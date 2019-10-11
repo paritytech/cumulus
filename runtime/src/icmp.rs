@@ -21,6 +21,7 @@
 //! - API to allow runtimes to configure the how messages are handled;
 //! - API to allow runtimes to deposit outgoing messages.
 
+use rstd::prelude::*;
 use codec::Codec;
 use support::{decl_module, decl_storage, decl_event};
 use system::ensure_none;
