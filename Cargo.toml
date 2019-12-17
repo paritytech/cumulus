@@ -1,0 +1,53 @@
+[package]
+name = "substrate-pallet-template"
+version = "0.1.0"
+authors = ["Anonymous"]
+edition = "2018"
+
+[features]
+default = ['std']
+std = [
+    'serde',
+    'codec/std',
+    'frame-support/std',
+    'sp-runtime/std',
+    'sp-io/std',
+    'system/std',
+]
+
+[dependencies.serde]
+features = ['derive']
+optional = true
+version = '1.0.101'
+
+[dependencies.codec]
+default-features = false
+features = ['derive']
+package = 'parity-scale-codec'
+version = '1.0.0'
+
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+rev = '40a16efefc070faf5a25442bc3ae1d0ea2478eee'
+
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+rev = '40a16efefc070faf5a25442bc3ae1d0ea2478eee'
+
+[dependencies.system]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'frame-system'
+rev = '40a16efefc070faf5a25442bc3ae1d0ea2478eee'
+
+[dev-dependencies.sp-io]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+rev = '40a16efefc070faf5a25442bc3ae1d0ea2478eee'
+
+[dev-dependencies.sp-core]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+rev = '40a16efefc070faf5a25442bc3ae1d0ea2478eee'
