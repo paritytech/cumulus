@@ -62,7 +62,7 @@ Before you release your pallet, you should check that it can:
 1. Build to Native:
 
     ```
-    cargo build
+    cargo build --release
     ```
 
 2. Pass your tests:
