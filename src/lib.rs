@@ -1,3 +1,5 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
 /// A pallet template with necessary imports
 
 /// Feel free to remove or edit this file as needed.
