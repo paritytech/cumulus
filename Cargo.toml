@@ -1,6 +1,6 @@
 [package]
 name = "substrate-pallet-template"
-version = "0.1.0"
+version = "2.0.0"
 authors = ["Anonymous"]
 edition = "2018"
 
@@ -45,7 +45,7 @@ package = 'frame-system'
 rev = '3e651110aa06aa835790df63410a29676243fc54'
 version = '2.0.0'
 
-[dev-dependencies.sp-io]
+[dependencies.sp-io]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 rev = '3e651110aa06aa835790df63410a29676243fc54'
