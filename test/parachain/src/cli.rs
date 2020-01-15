@@ -71,6 +71,13 @@ where
 	E: IntoExit + Send + 'static,
 {
 	type Config<T> = Configuration<(), T>;
+
+	let config_relaychain = parse_and_prepare::<NoCustom, NoCustom, _>(
+		&version,
+		"cumulus-test-parachain-collator",
+		args_relaychain,
+	).into_configuration::<(), _, _, _>(load_spec);
+
 	match parse_and_prepare::<SubCommands, NoCustom, _>(
 		&version,
 		"cumulus-test-parachain-collator",
