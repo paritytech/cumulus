@@ -377,7 +377,7 @@ mod tests {
 	};
 	use test_runtime::{Block, Header};
 
-	use futures::Stream;
+	use futures::{Stream, future};
 
 	#[derive(Debug)]
 	struct Error;
