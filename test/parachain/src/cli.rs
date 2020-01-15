@@ -30,7 +30,8 @@ use sp_runtime::{
 	traits::{Block as BlockT, Hash as HashT, Header as HeaderT},
 	BuildStorage,
 };
-use polkadot_service::ChainSpec as ChainSpecPolkaDot;
+use polkadot_service::ChainSpec as ChainSpecPolkadot;
+use polkadot_service::CustomConfiguration as CustomConfigurationPolkadot;
 
 use futures::{channel::oneshot, future::Map, FutureExt};
 
@@ -101,10 +102,12 @@ where
 					&version,
 					"cumulus-test-parachain-collator",
 					args_relaychain,
-				).into_configuration::<polkadot_service::CustomConfiguration, _, _, _>(load_spec_polkadot)
+				).into_configuration::<CustomConfigurationPolkadot, _, _, _>(
+					load_spec_polkadot,
+					config.in_chain_config_dir("polkadot"),
+				)
 					.map_err(|e| e.to_string())?
 					.expect("not a run command?");
-				polkadot_config.config_dir = config.in_chain_config_dir("polkadot");
 				polkadot_config.network.boot_nodes = config.network.boot_nodes.clone();
 
 				if let Some(ref config_dir) = polkadot_config.config_dir {
@@ -158,7 +161,7 @@ fn load_spec(_: &str) -> std::result::Result<Option<chain_spec::ChainSpec>, Stri
 	Ok(Some(chain_spec::get_chain_spec()))
 }
 
-fn load_spec_polkadot(_: &str) -> std::result::Result<Option<ChainSpecPolkaDot>, String> {
+fn load_spec_polkadot(_: &str) -> std::result::Result<Option<ChainSpecPolkadot>, String> {
 	Some(polkadot_service::ChainSpec::from_json_bytes(
 		&include_bytes!("../res/polkadot_chainspec.json")[..],
 	)).transpose()
