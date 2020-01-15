@@ -30,6 +30,7 @@ use sp_runtime::{
 	traits::{Block as BlockT, Hash as HashT, Header as HeaderT},
 	BuildStorage,
 };
+use polkadot_service::ChainSpec as ChainSpecPolkaDot;
 
 use futures::{channel::oneshot, future::Map, FutureExt};
 
@@ -72,12 +73,6 @@ where
 {
 	type Config<T> = Configuration<(), T>;
 
-	let config_relaychain = parse_and_prepare::<NoCustom, NoCustom, _>(
-		&version,
-		"cumulus-test-parachain-collator",
-		args_relaychain,
-	).into_configuration::<(), _, _, _>(load_spec);
-
 	match parse_and_prepare::<SubCommands, NoCustom, _>(
 		&version,
 		"cumulus-test-parachain-collator",
@@ -102,13 +97,14 @@ where
 				config.network.listen_addresses = Vec::new();
 
 				// TODO
-				let mut polkadot_config =
-					polkadot_collator::Configuration::default_with_spec_and_base_path(
-						polkadot_service::ChainSpec::from_json_bytes(
-							&include_bytes!("../res/polkadot_chainspec.json")[..],
-						)?,
-						config.in_chain_config_dir("polkadot"),
-					);
+				let mut polkadot_config = parse_and_prepare::<NoCustom, NoCustom, _>(
+					&version,
+					"cumulus-test-parachain-collator",
+					args_relaychain,
+				).into_configuration::<polkadot_service::CustomConfiguration, _, _, _>(load_spec_polkadot)
+					.map_err(|e| e.to_string())?
+					.expect("not a run command?");
+				polkadot_config.config_dir = config.in_chain_config_dir("polkadot");
 				polkadot_config.network.boot_nodes = config.network.boot_nodes.clone();
 
 				if let Some(ref config_dir) = polkadot_config.config_dir {
@@ -160,6 +156,12 @@ where
 
 fn load_spec(_: &str) -> std::result::Result<Option<chain_spec::ChainSpec>, String> {
 	Ok(Some(chain_spec::get_chain_spec()))
+}
+
+fn load_spec_polkadot(_: &str) -> std::result::Result<Option<ChainSpecPolkaDot>, String> {
+	Some(polkadot_service::ChainSpec::from_json_bytes(
+		&include_bytes!("../res/polkadot_chainspec.json")[..],
+	)).transpose()
 }
 
 /// Export the genesis state of the parachain.
