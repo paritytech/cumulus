@@ -64,7 +64,7 @@ struct ExportGenesisStateCommand {
 }
 
 /// Parse command line arguments into service configuration.
-pub fn run<I, T, E>(args: I, exit: E, version: VersionInfo) -> error::Result<()>
+pub fn run<I, T, E>(args_parachain: I, args_relaychain: I, exit: E, version: VersionInfo) -> error::Result<()>
 where
 	I: IntoIterator<Item = T>,
 	T: Into<std::ffi::OsString> + Clone,
@@ -74,7 +74,7 @@ where
 	match parse_and_prepare::<SubCommands, NoCustom, _>(
 		&version,
 		"cumulus-test-parachain-collator",
-		args,
+		args_parachain,
 	) {
 		ParseAndPrepare::Run(cmd) => cmd.run(
 			load_spec,

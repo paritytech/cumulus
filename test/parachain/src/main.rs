@@ -19,6 +19,7 @@
 #![warn(missing_docs)]
 #![warn(unused_extern_crates)]
 
+use itertools::Itertools;
 use polkadot_primitives::parachain::Id as ParaId;
 
 mod chain_spec;
@@ -42,5 +43,10 @@ fn main() -> Result<(), cli::error::Error> {
 		support_url: "https://github.com/paritytech/cumulus/issues/new",
 	};
 
-	cli::run(std::env::args(), cli::Exit, version)
+	let args = std::env::args().collect::<Vec<String>>();
+	let mut iter = args.iter();
+	let parachain_args: Vec<_> = iter.take_while_ref(|&x| x != &"--").collect();
+	let relaychain_args: Vec<_> = iter.collect();
+
+	cli::run(parachain_args, relaychain_args, cli::Exit, version)
 }
