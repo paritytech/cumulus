@@ -31,15 +31,21 @@ pub use sc_cli::{error, IntoExit, VersionInfo};
 
 /// The parachain id of this parachain.
 pub const PARA_ID: ParaId = ParaId::new(100);
+const EXECUTABLE_NAME: &'static str = "cumulus-test-parachain-collator";
+const DESCRIPTION: &'static str =
+	"Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
+	passed to the parachain node, while the arguments provided after -- will be passed \
+	to the relaychain node.\n\n\
+	cumulus-test-parachain-collator --parachain-args -- --relaychain-args";
 
 fn main() -> Result<(), cli::error::Error> {
 	let version = VersionInfo {
 		name: "Cumulus Test Parachain Collator",
 		commit: env!("VERGEN_SHA_SHORT"),
 		version: env!("CARGO_PKG_VERSION"),
-		executable_name: "cumulus-test-parachain-collator",
 		author: "Parity Technologies <admin@parity.io>",
-		description: "Cumulus test parachain collator",
+		description: DESCRIPTION,
+		executable_name: EXECUTABLE_NAME,
 		support_url: "https://github.com/paritytech/cumulus/issues/new",
 	};
 
