@@ -36,7 +36,7 @@ const DESCRIPTION: &'static str =
 	"Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
 	passed to the parachain node, while the arguments provided after -- will be passed \
 	to the relaychain node.\n\n\
-	cumulus-test-parachain-collator --parachain-args -- --relaychain-args";
+	cumulus-test-parachain-collator [parachain-args] -- [relaychain-args]";
 
 fn main() -> Result<(), cli::error::Error> {
 	let version = VersionInfo {
