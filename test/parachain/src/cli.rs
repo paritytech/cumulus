@@ -97,7 +97,6 @@ where
 				// TODO
 				config.network.listen_addresses = Vec::new();
 
-				// TODO
 				let mut polkadot_config = parse_and_prepare::<NoCustom, NoCustom, _>(
 					&version,
 					"cumulus-test-parachain-collator",
