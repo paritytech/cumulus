@@ -105,8 +105,11 @@ where
 					load_spec_polkadot,
 					config.in_chain_config_dir("polkadot"),
 				)
-					.map_err(|e| e.to_string())?
-					.expect("not a run command?");
+				.map_err(|e| e.to_string())?
+				.expect(
+					"can only fail when this is a CustomCommand. Running parse_and_prepare with \
+					NoCustom can never return a CustomCommand; therefore this will never fail; qed"
+				);
 				polkadot_config.network.boot_nodes = config.network.boot_nodes.clone();
 
 				if let Some(ref config_dir) = polkadot_config.config_dir {
