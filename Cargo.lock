@@ -736,9 +736,9 @@ dependencies = [
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-collator 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-primitives 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-service 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-collator 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-primitives 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-service 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "sc-cli 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -761,8 +761,8 @@ dependencies = [
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-primitives 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-runtime 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-primitives 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-runtime 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -780,10 +780,10 @@ name = "cumulus-network"
 version = "0.1.0"
 dependencies = [
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-network 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-primitives 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-statement-table 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-validation 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-network 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-primitives 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-statement-table 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-validation 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sp-consensus 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -800,7 +800,7 @@ dependencies = [
  "hashbrown 0.6.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "memory-db 0.18.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-parachain 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-parachain 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "sc-executor 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sp-consensus 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -840,9 +840,9 @@ dependencies = [
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-collator 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-primitives 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-service 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-collator 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-primitives 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-service 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "sc-basic-authority 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-cli 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -2127,8 +2127,8 @@ dependencies = [
 
 [[package]]
 name = "kusama-runtime"
-version = "0.7.17"
-source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#b43b04552ac3279e446558aa9db33063deb70f11"
+version = "0.7.18"
+source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#765c4820658c50493958153ea26dd306c133f9f5"
 dependencies = [
  "bitvec 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-executive 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -2163,11 +2163,10 @@ dependencies = [
  "pallet-treasury 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "pallet-utility 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-parachain 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-primitives 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-runtime-common 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-parachain 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-primitives 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-runtime-common 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "rustc-hex 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "safe-mix 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -3763,8 +3762,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "polkadot-availability-store"
-version = "0.7.17"
-source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#b43b04552ac3279e446558aa9db33063deb70f11"
+version = "0.7.18"
+source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#765c4820658c50493958153ea26dd306c133f9f5"
 dependencies = [
  "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "exit-future 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3775,8 +3774,8 @@ dependencies = [
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-erasure-coding 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-primitives 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-erasure-coding 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-primitives 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-keystore 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -3791,13 +3790,13 @@ dependencies = [
 
 [[package]]
 name = "polkadot-cli"
-version = "0.7.17"
-source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#b43b04552ac3279e446558aa9db33063deb70f11"
+version = "0.7.18"
+source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#765c4820658c50493958153ea26dd306c133f9f5"
 dependencies = [
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-service 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-service 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "sc-cli 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -3807,23 +3806,23 @@ dependencies = [
  "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "structopt 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio 0.1.22 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "polkadot-collator"
-version = "0.7.17"
-source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#b43b04552ac3279e446558aa9db33063deb70f11"
+version = "0.7.18"
+source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#765c4820658c50493958153ea26dd306c133f9f5"
 dependencies = [
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-timer 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-cli 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-network 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-primitives 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-service 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-validation 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-cli 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-network 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-primitives 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-service 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-validation 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-network 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -3832,17 +3831,17 @@ dependencies = [
  "sp-consensus 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "tokio 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio 0.1.22 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "polkadot-erasure-coding"
-version = "0.7.17"
-source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#b43b04552ac3279e446558aa9db33063deb70f11"
+version = "0.7.18"
+source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#765c4820658c50493958153ea26dd306c133f9f5"
 dependencies = [
  "derive_more 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-primitives 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-primitives 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "reed-solomon-erasure 4.0.0 (git+https://github.com/paritytech/reed-solomon-erasure)",
  "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sp-trie 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -3850,8 +3849,8 @@ dependencies = [
 
 [[package]]
 name = "polkadot-network"
-version = "0.7.17"
-source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#b43b04552ac3279e446558aa9db33063deb70f11"
+version = "0.7.18"
+source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#765c4820658c50493958153ea26dd306c133f9f5"
 dependencies = [
  "arrayvec 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "exit-future 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3859,10 +3858,10 @@ dependencies = [
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-availability-store 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-erasure-coding 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-primitives 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-validation 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-availability-store 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-erasure-coding 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-primitives 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-validation 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-network 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-network-gossip 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -3875,8 +3874,8 @@ dependencies = [
 
 [[package]]
 name = "polkadot-parachain"
-version = "0.7.17"
-source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#b43b04552ac3279e446558aa9db33063deb70f11"
+version = "0.7.18"
+source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#765c4820658c50493958153ea26dd306c133f9f5"
 dependencies = [
  "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3895,13 +3894,13 @@ dependencies = [
 
 [[package]]
 name = "polkadot-primitives"
-version = "0.7.17"
-source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#b43b04552ac3279e446558aa9db33063deb70f11"
+version = "0.7.18"
+source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#765c4820658c50493958153ea26dd306c133f9f5"
 dependencies = [
  "bitvec 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "pallet-babe 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-parachain 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-parachain 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sp-application-crypto 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -3915,13 +3914,13 @@ dependencies = [
 
 [[package]]
 name = "polkadot-rpc"
-version = "0.7.17"
-source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#b43b04552ac3279e446558aa9db33063deb70f11"
+version = "0.7.18"
+source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#765c4820658c50493958153ea26dd306c133f9f5"
 dependencies = [
  "jsonrpc-core 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "pallet-transaction-payment-rpc 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-primitives 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-primitives 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-rpc 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -3932,8 +3931,8 @@ dependencies = [
 
 [[package]]
 name = "polkadot-runtime"
-version = "0.7.17"
-source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#b43b04552ac3279e446558aa9db33063deb70f11"
+version = "0.7.18"
+source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#765c4820658c50493958153ea26dd306c133f9f5"
 dependencies = [
  "bitvec 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-executive 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -3966,11 +3965,10 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "pallet-treasury 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-parachain 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-primitives 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-runtime-common 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-parachain 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-primitives 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-runtime-common 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "rustc-hex 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "safe-mix 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -3991,8 +3989,8 @@ dependencies = [
 
 [[package]]
 name = "polkadot-runtime-common"
-version = "0.7.17"
-source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#b43b04552ac3279e446558aa9db33063deb70f11"
+version = "0.7.18"
+source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#765c4820658c50493958153ea26dd306c133f9f5"
 dependencies = [
  "bitvec 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-support 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -4004,8 +4002,8 @@ dependencies = [
  "pallet-staking 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "pallet-timestamp 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-parachain 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-primitives 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-parachain 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-primitives 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "rustc-hex 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4020,14 +4018,14 @@ dependencies = [
 
 [[package]]
 name = "polkadot-service"
-version = "0.7.17"
-source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#b43b04552ac3279e446558aa9db33063deb70f11"
+version = "0.7.18"
+source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#765c4820658c50493958153ea26dd306c133f9f5"
 dependencies = [
  "frame-system-rpc-runtime-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex-literal 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "kusama-runtime 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "kusama-runtime 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "pallet-babe 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -4036,12 +4034,12 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-availability-store 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-network 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-primitives 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-rpc 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-runtime 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-validation 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-availability-store 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-network 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-primitives 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-rpc 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-runtime 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-validation 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "sc-authority-discovery 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-chain-spec 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -4075,18 +4073,18 @@ dependencies = [
 
 [[package]]
 name = "polkadot-statement-table"
-version = "0.7.17"
-source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#b43b04552ac3279e446558aa9db33063deb70f11"
+version = "0.7.18"
+source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#765c4820658c50493958153ea26dd306c133f9f5"
 dependencies = [
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-primitives 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-primitives 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
 ]
 
 [[package]]
 name = "polkadot-validation"
-version = "0.7.17"
-source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#b43b04552ac3279e446558aa9db33063deb70f11"
+version = "0.7.18"
+source = "git+https://github.com/paritytech/polkadot?branch=cumulus-branch#765c4820658c50493958153ea26dd306c133f9f5"
 dependencies = [
  "bitvec 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "derive_more 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4097,11 +4095,11 @@ dependencies = [
  "pallet-babe 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-availability-store 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-erasure-coding 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-parachain 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-primitives 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-statement-table 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-availability-store 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-erasure-coding 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-parachain 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-primitives 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "polkadot-statement-table 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "sc-block-builder 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-finality-grandpa 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -6511,7 +6509,6 @@ dependencies = [
  "bytes 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "memchr 2.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "num_cpus 1.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "pin-project-lite 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -7573,7 +7570,7 @@ dependencies = [
 "checksum jsonrpc-ws-server 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)" = "b34faa167c3ac9705aeecb986c0da6056529f348425dbe0441db60a2c4cc41d1"
 "checksum keccak 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "67c21572b4949434e4fc1e1978b99c5f77064153c59d998bf13ecd96fb5ecba7"
 "checksum kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7507624b29483431c0ba2d82aece8ca6cdba9382bff4ddd0f7490560c056098d"
-"checksum kusama-runtime 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
+"checksum kusama-runtime 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
 "checksum kv-log-macro 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "8c54d9f465d530a752e6ebdc217e081a7a614b48cb200f6f0aee21ba6bc9aabb"
 "checksum kvdb 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "8396be0e5561ccd1bf7ff0b2007487cdd7a87a056873fe6ea906b35d4dbf7ed8"
 "checksum kvdb-memorydb 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "4d25ef14155e418515c4839e9144c839de3506e68946f255a32b7f166095493d"
@@ -7710,19 +7707,19 @@ dependencies = [
 "checksum pin-utils 0.1.0-alpha.4 (registry+https://github.com/rust-lang/crates.io-index)" = "5894c618ce612a3fa23881b152b608bafb8c56cfc22f434a3ba3120b40f7b587"
 "checksum pkg-config 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)" = "05da548ad6865900e60eaba7f589cc0783590a92e940c26953ff81ddbab2d677"
 "checksum plain 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "b4596b6d070b27117e987119b4dac604f3c58cfb0b191112e24771b2faeac1a6"
-"checksum polkadot-availability-store 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
-"checksum polkadot-cli 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
-"checksum polkadot-collator 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
-"checksum polkadot-erasure-coding 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
-"checksum polkadot-network 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
-"checksum polkadot-parachain 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
-"checksum polkadot-primitives 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
-"checksum polkadot-rpc 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
-"checksum polkadot-runtime 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
-"checksum polkadot-runtime-common 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
-"checksum polkadot-service 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
-"checksum polkadot-statement-table 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
-"checksum polkadot-validation 0.7.17 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
+"checksum polkadot-availability-store 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
+"checksum polkadot-cli 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
+"checksum polkadot-collator 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
+"checksum polkadot-erasure-coding 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
+"checksum polkadot-network 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
+"checksum polkadot-parachain 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
+"checksum polkadot-primitives 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
+"checksum polkadot-rpc 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
+"checksum polkadot-runtime 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
+"checksum polkadot-runtime-common 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
+"checksum polkadot-service 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
+"checksum polkadot-statement-table 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
+"checksum polkadot-validation 0.7.18 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)" = "<none>"
 "checksum ppv-lite86 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)" = "74490b50b9fbe561ac330df47c08f3f33073d2d00c150f719147d7c54522fa1b"
 "checksum primitive-types 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)" = "e4336f4f5d5524fa60bcbd6fe626f9223d8142a50e7053e979acdf0da41ab975"
 "checksum proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "e10d4b51f154c8a7fb96fd6dad097cb74b863943ec010ac94b9fd1be8861fe1e"
