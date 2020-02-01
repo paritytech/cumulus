@@ -120,6 +120,8 @@ where
 		let inherent_providers = self.inherent_data_providers.clone();
 		let block_import = self.block_import.clone();
 
+		trace!(target: "cumulus-collator", "Producing candidate");
+
 		let last_head = match HeadData::<Block>::decode(&mut &status.head_data.0[..]) {
 			Ok(x) => x,
 			Err(e) => {
@@ -133,8 +135,6 @@ where
 			.init(&last_head.header);
 
 		Box::pin(async move {
-			trace!(target: "cumulus-collator", "Producing candidate");
-
 			let parent_state_root = *last_head.header.state_root();
 
 			let mut proposer = proposer_future
