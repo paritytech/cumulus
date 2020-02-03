@@ -26,8 +26,9 @@ mod chain_spec;
 #[macro_use]
 mod service;
 mod cli;
+mod command;
 
-pub use sc_cli::{error, IntoExit, VersionInfo};
+pub use sc_cli::VersionInfo;
 
 /// The parachain id of this parachain.
 pub const PARA_ID: ParaId = ParaId::new(100);
@@ -47,12 +48,8 @@ fn main() -> Result<(), cli::error::Error> {
 		description: DESCRIPTION,
 		executable_name: EXECUTABLE_NAME,
 		support_url: "https://github.com/paritytech/cumulus/issues/new",
+		copyright_start_year: 2017,
 	};
 
-	let args = std::env::args().collect::<Vec<String>>();
-	let mut iter = args.iter();
-	let parachain_args: Vec<_> = iter.take_while_ref(|&x| x != &"--").collect();
-	let relaychain_args: Vec<_> = iter.collect();
-
-	cli::run(parachain_args, relaychain_args, cli::Exit, version)
+	command::run(version)
 }
