@@ -14,43 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::chain_spec;
+use std::path::PathBuf;
 
-use parachain_runtime::Block;
-
-pub use sc_cli::{error::{self, Result}, VersionInfo};
-use sc_client::genesis;
-use sc_service::{Configuration, Roles as ServiceRoles};
-use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::{
-	traits::{Block as BlockT, Hash as HashT, Header as HeaderT},
-	BuildStorage,
-};
-use polkadot_service::ChainSpec as ChainSpecPolkadot;
+use sc_cli;
 use polkadot_cli::Cli as PolkadotCli;
-
-use futures::{channel::oneshot, future::Map, FutureExt};
-
-use codec::Encode;
-
-use log::info;
-
-use std::{cell::RefCell, path::PathBuf, sync::Arc};
-
 use structopt::StructOpt;
 
 /// Sub-commands supported by the collator.
 #[derive(Debug, StructOpt, Clone)]
-enum SubCommands {
+enum Subcommand {
+	#[structopt(flatten)]
+	Base(sc_cli::Subcommand),
 	/// Export the genesis state of the parachain.
 	#[structopt(name = "export-genesis-state")]
 	ExportGenesisState(ExportGenesisStateCommand),
-}
-
-impl sc_cli::GetSharedParams for SubCommands {
-	fn shared_params(&self) -> Option<&sc_cli::SharedParams> {
-		None
-	}
 }
 
 /// Command for exporting the genesis state of the parachain
@@ -59,4 +36,17 @@ struct ExportGenesisStateCommand {
 	/// Output file name or stdout if unspecified.
 	#[structopt(parse(from_os_str))]
 	pub output: Option<PathBuf>,
+}
+
+#[derive(Debug, StructOpt, Clone)]
+struct Cli {
+	#[structopt(subcommand)]
+	subcommand: Option<Subcommand>,
+
+	#[structopt(flatten)]
+	run: sc_cli::RunCmd,
+
+	/// Relaychain arguments
+	#[structopt(raw = true)]
+	relaychain_args: Vec<String>,
 }

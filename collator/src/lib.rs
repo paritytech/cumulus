@@ -345,21 +345,19 @@ pub trait SetupParachain<Block: BlockT>: Send {
 }
 
 /// Run a collator with the given proposer factory.
-pub fn run_collator<Block, SP, E>(
+pub fn run_collator<Block, SP>(
 	setup_parachain: SP,
 	para_id: ParaId,
-	exit: E,
 	key: Arc<CollatorPair>,
 	configuration: polkadot_collator::Configuration,
-) -> Result<(), sc_cli::error::Error>
+) -> Result<(), sc_service::Error>
 where
 	Block: BlockT,
 	SP: SetupParachain<Block> + Send + 'static,
 	<<SP as SetupParachain<Block>>::ProposerFactory as Environment<Block>>::Proposer: Send,
-	E: Future<Output = ()> + Unpin + Send + Clone + Sync + 'static,
 {
 	let builder = CollatorBuilder::new(setup_parachain);
-	polkadot_collator::run_collator(builder, para_id, exit, key, configuration)
+	polkadot_collator::run_collator(builder, para_id, key, configuration)
 }
 
 #[cfg(test)]

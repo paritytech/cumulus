@@ -80,7 +80,7 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 	config: Configuration<GenesisConfig, E>,
 	key: Arc<polkadot_primitives::parachain::CollatorPair>,
 	polkadot_config: polkadot_collator::Configuration,
-) -> crate::cli::Result<()> {
+) -> Result<(), sc_service::Error> {
 	let (builder, inherent_data_providers) = new_full_start!(config);
 	inherent_data_providers
 		.register_provider(sp_timestamp::InherentDataProvider)
