@@ -24,6 +24,7 @@ use sp_consensus::{
 };
 use sp_inherents::InherentDataProviders;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
+use sc_cli;
 
 use polkadot_collator::{
 	BuildParachainContext, InvalidHead, Network as CollatorNetwork, ParachainContext,
@@ -350,7 +351,7 @@ pub fn run_collator<Block, SP>(
 	para_id: ParaId,
 	key: Arc<CollatorPair>,
 	configuration: polkadot_collator::Configuration,
-) -> Result<(), sc_service::Error>
+) -> Result<(), sc_cli::error::Error>
 where
 	Block: BlockT,
 	SP: SetupParachain<Block> + Send + 'static,
@@ -358,7 +359,7 @@ where
 {
 	let builder = CollatorBuilder::new(setup_parachain);
 	let exit = future::ready(()); // TODO to delete
-	polkadot_collator::run_collator(builder, para_id, exit, key, configuration).map_err(|_| "boo (to delete)".into())
+	polkadot_collator::run_collator(builder, para_id, exit, key, configuration)
 }
 
 #[cfg(test)]

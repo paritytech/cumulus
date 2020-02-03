@@ -23,6 +23,7 @@ use sc_network::construct_simple_protocol;
 use sc_service::{AbstractService, Configuration};
 use sp_consensus::{BlockImport, Environment, Proposer};
 use sp_inherents::InherentDataProviders;
+use sc_cli;
 
 use futures::{future, task::Spawn, FutureExt, TryFutureExt};
 
@@ -80,7 +81,7 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 	config: Configuration<GenesisConfig, E>,
 	key: Arc<polkadot_primitives::parachain::CollatorPair>,
 	polkadot_config: polkadot_collator::Configuration,
-) -> Result<(), sc_service::Error> {
+) -> Result<(), sc_cli::error::Error> {
 	let (builder, inherent_data_providers) = new_full_start!(config);
 	inherent_data_providers
 		.register_provider(sp_timestamp::InherentDataProvider)
@@ -94,7 +95,6 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 		transaction_pool: service.transaction_pool(),
 	};
 
-	let on_exit = service.on_exit();
 	let block_import = service.client();
 
 	let setup_parachain = SetupParachain {
@@ -107,7 +107,6 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 	cumulus_collator::run_collator(
 		setup_parachain,
 		crate::PARA_ID,
-		on_exit,
 		key,
 		polkadot_config,
 	)

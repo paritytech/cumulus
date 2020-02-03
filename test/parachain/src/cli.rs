@@ -17,12 +17,12 @@
 use std::path::PathBuf;
 
 use sc_cli;
-use polkadot_cli::Cli as PolkadotCli;
+pub use polkadot_cli::Cli as PolkadotCli;
 use structopt::StructOpt;
 
 /// Sub-commands supported by the collator.
 #[derive(Debug, StructOpt, Clone)]
-enum Subcommand {
+pub enum Subcommand {
 	#[structopt(flatten)]
 	Base(sc_cli::Subcommand),
 	/// Export the genesis state of the parachain.
@@ -32,21 +32,21 @@ enum Subcommand {
 
 /// Command for exporting the genesis state of the parachain
 #[derive(Debug, StructOpt, Clone)]
-struct ExportGenesisStateCommand {
+pub struct ExportGenesisStateCommand {
 	/// Output file name or stdout if unspecified.
 	#[structopt(parse(from_os_str))]
 	pub output: Option<PathBuf>,
 }
 
 #[derive(Debug, StructOpt, Clone)]
-struct Cli {
+pub struct Cli {
 	#[structopt(subcommand)]
-	subcommand: Option<Subcommand>,
+	pub subcommand: Option<Subcommand>,
 
 	#[structopt(flatten)]
-	run: sc_cli::RunCmd,
+	pub run: sc_cli::RunCmd,
 
 	/// Relaychain arguments
 	#[structopt(raw = true)]
-	relaychain_args: Vec<String>,
+	pub relaychain_args: Vec<String>,
 }
