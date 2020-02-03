@@ -521,7 +521,7 @@ mod tests {
 		let context = builder
 			.build::<_, _, polkadot_service::polkadot_runtime::RuntimeApi, _, _>(
 				Arc::new(
-					substrate_test_client::TestClientBuilder::<_, _, ()>::default()
+					substrate_test_client::TestClientBuilder::<_, _, _, ()>::default()
 						.build_with_native_executor(Some(NativeExecutor::<
 							polkadot_service::PolkadotExecutor,
 						>::new(Interpreted, None)))
