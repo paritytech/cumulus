@@ -46,7 +46,7 @@ pub type Executor =
 	sc_client::LocalCallExecutor<Backend, sc_executor::NativeExecutor<LocalExecutor>>;
 
 /// Test client builder for Cumulus
-pub type TestClientBuilder = test_client::TestClientBuilder<Executor, Backend, GenesisParameters>;
+pub type TestClientBuilder = test_client::TestClientBuilder<Block, Executor, Backend, GenesisParameters>;
 
 /// LongestChain type for the test runtime/client.
 pub type LongestChain = test_client::sc_client::LongestChain<Backend, Block>;
