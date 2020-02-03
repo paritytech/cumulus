@@ -21,7 +21,7 @@ use runtime::{
 	genesismap::{additional_storage_with_genesis, GenesisConfig},
 	Block,
 };
-use sp_core::{sr25519, storage::Storage};
+use sp_core::{sr25519, storage::Storage, ChangesTrieConfiguration};
 use sp_keyring::{AccountKeyring, Sr25519Keyring};
 use sp_runtime::traits::{Block as BlockT, Hash as HashT, Header as HeaderT};
 pub use test_client::*;
@@ -64,7 +64,12 @@ impl test_client::GenesisInit for GenesisParameters {
 	fn genesis_storage(&self) -> Storage {
 		use codec::Encode;
 
-		let mut storage = genesis_config(self.support_changes_trie).genesis_map();
+		let changes_trie_config: Option<ChangesTrieConfiguration> = if self.support_changes_trie {
+			Some(sp_test_primitives::changes_trie_config())
+		} else {
+			None
+		};
+		let mut storage = genesis_config(changes_trie_config).genesis_map();
 
 		let child_roots = storage.children.iter().map(|(sk, child_content)| {
 			let state_root =
@@ -121,9 +126,9 @@ impl DefaultTestClientBuilderExt for TestClientBuilder {
 	}
 }
 
-fn genesis_config(support_changes_trie: bool) -> GenesisConfig {
+fn genesis_config(changes_trie_config: Option<ChangesTrieConfiguration>) -> GenesisConfig {
 	GenesisConfig::new(
-		support_changes_trie,
+		changes_trie_config,
 		vec![
 			sr25519::Public::from(Sr25519Keyring::Alice).into(),
 			sr25519::Public::from(Sr25519Keyring::Bob).into(),
