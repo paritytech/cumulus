@@ -43,7 +43,9 @@ use log::{error, trace};
 
 use futures::{task::Spawn, Future, future};
 
-use std::{fmt::Debug, marker::PhantomData, sync::Arc, time::Duration, pin::Pin};
+use std::{
+	fmt::Debug, marker::PhantomData, sync::Arc, time::Duration, pin::Pin, collections::HashMap,
+};
 
 use parking_lot::Mutex;
 
@@ -207,11 +209,12 @@ where
 				post_digests: vec![],
 				body: Some(b.extrinsics().to_vec()),
 				finalized: false,
+				intermediates: HashMap::new(),
 				auxiliary: vec![], // block-weight is written in block import.
 				// TODO: block-import handles fork choice and this shouldn't even have the
 				// option to specify one.
 				// https://github.com/paritytech/substrate/issues/3623
-				fork_choice: ForkChoiceStrategy::LongestChain,
+				fork_choice: Some(ForkChoiceStrategy::LongestChain),
 				allow_missing_state: false,
 				import_existing: false,
 				storage_changes: Some(storage_changes),
