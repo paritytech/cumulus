@@ -256,14 +256,14 @@ where
 }
 
 /// Implements `BuildParachainContext` to build a collator instance.
-struct CollatorBuilder<Block, SP> {
+pub struct CollatorBuilder<Block, SP> {
 	setup_parachain: SP,
 	_marker: PhantomData<Block>,
 }
 
 impl<Block, SP> CollatorBuilder<Block, SP> {
 	/// Create a new instance of self.
-	fn new(setup_parachain: SP) -> Self {
+	pub fn new(setup_parachain: SP) -> Self {
 		Self {
 			setup_parachain,
 			_marker: PhantomData,
@@ -343,22 +343,6 @@ pub trait SetupParachain<Block: BlockT>: Send {
 	where
 		P: cumulus_consensus::PolkadotClient,
 		SP: Spawn + Clone + Send + Sync + 'static;
-}
-
-/// Run a collator with the given proposer factory.
-pub fn run_collator<Block, SP>(
-	setup_parachain: SP,
-	para_id: ParaId,
-	key: Arc<CollatorPair>,
-	configuration: polkadot_collator::Configuration,
-) -> Result<(), sc_cli::error::Error>
-where
-	Block: BlockT,
-	SP: SetupParachain<Block> + Send + 'static,
-	<<SP as SetupParachain<Block>>::ProposerFactory as Environment<Block>>::Proposer: Send,
-{
-	let builder = CollatorBuilder::new(setup_parachain);
-	polkadot_collator::run_collator(builder, para_id, key, configuration)
 }
 
 #[cfg(test)]
