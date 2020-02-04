@@ -358,8 +358,7 @@ where
 	<<SP as SetupParachain<Block>>::ProposerFactory as Environment<Block>>::Proposer: Send,
 {
 	let builder = CollatorBuilder::new(setup_parachain);
-	let exit = future::pending(); // TODO to delete
-	polkadot_collator::run_collator(builder, para_id, exit, key, configuration)
+	polkadot_collator::run_collator(builder, para_id, key, configuration)
 }
 
 #[cfg(test)]
