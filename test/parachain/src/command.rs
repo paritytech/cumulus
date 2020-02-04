@@ -43,6 +43,7 @@ pub fn run(version: VersionInfo) -> error::Result<()> {
 	let opt: Cli = sc_cli::from_args(&version);
 
 	let mut config = sc_service::Configuration::new(&version);
+	let mut polkadot_config = Configuration::new(&version);
 
 	match opt.subcommand {
 		Some(Subcommand::Base(subcommand)) => sc_cli::run_subcommand(
@@ -79,10 +80,13 @@ pub fn run(version: VersionInfo) -> error::Result<()> {
 			Ok(())
 		},
 		None => {
-			let shared_params = &opt.run.shared_params;
-
-			sc_cli::init(shared_params, &version)?;
-			sc_cli::load_spec(&mut config, shared_params, load_spec)?;
+			sc_cli::init(&opt.run.shared_params, &version)?;
+			sc_cli::load_spec(&mut config, &opt.run.shared_params, load_spec)?;
+			sc_cli::update_config_for_running_node(
+				&mut config,
+				opt.run,
+				&version,
+			)?;
 
 			info!("{}", version.name);
 			info!("  version {}", config.full_version());
@@ -95,7 +99,6 @@ pub fn run(version: VersionInfo) -> error::Result<()> {
 			// TODO
 			let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
 
-			let mut polkadot_config = Configuration::new(&version);
 			polkadot_config.config_dir = config.in_chain_config_dir("polkadot");
 
 			let polkadot_opt: PolkadotCli = sc_cli::from_iter(opt.relaychain_args, &version);
@@ -104,7 +107,11 @@ pub fn run(version: VersionInfo) -> error::Result<()> {
 			polkadot_config.rpc_ws = Some(DEFAULT_POLKADOT_RPC_WS.parse().unwrap());
 			polkadot_config.grafana_port = Some(DEFAULT_POLKADOT_GRAFANA_PORT.parse().unwrap());
 
-			sc_cli::load_spec(&mut polkadot_config, shared_params, load_spec_polkadot)?;
+			sc_cli::load_spec(
+				&mut polkadot_config,
+				&polkadot_opt.run.shared_params,
+				load_spec_polkadot,
+			)?;
 			sc_cli::update_config_for_running_node(
 				&mut polkadot_config,
 				polkadot_opt.run,
