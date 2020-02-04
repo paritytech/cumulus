@@ -24,7 +24,6 @@ use sp_consensus::{
 };
 use sp_inherents::InherentDataProviders;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
-use sc_cli;
 
 use polkadot_collator::{
 	BuildParachainContext, InvalidHead, Network as CollatorNetwork, ParachainContext,
@@ -32,7 +31,7 @@ use polkadot_collator::{
 };
 use polkadot_primitives::{
 	parachain::{
-		self, BlockData, CollatorPair, Id as ParaId, Message, OutgoingMessages,
+		self, BlockData, Id as ParaId, Message, OutgoingMessages,
 		Status as ParachainStatus,
 	},
 	Block as PBlock, Hash as PHash,
