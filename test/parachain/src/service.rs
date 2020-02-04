@@ -89,7 +89,7 @@ macro_rules! new_full_start {
 ///
 /// This function blocks until done.
 pub fn run_collator<E: sc_service::ChainSpecExtension>(
-	parachain_config: sc_service::Configuration<GenesisConfig, E>,
+	mut parachain_config: sc_service::Configuration<GenesisConfig, E>,
 	key: Arc<CollatorPair>,
 	polkadot_config: polkadot_collator::Configuration,
 ) -> sc_cli::error::Result<()> {
@@ -98,11 +98,7 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 	match (polkadot_config.expect_chain_spec().is_kusama(), polkadot_config.roles) {
 		(true, _) =>
 			sc_cli::run_service_until_exit(polkadot_config, |polkadot_config| {
-				parachain_config.task_executor = Some(Box::new(|fut| {
-					let task_executor = polkadot_config.task_executor.as_ref().unwrap();
-
-					task_executor(fut);
-				}));
+				parachain_config.task_executor = polkadot_config.task_executor.clone();
 
 				let (builder, inherent_data_providers) = new_full_start!(parachain_config);
 				inherent_data_providers
@@ -137,11 +133,8 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 			}),
 		(false, _) =>
 			sc_cli::run_service_until_exit(polkadot_config, |polkadot_config| {
-				parachain_config.task_executor = Some(Box::new(|fut| {
-					let task_executor = polkadot_config.task_executor.as_ref().unwrap();
-
-					task_executor(fut);
-				}));
+				// NOTE: duplicated code. Don't read
+				parachain_config.task_executor = polkadot_config.task_executor.clone();
 
 				let (builder, inherent_data_providers) = new_full_start!(parachain_config);
 				inherent_data_providers
