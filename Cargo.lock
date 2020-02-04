@@ -2133,7 +2133,7 @@ dependencies = [
 [[package]]
 name = "kusama-runtime"
 version = "0.7.19"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#a11b6348ef381458e2cfc57d0f0465650293ba54"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#960fcfc56049c9201435101cc62972502d63f177"
 dependencies = [
  "bitvec 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-executive 2.0.0 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
@@ -3798,7 +3798,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "polkadot-availability-store"
 version = "0.7.19"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#a11b6348ef381458e2cfc57d0f0465650293ba54"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#960fcfc56049c9201435101cc62972502d63f177"
 dependencies = [
  "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "exit-future 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3826,7 +3826,7 @@ dependencies = [
 [[package]]
 name = "polkadot-cli"
 version = "0.7.19"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#a11b6348ef381458e2cfc57d0f0465650293ba54"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#960fcfc56049c9201435101cc62972502d63f177"
 dependencies = [
  "futures 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3846,7 +3846,7 @@ dependencies = [
 [[package]]
 name = "polkadot-collator"
 version = "0.7.19"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#a11b6348ef381458e2cfc57d0f0465650293ba54"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#960fcfc56049c9201435101cc62972502d63f177"
 dependencies = [
  "futures 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-timer 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3872,7 +3872,7 @@ dependencies = [
 [[package]]
 name = "polkadot-erasure-coding"
 version = "0.7.19"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#a11b6348ef381458e2cfc57d0f0465650293ba54"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#960fcfc56049c9201435101cc62972502d63f177"
 dependencies = [
  "derive_more 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3885,7 +3885,7 @@ dependencies = [
 [[package]]
 name = "polkadot-network"
 version = "0.7.19"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#a11b6348ef381458e2cfc57d0f0465650293ba54"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#960fcfc56049c9201435101cc62972502d63f177"
 dependencies = [
  "arrayvec 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3909,7 +3909,7 @@ dependencies = [
 [[package]]
 name = "polkadot-parachain"
 version = "0.7.19"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#a11b6348ef381458e2cfc57d0f0465650293ba54"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#960fcfc56049c9201435101cc62972502d63f177"
 dependencies = [
  "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3929,7 +3929,7 @@ dependencies = [
 [[package]]
 name = "polkadot-primitives"
 version = "0.7.19"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#a11b6348ef381458e2cfc57d0f0465650293ba54"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#960fcfc56049c9201435101cc62972502d63f177"
 dependencies = [
  "bitvec 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "pallet-babe 2.0.0 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
@@ -3949,7 +3949,7 @@ dependencies = [
 [[package]]
 name = "polkadot-rpc"
 version = "0.7.19"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#a11b6348ef381458e2cfc57d0f0465650293ba54"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#960fcfc56049c9201435101cc62972502d63f177"
 dependencies = [
  "jsonrpc-core 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "pallet-transaction-payment-rpc 2.0.0 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
@@ -3966,7 +3966,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime"
 version = "0.7.19"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#a11b6348ef381458e2cfc57d0f0465650293ba54"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#960fcfc56049c9201435101cc62972502d63f177"
 dependencies = [
  "bitvec 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-executive 2.0.0 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
@@ -4024,7 +4024,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-common"
 version = "0.7.19"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#a11b6348ef381458e2cfc57d0f0465650293ba54"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#960fcfc56049c9201435101cc62972502d63f177"
 dependencies = [
  "bitvec 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-support 2.0.0 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
@@ -4053,7 +4053,7 @@ dependencies = [
 [[package]]
 name = "polkadot-service"
 version = "0.7.19"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#a11b6348ef381458e2cfc57d0f0465650293ba54"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#960fcfc56049c9201435101cc62972502d63f177"
 dependencies = [
  "frame-system-rpc-runtime-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "futures 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4107,7 +4107,7 @@ dependencies = [
 [[package]]
 name = "polkadot-statement-table"
 version = "0.7.19"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#a11b6348ef381458e2cfc57d0f0465650293ba54"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#960fcfc56049c9201435101cc62972502d63f177"
 dependencies = [
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "polkadot-primitives 0.7.19 (git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch)",
@@ -4117,7 +4117,7 @@ dependencies = [
 [[package]]
 name = "polkadot-validation"
 version = "0.7.19"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#a11b6348ef381458e2cfc57d0f0465650293ba54"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch#960fcfc56049c9201435101cc62972502d63f177"
 dependencies = [
  "bitvec 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "derive_more 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)",
