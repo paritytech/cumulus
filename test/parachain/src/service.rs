@@ -82,8 +82,7 @@ macro_rules! new_full_start {
 		}};
 }
 
-/// Run a collator node with the given `RelayChainContext` and `ParachainContext`
-/// build by the given `BuildParachainContext` and arguments to the underlying polkadot node.
+/// Run a collator node with the given parachain `Configuration` and relaychain `Configuration`
 ///
 /// This function blocks until done.
 pub fn run_collator<E: sc_service::ChainSpecExtension>(
