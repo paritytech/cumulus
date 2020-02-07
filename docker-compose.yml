@@ -19,6 +19,7 @@ services:
       --port 30333
       --rpc-port 9933
       --ws-port 9944
+      --rpc-external
       --alice
     networks:
       testing_net:
@@ -45,6 +46,7 @@ services:
       --port 30344
       --rpc-port 9935
       --ws-port 9945
+      --rpc-external
       --bob
     networks:
       testing_net:
