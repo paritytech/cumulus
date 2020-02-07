@@ -41,7 +41,7 @@ fn running_the_node_works_and_can_be_interrupted() {
 	}
 
 	fn run_command_and_kill(signal: Signal) {
-		let mut cmd = Command::new(cargo_bin("cumulus-test-parachain-collator")).spawn().unwrap();
+		let mut cmd = Command::new(cargo_bin("cumulus-test-parachain-collator")).args(&["--dev", "-d", "interrupt_test"]).spawn().unwrap();
 		sleep(Duration::from_secs(30));
 		assert!(cmd.try_wait().unwrap().is_none(), "the process should still be running");
 		kill(Pid::from_raw(cmd.id().try_into().unwrap()), signal).unwrap();
