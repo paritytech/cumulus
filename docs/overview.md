@@ -95,6 +95,6 @@ make sure that the update is applied at the correct block.
 After updating the Parachain runtime, a Parachain needs to wait a certain amount of time `Y`
 (configured by the relay chain) before another update can be applied.
 
-The WASM blob update not only contains the Parachain runtime, it also contains the `validate_block`
+The WASM blob update not only contains the Parachain runtime, but also the `validate_block`
 function provided by Cumulus. So, updating a Parachain runtime on the relay chain involves a
 complete update of the validation WASM blob.
