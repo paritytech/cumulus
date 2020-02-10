@@ -6,7 +6,7 @@ This document provides high-level documentation for Cumulus.
 
 Each Substrate blockchain provides a runtime. The runtime is the state transition function of the
 blockchain. Cumulus provides interfaces and extensions to convert a Substrate FRAME runtime into a
-Parachain runtime. Polkadot expects that each runtime exposes an interface for validating a
+Parachain runtime. Polkadot expects each runtime exposes an interface for validating a
 Parachain's state transition and also provides interfaces for the Parachain to send and receive
 messages of other Parachains.
 
