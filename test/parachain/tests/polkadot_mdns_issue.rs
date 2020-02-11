@@ -26,9 +26,9 @@ fn running_the_node_works_and_can_be_interrupted() {
 	use nix::unistd::Pid;
 
 	fn run_command_and_kill(signal: Signal) {
-		let _ = fs::remove_dir_all("interrupt_test");
+		let _ = fs::remove_dir_all("interrupt_polkadot_mdns_issue_test");
 		let mut cmd = Command::new(cargo_bin("cumulus-test-parachain-collator"))
-			.args(&["--dev", "-d", "interrupt_test"])
+			.args(&["-d", "interrupt_polkadot_mdns_issue_test"])
 			.spawn()
 			.unwrap();
 
