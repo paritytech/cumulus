@@ -32,7 +32,7 @@ fn interrupt_polkadot_mdns_issue_test() {
 			.spawn()
 			.unwrap();
 
-		thread::sleep(Duration::from_secs(30));
+		thread::sleep(Duration::from_secs(20));
 		assert!(cmd.try_wait().unwrap().is_none(), "the process should still be running");
 		kill(Pid::from_raw(cmd.id().try_into().unwrap()), signal).unwrap();
 		assert_eq!(
