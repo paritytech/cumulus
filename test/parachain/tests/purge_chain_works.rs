@@ -29,7 +29,7 @@ fn purge_chain_works() {
 
 	let _ = fs::remove_dir_all(base_path);
 	let mut cmd = Command::new(cargo_bin("cumulus-test-parachain-collator"))
-		.args(&["--dev", "-d", base_path])
+		.args(&["-d", base_path])
 		.spawn()
 		.unwrap();
 
@@ -42,12 +42,12 @@ fn purge_chain_works() {
 	assert!(common::wait_for(&mut cmd, 30).map(|x| x.success()).unwrap_or_default());
 
 	let status = Command::new(cargo_bin("cumulus-test-parachain-collator"))
-		.args(&["purge-chain", "--dev", "-d", base_path, "-y"])
+		.args(&["purge-chain", "-d", base_path, "-y"])
 		.status()
 		.unwrap();
 	assert!(status.success());
 
-	// Make sure that the `dev` chain folder exists, but the `db` is deleted.
-	assert!(PathBuf::from(base_path).join("chains/dev/").exists());
-	assert!(!PathBuf::from(base_path).join("chains/dev/db").exists());
+	// Make sure that the `parachain_local_testnet` chain folder exists, but the `db` is deleted.
+	assert!(PathBuf::from(base_path).join("chains/parachain_local_testnet/").exists());
+	assert!(!PathBuf::from(base_path).join("chains/parachain_local_testnet/db").exists());
 }
