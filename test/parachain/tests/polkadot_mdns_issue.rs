@@ -21,7 +21,7 @@ mod common;
 
 #[test]
 #[cfg(unix)]
-fn running_the_node_works_and_can_be_interrupted() {
+fn interrupt_polkadot_mdns_issue_test() {
 	use nix::sys::signal::{kill, Signal::{self, SIGINT, SIGTERM}};
 	use nix::unistd::Pid;
 
