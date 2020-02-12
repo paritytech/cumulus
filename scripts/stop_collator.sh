@@ -3,5 +3,7 @@
 set -e
 
 cd "$(cd "$(dirname "$0")" && git rev-parse --show-toplevel)"
+# shellcheck source=dc.sh
+source scripts/dc.sh
 
-docker-compose down --volumes
+dc down --volumes

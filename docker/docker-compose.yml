@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   node_alice:
-    image: polkadot:${BRANCH:-bkchr-cumulus-branch}
+    image: "polkadot:${BRANCH:-bkchr-cumulus-branch}"
     ports:
       - "30333:30333"
       - "9933:9933"
@@ -27,7 +27,7 @@ services:
         ipv4_address: 172.28.1.1
 
   node_bob:
-    image: polkadot:${BRANCH:-bkchr-cumulus-branch}
+    image: "polkadot:${BRANCH:-bkchr-cumulus-branch}"
     ports:
       - "30344:30344"
       - "9935:9935"
@@ -54,9 +54,37 @@ services:
       testing_net:
         ipv4_address: 172.28.1.2
 
+  genesis_state:
+    build:
+      context: .
+      dockerfile: ./docker/test-parachain-collator.dockerfile
+    image: "ctpc:latest"
+    volumes:
+      - "genesis-state:/data"
+    command: >
+      cumulus-test-parachain-collator
+      export-genesis-state
+      /data/genesis-state
+
+  collator:
+    build:
+      context: .
+      dockerfile: ./docker/test-parachain-collator.dockerfile
+      target: collator
+    image: "ctpc:collator"
+    volumes:
+      - "collator-data:/data"
+    command: >
+      inject_bootnodes.sh
+      --base-path=/data
+    
+
+
 volumes:
   polkadot-data-alice:
   polkadot-data-bob:
+  genesis-state:
+  collator-data:
 
 
 networks:

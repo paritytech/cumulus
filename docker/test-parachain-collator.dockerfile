@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install httpie jq curl bash -y && \
     chmod +x /wait-for-it.sh
 COPY --from=builder \
     /paritytech/cumulus/target/release/cumulus-test-parachain-collator /usr/bin
-COPY ./scripts/inject_bootnodes.sh /usr/bin
+COPY ./inject_bootnodes.sh /usr/bin
 CMD ["/usr/bin/inject_bootnodes.sh"]
 
 

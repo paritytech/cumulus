@@ -3,3 +3,7 @@
 **/*.txt
 **/*.md
 docker/
+scripts/
+
+# dotfiles in the repo root
+.*/
