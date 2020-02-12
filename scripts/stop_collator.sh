@@ -4,4 +4,4 @@ set -e
 
 cd "$(cd "$(dirname "$0")" && git rev-parse --show-toplevel)"
 
-docker-compose stop
+docker-compose down --volumes
