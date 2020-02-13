@@ -8,13 +8,15 @@
 
 set -e -o pipefail
 
-if [ ! -x cumulus-test-parachain-collator ]; then
-    echo "FATAL: cumulus-test-parachain collator not in PATH"
+ctpc="/usr/bin/cumulus-test-parachain-collator"
+
+if [ ! -x "$ctpc" ]; then
+    echo "FATAL: $ctpc does not exist or is not executable"
     exit 1
 fi
 
 # name the variable with the incoming args so it isn't overwritten later by function calls
-args=( "${@[@]}" )
+args=( "$@" )
 
 alice="172.28.1.1:9933"
 bob="172.28.1.2:9935"
@@ -22,8 +24,11 @@ bob="172.28.1.2:9935"
 get_id () {
     node="$1"
     /wait-for-it.sh "$node" -t 10 -s -- \
-        http http://"$node" id:=1 jsonrpc="2.0" method=system_networkState |\
-        jq -r '.result.peerId'
+        curl -sS \
+            -H 'Content-Type: application/json' \
+            --data '{"id":1,"jsonrpc":"2.0","method":"system_networkState"}' \
+            "$node" |\
+    jq -r '.result.peerId'
 }
 
 bootnode () {
@@ -36,4 +41,5 @@ bootnode () {
 
 args+=( "--bootnodes" "$(bootnode "$alice")" "--bootnodes" "$(bootnode "$bob")" )
 
-cumulus-test-parachain-collator "${args[@]}"
+set -x
+"$ctpc" "${args[@]}"

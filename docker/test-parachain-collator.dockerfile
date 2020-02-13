@@ -20,7 +20,7 @@ RUN time cargo build --release -p cumulus-test-parachain-collator
 #
 # with the appropriate ID for both Alice and Bob
 FROM debian:buster-slim as collator
-RUN apt-get update && apt-get install httpie jq curl bash -y && \
+RUN apt-get update && apt-get install jq curl bash -y && \
     curl -sSo /wait-for-it.sh https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
     chmod +x /wait-for-it.sh
 COPY --from=builder \

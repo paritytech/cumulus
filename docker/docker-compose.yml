@@ -25,6 +25,8 @@ services:
     networks:
       testing_net:
         ipv4_address: 172.28.1.1
+        aliases:
+          - alice
 
   node_bob:
     image: "polkadot:${BRANCH:-bkchr-cumulus-branch}"
@@ -38,8 +40,6 @@ services:
         source: ./test/parachain/res/polkadot_chainspec.json
         target: /chainspec.json
         read_only: true
-    links:
-      - "node_alice:alice"
     command: >
       polkadot
       --chain=/chainspec.json
@@ -53,6 +53,8 @@ services:
     networks:
       testing_net:
         ipv4_address: 172.28.1.2
+        aliases:
+          - bob
 
   genesis_state:
     build:
@@ -77,7 +79,8 @@ services:
     command: >
       inject_bootnodes.sh
       --base-path=/data
-    
+    networks:
+      testing_net:
 
 
 volumes:
