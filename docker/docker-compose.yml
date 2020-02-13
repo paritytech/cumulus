@@ -21,6 +21,7 @@ services:
       --ws-port 9944
       --rpc-external
       --rpc-cors all
+      --ws-external
       --alice
     networks:
       testing_net:
@@ -48,6 +49,7 @@ services:
       --rpc-port 9935
       --ws-port 9945
       --rpc-external
+      --ws-external
       --rpc-cors all
       --bob
     networks:
