@@ -103,23 +103,28 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 		let service = builder
 			.with_network_protocol(|_| Ok(NodeProtocol::new()))?
 			.build()?;
-		let proposer_factory = sc_basic_authorship::ProposerFactory {
-			client: service.client(),
-			transaction_pool: service.transaction_pool(),
+
+		let builder = || {
+			let proposer_factory = sc_basic_authorship::ProposerFactory {
+				client: service.client(),
+				transaction_pool: service.transaction_pool(),
+			};
+
+			let block_import = service.client();
+
+			let setup_parachain = SetupParachain {
+				service,
+				inherent_data_providers,
+				proposer_factory,
+				block_import,
+			};
+
+			let builder = CollatorBuilder::new(setup_parachain);
+
+			builder
 		};
 
-		let block_import = service.client();
-
-		let setup_parachain = SetupParachain {
-			service,
-			inherent_data_providers,
-			proposer_factory,
-			block_import,
-		};
-
-		let builder = CollatorBuilder::new(setup_parachain);
-
-		Ok(polkadot_collator::build_collator(polkadot_config, para_id, key, builder))
+		Ok(polkadot_collator::build_collator(polkadot_config, para_id, key, Box::new(builder)))
 	})
 }
 
