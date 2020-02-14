@@ -92,7 +92,7 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 ) -> sc_cli::error::Result<()> {
 	let para_id = crate::PARA_ID;
 
-	sc_cli::run_service_until_exit(polkadot_config, |polkadot_config| {
+	sc_cli::run_until_exit(polkadot_config, |polkadot_config| {
 		parachain_config.task_executor = polkadot_config.task_executor.clone();
 
 		let (builder, inherent_data_providers) = new_full_start!(parachain_config);
@@ -119,7 +119,7 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 
 		let builder = CollatorBuilder::new(setup_parachain);
 
-		polkadot_service::build_collator(polkadot_config, para_id, key, builder);
+		Ok(polkadot_collator::build_collator(polkadot_config, para_id, key, builder))
 	})
 }
 
