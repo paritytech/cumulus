@@ -13,10 +13,10 @@ sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cumu
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 
 # polkadot deps
-polkadot-primitives = { git = "file:///home/cecile/repos/polkadot", branch = "cecton-start-collator" }
-polkadot-statement-table = { git = "file:///home/cecile/repos/polkadot", branch = "cecton-start-collator" }
-polkadot-validation = { git = "file:///home/cecile/repos/polkadot", branch = "cecton-start-collator" }
-polkadot-network = { git = "file:///home/cecile/repos/polkadot", branch = "cecton-start-collator" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-start-collator" }
+polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "cecton-start-collator" }
+polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "cecton-start-collator" }
+polkadot-network = { git = "https://github.com/paritytech/polkadot", branch = "cecton-start-collator" }
 
 # other deps
 codec = { package = "parity-scale-codec", version = "1.0.5", features = [ "derive" ] }

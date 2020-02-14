@@ -17,9 +17,9 @@ sc-service = { git = "https://github.com/paritytech/substrate", branch = "cumulu
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 
 # Polkadot dependencies
-polkadot-collator = { git = "file:///home/cecile/repos/polkadot", branch = "cecton-start-collator" }
-polkadot-service = { git = "file:///home/cecile/repos/polkadot", branch = "cecton-start-collator" }
-polkadot-primitives = { git = "file:///home/cecile/repos/polkadot", branch = "cecton-start-collator" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-start-collator" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-start-collator" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-start-collator" }
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../consensus" }
@@ -43,7 +43,7 @@ sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cum
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 
 # Polkadot dependencies
-polkadot-service = { git = "file:///home/cecile/repos/polkadot", branch = "cecton-start-collator" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-start-collator" }
 
 # Other dependencies
 env_logger = "0.7.1"

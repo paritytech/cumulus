@@ -21,7 +21,7 @@ frame-executive = { git = "https://github.com/paritytech/substrate", default-fea
 sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
 
 # Polkadot dependencies
-parachain = { package = "polkadot-parachain", git = "file:///home/cecile/repos/polkadot", branch = "cecton-start-collator", default-features = false, features = [ "wasm-api" ] }
+parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", branch = "cecton-start-collator", default-features = false, features = [ "wasm-api" ] }
 
 [dev-dependencies]
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
