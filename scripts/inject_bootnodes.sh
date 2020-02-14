@@ -40,7 +40,7 @@ bootnode () {
     echo "/ip4/$node/tcp/$p2p_port/p2p/$id"
 }
 
-args+=( "--bootnodes" "$(bootnode "$alice")" "--bootnodes" "$(bootnode "$bob")" )
+args+=( "--" "--bootnodes=$(bootnode "$alice")" "--bootnodes=$(bootnode "$bob")" )
 
 set -x
 "$ctpc" "${args[@]}"
