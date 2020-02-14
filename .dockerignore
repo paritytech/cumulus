@@ -2,8 +2,7 @@
 **/target/
 **/*.txt
 **/*.md
-docker/
-scripts/
+/docker/
 
 # dotfiles in the repo root
-.*/
+/.*

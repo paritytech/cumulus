@@ -7,7 +7,22 @@ RUN command -v wasm-gc || cargo +nightly install --git https://github.com/alexcr
 
 WORKDIR /paritytech/cumulus
 
-COPY . .
+# Ideally, we could just do something like `COPY . .`, but that doesn't work:
+# it busts the cache every time non-source files like inject_bootnodes.sh change,
+# as well as when non-`.dockerignore`'d transient files (*.log and friends)
+# show up. There is no way to exclude particular files, or write a negative
+# rule, using Docker's COPY syntax, which derives from go's filepath.Match rules.
+#
+# We can't combine these into a single big COPY operation like
+# `COPY collator consensus network runtime test Cargo.* .`, because in that case
+# docker will copy the _contents_ of each directory into the image workdir,
+# not the actual directory. We're stuck just enumerating them.
+COPY Cargo.* ./
+COPY collator collator/
+COPY consensus consensus/
+COPY network network/
+COPY runtime runtime/
+COPY test test/
 
 RUN time cargo build --release -p cumulus-test-parachain-collator
 
@@ -25,7 +40,7 @@ RUN apt-get update && apt-get install jq curl bash -y && \
     chmod +x /wait-for-it.sh
 COPY --from=builder \
     /paritytech/cumulus/target/release/cumulus-test-parachain-collator /usr/bin
-COPY ./inject_bootnodes.sh /usr/bin
+COPY ./scripts/inject_bootnodes.sh /usr/bin
 CMD ["/usr/bin/inject_bootnodes.sh"]
 
 

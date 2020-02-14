@@ -32,9 +32,9 @@ services:
   node_bob:
     image: "polkadot:${BRANCH:-bkchr-cumulus-branch}"
     ports:
-      - "30344:30344"
-      - "9935:9935"
-      - "9945:9945"
+      - "30344:30333"
+      - "9935:9933"
+      - "9945:9944"
     volumes:
       - "polkadot-data-bob:/data"
       - type: bind
@@ -45,9 +45,9 @@ services:
       polkadot
       --chain=/chainspec.json
       --base-path=/data
-      --port 30344
-      --rpc-port 9935
-      --ws-port 9945
+      --port 30333
+      --rpc-port 9933
+      --ws-port 9944
       --rpc-external
       --ws-external
       --rpc-cors all

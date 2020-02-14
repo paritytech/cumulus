@@ -18,25 +18,26 @@ fi
 # name the variable with the incoming args so it isn't overwritten later by function calls
 args=( "$@" )
 
-alice="172.28.1.1:9933"
-bob="172.28.1.2:9935"
+alice="172.28.1.1"
+bob="172.28.1.2"
+p2p_port="30333"
+rpc_port="9933"
+
 
 get_id () {
     node="$1"
-    /wait-for-it.sh "$node" -t 10 -s -- \
+    /wait-for-it.sh "$node:$rpc_port" -t 10 -s -- \
         curl -sS \
             -H 'Content-Type: application/json' \
             --data '{"id":1,"jsonrpc":"2.0","method":"system_networkState"}' \
-            "$node" |\
+            "$node:$rpc_port" |\
     jq -r '.result.peerId'
 }
 
 bootnode () {
     node="$1"
-    ip=$(cut -d: -f1 <<< "$node")
-    port=$(cut -d: -f2 <<< "$node")
     id=$(get_id "$node")
-    echo "/ip4/$ip/tcp/$port/p2p/$id"
+    echo "/ip4/$node/tcp/$p2p_port/p2p/$id"
 }
 
 args+=( "--bootnodes" "$(bootnode "$alice")" "--bootnodes" "$(bootnode "$bob")" )
