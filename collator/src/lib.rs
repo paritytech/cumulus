@@ -18,6 +18,7 @@
 
 use cumulus_runtime::ParachainBlockData;
 
+use sc_client::Client;
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, Environment, Error as ConsensusError,
 	ForkChoiceStrategy, Proposal, Proposer, RecordProof,
@@ -255,30 +256,33 @@ where
 }
 
 /// Implements `BuildParachainContext` to build a collator instance.
-pub struct CollatorBuilder<Block, PF, BI, S> {
+pub struct CollatorBuilder<Block: BlockT, PF, BI, Backend, Executor, Runtime>
+{
 	proposer_factory: PF,
 	inherent_data_providers: InherentDataProviders,
 	block_import: BI,
-	service: S,
 	para_id: ParaId,
+	client: Arc<Client<Backend, Executor, Block, Runtime>>,
 	_marker: PhantomData<Block>,
 }
 
-impl<Block, PF, BI, S> CollatorBuilder<Block, PF, BI, S> {
+impl<Block: BlockT, PF, BI, Backend, Executor, Runtime>
+	CollatorBuilder<Block, PF, BI, Backend, Executor, Runtime>
+{
 	/// Create a new instance of self.
 	pub fn new(
 		proposer_factory: PF,
 		inherent_data_providers: InherentDataProviders,
 		block_import: BI,
-		service: S,
 		para_id: ParaId,
+		client: Arc<Client<Backend, Executor, Block, Runtime>>,
 	) -> Self {
 		Self {
 			proposer_factory,
 			inherent_data_providers,
 			block_import,
-			service,
 			para_id,
+			client,
 			_marker: PhantomData,
 		}
 	}
@@ -287,14 +291,17 @@ impl<Block, PF, BI, S> CollatorBuilder<Block, PF, BI, S> {
 type TransactionFor<E, Block> =
 	<<E as Environment<Block>>::Proposer as Proposer<Block>>::Transaction;
 
-impl<Block: BlockT, PF, BI, S> BuildParachainContext for CollatorBuilder<Block, PF, BI, S>
+impl<Block: BlockT, PF, BI, Backend, Executor, Runtime> BuildParachainContext
+	for CollatorBuilder<Block, PF, BI, Backend, Executor, Runtime>
 where
-	S: sc_service::AbstractService,
 	PF: Environment<Block> + Send + 'static,
 	BI: BlockImport<Block, Error = sp_consensus::Error, Transaction = TransactionFor<PF, Block>>
 		+ Send
 		+ Sync
 		+ 'static,
+	Backend: sc_client_api::Backend<Block> + 'static,
+	Executor: sc_client_api::CallExecutor<Block> + Send + Sync + 'static,
+	Runtime: Send + Sync + 'static,
 {
 	type ParachainContext = Collator<Block, PF, BI>;
 
@@ -319,10 +326,8 @@ where
 		// Rust bug: https://github.com/rust-lang/rust/issues/24159
 		B::State: sp_api::StateBackend<sp_core::Blake2Hasher>,
 	{
-		let client = self.service.client();
-
 		let follow =
-			match cumulus_consensus::follow_polkadot(self.para_id, client, polkadot_client) {
+			match cumulus_consensus::follow_polkadot(self.para_id, self.client, polkadot_client) {
 				Ok(follow) => follow,
 				Err(e) => {
 					return Err(error!("Could not start following polkadot: {:?}", e));
@@ -332,12 +337,7 @@ where
 		spawner
 			.spawn_obj(
 				Box::new(
-					future::select(
-						self.service
-							.map_err(|e| error!("Parachain service error: {:?}", e)),
-						follow,
-					)
-					.map(|_| ()),
+					follow.map(|_| ()),
 				)
 				.into(),
 			)

@@ -31,7 +31,7 @@ use polkadot_service::IsKusama;
 
 use cumulus_collator::CollatorBuilder;
 
-use futures::{future, task::Spawn, FutureExt, TryFutureExt};
+use futures::{future, task::Spawn, FutureExt, TryFutureExt, select, pin_mut};
 
 use log::error;
 
@@ -102,25 +102,45 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 			.with_network_protocol(|_| Ok(NodeProtocol::new()))?
 			.build()?;
 
-		let builder = || {
-			let proposer_factory = sc_basic_authorship::ProposerFactory {
-				client: service.client(),
-				transaction_pool: service.transaction_pool(),
-			};
+		let proposer_factory = sc_basic_authorship::ProposerFactory {
+			client: service.client(),
+			transaction_pool: service.transaction_pool(),
+		};
 
-			let block_import = service.client();
-
-			let builder = CollatorBuilder::new(
+		let block_import = service.client();
+		let client = service.client();
+		let builder = move || {
+			CollatorBuilder::new(
 				proposer_factory,
 				inherent_data_providers,
 				block_import,
-				service,
 				crate::PARA_ID,
-			);
-
-			builder
+				client,
+			)
 		};
 
-		Ok(polkadot_collator::build_collator(polkadot_config, crate::PARA_ID, key, Box::new(builder)))
+/*
+		let f = async {
+		//let f: Box<dyn future::Future<Output = Result<(), sc_cli::error::Error>>> = async {
+			let polkadot_future = polkadot_collator::build_collator(polkadot_config, crate::PARA_ID, key, Box::new(builder)).fuse();
+			let parachain_future = service.map(|_| ());
+
+			pin_mut!(polkadot_future, parachain_future);
+
+			select! {
+				_ = polkadot_future => {
+					return Err(sc_cli::error::Error::Other("boo".into()));
+				},
+				_ = parachain_future => {},
+			}
+
+			Ok(())
+		};
+*/
+		let polkadot_future = polkadot_collator::build_collator(polkadot_config, crate::PARA_ID, key, Box::new(builder));
+		let parachain_future = service.map_err(|e| error!("Parachain service error: {:?}", e));
+		let f = future::select(polkadot_future, parachain_future).map(|_| Ok(()));
+
+		Ok(f)
 	})
 }
