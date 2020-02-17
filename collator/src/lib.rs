@@ -41,7 +41,7 @@ use codec::{Decode, Encode};
 
 use log::{error, trace};
 
-use futures::{task::Spawn, Future, future};
+use futures::{task::Spawn, Future, future, FutureExt, TryFutureExt};
 
 use std::{
 	fmt::Debug, marker::PhantomData, sync::Arc, time::Duration, pin::Pin, collections::HashMap,
@@ -255,30 +255,52 @@ where
 }
 
 /// Implements `BuildParachainContext` to build a collator instance.
-pub struct CollatorBuilder<Block, SP> {
-	setup_parachain: SP,
+pub struct CollatorBuilder<Block, PF, BI, S> {
+	proposer_factory: PF,
+	inherent_data_providers: InherentDataProviders,
+	block_import: BI,
+	service: S,
+	para_id: ParaId,
 	_marker: PhantomData<Block>,
 }
 
-impl<Block, SP> CollatorBuilder<Block, SP> {
+impl<Block, PF, BI, S> CollatorBuilder<Block, PF, BI, S> {
 	/// Create a new instance of self.
-	pub fn new(setup_parachain: SP) -> Self {
+	pub fn new(
+		proposer_factory: PF,
+		inherent_data_providers: InherentDataProviders,
+		block_import: BI,
+		service: S,
+		para_id: ParaId,
+	) -> Self {
 		Self {
-			setup_parachain,
+			proposer_factory,
+			inherent_data_providers,
+			block_import,
+			service,
+			para_id,
 			_marker: PhantomData,
 		}
 	}
 }
 
-impl<Block: BlockT, SP: SetupParachain<Block>> BuildParachainContext for CollatorBuilder<Block, SP>
+type TransactionFor<E, Block> =
+	<<E as Environment<Block>>::Proposer as Proposer<Block>>::Transaction;
+
+impl<Block: BlockT, PF, BI, S> BuildParachainContext for CollatorBuilder<Block, PF, BI, S>
 where
-	<SP::ProposerFactory as Environment<Block>>::Proposer: Send,
+	S: sc_service::AbstractService,
+	PF: Environment<Block> + Send + 'static,
+	BI: BlockImport<Block, Error = sp_consensus::Error, Transaction = TransactionFor<PF, Block>>
+		+ Send
+		+ Sync
+		+ 'static,
 {
-	type ParachainContext = Collator<Block, SP::ProposerFactory, SP::BlockImport>;
+	type ParachainContext = Collator<Block, PF, BI>;
 
 	fn build<B, E, R, Spawner, Extrinsic>(
 		self,
-		client: Arc<PolkadotClient<B, E, R>>,
+		polkadot_client: Arc<PolkadotClient<B, E, R>>,
 		spawner: Spawner,
 		network: Arc<dyn CollatorNetwork>,
 	) -> Result<Self::ParachainContext, ()>
@@ -297,51 +319,37 @@ where
 		// Rust bug: https://github.com/rust-lang/rust/issues/24159
 		B::State: sp_api::StateBackend<sp_core::Blake2Hasher>,
 	{
-		let (proposer_factory, block_import, inherent_data_providers) = self
-			.setup_parachain
-			.setup_parachain(client, spawner)
-			.map_err(|e| error!("Error setting up the parachain: {}", e))?;
+		let client = self.service.client();
+
+		let follow =
+			match cumulus_consensus::follow_polkadot(self.para_id, client, polkadot_client) {
+				Ok(follow) => follow,
+				Err(e) => {
+					return Err(error!("Could not start following polkadot: {:?}", e));
+				}
+			};
+
+		spawner
+			.spawn_obj(
+				Box::new(
+					future::select(
+						self.service
+							.map_err(|e| error!("Parachain service error: {:?}", e)),
+						follow,
+					)
+					.map(|_| ()),
+				)
+				.into(),
+			)
+			.map_err(|_| error!("Could not spawn parachain server!"))?;
 
 		Ok(Collator::new(
-			proposer_factory,
-			inherent_data_providers,
+			self.proposer_factory,
+			self.inherent_data_providers,
 			network,
-			block_import,
+			self.block_import,
 		))
 	}
-}
-
-/// Something that can setup a parachain.
-pub trait SetupParachain<Block: BlockT>: Send {
-	/// The proposer factory of the parachain to build blocks.
-	type ProposerFactory: Environment<Block> + Send + 'static;
-	/// The block import for importing the blocks build by the collator.
-	type BlockImport: BlockImport<
-			Block,
-			Error = ConsensusError,
-			Transaction = <<Self::ProposerFactory as Environment<Block>>::Proposer as Proposer<
-				Block,
-			>>::Transaction,
-		> + Send
-		+ Sync
-		+ 'static;
-
-	/// Setup the parachain.
-	fn setup_parachain<P, SP>(
-		self,
-		polkadot_client: P,
-		spawner: SP,
-	) -> Result<
-		(
-			Self::ProposerFactory,
-			Self::BlockImport,
-			InherentDataProviders,
-		),
-		String,
-	>
-	where
-		P: cumulus_consensus::PolkadotClient,
-		SP: Spawn + Clone + Send + Sync + 'static;
 }
 
 #[cfg(test)]

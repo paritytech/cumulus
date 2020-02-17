@@ -90,8 +90,6 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 	key: Arc<CollatorPair>,
 	polkadot_config: polkadot_collator::Configuration,
 ) -> sc_cli::error::Result<()> {
-	let para_id = crate::PARA_ID;
-
 	sc_cli::run_until_exit(polkadot_config, |polkadot_config| {
 		parachain_config.task_executor = polkadot_config.task_executor.clone();
 
@@ -112,87 +110,17 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 
 			let block_import = service.client();
 
-			let setup_parachain = SetupParachain {
-				service,
-				inherent_data_providers,
+			let builder = CollatorBuilder::new(
 				proposer_factory,
+				inherent_data_providers,
 				block_import,
-			};
-
-			let builder = CollatorBuilder::new(setup_parachain);
+				service,
+				crate::PARA_ID,
+			);
 
 			builder
 		};
 
-		Ok(polkadot_collator::build_collator(polkadot_config, para_id, key, Box::new(builder)))
+		Ok(polkadot_collator::build_collator(polkadot_config, crate::PARA_ID, key, Box::new(builder)))
 	})
-}
-
-struct SetupParachain<S, PF, BI> {
-	service: S,
-	proposer_factory: PF,
-	inherent_data_providers: InherentDataProviders,
-	block_import: BI,
-}
-
-type TransactionFor<E, Block> =
-	<<E as Environment<Block>>::Proposer as Proposer<Block>>::Transaction;
-
-impl<S, PF, BI> cumulus_collator::SetupParachain<Block> for SetupParachain<S, PF, BI>
-where
-	S: AbstractService,
-	PF: Environment<Block> + Send + 'static,
-	BI: BlockImport<Block, Error = sp_consensus::Error, Transaction = TransactionFor<PF, Block>>
-		+ Send
-		+ Sync
-		+ 'static,
-{
-	type ProposerFactory = PF;
-	type BlockImport = BI;
-
-	fn setup_parachain<P: cumulus_consensus::PolkadotClient, Spawner>(
-		self,
-		polkadot_client: P,
-		spawner: Spawner,
-	) -> Result<
-		(
-			Self::ProposerFactory,
-			Self::BlockImport,
-			InherentDataProviders,
-		),
-		String,
-	>
-	where
-		Spawner: Spawn + Clone + Send + Sync + 'static,
-	{
-		let client = self.service.client();
-
-		let follow =
-			match cumulus_consensus::follow_polkadot(crate::PARA_ID, client, polkadot_client) {
-				Ok(follow) => follow,
-				Err(e) => {
-					return Err(format!("Could not start following polkadot: {:?}", e));
-				}
-			};
-
-		spawner
-			.spawn_obj(
-				Box::new(
-					future::select(
-						self.service
-							.map_err(|e| error!("Parachain service error: {:?}", e)),
-						follow,
-					)
-					.map(|_| ()),
-				)
-				.into(),
-			)
-			.map_err(|_| "Could not spawn parachain server!")?;
-
-		Ok((
-			self.proposer_factory,
-			self.block_import,
-			self.inherent_data_providers,
-		))
-	}
 }
