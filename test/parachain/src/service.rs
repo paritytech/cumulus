@@ -119,7 +119,7 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 			)
 		};
 
-		let polkadot_future = polkadot_collator::build_collator(polkadot_config, crate::PARA_ID, key, Box::new(builder));
+		let polkadot_future = polkadot_collator::build_collator(polkadot_config, crate::PARA_ID, key, Box::new(builder)).fuse();
 		//let polkadot_future = async { () };
 		service.spawn_essential_task("polkadot", polkadot_future);
 
