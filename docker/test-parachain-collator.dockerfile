@@ -33,7 +33,7 @@ RUN time cargo build --release -p cumulus-test-parachain-collator
 #
 #   --bootnodes /ip4/127.0.0.1/tcp/30333/p2p/PEER_ID
 #
-# with the appropriate ID for both Alice and Bob
+# with the appropriate ip and ID for both Alice and Bob
 FROM debian:buster-slim as collator
 RUN apt-get update && apt-get install jq curl bash -y && \
     curl -sSo /wait-for-it.sh https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
@@ -42,6 +42,15 @@ COPY --from=builder \
     /paritytech/cumulus/target/release/cumulus-test-parachain-collator /usr/bin
 COPY ./scripts/inject_bootnodes.sh /usr/bin
 CMD ["/usr/bin/inject_bootnodes.sh"]
+
+# the runtime stage is normally built once, cached, and ignored, but can be
+# specified with the --target build flag. This just preserves one of the builder's
+# outputs, which can then be moved into a volume at runtime
+FROM debian:buster-slim as runtime
+COPY --from=builder \
+    /paritytech/cumulus/target/release/wbuild/cumulus-test-parachain-runtime/cumulus_test_parachain_runtime.compact.wasm \
+    /var/opt/
+CMD ["cp", "-v", "/var/opt/cumulus_test_parachain_runtime.compact.wasm", "/runtime/"]
 
 
 FROM debian:buster-slim

@@ -78,18 +78,32 @@ services:
     image: "ctpc:collator"
     volumes:
       - "collator-data:/data"
+    depends_on:
+      - node_alice
+      - node_bob
     command: >
       inject_bootnodes.sh
       --base-path=/data
     networks:
       testing_net:
 
+  runtime:
+    build:
+      context: .
+      dockerfile: ./docker/test-parachain-collator.dockerfile
+      target: runtime
+    image: "ctpc:runtime"
+    volumes:
+      - "parachain-runtime:/runtime"
+
+
 
 volumes:
   polkadot-data-alice:
   polkadot-data-bob:
-  genesis-state:
   collator-data:
+  genesis-state:
+  parachain-runtime:
 
 
 networks:
