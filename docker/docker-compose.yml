@@ -97,6 +97,20 @@ services:
       - "parachain-runtime:/runtime"
 
 
+  registrar:
+    build:
+      context: .
+      dockerfile: ./docker/parachain-registrar.dockerfile
+    image: para-reg:latest
+    volumes:
+      - "genesis-state:/genesis"
+      - "parachain-runtime:/runtime"
+    depends_on:
+      - runtime
+      - genesis_state
+    networks:
+      testing_net:
+
 
 volumes:
   polkadot-data-alice:
