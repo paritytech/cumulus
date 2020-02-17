@@ -90,8 +90,8 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 	key: Arc<CollatorPair>,
 	polkadot_config: polkadot_collator::Configuration,
 ) -> sc_cli::error::Result<()> {
-	sc_cli::run_until_exit(polkadot_config, |polkadot_config| {
-		parachain_config.task_executor = polkadot_config.task_executor.clone();
+	sc_cli::run_service_until_exit(parachain_config, |parachain_config| {
+		polkadot_config.task_executor = parachain_config.task_executor.clone();
 
 		let (builder, inherent_data_providers) = new_full_start!(parachain_config);
 		inherent_data_providers
@@ -119,28 +119,12 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 			)
 		};
 
-/*
-		let f = async {
-		//let f: Box<dyn future::Future<Output = Result<(), sc_cli::error::Error>>> = async {
-			let polkadot_future = polkadot_collator::build_collator(polkadot_config, crate::PARA_ID, key, Box::new(builder)).fuse();
-			let parachain_future = service.map(|_| ());
-
-			pin_mut!(polkadot_future, parachain_future);
-
-			select! {
-				_ = polkadot_future => {
-					return Err(sc_cli::error::Error::Other("boo".into()));
-				},
-				_ = parachain_future => {},
-			}
-
-			Ok(())
-		};
-*/
 		let polkadot_future = polkadot_collator::build_collator(polkadot_config, crate::PARA_ID, key, Box::new(builder));
-		let parachain_future = service.map_err(|e| error!("Parachain service error: {:?}", e));
-		let f = future::select(polkadot_future, parachain_future).map(|_| Ok(()));
+		//service.spawn_essential_task("polkadot", polkadot_future);
 
-		Ok(f)
+		let task_executor = parachain_config.task_executor.as_ref().unwrap();
+		task_executor(Box::pin(polkadot_future));
+
+		Ok(service)
 	})
 }
