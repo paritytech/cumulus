@@ -371,7 +371,7 @@ mod tests {
 	use substrate_test_client::{NativeExecutor, WasmExecutionMethod::Interpreted};
 
 	use test_client::{
-		Client, DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
+		DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
 	use test_runtime::{Block, Header};
 
@@ -476,38 +476,19 @@ mod tests {
 		}
 	}
 
-	struct DummySetup;
-
-	impl SetupParachain<Block> for DummySetup {
-		type ProposerFactory = DummyFactory;
-		type BlockImport = Client;
-
-		fn setup_parachain<P, SP>(
-			self,
-			_: P,
-			_: SP,
-		) -> Result<
-			(
-				Self::ProposerFactory,
-				Self::BlockImport,
-				InherentDataProviders,
-			),
-			String,
-		> {
-			Ok((
-				DummyFactory,
-				TestClientBuilder::new().build(),
-				InherentDataProviders::default(),
-			))
-		}
-	}
-
 	#[test]
 	fn collates_produces_a_block() {
+		let id = ParaId::from(100);
 		let _ = env_logger::try_init();
 		let spawner = futures::executor::ThreadPool::new().unwrap();
 
-		let builder = CollatorBuilder::new(DummySetup);
+		let builder = CollatorBuilder::new(
+			DummyFactory,
+			InherentDataProviders::default(),
+			TestClientBuilder::new().build(),
+			id,
+			Arc::new(TestClientBuilder::new().build()),
+		);
 		let context = builder
 			.build::<_, _, polkadot_service::polkadot_runtime::RuntimeApi, _, _>(
 				Arc::new(
@@ -522,7 +503,6 @@ mod tests {
 			)
 			.expect("Creates parachain context");
 
-		let id = ParaId::from(100);
 		let header = Header::new(
 			0,
 			Default::default(),
