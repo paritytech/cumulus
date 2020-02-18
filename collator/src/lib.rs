@@ -42,7 +42,7 @@ use codec::{Decode, Encode};
 
 use log::{error, trace};
 
-use futures::{task::Spawn, Future, future, FutureExt, TryFutureExt};
+use futures::{task::Spawn, Future, future, FutureExt};
 
 use std::{
 	fmt::Debug, marker::PhantomData, sync::Arc, time::Duration, pin::Pin, collections::HashMap,
