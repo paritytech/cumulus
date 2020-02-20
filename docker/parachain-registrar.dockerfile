@@ -1,6 +1,8 @@
 FROM node:latest AS pjs
 
-RUN yarn global add @polkadot/api-cli
+# It would be great to depend on a more stable tag, but we need some
+# as-yet-unreleased features.
+RUN yarn global add @polkadot/api-cli@0.10.0-beta.14
 
 ENTRYPOINT [ "polkadot-js-api" ]
 CMD [ "--version" ]
@@ -15,10 +17,6 @@ CMD [ "--version" ]
 #   pjs query.sudo.key
 
 FROM pjs
-
-# install tools required to run the registration script
-RUN apt-get update && apt-get install -y xxd
-
 # the only thing left to do is to actually run the transaction.
 COPY ./scripts/register_para.sh /usr/bin
 # unset the previous stage's entrypoint

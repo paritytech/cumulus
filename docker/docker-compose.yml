@@ -106,6 +106,7 @@ services:
       - "genesis-state:/genesis"
       - "parachain-runtime:/runtime"
     depends_on:
+      - node_alice
       - runtime
       - genesis_state
     networks:
