@@ -41,15 +41,18 @@ wait_for_file () {
 wait_for_file /runtime/cumulus_test_parachain_runtime.compact.wasm
 wait_for_file /genesis/genesis-state
 
-# this is now straightforward: just send the sudo'd tx to the alice node
-
-polkadot-js-api \
-    --ws ws://172.28.1.1:9944 \
-    query.sudo.key
-    # --sudo \
-    # --seed "//Alice" \
-    # tx.registrar.registerPara \
-    #     100 \
-    #     '{"scheduling":"Always"}' \
-    #     @/runtime/cumulus_test_parachain_runtime.compact.wasm \
-    #     @/genesis/genesis-state
+# this is now straightforward: just send the sudo'd tx to the alice node,
+# as soon as the node is ready to receive connections
+/wait-for-it.sh 172.28.1.1:9944 \
+    --strict \
+    --timeout=10 \
+    -- \
+    polkadot-js-api \
+        --ws ws://172.28.1.1:9944 \
+        --sudo \
+        --seed "//Alice" \
+        tx.registrar.registerPara \
+            100 \
+            '{"scheduling":"Always"}' \
+            @/runtime/cumulus_test_parachain_runtime.compact.wasm \
+            @/genesis/genesis-state
