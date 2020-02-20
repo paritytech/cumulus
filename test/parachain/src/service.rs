@@ -102,15 +102,13 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 
 		let block_import = service.client();
 		let client = service.client();
-		let builder = move || {
-			CollatorBuilder::new(
-				proposer_factory,
-				inherent_data_providers,
-				block_import,
-				crate::PARA_ID,
-				client,
-			)
-		};
+		let builder = CollatorBuilder::new(
+			proposer_factory,
+			inherent_data_providers,
+			block_import,
+			crate::PARA_ID,
+			client,
+		);
 
 		let polkadot_future = polkadot_collator::start_collator(
 			builder,
