@@ -55,4 +55,4 @@ wait_for_file /genesis/genesis-state
             100 \
             '{"scheduling":"Always"}' \
             @/runtime/cumulus_test_parachain_runtime.compact.wasm \
-            @/genesis/genesis-state
+            "$(cat /genesis/genesis-state)"

@@ -15,6 +15,7 @@ if [ -z "$BRANCH" ]; then
 fi
 
 cd "$polkadot_repo"
+git fetch
 git checkout "$BRANCH"
 time docker build \
     -f ./docker/Dockerfile \
