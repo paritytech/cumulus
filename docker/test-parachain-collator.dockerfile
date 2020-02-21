@@ -17,12 +17,7 @@ WORKDIR /paritytech/cumulus
 # `COPY collator consensus network runtime test Cargo.* .`, because in that case
 # docker will copy the _contents_ of each directory into the image workdir,
 # not the actual directory. We're stuck just enumerating them.
-COPY Cargo.* ./
-COPY collator collator/
-COPY consensus consensus/
-COPY network network/
-COPY runtime runtime/
-COPY test test/
+COPY . .
 
 RUN cargo build --release -p cumulus-test-parachain-collator
 
