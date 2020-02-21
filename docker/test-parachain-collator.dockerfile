@@ -24,7 +24,7 @@ COPY network network/
 COPY runtime runtime/
 COPY test test/
 
-RUN time cargo build --release -p cumulus-test-parachain-collator
+RUN cargo build --release -p cumulus-test-parachain-collator
 
 # the collator stage is normally built once, cached, and then ignored, but can
 # be specified with the --target build flag. This adds some extra tooling to the

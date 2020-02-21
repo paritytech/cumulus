@@ -11,7 +11,7 @@ if [ ! -d "$polkadot_repo/.git" ]; then
 fi
 
 if [ -z "$BRANCH" ]; then
-    BRANCH=bkchr-cumulus-branch
+    BRANCH=cumulus-branch
 fi
 
 cd "$polkadot_repo"
