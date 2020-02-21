@@ -84,3 +84,11 @@ $ pjs query.parachains.heads 100
   "heads": "0xe1efbf8cc2e1304da927986f4cd6964ce0888ce3995948bf71fe427b1a9d39b02101d2dac9c5342d7e8c4f4de2f5277ef860b3a518c1cd823b9a8cee175dce11bf7f57c5016e8a60a6cec16244b2cbf81a67a1dc7a825c288fc694997bc70e2d456400"
 }
 ```
+
+The collator includes its own health check, which you can inspect with
+
+```sh
+docker inspect --format='{{json .State.Health}}' cumulus_collator_1
+```
+
+The check runs every 5 minutes, and takes about a minute to complete each time. Most of that time is spent sleeping; it remains a very lightweight process.
