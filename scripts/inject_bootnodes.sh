@@ -37,6 +37,10 @@ get_id () {
 bootnode () {
     node="$1"
     id=$(get_id "$node")
+    if [ -z "$id" ]; then
+        echo >&2 "failed to get id for $node"
+        exit 1
+    fi
     echo "/ip4/$node/tcp/$p2p_port/p2p/$id"
 }
 

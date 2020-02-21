@@ -6,4 +6,4 @@ cd "$(cd "$(dirname "$0")" && git rev-parse --show-toplevel)"
 # shellcheck source=dc.sh
 source scripts/dc.sh
 
-dc down --volumes
+dc down --volumes --remove-orphans
