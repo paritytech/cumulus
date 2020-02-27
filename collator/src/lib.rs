@@ -31,7 +31,8 @@ use polkadot_collator::{
 	PolkadotClient,
 };
 use polkadot_primitives::{
-	parachain::{self, BlockData, Status as ParachainStatus}, Block as PBlock, Hash as PHash,
+	parachain::{self, BlockData, Status as ParachainStatus, Id as ParaId}, Block as PBlock,
+	Hash as PHash,
 };
 
 use codec::{Decode, Encode};
