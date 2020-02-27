@@ -256,8 +256,7 @@ where
 }
 
 /// Implements `BuildParachainContext` to build a collator instance.
-pub struct CollatorBuilder<Block: BlockT, PF, BI, Backend, Executor, Runtime>
-{
+pub struct CollatorBuilder<Block: BlockT, PF, BI, Backend, Executor, Runtime> {
 	proposer_factory: PF,
 	inherent_data_providers: InherentDataProviders,
 	block_import: BI,
