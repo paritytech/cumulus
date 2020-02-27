@@ -21,12 +21,19 @@ use parachain_runtime::{self, opaque::Block, GenesisConfig};
 use sc_executor::native_executor_instance;
 use sc_network::construct_simple_protocol;
 use sc_service::{AbstractService, Configuration};
+use sp_consensus::{BlockImport, Environment, Proposer};
+use sp_inherents::InherentDataProviders;
+use sp_core::crypto::Pair;
 
+use polkadot_collator::build_collator_service;
 use polkadot_primitives::parachain::CollatorPair;
+use polkadot_service::IsKusama;
 
 use cumulus_collator::CollatorBuilder;
 
-use futures::FutureExt;
+use futures::{future, task::Spawn, FutureExt, TryFutureExt, select, pin_mut};
+
+use log::error;
 
 pub use sc_executor::NativeExecutor;
 
@@ -102,20 +109,18 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 
 		let block_import = service.client();
 		let client = service.client();
-		let builder = CollatorBuilder::new(
-			proposer_factory,
-			inherent_data_providers,
-			block_import,
-			crate::PARA_ID,
-			client,
-		);
+		let builder = move || {
+			CollatorBuilder::new(
+				proposer_factory,
+				inherent_data_providers,
+				block_import,
+				crate::PARA_ID,
+				client,
+			)
+		};
 
-		let polkadot_future = polkadot_collator::start_collator(
-			builder,
-			crate::PARA_ID,
-			key,
-			polkadot_config,
-		).map(|_| ());
+		let polkadot_future = polkadot_collator::build_collator(polkadot_config, crate::PARA_ID, key, Box::new(builder));
+		//let polkadot_future = async { () };
 		service.spawn_essential_task("polkadot", polkadot_future);
 
 		Ok(service)
