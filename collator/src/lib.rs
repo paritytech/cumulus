@@ -31,11 +31,7 @@ use polkadot_collator::{
 	PolkadotClient,
 };
 use polkadot_primitives::{
-	parachain::{
-		self, BlockData, Id as ParaId, Message, OutgoingMessages,
-		Status as ParachainStatus,
-	},
-	Block as PBlock, Hash as PHash,
+	parachain::{self, BlockData, Status as ParachainStatus}, Block as PBlock, Hash as PHash,
 };
 
 use codec::{Decode, Encode};
@@ -44,9 +40,7 @@ use log::{error, trace};
 
 use futures::{task::Spawn, Future, future, FutureExt};
 
-use std::{
-	fmt::Debug, marker::PhantomData, sync::Arc, time::Duration, pin::Pin, collections::HashMap,
-};
+use std::{fmt::Debug, marker::PhantomData, sync::Arc, time::Duration, pin::Pin};
 
 use parking_lot::Mutex;
 
@@ -109,15 +103,14 @@ where
 		+ 'static,
 {
 	type ProduceCandidate = Pin<Box<
-		dyn Future<Output=Result<(BlockData, parachain::HeadData, OutgoingMessages), InvalidHead>>
+		dyn Future<Output=Result<(BlockData, parachain::HeadData), InvalidHead>>
 		+ Send,
 	>>;
 
-	fn produce_candidate<I: IntoIterator<Item=(ParaId, Message)>>(
+	fn produce_candidate(
 		&mut self,
 		_relay_chain_parent: PHash,
 		status: ParachainStatus,
-		_: I,
 	) -> Self::ProduceCandidate {
 		let factory = self.proposer_factory.clone();
 		let inherent_providers = self.inherent_data_providers.clone();
@@ -197,29 +190,16 @@ where
 
 			// Create the parachain block data for the validators.
 			let b = ParachainBlockData::<Block>::new(
-				header,
+				header.clone(),
 				extrinsics,
 				proof.iter_nodes().collect(),
 				parent_state_root,
 			);
 
-			let block_import_params = BlockImportParams {
-				origin: BlockOrigin::Own,
-				header: b.header().clone(),
-				justification: None,
-				post_digests: vec![],
-				body: Some(b.extrinsics().to_vec()),
-				finalized: false,
-				intermediates: HashMap::new(),
-				auxiliary: vec![], // block-weight is written in block import.
-				// TODO: block-import handles fork choice and this shouldn't even have the
-				// option to specify one.
-				// https://github.com/paritytech/substrate/issues/3623
-				fork_choice: Some(ForkChoiceStrategy::LongestChain),
-				allow_missing_state: false,
-				import_existing: false,
-				storage_changes: Some(storage_changes),
-			};
+			let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header);
+			block_import_params.body = Some(b.extrinsics().to_vec());
+			block_import_params.fork_choice = Some(ForkChoiceStrategy::LongestChain);
+			block_import_params.storage_changes = Some(storage_changes);
 
 			if let Err(err) = block_import
 				.lock()
@@ -238,14 +218,10 @@ where
 			let head_data = HeadData::<Block> {
 				header: b.into_header(),
 			};
-			let messages = OutgoingMessages {
-				outgoing_messages: Vec::new(),
-			};
 
 			let candidate = (
 				block_data,
 				parachain::HeadData(head_data.encode()),
-				messages,
 			);
 
 			trace!(target: "cumulus-collator", "Produced candidate: {:?}", candidate);
@@ -356,8 +332,8 @@ mod tests {
 	use super::*;
 	use std::time::Duration;
 
-	use polkadot_collator::{collate, CollatorId, PeerId, RelayChainContext, SignedStatement};
-	use polkadot_primitives::parachain::{ConsolidatedIngress, FeeSchedule, HeadData};
+	use polkadot_collator::{collate, CollatorId, PeerId, SignedStatement};
+	use polkadot_primitives::parachain::{FeeSchedule, HeadData, Id as ParaId};
 
 	use sp_blockchain::Result as ClientResult;
 	use sp_inherents::InherentData;
@@ -444,17 +420,6 @@ mod tests {
 		}
 	}
 
-	struct DummyRelayChainContext;
-
-	impl RelayChainContext for DummyRelayChainContext {
-		type Error = Error;
-		type FutureEgress = future::Ready<Result<ConsolidatedIngress, Error>>;
-
-		fn unrouted_egress(&self, _id: ParaId) -> Self::FutureEgress {
-			future::ready(Ok(ConsolidatedIngress(Vec::new())))
-		}
-	}
-
 	#[derive(Clone)]
 	struct DummyPolkadotClient;
 
@@ -521,12 +486,11 @@ mod tests {
 					per_byte: 1,
 				},
 			},
-			DummyRelayChainContext,
 			context,
 			Arc::new(Sr25519Keyring::Alice.pair().into()),
 		);
 
-		let collation = futures::executor::block_on(collation).unwrap().0;
+		let collation = futures::executor::block_on(collation).unwrap();
 
 		let block_data = collation.pov.block_data;
 
