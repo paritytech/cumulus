@@ -26,7 +26,7 @@ use polkadot_primitives::parachain::CollatorPair;
 
 use cumulus_collator::CollatorBuilder;
 
-use futures::{FutureExt};
+use futures::FutureExt;
 
 pub use sc_executor::NativeExecutor;
 
