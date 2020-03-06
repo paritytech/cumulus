@@ -20,9 +20,9 @@ use crate::WitnessData;
 use frame_executive::ExecuteBlock;
 use sp_runtime::traits::{Block as BlockT, HasherFor, Header as HeaderT};
 
-use sp_trie::{delta_trie_root, read_trie_value, Layout, MemoryDB};
-
+use sp_core::storage::well_known_keys;
 use sp_std::{boxed::Box, vec::Vec};
+use sp_trie::{delta_trie_root, read_trie_value, Layout, MemoryDB};
 
 use hash_db::{HashDB, EMPTY_PREFIX};
 
@@ -113,6 +113,13 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	ValidationResult { head_data }
 }
 
+fn is_upgrade_legal() -> bool {
+	// TODO! Polkadot will eventually expose a function which says whether a
+	// parachain upgrade is legal. It doesn't yet, though. This is just a stub
+	// so we can move forward while polkadot gets sorted.
+	false
+}
+
 /// The storage implementation used when validating a block that is using the
 /// witness data as source.
 struct WitnessStorage<B: BlockT> {
@@ -160,6 +167,9 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 	}
 
 	fn insert(&mut self, key: &[u8], value: &[u8]) {
+		if key == well_known_keys::CODE && ! is_upgrade_legal() {
+			panic!("It is illegal to upgrade CODE except via `upgrade_validation_function`");
+		}
 		self.overlay.insert(key.to_vec(), Some(value.to_vec()));
 	}
 
