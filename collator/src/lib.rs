@@ -31,7 +31,7 @@ use polkadot_collator::{
 	PolkadotClient,
 };
 use polkadot_primitives::{
-	parachain::{self, BlockData, Status as ParachainStatus, Id as ParaId}, Block as PBlock,
+	parachain::{self, BlockData, LocalValidationData, Id as ParaId}, Block as PBlock,
 	Hash as PHash,
 };
 
@@ -111,7 +111,7 @@ where
 	fn produce_candidate(
 		&mut self,
 		_relay_chain_parent: PHash,
-		status: ParachainStatus,
+		status: LocalValidationData,
 	) -> Self::ProduceCandidate {
 		let factory = self.proposer_factory.clone();
 		let inherent_providers = self.inherent_data_providers.clone();
@@ -119,7 +119,7 @@ where
 
 		trace!(target: "cumulus-collator", "Producing candidate");
 
-		let last_head = match HeadData::<Block>::decode(&mut &status.head_data.0[..]) {
+		let last_head = match HeadData::<Block>::decode(&mut &status.parent_head.0[..]) {
 			Ok(x) => x,
 			Err(e) => {
 				error!(target: "cumulus-collator", "Could not decode the head data: {:?}", e);
