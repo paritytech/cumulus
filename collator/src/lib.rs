@@ -65,14 +65,14 @@ impl<Block, PF, BI> Collator<Block, PF, BI> {
 	fn new(
 		proposer_factory: PF,
 		inherent_data_providers: InherentDataProviders,
-		collator_network: Arc<dyn CollatorNetwork>,
+		collator_network: impl CollatorNetwork + Clone + 'static,
 		block_import: BI,
 	) -> Self {
 		Self {
 			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
 			inherent_data_providers,
 			_phantom: PhantomData,
-			collator_network,
+			collator_network: Arc::new(collator_network),
 			block_import: Arc::new(Mutex::new(block_import)),
 		}
 	}
@@ -285,7 +285,7 @@ where
 		self,
 		polkadot_client: Arc<PolkadotClient<B, E, R>>,
 		spawner: Spawner,
-		network: Arc<dyn CollatorNetwork>,
+		network: impl CollatorNetwork + Clone + 'static,
 	) -> Result<Self::ParachainContext, ()>
 	where
 		PolkadotClient<B, E, R>: sp_api::ProvideRuntimeApi<PBlock>,
