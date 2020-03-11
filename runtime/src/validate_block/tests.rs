@@ -17,11 +17,13 @@
 use crate::{ParachainBlockData, WitnessData};
 
 use parachain::{ValidationParams, ValidationResult};
-use sp_core::traits::CallInWasm;
-use sc_executor::{error::Result, WasmExecutionMethod, WasmExecutor};
+use sc_executor::{
+	error::Result, WasmExecutionMethod, WasmExecutor, sp_wasm_interface::HostFunctions,
+};
 use sc_block_builder::BlockBuilderProvider;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::SelectChain;
+use sp_core::traits::CallInWasm;
 use sp_io::TestExternalities;
 use sp_keyring::AccountKeyring;
 use sp_runtime::{
