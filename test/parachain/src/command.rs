@@ -47,8 +47,8 @@ pub fn run(version: sc_cli::VersionInfo) -> sc_cli::Result<()> {
 
 	match opt.subcommand {
 		Some(Subcommand::Base(subcommand)) => {
-			subcommand.init(&version);
-			subcommand.update_config(&mut config, load_spec, &version);
+			subcommand.init(&version)?;
+			subcommand.update_config(&mut config, load_spec, &version)?;
 			subcommand.run(
 				config,
 				|config: Configuration<_, _>| Ok(new_full_start!(config).0),
