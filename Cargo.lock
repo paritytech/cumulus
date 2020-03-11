@@ -469,7 +469,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "num-integer 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-traits 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -749,19 +748,19 @@ dependencies = [
  "polkadot-collator 0.7.22 (git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch)",
  "polkadot-primitives 0.7.22 (git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch)",
  "polkadot-service 0.7.22 (git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch)",
- "sc-cli 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-service 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-consensus 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-inherents 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-keyring 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-state-machine 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "substrate-test-client 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sc-cli 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sc-client 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sc-client-api 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sc-service 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-api 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-blockchain 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-consensus 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-core 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-inherents 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-keyring 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-state-machine 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "substrate-test-client 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
 ]
 
 [[package]]
@@ -773,15 +772,15 @@ dependencies = [
  "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "polkadot-primitives 0.7.22 (git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch)",
  "polkadot-runtime 0.7.22 (git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch)",
- "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-block-builder 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-consensus 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-inherents 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sc-client 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sc-client-api 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-api 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-block-builder 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-blockchain 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-consensus 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-core 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-inherents 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "tokio 0.1.22 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -794,10 +793,10 @@ dependencies = [
  "polkadot-primitives 0.7.22 (git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch)",
  "polkadot-statement-table 0.7.22 (git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch)",
  "polkadot-validation 0.7.22 (git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch)",
- "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-consensus 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sc-client 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-blockchain 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-consensus 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
 ]
 
 [[package]]
@@ -805,21 +804,21 @@ name = "cumulus-runtime"
 version = "0.1.0"
 dependencies = [
  "cumulus-test-client 0.1.0",
- "frame-executive 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "frame-executive 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "hashbrown 0.6.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "memory-db 0.18.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "polkadot-parachain 0.7.22 (git+https://github.com/paritytech/polkadot?branch=cecton-cumulus-branch)",
- "sc-executor 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-consensus 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-io 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-keyring 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-trie 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sc-executor 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-blockchain 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-consensus 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-core 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-io 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-keyring 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-std 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-trie 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "trie-db 0.20.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -829,11 +828,11 @@ version = "0.1.0"
 dependencies = [
  "cumulus-test-runtime 0.1.0",
  "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-keyring 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-test-primitives 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "substrate-test-client 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-core 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-keyring 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-test-primitives 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "substrate-test-client 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
 ]
 
 [[package]]
@@ -909,7 +908,7 @@ name = "cumulus-test-runtime"
 version = "0.1.0"
 dependencies = [
  "cumulus-runtime 0.1.0",
- "substrate-test-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "substrate-test-runtime 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "substrate-wasm-builder-runner 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -1292,14 +1291,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fork-tree"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "frame-benchmarking"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -1315,17 +1306,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "frame-benchmarking"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime-interface 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "frame-executive"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -1340,20 +1320,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "frame-executive"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "frame-support 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "frame-system 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-io 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "frame-metadata"
 version = "11.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -1362,17 +1328,6 @@ dependencies = [
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-core 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-std 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
-]
-
-[[package]]
-name = "frame-metadata"
-version = "11.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
 ]
 
 [[package]]
@@ -1400,46 +1355,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "frame-support"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "bitmask 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "frame-metadata 11.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "frame-support-procedural 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "once_cell 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "paste 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-arithmetic 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-inherents 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-io 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-state-machine 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "tracing 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "frame-support-procedural"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
 dependencies = [
  "frame-support-procedural-tools 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
- "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 1.0.16 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "frame-support-procedural"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "frame-support-procedural-tools 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 1.0.16 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1458,31 +1378,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "frame-support-procedural-tools"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "frame-support-procedural-tools-derive 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 1.0.16 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "frame-support-procedural-tools-derive"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
-dependencies = [
- "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 1.0.16 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "frame-support-procedural-tools-derive"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
 dependencies = [
  "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1506,37 +1404,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "frame-system"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "frame-support 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-io 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-version 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "frame-system-rpc-runtime-api"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
 dependencies = [
  "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
-]
-
-[[package]]
-name = "frame-system-rpc-runtime-api"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
 ]
 
 [[package]]
@@ -1809,25 +1682,6 @@ dependencies = [
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "plain 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "scroll 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "grafana-data-source"
-version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "async-std 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "chrono 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures-timer 3.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures-util 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "hyper 0.13.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio 0.2.13 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -3309,27 +3163,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-babe"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "frame-support 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "frame-system 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "hex-literal 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "pallet-session 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "pallet-timestamp 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-consensus-babe 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-inherents 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-io 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-staking 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-timestamp 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "pallet-balances"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -3561,24 +3394,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-session"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "frame-support 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "frame-system 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "pallet-timestamp 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-io 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-staking 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-trie 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "pallet-society"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -3652,24 +3467,6 @@ dependencies = [
  "sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-std 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-timestamp 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
-]
-
-[[package]]
-name = "pallet-timestamp"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "frame-benchmarking 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "frame-support 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "frame-system 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-inherents 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-io 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-timestamp 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
 ]
 
 [[package]]
@@ -5081,22 +4878,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sc-block-builder"
-version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-block-builder 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-consensus 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-state-machine 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sc-chain-spec"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -5112,35 +4893,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "sc-chain-spec"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "sc-chain-spec-derive 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-network 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-telemetry 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sc-chain-spec-derive"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
-dependencies = [
- "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 1.0.16 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sc-chain-spec-derive"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
 dependencies = [
  "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5188,44 +4943,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sc-cli"
-version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "ansi_term 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "app_dirs 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "atty 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
- "chrono 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "env_logger 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "fdlimit 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "names 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-util-mem 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "regex 1.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "rpassword 4.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-informant 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-network 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-service 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-telemetry 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-tracing 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-keyring 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-panic-handler 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-state-machine 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "structopt 0.3.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "time 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio 0.2.13 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "sc-client"
 version = "0.8.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -5256,39 +4973,6 @@ dependencies = [
  "sp-trie 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-version 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "substrate-prometheus-endpoint 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
- "tracing 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sc-client"
-version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "hex-literal 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "kvdb 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sc-block-builder 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-executor 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-telemetry 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-consensus 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-externalities 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-inherents 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-keyring 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-state-machine 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-trie 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-version 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "tracing 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -5325,37 +5009,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sc-client-api"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "hex-literal 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "kvdb 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sc-executor 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-telemetry 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-consensus 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-externalities 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-inherents 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-keyring 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-state-machine 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-transaction-pool 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-trie 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-version 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sc-client-db"
 version = "0.8.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -5381,33 +5034,6 @@ dependencies = [
  "sp-state-machine 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-trie 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "substrate-prometheus-endpoint 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
-]
-
-[[package]]
-name = "sc-client-db"
-version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "kvdb 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "kvdb-memorydb 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "kvdb-rocksdb 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "linked-hash-map 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-util-mem 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-executor 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-state-db 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-consensus 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-state-machine 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-trie 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
 ]
 
 [[package]]
@@ -5527,32 +5153,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sc-executor"
-version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libsecp256k1 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-wasm 0.41.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sc-executor-common 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-executor-wasmi 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-externalities 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-io 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-panic-handler 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime-interface 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-serializer 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-trie 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-version 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-wasm-interface 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "wasmi 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "sc-executor-common"
 version = "0.8.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -5569,22 +5169,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sc-executor-common"
-version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-allocator 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime-interface 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-serializer 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-wasm-interface 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "wasmi 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "sc-executor-wasmi"
 version = "0.8.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -5597,22 +5181,6 @@ dependencies = [
  "sp-core 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-runtime-interface 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-wasm-interface 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
- "wasmi 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sc-executor-wasmi"
-version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-wasm 0.41.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sc-executor-common 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-allocator 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime-interface 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-wasm-interface 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "wasmi 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -5686,23 +5254,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sc-informant"
-version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "ansi_term 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-util-mem 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-network 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-service 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "wasm-timer 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "sc-keystore"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -5714,21 +5265,6 @@ dependencies = [
  "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-application-crypto 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-core 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
- "subtle 2.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sc-keystore"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "hex 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-application-crypto 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "subtle 2.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -5784,55 +5320,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sc-network"
-version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "bytes 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "either 1.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "erased-serde 0.3.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "fork-tree 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures-timer 3.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures_codec 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "libp2p 0.16.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "linked-hash-map 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "linked_hash_set 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "lru 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "nohash-hasher 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "prost 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "prost-build 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-hex 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sc-block-builder 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-peerset 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
- "slog 2.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "slog_derive 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "smallvec 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-arithmetic 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-consensus 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-consensus-babe 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "thiserror 1.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "unsigned-varint 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "wasm-timer 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "zeroize 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "sc-network-gossip"
 version = "0.8.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -5875,47 +5362,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "sc-offchain"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "bytes 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures-timer 3.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "hyper 0.13.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "hyper-rustls 0.19.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "num_cpus 1.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-keystore 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-network 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-offchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "threadpool 1.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "sc-peerset"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
-dependencies = [
- "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "libp2p 0.16.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
- "wasm-timer 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sc-peerset"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
 dependencies = [
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "libp2p 0.16.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5955,36 +5404,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sc-rpc"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonrpc-core 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonrpc-pubsub 14.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-executor 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-keystore 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-rpc-api 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-offchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-rpc 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-session 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-state-machine 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-transaction-pool 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-version 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sc-rpc-api"
 version = "0.8.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -6008,29 +5427,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sc-rpc-api"
-version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonrpc-core 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonrpc-core-client 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonrpc-derive 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonrpc-pubsub 14.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-rpc 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-transaction-pool 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-version 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sc-rpc-server"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -6043,21 +5439,6 @@ dependencies = [
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
-]
-
-[[package]]
-name = "sc-rpc-server"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "jsonrpc-core 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonrpc-http-server 14.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonrpc-pubsub 14.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonrpc-ws-server 14.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
 ]
 
 [[package]]
@@ -6110,55 +5491,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sc-service"
-version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "exit-future 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures-diagnose 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures-timer 3.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "grafana-data-source 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-multiaddr 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-util-mem 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sc-chain-spec 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-client-db 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-executor 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-keystore 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-network 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-offchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-rpc 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-rpc-server 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-telemetry 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-tracing 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-transaction-pool 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
- "slog 2.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-application-crypto 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-consensus 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-io 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-session 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-transaction-pool 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sysinfo 0.9.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "target_info 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "tracing 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)",
- "wasm-timer 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "sc-state-db"
 version = "0.8.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -6173,42 +5505,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "sc-state-db"
-version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sc-telemetry"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
-dependencies = [
- "bytes 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures-timer 3.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "libp2p 0.16.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "pin-project 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "slog 2.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "slog-json 2.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "slog-scope 4.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "take_mut 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "wasm-timer 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sc-telemetry"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
 dependencies = [
  "bytes 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6243,22 +5542,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sc-tracing"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "erased-serde 0.3.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "grafana-data-source 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sc-telemetry 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
- "slog 2.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "tracing-core 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "sc-transaction-graph"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -6274,25 +5557,6 @@ dependencies = [
  "sp-core 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-transaction-pool 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
- "wasm-timer 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sc-transaction-graph"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "linked-hash-map 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-util-mem 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-transaction-pool 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "wasm-timer 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -6316,29 +5580,6 @@ dependencies = [
  "sp-core 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-transaction-pool 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
- "wasm-timer 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sc-transaction-pool"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures-diagnose 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures-timer 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-util-mem 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-transaction-graph 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-transaction-pool 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "wasm-timer 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -6671,18 +5912,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-allocator"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-wasm-interface 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sp-api"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -6698,36 +5927,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-api"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-api-proc-macro 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-state-machine 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-version 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sp-api-proc-macro"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
-dependencies = [
- "blake2-rfc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
- "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 1.0.16 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sp-api-proc-macro"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
 dependencies = [
  "blake2-rfc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6749,18 +5951,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-application-crypto"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-io 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sp-arithmetic"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -6771,19 +5961,6 @@ dependencies = [
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-debug-derive 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-std 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
-]
-
-[[package]]
-name = "sp-arithmetic"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "integer-sqrt 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "num-traits 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-debug-derive 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
 ]
 
 [[package]]
@@ -6822,18 +5999,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-block-builder"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-inherents 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sp-blockchain"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -6847,22 +6012,6 @@ dependencies = [
  "sp-consensus 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-state-machine 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
-]
-
-[[package]]
-name = "sp-blockchain"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "lru 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-block-builder 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-consensus 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-state-machine 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
 ]
 
 [[package]]
@@ -6888,39 +6037,17 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-consensus"
-version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures-diagnose 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures-timer 3.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "libp2p 0.16.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-inherents 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-state-machine 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-version 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sp-consensus-aura"
-version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
+version = "0.8.0-alpha.3"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
 dependencies = [
  "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-application-crypto 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-inherents 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-timestamp 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-api 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-application-crypto 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-inherents 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-std 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-timestamp 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
 ]
 
 [[package]]
@@ -6937,22 +6064,6 @@ dependencies = [
  "sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-std 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-timestamp 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
-]
-
-[[package]]
-name = "sp-consensus-babe"
-version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "schnorrkel 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-application-crypto 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-consensus 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-inherents 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-timestamp 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
 ]
 
 [[package]]
@@ -6996,59 +6107,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-core"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "base58 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "blake2-rfc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
- "byteorder 1.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "ed25519-dalek 1.0.0-pre.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "hash256-std-hasher 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "hex 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "impl-serde 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libsecp256k1 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "num-traits 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-util-mem 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "primitive-types 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "regex 1.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-hex 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "schnorrkel 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sha2 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-debug-derive 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-externalities 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime-interface 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-storage 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "substrate-bip39 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "tiny-bip39 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "tiny-keccak 2.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "twox-hash 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "wasmi 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "zeroize 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "sp-debug-derive"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
-dependencies = [
- "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 1.0.16 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sp-debug-derive"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
 dependencies = [
  "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -7063,16 +6124,6 @@ dependencies = [
  "environmental 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-std 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-storage 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
-]
-
-[[package]]
-name = "sp-externalities"
-version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "environmental 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-storage 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
 ]
 
 [[package]]
@@ -7111,18 +6162,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-inherents"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sp-io"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -7141,24 +6180,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-io"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "libsecp256k1 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-externalities 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime-interface 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-state-machine 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-trie 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-wasm-interface 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sp-keyring"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -7166,17 +6187,6 @@ dependencies = [
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-core 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
- "strum 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sp-keyring"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "strum 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -7190,27 +6200,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-offchain"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sp-panic-handler"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
-dependencies = [
- "backtrace 0.3.45 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sp-panic-handler"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
 dependencies = [
  "backtrace 0.3.45 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -7236,15 +6228,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-rpc"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sp-runtime"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -7266,26 +6249,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-runtime"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-util-mem 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "paste 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-application-crypto 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-arithmetic 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-inherents 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-io 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sp-runtime-interface"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -7300,20 +6263,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-runtime-interface"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "primitive-types 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-externalities 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime-interface-proc-macro 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-wasm-interface 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "static_assertions 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "sp-runtime-interface-proc-macro"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -7326,30 +6275,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-runtime-interface-proc-macro"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "Inflector 0.11.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 1.0.16 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "sp-serializer"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
-dependencies = [
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sp-serializer"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
 dependencies = [
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -7367,17 +6295,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-session"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sp-staking"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -7385,16 +6302,6 @@ dependencies = [
  "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-std 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
-]
-
-[[package]]
-name = "sp-staking"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
 ]
 
 [[package]]
@@ -7417,33 +6324,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-state-machine"
-version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "num-traits 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-externalities 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-panic-handler 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-trie 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "trie-db 0.20.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "trie-root 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "sp-std"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
-
-[[package]]
-name = "sp-std"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
 
 [[package]]
 name = "sp-storage"
@@ -7457,27 +6340,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-storage"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "impl-serde 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-debug-derive 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sp-test-primitives"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
+version = "2.0.0-dev"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
 dependencies = [
  "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-util-mem 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-application-crypto 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-application-crypto 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-core 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
 ]
 
 [[package]]
@@ -7495,20 +6367,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-timestamp"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-inherents 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "wasm-timer 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "sp-transaction-pool"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -7520,20 +6378,6 @@ dependencies = [
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
-]
-
-[[package]]
-name = "sp-transaction-pool"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
 ]
 
 [[package]]
@@ -7551,20 +6395,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-trie"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "memory-db 0.19.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "trie-db 0.20.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "trie-root 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "sp-version"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -7577,18 +6407,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-version"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "impl-serde 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
 name = "sp-wasm-interface"
 version = "2.0.0-alpha.3"
 source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
@@ -7596,17 +6414,6 @@ dependencies = [
  "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-std 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
- "wasmi 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sp-wasm-interface"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
-dependencies = [
- "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "wasmi 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -7743,67 +6550,67 @@ dependencies = [
 
 [[package]]
 name = "substrate-test-client"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
+version = "2.0.0-dev"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
 dependencies = [
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-client-db 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sc-executor 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-consensus 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-keyring 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-state-machine 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sc-client 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sc-client-api 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sc-client-db 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sc-executor 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-blockchain 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-consensus 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-core 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-keyring 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-state-machine 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
 ]
 
 [[package]]
 name = "substrate-test-runtime"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
+version = "2.0.0-dev"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
 dependencies = [
  "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "frame-executive 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "frame-support 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "frame-system 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "frame-system-rpc-runtime-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "frame-executive 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "frame-support 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "frame-system 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "frame-system-rpc-runtime-api 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "memory-db 0.19.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "pallet-babe 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "pallet-timestamp 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "pallet-babe 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "pallet-timestamp 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-util-mem 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sc-client 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-application-crypto 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-block-builder 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-consensus-aura 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-consensus-babe 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-inherents 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-io 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-keyring 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-offchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime-interface 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-session 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-transaction-pool 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-trie 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-version 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "substrate-wasm-builder-runner 1.0.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-api 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-application-crypto 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-block-builder 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-consensus-aura 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-consensus-babe 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-core 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-inherents 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-io 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-keyring 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-offchain 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-runtime-interface 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-session 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-std 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-transaction-pool 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-trie 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sp-version 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "substrate-wasm-builder-runner 1.0.5 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "trie-db 0.20.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "substrate-wasm-builder-runner"
 version = "1.0.5"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#6c0232b9a34d1680cf3d0f1e383edb6f8aa4dffa"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
 
 [[package]]
 name = "substrate-wasm-builder-runner"
@@ -9053,25 +7860,15 @@ dependencies = [
 "checksum fixedbitset 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "37ab347416e802de484e4d03c7316c48f1ecb56574dfd4a46a80f173ce1de04d"
 "checksum flate2 1.0.13 (registry+https://github.com/rust-lang/crates.io-index)" = "6bd6d6f4752952feb71363cffc9ebac9411b75b87c6ab6058c40c8900cf43c0f"
 "checksum fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)" = "2fad85553e09a6f881f739c29f0b00b0f01357c743266d478b68951ce23285f3"
-"checksum fork-tree 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum fork-tree 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum frame-benchmarking 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum frame-benchmarking 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum frame-executive 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum frame-executive 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum frame-metadata 11.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum frame-metadata 11.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum frame-support 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum frame-support 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum frame-support-procedural 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum frame-support-procedural 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum frame-support-procedural-tools 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum frame-support-procedural-tools 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum frame-support-procedural-tools-derive 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum frame-support-procedural-tools-derive 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum frame-system 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum frame-system 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum frame-system-rpc-runtime-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum frame-system-rpc-runtime-api 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum fs-swap 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)" = "921d332c89b3b61a826de38c61ee5b6e02c56806cade1b0e5d81bd71f57a71bb"
 "checksum fuchsia-cprng 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "a06f77d526c1a601b7c4cdd98f54b5eaabffc14d5f2f0296febdc7f357c6d3ba"
@@ -9104,7 +7901,6 @@ dependencies = [
 "checksum glob 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 "checksum globset 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)" = "925aa2cac82d8834e2b2a4415b6f6879757fb5c0928fc445ae76461a12eed8f2"
 "checksum goblin 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "3081214398d39e4bd7f2c1975f0488ed04614ffdd976c6fc7a0708278552c0da"
-"checksum grafana-data-source 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum h2 0.1.26 (registry+https://github.com/rust-lang/crates.io-index)" = "a5b34c246847f938a410a03c5458c7fee2274436675e76d8b903c08efc29c462"
 "checksum h2 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "9d5c295d1c0c68e4e42003d75f908f5e16a1edd1cbe0b0d02e4dc2006a384f47"
 "checksum hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)" = "d23bd4e7b5eda0d0f3a307e8b381fdc8ba9000f26fbe912250c0a4cc3956364a"
@@ -9234,7 +8030,6 @@ dependencies = [
 "checksum owning_ref 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "6ff55baddef9e4ad00f88b6c743a2a8062d4c6ade126c2a528644b8e444d52ce"
 "checksum pallet-authority-discovery 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum pallet-authorship 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum pallet-babe 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum pallet-babe 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum pallet-balances 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum pallet-collective 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
@@ -9250,13 +8045,11 @@ dependencies = [
 "checksum pallet-offences 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum pallet-randomness-collective-flip 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum pallet-recovery 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum pallet-session 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum pallet-session 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum pallet-society 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum pallet-staking 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum pallet-staking-reward-curve 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum pallet-sudo 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum pallet-timestamp 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum pallet-timestamp 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum pallet-transaction-payment 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum pallet-transaction-payment-rpc 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
@@ -9377,60 +8170,36 @@ dependencies = [
 "checksum salsa20-core 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "2fe6cc1b9f5a5867853ade63099de70f042f7679e408d1ffe52821c9248e6e69"
 "checksum sc-authority-discovery 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum sc-basic-authorship 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-block-builder 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-block-builder 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-chain-spec 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-chain-spec 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-chain-spec-derive 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-chain-spec-derive 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-cli 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-cli 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-client 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-client 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-client-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-client-api 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-client-db 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-client-db 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum sc-consensus-babe 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum sc-consensus-epochs 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum sc-consensus-slots 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum sc-consensus-uncles 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-executor 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-executor 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-executor-common 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-executor-common 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-executor-wasmi 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-executor-wasmi 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum sc-executor-wasmtime 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum sc-finality-grandpa 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-informant 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-informant 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-keystore 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-keystore 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-network 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-network 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum sc-network-gossip 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-offchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-offchain 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-peerset 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-peerset 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-rpc 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-rpc 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-rpc-api 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-rpc-api 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-rpc-server 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-rpc-server 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-service 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-service 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-state-db 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-state-db 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-telemetry 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-telemetry 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-tracing 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-tracing 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-transaction-graph 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-transaction-graph 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sc-transaction-pool 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sc-transaction-pool 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum schannel 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)" = "507a9e6e8ffe0a4e0ebb9a10293e62fdf7657c06f1b8bb07a8fcf697d2abf295"
 "checksum schnorrkel 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)" = "eacd8381b3c37840c9c9f40472af529e49975bdcbc24f83c31059fd6539023d3"
@@ -9466,76 +8235,44 @@ dependencies = [
 "checksum smallvec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5c2fb2ec9bcd216a5b0d0ccf31ab17b5ed1d627960edff65bbe95d3ce221cefc"
 "checksum snow 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)" = "afb767eee7d257ba202f0b9b08673bc13b22281632ef45267b19f13100accd2f"
 "checksum soketto 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "1c9dab3f95c9ebdf3a88268c19af668f637a3c5039c2c56ff2d40b1b2d64a25b"
-"checksum sp-allocator 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-allocator 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-api 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-api 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-api-proc-macro 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-api-proc-macro 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-application-crypto 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-application-crypto 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-arithmetic 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-arithmetic 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum sp-authority-discovery 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum sp-authorship 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-block-builder 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-block-builder 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-blockchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-blockchain 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-consensus 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-consensus 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-consensus-aura 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
-"checksum sp-consensus-babe 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-consensus-aura 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum sp-consensus-babe 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-core 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-core 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-debug-derive 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-debug-derive 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-externalities 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-externalities 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum sp-finality-grandpa 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum sp-finality-tracker 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-inherents 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-inherents 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-io 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-io 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-keyring 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-keyring 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-offchain 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-offchain 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-panic-handler 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-panic-handler 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum sp-phragmen 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-rpc 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-rpc 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-runtime 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-runtime-interface 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-runtime-interface 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-runtime-interface-proc-macro 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-runtime-interface-proc-macro 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-serializer 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-serializer 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-session 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-session 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-staking 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-staking 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-state-machine 0.8.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-state-machine 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-std 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-std 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-storage 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-storage 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-test-primitives 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
-"checksum sp-timestamp 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-test-primitives 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum sp-timestamp 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-transaction-pool 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-transaction-pool 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-trie 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-trie 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-version 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-version 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum sp-wasm-interface 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-wasm-interface 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum spin 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 "checksum stable_deref_trait 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "dba1a27d3efae4351c8051072d619e3ade2820635c3958d826bfea39d59b54c8"
@@ -9551,9 +8288,9 @@ dependencies = [
 "checksum substrate-bip39 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "3be511be555a3633e71739a79e4ddff6a6aaa6579fa6114182a51d72c3eb93c5"
 "checksum substrate-frame-rpc-system 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum substrate-prometheus-endpoint 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
-"checksum substrate-test-client 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
-"checksum substrate-test-runtime 2.0.0 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
-"checksum substrate-wasm-builder-runner 1.0.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum substrate-test-client 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
+"checksum substrate-test-runtime 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
+"checksum substrate-wasm-builder-runner 1.0.5 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)" = "<none>"
 "checksum substrate-wasm-builder-runner 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)" = "e30c70de7e7d5fd404fe26db1e7a4d6b553e2760b1ac490f249c04a960c483b8"
 "checksum subtle 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "2d67a5a62ba6e01cb2192ff309324cb4875d0c451d55fe2319433abe7a05a8ee"
 "checksum subtle 2.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7c65d530b10ccaeac294f349038a597e435b18fb456aadd0840a623f83b9e941"
