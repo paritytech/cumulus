@@ -52,7 +52,7 @@ pub fn run(version: sc_cli::VersionInfo) -> sc_cli::Result<()> {
 			subcommand.run(
 				config,
 				|config: Configuration<_, _>| Ok(new_full_start!(config).0),
-			);
+			)
 		},
 		Some(Subcommand::ExportGenesisState(params)) => {
 			sc_cli::init_logger("");
