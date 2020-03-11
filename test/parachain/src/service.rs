@@ -19,7 +19,6 @@ use std::sync::Arc;
 use parachain_runtime::{self, opaque::Block, GenesisConfig};
 
 use sc_executor::native_executor_instance;
-use sc_network::construct_simple_protocol;
 use sc_service::{AbstractService, Configuration};
 
 use polkadot_primitives::parachain::CollatorPair;
@@ -36,11 +35,6 @@ native_executor_instance!(
 	parachain_runtime::api::dispatch,
 	parachain_runtime::native_version,
 );
-
-construct_simple_protocol! {
-	/// Demo protocol attachment for substrate.
-	pub struct NodeProtocol where Block = Block { }
-}
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
