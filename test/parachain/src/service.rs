@@ -82,7 +82,7 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 	parachain_config: Configuration<GenesisConfig, E>,
 	key: Arc<CollatorPair>,
 	mut polkadot_config: polkadot_collator::Configuration,
-) -> sc_cli::error::Result<()> {
+) -> sc_cli::Result<()> {
 	sc_cli::run_service_until_exit(parachain_config, move |parachain_config| {
 		polkadot_config.task_executor = parachain_config.task_executor.clone();
 
