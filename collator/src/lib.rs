@@ -333,8 +333,8 @@ mod tests {
 	use super::*;
 	use std::time::Duration;
 
-	use polkadot_collator::{collate, CollatorId, PeerId, SignedStatement};
-	use polkadot_primitives::parachain::{FeeSchedule, HeadData, Id as ParaId};
+	use polkadot_collator::{collate, SignedStatement};
+	use polkadot_primitives::parachain::{HeadData, Id as ParaId};
 
 	use sp_blockchain::Result as ClientResult;
 	use sp_inherents::InherentData;
