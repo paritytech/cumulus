@@ -16,7 +16,7 @@
 
 use std::sync::Arc;
 
-use parachain_runtime::{self, opaque::Block, GenesisConfig};
+use parachain_runtime::{self, GenesisConfig};
 
 use sc_executor::native_executor_instance;
 use sc_service::{AbstractService, Configuration};
@@ -94,10 +94,10 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 			})?
 			.build()?;
 
-		let proposer_factory = sc_basic_authorship::ProposerFactory {
-			client: service.client(),
-			transaction_pool: service.transaction_pool(),
-		};
+		let proposer_factory = sc_basic_authorship::ProposerFactory::new(
+			service.client(),
+			service.transaction_pool(),
+		);
 
 		let block_import = service.client();
 		let client = service.client();
