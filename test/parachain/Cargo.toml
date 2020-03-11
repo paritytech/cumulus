@@ -37,6 +37,7 @@ sc-network = { git = "https://github.com/paritytech/substrate", branch = "cecton
 sc-client = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
+sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../../consensus" }

@@ -858,6 +858,7 @@ dependencies = [
  "sc-cli 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sc-client 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sc-executor 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
+ "sc-finality-grandpa 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sc-network 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sc-service 0.8.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",
  "sc-transaction-pool 2.0.0-alpha.3 (git+https://github.com/paritytech/substrate?branch=cecton-cumulus-branch)",

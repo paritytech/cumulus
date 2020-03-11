@@ -20,6 +20,7 @@ use parachain_runtime::{self, opaque::Block, GenesisConfig};
 
 use sc_executor::native_executor_instance;
 use sc_service::{AbstractService, Configuration};
+use sc_finality_grandpa::{FinalityProofProvider as GrandpaFinalityProofProvider, StorageAndProofProvider};
 
 use polkadot_primitives::parachain::CollatorPair;
 
@@ -86,7 +87,11 @@ pub fn run_collator<E: sc_service::ChainSpecExtension>(
 			.unwrap();
 
 		let service = builder
-			.with_network_protocol(|_| Ok(NodeProtocol::new()))?
+			.with_finality_proof_provider(|client, backend| {
+				// GenesisAuthoritySetProvider is implemented for StorageAndProofProvider
+				let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
+				Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
+			})?
 			.build()?;
 
 		let proposer_factory = sc_basic_authorship::ProposerFactory {
