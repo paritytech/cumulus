@@ -1,16 +1,10 @@
-# substrate-pallet-template
+# parachain-upgrade-pallet
 
-This is a template for a Substrate pallet which lives as its own crate so it can be imported into multiple other runtimes. It is based on the ["template" pallet](https://github.com/paritytech/substrate/tree/master/bin/node-template/runtime/src/template.rs) which is included with the [Substrate node template](https://github.com/paritytech/substrate/tree/master/bin/node-template).
-
-Check out the [HOWTO](HOWTO.md) to learn how to use this for your own runtime module.
-
-This README should act as a general template for distributing your module to others.
+WIP on a pallet to ease parachain upgrades; see https://github.com/paritytech/cumulus/issues/59.
 
 ## Purpose
 
-This pallet acts as a template for building other pallets.
-
-It currently allows a user to put a `u32` value into storage, which triggers a runtime event.
+This pallet allows a user to determine when a parachain validation function is legal, and upgrade that validation function, triggering runtime events for both the storing and applying the new validation function.
 
 ## Dependencies
 
@@ -20,7 +14,7 @@ This pallet does not depend on any externally defined traits.
 
 ### Pallets
 
-This pallet does not depend on any other FRAME pallet or externally developed modules.
+This pallet depends on the [`balances` pallet](https://github.com/paritytech/substrate/tree/master/frame/balances).
 
 ## Installation
 
@@ -29,7 +23,7 @@ This pallet does not depend on any other FRAME pallet or externally developed mo
 To add this pallet to your runtime, simply include the following to your runtime's `Cargo.toml` file:
 
 ```TOML
-[dependencies.substrate-pallet-template]
+[dependencies.parachain-upgrade-pallet]
 default_features = false
 git = 'https://github.com/substrate-developer-hub/substrate-pallet-template.git'
 ```
@@ -39,17 +33,17 @@ and update your runtime's `std` feature to include this pallet:
 ```TOML
 std = [
     # --snip--
-    'example_pallet/std',
+    'parachain-upgrade-pallet/std',
 ]
 ```
 
 ### Runtime `lib.rs`
 
-You should implement it's trait like so:
+You should implement its trait like so:
 
 ```rust
 /// Used for test_module
-impl example_pallet::Trait for Runtime {
+impl parachain_upgrade_pallet::Trait for Runtime {
 	type Event = Event;
 }
 ```
@@ -57,7 +51,7 @@ impl example_pallet::Trait for Runtime {
 and include it in your `construct_runtime!` macro:
 
 ```rust
-ExamplePallet: substrate_pallet_template::{Module, Call, Storage, Event<T>},
+ParachainUpgradePallet: parachain_upgrade_pallet::{Module, Call, Storage, Event<T>},
 ```
 
 ### Genesis Configuration
