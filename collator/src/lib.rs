@@ -296,11 +296,11 @@ where
 		Extrinsic: codec::Codec + Send + Sync + 'static,
 		<<PolkadotClient<B, E, R> as sp_api::ProvideRuntimeApi<PBlock>>::Api as sp_api::ApiExt<
 			PBlock,
-		>>::StateBackend: sp_api::StateBackend<sp_core::Blake2Hasher>,
+		>>::StateBackend: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
 		R: Send + Sync + 'static,
 		B: sc_client_api::Backend<PBlock> + 'static,
 		// Rust bug: https://github.com/rust-lang/rust/issues/24159
-		B::State: sp_api::StateBackend<sp_core::Blake2Hasher>,
+		B::State: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
 	{
 		let follow =
 			match cumulus_consensus::follow_polkadot(self.para_id, self.client, polkadot_client) {

@@ -154,7 +154,7 @@ where
 	<Client<B, E, PBlock, RA> as ProvideRuntimeApi<PBlock>>::Api:
 		ParachainHost<PBlock, Error = ClientError>,
 	// Rust bug: https://github.com/rust-lang/rust/issues/24159
-	StateBackendFor<B, PBlock>: StateBackend<sp_core::Blake2Hasher>,
+	StateBackendFor<B, PBlock>: StateBackend<sp_runtime::traits::BlakeTwo256>,
 {
 	type Error = ClientError;
 
