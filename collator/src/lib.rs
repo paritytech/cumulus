@@ -406,17 +406,11 @@ mod tests {
 		}
 	}
 
+	#[derive(Clone)]
 	struct DummyCollatorNetwork;
 
 	impl CollatorNetwork for DummyCollatorNetwork {
-		fn collator_id_to_peer_id(
-			&self,
-			_: CollatorId,
-		) -> Box<dyn Future<Output = Option<PeerId>> + Send> {
-			unimplemented!("Not required in tests")
-		}
-
-		fn checked_statements(&self, _: PHash) -> Box<dyn Stream<Item = SignedStatement>> {
+		fn checked_statements(&self, _: PHash) -> Pin<Box<dyn Stream<Item = SignedStatement>>> {
 			unimplemented!("Not required in tests")
 		}
 	}
@@ -455,16 +449,21 @@ mod tests {
 			Arc::new(TestClientBuilder::new().build()),
 		);
 		let context = builder
-			.build::<_, _, polkadot_service::polkadot_runtime::RuntimeApi, _, _>(
+			.build(
 				Arc::new(
 					substrate_test_client::TestClientBuilder::<_, _, _, ()>::default()
-						.build_with_native_executor(Some(NativeExecutor::<
-							polkadot_service::PolkadotExecutor,
-						>::new(Interpreted, None)))
+						.build_with_native_executor::<polkadot_service::polkadot_runtime::RuntimeApi, _>(
+							Some(
+								NativeExecutor::<polkadot_service::PolkadotExecutor>::new(
+									Interpreted,
+									None,
+								)
+							)
+						)
 						.0,
 				),
 				spawner,
-				Arc::new(DummyCollatorNetwork),
+				DummyCollatorNetwork,
 			)
 			.expect("Creates parachain context");
 
@@ -479,13 +478,9 @@ mod tests {
 		let collation = collate(
 			Default::default(),
 			id,
-			ParachainStatus {
-				head_data: HeadData(header.encode()),
+			LocalValidationData {
+				parent_head: HeadData(header.encode()),
 				balance: 10,
-				fee_schedule: FeeSchedule {
-					base: 0,
-					per_byte: 1,
-				},
 			},
 			context,
 			Arc::new(Sr25519Keyring::Alice.pair().into()),
