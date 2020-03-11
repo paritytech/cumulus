@@ -13,6 +13,7 @@ trie-db = { version = "0.20.0", default-features = false }
 hashbrown = "0.6.1"
 
 # Substrate dependencies
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-cumulus-branch" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-cumulus-branch" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-cumulus-branch" }
