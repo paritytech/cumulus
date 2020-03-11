@@ -46,13 +46,14 @@ pub fn run(version: sc_cli::VersionInfo) -> sc_cli::Result<()> {
 	let mut polkadot_config = Configuration::from_version(&version);
 
 	match opt.subcommand {
-		Some(Subcommand::Base(subcommand)) => sc_cli::run_subcommand(
-			config,
-			subcommand,
-			load_spec,
-			|config: Configuration<_, _>| Ok(new_full_start!(config).0),
-			&version,
-		),
+		Some(Subcommand::Base(subcommand)) => {
+			subcommand.init(&version);
+			subcommand.update_config(&mut config, load_spec, &version);
+			subcommand.run(
+				config,
+				|config: Configuration<_, _>| Ok(new_full_start!(config).0),
+			);
+		},
 		Some(Subcommand::ExportGenesisState(params)) => {
 			sc_cli::init_logger("");
 
