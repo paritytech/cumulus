@@ -1,23 +1,24 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-/// A pallet template with necessary imports
-
-/// Feel free to remove or edit this file as needed.
-/// If you change the name of this file, make sure to update its references in runtime/src/lib.rs
-/// If you remove this file, you can remove those references
-
-/// For more guidance on FRAME pallets, see the example.
-/// https://github.com/paritytech/substrate/blob/master/frame/example/src/lib.rs
-use frame_support::{decl_event, decl_module, decl_storage};
-use pallet_balances::Trait as BalanceTrait;
-use system::ensure_signed;
+use frame_support::{
+    decl_error, decl_event, decl_module, decl_storage, ensure, parameter_types, storage,
+};
+use sp_core::storage::well_known_keys;
+use system::ensure_root;
 
 pub type ValidationFunction = Vec<u8>;
 
+parameter_types! {
+    // How many blocks must pass between scheduling a validation function
+    // upgrade and applying it.
+    //
+    // We don't have access to T::BlockNumber in this scope, but we know that
+    // the BlockNumber type must be convertable from a 32 bit integer, so using
+    // a u32 here should be acceptable.
+    pub const ValidationUpgradeDelayBlocks: u32 = 1000;
+}
 /// The pallet's configuration trait.
-pub trait Trait: system::Trait + BalanceTrait {
-    // TODO: Add other types and constants required configure this pallet.
-
+pub trait Trait: system::Trait {
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
@@ -27,7 +28,11 @@ decl_storage! {
     trait Store for Module<T: Trait> as TemplateModule {
         // we need to store the new validation function for the span between
         // setting it and applying it.
-        NewValidationFunction get(fn new_validation_function): Option<ValidationFunction>;
+        PendingValidationFunction get(fn new_validation_function): (T::BlockNumber, ValidationFunction);
+
+        // we store the current block number on each block in order to compare to the
+        // pending block number
+        CurrentBlockNumber get(fn current_block_number): T::BlockNumber;
     }
 }
 
@@ -38,39 +43,57 @@ decl_module! {
         // this is needed only if you are using events in your pallet
         fn deposit_event() = default;
 
-        pub fn upgrade_validation_function(origin, validation_function: ValidationFunction) {
-            let who = ensure_signed(origin)?;
+        fn on_initialize(n: T::BlockNumber) {
+            CurrentBlockNumber::<T>::put(n);
 
-            NewValidationFunction::put(validation_function);
-
-            // unimplemented!("dispatch this to a real function in polkadot");
-
-            Self::deposit_event(RawEvent::ValidationFunctionStored(who));
+            if PendingValidationFunction::<T>::exists() {
+                let (apply_block, validation_function) = PendingValidationFunction::<T>::take();
+                if n >= apply_block {
+                    storage::unhashed::put_raw(well_known_keys::CODE, &validation_function);
+                    Self::deposit_event(RawEvent::ValidationFunctionApplied(n));
+                }
+            }
         }
-    }
-}
 
-impl<T: Trait + BalanceTrait> Module<T> {
-    /// Returns `Some(balance)` with the upgrade fee when an upgrade would be legal.
-    /// Returns `None` when an upgrade would be illegal.
-    pub fn can_upgrade_validation_function(_len: usize) -> Option<<T as BalanceTrait>::Balance> {
-        // unimplemented!("dispatch this to a real function in polkadot")
-        None
+        pub fn upgrade_validation_function(origin, validation_function: ValidationFunction) {
+            // TODO: in the future, we can't rely on a superuser existing
+            // on-chain who can just wave their hands and make this happen.
+            // Instead, this should hook into the democracy pallet and check
+            // that a validation function upgrade has been approved; potentially,
+            // it should even trigger the validation function upgrade automatically
+            // the moment the vote passes.
+            ensure_root(origin)?;
+            ensure!(!PendingValidationFunction::<T>::exists(), Error::<T>::OverlappingUpgrades);
+            ensure!(CurrentBlockNumber::<T>::exists(), Error::<T>::MissingCurrentBlockNumber);
+
+            let apply_block = CurrentBlockNumber::<T>::get() + ValidationUpgradeDelayBlocks::get().into();
+
+            PendingValidationFunction::<T>::put((apply_block, validation_function));
+            Self::deposit_event(RawEvent::ValidationFunctionStored(apply_block));
+        }
     }
 }
 
 decl_event!(
     pub enum Event<T>
     where
-        AccountId = <T as system::Trait>::AccountId,
+        BlockNumber = <T as system::Trait>::BlockNumber,
     {
-        // Note when the validation function is updated.
-        ValidationFunctionStored(AccountId),
-
-        // Where do we dispatch this event?
-        ValidationFunctionApplied,
+        // The validation function has been scheduled to apply as of the contained block number.
+        ValidationFunctionStored(BlockNumber),
+        // The validation function was applied as of the contained block number.
+        ValidationFunctionApplied(BlockNumber),
     }
 );
+
+decl_error! {
+    pub enum Error for Module<T: Trait> {
+        /// Attempt to upgrade validation function while existing upgrade pending
+        OverlappingUpgrades,
+        /// Current block number was not stored
+        MissingCurrentBlockNumber,
+    }
+}
 
 /// tests for this pallet
 #[cfg(test)]
@@ -121,17 +144,6 @@ mod tests {
     impl Trait for Test {
         type Event = ();
     }
-    impl BalanceTrait for Test {
-        type Balance = u64;
-        type TransferPayment = ();
-        type Event = ();
-        type OnFreeBalanceZero = ();
-        type OnNewAccount = ();
-        type DustRemoval = ();
-        type ExistentialDeposit = ();
-        type TransferFee = ();
-        type CreationFee = ();
-    }
     type TemplateModule = Module<Test>;
 
     // This function basically just builds a genesis storage key/value store according to
@@ -144,9 +156,9 @@ mod tests {
     }
 
     #[test]
-    fn it_works_for_default_value() {
+    #[should_panic]
+    fn requires_root() {
         new_test_ext().execute_with(|| {
-            assert_eq!(TemplateModule::can_upgrade_validation_function(0), None);
             assert_ok!(TemplateModule::upgrade_validation_function(
                 Origin::signed(1),
                 Default::default()
