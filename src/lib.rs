@@ -25,7 +25,7 @@ pub trait Trait: system::Trait {
 
 // This pallet's storage items.
 decl_storage! {
-    trait Store for Module<T: Trait> as TemplateModule {
+    trait Store for Module<T: Trait> as ParachainUpgrade {
         // we need to store the new validation function for the span between
         // setting it and applying it.
         PendingValidationFunction get(fn new_validation_function): (T::BlockNumber, ValidationFunction);
