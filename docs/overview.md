@@ -86,11 +86,12 @@ block and the runtime is updated.
 
 A Parachain will follow the same paradigm, but the relay chain needs to be informed before
 the update. Cumulus will provide functionality to notify the relay chain about the runtime update. The
-update will not be enacted directly; instead it takes `X` blocks (a value that is configured by the relay
-chain) before the relay chain allows the update to be applied. If the update is applied before the
-waiting period is finished, the relay chain will reject the Parachain block for inclusion. The
-Cumulus runtime pallet will provide the functionality to register the runtime upgrade and will also
-make sure that the update is applied at the correct block.
+update will not be enacted directly; instead it takes `X` relay blocks (a value that is configured
+by the relay chain) before the relay chain allows the update to be applied. The first Parachain
+block that will be included after `X` relay chain blocks needs to apply the upgrade.
+If the update is applied before the waiting period is finished, the relay chain will reject the
+Parachain block for inclusion. The Cumulus runtime pallet will provide the functionality to
+register the runtime upgrade and will also make sure that the update is applied at the correct block.
 
 After updating the Parachain runtime, a Parachain needs to wait a certain amount of time `Y`
 (configured by the relay chain) before another update can be applied.
