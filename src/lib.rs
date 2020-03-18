@@ -164,6 +164,14 @@ mod tests {
         pub const MaximumBlockWeight: Weight = 1024;
         pub const MaximumBlockLength: u32 = 2 * 1024;
         pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
+        pub const Version: RuntimeVersion = RuntimeVersion {
+			spec_name: sp_version::create_runtime_str!("test"),
+			impl_name: sp_version::create_runtime_str!("system-test"),
+			authoring_version: 1,
+			spec_version: 1,
+			impl_version: 1,
+			apis: sp_version::create_apis_vec!([]),
+		};
     }
     impl system::Trait for Test {
         type Origin = Origin;
@@ -182,9 +190,13 @@ mod tests {
         type AvailableBlockRatio = AvailableBlockRatio;
         type Version = ();
         type ModuleToIndex = ();
+        type AccountData = ();
+        type OnNewAccount = ();
+        type OnKilledAccount = ();
     }
     impl Trait for Test {
         type Event = ();
+        type Version = Version;
     }
     type TemplateModule = Module<Test>;
 
