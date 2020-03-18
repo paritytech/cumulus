@@ -1,9 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::Decode;
 use frame_support::{
     decl_error, decl_event, decl_module, decl_storage, ensure, parameter_types, storage,
+    traits::Get,
 };
 use sp_core::storage::well_known_keys;
+use sp_version::RuntimeVersion;
 use system::ensure_root;
 
 pub type ValidationFunction = Vec<u8>;
@@ -17,10 +20,14 @@ parameter_types! {
     // a u32 here should be acceptable.
     pub const ValidationUpgradeDelayBlocks: u32 = 1000;
 }
+
 /// The pallet's configuration trait.
 pub trait Trait: system::Trait {
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+
+    /// Get the chain's current version.
+    type Version: Get<RuntimeVersion>;
 }
 
 // This pallet's storage items.
@@ -66,6 +73,25 @@ decl_module! {
             ensure!(!PendingValidationFunction::<T>::exists(), Error::<T>::OverlappingUpgrades);
             ensure!(CurrentBlockNumber::<T>::exists(), Error::<T>::MissingCurrentBlockNumber);
 
+            let current_version = <T as Trait>::Version::get();
+            let new_version = sp_io::misc::runtime_version(&validation_function)
+                .and_then(|v| RuntimeVersion::decode(&mut &v[..]).ok())
+                .ok_or_else(|| Error::<T>::FailedToExtractRuntimeVersion)?;
+
+            if new_version.spec_name != current_version.spec_name {
+                Err(Error::<T>::InvalidSpecName)?
+            }
+
+            if new_version.spec_version < current_version.spec_version {
+                Err(Error::<T>::SpecVersionNotAllowedToDecrease)?
+            } else if new_version.spec_version == current_version.spec_version {
+                if new_version.impl_version < current_version.impl_version {
+                    Err(Error::<T>::ImplVersionNotAllowedToDecrease)?
+                } else if new_version.impl_version == current_version.impl_version {
+                    Err(Error::<T>::SpecOrImplVersionNeedToIncrease)?
+                }
+            }
+
             let apply_block = CurrentBlockNumber::<T>::get() + ValidationUpgradeDelayBlocks::get().into();
 
             PendingValidationFunction::<T>::put((apply_block, validation_function));
@@ -92,6 +118,22 @@ decl_error! {
         OverlappingUpgrades,
         /// Current block number was not stored
         MissingCurrentBlockNumber,
+        /// The name of specification does not match between the current runtime
+        /// and the new runtime.
+        InvalidSpecName,
+        /// The specification version is not allowed to decrease between the current runtime
+        /// and the new runtime.
+        SpecVersionNotAllowedToDecrease,
+        /// The implementation version is not allowed to decrease between the current runtime
+        /// and the new runtime.
+        ImplVersionNotAllowedToDecrease,
+        /// The specification or the implementation version need to increase between the
+        /// current runtime and the new runtime.
+        SpecOrImplVersionNeedToIncrease,
+        /// Failed to extract the runtime version from the new runtime.
+        ///
+        /// Either calling `Core_version` or decoding `RuntimeVersion` failed.
+        FailedToExtractRuntimeVersion,
     }
 }
 
