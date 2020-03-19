@@ -29,7 +29,6 @@ use sp_runtime::{
 	BuildStorage,
 };
 use sc_network::config::TransportConfig;
-use polkadot_service::ChainSpec as ChainSpecPolkadot;
 
 use codec::Encode;
 use log::info;
@@ -51,7 +50,7 @@ pub fn run(version: sc_cli::VersionInfo) -> sc_cli::Result<()> {
 			subcommand.update_config(&mut config, load_spec, &version)?;
 			subcommand.run(
 				config,
-				|config: Configuration<_, _>| Ok(new_full_start!(config).0),
+				|config: Configuration| Ok(new_full_start!(config).0),
 			)
 		},
 		Some(Subcommand::ExportGenesisState(params)) => {
@@ -101,7 +100,7 @@ pub fn run(version: sc_cli::VersionInfo) -> sc_cli::Result<()> {
 				[version.executable_name.to_string()].iter().chain(opt.relaychain_args.iter()),
 				&version,
 			);
-			let allow_private_ipv4 = !polkadot_opt.run.network_config.no_private_ipv4;
+			let allow_private_ipv4 = !polkadot_opt.run.base.network_config.no_private_ipv4;
 
 			polkadot_config.rpc_http = Some(DEFAULT_POLKADOT_RPC_HTTP.parse().unwrap());
 			polkadot_config.rpc_ws = Some(DEFAULT_POLKADOT_RPC_WS.parse().unwrap());
@@ -111,7 +110,7 @@ pub fn run(version: sc_cli::VersionInfo) -> sc_cli::Result<()> {
 				)
 			);
 
-			polkadot_opt.run.update_config(
+			polkadot_opt.run.base.update_config(
 				&mut polkadot_config,
 				load_spec_polkadot,
 				&version,
@@ -134,12 +133,12 @@ pub fn run(version: sc_cli::VersionInfo) -> sc_cli::Result<()> {
 	}
 }
 
-fn load_spec(_: &str) -> Result<Option<chain_spec::ChainSpec>, String> {
-	Ok(Some(chain_spec::get_chain_spec()))
+fn load_spec(_: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
+	Ok(Box::new(chain_spec::get_chain_spec()))
 }
 
-fn load_spec_polkadot(_: &str) -> Result<Option<ChainSpecPolkadot>, String> {
-	Some(polkadot_service::ChainSpec::from_json_bytes(
+fn load_spec_polkadot(_: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
+	polkadot_service::PolkadotChainSpec::from_json_bytes(
 		&include_bytes!("../res/polkadot_chainspec.json")[..],
-	)).transpose()
+	).map(|r| Box::new(r) as Box<_>)
 }
