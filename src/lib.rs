@@ -263,6 +263,22 @@ mod tests {
     }
 
     #[test]
+    fn non_overlapping() {
+        wasm_ext().execute_with(|| {
+            ParachainUpgrade::on_initialize(123);
+            assert_ok!(ParachainUpgrade::set_code(
+                RawOrigin::Root.into(),
+                Default::default()
+            ));
+            ParachainUpgrade::on_initialize(234);
+            assert_eq!(
+                ParachainUpgrade::set_code(RawOrigin::Root.into(), Default::default(),),
+                Err(Error::<Test>::OverlappingUpgrades.into()),
+            )
+        })
+    }
+
+    #[test]
     fn set_code_checks_works() {
         let test_data = vec![
             ("test", 1, 2, Ok(())),
