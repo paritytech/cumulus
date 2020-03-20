@@ -62,7 +62,7 @@ decl_module! {
             }
         }
 
-        pub fn upgrade_validation_function(origin, validation_function: ValidationFunction) {
+        pub fn set_code(origin, validation_function: ValidationFunction) {
             // TODO: in the future, we can't rely on a superuser existing
             // on-chain who can just wave their hands and make this happen.
             // Instead, this should hook into the democracy pallet and check
@@ -142,13 +142,15 @@ decl_error! {
 mod tests {
     use super::*;
 
+    use codec::Encode;
     use frame_support::{assert_ok, impl_outer_origin, parameter_types, weights::Weight};
     use sp_core::H256;
     use sp_runtime::{
         testing::Header,
         traits::{BlakeTwo256, IdentityLookup},
-        Perbill,
+        DispatchError, Perbill,
     };
+    use system::RawOrigin;
 
     impl_outer_origin! {
         pub enum Origin for Test {}
@@ -200,6 +202,8 @@ mod tests {
     }
     type TemplateModule = Module<Test>;
 
+    type System = Module<Test>;
+
     // This function basically just builds a genesis storage key/value store according to
     // our desired mockup.
     fn new_test_ext() -> sp_io::TestExternalities {
@@ -213,10 +217,82 @@ mod tests {
     #[should_panic]
     fn requires_root() {
         new_test_ext().execute_with(|| {
-            assert_ok!(TemplateModule::upgrade_validation_function(
+            assert_ok!(TemplateModule::set_code(
                 Origin::signed(1),
                 Default::default()
             ));
         });
     }
+
+    #[test]
+    fn requires_root_2() {
+        new_test_ext().execute_with(|| {
+            System::set_block_number(123);
+            assert_ok!(TemplateModule::set_code(
+                RawOrigin::Root.into(),
+                Default::default()
+            ));
+        });
+    }
+
+
+	#[test]
+	fn set_code_checks_works() {
+		struct CallInWasm(Vec<u8>);
+
+		impl sp_core::traits::CallInWasm for CallInWasm {
+			fn call_in_wasm(
+				&self,
+				_: &[u8],
+				_: &str,
+				_: &[u8],
+				_: &mut dyn sp_externalities::Externalities,
+			) -> Result<Vec<u8>, String> {
+				Ok(self.0.clone())
+			}
+		}
+
+		let test_data = vec![
+			("test", 1, 2, Ok(())),
+			("test", 1, 1, Err(Error::<Test>::SpecOrImplVersionNeedToIncrease)),
+			("test2", 1, 1, Err(Error::<Test>::InvalidSpecName)),
+			("test", 2, 1, Ok(())),
+			("test", 0, 1, Err(Error::<Test>::SpecVersionNotAllowedToDecrease)),
+			("test", 1, 0, Err(Error::<Test>::ImplVersionNotAllowedToDecrease)),
+		];
+
+		for (spec_name, spec_version, impl_version, expected) in test_data.into_iter() {
+			let version = RuntimeVersion {
+				spec_name: spec_name.into(),
+				spec_version,
+				impl_version,
+				..Default::default()
+			};
+			let call_in_wasm = CallInWasm(version.encode());
+
+			let mut ext = new_test_ext();
+			ext.register_extension(sp_core::traits::CallInWasmExt::new(call_in_wasm));
+			ext.execute_with(|| {
+				let res = System::set_code(
+					RawOrigin::Root.into(),
+					vec![1, 2, 3, 4],
+				);
+
+				assert_eq!(expected.map_err(DispatchError::from), res);
+			});
+		}
+	}
+
+	#[test]
+	fn set_code_with_real_wasm_blob() {
+		let executor = substrate_test_runtime_client::new_native_executor();
+		let mut ext = new_test_ext();
+		ext.register_extension(sp_core::traits::CallInWasmExt::new(executor));
+		ext.execute_with(|| {
+			System::set_code(
+				RawOrigin::Root.into(),
+				substrate_test_runtime_client::runtime::WASM_BINARY.to_vec(),
+			).unwrap();
+		});
+	}
 }

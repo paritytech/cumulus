@@ -79,3 +79,15 @@ default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 rev = 'a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8'
 version = '2.0.0-alpha.3'
+
+[dev-dependencies.sp-externalities]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+rev = 'a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8'
+version = "0.8.0-alpha.2"
+
+[dev-dependencies.substrate-test-runtime-client]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+rev = 'a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8'
+version = '2.0.0-alpha.3'
