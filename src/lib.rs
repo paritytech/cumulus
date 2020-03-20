@@ -147,7 +147,7 @@ mod tests {
     use sp_core::H256;
     use sp_runtime::{
         testing::Header,
-        traits::{BlakeTwo256, IdentityLookup},
+        traits::{BlakeTwo256, IdentityLookup, OnInitialize},
         DispatchError, Perbill,
     };
     use system::RawOrigin;
@@ -167,13 +167,13 @@ mod tests {
         pub const MaximumBlockLength: u32 = 2 * 1024;
         pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
         pub const Version: RuntimeVersion = RuntimeVersion {
-			spec_name: sp_version::create_runtime_str!("test"),
-			impl_name: sp_version::create_runtime_str!("system-test"),
-			authoring_version: 1,
-			spec_version: 1,
-			impl_version: 1,
-			apis: sp_version::create_apis_vec!([]),
-		};
+            spec_name: sp_version::create_runtime_str!("test"),
+            impl_name: sp_version::create_runtime_str!("system-test"),
+            authoring_version: 1,
+            spec_version: 1,
+            impl_version: 1,
+            apis: sp_version::create_apis_vec!([]),
+        };
     }
     impl system::Trait for Test {
         type Origin = Origin;
@@ -200,9 +200,8 @@ mod tests {
         type Event = ();
         type Version = Version;
     }
-    type TemplateModule = Module<Test>;
 
-    type System = Module<Test>;
+    type ParachainUpgrade = Module<Test>;
 
     // This function basically just builds a genesis storage key/value store according to
     // our desired mockup.
@@ -213,86 +212,114 @@ mod tests {
             .into()
     }
 
+    struct CallInWasm(Vec<u8>);
+
+    impl sp_core::traits::CallInWasm for CallInWasm {
+        fn call_in_wasm(
+            &self,
+            _: &[u8],
+            _: &str,
+            _: &[u8],
+            _: &mut dyn sp_externalities::Externalities,
+        ) -> Result<Vec<u8>, String> {
+            Ok(self.0.clone())
+        }
+    }
+
+    fn wasm_ext() -> sp_io::TestExternalities {
+        let version = RuntimeVersion {
+            spec_name: "test".into(),
+            spec_version: 1,
+            impl_version: 2,
+            ..Default::default()
+        };
+        let call_in_wasm = CallInWasm(version.encode());
+
+        let mut ext = new_test_ext();
+        ext.register_extension(sp_core::traits::CallInWasmExt::new(call_in_wasm));
+        ext
+    }
+
     #[test]
-    #[should_panic]
     fn requires_root() {
-        new_test_ext().execute_with(|| {
-            assert_ok!(TemplateModule::set_code(
-                Origin::signed(1),
-                Default::default()
-            ));
+        wasm_ext().execute_with(|| {
+            ParachainUpgrade::on_initialize(123);
+            assert_eq!(
+                ParachainUpgrade::set_code(Origin::signed(1), Default::default()),
+                Err(sp_runtime::DispatchError::BadOrigin),
+            );
         });
     }
 
     #[test]
     fn requires_root_2() {
-        new_test_ext().execute_with(|| {
-            System::set_block_number(123);
-            assert_ok!(TemplateModule::set_code(
+        wasm_ext().execute_with(|| {
+            ParachainUpgrade::on_initialize(123);
+            assert_ok!(ParachainUpgrade::set_code(
                 RawOrigin::Root.into(),
                 Default::default()
             ));
         });
     }
 
+    #[test]
+    fn set_code_checks_works() {
+        let test_data = vec![
+            ("test", 1, 2, Ok(())),
+            (
+                "test",
+                1,
+                1,
+                Err(Error::<Test>::SpecOrImplVersionNeedToIncrease),
+            ),
+            ("test2", 1, 1, Err(Error::<Test>::InvalidSpecName)),
+            ("test", 2, 1, Ok(())),
+            (
+                "test",
+                0,
+                1,
+                Err(Error::<Test>::SpecVersionNotAllowedToDecrease),
+            ),
+            (
+                "test",
+                1,
+                0,
+                Err(Error::<Test>::ImplVersionNotAllowedToDecrease),
+            ),
+        ];
 
-	#[test]
-	fn set_code_checks_works() {
-		struct CallInWasm(Vec<u8>);
+        for (spec_name, spec_version, impl_version, expected) in test_data.into_iter() {
+            let version = RuntimeVersion {
+                spec_name: spec_name.into(),
+                spec_version,
+                impl_version,
+                ..Default::default()
+            };
+            let call_in_wasm = CallInWasm(version.encode());
 
-		impl sp_core::traits::CallInWasm for CallInWasm {
-			fn call_in_wasm(
-				&self,
-				_: &[u8],
-				_: &str,
-				_: &[u8],
-				_: &mut dyn sp_externalities::Externalities,
-			) -> Result<Vec<u8>, String> {
-				Ok(self.0.clone())
-			}
-		}
+            let mut ext = new_test_ext();
+            ext.register_extension(sp_core::traits::CallInWasmExt::new(call_in_wasm));
+            ext.execute_with(|| {
+                ParachainUpgrade::on_initialize(123);
+                let res = ParachainUpgrade::set_code(RawOrigin::Root.into(), vec![1, 2, 3, 4]);
 
-		let test_data = vec![
-			("test", 1, 2, Ok(())),
-			("test", 1, 1, Err(Error::<Test>::SpecOrImplVersionNeedToIncrease)),
-			("test2", 1, 1, Err(Error::<Test>::InvalidSpecName)),
-			("test", 2, 1, Ok(())),
-			("test", 0, 1, Err(Error::<Test>::SpecVersionNotAllowedToDecrease)),
-			("test", 1, 0, Err(Error::<Test>::ImplVersionNotAllowedToDecrease)),
-		];
+                assert_eq!(expected.map_err(DispatchError::from), res);
+            });
+        }
+    }
 
-		for (spec_name, spec_version, impl_version, expected) in test_data.into_iter() {
-			let version = RuntimeVersion {
-				spec_name: spec_name.into(),
-				spec_version,
-				impl_version,
-				..Default::default()
-			};
-			let call_in_wasm = CallInWasm(version.encode());
-
-			let mut ext = new_test_ext();
-			ext.register_extension(sp_core::traits::CallInWasmExt::new(call_in_wasm));
-			ext.execute_with(|| {
-				let res = System::set_code(
-					RawOrigin::Root.into(),
-					vec![1, 2, 3, 4],
-				);
-
-				assert_eq!(expected.map_err(DispatchError::from), res);
-			});
-		}
-	}
-
-	#[test]
-	fn set_code_with_real_wasm_blob() {
-		let executor = substrate_test_runtime_client::new_native_executor();
-		let mut ext = new_test_ext();
-		ext.register_extension(sp_core::traits::CallInWasmExt::new(executor));
-		ext.execute_with(|| {
-			System::set_code(
-				RawOrigin::Root.into(),
-				substrate_test_runtime_client::runtime::WASM_BINARY.to_vec(),
-			).unwrap();
-		});
-	}
+    #[test]
+    fn set_code_with_real_wasm_blob() {
+        let executor = substrate_test_runtime_client::new_native_executor();
+        let mut ext = new_test_ext();
+        ext.register_extension(sp_core::traits::CallInWasmExt::new(executor));
+        ext.execute_with(|| {
+            ParachainUpgrade::on_initialize(123);
+            ParachainUpgrade::set_code(
+                RawOrigin::Root.into(),
+                substrate_test_runtime_client::runtime::WASM_BINARY.to_vec(),
+            )
+            .unwrap();
+        });
+    }
 }
