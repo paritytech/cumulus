@@ -89,22 +89,6 @@ decl_error! {
     pub enum Error for Module<T: Trait> {
         /// Attempt to upgrade validation function while existing upgrade pending
         OverlappingUpgrades,
-        /// The name of specification does not match between the current runtime
-        /// and the new runtime.
-        InvalidSpecName,
-        /// The specification version is not allowed to decrease between the current runtime
-        /// and the new runtime.
-        SpecVersionNotAllowedToDecrease,
-        /// The implementation version is not allowed to decrease between the current runtime
-        /// and the new runtime.
-        ImplVersionNotAllowedToDecrease,
-        /// The specification or the implementation version need to increase between the
-        /// current runtime and the new runtime.
-        SpecOrImplVersionNeedToIncrease,
-        /// Failed to extract the runtime version from the new runtime.
-        ///
-        /// Either calling `Core_version` or decoding `RuntimeVersion` failed.
-        FailedToExtractRuntimeVersion,
     }
 }
 
@@ -119,7 +103,7 @@ mod tests {
     use sp_runtime::{
         testing::Header,
         traits::{BlakeTwo256, IdentityLookup, OnInitialize},
-        DispatchError, Perbill,
+        Perbill,
     };
     use system::RawOrigin;
 
@@ -161,7 +145,7 @@ mod tests {
         type MaximumBlockWeight = MaximumBlockWeight;
         type MaximumBlockLength = MaximumBlockLength;
         type AvailableBlockRatio = AvailableBlockRatio;
-        type Version = ();
+        type Version = Version;
         type ModuleToIndex = ();
         type AccountData = ();
         type OnNewAccount = ();
@@ -201,8 +185,8 @@ mod tests {
     fn wasm_ext() -> sp_io::TestExternalities {
         let version = RuntimeVersion {
             spec_name: "test".into(),
-            spec_version: 1,
-            impl_version: 2,
+            spec_version: 2,
+            impl_version: 1,
             ..Default::default()
         };
         let call_in_wasm = CallInWasm(version.encode());
@@ -248,52 +232,6 @@ mod tests {
                 Err(Error::<Test>::OverlappingUpgrades.into()),
             )
         })
-    }
-
-    #[test]
-    fn set_code_checks_works() {
-        let test_data = vec![
-            ("test", 1, 2, Ok(())),
-            (
-                "test",
-                1,
-                1,
-                Err(Error::<Test>::SpecOrImplVersionNeedToIncrease),
-            ),
-            ("test2", 1, 1, Err(Error::<Test>::InvalidSpecName)),
-            ("test", 2, 1, Ok(())),
-            (
-                "test",
-                0,
-                1,
-                Err(Error::<Test>::SpecVersionNotAllowedToDecrease),
-            ),
-            (
-                "test",
-                1,
-                0,
-                Err(Error::<Test>::ImplVersionNotAllowedToDecrease),
-            ),
-        ];
-
-        for (spec_name, spec_version, impl_version, expected) in test_data.into_iter() {
-            let version = RuntimeVersion {
-                spec_name: spec_name.into(),
-                spec_version,
-                impl_version,
-                ..Default::default()
-            };
-            let call_in_wasm = CallInWasm(version.encode());
-
-            let mut ext = new_test_ext();
-            ext.register_extension(sp_core::traits::CallInWasmExt::new(call_in_wasm));
-            ext.execute_with(|| {
-                ParachainUpgrade::on_initialize(123);
-                let res = ParachainUpgrade::set_code(RawOrigin::Root.into(), vec![1, 2, 3, 4]);
-
-                assert_eq!(expected.map_err(DispatchError::from), res);
-            });
-        }
     }
 
     #[test]
