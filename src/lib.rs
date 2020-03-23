@@ -10,6 +10,7 @@ use sp_version::RuntimeVersion;
 use system::ensure_root;
 
 pub type ValidationFunction = Vec<u8>;
+type System<T> = system::Module<T>;
 
 parameter_types! {
     // How many blocks must pass between scheduling a validation function
@@ -36,10 +37,6 @@ decl_storage! {
         // we need to store the new validation function for the span between
         // setting it and applying it.
         PendingValidationFunction get(fn new_validation_function): (T::BlockNumber, ValidationFunction);
-
-        // we store the current block number on each block in order to compare to the
-        // pending block number
-        CurrentBlockNumber get(fn current_block_number): T::BlockNumber;
     }
 }
 
@@ -51,11 +48,9 @@ decl_module! {
         fn deposit_event() = default;
 
         fn on_initialize(n: T::BlockNumber) {
-            CurrentBlockNumber::<T>::put(n);
-
-            if PendingValidationFunction::<T>::exists() {
-                let (apply_block, validation_function) = PendingValidationFunction::<T>::take();
+            if let Ok((apply_block, validation_function)) = PendingValidationFunction::<T>::try_get() {
                 if n >= apply_block {
+                    PendingValidationFunction::<T>::kill();
                     storage::unhashed::put_raw(well_known_keys::CODE, &validation_function);
                     Self::deposit_event(RawEvent::ValidationFunctionApplied(n));
                 }
@@ -71,7 +66,6 @@ decl_module! {
             // the moment the vote passes.
             ensure_root(origin)?;
             ensure!(!PendingValidationFunction::<T>::exists(), Error::<T>::OverlappingUpgrades);
-            ensure!(CurrentBlockNumber::<T>::exists(), Error::<T>::MissingCurrentBlockNumber);
 
             let current_version = <T as Trait>::Version::get();
             let new_version = sp_io::misc::runtime_version(&validation_function)
@@ -92,7 +86,7 @@ decl_module! {
                 }
             }
 
-            let apply_block = CurrentBlockNumber::<T>::get() + ValidationUpgradeDelayBlocks::get().into();
+            let apply_block = System::<T>::block_number() + ValidationUpgradeDelayBlocks::get().into();
 
             PendingValidationFunction::<T>::put((apply_block, validation_function));
             Self::deposit_event(RawEvent::ValidationFunctionStored(apply_block));
@@ -116,8 +110,6 @@ decl_error! {
     pub enum Error for Module<T: Trait> {
         /// Attempt to upgrade validation function while existing upgrade pending
         OverlappingUpgrades,
-        /// Current block number was not stored
-        MissingCurrentBlockNumber,
         /// The name of specification does not match between the current runtime
         /// and the new runtime.
         InvalidSpecName,
