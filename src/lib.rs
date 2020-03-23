@@ -1,13 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::Decode;
 use frame_support::{
     decl_error, decl_event, decl_module, decl_storage, ensure, parameter_types, storage,
     traits::Get,
 };
 use sp_core::storage::well_known_keys;
 use sp_version::RuntimeVersion;
-use system::ensure_root;
 
 pub type ValidationFunction = Vec<u8>;
 type System<T> = system::Module<T>;
@@ -64,27 +62,8 @@ decl_module! {
             // that a validation function upgrade has been approved; potentially,
             // it should even trigger the validation function upgrade automatically
             // the moment the vote passes.
-            ensure_root(origin)?;
+            System::<T>::can_set_code(origin, &validation_function)?;
             ensure!(!PendingValidationFunction::<T>::exists(), Error::<T>::OverlappingUpgrades);
-
-            let current_version = <T as Trait>::Version::get();
-            let new_version = sp_io::misc::runtime_version(&validation_function)
-                .and_then(|v| RuntimeVersion::decode(&mut &v[..]).ok())
-                .ok_or_else(|| Error::<T>::FailedToExtractRuntimeVersion)?;
-
-            if new_version.spec_name != current_version.spec_name {
-                Err(Error::<T>::InvalidSpecName)?
-            }
-
-            if new_version.spec_version < current_version.spec_version {
-                Err(Error::<T>::SpecVersionNotAllowedToDecrease)?
-            } else if new_version.spec_version == current_version.spec_version {
-                if new_version.impl_version < current_version.impl_version {
-                    Err(Error::<T>::ImplVersionNotAllowedToDecrease)?
-                } else if new_version.impl_version == current_version.impl_version {
-                    Err(Error::<T>::SpecOrImplVersionNeedToIncrease)?
-                }
-            }
 
             let apply_block = System::<T>::block_number() + ValidationUpgradeDelayBlocks::get().into();
 
@@ -209,10 +188,11 @@ mod tests {
     impl sp_core::traits::CallInWasm for CallInWasm {
         fn call_in_wasm(
             &self,
-            _: &[u8],
-            _: &str,
-            _: &[u8],
-            _: &mut dyn sp_externalities::Externalities,
+            _wasm_code: &[u8],
+            _code_hash: Option<Vec<u8>>,
+            _method: &str,
+            _call_data: &[u8],
+            _ext: &mut dyn sp_externalities::Externalities,
         ) -> Result<Vec<u8>, String> {
             Ok(self.0.clone())
         }

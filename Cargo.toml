@@ -34,60 +34,60 @@ version = '1.0.0'
 [dependencies.sp-core]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-rev = 'a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8'
-version = '2.0.0-alpha.3'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'
 
 [dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-rev = 'a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8'
-version = '2.0.0-alpha.3'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'
 
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-rev = 'a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8'
-version = '2.0.0-alpha.3'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'
 
 [dependencies.pallet-balances]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-rev = 'a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8'
-version = '2.0.0-alpha.3'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'
 
 [dependencies.system]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'frame-system'
-rev = 'a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8'
-version = '2.0.0-alpha.3'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'
 
 [dependencies.sp-io]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-rev = 'a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8'
-version = '2.0.0-alpha.3'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'
 
 [dependencies.sp-version]
  default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-rev = 'a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8'
-version = '2.0.0-alpha.3'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'
 
 [dev-dependencies.sp-core]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-rev = 'a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8'
-version = '2.0.0-alpha.3'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'
 
 [dev-dependencies.sp-externalities]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-rev = 'a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
 version = "0.8.0-alpha.2"
 
 [dev-dependencies.substrate-test-runtime-client]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-rev = 'a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8'
-version = '2.0.0-alpha.3'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'

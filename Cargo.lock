@@ -535,19 +535,6 @@ dependencies = [
 
 [[package]]
 name = "curve25519-dalek"
-version = "1.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b7dcd30ba50cdf88b55b033456138b7c0ac4afdc436d82e1b79f370f24cc66d"
-dependencies = [
- "byteorder 1.3.4",
- "clear_on_drop",
- "digest",
- "rand_core 0.3.1",
- "subtle 2.2.2",
-]
-
-[[package]]
-name = "curve25519-dalek"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "26778518a7f6cffa1d25a44b602b62b979bd88adb9e99ffec546998cf3404839"
@@ -556,7 +543,7 @@ dependencies = [
  "digest",
  "rand_core 0.5.1",
  "subtle 2.2.2",
- "zeroize 1.1.0",
+ "zeroize",
 ]
 
 [[package]]
@@ -602,7 +589,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "978710b352437433c97b2bff193f2fb1dfd58a093f863dd95e225a19baa599a2"
 dependencies = [
  "clear_on_drop",
- "curve25519-dalek 2.0.0",
+ "curve25519-dalek",
  "rand 0.7.3",
  "sha2",
 ]
@@ -630,27 +617,27 @@ dependencies = [
 
 [[package]]
 name = "ethbloom"
-version = "0.8.1"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32cfe1c169414b709cf28aa30c74060bdb830a03a8ba473314d079ac79d80a5f"
+checksum = "9e7abcddbdd5db30aeed4deb586adc4824e6c247e2f7238d1187f752893f096b"
 dependencies = [
  "crunchy",
  "fixed-hash",
  "impl-rlp",
- "impl-serde 0.2.3",
- "tiny-keccak 1.5.0",
+ "impl-serde 0.3.0",
+ "tiny-keccak",
 ]
 
 [[package]]
 name = "ethereum-types"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba744248e3553a393143d5ebb68939fc3a4ec0c22a269682535f5ffe7fed728c"
+checksum = "964c23cdee0ca07d5be2a628b46d5c11a2134ce554a8c16d8dbc2db647e4fd4d"
 dependencies = [
  "ethbloom",
  "fixed-hash",
  "impl-rlp",
- "impl-serde 0.2.3",
+ "impl-serde 0.3.0",
  "primitive-types",
  "uint",
 ]
@@ -685,12 +672,11 @@ checksum = "e88a8acf291dafb59c2d96e8f59828f3838bb1a70398823ade51a84de6a6deed"
 
 [[package]]
 name = "fixed-hash"
-version = "0.5.2"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3367952ceb191f4ab95dd5685dc163ac539e36202f9fcfd0cb22f9f9c542fefc"
+checksum = "32529fc42e86ec06e5047092082aab9ad459b070c5d2a76b14f4f5ce70bf2e84"
 dependencies = [
  "byteorder 1.3.4",
- "libc",
  "rand 0.7.3",
  "rustc-hex",
  "static_assertions",
@@ -723,8 +709,8 @@ checksum = "2fad85553e09a6f881f739c29f0b00b0f01357c743266d478b68951ce23285f3"
 
 [[package]]
 name = "frame-benchmarking"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -738,22 +724,21 @@ dependencies = [
 
 [[package]]
 name = "frame-executive"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "frame-support",
  "frame-system",
  "parity-scale-codec",
  "serde",
- "sp-io",
  "sp-runtime",
  "sp-std",
 ]
 
 [[package]]
 name = "frame-metadata"
-version = "11.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "11.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "parity-scale-codec",
  "serde",
@@ -763,8 +748,8 @@ dependencies = [
 
 [[package]]
 name = "frame-support"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "bitmask",
  "frame-metadata",
@@ -787,8 +772,8 @@ dependencies = [
 
 [[package]]
 name = "frame-support-procedural"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "frame-support-procedural-tools",
  "proc-macro2",
@@ -798,8 +783,8 @@ dependencies = [
 
 [[package]]
 name = "frame-support-procedural-tools"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "frame-support-procedural-tools-derive",
  "proc-macro-crate",
@@ -810,8 +795,8 @@ dependencies = [
 
 [[package]]
 name = "frame-support-procedural-tools-derive"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -820,8 +805,8 @@ dependencies = [
 
 [[package]]
 name = "frame-system"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "frame-support",
  "impl-trait-for-tuples",
@@ -836,8 +821,8 @@ dependencies = [
 
 [[package]]
 name = "frame-system-rpc-runtime-api"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -1350,23 +1335,22 @@ dependencies = [
 
 [[package]]
 name = "kvdb"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03080afe6f42cd996da9f568d6add5d7fb5ee2ea7fb7802d2d2cbd836958fd87"
+checksum = "cad096c6849b2ef027fabe35c4aed356d0e3d3f586d0a8361e5e17f1e50a7ce5"
 dependencies = [
- "parity-bytes",
- "parity-util-mem",
+ "parity-util-mem 0.6.0",
  "smallvec 1.2.0",
 ]
 
 [[package]]
 name = "kvdb-memorydb"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9355274e5a9e0a7e8ef43916950eae3949024de2a8dffe4d5a6c13974a37c8e"
+checksum = "4aa954d12cfac958822dfd77aab34f3eec71f103b918c4ab79ab59a36ee594ea"
 dependencies = [
  "kvdb",
- "parity-util-mem",
+ "parity-util-mem 0.6.0",
  "parking_lot 0.10.0",
 ]
 
@@ -1450,7 +1434,7 @@ dependencies = [
  "thiserror",
  "unsigned-varint",
  "void",
- "zeroize 1.1.0",
+ "zeroize",
 ]
 
 [[package]]
@@ -1614,7 +1598,7 @@ version = "0.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b15a8a3d71f898beb6f854c8aae27aa1d198e0d1f2e49412261c2d90ef39675a"
 dependencies = [
- "curve25519-dalek 2.0.0",
+ "curve25519-dalek",
  "futures 0.3.4",
  "lazy_static",
  "libp2p-core",
@@ -1626,7 +1610,7 @@ dependencies = [
  "snow",
  "static_assertions",
  "x25519-dalek",
- "zeroize 1.1.0",
+ "zeroize",
 ]
 
 [[package]]
@@ -1892,7 +1876,7 @@ dependencies = [
  "ahash",
  "hash-db",
  "hashbrown",
- "parity-util-mem",
+ "parity-util-mem 0.5.2",
 ]
 
 [[package]]
@@ -1903,14 +1887,14 @@ checksum = "71d96e3f3c0b6325d8ccd83c33b28acb183edcb6c67938ba104ec546854b0882"
 
 [[package]]
 name = "merlin"
-version = "1.3.0"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b0942b357c1b4d0dc43ba724674ec89c3218e6ca2b3e8269e7cb53bcecd2f6e"
+checksum = "c6feca46f4fa3443a01769d768727f10c10a20fdb65e52dc16a81f0c8269bb78"
 dependencies = [
  "byteorder 1.3.4",
  "keccak",
- "rand_core 0.4.2",
- "zeroize 1.1.0",
+ "rand_core 0.5.1",
+ "zeroize",
 ]
 
 [[package]]
@@ -2076,8 +2060,8 @@ checksum = "2839e79665f131bdb5782e51f2c6c9599c133c6098982a54c794358bf432529c"
 
 [[package]]
 name = "pallet-babe"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -2097,8 +2081,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-balances"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -2112,8 +2096,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-session"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -2130,8 +2114,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-timestamp"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -2161,12 +2145,6 @@ dependencies = [
  "sp-version",
  "substrate-test-runtime-client",
 ]
-
-[[package]]
-name = "parity-bytes"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16b56e3a2420138bdb970f84dfb9c774aea80fa0e7371549eedec0d80c209c67"
 
 [[package]]
 name = "parity-multiaddr"
@@ -2237,6 +2215,19 @@ name = "parity-util-mem"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9344bc978467339b9ae688f9dcf279d1aaa0ccfc88e9a780c729b765a82d57d5"
+dependencies = [
+ "cfg-if",
+ "impl-trait-for-tuples",
+ "parity-util-mem-derive",
+ "parking_lot 0.10.0",
+ "winapi 0.3.8",
+]
+
+[[package]]
+name = "parity-util-mem"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e42755f26e5ea21a6a819d9e63cbd70713e9867a2b767ec2cc65ca7659532c5"
 dependencies = [
  "cfg-if",
  "ethereum-types",
@@ -2411,9 +2402,9 @@ checksum = "74490b50b9fbe561ac330df47c08f3f33073d2d00c150f719147d7c54522fa1b"
 
 [[package]]
 name = "primitive-types"
-version = "0.6.2"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4336f4f5d5524fa60bcbd6fe626f9223d8142a50e7053e979acdf0da41ab975"
+checksum = "e5e4b9943a2da369aec5e96f7c10ebc74fcf434d39590d974b0a3460e6f67fbb"
 dependencies = [
  "fixed-hash",
  "impl-codec",
@@ -2579,44 +2570,15 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.6.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d71dacdc3c88c1fde3885a3be3fbab9f35724e6ce99467f7d9c5026132184ca"
-dependencies = [
- "autocfg 0.1.7",
- "libc",
- "rand_chacha 0.1.1",
- "rand_core 0.4.2",
- "rand_hc 0.1.0",
- "rand_isaac",
- "rand_jitter",
- "rand_os",
- "rand_pcg",
- "rand_xorshift",
- "winapi 0.3.8",
-]
-
-[[package]]
-name = "rand"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a6b1679d49b24bbfe0c803429aa1874472f50d9b363131f0e89fc356b544d03"
 dependencies = [
  "getrandom",
  "libc",
- "rand_chacha 0.2.2",
+ "rand_chacha",
  "rand_core 0.5.1",
- "rand_hc 0.2.0",
-]
-
-[[package]]
-name = "rand_chacha"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "556d3a1ca6600bfcbab7c7c91ccb085ac7fbbcd70e008a98742e7847f4f7bcef"
-dependencies = [
- "autocfg 0.1.7",
- "rand_core 0.3.1",
+ "rand_hc",
 ]
 
 [[package]]
@@ -2655,73 +2617,11 @@ dependencies = [
 
 [[package]]
 name = "rand_hc"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b40677c7be09ae76218dc623efbf7b18e34bced3f38883af07bb75630a21bc4"
-dependencies = [
- "rand_core 0.3.1",
-]
-
-[[package]]
-name = "rand_hc"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ca3129af7b92a17112d59ad498c6f81eaf463253766b90396d39ea7a39d6613c"
 dependencies = [
  "rand_core 0.5.1",
-]
-
-[[package]]
-name = "rand_isaac"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ded997c9d5f13925be2a6fd7e66bf1872597f759fd9dd93513dd7e92e5a5ee08"
-dependencies = [
- "rand_core 0.3.1",
-]
-
-[[package]]
-name = "rand_jitter"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1166d5c91dc97b88d1decc3285bb0a99ed84b05cfd0bc2341bdf2d43fc41e39b"
-dependencies = [
- "libc",
- "rand_core 0.4.2",
- "winapi 0.3.8",
-]
-
-[[package]]
-name = "rand_os"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b75f676a1e053fc562eafbb47838d67c84801e38fc1ba459e8f180deabd5071"
-dependencies = [
- "cloudabi",
- "fuchsia-cprng",
- "libc",
- "rand_core 0.4.2",
- "rdrand",
- "winapi 0.3.8",
-]
-
-[[package]]
-name = "rand_pcg"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "abf9b09b01790cfe0364f52bf32995ea3c39f4d2dd011eac241d2914146d0b44"
-dependencies = [
- "autocfg 0.1.7",
- "rand_core 0.4.2",
-]
-
-[[package]]
-name = "rand_xorshift"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cbf7e9e623549b0e21f6e97cf8ecf247c1a8fd2e8a992ae265314300b2455d5c"
-dependencies = [
- "rand_core 0.3.1",
 ]
 
 [[package]]
@@ -2869,8 +2769,8 @@ dependencies = [
 
 [[package]]
 name = "sc-block-builder"
-version = "0.8.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "0.8.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "parity-scale-codec",
  "sc-client-api",
@@ -2885,8 +2785,8 @@ dependencies = [
 
 [[package]]
 name = "sc-client"
-version = "0.8.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "0.8.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "derive_more",
  "fnv",
@@ -2919,8 +2819,8 @@ dependencies = [
 
 [[package]]
 name = "sc-client-api"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "derive_more",
  "fnv",
@@ -2951,8 +2851,8 @@ dependencies = [
 
 [[package]]
 name = "sc-client-db"
-version = "0.8.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "0.8.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "hash-db",
  "kvdb",
@@ -2960,7 +2860,7 @@ dependencies = [
  "linked-hash-map",
  "log",
  "parity-scale-codec",
- "parity-util-mem",
+ "parity-util-mem 0.6.0",
  "parking_lot 0.10.0",
  "rand 0.7.3",
  "sc-client",
@@ -2978,8 +2878,8 @@ dependencies = [
 
 [[package]]
 name = "sc-executor"
-version = "0.8.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "0.8.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "derive_more",
  "lazy_static",
@@ -3004,8 +2904,8 @@ dependencies = [
 
 [[package]]
 name = "sc-executor-common"
-version = "0.8.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "0.8.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "derive_more",
  "log",
@@ -3020,8 +2920,8 @@ dependencies = [
 
 [[package]]
 name = "sc-executor-wasmi"
-version = "0.8.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "0.8.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "log",
  "parity-scale-codec",
@@ -3036,12 +2936,12 @@ dependencies = [
 
 [[package]]
 name = "sc-state-db"
-version = "0.8.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "0.8.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "log",
  "parity-scale-codec",
- "parity-util-mem",
+ "parity-util-mem 0.6.0",
  "parity-util-mem-derive",
  "parking_lot 0.10.0",
  "sc-client-api",
@@ -3050,8 +2950,8 @@ dependencies = [
 
 [[package]]
 name = "sc-telemetry"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "bytes 0.5.4",
  "futures 0.3.4",
@@ -3072,19 +2972,20 @@ dependencies = [
 
 [[package]]
 name = "schnorrkel"
-version = "0.8.5"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eacd8381b3c37840c9c9f40472af529e49975bdcbc24f83c31059fd6539023d3"
+checksum = "021b403afe70d81eea68f6ea12f6b3c9588e5d536a94c3bf80f15e7faa267862"
 dependencies = [
- "curve25519-dalek 1.2.3",
- "failure",
+ "arrayref",
+ "arrayvec 0.5.1",
+ "curve25519-dalek",
+ "getrandom",
  "merlin",
- "rand 0.6.5",
- "rand_core 0.4.2",
- "rand_os",
+ "rand 0.7.3",
+ "rand_core 0.5.1",
  "sha2",
  "subtle 2.2.2",
- "zeroize 0.9.3",
+ "zeroize",
 ]
 
 [[package]]
@@ -3292,8 +3193,8 @@ dependencies = [
 
 [[package]]
 name = "sp-allocator"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "derive_more",
  "log",
@@ -3304,8 +3205,8 @@ dependencies = [
 
 [[package]]
 name = "sp-api"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "hash-db",
  "parity-scale-codec",
@@ -3319,8 +3220,8 @@ dependencies = [
 
 [[package]]
 name = "sp-api-proc-macro"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "blake2-rfc",
  "proc-macro-crate",
@@ -3331,8 +3232,8 @@ dependencies = [
 
 [[package]]
 name = "sp-application-crypto"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "parity-scale-codec",
  "serde",
@@ -3343,8 +3244,8 @@ dependencies = [
 
 [[package]]
 name = "sp-arithmetic"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "integer-sqrt",
  "num-traits",
@@ -3356,8 +3257,8 @@ dependencies = [
 
 [[package]]
 name = "sp-block-builder"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -3368,8 +3269,8 @@ dependencies = [
 
 [[package]]
 name = "sp-blockchain"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "derive_more",
  "log",
@@ -3384,8 +3285,8 @@ dependencies = [
 
 [[package]]
 name = "sp-consensus"
-version = "0.8.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "0.8.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "derive_more",
  "futures 0.3.4",
@@ -3406,8 +3307,8 @@ dependencies = [
 
 [[package]]
 name = "sp-consensus-aura"
-version = "0.8.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "0.8.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -3420,8 +3321,8 @@ dependencies = [
 
 [[package]]
 name = "sp-consensus-babe"
-version = "0.8.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "0.8.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "parity-scale-codec",
  "schnorrkel",
@@ -3436,13 +3337,14 @@ dependencies = [
 
 [[package]]
 name = "sp-core"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "base58",
  "blake2-rfc",
  "byteorder 1.3.4",
  "ed25519-dalek",
+ "futures 0.3.4",
  "hash-db",
  "hash256-std-hasher",
  "hex",
@@ -3452,7 +3354,7 @@ dependencies = [
  "log",
  "num-traits",
  "parity-scale-codec",
- "parity-util-mem",
+ "parity-util-mem 0.6.0",
  "parking_lot 0.10.0",
  "primitive-types",
  "rand 0.7.3",
@@ -3468,16 +3370,16 @@ dependencies = [
  "sp-storage",
  "substrate-bip39",
  "tiny-bip39",
- "tiny-keccak 2.0.1",
+ "tiny-keccak",
  "twox-hash",
  "wasmi",
- "zeroize 1.1.0",
+ "zeroize",
 ]
 
 [[package]]
 name = "sp-debug-derive"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3486,8 +3388,8 @@ dependencies = [
 
 [[package]]
 name = "sp-externalities"
-version = "0.8.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "0.8.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "environmental",
  "sp-std",
@@ -3496,8 +3398,8 @@ dependencies = [
 
 [[package]]
 name = "sp-inherents"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "derive_more",
  "parity-scale-codec",
@@ -3508,8 +3410,8 @@ dependencies = [
 
 [[package]]
 name = "sp-io"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "hash-db",
  "libsecp256k1",
@@ -3526,8 +3428,8 @@ dependencies = [
 
 [[package]]
 name = "sp-keyring"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "lazy_static",
  "sp-core",
@@ -3537,8 +3439,8 @@ dependencies = [
 
 [[package]]
 name = "sp-offchain"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "sp-api",
  "sp-runtime",
@@ -3546,8 +3448,8 @@ dependencies = [
 
 [[package]]
 name = "sp-panic-handler"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "backtrace",
  "log",
@@ -3555,14 +3457,14 @@ dependencies = [
 
 [[package]]
 name = "sp-runtime"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "hash256-std-hasher",
  "impl-trait-for-tuples",
  "log",
  "parity-scale-codec",
- "parity-util-mem",
+ "parity-util-mem 0.6.0",
  "paste",
  "rand 0.7.3",
  "serde",
@@ -3576,8 +3478,8 @@ dependencies = [
 
 [[package]]
 name = "sp-runtime-interface"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "parity-scale-codec",
  "primitive-types",
@@ -3590,8 +3492,8 @@ dependencies = [
 
 [[package]]
 name = "sp-runtime-interface-proc-macro"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "Inflector",
  "proc-macro-crate",
@@ -3602,8 +3504,8 @@ dependencies = [
 
 [[package]]
 name = "sp-serializer"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "serde",
  "serde_json",
@@ -3611,8 +3513,8 @@ dependencies = [
 
 [[package]]
 name = "sp-session"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "sp-api",
  "sp-core",
@@ -3622,8 +3524,8 @@ dependencies = [
 
 [[package]]
 name = "sp-staking"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "parity-scale-codec",
  "sp-runtime",
@@ -3632,8 +3534,8 @@ dependencies = [
 
 [[package]]
 name = "sp-state-machine"
-version = "0.8.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "0.8.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "hash-db",
  "log",
@@ -3651,13 +3553,13 @@ dependencies = [
 
 [[package]]
 name = "sp-std"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 
 [[package]]
 name = "sp-storage"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "impl-serde 0.2.3",
  "serde",
@@ -3667,8 +3569,8 @@ dependencies = [
 
 [[package]]
 name = "sp-timestamp"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "impl-trait-for-tuples",
  "parity-scale-codec",
@@ -3681,8 +3583,8 @@ dependencies = [
 
 [[package]]
 name = "sp-transaction-pool"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "derive_more",
  "futures 0.3.4",
@@ -3695,8 +3597,8 @@ dependencies = [
 
 [[package]]
 name = "sp-trie"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "hash-db",
  "memory-db",
@@ -3709,8 +3611,8 @@ dependencies = [
 
 [[package]]
 name = "sp-version"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "impl-serde 0.2.3",
  "parity-scale-codec",
@@ -3721,8 +3623,8 @@ dependencies = [
 
 [[package]]
 name = "sp-wasm-interface"
-version = "2.0.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "impl-trait-for-tuples",
  "parity-scale-codec",
@@ -3774,9 +3676,9 @@ dependencies = [
 
 [[package]]
 name = "substrate-bip39"
-version = "0.3.1"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3be511be555a3633e71739a79e4ddff6a6aaa6579fa6114182a51d72c3eb93c5"
+checksum = "c004e8166d6e0aa3a9d5fa673e5b7098ff25f930de1013a21341988151e681bb"
 dependencies = [
  "hmac",
  "pbkdf2",
@@ -3786,8 +3688,8 @@ dependencies = [
 
 [[package]]
 name = "substrate-prometheus-endpoint"
-version = "0.8.0-alpha.3"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+version = "0.8.0-alpha.5"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "async-std",
  "derive_more",
@@ -3801,7 +3703,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-client"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "futures 0.3.4",
  "hash-db",
@@ -3821,7 +3723,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-runtime"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "cfg-if",
  "frame-executive",
@@ -3833,7 +3735,7 @@ dependencies = [
  "pallet-babe",
  "pallet-timestamp",
  "parity-scale-codec",
- "parity-util-mem",
+ "parity-util-mem 0.6.0",
  "sc-client",
  "serde",
  "sp-api",
@@ -3860,7 +3762,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-runtime-client"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 dependencies = [
  "futures 0.3.4",
  "parity-scale-codec",
@@ -3878,7 +3780,7 @@ dependencies = [
 [[package]]
 name = "substrate-wasm-builder-runner"
 version = "1.0.5"
-source = "git+https://github.com/paritytech/substrate.git?rev=a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8#a439a7aa5a9a3df2a42d9b25ea04288d3a0866e8"
+source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
 
 [[package]]
 name = "subtle"
@@ -3989,15 +3891,6 @@ dependencies = [
  "rustc-hash",
  "sha2",
  "unicode-normalization",
-]
-
-[[package]]
-name = "tiny-keccak"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d8a021c69bb74a44ccedb824a046447e2c84a01df9e5c20779750acb38e11b2"
-dependencies = [
- "crunchy",
 ]
 
 [[package]]
@@ -4444,9 +4337,9 @@ version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "637ff90c9540fa3073bb577e65033069e4bae7c79d49d74aa3ffdf5342a53217"
 dependencies = [
- "curve25519-dalek 2.0.0",
+ "curve25519-dalek",
  "rand_core 0.5.1",
- "zeroize 1.1.0",
+ "zeroize",
 ]
 
 [[package]]
@@ -4463,12 +4356,6 @@ dependencies = [
  "rand 0.7.3",
  "thiserror",
 ]
-
-[[package]]
-name = "zeroize"
-version = "0.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45af6a010d13e4cf5b54c94ba5a2b2eba5596b9e46bf5875612d332a1f2b3f86"
 
 [[package]]
 name = "zeroize"
