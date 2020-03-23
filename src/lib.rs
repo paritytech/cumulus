@@ -105,7 +105,7 @@ mod tests {
         traits::{BlakeTwo256, IdentityLookup, OnInitialize},
         Perbill,
     };
-    use system::RawOrigin;
+    use system::{EventRecord, Phase, RawOrigin};
 
     impl_outer_origin! {
         pub enum Origin for Test {}
@@ -215,6 +215,37 @@ mod tests {
                 RawOrigin::Root.into(),
                 Default::default()
             ));
+        });
+    }
+
+    #[test]
+    fn events() {
+        wasm_ext().execute_with(|| {
+            ParachainUpgrade::on_initialize(123);
+            assert_ok!(ParachainUpgrade::set_code(
+                RawOrigin::Root.into(),
+                Default::default()
+            ));
+            ParachainUpgrade::on_initialize(1234);
+
+            let events = dbg!(System::<Test>::events());
+            assert_eq!(
+                events,
+                vec![
+                    // should be ValidationFunctionStored(1123)
+                    EventRecord {
+                        phase: Phase::Initialization,
+                        event: (),
+                        topics: Vec::new(),
+                    },
+                    // should be ValidationFunctionApplied(1234)
+                    EventRecord {
+                        phase: Phase::Initialization,
+                        event: (),
+                        topics: Vec::new(),
+                    },
+                ],
+            );
         });
     }
 
