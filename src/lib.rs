@@ -98,17 +98,30 @@ mod tests {
     use super::*;
 
     use codec::Encode;
-    use frame_support::{assert_ok, impl_outer_origin, parameter_types, weights::Weight};
+    use frame_support::{
+        assert_ok, impl_outer_event, impl_outer_origin, parameter_types, weights::Weight,
+    };
     use sp_core::H256;
     use sp_runtime::{
         testing::Header,
         traits::{BlakeTwo256, IdentityLookup, OnInitialize},
         Perbill,
     };
-    use system::{EventRecord, InitKind, Phase, RawOrigin};
+    use system::{InitKind, RawOrigin};
 
     impl_outer_origin! {
         pub enum Origin for Test {}
+    }
+
+    mod parachain_upgrade {
+        pub use crate::Event;
+    }
+
+    impl_outer_event! {
+        pub enum TestEvent for Test {
+            system<T>,
+            parachain_upgrade<T>,
+        }
     }
 
     // For testing the pallet, we construct most of a mock runtime. This means
@@ -140,7 +153,7 @@ mod tests {
         type AccountId = u64;
         type Lookup = IdentityLookup<Self::AccountId>;
         type Header = Header;
-        type Event = ();
+        type Event = TestEvent;
         type BlockHashCount = BlockHashCount;
         type MaximumBlockWeight = MaximumBlockWeight;
         type MaximumBlockLength = MaximumBlockLength;
@@ -152,7 +165,7 @@ mod tests {
         type OnKilledAccount = ();
     }
     impl Trait for Test {
-        type Event = Event<Test>;
+        type Event = TestEvent;
         type Version = Version;
     }
 
@@ -234,16 +247,11 @@ mod tests {
                 Default::default()
             ));
             System::<Test>::finalize();
+            let events = dbg!(System::<Test>::events());
+            assert_eq!(events.len(), 1);
             assert_eq!(
-                dbg!(System::<Test>::events()),
-                vec![
-                    // should be ValidationFunctionStored(1123)
-                    EventRecord {
-                        phase: Phase::Initialization,
-                        event: (),
-                        topics: Vec::new(),
-                    },
-                ],
+                events[0].event,
+                TestEvent::parachain_upgrade(RawEvent::ValidationFunctionStored(1123))
             );
 
             System::<Test>::initialize(
@@ -255,16 +263,11 @@ mod tests {
             );
             ParachainUpgrade::on_initialize(1234);
             System::<Test>::finalize();
+            let events = dbg!(System::<Test>::events());
+            assert_eq!(events.len(), 1);
             assert_eq!(
-                dbg!(System::<Test>::events()),
-                vec![
-                    // should be ValidationFunctionApplied(1234)
-                    EventRecord {
-                        phase: Phase::Initialization,
-                        event: (),
-                        topics: Vec::new(),
-                    },
-                ],
+                events[0].event,
+                TestEvent::parachain_upgrade(RawEvent::ValidationFunctionApplied(1234))
             );
         });
     }
