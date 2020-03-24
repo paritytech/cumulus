@@ -172,7 +172,6 @@ impl frame_system::Trait for Runtime {
 	type AccountData = pallet_balances::AccountData<Balance>;
 	type OnNewAccount = ();
 	type OnKilledAccount = Balances;
-	type MigrateAccount = ();
 }
 
 parameter_types! {
