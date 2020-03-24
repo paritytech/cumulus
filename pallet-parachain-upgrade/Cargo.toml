@@ -1,0 +1,93 @@
+[package]
+name = "parachain-upgrade-pallet"
+version = "2.0.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2018"
+license = "GPL-3.0"
+homepage = "https://substrate.dev"
+description = "pallet to manage parachain upgrades"
+
+[features]
+default = ['std']
+std = [
+    'serde',
+    'codec/std',
+    'frame-support/std',
+    'pallet-balances/std',
+    'sp-core/std',
+    'sp-runtime/std',
+    'sp-io/std',
+    'system/std',
+]
+
+[dependencies.serde]
+features = ['derive']
+optional = true
+version = '1.0.101'
+
+[dependencies.codec]
+default-features = false
+features = ['derive']
+package = 'parity-scale-codec'
+version = '1.0.0'
+
+[dependencies.sp-core]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'
+
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'
+
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'
+
+[dependencies.pallet-balances]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'
+
+[dependencies.system]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'frame-system'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'
+
+[dependencies.sp-io]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'
+
+[dependencies.sp-version]
+ default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'
+
+[dev-dependencies.sp-core]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'
+
+[dev-dependencies.sp-externalities]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = "0.8.0-alpha.2"
+
+[dev-dependencies.substrate-test-runtime-client]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'
