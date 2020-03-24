@@ -105,7 +105,7 @@ mod tests {
         traits::{BlakeTwo256, IdentityLookup, OnInitialize},
         Perbill,
     };
-    use system::{EventRecord, Phase, RawOrigin};
+    use system::{EventRecord, InitKind, Phase, RawOrigin};
 
     impl_outer_origin! {
         pub enum Origin for Test {}
@@ -152,7 +152,7 @@ mod tests {
         type OnKilledAccount = ();
     }
     impl Trait for Test {
-        type Event = ();
+        type Event = Event<Test>;
         type Version = Version;
     }
 
@@ -221,16 +221,21 @@ mod tests {
     #[test]
     fn events() {
         wasm_ext().execute_with(|| {
+            System::<Test>::initialize(
+                &123,
+                &Default::default(),
+                &Default::default(),
+                &Default::default(),
+                InitKind::Full,
+            );
             ParachainUpgrade::on_initialize(123);
             assert_ok!(ParachainUpgrade::set_code(
                 RawOrigin::Root.into(),
                 Default::default()
             ));
-            ParachainUpgrade::on_initialize(1234);
-
-            let events = dbg!(System::<Test>::events());
+            System::<Test>::finalize();
             assert_eq!(
-                events,
+                dbg!(System::<Test>::events()),
                 vec![
                     // should be ValidationFunctionStored(1123)
                     EventRecord {
@@ -238,6 +243,21 @@ mod tests {
                         event: (),
                         topics: Vec::new(),
                     },
+                ],
+            );
+
+            System::<Test>::initialize(
+                &1234,
+                &Default::default(),
+                &Default::default(),
+                &Default::default(),
+                InitKind::Full,
+            );
+            ParachainUpgrade::on_initialize(1234);
+            System::<Test>::finalize();
+            assert_eq!(
+                dbg!(System::<Test>::events()),
+                vec![
                     // should be ValidationFunctionApplied(1234)
                     EventRecord {
                         phase: Phase::Initialization,
