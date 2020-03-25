@@ -21,7 +21,12 @@ frame-executive = { git = "https://github.com/paritytech/substrate", default-fea
 sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
 
 # Polkadot dependencies
-parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch", default-features = false, features = [ "wasm-api" ] }
+[dependencies.parachain]
+package = "polkadot-parachain"
+git = "https://github.com/paritytech/polkadot"
+branch = "rh-upgradeable-validation-function"
+default-features = false
+features = [ "wasm-api" ]
 
 [dev-dependencies]
 sc-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }

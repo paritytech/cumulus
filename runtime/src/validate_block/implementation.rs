@@ -28,7 +28,7 @@ use hash_db::{HashDB, EMPTY_PREFIX};
 
 use trie_db::{Trie, TrieDB};
 
-use parachain::{ValidationParams, ValidationResult};
+use parachain::primitives::{HeadData, ValidationParams, ValidationResult};
 
 use codec::{Decode, Encode};
 
@@ -73,10 +73,10 @@ trait Storage {
 /// Validate a given parachain block on a validator.
 #[doc(hidden)]
 pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -> ValidationResult {
-	let block_data = crate::ParachainBlockData::<B>::decode(&mut &params.block_data[..])
+	let block_data = crate::ParachainBlockData::<B>::decode(&mut &params.block_data.0[..])
 		.expect("Invalid parachain block data");
 
-	let parent_head = B::Header::decode(&mut &params.parent_head[..]).expect("Invalid parent head");
+	let parent_head = B::Header::decode(&mut &params.parent_head.0[..]).expect("Invalid parent head");
 	// TODO: Use correct head data
 	let head_data = block_data.header.encode();
 
@@ -90,6 +90,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	let storage = WitnessStorage::<B>::new(
 		block_data.witness_data,
 		block_data.witness_data_storage_root,
+		params,
 	)
 	.expect("Witness data and storage root always match; qed");
 
@@ -110,14 +111,10 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 
 	E::execute_block(block);
 
-	ValidationResult { head_data }
-}
-
-fn is_upgrade_legal() -> bool {
-	// TODO! Polkadot will eventually expose a function which says whether a
-	// parachain upgrade is legal. It doesn't yet, though. This is just a stub
-	// so we can move forward while polkadot gets sorted.
-	false
+	ValidationResult {
+		head_data: HeadData(head_data),
+		new_validation_code: None, // TODO: when should this be something?
+	}
 }
 
 /// The storage implementation used when validating a block that is using the
@@ -126,13 +123,14 @@ struct WitnessStorage<B: BlockT> {
 	witness_data: MemoryDB<HashFor<B>>,
 	overlay: hashbrown::HashMap<Vec<u8>, Option<Vec<u8>>>,
 	storage_root: B::Hash,
+	params: ValidationParams,
 }
 
 impl<B: BlockT> WitnessStorage<B> {
 	/// Initialize from the given witness data and storage root.
 	///
 	/// Returns an error if given storage root was not found in the witness data.
-	fn new(data: WitnessData, storage_root: B::Hash) -> Result<Self, &'static str> {
+	fn new(data: WitnessData, storage_root: B::Hash, params: ValidationParams) -> Result<Self, &'static str> {
 		let mut db = MemoryDB::default();
 		data.into_iter().for_each(|i| {
 			db.insert(EMPTY_PREFIX, &i);
@@ -146,7 +144,13 @@ impl<B: BlockT> WitnessStorage<B> {
 			witness_data: db,
 			overlay: Default::default(),
 			storage_root,
+			params,
 		})
+	}
+
+	/// `true` when code upgrades are allowed
+	fn is_upgrade_legal(&self) -> bool {
+		self.params.code_upgrade_allowed.is_some()
 	}
 }
 
@@ -167,7 +171,7 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 	}
 
 	fn insert(&mut self, key: &[u8], value: &[u8]) {
-		if key == well_known_keys::CODE && ! is_upgrade_legal() {
+		if key == well_known_keys::CODE && ! self.is_upgrade_legal() {
 			panic!("It is illegal to upgrade CODE except via `upgrade_validation_function`");
 		}
 		self.overlay.insert(key.to_vec(), Some(value.to_vec()));
