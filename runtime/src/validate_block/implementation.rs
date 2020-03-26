@@ -28,9 +28,18 @@ use hash_db::{HashDB, EMPTY_PREFIX};
 
 use trie_db::{Trie, TrieDB};
 
-use parachain::primitives::{HeadData, ValidationParams, ValidationResult};
+use parachain::primitives::{HeadData, ValidationCode, ValidationParams, ValidationResult, RelayChainBlockNumber};
 
-use codec::{Decode, Encode};
+use codec::{Decode, DecodeAll, Encode};
+
+/// Current validation function parameters
+pub const VALIDATION_FUNCTION_PARAMS: &'static [u8] = b":validation_function_params";
+
+/// Code upgarde (set as appropriate by a pallet)
+pub const NEW_VALIDATION_CODE: &'static [u8] = b":new_validation_code";
+
+/// the relay chain block number of a pending parachain validation function upgrade
+const SCHEDULED_UPGRADE_BLOCK: &'static [u8] = b":SCHEDULED_UPGRADE_BLOCK";
 
 /// Stores the global [`Storage`] instance.
 ///
@@ -87,15 +96,18 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 		"Invalid parent hash"
 	);
 
-	let storage = WitnessStorage::<B>::new(
+	// make a copy for later use
+	let validation_function_params = ValidationFunctionParams::new(&params);
+
+	let storage_inner = WitnessStorage::<B>::new(
 		block_data.witness_data,
 		block_data.witness_data_storage_root,
-		params,
+		validation_function_params,
 	)
 	.expect("Witness data and storage root always match; qed");
 
 	let _guard = unsafe {
-		STORAGE = Some(Box::new(storage));
+		STORAGE = Some(Box::new(storage_inner));
 		(
 			// Replace storage calls with our own implementations
 			sp_io::storage::host_read.replace_implementation(host_storage_read),
@@ -109,11 +121,54 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 		)
 	};
 
+	// insert the validation params into the storage so that
+	// pallet-parachain-upgrade can extract them
+	storage().insert(VALIDATION_FUNCTION_PARAMS, &validation_function_params.encode());
+	// ensure that there is no validator update code left over from a previous block:
+	// it should only be present in the output if executing the block produces it.
+	storage().remove(NEW_VALIDATION_CODE);
+
 	E::execute_block(block);
+
+	// if in the course of block execution new validation code was set, insert
+	// its scheduled upgrade so we can validate that block number later
+	let new_validation_code = storage().get(NEW_VALIDATION_CODE).map(|vec| ValidationCode(vec));
+	if new_validation_code.is_some() {
+		if let Some(relay_block) = validation_function_params.code_upgrade_allowed {
+			storage().insert(SCHEDULED_UPGRADE_BLOCK, &relay_block.encode());
+		} else {
+			panic!("attempt to upgrade validation function when not permitted");
+		}
+	}
 
 	ValidationResult {
 		head_data: HeadData(head_data),
-		new_validation_code: None, // TODO: when should this be something?
+		new_validation_code,
+	}
+}
+
+#[derive(PartialEq, Eq, Encode, Decode, Clone, Copy)]
+#[cfg_attr(feature = "std", derive(Debug))]
+pub struct ValidationFunctionParams {
+	/// The maximum code size permitted, in bytes.
+	pub max_code_size: u32,
+	/// The current relay-chain block number.
+	pub relay_chain_height: RelayChainBlockNumber,
+	/// Whether a code upgrade is allowed or not, and at which height the upgrade
+	/// would be applied after, if so. The parachain logic should apply any upgrade
+	/// issued in this block after the first block
+	/// with `relay_chain_height` at least this value, if `Some`. if `None`, issue
+	/// no upgrade.
+	pub code_upgrade_allowed: Option<RelayChainBlockNumber>,
+}
+
+impl ValidationFunctionParams {
+	fn new(vp: &ValidationParams) -> ValidationFunctionParams {
+		ValidationFunctionParams {
+			max_code_size: vp.max_code_size,
+			relay_chain_height: vp.relay_chain_height,
+			code_upgrade_allowed: vp.code_upgrade_allowed,
+		}
 	}
 }
 
@@ -123,14 +178,14 @@ struct WitnessStorage<B: BlockT> {
 	witness_data: MemoryDB<HashFor<B>>,
 	overlay: hashbrown::HashMap<Vec<u8>, Option<Vec<u8>>>,
 	storage_root: B::Hash,
-	params: ValidationParams,
+	params: ValidationFunctionParams,
 }
 
 impl<B: BlockT> WitnessStorage<B> {
 	/// Initialize from the given witness data and storage root.
 	///
 	/// Returns an error if given storage root was not found in the witness data.
-	fn new(data: WitnessData, storage_root: B::Hash, params: ValidationParams) -> Result<Self, &'static str> {
+	fn new(data: WitnessData, storage_root: B::Hash, params: ValidationFunctionParams) -> Result<Self, &'static str> {
 		let mut db = MemoryDB::default();
 		data.into_iter().for_each(|i| {
 			db.insert(EMPTY_PREFIX, &i);
@@ -146,11 +201,6 @@ impl<B: BlockT> WitnessStorage<B> {
 			storage_root,
 			params,
 		})
-	}
-
-	/// `true` when code upgrades are allowed
-	fn is_upgrade_legal(&self) -> bool {
-		self.params.code_upgrade_allowed.is_some()
 	}
 }
 
@@ -171,8 +221,15 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 	}
 
 	fn insert(&mut self, key: &[u8], value: &[u8]) {
-		if key == well_known_keys::CODE && ! self.is_upgrade_legal() {
-			panic!("It is illegal to upgrade CODE except via `upgrade_validation_function`");
+		if key == well_known_keys::CODE {
+			// a code upgrade is legal if we have previously scheduled it;
+			// otherwise, we have to panic
+			let scheduled_upgrade_block = self.get(SCHEDULED_UPGRADE_BLOCK).expect("no validation function upgrade scheduled; cannot update validation function");
+			let scheduled_upgrade_block = RelayChainBlockNumber::decode_all(&scheduled_upgrade_block).unwrap();
+			if self.params.relay_chain_height < scheduled_upgrade_block {
+				panic!("expected a validation function upgrade on {} but current block is {}", scheduled_upgrade_block, self.params.relay_chain_height);
+			}
+			self.remove(SCHEDULED_UPGRADE_BLOCK);
 		}
 		self.overlay.insert(key.to_vec(), Some(value.to_vec()));
 	}
