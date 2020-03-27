@@ -1,5 +1,5 @@
 [package]
-name = "parachain-upgrade-pallet"
+name = "pallet-parachain-upgrade"
 version = "2.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
@@ -14,6 +14,7 @@ std = [
     'codec/std',
     'frame-support/std',
     'pallet-balances/std',
+	'cumulus-runtime/std',
     'sp-core/std',
     'sp-runtime/std',
     'sp-io/std',
@@ -30,6 +31,10 @@ default-features = false
 features = ['derive']
 package = 'parity-scale-codec'
 version = '1.0.0'
+
+[dependencies.cumulus-runtime]
+default-features = false
+path = "../runtime"
 
 [dependencies.sp-core]
 default-features = false
@@ -48,6 +53,12 @@ default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
 version = '2.0.0-alpha.5'
+
+[dependencies.parachain]
+package = "polkadot-parachain"
+git = "https://github.com/paritytech/polkadot"
+branch = "rh-upgradeable-validation-function"
+default-features = false
 
 [dependencies.pallet-balances]
 default-features = false

@@ -17,6 +17,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
+use parachain::primitives::{RelayChainBlockNumber, ValidationParams};
 use sp_runtime::traits::Block as BlockT;
 ///! The Cumulus runtime to make a runtime a parachain.
 use sp_std::vec::Vec;
@@ -72,5 +73,50 @@ impl<B: BlockT> ParachainBlockData<B> {
 	/// Returns the extrinsics.
 	pub fn extrinsics(&self) -> &[B::Extrinsic] {
 		&self.extrinsics
+	}
+}
+
+
+/// Current validation function parameters.
+pub const VALIDATION_FUNCTION_PARAMS: &'static [u8] = b":validation_function_params";
+
+/// Code upgarde (set as appropriate by a pallet).
+pub const NEW_VALIDATION_CODE: &'static [u8] = b":new_validation_code";
+
+// this const is not actually dead; it's imported and used in
+// /runtime/src/validate_block/implementation.rs. However, the dead code
+// warning triggers in error due to the pub(crate) visibility.
+#[allow(dead_code)]
+/// The relay chain block number of a pending parachain validation function upgrade.
+///
+/// This is an implementation detail and should not be of interest to external pallets.
+pub(crate) const SCHEDULED_UPGRADE_BLOCK: &'static [u8] = b":scheduled_upgrade_block";
+
+/// Validation Function Parameters
+///
+/// This struct is the subset of [`ValidationParams`](../../polkadot_parachain/primitives/struct.ValidationParams.html)
+/// which is of interest when upgrading parachain validation functions.
+#[derive(PartialEq, Eq, Encode, Decode, Clone, Copy)]
+#[cfg_attr(feature = "std", derive(Debug))]
+pub struct ValidationFunctionParams {
+	/// The maximum code size permitted, in bytes.
+	pub max_code_size: u32,
+	/// The current relay-chain block number.
+	pub relay_chain_height: RelayChainBlockNumber,
+	/// Whether a code upgrade is allowed or not, and at which height the upgrade
+	/// would be applied after, if so. The parachain logic should apply any upgrade
+	/// issued in this block after the first block
+	/// with `relay_chain_height` at least this value, if `Some`. if `None`, issue
+	/// no upgrade.
+	pub code_upgrade_allowed: Option<RelayChainBlockNumber>,
+}
+
+impl ValidationFunctionParams {
+	pub fn new(vp: &ValidationParams) -> ValidationFunctionParams {
+		ValidationFunctionParams {
+			max_code_size: vp.max_code_size,
+			relay_chain_height: vp.relay_chain_height,
+			code_upgrade_allowed: vp.code_upgrade_allowed,
+		}
 	}
 }

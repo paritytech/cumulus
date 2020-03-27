@@ -2,6 +2,7 @@
 members = [
 	"consensus",
 	"network",
+	"pallet-parachain-upgrade",
 	"runtime",
 	"test/runtime",
 	"test/client",

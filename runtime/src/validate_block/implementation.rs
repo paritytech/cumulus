@@ -32,14 +32,12 @@ use parachain::primitives::{HeadData, ValidationCode, ValidationParams, Validati
 
 use codec::{Decode, DecodeAll, Encode};
 
-/// Current validation function parameters
-pub const VALIDATION_FUNCTION_PARAMS: &'static [u8] = b":validation_function_params";
-
-/// Code upgarde (set as appropriate by a pallet)
-pub const NEW_VALIDATION_CODE: &'static [u8] = b":new_validation_code";
-
-/// the relay chain block number of a pending parachain validation function upgrade
-const SCHEDULED_UPGRADE_BLOCK: &'static [u8] = b":SCHEDULED_UPGRADE_BLOCK";
+use crate::{
+	NEW_VALIDATION_CODE,
+	SCHEDULED_UPGRADE_BLOCK,
+	VALIDATION_FUNCTION_PARAMS,
+	ValidationFunctionParams,
+};
 
 /// Stores the global [`Storage`] instance.
 ///
@@ -144,31 +142,6 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	ValidationResult {
 		head_data: HeadData(head_data),
 		new_validation_code,
-	}
-}
-
-#[derive(PartialEq, Eq, Encode, Decode, Clone, Copy)]
-#[cfg_attr(feature = "std", derive(Debug))]
-pub struct ValidationFunctionParams {
-	/// The maximum code size permitted, in bytes.
-	pub max_code_size: u32,
-	/// The current relay-chain block number.
-	pub relay_chain_height: RelayChainBlockNumber,
-	/// Whether a code upgrade is allowed or not, and at which height the upgrade
-	/// would be applied after, if so. The parachain logic should apply any upgrade
-	/// issued in this block after the first block
-	/// with `relay_chain_height` at least this value, if `Some`. if `None`, issue
-	/// no upgrade.
-	pub code_upgrade_allowed: Option<RelayChainBlockNumber>,
-}
-
-impl ValidationFunctionParams {
-	fn new(vp: &ValidationParams) -> ValidationFunctionParams {
-		ValidationFunctionParams {
-			max_code_size: vp.max_code_size,
-			relay_chain_height: vp.relay_chain_height,
-			code_upgrade_allowed: vp.code_upgrade_allowed,
-		}
 	}
 }
 
