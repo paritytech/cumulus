@@ -254,6 +254,7 @@ mod tests {
 	struct BlockTests {
 		tests: Vec<BlockTest>,
 		pending_upgrade: Option<RelayChainBlockNumber>,
+		ran: bool,
 	}
 
 	impl BlockTests {
@@ -295,6 +296,7 @@ mod tests {
 		}
 
 		fn run(&mut self) {
+			self.ran = true;
 			wasm_ext().execute_with(|| {
 				for BlockTest {
 					n,
@@ -349,7 +351,15 @@ mod tests {
 						after_block();
 					}
 				}
-			})
+			});
+		}
+	}
+
+	impl Drop for BlockTests {
+		fn drop(&mut self) {
+			if !self.ran {
+				self.run();
+			}
 		}
 	}
 
@@ -361,8 +371,7 @@ mod tests {
 					ParachainUpgrade::set_code(Origin::signed(1), Default::default()),
 					Err(sp_runtime::DispatchError::BadOrigin),
 				);
-			})
-			.run();
+			});
 	}
 
 	#[test]
@@ -373,8 +382,7 @@ mod tests {
 					RawOrigin::Root.into(),
 					Default::default()
 				));
-			})
-			.run();
+			});
 	}
 
 	#[test]
@@ -406,8 +414,7 @@ mod tests {
 						TestEvent::parachain_upgrade(Event::ValidationFunctionApplied(1234))
 					);
 				},
-			)
-			.run();
+			);
 	}
 
 	#[test]
@@ -424,22 +431,6 @@ mod tests {
 					ParachainUpgrade::set_code(RawOrigin::Root.into(), Default::default(),),
 					Err(Error::<Test>::OverlappingUpgrades.into()),
 				)
-			})
-			.run();
-	}
-
-	#[test]
-	fn set_code_with_real_wasm_blob() {
-		let executor = substrate_test_runtime_client::new_native_executor();
-		let mut ext = new_test_ext();
-		ext.register_extension(sp_core::traits::CallInWasmExt::new(executor));
-		ext.execute_with(|| {
-			ParachainUpgrade::on_initialize(123);
-			ParachainUpgrade::set_code(
-				RawOrigin::Root.into(),
-				substrate_test_runtime_client::runtime::WASM_BINARY.to_vec(),
-			)
-			.unwrap();
-		});
+			});
 	}
 }
