@@ -433,4 +433,20 @@ mod tests {
 				)
 			});
 	}
+
+	#[test]
+	fn manipulates_storage() {
+		BlockTests::new()
+			.add(123, || {
+				assert!(!PendingValidationFunction::exists(), "validation function must not exist yet");
+				assert_ok!(ParachainUpgrade::set_code(
+					RawOrigin::Root.into(),
+					Default::default()
+				));
+				assert!(PendingValidationFunction::exists(), "validation function must now exist");
+			})
+			.add_with_post_test(1234, || {}, || {
+				assert!(!PendingValidationFunction::exists(), "validation function must have been unset");
+			});
+	}
 }
