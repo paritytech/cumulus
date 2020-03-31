@@ -381,6 +381,14 @@ mod tests {
 	}
 
 	#[test]
+	#[should_panic]
+	fn block_tests_run_on_drop() {
+		BlockTests::new().add(123, || {
+			panic!("if this test passes, block tests run properly")
+		});
+	}
+
+	#[test]
 	fn requires_root() {
 		BlockTests::new().add(123, || {
 			assert_eq!(
