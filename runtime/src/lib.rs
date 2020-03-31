@@ -83,15 +83,6 @@ pub const VALIDATION_FUNCTION_PARAMS: &'static [u8] = b":validation_function_par
 /// Code upgarde (set as appropriate by a pallet).
 pub const NEW_VALIDATION_CODE: &'static [u8] = b":new_validation_code";
 
-// this const is not actually dead; it's imported and used in
-// /runtime/src/validate_block/implementation.rs. However, the dead code
-// warning triggers in error due to the pub(crate) visibility.
-#[allow(dead_code)]
-/// The relay chain block number of a pending parachain validation function upgrade.
-///
-/// This is an implementation detail and should not be of interest to external pallets.
-pub(crate) const SCHEDULED_UPGRADE_BLOCK: &'static [u8] = b":scheduled_upgrade_block";
-
 /// Validation Function Parameters
 ///
 /// This struct is the subset of [`ValidationParams`](../../polkadot_parachain/primitives/struct.ValidationParams.html)

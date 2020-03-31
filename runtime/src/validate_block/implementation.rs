@@ -20,7 +20,6 @@ use crate::WitnessData;
 use frame_executive::ExecuteBlock;
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT};
 
-use sp_core::storage::well_known_keys;
 use sp_std::{boxed::Box, vec::Vec};
 use sp_trie::{delta_trie_root, read_trie_value, Layout, MemoryDB};
 
@@ -28,13 +27,12 @@ use hash_db::{HashDB, EMPTY_PREFIX};
 
 use trie_db::{Trie, TrieDB};
 
-use parachain::primitives::{HeadData, ValidationCode, ValidationParams, ValidationResult, RelayChainBlockNumber};
+use parachain::primitives::{HeadData, ValidationCode, ValidationParams, ValidationResult};
 
-use codec::{Decode, DecodeAll, Encode};
+use codec::{Decode, Encode};
 
 use crate::{
 	NEW_VALIDATION_CODE,
-	SCHEDULED_UPGRADE_BLOCK,
 	VALIDATION_FUNCTION_PARAMS,
 	ValidationFunctionParams,
 };
@@ -119,24 +117,14 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 		)
 	};
 
-	// insert the validation params into the storage so that
-	// pallet-parachain-upgrade can extract them
-	storage().insert(VALIDATION_FUNCTION_PARAMS, &validation_function_params.encode());
-	// ensure that there is no validator update code left over from a previous block:
-	// it should only be present in the output if executing the block produces it.
-	storage().remove(NEW_VALIDATION_CODE);
-
 	E::execute_block(block);
 
 	// if in the course of block execution new validation code was set, insert
 	// its scheduled upgrade so we can validate that block number later
 	let new_validation_code = storage().get(NEW_VALIDATION_CODE).map(|vec| ValidationCode(vec));
-	if new_validation_code.is_some() {
-		if let Some(relay_block) = validation_function_params.code_upgrade_allowed {
-			storage().insert(SCHEDULED_UPGRADE_BLOCK, &relay_block.encode());
-		} else {
-			panic!("attempt to upgrade validation function when not permitted");
-		}
+	storage().remove(NEW_VALIDATION_CODE);
+	if new_validation_code.is_some() && validation_function_params.code_upgrade_allowed.is_none() {
+		panic!("attempt to upgrade validation function when not permitted");
 	}
 
 	ValidationResult {
@@ -179,31 +167,26 @@ impl<B: BlockT> WitnessStorage<B> {
 
 impl<B: BlockT> Storage for WitnessStorage<B> {
 	fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
-		self.overlay
-			.get(key)
-			.cloned()
-			.or_else(|| {
-				read_trie_value::<Layout<HashFor<B>>, _>(
-					&self.witness_data,
-					&self.storage_root,
-					key,
-				)
-				.ok()
-			})
-			.unwrap_or(None)
+		match key {
+			VALIDATION_FUNCTION_PARAMS => Some(self.params.encode()),
+			key => {
+				self.overlay
+					.get(key)
+					.cloned()
+					.or_else(|| {
+						read_trie_value::<Layout<HashFor<B>>, _>(
+							&self.witness_data,
+							&self.storage_root,
+							key,
+						)
+						.ok()
+					})
+					.unwrap_or(None)
+			}
+		}
 	}
 
 	fn insert(&mut self, key: &[u8], value: &[u8]) {
-		if key == well_known_keys::CODE {
-			// a code upgrade is legal if we have previously scheduled it;
-			// otherwise, we have to panic
-			let scheduled_upgrade_block = self.get(SCHEDULED_UPGRADE_BLOCK).expect("no validation function upgrade scheduled; cannot update validation function");
-			let scheduled_upgrade_block = RelayChainBlockNumber::decode_all(&scheduled_upgrade_block).unwrap();
-			if self.params.relay_chain_height < scheduled_upgrade_block {
-				panic!("expected a validation function upgrade on {} but current block is {}", scheduled_upgrade_block, self.params.relay_chain_height);
-			}
-			self.remove(SCHEDULED_UPGRADE_BLOCK);
-		}
 		self.overlay.insert(key.to_vec(), Some(value.to_vec()));
 	}
 
