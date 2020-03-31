@@ -56,7 +56,9 @@ decl_module! {
 			// the moment the vote passes.
 			System::<T>::can_set_code(origin, &validation_function)?;
 			ensure!(!PendingValidationFunction::exists(), Error::<T>::OverlappingUpgrades);
-			let apply_block = Self::validation_function_params().code_upgrade_allowed.ok_or(Error::<T>::ProhibitedByPolkadot)?;
+			let vfp = Self::validation_function_params();
+			ensure!(validation_function.len() <= vfp.max_code_size as usize, Error::<T>::TooBig);
+			let apply_block = vfp.code_upgrade_allowed.ok_or(Error::<T>::ProhibitedByPolkadot)?;
 
 			// When a code upgrade is scheduled, it has to be applied in two
 			// places, synchronized: both polkadot and the individual parachain
@@ -120,6 +122,8 @@ decl_error! {
 		OverlappingUpgrades,
 		/// Polkadot currently prohibits this parachain from upgrading its validation function
 		ProhibitedByPolkadot,
+		/// The supplied validation function has compiled into a blob larger than Polkadot is willing to run
+		TooBig,
 	}
 }
 
@@ -255,6 +259,8 @@ mod tests {
 		tests: Vec<BlockTest>,
 		pending_upgrade: Option<RelayChainBlockNumber>,
 		ran: bool,
+		vfp_maker:
+			Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber) -> ValidationFunctionParams>>,
 	}
 
 	impl BlockTests {
@@ -295,6 +301,14 @@ mod tests {
 			})
 		}
 
+		fn with_validation_function_params<F>(mut self, f: F) -> Self
+		where
+			F: 'static + Fn(&BlockTests, RelayChainBlockNumber) -> ValidationFunctionParams,
+		{
+			self.vfp_maker = Some(Box::new(f));
+			self
+		}
+
 		fn run(&mut self) {
 			self.ran = true;
 			wasm_ext().execute_with(|| {
@@ -321,14 +335,17 @@ mod tests {
 					);
 
 					// now mess with the storage the way validate_block does
-					let vfp = ValidationFunctionParams {
-						max_code_size: 10 * 1024 * 1024, // 10 mb
-						relay_chain_height: *n as RelayChainBlockNumber,
-						code_upgrade_allowed: if self.pending_upgrade.is_some() {
-							None
-						} else {
-							Some(*n as RelayChainBlockNumber + 1000)
+					let vfp = match self.vfp_maker {
+						None => ValidationFunctionParams {
+							max_code_size: 10 * 1024 * 1024, // 10 mb
+							relay_chain_height: *n as RelayChainBlockNumber,
+							code_upgrade_allowed: if self.pending_upgrade.is_some() {
+								None
+							} else {
+								Some(*n as RelayChainBlockNumber + 1000)
+							},
 						},
+						Some(ref maker) => maker(self, *n as RelayChainBlockNumber),
 					};
 					storage::unhashed::put(VALIDATION_FUNCTION_PARAMS, &vfp);
 					storage::unhashed::kill(NEW_VALIDATION_CODE);
@@ -365,24 +382,22 @@ mod tests {
 
 	#[test]
 	fn requires_root() {
-		BlockTests::new()
-			.add(123, || {
-				assert_eq!(
-					ParachainUpgrade::set_code(Origin::signed(1), Default::default()),
-					Err(sp_runtime::DispatchError::BadOrigin),
-				);
-			});
+		BlockTests::new().add(123, || {
+			assert_eq!(
+				ParachainUpgrade::set_code(Origin::signed(1), Default::default()),
+				Err(sp_runtime::DispatchError::BadOrigin),
+			);
+		});
 	}
 
 	#[test]
 	fn requires_root_2() {
-		BlockTests::new()
-			.add(123, || {
-				assert_ok!(ParachainUpgrade::set_code(
-					RawOrigin::Root.into(),
-					Default::default()
-				));
-			});
+		BlockTests::new().add(123, || {
+			assert_ok!(ParachainUpgrade::set_code(
+				RawOrigin::Root.into(),
+				Default::default()
+			));
+		});
 	}
 
 	#[test]
@@ -438,15 +453,44 @@ mod tests {
 	fn manipulates_storage() {
 		BlockTests::new()
 			.add(123, || {
-				assert!(!PendingValidationFunction::exists(), "validation function must not exist yet");
+				assert!(
+					!PendingValidationFunction::exists(),
+					"validation function must not exist yet"
+				);
 				assert_ok!(ParachainUpgrade::set_code(
 					RawOrigin::Root.into(),
 					Default::default()
 				));
-				assert!(PendingValidationFunction::exists(), "validation function must now exist");
+				assert!(
+					PendingValidationFunction::exists(),
+					"validation function must now exist"
+				);
 			})
-			.add_with_post_test(1234, || {}, || {
-				assert!(!PendingValidationFunction::exists(), "validation function must have been unset");
+			.add_with_post_test(
+				1234,
+				|| {},
+				|| {
+					assert!(
+						!PendingValidationFunction::exists(),
+						"validation function must have been unset"
+					);
+				},
+			);
+	}
+
+	#[test]
+	fn checks_size() {
+		BlockTests::new()
+			.with_validation_function_params(|_, n| ValidationFunctionParams {
+				max_code_size: 32,
+				relay_chain_height: n,
+				code_upgrade_allowed: Some(n + 1000),
+			})
+			.add(123, || {
+				assert_eq!(
+					ParachainUpgrade::set_code(RawOrigin::Root.into(), vec![0; 64]),
+					Err(Error::<Test>::TooBig.into()),
+				);
 			});
 	}
 }
