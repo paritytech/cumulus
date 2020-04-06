@@ -22,7 +22,7 @@ use std::sync::Arc;
 use parachain_runtime::Block;
 
 use sc_client::genesis;
-use sc_service::{Configuration, Roles as ServiceRoles, config::PrometheusConfig};
+use sc_service::{Configuration, Role as ServiceRole, config::PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::{
 	traits::{Block as BlockT, Hash as HashT, Header as HeaderT},
@@ -88,7 +88,7 @@ pub fn run(version: sc_cli::VersionInfo) -> sc_cli::Result<()> {
 			info!("  by {}, 2019", version.author);
 			info!("Chain specification: {}", config.expect_chain_spec().name());
 			info!("Node name: {}", config.name);
-			info!("Roles: {:?}", config.roles);
+			info!("Roles: {:?}", config.role);
 			info!("Parachain id: {:?}", crate::PARA_ID);
 
 			// TODO
@@ -125,8 +125,8 @@ pub fn run(version: sc_cli::VersionInfo) -> sc_cli::Result<()> {
 				use_yamux_flow_control: false,
 			};
 
-			match config.roles {
-				ServiceRoles::LIGHT => unimplemented!("Light client not supported!"),
+			match config.role {
+				ServiceRole::Light => unimplemented!("Light client not supported!"),
 				_ => crate::service::run_collator(config, key, polkadot_config),
 			}
 		},
