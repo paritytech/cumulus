@@ -58,5 +58,5 @@ pub struct Cli {
 #[derive(Debug, StructOpt, Clone)]
 pub struct PolkadotCli {
 	#[structopt(flatten)]
-	base: polkadot_cli::Cli,
+	pub base: polkadot_cli::Cli,
 }
