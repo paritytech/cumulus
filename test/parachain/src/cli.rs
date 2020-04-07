@@ -17,7 +17,6 @@
 use std::path::PathBuf;
 
 use sc_cli;
-pub use polkadot_cli::Cli as PolkadotCli;
 use structopt::StructOpt;
 
 /// Sub-commands supported by the collator.
@@ -54,4 +53,10 @@ pub struct Cli {
 	/// Relaychain arguments
 	#[structopt(raw = true)]
 	pub relaychain_args: Vec<String>,
+}
+
+#[derive(Debug, StructOpt, Clone)]
+pub struct PolkadotCli {
+	#[structopt(flatten)]
+	base: polkadot_cli::Cli,
 }

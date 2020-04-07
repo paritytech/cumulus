@@ -14,13 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+#![allow(unused_imports)]
+
 use crate::chain_spec;
 use crate::cli::{Cli, PolkadotCli, Subcommand};
-
 use std::sync::Arc;
-
 use parachain_runtime::Block;
-
 use sc_client::genesis;
 use sc_service::{Configuration, Role as ServiceRole, config::PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
@@ -29,29 +28,99 @@ use sp_runtime::{
 	BuildStorage,
 };
 use sc_network::config::TransportConfig;
-
 use codec::Encode;
 use log::info;
+use sc_cli::{SubstrateCli};
 
 const DEFAULT_POLKADOT_RPC_HTTP: &'static str = "127.0.0.1:9934";
 const DEFAULT_POLKADOT_RPC_WS: &'static str = "127.0.0.1:9945";
 const DEFAULT_POLKADOT_PROMETHEUS_PORT: &'static str = "127.0.0.1:9616";
 
+impl SubstrateCli for Cli {
+	fn impl_name() -> &'static str {
+		"Cumulus Test Parachain Collator"
+	}
+
+	fn impl_version() -> &'static str {
+		env!("SUBSTRATE_CLI_IMPL_VERSION")
+	}
+
+	fn description() -> &'static str {
+"Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
+passed to the parachain node, while the arguments provided after -- will be passed \
+to the relaychain node.\n\n\
+cumulus-test-parachain-collator [parachain-args] -- [relaychain-args]"
+	}
+
+	fn author() -> &'static str {
+		env!("CARGO_PKG_AUTHORS")
+	}
+
+	fn support_url() -> &'static str {
+		"https://github.com/paritytech/cumulus/issues/new"
+	}
+
+	fn copyright_start_year() -> i32 {
+		2017
+	}
+
+	fn executable_name() -> &'static str {
+		"cumulus-test-parachain-collator"
+	}
+
+	fn load_spec(&self, _id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+		Ok(Box::new(chain_spec::get_chain_spec()))
+	}
+}
+
+impl SubstrateCli for PolkadotCli {
+	fn impl_name() -> &'static str {
+		"Cumulus Test Parachain Collator"
+	}
+
+	fn impl_version() -> &'static str {
+		env!("SUBSTRATE_CLI_IMPL_VERSION")
+	}
+
+	fn description() -> &'static str {
+"Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
+passed to the parachain node, while the arguments provided after -- will be passed \
+to the relaychain node.\n\n\
+cumulus-test-parachain-collator [parachain-args] -- [relaychain-args]"
+	}
+
+	fn author() -> &'static str {
+		env!("CARGO_PKG_AUTHORS")
+	}
+
+	fn support_url() -> &'static str {
+		"https://github.com/paritytech/cumulus/issues/new"
+	}
+
+	fn copyright_start_year() -> i32 {
+		2017
+	}
+
+	fn executable_name() -> &'static str {
+		"cumulus-test-parachain-collator"
+	}
+
+	fn load_spec(&self, _id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+		polkadot_service::PolkadotChainSpec::from_json_bytes(
+			&include_bytes!("../res/polkadot_chainspec.json")[..],
+		).map(|r| Box::new(r) as Box<_>)
+	}
+}
+
 /// Parse command line arguments into service configuration.
-pub fn run(version: sc_cli::VersionInfo) -> sc_cli::Result<()> {
-	let opt: Cli = sc_cli::from_args(&version);
+pub fn run() -> sc_cli::Result<()> {
+	let cli = Cli::from_args();
 
-	let mut config = sc_service::Configuration::from_version(&version);
-	let mut polkadot_config = Configuration::from_version(&version);
-
-	match opt.subcommand {
+	match &cli.subcommand {
 		Some(Subcommand::Base(subcommand)) => {
-			subcommand.init(&version)?;
-			subcommand.update_config(&mut config, load_spec, &version)?;
-			subcommand.run(
-				config,
-				|config: Configuration| Ok(new_full_start!(config).0),
-			)
+			let runner = cli.create_runner(subcommand)?;
+
+			runner.run_subcommand(subcommand, |config| Ok(new_full_start!(config).0))
 		},
 		Some(Subcommand::ExportGenesisState(params)) => {
 			sc_cli::init_logger("");
@@ -71,7 +140,7 @@ pub fn run(version: sc_cli::VersionInfo) -> sc_cli::Result<()> {
 
 			let header_hex = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
-			if let Some(output) = params.output {
+			if let Some(output) = &params.output {
 				std::fs::write(output, header_hex)?;
 			} else {
 				println!("{}", header_hex);
@@ -79,6 +148,7 @@ pub fn run(version: sc_cli::VersionInfo) -> sc_cli::Result<()> {
 
 			Ok(())
 		},
+		/*
 		None => {
 			opt.run.init(&version)?;
 			opt.run.update_config(&mut config, load_spec, &version)?;
@@ -130,15 +200,7 @@ pub fn run(version: sc_cli::VersionInfo) -> sc_cli::Result<()> {
 				_ => crate::service::run_collator(config, key, polkadot_config),
 			}
 		},
+		*/
+		_ => todo!(),
 	}
-}
-
-fn load_spec(_: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
-	Ok(Box::new(chain_spec::get_chain_spec()))
-}
-
-fn load_spec_polkadot(_: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
-	polkadot_service::PolkadotChainSpec::from_json_bytes(
-		&include_bytes!("../res/polkadot_chainspec.json")[..],
-	).map(|r| Box::new(r) as Box<_>)
 }

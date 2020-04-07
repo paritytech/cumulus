@@ -76,6 +76,8 @@ pub fn run_collator(
 	key: Arc<CollatorPair>,
 	mut polkadot_config: polkadot_collator::Configuration,
 ) -> sc_cli::Result<()> {
+	todo!();
+	/*
 	sc_cli::run_service_until_exit(parachain_config, move |parachain_config| {
 		polkadot_config.task_executor = parachain_config.task_executor.clone();
 
@@ -117,4 +119,5 @@ pub fn run_collator(
 
 		Ok(service)
 	})
+	*/
 }
