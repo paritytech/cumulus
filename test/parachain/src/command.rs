@@ -266,7 +266,7 @@ impl CliConfiguration for PolkadotCli {
 		node_name: &str,
 		node_key: NodeKeyConfig,
 	) -> Result<NetworkConfiguration> {
-		let (mut network, allow_private_ipv4) = if let Some(network_params) = self.network_params() { // TODO network_params
+		let (mut network, allow_private_ipv4) = if let Some(network_params) = self.network_params() {
 			(network_params.network_config(
 				chain_spec,
 				is_dev,
