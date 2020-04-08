@@ -160,7 +160,7 @@ pub fn run() -> Result<()> {
 			*/
 
 			// TODO
-			//let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
+			let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
 
 			//polkadot_config.config_dir = config.in_chain_config_dir("polkadot");
 
@@ -168,14 +168,16 @@ pub fn run() -> Result<()> {
 				[PolkadotCli::executable_name().to_string()].iter().chain(cli.relaychain_args.iter()),
 			);
 
-			let polkadot_runner = polkadot_cli.create_runner(&polkadot_cli)?;
+			runner.async_run(|config| {
+				let task_executor = config.task_executor.clone();
+				let polkadot_config = <PolkadotCli as SubstrateCli>::create_configuration(&polkadot_cli, &polkadot_cli, task_executor).expect("TODO");
 
-			/*
-			match config.role {
-				ServiceRole::Light => unimplemented!("Light client not supported!"),
-				_ => crate::service::run_collator(config, key, polkadot_config),
-			}
-			*/
+				match config.role {
+					ServiceRole::Light => unimplemented!("Light client not supported!"),
+					_ => crate::service::run_collator(config, key, polkadot_config),
+				}
+			});
+
 			Ok(())
 		},
 	}
@@ -286,8 +288,7 @@ impl CliConfiguration for PolkadotCli {
 	}
 
 	fn init<C: SubstrateCli>(&self) -> Result<()> {
-		// NOTE: already initialized so, skipping...
-		Ok(())
+		unreachable!("PolkadotCli is never initialized; qed");
 	}
 }
 
