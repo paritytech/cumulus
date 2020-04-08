@@ -15,17 +15,13 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::sync::Arc;
-
+use sc_client::BlockchainEvents;
 use sc_executor::native_executor_instance;
 use sc_service::{AbstractService, Configuration};
 use sc_finality_grandpa::{FinalityProofProvider as GrandpaFinalityProofProvider, StorageAndProofProvider};
-
 use polkadot_primitives::parachain::CollatorPair;
-
 use cumulus_collator::CollatorBuilder;
-
-use futures::FutureExt;
-
+use futures::prelude::*;
 pub use sc_executor::NativeExecutor;
 
 // Our native executor instance.
@@ -72,10 +68,14 @@ macro_rules! new_full_start {
 ///
 /// This function blocks until done.
 pub async fn run_collator(
-	parachain_config: Configuration,
+	mut parachain_config: Configuration,
 	key: Arc<CollatorPair>,
 	polkadot_config: polkadot_collator::Configuration,
 ) -> sc_cli::Result<()> {
+	let task_executor = parachain_config.task_executor.clone();
+
+	parachain_config.announce_block = false;
+
 	let (builder, inherent_data_providers) = new_full_start!(parachain_config);
 	inherent_data_providers
 		.register_provider(sp_timestamp::InherentDataProvider)
@@ -88,6 +88,18 @@ pub async fn run_collator(
 			Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
 		})?
 		.build()?;
+	let network = service.network();
+	let mut imported_blocks_stream = service.client().import_notification_stream().fuse();
+
+	task_executor(Box::pin(async move {
+		println!("0");
+		while let Some(notification) = imported_blocks_stream.next().await {
+			println!("1");
+			network.announce_block(notification.hash, Vec::new());
+			println!("2");
+		}
+		println!("3");
+	}));
 
 	let proposer_factory = sc_basic_authorship::ProposerFactory::new(
 		service.client(),
