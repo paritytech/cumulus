@@ -23,34 +23,34 @@ structopt = "0.3.3"
 parachain-runtime = { package = "cumulus-test-parachain-runtime", path = "runtime" }
 
 # Substrate dependencies
-sp-runtime = { git = "https://github.com/paritytech/substrate", default_features = false, branch = "cecton-cumulus-branch" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
-sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
-sc-network = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
-sc-client = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch", version = "0.8.0-alpha.5" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
-sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default_features = false, branch = "cecton-keep-unpinned-para-blocks" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
+sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
+sc-network = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
+sc-client = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks", version = "0.8.0-alpha.5" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
+sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../../consensus" }
 cumulus-collator = { path = "../../collator" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-cumulus-branch" }
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-cumulus-branch" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-cumulus-branch" }
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "cecton-cumulus-branch" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks" }
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "cecton-cumulus-branch" }
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 
 [dev-dependencies]
 assert_cmd = "0.12"
