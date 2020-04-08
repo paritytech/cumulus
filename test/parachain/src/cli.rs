@@ -59,4 +59,7 @@ pub struct Cli {
 pub struct PolkadotCli {
 	#[structopt(flatten)]
 	pub base: polkadot_cli::RunCmd,
+
+	#[structopt(skip)]
+	pub base_path: Option<PathBuf>,
 }

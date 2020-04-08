@@ -152,11 +152,11 @@ pub fn run() -> Result<()> {
 			// TODO
 			let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
 
-			//polkadot_config.config_dir = config.in_chain_config_dir("polkadot");
-
-			let polkadot_cli = PolkadotCli::from_iter(
+			let mut polkadot_cli = PolkadotCli::from_iter(
 				[PolkadotCli::executable_name().to_string()].iter().chain(cli.relaychain_args.iter()),
 			);
+
+			polkadot_cli.base_path = cli.run.base_path()?.map(|x| x.join("polkadot"));
 
 			runner.async_run(|config| async {
 				let task_executor = config.task_executor.clone();
@@ -194,6 +194,12 @@ impl CliConfiguration for PolkadotCli {
 
 	fn keystore_params(&self) -> Option<&KeystoreParams> {
 		self.base.base.keystore_params()
+	}
+
+	fn base_path(&self) -> Result<Option<PathBuf>> {
+		Ok(
+			self.shared_params().base_path().or(self.base_path.clone())
+		)
 	}
 
 	fn rpc_http(&self) -> Result<Option<SocketAddr>> {
