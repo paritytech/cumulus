@@ -273,7 +273,7 @@ impl<Block: BlockT, PF, BI, Backend, Executor, Runtime>
 type TransactionFor<E, Block> =
 	<<E as Environment<Block>>::Proposer as Proposer<Block>>::Transaction;
 
-impl<Block: BlockT, PF, BI, Backend, Executor, Runtime> BuildParachainContext
+impl<Block: BlockT<Hash = sp_core::H256>, PF, BI, Backend, Executor, Runtime> BuildParachainContext
 	for CollatorBuilder<Block, PF, BI, Backend, Executor, Runtime>
 where
 	PF: Environment<Block> + Send + 'static,
@@ -327,14 +327,17 @@ where
 
 		let network = self.network.clone();
 		let mut imported_blocks_stream = self.client.import_notification_stream().fuse();
-		let checked_statements = polkadot_network.checked_statements(());
+		let polkadot_network_2 = polkadot_network.clone();
 
 		spawner
 			.spawn_obj(
 				Box::pin(async move {
+					let polkadot_network = polkadot_network_2;
+
 					println!("0");
 					while let Some(notification) = imported_blocks_stream.next().await {
 						println!("1");
+						let checked_statements = polkadot_network.checked_statements(notification.hash);
 						network.announce_block(notification.hash, Vec::new());
 						println!("2");
 					}
