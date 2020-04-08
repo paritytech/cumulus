@@ -480,9 +480,15 @@ mod tests {
 		let collation = collate(
 			Default::default(),
 			id,
+			GlobalValidationSchedule {
+				block_number: 0,
+				max_code_size: 0,
+				max_head_data_size: 0,
+			},
 			LocalValidationData {
 				parent_head: HeadData(header.encode()),
 				balance: 10,
+				code_upgrade_allowed: None,
 			},
 			context,
 			Arc::new(Sr25519Keyring::Alice.pair().into()),
