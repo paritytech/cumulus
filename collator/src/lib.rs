@@ -18,7 +18,8 @@
 
 use cumulus_runtime::ParachainBlockData;
 
-use sc_client::Client;
+use sc_client::{BlockchainEvents, Client};
+use sc_network::NetworkService;
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, Environment, Error as ConsensusError,
 	ForkChoiceStrategy, Proposal, Proposer, RecordProof,
@@ -39,7 +40,8 @@ use codec::{Decode, Encode};
 
 use log::{error, trace};
 
-use futures::{task::Spawn, Future, future, FutureExt};
+use futures::task::Spawn;
+use futures::prelude::*;
 
 use std::{fmt::Debug, marker::PhantomData, sync::Arc, time::Duration, pin::Pin};
 
@@ -240,6 +242,7 @@ pub struct CollatorBuilder<Block: BlockT, PF, BI, Backend, Executor, Runtime> {
 	block_import: BI,
 	para_id: ParaId,
 	client: Arc<Client<Backend, Executor, Block, Runtime>>,
+	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 	_marker: PhantomData<Block>,
 }
 
@@ -253,6 +256,7 @@ impl<Block: BlockT, PF, BI, Backend, Executor, Runtime>
 		block_import: BI,
 		para_id: ParaId,
 		client: Arc<Client<Backend, Executor, Block, Runtime>>,
+		network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 	) -> Self {
 		Self {
 			proposer_factory,
@@ -260,6 +264,7 @@ impl<Block: BlockT, PF, BI, Backend, Executor, Runtime>
 			block_import,
 			para_id,
 			client,
+			network,
 			_marker: PhantomData,
 		}
 	}
@@ -286,7 +291,7 @@ where
 		self,
 		polkadot_client: Arc<PolkadotClient<B, E, R>>,
 		spawner: Spawner,
-		network: impl CollatorNetwork + Clone + 'static,
+		polkadot_network: impl CollatorNetwork + Clone + 'static,
 	) -> Result<Self::ParachainContext, ()>
 	where
 		PolkadotClient<B, E, R>: sp_api::ProvideRuntimeApi<PBlock>,
@@ -304,7 +309,7 @@ where
 		B::State: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
 	{
 		let follow =
-			match cumulus_consensus::follow_polkadot(self.para_id, self.client, polkadot_client) {
+			match cumulus_consensus::follow_polkadot(self.para_id, self.client.clone(), polkadot_client) {
 				Ok(follow) => follow,
 				Err(e) => {
 					return Err(error!("Could not start following polkadot: {:?}", e));
@@ -320,10 +325,29 @@ where
 			)
 			.map_err(|_| error!("Could not spawn parachain server!"))?;
 
+		let network = self.network.clone();
+		let mut imported_blocks_stream = self.client.import_notification_stream().fuse();
+		let checked_statements = polkadot_network.checked_statements(());
+
+		spawner
+			.spawn_obj(
+				Box::pin(async move {
+					println!("0");
+					while let Some(notification) = imported_blocks_stream.next().await {
+						println!("1");
+						network.announce_block(notification.hash, Vec::new());
+						println!("2");
+					}
+					println!("3");
+				})
+				.into(),
+			)
+			.map_err(|_| error!("Could not spawn block announcer!"))?;
+
 		Ok(Collator::new(
 			self.proposer_factory,
 			self.inherent_data_providers,
-			network,
+			polkadot_network,
 			self.block_import,
 		))
 	}

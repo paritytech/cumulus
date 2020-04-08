@@ -768,6 +768,7 @@ dependencies = [
  "sc-cli 0.8.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "sc-client 0.8.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "sc-client-api 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sc-network 0.8.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "sc-service 0.8.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "sp-api 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "sp-blockchain 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
