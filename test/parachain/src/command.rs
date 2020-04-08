@@ -18,21 +18,27 @@
 
 use crate::chain_spec;
 use crate::cli::{Cli, PolkadotCli, Subcommand};
-use std::sync::Arc;
+use codec::Encode;
+use log::info;
 use parachain_runtime::Block;
+use sc_cli::{
+	CliConfiguration, Error, ImportParams, KeystoreParams, NetworkParams, Result, SharedParams,
+	SubstrateCli,
+};
 use sc_client::genesis;
-use sc_service::{Configuration, Role as ServiceRole, config::{PrometheusConfig, NetworkConfiguration, NodeKeyConfig}};
+use sc_network::config::TransportConfig;
+use sc_service::{
+	config::{NetworkConfiguration, NodeKeyConfig, PrometheusConfig},
+	Configuration, Role as ServiceRole,
+};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::{
 	traits::{Block as BlockT, Hash as HashT, Header as HeaderT},
 	BuildStorage,
 };
-use sc_network::config::TransportConfig;
-use codec::Encode;
-use log::info;
-use sc_cli::{SubstrateCli, CliConfiguration, SharedParams, Result, Error, KeystoreParams, NetworkParams, ImportParams};
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> &'static str {
@@ -44,10 +50,10 @@ impl SubstrateCli for Cli {
 	}
 
 	fn description() -> &'static str {
-"Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
-passed to the parachain node, while the arguments provided after -- will be passed \
-to the relaychain node.\n\n\
-cumulus-test-parachain-collator [parachain-args] -- [relaychain-args]"
+		"Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
+		passed to the parachain node, while the arguments provided after -- will be passed \
+		to the relaychain node.\n\n\
+		cumulus-test-parachain-collator [parachain-args] -- [relaychain-args]"
 	}
 
 	fn author() -> &'static str {
@@ -81,10 +87,10 @@ impl SubstrateCli for PolkadotCli {
 	}
 
 	fn description() -> &'static str {
-"Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
-passed to the parachain node, while the arguments provided after -- will be passed \
-to the relaychain node.\n\n\
-cumulus-test-parachain-collator [parachain-args] -- [relaychain-args]"
+		"Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
+		passed to the parachain node, while the arguments provided after -- will be passed \
+		to the relaychain node.\n\n\
+		cumulus-test-parachain-collator [parachain-args] -- [relaychain-args]"
 	}
 
 	fn author() -> &'static str {
@@ -106,7 +112,8 @@ cumulus-test-parachain-collator [parachain-args] -- [relaychain-args]"
 	fn load_spec(&self, _id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 		polkadot_service::PolkadotChainSpec::from_json_bytes(
 			&include_bytes!("../res/polkadot_chainspec.json")[..],
-		).map(|r| Box::new(r) as Box<_>)
+		)
+		.map(|r| Box::new(r) as Box<_>)
 	}
 }
 
@@ -119,16 +126,17 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(subcommand)?;
 
 			runner.run_subcommand(subcommand, |config| Ok(new_full_start!(config).0))
-		},
+		}
 		Some(Subcommand::ExportGenesisState(params)) => {
 			sc_cli::init_logger("");
 
 			let storage = (&chain_spec::get_chain_spec()).build_storage()?;
 
 			let child_roots = storage.children.iter().map(|(sk, child_content)| {
-				let state_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
-					child_content.data.clone().into_iter().collect(),
-				);
+				let state_root =
+					<<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
+						child_content.data.clone().into_iter().collect(),
+					);
 				(sk.clone(), state_root.encode())
 			});
 			let state_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
@@ -145,7 +153,7 @@ pub fn run() -> Result<()> {
 			}
 
 			Ok(())
-		},
+		}
 		None => {
 			let runner = cli.create_runner(&cli.run)?;
 
@@ -153,14 +161,20 @@ pub fn run() -> Result<()> {
 			let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
 
 			let mut polkadot_cli = PolkadotCli::from_iter(
-				[PolkadotCli::executable_name().to_string()].iter().chain(cli.relaychain_args.iter()),
+				[PolkadotCli::executable_name().to_string()]
+					.iter()
+					.chain(cli.relaychain_args.iter()),
 			);
 
 			polkadot_cli.base_path = cli.run.base_path()?.map(|x| x.join("polkadot"));
 
 			runner.async_run(|config| async {
 				let task_executor = config.task_executor.clone();
-				let polkadot_config = SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, task_executor)?;
+				let polkadot_config = SubstrateCli::create_configuration(
+					&polkadot_cli,
+					&polkadot_cli,
+					task_executor,
+				)?;
 
 				info!("{}", Cli::impl_name());
 				info!("  version {}", Cli::impl_version());
@@ -175,7 +189,7 @@ pub fn run() -> Result<()> {
 					_ => crate::service::run_collator(config, key, polkadot_config).await,
 				}
 			})
-		},
+		}
 	}
 }
 
@@ -197,9 +211,7 @@ impl CliConfiguration for PolkadotCli {
 	}
 
 	fn base_path(&self) -> Result<Option<PathBuf>> {
-		Ok(
-			self.shared_params().base_path().or(self.base_path.clone())
-		)
+		Ok(self.shared_params().base_path().or(self.base_path.clone()))
 	}
 
 	fn rpc_http(&self) -> Result<Option<SocketAddr>> {
@@ -208,8 +220,7 @@ impl CliConfiguration for PolkadotCli {
 		let validator = self.base.base.validator;
 		let rpc_port = self.base.base.rpc_port;
 		// copied directly from substrate
-		let rpc_interface: &str =
-			interface_str(rpc_external, unsafe_rpc_external, validator)?;
+		let rpc_interface: &str = interface_str(rpc_external, unsafe_rpc_external, validator)?;
 
 		Ok(Some(parse_address(
 			&format!("{}:{}", rpc_interface, 9934),
@@ -223,8 +234,7 @@ impl CliConfiguration for PolkadotCli {
 		let validator = self.base.base.validator;
 		let ws_port = self.base.base.ws_port;
 		// copied directly from substrate
-		let ws_interface: &str =
-			interface_str(ws_external, unsafe_ws_external, validator)?;
+		let ws_interface: &str = interface_str(ws_external, unsafe_ws_external, validator)?;
 
 		Ok(Some(parse_address(
 			&format!("{}:{}", ws_interface, 9945),
@@ -266,15 +276,19 @@ impl CliConfiguration for PolkadotCli {
 		node_name: &str,
 		node_key: NodeKeyConfig,
 	) -> Result<NetworkConfiguration> {
-		let (mut network, allow_private_ipv4) = if let Some(network_params) = self.network_params() {
-			(network_params.network_config(
-				chain_spec,
-				is_dev,
-				net_config_dir,
-				client_id,
-				node_name,
-				node_key,
-			), !network_params.no_private_ipv4)
+		let (mut network, allow_private_ipv4) = if let Some(network_params) = self.network_params()
+		{
+			(
+				network_params.network_config(
+					chain_spec,
+					is_dev,
+					net_config_dir,
+					client_id,
+					node_name,
+					node_key,
+				),
+				!network_params.no_private_ipv4,
+			)
 		} else {
 			unreachable!("NetworkParams is always available on RunCmd; qed");
 		};
