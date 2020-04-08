@@ -30,7 +30,7 @@ use sp_runtime::{
 use sc_network::config::TransportConfig;
 use codec::Encode;
 use log::info;
-use sc_cli::{SubstrateCli, CliConfiguration, SharedParams, Result, Error};
+use sc_cli::{SubstrateCli, CliConfiguration, SharedParams, Result, Error, KeystoreParams, NetworkParams, ImportParams};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
@@ -183,14 +183,26 @@ pub fn run() -> Result<()> {
 
 impl CliConfiguration for PolkadotCli {
 	fn shared_params(&self) -> &SharedParams {
-		self.base.run.base.shared_params() // TODO: probably not good
+		self.base.base.shared_params()
+	}
+
+	fn import_params(&self) -> Option<&ImportParams> {
+		self.base.base.import_params()
+	}
+
+	fn network_params(&self) -> Option<&NetworkParams> {
+		self.base.base.network_params()
+	}
+
+	fn keystore_params(&self) -> Option<&KeystoreParams> {
+		self.base.base.keystore_params()
 	}
 
 	fn rpc_http(&self) -> Result<Option<SocketAddr>> {
-		let rpc_external = self.base.run.base.rpc_external;
-		let unsafe_rpc_external = self.base.run.base.unsafe_rpc_external;
-		let validator = self.base.run.base.validator;
-		let rpc_port = self.base.run.base.rpc_port;
+		let rpc_external = self.base.base.rpc_external;
+		let unsafe_rpc_external = self.base.base.unsafe_rpc_external;
+		let validator = self.base.base.validator;
+		let rpc_port = self.base.base.rpc_port;
 		// copied directly from substrate
 		let rpc_interface: &str =
 			interface_str(rpc_external, unsafe_rpc_external, validator)?;
@@ -202,10 +214,10 @@ impl CliConfiguration for PolkadotCli {
 	}
 
 	fn rpc_ws(&self) -> Result<Option<SocketAddr>> {
-		let ws_external = self.base.run.base.ws_external;
-		let unsafe_ws_external = self.base.run.base.unsafe_ws_external;
-		let validator = self.base.run.base.validator;
-		let ws_port = self.base.run.base.ws_port;
+		let ws_external = self.base.base.ws_external;
+		let unsafe_ws_external = self.base.base.unsafe_ws_external;
+		let validator = self.base.base.validator;
+		let ws_port = self.base.base.ws_port;
 		// copied directly from substrate
 		let ws_interface: &str =
 			interface_str(ws_external, unsafe_ws_external, validator)?;
@@ -217,9 +229,9 @@ impl CliConfiguration for PolkadotCli {
 	}
 
 	fn prometheus_config(&self) -> Result<Option<PrometheusConfig>> {
-		let no_prometheus = self.base.run.base.no_prometheus;
-		let prometheus_external = self.base.run.base.prometheus_external;
-		let prometheus_port = self.base.run.base.prometheus_port;
+		let no_prometheus = self.base.base.no_prometheus;
+		let prometheus_external = self.base.base.prometheus_external;
+		let prometheus_port = self.base.base.prometheus_port;
 
 		if no_prometheus {
 			Ok(None)
@@ -260,7 +272,7 @@ impl CliConfiguration for PolkadotCli {
 				node_key,
 			), !network_params.no_private_ipv4)
 		} else {
-			unreachable!();
+			unreachable!("NetworkParams is always available on RunCmd; qed");
 		};
 
 		network.transport = TransportConfig::Normal {
@@ -271,6 +283,11 @@ impl CliConfiguration for PolkadotCli {
 		};
 
 		Ok(network)
+	}
+
+	fn init<C: SubstrateCli>(&self) -> Result<()> {
+		// NOTE: already initialized so, skipping...
+		Ok(())
 	}
 }
 
