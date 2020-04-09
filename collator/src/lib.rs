@@ -338,6 +338,11 @@ where
 					while let Some(notification) = imported_blocks_stream.next().await {
 						println!("1");
 						let checked_statements = polkadot_network.checked_statements(notification.hash);
+
+						while let Some(statement) = checked_statements.next().await {
+							println!("{:?}", statement);
+						}
+
 						network.announce_block(notification.hash, Vec::new());
 						println!("2");
 					}
