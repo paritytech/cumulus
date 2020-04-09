@@ -67,11 +67,11 @@ macro_rules! new_full_start {
 ///
 /// This function blocks until done.
 pub async fn run_collator(
-	mut parachain_config: Configuration,
+	parachain_config: Configuration,
 	key: Arc<CollatorPair>,
-	polkadot_config: polkadot_collator::Configuration,
+	mut polkadot_config: polkadot_collator::Configuration,
 ) -> sc_cli::Result<()> {
-	parachain_config.announce_block = false;
+	polkadot_config.announce_block = false;
 
 	let (builder, inherent_data_providers) = new_full_start!(parachain_config);
 	inherent_data_providers

@@ -309,7 +309,7 @@ where
 		B::State: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
 	{
 		let follow =
-			match cumulus_consensus::follow_polkadot(self.para_id, self.client.clone(), polkadot_client) {
+			match cumulus_consensus::follow_polkadot(self.para_id, self.client.clone(), polkadot_client.clone()) {
 				Ok(follow) => follow,
 				Err(e) => {
 					return Err(error!("Could not start following polkadot: {:?}", e));
@@ -326,7 +326,7 @@ where
 			.map_err(|_| error!("Could not spawn parachain server!"))?;
 
 		let network = self.network.clone();
-		let mut imported_blocks_stream = self.client.import_notification_stream().fuse();
+		let mut imported_blocks_stream = polkadot_client.import_notification_stream().fuse();
 		let polkadot_network_2 = polkadot_network.clone();
 
 		spawner
@@ -337,13 +337,13 @@ where
 					println!("0");
 					while let Some(notification) = imported_blocks_stream.next().await {
 						println!("1");
-						let mut checked_statements = polkadot_network.checked_statements(notification.hash);
+						let mut checked_statements = polkadot_network.checked_statements(notification.header.parent_hash);
 
 						while let Some(statement) = checked_statements.next().await {
 							println!("{:?}", statement);
 						}
 
-						network.announce_block(notification.hash, Vec::new());
+						polkadot_network.network_service().announce_block(notification.hash, Vec::new());
 						println!("2");
 					}
 					println!("3");
