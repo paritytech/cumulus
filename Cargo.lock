@@ -2200,7 +2200,7 @@ dependencies = [
 [[package]]
 name = "kusama-runtime"
 version = "0.7.29-pre1"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#b77b69b35b30e5ecedd45c8425ec58621ac174a5"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#6de90b625ec2cecfc6e5522398ce0cf43b29c636"
 dependencies = [
  "bitvec 0.17.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-executive 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
@@ -3908,7 +3908,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "polkadot-availability-store"
 version = "0.7.29-pre1"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#b77b69b35b30e5ecedd45c8425ec58621ac174a5"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#6de90b625ec2cecfc6e5522398ce0cf43b29c636"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "exit-future 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3936,7 +3936,7 @@ dependencies = [
 [[package]]
 name = "polkadot-cli"
 version = "0.7.29-pre1"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#b77b69b35b30e5ecedd45c8425ec58621ac174a5"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#6de90b625ec2cecfc6e5522398ce0cf43b29c636"
 dependencies = [
  "frame-benchmarking-cli 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3959,7 +3959,7 @@ dependencies = [
 [[package]]
 name = "polkadot-collator"
 version = "0.7.29-pre1"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#b77b69b35b30e5ecedd45c8425ec58621ac174a5"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#6de90b625ec2cecfc6e5522398ce0cf43b29c636"
 dependencies = [
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-timer 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3985,7 +3985,7 @@ dependencies = [
 [[package]]
 name = "polkadot-erasure-coding"
 version = "0.7.29-pre1"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#b77b69b35b30e5ecedd45c8425ec58621ac174a5"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#6de90b625ec2cecfc6e5522398ce0cf43b29c636"
 dependencies = [
  "derive_more 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3998,7 +3998,7 @@ dependencies = [
 [[package]]
 name = "polkadot-network"
 version = "0.7.29-pre1"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#b77b69b35b30e5ecedd45c8425ec58621ac174a5"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#6de90b625ec2cecfc6e5522398ce0cf43b29c636"
 dependencies = [
  "arrayvec 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "bytes 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4026,7 +4026,7 @@ dependencies = [
 [[package]]
 name = "polkadot-parachain"
 version = "0.7.29-pre1"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#b77b69b35b30e5ecedd45c8425ec58621ac174a5"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#6de90b625ec2cecfc6e5522398ce0cf43b29c636"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4046,7 +4046,7 @@ dependencies = [
 [[package]]
 name = "polkadot-primitives"
 version = "0.7.29-pre1"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#b77b69b35b30e5ecedd45c8425ec58621ac174a5"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#6de90b625ec2cecfc6e5522398ce0cf43b29c636"
 dependencies = [
  "bitvec 0.17.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4066,7 +4066,7 @@ dependencies = [
 [[package]]
 name = "polkadot-rpc"
 version = "0.7.29-pre1"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#b77b69b35b30e5ecedd45c8425ec58621ac174a5"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#6de90b625ec2cecfc6e5522398ce0cf43b29c636"
 dependencies = [
  "jsonrpc-core 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "pallet-transaction-payment-rpc 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
@@ -4083,7 +4083,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime"
 version = "0.7.29-pre1"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#b77b69b35b30e5ecedd45c8425ec58621ac174a5"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#6de90b625ec2cecfc6e5522398ce0cf43b29c636"
 dependencies = [
  "bitvec 0.17.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-executive 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
@@ -4143,7 +4143,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-common"
 version = "0.7.29-pre1"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#b77b69b35b30e5ecedd45c8425ec58621ac174a5"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#6de90b625ec2cecfc6e5522398ce0cf43b29c636"
 dependencies = [
  "bitvec 0.17.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-support 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
@@ -4174,7 +4174,7 @@ dependencies = [
 [[package]]
 name = "polkadot-service"
 version = "0.7.29-pre1"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#b77b69b35b30e5ecedd45c8425ec58621ac174a5"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#6de90b625ec2cecfc6e5522398ce0cf43b29c636"
 dependencies = [
  "frame-benchmarking 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "frame-system-rpc-runtime-api 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
@@ -4230,7 +4230,7 @@ dependencies = [
 [[package]]
 name = "polkadot-statement-table"
 version = "0.7.29-pre1"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#b77b69b35b30e5ecedd45c8425ec58621ac174a5"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#6de90b625ec2cecfc6e5522398ce0cf43b29c636"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "polkadot-primitives 0.7.29-pre1 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
@@ -4240,7 +4240,7 @@ dependencies = [
 [[package]]
 name = "polkadot-validation"
 version = "0.7.29-pre1"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#b77b69b35b30e5ecedd45c8425ec58621ac174a5"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#6de90b625ec2cecfc6e5522398ce0cf43b29c636"
 dependencies = [
  "bitvec 0.17.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "derive_more 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)",

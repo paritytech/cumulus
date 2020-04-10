@@ -159,6 +159,7 @@ pub fn run() -> Result<()> {
 
 			// TODO
 			let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
+			let key2 = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
 
 			let mut polkadot_cli = PolkadotCli::from_iter(
 				[PolkadotCli::executable_name().to_string()]
@@ -168,26 +169,28 @@ pub fn run() -> Result<()> {
 
 			polkadot_cli.base_path = cli.run.base_path()?.map(|x| x.join("polkadot"));
 
-			runner.async_run(|config| async {
+			runner.run_node(|config| {
 				let task_executor = config.task_executor.clone();
 				let polkadot_config = SubstrateCli::create_configuration(
 					&polkadot_cli,
 					&polkadot_cli,
 					task_executor,
-				)?;
+				).unwrap();
 
-				info!("{}", Cli::impl_name());
-				info!("  version {}", Cli::impl_version());
-				info!("  by {}, 2019", Cli::author());
-				info!("Chain specification: {}", config.chain_spec.name());
-				info!("Node name: {}", config.network.node_name);
-				info!("Roles: {:?}", config.role);
 				info!("Parachain id: {:?}", crate::PARA_ID);
 
-				match config.role {
-					ServiceRole::Light => unimplemented!("Light client not supported!"),
-					_ => crate::service::run_collator(config, key, polkadot_config).await,
-				}
+				crate::service::run_collator(config, key2, polkadot_config)
+			}, |config| {
+				let task_executor = config.task_executor.clone();
+				let polkadot_config = SubstrateCli::create_configuration(
+					&polkadot_cli,
+					&polkadot_cli,
+					task_executor,
+				).unwrap();
+
+				info!("Parachain id: {:?}", crate::PARA_ID);
+
+				crate::service::run_collator(config, key, polkadot_config)
 			})
 		}
 	}
