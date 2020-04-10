@@ -71,11 +71,11 @@ macro_rules! new_full_start {
 /// Run a collator node with the given parachain `Configuration` and relaychain `Configuration`
 ///
 /// This function blocks until done.
-pub async fn run_collator(
+pub fn run_collator(
 	parachain_config: Configuration,
 	key: Arc<CollatorPair>,
 	polkadot_config: polkadot_collator::Configuration,
-) -> sc_cli::Result<()> {
+) -> sc_service::error::Result<impl AbstractService> {
 	let (builder, inherent_data_providers) = new_full_start!(parachain_config);
 	inherent_data_providers
 		.register_provider(sp_timestamp::InherentDataProvider)
@@ -112,5 +112,5 @@ pub async fn run_collator(
 	).map(|_| ());
 	service.spawn_essential_task("polkadot", polkadot_future);
 
-	service.await.map_err(Into::into)
+	Ok(service)
 }
