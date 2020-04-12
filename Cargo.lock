@@ -7879,6 +7879,35 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "wrapped-dot"
+version = "0.1.0"
+dependencies = [
+ "frame-executive 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "frame-support 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "frame-system 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "pallet-balances 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "pallet-indices 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "pallet-randomness-collective-flip 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "pallet-sudo 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "pallet-timestamp 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "pallet-transaction-payment 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-api 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-block-builder 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-core 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-inherents 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-io 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-offchain 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-runtime 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-session 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-std 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-transaction-pool 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-version 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "substrate-wasm-builder-runner 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "ws"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
