@@ -45,16 +45,13 @@ use std::{fmt::Debug, marker::PhantomData, sync::Arc, time::Duration, pin::Pin};
 
 use parking_lot::Mutex;
 
-mod vfpx;
-use vfpx::ValidationFunctionParamsExtractor;
+use cumulus_runtime::ValidationFunctionParams;
 
 /// The head data of the parachain, stored in the relay chain.
 #[derive(Decode, Encode, Debug)]
 struct HeadData<Block: BlockT> {
 	header: Block::Header,
 }
-
-type Vfpx = Arc<dyn ValidationFunctionParamsExtractor + Send + Sync>;
 
 /// The implementation of the Cumulus `Collator`.
 pub struct Collator<Block, PF, BI> {
@@ -63,7 +60,6 @@ pub struct Collator<Block, PF, BI> {
 	inherent_data_providers: InherentDataProviders,
 	collator_network: Arc<dyn CollatorNetwork>,
 	block_import: Arc<Mutex<BI>>,
-	vfpx: Vfpx,
 }
 
 impl<Block, PF, BI> Collator<Block, PF, BI> {
@@ -73,7 +69,6 @@ impl<Block, PF, BI> Collator<Block, PF, BI> {
 		inherent_data_providers: InherentDataProviders,
 		collator_network: impl CollatorNetwork + Clone + 'static,
 		block_import: BI,
-		vfpx: Vfpx,
 	) -> Self {
 		Self {
 			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
@@ -81,7 +76,6 @@ impl<Block, PF, BI> Collator<Block, PF, BI> {
 			_phantom: PhantomData,
 			collator_network: Arc::new(collator_network),
 			block_import: Arc::new(Mutex::new(block_import)),
-			vfpx,
 		}
 	}
 }
@@ -94,7 +88,6 @@ impl<Block, PF, BI> Clone for Collator<Block, PF, BI> {
 			_phantom: PhantomData,
 			collator_network: self.collator_network.clone(),
 			block_import: self.block_import.clone(),
-			vfpx: self.vfpx.clone(),
 		}
 	}
 }
@@ -120,7 +113,7 @@ where
 	fn produce_candidate(
 		&mut self,
 		_relay_chain_parent: PHash,
-		_global_validation: GlobalValidationSchedule,
+		global_validation: GlobalValidationSchedule,
 		local_validation: LocalValidationData,
 	) -> Self::ProduceCandidate {
 		let factory = self.proposer_factory.clone();
@@ -155,7 +148,8 @@ where
 					InvalidHead
 				})?;
 
-			let inherent_data = inherent_providers
+			let inherent_data = {
+				let mut inherent_data = inherent_providers
 				.create_inherent_data()
 				.map_err(|e| {
 					error!(
@@ -165,6 +159,26 @@ where
 					);
 					InvalidHead
 				})?;
+				inherent_data.put_data(
+					// TODO: make a real inherent identifier
+					*b"valfuncp",
+					&ValidationFunctionParams {
+						max_code_size: global_validation.max_code_size,
+						relay_chain_height: global_validation.block_number,
+						code_upgrade_allowed: local_validation.code_upgrade_allowed,
+					}
+				).map_err(|e| {
+					error!(
+						target: "cumulus-collator",
+						"Failed to inject validation function params into inherents: {:?}",
+						e,
+					);
+					InvalidHead}
+				)?;
+				inherent_data
+			};
+
+
 
 			let Proposal {
 				block,
@@ -334,7 +348,6 @@ where
 			self.inherent_data_providers,
 			network,
 			self.block_import,
-			polkadot_client,
 		))
 	}
 }
