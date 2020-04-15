@@ -46,11 +46,10 @@ fn call_validate_block(
 	let params = ValidationParams {
 		block_data: BlockData(block_data.encode()),
 		parent_head: HeadData(parent_head.encode()),
-		// defaults
-		max_code_size: 0,
-		max_head_data_size: 0,
-		relay_chain_height: 0,
 		code_upgrade_allowed: None,
+		max_code_size: 1024,
+		max_head_data_size: 1024,
+		relay_chain_height: 1,
 	}
 	.encode();
 
@@ -59,10 +58,12 @@ fn call_validate_block(
 		Some(1024),
 		sp_io::SubstrateHostFunctions::host_functions(),
 		false,
+		1,
 	);
 
 	executor.call_in_wasm(
 		&WASM_BINARY,
+		None,
 		"validate_block",
 		&params,
 		&mut ext_ext,

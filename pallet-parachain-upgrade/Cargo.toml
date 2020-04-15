@@ -57,7 +57,7 @@ version = '2.0.0-alpha.5'
 [dependencies.parachain]
 package = "polkadot-parachain"
 git = "https://github.com/paritytech/polkadot"
-branch = "rh-upgradeable-validation-function"
+branch = "cumulus-branch"
 default-features = false
 
 [dependencies.pallet-balances]

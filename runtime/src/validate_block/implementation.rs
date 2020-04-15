@@ -83,7 +83,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 
 	let parent_head = B::Header::decode(&mut &params.parent_head.0[..]).expect("Invalid parent head");
 	// TODO: Use correct head data
-	let head_data = block_data.header.encode();
+	let head_data = HeadData(block_data.header.encode());
 
 	// TODO: Add `PolkadotInherent`.
 	let block = B::new(block_data.header, block_data.extrinsics);
@@ -128,7 +128,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	}
 
 	ValidationResult {
-		head_data: HeadData(head_data),
+		head_data: head_data,
 		new_validation_code,
 	}
 }

@@ -24,7 +24,7 @@ sp-trie = { git = "https://github.com/paritytech/substrate", default-features = 
 [dependencies.parachain]
 package = "polkadot-parachain"
 git = "https://github.com/paritytech/polkadot"
-branch = "rh-upgradeable-validation-function"
+branch = "cumulus-branch"
 default-features = false
 features = [ "wasm-api" ]
 
