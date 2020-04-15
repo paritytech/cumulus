@@ -167,29 +167,34 @@ pub fn run() -> Result<()> {
 
 			polkadot_cli.base_path = cli.run.base_path()?.map(|x| x.join("polkadot"));
 
-			runner.run_node(|config| {
-				let task_executor = config.task_executor.clone();
-				let polkadot_config = SubstrateCli::create_configuration(
-					&polkadot_cli,
-					&polkadot_cli,
-					task_executor,
-				).unwrap();
+			runner.run_node(
+				|config| {
+					let task_executor = config.task_executor.clone();
+					let polkadot_config = SubstrateCli::create_configuration(
+						&polkadot_cli,
+						&polkadot_cli,
+						task_executor,
+					)
+					.unwrap();
 
-				info!("Parachain id: {:?}", crate::PARA_ID);
+					info!("Parachain id: {:?}", crate::PARA_ID);
 
-				crate::service::run_collator(config, key2, polkadot_config)
-			}, |config| {
-				let task_executor = config.task_executor.clone();
-				let polkadot_config = SubstrateCli::create_configuration(
-					&polkadot_cli,
-					&polkadot_cli,
-					task_executor,
-				).unwrap();
+					crate::service::run_collator(config, key2, polkadot_config)
+				},
+				|config| {
+					let task_executor = config.task_executor.clone();
+					let polkadot_config = SubstrateCli::create_configuration(
+						&polkadot_cli,
+						&polkadot_cli,
+						task_executor,
+					)
+					.unwrap();
 
-				info!("Parachain id: {:?}", crate::PARA_ID);
+					info!("Parachain id: {:?}", crate::PARA_ID);
 
-				crate::service::run_collator(config, key, polkadot_config)
-			})
+					crate::service::run_collator(config, key, polkadot_config)
+				},
+			)
 		}
 	}
 }
@@ -277,22 +282,22 @@ impl CliConfiguration for PolkadotCli {
 		node_name: &str,
 		node_key: NodeKeyConfig,
 	) -> Result<NetworkConfiguration> {
-		let (mut network, allow_private_ipv4) = if let Some(network_params) = self.network_params()
-		{
-			(
-				network_params.network_config(
-					chain_spec,
-					is_dev,
-					net_config_dir,
-					client_id,
-					node_name,
-					node_key,
-				),
-				!network_params.no_private_ipv4,
-			)
-		} else {
-			unreachable!("NetworkParams is always available on RunCmd; qed");
-		};
+		let (mut network, allow_private_ipv4) = self
+			.network_params()
+			.map(|x| {
+				(
+					x.network_config(
+						chain_spec,
+						is_dev,
+						net_config_dir,
+						client_id,
+						node_name,
+						node_key,
+					),
+					!x.no_private_ipv4,
+				)
+			})
+			.expect("NetworkParams is always available on RunCmd; qed");
 
 		network.transport = TransportConfig::Normal {
 			enable_mdns: false,
