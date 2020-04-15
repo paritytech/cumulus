@@ -1,5 +1,5 @@
 // Copyright 2019 Parity Technologies (UK) Ltd.
-// This file is part of Substrate.
+// This file is part of Cumulus.
 
 // Substrate is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,29 +16,32 @@
 
 //! Cumulus Collator implementation for Substrate.
 
-use sr_primitives::traits::Block as BlockT;
-use consensus_common::{Environment, Proposer};
-use inherents::InherentDataProviders;
+use cumulus_runtime::ParachainBlockData;
+
+use sc_client::Client;
+use sp_consensus::{
+	BlockImport, BlockImportParams, BlockOrigin, Environment, Error as ConsensusError,
+	ForkChoiceStrategy, Proposal, Proposer, RecordProof,
+};
+use sp_inherents::InherentDataProviders;
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 
 use polkadot_collator::{
-	InvalidHead, ParachainContext, BuildParachainContext, Network as CollatorNetwork, VersionInfo,
+	BuildParachainContext, InvalidHead, Network as CollatorNetwork, ParachainContext,
+	PolkadotClient,
 };
 use polkadot_primitives::{
-	Hash,
-	parachain::{
-		self, BlockData, Message, Id as ParaId, OutgoingMessages, Status as ParachainStatus,
-		CollatorPair,
-	}
+	parachain::{self, BlockData, LocalValidationData, Id as ParaId}, Block as PBlock,
+	Hash as PHash,
 };
 
 use codec::{Decode, Encode};
 
-use log::error;
+use log::{error, trace};
 
-use futures03::TryFutureExt;
-use futures::{Future, future::IntoFuture};
+use futures::{task::Spawn, Future, future, FutureExt};
 
-use std::{sync::Arc, marker::PhantomData, time::Duration};
+use std::{fmt::Debug, marker::PhantomData, sync::Arc, time::Duration, pin::Pin};
 
 use parking_lot::Mutex;
 
@@ -49,158 +52,280 @@ struct HeadData<Block: BlockT> {
 }
 
 /// The implementation of the Cumulus `Collator`.
-pub struct Collator<Block, PF> {
+pub struct Collator<Block, PF, BI> {
 	proposer_factory: Arc<Mutex<PF>>,
 	_phantom: PhantomData<Block>,
 	inherent_data_providers: InherentDataProviders,
 	collator_network: Arc<dyn CollatorNetwork>,
+	block_import: Arc<Mutex<BI>>,
 }
 
-impl<Block: BlockT, PF: Environment<Block>> Collator<Block, PF> {
+impl<Block, PF, BI> Collator<Block, PF, BI> {
 	/// Create a new instance.
 	fn new(
 		proposer_factory: PF,
 		inherent_data_providers: InherentDataProviders,
-		collator_network: Arc<dyn CollatorNetwork>,
+		collator_network: impl CollatorNetwork + Clone + 'static,
+		block_import: BI,
 	) -> Self {
 		Self {
 			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
 			inherent_data_providers,
 			_phantom: PhantomData,
-			collator_network,
+			collator_network: Arc::new(collator_network),
+			block_import: Arc::new(Mutex::new(block_import)),
 		}
 	}
 }
 
-impl<Block, PF> Clone for Collator<Block, PF> {
+impl<Block, PF, BI> Clone for Collator<Block, PF, BI> {
 	fn clone(&self) -> Self {
 		Self {
 			proposer_factory: self.proposer_factory.clone(),
 			inherent_data_providers: self.inherent_data_providers.clone(),
 			_phantom: PhantomData,
 			collator_network: self.collator_network.clone(),
+			block_import: self.block_import.clone(),
 		}
 	}
 }
 
-impl<Block, PF> ParachainContext for Collator<Block, PF> where
+impl<Block, PF, BI> ParachainContext for Collator<Block, PF, BI>
+where
 	Block: BlockT,
-	PF: Environment<Block> + 'static + Send + Sync,
-	PF::Error: std::fmt::Debug,
-	PF::Proposer: Send + Sync,
-	<PF::Proposer as Proposer<Block>>::Create: Unpin + Send + Sync,
+	PF: Environment<Block> + 'static + Send,
+	PF::Proposer: Send,
+	BI: BlockImport<
+			Block,
+			Error = ConsensusError,
+			Transaction = <PF::Proposer as Proposer<Block>>::Transaction,
+		> + Send
+		+ Sync
+		+ 'static,
 {
-	type ProduceCandidate = Box<
-		dyn Future<Item=(BlockData, parachain::HeadData, OutgoingMessages), Error=InvalidHead>
-			+ Send + Sync
-	>;
+	type ProduceCandidate = Pin<Box<
+		dyn Future<Output=Result<(BlockData, parachain::HeadData), InvalidHead>>
+		+ Send,
+	>>;
 
-	fn produce_candidate<I: IntoIterator<Item=(ParaId, Message)>>(
-		&self,
-		_relay_chain_parent: Hash,
-		status: ParachainStatus,
-		_: I,
+	fn produce_candidate(
+		&mut self,
+		_relay_chain_parent: PHash,
+		status: LocalValidationData,
 	) -> Self::ProduceCandidate {
 		let factory = self.proposer_factory.clone();
 		let inherent_providers = self.inherent_data_providers.clone();
+		let block_import = self.block_import.clone();
 
-		let res = HeadData::<Block>::decode(&mut &status.head_data.0[..])
-			.map_err(|_| InvalidHead)
-			.into_future()
-			.and_then(move |last_head|
-				factory.lock()
-					.init(&last_head.header)
-					.map_err(|e| {
-						//TODO: Do we want to return the real error?
-						error!("Could not create proposer: {:?}", e);
-						InvalidHead
-					})
-			)
-			.and_then(move |proposer|
-				inherent_providers.create_inherent_data()
-					.map(|id| (proposer, id))
-					.map_err(|e| {
-						error!("Failed to create inherent data: {:?}", e);
-						InvalidHead
-					})
-			)
-			.and_then(|(mut proposer, inherent_data)| {
-				proposer.propose(
+		trace!(target: "cumulus-collator", "Producing candidate");
+
+		let last_head = match HeadData::<Block>::decode(&mut &status.parent_head.0[..]) {
+			Ok(x) => x,
+			Err(e) => {
+				error!(target: "cumulus-collator", "Could not decode the head data: {:?}", e);
+				return Box::pin(future::ready(Err(InvalidHead)));
+			}
+		};
+
+		let proposer_future = factory
+			.lock()
+			.init(&last_head.header);
+
+		Box::pin(async move {
+			let parent_state_root = *last_head.header.state_root();
+
+			let mut proposer = proposer_future
+				.await
+				.map_err(|e| {
+					error!(
+						target: "cumulus-collator",
+						"Could not create proposer: {:?}",
+						e,
+					);
+					InvalidHead
+				})?;
+
+			let inherent_data = inherent_providers
+				.create_inherent_data()
+				.map_err(|e| {
+					error!(
+						target: "cumulus-collator",
+						"Failed to create inherent data: {:?}",
+						e,
+					);
+					InvalidHead
+				})?;
+
+			let Proposal {
+				block,
+				storage_changes,
+				proof,
+			} = proposer
+				.propose(
 					inherent_data,
 					Default::default(),
 					//TODO: Fix this.
 					Duration::from_secs(6),
+					RecordProof::Yes,
 				)
+				.await
 				.map_err(|e| {
-					error!("Proposing failed: {:?}", e);
+					error!(
+						target: "cumulus-collator",
+						"Proposing failed: {:?}",
+						e,
+					);
 					InvalidHead
-				})
-				.compat()
-			})
-			.map(|b| {
-				let block_data = BlockData(b.encode());
-				let head_data = HeadData::<Block> { header: b.deconstruct().0 };
-				let messages = OutgoingMessages { outgoing_messages: Vec::new() };
+				})?;
 
-				(block_data, parachain::HeadData(head_data.encode()), messages)
-			});
+			let proof = proof
+				.ok_or_else(|| {
+					error!(
+						target: "cumulus-collator",
+						"Proposer did not return the requested proof.",
+					);
+					InvalidHead
+				})?;
 
-		Box::new(res)
+			let (header, extrinsics) = block.deconstruct();
+
+			// Create the parachain block data for the validators.
+			let b = ParachainBlockData::<Block>::new(
+				header.clone(),
+				extrinsics,
+				proof.iter_nodes().collect(),
+				parent_state_root,
+			);
+
+			let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header);
+			block_import_params.body = Some(b.extrinsics().to_vec());
+			block_import_params.fork_choice = Some(ForkChoiceStrategy::LongestChain);
+			block_import_params.storage_changes = Some(storage_changes);
+
+			if let Err(err) = block_import
+				.lock()
+				.import_block(block_import_params, Default::default())
+			{
+				error!(
+					target: "cumulus-collator",
+					"Error importing build block (at {:?}): {:?}",
+					b.header().parent_hash(),
+					err,
+				);
+				return Err(InvalidHead);
+			}
+
+			let block_data = BlockData(b.encode());
+			let head_data = HeadData::<Block> {
+				header: b.into_header(),
+			};
+
+			let candidate = (
+				block_data,
+				parachain::HeadData(head_data.encode()),
+			);
+
+			trace!(target: "cumulus-collator", "Produced candidate: {:?}", candidate);
+
+			Ok(candidate)
+		})
 	}
 }
 
 /// Implements `BuildParachainContext` to build a collator instance.
-struct CollatorBuilder<Block, PF> {
-	inherent_data_providers: InherentDataProviders,
+pub struct CollatorBuilder<Block: BlockT, PF, BI, Backend, Executor, Runtime> {
 	proposer_factory: PF,
-	_phantom: PhantomData<Block>,
+	inherent_data_providers: InherentDataProviders,
+	block_import: BI,
+	para_id: ParaId,
+	client: Arc<Client<Backend, Executor, Block, Runtime>>,
+	_marker: PhantomData<Block>,
 }
 
-impl<Block, PF> CollatorBuilder<Block, PF> {
+impl<Block: BlockT, PF, BI, Backend, Executor, Runtime>
+	CollatorBuilder<Block, PF, BI, Backend, Executor, Runtime>
+{
 	/// Create a new instance of self.
-	fn new(proposer_factory: PF, inherent_data_providers: InherentDataProviders) -> Self {
+	pub fn new(
+		proposer_factory: PF,
+		inherent_data_providers: InherentDataProviders,
+		block_import: BI,
+		para_id: ParaId,
+		client: Arc<Client<Backend, Executor, Block, Runtime>>,
+	) -> Self {
 		Self {
-			inherent_data_providers,
 			proposer_factory,
-			_phantom: Default::default(),
+			inherent_data_providers,
+			block_import,
+			para_id,
+			client,
+			_marker: PhantomData,
 		}
 	}
 }
 
-impl<Block, PF> BuildParachainContext for CollatorBuilder<Block, PF> where
-	Block: BlockT,
-	PF: Environment<Block> + 'static + Send + Sync,
-	PF::Error: std::fmt::Debug,
-	PF::Proposer: Send + Sync,
-	<PF::Proposer as Proposer<Block>>::Create: Unpin + Send + Sync,
-{
-	type ParachainContext = Collator<Block, PF>;
+type TransactionFor<E, Block> =
+	<<E as Environment<Block>>::Proposer as Proposer<Block>>::Transaction;
 
-	fn build(self, network: Arc<dyn CollatorNetwork>) -> Result<Self::ParachainContext, ()> {
-		Ok(Collator::new(self.proposer_factory, self.inherent_data_providers, network))
-	}
-}
-
-/// Run a collator with the given proposer factory.
-pub fn run_collator<Block, PF, E, I>(
-	proposer_factory: PF,
-	inherent_data_providers: InherentDataProviders,
-	para_id: ParaId,
-	exit: E,
-	key: Arc<CollatorPair>,
-	version: VersionInfo,
-) -> Result<(), cli::error::Error>
+impl<Block: BlockT, PF, BI, Backend, Executor, Runtime> BuildParachainContext
+	for CollatorBuilder<Block, PF, BI, Backend, Executor, Runtime>
 where
-	Block: BlockT,
-	PF: Environment<Block> + 'static + Send + Sync,
-	PF::Error: std::fmt::Debug,
-	PF::Proposer: Send + Sync,
-	<PF::Proposer as Proposer<Block>>::Create: Unpin + Send + Sync,
-	E: IntoFuture<Item=(), Error=()>,
-	E::Future: Send + Clone + Sync + 'static,
+	PF: Environment<Block> + Send + 'static,
+	BI: BlockImport<Block, Error = sp_consensus::Error, Transaction = TransactionFor<PF, Block>>
+		+ Send
+		+ Sync
+		+ 'static,
+	Backend: sc_client_api::Backend<Block> + 'static,
+	Executor: sc_client_api::CallExecutor<Block> + Send + Sync + 'static,
+	Runtime: Send + Sync + 'static,
 {
-	let builder = CollatorBuilder::new(proposer_factory, inherent_data_providers);
-	polkadot_collator::run_collator(builder, para_id, exit, key, version)
+	type ParachainContext = Collator<Block, PF, BI>;
+
+	fn build<B, E, R, Spawner, Extrinsic>(
+		self,
+		polkadot_client: Arc<PolkadotClient<B, E, R>>,
+		spawner: Spawner,
+		network: impl CollatorNetwork + Clone + 'static,
+	) -> Result<Self::ParachainContext, ()>
+	where
+		PolkadotClient<B, E, R>: sp_api::ProvideRuntimeApi<PBlock>,
+		<PolkadotClient<B, E, R> as sp_api::ProvideRuntimeApi<PBlock>>::Api:
+			polkadot_service::RuntimeApiCollection<Extrinsic>,
+		E: sc_client::CallExecutor<PBlock> + Clone + Send + Sync + 'static,
+		Spawner: Spawn + Clone + Send + Sync + 'static,
+		Extrinsic: codec::Codec + Send + Sync + 'static,
+		<<PolkadotClient<B, E, R> as sp_api::ProvideRuntimeApi<PBlock>>::Api as sp_api::ApiExt<
+			PBlock,
+		>>::StateBackend: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
+		R: Send + Sync + 'static,
+		B: sc_client_api::Backend<PBlock> + 'static,
+		// Rust bug: https://github.com/rust-lang/rust/issues/24159
+		B::State: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
+	{
+		let follow =
+			match cumulus_consensus::follow_polkadot(self.para_id, self.client, polkadot_client) {
+				Ok(follow) => follow,
+				Err(e) => {
+					return Err(error!("Could not start following polkadot: {:?}", e));
+				}
+			};
+
+		spawner
+			.spawn_obj(
+				Box::new(
+					follow.map(|_| ()),
+				)
+				.into(),
+			)
+			.map_err(|_| error!("Could not spawn parachain server!"))?;
+
+		Ok(Collator::new(
+			self.proposer_factory,
+			self.inherent_data_providers,
+			network,
+			self.block_import,
+		))
+	}
 }
 
 #[cfg(test)]
@@ -208,23 +333,31 @@ mod tests {
 	use super::*;
 	use std::time::Duration;
 
-	use polkadot_collator::{collate, RelayChainContext, PeerId, CollatorId, SignedStatement};
-	use polkadot_primitives::parachain::{ConsolidatedIngress, HeadData, FeeSchedule};
+	use polkadot_collator::{collate, SignedStatement};
+	use polkadot_primitives::parachain::{HeadData, Id as ParaId};
 
-	use keyring::Sr25519Keyring;
-	use sr_primitives::traits::{DigestFor, Header as HeaderT};
-	use inherents::InherentData;
+	use sp_blockchain::Result as ClientResult;
+	use sp_inherents::InherentData;
+	use sp_keyring::Sr25519Keyring;
+	use sp_runtime::{
+		generic::BlockId,
+		traits::{DigestFor, Header as HeaderT},
+	};
+	use sp_state_machine::StorageProof;
+	use substrate_test_client::{NativeExecutor, WasmExecutionMethod::Interpreted};
 
+	use test_client::{
+		DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
+	};
 	use test_runtime::{Block, Header};
 
-	use futures03::future;
-	use futures::Stream;
+	use futures::{Stream, future};
 
 	#[derive(Debug)]
 	struct Error;
 
-	impl From<consensus_common::Error> for Error {
-		fn from(_: consensus_common::Error) -> Self {
+	impl From<sp_consensus::Error> for Error {
+		fn from(_: sp_consensus::Error) -> Self {
 			unimplemented!("Not required in tests")
 		}
 	}
@@ -234,9 +367,12 @@ mod tests {
 	impl Environment<Block> for DummyFactory {
 		type Proposer = DummyProposer;
 		type Error = Error;
+		type CreateProposer = Pin<Box<
+			dyn Future<Output = Result<Self::Proposer, Self::Error>> + Send + Unpin + 'static
+		>>;
 
-		fn init(&mut self, _: &Header) -> Result<Self::Proposer, Self::Error> {
-			Ok(DummyProposer)
+		fn init(&mut self, _: &Header) -> Self::CreateProposer {
+			Box::pin(future::ready(Ok(DummyProposer)))
 		}
 	}
 
@@ -244,14 +380,16 @@ mod tests {
 
 	impl Proposer<Block> for DummyProposer {
 		type Error = Error;
-		type Create = future::Ready<Result<Block, Error>>;
+		type Proposal = future::Ready<Result<Proposal<Block, Self::Transaction>, Error>>;
+		type Transaction = sc_client_api::TransactionFor<test_client::Backend, Block>;
 
 		fn propose(
 			&mut self,
 			_: InherentData,
-			digest : DigestFor<Block>,
+			digest: DigestFor<Block>,
 			_: Duration,
-		) -> Self::Create {
+			_: RecordProof,
+		) -> Self::Proposal {
 			let header = Header::new(
 				1337,
 				Default::default(),
@@ -260,43 +398,76 @@ mod tests {
 				digest,
 			);
 
-			future::ready(Ok(Block::new(header, Vec::new())))
+			future::ready(Ok(Proposal {
+				block: Block::new(header, Vec::new()),
+				storage_changes: Default::default(),
+				proof: Some(StorageProof::empty()),
+			}))
 		}
 	}
 
+	#[derive(Clone)]
 	struct DummyCollatorNetwork;
 
 	impl CollatorNetwork for DummyCollatorNetwork {
-		fn collator_id_to_peer_id(&self, _: CollatorId) ->
-			Box<dyn Future<Item=Option<PeerId>, Error=()> + Send>
-		{
-			unimplemented!("Not required in tests")
-		}
-
-		fn checked_statements(&self, _: Hash) ->
-			Box<dyn Stream<Item=SignedStatement, Error=()>>
-		{
+		fn checked_statements(&self, _: PHash) -> Pin<Box<dyn Stream<Item = SignedStatement>>> {
 			unimplemented!("Not required in tests")
 		}
 	}
 
-	struct DummyRelayChainContext;
+	#[derive(Clone)]
+	struct DummyPolkadotClient;
 
-	impl RelayChainContext for DummyRelayChainContext {
+	impl cumulus_consensus::PolkadotClient for DummyPolkadotClient {
 		type Error = Error;
-		type FutureEgress = Result<ConsolidatedIngress, Self::Error>;
+		type Finalized = Box<dyn futures::Stream<Item = Vec<u8>> + Send + Unpin>;
 
-		fn unrouted_egress(&self, _id: ParaId) -> Self::FutureEgress {
-			Ok(ConsolidatedIngress(Vec::new()))
+		fn finalized_heads(&self, _: ParaId) -> ClientResult<Self::Finalized> {
+			unimplemented!("Not required in tests")
+		}
+
+		fn parachain_head_at(
+			&self,
+			_: &BlockId<PBlock>,
+			_: ParaId,
+		) -> ClientResult<Option<Vec<u8>>> {
+			unimplemented!("Not required in tests")
 		}
 	}
 
 	#[test]
 	fn collates_produces_a_block() {
-		let builder = CollatorBuilder::new(DummyFactory, InherentDataProviders::new());
-		let context = builder.build(Arc::new(DummyCollatorNetwork)).expect("Creates parachain context");
-
 		let id = ParaId::from(100);
+		let _ = env_logger::try_init();
+		let spawner = futures::executor::ThreadPool::new().unwrap();
+
+		let builder = CollatorBuilder::new(
+			DummyFactory,
+			InherentDataProviders::default(),
+			TestClientBuilder::new().build(),
+			id,
+			Arc::new(TestClientBuilder::new().build()),
+		);
+		let context = builder
+			.build(
+				Arc::new(
+					substrate_test_client::TestClientBuilder::<_, _, _, ()>::default()
+						.build_with_native_executor::<polkadot_service::polkadot_runtime::RuntimeApi, _>(
+							Some(
+								NativeExecutor::<polkadot_service::PolkadotExecutor>::new(
+									Interpreted,
+									None,
+									1,
+								)
+							)
+						)
+						.0,
+				),
+				spawner,
+				DummyCollatorNetwork,
+			)
+			.expect("Creates parachain context");
+
 		let header = Header::new(
 			0,
 			Default::default(),
@@ -308,18 +479,15 @@ mod tests {
 		let collation = collate(
 			Default::default(),
 			id,
-			ParachainStatus {
-				head_data: HeadData(header.encode()),
+			LocalValidationData {
+				parent_head: HeadData(header.encode()),
 				balance: 10,
-				fee_schedule: FeeSchedule {
-					base: 0,
-					per_byte: 1,
-				},
 			},
-			DummyRelayChainContext,
 			context,
 			Arc::new(Sr25519Keyring::Alice.pair().into()),
-		).wait().unwrap().0;
+		);
+
+		let collation = futures::executor::block_on(collation).unwrap();
 
 		let block_data = collation.pov.block_data;
 

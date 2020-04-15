@@ -16,15 +16,14 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::{Decode, Encode};
+use sp_runtime::traits::Block as BlockT;
 ///! The Cumulus runtime to make a runtime a parachain.
-
-use rstd::vec::Vec;
-use codec::{Encode, Decode};
-use runtime_primitives::traits::Block as BlockT;
+use sp_std::vec::Vec;
 
 #[cfg(not(feature = "std"))]
 #[doc(hidden)]
-pub use rstd::slice;
+pub use sp_std::slice;
 
 #[macro_use]
 pub mod validate_block;
@@ -43,6 +42,7 @@ pub struct ParachainBlockData<B: BlockT> {
 	extrinsics: Vec<<B as BlockT>::Extrinsic>,
 	/// The data that is required to emulate the storage accesses executed by all extrinsics.
 	witness_data: WitnessData,
+	/// The storage root of the witness data.
 	witness_data_storage_root: <B as BlockT>::Hash,
 }
 
@@ -59,5 +59,20 @@ impl<B: BlockT> ParachainBlockData<B> {
 			witness_data,
 			witness_data_storage_root,
 		}
+	}
+
+	/// Convert `self` into the stored header.
+	pub fn into_header(self) -> B::Header {
+		self.header
+	}
+
+	/// Returns the header.
+	pub fn header(&self) -> &B::Header {
+		&self.header
+	}
+
+	/// Returns the extrinsics.
+	pub fn extrinsics(&self) -> &[B::Extrinsic] {
+		&self.extrinsics
 	}
 }

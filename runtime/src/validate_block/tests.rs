@@ -16,49 +16,57 @@
 
 use crate::{ParachainBlockData, WitnessData};
 
-use rio::TestExternalities;
-use keyring::AccountKeyring;
-use runtime_primitives::{generic::BlockId, traits::{Block as BlockT, Header as HeaderT}};
-use executor::{WasmExecutor, error::Result, wasmi::RuntimeValue::I32};
-use test_client::{
-	TestClientBuilder, TestClientBuilderExt, DefaultTestClientBuilderExt, Client, LongestChain,
-	runtime::{Block, Transfer, Hash, WASM_BINARY, Header}
+use parachain::{ValidationParams, ValidationResult};
+use sc_executor::{
+	error::Result, WasmExecutionMethod, WasmExecutor, sp_wasm_interface::HostFunctions,
 };
-use consensus_common::SelectChain;
-use parachain::ValidationParams;
+use sc_block_builder::BlockBuilderProvider;
+use sp_blockchain::HeaderBackend;
+use sp_consensus::SelectChain;
+use sp_core::traits::CallInWasm;
+use sp_io::TestExternalities;
+use sp_keyring::AccountKeyring;
+use sp_runtime::{
+	generic::BlockId,
+	traits::{Block as BlockT, Header as HeaderT},
+};
+use test_client::{
+	runtime::{Block, Hash, Header, Transfer, WASM_BINARY},
+	Client, DefaultTestClientBuilderExt, LongestChain, TestClientBuilder, TestClientBuilderExt,
+};
 
-use codec::Encode;
+use codec::{Decode, Encode};
 
-fn call_validate_block(parent_head: Header, block_data: ParachainBlockData<Block>) -> Result<()> {
+fn call_validate_block(
+	parent_head: Header,
+	block_data: ParachainBlockData<Block>,
+) -> Result<Header> {
 	let mut ext = TestExternalities::default();
-	WasmExecutor::new().call_with_custom_signature(
-		&mut ext,
-		1024,
-		&WASM_BINARY,
-		"validate_block",
-		|alloc| {
-			let params = ValidationParams {
-				block_data: block_data.encode(),
-				parent_head: parent_head.encode(),
-				ingress: Vec::new(),
-			}.encode();
-			let params_offset = alloc(&params)?;
+	let mut ext_ext = ext.ext();
+	let params = ValidationParams {
+		block_data: block_data.encode(),
+		parent_head: parent_head.encode(),
+	}
+	.encode();
 
-			Ok(
-				vec![
-					I32(params_offset as i32),
-					I32(params.len() as i32),
-				]
-			)
-		},
-		|res, _| {
-			if res.is_none() {
-				Ok(Some(()))
-			} else {
-				Ok(None)
-			}
-		}
+	let executor = WasmExecutor::new(
+		WasmExecutionMethod::Interpreted,
+		Some(1024),
+		sp_io::SubstrateHostFunctions::host_functions(),
+		false,
+		1,
+	);
+
+	executor.call_in_wasm(
+		&WASM_BINARY,
+		None,
+		"validate_block",
+		&params,
+		&mut ext_ext,
 	)
+	.map(|v| ValidationResult::decode(&mut &v[..]).expect("Decode `ValidationResult`."))
+	.map(|v| Header::decode(&mut &v.head_data[..]).expect("Decode `Header`."))
+	.map_err(|err| err.into())
 }
 
 fn create_extrinsics() -> Vec<<Block as BlockT>::Extrinsic> {
@@ -68,25 +76,29 @@ fn create_extrinsics() -> Vec<<Block as BlockT>::Extrinsic> {
 			to: AccountKeyring::Bob.into(),
 			amount: 69,
 			nonce: 0,
-		}.into_signed_tx(),
+		}
+		.into_signed_tx(),
 		Transfer {
 			from: AccountKeyring::Alice.into(),
 			to: AccountKeyring::Charlie.into(),
 			amount: 100,
 			nonce: 1,
-		}.into_signed_tx(),
+		}
+		.into_signed_tx(),
 		Transfer {
 			from: AccountKeyring::Bob.into(),
 			to: AccountKeyring::Charlie.into(),
 			amount: 100,
 			nonce: 0,
-		}.into_signed_tx(),
+		}
+		.into_signed_tx(),
 		Transfer {
 			from: AccountKeyring::Charlie.into(),
 			to: AccountKeyring::Alice.into(),
 			amount: 500,
 			nonce: 0,
-		}.into_signed_tx(),
+		}
+		.into_signed_tx(),
 	]
 }
 
@@ -98,19 +110,25 @@ fn build_block_with_proof(
 	client: &Client,
 	extrinsics: Vec<<Block as BlockT>::Extrinsic>,
 ) -> (Block, WitnessData) {
-	let block_id = BlockId::Hash(client.info().chain.best_hash);
-	let mut builder = client.new_block_at_with_proof_recording(
-		&block_id,
-		Default::default()
-	).expect("Initializes new block");
+	let block_id = BlockId::Hash(client.info().best_hash);
+	let mut builder = client
+		.new_block_at(&block_id, Default::default(), true)
+		.expect("Initializes new block");
 
-	extrinsics.into_iter().for_each(|e| builder.push(e).expect("Pushes an extrinsic"));
+	extrinsics
+		.into_iter()
+		.for_each(|e| builder.push(e).expect("Pushes an extrinsic"));
 
-	let (block, proof) = builder
-		.bake_and_extract_proof()
-		.expect("Finalizes block");
+	let built_block = builder.build().expect("Creates block");
 
-	(block, proof.expect("We enabled proof recording before."))
+	(
+		built_block.block,
+		built_block
+			.proof
+			.expect("We enabled proof recording before.")
+			.iter_nodes()
+			.collect(),
+	)
 }
 
 #[test]
@@ -122,12 +140,14 @@ fn validate_block_with_no_extrinsics() {
 	let (header, extrinsics) = block.deconstruct();
 
 	let block_data = ParachainBlockData::new(
-		header,
+		header.clone(),
 		extrinsics,
 		witness_data,
-		witness_data_storage_root
+		witness_data_storage_root,
 	);
-	call_validate_block(parent_head, block_data).expect("Calls `validate_block`");
+
+	let res_header = call_validate_block(parent_head, block_data).expect("Calls `validate_block`");
+	assert_eq!(header, res_header);
 }
 
 #[test]
@@ -139,12 +159,14 @@ fn validate_block_with_extrinsics() {
 	let (header, extrinsics) = block.deconstruct();
 
 	let block_data = ParachainBlockData::new(
-		header,
+		header.clone(),
 		extrinsics,
 		witness_data,
-		witness_data_storage_root
+		witness_data_storage_root,
 	);
-	call_validate_block(parent_head, block_data).expect("Calls `validate_block`");
+
+	let res_header = call_validate_block(parent_head, block_data).expect("Calls `validate_block`");
+	assert_eq!(header, res_header);
 }
 
 #[test]
@@ -157,11 +179,7 @@ fn validate_block_invalid_parent_hash() {
 	let (mut header, extrinsics) = block.deconstruct();
 	header.set_parent_hash(Hash::from_low_u64_be(1));
 
-	let block_data = ParachainBlockData::new(
-		header,
-		extrinsics,
-		witness_data,
-		witness_data_storage_root
-	);
+	let block_data =
+		ParachainBlockData::new(header, extrinsics, witness_data, witness_data_storage_root);
 	call_validate_block(parent_head, block_data).expect("Calls `validate_block`");
 }

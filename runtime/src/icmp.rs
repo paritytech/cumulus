@@ -21,11 +21,11 @@
 //! - API to allow runtimes to configure the how messages are handled;
 //! - API to allow runtimes to deposit outgoing messages.
 
-use rstd::prelude::*;
+use sp_std::prelude::*;
 use codec::Codec;
-use support::{decl_module, decl_storage, decl_event};
-use system::ensure_none;
-use runtime_primitives::traits::Dispatchable;
+use frame_support::{decl_module, decl_storage, decl_event, dispatch::SimpleDispatchInfo};
+use frame_system::{self as system, ensure_none};
+use sp_runtime::traits::Dispatchable;
 use polkadot_primitives::parachain::{Chain, Id as ParaId};
 
 /// Means of handling a bunch of "messages" (opaque blobs of data) coming in from other chains.
@@ -59,7 +59,7 @@ pub enum Origin {
 
 /// A message handler which treats each message as a `Call` and dispatches them as per `Call`s
 /// with a corresponding `Origin`.
-pub struct DispatchCall<Origin, Call>(::rstd::marker::PhantomData<(Origin, Call)>);
+pub struct DispatchCall<Origin, Call>(::sp_std::marker::PhantomData<(Origin, Call)>);
 
 impl<
 	Call: Codec + Dispatchable
@@ -103,6 +103,10 @@ decl_module! {
 
 		/// Provide any incoming messages from external ICMP chains (i.e. parachains or the relay
 		/// chain) for this block to execute.
+		/// # <weight>
+		/// Weight TODO
+		/// # </weight>
+		#[weight = SimpleDispatchInfo::FixedNormal(1_000_000)]
 		fn note_incoming(origin, messages: Vec<(Chain, Vec<u8>)>) {
 			ensure_none(origin)?;
 

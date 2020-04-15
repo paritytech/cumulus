@@ -1,5 +1,5 @@
 // Copyright 2019 Parity Technologies (UK) Ltd.
-// This file is part of Substrate.
+// This file is part of Cumulus.
 
 // Substrate is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,14 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! A Cumulus test runtime.
+use wasm_builder_runner::WasmBuilder;
 
-#![cfg_attr(not(feature = "std"), no_std)]
-
-// Make the WASM binary available.
-#[cfg(feature = "std")]
-include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
-
-pub use substrate_test_runtime::*;
-
-runtime::register_validate_block!(Block, system::BlockExecutor);
+fn main() {
+	WasmBuilder::new()
+		.with_current_project()
+		.with_wasm_builder_from_git("https://github.com/paritytech/substrate.git", "0b30207969fdde85e0dad785750757399cd0e3e4")
+		.export_heap_base()
+		.import_memory()
+		.build()
+}
