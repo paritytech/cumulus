@@ -339,9 +339,15 @@ where
 						println!("1");
 						let mut checked_statements = polkadot_network.checked_statements(notification.header.parent_hash);
 
+						/*
 						while let Some(statement) = checked_statements.next().await {
 							println!("{:?}", statement);
 						}
+						*/
+						checked_statements.for_each(move |msg| {
+							println!("{:?}", msg);
+							futures::future::ready(())
+						}).await;
 
 						polkadot_network.network_service().announce_block(notification.hash, Vec::new());
 						println!("2");
