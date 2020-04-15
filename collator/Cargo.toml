@@ -11,6 +11,7 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = "cumulus-b
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 sc-client = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
@@ -19,7 +20,9 @@ sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cumulus-br
 # Polkadot dependencies
 polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
+polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../consensus" }

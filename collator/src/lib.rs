@@ -45,11 +45,16 @@ use std::{fmt::Debug, marker::PhantomData, sync::Arc, time::Duration, pin::Pin};
 
 use parking_lot::Mutex;
 
+mod vfpx;
+use vfpx::ValidationFunctionParamsExtractor;
+
 /// The head data of the parachain, stored in the relay chain.
 #[derive(Decode, Encode, Debug)]
 struct HeadData<Block: BlockT> {
 	header: Block::Header,
 }
+
+type Vfpx = Arc<dyn ValidationFunctionParamsExtractor + Send + Sync>;
 
 /// The implementation of the Cumulus `Collator`.
 pub struct Collator<Block, PF, BI> {
@@ -58,6 +63,7 @@ pub struct Collator<Block, PF, BI> {
 	inherent_data_providers: InherentDataProviders,
 	collator_network: Arc<dyn CollatorNetwork>,
 	block_import: Arc<Mutex<BI>>,
+	vfpx: Vfpx,
 }
 
 impl<Block, PF, BI> Collator<Block, PF, BI> {
@@ -67,6 +73,7 @@ impl<Block, PF, BI> Collator<Block, PF, BI> {
 		inherent_data_providers: InherentDataProviders,
 		collator_network: impl CollatorNetwork + Clone + 'static,
 		block_import: BI,
+		vfpx: Vfpx,
 	) -> Self {
 		Self {
 			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
@@ -74,6 +81,7 @@ impl<Block, PF, BI> Collator<Block, PF, BI> {
 			_phantom: PhantomData,
 			collator_network: Arc::new(collator_network),
 			block_import: Arc::new(Mutex::new(block_import)),
+			vfpx,
 		}
 	}
 }
@@ -86,6 +94,7 @@ impl<Block, PF, BI> Clone for Collator<Block, PF, BI> {
 			_phantom: PhantomData,
 			collator_network: self.collator_network.clone(),
 			block_import: self.block_import.clone(),
+			vfpx: self.vfpx.clone(),
 		}
 	}
 }
@@ -304,7 +313,7 @@ where
 		B::State: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
 	{
 		let follow =
-			match cumulus_consensus::follow_polkadot(self.para_id, self.client, polkadot_client) {
+			match cumulus_consensus::follow_polkadot(self.para_id, self.client, polkadot_client.clone()) {
 				Ok(follow) => follow,
 				Err(e) => {
 					return Err(error!("Could not start following polkadot: {:?}", e));
@@ -325,6 +334,7 @@ where
 			self.inherent_data_providers,
 			network,
 			self.block_import,
+			polkadot_client,
 		))
 	}
 }
