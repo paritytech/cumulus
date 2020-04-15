@@ -27,7 +27,6 @@ use sc_client::genesis;
 use sc_network::config::TransportConfig;
 use sc_service::{
 	config::{NetworkConfiguration, NodeKeyConfig, PrometheusConfig},
-	Configuration, Role as ServiceRole,
 };
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::{
