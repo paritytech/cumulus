@@ -7885,6 +7885,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "wrapped-dot"
 version = "0.1.0"
 dependencies = [
+ "cumulus-runtime 0.1.0",
  "frame-executive 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "frame-support 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "frame-system 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",

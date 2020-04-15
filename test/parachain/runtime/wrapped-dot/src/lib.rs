@@ -24,6 +24,7 @@ use sp_runtime::traits::{
 	Member,
 	AtLeast32Bit,
 	MaybeSerializeDeserialize,
+	EnsureOrigin,
 };
 use sp_std::fmt::Debug;
 
@@ -40,6 +41,8 @@ pub trait Trait: system::Trait {
 	/// The wrapped dot balance of an account on this parachain
 	type Balance: Parameter + Member + AtLeast32Bit + Codec + Default + Copy +
 		MaybeSerializeDeserialize + Debug;
+	/// Origin from which DOTs may be transferred into the parachain
+	type TransferInOrigin: EnsureOrigin<Self::Origin>;
 }
 
 // This pallet's storage items.
@@ -103,8 +106,11 @@ decl_module! {
 
 		/// Simulate a transfer of DOTs in from the relay chain
 		#[weight = SimpleDispatchInfo::FixedNormal(1_000_000)]
-		pub fn transfer_in(_origin, dest: T::AccountId, value: T::Balance) -> dispatch::DispatchResult {
+		pub fn transfer_in(origin, dest: T::AccountId, value: T::Balance) -> dispatch::DispatchResult {
+			// Ensure that the method is called only from the correct origin.
+			T::ExternalOrigin::ensure_origin(origin)?;
 
+			// Mint new tokens in the parachain
 			Balances::<T>::insert(&dest, Balances::<T>::get(&dest) + value);
 
 			Self::deposit_event(RawEvent::TransferIn(dest, value));
@@ -125,7 +131,6 @@ decl_module! {
 			Balances::<T>::insert(&source, source_balance - value);
 
 			//TODO upward message to relay chain
-			// for details follow https://github.com/paritytech/cumulus/pull/16
 
 			Self::deposit_event(RawEvent::TransferOut(source, relay_dest, value));
 			Ok(())
