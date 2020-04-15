@@ -28,6 +28,8 @@ pub use sp_std::slice;
 #[macro_use]
 pub mod validate_block;
 
+pub mod icmp;
+
 /// The witness data type.
 type WitnessData = Vec<Vec<u8>>;
 

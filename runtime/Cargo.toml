@@ -18,10 +18,13 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", default-features
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
 sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
 sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
 
 # Polkadot dependencies
 parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch", default-features = false, features = [ "wasm-api" ] }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "cumulus-branch" }
 
 [dev-dependencies]
 sc-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
@@ -40,9 +43,12 @@ std = [
 	"sp-runtime/std",
 	"sp-core/std",
 	"frame-executive/std",
+	"frame-support/std",
+	"frame-system/std",
 	"memory-db/std",
 	"hash-db/std",
 	"trie-db/std",
 	"sp-trie/std",
+	"polkadot-primitives/std",
 	"parachain/std",
 ]
