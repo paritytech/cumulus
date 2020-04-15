@@ -45,7 +45,7 @@ use std::{fmt::Debug, marker::PhantomData, sync::Arc, time::Duration, pin::Pin};
 
 use parking_lot::Mutex;
 
-use cumulus_runtime::ValidationFunctionParams;
+use cumulus_validation_function_params::{ValidationFunctionParams, INHERENT_IDENTIFIER as VFP_IDENT};
 
 /// The head data of the parachain, stored in the relay chain.
 #[derive(Decode, Encode, Debug)]
@@ -160,8 +160,7 @@ where
 					InvalidHead
 				})?;
 				inherent_data.put_data(
-					// TODO: make a real inherent identifier
-					*b"valfuncp",
+					VFP_IDENT,
 					&ValidationFunctionParams {
 						max_code_size: global_validation.max_code_size,
 						relay_chain_height: global_validation.block_number,
