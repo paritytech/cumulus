@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-#![allow(unused_imports)]
-
 use crate::chain_spec;
 use crate::cli::{Cli, PolkadotCli, Subcommand};
 use codec::Encode;
