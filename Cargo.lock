@@ -3994,6 +3994,7 @@ dependencies = [
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-core 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
  "sp-externalities 0.8.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
+ "sp-inherents 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
  "sp-io 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
  "sp-runtime 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
  "sp-version 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",

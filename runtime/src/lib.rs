@@ -91,7 +91,7 @@ pub mod validation_function_params {
 	///
 	/// This struct is the subset of [`ValidationParams`](../../polkadot_parachain/primitives/struct.ValidationParams.html)
 	/// which is of interest when upgrading parachain validation functions.
-	#[derive(PartialEq, Eq, Encode, Decode, Clone, Copy)]
+	#[derive(PartialEq, Eq, Encode, Decode, Clone, Copy, Default)]
 	#[cfg_attr(feature = "std", derive(Debug))]
 	pub struct ValidationFunctionParams {
 		/// The maximum code size permitted, in bytes.
@@ -130,7 +130,7 @@ pub mod validation_function_params {
 	impl ValidationFunctionParamsInherentData for InherentData {
 		fn validation_function_params_inherent_data(&self) -> Result<InherentType, sp_inherents::Error> {
 			self.get_data(&INHERENT_IDENTIFIER)
-				.and_then(|r| r.ok_or_else(|| "Timestamp inherent data not found".into()))
+				.and_then(|r| r.ok_or_else(|| "Validation Function Params inherent data not found".into()))
 		}
 	}
 }

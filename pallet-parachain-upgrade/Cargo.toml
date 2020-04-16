@@ -42,6 +42,12 @@ git = 'https://github.com/paritytech/substrate.git'
 rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
 version = '2.0.0-alpha.5'
 
+[dependencies.sp-inherents]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
+version = '2.0.0-alpha.5'
+
 [dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'

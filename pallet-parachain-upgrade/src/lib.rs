@@ -1,13 +1,16 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::Encode;
 use cumulus_runtime::validation_function_params::{
-	ValidationFunctionParams, NEW_VALIDATION_CODE, VALIDATION_FUNCTION_PARAMS,
+	ValidationFunctionParams, ValidationFunctionParamsInherentData,
+	NEW_VALIDATION_CODE, VALIDATION_FUNCTION_PARAMS, INHERENT_IDENTIFIER,
 };
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure, storage, traits::Get,
 };
 use parachain::primitives::RelayChainBlockNumber;
 use sp_core::storage::well_known_keys;
+use sp_inherents::{ProvideInherent, InherentData, InherentIdentifier};
 use sp_version::RuntimeVersion;
 
 pub type ValidationFunction = Vec<u8>;
@@ -28,6 +31,10 @@ decl_storage! {
 		// we need to store the new validation function for the span between
 		// setting it and applying it.
 		PendingValidationFunction get(fn new_validation_function): (RelayChainBlockNumber, ValidationFunction);
+
+		// we keep the validation function parameters here because we have to use
+		// storage as a transport layer between the inherents and the module
+		VFPs get(fn vfps): ValidationFunctionParams;
 	}
 }
 
@@ -77,10 +84,17 @@ decl_module! {
 }
 
 impl<T: Trait> Module<T> {
-	/// Get validation function parameters from polkadot.
+	/// Get validation function parameters.
+	///
+	/// This tries to get them first from a magic storage key which is injected
+	/// by cumulus; if that value is set, we should use it, because it's more
+	/// trustworthy than a block's contents. That said, we also try to extract
+	/// them from this block's extrinsics; cumulus also injects them as an
+	/// inherent into each block, so that they're available during block production.
 	fn validation_function_params() -> ValidationFunctionParams {
 		storage::unhashed::get(VALIDATION_FUNCTION_PARAMS)
-			.expect("validation function params must be set by validate_block")
+			.unwrap_or_else(|| VFPs::get())
+			// .expect("validation function params must be set by validate_block, or present as an intrinsic")
 	}
 
 	/// Put a new validation function into a particular location where polkadot
@@ -106,6 +120,35 @@ impl<T: Trait> Module<T> {
 	/// The maximum code size permitted, in bytes.
 	pub fn max_code_size() -> u32 {
 		Self::validation_function_params().max_code_size
+	}
+}
+
+#[derive(Encode)]
+pub struct ProvideInherentError{}
+
+impl sp_inherents::IsFatalError for ProvideInherentError {
+	fn is_fatal_error(&self) -> bool {
+		// if you can figure out how to return a variant-free struct...
+		true
+	}
+}
+
+impl<T: Trait> ProvideInherent for Module<T> {
+	type Call = Call<T>;
+	type Error = ProvideInherentError;
+	const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
+
+	fn create_inherent(data: &InherentData) -> Option<Self::Call> {
+		let vfp = data.validation_function_params_inherent_data()
+			.expect("Gets and decodes vfp inherent data");
+
+		VFPs::set(vfp);
+
+		// not sure what precisely the semantics of a None return here are, as
+		// it's not documented, but if I wrote a function like this, then I'd
+		// interpret a None result as "please don't actually create an inherent
+		// for me this block"
+		None
 	}
 }
 
