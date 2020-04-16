@@ -1,0 +1,14 @@
+[package]
+name = "cumulus-message-broker"
+version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2018"
+
+[dependencies]
+# substrate deps
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+
+# Other dependencies
+impl-trait-for-tuples = "0.1.3"

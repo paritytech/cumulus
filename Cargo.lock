@@ -798,6 +798,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-message-broker"
+version = "0.1.0"
+
+[[package]]
 name = "cumulus-network"
 version = "0.1.0"
 dependencies = [
