@@ -16,7 +16,10 @@
 
 //! Cumulus Collator implementation for Substrate.
 
-use cumulus_runtime::ParachainBlockData;
+use cumulus_runtime::{
+	validation_function_params::{ValidationFunctionParams, INHERENT_IDENTIFIER as VFP_IDENT},
+	ParachainBlockData,
+};
 
 use sc_client::Client;
 use sp_consensus::{
@@ -44,8 +47,6 @@ use futures::{task::Spawn, Future, future, FutureExt};
 use std::{fmt::Debug, marker::PhantomData, sync::Arc, time::Duration, pin::Pin};
 
 use parking_lot::Mutex;
-
-use cumulus_validation_function_params::{ValidationFunctionParams, INHERENT_IDENTIFIER as VFP_IDENT};
 
 /// The head data of the parachain, stored in the relay chain.
 #[derive(Decode, Encode, Debug)]

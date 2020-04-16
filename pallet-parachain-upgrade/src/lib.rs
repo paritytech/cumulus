@@ -1,6 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use cumulus_runtime::{ValidationFunctionParams, NEW_VALIDATION_CODE, VALIDATION_FUNCTION_PARAMS};
+use cumulus_runtime::validation_function_params::{
+	ValidationFunctionParams, NEW_VALIDATION_CODE, VALIDATION_FUNCTION_PARAMS,
+};
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure, storage, traits::Get,
 };

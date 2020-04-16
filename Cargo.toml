@@ -8,7 +8,6 @@ members = [
 	"test/client",
 	"test/parachain/runtime",
 	"test/parachain/",
-	"validation-function-params",
 ]
 
 [profile.release]

@@ -31,7 +31,7 @@ use parachain::primitives::{HeadData, ValidationCode, ValidationParams, Validati
 
 use codec::{Decode, Encode};
 
-use crate::{
+use crate::validation_function_params::{
 	NEW_VALIDATION_CODE,
 	VALIDATION_FUNCTION_PARAMS,
 	ValidationFunctionParams,
