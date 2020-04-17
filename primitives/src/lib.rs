@@ -16,6 +16,8 @@
 
 //! Cumulus related primitive types and traits.
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
 /// Inherents identifiers and types related to
 pub mod inherents {
 	use sp_inherents::InherentIdentifier;

@@ -10,3 +10,9 @@ sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cumu
 
 # Other dependencies
 impl-trait-for-tuples = "0.1.3"
+
+[features]
+default = [ "std" ]
+std = [
+	"sp-inherents/std",
+]

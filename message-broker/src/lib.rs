@@ -18,6 +18,8 @@
 //!
 //! This pallet provides support for handling downward and upward messages.
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
 use cumulus_primitives::{
 	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER},
 	well_known_keys, DownwardMessageHandler, UpwardMessageSender,
