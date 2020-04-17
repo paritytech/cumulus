@@ -18,14 +18,16 @@
 //!
 //! This pallet provides support for handling downward and upward messages.
 
-use sp_inherents::{ProvideInherent, InherentData, InherentIdentifier, MakeFatalError};
-
-/// Something that should be called when a downward message is received.
-#[impl_trait_for_tuples::impl_for_tuples(30)]
-pub trait DownwardMessageHandler {
-	/// Handle the given downward message.
-	fn handle_downward_message(msg: &());
-}
+use cumulus_primitives::{
+	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER},
+	well_known_keys, DownwardMessageHandler, UpwardMessageSender,
+};
+use frame_support::{
+	decl_module, storage,
+	weights::{SimpleDispatchInfo, WeighData, Weight},
+};
+use frame_system::ensure_none;
+use sp_inherents::{InherentData, InherentIdentifier, MakeFatalError, ProvideInherent};
 
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {
@@ -33,23 +35,39 @@ pub trait Trait: frame_system::Trait {
 	type DownwardMessageHandlers: DownwardMessageHandler;
 }
 
-frame_support::decl_module! {
+decl_module! {
 	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+		/// Executes the given downward messages by calling the message handlers.
+		///
+		/// The origin of this call needs to be `None` as this is an inherent.
+		#[weight = SimpleDispatchInfo::FixedMandatory(10)]
+		fn execute_downward_messages(origin, messages: Vec<()>) {
+			ensure_none(origin)?;
+			messages.iter().for_each(T::DownwardMessageHandlers::handle_downward_message);
+		}
 
+		fn on_initialize() -> Weight {
+			storage::unhashed::kill(well_known_keys::UPWARD_MESSAGES);
+
+			SimpleDispatchInfo::default().weigh_data(())
+		}
+	}
+}
+
+impl<T: Trait> UpwardMessageSender for Module<T> {
+	fn send_upward_message(_: &()) -> Result<(), ()> {
+		Ok(())
 	}
 }
 
 impl<T: Trait> ProvideInherent for Module<T> {
 	type Call = Call<T>;
 	type Error = MakeFatalError<()>;
-	const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
+	const INHERENT_IDENTIFIER: InherentIdentifier = DOWNWARD_MESSAGES_IDENTIFIER;
 
 	fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-		let data: T::Moment = extract_inherent_data(data)
-			.expect("Gets and decodes timestamp inherent data")
-			.saturated_into();
-
-		let next_time = cmp::max(data, Self::now() + T::MinimumPeriod::get());
-		Some(Call::set(next_time.into()))
+		data.get_data::<DownwardMessagesType>(&DOWNWARD_MESSAGES_IDENTIFIER)
+			.expect("Downward messages inherent data failed to decode")
+			.map(|msgs| Call::execute_downward_messages(msgs))
 	}
 }

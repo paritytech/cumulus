@@ -11,4 +11,7 @@ frame-system = { git = "https://github.com/paritytech/substrate", branch = "cumu
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 
 # Other dependencies
-impl-trait-for-tuples = "0.1.3"
+codec = { package = "parity-scale-codec", version = "1.3.0", features = [ "derive" ] }
+
+# Cumulus dependencies
+cumulus-primitives = { path = "../primitives" }

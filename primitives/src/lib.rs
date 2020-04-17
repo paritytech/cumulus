@@ -26,3 +26,26 @@ pub mod inherents {
 	/// The type of the inherent downward messages.
 	pub type DownwardMessagesType = Vec<()>;
 }
+
+/// Well known keys for values in the storage.
+pub mod well_known_keys {
+	/// The storage key for the upward messages.
+	///
+	/// The upward messages are stored as SCALE encoded `Vec<()>`.
+	pub const UPWARD_MESSAGES: &'static [u8] = b":cumulus_upward_messages:";
+}
+
+/// Something that should be called when a downward message is received.
+#[impl_trait_for_tuples::impl_for_tuples(30)]
+pub trait DownwardMessageHandler {
+	/// Handle the given downward message.
+	fn handle_downward_message(msg: &());
+}
+
+/// Something that can send upward messages.
+pub trait UpwardMessageSender {
+	/// Send an upward message to the relay chain.
+	///
+	/// Returns an error if sending failed.
+	fn send_upward_message(msg: &()) -> Result<(), ()>;
+}
