@@ -79,7 +79,7 @@ impl<B: BlockT> ParachainBlockData<B> {
 pub mod validation_function_params {
 	use codec::{Decode, Encode};
 	use parachain::primitives::{RelayChainBlockNumber, ValidationParams};
-	use sp_inherents::{InherentIdentifier, InherentData};
+	use sp_inherents::InherentIdentifier;
 
 	/// Current validation function parameters.
 	pub const VALIDATION_FUNCTION_PARAMS: &'static [u8] = b":validation_function_params";
@@ -120,17 +120,4 @@ pub mod validation_function_params {
 	pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"valfunp0";
 	/// The type of the inherent.
 	pub type InherentType = ValidationFunctionParams;
-
-	/// Auxiliary trait to extract timestamp inherent data.
-	pub trait ValidationFunctionParamsInherentData {
-		/// Get `ValidationFunctionParams` inherent data.
-		fn validation_function_params_inherent_data(&self) -> Result<InherentType, sp_inherents::Error>;
-	}
-
-	impl ValidationFunctionParamsInherentData for InherentData {
-		fn validation_function_params_inherent_data(&self) -> Result<InherentType, sp_inherents::Error> {
-			self.get_data(&INHERENT_IDENTIFIER)
-				.and_then(|r| r.ok_or_else(|| "Validation Function Params inherent data not found".into()))
-		}
-	}
 }

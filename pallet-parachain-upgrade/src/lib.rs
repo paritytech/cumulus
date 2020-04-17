@@ -2,7 +2,7 @@
 
 use codec::Encode;
 use cumulus_runtime::validation_function_params::{
-	ValidationFunctionParams, ValidationFunctionParamsInherentData,
+	ValidationFunctionParams,
 	NEW_VALIDATION_CODE, VALIDATION_FUNCTION_PARAMS, INHERENT_IDENTIFIER,
 };
 use frame_support::{
@@ -92,9 +92,16 @@ impl<T: Trait> Module<T> {
 	/// them from this block's extrinsics; cumulus also injects them as an
 	/// inherent into each block, so that they're available during block production.
 	fn validation_function_params() -> ValidationFunctionParams {
+		// this storage value is set by cumulus during block validation
 		storage::unhashed::get(VALIDATION_FUNCTION_PARAMS)
+			// this storage value is set each block by the ProvideInherent
+			// implementation, ensuring that the data is also available
+			// during block production
 			.unwrap_or_else(|| VFPs::get())
-			// .expect("validation function params must be set by validate_block, or present as an intrinsic")
+			// in the event that something has gone seriously wrong and neither
+			// of those values are present, I believe that VFPs::get falls back
+			// to the Default::default() value, which should be harmless in that
+			// it prevents users from doing any upgrades during the invalid block.
 	}
 
 	/// Put a new validation function into a particular location where polkadot
@@ -139,7 +146,8 @@ impl<T: Trait> ProvideInherent for Module<T> {
 	const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
 
 	fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-		let vfp = data.validation_function_params_inherent_data()
+		let vfp = data.get_data(&INHERENT_IDENTIFIER)
+			.and_then(|r| r.ok_or_else(|| "Validation Function Params inherent data not found".into()))
 			.expect("Gets and decodes vfp inherent data");
 
 		VFPs::set(vfp);
