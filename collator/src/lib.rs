@@ -327,7 +327,7 @@ where
 		B::State: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
 	{
 		let follow =
-			match cumulus_consensus::follow_polkadot(self.para_id, self.client, polkadot_client.clone()) {
+			match cumulus_consensus::follow_polkadot(self.para_id, self.client, polkadot_client) {
 				Ok(follow) => follow,
 				Err(e) => {
 					return Err(error!("Could not start following polkadot: {:?}", e));

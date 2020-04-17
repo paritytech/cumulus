@@ -128,7 +128,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	}
 
 	ValidationResult {
-		head_data: head_data,
+		head_data,
 		new_validation_code,
 	}
 }

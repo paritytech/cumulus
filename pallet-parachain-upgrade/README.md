@@ -1,10 +1,8 @@
 # parachain-upgrade-pallet
 
-WIP on a pallet to ease parachain upgrades; see https://github.com/paritytech/cumulus/issues/59.
-
 ## Purpose
 
-This pallet allows a user to determine when a parachain validation function is legal, and upgrade that validation function, triggering runtime events for both the storing and applying the new validation function.
+This pallet allows a user to determine when a parachain validation function is legal, and upgrade that validation function, triggering runtime events for both storing and applying the new validation function.
 
 ## Dependencies
 
@@ -14,7 +12,11 @@ This pallet does not depend on any externally defined traits.
 
 ### Pallets
 
-This pallet depends on the [`balances` pallet](https://github.com/paritytech/substrate/tree/master/frame/balances).
+This pallet does not depend on any externally defined pallets.
+
+### Environment
+
+This pallet depends on certain environmental conditions provided by Cumulus. It will not work outside a Cumulus parachain.
 
 ## Installation
 
@@ -65,5 +67,3 @@ You can view the reference docs for this pallet by running:
 ```
 cargo doc --open
 ```
-
-or by visiting this site: <Add Your Link>

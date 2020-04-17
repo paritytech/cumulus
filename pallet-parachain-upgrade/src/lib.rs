@@ -91,6 +91,8 @@ impl<T: Trait> Module<T> {
 	/// trustworthy than a block's contents. That said, we also try to extract
 	/// them from this block's extrinsics; cumulus also injects them as an
 	/// inherent into each block, so that they're available during block production.
+	///
+	/// This function is preferable in all cases to `Self::vfps()`.
 	fn validation_function_params() -> ValidationFunctionParams {
 		// this storage value is set by cumulus during block validation
 		storage::unhashed::get(VALIDATION_FUNCTION_PARAMS)
