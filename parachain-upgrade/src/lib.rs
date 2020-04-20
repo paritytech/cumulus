@@ -1,5 +1,18 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+//! Enable parachain validation function upgrades.
+//!
+//! Allow a user to determine when a parachain validation function upgrade
+//! is legal, and perform the upgrade, triggering runtime events
+//! for both storing and applying the new validation function.
+//!
+//! Depends on no external pallets or traits.
+//!
+//! This pallet depends on certain environmental conditions provided by
+//! Cumulus. It will not work outside a Cumulus parachain.
+
+
+
 use codec::Encode;
 use cumulus_primitives::validation_function_params::{
 	ValidationFunctionParams,
