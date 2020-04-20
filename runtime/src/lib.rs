@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-///! The Cumulus runtime to make a runtime a parachain.
-
 #![cfg_attr(not(feature = "std"), no_std)]
+
+///! The Cumulus runtime to make a runtime a parachain.
 
 use codec::{Decode, Encode};
 use sp_runtime::traits::Block as BlockT;
