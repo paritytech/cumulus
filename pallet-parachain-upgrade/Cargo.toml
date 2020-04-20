@@ -8,15 +8,15 @@ description = "pallet to manage parachain upgrades"
 [features]
 default = ['std']
 std = [
-    'serde',
-    'codec/std',
-    'frame-support/std',
-    'pallet-balances/std',
+	'serde',
+	'codec/std',
+	'frame-support/std',
+	'pallet-balances/std',
 	'cumulus-runtime/std',
-    'sp-core/std',
-    'sp-runtime/std',
-    'sp-io/std',
-    'system/std',
+	'sp-core/std',
+	'sp-runtime/std',
+	'sp-io/std',
+	'system/std',
 	'cumulus-primitives/std',
 ]
 
