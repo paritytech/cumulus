@@ -831,6 +831,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-parachain-upgrade"
+version = "0.1.0"
+dependencies = [
+ "cumulus-primitives 0.1.0",
+ "cumulus-runtime 0.1.0",
+ "frame-support 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
+ "frame-system 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
+ "pallet-balances 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
+ "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "polkadot-parachain 0.7.29-pre1 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
+ "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-core 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
+ "sp-externalities 0.8.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
+ "sp-inherents 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
+ "sp-io 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
+ "sp-runtime 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
+ "sp-version 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
+ "substrate-test-runtime-client 2.0.0-dev (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
+]
+
+[[package]]
 name = "cumulus-primitives"
 version = "0.1.0"
 dependencies = [
@@ -3991,27 +4012,6 @@ dependencies = [
  "sp-runtime 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sp-staking 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sp-std 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
-]
-
-[[package]]
-name = "pallet-parachain-upgrade"
-version = "0.1.0"
-dependencies = [
- "cumulus-primitives 0.1.0",
- "cumulus-runtime 0.1.0",
- "frame-support 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
- "pallet-balances 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
- "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-parachain 0.7.29-pre1 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
- "sp-externalities 0.8.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
- "sp-version 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
- "substrate-test-runtime-client 2.0.0-dev (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
 ]
 
 [[package]]

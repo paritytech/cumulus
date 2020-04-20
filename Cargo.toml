@@ -2,7 +2,7 @@
 members = [
 	"consensus",
 	"network",
-	"pallet-parachain-upgrade",
+	"parachain-upgrade",
 	"primitives",
 	"runtime",
 	"test/runtime",
