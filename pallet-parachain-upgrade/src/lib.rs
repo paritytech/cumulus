@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::Encode;
-use cumulus_runtime::validation_function_params::{
+use cumulus_primitives::validation_function_params::{
 	ValidationFunctionParams,
 	NEW_VALIDATION_CODE, VALIDATION_FUNCTION_PARAMS, INHERENT_IDENTIFIER,
 };

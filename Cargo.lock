@@ -764,6 +764,7 @@ name = "cumulus-collator"
 version = "0.1.0"
 dependencies = [
  "cumulus-consensus 0.1.0",
+ "cumulus-primitives 0.1.0",
  "cumulus-runtime 0.1.0",
  "cumulus-test-client 0.1.0",
  "cumulus-test-runtime 0.1.0",
@@ -834,6 +835,8 @@ name = "cumulus-primitives"
 version = "0.1.0"
 dependencies = [
  "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "polkadot-parachain 0.7.29-pre1 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "sp-inherents 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
 ]
 
@@ -841,6 +844,7 @@ dependencies = [
 name = "cumulus-runtime"
 version = "0.1.0"
 dependencies = [
+ "cumulus-primitives 0.1.0",
  "cumulus-test-client 0.1.0",
  "frame-executive 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3993,6 +3997,7 @@ dependencies = [
 name = "pallet-parachain-upgrade"
 version = "0.1.0"
 dependencies = [
+ "cumulus-primitives 0.1.0",
  "cumulus-runtime 0.1.0",
  "frame-support 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
  "frame-system 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
