@@ -23,91 +23,25 @@ std = [
 [dependencies]
 # Cumulus dependencies
 cumulus-primitives = { path = "../primitives", default-features = false }
+cumulus-runtime = { path = "../runtime", default-features = false }
 
-[dependencies.serde]
-features = ['derive']
-optional = true
-version = '1.0.101'
+# Polkadot dependencies
+parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch", default-features = false }
 
-[dependencies.codec]
-default-features = false
-features = ['derive']
-package = 'parity-scale-codec'
-version = '1.0.0'
+# Substrate dependencies
+frame-support = { git = "https://github.com/paritytech/substrate.git", rev = "d1b9ccad107e4899978858de5ddd2868b9777aab", version = "2.0.0-alpha.5", default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/substrate.git", rev = "d1b9ccad107e4899978858de5ddd2868b9777aab", version = "2.0.0-alpha.5", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate.git", rev = "d1b9ccad107e4899978858de5ddd2868b9777aab", version = "2.0.0-alpha.5", default-features = false }
+sp-inherents = { git = "https://github.com/paritytech/substrate.git", rev = "d1b9ccad107e4899978858de5ddd2868b9777aab", version = "2.0.0-alpha.5", default-features = false }
+sp-io = { git = "https://github.com/paritytech/substrate.git", rev = "d1b9ccad107e4899978858de5ddd2868b9777aab", version = "2.0.0-alpha.5", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", rev = "d1b9ccad107e4899978858de5ddd2868b9777aab", version = "2.0.0-alpha.5", default-features = false }
+sp-version = { git = "https://github.com/paritytech/substrate.git", rev = "d1b9ccad107e4899978858de5ddd2868b9777aab", version = "2.0.0-alpha.5", default-features = false }
+system = { package = "frame-system", git = "https://github.com/paritytech/substrate.git", rev = "d1b9ccad107e4899978858de5ddd2868b9777aab", version = "2.0.0-alpha.5", default-features = false }
 
-[dependencies.cumulus-runtime]
-default-features = false
-path = "../runtime"
+# Other Dependencies
+codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false, features = ["derive"]}
+serde = { version = "1.0.101", optional = true, features = ["derive"] }
 
-[dependencies.sp-core]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
-version = '2.0.0-alpha.5'
-
-[dependencies.sp-inherents]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
-version = '2.0.0-alpha.5'
-
-[dependencies.sp-runtime]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
-version = '2.0.0-alpha.5'
-
-[dependencies.frame-support]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
-version = '2.0.0-alpha.5'
-
-[dependencies.parachain]
-package = "polkadot-parachain"
-git = "https://github.com/paritytech/polkadot"
-branch = "cumulus-branch"
-default-features = false
-
-[dependencies.pallet-balances]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
-version = '2.0.0-alpha.5'
-
-[dependencies.system]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-package = 'frame-system'
-rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
-version = '2.0.0-alpha.5'
-
-[dependencies.sp-io]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
-version = '2.0.0-alpha.5'
-
-[dependencies.sp-version]
- default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
-version = '2.0.0-alpha.5'
-
-[dev-dependencies.sp-core]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
-version = '2.0.0-alpha.5'
-
-[dev-dependencies.sp-externalities]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
-version = "0.8.0-alpha.2"
-
-[dev-dependencies.substrate-test-runtime-client]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-rev = 'd1b9ccad107e4899978858de5ddd2868b9777aab'
-version = '2.0.0-alpha.5'
+[dev-dependencies]
+sp-externalities = { git = "https://github.com/paritytech/substrate.git", rev = "d1b9ccad107e4899978858de5ddd2868b9777aab", version = "0.8.0-alpha.2", default-features = false }
+substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate.git", rev = "d1b9ccad107e4899978858de5ddd2868b9777aab", version = "2.0.0-alpha.5", default-features = false }
