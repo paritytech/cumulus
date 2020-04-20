@@ -830,6 +830,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-primitives"
+version = "0.1.0"
+dependencies = [
+ "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-inherents 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+]
+
+[[package]]
 name = "cumulus-runtime"
 version = "0.1.0"
 dependencies = [
