@@ -329,6 +329,8 @@ where
 		let mut imported_blocks_stream = polkadot_client.import_notification_stream().fuse();
 		let polkadot_network_2 = polkadot_network.clone();
 
+		let spawner2 = spawner.clone();
+
 		spawner
 			.spawn_obj(
 				Box::pin(async move {
@@ -336,21 +338,25 @@ where
 
 					println!("0");
 					while let Some(notification) = imported_blocks_stream.next().await {
-						println!("1");
-						let mut checked_statements = polkadot_network.checked_statements(notification.header.parent_hash);
+						let polkadot_network_3 = polkadot_network.clone();
+						spawner2.spawn_obj(
+							Box::pin(async move {
+							println!("1");
+							let mut checked_statements = polkadot_network_3.checked_statements(notification.header.parent_hash);
 
-						/*
-						while let Some(statement) = checked_statements.next().await {
-							println!("{:?}", statement);
-						}
-						*/
-						checked_statements.for_each(move |msg| {
-							println!("{:?}", msg);
-							futures::future::ready(())
-						}).await;
+							while let Some(statement) = checked_statements.next().await {
+								println!("{:?}", statement);
+							}
+							/*
+							checked_statements.for_each(move |msg| {
+								println!("{:?}", msg);
+								futures::future::ready(())
+							}).await;
+							*/
 
-						polkadot_network.network_service().announce_block(notification.hash, Vec::new());
-						println!("2");
+							polkadot_network_3.network_service().announce_block(notification.hash, Vec::new());
+							println!("2");
+						}).into());
 					}
 					println!("3");
 				})
