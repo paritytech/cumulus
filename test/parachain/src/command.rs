@@ -193,6 +193,7 @@ pub fn run() -> Result<()> {
 
 					crate::service::run_collator(config, key, polkadot_config)
 				},
+				parachain_runtime::VERSION,
 			)
 		}
 	}
@@ -276,7 +277,7 @@ impl CliConfiguration for PolkadotCli {
 		&self,
 		chain_spec: &Box<dyn sc_service::ChainSpec>,
 		is_dev: bool,
-		net_config_dir: &PathBuf,
+		net_config_dir: PathBuf,
 		client_id: &str,
 		node_name: &str,
 		node_key: NodeKeyConfig,
@@ -288,7 +289,7 @@ impl CliConfiguration for PolkadotCli {
 					x.network_config(
 						chain_spec,
 						is_dev,
-						net_config_dir,
+						Some(net_config_dir),
 						client_id,
 						node_name,
 						node_key,

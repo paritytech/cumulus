@@ -18,7 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-/// Inherents identifiers and types related to
+/// Identifiers and types related to Cumulus Inherents
 pub mod inherents {
 	use sp_inherents::InherentIdentifier;
 
@@ -26,7 +26,7 @@ pub mod inherents {
 	pub const DOWNWARD_MESSAGES_IDENTIFIER: InherentIdentifier = *b"cumdownm";
 
 	/// The type of the inherent downward messages.
-	pub type DownwardMessagesType = Vec<()>;
+	pub type DownwardMessagesType = sp_std::vec::Vec<()>;
 }
 
 /// Well known keys for values in the storage.
@@ -52,6 +52,7 @@ pub trait UpwardMessageSender {
 	fn send_upward_message(msg: &()) -> Result<(), ()>;
 }
 
+/// Validation Function Parameters govern the ability of parachains to upgrade their validation functions.
 pub mod validation_function_params {
 	use codec::{Decode, Encode};
 	use polkadot_parachain::primitives::{RelayChainBlockNumber, ValidationParams};

@@ -6,7 +6,8 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", default-features = false }
 
 # Polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch", default-features = false }
