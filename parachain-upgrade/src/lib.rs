@@ -214,12 +214,14 @@ mod tests {
 
 	use codec::Encode;
 	use frame_support::{
-		assert_ok, impl_outer_event, impl_outer_origin, parameter_types, weights::Weight,
+		assert_ok, impl_outer_event, impl_outer_origin, parameter_types,
+		traits::OnInitialize,
+		weights::Weight,
 	};
 	use sp_core::H256;
 	use sp_runtime::{
 		testing::Header,
-		traits::{BlakeTwo256, IdentityLookup, OnInitialize},
+		traits::{BlakeTwo256, IdentityLookup},
 		Perbill,
 	};
 	use system::{InitKind, RawOrigin};
@@ -256,6 +258,7 @@ mod tests {
 			spec_version: 1,
 			impl_version: 1,
 			apis: sp_version::create_apis_vec!([]),
+			transaction_version: 1,
 		};
 	}
 	impl system::Trait for Test {
@@ -278,6 +281,7 @@ mod tests {
 		type AccountData = ();
 		type OnNewAccount = ();
 		type OnKilledAccount = ();
+		type DbWeight = ();
 	}
 	impl Trait for Test {
 		type Event = TestEvent;

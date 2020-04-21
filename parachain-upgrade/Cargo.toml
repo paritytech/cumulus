@@ -43,5 +43,5 @@ codec = { package = "parity-scale-codec", version = "1.0.0", default-features = 
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 
 [dev-dependencies]
-sp-externalities = { git = "https://github.com/paritytech/substrate.git", rev = "d1b9ccad107e4899978858de5ddd2868b9777aab", version = "0.8.0-alpha.2", default-features = false }
+sp-externalities = { git = "https://github.com/paritytech/substrate.git", branch = "cumulus-branch", default-features = false }
 substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate.git", branch = "cumulus-branch", default-features = false }

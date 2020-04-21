@@ -832,7 +832,7 @@ dependencies = [
  "polkadot-parachain 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-externalities 0.8.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
+ "sp-externalities 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sp-inherents 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sp-io 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sp-runtime 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
@@ -6271,32 +6271,12 @@ dependencies = [
 
 [[package]]
 name = "sp-debug-derive"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
-dependencies = [
- "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 1.0.16 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sp-debug-derive"
 version = "2.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
 dependencies = [
  "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 1.0.16 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sp-externalities"
-version = "0.8.0-alpha.5"
-source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
-dependencies = [
- "environmental 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
- "sp-storage 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
 ]
 
 [[package]]
@@ -6523,24 +6503,8 @@ dependencies = [
 
 [[package]]
 name = "sp-std"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
-
-[[package]]
-name = "sp-std"
 version = "2.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
-
-[[package]]
-name = "sp-storage"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab#d1b9ccad107e4899978858de5ddd2868b9777aab"
-dependencies = [
- "impl-serde 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-debug-derive 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)",
-]
 
 [[package]]
 name = "sp-storage"
@@ -8573,9 +8537,7 @@ dependencies = [
 "checksum sp-consensus-vrf 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-database 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
-"checksum sp-debug-derive 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)" = "<none>"
 "checksum sp-debug-derive 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
-"checksum sp-externalities 0.8.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)" = "<none>"
 "checksum sp-externalities 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-finality-grandpa 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-finality-tracker 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
@@ -8594,9 +8556,7 @@ dependencies = [
 "checksum sp-session 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-staking 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-state-machine 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
-"checksum sp-std 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)" = "<none>"
 "checksum sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
-"checksum sp-storage 2.0.0-alpha.5 (git+https://github.com/paritytech/substrate.git?rev=d1b9ccad107e4899978858de5ddd2868b9777aab)" = "<none>"
 "checksum sp-storage 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-test-primitives 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
 "checksum sp-timestamp 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
