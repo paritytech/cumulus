@@ -11,9 +11,6 @@
 //! This pallet depends on certain environmental conditions provided by
 //! Cumulus. It will not work outside a Cumulus parachain.
 
-
-
-use codec::Encode;
 use cumulus_primitives::validation_function_params::{
 	ValidationFunctionParams,
 	NEW_VALIDATION_CODE, VALIDATION_FUNCTION_PARAMS, INHERENT_IDENTIFIER,
@@ -151,19 +148,9 @@ impl<T: Trait> Module<T> {
 	}
 }
 
-#[derive(Encode)]
-pub struct ProvideInherentError{}
-
-impl sp_inherents::IsFatalError for ProvideInherentError {
-	fn is_fatal_error(&self) -> bool {
-		// if you can figure out how to return a variant-free struct...
-		true
-	}
-}
-
 impl<T: Trait> ProvideInherent for Module<T> {
 	type Call = Call<T>;
-	type Error = ProvideInherentError;
+	type Error = sp_inherents::MakeFatalError<()>;
 	const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
 
 	fn create_inherent(data: &InherentData) -> Option<Self::Call> {
