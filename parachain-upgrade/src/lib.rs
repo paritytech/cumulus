@@ -20,6 +20,7 @@ use cumulus_primitives::validation_function_params::{
 };
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure, storage, traits::Get,
+	weights::{SimpleDispatchInfo, Weight},
 };
 use parachain::primitives::RelayChainBlockNumber;
 use sp_core::storage::well_known_keys;
@@ -58,7 +59,7 @@ decl_module! {
 		// this is needed only if you are using events in your pallet
 		fn deposit_event() = default;
 
-		fn on_initialize(_n: T::BlockNumber) {
+		fn on_initialize(_n: T::BlockNumber) -> Weight {
 			if let Ok((apply_block, validation_function)) = PendingValidationFunction::try_get() {
 				let relay_chain_height = Self::validation_function_params().relay_chain_height;
 				if relay_chain_height >= apply_block {
@@ -67,8 +68,13 @@ decl_module! {
 					Self::deposit_event(Event::ValidationFunctionApplied(relay_chain_height));
 				}
 			}
+
+			// TOOD: figure out a better value than this WAG
+			100_000
 		}
 
+		// TODO: figure out a bettwe weight than this WAG
+		#[weight = SimpleDispatchInfo::FixedOperational(1_000_000)]
 		pub fn set_code(origin, validation_function: ValidationFunction) {
 			// TODO: in the future, we can't rely on a superuser existing
 			// on-chain who can just wave their hands and make this happen.
