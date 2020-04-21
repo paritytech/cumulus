@@ -60,6 +60,7 @@ pub struct Collator<Block, PF, BI> {
 	inherent_data_providers: InherentDataProviders,
 	collator_network: Arc<dyn CollatorNetwork>,
 	block_import: Arc<Mutex<BI>>,
+               spawner: Arc<dyn Spawn + Send + Sync>,
 }
 
 impl<Block, PF, BI> Collator<Block, PF, BI> {
@@ -69,6 +70,7 @@ impl<Block, PF, BI> Collator<Block, PF, BI> {
 		inherent_data_providers: InherentDataProviders,
 		collator_network: impl CollatorNetwork + Clone + 'static,
 		block_import: BI,
+               spawner: Arc<dyn Spawn + Send + Sync>,
 	) -> Self {
 		Self {
 			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
@@ -76,6 +78,7 @@ impl<Block, PF, BI> Collator<Block, PF, BI> {
 			_phantom: PhantomData,
 			collator_network: Arc::new(collator_network),
 			block_import: Arc::new(Mutex::new(block_import)),
+                       spawner,
 		}
 	}
 }
@@ -88,6 +91,7 @@ impl<Block, PF, BI> Clone for Collator<Block, PF, BI> {
 			_phantom: PhantomData,
 			collator_network: self.collator_network.clone(),
 			block_import: self.block_import.clone(),
+                       spawner: self.spawner.clone(),
 		}
 	}
 }
@@ -129,6 +133,13 @@ where
 				return Box::pin(future::ready(Err(InvalidHead)));
 			}
 		};
+
+
+               use futures::{Stream, StreamExt};
+               self.spawner.spawn_obj(Box::new(self.collator_network.checked_statements(_relay_chain_parent).for_each(|_| {
+                       eprintln!("Statement");
+                       futures::future::ready(())
+               })).into()).unwrap();
 
 		let proposer_future = factory
 			.lock()
@@ -369,6 +380,7 @@ where
 			self.inherent_data_providers,
 			polkadot_network,
 			self.block_import,
+                       Arc::new(spawner),
 		))
 	}
 }
