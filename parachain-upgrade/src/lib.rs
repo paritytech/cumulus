@@ -15,9 +15,10 @@ use cumulus_primitives::validation_function_params::{
 	ValidationFunctionParams,
 	NEW_VALIDATION_CODE, VALIDATION_FUNCTION_PARAMS, INHERENT_IDENTIFIER,
 };
+use system::ensure_none;
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure, storage, traits::Get,
-	weights::{SimpleDispatchInfo, Weight},
+	weights::{SimpleDispatchInfo, Weight, MINIMUM_WEIGHT},
 };
 use parachain::primitives::RelayChainBlockNumber;
 use sp_core::storage::well_known_keys;
@@ -46,6 +47,9 @@ decl_storage! {
 		// we keep the validation function parameters here because we have to use
 		// storage as a transport layer between the inherents and the module
 		VFPs get(fn vfps): ValidationFunctionParams;
+
+		/// Were the VFPs updated this block?
+		DidUpdateVFPs: bool;
 	}
 }
 
@@ -95,6 +99,27 @@ decl_module! {
 			Self::put_polkadot_code(&validation_function);
 			PendingValidationFunction::put((apply_block, validation_function));
 			Self::deposit_event(Event::ValidationFunctionStored(apply_block));
+		}
+
+		/// Set the current validation function parameters
+		///
+		/// This should be invoked exactly once per block. It will panic at the finalization
+		/// phease if the call was not invoked.
+		///
+		/// The dispatch origin for this call must be `Inherent`
+		//
+		// weight data just stolen from Timestamp::set
+		#[weight = SimpleDispatchInfo::FixedMandatory(MINIMUM_WEIGHT)]
+		fn set_validation_function_parameters(origin, vfps: ValidationFunctionParams) {
+			ensure_none(origin)?;
+			assert!(!DidUpdateVFPs::exists(), "VFPs must be updated only once in the block");
+
+			VFPs::put(vfps);
+			DidUpdateVFPs::put(true);
+		}
+
+		fn on_finalize() {
+			assert!(DidUpdateVFPs::take(), "VFPs must be updated once per block");
 		}
 	}
 }
@@ -158,13 +183,7 @@ impl<T: Trait> ProvideInherent for Module<T> {
 			.and_then(|r| r.ok_or_else(|| "Validation Function Params inherent data not found".into()))
 			.expect("Gets and decodes vfp inherent data");
 
-		VFPs::set(vfp);
-
-		// not sure what precisely the semantics of a None return here are, as
-		// it's not documented, but if I wrote a function like this, then I'd
-		// interpret a None result as "please don't actually create an inherent
-		// for me this block"
-		None
+		Some(Call::set_validation_function_parameters(vfp))
 	}
 }
 
