@@ -19,7 +19,6 @@
 use cumulus_runtime::ParachainBlockData;
 
 use sc_client::{BlockchainEvents, Client};
-use sc_network::NetworkService;
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, Environment, Error as ConsensusError,
 	ForkChoiceStrategy, Proposal, Proposer, RecordProof,
@@ -60,7 +59,6 @@ pub struct Collator<Block, PF, BI> {
 	inherent_data_providers: InherentDataProviders,
 	collator_network: Arc<dyn CollatorNetwork>,
 	block_import: Arc<Mutex<BI>>,
-               spawner: Arc<dyn Spawn + Send + Sync>,
 }
 
 impl<Block, PF, BI> Collator<Block, PF, BI> {
@@ -70,7 +68,6 @@ impl<Block, PF, BI> Collator<Block, PF, BI> {
 		inherent_data_providers: InherentDataProviders,
 		collator_network: impl CollatorNetwork + Clone + 'static,
 		block_import: BI,
-               spawner: Arc<dyn Spawn + Send + Sync>,
 	) -> Self {
 		Self {
 			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
@@ -78,7 +75,6 @@ impl<Block, PF, BI> Collator<Block, PF, BI> {
 			_phantom: PhantomData,
 			collator_network: Arc::new(collator_network),
 			block_import: Arc::new(Mutex::new(block_import)),
-                       spawner,
 		}
 	}
 }
@@ -91,7 +87,6 @@ impl<Block, PF, BI> Clone for Collator<Block, PF, BI> {
 			_phantom: PhantomData,
 			collator_network: self.collator_network.clone(),
 			block_import: self.block_import.clone(),
-                       spawner: self.spawner.clone(),
 		}
 	}
 }
@@ -246,7 +241,6 @@ pub struct CollatorBuilder<Block: BlockT, PF, BI, Backend, Executor, Runtime> {
 	block_import: BI,
 	para_id: ParaId,
 	client: Arc<Client<Backend, Executor, Block, Runtime>>,
-	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 	_marker: PhantomData<Block>,
 }
 
@@ -260,7 +254,6 @@ impl<Block: BlockT, PF, BI, Backend, Executor, Runtime>
 		block_import: BI,
 		para_id: ParaId,
 		client: Arc<Client<Backend, Executor, Block, Runtime>>,
-		network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 	) -> Self {
 		Self {
 			proposer_factory,
@@ -268,7 +261,6 @@ impl<Block: BlockT, PF, BI, Backend, Executor, Runtime>
 			block_import,
 			para_id,
 			client,
-			network,
 			_marker: PhantomData,
 		}
 	}
@@ -277,7 +269,7 @@ impl<Block: BlockT, PF, BI, Backend, Executor, Runtime>
 type TransactionFor<E, Block> =
 	<<E as Environment<Block>>::Proposer as Proposer<Block>>::Transaction;
 
-impl<Block: BlockT<Hash = sp_core::H256>, PF, BI, Backend, Executor, Runtime> BuildParachainContext
+impl<Block: BlockT, PF, BI, Backend, Executor, Runtime> BuildParachainContext
 	for CollatorBuilder<Block, PF, BI, Backend, Executor, Runtime>
 where
 	PF: Environment<Block> + Send + 'static,
@@ -329,7 +321,6 @@ where
 			)
 			.map_err(|_| error!("Could not spawn parachain server!"))?;
 
-		let network = self.network.clone();
 		let mut imported_blocks_stream = polkadot_client.import_notification_stream().fuse();
 		let polkadot_network_2 = polkadot_network.clone();
 
@@ -343,7 +334,7 @@ where
 					println!("0");
 					while let Some(notification) = imported_blocks_stream.next().await {
 						let polkadot_network_3 = polkadot_network.clone();
-						spawner2.spawn_obj(
+						if spawner2.spawn_obj(
 							Box::pin(async move {
 								println!("1");
 								let mut checked_statements = polkadot_network_3.checked_statements(notification.header.parent_hash);
@@ -352,7 +343,9 @@ where
 
 								polkadot_network_3.network_service().announce_block(notification.hash, Vec::new());
 								println!("2");
-						}).into());
+						}).into()).is_err() {
+							error!("Could not spawn single block announcer task!");
+						}
 					}
 					println!("3");
 				})
@@ -365,7 +358,6 @@ where
 			self.inherent_data_providers,
 			polkadot_network,
 			self.block_import,
-                       Arc::new(spawner),
 		))
 	}
 }

@@ -85,7 +85,6 @@ pub fn run_collator(
 			Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
 		})?
 		.build()?;
-	let network = service.network();
 
 	let proposer_factory = sc_basic_authorship::ProposerFactory::new(
 		service.client(),
@@ -100,7 +99,6 @@ pub fn run_collator(
 		block_import,
 		crate::PARA_ID,
 		client,
-		network,
 	);
 
 	let polkadot_future = polkadot_collator::start_collator(
