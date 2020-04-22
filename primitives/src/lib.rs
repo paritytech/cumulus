@@ -67,6 +67,7 @@ pub trait UpwardMessageSender {
 pub mod validation_function_params {
 	use codec::{Decode, Encode};
 	use polkadot_parachain::primitives::{RelayChainBlockNumber, ValidationParams};
+	use polkadot_primitives::parachain::{GlobalValidationSchedule, LocalValidationData};
 
 	/// Validation Function Parameters
 	///
@@ -87,12 +88,23 @@ pub mod validation_function_params {
 		pub code_upgrade_allowed: Option<RelayChainBlockNumber>,
 	}
 
-	impl ValidationFunctionParams {
-		pub fn new(vp: &ValidationParams) -> ValidationFunctionParams {
+	impl From<&ValidationParams> for ValidationFunctionParams {
+		fn from(vp: &ValidationParams) -> Self {
 			ValidationFunctionParams {
 				max_code_size: vp.max_code_size,
 				relay_chain_height: vp.relay_chain_height,
 				code_upgrade_allowed: vp.code_upgrade_allowed,
+			}
+		}
+	}
+
+	impl From<(GlobalValidationSchedule, LocalValidationData)> for ValidationFunctionParams {
+		fn from(t: (GlobalValidationSchedule, LocalValidationData)) -> Self {
+			let (global_validation, local_validation) = t;
+			ValidationFunctionParams {
+				max_code_size: global_validation.max_code_size,
+				relay_chain_height: global_validation.block_number,
+				code_upgrade_allowed: local_validation.code_upgrade_allowed,
 			}
 		}
 	}

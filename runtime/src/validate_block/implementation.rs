@@ -92,7 +92,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	);
 
 	// make a copy for later use
-	let validation_function_params = ValidationFunctionParams::new(&params);
+	let validation_function_params = (&params).into();
 
 	let storage_inner = WitnessStorage::<B>::new(
 		block_data.witness_data,

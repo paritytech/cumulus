@@ -163,11 +163,7 @@ where
 				})?;
 				inherent_data.put_data(
 					VFP_IDENT,
-					&ValidationFunctionParams {
-						max_code_size: global_validation.max_code_size,
-						relay_chain_height: global_validation.block_number,
-						code_upgrade_allowed: local_validation.code_upgrade_allowed,
-					}
+					&ValidationFunctionParams::from((global_validation, local_validation))
 				).map_err(|e| {
 					error!(
 						target: "cumulus-collator",
