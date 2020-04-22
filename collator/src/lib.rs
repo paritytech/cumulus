@@ -61,7 +61,7 @@ pub struct Collator<Block, PF, BI> {
 	inherent_data_providers: InherentDataProviders,
 	collator_network: Arc<dyn CollatorNetwork>,
 	block_import: Arc<Mutex<BI>>,
-	blocks_tx: mpsc::Sender<PHash>,
+	blocks_tx: mpsc::Sender<(PHash, (BlockData, parachain::HeadData))>,
 }
 
 impl<Block, PF, BI> Collator<Block, PF, BI> {
@@ -71,7 +71,7 @@ impl<Block, PF, BI> Collator<Block, PF, BI> {
 		inherent_data_providers: InherentDataProviders,
 		collator_network: impl CollatorNetwork + Clone + 'static,
 		block_import: BI,
-		blocks_tx: mpsc::Sender<PHash>,
+		blocks_tx: mpsc::Sender<(PHash, (BlockData, parachain::HeadData))>,
 	) -> Self {
 		Self {
 			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
@@ -142,8 +142,6 @@ where
 		let mut blocks_tx = self.blocks_tx.clone();
 
 		Box::pin(async move {
-			blocks_tx.send(relay_chain_parent).await.expect("todo");
-
 			let parent_state_root = *last_head.header.state_root();
 
 			let mut proposer = proposer_future
@@ -236,6 +234,8 @@ where
 				block_data,
 				parachain::HeadData(head_data.encode()),
 			);
+
+			blocks_tx.send((relay_chain_parent, candidate.clone())).await.expect("todo");
 
 			trace!(target: "cumulus-collator", "Produced candidate: {:?}", candidate);
 
@@ -334,7 +334,7 @@ where
 			)
 			.map_err(|_| error!("Could not spawn parachain server!"))?;
 
-		let (blocks_tx, blocks_rx) = mpsc::channel(0);
+		let (blocks_tx, mut blocks_rx) = mpsc::channel(0);
 		let mut imported_blocks_stream = self.client.import_notification_stream().fuse();
 		let polkadot_network_2 = polkadot_network.clone();
 		let para_network_2 = self.network.clone();
@@ -348,6 +348,8 @@ where
 					println!("0");
 					while let Some(notification) = imported_blocks_stream.next().await {
 						let para_network = para_network_2.clone();
+						let (relay_chain_parent, candidate) =  blocks_rx.next().await.expect("todo");
+
 						if spawner2.spawn_obj(
 							Box::pin(async move {
 								println!("1");
