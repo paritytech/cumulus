@@ -16,7 +16,10 @@
 
 //! Cumulus Collator implementation for Substrate.
 
-use cumulus_primitives::validation_function_params::{ValidationFunctionParams, INHERENT_IDENTIFIER as VFP_IDENT};
+use cumulus_primitives::{
+	inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER as VFP_IDENT,
+	validation_function_params::ValidationFunctionParams,
+};
 use cumulus_runtime::ParachainBlockData;
 
 use sc_client::Client;

@@ -27,9 +27,10 @@
 //! This pallet depends on certain environmental conditions provided by
 //! Cumulus. It will not work outside a Cumulus Parachain.
 
-use cumulus_primitives::validation_function_params::{
-	ValidationFunctionParams,
-	NEW_VALIDATION_CODE, VALIDATION_FUNCTION_PARAMS, INHERENT_IDENTIFIER,
+use cumulus_primitives::{
+	inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER as INHERENT_IDENTIFIER,
+	validation_function_params::ValidationFunctionParams,
+	well_known_keys::{NEW_VALIDATION_CODE, VALIDATION_FUNCTION_PARAMS},
 };
 use system::ensure_none;
 use frame_support::{

@@ -31,10 +31,9 @@ use parachain::primitives::{HeadData, ValidationCode, ValidationParams, Validati
 
 use codec::{Decode, Encode};
 
-use cumulus_primitives::validation_function_params::{
-	NEW_VALIDATION_CODE,
-	VALIDATION_FUNCTION_PARAMS,
-	ValidationFunctionParams,
+use cumulus_primitives::{
+	validation_function_params::ValidationFunctionParams,
+	well_known_keys::{NEW_VALIDATION_CODE, VALIDATION_FUNCTION_PARAMS},
 };
 
 /// Stores the global [`Storage`] instance.
