@@ -66,7 +66,7 @@ pub mod validation_function_params {
 
 	/// Validation Function Parameters
 	///
-	/// This struct is the subset of [`ValidationParams`](../../polkadot_parachain/primitives/struct.ValidationParams.html)
+	/// This struct is the subset of [`ValidationParams`](polkadot_parachain::ValidationParams)
 	/// which is of interest when upgrading parachain validation functions.
 	#[derive(PartialEq, Eq, Encode, Decode, Clone, Copy, Default)]
 	#[cfg_attr(feature = "std", derive(Debug))]

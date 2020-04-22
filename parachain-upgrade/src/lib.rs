@@ -9,7 +9,7 @@
 //! Depends on no external pallets or traits.
 //!
 //! This pallet depends on certain environmental conditions provided by
-//! Cumulus. It will not work outside a Cumulus parachain.
+//! Cumulus. It will not work outside a Cumulus Parachain.
 
 use cumulus_primitives::validation_function_params::{
 	ValidationFunctionParams,
