@@ -475,7 +475,7 @@ mod tests {
 	fn requires_root() {
 		BlockTests::new().add(123, || {
 			assert_eq!(
-				ParachainUpgrade::set_code(Origin::signed(1), Default::default()),
+				ParachainUpgrade::schedule_upgrade(Origin::signed(1), Default::default()),
 				Err(sp_runtime::DispatchError::BadOrigin),
 			);
 		});
@@ -484,7 +484,7 @@ mod tests {
 	#[test]
 	fn requires_root_2() {
 		BlockTests::new().add(123, || {
-			assert_ok!(ParachainUpgrade::set_code(
+			assert_ok!(ParachainUpgrade::schedule_upgrade(
 				RawOrigin::Root.into(),
 				Default::default()
 			));
@@ -497,7 +497,7 @@ mod tests {
 			.add_with_post_test(
 				123,
 				|| {
-					assert_ok!(ParachainUpgrade::set_code(
+					assert_ok!(ParachainUpgrade::schedule_upgrade(
 						RawOrigin::Root.into(),
 						Default::default()
 					));
@@ -527,14 +527,14 @@ mod tests {
 	fn non_overlapping() {
 		BlockTests::new()
 			.add(123, || {
-				assert_ok!(ParachainUpgrade::set_code(
+				assert_ok!(ParachainUpgrade::schedule_upgrade(
 					RawOrigin::Root.into(),
 					Default::default()
 				));
 			})
 			.add(234, || {
 				assert_eq!(
-					ParachainUpgrade::set_code(RawOrigin::Root.into(), Default::default(),),
+					ParachainUpgrade::schedule_upgrade(RawOrigin::Root.into(), Default::default(),),
 					Err(Error::<Test>::OverlappingUpgrades.into()),
 				)
 			});
@@ -548,7 +548,7 @@ mod tests {
 					!PendingValidationFunction::exists(),
 					"validation function must not exist yet"
 				);
-				assert_ok!(ParachainUpgrade::set_code(
+				assert_ok!(ParachainUpgrade::schedule_upgrade(
 					RawOrigin::Root.into(),
 					Default::default()
 				));
@@ -579,7 +579,7 @@ mod tests {
 			})
 			.add(123, || {
 				assert_eq!(
-					ParachainUpgrade::set_code(RawOrigin::Root.into(), vec![0; 64]),
+					ParachainUpgrade::schedule_upgrade(RawOrigin::Root.into(), vec![0; 64]),
 					Err(Error::<Test>::TooBig.into()),
 				);
 			});
