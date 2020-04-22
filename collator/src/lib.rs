@@ -27,7 +27,7 @@ use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, Environment, Error as ConsensusError,
 	ForkChoiceStrategy, Proposal, Proposer, RecordProof,
 };
-use sp_inherents::InherentDataProviders;
+use sp_inherents::{InherentData, InherentDataProviders};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 
 use polkadot_collator::{
@@ -79,6 +79,36 @@ impl<Block, PF, BI> Collator<Block, PF, BI> {
 			collator_network: Arc::new(collator_network),
 			block_import: Arc::new(Mutex::new(block_import)),
 		}
+	}
+
+	/// Get the inherent data with validation function parameters injected
+	fn inherent_data(
+		inherent_providers: InherentDataProviders,
+		global_validation: GlobalValidationSchedule,
+		local_validation: LocalValidationData,
+	) -> Result<InherentData, InvalidHead> {
+		let mut inherent_data = inherent_providers
+			.create_inherent_data()
+			.map_err(|e| {
+				error!(
+					target: "cumulus-collator",
+					"Failed to create inherent data: {:?}",
+					e,
+				);
+				InvalidHead
+			})?;
+		inherent_data.put_data(
+			VFP_IDENT,
+			&ValidationFunctionParams::from((global_validation, local_validation))
+		).map_err(|e| {
+			error!(
+				target: "cumulus-collator",
+				"Failed to inject validation function params into inherents: {:?}",
+				e,
+			);
+			InvalidHead
+		})?;
+		Ok(inherent_data)
 	}
 }
 
@@ -150,30 +180,7 @@ where
 					InvalidHead
 				})?;
 
-			let inherent_data = {
-				let mut inherent_data = inherent_providers
-				.create_inherent_data()
-				.map_err(|e| {
-					error!(
-						target: "cumulus-collator",
-						"Failed to create inherent data: {:?}",
-						e,
-					);
-					InvalidHead
-				})?;
-				inherent_data.put_data(
-					VFP_IDENT,
-					&ValidationFunctionParams::from((global_validation, local_validation))
-				).map_err(|e| {
-					error!(
-						target: "cumulus-collator",
-						"Failed to inject validation function params into inherents: {:?}",
-						e,
-					);
-					InvalidHead
-				})?;
-				inherent_data
-			};
+			let inherent_data = Self::inherent_data(inherent_providers, global_validation, local_validation)?;
 
 			let Proposal {
 				block,
