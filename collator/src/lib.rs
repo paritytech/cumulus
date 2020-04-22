@@ -134,13 +134,6 @@ where
 			}
 		};
 
-
-               use futures::{Stream, StreamExt};
-               self.spawner.spawn_obj(Box::new(self.collator_network.checked_statements(_relay_chain_parent).for_each(|_| {
-                       eprintln!("Statement");
-                       futures::future::ready(())
-               })).into()).unwrap();
-
 		let proposer_future = factory
 			.lock()
 			.init(&last_head.header);
@@ -352,21 +345,13 @@ where
 						let polkadot_network_3 = polkadot_network.clone();
 						spawner2.spawn_obj(
 							Box::pin(async move {
-							println!("1");
-							let mut checked_statements = polkadot_network_3.checked_statements(notification.header.parent_hash);
+								println!("1");
+								let mut checked_statements = polkadot_network_3.checked_statements(notification.header.parent_hash);
 
-							while let Some(statement) = checked_statements.next().await {
-								println!("{:?}", statement);
-							}
-							/*
-							checked_statements.for_each(move |msg| {
-								println!("{:?}", msg);
-								futures::future::ready(())
-							}).await;
-							*/
+								let _statement = checked_statements.next().await;
 
-							polkadot_network_3.network_service().announce_block(notification.hash, Vec::new());
-							println!("2");
+								polkadot_network_3.network_service().announce_block(notification.hash, Vec::new());
+								println!("2");
 						}).into());
 					}
 					println!("3");
