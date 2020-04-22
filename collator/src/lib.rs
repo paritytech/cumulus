@@ -171,8 +171,8 @@ where
 						"Failed to inject validation function params into inherents: {:?}",
 						e,
 					);
-					InvalidHead}
-				)?;
+					InvalidHead
+				})?;
 				inherent_data
 			};
 
