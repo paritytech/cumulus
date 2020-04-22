@@ -89,7 +89,7 @@ decl_module! {
 
 		// TODO: figure out a bettwe weight than this WAG
 		#[weight = SimpleDispatchInfo::FixedOperational(MINIMUM_WEIGHT)]
-		pub fn set_code(origin, validation_function: ValidationFunction) {
+		pub fn schedule_upgrade(origin, validation_function: ValidationFunction) {
 			// TODO: in the future, we can't rely on a superuser existing
 			// on-chain who can just wave their hands and make this happen.
 			// Instead, this should hook into the democracy pallet and check
@@ -106,10 +106,10 @@ decl_module! {
 			// places, synchronized: both polkadot and the individual parachain
 			// have to upgrade on the same relay chain block.
 			//
-			// `put_polkadot_code` notifies polkadot; the `PendingValidationFunction`
+			// `notify_polkadot_of_pending_upgrade` notifies polkadot; the `PendingValidationFunction`
 			// storage keeps track locally for the parachain upgrade, which will
 			// be applied later.
-			Self::put_polkadot_code(&validation_function);
+			Self::notify_polkadot_of_pending_upgrade(&validation_function);
 			PendingValidationFunction::put((apply_block, validation_function));
 			Self::deposit_event(Event::ValidationFunctionStored(apply_block));
 		}
@@ -149,7 +149,7 @@ impl<T: Trait> Module<T> {
 	/// Put a new validation function into a particular location where polkadot
 	/// monitors for updates. Calling this function notifies polkadot that a new
 	/// upgrade has been scheduled.
-	fn put_polkadot_code(code: &[u8]) {
+	fn notify_polkadot_of_pending_upgrade(code: &[u8]) {
 		storage::unhashed::put_raw(NEW_VALIDATION_CODE, code);
 	}
 
