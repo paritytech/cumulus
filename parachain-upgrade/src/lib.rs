@@ -61,10 +61,6 @@ decl_storage! {
 		// setting it and applying it.
 		PendingValidationFunction get(fn new_validation_function): (RelayChainBlockNumber, ValidationFunction);
 
-		// we keep the validation function parameters here because we have to use
-		// storage as a transport layer between the inherents and the module
-		VFPs get(fn vfps): ValidationFunctionParams;
-
 		/// Were the VFPs updated this block?
 		DidUpdateVFPs: bool;
 	}
@@ -131,7 +127,7 @@ decl_module! {
 			ensure_none(origin)?;
 			assert!(!DidUpdateVFPs::exists(), "VFPs must be updated only once in the block");
 
-			VFPs::put(vfps);
+			storage::unhashed::put(VALIDATION_FUNCTION_PARAMS, &vfps);
 			DidUpdateVFPs::put(true);
 		}
 
@@ -152,16 +148,10 @@ impl<T: Trait> Module<T> {
 	///
 	/// This function is preferable in all cases to `Self::vfps()`.
 	fn validation_function_params() -> ValidationFunctionParams {
-		// this storage value is set by cumulus during block validation
+		// this storage value is set by cumulus during block validation,
+		// and also by the inherent for this module.
 		storage::unhashed::get(VALIDATION_FUNCTION_PARAMS)
-			// this storage value is set each block by the ProvideInherent
-			// implementation, ensuring that the data is also available
-			// during block production
-			.unwrap_or_else(|| VFPs::get())
-			// in the event that something has gone seriously wrong and neither
-			// of those values are present, I believe that VFPs::get falls back
-			// to the Default::default() value, which should be harmless in that
-			// it prevents users from doing any upgrades during the invalid block.
+			.expect("validation function params must be set")
 	}
 
 	/// Put a new validation function into a particular location where polkadot
