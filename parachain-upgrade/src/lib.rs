@@ -139,17 +139,9 @@ decl_module! {
 
 impl<T: Trait> Module<T> {
 	/// Get validation function parameters.
-	///
-	/// This tries to get them first from a magic storage key which is injected
-	/// by cumulus; if that value is set, we should use it, because it's more
-	/// trustworthy than a block's contents. That said, we also try to extract
-	/// them from this block's extrinsics; cumulus also injects them as an
-	/// inherent into each block, so that they're available during block production.
-	///
-	/// This function is preferable in all cases to `Self::vfps()`.
 	fn validation_function_params() -> ValidationFunctionParams {
 		// this storage value is set by cumulus during block validation,
-		// and also by the inherent for this module.
+		// and also by the inherent from this module.
 		storage::unhashed::get(VALIDATION_FUNCTION_PARAMS)
 			.expect("validation function params must be set")
 	}
