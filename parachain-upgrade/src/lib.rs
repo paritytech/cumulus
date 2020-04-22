@@ -84,11 +84,11 @@ decl_module! {
 			}
 
 			// TOOD: figure out a better value than this WAG
-			100_000
+			MINIMUM_WEIGHT
 		}
 
 		// TODO: figure out a bettwe weight than this WAG
-		#[weight = SimpleDispatchInfo::FixedOperational(1_000_000)]
+		#[weight = SimpleDispatchInfo::FixedOperational(MINIMUM_WEIGHT)]
 		pub fn set_code(origin, validation_function: ValidationFunction) {
 			// TODO: in the future, we can't rely on a superuser existing
 			// on-chain who can just wave their hands and make this happen.
