@@ -19,6 +19,7 @@
 use cumulus_runtime::ParachainBlockData;
 
 use sc_client::{BlockchainEvents, Client};
+use sc_network::NetworkService;
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, Environment, Error as ConsensusError,
 	ForkChoiceStrategy, Proposal, Proposer, RecordProof,
@@ -250,8 +251,7 @@ pub struct CollatorBuilder<Block: BlockT, PF, BI, Backend, Executor, Runtime> {
 	block_import: BI,
 	para_id: ParaId,
 	client: Arc<Client<Backend, Executor, Block, Runtime>>,
-	blocks_tx: mpsc::Sender<PHash>,
-	blocks_rx: mpsc::Receiver<PHash>,
+	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 	_marker: PhantomData<Block>,
 }
 
@@ -265,17 +265,15 @@ impl<Block: BlockT, PF, BI, Backend, Executor, Runtime>
 		block_import: BI,
 		para_id: ParaId,
 		client: Arc<Client<Backend, Executor, Block, Runtime>>,
+		network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 	) -> Self {
-		let (blocks_tx, blocks_rx) = mpsc::channel(0);
-
 		Self {
 			proposer_factory,
 			inherent_data_providers,
 			block_import,
 			para_id,
 			client,
-			blocks_tx,
-			blocks_rx,
+			network,
 			_marker: PhantomData,
 		}
 	}
@@ -336,11 +334,11 @@ where
 			)
 			.map_err(|_| error!("Could not spawn parachain server!"))?;
 
-		let mut imported_blocks_stream = polkadot_client.import_notification_stream().fuse();
+		let (blocks_tx, blocks_rx) = mpsc::channel(0);
+		let mut imported_blocks_stream = self.client.import_notification_stream().fuse();
 		let polkadot_network_2 = polkadot_network.clone();
-
+		let para_network_2 = self.network.clone();
 		let spawner2 = spawner.clone();
-		let blocks_rx = self.blocks_rx;
 
 		spawner
 			.spawn_obj(
@@ -349,15 +347,15 @@ where
 
 					println!("0");
 					while let Some(notification) = imported_blocks_stream.next().await {
-						let polkadot_network_3 = polkadot_network.clone();
+						let para_network = para_network_2.clone();
 						if spawner2.spawn_obj(
 							Box::pin(async move {
 								println!("1");
-								let mut checked_statements = polkadot_network_3.checked_statements(notification.header.parent_hash);
+								//let mut checked_statements = polkadot_network_3.checked_statements(notification.header.parent_hash());
 
-								let _statement = checked_statements.next().await;
+								//let _statement = checked_statements.next().await;
 
-								polkadot_network_3.network_service().announce_block(notification.hash, Vec::new());
+								para_network.announce_block(notification.hash, Vec::new());
 								println!("2");
 						}).into()).is_err() {
 							error!("Could not spawn single block announcer task!");
@@ -374,7 +372,7 @@ where
 			self.inherent_data_providers,
 			polkadot_network,
 			self.block_import,
-			self.blocks_tx.clone(),
+			blocks_tx,
 		))
 	}
 }

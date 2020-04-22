@@ -67,11 +67,11 @@ macro_rules! new_full_start {
 ///
 /// This function blocks until done.
 pub fn run_collator(
-	parachain_config: Configuration,
+	mut parachain_config: Configuration,
 	key: Arc<CollatorPair>,
-	mut polkadot_config: polkadot_collator::Configuration,
+	polkadot_config: polkadot_collator::Configuration,
 ) -> sc_service::error::Result<impl AbstractService> {
-	polkadot_config.announce_block = false;
+	parachain_config.announce_block = false;
 
 	let (builder, inherent_data_providers) = new_full_start!(parachain_config);
 	inherent_data_providers
@@ -93,12 +93,14 @@ pub fn run_collator(
 
 	let block_import = service.client();
 	let client = service.client();
+	let network = service.network();
 	let builder = CollatorBuilder::new(
 		proposer_factory,
 		inherent_data_providers,
 		block_import,
 		crate::PARA_ID,
 		client,
+		network,
 	);
 
 	let polkadot_future = polkadot_collator::start_collator(
