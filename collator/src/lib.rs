@@ -39,6 +39,7 @@ use codec::{Decode, Encode};
 
 use log::{error, trace};
 
+use futures::channel::mpsc;
 use futures::task::Spawn;
 use futures::prelude::*;
 
@@ -59,6 +60,7 @@ pub struct Collator<Block, PF, BI> {
 	inherent_data_providers: InherentDataProviders,
 	collator_network: Arc<dyn CollatorNetwork>,
 	block_import: Arc<Mutex<BI>>,
+	blocks_tx: mpsc::Sender<PHash>,
 }
 
 impl<Block, PF, BI> Collator<Block, PF, BI> {
@@ -68,6 +70,7 @@ impl<Block, PF, BI> Collator<Block, PF, BI> {
 		inherent_data_providers: InherentDataProviders,
 		collator_network: impl CollatorNetwork + Clone + 'static,
 		block_import: BI,
+		blocks_tx: mpsc::Sender<PHash>,
 	) -> Self {
 		Self {
 			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
@@ -75,6 +78,7 @@ impl<Block, PF, BI> Collator<Block, PF, BI> {
 			_phantom: PhantomData,
 			collator_network: Arc::new(collator_network),
 			block_import: Arc::new(Mutex::new(block_import)),
+			blocks_tx,
 		}
 	}
 }
@@ -87,6 +91,7 @@ impl<Block, PF, BI> Clone for Collator<Block, PF, BI> {
 			_phantom: PhantomData,
 			collator_network: self.collator_network.clone(),
 			block_import: self.block_import.clone(),
+			blocks_tx: self.blocks_tx.clone(),
 		}
 	}
 }
@@ -111,7 +116,7 @@ where
 
 	fn produce_candidate(
 		&mut self,
-		_relay_chain_parent: PHash,
+		relay_chain_parent: PHash,
 		_global_validation: GlobalValidationSchedule,
 		local_validation: LocalValidationData,
 	) -> Self::ProduceCandidate {
@@ -133,7 +138,11 @@ where
 			.lock()
 			.init(&last_head.header);
 
+		let mut blocks_tx = self.blocks_tx.clone();
+
 		Box::pin(async move {
+			blocks_tx.send(relay_chain_parent).await.expect("todo");
+
 			let parent_state_root = *last_head.header.state_root();
 
 			let mut proposer = proposer_future
@@ -241,6 +250,8 @@ pub struct CollatorBuilder<Block: BlockT, PF, BI, Backend, Executor, Runtime> {
 	block_import: BI,
 	para_id: ParaId,
 	client: Arc<Client<Backend, Executor, Block, Runtime>>,
+	blocks_tx: mpsc::Sender<PHash>,
+	blocks_rx: mpsc::Receiver<PHash>,
 	_marker: PhantomData<Block>,
 }
 
@@ -255,12 +266,16 @@ impl<Block: BlockT, PF, BI, Backend, Executor, Runtime>
 		para_id: ParaId,
 		client: Arc<Client<Backend, Executor, Block, Runtime>>,
 	) -> Self {
+		let (blocks_tx, blocks_rx) = mpsc::channel(0);
+
 		Self {
 			proposer_factory,
 			inherent_data_providers,
 			block_import,
 			para_id,
 			client,
+			blocks_tx,
+			blocks_rx,
 			_marker: PhantomData,
 		}
 	}
@@ -325,6 +340,7 @@ where
 		let polkadot_network_2 = polkadot_network.clone();
 
 		let spawner2 = spawner.clone();
+		let blocks_rx = self.blocks_rx;
 
 		spawner
 			.spawn_obj(
@@ -358,6 +374,7 @@ where
 			self.inherent_data_providers,
 			polkadot_network,
 			self.block_import,
+			self.blocks_tx.clone(),
 		))
 	}
 }
