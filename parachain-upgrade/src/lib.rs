@@ -26,6 +26,8 @@
 //!
 //! This pallet depends on certain environmental conditions provided by
 //! Cumulus. It will not work outside a Cumulus Parachain.
+//!
+//! Users must ensure that they register this pallet as an inherent provider.
 
 use cumulus_primitives::{
 	inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER as INHERENT_IDENTIFIER,
@@ -35,7 +37,7 @@ use cumulus_primitives::{
 use system::ensure_none;
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure, storage, traits::Get,
-	weights::{SimpleDispatchInfo, Weight, MINIMUM_WEIGHT},
+	weights::{SimpleDispatchInfo, MINIMUM_WEIGHT},
 };
 use parachain::primitives::RelayChainBlockNumber;
 use sp_core::storage::well_known_keys;
@@ -72,20 +74,6 @@ decl_module! {
 		// Initializing events
 		// this is needed only if you are using events in your pallet
 		fn deposit_event() = default;
-
-		fn on_initialize(_n: T::BlockNumber) -> Weight {
-			if let Ok((apply_block, validation_function)) = PendingValidationFunction::try_get() {
-				let relay_chain_height = Self::validation_function_params().relay_chain_height;
-				if relay_chain_height >= apply_block {
-					PendingValidationFunction::kill();
-					Self::put_parachain_code(&validation_function);
-					Self::deposit_event(Event::ValidationFunctionApplied(relay_chain_height));
-				}
-			}
-
-			// TOOD: figure out a better value than this WAG
-			MINIMUM_WEIGHT
-		}
 
 		// TODO: figure out a bettwe weight than this WAG
 		#[weight = SimpleDispatchInfo::FixedOperational(MINIMUM_WEIGHT)]
@@ -178,9 +166,21 @@ impl<T: Trait> ProvideInherent for Module<T> {
 	const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
 
 	fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-		let vfp = data.get_data(&INHERENT_IDENTIFIER)
-			.and_then(|r| r.ok_or_else(|| "Validation Function Params inherent data not found".into()))
-			.expect("Gets and decodes vfp inherent data");
+		let vfp: ValidationFunctionParams = data.get_data(&INHERENT_IDENTIFIER)
+			.expect("Gets and decodes vfp inherent data")
+			.expect("Validation Function Params inherent data not found");
+
+
+		// initialization logic: we know that this runs exactly once every block,
+		// which means we can put the initialization logic here to remove the
+		// sequencing problem.
+		if let Ok((apply_block, validation_function)) = PendingValidationFunction::try_get() {
+			if vfp.relay_chain_height >= apply_block {
+				PendingValidationFunction::kill();
+				Module::<T>::put_parachain_code(&validation_function);
+				Module::<T>::deposit_event(Event::ValidationFunctionApplied(vfp.relay_chain_height));
+			}
+		}
 
 		Some(Call::set_validation_function_parameters(vfp))
 	}
@@ -433,8 +433,17 @@ mod tests {
 					storage::unhashed::put(VALIDATION_FUNCTION_PARAMS, &vfp);
 					storage::unhashed::kill(NEW_VALIDATION_CODE);
 
+					// It is insufficient to push the validation function params
+					// to storage; they must also be included in the inherent data.
+					let inherent_data = {
+						let mut inherent_data = InherentData::default();
+						inherent_data.put_data(INHERENT_IDENTIFIER, &vfp).expect("failed to put VFP inherent");
+						inherent_data
+					};
+
 					// execute the block
 					ParachainUpgrade::on_initialize(*n);
+					ParachainUpgrade::create_inherent(&inherent_data);
 					within_block();
 
 					// did block execution set new validation code?
