@@ -21,6 +21,7 @@ sc-network = { git = "https://github.com/paritytech/substrate", branch = "master
 polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service" }
+polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service" }
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../consensus" }

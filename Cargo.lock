@@ -753,6 +753,7 @@ dependencies = [
  "polkadot-collator 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
  "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
  "polkadot-service 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-validation 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
  "sc-cli 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-client 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-client-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",

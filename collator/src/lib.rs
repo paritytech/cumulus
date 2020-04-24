@@ -35,6 +35,7 @@ use polkadot_primitives::{
 	parachain::{self, BlockData, GlobalValidationSchedule, LocalValidationData, Id as ParaId},
 	Block as PBlock, Hash as PHash,
 };
+use polkadot_validation::Statement;
 
 use codec::{Decode, Encode};
 
@@ -55,23 +56,25 @@ struct HeadData<Block: BlockT> {
 }
 
 /// The implementation of the Cumulus `Collator`.
-pub struct Collator<Block, PF, BI> {
+pub struct Collator<Block: BlockT, PF, BI> {
 	proposer_factory: Arc<Mutex<PF>>,
 	_phantom: PhantomData<Block>,
 	inherent_data_providers: InherentDataProviders,
 	collator_network: Arc<dyn CollatorNetwork>,
 	block_import: Arc<Mutex<BI>>,
-	blocks_tx: mpsc::Sender<(PHash, (BlockData, parachain::HeadData))>,
+	spawner: Arc<dyn Spawn + Send + Sync>,
+	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 }
 
-impl<Block, PF, BI> Collator<Block, PF, BI> {
+impl<Block: BlockT, PF, BI> Collator<Block, PF, BI> {
 	/// Create a new instance.
 	fn new(
 		proposer_factory: PF,
 		inherent_data_providers: InherentDataProviders,
 		collator_network: impl CollatorNetwork + Clone + 'static,
 		block_import: BI,
-		blocks_tx: mpsc::Sender<(PHash, (BlockData, parachain::HeadData))>,
+		spawner: Arc<dyn Spawn + Send + Sync>,
+		network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 	) -> Self {
 		Self {
 			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
@@ -79,12 +82,13 @@ impl<Block, PF, BI> Collator<Block, PF, BI> {
 			_phantom: PhantomData,
 			collator_network: Arc::new(collator_network),
 			block_import: Arc::new(Mutex::new(block_import)),
-			blocks_tx,
+			spawner,
+			network,
 		}
 	}
 }
 
-impl<Block, PF, BI> Clone for Collator<Block, PF, BI> {
+impl<Block: BlockT, PF, BI> Clone for Collator<Block, PF, BI> {
 	fn clone(&self) -> Self {
 		Self {
 			proposer_factory: self.proposer_factory.clone(),
@@ -92,7 +96,8 @@ impl<Block, PF, BI> Clone for Collator<Block, PF, BI> {
 			_phantom: PhantomData,
 			collator_network: self.collator_network.clone(),
 			block_import: self.block_import.clone(),
-			blocks_tx: self.blocks_tx.clone(),
+			spawner: self.spawner.clone(),
+			network: self.network.clone(),
 		}
 	}
 }
@@ -139,7 +144,10 @@ where
 			.lock()
 			.init(&last_head.header);
 
-		let mut blocks_tx = self.blocks_tx.clone();
+		let spawner = self.spawner.clone();
+		println!("0");
+		let mut checked_statements = self.collator_network.checked_statements(relay_chain_parent);
+		let network = self.network.clone();
 
 		Box::pin(async move {
 			let parent_state_root = *last_head.header.state_root();
@@ -226,8 +234,11 @@ where
 			}
 
 			let block_data = BlockData(b.encode());
+			let header = b.into_header();
+			let number = header.number().clone();
+			let hash = header.hash();
 			let head_data = HeadData::<Block> {
-				header: b.into_header(),
+				header,
 			};
 
 			let candidate = (
@@ -235,7 +246,24 @@ where
 				parachain::HeadData(head_data.encode()),
 			);
 
-			blocks_tx.send((relay_chain_parent, candidate.clone())).await.expect("todo");
+			let head_data = parachain::HeadData(head_data.encode());
+
+			spawner.spawn_obj(Box::pin(async move {
+				println!("1");
+				while let Some(statement) = checked_statements.next().await {
+					println!("3");
+					match statement.statement {
+						Statement::Valid(digest) => println!("4"),
+						Statement::Candidate(c) if c.head_data == head_data => {
+							println!("5 {:?} {:?} {:?}", c.head_data, head_data, hash);
+							network.announce_block(hash, Vec::new());
+						},
+						Statement::Candidate(c) => println!("6 {:?} {:?}", c.head_data, head_data),
+						_ => todo!(),
+					}
+				}
+				println!("2");
+			}).into()).expect("todo");
 
 			trace!(target: "cumulus-collator", "Produced candidate: {:?}", candidate);
 
@@ -334,7 +362,6 @@ where
 			)
 			.map_err(|_| error!("Could not spawn parachain server!"))?;
 
-		let (blocks_tx, mut blocks_rx) = mpsc::channel(0);
 		let mut imported_blocks_stream = self.client.import_notification_stream().fuse();
 		let polkadot_network_2 = polkadot_network.clone();
 		let para_network_2 = self.network.clone();
@@ -347,6 +374,8 @@ where
 
 					println!("0");
 					while let Some(notification) = imported_blocks_stream.next().await {
+						println!("{:?}", notification.hash);
+						/*
 						let para_network = para_network_2.clone();
 						let (relay_chain_parent, candidate) =  blocks_rx.next().await.expect("todo");
 
@@ -362,6 +391,7 @@ where
 						}).into()).is_err() {
 							error!("Could not spawn single block announcer task!");
 						}
+						*/
 					}
 					println!("3");
 				})
@@ -374,7 +404,8 @@ where
 			self.inherent_data_providers,
 			polkadot_network,
 			self.block_import,
-			blocks_tx,
+			Arc::new(spawner),
+			para_network_2,
 		))
 	}
 }
