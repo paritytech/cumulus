@@ -18,22 +18,25 @@
 //!
 //! Contains message send between collators and logic to process them.
 
+use sc_network::NetworkService;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::Error as ClientError;
 use sp_consensus::block_validation::{BlockAnnounceValidator, Validation};
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
+use polkadot_collator::Network as CollatorNetwork;
 use polkadot_network::legacy::gossip::{GossipMessage, GossipStatement};
 use polkadot_primitives::{
 	parachain::{ParachainHost, ValidatorId},
-	Block as PBlock,
+	Block as PBlock, Hash as PHash,
 };
 use polkadot_statement_table::{SignedStatement, Statement};
 use polkadot_validation::check_statement;
 
 use codec::{Decode, Encode};
+use futures::{Stream, StreamExt};
 
-use std::{marker::PhantomData, sync::Arc};
+use std::{marker::PhantomData, pin::Pin, sync::Arc};
 
 /// Validate that data is a valid justification from a relay-chain validator that the block is a
 /// valid parachain-block candidate.
@@ -140,4 +143,34 @@ where
 
 		Ok(Validation::Success)
 	}
+}
+
+pub async fn wait_to_announce<Block: BlockT>(
+	hash: <Block as BlockT>::Hash,
+	relay_chain_leaf: PHash,
+	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+	collator_network: Arc<dyn CollatorNetwork>,
+	head_data: &Vec<u8>,
+) {
+	println!("1");
+	let mut checked_statements = collator_network.checked_statements(relay_chain_leaf);
+
+	while let Some(statement) = checked_statements.next().await {
+		println!("3");
+		match &statement.statement {
+			Statement::Valid(_digest) => println!("4"),
+			Statement::Candidate(c) if &c.head_data.0 == head_data => {
+				println!("5 {:?} {:?} {:?}", c.head_data, head_data, hash);
+				let gossip_message: GossipMessage = GossipStatement {
+					relay_chain_leaf,
+					signed_statement: statement,
+				}.into();
+
+				network.announce_block(hash, gossip_message.encode());
+			},
+			Statement::Candidate(c) => println!("6 {:?} {:?}", c.head_data, head_data),
+			_ => todo!(),
+		}
+	}
+	println!("2");
 }

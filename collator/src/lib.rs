@@ -16,6 +16,7 @@
 
 //! Cumulus Collator implementation for Substrate.
 
+use cumulus_network::wait_to_announce;
 use cumulus_runtime::ParachainBlockData;
 
 use sc_client::{BlockchainEvents, Client};
@@ -146,8 +147,8 @@ where
 
 		let spawner = self.spawner.clone();
 		println!("0");
-		let mut checked_statements = self.collator_network.checked_statements(relay_chain_parent);
 		let network = self.network.clone();
+		let collator_network = self.collator_network.clone();
 
 		Box::pin(async move {
 			let parent_state_root = *last_head.header.state_root();
@@ -235,7 +236,7 @@ where
 
 			let block_data = BlockData(b.encode());
 			let header = b.into_header();
-			let number = header.number().clone();
+			let encoded_header = header.encode();
 			let hash = header.hash();
 			let head_data = HeadData::<Block> {
 				header,
@@ -246,23 +247,8 @@ where
 				parachain::HeadData(head_data.encode()),
 			);
 
-			let head_data = parachain::HeadData(head_data.encode());
-
 			spawner.spawn_obj(Box::pin(async move {
-				println!("1");
-				while let Some(statement) = checked_statements.next().await {
-					println!("3");
-					match statement.statement {
-						Statement::Valid(digest) => println!("4"),
-						Statement::Candidate(c) if c.head_data == head_data => {
-							println!("5 {:?} {:?} {:?}", c.head_data, head_data, hash);
-							network.announce_block(hash, Vec::new());
-						},
-						Statement::Candidate(c) => println!("6 {:?} {:?}", c.head_data, head_data),
-						_ => todo!(),
-					}
-				}
-				println!("2");
+				wait_to_announce(hash, relay_chain_parent, network, collator_network, &encoded_header).await;
 			}).into()).expect("todo");
 
 			trace!(target: "cumulus-collator", "Produced candidate: {:?}", candidate);
