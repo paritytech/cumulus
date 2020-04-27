@@ -108,14 +108,28 @@ decl_module! {
 		/// phease if the call was not invoked.
 		///
 		/// The dispatch origin for this call must be `Inherent`
+		///
+		/// As a side effect, this function upgrades the current validation function
+		/// if the appropriate time has come.
 		//
 		// weight data just stolen from Timestamp::set
 		#[weight = SimpleDispatchInfo::FixedMandatory(MINIMUM_WEIGHT)]
-		fn set_validation_function_parameters(origin, vfps: ValidationFunctionParams) {
+		fn set_validation_function_parameters(origin, vfp: ValidationFunctionParams) {
 			ensure_none(origin)?;
 			assert!(!DidUpdateVFPs::exists(), "VFPs must be updated only once in the block");
 
-			storage::unhashed::put(VALIDATION_FUNCTION_PARAMS, &vfps);
+			// initialization logic: we know that this runs exactly once every block,
+			// which means we can put the initialization logic here to remove the
+			// sequencing problem.
+			if let Ok((apply_block, validation_function)) = PendingValidationFunction::try_get() {
+				if vfp.relay_chain_height >= apply_block {
+					PendingValidationFunction::kill();
+					Self::put_parachain_code(&validation_function);
+					Self::deposit_event(Event::ValidationFunctionApplied(vfp.relay_chain_height));
+				}
+			}
+
+			storage::unhashed::put(VALIDATION_FUNCTION_PARAMS, &vfp);
 			DidUpdateVFPs::put(true);
 		}
 
@@ -170,17 +184,6 @@ impl<T: Trait> ProvideInherent for Module<T> {
 		// cause the on_finalize assertion to fail.
 		let vfp: ValidationFunctionParams = data.get_data(&INHERENT_IDENTIFIER).ok().flatten()?;
 
-		// initialization logic: we know that this runs exactly once every block,
-		// which means we can put the initialization logic here to remove the
-		// sequencing problem.
-		if let Ok((apply_block, validation_function)) = PendingValidationFunction::try_get() {
-			if vfp.relay_chain_height >= apply_block {
-				PendingValidationFunction::kill();
-				Module::<T>::put_parachain_code(&validation_function);
-				Module::<T>::deposit_event(Event::ValidationFunctionApplied(vfp.relay_chain_height));
-			}
-		}
-
 		Some(Call::set_validation_function_parameters(vfp))
 	}
 }
@@ -213,13 +216,13 @@ mod tests {
 	use codec::Encode;
 	use frame_support::{
 		assert_ok, impl_outer_event, impl_outer_origin, parameter_types,
-		traits::OnInitialize,
+		traits::{OnInitialize, OnFinalize},
 		weights::Weight,
 	};
 	use sp_core::H256;
 	use sp_runtime::{
 		testing::Header,
-		traits::{BlakeTwo256, IdentityLookup},
+		traits::{BlakeTwo256, Dispatchable, IdentityLookup},
 		Perbill,
 	};
 	use system::{InitKind, RawOrigin};
@@ -442,8 +445,12 @@ mod tests {
 
 					// execute the block
 					ParachainUpgrade::on_initialize(*n);
-					ParachainUpgrade::create_inherent(&inherent_data);
+					ParachainUpgrade::create_inherent(&inherent_data)
+						.expect("got an inherent")
+						.dispatch(RawOrigin::None.into())
+						.expect("dispatch succeeded");
 					within_block();
+					ParachainUpgrade::on_finalize(*n);
 
 					// did block execution set new validation code?
 					if storage::unhashed::exists(NEW_VALIDATION_CODE) {
