@@ -166,10 +166,9 @@ impl<T: Trait> ProvideInherent for Module<T> {
 	const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
 
 	fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-		let vfp: ValidationFunctionParams = data.get_data(&INHERENT_IDENTIFIER)
-			.expect("Gets and decodes vfp inherent data")
-			.expect("Validation Function Params inherent data not found");
-
+		// If the inherent is not present, this returns None early. This in turn will
+		// cause the on_finalize assertion to fail.
+		let vfp: ValidationFunctionParams = data.get_data(&INHERENT_IDENTIFIER).ok().flatten()?;
 
 		// initialization logic: we know that this runs exactly once every block,
 		// which means we can put the initialization logic here to remove the
