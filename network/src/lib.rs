@@ -70,8 +70,11 @@ where
 		header: &B::Header,
 		mut data: &[u8],
 	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
+		println!("validation 0");
+
 		// If no data is provided the announce is valid.
 		if data.is_empty() {
+			println!("validation 1");
 			return Ok(Validation::Success);
 		}
 
@@ -81,6 +84,7 @@ where
 				"cannot decode block announced justification, must be a gossip message".to_string(),
 			)) as Box<_>
 		})?;
+		println!("validation 2");
 
 		// Check message is a gossip statement.
 		let gossip_statement = match gossip_message {
@@ -92,6 +96,7 @@ where
 				)) as Box<_>)
 			}
 		};
+		println!("validation 3");
 
 		let GossipStatement {
 			relay_chain_leaf,
@@ -108,6 +113,7 @@ where
 			.signing_context(&BlockId::Hash(relay_chain_leaf))
 			.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?;
 
+		println!("validation 4");
 		// Check that the signer is a legit validator.
 		let signer = self.authorities.get(sender as usize).ok_or_else(|| {
 			Box::new(ClientError::BadJustification(
@@ -116,6 +122,7 @@ where
 			)) as Box<_>
 		})?;
 
+		println!("validation 5");
 		// Check statement is correctly signed.
 		if !check_statement(&statement, &signature, signer.clone(), &signing_context) {
 			return Err(Box::new(ClientError::BadJustification(
@@ -123,6 +130,7 @@ where
 			)) as Box<_>);
 		}
 
+		println!("validation 6");
 		// Check statement is a candidate statement.
 		let candidate_receipt = match statement {
 			Statement::Candidate(candidate_receipt) => candidate_receipt,
@@ -134,6 +142,7 @@ where
 			}
 		};
 
+		println!("validation 7");
 		// Check the header in the candidate_receipt match header given header.
 		if header.encode() != candidate_receipt.head_data.0 {
 			return Err(Box::new(ClientError::BadJustification(
@@ -141,6 +150,7 @@ where
 			)) as Box<_>);
 		}
 
+		println!("validation 8");
 		Ok(Validation::Success)
 	}
 }
