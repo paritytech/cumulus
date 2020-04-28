@@ -7,19 +7,19 @@ edition = "2018"
 
 [dependencies]
 # substrate deps
-sc-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-network = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 
 # polkadot deps
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service" }
-polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service" }
-polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service" }
-polkadot-network = { git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
+polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
+polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
+polkadot-network = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
 
 # other deps
 codec = { package = "parity-scale-codec", version = "1.3.0", features = [ "derive" ] }
