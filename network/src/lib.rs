@@ -34,9 +34,9 @@ use polkadot_statement_table::{SignedStatement, Statement};
 use polkadot_validation::check_statement;
 
 use codec::{Decode, Encode};
-use futures::{Stream, StreamExt};
+use futures::StreamExt;
 
-use std::{marker::PhantomData, pin::Pin, sync::Arc};
+use std::{marker::PhantomData, sync::Arc};
 
 /// Validate that data is a valid justification from a relay-chain validator that the block is a
 /// valid parachain-block candidate.

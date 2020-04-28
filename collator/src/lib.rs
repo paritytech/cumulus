@@ -19,7 +19,7 @@
 use cumulus_network::wait_to_announce;
 use cumulus_runtime::ParachainBlockData;
 
-use sc_client::{BlockchainEvents, Client};
+use sc_client::Client;
 use sc_network::NetworkService;
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, Environment, Error as ConsensusError,
@@ -36,13 +36,11 @@ use polkadot_primitives::{
 	parachain::{self, BlockData, GlobalValidationSchedule, LocalValidationData, Id as ParaId},
 	Block as PBlock, Hash as PHash,
 };
-use polkadot_validation::Statement;
 
 use codec::{Decode, Encode};
 
 use log::{error, trace};
 
-use futures::channel::mpsc;
 use futures::task::Spawn;
 use futures::prelude::*;
 
@@ -348,42 +346,6 @@ where
 			)
 			.map_err(|_| error!("Could not spawn parachain server!"))?;
 
-		let mut imported_blocks_stream = self.client.import_notification_stream().fuse();
-		let polkadot_network_2 = polkadot_network.clone();
-		let para_network_2 = self.network.clone();
-		let spawner2 = spawner.clone();
-
-		spawner
-			.spawn_obj(
-				Box::pin(async move {
-					let polkadot_network = polkadot_network_2;
-
-					println!("0");
-					while let Some(notification) = imported_blocks_stream.next().await {
-						println!("{:?}", notification.hash);
-						/*
-						let para_network = para_network_2.clone();
-						let (relay_chain_parent, candidate) =  blocks_rx.next().await.expect("todo");
-
-						if spawner2.spawn_obj(
-							Box::pin(async move {
-								println!("1");
-								//let mut checked_statements = polkadot_network_3.checked_statements(notification.header.parent_hash());
-
-								//let _statement = checked_statements.next().await;
-
-								para_network.announce_block(notification.hash, Vec::new());
-								println!("2");
-						}).into()).is_err() {
-							error!("Could not spawn single block announcer task!");
-						}
-						*/
-					}
-					println!("3");
-				})
-				.into(),
-			)
-			.map_err(|_| error!("Could not spawn block announcer!"))?;
 
 		Ok(Collator::new(
 			self.proposer_factory,
@@ -391,7 +353,7 @@ where
 			polkadot_network,
 			self.block_import,
 			Arc::new(spawner),
-			para_network_2,
+			self.network,
 		))
 	}
 }
