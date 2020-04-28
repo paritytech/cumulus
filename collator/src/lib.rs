@@ -245,9 +245,20 @@ where
 				parachain::HeadData(head_data.encode()),
 			);
 
-			spawner.spawn_obj(Box::pin(async move {
-				wait_to_announce(hash, relay_chain_parent, network, collator_network, &encoded_header).await;
-			}).into()).expect("todo");
+			if let Err(err) = spawner.spawn_obj(Box::pin(async move {
+				wait_to_announce(
+					hash,
+					relay_chain_parent,
+					network, collator_network,
+					&encoded_header,
+				).await
+			}).into()) {
+				error!(
+					target: "cumulus-collator",
+					"Could not spawn a new task to wait for the announce block: {:?}",
+					err
+				);
+			}
 
 			trace!(target: "cumulus-collator", "Produced candidate: {:?}", candidate);
 
