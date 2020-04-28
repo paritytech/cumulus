@@ -103,16 +103,11 @@ pub fn run_collator(
 		network,
 	);
 
-	let polkadot_future = polkadot_collator::start_collator_polkadot(
+	let polkadot_future = polkadot_collator::start_collator(
 		builder,
 		crate::PARA_ID,
 		key,
 		polkadot_config,
-		Some(Box::new(|client| {
-			let authorities = Vec::new();
-
-			Box::new(::cumulus_network::JustifiedBlockAnnounceValidator::new(authorities, client))
-		})),
 	).map(|_| ());
 	service.spawn_essential_task("polkadot", polkadot_future);
 

@@ -15,11 +15,11 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # polkadot deps
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks" }
-polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks" }
-polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks" }
-polkadot-network = { git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service" }
+polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service" }
+polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service" }
+polkadot-network = { git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service" }
 
 # other deps
 codec = { package = "parity-scale-codec", version = "1.3.0", features = [ "derive" ] }

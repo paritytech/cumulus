@@ -21,7 +21,7 @@ frame-executive = { git = "https://github.com/paritytech/substrate", default-fea
 sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot dependencies
-parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks", default-features = false, features = [ "wasm-api" ] }
+parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service", default-features = false, features = [ "wasm-api" ] }
 
 [dev-dependencies]
 sc-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }

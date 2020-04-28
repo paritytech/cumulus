@@ -42,13 +42,12 @@ sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch 
 # Cumulus dependencies
 cumulus-consensus = { path = "../../consensus" }
 cumulus-collator = { path = "../../collator" }
-cumulus-network = { path = "../../network" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks" }
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks" }
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "cecton-add-network-service" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
