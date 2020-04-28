@@ -751,10 +751,10 @@ dependencies = [
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-collator 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-service 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-validation 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-collator 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-service 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-validation 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "sc-cli 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-client 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-client-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -778,8 +778,8 @@ dependencies = [
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-runtime 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-runtime 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "sc-client 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-client-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "sp-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -797,10 +797,10 @@ name = "cumulus-message-broker"
 version = "0.1.0"
 dependencies = [
  "cumulus-primitives 0.1.0",
- "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-inherents 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-inherents 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
 ]
 
 [[package]]
@@ -809,11 +809,11 @@ version = "0.1.0"
 dependencies = [
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-collator 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-network 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-statement-table 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-validation 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-collator 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-network 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-statement-table 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-validation 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "sc-client 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-network 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sp-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -827,7 +827,7 @@ name = "cumulus-primitives"
 version = "0.1.0"
 dependencies = [
  "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-inherents 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-inherents 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
 ]
 
 [[package]]
@@ -840,7 +840,7 @@ dependencies = [
  "hashbrown 0.6.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "memory-db 0.18.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-parachain 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-parachain 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "sc-block-builder 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-executor 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sp-blockchain 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -874,6 +874,7 @@ dependencies = [
  "assert_cmd 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cumulus-collator 0.1.0",
  "cumulus-consensus 0.1.0",
+ "cumulus-network 0.1.0",
  "cumulus-test-parachain-runtime 0.1.0",
  "derive_more 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "exit-future 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -882,10 +883,10 @@ dependencies = [
  "nix 0.17.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-cli 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-collator 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-service 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-cli 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-collator 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-service 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "sc-basic-authorship 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-cli 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-client 0.8.0-dev (git+https://github.com/paritytech/substrate)",
@@ -1290,7 +1291,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "fork-tree"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -1298,7 +1299,7 @@ dependencies = [
 [[package]]
 name = "frame-benchmarking"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -1315,7 +1316,7 @@ dependencies = [
 [[package]]
 name = "frame-benchmarking-cli"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-benchmarking 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1334,7 +1335,7 @@ dependencies = [
 [[package]]
 name = "frame-executive"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -1348,18 +1349,18 @@ dependencies = [
 [[package]]
 name = "frame-metadata"
 version = "11.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
 ]
 
 [[package]]
 name = "frame-metadata"
 version = "11.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1370,31 +1371,31 @@ dependencies = [
 [[package]]
 name = "frame-support"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "bitmask 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "frame-metadata 11.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "frame-support-procedural 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "frame-metadata 11.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "frame-support-procedural 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "once_cell 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "paste 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-arithmetic 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-inherents 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-io 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-state-machine 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-arithmetic 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-inherents 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-io 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-runtime 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-state-machine 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "tracing 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "frame-support"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "bitmask 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-metadata 11.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -1418,9 +1419,9 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
- "frame-support-procedural-tools 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "frame-support-procedural-tools 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 1.0.16 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1429,7 +1430,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support-procedural-tools 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1440,9 +1441,9 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural-tools"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
- "frame-support-procedural-tools-derive 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "frame-support-procedural-tools-derive 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1452,7 +1453,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural-tools"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support-procedural-tools-derive 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1464,7 +1465,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural-tools-derive"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1474,7 +1475,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural-tools-derive"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1484,23 +1485,23 @@ dependencies = [
 [[package]]
 name = "frame-system"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
- "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-io 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-version 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-io 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-runtime 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-version 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
 ]
 
 [[package]]
 name = "frame-system"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1516,7 +1517,7 @@ dependencies = [
 [[package]]
 name = "frame-system-rpc-runtime-api"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -2268,7 +2269,7 @@ dependencies = [
 [[package]]
 name = "kusama-runtime"
 version = "0.7.30"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service#b3ec39ec70e784d86086994674c4d11dedcae257"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#5e228013edcbae5476ed21891bd604698538def0"
 dependencies = [
  "bitvec 0.17.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-executive 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -2305,8 +2306,8 @@ dependencies = [
  "pallet-utility 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "pallet-vesting 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-runtime-common 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-runtime-common 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "rustc-hex 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3228,7 +3229,7 @@ dependencies = [
 [[package]]
 name = "pallet-authority-discovery"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3246,7 +3247,7 @@ dependencies = [
 [[package]]
 name = "pallet-authorship"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3263,7 +3264,7 @@ dependencies = [
 [[package]]
 name = "pallet-babe"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3284,7 +3285,7 @@ dependencies = [
 [[package]]
 name = "pallet-balances"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-benchmarking 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3299,7 +3300,7 @@ dependencies = [
 [[package]]
 name = "pallet-collective"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3314,7 +3315,7 @@ dependencies = [
 [[package]]
 name = "pallet-democracy"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-benchmarking 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3329,7 +3330,7 @@ dependencies = [
 [[package]]
 name = "pallet-elections-phragmen"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3343,7 +3344,7 @@ dependencies = [
 [[package]]
 name = "pallet-finality-tracker"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3359,7 +3360,7 @@ dependencies = [
 [[package]]
 name = "pallet-grandpa"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3377,7 +3378,7 @@ dependencies = [
 [[package]]
 name = "pallet-identity"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "enumflags2 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-benchmarking 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3393,7 +3394,7 @@ dependencies = [
 [[package]]
 name = "pallet-im-online"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3412,7 +3413,7 @@ dependencies = [
 [[package]]
 name = "pallet-indices"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3428,7 +3429,7 @@ dependencies = [
 [[package]]
 name = "pallet-membership"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3442,7 +3443,7 @@ dependencies = [
 [[package]]
 name = "pallet-nicks"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3456,7 +3457,7 @@ dependencies = [
 [[package]]
 name = "pallet-offences"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3471,7 +3472,7 @@ dependencies = [
 [[package]]
 name = "pallet-randomness-collective-flip"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3484,7 +3485,7 @@ dependencies = [
 [[package]]
 name = "pallet-recovery"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "enumflags2 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3499,7 +3500,7 @@ dependencies = [
 [[package]]
 name = "pallet-scheduler"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-benchmarking 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3514,7 +3515,7 @@ dependencies = [
 [[package]]
 name = "pallet-session"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3532,7 +3533,7 @@ dependencies = [
 [[package]]
 name = "pallet-society"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3547,7 +3548,7 @@ dependencies = [
 [[package]]
 name = "pallet-staking"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3568,7 +3569,7 @@ dependencies = [
 [[package]]
 name = "pallet-staking-reward-curve"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3579,7 +3580,7 @@ dependencies = [
 [[package]]
 name = "pallet-sudo"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3593,7 +3594,7 @@ dependencies = [
 [[package]]
 name = "pallet-timestamp"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-benchmarking 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3610,7 +3611,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3623,7 +3624,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment-rpc"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "jsonrpc-core 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "jsonrpc-core-client 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3641,7 +3642,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment-rpc-runtime-api"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3654,7 +3655,7 @@ dependencies = [
 [[package]]
 name = "pallet-treasury"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3668,7 +3669,7 @@ dependencies = [
 [[package]]
 name = "pallet-utility"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3683,7 +3684,7 @@ dependencies = [
 [[package]]
 name = "pallet-vesting"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "enumflags2 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -3993,7 +3994,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "polkadot-availability-store"
 version = "0.7.30"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service#b3ec39ec70e784d86086994674c4d11dedcae257"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#5e228013edcbae5476ed21891bd604698538def0"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "exit-future 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4004,8 +4005,8 @@ dependencies = [
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-erasure-coding 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-erasure-coding 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "sc-client 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-client-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-keystore 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -4021,12 +4022,12 @@ dependencies = [
 [[package]]
 name = "polkadot-cli"
 version = "0.7.30"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service#b3ec39ec70e784d86086994674c4d11dedcae257"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#5e228013edcbae5476ed21891bd604698538def0"
 dependencies = [
  "frame-benchmarking-cli 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-service 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-service 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "sc-cli 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-client 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-client-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -4044,17 +4045,17 @@ dependencies = [
 [[package]]
 name = "polkadot-collator"
 version = "0.7.30"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service#b3ec39ec70e784d86086994674c4d11dedcae257"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#5e228013edcbae5476ed21891bd604698538def0"
 dependencies = [
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-timer 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-cli 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-network 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-service 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-validation 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-cli 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-network 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-service 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-validation 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "sc-cli 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-client 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-client-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -4070,11 +4071,11 @@ dependencies = [
 [[package]]
 name = "polkadot-erasure-coding"
 version = "0.7.30"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service#b3ec39ec70e784d86086994674c4d11dedcae257"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#5e228013edcbae5476ed21891bd604698538def0"
 dependencies = [
  "derive_more 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "reed-solomon-erasure 4.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "sp-trie 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -4083,7 +4084,7 @@ dependencies = [
 [[package]]
 name = "polkadot-network"
 version = "0.7.30"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service#b3ec39ec70e784d86086994674c4d11dedcae257"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#5e228013edcbae5476ed21891bd604698538def0"
 dependencies = [
  "arrayvec 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "bytes 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4094,10 +4095,10 @@ dependencies = [
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-availability-store 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-erasure-coding 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-validation 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-availability-store 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-erasure-coding 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-validation 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "sc-client 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-network 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-network-gossip 0.8.0-dev (git+https://github.com/paritytech/substrate)",
@@ -4111,7 +4112,7 @@ dependencies = [
 [[package]]
 name = "polkadot-parachain"
 version = "0.7.30"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service#b3ec39ec70e784d86086994674c4d11dedcae257"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#5e228013edcbae5476ed21891bd604698538def0"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4131,11 +4132,11 @@ dependencies = [
 [[package]]
 name = "polkadot-primitives"
 version = "0.7.30"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service#b3ec39ec70e784d86086994674c4d11dedcae257"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#5e228013edcbae5476ed21891bd604698538def0"
 dependencies = [
  "bitvec 0.17.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-parachain 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-parachain 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "sp-application-crypto 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -4151,12 +4152,12 @@ dependencies = [
 [[package]]
 name = "polkadot-rpc"
 version = "0.7.30"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service#b3ec39ec70e784d86086994674c4d11dedcae257"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#5e228013edcbae5476ed21891bd604698538def0"
 dependencies = [
  "jsonrpc-core 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "pallet-transaction-payment-rpc 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "sc-client 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-rpc 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "sp-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -4168,7 +4169,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime"
 version = "0.7.30"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service#b3ec39ec70e784d86086994674c4d11dedcae257"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#5e228013edcbae5476ed21891bd604698538def0"
 dependencies = [
  "bitvec 0.17.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-executive 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -4203,8 +4204,8 @@ dependencies = [
  "pallet-treasury 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "pallet-vesting 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-runtime-common 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-runtime-common 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "rustc-hex 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4227,7 +4228,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-common"
 version = "0.7.30"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service#b3ec39ec70e784d86086994674c4d11dedcae257"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#5e228013edcbae5476ed21891bd604698538def0"
 dependencies = [
  "bitvec 0.17.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -4241,7 +4242,7 @@ dependencies = [
  "pallet-timestamp 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "pallet-vesting 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "rustc-hex 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4257,13 +4258,13 @@ dependencies = [
 [[package]]
 name = "polkadot-service"
 version = "0.7.30"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service#b3ec39ec70e784d86086994674c4d11dedcae257"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#5e228013edcbae5476ed21891bd604698538def0"
 dependencies = [
  "frame-benchmarking 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "frame-system-rpc-runtime-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex-literal 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "kusama-runtime 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "kusama-runtime 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "pallet-babe 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -4272,12 +4273,12 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-availability-store 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-network 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-rpc 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-runtime 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-validation 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-availability-store 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-network 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-rpc 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-runtime 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-validation 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "sc-authority-discovery 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-chain-spec 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-client 0.8.0-dev (git+https://github.com/paritytech/substrate)",
@@ -4308,23 +4309,23 @@ dependencies = [
  "sp-session 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "sp-transaction-pool 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "substrate-prometheus-endpoint 0.8.0-dev (git+https://github.com/paritytech/substrate)",
- "westend-runtime 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "westend-runtime 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
 ]
 
 [[package]]
 name = "polkadot-statement-table"
 version = "0.7.30"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service#b3ec39ec70e784d86086994674c4d11dedcae257"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#5e228013edcbae5476ed21891bd604698538def0"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate)",
 ]
 
 [[package]]
 name = "polkadot-validation"
 version = "0.7.30"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service#b3ec39ec70e784d86086994674c4d11dedcae257"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#5e228013edcbae5476ed21891bd604698538def0"
 dependencies = [
  "bitvec 0.17.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "derive_more 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4335,11 +4336,11 @@ dependencies = [
  "pallet-babe 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-availability-store 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-erasure-coding 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-parachain 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-statement-table 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-availability-store 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-erasure-coding 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-parachain 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-statement-table 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "sc-block-builder 0.8.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-client-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "sc-finality-grandpa 0.8.0-dev (git+https://github.com/paritytech/substrate)",
@@ -4973,7 +4974,7 @@ dependencies = [
 [[package]]
 name = "sc-authority-discovery"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "bytes 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5000,7 +5001,7 @@ dependencies = [
 [[package]]
 name = "sc-basic-authorship"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-timer 3.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5022,7 +5023,7 @@ dependencies = [
 [[package]]
 name = "sc-block-builder"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sc-client-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -5038,7 +5039,7 @@ dependencies = [
 [[package]]
 name = "sc-chain-spec"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "sc-chain-spec-derive 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -5054,7 +5055,7 @@ dependencies = [
 [[package]]
 name = "sc-chain-spec-derive"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5065,7 +5066,7 @@ dependencies = [
 [[package]]
 name = "sc-cli"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "ansi_term 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "app_dirs 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5107,7 +5108,7 @@ dependencies = [
 [[package]]
 name = "sc-client"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5144,7 +5145,7 @@ dependencies = [
 [[package]]
 name = "sc-client-api"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5178,7 +5179,7 @@ dependencies = [
 [[package]]
 name = "sc-client-db"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "blake2-rfc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5208,7 +5209,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-babe"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "fork-tree 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -5250,7 +5251,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-epochs"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "fork-tree 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5263,7 +5264,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-slots"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-timer 3.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5284,7 +5285,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-uncles"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "sc-client-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -5298,7 +5299,7 @@ dependencies = [
 [[package]]
 name = "sc-executor"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5326,7 +5327,7 @@ dependencies = [
 [[package]]
 name = "sc-executor-common"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5343,7 +5344,7 @@ dependencies = [
 [[package]]
 name = "sc-executor-wasmi"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5358,7 +5359,7 @@ dependencies = [
 [[package]]
 name = "sc-executor-wasmtime"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "cranelift-codegen 0.59.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cranelift-wasm 0.59.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5379,7 +5380,7 @@ dependencies = [
 [[package]]
 name = "sc-finality-grandpa"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "assert_matches 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "finality-grandpa 0.11.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5415,7 +5416,7 @@ dependencies = [
 [[package]]
 name = "sc-informant"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "ansi_term 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5432,7 +5433,7 @@ dependencies = [
 [[package]]
 name = "sc-keystore"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5447,7 +5448,7 @@ dependencies = [
 [[package]]
 name = "sc-network"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "bytes 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5499,7 +5500,7 @@ dependencies = [
 [[package]]
 name = "sc-network-gossip"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-timer 3.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5515,7 +5516,7 @@ dependencies = [
 [[package]]
 name = "sc-offchain"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "bytes 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5542,7 +5543,7 @@ dependencies = [
 [[package]]
 name = "sc-peerset"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "libp2p 0.18.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5555,7 +5556,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5588,7 +5589,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc-api"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5612,7 +5613,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc-server"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "jsonrpc-core 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "jsonrpc-http-server 14.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5627,7 +5628,7 @@ dependencies = [
 [[package]]
 name = "sc-service"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "exit-future 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5678,7 +5679,7 @@ dependencies = [
 [[package]]
 name = "sc-state-db"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5692,7 +5693,7 @@ dependencies = [
 [[package]]
 name = "sc-telemetry"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "bytes 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5714,7 +5715,7 @@ dependencies = [
 [[package]]
 name = "sc-tracing"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "erased-serde 0.3.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5729,7 +5730,7 @@ dependencies = [
 [[package]]
 name = "sc-transaction-graph"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5749,7 +5750,7 @@ dependencies = [
 [[package]]
 name = "sc-transaction-pool"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6093,7 +6094,7 @@ dependencies = [
 [[package]]
 name = "sp-allocator"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6105,7 +6106,7 @@ dependencies = [
 [[package]]
 name = "sp-api"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6120,7 +6121,7 @@ dependencies = [
 [[package]]
 name = "sp-api-proc-macro"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "blake2-rfc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6132,19 +6133,19 @@ dependencies = [
 [[package]]
 name = "sp-application-crypto"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-io 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-io 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
 ]
 
 [[package]]
 name = "sp-application-crypto"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6156,21 +6157,21 @@ dependencies = [
 [[package]]
 name = "sp-arithmetic"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "integer-sqrt 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-traits 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "primitive-types 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-debug-derive 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-debug-derive 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
 ]
 
 [[package]]
 name = "sp-arithmetic"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "integer-sqrt 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-traits 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6184,7 +6185,7 @@ dependencies = [
 [[package]]
 name = "sp-authority-discovery"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -6196,7 +6197,7 @@ dependencies = [
 [[package]]
 name = "sp-authorship"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-inherents 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -6207,7 +6208,7 @@ dependencies = [
 [[package]]
 name = "sp-block-builder"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -6219,7 +6220,7 @@ dependencies = [
 [[package]]
 name = "sp-blockchain"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6235,7 +6236,7 @@ dependencies = [
 [[package]]
 name = "sp-chain-spec"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6244,7 +6245,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6267,7 +6268,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-aura"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -6281,7 +6282,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-babe"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -6297,7 +6298,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-vrf"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "schnorrkel 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6309,7 +6310,7 @@ dependencies = [
 [[package]]
 name = "sp-core"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "base58 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "blake2-rfc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6334,11 +6335,11 @@ dependencies = [
  "schnorrkel 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "sha2 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-debug-derive 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-externalities 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime-interface 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-storage 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-debug-derive 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-externalities 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-runtime-interface 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-storage 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "substrate-bip39 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tiny-bip39 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tiny-keccak 2.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6350,7 +6351,7 @@ dependencies = [
 [[package]]
 name = "sp-core"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "base58 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "blake2-rfc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6391,7 +6392,7 @@ dependencies = [
 [[package]]
 name = "sp-database"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "kvdb 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6400,7 +6401,7 @@ dependencies = [
 [[package]]
 name = "sp-debug-derive"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6410,7 +6411,7 @@ dependencies = [
 [[package]]
 name = "sp-debug-derive"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6420,17 +6421,17 @@ dependencies = [
 [[package]]
 name = "sp-externalities"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "environmental 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-storage 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-storage 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
 ]
 
 [[package]]
 name = "sp-externalities"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "environmental 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -6440,7 +6441,7 @@ dependencies = [
 [[package]]
 name = "sp-finality-grandpa"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6453,7 +6454,7 @@ dependencies = [
 [[package]]
 name = "sp-finality-tracker"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-inherents 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -6463,19 +6464,19 @@ dependencies = [
 [[package]]
 name = "sp-inherents"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
 ]
 
 [[package]]
 name = "sp-inherents"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6487,7 +6488,7 @@ dependencies = [
 [[package]]
 name = "sp-io"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6495,19 +6496,19 @@ dependencies = [
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-externalities 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime-interface 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-state-machine 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-trie 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-wasm-interface 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-externalities 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-runtime-interface 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-state-machine 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-trie 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-wasm-interface 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
 ]
 
 [[package]]
 name = "sp-io"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6527,7 +6528,7 @@ dependencies = [
 [[package]]
 name = "sp-keyring"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -6538,7 +6539,7 @@ dependencies = [
 [[package]]
 name = "sp-offchain"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "sp-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "sp-runtime 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -6547,7 +6548,7 @@ dependencies = [
 [[package]]
 name = "sp-panic-handler"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "backtrace 0.3.45 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6556,7 +6557,7 @@ dependencies = [
 [[package]]
 name = "sp-panic-handler"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "backtrace 0.3.45 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6565,7 +6566,7 @@ dependencies = [
 [[package]]
 name = "sp-phragmen"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6577,7 +6578,7 @@ dependencies = [
 [[package]]
 name = "sp-phragmen-compact"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro2 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6588,7 +6589,7 @@ dependencies = [
 [[package]]
 name = "sp-rpc"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -6597,7 +6598,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "hash256-std-hasher 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6607,18 +6608,18 @@ dependencies = [
  "paste 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-application-crypto 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-arithmetic 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-inherents 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-io 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-application-crypto 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-arithmetic 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-inherents 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-io 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
 ]
 
 [[package]]
 name = "sp-runtime"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "hash256-std-hasher 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6639,21 +6640,21 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "primitive-types 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-externalities 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-runtime-interface-proc-macro 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-wasm-interface 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-externalities 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-runtime-interface-proc-macro 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-wasm-interface 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "static_assertions 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "sp-runtime-interface"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "primitive-types 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6667,7 +6668,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface-proc-macro"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "Inflector 0.11.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6679,7 +6680,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface-proc-macro"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "Inflector 0.11.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6691,7 +6692,7 @@ dependencies = [
 [[package]]
 name = "sp-serializer"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6700,7 +6701,7 @@ dependencies = [
 [[package]]
 name = "sp-session"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "sp-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -6711,7 +6712,7 @@ dependencies = [
 [[package]]
 name = "sp-staking"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-runtime 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -6721,7 +6722,7 @@ dependencies = [
 [[package]]
 name = "sp-state-machine"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6729,10 +6730,10 @@ dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-externalities 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-panic-handler 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-trie 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-externalities 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-panic-handler 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-trie 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "trie-db 0.20.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "trie-root 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -6740,7 +6741,7 @@ dependencies = [
 [[package]]
 name = "sp-state-machine"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6759,28 +6760,28 @@ dependencies = [
 [[package]]
 name = "sp-std"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 
 [[package]]
 name = "sp-std"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 
 [[package]]
 name = "sp-storage"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "impl-serde 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-debug-derive 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-debug-derive 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
 ]
 
 [[package]]
 name = "sp-storage"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "impl-serde 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6791,7 +6792,7 @@ dependencies = [
 [[package]]
 name = "sp-test-primitives"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-util-mem 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6804,7 +6805,7 @@ dependencies = [
 [[package]]
 name = "sp-timestamp"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6818,7 +6819,7 @@ dependencies = [
 [[package]]
 name = "sp-transaction-pool"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6833,13 +6834,13 @@ dependencies = [
 [[package]]
 name = "sp-trie"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "memory-db 0.20.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "trie-db 0.20.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "trie-root 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -6847,7 +6848,7 @@ dependencies = [
 [[package]]
 name = "sp-trie"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "memory-db 0.20.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6861,7 +6862,7 @@ dependencies = [
 [[package]]
 name = "sp-utils"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-core 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6872,19 +6873,19 @@ dependencies = [
 [[package]]
 name = "sp-version"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "impl-serde 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-runtime 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
- "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-runtime 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
+ "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
 ]
 
 [[package]]
 name = "sp-version"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "impl-serde 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6896,18 +6897,18 @@ dependencies = [
 [[package]]
 name = "sp-wasm-interface"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
+ "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "wasmi 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "sp-wasm-interface"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -7022,7 +7023,7 @@ dependencies = [
 [[package]]
 name = "substrate-build-script-utils"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "platforms 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -7030,7 +7031,7 @@ dependencies = [
 [[package]]
 name = "substrate-frame-rpc-system"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "frame-system-rpc-runtime-api 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -7051,7 +7052,7 @@ dependencies = [
 [[package]]
 name = "substrate-prometheus-endpoint"
 version = "0.8.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "async-std 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "derive_more 0.99.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -7065,7 +7066,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-client"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -7085,7 +7086,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-runtime"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 dependencies = [
  "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-executive 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -7124,7 +7125,7 @@ dependencies = [
 [[package]]
 name = "substrate-wasm-builder-runner"
 version = "1.0.5"
-source = "git+https://github.com/paritytech/substrate#05161aae549c2477580df55e1837a7cdc0d48453"
+source = "git+https://github.com/paritytech/substrate#61171d5eaa48ab55dbcfe27a23cc03ae1bac5af5"
 
 [[package]]
 name = "substrate-wasm-builder-runner"
@@ -8097,7 +8098,7 @@ dependencies = [
 [[package]]
 name = "westend-runtime"
 version = "0.7.30"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service#b3ec39ec70e784d86086994674c4d11dedcae257"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks#5e228013edcbae5476ed21891bd604698538def0"
 dependencies = [
  "bitvec 0.17.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-executive 2.0.0-dev (git+https://github.com/paritytech/substrate)",
@@ -8135,9 +8136,9 @@ dependencies = [
  "pallet-utility 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "pallet-vesting 2.0.0-dev (git+https://github.com/paritytech/substrate)",
  "parity-scale-codec 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "polkadot-parachain 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
- "polkadot-runtime-common 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)",
+ "polkadot-parachain 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
+ "polkadot-runtime-common 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)",
  "rustc-hex 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -8432,17 +8433,17 @@ dependencies = [
 "checksum frame-benchmarking-cli 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum frame-executive 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum frame-metadata 11.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum frame-metadata 11.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum frame-metadata 11.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum frame-support-procedural 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum frame-support-procedural 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum frame-support-procedural 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum frame-support-procedural-tools 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum frame-support-procedural-tools 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum frame-support-procedural-tools 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum frame-support-procedural-tools-derive 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum frame-support-procedural-tools-derive 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum frame-support-procedural-tools-derive 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum frame-system-rpc-runtime-api 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum fs-swap 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)" = "921d332c89b3b61a826de38c61ee5b6e02c56806cade1b0e5d81bd71f57a71bb"
 "checksum fuchsia-cprng 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "a06f77d526c1a601b7c4cdd98f54b5eaabffc14d5f2f0296febdc7f357c6d3ba"
@@ -8522,7 +8523,7 @@ dependencies = [
 "checksum jsonrpc-ws-server 14.0.6 (registry+https://github.com/rust-lang/crates.io-index)" = "b94e5773b2ae66e0e02c80775ce6bbba6f15d5bb47c14ec36a36fcf94f8df851"
 "checksum keccak 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "67c21572b4949434e4fc1e1978b99c5f77064153c59d998bf13ecd96fb5ecba7"
 "checksum kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7507624b29483431c0ba2d82aece8ca6cdba9382bff4ddd0f7490560c056098d"
-"checksum kusama-runtime 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)" = "<none>"
+"checksum kusama-runtime 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum kv-log-macro 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "8c54d9f465d530a752e6ebdc217e081a7a614b48cb200f6f0aee21ba6bc9aabb"
 "checksum kvdb 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "cad096c6849b2ef027fabe35c4aed356d0e3d3f586d0a8361e5e17f1e50a7ce5"
 "checksum kvdb-memorydb 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4aa954d12cfac958822dfd77aab34f3eec71f103b918c4ab79ab59a36ee594ea"
@@ -8668,19 +8669,19 @@ dependencies = [
 "checksum pkg-config 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)" = "05da548ad6865900e60eaba7f589cc0783590a92e940c26953ff81ddbab2d677"
 "checksum plain 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "b4596b6d070b27117e987119b4dac604f3c58cfb0b191112e24771b2faeac1a6"
 "checksum platforms 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "feb3b2b1033b8a60b4da6ee470325f887758c95d5320f52f9ce0df055a55940e"
-"checksum polkadot-availability-store 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)" = "<none>"
-"checksum polkadot-cli 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)" = "<none>"
-"checksum polkadot-collator 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)" = "<none>"
-"checksum polkadot-erasure-coding 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)" = "<none>"
-"checksum polkadot-network 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)" = "<none>"
-"checksum polkadot-parachain 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)" = "<none>"
-"checksum polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)" = "<none>"
-"checksum polkadot-rpc 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)" = "<none>"
-"checksum polkadot-runtime 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)" = "<none>"
-"checksum polkadot-runtime-common 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)" = "<none>"
-"checksum polkadot-service 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)" = "<none>"
-"checksum polkadot-statement-table 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)" = "<none>"
-"checksum polkadot-validation 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)" = "<none>"
+"checksum polkadot-availability-store 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
+"checksum polkadot-cli 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
+"checksum polkadot-collator 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
+"checksum polkadot-erasure-coding 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
+"checksum polkadot-network 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
+"checksum polkadot-parachain 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
+"checksum polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
+"checksum polkadot-rpc 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
+"checksum polkadot-runtime 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
+"checksum polkadot-runtime-common 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
+"checksum polkadot-service 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
+"checksum polkadot-statement-table 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
+"checksum polkadot-validation 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum ppv-lite86 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)" = "74490b50b9fbe561ac330df47c08f3f33073d2d00c150f719147d7c54522fa1b"
 "checksum predicates 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "347a1b6f0b21e636bc9872fb60b83b8e185f6f5516298b8238699f7f9a531030"
 "checksum predicates-core 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "06075c3a3e92559ff8929e7a280684489ea27fe44805174c3ebd9328dcb37178"
@@ -8821,9 +8822,9 @@ dependencies = [
 "checksum sp-api 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-api-proc-macro 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-application-crypto 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum sp-application-crypto 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-application-crypto 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum sp-arithmetic 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum sp-arithmetic 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-arithmetic 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum sp-authority-discovery 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-authorship 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-block-builder 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
@@ -8834,50 +8835,50 @@ dependencies = [
 "checksum sp-consensus-babe 0.8.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-consensus-vrf 0.8.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum sp-database 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-debug-derive 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum sp-debug-derive 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-debug-derive 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum sp-externalities 0.8.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum sp-externalities 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-externalities 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum sp-finality-grandpa 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-finality-tracker 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-inherents 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum sp-inherents 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-inherents 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum sp-io 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum sp-io 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-io 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum sp-keyring 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-offchain 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-panic-handler 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum sp-panic-handler 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-panic-handler 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum sp-phragmen 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-phragmen-compact 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-rpc 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-runtime 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum sp-runtime 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-runtime 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum sp-runtime-interface 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum sp-runtime-interface 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-runtime-interface 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum sp-runtime-interface-proc-macro 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum sp-runtime-interface-proc-macro 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-runtime-interface-proc-macro 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum sp-serializer 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-session 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-staking 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-state-machine 0.8.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum sp-state-machine 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-state-machine 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum sp-storage 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum sp-storage 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-storage 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum sp-test-primitives 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-timestamp 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-transaction-pool 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-trie 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum sp-trie 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-trie 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum sp-utils 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
 "checksum sp-version 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum sp-version 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-version 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum sp-wasm-interface 2.0.0-dev (git+https://github.com/paritytech/substrate)" = "<none>"
-"checksum sp-wasm-interface 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)" = "<none>"
+"checksum sp-wasm-interface 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum spin 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 "checksum stable_deref_trait 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "dba1a27d3efae4351c8051072d619e3ade2820635c3958d826bfea39d59b54c8"
 "checksum static_assertions 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
@@ -8995,7 +8996,7 @@ dependencies = [
 "checksum webpki 0.21.2 (registry+https://github.com/rust-lang/crates.io-index)" = "f1f50e1972865d6b1adb54167d1c8ed48606004c2c9d0ea5f1eeb34d95e863ef"
 "checksum webpki-roots 0.18.0 (registry+https://github.com/rust-lang/crates.io-index)" = "91cd5736df7f12a964a5067a12c62fa38e1bd8080aff1f80bc29be7c80d19ab4"
 "checksum webpki-roots 0.19.0 (registry+https://github.com/rust-lang/crates.io-index)" = "f8eff4b7516a57307f9349c64bf34caa34b940b66fed4b2fb3136cb7386e5739"
-"checksum westend-runtime 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-add-network-service)" = "<none>"
+"checksum westend-runtime 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cecton-keep-unpinned-para-blocks)" = "<none>"
 "checksum which 3.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "d011071ae14a2f6671d0b74080ae0cd8ebf3a6f8c9589a2cd45f23126fe29724"
 "checksum winapi 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)" = "167dc9d6949a9b857f3451275e911c3f44255842c1f7a76f33c55103a909087a"
 "checksum winapi 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)" = "8093091eeb260906a183e6ae1abdba2ef5ef2257a21801128899c3fc699229c6"
