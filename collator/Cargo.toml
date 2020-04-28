@@ -21,7 +21,6 @@ sc-network = { git = "https://github.com/paritytech/substrate", branch = "cumulu
 polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
-polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../consensus" }

@@ -754,7 +754,6 @@ dependencies = [
  "polkadot-collator 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "polkadot-primitives 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "polkadot-service 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
- "polkadot-validation 0.7.30 (git+https://github.com/paritytech/polkadot?branch=cumulus-branch)",
  "sc-cli 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-client 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "sc-client-api 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",

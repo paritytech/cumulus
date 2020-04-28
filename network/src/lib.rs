@@ -167,6 +167,8 @@ pub async fn wait_to_announce<Block: BlockT>(
 				}.into();
 
 				network.announce_block(hash, gossip_message.encode());
+
+				break;
 			},
 			Statement::Candidate(c) => println!("6 {:?} {:?}", c.head_data, head_data),
 			_ => todo!(),
