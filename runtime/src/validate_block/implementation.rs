@@ -116,6 +116,11 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 		)
 	};
 
+	// ensure that the stored validation function params cannot contaminate
+	// the validity check; we have to use the ones constructed here, as protection
+	// against a maliciously-constructed block
+	storage().remove(VALIDATION_FUNCTION_PARAMS);
+
 	E::execute_block(block);
 
 	// if in the course of block execution new validation code was set, insert
