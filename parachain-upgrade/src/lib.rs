@@ -283,6 +283,8 @@ mod tests {
 		type OnNewAccount = ();
 		type OnKilledAccount = ();
 		type DbWeight = ();
+		type BlockExecutionWeight = ();
+		type ExtrinsicBaseWeight = ();
 	}
 	impl Trait for Test {
 		type Event = TestEvent;
@@ -310,6 +312,7 @@ mod tests {
 			_method: &str,
 			_call_data: &[u8],
 			_ext: &mut dyn sp_externalities::Externalities,
+			_missing_host_functions: sp_core::traits::MissingHostFunctions,
 		) -> Result<Vec<u8>, String> {
 			Ok(self.0.clone())
 		}
