@@ -144,7 +144,6 @@ where
 			.init(&last_head.header);
 
 		let spawner = self.spawner.clone();
-		println!("0");
 		let network = self.network.clone();
 		let collator_network = self.collator_network.clone();
 

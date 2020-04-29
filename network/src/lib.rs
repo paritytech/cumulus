@@ -152,11 +152,14 @@ pub async fn wait_to_announce<Block: BlockT>(
 	collator_network: Arc<dyn CollatorNetwork>,
 	head_data: &Vec<u8>,
 ) {
+	println!("0");
 	let mut checked_statements = collator_network.checked_statements(relay_chain_leaf);
 
 	while let Some(statement) = checked_statements.next().await {
+		println!("1");
 		match &statement.statement {
 			Statement::Candidate(c) if &c.head_data.0 == head_data => {
+				println!("2");
 				let gossip_message: GossipMessage = GossipStatement {
 					relay_chain_leaf,
 					signed_statement: statement,
@@ -164,9 +167,10 @@ pub async fn wait_to_announce<Block: BlockT>(
 
 				network.announce_block(hash, gossip_message.encode());
 
-				break;
+				//break;
 			},
 			_ => {},
 		}
 	}
+	println!("3");
 }
