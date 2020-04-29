@@ -37,7 +37,7 @@ use cumulus_primitives::{
 use system::ensure_none;
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure, storage, traits::Get,
-	weights::{SimpleDispatchInfo, MINIMUM_WEIGHT},
+	weights::DispatchClass,
 };
 use parachain::primitives::RelayChainBlockNumber;
 use sp_core::storage::well_known_keys;
@@ -75,8 +75,8 @@ decl_module! {
 		// this is needed only if you are using events in your pallet
 		fn deposit_event() = default;
 
-		// TODO: figure out a bettwe weight than this WAG
-		#[weight = SimpleDispatchInfo::FixedOperational(MINIMUM_WEIGHT)]
+		// TODO: figure out a better weight than this
+		#[weight = (0, DispatchClass::Operational)]
 		pub fn schedule_upgrade(origin, validation_function: ValidationFunction) {
 			// TODO: in the future, we can't rely on a superuser existing
 			// on-chain who can just wave their hands and make this happen.
@@ -112,8 +112,8 @@ decl_module! {
 		/// As a side effect, this function upgrades the current validation function
 		/// if the appropriate time has come.
 		//
-		// weight data just stolen from Timestamp::set
-		#[weight = SimpleDispatchInfo::FixedMandatory(MINIMUM_WEIGHT)]
+		// weight data just stolen from Timestamp::set; may be inappropriate
+		#[weight = (0, DispatchClass::Mandatory)]
 		fn set_validation_function_parameters(origin, vfp: ValidationFunctionParams) {
 			ensure_none(origin)?;
 			assert!(!DidUpdateVFPs::exists(), "VFPs must be updated only once in the block");
