@@ -16,7 +16,7 @@
 
 //! Cumulus Collator implementation for Substrate.
 
-use cumulus_network::wait_to_announce;
+use cumulus_network::WaitToAnnounce;
 use cumulus_runtime::ParachainBlockData;
 
 use sc_client::Client;
@@ -63,6 +63,7 @@ pub struct Collator<Block: BlockT, PF, BI> {
 	block_import: Arc<Mutex<BI>>,
 	spawner: Arc<dyn Spawn + Send + Sync>,
 	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+	wait_to_announce: Arc<Mutex<WaitToAnnounce<Block>>>,
 }
 
 impl<Block: BlockT, PF, BI> Collator<Block, PF, BI> {
@@ -75,14 +76,22 @@ impl<Block: BlockT, PF, BI> Collator<Block, PF, BI> {
 		spawner: Arc<dyn Spawn + Send + Sync>,
 		network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 	) -> Self {
+		let collator_network = Arc::new(collator_network);
+		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(
+			spawner.clone(),
+			network.clone(),
+			collator_network.clone(),
+		)));
+
 		Self {
 			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
 			inherent_data_providers,
 			_phantom: PhantomData,
-			collator_network: Arc::new(collator_network),
+			collator_network,
 			block_import: Arc::new(Mutex::new(block_import)),
 			spawner,
 			network,
+			wait_to_announce,
 		}
 	}
 }
@@ -97,6 +106,7 @@ impl<Block: BlockT, PF, BI> Clone for Collator<Block, PF, BI> {
 			block_import: self.block_import.clone(),
 			spawner: self.spawner.clone(),
 			network: self.network.clone(),
+			wait_to_announce: self.wait_to_announce.clone(),
 		}
 	}
 }
@@ -143,9 +153,7 @@ where
 			.lock()
 			.init(&last_head.header);
 
-		let spawner = self.spawner.clone();
-		let network = self.network.clone();
-		let collator_network = self.collator_network.clone();
+		let wait_to_announce = self.wait_to_announce.clone();
 
 		Box::pin(async move {
 			let parent_state_root = *last_head.header.state_root();
@@ -244,20 +252,11 @@ where
 				parachain::HeadData(head_data.encode()),
 			);
 
-			if let Err(err) = spawner.spawn_obj(Box::pin(async move {
-				wait_to_announce(
-					hash,
-					relay_chain_parent,
-					network, collator_network,
-					&encoded_header,
-				).await
-			}).into()) {
-				error!(
-					target: "cumulus-collator",
-					"Could not spawn a new task to wait for the announce block: {:?}",
-					err
-				);
-			}
+			wait_to_announce.lock().wait_to_announce(
+				hash,
+				relay_chain_parent,
+				encoded_header,
+			);
 
 			trace!(target: "cumulus-collator", "Produced candidate: {:?}", candidate);
 

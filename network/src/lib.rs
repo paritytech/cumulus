@@ -34,7 +34,11 @@ use polkadot_statement_table::{SignedStatement, Statement};
 use polkadot_validation::check_statement;
 
 use codec::{Decode, Encode};
-use futures::StreamExt;
+use futures::{pin_mut, select, StreamExt};
+use futures::future::FutureExt;
+use futures::task::Spawn;
+use stream_cancel::{Trigger, Tripwire};
+use log::{error, trace};
 
 use std::{marker::PhantomData, sync::Arc};
 
@@ -145,7 +149,73 @@ where
 	}
 }
 
-pub async fn wait_to_announce<Block: BlockT>(
+pub struct WaitToAnnounce<Block: BlockT> {
+	spawner: Arc<dyn Spawn + Send + Sync>,
+	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+	collator_network: Arc<dyn CollatorNetwork>,
+	current_trigger: Trigger,
+}
+
+impl<Block: BlockT> WaitToAnnounce<Block> {
+	pub fn new(
+		spawner: Arc<dyn Spawn + Send + Sync>,
+		network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+		collator_network: Arc<dyn CollatorNetwork>,
+	) -> WaitToAnnounce<Block> {
+		let (current_trigger, _tripwire) = Tripwire::new();
+
+		WaitToAnnounce {
+			spawner,
+			network,
+			collator_network,
+			current_trigger,
+		}
+	}
+
+	pub fn wait_to_announce(
+		&mut self,
+		hash: <Block as BlockT>::Hash,
+		relay_chain_leaf: PHash,
+		head_data: Vec<u8>,
+	) {
+		let (trigger, tripwire) = Tripwire::new();
+		let network = self.network.clone();
+		let collator_network = self.collator_network.clone();
+
+		std::mem::replace(&mut self.current_trigger, trigger).cancel();
+
+		if let Err(err) = self.spawner.spawn_obj(Box::pin(async move {
+			let t1 = wait_to_announce(
+				hash,
+				relay_chain_leaf,
+				network,
+				collator_network,
+				&head_data,
+			).fuse();
+			let t2 = tripwire.fuse();
+
+			pin_mut!(t1, t2);
+
+			select! {
+				_ = t1 => {},
+				_ = t2 => {
+					trace!(
+						target: "cumulus-network",
+						"previous task that waits for announce block has been canceled",
+					);
+				}
+			}
+		}).into()) {
+			error!(
+				target: "cumulus-network",
+				"Could not spawn a new task to wait for the announce block: {:?}",
+				err
+			);
+		}
+	}
+}
+
+async fn wait_to_announce<Block: BlockT>(
 	hash: <Block as BlockT>::Hash,
 	relay_chain_leaf: PHash,
 	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
