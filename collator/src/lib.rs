@@ -61,8 +61,6 @@ pub struct Collator<Block: BlockT, PF, BI> {
 	inherent_data_providers: InherentDataProviders,
 	collator_network: Arc<dyn CollatorNetwork>,
 	block_import: Arc<Mutex<BI>>,
-	spawner: Arc<dyn Spawn + Send + Sync>,
-	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 	wait_to_announce: Arc<Mutex<WaitToAnnounce<Block>>>,
 }
 
@@ -78,8 +76,8 @@ impl<Block: BlockT, PF, BI> Collator<Block, PF, BI> {
 	) -> Self {
 		let collator_network = Arc::new(collator_network);
 		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(
-			spawner.clone(),
-			network.clone(),
+			spawner,
+			network,
 			collator_network.clone(),
 		)));
 
@@ -89,8 +87,6 @@ impl<Block: BlockT, PF, BI> Collator<Block, PF, BI> {
 			_phantom: PhantomData,
 			collator_network,
 			block_import: Arc::new(Mutex::new(block_import)),
-			spawner,
-			network,
 			wait_to_announce,
 		}
 	}
@@ -104,8 +100,6 @@ impl<Block: BlockT, PF, BI> Clone for Collator<Block, PF, BI> {
 			_phantom: PhantomData,
 			collator_network: self.collator_network.clone(),
 			block_import: self.block_import.clone(),
-			spawner: self.spawner.clone(),
-			network: self.network.clone(),
 			wait_to_announce: self.wait_to_announce.clone(),
 		}
 	}
