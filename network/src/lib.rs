@@ -182,7 +182,7 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 		let network = self.network.clone();
 		let collator_network = self.collator_network.clone();
 
-		std::mem::replace(&mut self.current_trigger, tx);
+		self.current_trigger = tx;
 
 		if let Err(err) = self.spawner.spawn_obj(Box::pin(async move {
 			let t1 = wait_to_announce(
