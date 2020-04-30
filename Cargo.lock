@@ -820,7 +820,6 @@ dependencies = [
  "sp-blockchain 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "sp-consensus 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
  "sp-runtime 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=cecton-keep-unpinned-para-blocks)",
- "stream-cancel 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

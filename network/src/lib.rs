@@ -35,9 +35,9 @@ use polkadot_validation::check_statement;
 
 use codec::{Decode, Encode};
 use futures::{pin_mut, select, StreamExt};
+use futures::channel::oneshot;
 use futures::future::FutureExt;
 use futures::task::Spawn;
-use stream_cancel::{Trigger, Tripwire};
 use log::{error, trace};
 
 use std::{marker::PhantomData, sync::Arc};
@@ -153,7 +153,7 @@ pub struct WaitToAnnounce<Block: BlockT> {
 	spawner: Arc<dyn Spawn + Send + Sync>,
 	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 	collator_network: Arc<dyn CollatorNetwork>,
-	current_trigger: Trigger,
+	current_trigger: oneshot::Sender<()>,
 }
 
 impl<Block: BlockT> WaitToAnnounce<Block> {
@@ -162,13 +162,13 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 		network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 		collator_network: Arc<dyn CollatorNetwork>,
 	) -> WaitToAnnounce<Block> {
-		let (current_trigger, _tripwire) = Tripwire::new();
+		let (tx, _rx) = oneshot::channel();
 
 		WaitToAnnounce {
 			spawner,
 			network,
 			collator_network,
-			current_trigger,
+			current_trigger: tx,
 		}
 	}
 
@@ -178,11 +178,11 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 		relay_chain_leaf: PHash,
 		head_data: Vec<u8>,
 	) {
-		let (trigger, tripwire) = Tripwire::new();
+		let (tx, rx) = oneshot::channel();
 		let network = self.network.clone();
 		let collator_network = self.collator_network.clone();
 
-		std::mem::replace(&mut self.current_trigger, trigger).cancel();
+		std::mem::replace(&mut self.current_trigger, tx);
 
 		if let Err(err) = self.spawner.spawn_obj(Box::pin(async move {
 			let t1 = wait_to_announce(
@@ -192,7 +192,7 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 				collator_network,
 				&head_data,
 			).fuse();
-			let t2 = tripwire.fuse();
+			let t2 = rx.fuse();
 
 			pin_mut!(t1, t2);
 
