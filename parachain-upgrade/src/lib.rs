@@ -154,6 +154,18 @@ impl<T: Trait> Module<T> {
 			.expect("validation function params must be set")
 	}
 
+	/// Get validation function parameters.
+	///
+	/// This will return `None` if this module's inherent has not yet run.
+	/// If it returns `Some(_)`, the validation function params are current for this block.
+	pub fn get_validation_function_params() -> Option<ValidationFunctionParams> {
+		if DidUpdateVFPs::try_get().unwrap_or(false) {
+			Some(Self::validation_function_params())
+		} else {
+			None
+		}
+	}
+
 	/// Put a new validation function into a particular location where polkadot
 	/// monitors for updates. Calling this function notifies polkadot that a new
 	/// upgrade has been scheduled.
