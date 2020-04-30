@@ -54,11 +54,13 @@ macro_rules! new_full_start {
 			let pool = sc_transaction_pool::BasicPool::new(config, pool_api, prometheus_registry);
 			Ok(pool)
 		})?
-		.with_import_queue(|_config, client, _, _| {
+		.with_import_queue(|_config, client, _, _, spawner| {
+			let spawner = |future| spawner.spawn_blocking("import-queue-worker", future);
 			let import_queue = cumulus_consensus::import_queue::import_queue(
 				client.clone(),
 				client,
 				inherent_data_providers.clone(),
+				spawner,
 			)?;
 
 			Ok(import_queue)

@@ -18,6 +18,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub use polkadot_core_primitives::DownwardMessage;
+
 /// Identifiers and types related to Cumulus Inherents
 pub mod inherents {
 	use sp_inherents::InherentIdentifier;
@@ -26,7 +28,7 @@ pub mod inherents {
 	pub const DOWNWARD_MESSAGES_IDENTIFIER: InherentIdentifier = *b"cumdownm";
 
 	/// The type of the inherent downward messages.
-	pub type DownwardMessagesType = Vec<()>;
+	pub type DownwardMessagesType = Vec<crate::DownwardMessage>;
 }
 
 /// Well known keys for values in the storage.
@@ -41,13 +43,13 @@ pub mod well_known_keys {
 #[impl_trait_for_tuples::impl_for_tuples(30)]
 pub trait DownwardMessageHandler {
 	/// Handle the given downward message.
-	fn handle_downward_message(msg: &());
+	fn handle_downward_message(msg: &DownwardMessage);
 }
 
 /// Something that can send upward messages.
-pub trait UpwardMessageSender {
+pub trait UpwardMessageSender<UpwardMessage> {
 	/// Send an upward message to the relay chain.
 	///
 	/// Returns an error if sending failed.
-	fn send_upward_message(msg: &()) -> Result<(), ()>;
+	fn send_upward_message(msg: &UpwardMessage) -> Result<(), ()>;
 }

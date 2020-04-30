@@ -97,16 +97,18 @@ where
 }
 
 /// Start an import queue for a Cumulus collator that does not uses any special authoring logic.
-pub fn import_queue<Client, Block: BlockT, I>(
+pub fn import_queue<Client, Block: BlockT, I, F>(
 	client: Arc<Client>,
 	block_import: I,
 	inherent_data_providers: InherentDataProviders,
+	spawner: F,
 ) -> ClientResult<BasicQueue<Block, I::Transaction>>
 where
 	I: BlockImport<Block, Error = ConsensusError> + Send + Sync + 'static,
  	I::Transaction: Send,
 	Client: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	<Client as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block>,
+	F: Fn(futures::future::BoxFuture<'static, ()>) -> (),
 {
 	let verifier = Verifier {
 		client,
@@ -119,5 +121,6 @@ where
 		Box::new(block_import),
 		None,
 		None,
+		spawner,
 	))
 }

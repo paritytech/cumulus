@@ -22,7 +22,7 @@
 
 use cumulus_primitives::{
 	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER},
-	well_known_keys, DownwardMessageHandler, UpwardMessageSender,
+	well_known_keys, DownwardMessage, DownwardMessageHandler, UpwardMessageSender,
 };
 use frame_support::{
 	decl_module, storage,
@@ -43,7 +43,7 @@ decl_module! {
 		///
 		/// The origin of this call needs to be `None` as this is an inherent.
 		#[weight = (10, DispatchClass::Mandatory)]
-		fn execute_downward_messages(origin, messages: Vec<()>) {
+		fn execute_downward_messages(origin, messages: Vec<DownwardMessage>) {
 			ensure_none(origin)?;
 			messages.iter().for_each(T::DownwardMessageHandlers::handle_downward_message);
 		}
