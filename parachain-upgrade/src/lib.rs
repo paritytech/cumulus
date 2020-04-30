@@ -54,6 +54,11 @@ pub trait Trait: system::Trait {
 
 	/// Get the chain's current version.
 	type Version: Get<RuntimeVersion>;
+
+	/// Something which can be notified when the validation function params are set.
+	///
+	/// Set this to `()` if not needed.
+	type OnValidationFunctionParams: OnValidationFunctionParams;
 }
 
 // This pallet's storage items.
@@ -131,6 +136,7 @@ decl_module! {
 
 			storage::unhashed::put(VALIDATION_FUNCTION_PARAMS, &vfp);
 			DidUpdateVFPs::put(true);
+			<T::OnValidationFunctionParams as OnValidationFunctionParams>::on_validation_function_params(vfp);
 		}
 
 		fn on_finalize() {
@@ -206,6 +212,15 @@ decl_error! {
 		/// The supplied validation function has compiled into a blob larger than Polkadot is willing to run
 		TooBig,
 	}
+}
+
+/// A trait which is called when the validation function parameters are set
+pub trait OnValidationFunctionParams {
+	fn on_validation_function_params(vfp: ValidationFunctionParams);
+}
+
+impl OnValidationFunctionParams for () {
+	fn on_validation_function_params(_vfp: ValidationFunctionParams) {}
 }
 
 /// tests for this pallet
@@ -289,6 +304,7 @@ mod tests {
 	impl Trait for Test {
 		type Event = TestEvent;
 		type Version = Version;
+		type OnValidationFunctionParams = ();
 	}
 
 	type ParachainUpgrade = Module<Test>;
