@@ -20,7 +20,7 @@ use sc_service::{AbstractService, Configuration};
 use sc_finality_grandpa::{FinalityProofProvider as GrandpaFinalityProofProvider, StorageAndProofProvider};
 use polkadot_primitives::parachain::CollatorPair;
 use cumulus_collator::CollatorBuilder;
-use futures::prelude::*;
+use futures::FutureExt;
 pub use sc_executor::NativeExecutor;
 
 // Our native executor instance.
