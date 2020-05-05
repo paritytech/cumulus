@@ -148,6 +148,11 @@ where
 	}
 }
 
+/// Wait before announcing a block that a candidate message has been received for this block, then
+/// add this message as justification for the block announcement.
+///
+/// This object will spawn a new task every time the method `wait_to_announce` is called and cancel
+/// the previous task running.
 pub struct WaitToAnnounce<Block: BlockT> {
 	spawner: Arc<dyn Spawn + Send + Sync>,
 	announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
@@ -156,6 +161,7 @@ pub struct WaitToAnnounce<Block: BlockT> {
 }
 
 impl<Block: BlockT> WaitToAnnounce<Block> {
+	/// Create the `WaitToAnnounce` object
 	pub fn new(
 		spawner: Arc<dyn Spawn + Send + Sync>,
 		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
@@ -171,6 +177,8 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 		}
 	}
 
+	/// Wait for a candidate message for the block, then announce the block. The candidate
+	/// message will be added as justification to the block announcement.
 	pub fn wait_to_announce(
 		&mut self,
 		hash: <Block as BlockT>::Hash,
