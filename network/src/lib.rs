@@ -18,7 +18,6 @@
 //!
 //! Contains message send between collators and logic to process them.
 
-use sc_network::NetworkService;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::Error as ClientError;
 use sp_consensus::block_validation::{BlockAnnounceValidator, Validation};
@@ -151,7 +150,7 @@ where
 
 pub struct WaitToAnnounce<Block: BlockT> {
 	spawner: Arc<dyn Spawn + Send + Sync>,
-	network: Arc<NetworkService<Block, Block::Hash>>,
+	announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
 	collator_network: Arc<dyn CollatorNetwork>,
 	current_trigger: oneshot::Sender<()>,
 }
@@ -159,14 +158,14 @@ pub struct WaitToAnnounce<Block: BlockT> {
 impl<Block: BlockT> WaitToAnnounce<Block> {
 	pub fn new(
 		spawner: Arc<dyn Spawn + Send + Sync>,
-		network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
 		collator_network: Arc<dyn CollatorNetwork>,
 	) -> WaitToAnnounce<Block> {
 		let (tx, _rx) = oneshot::channel();
 
 		WaitToAnnounce {
 			spawner,
-			network,
+			announce_block,
 			collator_network,
 			current_trigger: tx,
 		}
@@ -179,16 +178,16 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 		head_data: Vec<u8>,
 	) {
 		let (tx, rx) = oneshot::channel();
-		let network = self.network.clone();
+		let announce_block = self.announce_block.clone();
 		let collator_network = self.collator_network.clone();
 
 		self.current_trigger = tx;
 
 		if let Err(err) = self.spawner.spawn_obj(Box::pin(async move {
-			let t1 = wait_to_announce(
+			let t1 = wait_to_announce::<Block>(
 				hash,
 				relay_chain_leaf,
-				network,
+				announce_block,
 				collator_network,
 				&head_data,
 			).fuse();
@@ -228,7 +227,7 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 async fn wait_to_announce<Block: BlockT>(
 	hash: <Block as BlockT>::Hash,
 	relay_chain_leaf: PHash,
-	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+	announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
 	collator_network: Arc<dyn CollatorNetwork>,
 	head_data: &Vec<u8>,
 ) {
@@ -242,7 +241,7 @@ async fn wait_to_announce<Block: BlockT>(
 					signed_statement: statement,
 				}.into();
 
-				network.announce_block(hash, gossip_message.encode());
+				announce_block(hash, gossip_message.encode());
 
 				break;
 			},

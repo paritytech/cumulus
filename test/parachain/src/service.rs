@@ -94,13 +94,16 @@ pub fn run_collator(
 	let block_import = service.client();
 	let client = service.client();
 	let network = service.network();
+	let announce_block = Arc::new(move |hash, data| {
+		network.announce_block(hash, data)
+	});
 	let builder = CollatorBuilder::new(
 		proposer_factory,
 		inherent_data_providers,
 		block_import,
 		crate::PARA_ID,
 		client,
-		network,
+		announce_block,
 	);
 
 	let polkadot_future = polkadot_collator::start_collator(

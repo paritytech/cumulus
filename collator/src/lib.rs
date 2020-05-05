@@ -19,7 +19,6 @@
 use cumulus_network::WaitToAnnounce;
 use cumulus_runtime::ParachainBlockData;
 
-use sc_network::NetworkService;
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, Environment, Error as ConsensusError,
 	ForkChoiceStrategy, Proposal, Proposer, RecordProof,
@@ -73,12 +72,12 @@ impl<Block: BlockT, PF, BI> Collator<Block, PF, BI> {
 		collator_network: impl CollatorNetwork + Clone + 'static,
 		block_import: BI,
 		spawner: Arc<dyn Spawn + Send + Sync>,
-		network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
 	) -> Self {
 		let collator_network = Arc::new(collator_network);
 		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(
 			spawner,
-			network,
+			announce_block,
 			collator_network.clone(),
 		)));
 
@@ -267,7 +266,7 @@ pub struct CollatorBuilder<Block: BlockT, PF, BI, Backend, Client> {
 	block_import: BI,
 	para_id: ParaId,
 	client: Arc<Client>,
-	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+	announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
 	_marker: PhantomData<(Block, Backend)>,
 }
 
@@ -281,7 +280,7 @@ impl<Block: BlockT, PF, BI, Backend, Client>
 		block_import: BI,
 		para_id: ParaId,
 		client: Arc<Client>,
-		network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
 	) -> Self {
 		Self {
 			proposer_factory,
@@ -289,7 +288,7 @@ impl<Block: BlockT, PF, BI, Backend, Client>
 			block_import,
 			para_id,
 			client,
-			network,
+			announce_block,
 			_marker: PhantomData,
 		}
 	}
@@ -341,14 +340,13 @@ where
 			)
 			.map_err(|_| error!("Could not spawn parachain server!"))?;
 
-
 		Ok(Collator::new(
 			self.proposer_factory,
 			self.inherent_data_providers,
 			polkadot_network,
 			self.block_import,
 			Arc::new(spawner),
-			self.network,
+			self.announce_block,
 		))
 	}
 }
@@ -465,6 +463,7 @@ mod tests {
 		let id = ParaId::from(100);
 		let _ = env_logger::try_init();
 		let spawner = futures::executor::ThreadPool::new().unwrap();
+		let announce_block = |_, _| ();
 
 		let builder = CollatorBuilder::new(
 			DummyFactory,
@@ -472,6 +471,7 @@ mod tests {
 			TestClientBuilder::new().build(),
 			id,
 			Arc::new(TestClientBuilder::new().build()),
+			Arc::new(announce_block),
 		);
 		let context = builder
 			.build(
