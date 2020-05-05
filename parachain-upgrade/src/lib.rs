@@ -66,7 +66,7 @@ decl_storage! {
 	trait Store for Module<T: Trait> as ParachainUpgrade {
 		// we need to store the new validation function for the span between
 		// setting it and applying it.
-		PendingValidationFunction get(fn new_validation_function): (RelayChainBlockNumber, ValidationFunction);
+		PendingValidationFunction get(fn new_validation_function): Option<(RelayChainBlockNumber, ValidationFunction)>;
 
 		/// Were the VFPs updated this block?
 		DidUpdateVFPs: bool;
@@ -126,7 +126,7 @@ decl_module! {
 			// initialization logic: we know that this runs exactly once every block,
 			// which means we can put the initialization logic here to remove the
 			// sequencing problem.
-			if let Ok((apply_block, validation_function)) = PendingValidationFunction::try_get() {
+			if let Some((apply_block, validation_function)) = PendingValidationFunction::get() {
 				if vfp.relay_chain_height >= apply_block {
 					PendingValidationFunction::kill();
 					Self::put_parachain_code(&validation_function);
@@ -159,7 +159,7 @@ impl<T: Trait> Module<T> {
 	/// This will return `None` if this module's inherent has not yet run.
 	/// If it returns `Some(_)`, the validation function params are current for this block.
 	pub fn get_validation_function_params() -> Option<ValidationFunctionParams> {
-		if DidUpdateVFPs::try_get().unwrap_or(false) {
+		if DidUpdateVFPs::get() {
 			Some(Self::validation_function_params())
 		} else {
 			None
