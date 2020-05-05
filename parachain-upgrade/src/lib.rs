@@ -366,8 +366,7 @@ mod tests {
 		tests: Vec<BlockTest>,
 		pending_upgrade: Option<RelayChainBlockNumber>,
 		ran: bool,
-		vfp_maker:
-			Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber) -> ValidationFunctionParams>>,
+		vfp_maker: Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber) -> ValidationFunctionParams>>,
 	}
 
 	impl BlockTests {
