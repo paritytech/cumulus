@@ -9,6 +9,7 @@ members = [
 	"test/client",
 	"test/parachain/runtime",
 	"test/parachain/",
+	"upward-message",
 ]
 
 [profile.release]

@@ -1,0 +1,23 @@
+[package]
+name = "cumulus-upward-message"
+version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2018"
+
+[dependencies]
+# Polkadot deps
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch", default-features = false }
+
+# All these should be optional dependenices, but given the perfect Cargo, it is not possible.
+polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch", default-features = false }
+kusama-runtime = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch", default-features = false }
+westend-runtime = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch", default-features = false }
+
+[features]
+default = [ "std" ]
+std = [
+	"polkadot-runtime/std",
+	"kusama-runtime/std",
+	"westend-runtime/std",
+	"polkadot-core-primitives/std",
+]
