@@ -108,4 +108,10 @@ pub mod validation_function_params {
 			}
 		}
 	}
+
+	/// A trait which is called when the validation function parameters are set
+	#[impl_trait_for_tuples::impl_for_tuples(30)]
+	pub trait OnValidationFunctionParams {
+		fn on_validation_function_params(vfp: ValidationFunctionParams);
+	}
 }

@@ -31,7 +31,7 @@
 
 use cumulus_primitives::{
 	inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER as INHERENT_IDENTIFIER,
-	validation_function_params::ValidationFunctionParams,
+	validation_function_params::{OnValidationFunctionParams, ValidationFunctionParams},
 	well_known_keys::{NEW_VALIDATION_CODE, VALIDATION_FUNCTION_PARAMS},
 };
 use frame_support::{
@@ -224,15 +224,6 @@ decl_error! {
 		/// The inherent which supplies the validation function params did not run this block
 		ValidationFunctionParamsNotAvailable,
 	}
-}
-
-/// A trait which is called when the validation function parameters are set
-pub trait OnValidationFunctionParams {
-	fn on_validation_function_params(vfp: ValidationFunctionParams);
-}
-
-impl OnValidationFunctionParams for () {
-	fn on_validation_function_params(_vfp: ValidationFunctionParams) {}
 }
 
 /// tests for this pallet
