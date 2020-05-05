@@ -98,6 +98,7 @@ impl<Block, PF, BI> Collator<Block, PF, BI> {
 				);
 				InvalidHead
 			})?;
+
 		inherent_data.put_data(
 			VFP_IDENT,
 			&ValidationFunctionParams::from((global_validation, local_validation))
@@ -109,6 +110,7 @@ impl<Block, PF, BI> Collator<Block, PF, BI> {
 			);
 			InvalidHead
 		})?;
+
 		Ok(inherent_data)
 	}
 }

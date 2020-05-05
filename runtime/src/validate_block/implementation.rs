@@ -125,7 +125,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 
 	// if in the course of block execution new validation code was set, insert
 	// its scheduled upgrade so we can validate that block number later
-	let new_validation_code = storage().get(NEW_VALIDATION_CODE).map(|vec| ValidationCode(vec));
+	let new_validation_code = storage().get(NEW_VALIDATION_CODE).map(ValidationCode);
 	storage().remove(NEW_VALIDATION_CODE);
 	if new_validation_code.is_some() && validation_function_params.code_upgrade_allowed.is_none() {
 		panic!("attempt to upgrade validation function when not permitted");

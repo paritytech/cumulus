@@ -1,4 +1,4 @@
-// Copyright 2019 Parity Technologies (UK) Ltd.
+// Copyright 2020 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-//! Enable parachain validation function upgrades.
+//! Enable Parachain validation function upgrades.
 //!
 //! Allow a user to determine when a parachain validation function upgrade
 //! is legal, and perform the upgrade, triggering runtime events
