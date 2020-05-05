@@ -44,6 +44,7 @@ use sp_core::storage::well_known_keys;
 use sp_inherents::{ProvideInherent, InherentData, InherentIdentifier};
 use sp_version::RuntimeVersion;
 
+/// A ValidationFunction is a compiled WASM blob which, on execution, validates parachain blocks.
 pub type ValidationFunction = Vec<u8>;
 type System<T> = system::Module<T>;
 
