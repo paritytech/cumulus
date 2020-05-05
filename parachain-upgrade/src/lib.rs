@@ -197,7 +197,8 @@ impl<T: Trait> ProvideInherent for Module<T> {
 	fn create_inherent(data: &InherentData) -> Option<Self::Call> {
 		// If the inherent is not present, this returns None early. This in turn will
 		// cause the on_finalize assertion to fail.
-		let vfp: ValidationFunctionParams = data.get_data(&INHERENT_IDENTIFIER).ok().flatten()?;
+		let vfp: ValidationFunctionParams = data.get_data(&INHERENT_IDENTIFIER).ok().flatten()
+			.expect("validation function params are always injected into inherent data; qed");
 
 		Some(Call::set_validation_function_parameters(vfp))
 	}
