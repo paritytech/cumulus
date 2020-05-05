@@ -219,7 +219,7 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 			error!(
 				target: "cumulus-network",
 				"Could not spawn a new task to wait for the announce block: {:?}",
-				err
+				err,
 			);
 		}
 	}
