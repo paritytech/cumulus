@@ -151,7 +151,7 @@ where
 
 pub struct WaitToAnnounce<Block: BlockT> {
 	spawner: Arc<dyn Spawn + Send + Sync>,
-	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+	network: Arc<NetworkService<Block, Block::Hash>>,
 	collator_network: Arc<dyn CollatorNetwork>,
 	current_trigger: oneshot::Sender<()>,
 }
