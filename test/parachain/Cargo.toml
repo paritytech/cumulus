@@ -31,7 +31,7 @@ sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cect
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks", features = ["test-helpers"] }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
