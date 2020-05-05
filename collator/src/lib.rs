@@ -19,18 +19,19 @@
 use cumulus_network::WaitToAnnounce;
 use cumulus_runtime::ParachainBlockData;
 
-use sc_client::Client;
 use sc_network::NetworkService;
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, Environment, Error as ConsensusError,
 	ForkChoiceStrategy, Proposal, Proposer, RecordProof,
 };
 use sp_inherents::InherentDataProviders;
-use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT, HashFor};
+use sp_api::{ApiExt, ProvideRuntimeApi};
+use sc_client_api::{StateBackend, UsageProvider, Finalizer, BlockchainEvents};
 
 use polkadot_collator::{
 	BuildParachainContext, InvalidHead, Network as CollatorNetwork, ParachainContext,
-	PolkadotClient,
+	RuntimeApiCollection,
 };
 use polkadot_primitives::{
 	parachain::{self, BlockData, GlobalValidationSchedule, LocalValidationData, Id as ParaId},
@@ -260,18 +261,18 @@ where
 }
 
 /// Implements `BuildParachainContext` to build a collator instance.
-pub struct CollatorBuilder<Block: BlockT, PF, BI, Backend, Executor, Runtime> {
+pub struct CollatorBuilder<Block: BlockT, PF, BI, Backend, Client> {
 	proposer_factory: PF,
 	inherent_data_providers: InherentDataProviders,
 	block_import: BI,
 	para_id: ParaId,
-	client: Arc<Client<Backend, Executor, Block, Runtime>>,
+	client: Arc<Client>,
 	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
-	_marker: PhantomData<Block>,
+	_marker: PhantomData<(Block, Backend)>,
 }
 
-impl<Block: BlockT, PF, BI, Backend, Executor, Runtime>
-	CollatorBuilder<Block, PF, BI, Backend, Executor, Runtime>
+impl<Block: BlockT, PF, BI, Backend, Client>
+	CollatorBuilder<Block, PF, BI, Backend, Client>
 {
 	/// Create a new instance of self.
 	pub fn new(
@@ -279,7 +280,7 @@ impl<Block: BlockT, PF, BI, Backend, Executor, Runtime>
 		inherent_data_providers: InherentDataProviders,
 		block_import: BI,
 		para_id: ParaId,
-		client: Arc<Client<Backend, Executor, Block, Runtime>>,
+		client: Arc<Client>,
 		network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 	) -> Self {
 		Self {
@@ -297,8 +298,8 @@ impl<Block: BlockT, PF, BI, Backend, Executor, Runtime>
 type TransactionFor<E, Block> =
 	<<E as Environment<Block>>::Proposer as Proposer<Block>>::Transaction;
 
-impl<Block: BlockT, PF, BI, Backend, Executor, Runtime> BuildParachainContext
-	for CollatorBuilder<Block, PF, BI, Backend, Executor, Runtime>
+impl<Block: BlockT, PF, BI, Backend, Client> BuildParachainContext
+	for CollatorBuilder<Block, PF, BI, Backend, Client>
 where
 	PF: Environment<Block> + Send + 'static,
 	BI: BlockImport<Block, Error = sp_consensus::Error, Transaction = TransactionFor<PF, Block>>
@@ -306,31 +307,22 @@ where
 		+ Sync
 		+ 'static,
 	Backend: sc_client_api::Backend<Block> + 'static,
-	Executor: sc_client_api::CallExecutor<Block> + Send + Sync + 'static,
-	Runtime: Send + Sync + 'static,
+	Client: Finalizer<Block, Backend> + UsageProvider<Block> + Send + Sync + 'static,
 {
 	type ParachainContext = Collator<Block, PF, BI>;
 
-	fn build<B, E, R, Spawner, Extrinsic>(
+	fn build<PClient, Spawner, Extrinsic>(
 		self,
-		polkadot_client: Arc<PolkadotClient<B, E, R>>,
+		polkadot_client: Arc<PClient>,
 		spawner: Spawner,
 		polkadot_network: impl CollatorNetwork + Clone + 'static,
 	) -> Result<Self::ParachainContext, ()>
 	where
-		PolkadotClient<B, E, R>: sp_api::ProvideRuntimeApi<PBlock>,
-		<PolkadotClient<B, E, R> as sp_api::ProvideRuntimeApi<PBlock>>::Api:
-			polkadot_service::RuntimeApiCollection<Extrinsic>,
-		E: sc_client::CallExecutor<PBlock> + Clone + Send + Sync + 'static,
+		PClient: ProvideRuntimeApi<PBlock> + Send + Sync + BlockchainEvents<PBlock> + 'static,
+		PClient::Api: RuntimeApiCollection<Extrinsic>,
+		<PClient::Api as ApiExt<PBlock>>::StateBackend: StateBackend<HashFor<PBlock>>,
 		Spawner: Spawn + Clone + Send + Sync + 'static,
 		Extrinsic: codec::Codec + Send + Sync + 'static,
-		<<PolkadotClient<B, E, R> as sp_api::ProvideRuntimeApi<PBlock>>::Api as sp_api::ApiExt<
-			PBlock,
-		>>::StateBackend: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
-		R: Send + Sync + 'static,
-		B: sc_client_api::Backend<PBlock> + 'static,
-		// Rust bug: https://github.com/rust-lang/rust/issues/24159
-		B::State: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
 	{
 		let follow =
 			match cumulus_consensus::follow_polkadot(self.para_id, self.client, polkadot_client) {

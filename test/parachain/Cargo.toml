@@ -28,13 +28,13 @@ sp-io = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
-sc-client = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks", version = "0.8.0-alpha.5" }
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
