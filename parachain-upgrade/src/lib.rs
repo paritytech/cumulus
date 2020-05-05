@@ -34,15 +34,15 @@ use cumulus_primitives::{
 	validation_function_params::ValidationFunctionParams,
 	well_known_keys::{NEW_VALIDATION_CODE, VALIDATION_FUNCTION_PARAMS},
 };
-use system::ensure_none;
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure, storage, traits::Get,
 	weights::DispatchClass,
 };
 use parachain::primitives::RelayChainBlockNumber;
 use sp_core::storage::well_known_keys;
-use sp_inherents::{ProvideInherent, InherentData, InherentIdentifier};
+use sp_inherents::{InherentData, InherentIdentifier, ProvideInherent};
 use sp_version::RuntimeVersion;
+use system::ensure_none;
 
 /// A ValidationFunction is a compiled WASM blob which, on execution, validates parachain blocks.
 pub type ValidationFunction = Vec<u8>;
@@ -90,9 +90,11 @@ decl_module! {
 			// that a validation function upgrade has been approved; potentially,
 			// it should even trigger the validation function upgrade automatically
 			// the moment the vote passes.
+
+
 			System::<T>::can_set_code(origin, &validation_function)?;
 			ensure!(!PendingValidationFunction::exists(), Error::<T>::OverlappingUpgrades);
-			let vfp = Self::validation_function_params();
+			let vfp = Self::validation_function_params().ok_or(Error::<T>::ValidationFunctionParamsNotAvailable)?;
 			ensure!(validation_function.len() <= vfp.max_code_size as usize, Error::<T>::TooBig);
 			let apply_block = vfp.code_upgrade_allowed.ok_or(Error::<T>::ProhibitedByPolkadot)?;
 
@@ -148,20 +150,14 @@ decl_module! {
 
 impl<T: Trait> Module<T> {
 	/// Get validation function parameters.
-	fn validation_function_params() -> ValidationFunctionParams {
-		// this storage value is set by cumulus during block validation,
-		// and also by the inherent from this module.
-		storage::unhashed::get(VALIDATION_FUNCTION_PARAMS)
-			.expect("validation function params must be set")
-	}
-
-	/// Get validation function parameters.
 	///
 	/// This will return `None` if this module's inherent has not yet run.
 	/// If it returns `Some(_)`, the validation function params are current for this block.
-	pub fn get_validation_function_params() -> Option<ValidationFunctionParams> {
+	pub fn validation_function_params() -> Option<ValidationFunctionParams> {
 		if DidUpdateVFPs::get() {
-			Some(Self::validation_function_params())
+			// this storage value is set by cumulus during block validation,
+			// and also by the inherent from this module.
+			storage::unhashed::get(VALIDATION_FUNCTION_PARAMS)
 		} else {
 			None
 		}
@@ -183,13 +179,13 @@ impl<T: Trait> Module<T> {
 	/// `true` when a code upgrade is currently legal
 	pub fn can_set_code() -> bool {
 		Self::validation_function_params()
-			.code_upgrade_allowed
-			.is_some()
+			.map(|vfp| vfp.code_upgrade_allowed.is_some())
+			.unwrap_or_default()
 	}
 
 	/// The maximum code size permitted, in bytes.
-	pub fn max_code_size() -> u32 {
-		Self::validation_function_params().max_code_size
+	pub fn max_code_size() -> Option<u32> {
+		Self::validation_function_params().map(|vfp| vfp.max_code_size)
 	}
 }
 
@@ -224,6 +220,8 @@ decl_error! {
 		ProhibitedByPolkadot,
 		/// The supplied validation function has compiled into a blob larger than Polkadot is willing to run
 		TooBig,
+		/// The inherent which supplies the validation function params did not run this block
+		ValidationFunctionParamsNotAvailable,
 	}
 }
 
@@ -244,7 +242,7 @@ mod tests {
 	use codec::Encode;
 	use frame_support::{
 		assert_ok, impl_outer_event, impl_outer_origin, parameter_types,
-		traits::{OnInitialize, OnFinalize},
+		traits::{OnFinalize, OnInitialize},
 		weights::Weight,
 	};
 	use sp_core::H256;
@@ -471,7 +469,9 @@ mod tests {
 					// to storage; they must also be included in the inherent data.
 					let inherent_data = {
 						let mut inherent_data = InherentData::default();
-						inherent_data.put_data(INHERENT_IDENTIFIER, &vfp).expect("failed to put VFP inherent");
+						inherent_data
+							.put_data(INHERENT_IDENTIFIER, &vfp)
+							.expect("failed to put VFP inherent");
 						inherent_data
 					};
 
