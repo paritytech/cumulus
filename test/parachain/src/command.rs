@@ -23,6 +23,7 @@ use sc_cli::{
 	CliConfiguration, Error, ImportParams, KeystoreParams, NetworkParams, Result, SharedParams,
 	SubstrateCli,
 };
+use sc_executor::NativeExecutionDispatch;
 use sc_service::client::genesis;
 use sc_network::config::TransportConfig;
 use sc_service::config::{NetworkConfiguration, NodeKeyConfig, PrometheusConfig};
@@ -149,6 +150,32 @@ pub fn run() -> Result<()> {
 
 			Ok(())
 		}
+		Some(Subcommand::Polkadot(polkadot_cli)) => {
+			let runner = polkadot_cli.create_runner(&polkadot_cli.run.base)?;
+			let authority_discovery_enabled = polkadot_cli.run.authority_discovery_enabled;
+			let grandpa_pause = if polkadot_cli.run.grandpa_pause.is_empty() {
+				None
+			} else {
+				Some((polkadot_cli.run.grandpa_pause[0], polkadot_cli.run.grandpa_pause[1]))
+			};
+
+			runner.run_node(
+				|config| {
+					polkadot_service::polkadot_new_light(config)
+				},
+				|config| {
+					polkadot_service::polkadot_new_full(
+						config,
+						None,
+						None,
+						authority_discovery_enabled,
+						6000,
+						grandpa_pause
+					).map(|(s, _, _)| s)
+				},
+				polkadot_service::PolkadotExecutor::native_version().runtime_version
+			)
+		},
 		None => {
 			let runner = cli.create_runner(&cli.run)?;
 

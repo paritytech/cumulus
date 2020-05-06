@@ -24,9 +24,13 @@ use structopt::StructOpt;
 pub enum Subcommand {
 	#[structopt(flatten)]
 	Base(sc_cli::Subcommand),
+
 	/// Export the genesis state of the parachain.
 	#[structopt(name = "export-genesis-state")]
 	ExportGenesisState(ExportGenesisStateCommand),
+
+	/// Run Polkadot for testing purpose
+	Polkadot(polkadot_cli::Cli),
 }
 
 /// Command for exporting the genesis state of the parachain
