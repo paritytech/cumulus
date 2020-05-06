@@ -31,7 +31,7 @@ sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cumu
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", features = [ "test-helpers" ] }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
