@@ -17,13 +17,17 @@
 //! Cumulus Collator implementation for Substrate.
 
 use cumulus_network::WaitToAnnounce;
+use cumulus_primitives::{
+	inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER as VFP_IDENT,
+	validation_function_params::ValidationFunctionParams,
+};
 use cumulus_runtime::ParachainBlockData;
 
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, Environment, Error as ConsensusError,
 	ForkChoiceStrategy, Proposal, Proposer, RecordProof,
 };
-use sp_inherents::InherentDataProviders;
+use sp_inherents::{InherentData, InherentDataProviders};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, HashFor};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sc_client_api::{StateBackend, UsageProvider, Finalizer, BlockchainEvents};
@@ -91,6 +95,38 @@ impl<Block: BlockT, PF, BI> Collator<Block, PF, BI> {
 			wait_to_announce,
 		}
 	}
+
+	/// Get the inherent data with validation function parameters injected
+	fn inherent_data(
+		inherent_providers: InherentDataProviders,
+		global_validation: GlobalValidationSchedule,
+		local_validation: LocalValidationData,
+	) -> Result<InherentData, InvalidHead> {
+		let mut inherent_data = inherent_providers
+			.create_inherent_data()
+			.map_err(|e| {
+				error!(
+					target: "cumulus-collator",
+					"Failed to create inherent data: {:?}",
+					e,
+				);
+				InvalidHead
+			})?;
+
+		inherent_data.put_data(
+			VFP_IDENT,
+			&ValidationFunctionParams::from((global_validation, local_validation))
+		).map_err(|e| {
+			error!(
+				target: "cumulus-collator",
+				"Failed to inject validation function params into inherents: {:?}",
+				e,
+			);
+			InvalidHead
+		})?;
+
+		Ok(inherent_data)
+	}
 }
 
 impl<Block: BlockT, PF, BI> Clone for Collator<Block, PF, BI> {
@@ -127,7 +163,7 @@ where
 	fn produce_candidate(
 		&mut self,
 		relay_chain_parent: PHash,
-		_global_validation: GlobalValidationSchedule,
+		global_validation: GlobalValidationSchedule,
 		local_validation: LocalValidationData,
 	) -> Self::ProduceCandidate {
 		let factory = self.proposer_factory.clone();
@@ -164,16 +200,7 @@ where
 					InvalidHead
 				})?;
 
-			let inherent_data = inherent_providers
-				.create_inherent_data()
-				.map_err(|e| {
-					error!(
-						target: "cumulus-collator",
-						"Failed to create inherent data: {:?}",
-						e,
-					);
-					InvalidHead
-				})?;
+			let inherent_data = Self::inherent_data(inherent_providers, global_validation, local_validation)?;
 
 			let Proposal {
 				block,

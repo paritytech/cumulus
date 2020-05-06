@@ -18,11 +18,14 @@ sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cecton-kee
 # Polkadot dependencies
 polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks" }
+polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks" }
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../consensus" }
 cumulus-network = { path = "../network" }
+cumulus-primitives = { path = "../primitives" }
 cumulus-runtime = { path = "../runtime" }
 
 # Other dependencies

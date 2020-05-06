@@ -12,6 +12,9 @@ hash-db = { version = "0.15.2", default-features = false }
 trie-db = { version = "0.20.1", default-features = false }
 hashbrown = "0.6.1"
 
+# Cumulus dependencies
+cumulus-primitives = { path = "../primitives", default-features = false }
+
 # Substrate dependencies
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
@@ -19,6 +22,7 @@ sp-core = { git = "https://github.com/paritytech/substrate", default-features = 
 sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
 sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
 
 # Polkadot dependencies
 parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks", default-features = false, features = [ "wasm-api" ] }
@@ -35,6 +39,7 @@ test-client = { package = "cumulus-test-client", path = "../test/client" }
 default = ["std"]
 std = [
 	"codec/std",
+	"cumulus-primitives/std",
 	"sp-std/std",
 	"sp-io/std",
 	"sp-runtime/std",

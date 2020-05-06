@@ -23,7 +23,7 @@ structopt = "0.3.3"
 parachain-runtime = { package = "cumulus-test-parachain-runtime", path = "runtime" }
 
 # Substrate dependencies
-sp-runtime = { git = "https://github.com/paritytech/substrate", default_features = false, branch = "cecton-keep-unpinned-para-blocks" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
@@ -31,7 +31,7 @@ sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cect
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks", features = ["test-helpers"] }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }

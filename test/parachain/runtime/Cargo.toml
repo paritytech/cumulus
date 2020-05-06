@@ -9,26 +9,26 @@ serde = { version = "1.0.101", optional = true, features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "1.0.6", default-features = false, features = ["derive"] }
 
 # Substrate dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default_features = false, branch = "cecton-keep-unpinned-para-blocks" }
-sp-api = { git = "https://github.com/paritytech/substrate", default_features = false, branch = "cecton-keep-unpinned-para-blocks" }
-sp-io = { git = "https://github.com/paritytech/substrate", default_features = false, branch = "cecton-keep-unpinned-para-blocks" }
-sp-version = { git = "https://github.com/paritytech/substrate", default_features = false, branch = "cecton-keep-unpinned-para-blocks" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default_features = false, branch = "cecton-keep-unpinned-para-blocks" }
-sp-core = { git = "https://github.com/paritytech/substrate", default_features = false, branch = "cecton-keep-unpinned-para-blocks" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
+sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
 sp-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
 sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
 
-frame-support = { git = "https://github.com/paritytech/substrate", default_features = false, branch = "cecton-keep-unpinned-para-blocks" }
-frame-executive = { git = "https://github.com/paritytech/substrate", default_features = false, branch = "cecton-keep-unpinned-para-blocks" }
-frame-system = { git = "https://github.com/paritytech/substrate", default_features = false, branch = "cecton-keep-unpinned-para-blocks" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", default_features = false, branch = "cecton-keep-unpinned-para-blocks" }
-pallet-indices = { git = "https://github.com/paritytech/substrate", default_features = false, branch = "cecton-keep-unpinned-para-blocks" }
-pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default_features = false, branch = "cecton-keep-unpinned-para-blocks" }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", default_features = false, branch = "cecton-keep-unpinned-para-blocks" }
-pallet-sudo = { git = "https://github.com/paritytech/substrate", default_features = false, branch = "cecton-keep-unpinned-para-blocks" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
+frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
+pallet-indices = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
+pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
 
 # Cumulus dependencies
