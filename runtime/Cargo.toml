@@ -16,23 +16,23 @@ hashbrown = "0.6.1"
 cumulus-primitives = { path = "../primitives", default-features = false }
 
 # Substrate dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
-frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
+frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
 
 # Polkadot dependencies
-parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", branch = "cecton-keep-unpinned-para-blocks", default-features = false, features = [ "wasm-api" ] }
+parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch", default-features = false, features = [ "wasm-api" ] }
 
 [dev-dependencies]
-sc-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-keep-unpinned-para-blocks" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-keep-unpinned-para-blocks" }
+sc-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 test-client = { package = "cumulus-test-client", path = "../test/client" }
 
 [features]
