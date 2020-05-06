@@ -176,6 +176,12 @@ pub fn run() -> Result<()> {
 				polkadot_service::PolkadotExecutor::native_version().runtime_version
 			)
 		},
+		Some(Subcommand::PolkadotValidationWorker(cmd)) => {
+			sc_cli::init_logger("");
+			polkadot_service::run_validation_worker(&cmd.mem_id)?;
+
+			Ok(())
+		},
 		None => {
 			let runner = cli.create_runner(&cli.run)?;
 
