@@ -19,7 +19,7 @@ use sc_executor::native_executor_instance;
 use sc_service::{AbstractService, Configuration};
 use sc_finality_grandpa::{FinalityProofProvider as GrandpaFinalityProofProvider, StorageAndProofProvider};
 use polkadot_primitives::parachain::CollatorPair;
-use cumulus_collator::CollatorBuilder;
+use cumulus_collator::{CollatorBuilder, prepare_collator_config};
 use futures::FutureExt;
 pub use sc_executor::NativeExecutor;
 
@@ -67,11 +67,11 @@ macro_rules! new_full_start {
 ///
 /// This function blocks until done.
 pub fn run_collator(
-	mut parachain_config: Configuration,
+	parachain_config: Configuration,
 	key: Arc<CollatorPair>,
 	polkadot_config: polkadot_collator::Configuration,
 ) -> sc_service::error::Result<impl AbstractService> {
-	parachain_config.announce_block = false;
+	let parachain_config = prepare_collator_config(parachain_config);
 
 	let (builder, inherent_data_providers) = new_full_start!(parachain_config);
 	inherent_data_providers

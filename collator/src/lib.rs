@@ -27,6 +27,7 @@ use sp_inherents::InherentDataProviders;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, HashFor};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sc_client_api::{StateBackend, UsageProvider, Finalizer, BlockchainEvents};
+use sc_service::Configuration;
 
 use polkadot_collator::{
 	BuildParachainContext, InvalidHead, Network as CollatorNetwork, ParachainContext,
@@ -349,6 +350,16 @@ where
 			self.announce_block,
 		))
 	}
+}
+
+/// Prepare the collator's node condifugration
+///
+/// This function will disable the default announcement of Substrate for the parachain in favor
+/// of the one of Cumulus.
+pub fn prepare_collator_config(mut parachain_config: Configuration) -> Configuration {
+	parachain_config.announce_block = false;
+
+	parachain_config
 }
 
 #[cfg(test)]
