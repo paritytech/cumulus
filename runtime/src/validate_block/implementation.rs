@@ -25,7 +25,7 @@ use sp_trie::{delta_trie_root, read_trie_value, Layout, MemoryDB};
 
 use hash_db::{HashDB, EMPTY_PREFIX};
 
-use trie_db::{Trie, TrieDB};
+use trie_db::{Trie, TrieDB, TrieDBIterator};
 
 use parachain::primitives::{HeadData, ValidationCode, ValidationParams, ValidationResult};
 
@@ -215,15 +215,16 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 			Err(_) => panic!(),
 		};
 
-		let mut iter = trie.iter().expect("Creates trie iterator");
-		iter.seek(prefix).expect("Seek trie iterator");
+		let iterator = match TrieDBIterator::new_prefixed(&trie, prefix)
+		{
+			Ok(r) => r,
+			Err(_) => panic!(),
+		};
 
-		for x in iter {
+		for x in iterator {
 			let (key, _) = x.expect("Iterating trie iterator");
 
-			if !key.starts_with(prefix) {
-				break;
-			}
+			debug_assert!(!key.starts_with(prefix));
 
 			self.overlay.insert(key, None);
 		}
