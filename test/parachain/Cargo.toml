@@ -55,3 +55,13 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 [dev-dependencies]
 assert_cmd = "0.12"
 nix = "0.17"
+tempfile = "3.1"
+jsonrpc-client-transports = "14.1"
+url = "1.7"
+jsonrpsee = "0.1"
+async-std = "1.2.0"
+tokio = { version = "0.2", features = ["rt-threaded", "macros"] }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
+hex = "0.4"
+polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
+substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
