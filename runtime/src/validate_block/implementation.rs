@@ -215,17 +215,8 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 			Err(_) => panic!(),
 		};
 
-		let iterator = match TrieDBIterator::new_prefixed(&trie, prefix)
-		{
-			Ok(r) => r,
-			Err(_) => panic!(),
-		};
-
-		for x in iterator {
+		for x in TrieDBIterator::new_prefixed(&trie, prefix).expect("Creates trie iterator") {
 			let (key, _) = x.expect("Iterating trie iterator");
-
-			debug_assert!(!key.starts_with(prefix));
-
 			self.overlay.insert(key, None);
 		}
 	}
