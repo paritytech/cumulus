@@ -16,5 +16,15 @@
 
 //! Kusama upward message
 
+use crate::*;
+use polkadot_core_primitives::{Balance, AccountId};
+use kusama_runtime::BalancesCall;
+
 /// The Kusama upward message.
 pub type UpwardMessage = kusama_runtime::Call;
+
+impl BalancesMessage for UpwardMessage {
+	fn transfer(dest: AccountId, amount: Balance) -> Self {
+		BalancesCall::transfer(dest, amount).into()
+	}
+}
