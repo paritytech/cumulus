@@ -35,8 +35,8 @@ static POLKADOT_ARGS: &[&str] = &["polkadot", "--chain=res/polkadot_chainspec.js
 
 jsonrpsee::rpc_api! {
 	Author {
-		#[rpc(method = "author_submitExtrinsic")]
-		fn submit_extrinsic(extrinsic: Vec<u8>) -> String;
+		#[rpc(method = "author_submitExtrinsic", positional_params)]
+		fn submit_extrinsic(extrinsic: String) -> String;
 	}
 }
 
@@ -172,7 +172,7 @@ fn integration_test() {
 		jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:9933");
 	let mut client = jsonrpsee::raw::RawClient::new(transport_client);
 	let v = async_std::task::block_on(async {
-		Author::submit_extrinsic(&mut client, ex.encode()).await.unwrap()
+		Author::submit_extrinsic(&mut client, format!("0x{}", hex::encode(ex.encode()))).await.unwrap()
 	});
 	/*
 	assert!(Command::new("/tmp/b/node_modules/.bin/polkadot-js-api")
