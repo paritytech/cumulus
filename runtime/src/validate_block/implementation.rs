@@ -238,14 +238,11 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 		let value_vec = sp_std::vec![EncodeOpaqueValue(value)];
 		let current_value = self.overlay.entry(key.to_vec()).or_default();
 
-		if let Some(item) = sp_std::mem::take(current_value) {
-			*current_value = Some(match Vec::<EncodeOpaqueValue>::append_or_new(item, &value_vec) {
-				Ok(item) => item,
-				Err(_) => value_vec.encode(),
-			});
-		} else {
-			*current_value = Some(value_vec.encode());
-		}
+		let item = current_value.take().unwrap_or_default();
+		*current_value = Some(match Vec::<EncodeOpaqueValue>::append_or_new(item, &value_vec) {
+			Ok(item) => item,
+			Err(_) => value_vec.encode(),
+		});
 	}
 }
 
