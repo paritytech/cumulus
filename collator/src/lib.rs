@@ -16,16 +16,22 @@
 
 //! Cumulus Collator implementation for Substrate.
 
+use cumulus_network::WaitToAnnounce;
+use cumulus_primitives::{
+	inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER as VFP_IDENT,
+	validation_function_params::ValidationFunctionParams,
+};
 use cumulus_runtime::ParachainBlockData;
 
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, Environment, Error as ConsensusError,
 	ForkChoiceStrategy, Proposal, Proposer, RecordProof,
 };
-use sp_inherents::InherentDataProviders;
+use sp_inherents::{InherentData, InherentDataProviders};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, HashFor};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sc_client_api::{StateBackend, UsageProvider, Finalizer, BlockchainEvents};
+use sc_service::Configuration;
 
 use polkadot_collator::{
 	BuildParachainContext, InvalidHead, Network as CollatorNetwork, ParachainContext,
@@ -40,7 +46,8 @@ use codec::{Decode, Encode};
 
 use log::{error, trace};
 
-use futures::{task::Spawn, Future, future, FutureExt};
+use futures::task::Spawn;
+use futures::prelude::*;
 
 use std::{fmt::Debug, marker::PhantomData, sync::Arc, time::Duration, pin::Pin};
 
@@ -53,33 +60,76 @@ struct HeadData<Block: BlockT> {
 }
 
 /// The implementation of the Cumulus `Collator`.
-pub struct Collator<Block, PF, BI> {
+pub struct Collator<Block: BlockT, PF, BI> {
 	proposer_factory: Arc<Mutex<PF>>,
 	_phantom: PhantomData<Block>,
 	inherent_data_providers: InherentDataProviders,
 	collator_network: Arc<dyn CollatorNetwork>,
 	block_import: Arc<Mutex<BI>>,
+	wait_to_announce: Arc<Mutex<WaitToAnnounce<Block>>>,
 }
 
-impl<Block, PF, BI> Collator<Block, PF, BI> {
+impl<Block: BlockT, PF, BI> Collator<Block, PF, BI> {
 	/// Create a new instance.
 	fn new(
 		proposer_factory: PF,
 		inherent_data_providers: InherentDataProviders,
 		collator_network: impl CollatorNetwork + Clone + 'static,
 		block_import: BI,
+		spawner: Arc<dyn Spawn + Send + Sync>,
+		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
 	) -> Self {
+		let collator_network = Arc::new(collator_network);
+		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(
+			spawner,
+			announce_block,
+			collator_network.clone(),
+		)));
+
 		Self {
 			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
 			inherent_data_providers,
 			_phantom: PhantomData,
-			collator_network: Arc::new(collator_network),
+			collator_network,
 			block_import: Arc::new(Mutex::new(block_import)),
+			wait_to_announce,
 		}
+	}
+
+	/// Get the inherent data with validation function parameters injected
+	fn inherent_data(
+		inherent_providers: InherentDataProviders,
+		global_validation: GlobalValidationSchedule,
+		local_validation: LocalValidationData,
+	) -> Result<InherentData, InvalidHead> {
+		let mut inherent_data = inherent_providers
+			.create_inherent_data()
+			.map_err(|e| {
+				error!(
+					target: "cumulus-collator",
+					"Failed to create inherent data: {:?}",
+					e,
+				);
+				InvalidHead
+			})?;
+
+		inherent_data.put_data(
+			VFP_IDENT,
+			&ValidationFunctionParams::from((global_validation, local_validation))
+		).map_err(|e| {
+			error!(
+				target: "cumulus-collator",
+				"Failed to inject validation function params into inherents: {:?}",
+				e,
+			);
+			InvalidHead
+		})?;
+
+		Ok(inherent_data)
 	}
 }
 
-impl<Block, PF, BI> Clone for Collator<Block, PF, BI> {
+impl<Block: BlockT, PF, BI> Clone for Collator<Block, PF, BI> {
 	fn clone(&self) -> Self {
 		Self {
 			proposer_factory: self.proposer_factory.clone(),
@@ -87,6 +137,7 @@ impl<Block, PF, BI> Clone for Collator<Block, PF, BI> {
 			_phantom: PhantomData,
 			collator_network: self.collator_network.clone(),
 			block_import: self.block_import.clone(),
+			wait_to_announce: self.wait_to_announce.clone(),
 		}
 	}
 }
@@ -111,8 +162,8 @@ where
 
 	fn produce_candidate(
 		&mut self,
-		_relay_chain_parent: PHash,
-		_global_validation: GlobalValidationSchedule,
+		relay_chain_parent: PHash,
+		global_validation: GlobalValidationSchedule,
 		local_validation: LocalValidationData,
 	) -> Self::ProduceCandidate {
 		let factory = self.proposer_factory.clone();
@@ -133,6 +184,8 @@ where
 			.lock()
 			.init(&last_head.header);
 
+		let wait_to_announce = self.wait_to_announce.clone();
+
 		Box::pin(async move {
 			let parent_state_root = *last_head.header.state_root();
 
@@ -147,16 +200,7 @@ where
 					InvalidHead
 				})?;
 
-			let inherent_data = inherent_providers
-				.create_inherent_data()
-				.map_err(|e| {
-					error!(
-						target: "cumulus-collator",
-						"Failed to create inherent data: {:?}",
-						e,
-					);
-					InvalidHead
-				})?;
+			let inherent_data = Self::inherent_data(inherent_providers, global_validation, local_validation)?;
 
 			let Proposal {
 				block,
@@ -218,13 +262,22 @@ where
 			}
 
 			let block_data = BlockData(b.encode());
+			let header = b.into_header();
+			let encoded_header = header.encode();
+			let hash = header.hash();
 			let head_data = HeadData::<Block> {
-				header: b.into_header(),
+				header,
 			};
 
 			let candidate = (
 				block_data,
 				parachain::HeadData(head_data.encode()),
+			);
+
+			wait_to_announce.lock().wait_to_announce(
+				hash,
+				relay_chain_parent,
+				encoded_header,
 			);
 
 			trace!(target: "cumulus-collator", "Produced candidate: {:?}", candidate);
@@ -241,6 +294,7 @@ pub struct CollatorBuilder<Block: BlockT, PF, BI, Backend, Client> {
 	block_import: BI,
 	para_id: ParaId,
 	client: Arc<Client>,
+	announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
 	_marker: PhantomData<(Block, Backend)>,
 }
 
@@ -254,6 +308,7 @@ impl<Block: BlockT, PF, BI, Backend, Client>
 		block_import: BI,
 		para_id: ParaId,
 		client: Arc<Client>,
+		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
 	) -> Self {
 		Self {
 			proposer_factory,
@@ -261,6 +316,7 @@ impl<Block: BlockT, PF, BI, Backend, Client>
 			block_import,
 			para_id,
 			client,
+			announce_block,
 			_marker: PhantomData,
 		}
 	}
@@ -286,7 +342,7 @@ where
 		self,
 		polkadot_client: Arc<PClient>,
 		spawner: Spawner,
-		network: impl CollatorNetwork + Clone + 'static,
+		polkadot_network: impl CollatorNetwork + Clone + 'static,
 	) -> Result<Self::ParachainContext, ()>
 	where
 		PClient: ProvideRuntimeApi<PBlock> + Send + Sync + BlockchainEvents<PBlock> + 'static,
@@ -315,10 +371,22 @@ where
 		Ok(Collator::new(
 			self.proposer_factory,
 			self.inherent_data_providers,
-			network,
+			polkadot_network,
 			self.block_import,
+			Arc::new(spawner),
+			self.announce_block,
 		))
 	}
+}
+
+/// Prepare the collator's node condifugration
+///
+/// This function will disable the default announcement of Substrate for the parachain in favor
+/// of the one of Cumulus.
+pub fn prepare_collator_config(mut parachain_config: Configuration) -> Configuration {
+	parachain_config.announce_block = false;
+
+	parachain_config
 }
 
 #[cfg(test)]
@@ -433,6 +501,7 @@ mod tests {
 		let id = ParaId::from(100);
 		let _ = env_logger::try_init();
 		let spawner = futures::executor::ThreadPool::new().unwrap();
+		let announce_block = |_, _| ();
 
 		let builder = CollatorBuilder::new(
 			DummyFactory,
@@ -440,6 +509,7 @@ mod tests {
 			TestClientBuilder::new().build(),
 			id,
 			Arc::new(TestClientBuilder::new().build()),
+			Arc::new(announce_block),
 		);
 		let context = builder
 			.build(

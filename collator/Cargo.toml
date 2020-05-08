@@ -18,10 +18,14 @@ sc-cli = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumu
 # Polkadot dependencies
 polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
+polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../consensus" }
+cumulus-network = { path = "../network" }
+cumulus-primitives = { path = "../primitives" }
 cumulus-runtime = { path = "../runtime" }
 
 # Other dependencies
