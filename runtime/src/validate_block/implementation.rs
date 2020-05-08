@@ -236,8 +236,7 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 
 	fn storage_append(&mut self, key: &[u8], value: Vec<u8>) {
 		let key_vec = key.to_vec();
-		let mut value_vec = Vec::with_capacity(1);
-		value_vec.push(EncodeOpaqueValue(value));
+		let value_vec = sp_std::vec![EncodeOpaqueValue(value)];
 
 		if let Some(Some(item)) = self.overlay.remove(&key_vec) {
 			self.overlay.insert(
