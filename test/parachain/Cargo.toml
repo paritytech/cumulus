@@ -65,3 +65,6 @@ polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", bran
 hex = "0.4"
 polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
 substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", default-features = false }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", default-features = false }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", default-features = false }

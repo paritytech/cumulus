@@ -14,8 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
+// TODO
 // This test needs --release to work
 //#![cfg(not(debug_assertions))]
+#![allow(unused_imports)]
 
 use assert_cmd::cargo::cargo_bin;
 use std::{
@@ -27,9 +29,12 @@ use jsonrpc_client_transports::transports::ws;
 use jsonrpc_client_transports::RpcChannel;
 use url::Url;
 use polkadot_primitives::parachain::{Info, Scheduling};
-use polkadot_runtime_common::registrar;
+use polkadot_runtime_common::{registrar, parachains, BlockHashCount};
+use polkadot_runtime::{Runtime, OnlyStakingAndClaims, SignedExtra, System};
 use codec::Encode;
 use substrate_test_runtime_client::AccountKeyring::Alice;
+use sp_runtime::generic;
+use sp_arithmetic::traits::SaturatedConversion;
 
 static POLKADOT_ARGS: &[&str] = &["polkadot", "--chain=res/polkadot_chainspec.json"];
 
@@ -39,25 +44,6 @@ jsonrpsee::rpc_api! {
 		fn submit_extrinsic(extrinsic: String) -> String;
 	}
 }
-
-/*
-jsonrpsee::rpc_api! {
-	Health {
-		/// Test
-		fn system_name(foo: String, bar: i32) -> String;
-
-		fn test_notif(foo: String, bar: i32);
-
-		/// Test2
-		#[rpc(method = "foo")]
-		fn system_name2() -> String;
-	}
-
-	System {
-		fn test_foo() -> String;
-	}
-}
-*/
 
 // Adapted from
 // https://github.com/rust-lang/cargo/blob/485670b3983b52289a2f353d589c57fae2f60f82/tests/testsuite/support/mod.rs#L507
@@ -78,6 +64,7 @@ struct ProcessCleanUp<'a>(&'a mut Child);
 
 impl<'a> Drop for ProcessCleanUp<'a> {
 	fn drop(&mut self) {
+		// TODO: send SIGTERM and wait before killing
 		let _ = self.0.kill();
 		let _ = self.0.wait();
 	}
@@ -139,7 +126,7 @@ fn integration_test() {
 
 	// register parachain
 	let wasm: Vec<u8> = vec![];
-	let tx = registrar::Call::<polkadot_runtime::Runtime>::register_para(
+	let tx = registrar::Call::<Runtime>::register_para(
 		100.into(),
 		Info {
 			scheduling: Scheduling::Always,
@@ -148,9 +135,28 @@ fn integration_test() {
 		genesis_state.into(),
 	);
 	let signature = tx.using_encoded(|e| Alice.sign(e));
+	let period = BlockHashCount::get()
+		.checked_next_power_of_two()
+		.map(|c| c / 2)
+		.unwrap_or(2) as u64;
+	let current_block = System::block_number()
+		.saturated_into::<u64>()
+		.saturating_sub(1);
+	let tip = 0;
+	let extra: SignedExtra = (
+		OnlyStakingAndClaims,
+		frame_system::CheckVersion::<Runtime>::new(),
+		frame_system::CheckGenesis::<Runtime>::new(),
+		frame_system::CheckEra::<Runtime>::from(generic::Era::mortal(period, current_block)),
+		frame_system::CheckNonce::<Runtime>::from(nonce),
+		frame_system::CheckWeight::<Runtime>::new(),
+		pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
+		registrar::LimitParathreadCommits::<Runtime>::new(),
+		parachains::ValidateDoubleVoteReports::<Runtime>::new(),
+	);
 	let ex = polkadot_runtime::UncheckedExtrinsic {
-		//signature: Some(((), sp_runtime::MultiSignature::Sr25519(signature), ())),
-		signature: None,
+		signature: Some(((), sp_runtime::MultiSignature::Sr25519(signature), extra)),
+		//signature: None,
 		function: tx.into(),
 	};
 	/*
