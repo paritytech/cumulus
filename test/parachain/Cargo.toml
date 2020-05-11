@@ -69,3 +69,4 @@ frame-system = { git = "https://github.com/paritytech/substrate", branch = "cumu
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", default-features = false }
 sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", default-features = false }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", default-features = false }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", default-features = false }

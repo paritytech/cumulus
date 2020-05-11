@@ -32,11 +32,14 @@ use polkadot_primitives::parachain::{Info, Scheduling};
 use polkadot_primitives::Hash as PHash;
 use polkadot_runtime_common::{registrar, parachains, BlockHashCount};
 use polkadot_runtime::{Runtime, OnlyStakingAndClaims, SignedExtra, SignedPayload, System};
+use polkadot_service::chain_spec::polkadot_local_testnet_config;
+use polkadot_service::ChainSpec;
 use codec::Encode;
 use substrate_test_runtime_client::AccountKeyring::Alice;
 use sp_runtime::generic;
 use sp_arithmetic::traits::SaturatedConversion;
 use sp_api::runtime_decl_for_Core::Core;
+use sp_state_machine::BasicExternalities;
 
 static POLKADOT_ARGS: &[&str] = &["polkadot", "--chain=res/polkadot_chainspec.json"];
 
@@ -209,7 +212,12 @@ fn integration_test() {
 		registrar::LimitParathreadCommits::<Runtime>::new(),
 		parachains::ValidateDoubleVoteReports::<Runtime>::new(),
 	);
-	let raw_payload = SignedPayload::new(call.clone().into(), extra.clone()); // <--- `get_version_1` called outside of an Externalities-provided environment.
+	let genesis_config = polkadot_local_testnet_config();
+	let storage = genesis_config.as_storage_builder().build_storage().unwrap();
+	let mut basic_ext = BasicExternalities::new(storage);
+	let raw_payload = basic_ext.execute_with(|| {
+		SignedPayload::new(call.clone().into(), extra.clone())
+	});
 	/*
 	let raw_payload = SignedPayload::from_raw(call.clone().into(), extra.clone(), (
 		(),
