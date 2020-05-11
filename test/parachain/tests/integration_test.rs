@@ -32,7 +32,7 @@ use polkadot_primitives::parachain::{Info, Scheduling};
 use polkadot_primitives::Hash as PHash;
 use polkadot_runtime_common::{registrar, parachains, BlockHashCount};
 use polkadot_runtime::{Runtime, OnlyStakingAndClaims, SignedExtra, SignedPayload, System};
-use polkadot_service::chain_spec::polkadot_local_testnet_config;
+use polkadot_service::chain_spec::{polkadot_local_testnet_config, PolkadotChainSpec};
 use polkadot_service::ChainSpec;
 use codec::Encode;
 use substrate_test_runtime_client::AccountKeyring::Alice;
@@ -212,7 +212,8 @@ fn integration_test() {
 		registrar::LimitParathreadCommits::<Runtime>::new(),
 		parachains::ValidateDoubleVoteReports::<Runtime>::new(),
 	);
-	let genesis_config = polkadot_local_testnet_config();
+	//let genesis_config = polkadot_local_testnet_config();
+	let genesis_config = PolkadotChainSpec::from_json_bytes(&include_bytes!("../res/polkadot_chainspec.json")[..]).unwrap();
 	let storage = genesis_config.as_storage_builder().build_storage().unwrap();
 	let mut basic_ext = BasicExternalities::new(storage);
 	let raw_payload = basic_ext.execute_with(|| {
