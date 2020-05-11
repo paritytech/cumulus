@@ -68,3 +68,4 @@ substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", default-features = false }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", default-features = false }
 sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", default-features = false }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", default-features = false }

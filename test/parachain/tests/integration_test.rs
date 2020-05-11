@@ -29,12 +29,14 @@ use jsonrpc_client_transports::transports::ws;
 use jsonrpc_client_transports::RpcChannel;
 use url::Url;
 use polkadot_primitives::parachain::{Info, Scheduling};
+use polkadot_primitives::Hash as PHash;
 use polkadot_runtime_common::{registrar, parachains, BlockHashCount};
-use polkadot_runtime::{Runtime, OnlyStakingAndClaims, SignedExtra, System};
+use polkadot_runtime::{Runtime, OnlyStakingAndClaims, SignedExtra, SignedPayload, System};
 use codec::Encode;
 use substrate_test_runtime_client::AccountKeyring::Alice;
 use sp_runtime::generic;
 use sp_arithmetic::traits::SaturatedConversion;
+use sp_api::runtime_decl_for_Core::Core;
 
 static POLKADOT_ARGS: &[&str] = &["polkadot", "--chain=res/polkadot_chainspec.json"];
 
@@ -46,10 +48,10 @@ jsonrpsee::rpc_api! {
 
 	Chain {
 		#[rpc(method = "chain_getFinalizedHead")]
-		fn finalized_head() -> String;
+		fn finalized_head() -> PHash;
 
 		#[rpc(method = "chain_getHeader", positional_params)]
-		fn header(hash: String) -> Option<polkadot_runtime::Header>;
+		fn header(hash: PHash) -> Option<polkadot_runtime::Header>;
 	}
 }
 
@@ -182,7 +184,7 @@ fn integration_test() {
 	// create and sign transaction
 	let wasm = fs::read(target_dir()
 		.join("wbuild/cumulus-test-parachain-runtime/cumulus_test_parachain_runtime.compact.wasm")).unwrap();
-	let tx = registrar::Call::<Runtime>::register_para(
+	let call = registrar::Call::<Runtime>::register_para(
 		100.into(),
 		Info {
 			scheduling: Scheduling::Always,
@@ -190,9 +192,6 @@ fn integration_test() {
 		wasm.into(),
 		genesis_state.into(),
 	);
-	let signature = tx.using_encoded(|e| Alice.sign(e));
-
-	// register parachain
 	let nonce = 0;
 	let period = BlockHashCount::get()
 		.checked_next_power_of_two()
@@ -210,11 +209,29 @@ fn integration_test() {
 		registrar::LimitParathreadCommits::<Runtime>::new(),
 		parachains::ValidateDoubleVoteReports::<Runtime>::new(),
 	);
-	let ex = polkadot_runtime::UncheckedExtrinsic {
-		signature: Some((Alice.into(), sp_runtime::MultiSignature::Sr25519(signature), extra)),
-		//signature: None,
-		function: tx.into(),
-	};
+	let raw_payload = SignedPayload::new(call.clone().into(), extra.clone()); // <--- `get_version_1` called outside of an Externalities-provided environment.
+	/*
+	let raw_payload = SignedPayload::from_raw(call.clone().into(), extra.clone(), (
+		(),
+		Runtime::version().spec_version,
+		finalized_head,
+		finalized_head,
+		(),
+		(),
+		(),
+		(),
+		(),
+	));
+	*/
+	let signature = raw_payload.using_encoded(|e| Alice.sign(e));
+
+	// register parachain
+	let ex = polkadot_runtime::UncheckedExtrinsic::new_signed(
+		call.into(),
+		Alice.into(),
+		sp_runtime::MultiSignature::Sr25519(signature),
+		extra,
+	);
 	/*
 	async_std::task::block_on(async {
 		let uri = "http://localhost:9933";
