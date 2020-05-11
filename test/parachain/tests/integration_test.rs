@@ -40,6 +40,8 @@ use sp_runtime::generic;
 use sp_arithmetic::traits::SaturatedConversion;
 use sp_api::runtime_decl_for_Core::Core;
 use sp_state_machine::BasicExternalities;
+use sp_runtime::traits::Verify;
+use sp_runtime::traits::SignedExtension;
 
 static POLKADOT_ARGS: &[&str] = &["polkadot", "--chain=res/polkadot_chainspec.json"];
 
@@ -55,6 +57,9 @@ jsonrpsee::rpc_api! {
 
 		#[rpc(method = "chain_getHeader", positional_params)]
 		fn header(hash: PHash) -> Option<polkadot_runtime::Header>;
+
+		#[rpc(method = "chain_getBlockHash", positional_params)]
+		fn block_hash(hash: Option<u64>) -> Option<PHash>;
 	}
 }
 
@@ -165,6 +170,7 @@ fn integration_test() {
 	assert!(cmd.status.success());
 	let output = &cmd.stdout[2..];
 	let genesis_state = hex::decode(&output[2..output.len() - 1]).unwrap();
+	thread::sleep_ms(10000);
 
 	// connect RPC client
 	let transport_client =
@@ -177,12 +183,21 @@ fn integration_test() {
 		.saturated_into::<u64>()
 		.saturating_sub(1);
 	*/
+	/*
 	let finalized_head = async_std::task::block_on(async {
 		Chain::finalized_head(&mut client).await.unwrap()
 	});
+	*/
+	let finalized_head = async_std::task::block_on(async {
+		Chain::block_hash(&mut client, None).await.unwrap()
+	}).unwrap();
 	let current_block = async_std::task::block_on(async {
 		Chain::header(&mut client, finalized_head).await.unwrap()
 	}).unwrap().number.saturated_into::<u64>();
+
+	let genesis_block = async_std::task::block_on(async {
+		Chain::block_hash(&mut client, 0).await.unwrap()
+	}).unwrap();
 
 	// create and sign transaction
 	let wasm = fs::read(target_dir()
@@ -213,17 +228,19 @@ fn integration_test() {
 		parachains::ValidateDoubleVoteReports::<Runtime>::new(),
 	);
 	//let genesis_config = polkadot_local_testnet_config();
+	/*
 	let genesis_config = PolkadotChainSpec::from_json_bytes(&include_bytes!("../res/polkadot_chainspec.json")[..]).unwrap();
 	let storage = genesis_config.as_storage_builder().build_storage().unwrap();
 	let mut basic_ext = BasicExternalities::new(storage);
 	let raw_payload = basic_ext.execute_with(|| {
+		panic!("{:?} {:?}", extra.additional_signed(), finalized_head);
 		SignedPayload::new(call.clone().into(), extra.clone())
-	});
-	/*
+	}).unwrap();
+	*/
 	let raw_payload = SignedPayload::from_raw(call.clone().into(), extra.clone(), (
 		(),
 		Runtime::version().spec_version,
-		finalized_head,
+		genesis_block,
 		finalized_head,
 		(),
 		(),
@@ -231,8 +248,9 @@ fn integration_test() {
 		(),
 		(),
 	));
-	*/
+	//panic!("{:?} {:?} {:?}", Runtime::version().spec_version, genesis_block, finalized_head);
 	let signature = raw_payload.using_encoded(|e| Alice.sign(e));
+	//assert!(raw_payload.using_encoded(|payload| signature.verify(payload, &Alice.public())));
 
 	// register parachain
 	let ex = polkadot_runtime::UncheckedExtrinsic::new_signed(
