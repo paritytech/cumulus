@@ -43,6 +43,14 @@ jsonrpsee::rpc_api! {
 		#[rpc(method = "author_submitExtrinsic", positional_params)]
 		fn submit_extrinsic(extrinsic: String) -> String;
 	}
+
+	Chain {
+		#[rpc(method = "chain_getFinalizedHead")]
+		fn finalized_head() -> String;
+
+		#[rpc(method = "chain_getHeader", positional_params)]
+		fn header(hash: String) -> Option<polkadot_runtime::Header>;
+	}
 }
 
 // Adapted from
@@ -124,8 +132,27 @@ fn integration_test() {
 	let output = &cmd.stdout[2..];
 	let genesis_state = hex::decode(&output[2..output.len() - 1]).unwrap();
 
-	// register parachain
-	let wasm: Vec<u8> = vec![];
+	// connect RPC client
+	let transport_client =
+		jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:9933");
+	let mut client = jsonrpsee::raw::RawClient::new(transport_client);
+
+	// get the current block
+	/*
+	let current_block = System::block_number()
+		.saturated_into::<u64>()
+		.saturating_sub(1);
+	*/
+	let finalized_head = async_std::task::block_on(async {
+		Chain::finalized_head(&mut client).await.unwrap()
+	});
+	let current_block = async_std::task::block_on(async {
+		Chain::header(&mut client, finalized_head).await.unwrap()
+	}).unwrap().number.saturated_into::<u64>();
+
+	// create and sign transaction
+	let wasm = fs::read(target_dir()
+		.join("wbuild/cumulus-test-parachain-runtime/cumulus_test_parachain_runtime.compact.wasm")).unwrap();
 	let tx = registrar::Call::<Runtime>::register_para(
 		100.into(),
 		Info {
@@ -135,13 +162,13 @@ fn integration_test() {
 		genesis_state.into(),
 	);
 	let signature = tx.using_encoded(|e| Alice.sign(e));
+
+	// register parachain
+	let nonce = 0;
 	let period = BlockHashCount::get()
 		.checked_next_power_of_two()
 		.map(|c| c / 2)
 		.unwrap_or(2) as u64;
-	let current_block = System::block_number()
-		.saturated_into::<u64>()
-		.saturating_sub(1);
 	let tip = 0;
 	let extra: SignedExtra = (
 		OnlyStakingAndClaims,
@@ -155,7 +182,7 @@ fn integration_test() {
 		parachains::ValidateDoubleVoteReports::<Runtime>::new(),
 	);
 	let ex = polkadot_runtime::UncheckedExtrinsic {
-		signature: Some(((), sp_runtime::MultiSignature::Sr25519(signature), extra)),
+		signature: Some((Alice.into(), sp_runtime::MultiSignature::Sr25519(signature), extra)),
 		//signature: None,
 		function: tx.into(),
 	};
@@ -174,9 +201,6 @@ fn integration_test() {
 	});
 	*/
 	//let client = ws::connect(&Url::parse("ws://127.0.0.1:9944").unwrap()).await;
-	let transport_client =
-		jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:9933");
-	let mut client = jsonrpsee::raw::RawClient::new(transport_client);
 	let v = async_std::task::block_on(async {
 		Author::submit_extrinsic(&mut client, format!("0x{}", hex::encode(ex.encode()))).await.unwrap()
 	});
@@ -189,5 +213,5 @@ fn integration_test() {
 		.success());
 	*/
 
-	assert!(false);
+	panic!("{:?}", v);
 }
