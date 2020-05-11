@@ -72,8 +72,37 @@ struct ProcessCleanUp<'a>(&'a mut Child);
 
 impl<'a> Drop for ProcessCleanUp<'a> {
 	fn drop(&mut self) {
-		// TODO: send SIGTERM and wait before killing
+		#[cfg(unix)]
+		{
+			use nix::sys::signal::{kill, Signal::SIGTERM};
+			use nix::unistd::Pid;
+
+			kill(Pid::from_raw(self.0.id().try_into().unwrap()), SIGTERM).unwrap();
+
+			let mut tries = 30;
+
+			let success = loop {
+				tries -= 1;
+
+				match self.0.try_wait() {
+					Ok(Some(_)) => break true,
+					Ok(None) if tries == 0 => break false,
+					Ok(None) => thread::sleep(Duration::from_secs(1)),
+					Err(err) => {
+						eprintln!("could not wait for child process to finish: {}", err);
+						break false;
+					},
+				}
+			};
+
+			if !success {
+				let _ = self.0.kill();
+			}
+		}
+
+		#[cfg(not(unix))]
 		let _ = self.0.kill();
+
 		let _ = self.0.wait();
 	}
 }
