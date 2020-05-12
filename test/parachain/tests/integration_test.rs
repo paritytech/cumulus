@@ -31,7 +31,7 @@ use url::Url;
 use polkadot_primitives::parachain::{Info, Scheduling};
 use polkadot_primitives::Hash as PHash;
 use polkadot_runtime_common::{registrar, parachains, BlockHashCount};
-use polkadot_runtime::{Runtime, OnlyStakingAndClaims, SignedExtra, SignedPayload, System};
+use polkadot_runtime::{Runtime, OnlyStakingAndClaims, SignedExtra, SignedPayload};
 use polkadot_service::chain_spec::{polkadot_local_testnet_config, PolkadotChainSpec};
 use polkadot_service::ChainSpec;
 use codec::Encode;
@@ -42,24 +42,31 @@ use sp_api::runtime_decl_for_Core::Core;
 use sp_state_machine::BasicExternalities;
 use sp_runtime::traits::Verify;
 use sp_runtime::traits::SignedExtension;
+use sp_version::RuntimeVersion;
+use std::io::Read;
 
 static POLKADOT_ARGS: &[&str] = &["polkadot", "--chain=res/polkadot_chainspec.json"];
 
 jsonrpsee::rpc_api! {
 	Author {
 		#[rpc(method = "author_submitExtrinsic", positional_params)]
-		fn submit_extrinsic(extrinsic: String) -> String;
+		fn submit_extrinsic(extrinsic: String) -> PHash;
 	}
 
 	Chain {
 		#[rpc(method = "chain_getFinalizedHead")]
-		fn finalized_head() -> PHash;
+		fn current_block_hash() -> PHash;
 
 		#[rpc(method = "chain_getHeader", positional_params)]
 		fn header(hash: PHash) -> Option<polkadot_runtime::Header>;
 
 		#[rpc(method = "chain_getBlockHash", positional_params)]
 		fn block_hash(hash: Option<u64>) -> Option<PHash>;
+	}
+
+	State {
+		#[rpc(method = "state_getRuntimeVersion")]
+		fn runtime_version() -> RuntimeVersion;
 	}
 }
 
@@ -114,6 +121,22 @@ impl<'a> Drop for ProcessCleanUp<'a> {
 		let _ = self.0.kill();
 
 		let _ = self.0.wait();
+		eprintln!("stdout:\n{}\n", self.read_stdout());
+		eprintln!("stderr:\n{}\n", self.read_stderr());
+	}
+}
+
+impl<'a> ProcessCleanUp<'a> {
+	fn read_stdout(&mut self) -> String {
+		let mut output = String::new();
+		self.0.stdout.as_mut().unwrap().read_to_string(&mut output);
+		output
+	}
+
+	fn read_stderr(&mut self) -> String {
+		let mut output = String::new();
+		self.0.stderr.as_mut().unwrap().read_to_string(&mut output);
+		output
 	}
 }
 
@@ -144,9 +167,10 @@ fn integration_test() {
 		.arg(polkadot_alice_dir.path())
 		.arg("--alice")
 		.arg("--unsafe-rpc-expose")
+		//.args(&["--log", "debug"])
 		.spawn()
 		.unwrap();
-	let polkadot_alice_clean_up = ProcessCleanUp(&mut polkadot_alice);
+	let mut polkadot_alice_clean_up = ProcessCleanUp(&mut polkadot_alice);
 	wait_for_tcp("127.0.0.1:9933").unwrap();
 
 	// starts Bob
@@ -170,30 +194,24 @@ fn integration_test() {
 	assert!(cmd.status.success());
 	let output = &cmd.stdout[2..];
 	let genesis_state = hex::decode(&output[2..output.len() - 1]).unwrap();
-	thread::sleep_ms(10000);
+	//thread::sleep_ms(10000);
 
 	// connect RPC client
 	let transport_client =
 		jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:9933");
 	let mut client = jsonrpsee::raw::RawClient::new(transport_client);
 
-	// get the current block
-	/*
-	let current_block = System::block_number()
-		.saturated_into::<u64>()
-		.saturating_sub(1);
-	*/
-	/*
-	let finalized_head = async_std::task::block_on(async {
-		Chain::finalized_head(&mut client).await.unwrap()
+	let runtime_version = async_std::task::block_on(async {
+		State::runtime_version(&mut client).await.unwrap()
 	});
-	*/
-	let finalized_head = async_std::task::block_on(async {
+
+	// get the current block
+	let current_block_hash = async_std::task::block_on(async {
 		Chain::block_hash(&mut client, None).await.unwrap()
 	}).unwrap();
 	let current_block = async_std::task::block_on(async {
-		Chain::header(&mut client, finalized_head).await.unwrap()
-	}).unwrap().number.saturated_into::<u64>();
+		Chain::header(&mut client, current_block_hash).await.unwrap()
+	}).unwrap().number.saturated_into::<u64>(); //.saturating_sub(1);
 
 	let genesis_block = async_std::task::block_on(async {
 		Chain::block_hash(&mut client, 0).await.unwrap()
@@ -202,13 +220,15 @@ fn integration_test() {
 	// create and sign transaction
 	let wasm = fs::read(target_dir()
 		.join("wbuild/cumulus-test-parachain-runtime/cumulus_test_parachain_runtime.compact.wasm")).unwrap();
-	let call = registrar::Call::<Runtime>::register_para(
-		100.into(),
-		Info {
-			scheduling: Scheduling::Always,
-		},
-		wasm.into(),
-		genesis_state.into(),
+	let call = pallet_sudo::Call::sudo(
+		Box::new(registrar::Call::<Runtime>::register_para(
+			100.into(),
+			Info {
+				scheduling: Scheduling::Always,
+			},
+			wasm.into(),
+			genesis_state.into(),
+		).into()),
 	);
 	let nonce = 0;
 	let period = BlockHashCount::get()
@@ -227,30 +247,18 @@ fn integration_test() {
 		registrar::LimitParathreadCommits::<Runtime>::new(),
 		parachains::ValidateDoubleVoteReports::<Runtime>::new(),
 	);
-	//let genesis_config = polkadot_local_testnet_config();
-	/*
-	let genesis_config = PolkadotChainSpec::from_json_bytes(&include_bytes!("../res/polkadot_chainspec.json")[..]).unwrap();
-	let storage = genesis_config.as_storage_builder().build_storage().unwrap();
-	let mut basic_ext = BasicExternalities::new(storage);
-	let raw_payload = basic_ext.execute_with(|| {
-		panic!("{:?} {:?}", extra.additional_signed(), finalized_head);
-		SignedPayload::new(call.clone().into(), extra.clone())
-	}).unwrap();
-	*/
 	let raw_payload = SignedPayload::from_raw(call.clone().into(), extra.clone(), (
 		(),
-		Runtime::version().spec_version,
+		runtime_version.spec_version,
 		genesis_block,
-		finalized_head,
+		current_block_hash,
 		(),
 		(),
 		(),
 		(),
 		(),
 	));
-	//panic!("{:?} {:?} {:?}", Runtime::version().spec_version, genesis_block, finalized_head);
 	let signature = raw_payload.using_encoded(|e| Alice.sign(e));
-	//assert!(raw_payload.using_encoded(|payload| signature.verify(payload, &Alice.public())));
 
 	// register parachain
 	let ex = polkadot_runtime::UncheckedExtrinsic::new_signed(
@@ -275,7 +283,7 @@ fn integration_test() {
 	*/
 	//let client = ws::connect(&Url::parse("ws://127.0.0.1:9944").unwrap()).await;
 	let v = async_std::task::block_on(async {
-		Author::submit_extrinsic(&mut client, format!("0x{}", hex::encode(ex.encode()))).await.unwrap()
+		Author::submit_extrinsic(&mut client, format!("0x{}", hex::encode(ex.encode()))).await
 	});
 	/*
 	assert!(Command::new("/tmp/b/node_modules/.bin/polkadot-js-api")
@@ -286,5 +294,20 @@ fn integration_test() {
 		.success());
 	*/
 
+	// run cumulus
+	let mut cumulus = Command::new(cargo_bin("cumulus-test-parachain-collator"))
+		.arg("--base-path")
+		.arg(polkadot_bob_dir.path())
+		.arg("--")
+		.arg(format!("--bootnodes=/ipv4/127.0.0.1/tcp/30333/p2p/{}", 1))
+		.arg(format!("--bootnodes=/ipv4/127.0.0.1/tcp/50666/p2p/{}", 1))
+		.spawn()
+		.unwrap();
+	let cumulus_clean_up = ProcessCleanUp(&mut cumulus);
+
+	// wait for blocks to be generated
+	thread::sleep(Duration::from_secs(10));
+
+	// check output
 	panic!("{:?}", v);
 }
