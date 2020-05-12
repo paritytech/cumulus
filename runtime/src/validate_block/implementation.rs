@@ -25,7 +25,7 @@ use sp_trie::{delta_trie_root, read_trie_value, Layout, MemoryDB};
 
 use hash_db::{HashDB, EMPTY_PREFIX};
 
-use trie_db::{Trie, TrieDB};
+use trie_db::{Trie, TrieDB, TrieDBIterator};
 
 use parachain::primitives::{HeadData, ValidationCode, ValidationParams, ValidationResult};
 
@@ -228,36 +228,21 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 			Err(_) => panic!(),
 		};
 
-		let mut iter = trie.iter().expect("Creates trie iterator");
-		iter.seek(prefix).expect("Seek trie iterator");
-
-		for x in iter {
+		for x in TrieDBIterator::new_prefixed(&trie, prefix).expect("Creates trie iterator") {
 			let (key, _) = x.expect("Iterating trie iterator");
-
-			if !key.starts_with(prefix) {
-				break;
-			}
-
 			self.overlay.insert(key, None);
 		}
 	}
 
 	fn storage_append(&mut self, key: &[u8], value: Vec<u8>) {
-		let key_vec = key.to_vec();
-		let mut value_vec = Vec::with_capacity(1);
-		value_vec.push(EncodeOpaqueValue(value));
+		let value_vec = sp_std::vec![EncodeOpaqueValue(value)];
+		let current_value = self.overlay.entry(key.to_vec()).or_default();
 
-		if let Some(Some(item)) = self.overlay.remove(&key_vec) {
-			self.overlay.insert(
-				key_vec,
-				match Vec::<EncodeOpaqueValue>::append_or_new(item, &value_vec) {
-					Ok(item) => Some(item),
-					Err(_) => Some(value_vec.encode()),
-				},
-			);
-		} else {
-			self.overlay.insert(key_vec, Some(value_vec.encode()));
-		}
+		let item = current_value.take().unwrap_or_default();
+		*current_value = Some(match Vec::<EncodeOpaqueValue>::append_or_new(item, &value_vec) {
+			Ok(item) => item,
+			Err(_) => value_vec.encode(),
+		});
 	}
 }
 
