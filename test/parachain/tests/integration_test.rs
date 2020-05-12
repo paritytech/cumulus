@@ -44,6 +44,7 @@ use sp_runtime::traits::Verify;
 use sp_runtime::traits::SignedExtension;
 use sp_version::RuntimeVersion;
 use std::io::Read;
+use regex::{Captures, Regex};
 
 static POLKADOT_ARGS: &[&str] = &["polkadot", "--chain=res/polkadot_chainspec.json"];
 
@@ -85,23 +86,85 @@ fn target_dir() -> PathBuf {
 		.unwrap()
 }
 
-struct ProcessCleanUp<'a>(&'a mut Child);
+struct ProcessCleanUp<'a> {
+	name: String,
+	child: &'a mut Child,
+	stdout: String,
+	stderr: String,
+}
 
 impl<'a> Drop for ProcessCleanUp<'a> {
 	fn drop(&mut self) {
+		let name = self.name.clone();
+
+		self.terminate();
+		eprintln!("process '{}' stdout:\n{}\n", name, self.read_stdout_to_end());
+		eprintln!("process '{}' stderr:\n{}\n", name, self.read_stderr_to_end());
+	}
+}
+
+impl<'a> ProcessCleanUp<'a> {
+	fn new(name: &str, child: &'a mut Child) -> ProcessCleanUp<'a> {
+		ProcessCleanUp {
+			name: name.to_string(),
+			child,
+			stdout: Default::default(),
+			stderr: Default::default(),
+		}
+	}
+
+	fn read_stdout_to_end(&mut self) -> &str {
+		let mut output = String::new();
+
+		self.child.stdout.as_mut().unwrap().read_to_string(&mut output);
+		self.stdout.push_str(output.as_str());
+
+		&self.stdout
+	}
+
+	fn read_stderr_to_end(&mut self) -> &str {
+		let mut output = String::new();
+
+		self.child.stderr.as_mut().unwrap().read_to_string(&mut output);
+		self.stderr.push_str(output.as_str());
+
+		&self.stderr
+	}
+
+	fn read_stderr(&mut self, size: usize) -> &str {
+		let mut buffer = vec![0; size];
+		let size = self.child.stderr.as_mut().unwrap().read(&mut buffer).unwrap();
+
+		self.stderr.push_str(&String::from_utf8_lossy(&buffer[..size]));
+
+		&self.stderr
+	}
+
+	fn terminate(&mut self) {
+		match self.child.try_wait() {
+			Ok(Some(_)) => return,
+			Ok(None) => {},
+			Err(err) => {
+				eprintln!("could not wait for child process to finish: {}", err);
+				let _ = self.child.kill();
+				let _ = self.child.wait();
+				return;
+			},
+		}
+
 		#[cfg(unix)]
 		{
 			use nix::sys::signal::{kill, Signal::SIGTERM};
 			use nix::unistd::Pid;
 
-			kill(Pid::from_raw(self.0.id().try_into().unwrap()), SIGTERM).unwrap();
+			kill(Pid::from_raw(self.child.id().try_into().unwrap()), SIGTERM).unwrap();
 
 			let mut tries = 30;
 
 			let success = loop {
 				tries -= 1;
 
-				match self.0.try_wait() {
+				match self.child.try_wait() {
 					Ok(Some(_)) => break true,
 					Ok(None) if tries == 0 => break false,
 					Ok(None) => thread::sleep(Duration::from_secs(1)),
@@ -113,30 +176,14 @@ impl<'a> Drop for ProcessCleanUp<'a> {
 			};
 
 			if !success {
-				let _ = self.0.kill();
+				let _ = self.child.kill();
 			}
 		}
 
 		#[cfg(not(unix))]
-		let _ = self.0.kill();
+		let _ = self.child.kill();
 
-		let _ = self.0.wait();
-		eprintln!("stdout:\n{}\n", self.read_stdout());
-		eprintln!("stderr:\n{}\n", self.read_stderr());
-	}
-}
-
-impl<'a> ProcessCleanUp<'a> {
-	fn read_stdout(&mut self) -> String {
-		let mut output = String::new();
-		self.0.stdout.as_mut().unwrap().read_to_string(&mut output);
-		output
-	}
-
-	fn read_stderr(&mut self) -> String {
-		let mut output = String::new();
-		self.0.stderr.as_mut().unwrap().read_to_string(&mut output);
-		output
+		let _ = self.child.wait();
 	}
 }
 
@@ -155,7 +202,6 @@ fn wait_for_tcp<A: net::ToSocketAddrs>(address: A) -> io::Result<()> {
 }
 
 #[test]
-//#[tokio::test]
 fn integration_test() {
 	// starts Alice
 	let polkadot_alice_dir = tempdir().unwrap();
@@ -170,8 +216,9 @@ fn integration_test() {
 		//.args(&["--log", "debug"])
 		.spawn()
 		.unwrap();
-	let mut polkadot_alice_clean_up = ProcessCleanUp(&mut polkadot_alice);
+	let mut polkadot_alice_clean_up = ProcessCleanUp::new("alice", &mut polkadot_alice);
 	wait_for_tcp("127.0.0.1:9933").unwrap();
+	let polkadot_alice_id = find_local_node_identity(&mut polkadot_alice_clean_up);
 
 	// starts Bob
 	let polkadot_bob_dir = tempdir().unwrap();
@@ -184,7 +231,8 @@ fn integration_test() {
 		.arg("--bob")
 		.spawn()
 		.unwrap();
-	let polkadot_bob_clean_up = ProcessCleanUp(&mut polkadot_bob);
+	let mut polkadot_bob_clean_up = ProcessCleanUp::new("bob", &mut polkadot_bob);
+	let polkadot_bob_id = find_local_node_identity(&mut polkadot_bob_clean_up);
 
 	// export genesis state
 	let cmd = Command::new(cargo_bin("cumulus-test-parachain-collator"))
@@ -282,7 +330,7 @@ fn integration_test() {
 	});
 	*/
 	//let client = ws::connect(&Url::parse("ws://127.0.0.1:9944").unwrap()).await;
-	let v = async_std::task::block_on(async {
+	async_std::task::block_on(async {
 		Author::submit_extrinsic(&mut client, format!("0x{}", hex::encode(ex.encode()))).await
 	});
 	/*
@@ -295,19 +343,40 @@ fn integration_test() {
 	*/
 
 	// run cumulus
+	let cumulus_dir = tempdir().unwrap();
 	let mut cumulus = Command::new(cargo_bin("cumulus-test-parachain-collator"))
+		.stdout(Stdio::piped())
+		.stderr(Stdio::piped())
 		.arg("--base-path")
-		.arg(polkadot_bob_dir.path())
+		.arg(cumulus_dir.path())
 		.arg("--")
-		.arg(format!("--bootnodes=/ipv4/127.0.0.1/tcp/30333/p2p/{}", 1))
-		.arg(format!("--bootnodes=/ipv4/127.0.0.1/tcp/50666/p2p/{}", 1))
+		.arg(format!("--bootnodes=/ip4/127.0.0.1/tcp/30333/p2p/{}", polkadot_alice_id))
+		.arg(format!("--bootnodes=/ip4/127.0.0.1/tcp/50666/p2p/{}", polkadot_bob_id))
 		.spawn()
 		.unwrap();
-	let cumulus_clean_up = ProcessCleanUp(&mut cumulus);
+	let mut cumulus_clean_up = ProcessCleanUp::new("cumulus", &mut cumulus);
 
 	// wait for blocks to be generated
-	thread::sleep(Duration::from_secs(10));
+	thread::sleep(Duration::from_secs(30));
 
 	// check output
-	panic!("{:?}", v);
+	cumulus_clean_up.terminate();
+	assert!(
+		cumulus_clean_up.read_stderr_to_end().contains("best: #3"),
+		"no parachain blocks seems to have been produced",
+	);
+}
+
+fn find_local_node_identity(instance: &mut ProcessCleanUp) -> String {
+	let regex = Regex::new(r"Local node identity is: (.+)\n").unwrap();
+
+	loop {
+		let s = instance.read_stderr(200);
+
+		if let Some(captures) = regex.captures(s) {
+			break captures.get(1).unwrap().as_str().to_string();
+		} else if s.len() > 2000 {
+			panic!("could not find node identity");
+		}
+	}
 }

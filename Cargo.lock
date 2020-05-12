@@ -1045,6 +1045,7 @@ dependencies = [
  "polkadot-runtime",
  "polkadot-runtime-common",
  "polkadot-service",
+ "regex",
  "sc-basic-authorship",
  "sc-cli",
  "sc-consensus",
@@ -1068,7 +1069,6 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-test-runtime-client",
  "tempfile",
- "tokio 0.2.20",
  "trie-root 0.15.2",
  "url 1.7.2",
 ]
@@ -7878,7 +7878,6 @@ dependencies = [
  "pin-project-lite",
  "signal-hook-registry",
  "slab",
- "tokio-macros",
  "winapi 0.3.8",
 ]
 
@@ -7955,17 +7954,6 @@ dependencies = [
  "bytes 0.4.12",
  "futures 0.1.29",
  "log 0.4.8",
-]
-
-[[package]]
-name = "tokio-macros"
-version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0c3acc6aa564495a0f2e1d59fab677cd7f81a19994cfc7f3ad0e64301560389"
-dependencies = [
- "proc-macro2 1.0.10",
- "quote 1.0.3",
- "syn 1.0.18",
 ]
 
 [[package]]
