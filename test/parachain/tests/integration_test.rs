@@ -81,14 +81,14 @@ fn target_dir() -> PathBuf {
 		.unwrap()
 }
 
-struct ProcessCleanUp<'a> {
+struct ChildHelper<'a> {
 	name: String,
 	child: &'a mut Child,
 	stdout: String,
 	stderr: String,
 }
 
-impl<'a> Drop for ProcessCleanUp<'a> {
+impl<'a> Drop for ChildHelper<'a> {
 	fn drop(&mut self) {
 		let name = self.name.clone();
 
@@ -106,9 +106,9 @@ impl<'a> Drop for ProcessCleanUp<'a> {
 	}
 }
 
-impl<'a> ProcessCleanUp<'a> {
-	fn new(name: &str, child: &'a mut Child) -> ProcessCleanUp<'a> {
-		ProcessCleanUp {
+impl<'a> ChildHelper<'a> {
+	fn new(name: &str, child: &'a mut Child) -> ChildHelper<'a> {
+		ChildHelper {
 			name: name.to_string(),
 			child,
 			stdout: Default::default(),
@@ -244,9 +244,9 @@ fn integration_test() {
 		.arg("--unsafe-rpc-expose")
 		.spawn()
 		.unwrap();
-	let mut polkadot_alice_clean_up = ProcessCleanUp::new("alice", &mut polkadot_alice);
+	let mut polkadot_alice_child = ChildHelper::new("alice", &mut polkadot_alice);
 	wait_for_tcp("127.0.0.1:9933").unwrap();
-	let polkadot_alice_id = find_local_node_identity(&mut polkadot_alice_clean_up);
+	let polkadot_alice_id = find_local_node_identity(&mut polkadot_alice_child);
 
 	// start bob
 	let polkadot_bob_dir = tempdir().unwrap();
@@ -259,8 +259,8 @@ fn integration_test() {
 		.arg("--bob")
 		.spawn()
 		.unwrap();
-	let mut polkadot_bob_clean_up = ProcessCleanUp::new("bob", &mut polkadot_bob);
-	let polkadot_bob_id = find_local_node_identity(&mut polkadot_bob_clean_up);
+	let mut polkadot_bob_child = ChildHelper::new("bob", &mut polkadot_bob);
+	let polkadot_bob_id = find_local_node_identity(&mut polkadot_bob_child);
 
 	// wait a bit for some relay chains blocks to be generated
 	thread::sleep(Duration::from_secs(10));
@@ -381,15 +381,15 @@ fn integration_test() {
 		))
 		.spawn()
 		.unwrap();
-	let mut cumulus_clean_up = ProcessCleanUp::new("cumulus", &mut cumulus);
+	let mut cumulus_child = ChildHelper::new("cumulus", &mut cumulus);
 
 	// wait for blocks to be generated
 	thread::sleep(Duration::from_secs(60));
 
 	// check output
-	cumulus_clean_up.terminate();
+	cumulus_child.terminate();
 	assert!(
-		cumulus_clean_up
+		cumulus_child
 			.read_stderr_to_end()
 			.unwrap()
 			.contains("best: #2"),
@@ -397,7 +397,7 @@ fn integration_test() {
 	);
 }
 
-fn find_local_node_identity(instance: &mut ProcessCleanUp) -> String {
+fn find_local_node_identity(instance: &mut ChildHelper) -> String {
 	let regex = Regex::new(r"Local node identity is: (.+)\n").unwrap();
 
 	loop {
