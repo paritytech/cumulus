@@ -23,7 +23,7 @@ use polkadot_primitives::parachain::{Info, Scheduling};
 use polkadot_primitives::Hash as PHash;
 use polkadot_runtime::{Header, OnlyStakingAndClaims, Runtime, SignedExtra, SignedPayload};
 use polkadot_runtime_common::{parachains, registrar, BlockHashCount};
-use regex::Regex;
+use serde_json::Value;
 use sp_arithmetic::traits::SaturatedConversion;
 use sp_runtime::generic;
 use sp_version::RuntimeVersion;
@@ -61,6 +61,11 @@ jsonrpsee::rpc_api! {
 	State {
 		#[rpc(method = "state_getRuntimeVersion")]
 		fn runtime_version() -> RuntimeVersion;
+	}
+
+	System {
+		#[rpc(method = "system_networkState")]
+		fn network_state() -> Value;
 	}
 }
 
@@ -140,21 +145,6 @@ impl<'a> ChildHelper<'a> {
 		Ok(&self.stderr)
 	}
 
-	fn read_stderr(&mut self, size: usize) -> io::Result<&str> {
-		let mut buffer = vec![0; size];
-		let size = self
-			.child
-			.stderr
-			.as_mut()
-			.ok_or_else(|| io::Error::new(io::ErrorKind::Other, "stderr not captured"))?
-			.read(&mut buffer)?;
-
-		self.stderr
-			.push_str(&String::from_utf8_lossy(&buffer[..size]));
-
-		Ok(&self.stderr)
-	}
-
 	fn terminate(&mut self) {
 		match self.child.try_wait() {
 			Ok(Some(_)) => return,
@@ -223,12 +213,16 @@ fn wait_for_tcp<A: net::ToSocketAddrs>(address: A) -> io::Result<()> {
 	}
 }
 
-#[test]
+#[async_std::test]
 #[ignore]
-fn integration_test() {
+async fn integration_test() {
 	assert!(
 		!tcp_port_is_open("127.0.0.1:9933"),
 		"tcp port is already open 127.0.0.1:9933, this test cannot be run",
+	);
+	assert!(
+		!tcp_port_is_open("127.0.0.1:9934"),
+		"tcp port is already open 127.0.0.1:9934, this test cannot be run",
 	);
 
 	// start alice
@@ -243,9 +237,8 @@ fn integration_test() {
 		.arg("--unsafe-rpc-expose")
 		.spawn()
 		.unwrap();
-	let mut polkadot_alice_child = ChildHelper::new("alice", &mut polkadot_alice);
+	let polkadot_alice_child = ChildHelper::new("alice", &mut polkadot_alice);
 	wait_for_tcp("127.0.0.1:9933").unwrap();
-	let polkadot_alice_id = find_local_node_identity(&mut polkadot_alice_child);
 
 	// start bob
 	let polkadot_bob_dir = tempdir().unwrap();
@@ -256,10 +249,12 @@ fn integration_test() {
 		.arg("--base-path")
 		.arg(polkadot_bob_dir.path())
 		.arg("--bob")
+		.arg("--unsafe-rpc-expose")
+		.arg("--rpc-port=9934")
 		.spawn()
 		.unwrap();
-	let mut polkadot_bob_child = ChildHelper::new("bob", &mut polkadot_bob);
-	let polkadot_bob_id = find_local_node_identity(&mut polkadot_bob_child);
+	let polkadot_bob_child = ChildHelper::new("bob", &mut polkadot_bob);
+	wait_for_tcp("127.0.0.1:9934").unwrap();
 
 	// wait a bit for some relay chains blocks to be generated
 	thread::sleep(Duration::from_secs(10));
@@ -273,31 +268,43 @@ fn integration_test() {
 	let output = &cmd.stdout;
 	let genesis_state = hex::decode(&output[2..output.len() - 1]).unwrap();
 
-	// connect RPC client
-	let transport_client =
+	// connect RPC clients
+	let transport_client_alice =
 		jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:9933");
-	let mut client = jsonrpsee::raw::RawClient::new(transport_client);
+	let mut client_alice = jsonrpsee::raw::RawClient::new(transport_client_alice);
+	let transport_client_bob =
+		jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:9934");
+	let mut client_bob = jsonrpsee::raw::RawClient::new(transport_client_bob);
+
+	// retrieve nodes network id
+	let polkadot_alice_id = System::network_state(&mut client_alice).await.unwrap()["peerId"]
+		.as_str()
+		.unwrap()
+		.to_string();
+	let polkadot_bob_id = System::network_state(&mut client_bob).await.unwrap()["peerId"]
+		.as_str()
+		.unwrap()
+		.to_string();
 
 	// retrieve runtime version
-	let runtime_version =
-		async_std::task::block_on(async { State::runtime_version(&mut client).await.unwrap() });
+	let runtime_version = State::runtime_version(&mut client_alice).await.unwrap();
 
 	// get the current block
-	let current_block_hash =
-		async_std::task::block_on(async { Chain::block_hash(&mut client, None).await.unwrap() })
-			.unwrap();
-	let current_block = async_std::task::block_on(async {
-		Chain::header(&mut client, current_block_hash)
-			.await
-			.unwrap()
-	})
-	.unwrap()
-	.number
-	.saturated_into::<u64>();
+	let current_block_hash = Chain::block_hash(&mut client_alice, None)
+		.await
+		.unwrap()
+		.unwrap();
+	let current_block = Chain::header(&mut client_alice, current_block_hash)
+		.await
+		.unwrap()
+		.unwrap()
+		.number
+		.saturated_into::<u64>();
 
-	let genesis_block =
-		async_std::task::block_on(async { Chain::block_hash(&mut client, 0).await.unwrap() })
-			.unwrap();
+	let genesis_block = Chain::block_hash(&mut client_alice, 0)
+		.await
+		.unwrap()
+		.unwrap();
 
 	// create and sign transaction
 	let wasm =
@@ -357,10 +364,10 @@ fn integration_test() {
 		sp_runtime::MultiSignature::Sr25519(signature),
 		extra,
 	);
-	let _register_block_hash = async_std::task::block_on(async {
-		Author::submit_extrinsic(&mut client, format!("0x{}", hex::encode(ex.encode()))).await
-	})
-	.unwrap();
+	let _register_block_hash =
+		Author::submit_extrinsic(&mut client_alice, format!("0x{}", hex::encode(ex.encode())))
+			.await
+			.unwrap();
 
 	// run cumulus
 	let cumulus_dir = tempdir().unwrap();
@@ -394,18 +401,4 @@ fn integration_test() {
 			.contains("best: #2"),
 		"no parachain blocks seems to have been produced",
 	);
-}
-
-fn find_local_node_identity(instance: &mut ChildHelper) -> String {
-	let regex = Regex::new(r"Local node identity is: (.+)\n").unwrap();
-
-	loop {
-		let s = instance.read_stderr(200).unwrap();
-
-		if let Some(captures) = regex.captures(s) {
-			break captures.get(1).unwrap().as_str().to_string();
-		} else if s.len() > 2000 {
-			panic!("could not find node identity");
-		}
-	}
 }
