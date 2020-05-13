@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
-// This test needs --release to work
-#![cfg(not(debug_assertions))]
 // TODO: this is necessary for the jsonrpsee macro used
 #![allow(unused_variables, dead_code)]
 
@@ -226,6 +224,7 @@ fn wait_for_tcp<A: net::ToSocketAddrs>(address: A) -> io::Result<()> {
 }
 
 #[test]
+#[ignore]
 fn integration_test() {
 	assert!(
 		!tcp_port_is_open("127.0.0.1:9933"),
