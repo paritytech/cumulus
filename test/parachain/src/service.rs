@@ -23,6 +23,7 @@ use polkadot_primitives::parachain::CollatorPair;
 use cumulus_collator::{CollatorBuilder, prepare_collator_config};
 use futures::FutureExt;
 pub use sc_executor::NativeExecutor;
+use cumulus_network::JustifiedBlockAnnounceValidator;
 
 // Our native executor instance.
 native_executor_instance!(
@@ -74,16 +75,30 @@ pub fn run_collator(
 ) -> sc_service::error::Result<impl AbstractService> {
 	let parachain_config = prepare_collator_config(parachain_config);
 
+	let (polkadot_service, polkadot_client, polkadot_handles) = polkadot_service::polkadot_new_full(
+		polkadot_config,
+		Some((key.public(), crate::PARA_ID)),
+		None,
+		false,
+		6000,
+		None
+	)?;
+
 	let (builder, inherent_data_providers) = new_full_start!(parachain_config);
 	inherent_data_providers
 		.register_provider(sp_timestamp::InherentDataProvider)
 		.unwrap();
 
+	let authorities = Vec::new();
+	let polkadot_client_for_validator = polkadot_client.clone();
 	let service = builder
 		.with_finality_proof_provider(|client, backend| {
 			// GenesisAuthoritySetProvider is implemented for StorageAndProofProvider
 			let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
 			Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
+		})?
+		.with_block_announce_validator(|_client| {
+			Box::new(JustifiedBlockAnnounceValidator::new(authorities, polkadot_client_for_validator))
 		})?
 		.build()?;
 
@@ -107,14 +122,6 @@ pub fn run_collator(
 		announce_block,
 	);
 
-	let (polkadot_service, polkadot_client, polkadot_handles) = polkadot_service::polkadot_new_full(
-		polkadot_config,
-		Some((key.public(), crate::PARA_ID)),
-		None,
-		false,
-		6000,
-		None
-	)?;
 	let spawn_handle = polkadot_service.spawn_task_handle();
 	let polkadot_future = polkadot_collator::build_collator_service(
 		spawn_handle,

@@ -987,6 +987,7 @@ dependencies = [
  "assert_cmd",
  "cumulus-collator",
  "cumulus-consensus",
+ "cumulus-network",
  "cumulus-test-parachain-runtime",
  "derive_more 0.15.0",
  "exit-future 0.1.4",
