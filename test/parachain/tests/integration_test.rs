@@ -237,7 +237,7 @@ async fn integration_test() {
 		.arg("--unsafe-rpc-expose")
 		.spawn()
 		.unwrap();
-	let polkadot_alice_child = ChildHelper::new("alice", &mut polkadot_alice);
+	let polkadot_alice_helper = ChildHelper::new("alice", &mut polkadot_alice);
 	wait_for_tcp("127.0.0.1:9933").unwrap();
 
 	// start bob
@@ -253,7 +253,7 @@ async fn integration_test() {
 		.arg("--rpc-port=9934")
 		.spawn()
 		.unwrap();
-	let polkadot_bob_child = ChildHelper::new("bob", &mut polkadot_bob);
+	let polkadot_bob_helper = ChildHelper::new("bob", &mut polkadot_bob);
 	wait_for_tcp("127.0.0.1:9934").unwrap();
 
 	// wait a bit for some relay chains blocks to be generated
@@ -387,15 +387,15 @@ async fn integration_test() {
 		))
 		.spawn()
 		.unwrap();
-	let mut cumulus_child = ChildHelper::new("cumulus", &mut cumulus);
+	let mut cumulus_helper = ChildHelper::new("cumulus", &mut cumulus);
 
 	// wait for blocks to be generated
 	thread::sleep(Duration::from_secs(60));
 
 	// check output
-	cumulus_child.terminate();
+	cumulus_helper.terminate();
 	assert!(
-		cumulus_child
+		cumulus_helper
 			.read_stderr_to_end()
 			.unwrap()
 			.contains("best: #2"),
