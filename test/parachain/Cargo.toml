@@ -23,34 +23,34 @@ structopt = "0.3.3"
 parachain-runtime = { package = "cumulus-test-parachain-runtime", path = "runtime" }
 
 # Substrate dependencies
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
-sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
-sc-network = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", version = "0.8.0-alpha.5" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
-sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-use-custom-block-announce-validator" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "cecton-use-custom-block-announce-validator" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "cecton-use-custom-block-announce-validator" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cecton-use-custom-block-announce-validator" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-use-custom-block-announce-validator" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-use-custom-block-announce-validator" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cecton-use-custom-block-announce-validator" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "cecton-use-custom-block-announce-validator" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "cecton-use-custom-block-announce-validator" }
+sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cecton-use-custom-block-announce-validator" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cecton-use-custom-block-announce-validator" }
+sc-network = { git = "https://github.com/paritytech/substrate", branch = "cecton-use-custom-block-announce-validator" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "cecton-use-custom-block-announce-validator", version = "0.8.0-alpha.5" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "cecton-use-custom-block-announce-validator" }
+sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "cecton-use-custom-block-announce-validator" }
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../../consensus" }
 cumulus-collator = { path = "../../collator" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-use-custom-block-announce-validator" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-use-custom-block-announce-validator" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-use-custom-block-announce-validator" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "cecton-use-custom-block-announce-validator" }
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "cecton-use-custom-block-announce-validator" }
 
 [dev-dependencies]
 assert_cmd = "0.12"
