@@ -18,6 +18,7 @@ use std::sync::Arc;
 use sc_executor::native_executor_instance;
 use sc_service::{AbstractService, Configuration};
 use sc_finality_grandpa::{FinalityProofProvider as GrandpaFinalityProofProvider, StorageAndProofProvider};
+use sp_core::crypto::Pair;
 use polkadot_primitives::parachain::CollatorPair;
 use cumulus_collator::{CollatorBuilder, prepare_collator_config};
 use futures::FutureExt;
@@ -106,12 +107,24 @@ pub fn run_collator(
 		announce_block,
 	);
 
-	let polkadot_future = polkadot_collator::start_collator(
-		builder,
+	let (polkadot_service, polkadot_client, polkadot_handles) = polkadot_service::polkadot_new_full(
+		polkadot_config,
+		Some((key.public(), crate::PARA_ID)),
+		None,
+		false,
+		6000,
+		None
+	)?;
+	let spawn_handle = polkadot_service.spawn_task_handle();
+	let polkadot_future = polkadot_collator::build_collator_service(
+		spawn_handle,
+		polkadot_handles,
+		polkadot_client,
 		crate::PARA_ID,
 		key,
-		polkadot_config,
-	).map(|_| ());
+		builder,
+	)?;
+
 	service.spawn_essential_task("polkadot", polkadot_future);
 
 	Ok(service)
