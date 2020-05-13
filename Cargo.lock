@@ -1041,7 +1041,6 @@ dependencies = [
  "sc-executor",
  "sc-finality-grandpa",
  "sc-network",
- "sc-rpc",
  "sc-service",
  "sc-transaction-pool",
  "sp-arithmetic",
