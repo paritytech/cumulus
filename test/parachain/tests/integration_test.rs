@@ -228,7 +228,7 @@ fn wait_for_tcp<A: net::ToSocketAddrs>(address: A) -> io::Result<()> {
 fn integration_test() {
 	assert!(
 		!tcp_port_is_open("127.0.0.1:9933"),
-		"tcp port is already open 127.0.0.1:9933, this test cannot be ran",
+		"tcp port is already open 127.0.0.1:9933, this test cannot be run",
 	);
 
 	// start alice
