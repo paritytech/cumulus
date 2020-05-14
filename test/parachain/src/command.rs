@@ -112,6 +112,36 @@ impl SubstrateCli for PolkadotCli {
 	}
 }
 
+fn generate_genesis_state() -> Result<Block> {
+	let storage = (&chain_spec::get_chain_spec()).build_storage()?;
+
+	let child_roots = storage.children_default.iter().map(|(sk, child_content)| {
+		let state_root =
+			<<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
+				child_content.data.clone().into_iter().collect(),
+			);
+		(sk.clone(), state_root.encode())
+	});
+	let state_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
+		storage.top.clone().into_iter().chain(child_roots).collect(),
+	);
+
+	let extrinsics_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
+		Vec::new(),
+	);
+
+	Ok(Block::new(
+		<<Block as BlockT>::Header as HeaderT>::new(
+			Zero::zero(),
+			extrinsics_root,
+			state_root,
+			Default::default(),
+			Default::default(),
+		),
+		Default::default(),
+	))
+}
+
 /// Parse command line arguments into service configuration.
 pub fn run() -> Result<()> {
 	let cli = Cli::from_args();
@@ -125,35 +155,7 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::ExportGenesisState(params)) => {
 			sc_cli::init_logger("");
 
-			let storage = (&chain_spec::get_chain_spec()).build_storage()?;
-
-			let child_roots = storage.children_default.iter().map(|(sk, child_content)| {
-				let state_root =
-					<<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
-						child_content.data.clone().into_iter().collect(),
-					);
-				(sk.clone(), state_root.encode())
-			});
-			let state_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
-				storage.top.clone().into_iter().chain(child_roots).collect(),
-			);
-			let block = {
-				let extrinsics_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
-					Vec::new(),
-				);
-
-				Block::new(
-					<<Block as BlockT>::Header as HeaderT>::new(
-						Zero::zero(),
-						extrinsics_root,
-						state_root,
-						Default::default(),
-						Default::default(),
-					),
-					Default::default(),
-				)
-			};
-
+			let block = generate_genesis_state()?;
 			let header_hex = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
 			if let Some(output) = &params.output {
