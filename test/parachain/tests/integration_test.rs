@@ -196,16 +196,14 @@ fn tcp_port_is_open<A: net::ToSocketAddrs>(address: A) -> bool {
 	net::TcpStream::connect(&address).is_ok()
 }
 
-fn wait_for_tcp<A: net::ToSocketAddrs>(address: A) -> io::Result<()> {
-	let mut tries = 10;
-
+fn wait_for_tcp<A: net::ToSocketAddrs + std::fmt::Display>(address: A) {
 	loop {
-		tries -= 1;
-
 		match net::TcpStream::connect(&address) {
-			Ok(_) => break Ok(()),
-			Err(err) if tries == 0 => break Err(err),
-			_ => thread::sleep(Duration::from_secs(1)),
+			Ok(_) => break,
+			Err(err) => {
+				eprintln!("Waiting for {} to be up ({})...", address, err);
+				thread::sleep(Duration::from_secs(1));
+			},
 		}
 	}
 }
@@ -235,7 +233,7 @@ async fn integration_test() {
 		.spawn()
 		.unwrap();
 	let polkadot_alice_helper = ChildHelper::new("alice", &mut polkadot_alice);
-	wait_for_tcp("127.0.0.1:9933").unwrap();
+	wait_for_tcp("127.0.0.1:9933");
 
 	// start bob
 	let polkadot_bob_dir = tempdir().unwrap();
@@ -251,10 +249,7 @@ async fn integration_test() {
 		.spawn()
 		.unwrap();
 	let polkadot_bob_helper = ChildHelper::new("bob", &mut polkadot_bob);
-	wait_for_tcp("127.0.0.1:9934").unwrap();
-
-	// wait a bit for some relay chains blocks to be generated
-	thread::sleep(Duration::from_secs(10));
+	wait_for_tcp("127.0.0.1:9934");
 
 	// export genesis state
 	let cmd = Command::new(cargo_bin("cumulus-test-parachain-collator"))
