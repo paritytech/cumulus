@@ -32,7 +32,7 @@ use sp_version::RuntimeVersion;
 use std::collections::HashSet;
 use std::{
 	convert::TryInto,
-	env, fs, io,
+	env, fs,
 	io::Read,
 	net,
 	path::PathBuf,
@@ -91,8 +91,6 @@ fn target_dir() -> PathBuf {
 struct ChildHelper<'a> {
 	name: String,
 	child: &'a mut Child,
-	stdout: String,
-	stderr: String,
 }
 
 impl<'a> Drop for ChildHelper<'a> {
@@ -100,16 +98,18 @@ impl<'a> Drop for ChildHelper<'a> {
 		let name = self.name.clone();
 
 		self.terminate();
-		eprintln!(
-			"process '{}' stdout:\n{}\n",
-			name,
-			self.read_stdout_to_end().unwrap_or_default()
-		);
-		eprintln!(
-			"process '{}' stderr:\n{}\n",
-			name,
-			self.read_stderr_to_end().unwrap_or_default()
-		);
+
+		let mut stdout = String::new();
+		if let Some(reader) = self.child.stdout.as_mut() {
+			let _ = reader.read_to_string(&mut stdout);
+		}
+		eprintln!("process '{}' stdout:\n{}\n", name, stdout,);
+
+		let mut stderr = String::new();
+		if let Some(reader) = self.child.stderr.as_mut() {
+			let _ = reader.read_to_string(&mut stderr);
+		}
+		eprintln!("process '{}' stderr:\n{}\n", name, stderr,);
 	}
 }
 
@@ -118,35 +118,7 @@ impl<'a> ChildHelper<'a> {
 		ChildHelper {
 			name: name.to_string(),
 			child,
-			stdout: Default::default(),
-			stderr: Default::default(),
 		}
-	}
-
-	fn read_stdout_to_end(&mut self) -> io::Result<&str> {
-		let mut output = String::new();
-
-		self.child
-			.stdout
-			.as_mut()
-			.ok_or_else(|| io::Error::new(io::ErrorKind::Other, "stdout not captured"))?
-			.read_to_string(&mut output)?;
-		self.stdout.push_str(output.as_str());
-
-		Ok(&self.stdout)
-	}
-
-	fn read_stderr_to_end(&mut self) -> io::Result<&str> {
-		let mut output = String::new();
-
-		self.child
-			.stderr
-			.as_mut()
-			.ok_or_else(|| io::Error::new(io::ErrorKind::Other, "stderr not captured"))?
-			.read_to_string(&mut output)?;
-		self.stderr.push_str(output.as_str());
-
-		Ok(&self.stderr)
 	}
 
 	fn terminate(&mut self) {
