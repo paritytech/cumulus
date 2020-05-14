@@ -193,10 +193,7 @@ impl<'a> ChildHelper<'a> {
 }
 
 fn tcp_port_is_open<A: net::ToSocketAddrs>(address: A) -> bool {
-	match net::TcpStream::connect(&address) {
-		Ok(_) => true,
-		Err(_) => false,
-	}
+	net::TcpStream::connect(&address).is_ok()
 }
 
 fn wait_for_tcp<A: net::ToSocketAddrs>(address: A) -> io::Result<()> {
