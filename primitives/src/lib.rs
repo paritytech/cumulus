@@ -19,6 +19,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use polkadot_core_primitives::DownwardMessage;
+/// A generic upward message from a Parachain to the Relay Chain.
+///
+/// It is "generic" in such a way, that the actual message is encoded in the `data` field.
+/// Besides the `data` it also holds the `origin` of the message.
+pub use polkadot_parachain::primitives::UpwardMessage as GenericUpwardMessage;
+pub use polkadot_parachain::primitives::ParachainDispatchOrigin as UpwardMessageOrigin;
 
 pub mod validation_function_params;
 
@@ -30,7 +36,7 @@ pub mod inherents {
 	pub const DOWNWARD_MESSAGES_IDENTIFIER: InherentIdentifier = *b"cumdownm";
 
 	/// The type of the inherent downward messages.
-	pub type DownwardMessagesType = Vec<crate::DownwardMessage>;
+	pub type DownwardMessagesType = sp_std::vec::Vec<crate::DownwardMessage>;
 
 	/// The identifier for the `validation_function_params` inherent.
 	pub const VALIDATION_FUNCTION_PARAMS_IDENTIFIER: InherentIdentifier = *b"valfunp0";
@@ -42,14 +48,14 @@ pub mod inherents {
 pub mod well_known_keys {
 	/// The storage key for the upward messages.
 	///
-	/// The upward messages are stored as SCALE encoded `Vec<()>`.
+	/// The upward messages are stored as SCALE encoded `Vec<GenericUpwardMessage>`.
 	pub const UPWARD_MESSAGES: &'static [u8] = b":cumulus_upward_messages:";
 
 	/// Current validation function parameters.
-	pub const VALIDATION_FUNCTION_PARAMS: &'static [u8] = b":validation_function_params";
+	pub const VALIDATION_FUNCTION_PARAMS: &'static [u8] = b":cumulus_validation_function_params";
 
 	/// Code upgarde (set as appropriate by a pallet).
-	pub const NEW_VALIDATION_CODE: &'static [u8] = b":new_validation_code";
+	pub const NEW_VALIDATION_CODE: &'static [u8] = b":cumulus_new_validation_code";
 }
 
 /// Something that should be called when a downward message is received.
@@ -64,5 +70,5 @@ pub trait UpwardMessageSender<UpwardMessage> {
 	/// Send an upward message to the relay chain.
 	///
 	/// Returns an error if sending failed.
-	fn send_upward_message(msg: &UpwardMessage) -> Result<(), ()>;
+	fn send_upward_message(msg: &UpwardMessage, origin: UpwardMessageOrigin) -> Result<(), ()>;
 }

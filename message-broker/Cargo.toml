@@ -9,6 +9,7 @@ edition = "2018"
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch", default-features = false }
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch", default-features = false }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch", default-features = false }
 
 # Other dependencies
 codec = { package = "parity-scale-codec", version = "1.3.0", features = [ "derive" ], default-features = false }
@@ -22,6 +23,7 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"sp-inherents/std",
+	"sp-io/std",
 	"codec/std",
 	"cumulus-primitives/std",
 ]

@@ -22,19 +22,24 @@
 
 use cumulus_primitives::{
 	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER},
-	well_known_keys, DownwardMessage, DownwardMessageHandler, UpwardMessageSender,
+	well_known_keys, DownwardMessage, DownwardMessageHandler, GenericUpwardMessage,
+	UpwardMessageOrigin, UpwardMessageSender,
 };
 use frame_support::{
-	decl_module, storage,
+	decl_module, storage, traits::Get,
 	weights::{DispatchClass, Weight},
 };
 use frame_system::ensure_none;
 use sp_inherents::{InherentData, InherentIdentifier, MakeFatalError, ProvideInherent};
+use codec::Encode;
 
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {
 	/// The downward message handlers that will be informed when a message is received.
 	type DownwardMessageHandlers: DownwardMessageHandler;
+
+	/// The upward message type used by the Parachain runtime.
+	type UpwardMessage: codec::Codec;
 }
 
 decl_module! {
@@ -51,13 +56,16 @@ decl_module! {
 		fn on_initialize() -> Weight {
 			storage::unhashed::kill(well_known_keys::UPWARD_MESSAGES);
 
-			0
+			T::DbWeight::get().writes(1)
 		}
 	}
 }
 
-impl<T: Trait> UpwardMessageSender for Module<T> {
-	fn send_upward_message(_: &()) -> Result<(), ()> {
+impl<T: Trait> UpwardMessageSender<T::UpwardMessage> for Module<T> {
+	fn send_upward_message(msg: &T::UpwardMessage, origin: UpwardMessageOrigin) -> Result<(), ()> {
+		//TODO: check fee schedule
+		let msg = GenericUpwardMessage { origin, data: msg.encode() };
+		sp_io::storage::append(well_known_keys::UPWARD_MESSAGES, msg.encode());
 		Ok(())
 	}
 }

@@ -886,6 +886,7 @@ dependencies = [
  "frame-system 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=bkchr-cumulus-branch)",
  "parity-scale-codec",
  "sp-inherents 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=bkchr-cumulus-branch)",
+ "sp-io 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=bkchr-cumulus-branch)",
 ]
 
 [[package]]
@@ -2562,7 +2563,7 @@ dependencies = [
 [[package]]
 name = "kusama-runtime"
 version = "0.7.32"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#682af31e1d28b615a57cef1a6225671ffdedfb19"
+source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#849b60c8aaeac3cc983560c6e12093163a1436e5"
 dependencies = [
  "bitvec",
  "frame-executive 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=bkchr-cumulus-branch)",
@@ -4474,7 +4475,7 @@ checksum = "feb3b2b1033b8a60b4da6ee470325f887758c95d5320f52f9ce0df055a55940e"
 [[package]]
 name = "polkadot-availability-store"
 version = "0.7.32"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#682af31e1d28b615a57cef1a6225671ffdedfb19"
+source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#849b60c8aaeac3cc983560c6e12093163a1436e5"
 dependencies = [
  "derive_more 0.99.5",
  "exit-future 0.2.0",
@@ -4501,7 +4502,7 @@ dependencies = [
 [[package]]
 name = "polkadot-cli"
 version = "0.7.32"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#682af31e1d28b615a57cef1a6225671ffdedfb19"
+source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#849b60c8aaeac3cc983560c6e12093163a1436e5"
 dependencies = [
  "frame-benchmarking-cli",
  "futures 0.3.4",
@@ -4523,7 +4524,7 @@ dependencies = [
 [[package]]
 name = "polkadot-collator"
 version = "0.7.32"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#682af31e1d28b615a57cef1a6225671ffdedfb19"
+source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#849b60c8aaeac3cc983560c6e12093163a1436e5"
 dependencies = [
  "futures 0.3.4",
  "futures-timer 2.0.2",
@@ -4550,7 +4551,7 @@ dependencies = [
 [[package]]
 name = "polkadot-core-primitives"
 version = "0.7.30"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#682af31e1d28b615a57cef1a6225671ffdedfb19"
+source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#849b60c8aaeac3cc983560c6e12093163a1436e5"
 dependencies = [
  "parity-scale-codec",
  "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=bkchr-cumulus-branch)",
@@ -4561,7 +4562,7 @@ dependencies = [
 [[package]]
 name = "polkadot-erasure-coding"
 version = "0.7.32"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#682af31e1d28b615a57cef1a6225671ffdedfb19"
+source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#849b60c8aaeac3cc983560c6e12093163a1436e5"
 dependencies = [
  "derive_more 0.15.0",
  "parity-scale-codec",
@@ -4574,7 +4575,7 @@ dependencies = [
 [[package]]
 name = "polkadot-network"
 version = "0.7.32"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#682af31e1d28b615a57cef1a6225671ffdedfb19"
+source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#849b60c8aaeac3cc983560c6e12093163a1436e5"
 dependencies = [
  "arrayvec 0.4.12",
  "bytes 0.5.4",
@@ -4612,7 +4613,7 @@ dependencies = [
 [[package]]
 name = "polkadot-parachain"
 version = "0.7.32"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#682af31e1d28b615a57cef1a6225671ffdedfb19"
+source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#849b60c8aaeac3cc983560c6e12093163a1436e5"
 dependencies = [
  "derive_more 0.99.5",
  "log 0.4.8",
@@ -4625,7 +4626,6 @@ dependencies = [
  "sp-core 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=bkchr-cumulus-branch)",
  "sp-externalities 0.8.0-dev (git+https://github.com/paritytech/substrate?branch=bkchr-cumulus-branch)",
  "sp-io 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=bkchr-cumulus-branch)",
- "sp-runtime-interface 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=bkchr-cumulus-branch)",
  "sp-std 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=bkchr-cumulus-branch)",
  "sp-wasm-interface 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=bkchr-cumulus-branch)",
 ]
@@ -4633,7 +4633,7 @@ dependencies = [
 [[package]]
 name = "polkadot-primitives"
 version = "0.7.32"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#682af31e1d28b615a57cef1a6225671ffdedfb19"
+source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#849b60c8aaeac3cc983560c6e12093163a1436e5"
 dependencies = [
  "bitvec",
  "parity-scale-codec",
@@ -4654,7 +4654,7 @@ dependencies = [
 [[package]]
 name = "polkadot-rpc"
 version = "0.7.32"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#682af31e1d28b615a57cef1a6225671ffdedfb19"
+source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#849b60c8aaeac3cc983560c6e12093163a1436e5"
 dependencies = [
  "jsonrpc-core",
  "pallet-transaction-payment-rpc",
@@ -4672,7 +4672,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime"
 version = "0.7.32"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#682af31e1d28b615a57cef1a6225671ffdedfb19"
+source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#849b60c8aaeac3cc983560c6e12093163a1436e5"
 dependencies = [
  "bitvec",
  "frame-executive 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=bkchr-cumulus-branch)",
@@ -4731,7 +4731,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-common"
 version = "0.7.32"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#682af31e1d28b615a57cef1a6225671ffdedfb19"
+source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#849b60c8aaeac3cc983560c6e12093163a1436e5"
 dependencies = [
  "bitvec",
  "frame-support 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=bkchr-cumulus-branch)",
@@ -4761,7 +4761,7 @@ dependencies = [
 [[package]]
 name = "polkadot-service"
 version = "0.7.32"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#682af31e1d28b615a57cef1a6225671ffdedfb19"
+source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#849b60c8aaeac3cc983560c6e12093163a1436e5"
 dependencies = [
  "frame-benchmarking 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=bkchr-cumulus-branch)",
  "frame-system-rpc-runtime-api 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=bkchr-cumulus-branch)",
@@ -4819,7 +4819,7 @@ dependencies = [
 [[package]]
 name = "polkadot-statement-table"
 version = "0.7.32"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#682af31e1d28b615a57cef1a6225671ffdedfb19"
+source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#849b60c8aaeac3cc983560c6e12093163a1436e5"
 dependencies = [
  "parity-scale-codec",
  "polkadot-primitives",
@@ -4829,7 +4829,7 @@ dependencies = [
 [[package]]
 name = "polkadot-validation"
 version = "0.7.32"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#682af31e1d28b615a57cef1a6225671ffdedfb19"
+source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#849b60c8aaeac3cc983560c6e12093163a1436e5"
 dependencies = [
  "bitvec",
  "derive_more 0.14.1",
@@ -9712,7 +9712,7 @@ dependencies = [
 [[package]]
 name = "westend-runtime"
 version = "0.7.32"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#682af31e1d28b615a57cef1a6225671ffdedfb19"
+source = "git+https://github.com/paritytech/polkadot?branch=bkchr-cumulus-branch#849b60c8aaeac3cc983560c6e12093163a1436e5"
 dependencies = [
  "bitvec",
  "frame-executive 2.0.0-dev (git+https://github.com/paritytech/substrate?branch=bkchr-cumulus-branch)",
