@@ -27,10 +27,10 @@ use serde_json::Value;
 use sp_arithmetic::traits::SaturatedConversion;
 use sp_runtime::generic;
 use sp_version::RuntimeVersion;
-use std::io::Read;
 use std::{
 	convert::TryInto,
 	env, fs, io, net,
+	io::Read,
 	path::PathBuf,
 	process::{Child, Command, Stdio},
 	thread,
