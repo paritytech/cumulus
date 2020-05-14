@@ -29,6 +29,7 @@ use serde_json::Value;
 use sp_arithmetic::traits::SaturatedConversion;
 use sp_runtime::generic;
 use sp_version::RuntimeVersion;
+use std::collections::HashSet;
 use std::{
 	convert::TryInto,
 	env, fs, io,
@@ -205,7 +206,7 @@ async fn wait_for_tcp<A: net::ToSocketAddrs + std::fmt::Display>(address: A) {
 			Ok(_) => break,
 			Err(err) => {
 				eprintln!("Waiting for {} to be up ({})...", address, err);
-				sleep(Duration::from_secs(1)).await;
+				sleep(Duration::from_secs(2)).await;
 			}
 		}
 	}
@@ -372,6 +373,8 @@ async fn integration_test() {
 			.stderr(Stdio::piped())
 			.arg("--base-path")
 			.arg(cumulus_dir.path())
+			.arg("--unsafe-rpc-expose")
+			.arg("--rpc-port=9935")
 			.arg("--")
 			.arg(format!(
 				"--bootnodes=/ip4/127.0.0.1/tcp/30333/p2p/{}",
@@ -383,20 +386,33 @@ async fn integration_test() {
 			))
 			.spawn()
 			.unwrap();
-		let mut cumulus_helper = ChildHelper::new("cumulus", &mut cumulus);
+		let cumulus_helper = ChildHelper::new("cumulus", &mut cumulus);
+		wait_for_tcp("127.0.0.1:9935").await;
 
-		// wait for blocks to be generated
-		sleep(Duration::from_secs(60)).await;
+		// connect rpc client to cumulus
+		let transport_client_cumulus =
+			jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:9935");
+		let mut client_cumulus = jsonrpsee::raw::RawClient::new(transport_client_cumulus);
 
-		// check output
-		cumulus_helper.terminate();
-		assert!(
-			cumulus_helper
-				.read_stderr_to_end()
+		// wait for parachain blocks to be produced
+		let number_of_blocks = 4;
+		let mut previous_blocks = HashSet::with_capacity(number_of_blocks);
+		loop {
+			let current_block_hash = Chain::block_hash(&mut client_cumulus, None)
+				.await
 				.unwrap()
-				.contains("best: #2"),
-			"no parachain blocks seems to have been produced",
-		);
+				.unwrap();
+
+			if previous_blocks.insert(current_block_hash) {
+				eprintln!("new parachain block: {}", current_block_hash);
+
+				if previous_blocks.len() == number_of_blocks {
+					break;
+				}
+			}
+
+			sleep(Duration::from_secs(2)).await;
+		}
 	}
 	.fuse();
 
@@ -404,7 +420,7 @@ async fn integration_test() {
 
 	select! {
 		_ = t1 => {
-			panic!("the test took too long");
+			panic!("the test took too long, maybe no parachain blocks have been produced");
 		},
 		_ = t2 => {},
 	}
