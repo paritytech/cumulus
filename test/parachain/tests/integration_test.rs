@@ -173,14 +173,9 @@ fn tcp_port_is_open<A: net::ToSocketAddrs>(address: A) -> bool {
 }
 
 async fn wait_for_tcp<A: net::ToSocketAddrs + std::fmt::Display>(address: A) {
-	loop {
-		match net::TcpStream::connect(&address) {
-			Ok(_) => break,
-			Err(err) => {
-				eprintln!("Waiting for {} to be up ({})...", address, err);
-				sleep(Duration::from_secs(2)).await;
-			}
-		}
+	while let Err(err) = net::TcpStream::connect(&address) {
+		eprintln!("Waiting for {} to be up ({})...", address, err);
+		sleep(Duration::from_secs(2)).await;
 	}
 }
 
