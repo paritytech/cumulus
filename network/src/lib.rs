@@ -74,10 +74,13 @@ where
 		mut data: &[u8],
 	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
 		// If no data is provided the announce is valid.
+		println!("validation 1");
 		if data.is_empty() {
+			println!("validation 2");
 			return Ok(Validation::Success);
 		}
 
+		println!("validation 3");
 		// Check data is a gossip message.
 		let gossip_message = GossipMessage::decode(&mut data).map_err(|_| {
 			Box::new(ClientError::BadJustification(
