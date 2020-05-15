@@ -18,9 +18,9 @@
 #![allow(unused_variables, dead_code)]
 
 use assert_cmd::cargo::cargo_bin;
-use async_std::task::sleep;
+use async_std::{net, task::sleep};
 use codec::Encode;
-use futures::{future::FutureExt, pin_mut, select};
+use futures::{future::FutureExt, join, pin_mut, select};
 use polkadot_primitives::parachain::{Info, Scheduling};
 use polkadot_primitives::Hash as PHash;
 use polkadot_runtime::{Header, OnlyStakingAndClaims, Runtime, SignedExtra, SignedPayload};
@@ -29,12 +29,11 @@ use serde_json::Value;
 use sp_arithmetic::traits::SaturatedConversion;
 use sp_runtime::generic;
 use sp_version::RuntimeVersion;
-use std::collections::HashSet;
 use std::{
+	collections::HashSet,
 	convert::TryInto,
 	env, fs,
 	io::Read,
-	net,
 	path::PathBuf,
 	process::{Child, Command, Stdio},
 	thread,
@@ -44,6 +43,7 @@ use substrate_test_runtime_client::AccountKeyring::Alice;
 use tempfile::tempdir;
 
 static POLKADOT_ARGS: &[&str] = &["polkadot", "--chain=res/polkadot_chainspec.json"];
+static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TEST_ALLOWED_TIME");
 
 jsonrpsee::rpc_api! {
 	Author {
@@ -169,7 +169,7 @@ impl<'a> ChildHelper<'a> {
 }
 
 async fn wait_for_tcp<A: net::ToSocketAddrs + std::fmt::Display>(address: A) {
-	while let Err(err) = net::TcpStream::connect(&address) {
+	while let Err(err) = net::TcpStream::connect(&address).await {
 		eprintln!("Waiting for {} to be up ({})...", address, err);
 		sleep(Duration::from_secs(2)).await;
 	}
@@ -179,15 +179,20 @@ async fn wait_for_tcp<A: net::ToSocketAddrs + std::fmt::Display>(address: A) {
 #[ignore]
 async fn integration_test() {
 	assert!(
-		!net::TcpStream::connect("127.0.0.1:9933").is_ok(),
-		"tcp port is already open 127.0.0.1:9933, this test cannot be run",
+		!net::TcpStream::connect("127.0.0.1:27015").await.is_ok(),
+		"tcp port is already open 127.0.0.1:27015, this test cannot be run",
 	);
 	assert!(
-		!net::TcpStream::connect("127.0.0.1:9934").is_ok(),
-		"tcp port is already open 127.0.0.1:9934, this test cannot be run",
+		!net::TcpStream::connect("127.0.0.1:27016").await.is_ok(),
+		"tcp port is already open 127.0.0.1:27016, this test cannot be run",
 	);
 
-	let t1 = sleep(Duration::from_secs(60 * 10)).fuse();
+	let t1 = sleep(Duration::from_secs(
+		INTEGRATION_TEST_ALLOWED_TIME
+			.and_then(|x| x.parse().ok())
+			.unwrap_or(600),
+	))
+	.fuse();
 	let t2 = async {
 		// start alice
 		let polkadot_alice_dir = tempdir().unwrap();
@@ -199,10 +204,10 @@ async fn integration_test() {
 			.arg(polkadot_alice_dir.path())
 			.arg("--alice")
 			.arg("--unsafe-rpc-expose")
+			.arg("--rpc-port=27015")
 			.spawn()
 			.unwrap();
 		let polkadot_alice_helper = ChildHelper::new("alice", &mut polkadot_alice);
-		wait_for_tcp("127.0.0.1:9933").await;
 
 		// start bob
 		let polkadot_bob_dir = tempdir().unwrap();
@@ -214,11 +219,16 @@ async fn integration_test() {
 			.arg(polkadot_bob_dir.path())
 			.arg("--bob")
 			.arg("--unsafe-rpc-expose")
-			.arg("--rpc-port=9934")
+			.arg("--rpc-port=27016")
 			.spawn()
 			.unwrap();
 		let polkadot_bob_helper = ChildHelper::new("bob", &mut polkadot_bob);
-		wait_for_tcp("127.0.0.1:9934").await;
+
+		// wait for both nodes to be up and running
+		join!(
+			wait_for_tcp("127.0.0.1:27015"),
+			wait_for_tcp("127.0.0.1:27016")
+		);
 
 		// export genesis state
 		let cmd = Command::new(cargo_bin("cumulus-test-parachain-collator"))
@@ -231,10 +241,10 @@ async fn integration_test() {
 
 		// connect RPC clients
 		let transport_client_alice =
-			jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:9933");
+			jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:27015");
 		let mut client_alice = jsonrpsee::raw::RawClient::new(transport_client_alice);
 		let transport_client_bob =
-			jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:9934");
+			jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:27016");
 		let mut client_bob = jsonrpsee::raw::RawClient::new(transport_client_bob);
 
 		// retrieve nodes network id
@@ -337,7 +347,7 @@ async fn integration_test() {
 			.arg("--base-path")
 			.arg(cumulus_dir.path())
 			.arg("--unsafe-rpc-expose")
-			.arg("--rpc-port=9935")
+			.arg("--rpc-port=27017")
 			.arg("--")
 			.arg(format!(
 				"--bootnodes=/ip4/127.0.0.1/tcp/30333/p2p/{}",
@@ -350,11 +360,11 @@ async fn integration_test() {
 			.spawn()
 			.unwrap();
 		let cumulus_helper = ChildHelper::new("cumulus", &mut cumulus);
-		wait_for_tcp("127.0.0.1:9935").await;
+		wait_for_tcp("127.0.0.1:27017").await;
 
 		// connect rpc client to cumulus
 		let transport_client_cumulus =
-			jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:9935");
+			jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:27017");
 		let mut client_cumulus = jsonrpsee::raw::RawClient::new(transport_client_cumulus);
 
 		// wait for parachain blocks to be produced
