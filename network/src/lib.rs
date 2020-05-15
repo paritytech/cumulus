@@ -39,7 +39,7 @@ use futures::future::FutureExt;
 use futures::task::Spawn;
 use log::{error, trace};
 
-use std::{marker::PhantomData, sync::Arc};
+use std::{marker::PhantomData, sync::{Arc, Mutex}};
 
 /// Validate that data is a valid justification from a relay-chain validator that the block is a
 /// valid parachain-block candidate.
@@ -147,8 +147,6 @@ where
 		Ok(Validation::Success)
 	}
 }
-
-use std::sync::Mutex;
 
 pub struct DelayedBlockAnnounceValidator<B: BlockT>(Arc<Mutex<Option<Box<dyn BlockAnnounceValidator<B> + Send>>>>);
 
