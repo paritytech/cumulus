@@ -295,8 +295,11 @@ pub struct CollatorBuilder<Block: BlockT, PF, BI, Backend, Client> {
 	para_id: ParaId,
 	client: Arc<Client>,
 	announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
+	delayed_block_announce_validator: DelayedBlockAnnounceValidator<Block>,
 	_marker: PhantomData<(Block, Backend)>,
 }
+
+use cumulus_network::{DelayedBlockAnnounceValidator, JustifiedBlockAnnounceValidator};
 
 impl<Block: BlockT, PF, BI, Backend, Client>
 	CollatorBuilder<Block, PF, BI, Backend, Client>
@@ -309,6 +312,7 @@ impl<Block: BlockT, PF, BI, Backend, Client>
 		para_id: ParaId,
 		client: Arc<Client>,
 		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
+		delayed_block_announce_validator: DelayedBlockAnnounceValidator<Block>,
 	) -> Self {
 		Self {
 			proposer_factory,
@@ -317,6 +321,7 @@ impl<Block: BlockT, PF, BI, Backend, Client>
 			para_id,
 			client,
 			announce_block,
+			delayed_block_announce_validator,
 			_marker: PhantomData,
 		}
 	}
@@ -351,6 +356,10 @@ where
 		Spawner: Spawn + Clone + Send + Sync + 'static,
 		Extrinsic: codec::Codec + Send + Sync + 'static,
 	{
+		self.delayed_block_announce_validator.set(
+			Box::new(JustifiedBlockAnnounceValidator::new(Vec::new(), polkadot_client.clone())),
+		);
+
 		let follow =
 			match cumulus_consensus::follow_polkadot(self.para_id, self.client, polkadot_client) {
 				Ok(follow) => follow,
