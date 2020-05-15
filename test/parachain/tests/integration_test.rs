@@ -205,6 +205,7 @@ async fn integration_test() {
 			.arg("--alice")
 			.arg("--unsafe-rpc-expose")
 			.arg("--rpc-port=27015")
+			.arg("--port=27115")
 			.spawn()
 			.unwrap();
 		let polkadot_alice_helper = ChildHelper::new("alice", &mut polkadot_alice);
@@ -220,6 +221,7 @@ async fn integration_test() {
 			.arg("--bob")
 			.arg("--unsafe-rpc-expose")
 			.arg("--rpc-port=27016")
+			.arg("--port=27116")
 			.spawn()
 			.unwrap();
 		let polkadot_bob_helper = ChildHelper::new("bob", &mut polkadot_bob);
@@ -348,13 +350,14 @@ async fn integration_test() {
 			.arg(cumulus_dir.path())
 			.arg("--unsafe-rpc-expose")
 			.arg("--rpc-port=27017")
+			.arg("--port=27117")
 			.arg("--")
 			.arg(format!(
-				"--bootnodes=/ip4/127.0.0.1/tcp/30333/p2p/{}",
+				"--bootnodes=/ip4/127.0.0.1/tcp/27115/p2p/{}",
 				polkadot_alice_id
 			))
 			.arg(format!(
-				"--bootnodes=/ip4/127.0.0.1/tcp/50666/p2p/{}",
+				"--bootnodes=/ip4/127.0.0.1/tcp/27116/p2p/{}",
 				polkadot_bob_id
 			))
 			.spawn()
