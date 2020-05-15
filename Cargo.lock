@@ -924,6 +924,7 @@ dependencies = [
  "sp-inherents",
  "sp-io",
  "sp-runtime",
+ "sp-std",
  "sp-version",
  "substrate-test-runtime-client",
 ]
@@ -938,6 +939,7 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-primitives",
  "sp-inherents",
+ "sp-runtime",
  "sp-std",
 ]
 
@@ -1024,6 +1026,7 @@ dependencies = [
 name = "cumulus-test-parachain-runtime"
 version = "0.1.0"
 dependencies = [
+ "cumulus-parachain-upgrade",
  "cumulus-runtime",
  "frame-executive",
  "frame-support",
