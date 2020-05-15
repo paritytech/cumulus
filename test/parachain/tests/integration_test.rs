@@ -168,10 +168,6 @@ impl<'a> ChildHelper<'a> {
 	}
 }
 
-fn tcp_port_is_open<A: net::ToSocketAddrs>(address: A) -> bool {
-	net::TcpStream::connect(&address).is_ok()
-}
-
 async fn wait_for_tcp<A: net::ToSocketAddrs + std::fmt::Display>(address: A) {
 	while let Err(err) = net::TcpStream::connect(&address) {
 		eprintln!("Waiting for {} to be up ({})...", address, err);
@@ -183,11 +179,11 @@ async fn wait_for_tcp<A: net::ToSocketAddrs + std::fmt::Display>(address: A) {
 #[ignore]
 async fn integration_test() {
 	assert!(
-		!tcp_port_is_open("127.0.0.1:9933"),
+		!net::TcpStream::connect("127.0.0.1:9933").is_ok(),
 		"tcp port is already open 127.0.0.1:9933, this test cannot be run",
 	);
 	assert!(
-		!tcp_port_is_open("127.0.0.1:9934"),
+		!net::TcpStream::connect("127.0.0.1:9934").is_ok(),
 		"tcp port is already open 127.0.0.1:9934, this test cannot be run",
 	);
 
