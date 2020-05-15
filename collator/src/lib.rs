@@ -16,7 +16,9 @@
 
 //! Cumulus Collator implementation for Substrate.
 
-use cumulus_network::WaitToAnnounce;
+use cumulus_network::{
+	DelayedBlockAnnounceValidator, JustifiedBlockAnnounceValidator, WaitToAnnounce,
+};
 use cumulus_primitives::{
 	inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER as VFP_IDENT,
 	validation_function_params::ValidationFunctionParams,
@@ -298,8 +300,6 @@ pub struct CollatorBuilder<Block: BlockT, PF, BI, Backend, Client> {
 	delayed_block_announce_validator: DelayedBlockAnnounceValidator<Block>,
 	_marker: PhantomData<(Block, Backend)>,
 }
-
-use cumulus_network::{DelayedBlockAnnounceValidator, JustifiedBlockAnnounceValidator};
 
 impl<Block: BlockT, PF, BI, Backend, Client>
 	CollatorBuilder<Block, PF, BI, Backend, Client>
