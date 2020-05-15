@@ -6,12 +6,12 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cecton-use-custom-block-announce-validator", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "cecton-use-custom-block-announce-validator", default-features = false }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", default-features = false }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "cecton-use-custom-block-announce-validator", default-features = false }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-use-custom-block-announce-validator", default-features = false }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch", default-features = false }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch", default-features = false }
 
 # Other dependencies
 codec = { package = "parity-scale-codec", version = "1.0.5", default-features = false, features = [ "derive" ] }

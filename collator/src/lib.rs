@@ -511,6 +511,7 @@ mod tests {
 		let _ = env_logger::try_init();
 		let spawner = futures::executor::ThreadPool::new().unwrap();
 		let announce_block = |_, _| ();
+		let block_announce_validator = DelayedBlockAnnounceValidator::new();
 
 		let builder = CollatorBuilder::new(
 			DummyFactory,
@@ -519,6 +520,7 @@ mod tests {
 			id,
 			Arc::new(TestClientBuilder::new().build()),
 			Arc::new(announce_block),
+			block_announce_validator,
 		);
 		let context = builder
 			.build(
