@@ -31,12 +31,10 @@ use sp_runtime::generic;
 use sp_version::RuntimeVersion;
 use std::{
 	collections::HashSet,
-	convert::TryInto,
 	env, fs,
 	io::Read,
 	path::PathBuf,
 	process::{Child, Command, Stdio},
-	thread,
 	time::Duration,
 };
 use substrate_test_runtime_client::AccountKeyring::Alice;
