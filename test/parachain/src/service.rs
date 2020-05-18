@@ -80,7 +80,7 @@ pub fn run_collator(
 		.unwrap();
 
 	let block_announce_validator = DelayedBlockAnnounceValidator::new();
-	let r = block_announce_validator.clone();
+	let block_announce_validator_copy = block_announce_validator.clone();
 	let service = builder
 		.with_finality_proof_provider(|client, backend| {
 			// GenesisAuthoritySetProvider is implemented for StorageAndProofProvider
@@ -88,7 +88,7 @@ pub fn run_collator(
 			Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
 		})?
 		.with_block_announce_validator(|_client| {
-			Box::new(block_announce_validator)
+			Box::new(block_announce_validator_copy)
 		})?
 		.build()?;
 
@@ -110,14 +110,14 @@ pub fn run_collator(
 		crate::PARA_ID,
 		client,
 		announce_block,
-		r,
+		block_announce_validator,
 	);
 
 	let polkadot_future = polkadot_collator::start_collator(
-			builder,
-			crate::PARA_ID,
-			key,
-			polkadot_config,
+		builder,
+		crate::PARA_ID,
+		key,
+		polkadot_config,
 	).map(|_| ());
 	service.spawn_essential_task("polkadot", polkadot_future);
 
