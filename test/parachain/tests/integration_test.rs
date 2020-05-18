@@ -31,12 +31,10 @@ use sp_runtime::generic;
 use sp_version::RuntimeVersion;
 use std::{
 	collections::HashSet,
-	convert::TryInto,
 	env, fs,
 	io::Read,
 	path::PathBuf,
 	process::{Child, Command, Stdio},
-	thread,
 	time::Duration,
 };
 use substrate_test_runtime_client::AccountKeyring::Alice;
@@ -133,35 +131,6 @@ impl<'a> ChildHelper<'a> {
 			}
 		}
 
-		#[cfg(unix)]
-		{
-			use nix::sys::signal::{kill, Signal::SIGTERM};
-			use nix::unistd::Pid;
-
-			kill(Pid::from_raw(self.child.id().try_into().unwrap()), SIGTERM).unwrap();
-
-			let mut tries = 30;
-
-			let success = loop {
-				tries -= 1;
-
-				match self.child.try_wait() {
-					Ok(Some(_)) => break true,
-					Ok(None) if tries == 0 => break false,
-					Ok(None) => thread::sleep(Duration::from_secs(1)),
-					Err(err) => {
-						eprintln!("could not wait for child process to finish: {}", err);
-						break false;
-					}
-				}
-			};
-
-			if !success {
-				let _ = self.child.kill();
-			}
-		}
-
-		#[cfg(not(unix))]
 		let _ = self.child.kill();
 
 		let _ = self.child.wait();
