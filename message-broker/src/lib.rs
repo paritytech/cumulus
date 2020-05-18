@@ -20,21 +20,27 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::Encode;
 use cumulus_primitives::{
 	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER},
 	well_known_keys, DownwardMessage, DownwardMessageHandler, GenericUpwardMessage,
 	UpwardMessageOrigin, UpwardMessageSender,
 };
 use frame_support::{
-	decl_module, storage, traits::Get,
+	decl_event, decl_module, storage,
+	traits::Get,
 	weights::{DispatchClass, Weight},
 };
 use frame_system::ensure_none;
 use sp_inherents::{InherentData, InherentIdentifier, MakeFatalError, ProvideInherent};
-use codec::Encode;
+use sp_runtime::traits::Hash;
+use sp_std::vec::Vec;
 
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {
+	/// Event type used by the runtime.
+	type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
+
 	/// The downward message handlers that will be informed when a message is received.
 	type DownwardMessageHandlers: DownwardMessageHandler;
 
@@ -42,8 +48,17 @@ pub trait Trait: frame_system::Trait {
 	type UpwardMessage: codec::Codec;
 }
 
+decl_event! {
+	pub enum Event<T> where Hash = <T as frame_system::Trait>::Hash {
+		/// An upward message was sent to the relay chain.
+		///
+		/// The hash corresponds to the hash of the encoded upward message.
+		UpwardMessageSent(Hash),
+	}
+}
+
 decl_module! {
-	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+	pub struct Module<T: Trait> for enum Call where origin: T::Origin, system = frame_system {
 		/// Executes the given downward messages by calling the message handlers.
 		///
 		/// The origin of this call needs to be `None` as this is an inherent.
@@ -58,14 +73,22 @@ decl_module! {
 
 			T::DbWeight::get().writes(1)
 		}
+
+		fn deposit_event() = default;
 	}
 }
 
 impl<T: Trait> UpwardMessageSender<T::UpwardMessage> for Module<T> {
 	fn send_upward_message(msg: &T::UpwardMessage, origin: UpwardMessageOrigin) -> Result<(), ()> {
 		//TODO: check fee schedule
-		let msg = GenericUpwardMessage { origin, data: msg.encode() };
+		let data = msg.encode();
+		let data_hash = T::Hashing::hash(&data);
+
+		let msg = GenericUpwardMessage { origin, data };
 		sp_io::storage::append(well_known_keys::UPWARD_MESSAGES, msg.encode());
+
+		Self::deposit_event(RawEvent::UpwardMessageSent(data_hash));
+
 		Ok(())
 	}
 }

@@ -887,6 +887,8 @@ dependencies = [
  "parity-scale-codec",
  "sp-inherents",
  "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -1026,8 +1028,11 @@ dependencies = [
 name = "cumulus-test-parachain-runtime"
 version = "0.1.0"
 dependencies = [
+ "cumulus-message-broker",
  "cumulus-parachain-upgrade",
+ "cumulus-primitives",
  "cumulus-runtime",
+ "cumulus-upward-message",
  "frame-executive",
  "frame-support",
  "frame-system",

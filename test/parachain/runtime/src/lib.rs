@@ -35,6 +35,8 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+mod message_example;
+
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, parameter_types, traits::Randomness, weights::Weight, StorageValue,
@@ -235,6 +237,18 @@ impl cumulus_parachain_upgrade::Trait for Runtime {
 	type OnValidationFunctionParams = ();
 }
 
+impl cumulus_message_broker::Trait for Runtime {
+	type Event = Event;
+	type DownwardMessageHandlers = ();
+	type UpwardMessage = cumulus_upward_message::WestendUpwardMessage;
+}
+
+impl message_example::Trait for Runtime {
+	type Event = Event;
+	type UpwardMessageSender = MessageBroker;
+	type UpwardMessage = cumulus_upward_message::WestendUpwardMessage;
+}
+
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
@@ -248,6 +262,8 @@ construct_runtime! {
 		Sudo: pallet_sudo::{Module, Call, Storage, Config<T>, Event<T>},
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
+		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
+		TokenDealer: message_example::{Module, Call, Event},
 	}
 }
 

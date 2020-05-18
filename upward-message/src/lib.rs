@@ -20,6 +20,8 @@
 //! type is different for each of them. To support all of them, Cumulus provides
 //! traits to write upward message generic code.
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
 use polkadot_core_primitives::{Balance, AccountId};
 
 mod polkadot;

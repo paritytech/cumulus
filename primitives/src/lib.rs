@@ -18,6 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub use polkadot_core_primitives as relay_chain;
 pub use polkadot_core_primitives::DownwardMessage;
 /// A generic upward message from a Parachain to the Relay Chain.
 ///
