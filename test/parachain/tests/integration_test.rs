@@ -21,6 +21,7 @@ use assert_cmd::cargo::cargo_bin;
 use async_std::{net, task::sleep};
 use codec::Encode;
 use futures::{future::FutureExt, join, pin_mut, select};
+use jsonrpsee::{raw::RawClient, transport::http::HttpTransportClient};
 use polkadot_primitives::parachain::{Info, Scheduling};
 use polkadot_primitives::Hash as PHash;
 use polkadot_runtime::{Header, OnlyStakingAndClaims, Runtime, SignedExtra, SignedPayload};
@@ -140,6 +141,25 @@ impl<'a> ChildHelper<'a> {
 async fn wait_for_tcp<A: net::ToSocketAddrs + std::fmt::Display>(address: A) {
 	while let Err(err) = net::TcpStream::connect(&address).await {
 		eprintln!("Waiting for {} to be up ({})...", address, err);
+		sleep(Duration::from_secs(2)).await;
+	}
+}
+
+/// wait for parachain blocks to be produced
+async fn wait_for_blocks(number_of_blocks: usize, mut client: &mut RawClient<HttpTransportClient>) {
+	let mut previous_blocks = HashSet::with_capacity(number_of_blocks);
+
+	loop {
+		let current_block_hash = Chain::block_hash(&mut client, None).await.unwrap().unwrap();
+
+		if previous_blocks.insert(current_block_hash) {
+			eprintln!("new parachain block: {}", current_block_hash);
+
+			if previous_blocks.len() == number_of_blocks {
+				break;
+			}
+		}
+
 		sleep(Duration::from_secs(2)).await;
 	}
 }
@@ -338,27 +358,10 @@ async fn integration_test() {
 		// connect rpc client to cumulus
 		let transport_client_cumulus_charlie =
 			jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:27017");
-		let mut client_cumulus_charlie = jsonrpsee::raw::RawClient::new(transport_client_cumulus_charlie);
+		let mut client_cumulus_charlie =
+			jsonrpsee::raw::RawClient::new(transport_client_cumulus_charlie);
 
-		// wait for parachain blocks to be produced
-		let number_of_blocks = 4;
-		let mut previous_blocks = HashSet::with_capacity(number_of_blocks);
-		loop {
-			let current_block_hash = Chain::block_hash(&mut client_cumulus_charlie, None)
-				.await
-				.unwrap()
-				.unwrap();
-
-			if previous_blocks.insert(current_block_hash) {
-				eprintln!("new parachain block: {}", current_block_hash);
-
-				if previous_blocks.len() == number_of_blocks {
-					break;
-				}
-			}
-
-			sleep(Duration::from_secs(2)).await;
-		}
+		wait_for_blocks(4, &mut client_cumulus_charlie).await;
 
 		// run cumulus dave
 		let cumulus_dave_dir = tempdir().unwrap();
@@ -390,25 +393,7 @@ async fn integration_test() {
 			jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:27018");
 		let mut client_cumulus_dave = jsonrpsee::raw::RawClient::new(transport_client_cumulus_dave);
 
-		// wait for parachain blocks to be produced
-		let number_of_blocks = 4;
-		let mut previous_blocks = HashSet::with_capacity(number_of_blocks);
-		loop {
-			let current_block_hash = Chain::block_hash(&mut client_cumulus_dave, None)
-				.await
-				.unwrap()
-				.unwrap();
-
-			if previous_blocks.insert(current_block_hash) {
-				eprintln!("new parachain block: {}", current_block_hash);
-
-				if previous_blocks.len() == number_of_blocks {
-					break;
-				}
-			}
-
-			sleep(Duration::from_secs(2)).await;
-		}
+		wait_for_blocks(4, &mut client_cumulus_dave).await;
 	}
 	.fuse();
 
