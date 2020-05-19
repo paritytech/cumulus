@@ -174,10 +174,9 @@ impl<B: BlockT> BlockAnnounceValidator<B> for DelayedBlockAnnounceValidator<B>
 		header: &B::Header,
 		data: &[u8],
 	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
-		match *self.0.lock() {
-			Some(ref mut validator) => validator.validate(header, data),
-			None => panic!("block announce validator not set!"),
-		}
+		self.0.lock().as_mut()
+			.expect("BlockAnnounceValidator is set before validating the first announcement; qed")
+			.validate(header, data)
 	}
 }
 
