@@ -933,6 +933,7 @@ dependencies = [
  "futures 0.3.4",
  "log 0.4.8",
  "parity-scale-codec",
+ "parking_lot 0.10.2",
  "polkadot-collator",
  "polkadot-network",
  "polkadot-primitives",
