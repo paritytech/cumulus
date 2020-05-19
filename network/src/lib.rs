@@ -39,7 +39,8 @@ use futures::future::FutureExt;
 use futures::task::Spawn;
 use log::{error, trace};
 
-use std::{marker::PhantomData, sync::{Arc, Mutex}};
+use std::{marker::PhantomData, sync::Arc};
+use parking_lot::Mutex;
 
 /// Validate that data is a valid justification from a relay-chain validator that the block is a
 /// valid parachain-block candidate.
@@ -148,6 +149,8 @@ where
 	}
 }
 
+/// A `BlockAnnounceValidator` that will be able to validate data when its internal
+/// `BlockAnnounceValidator` is set.
 pub struct DelayedBlockAnnounceValidator<B: BlockT>(Arc<Mutex<Option<Box<dyn BlockAnnounceValidator<B> + Send>>>>);
 
 impl<B: BlockT> DelayedBlockAnnounceValidator<B> {
@@ -156,7 +159,7 @@ impl<B: BlockT> DelayedBlockAnnounceValidator<B> {
 	}
 
 	pub fn set(&self, validator: Box<dyn BlockAnnounceValidator<B> + Send>) {
-		*self.0.lock().unwrap() = Some(validator);
+		*self.0.lock() = Some(validator);
 	}
 }
 
@@ -166,17 +169,15 @@ impl<B: BlockT> Clone for DelayedBlockAnnounceValidator<B> {
 	}
 }
 
-impl<B: BlockT> BlockAnnounceValidator<B> for DelayedBlockAnnounceValidator<B>
-{
+impl<B: BlockT> BlockAnnounceValidator<B> for DelayedBlockAnnounceValidator<B> {
 	fn validate(
 		&mut self,
 		header: &B::Header,
 		data: &[u8],
 	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
-		match *self.0.lock().unwrap() {
-			Some(ref mut validator) => validator.validate(header, data),
-			None => panic!("block announce validator not set!"),
-		}
+		self.0.lock().as_mut()
+			.expect("BlockAnnounceValidator is set before validating the first announcement; qed")
+			.validate(header, data)
 	}
 }
 
