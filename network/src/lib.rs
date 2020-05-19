@@ -167,8 +167,7 @@ impl<B: BlockT> Clone for DelayedBlockAnnounceValidator<B> {
 	}
 }
 
-impl<B: BlockT> BlockAnnounceValidator<B> for DelayedBlockAnnounceValidator<B>
-{
+impl<B: BlockT> BlockAnnounceValidator<B> for DelayedBlockAnnounceValidator<B> {
 	fn validate(
 		&mut self,
 		header: &B::Header,
