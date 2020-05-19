@@ -149,6 +149,19 @@ where
 	}
 }
 
+/// A `BlockAnnounceValidator` that will be able to validate data when its internal
+/// `BlockAnnounceValidator` is set.
+///
+/// This is required for now because the `BlockAnnounceValidator` is set during the build of a
+/// `Service` (see substrate: `client/service/builder.rs`) and our `JustifiedBlockAnnounceValidator`
+/// requires a Polkadot client but we get this client only when the Polkadot service is created
+/// (chicken and egg problem).
+///
+/// One way to solve this would be to split the `start_collator` into a "prepare" step where we
+/// receive the service with the client and a "build/start" step where we finalize and run the
+/// collator. Unfortunately the type of the service may vary (Polkadot, Kusama, Westend) and it
+/// can't be dynamically dispatched because the services (and the client) have `Self` as type
+/// parameters in the supertraits (or where-clauses).
 pub struct DelayedBlockAnnounceValidator<B: BlockT>(Arc<Mutex<Option<Box<dyn BlockAnnounceValidator<B> + Send>>>>);
 
 impl<B: BlockT> DelayedBlockAnnounceValidator<B> {
