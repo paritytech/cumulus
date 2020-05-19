@@ -187,6 +187,8 @@ where
 			}
 		};
 
+		println!("{:?}", last_head);
+
 		let proposer_future = factory
 			.lock()
 			.init(&last_head.header);

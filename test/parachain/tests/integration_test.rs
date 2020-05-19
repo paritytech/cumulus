@@ -409,6 +409,7 @@ async fn integration_test() {
 
 			sleep(Duration::from_secs(2)).await;
 		}
+		panic!("boo!");
 	}
 	.fuse();
 
