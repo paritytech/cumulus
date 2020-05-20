@@ -362,7 +362,6 @@ where
 		self.delayed_block_announce_validator.set(
 			Box::new(JustifiedBlockAnnounceValidator::new(Vec::new(), polkadot_client.clone())),
 		);
-		let _ = polkadot_network.client();
 
 		let follow =
 			match cumulus_consensus::follow_polkadot(self.para_id, self.client, polkadot_client) {
@@ -388,7 +387,6 @@ where
 			self.block_import,
 			Arc::new(spawner),
 			self.announce_block,
-			polkadot_client,
 		))
 	}
 }
