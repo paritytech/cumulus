@@ -107,10 +107,20 @@ where
 		} = gossip_statement;
 
 		// Check that the relay chain parent of the block is the relay chain head
-		let best_hash = self.polkadot_client.info().best_hash;
+		let best_number = self.polkadot_client.info().best_number;
 
-		if relay_chain_leaf != best_hash {
-			return Ok(Validation::Failure);
+		match self.polkadot_client.number(relay_chain_leaf) {
+			Err(err) => {
+				return Err(Box::new(ClientError::Backend(format!(
+					"could not find block number for {}: {}",
+					relay_chain_leaf, err,
+				))));
+			},
+			Ok(Some(x)) if x == best_number => {},
+			Ok(None) => {
+				return Err(Box::new(ClientError::UnknownBlock(relay_chain_leaf.to_string())));
+			},
+			Ok(Some(_)) => return Ok(Validation::Failure),
 		}
 
 		let signing_context = self
