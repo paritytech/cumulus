@@ -70,7 +70,6 @@ pub struct Collator<Block: BlockT, PF, BI> {
 	collator_network: Arc<dyn CollatorNetwork>,
 	block_import: Arc<Mutex<BI>>,
 	wait_to_announce: Arc<Mutex<WaitToAnnounce<Block>>>,
-	polkadot_client: Arc<dyn HeaderBackend<PBlock>>,
 }
 
 impl<Block: BlockT, PF, BI> Collator<Block, PF, BI> {
@@ -82,7 +81,6 @@ impl<Block: BlockT, PF, BI> Collator<Block, PF, BI> {
 		block_import: BI,
 		spawner: Arc<dyn Spawn + Send + Sync>,
 		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
-		polkadot_client: Arc<dyn HeaderBackend<PBlock>>,
 	) -> Self {
 		let collator_network = Arc::new(collator_network);
 		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(
@@ -98,7 +96,6 @@ impl<Block: BlockT, PF, BI> Collator<Block, PF, BI> {
 			collator_network,
 			block_import: Arc::new(Mutex::new(block_import)),
 			wait_to_announce,
-			polkadot_client,
 		}
 	}
 
@@ -144,7 +141,6 @@ impl<Block: BlockT, PF, BI> Clone for Collator<Block, PF, BI> {
 			collator_network: self.collator_network.clone(),
 			block_import: self.block_import.clone(),
 			wait_to_announce: self.wait_to_announce.clone(),
-			polkadot_client: self.polkadot_client.clone(),
 		}
 	}
 }
@@ -192,7 +188,8 @@ where
 			.init(&last_head.header);
 
 		let wait_to_announce = self.wait_to_announce.clone();
-		let best_hash = self.polkadot_client.info().best_hash;
+
+		//let best_hash = self.collator_network.info();
 
 		Box::pin(async move {
 			let parent_state_root = *last_head.header.state_root();
@@ -282,13 +279,11 @@ where
 				parachain::HeadData(head_data.encode()),
 			);
 
-			if relay_chain_parent == best_hash {
-				wait_to_announce.lock().wait_to_announce(
-					hash,
-					relay_chain_parent,
-					encoded_header,
-				);
-			}
+			wait_to_announce.lock().wait_to_announce(
+				hash,
+				relay_chain_parent,
+				encoded_header,
+			);
 
 			trace!(target: "cumulus-collator", "Produced candidate: {:?}", candidate);
 
@@ -367,9 +362,10 @@ where
 		self.delayed_block_announce_validator.set(
 			Box::new(JustifiedBlockAnnounceValidator::new(Vec::new(), polkadot_client.clone())),
 		);
+		let _ = polkadot_network.client();
 
 		let follow =
-			match cumulus_consensus::follow_polkadot(self.para_id, self.client, polkadot_client.clone()) {
+			match cumulus_consensus::follow_polkadot(self.para_id, self.client, polkadot_client) {
 				Ok(follow) => follow,
 				Err(e) => {
 					return Err(error!("Could not start following polkadot: {:?}", e));
