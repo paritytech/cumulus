@@ -272,7 +272,7 @@ async fn integration_test() {
 		let tip = 0;
 		let extra: SignedExtra = (
 			OnlyStakingAndClaims,
-			frame_system::CheckVersion::<Runtime>::new(),
+			frame_system::CheckSpecVersion::<Runtime>::new(),
 			frame_system::CheckGenesis::<Runtime>::new(),
 			frame_system::CheckEra::<Runtime>::from(generic::Era::mortal(period, current_block)),
 			frame_system::CheckNonce::<Runtime>::from(nonce),
