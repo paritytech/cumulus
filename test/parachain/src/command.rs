@@ -34,6 +34,7 @@ use sp_runtime::{
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
+use polkadot_parachain::primitives::AccountIdConversion;
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> &'static str {
@@ -212,6 +213,7 @@ pub fn run() -> Result<()> {
 			);
 
 			polkadot_cli.base_path = cli.run.base_path()?.map(|x| x.join("polkadot"));
+			let parachain_account = AccountIdConversion::<polkadot_primitives::AccountId>::into_account(&crate::PARA_ID);
 
 			runner.run_node(
 				|config| {
@@ -224,6 +226,7 @@ pub fn run() -> Result<()> {
 					.unwrap();
 
 					info!("Parachain id: {:?}", crate::PARA_ID);
+					info!("Parachain Account: {}", parachain_account);
 
 					crate::service::run_collator(config, key2, polkadot_config)
 				},
@@ -237,6 +240,7 @@ pub fn run() -> Result<()> {
 					.unwrap();
 
 					info!("Parachain id: {:?}", crate::PARA_ID);
+					info!("Parachain Account: {}", parachain_account);
 
 					crate::service::run_collator(config, key, polkadot_config)
 				},

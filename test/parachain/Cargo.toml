@@ -45,6 +45,7 @@ cumulus-collator = { path = "../../collator" }
 
 # Polkadot dependencies
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
 polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
