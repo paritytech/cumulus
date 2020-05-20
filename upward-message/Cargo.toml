@@ -21,3 +21,13 @@ std = [
 	"westend-runtime/std",
 	"polkadot-core-primitives/std",
 ]
+# Should be enabled by when compiling the runtime for WASM.
+#
+# This disables the runtime api of the Polkadot/Kusama/Westend
+# runtimes to not clash with the runtime api of the Parachain when building
+# for WASM.
+runtime-wasm = [
+	"polkadot-runtime/disable-runtime-api",
+	"westend-runtime/disable-runtime-api",
+	"kusama-runtime/disable-runtime-api",
+]

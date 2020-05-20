@@ -102,7 +102,7 @@ pub fn import_queue<Client, Block: BlockT, I, S>(
 	block_import: I,
 	inherent_data_providers: InherentDataProviders,
 	spawner: &S,
-	registry: Option<&prometheus_endpoint::Registry>,
+	registry: Option<&substrate_prometheus_endpoint::Registry>,
 ) -> ClientResult<BasicQueue<Block, I::Transaction>>
 where
 	I: BlockImport<Block, Error = ConsensusError> + Send + Sync + 'static,
