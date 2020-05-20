@@ -19,7 +19,7 @@
 //! Contains message send between collators and logic to process them.
 
 use sp_api::ProvideRuntimeApi;
-use sp_blockchain::Error as ClientError;
+use sp_blockchain::{Error as ClientError, HeaderBackend};
 use sp_consensus::block_validation::{BlockAnnounceValidator, Validation};
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
@@ -66,7 +66,7 @@ impl<B, P> JustifiedBlockAnnounceValidator<B, P> {
 
 impl<B: BlockT, P> BlockAnnounceValidator<B> for JustifiedBlockAnnounceValidator<B, P>
 where
-	P: ProvideRuntimeApi<PBlock>,
+	P: ProvideRuntimeApi<PBlock> + HeaderBackend<PBlock>,
 	P::Api: ParachainHost<PBlock>,
 {
 	fn validate(
@@ -105,6 +105,13 @@ where
 				sender,
 			},
 		} = gossip_statement;
+
+		// Check that the relay chain parent of the block is the relay chain head
+		let best_hash = self.polkadot_client.info().best_hash;
+
+		if relay_chain_leaf != best_hash {
+			return Ok(Validation::Failure);
+		}
 
 		let signing_context = self
 			.polkadot_client
