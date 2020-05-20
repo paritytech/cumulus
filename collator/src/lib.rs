@@ -25,7 +25,6 @@ use cumulus_primitives::{
 };
 use cumulus_runtime::ParachainBlockData;
 
-use sp_blockchain::HeaderBackend;
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, Environment, Error as ConsensusError,
 	ForkChoiceStrategy, Proposal, Proposer, RecordProof,
@@ -189,8 +188,6 @@ where
 
 		let wait_to_announce = self.wait_to_announce.clone();
 
-		//let best_hash = self.collator_network.info();
-
 		Box::pin(async move {
 			let parent_state_root = *last_head.header.state_root();
 
@@ -353,7 +350,7 @@ where
 		polkadot_network: impl CollatorNetwork + Clone + 'static,
 	) -> Result<Self::ParachainContext, ()>
 	where
-		PClient: ProvideRuntimeApi<PBlock> + Send + Sync + BlockchainEvents<PBlock> + 'static + HeaderBackend<PBlock>,
+		PClient: ProvideRuntimeApi<PBlock> + Send + Sync + BlockchainEvents<PBlock> + 'static,
 		PClient::Api: RuntimeApiCollection<Extrinsic>,
 		<PClient::Api as ApiExt<PBlock>>::StateBackend: StateBackend<HashFor<PBlock>>,
 		Spawner: Spawn + Clone + Send + Sync + 'static,
@@ -362,7 +359,6 @@ where
 		self.delayed_block_announce_validator.set(
 			Box::new(JustifiedBlockAnnounceValidator::new(Vec::new(), polkadot_client.clone())),
 		);
-		let _ = polkadot_network.client();
 
 		let follow =
 			match cumulus_consensus::follow_polkadot(self.para_id, self.client, polkadot_client) {
@@ -388,7 +384,6 @@ where
 			self.block_import,
 			Arc::new(spawner),
 			self.announce_block,
-			polkadot_client,
 		))
 	}
 }

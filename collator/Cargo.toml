@@ -6,7 +6,6 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cecton-ensure-replay-parent-eq-relay-head" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "cecton-ensure-replay-parent-eq-relay-head" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "cecton-ensure-replay-parent-eq-relay-head" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-ensure-replay-parent-eq-relay-head" }
