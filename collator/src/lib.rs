@@ -189,8 +189,6 @@ where
 
 		let wait_to_announce = self.wait_to_announce.clone();
 
-		//let best_hash = self.collator_network.info();
-
 		Box::pin(async move {
 			let parent_state_root = *last_head.header.state_root();
 
@@ -353,7 +351,8 @@ where
 		polkadot_network: impl CollatorNetwork + Clone + 'static,
 	) -> Result<Self::ParachainContext, ()>
 	where
-		PClient: ProvideRuntimeApi<PBlock> + Send + Sync + BlockchainEvents<PBlock> + 'static + HeaderBackend<PBlock>,
+		PClient: ProvideRuntimeApi<PBlock> + BlockchainEvents<PBlock> + HeaderBackend<PBlock>
+			+ Send + Sync + 'static,
 		PClient::Api: RuntimeApiCollection<Extrinsic>,
 		<PClient::Api as ApiExt<PBlock>>::StateBackend: StateBackend<HashFor<PBlock>>,
 		Spawner: Spawn + Clone + Send + Sync + 'static,
