@@ -221,7 +221,7 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 		let root = delta_trie_root::<Layout<HashFor<B>>, _, _, _, _>(
 			&mut self.witness_data,
 			self.storage_root.clone(),
-			self.overlay.drain(),
+			self.overlay.clone().drain(),
 		)
 		.expect("Calculates storage root");
 
