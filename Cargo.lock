@@ -930,6 +930,7 @@ dependencies = [
 name = "cumulus-network"
 version = "0.1.0"
 dependencies = [
+ "cumulus-test-runtime",
  "futures 0.3.4",
  "log 0.4.8",
  "parity-scale-codec",
@@ -937,12 +938,19 @@ dependencies = [
  "polkadot-collator",
  "polkadot-network",
  "polkadot-primitives",
+ "polkadot-service",
  "polkadot-statement-table",
+ "polkadot-test-runtime",
+ "polkadot-test-runtime-client",
  "polkadot-validation",
+ "sc-chain-spec",
+ "sc-client-api",
  "sp-api",
+ "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
  "sp-runtime",
+ "sp-state-machine",
 ]
 
 [[package]]
@@ -4697,6 +4705,77 @@ dependencies = [
  "parity-scale-codec",
  "polkadot-primitives",
  "sp-core",
+]
+
+[[package]]
+name = "polkadot-test-runtime"
+version = "0.7.32-dev"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-ensure-replay-parent-eq-relay-head#0fd521416cb0566ef0173e65964a841352965031"
+dependencies = [
+ "bitvec",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "frame-system-rpc-runtime-api",
+ "log 0.3.9",
+ "pallet-authorship",
+ "pallet-babe",
+ "pallet-balances",
+ "pallet-finality-tracker",
+ "pallet-grandpa",
+ "pallet-indices",
+ "pallet-nicks",
+ "pallet-offences",
+ "pallet-randomness-collective-flip",
+ "pallet-session",
+ "pallet-staking",
+ "pallet-staking-reward-curve",
+ "pallet-timestamp",
+ "pallet-transaction-payment",
+ "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-vesting",
+ "parity-scale-codec",
+ "polkadot-parachain",
+ "polkadot-primitives",
+ "polkadot-runtime-common",
+ "rustc-hex",
+ "serde",
+ "serde_derive",
+ "sp-api",
+ "sp-block-builder",
+ "sp-consensus-babe",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-runtime",
+ "sp-session",
+ "sp-staking",
+ "sp-std",
+ "sp-transaction-pool",
+ "sp-version",
+ "substrate-wasm-builder-runner 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "polkadot-test-runtime-client"
+version = "2.0.0"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-ensure-replay-parent-eq-relay-head#0fd521416cb0566ef0173e65964a841352965031"
+dependencies = [
+ "futures 0.3.4",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "polkadot-primitives",
+ "polkadot-runtime-common",
+ "polkadot-test-runtime",
+ "sc-block-builder",
+ "sc-client-api",
+ "sc-consensus",
+ "sc-service",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-runtime",
+ "substrate-test-client",
 ]
 
 [[package]]
