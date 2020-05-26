@@ -15,37 +15,47 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use polkadot_test_runtime_client::{
-	DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt, TestClient,
-};
 use cumulus_test_runtime::{Block, Header};
-use sp_consensus::block_validation::BlockAnnounceValidator;
 use polkadot_primitives::{
 	parachain::{
-		ParachainHost, ValidatorId, Id as ParaId, Chain, CollatorId, Retriable, DutyRoster,
-		ValidationCode, GlobalValidationSchedule, LocalValidationData, AbridgedCandidateReceipt,
-		SigningContext,
+		AbridgedCandidateReceipt, Chain, CollatorId, DutyRoster, GlobalValidationSchedule,
+		Id as ParaId, LocalValidationData, ParachainHost, Retriable, SigningContext,
+		ValidationCode, ValidatorId,
 	},
 	Block as PBlock, Hash as PHash, Header as PHeader,
 };
+use polkadot_test_runtime_client::{
+	DefaultTestClientBuilderExt, TestClient, TestClientBuilder, TestClientBuilderExt,
+};
+use polkadot_validation::{sign_table_statement, Statement};
 use sp_api::{ApiRef, ProvideRuntimeApi};
 use sp_blockchain::{Error as ClientError, HeaderBackend};
-use sp_runtime::traits::{NumberFor, Block as BlockT, Zero};
-use polkadot_validation::{Statement, sign_table_statement};
+use sp_consensus::block_validation::BlockAnnounceValidator;
 use sp_core::H256;
 use sp_keyring::Sr25519Keyring;
+use sp_runtime::traits::{Block as BlockT, NumberFor, Zero};
 
-fn make_validator(authorities: Vec<ValidatorId>) -> JustifiedBlockAnnounceValidator<Block, TestApi> {
+fn make_validator(
+	authorities: Vec<ValidatorId>,
+) -> JustifiedBlockAnnounceValidator<Block, TestApi> {
 	let (validator, _client) = make_validator_and_client(authorities);
 
 	validator
 }
 
-fn make_validator_and_client(authorities: Vec<ValidatorId>) -> (JustifiedBlockAnnounceValidator<Block, TestApi>, Arc<TestApi>) {
+fn make_validator_and_client(
+	authorities: Vec<ValidatorId>,
+) -> (
+	JustifiedBlockAnnounceValidator<Block, TestApi>,
+	Arc<TestApi>,
+) {
 	let builder = TestClientBuilder::new();
 	let client = Arc::new(TestApi::new(Arc::new(builder.build())));
 
-	(JustifiedBlockAnnounceValidator::new(authorities, client.clone()), client)
+	(
+		JustifiedBlockAnnounceValidator::new(authorities, client.clone()),
+		client,
+	)
 }
 
 fn default_header() -> Header {
@@ -58,8 +68,10 @@ fn default_header() -> Header {
 	}
 }
 
-fn make_gossip_message_and_header(client: Arc<TestApi>, relay_chain_leaf: H256)
--> (GossipMessage, Header) {
+fn make_gossip_message_and_header(
+	client: Arc<TestApi>,
+	relay_chain_leaf: H256,
+) -> (GossipMessage, Header) {
 	let key = Sr25519Keyring::Alice.pair().into();
 	let signing_context = client
 		.runtime_api()
@@ -102,7 +114,10 @@ fn check_gossip_message_is_valid() {
 	let header = default_header();
 
 	let res = validator.validate(&header, &[0x42]).err();
-	assert!(res.is_some(), "only data that are gossip message are allowed");
+	assert!(
+		res.is_some(),
+		"only data that are gossip message are allowed"
+	);
 	assert!(matches!(
 		*res.unwrap().downcast::<ClientError>().unwrap(),
 		ClientError::BadJustification(x) if x.contains("must be a gossip message")
@@ -132,7 +147,10 @@ fn check_relay_parent_actually_exists() {
 	let data = gossip_message.encode();
 	let res = validator.validate(&header, data.as_slice()).err();
 
-	assert!(res.is_some(), "validation should fail if the relay chain leaf does not exist");
+	assert!(
+		res.is_some(),
+		"validation should fail if the relay chain leaf does not exist"
+	);
 	assert!(matches!(
 		*res.unwrap().downcast::<ClientError>().unwrap(),
 		ClientError::UnknownBlock(_)
@@ -147,7 +165,10 @@ fn check_relay_parent_does_not_fail() {
 	let data = gossip_message.encode();
 	let res = validator.validate(&header, data.as_slice()).err();
 
-	assert!(res.is_some(), "validation should fail if the relay chain leaf does not exist");
+	assert!(
+		res.is_some(),
+		"validation should fail if the relay chain leaf does not exist"
+	);
 	assert!(matches!(
 		*res.unwrap().downcast::<ClientError>().unwrap(),
 		ClientError::Backend(_)
@@ -162,7 +183,10 @@ fn check_signer_is_legit_validator() {
 	let data = gossip_message.encode();
 	let res = validator.validate(&header, data.as_slice()).err();
 
-	assert!(res.is_some(), "validation should fail if the signer is not a legit validator");
+	assert!(
+		res.is_some(),
+		"validation should fail if the signer is not a legit validator"
+	);
 	assert!(matches!(
 		*res.unwrap().downcast::<ClientError>().unwrap(),
 		ClientError::BadJustification(x) if x.contains("signer is a validator")
@@ -171,9 +195,8 @@ fn check_signer_is_legit_validator() {
 
 #[test]
 fn check_statement_is_correctly_signed() {
-	let (mut validator, client) = make_validator_and_client(vec![
-		Sr25519Keyring::Alice.public().into(),
-	]);
+	let (mut validator, client) =
+		make_validator_and_client(vec![Sr25519Keyring::Alice.public().into()]);
 	let header = default_header();
 	let relay_chain_leaf = H256::from_low_u64_be(1);
 
@@ -207,7 +230,10 @@ fn check_statement_is_correctly_signed() {
 	let data = gossip_message.encode();
 	let res = validator.validate(&header, data.as_slice()).err();
 
-	assert!(res.is_some(), "validation should fail if the statement is not correctly signed");
+	assert!(
+		res.is_some(),
+		"validation should fail if the statement is not correctly signed"
+	);
 	assert!(matches!(
 		*res.unwrap().downcast::<ClientError>().unwrap(),
 		ClientError::BadJustification(x) if x.contains("signature is invalid")
@@ -216,9 +242,8 @@ fn check_statement_is_correctly_signed() {
 
 #[test]
 fn check_statement_is_a_candidate_message() {
-	let (mut validator, client) = make_validator_and_client(vec![
-		Sr25519Keyring::Alice.public().into(),
-	]);
+	let (mut validator, client) =
+		make_validator_and_client(vec![Sr25519Keyring::Alice.public().into()]);
 	let header = default_header();
 	let relay_chain_leaf = H256::from_low_u64_be(1);
 
@@ -243,7 +268,10 @@ fn check_statement_is_a_candidate_message() {
 	let data = gossip_message.encode();
 	let res = validator.validate(&header, data.as_slice()).err();
 
-	assert!(res.is_some(), "validation should fail if the statement is not a candidate message");
+	assert!(
+		res.is_some(),
+		"validation should fail if the statement is not a candidate message"
+	);
 	assert!(matches!(
 		*res.unwrap().downcast::<ClientError>().unwrap(),
 		ClientError::BadJustification(x) if x.contains("must be a candidate statement")
@@ -252,9 +280,8 @@ fn check_statement_is_a_candidate_message() {
 
 #[test]
 fn check_header_match_candidate_receipt_header() {
-	let (mut validator, client) = make_validator_and_client(vec![
-		Sr25519Keyring::Alice.public().into(),
-	]);
+	let (mut validator, client) =
+		make_validator_and_client(vec![Sr25519Keyring::Alice.public().into()]);
 	let relay_chain_leaf = H256::from_low_u64_be(1);
 
 	let key = Sr25519Keyring::Alice.pair().into();
@@ -280,8 +307,11 @@ fn check_header_match_candidate_receipt_header() {
 	let data = gossip_message.encode();
 	let res = validator.validate(&header, data.as_slice()).err();
 
-	assert!(res.is_some(), "validation should fail if the header in the candidate_receipt doesn't \
-		match the header provided");
+	assert!(
+		res.is_some(),
+		"validation should fail if the header in the candidate_receipt doesn't \
+		match the header provided"
+	);
 	assert!(matches!(
 		*res.unwrap().downcast::<ClientError>().unwrap(),
 		ClientError::BadJustification(x) if x.contains("header does not match")
@@ -319,7 +349,10 @@ impl ProvideRuntimeApi<PBlock> for TestApi {
 	type Api = RuntimeApi;
 
 	fn runtime_api<'a>(&'a self) -> ApiRef<'a, Self::Api> {
-		RuntimeApi { data: self.data.clone() }.into()
+		RuntimeApi {
+			data: self.data.clone(),
+		}
+		.into()
 	}
 }
 
@@ -400,11 +433,16 @@ impl HeaderBackend<PBlock> for TestApi {
 		hash: PHash,
 	) -> std::result::Result<Option<NumberFor<PBlock>>, sp_blockchain::Error> {
 		Ok(match hash.as_fixed_bytes() {
-			&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => Some(0),
-			&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] => Some(1),
-			&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xde, 0xad] => {
+			&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
+				Some(0)
+			}
+			&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] => {
+				Some(1)
+			}
+			&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xde, 0xad] =>
+			{
 				return Err(sp_blockchain::Error::Backend("dead".to_string()));
-			},
+			}
 			_ => None,
 		})
 	}
