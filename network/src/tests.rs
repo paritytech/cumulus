@@ -158,7 +158,7 @@ fn check_relay_parent_actually_exists() {
 }
 
 #[test]
-fn check_relay_parent_does_not_fail() {
+fn check_relay_parent_fails_if_cannot_retrieve_number() {
 	let (mut validator, client) = make_validator_and_client(Vec::new());
 	let relay_chain_leaf = H256::from_low_u64_be(0xdead);
 	let (gossip_message, header) = make_gossip_message_and_header(client, relay_chain_leaf);
