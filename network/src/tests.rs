@@ -56,16 +56,42 @@ fn make_validator_and_client(authorities: Vec<ValidatorId>) -> (JustifiedBlockAn
 	(JustifiedBlockAnnounceValidator::new(authorities, client.clone()), client)
 }
 
-#[test]
-fn valid_if_no_data() {
-	let mut validator = make_validator(Vec::new());
-	let header = Header {
+fn default_header() -> Header {
+	Header {
 		number: Default::default(),
 		digest: Default::default(),
 		extrinsics_root: Default::default(),
 		parent_hash: Default::default(),
 		state_root: Default::default(),
+	}
+}
+
+fn make_gossip_message(client: Arc<TestApi>, relay_chain_leaf: H256) -> GossipMessage {
+	let key = Sr25519Keyring::Alice.pair().into();
+	let signing_context = client
+		.runtime_api()
+		.signing_context(&BlockId::Hash(relay_chain_leaf))
+		.unwrap();
+	let candidate_receipt = AbridgedCandidateReceipt::default();
+	let statement = Statement::Candidate(candidate_receipt);
+	let signature = sign_table_statement(&statement, &key, &signing_context);
+	let sender = 0;
+	let gossip_statement = GossipStatement {
+		relay_chain_leaf,
+		signed_statement: SignedStatement {
+			statement,
+			signature,
+			sender,
+		},
 	};
+
+	GossipMessage::Statement(gossip_statement)
+}
+
+#[test]
+fn valid_if_no_data() {
+	let mut validator = make_validator(Vec::new());
+	let header = default_header();
 
 	assert!(
 		matches!(validator.validate(&header, &[]), Ok(Validation::Success)),
@@ -76,51 +102,25 @@ fn valid_if_no_data() {
 #[test]
 fn check_gossip_message_is_valid() {
 	let mut validator = make_validator(Vec::new());
-	let header = Header {
-		number: Default::default(),
-		digest: Default::default(),
-		extrinsics_root: Default::default(),
-		parent_hash: Default::default(),
-		state_root: Default::default(),
-	};
+	let header = default_header();
 
 	let res = validator.validate(&header, &[0x42]).err();
 	assert!(res.is_some(), "only data that are gossip message are allowed");
-	assert!(matches!(*res.unwrap().downcast::<ClientError>().unwrap(), ClientError::BadJustification(_)));
+	assert!(matches!(
+		*res.unwrap().downcast::<ClientError>().unwrap(),
+		ClientError::BadJustification(x) if x.contains("must be a gossip message")
+	));
 }
 
 #[test]
 fn check_relay_parent_is_head() {
 	let (mut validator, client) = make_validator_and_client(Vec::new());
-	let header = Header {
-		number: Default::default(),
-		digest: Default::default(),
-		extrinsics_root: Default::default(),
-		parent_hash: Default::default(),
-		state_root: Default::default(),
-	};
-
-	let key = Sr25519Keyring::Alice.pair().into();
-	let relay_chain_leaf = H256::from_low_u64_be(0);
-	let signing_context = client
-		.runtime_api()
-		.signing_context(&BlockId::Hash(relay_chain_leaf))
-		.unwrap();
-	let candidate_receipt = AbridgedCandidateReceipt::default();
-	let statement = Statement::Candidate(candidate_receipt);
-	let signature = sign_table_statement(&statement, &key, &signing_context);
-	let sender = 0;
-	let gossip_statement = GossipStatement {
-		relay_chain_leaf: Default::default(),
-		signed_statement: SignedStatement {
-			statement,
-			signature,
-			sender,
-		},
-	};
-	let gossip_message = GossipMessage::Statement(gossip_statement);
+	let header = default_header();
+	let relay_chain_leaf = H256::zero();
+	let gossip_message = make_gossip_message(client, relay_chain_leaf);
 	let data = gossip_message.encode();
 	let res = validator.validate(&header, data.as_slice());
+
 	assert_eq!(
 		res.unwrap(),
 		Validation::Failure,
@@ -128,13 +128,86 @@ fn check_relay_parent_is_head() {
 	);
 }
 
+#[test]
+fn check_relay_parent_actually_exists() {
+	let (mut validator, client) = make_validator_and_client(Vec::new());
+	let header = default_header();
+	let relay_chain_leaf = H256::from_low_u64_be(42);
+	let gossip_message = make_gossip_message(client, relay_chain_leaf);
+	let data = gossip_message.encode();
+	let res = validator.validate(&header, data.as_slice()).err();
+
+	assert!(res.is_some(), "the validation should fail if the relay chain leaf does not exist");
+	assert!(matches!(
+		*res.unwrap().downcast::<ClientError>().unwrap(),
+		ClientError::UnknownBlock(_)
+	));
+}
+
+#[test]
+fn check_signer_is_legit_validator() {
+	let (mut validator, client) = make_validator_and_client(Vec::new());
+	let header = default_header();
+	let relay_chain_leaf = H256::from_low_u64_be(1);
+	let gossip_message = make_gossip_message(client, relay_chain_leaf);
+	let data = gossip_message.encode();
+	let res = validator.validate(&header, data.as_slice()).err();
+
+	assert!(res.is_some(), "the validation should fail if the signer is not a legit validator");
+	assert!(matches!(
+		*res.unwrap().downcast::<ClientError>().unwrap(),
+		ClientError::BadJustification(x) if x.contains("signer is a validator")
+	));
+}
+
+#[test]
+fn check_statement_is_correctly_signed() {
+	let (mut validator, client) = make_validator_and_client(vec![
+		Sr25519Keyring::Alice.public().into(),
+	]);
+	let header = default_header();
+	let relay_chain_leaf = H256::from_low_u64_be(1);
+
+	let key = Sr25519Keyring::Alice.pair().into();
+	let signing_context = client
+		.runtime_api()
+		.signing_context(&BlockId::Hash(relay_chain_leaf))
+		.unwrap();
+	let mut candidate_receipt = AbridgedCandidateReceipt::default();
+	let statement = Statement::Candidate(candidate_receipt.clone());
+	let signature = sign_table_statement(&statement, &key, &signing_context);
+
+	// alterate statement so the signature doesn't match anymore
+	candidate_receipt = AbridgedCandidateReceipt {
+		parachain_index: candidate_receipt.parachain_index + 1,
+		..candidate_receipt
+	};
+	let statement = Statement::Candidate(candidate_receipt);
+
+	let sender = 0;
+	let gossip_statement = GossipStatement {
+		relay_chain_leaf,
+		signed_statement: SignedStatement {
+			statement,
+			signature,
+			sender,
+		},
+	};
+	let gossip_message = GossipMessage::Statement(gossip_statement);
+
+	let data = gossip_message.encode();
+	let res = validator.validate(&header, data.as_slice()).err();
+
+	assert!(res.is_some(), "the validation should fail if the statement is not correctly signed");
+	assert!(matches!(
+		*res.unwrap().downcast::<ClientError>().unwrap(),
+		ClientError::BadJustification(x) if x.contains("signature is invalid")
+	));
+}
+
 	//let genesis_config = PolkadotChainSpec::from_json_bytes(&include_bytes!("../../test/parachain/res/polkadot_chainspec.json")[..]).unwrap();
 	//let storage = genesis_config.as_storage_builder().build_storage().unwrap();
 	//let mut basic_ext = BasicExternalities::new(storage);
-
-	/*
-		//parent_hash: H256::from_low_u64_be(3),
-	*/
 
 #[derive(Default)]
 struct ApiData {
