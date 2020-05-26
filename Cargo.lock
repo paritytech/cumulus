@@ -938,22 +938,16 @@ dependencies = [
  "polkadot-collator",
  "polkadot-network",
  "polkadot-primitives",
- "polkadot-service",
  "polkadot-statement-table",
- "polkadot-test-runtime",
  "polkadot-test-runtime-client",
  "polkadot-validation",
- "sc-chain-spec",
  "sc-client-api",
  "sp-api",
- "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
  "sp-core",
  "sp-keyring",
  "sp-runtime",
- "sp-state-machine",
- "substrate-test-runtime-client",
 ]
 
 [[package]]

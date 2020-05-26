@@ -26,14 +26,12 @@ log = "0.4.8"
 parking_lot = "0.10.2"
 
 [dev-dependencies]
-polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "cecton-ensure-replay-parent-eq-relay-head" }
 cumulus-test-runtime = { path = "../test/runtime" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "cecton-ensure-replay-parent-eq-relay-head" }
-polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cecton-ensure-replay-parent-eq-relay-head" }
+
+# substrate deps
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cecton-ensure-replay-parent-eq-relay-head" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-ensure-replay-parent-eq-relay-head" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "cecton-ensure-replay-parent-eq-relay-head" }
-sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "cecton-ensure-replay-parent-eq-relay-head" }
-substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "cecton-ensure-replay-parent-eq-relay-head" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "cecton-ensure-replay-parent-eq-relay-head" }
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "cecton-ensure-replay-parent-eq-relay-head" }
+
+# polkadot deps
+polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "cecton-ensure-replay-parent-eq-relay-head" }
