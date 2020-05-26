@@ -148,6 +148,21 @@ fn check_relay_parent_actually_exists() {
 }
 
 #[test]
+fn check_relay_parent_does_not_fail() {
+	let (mut validator, client) = make_validator_and_client(Vec::new());
+	let relay_chain_leaf = H256::from_low_u64_be(0xdead);
+	let (gossip_message, header) = make_gossip_message_and_header(client, relay_chain_leaf);
+	let data = gossip_message.encode();
+	let res = validator.validate(&header, data.as_slice()).err();
+
+	assert!(res.is_some(), "validation should fail if the relay chain leaf does not exist");
+	assert!(matches!(
+		*res.unwrap().downcast::<ClientError>().unwrap(),
+		ClientError::Backend(_)
+	));
+}
+
+#[test]
 fn check_signer_is_legit_validator() {
 	let (mut validator, client) = make_validator_and_client(Vec::new());
 	let relay_chain_leaf = H256::from_low_u64_be(1);
@@ -395,6 +410,9 @@ impl HeaderBackend<PBlock> for TestApi {
 		Ok(match hash.as_fixed_bytes() {
 			&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => Some(0),
 			&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] => Some(1),
+			&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xde, 0xad] => {
+				return Err(sp_blockchain::Error::Backend("dead".to_string()));
+			},
 			_ => None,
 		})
 	}
