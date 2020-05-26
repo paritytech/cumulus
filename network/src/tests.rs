@@ -66,13 +66,18 @@ fn default_header() -> Header {
 	}
 }
 
-fn make_gossip_message(client: Arc<TestApi>, relay_chain_leaf: H256) -> GossipMessage {
+fn make_gossip_message_and_header(client: Arc<TestApi>, relay_chain_leaf: H256)
+-> (GossipMessage, Header) {
 	let key = Sr25519Keyring::Alice.pair().into();
 	let signing_context = client
 		.runtime_api()
 		.signing_context(&BlockId::Hash(relay_chain_leaf))
 		.unwrap();
-	let candidate_receipt = AbridgedCandidateReceipt::default();
+	let header = default_header();
+	let candidate_receipt = AbridgedCandidateReceipt {
+		head_data: header.encode().into(),
+		..AbridgedCandidateReceipt::default()
+	};
 	let statement = Statement::Candidate(candidate_receipt);
 	let signature = sign_table_statement(&statement, &key, &signing_context);
 	let sender = 0;
@@ -85,7 +90,7 @@ fn make_gossip_message(client: Arc<TestApi>, relay_chain_leaf: H256) -> GossipMe
 		},
 	};
 
-	GossipMessage::Statement(gossip_statement)
+	(GossipMessage::Statement(gossip_statement), header)
 }
 
 #[test]
@@ -115,9 +120,8 @@ fn check_gossip_message_is_valid() {
 #[test]
 fn check_relay_parent_is_head() {
 	let (mut validator, client) = make_validator_and_client(Vec::new());
-	let header = default_header();
 	let relay_chain_leaf = H256::zero();
-	let gossip_message = make_gossip_message(client, relay_chain_leaf);
+	let (gossip_message, header) = make_gossip_message_and_header(client, relay_chain_leaf);
 	let data = gossip_message.encode();
 	let res = validator.validate(&header, data.as_slice());
 
@@ -131,13 +135,12 @@ fn check_relay_parent_is_head() {
 #[test]
 fn check_relay_parent_actually_exists() {
 	let (mut validator, client) = make_validator_and_client(Vec::new());
-	let header = default_header();
 	let relay_chain_leaf = H256::from_low_u64_be(42);
-	let gossip_message = make_gossip_message(client, relay_chain_leaf);
+	let (gossip_message, header) = make_gossip_message_and_header(client, relay_chain_leaf);
 	let data = gossip_message.encode();
 	let res = validator.validate(&header, data.as_slice()).err();
 
-	assert!(res.is_some(), "the validation should fail if the relay chain leaf does not exist");
+	assert!(res.is_some(), "validation should fail if the relay chain leaf does not exist");
 	assert!(matches!(
 		*res.unwrap().downcast::<ClientError>().unwrap(),
 		ClientError::UnknownBlock(_)
@@ -147,13 +150,12 @@ fn check_relay_parent_actually_exists() {
 #[test]
 fn check_signer_is_legit_validator() {
 	let (mut validator, client) = make_validator_and_client(Vec::new());
-	let header = default_header();
 	let relay_chain_leaf = H256::from_low_u64_be(1);
-	let gossip_message = make_gossip_message(client, relay_chain_leaf);
+	let (gossip_message, header) = make_gossip_message_and_header(client, relay_chain_leaf);
 	let data = gossip_message.encode();
 	let res = validator.validate(&header, data.as_slice()).err();
 
-	assert!(res.is_some(), "the validation should fail if the signer is not a legit validator");
+	assert!(res.is_some(), "validation should fail if the signer is not a legit validator");
 	assert!(matches!(
 		*res.unwrap().downcast::<ClientError>().unwrap(),
 		ClientError::BadJustification(x) if x.contains("signer is a validator")
@@ -198,16 +200,86 @@ fn check_statement_is_correctly_signed() {
 	let data = gossip_message.encode();
 	let res = validator.validate(&header, data.as_slice()).err();
 
-	assert!(res.is_some(), "the validation should fail if the statement is not correctly signed");
+	assert!(res.is_some(), "validation should fail if the statement is not correctly signed");
 	assert!(matches!(
 		*res.unwrap().downcast::<ClientError>().unwrap(),
 		ClientError::BadJustification(x) if x.contains("signature is invalid")
 	));
 }
 
-	//let genesis_config = PolkadotChainSpec::from_json_bytes(&include_bytes!("../../test/parachain/res/polkadot_chainspec.json")[..]).unwrap();
-	//let storage = genesis_config.as_storage_builder().build_storage().unwrap();
-	//let mut basic_ext = BasicExternalities::new(storage);
+#[test]
+fn check_statement_is_a_candidate_message() {
+	let (mut validator, client) = make_validator_and_client(vec![
+		Sr25519Keyring::Alice.public().into(),
+	]);
+	let header = default_header();
+	let relay_chain_leaf = H256::from_low_u64_be(1);
+
+	let key = Sr25519Keyring::Alice.pair().into();
+	let signing_context = client
+		.runtime_api()
+		.signing_context(&BlockId::Hash(relay_chain_leaf))
+		.unwrap();
+	let statement = Statement::Valid(H256::zero());
+	let signature = sign_table_statement(&statement, &key, &signing_context);
+	let sender = 0;
+	let gossip_statement = GossipStatement {
+		relay_chain_leaf,
+		signed_statement: SignedStatement {
+			statement,
+			signature,
+			sender,
+		},
+	};
+	let gossip_message = GossipMessage::Statement(gossip_statement);
+
+	let data = gossip_message.encode();
+	let res = validator.validate(&header, data.as_slice()).err();
+
+	assert!(res.is_some(), "validation should fail if the statement is not a candidate message");
+	assert!(matches!(
+		*res.unwrap().downcast::<ClientError>().unwrap(),
+		ClientError::BadJustification(x) if x.contains("must be a candidate statement")
+	));
+}
+
+#[test]
+fn check_header_match_candidate_receipt_header() {
+	let (mut validator, client) = make_validator_and_client(vec![
+		Sr25519Keyring::Alice.public().into(),
+	]);
+	let relay_chain_leaf = H256::from_low_u64_be(1);
+
+	let key = Sr25519Keyring::Alice.pair().into();
+	let signing_context = client
+		.runtime_api()
+		.signing_context(&BlockId::Hash(relay_chain_leaf))
+		.unwrap();
+	let header = default_header();
+	let candidate_receipt = AbridgedCandidateReceipt::default();
+	let statement = Statement::Candidate(candidate_receipt);
+	let signature = sign_table_statement(&statement, &key, &signing_context);
+	let sender = 0;
+	let gossip_statement = GossipStatement {
+		relay_chain_leaf,
+		signed_statement: SignedStatement {
+			statement,
+			signature,
+			sender,
+		},
+	};
+	let gossip_message = GossipMessage::Statement(gossip_statement);
+
+	let data = gossip_message.encode();
+	let res = validator.validate(&header, data.as_slice()).err();
+
+	assert!(res.is_some(), "validation should fail if the header in the candidate_receipt doesn't \
+		match the header provided");
+	assert!(matches!(
+		*res.unwrap().downcast::<ClientError>().unwrap(),
+		ClientError::BadJustification(x) if x.contains("header does not match")
+	));
+}
 
 #[derive(Default)]
 struct ApiData {
