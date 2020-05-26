@@ -123,7 +123,16 @@ where
 			Ok(None) => {
 				return Err(Box::new(ClientError::UnknownBlock(relay_chain_leaf.to_string())));
 			},
-			Ok(Some(_)) => return Ok(Validation::Failure),
+			Ok(Some(_)) => {
+				trace!(
+					target: "cumulus-network",
+					"validation failed because the relay chain parent ({}) is not the relay chain \
+					head ({})",
+					relay_chain_leaf, best_number,
+				);
+
+				return Ok(Validation::Failure);
+			},
 		}
 
 		let signing_context = self
