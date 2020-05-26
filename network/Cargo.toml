@@ -34,3 +34,6 @@ sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cec
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-ensure-replay-parent-eq-relay-head" }
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "cecton-ensure-replay-parent-eq-relay-head" }
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "cecton-ensure-replay-parent-eq-relay-head" }
+substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "cecton-ensure-replay-parent-eq-relay-head" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "cecton-ensure-replay-parent-eq-relay-head" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "cecton-ensure-replay-parent-eq-relay-head" }
