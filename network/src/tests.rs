@@ -432,19 +432,15 @@ impl HeaderBackend<PBlock> for TestApi {
 		&self,
 		hash: PHash,
 	) -> std::result::Result<Option<NumberFor<PBlock>>, sp_blockchain::Error> {
-		Ok(match hash.as_fixed_bytes() {
-			&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-				Some(0)
-			}
-			&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] => {
-				Some(1)
-			}
-			&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xde, 0xad] =>
-			{
-				return Err(sp_blockchain::Error::Backend("dead".to_string()));
-			}
-			_ => None,
-		})
+		if hash == H256::zero() {
+			Ok(Some(0))
+		} else if hash == H256::from_low_u64_be(1) {
+			Ok(Some(1))
+		} else if hash == H256::from_low_u64_be(0xdead) {
+			Err(sp_blockchain::Error::Backend("dead".to_string()))
+		} else {
+			Ok(None)
+		}
 	}
 
 	fn hash(
