@@ -24,7 +24,7 @@ mod tests;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Error as ClientError, HeaderBackend};
 use sp_consensus::block_validation::{BlockAnnounceValidator, Validation};
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_runtime::{generic::BlockId, traits::{Block as BlockT, Header as HeaderT}};
 
 use polkadot_collator::Network as CollatorNetwork;
 use polkadot_network::legacy::gossip::{GossipMessage, GossipStatement};
@@ -51,24 +51,27 @@ use parking_lot::Mutex;
 /// the justification.
 ///
 /// Note: if no justification is provided the annouce is considered valid.
-pub struct JustifiedBlockAnnounceValidator<B, P> {
+pub struct JustifiedBlockAnnounceValidator<B, P, C> {
 	phantom: PhantomData<B>,
 	polkadot_client: Arc<P>,
+	parachain_client: Arc<C>,
 }
 
-impl<B, P> JustifiedBlockAnnounceValidator<B, P> {
-	pub fn new(polkadot_client: Arc<P>) -> Self {
+impl<B, P, C> JustifiedBlockAnnounceValidator<B, P, C> {
+	pub fn new(polkadot_client: Arc<P>, parachain_client: Arc<C>) -> Self {
 		Self {
 			phantom: Default::default(),
 			polkadot_client,
+			parachain_client,
 		}
 	}
 }
 
-impl<B: BlockT, P> BlockAnnounceValidator<B> for JustifiedBlockAnnounceValidator<B, P>
+impl<B: BlockT, P, C> BlockAnnounceValidator<B> for JustifiedBlockAnnounceValidator<B, P, C>
 where
 	P: ProvideRuntimeApi<PBlock> + HeaderBackend<PBlock>,
 	P::Api: ParachainHost<PBlock>,
+	C: HeaderBackend<B>,
 {
 	fn validate(
 		&mut self,
@@ -78,6 +81,19 @@ where
 		// If no data is provided the announce is valid.
 		if data.is_empty() {
 			return Ok(Validation::Success);
+		}
+
+		// Check if block is one higher than best
+		let best_number = self.parachain_client.info().best_number;
+		let block_number = header.number();
+
+		if !(block_number == best_number + 1 || block_number == best_number) {
+			trace!(
+				target: "cumulus-network",
+				"validation failed because the block number is not the best block number or one higher",
+			);
+
+			return Ok(Validation::Failure);
 		}
 
 		// Check data is a gossip message.

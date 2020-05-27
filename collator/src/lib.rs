@@ -340,7 +340,10 @@ where
 		+ Sync
 		+ 'static,
 	Backend: sc_client_api::Backend<Block> + 'static,
-	Client: Finalizer<Block, Backend> + UsageProvider<Block> + Send + Sync + 'static,
+	Client: Finalizer<Block, Backend> + UsageProvider<Block> + HeaderBackend<Block>
+		+ Send
+		+ Sync
+		+ 'static,
 {
 	type ParachainContext = Collator<Block, PF, BI>;
 
@@ -359,7 +362,7 @@ where
 		Extrinsic: codec::Codec + Send + Sync + 'static,
 	{
 		self.delayed_block_announce_validator.set(
-			Box::new(JustifiedBlockAnnounceValidator::new(polkadot_client.clone())),
+			Box::new(JustifiedBlockAnnounceValidator::new(polkadot_client.clone(), self.client.clone())),
 		);
 
 		let follow =
