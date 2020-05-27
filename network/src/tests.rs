@@ -35,27 +35,20 @@ use sp_core::H256;
 use sp_keyring::Sr25519Keyring;
 use sp_runtime::traits::{Block as BlockT, NumberFor, Zero};
 
-fn make_validator(
-	authorities: Vec<ValidatorId>,
-) -> JustifiedBlockAnnounceValidator<Block, TestApi> {
-	let (validator, _client) = make_validator_and_client(authorities);
+fn make_validator() -> JustifiedBlockAnnounceValidator<Block, TestApi> {
+	let (validator, _client) = make_validator_and_client();
 
 	validator
 }
 
-fn make_validator_and_client(
-	authorities: Vec<ValidatorId>,
-) -> (
+fn make_validator_and_client() -> (
 	JustifiedBlockAnnounceValidator<Block, TestApi>,
 	Arc<TestApi>,
 ) {
 	let builder = TestClientBuilder::new();
 	let client = Arc::new(TestApi::new(Arc::new(builder.build())));
 
-	(
-		JustifiedBlockAnnounceValidator::new(authorities, client.clone()),
-		client,
-	)
+	(JustifiedBlockAnnounceValidator::new(client.clone()), client)
 }
 
 fn default_header() -> Header {
@@ -99,7 +92,7 @@ fn make_gossip_message_and_header(
 
 #[test]
 fn valid_if_no_data() {
-	let mut validator = make_validator(Vec::new());
+	let mut validator = make_validator();
 	let header = default_header();
 
 	assert!(
@@ -110,7 +103,7 @@ fn valid_if_no_data() {
 
 #[test]
 fn check_gossip_message_is_valid() {
-	let mut validator = make_validator(Vec::new());
+	let mut validator = make_validator();
 	let header = default_header();
 
 	let res = validator.validate(&header, &[0x42]).err();
@@ -126,7 +119,7 @@ fn check_gossip_message_is_valid() {
 
 #[test]
 fn check_relay_parent_is_head() {
-	let (mut validator, client) = make_validator_and_client(Vec::new());
+	let (mut validator, client) = make_validator_and_client();
 	let relay_chain_leaf = H256::zero();
 	let (gossip_message, header) = make_gossip_message_and_header(client, relay_chain_leaf);
 	let data = gossip_message.encode();
@@ -141,7 +134,7 @@ fn check_relay_parent_is_head() {
 
 #[test]
 fn check_relay_parent_actually_exists() {
-	let (mut validator, client) = make_validator_and_client(Vec::new());
+	let (mut validator, client) = make_validator_and_client();
 	let relay_chain_leaf = H256::from_low_u64_be(42);
 	let (gossip_message, header) = make_gossip_message_and_header(client, relay_chain_leaf);
 	let data = gossip_message.encode();
@@ -159,7 +152,7 @@ fn check_relay_parent_actually_exists() {
 
 #[test]
 fn check_relay_parent_fails_if_cannot_retrieve_number() {
-	let (mut validator, client) = make_validator_and_client(Vec::new());
+	let (mut validator, client) = make_validator_and_client();
 	let relay_chain_leaf = H256::from_low_u64_be(0xdead);
 	let (gossip_message, header) = make_gossip_message_and_header(client, relay_chain_leaf);
 	let data = gossip_message.encode();
@@ -177,9 +170,32 @@ fn check_relay_parent_fails_if_cannot_retrieve_number() {
 
 #[test]
 fn check_signer_is_legit_validator() {
-	let (mut validator, client) = make_validator_and_client(Vec::new());
+	let (mut validator, client) = make_validator_and_client();
 	let relay_chain_leaf = H256::from_low_u64_be(1);
-	let (gossip_message, header) = make_gossip_message_and_header(client, relay_chain_leaf);
+
+	let key = Sr25519Keyring::Alice.pair().into();
+	let signing_context = client
+		.runtime_api()
+		.signing_context(&BlockId::Hash(relay_chain_leaf))
+		.unwrap();
+	let header = default_header();
+	let candidate_receipt = AbridgedCandidateReceipt {
+		head_data: header.encode().into(),
+		..AbridgedCandidateReceipt::default()
+	};
+	let statement = Statement::Candidate(candidate_receipt);
+	let signature = sign_table_statement(&statement, &key, &signing_context);
+	let sender = 1;
+	let gossip_statement = GossipStatement {
+		relay_chain_leaf,
+		signed_statement: SignedStatement {
+			statement,
+			signature,
+			sender,
+		},
+	};
+	let gossip_message = GossipMessage::Statement(gossip_statement);
+
 	let data = gossip_message.encode();
 	let res = validator.validate(&header, data.as_slice()).err();
 
@@ -195,8 +211,7 @@ fn check_signer_is_legit_validator() {
 
 #[test]
 fn check_statement_is_correctly_signed() {
-	let (mut validator, client) =
-		make_validator_and_client(vec![Sr25519Keyring::Alice.public().into()]);
+	let (mut validator, client) = make_validator_and_client();
 	let header = default_header();
 	let relay_chain_leaf = H256::from_low_u64_be(1);
 
@@ -242,8 +257,7 @@ fn check_statement_is_correctly_signed() {
 
 #[test]
 fn check_statement_is_a_candidate_message() {
-	let (mut validator, client) =
-		make_validator_and_client(vec![Sr25519Keyring::Alice.public().into()]);
+	let (mut validator, client) = make_validator_and_client();
 	let header = default_header();
 	let relay_chain_leaf = H256::from_low_u64_be(1);
 
@@ -280,8 +294,7 @@ fn check_statement_is_a_candidate_message() {
 
 #[test]
 fn check_header_match_candidate_receipt_header() {
-	let (mut validator, client) =
-		make_validator_and_client(vec![Sr25519Keyring::Alice.public().into()]);
+	let (mut validator, client) = make_validator_and_client();
 	let relay_chain_leaf = H256::from_low_u64_be(1);
 
 	let key = Sr25519Keyring::Alice.pair().into();
@@ -335,7 +348,10 @@ impl TestApi {
 	fn new(client: Arc<TestClient>) -> Self {
 		Self {
 			client,
-			data: Default::default(),
+			data: Arc::new(Mutex::new(ApiData {
+				validators: vec![Sr25519Keyring::Alice.public().into()],
+				..Default::default()
+			})),
 		}
 	}
 }

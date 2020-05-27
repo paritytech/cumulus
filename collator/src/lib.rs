@@ -359,7 +359,7 @@ where
 		Extrinsic: codec::Codec + Send + Sync + 'static,
 	{
 		self.delayed_block_announce_validator.set(
-			Box::new(JustifiedBlockAnnounceValidator::new(Vec::new(), polkadot_client.clone())),
+			Box::new(JustifiedBlockAnnounceValidator::new(polkadot_client.clone())),
 		);
 
 		let follow =
