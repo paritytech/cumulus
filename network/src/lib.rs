@@ -77,7 +77,12 @@ where
 	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
 		// If no data is provided the announce is valid.
 		if data.is_empty() {
-			return Ok(Validation::Success);
+			trace!(
+				target: "cumulus-network",
+				"validation failed because no justification was provided",
+			);
+
+			return Ok(Validation::Failure);
 		}
 
 		// Check data is a gossip message.

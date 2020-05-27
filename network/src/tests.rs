@@ -91,13 +91,13 @@ fn make_gossip_message_and_header(
 }
 
 #[test]
-fn valid_if_no_data() {
+fn fails_if_no_data() {
 	let mut validator = make_validator();
 	let header = default_header();
 
 	assert!(
-		matches!(validator.validate(&header, &[]), Ok(Validation::Success)),
-		"validating without data is always a success",
+		matches!(validator.validate(&header, &[]), Ok(Validation::Failure)),
+		"validating without data is always a failure",
 	);
 }
 
