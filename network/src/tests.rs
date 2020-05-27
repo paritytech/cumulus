@@ -105,8 +105,8 @@ fn valid_if_no_data() {
 fn check_gossip_message_is_valid() {
 	let mut validator = make_validator();
 	let header = default_header();
-
 	let res = validator.validate(&header, &[0x42]).err();
+
 	assert!(
 		res.is_some(),
 		"only data that are gossip message are allowed"
