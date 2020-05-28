@@ -29,7 +29,7 @@ use sp_runtime::{generic::BlockId, traits::{Block as BlockT, Header as HeaderT, 
 use polkadot_collator::Network as CollatorNetwork;
 use polkadot_network::legacy::gossip::{GossipMessage, GossipStatement};
 use polkadot_primitives::{
-	parachain::ParachainHost,
+	parachain::{ParachainHost, Id as ParaId},
 	Block as PBlock, Hash as PHash,
 };
 use polkadot_statement_table::{SignedStatement, Statement};
@@ -45,6 +45,12 @@ use log::{error, trace};
 use std::{marker::PhantomData, sync::Arc};
 use parking_lot::Mutex;
 
+/// The head data of the parachain, stored in the relay chain.
+#[derive(Decode, Encode, Debug)]
+struct HeadData<Block: BlockT> {
+	header: Block::Header,
+}
+
 /// Validate that data is a valid justification from a relay-chain validator that the block is a
 /// valid parachain-block candidate.
 /// Data encoding is just `GossipMessage`, the relay-chain validator candidate statement message is
@@ -55,14 +61,16 @@ pub struct JustifiedBlockAnnounceValidator<B, P, C> {
 	phantom: PhantomData<B>,
 	polkadot_client: Arc<P>,
 	parachain_client: Arc<C>,
+	para_id: ParaId,
 }
 
 impl<B, P, C> JustifiedBlockAnnounceValidator<B, P, C> {
-	pub fn new(polkadot_client: Arc<P>, parachain_client: Arc<C>) -> Self {
+	pub fn new(polkadot_client: Arc<P>, parachain_client: Arc<C>, para_id: ParaId) -> Self {
 		Self {
 			phantom: Default::default(),
 			polkadot_client,
 			parachain_client,
+			para_id,
 		}
 	}
 }
@@ -78,24 +86,6 @@ where
 		header: &B::Header,
 		mut data: &[u8],
 	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
-		// If no data is provided the announce is probably valid
-		if data.is_empty() {
-			// Check if block is one higher than best
-			let best_number = self.parachain_client.info().best_number;
-			let block_number: <<B as BlockT>::Header as HeaderT>::Number = *header.number();
-
-			if !(block_number == best_number + One::one() || block_number == best_number) {
-				trace!(
-					target: "cumulus-network",
-					"validation failed because the block number is not the best block number or one higher",
-				);
-
-				return Ok(Validation::Failure);
-			}
-
-			return Ok(Validation::Success);
-		}
-
 		// Check data is a gossip message.
 		let gossip_message = GossipMessage::decode(&mut data).map_err(|_| {
 			Box::new(ClientError::BadJustification(
@@ -154,6 +144,30 @@ where
 		let signing_context = runtime_api
 			.signing_context(&runtime_api_block_id)
 			.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?;
+
+		if data.is_empty() {
+			// Check if block is one higher than best
+			let local_validation_data = runtime_api
+				.local_validation_data(&runtime_api_block_id, self.para_id)
+				.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?
+				.ok_or_else(|| {
+					Box::new(ClientError::Msg("no local validation data".to_string())) as Box<_>
+				})?;
+			let parent_head = HeadData::<B>::decode(&mut &local_validation_data.parent_head.0[..])
+				.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?;
+			let known_best_number = *parent_head.header.number();
+			let block_number: <<B as BlockT>::Header as HeaderT>::Number = *header.number();
+
+			if block_number < known_best_number {
+				trace!(
+					target: "cumulus-network",
+					"validation failed because the block number is not at least the best block \
+					number known",
+				);
+
+				return Ok(Validation::Failure);
+			}
+		}
 
 		// Check that the signer is a legit validator.
 		let authorities = runtime_api.validators(&runtime_api_block_id)
