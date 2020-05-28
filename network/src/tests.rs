@@ -47,8 +47,6 @@ fn make_validator_and_client() -> (
 ) {
 	let builder = TestClientBuilder::new();
 	let client = Arc::new(TestApi::new(Arc::new(builder.build())));
-	//let builderc = TestClientBuilderC::new();
-	//let clientc = Arc::new(TestApiC::new(Arc::new(builderc.build())));
 
 	(
 		JustifiedBlockAnnounceValidator::new(client.clone(), client.clone()),
