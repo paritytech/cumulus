@@ -86,6 +86,35 @@ where
 		header: &B::Header,
 		mut data: &[u8],
 	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
+		let runtime_api = self.polkadot_client.runtime_api();
+		let polkadot_info = self.polkadot_client.info();
+
+		if data.is_empty() {
+			// Check if block is one higher than best
+			let runtime_api_block_id = BlockId::Hash(polkadot_info.best_hash);
+			let block_number: <<B as BlockT>::Header as HeaderT>::Number = *header.number();
+
+			let local_validation_data = runtime_api
+				.local_validation_data(&runtime_api_block_id, self.para_id)
+				.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?
+				.ok_or_else(|| {
+					Box::new(ClientError::Msg("no local validation data".to_string())) as Box<_>
+				})?;
+			let parent_head = HeadData::<B>::decode(&mut &local_validation_data.parent_head.0[..])
+				.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?;
+			let known_best_number = *parent_head.header.number();
+
+			if block_number < known_best_number {
+				trace!(
+					target: "cumulus-network",
+					"validation failed because the block number is not at least the best block \
+					number known",
+				);
+
+				return Ok(Validation::Failure);
+			}
+		}
+
 		// Check data is a gossip message.
 		let gossip_message = GossipMessage::decode(&mut data).map_err(|_| {
 			Box::new(ClientError::BadJustification(
@@ -114,7 +143,7 @@ where
 		} = gossip_statement;
 
 		// Check that the relay chain parent of the block is the relay chain head
-		let best_number = self.polkadot_client.info().best_number;
+		let best_number = polkadot_info.best_number;
 
 		match self.polkadot_client.number(relay_chain_leaf) {
 			Err(err) => {
@@ -139,35 +168,10 @@ where
 			},
 		}
 
-		let runtime_api = self.polkadot_client.runtime_api();
 		let runtime_api_block_id = BlockId::Hash(relay_chain_leaf);
 		let signing_context = runtime_api
 			.signing_context(&runtime_api_block_id)
 			.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?;
-
-		if data.is_empty() {
-			// Check if block is one higher than best
-			let local_validation_data = runtime_api
-				.local_validation_data(&runtime_api_block_id, self.para_id)
-				.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?
-				.ok_or_else(|| {
-					Box::new(ClientError::Msg("no local validation data".to_string())) as Box<_>
-				})?;
-			let parent_head = HeadData::<B>::decode(&mut &local_validation_data.parent_head.0[..])
-				.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?;
-			let known_best_number = *parent_head.header.number();
-			let block_number: <<B as BlockT>::Header as HeaderT>::Number = *header.number();
-
-			if block_number < known_best_number {
-				trace!(
-					target: "cumulus-network",
-					"validation failed because the block number is not at least the best block \
-					number known",
-				);
-
-				return Ok(Validation::Failure);
-			}
-		}
 
 		// Check that the signer is a legit validator.
 		let authorities = runtime_api.validators(&runtime_api_block_id)
