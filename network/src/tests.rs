@@ -15,7 +15,7 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use cumulus_test_runtime::{Block, Header, Hash};
+use cumulus_test_runtime::{Block, Hash, Header};
 use polkadot_primitives::{
 	parachain::{
 		AbridgedCandidateReceipt, Chain, CollatorId, DutyRoster, GlobalValidationSchedule,
@@ -50,12 +50,15 @@ fn make_validator_and_client() -> (
 	//let builderc = TestClientBuilderC::new();
 	//let clientc = Arc::new(TestApiC::new(Arc::new(builderc.build())));
 
-	(JustifiedBlockAnnounceValidator::new(client.clone(), client.clone()), client)
+	(
+		JustifiedBlockAnnounceValidator::new(client.clone(), client.clone()),
+		client,
+	)
 }
 
 fn default_header() -> Header {
 	Header {
-		number: Default::default(),
+		number: 1,
 		digest: Default::default(),
 		extrinsics_root: Default::default(),
 		parent_hash: Default::default(),
@@ -93,13 +96,29 @@ fn make_gossip_message_and_header(
 }
 
 #[test]
-fn valid_if_no_data() {
+fn valid_if_no_data_and_best_number() {
 	let mut validator = make_validator();
 	let header = default_header();
 
 	assert!(
 		matches!(validator.validate(&header, &[]), Ok(Validation::Success)),
 		"validating without data is always a success",
+	);
+}
+
+#[test]
+fn invalid_if_no_data_but_not_best_number() {
+	let mut validator = make_validator();
+	let header = Header {
+		number: 0,
+		..default_header()
+	};
+	let res = validator.validate(&header, &[]);
+
+	assert_eq!(
+		res.unwrap(),
+		Validation::Failure,
+		"validation fails if no justification and not the best number",
 	);
 }
 

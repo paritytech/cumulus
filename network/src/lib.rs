@@ -24,7 +24,7 @@ mod tests;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Error as ClientError, HeaderBackend};
 use sp_consensus::block_validation::{BlockAnnounceValidator, Validation};
-use sp_runtime::{generic::BlockId, traits::{Block as BlockT, Header as HeaderT}};
+use sp_runtime::{generic::BlockId, traits::{Block as BlockT, Header as HeaderT, One}};
 
 use polkadot_collator::Network as CollatorNetwork;
 use polkadot_network::legacy::gossip::{GossipMessage, GossipStatement};
@@ -78,22 +78,22 @@ where
 		header: &B::Header,
 		mut data: &[u8],
 	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
-		// If no data is provided the announce is valid.
+		// If no data is provided the announce is probably valid
 		if data.is_empty() {
+			// Check if block is one higher than best
+			let best_number = self.parachain_client.info().best_number;
+			let block_number: <<B as BlockT>::Header as HeaderT>::Number = *header.number();
+
+			if !(block_number == best_number + One::one() || block_number == best_number) {
+				trace!(
+					target: "cumulus-network",
+					"validation failed because the block number is not the best block number or one higher",
+				);
+
+				return Ok(Validation::Failure);
+			}
+
 			return Ok(Validation::Success);
-		}
-
-		// Check if block is one higher than best
-		let best_number = self.parachain_client.info().best_number;
-		let block_number = header.number();
-
-		if !(block_number == best_number + 1 || block_number == best_number) {
-			trace!(
-				target: "cumulus-network",
-				"validation failed because the block number is not the best block number or one higher",
-			);
-
-			return Ok(Validation::Failure);
 		}
 
 		// Check data is a gossip message.
