@@ -94,18 +94,7 @@ fn make_gossip_message_and_header(
 }
 
 #[test]
-fn valid_if_no_data_and_best_number() {
-	let mut validator = make_validator();
-	let header = default_header();
-
-	assert!(
-		matches!(validator.validate(&header, &[]), Ok(Validation::Success)),
-		"validating without data is a success",
-	);
-}
-
-#[test]
-fn invalid_if_no_data_but_not_best_number() {
+fn valid_if_no_data_and_less_than_best_known_number() {
 	let mut validator = make_validator();
 	let header = Header {
 		number: 0,
@@ -115,10 +104,14 @@ fn invalid_if_no_data_but_not_best_number() {
 
 	assert_eq!(
 		res.unwrap(),
-		Validation::Failure,
-		"validation fails if no justification and not the best number",
+		Validation::Success,
+		"validating without data with block number < best known number is always a success",
 	);
+}
 
+#[test]
+fn invalid_if_no_data_exceeds_best_known_number() {
+	let mut validator = make_validator();
 	let header = Header {
 		number: 1,
 		..default_header()
@@ -127,8 +120,8 @@ fn invalid_if_no_data_but_not_best_number() {
 
 	assert_eq!(
 		res.unwrap(),
-		Validation::Success,
-		"validating without data with block number >= best known number is always a success",
+		Validation::Failure,
+		"validation fails if no justification and block number >= best known number",
 	);
 }
 
