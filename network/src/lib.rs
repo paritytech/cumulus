@@ -97,17 +97,18 @@ where
 				.map_err(|e| Box::new(ClientError::Msg(format!("Failed to decode parachain head: {:?}", e))) as Box<_>)?;
 			let known_best_number = parent_head.header.number();
 
-			if block_number >= known_best_number {
+			return Ok(if block_number >= known_best_number {
 				trace!(
 					target: "cumulus-network",
 					"validation failed because a justification is needed if this is a new best \
 					block",
 				);
 
-				return Ok(Validation::Failure);
-			}
+				Validation::Failure
+			} else {
+				Validation::Success
+			});
 
-			return Ok(Validation::Success);
 		}
 
 		// Check data is a gossip message.
