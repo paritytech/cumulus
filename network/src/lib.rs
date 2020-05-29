@@ -24,7 +24,7 @@ mod tests;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Error as ClientError, HeaderBackend};
 use sp_consensus::block_validation::{BlockAnnounceValidator, Validation};
-use sp_runtime::{generic::BlockId, traits::{Block as BlockT, Header as HeaderT, One}};
+use sp_runtime::{generic::BlockId, traits::{Block as BlockT, Header as HeaderT}};
 
 use polkadot_collator::Network as CollatorNetwork;
 use polkadot_network::legacy::gossip::{GossipMessage, GossipStatement};
@@ -57,29 +57,26 @@ struct HeadData<Block: BlockT> {
 /// the justification.
 ///
 /// Note: if no justification is provided the annouce is considered valid.
-pub struct JustifiedBlockAnnounceValidator<B, P, C> {
+pub struct JustifiedBlockAnnounceValidator<B, P> {
 	phantom: PhantomData<B>,
 	polkadot_client: Arc<P>,
-	parachain_client: Arc<C>,
 	para_id: ParaId,
 }
 
-impl<B, P, C> JustifiedBlockAnnounceValidator<B, P, C> {
-	pub fn new(polkadot_client: Arc<P>, parachain_client: Arc<C>, para_id: ParaId) -> Self {
+impl<B, P> JustifiedBlockAnnounceValidator<B, P> {
+	pub fn new(polkadot_client: Arc<P>, para_id: ParaId) -> Self {
 		Self {
 			phantom: Default::default(),
 			polkadot_client,
-			parachain_client,
 			para_id,
 		}
 	}
 }
 
-impl<B: BlockT, P, C> BlockAnnounceValidator<B> for JustifiedBlockAnnounceValidator<B, P, C>
+impl<B: BlockT, P> BlockAnnounceValidator<B> for JustifiedBlockAnnounceValidator<B, P>
 where
 	P: ProvideRuntimeApi<PBlock> + HeaderBackend<PBlock>,
 	P::Api: ParachainHost<PBlock>,
-	C: HeaderBackend<B>,
 {
 	fn validate(
 		&mut self,
@@ -113,6 +110,8 @@ where
 
 				return Ok(Validation::Failure);
 			}
+
+			return Ok(Validation::Success);
 		}
 
 		// Check data is a gossip message.
