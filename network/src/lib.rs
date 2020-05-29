@@ -35,6 +35,8 @@ use polkadot_primitives::{
 use polkadot_statement_table::{SignedStatement, Statement};
 use polkadot_validation::check_statement;
 
+use cumulus_primitives::HeadData;
+
 use codec::{Decode, Encode};
 use futures::{pin_mut, select, StreamExt};
 use futures::channel::oneshot;
@@ -44,12 +46,6 @@ use log::{error, trace};
 
 use std::{marker::PhantomData, sync::Arc};
 use parking_lot::Mutex;
-
-/// The head data of the parachain, stored in the relay chain.
-#[derive(Decode, Encode, Debug)]
-struct HeadData<Block: BlockT> {
-	header: Block::Header,
-}
 
 /// Validate that data is a valid justification from a relay-chain validator that the block is a
 /// valid parachain-block candidate.
