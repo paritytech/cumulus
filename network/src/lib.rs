@@ -83,7 +83,7 @@ where
 		let polkadot_info = self.polkadot_client.info();
 
 		if data.is_empty() {
-			// Check if block is one higher than best
+			// Check if block is equal or higher than best (this requires a justification)
 			let runtime_api_block_id = BlockId::Hash(polkadot_info.best_hash);
 			let block_number = header.number();
 
@@ -100,8 +100,8 @@ where
 			if block_number >= known_best_number {
 				trace!(
 					target: "cumulus-network",
-					"validation failed because the block number is not at least the best block \
-					number known",
+					"validation failed because a justification is needed if this is a new best \
+					block",
 				);
 
 				return Ok(Validation::Failure);
