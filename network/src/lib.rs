@@ -91,7 +91,7 @@ where
 				.local_validation_data(&runtime_api_block_id, self.para_id)
 				.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?
 				.ok_or_else(|| {
-					Box::new(ClientError::Msg("no local validation data".to_string())) as Box<_>
+					Box::new(ClientError::Msg("Could not find parachain head in relay chain".into())) as Box<_>
 				})?;
 			let parent_head = HeadData::<B>::decode(&mut &local_validation_data.parent_head.0[..])
 				.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?;
