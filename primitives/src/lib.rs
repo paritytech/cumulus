@@ -71,5 +71,5 @@ pub trait UpwardMessageSender {
 /// The head data of the parachain, stored in the relay chain.
 #[derive(Decode, Encode, Debug)]
 pub struct HeadData<Block: BlockT> {
-	header: Block::Header,
+	pub header: Block::Header,
 }
