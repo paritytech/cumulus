@@ -94,7 +94,7 @@ where
 					Box::new(ClientError::Msg("Could not find parachain head in relay chain".into())) as Box<_>
 				})?;
 			let parent_head = HeadData::<B>::decode(&mut &local_validation_data.parent_head.0[..])
-				.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?;
+				.map_err(|e| Box::new(ClientError::Msg(format!("Failed to decode parachain head: {:?}", e))) as Box<_>)?;
 			let known_best_number = *parent_head.header.number();
 
 			if !(block_number < known_best_number) {
