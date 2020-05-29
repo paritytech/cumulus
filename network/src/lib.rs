@@ -97,7 +97,7 @@ where
 				.map_err(|e| Box::new(ClientError::Msg(format!("Failed to decode parachain head: {:?}", e))) as Box<_>)?;
 			let known_best_number = parent_head.header.number();
 
-			if !(block_number < known_best_number) {
+			if block_number >= known_best_number {
 				trace!(
 					target: "cumulus-network",
 					"validation failed because the block number is not at least the best block \
