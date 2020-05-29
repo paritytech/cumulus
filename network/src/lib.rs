@@ -85,7 +85,7 @@ where
 		if data.is_empty() {
 			// Check if block is one higher than best
 			let runtime_api_block_id = BlockId::Hash(polkadot_info.best_hash);
-			let block_number: <<B as BlockT>::Header as HeaderT>::Number = *header.number();
+			let block_number = header.number();
 
 			let local_validation_data = runtime_api
 				.local_validation_data(&runtime_api_block_id, self.para_id)
@@ -95,7 +95,7 @@ where
 				})?;
 			let parent_head = HeadData::<B>::decode(&mut &local_validation_data.parent_head.0[..])
 				.map_err(|e| Box::new(ClientError::Msg(format!("Failed to decode parachain head: {:?}", e))) as Box<_>)?;
-			let known_best_number = *parent_head.header.number();
+			let known_best_number = parent_head.header.number();
 
 			if !(block_number < known_best_number) {
 				trace!(
