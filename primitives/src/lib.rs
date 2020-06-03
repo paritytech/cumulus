@@ -21,7 +21,7 @@
 pub mod validation_function_params;
 
 use codec::{Decode, Encode};
-use sp_runtime::traits::{Block as BlockT};
+use sp_runtime::traits::Block as BlockT;
 
 /// Identifiers and types related to Cumulus Inherents
 pub mod inherents {
