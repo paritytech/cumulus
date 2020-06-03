@@ -24,8 +24,8 @@ use futures::{future::FutureExt, join, pin_mut, select};
 use jsonrpsee::{raw::RawClient, transport::http::HttpTransportClient};
 use polkadot_primitives::parachain::{Info, Scheduling};
 use polkadot_primitives::Hash as PHash;
-use polkadot_runtime::{Header, OnlyStakingAndClaims, Runtime, SignedExtra, SignedPayload};
-use polkadot_runtime_common::{parachains, registrar, BlockHashCount};
+use polkadot_runtime::{Header, Runtime, SignedExtra, SignedPayload, IsCallable};
+use polkadot_runtime_common::{parachains, registrar, BlockHashCount, claims, TransactionCallFilter};
 use serde_json::Value;
 use sp_arithmetic::traits::SaturatedConversion;
 use sp_runtime::generic;
@@ -291,8 +291,9 @@ async fn integration_test() {
 			.unwrap_or(2) as u64;
 		let tip = 0;
 		let extra: SignedExtra = (
-			OnlyStakingAndClaims,
-			frame_system::CheckVersion::<Runtime>::new(),
+			TransactionCallFilter::<IsCallable, polkadot_runtime::Call>::new(),
+			frame_system::CheckSpecVersion::<Runtime>::new(),
+			frame_system::CheckTxVersion::<Runtime>::new(),
 			frame_system::CheckGenesis::<Runtime>::new(),
 			frame_system::CheckEra::<Runtime>::from(generic::Era::mortal(period, current_block)),
 			frame_system::CheckNonce::<Runtime>::from(nonce),
@@ -300,6 +301,8 @@ async fn integration_test() {
 			pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
 			registrar::LimitParathreadCommits::<Runtime>::new(),
 			parachains::ValidateDoubleVoteReports::<Runtime>::new(),
+			pallet_grandpa::ValidateEquivocationReport::<Runtime>::new(),
+			claims::PrevalidateAttests::<Runtime>::new(),
 		);
 		let raw_payload = SignedPayload::from_raw(
 			call.clone().into(),
@@ -307,8 +310,11 @@ async fn integration_test() {
 			(
 				(),
 				runtime_version.spec_version,
+				runtime_version.transaction_version,
 				genesis_block,
 				current_block_hash,
+				(),
+				(),
 				(),
 				(),
 				(),
