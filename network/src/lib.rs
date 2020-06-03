@@ -108,7 +108,6 @@ where
 			} else {
 				Validation::Success
 			});
-
 		}
 
 		// Check data is a gossip message.
