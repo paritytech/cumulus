@@ -101,7 +101,6 @@ where
 				trace!(
 					target: "cumulus-network",
 					"validation failed because a justification is needed if the block at the top of the chain."
-					block",
 				);
 
 				Validation::Failure
