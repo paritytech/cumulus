@@ -100,7 +100,7 @@ where
 			return Ok(if block_number >= known_best_number {
 				trace!(
 					target: "cumulus-network",
-					"validation failed because a justification is needed if this is a new best \
+					"validation failed because a justification is needed if the block at the top of the chain."
 					block",
 				);
 
