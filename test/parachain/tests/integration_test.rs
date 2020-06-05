@@ -343,7 +343,7 @@ async fn integration_test() {
 			.stderr(Stdio::piped())
 			.arg("--base-path")
 			.arg(cumulus_charlie_dir.path())
-			.arg(&["--unsafe-rpc-external", "--rpc-methods=Unsafe"])
+			.args(&["--unsafe-rpc-external", "--rpc-methods=Unsafe"])
 			.arg("--rpc-port=27017")
 			.arg("--port=27117")
 			.arg("--")
