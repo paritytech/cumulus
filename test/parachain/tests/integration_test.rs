@@ -166,6 +166,7 @@ async fn wait_for_blocks(number_of_blocks: usize, mut client: &mut RawClient<Htt
 
 #[async_std::test]
 #[ignore]
+#[cfg(feature = "disabled")]
 async fn integration_test() {
 	assert!(
 		!net::TcpStream::connect("127.0.0.1:27015").await.is_ok(),
