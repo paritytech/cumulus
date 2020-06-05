@@ -218,12 +218,11 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 	}
 
 	fn storage_root(&mut self) -> Vec<u8> {
-		let root = delta_trie_root::<Layout<HashFor<B>>, _, _, _, _>(
+		let root = delta_trie_root::<Layout<HashFor<B>>, _, _, _, _, _>(
 			&mut self.witness_data,
 			self.storage_root.clone(),
-			self.overlay.clone().drain(),
-		)
-		.expect("Calculates storage root");
+			self.overlay.iter().map(|(k, v)| (k.as_ref(), v.as_ref().map(|v| v.as_ref()))),
+		).expect("Calculates storage root");
 
 		root.encode()
 	}

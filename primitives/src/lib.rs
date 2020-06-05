@@ -29,6 +29,9 @@ pub use polkadot_parachain::primitives::ParachainDispatchOrigin as UpwardMessage
 
 pub mod validation_function_params;
 
+use codec::{Decode, Encode};
+use sp_runtime::traits::Block as BlockT;
+
 /// Identifiers and types related to Cumulus Inherents
 pub mod inherents {
 	use sp_inherents::InherentIdentifier;
@@ -72,4 +75,10 @@ pub trait UpwardMessageSender<UpwardMessage> {
 	///
 	/// Returns an error if sending failed.
 	fn send_upward_message(msg: &UpwardMessage, origin: UpwardMessageOrigin) -> Result<(), ()>;
+}
+
+/// The head data of the parachain, stored in the relay chain.
+#[derive(Decode, Encode, Debug)]
+pub struct HeadData<Block: BlockT> {
+	pub header: Block::Header,
 }

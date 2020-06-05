@@ -22,6 +22,7 @@ use polkadot_primitives::parachain::CollatorPair;
 use cumulus_collator::{CollatorBuilder, prepare_collator_config};
 use futures::FutureExt;
 pub use sc_executor::NativeExecutor;
+use cumulus_network::DelayedBlockAnnounceValidator;
 
 // Our native executor instance.
 native_executor_instance!(
@@ -80,18 +81,25 @@ pub fn run_collator(
 		.register_provider(sp_timestamp::InherentDataProvider)
 		.unwrap();
 
+	let block_announce_validator = DelayedBlockAnnounceValidator::new();
+	let block_announce_validator_copy = block_announce_validator.clone();
 	let service = builder
 		.with_finality_proof_provider(|client, backend| {
 			// GenesisAuthoritySetProvider is implemented for StorageAndProofProvider
 			let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
 			Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
 		})?
+		.with_block_announce_validator(|_client| {
+			Box::new(block_announce_validator_copy)
+		})?
 		.build()?;
+
+	let registry = service.prometheus_registry();
 
 	let proposer_factory = sc_basic_authorship::ProposerFactory::new(
 		service.client(),
 		service.transaction_pool(),
-		service.prometheus_registry().as_ref(),
+		registry.as_ref(),
 	);
 
 	let block_import = service.client();
@@ -107,6 +115,7 @@ pub fn run_collator(
 		crate::PARA_ID,
 		client,
 		announce_block,
+		block_announce_validator,
 	);
 
 	let polkadot_future = polkadot_collator::start_collator(

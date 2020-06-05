@@ -16,13 +16,16 @@
 
 //! Cumulus Collator implementation for Substrate.
 
-use cumulus_network::WaitToAnnounce;
+use cumulus_network::{
+	DelayedBlockAnnounceValidator, JustifiedBlockAnnounceValidator, WaitToAnnounce,
+};
 use cumulus_primitives::{
-	inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER as VFP_IDENT,
+	HeadData, inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER as VFP_IDENT,
 	validation_function_params::ValidationFunctionParams,
 };
 use cumulus_runtime::ParachainBlockData;
 
+use sp_blockchain::HeaderBackend;
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, Environment, Error as ConsensusError,
 	ForkChoiceStrategy, Proposal, Proposer, RecordProof,
@@ -49,15 +52,9 @@ use log::{error, trace};
 use futures::task::Spawn;
 use futures::prelude::*;
 
-use std::{fmt::Debug, marker::PhantomData, sync::Arc, time::Duration, pin::Pin};
+use std::{marker::PhantomData, sync::Arc, time::Duration, pin::Pin};
 
 use parking_lot::Mutex;
-
-/// The head data of the parachain, stored in the relay chain.
-#[derive(Decode, Encode, Debug)]
-struct HeadData<Block: BlockT> {
-	header: Block::Header,
-}
 
 /// The implementation of the Cumulus `Collator`.
 pub struct Collator<Block: BlockT, PF, BI> {
@@ -189,7 +186,7 @@ where
 		Box::pin(async move {
 			let parent_state_root = *last_head.header.state_root();
 
-			let mut proposer = proposer_future
+			let proposer = proposer_future
 				.await
 				.map_err(|e| {
 					error!(
@@ -295,6 +292,7 @@ pub struct CollatorBuilder<Block: BlockT, PF, BI, Backend, Client> {
 	para_id: ParaId,
 	client: Arc<Client>,
 	announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
+	delayed_block_announce_validator: DelayedBlockAnnounceValidator<Block>,
 	_marker: PhantomData<(Block, Backend)>,
 }
 
@@ -309,6 +307,7 @@ impl<Block: BlockT, PF, BI, Backend, Client>
 		para_id: ParaId,
 		client: Arc<Client>,
 		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
+		delayed_block_announce_validator: DelayedBlockAnnounceValidator<Block>,
 	) -> Self {
 		Self {
 			proposer_factory,
@@ -317,6 +316,7 @@ impl<Block: BlockT, PF, BI, Backend, Client>
 			para_id,
 			client,
 			announce_block,
+			delayed_block_announce_validator,
 			_marker: PhantomData,
 		}
 	}
@@ -334,7 +334,10 @@ where
 		+ Sync
 		+ 'static,
 	Backend: sc_client_api::Backend<Block> + 'static,
-	Client: Finalizer<Block, Backend> + UsageProvider<Block> + Send + Sync + 'static,
+	Client: Finalizer<Block, Backend> + UsageProvider<Block> + HeaderBackend<Block>
+		+ Send
+		+ Sync
+		+ 'static,
 {
 	type ParachainContext = Collator<Block, PF, BI>;
 
@@ -345,12 +348,17 @@ where
 		polkadot_network: impl CollatorNetwork + Clone + 'static,
 	) -> Result<Self::ParachainContext, ()>
 	where
-		PClient: ProvideRuntimeApi<PBlock> + Send + Sync + BlockchainEvents<PBlock> + 'static,
+		PClient: ProvideRuntimeApi<PBlock> + BlockchainEvents<PBlock> + HeaderBackend<PBlock>
+			+ Send + Sync + 'static,
 		PClient::Api: RuntimeApiCollection<Extrinsic>,
 		<PClient::Api as ApiExt<PBlock>>::StateBackend: StateBackend<HashFor<PBlock>>,
 		Spawner: Spawn + Clone + Send + Sync + 'static,
 		Extrinsic: codec::Codec + Send + Sync + 'static,
 	{
+		self.delayed_block_announce_validator.set(
+			Box::new(JustifiedBlockAnnounceValidator::new(polkadot_client.clone(), self.para_id)),
+		);
+
 		let follow =
 			match cumulus_consensus::follow_polkadot(self.para_id, self.client, polkadot_client) {
 				Ok(follow) => follow,
@@ -445,7 +453,7 @@ mod tests {
 		type Transaction = sc_client_api::TransactionFor<test_client::Backend, Block>;
 
 		fn propose(
-			&mut self,
+			self,
 			_: InherentData,
 			digest: DigestFor<Block>,
 			_: Duration,
@@ -502,6 +510,7 @@ mod tests {
 		let _ = env_logger::try_init();
 		let spawner = futures::executor::ThreadPool::new().unwrap();
 		let announce_block = |_, _| ();
+		let block_announce_validator = DelayedBlockAnnounceValidator::new();
 
 		let builder = CollatorBuilder::new(
 			DummyFactory,
@@ -510,6 +519,7 @@ mod tests {
 			id,
 			Arc::new(TestClientBuilder::new().build()),
 			Arc::new(announce_block),
+			block_announce_validator,
 		);
 		let context = builder
 			.build(

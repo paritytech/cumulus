@@ -18,19 +18,24 @@
 //!
 //! Contains message send between collators and logic to process them.
 
+#[cfg(test)]
+mod tests;
+
 use sp_api::ProvideRuntimeApi;
-use sp_blockchain::Error as ClientError;
+use sp_blockchain::{Error as ClientError, HeaderBackend};
 use sp_consensus::block_validation::{BlockAnnounceValidator, Validation};
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_runtime::{generic::BlockId, traits::{Block as BlockT, Header as HeaderT}};
 
 use polkadot_collator::Network as CollatorNetwork;
 use polkadot_network::legacy::gossip::{GossipMessage, GossipStatement};
 use polkadot_primitives::{
-	parachain::{ParachainHost, ValidatorId},
+	parachain::{ParachainHost, Id as ParaId},
 	Block as PBlock, Hash as PHash,
 };
 use polkadot_statement_table::{SignedStatement, Statement};
 use polkadot_validation::check_statement;
+
+use cumulus_primitives::HeadData;
 
 use codec::{Decode, Encode};
 use futures::{pin_mut, select, StreamExt};
@@ -40,6 +45,7 @@ use futures::task::Spawn;
 use log::{error, trace};
 
 use std::{marker::PhantomData, sync::Arc};
+use parking_lot::Mutex;
 
 /// Validate that data is a valid justification from a relay-chain validator that the block is a
 /// valid parachain-block candidate.
@@ -48,24 +54,24 @@ use std::{marker::PhantomData, sync::Arc};
 ///
 /// Note: if no justification is provided the annouce is considered valid.
 pub struct JustifiedBlockAnnounceValidator<B, P> {
-	authorities: Vec<ValidatorId>,
 	phantom: PhantomData<B>,
 	polkadot_client: Arc<P>,
+	para_id: ParaId,
 }
 
 impl<B, P> JustifiedBlockAnnounceValidator<B, P> {
-	pub fn new(authorities: Vec<ValidatorId>, polkadot_client: Arc<P>) -> Self {
+	pub fn new(polkadot_client: Arc<P>, para_id: ParaId) -> Self {
 		Self {
-			authorities,
 			phantom: Default::default(),
 			polkadot_client,
+			para_id,
 		}
 	}
 }
 
 impl<B: BlockT, P> BlockAnnounceValidator<B> for JustifiedBlockAnnounceValidator<B, P>
 where
-	P: ProvideRuntimeApi<PBlock>,
+	P: ProvideRuntimeApi<PBlock> + HeaderBackend<PBlock>,
 	P::Api: ParachainHost<PBlock>,
 {
 	fn validate(
@@ -73,9 +79,34 @@ where
 		header: &B::Header,
 		mut data: &[u8],
 	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
-		// If no data is provided the announce is valid.
+		let runtime_api = self.polkadot_client.runtime_api();
+		let polkadot_info = self.polkadot_client.info();
+
 		if data.is_empty() {
-			return Ok(Validation::Success);
+			// Check if block is equal or higher than best (this requires a justification)
+			let runtime_api_block_id = BlockId::Hash(polkadot_info.best_hash);
+			let block_number = header.number();
+
+			let local_validation_data = runtime_api
+				.local_validation_data(&runtime_api_block_id, self.para_id)
+				.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?
+				.ok_or_else(|| {
+					Box::new(ClientError::Msg("Could not find parachain head in relay chain".into())) as Box<_>
+				})?;
+			let parent_head = HeadData::<B>::decode(&mut &local_validation_data.parent_head.0[..])
+				.map_err(|e| Box::new(ClientError::Msg(format!("Failed to decode parachain head: {:?}", e))) as Box<_>)?;
+			let known_best_number = parent_head.header.number();
+
+			return Ok(if block_number >= known_best_number {
+				trace!(
+					target: "cumulus-network",
+					"validation failed because a justification is needed if the block at the top of the chain."
+				);
+
+				Validation::Failure
+			} else {
+				Validation::Success
+			});
 		}
 
 		// Check data is a gossip message.
@@ -105,14 +136,41 @@ where
 			},
 		} = gossip_statement;
 
-		let signing_context = self
-			.polkadot_client
-			.runtime_api()
-			.signing_context(&BlockId::Hash(relay_chain_leaf))
+		// Check that the relay chain parent of the block is the relay chain head
+		let best_number = polkadot_info.best_number;
+
+		match self.polkadot_client.number(relay_chain_leaf) {
+			Err(err) => {
+				return Err(Box::new(ClientError::Backend(format!(
+					"could not find block number for {}: {}",
+					relay_chain_leaf, err,
+				))));
+			},
+			Ok(Some(x)) if x == best_number => {},
+			Ok(None) => {
+				return Err(Box::new(ClientError::UnknownBlock(relay_chain_leaf.to_string())));
+			},
+			Ok(Some(_)) => {
+				trace!(
+					target: "cumulus-network",
+					"validation failed because the relay chain parent ({}) is not the relay chain \
+					head ({})",
+					relay_chain_leaf, best_number,
+				);
+
+				return Ok(Validation::Failure);
+			},
+		}
+
+		let runtime_api_block_id = BlockId::Hash(relay_chain_leaf);
+		let signing_context = runtime_api
+			.signing_context(&runtime_api_block_id)
 			.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?;
 
 		// Check that the signer is a legit validator.
-		let signer = self.authorities.get(sender as usize).ok_or_else(|| {
+		let authorities = runtime_api.validators(&runtime_api_block_id)
+			.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?;
+		let signer = authorities.get(sender as usize).ok_or_else(|| {
 			Box::new(ClientError::BadJustification(
 				"block accounced justification signer is a validator index out of bound"
 					.to_string(),
@@ -145,6 +203,38 @@ where
 		}
 
 		Ok(Validation::Success)
+	}
+}
+
+/// A `BlockAnnounceValidator` that will be able to validate data when its internal
+/// `BlockAnnounceValidator` is set.
+pub struct DelayedBlockAnnounceValidator<B: BlockT>(Arc<Mutex<Option<Box<dyn BlockAnnounceValidator<B> + Send>>>>);
+
+impl<B: BlockT> DelayedBlockAnnounceValidator<B> {
+	pub fn new() -> DelayedBlockAnnounceValidator<B> {
+		DelayedBlockAnnounceValidator(Arc::new(Mutex::new(None)))
+	}
+
+	pub fn set(&self, validator: Box<dyn BlockAnnounceValidator<B> + Send>) {
+		*self.0.lock() = Some(validator);
+	}
+}
+
+impl<B: BlockT> Clone for DelayedBlockAnnounceValidator<B> {
+	fn clone(&self) -> DelayedBlockAnnounceValidator<B> {
+		DelayedBlockAnnounceValidator(self.0.clone())
+	}
+}
+
+impl<B: BlockT> BlockAnnounceValidator<B> for DelayedBlockAnnounceValidator<B> {
+	fn validate(
+		&mut self,
+		header: &B::Header,
+		data: &[u8],
+	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
+		self.0.lock().as_mut()
+			.expect("BlockAnnounceValidator is set before validating the first announcement; qed")
+			.validate(header, data)
 	}
 }
 

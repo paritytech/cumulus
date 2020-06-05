@@ -21,10 +21,11 @@ use assert_cmd::cargo::cargo_bin;
 use async_std::{net, task::sleep};
 use codec::Encode;
 use futures::{future::FutureExt, join, pin_mut, select};
+use jsonrpsee::{raw::RawClient, transport::http::HttpTransportClient};
 use polkadot_primitives::parachain::{Info, Scheduling};
 use polkadot_primitives::Hash as PHash;
-use polkadot_runtime::{Header, OnlyStakingAndClaims, Runtime, SignedExtra, SignedPayload};
-use polkadot_runtime_common::{parachains, claims, registrar, BlockHashCount};
+use polkadot_runtime::{Header, Runtime, SignedExtra, SignedPayload, IsCallable};
+use polkadot_runtime_common::{parachains, registrar, BlockHashCount, claims, TransactionCallFilter};
 use serde_json::Value;
 use sp_arithmetic::traits::SaturatedConversion;
 use sp_runtime::generic;
@@ -144,8 +145,28 @@ async fn wait_for_tcp<A: net::ToSocketAddrs + std::fmt::Display>(address: A) {
 	}
 }
 
+/// wait for parachain blocks to be produced
+async fn wait_for_blocks(number_of_blocks: usize, mut client: &mut RawClient<HttpTransportClient>) {
+	let mut previous_blocks = HashSet::with_capacity(number_of_blocks);
+
+	loop {
+		let current_block_hash = Chain::block_hash(&mut client, None).await.unwrap().unwrap();
+
+		if previous_blocks.insert(current_block_hash) {
+			eprintln!("new parachain block: {}", current_block_hash);
+
+			if previous_blocks.len() == number_of_blocks {
+				break;
+			}
+		}
+
+		sleep(Duration::from_secs(2)).await;
+	}
+}
+
 #[async_std::test]
 #[ignore]
+#[cfg(feature = "disabled")]
 async fn integration_test() {
 	assert!(
 		!net::TcpStream::connect("127.0.0.1:27015").await.is_ok(),
@@ -172,7 +193,7 @@ async fn integration_test() {
 			.arg("--base-path")
 			.arg(polkadot_alice_dir.path())
 			.arg("--alice")
-			.arg("--unsafe-rpc-expose")
+			.arg("--rpc-methods=unsafe")
 			.arg("--rpc-port=27015")
 			.arg("--port=27115")
 			.spawn()
@@ -188,7 +209,7 @@ async fn integration_test() {
 			.arg("--base-path")
 			.arg(polkadot_bob_dir.path())
 			.arg("--bob")
-			.arg("--unsafe-rpc-expose")
+			.arg("--rpc-methods=unsafe")
 			.arg("--rpc-port=27016")
 			.arg("--port=27116")
 			.spawn()
@@ -271,7 +292,7 @@ async fn integration_test() {
 			.unwrap_or(2) as u64;
 		let tip = 0;
 		let extra: SignedExtra = (
-			OnlyStakingAndClaims,
+			TransactionCallFilter::<IsCallable, polkadot_runtime::Call>::new(),
 			frame_system::CheckSpecVersion::<Runtime>::new(),
 			frame_system::CheckTxVersion::<Runtime>::new(),
 			frame_system::CheckGenesis::<Runtime>::new(),
@@ -316,14 +337,14 @@ async fn integration_test() {
 				.await
 				.unwrap();
 
-		// run cumulus
-		let cumulus_dir = tempdir().unwrap();
-		let mut cumulus = Command::new(cargo_bin("cumulus-test-parachain-collator"))
+		// run cumulus charlie
+		let cumulus_charlie_dir = tempdir().unwrap();
+		let mut cumulus_charlie = Command::new(cargo_bin("cumulus-test-parachain-collator"))
 			.stdout(Stdio::piped())
 			.stderr(Stdio::piped())
 			.arg("--base-path")
-			.arg(cumulus_dir.path())
-			.arg("--unsafe-rpc-expose")
+			.arg(cumulus_charlie_dir.path())
+			.arg("--rpc-methods=unsafe")
 			.arg("--rpc-port=27017")
 			.arg("--port=27117")
 			.arg("--")
@@ -335,35 +356,19 @@ async fn integration_test() {
 				"--bootnodes=/ip4/127.0.0.1/tcp/27116/p2p/{}",
 				polkadot_bob_id
 			))
+			.arg("--charlie")
 			.spawn()
 			.unwrap();
-		let cumulus_helper = ChildHelper::new("cumulus", &mut cumulus);
+		let cumulus_charlie_helper = ChildHelper::new("cumulus-charlie", &mut cumulus_charlie);
 		wait_for_tcp("127.0.0.1:27017").await;
 
 		// connect rpc client to cumulus
-		let transport_client_cumulus =
+		let transport_client_cumulus_charlie =
 			jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:27017");
-		let mut client_cumulus = jsonrpsee::raw::RawClient::new(transport_client_cumulus);
+		let mut client_cumulus_charlie =
+			jsonrpsee::raw::RawClient::new(transport_client_cumulus_charlie);
 
-		// wait for parachain blocks to be produced
-		let number_of_blocks = 4;
-		let mut previous_blocks = HashSet::with_capacity(number_of_blocks);
-		loop {
-			let current_block_hash = Chain::block_hash(&mut client_cumulus, None)
-				.await
-				.unwrap()
-				.unwrap();
-
-			if previous_blocks.insert(current_block_hash) {
-				eprintln!("new parachain block: {}", current_block_hash);
-
-				if previous_blocks.len() == number_of_blocks {
-					break;
-				}
-			}
-
-			sleep(Duration::from_secs(2)).await;
-		}
+		wait_for_blocks(4, &mut client_cumulus_charlie).await;
 	}
 	.fuse();
 
