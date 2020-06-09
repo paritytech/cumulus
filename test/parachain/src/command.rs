@@ -185,7 +185,8 @@ pub fn run() -> Result<()> {
 						None,
 						authority_discovery_enabled,
 						6000,
-						grandpa_pause
+						grandpa_pause,
+						None,
 					).map(|(s, _, _)| s)
 				},
 				polkadot_service::PolkadotExecutor::native_version().runtime_version

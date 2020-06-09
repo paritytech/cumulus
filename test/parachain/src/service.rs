@@ -91,6 +91,7 @@ pub fn run_collator(
 	let block_announce_validator = DelayedBlockAnnounceValidator::new();
 	let block_announce_validator_copy = block_announce_validator.clone();
 	let service = builder
+		.with_informant_prefix("[ParaChain]".to_string())?
 		.with_finality_proof_provider(|client, backend| {
 			// GenesisAuthoritySetProvider is implemented for StorageAndProofProvider
 			let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
@@ -130,6 +131,7 @@ pub fn run_collator(
 		crate::PARA_ID,
 		key,
 		polkadot_config,
+		Some("[RelayChain]".to_string()),
 	).map(|_| ());
 	service.spawn_essential_task("polkadot", polkadot_future);
 
