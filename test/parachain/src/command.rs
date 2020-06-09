@@ -24,8 +24,7 @@ use sc_cli::{
 	SubstrateCli,
 };
 use sc_executor::NativeExecutionDispatch;
-use sc_network::config::TransportConfig;
-use sc_service::config::{NetworkConfiguration, NodeKeyConfig, PrometheusConfig};
+use sc_service::config::PrometheusConfig;
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::{
 	traits::{Block as BlockT, Hash as HashT, Header as HeaderT, Zero},
