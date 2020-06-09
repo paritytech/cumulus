@@ -60,6 +60,11 @@ pub mod well_known_keys {
 
 	/// Code upgarde (set as appropriate by a pallet).
 	pub const NEW_VALIDATION_CODE: &'static [u8] = b":cumulus_new_validation_code";
+
+	/// The storage key for the processed downward messages.
+	///
+	/// The value is stored as SCALE encoded `u32`.
+	pub const PROCESSED_DOWNWARD_MESSAGES: &'static [u8] = b":cumulus_processed_downward_messages:";
 }
 
 /// Something that should be called when a downward message is received.

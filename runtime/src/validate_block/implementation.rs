@@ -33,7 +33,10 @@ use codec::{Decode, Encode, EncodeAppend};
 
 use cumulus_primitives::{
 	validation_function_params::ValidationFunctionParams,
-	well_known_keys::{NEW_VALIDATION_CODE, UPWARD_MESSAGES, VALIDATION_FUNCTION_PARAMS},
+	well_known_keys::{
+		NEW_VALIDATION_CODE, PROCESSED_DOWNWARD_MESSAGES, UPWARD_MESSAGES,
+		VALIDATION_FUNCTION_PARAMS,
+	},
 	GenericUpwardMessage,
 };
 
@@ -95,7 +98,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 
 	let parent_head =
 		B::Header::decode(&mut &params.parent_head.0[..]).expect("Invalid parent head");
-	// TODO: Use correct head data
+
 	let head_data = HeadData(block_data.header.encode());
 
 	let block = B::new(block_data.header, block_data.extrinsics);
@@ -146,11 +149,16 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 		None => Vec::new(),
 	};
 
+	let processed_downward_messages = storage()
+		.get(PROCESSED_DOWNWARD_MESSAGES)
+		.and_then(|v| Decode::decode(&mut &v[..]).ok())
+		.unwrap_or_default();
+
 	ValidationResult {
 		head_data,
 		new_validation_code,
 		upward_messages,
-		processed_downward_messages: 0,
+		processed_downward_messages,
 	}
 }
 
@@ -222,8 +230,11 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 		let root = delta_trie_root::<Layout<HashFor<B>>, _, _, _, _, _>(
 			&mut self.witness_data,
 			self.storage_root.clone(),
-			self.overlay.iter().map(|(k, v)| (k.as_ref(), v.as_ref().map(|v| v.as_ref()))),
-		).expect("Calculates storage root");
+			self.overlay
+				.iter()
+				.map(|(k, v)| (k.as_ref(), v.as_ref().map(|v| v.as_ref()))),
+		)
+		.expect("Calculates storage root");
 
 		root.encode()
 	}
@@ -251,10 +262,12 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 		let current_value = self.overlay.entry(key.to_vec()).or_default();
 
 		let item = current_value.take().unwrap_or_default();
-		*current_value = Some(match Vec::<EncodeOpaqueValue>::append_or_new(item, &value_vec) {
-			Ok(item) => item,
-			Err(_) => value_vec.encode(),
-		});
+		*current_value = Some(
+			match Vec::<EncodeOpaqueValue>::append_or_new(item, &value_vec) {
+				Ok(item) => item,
+				Err(_) => value_vec.encode(),
+			},
+		);
 	}
 }
 

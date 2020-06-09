@@ -65,7 +65,14 @@ decl_module! {
 		#[weight = (10, DispatchClass::Mandatory)]
 		fn execute_downward_messages(origin, messages: Vec<DownwardMessage>) {
 			ensure_none(origin)?;
-			messages.iter().for_each(T::DownwardMessageHandlers::handle_downward_message);
+
+			//TODO: max messages should not be hardcoded. It should be determined based on the
+			// weight used by the handlers.
+			let max_messages = 10;
+			messages.iter().take(max_messages).for_each(T::DownwardMessageHandlers::handle_downward_message);
+
+			let processed = sp_std::cmp::min(messages.len(), max_messages) as u32;
+			storage::unhashed::put(well_known_keys::PROCESSED_DOWNWARD_MESSAGES, &processed);
 		}
 
 		fn on_initialize() -> Weight {
