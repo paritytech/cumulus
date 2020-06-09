@@ -150,6 +150,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 		head_data,
 		new_validation_code,
 		upward_messages,
+		processed_downward_messages: 0,
 	}
 }
 
