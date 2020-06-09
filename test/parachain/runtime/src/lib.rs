@@ -235,7 +235,7 @@ impl cumulus_parachain_upgrade::Trait for Runtime {
 
 impl cumulus_message_broker::Trait for Runtime {
 	type Event = Event;
-	type DownwardMessageHandlers = ();
+	type DownwardMessageHandlers = TokenDealer;
 	type UpwardMessage = cumulus_upward_message::WestendUpwardMessage;
 }
 

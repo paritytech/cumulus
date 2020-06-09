@@ -17,7 +17,7 @@
 //! Example Pallet that shows how to send upward messages and how to receive
 //! downward messages.
 
-use frame_support::{decl_event, decl_module, traits::Currency};
+use frame_support::{decl_event, decl_module, traits::{Currency, WithdrawReason, ExistenceRequirement}};
 use frame_system::ensure_signed;
 
 use codec::{Decode, Encode};
@@ -62,7 +62,14 @@ decl_module! {
 		#[weight = 10]
 		fn transfer_tokens(origin, dest: T::AccountId, amount: BalanceOf<T>) {
 			//TODO: Remove the tokens from the given account
-			ensure_signed(origin)?;
+			let who = ensure_signed(origin)?;
+
+			let _ = T::Currency::withdraw(
+				&who,
+				amount,
+				WithdrawReason::Transfer.into(),
+				ExistenceRequirement::AllowDeath,
+			)?;
 
 			let msg = <T as Trait>::UpwardMessage::transfer(dest.clone(), amount.clone());
 			<T as Trait>::UpwardMessageSender::send_upward_message(&msg, UpwardMessageOrigin::Signed)
