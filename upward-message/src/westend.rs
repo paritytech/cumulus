@@ -23,7 +23,7 @@ use westend_runtime::BalancesCall;
 /// The Westend upward message.
 pub type UpwardMessage = westend_runtime::Call;
 
-impl BalancesMessage for UpwardMessage {
+impl BalancesMessage<AccountId, Balance> for UpwardMessage {
 	fn transfer(dest: AccountId, amount: Balance) -> Self {
 		BalancesCall::transfer(dest, amount).into()
 	}

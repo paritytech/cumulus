@@ -23,7 +23,7 @@ use polkadot_runtime::BalancesCall;
 /// The Polkadot upward message.
 pub type UpwardMessage = polkadot_runtime::Call;
 
-impl BalancesMessage for UpwardMessage {
+impl BalancesMessage<AccountId, Balance> for UpwardMessage {
 	fn transfer(dest: AccountId, amount: Balance) -> Self {
 		BalancesCall::transfer(dest, amount).into()
 	}

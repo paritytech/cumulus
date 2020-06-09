@@ -23,7 +23,7 @@ use kusama_runtime::BalancesCall;
 /// The Kusama upward message.
 pub type UpwardMessage = kusama_runtime::Call;
 
-impl BalancesMessage for UpwardMessage {
+impl BalancesMessage<AccountId, Balance> for UpwardMessage {
 	fn transfer(dest: AccountId, amount: Balance) -> Self {
 		BalancesCall::transfer(dest, amount).into()
 	}

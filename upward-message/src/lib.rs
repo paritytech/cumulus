@@ -22,8 +22,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use polkadot_core_primitives::{Balance, AccountId};
-
 mod polkadot;
 mod kusama;
 mod westend;
@@ -33,7 +31,7 @@ pub use kusama::UpwardMessage as KusamaUpwardMessage;
 pub use westend::UpwardMessage as WestendUpwardMessage;
 
 /// A `Balances` related upward message.
-pub trait BalancesMessage: Sized {
+pub trait BalancesMessage<AccountId, Balance>: Sized {
 	/// Transfer the given `amount` from the parachain account to the given
 	/// `dest` account.
 	fn transfer(dest: AccountId, amount: Balance) -> Self;
