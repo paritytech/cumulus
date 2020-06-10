@@ -82,6 +82,8 @@ decl_module! {
 	}
 }
 
+/// This is a hack to convert from one generic type to another where we are sure that both are the
+/// same type/use the same encoding.
 fn convert_hack<O: Decode>(input: &impl Encode) -> O {
 	input.using_encoded(|e| Decode::decode(&mut &e[..]).expect("Must be compatible; qed"))
 }
