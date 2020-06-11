@@ -24,8 +24,7 @@ use sc_cli::{
 	SubstrateCli,
 };
 use sc_executor::NativeExecutionDispatch;
-use sc_network::config::TransportConfig;
-use sc_service::config::{NetworkConfiguration, NodeKeyConfig, PrometheusConfig};
+use sc_service::config::PrometheusConfig;
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::{
 	traits::{Block as BlockT, Hash as HashT, Header as HeaderT, Zero},
@@ -187,7 +186,8 @@ pub fn run() -> Result<()> {
 						None,
 						authority_discovery_enabled,
 						6000,
-						grandpa_pause
+						grandpa_pause,
+						None,
 					).map(|(s, _, _)| s)
 				},
 				polkadot_service::PolkadotExecutor::native_version().runtime_version
@@ -204,7 +204,6 @@ pub fn run() -> Result<()> {
 
 			// TODO
 			let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
-			let key2 = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
 
 			let mut polkadot_cli = PolkadotCli::from_iter(
 				[PolkadotCli::executable_name().to_string()]
@@ -215,21 +214,7 @@ pub fn run() -> Result<()> {
 			polkadot_cli.base_path = cli.run.base_path()?.map(|x| x.join("polkadot"));
 			let parachain_account = AccountIdConversion::<polkadot_primitives::AccountId>::into_account(&crate::PARA_ID);
 
-			runner.run_node(
-				|config| {
-					let task_executor = config.task_executor.clone();
-					let polkadot_config = SubstrateCli::create_configuration(
-						&polkadot_cli,
-						&polkadot_cli,
-						task_executor,
-					)
-					.unwrap();
-
-					info!("Parachain id: {:?}", crate::PARA_ID);
-					info!("Parachain Account: {}", parachain_account);
-
-					crate::service::run_collator(config, key2, polkadot_config)
-				},
+			runner.run_full_node(
 				|config| {
 					let task_executor = config.task_executor.clone();
 					let polkadot_config = SubstrateCli::create_configuration(
