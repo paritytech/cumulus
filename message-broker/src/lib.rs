@@ -133,7 +133,7 @@ impl<T: Trait> XCMPMessageSender<T::XCMPMessage> for Module<T> {
 
 		Self::send_upward_message(
 			&T::UpwardMessage::send_message(dest, message.encode()),
-			UpwardMessageOrigin::Signed,
+			UpwardMessageOrigin::Parachain,
 		)
 	}
 }

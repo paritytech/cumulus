@@ -125,8 +125,9 @@ pub const DAYS: BlockNumber = HOURS * 24;
 pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
 
 #[derive(codec::Encode, codec::Decode)]
-pub enum XCMPMessage {
-
+pub enum XCMPMessage<XAccountId, XBalance> {
+	/// Transfer tokens to the given account from the Parachain account.
+	TransferToken(XAccountId, XBalance),
 }
 
 /// The version infromation used to identify this runtime when compiled natively.
@@ -247,8 +248,8 @@ impl cumulus_message_broker::Trait for Runtime {
 	type DownwardMessageHandlers = TokenDealer;
 	type UpwardMessage = cumulus_upward_message::WestendUpwardMessage;
 	type ParachainId = ParachainId;
-	type XCMPMessage = XCMPMessage;
-	type XCMPMessageHandlers = ();
+	type XCMPMessage = XCMPMessage<AccountId, Balance>;
+	type XCMPMessageHandlers = TokenDealer;
 }
 
 impl message_example::Trait for Runtime {
@@ -256,6 +257,7 @@ impl message_example::Trait for Runtime {
 	type UpwardMessageSender = MessageBroker;
 	type UpwardMessage = cumulus_upward_message::WestendUpwardMessage;
 	type Currency = Balances;
+	type XCMPMessageSender = MessageBroker;
 }
 
 construct_runtime! {

@@ -1049,6 +1049,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "parity-scale-codec",
+ "polkadot-parachain",
  "serde",
  "sp-api",
  "sp-block-builder",

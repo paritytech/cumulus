@@ -23,12 +23,16 @@ use frame_support::{
 };
 use frame_system::ensure_signed;
 
+use crate::XCMPMessage;
 use codec::{Decode, Encode};
 use cumulus_primitives::{
-	relay_chain::DownwardMessage, DownwardMessageHandler, ParaId, UpwardMessageOrigin,
-	UpwardMessageSender,
+	relay_chain::DownwardMessage,
+	xcmp::{XCMPMessageHandler, XCMPMessageSender},
+	DownwardMessageHandler, ParaId, UpwardMessageOrigin, UpwardMessageSender,
 };
 use cumulus_upward_message::BalancesMessage;
+use polkadot_parachain::primitives::AccountIdConversion;
+use sp_runtime::DispatchResult;
 
 type BalanceOf<T> =
 	<<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
@@ -46,6 +50,9 @@ pub trait Trait: frame_system::Trait {
 
 	/// Currency of the runtime.
 	type Currency: Currency<Self::AccountId>;
+
+	/// The sender of XCMP messages.
+	type XCMPMessageSender: XCMPMessageSender<XCMPMessage<Self::AccountId, BalanceOf<Self>>>;
 }
 
 // This pallet's storage items.
@@ -70,6 +77,8 @@ decl_event! {
 		TransferredTokensToRelayChain(AccountId, Balance),
 		/// Transferred tokens to the account on request from the relay chain.
 		TransferredTokensFromRelayChain(AccountId, Balance),
+		/// Transferred tokens to the account from the given parachain account.
+		TransferredTokensViaXCMP(ParaId, AccountId, Balance, DispatchResult),
 	}
 }
 
@@ -78,8 +87,7 @@ decl_module! {
 		/// Transfer `amount` of tokens on the relay chain from the Parachain account to
 		/// the given `dest` account.
 		#[weight = 10]
-		fn transfer_tokens(origin, dest: T::AccountId, amount: BalanceOf<T>) {
-			//TODO: Remove the tokens from the given account
+		fn transfer_tokens_to_relay_chain(origin, dest: T::AccountId, amount: BalanceOf<T>) {
 			let who = ensure_signed(origin)?;
 
 			let _ = T::Currency::withdraw(
@@ -94,6 +102,30 @@ decl_module! {
 				.expect("Should not fail; qed");
 
 			Self::deposit_event(Event::<T>::TransferredTokensToRelayChain(dest, amount));
+		}
+
+		/// Transfer `amount` of tokens to another parachain.
+		#[weight = 10]
+		fn transfer_tokens_to_parachain_chain(
+			origin,
+			para_id: u32,
+			dest: T::AccountId,
+			amount: BalanceOf<T>,
+		) {
+			//TODO we don't make sure that the parachain has some tokens on the other parachain.
+			let who = ensure_signed(origin)?;
+
+			let _ = T::Currency::withdraw(
+				&who,
+				amount,
+				WithdrawReason::Transfer.into(),
+				ExistenceRequirement::AllowDeath,
+			)?;
+
+			T::XCMPMessageSender::send_xcmp_message(
+				para_id.into(),
+				&XCMPMessage::TransferToken(dest, amount),
+			).expect("Should not fail; qed");
 		}
 
 		fn deposit_event() = default;
@@ -118,6 +150,30 @@ impl<T: Trait> DownwardMessageHandler for Module<T> {
 				Self::deposit_event(Event::<T>::TransferredTokensFromRelayChain(dest, amount));
 			}
 			_ => {}
+		}
+	}
+}
+
+impl<T: Trait> XCMPMessageHandler<XCMPMessage<T::AccountId, BalanceOf<T>>> for Module<T> {
+	fn handle_xcmp_message(src: ParaId, msg: &XCMPMessage<T::AccountId, BalanceOf<T>>) {
+		match msg {
+			XCMPMessage::TransferToken(dest, amount) => {
+				let para_account = src.clone().into_account();
+
+				let res = T::Currency::transfer(
+					&para_account,
+					dest,
+					amount.clone(),
+					ExistenceRequirement::AllowDeath,
+				);
+
+				Self::deposit_event(Event::<T>::TransferredTokensViaXCMP(
+					src,
+					dest.clone(),
+					amount.clone(),
+					res,
+				));
+			}
 		}
 	}
 }
