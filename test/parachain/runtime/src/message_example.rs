@@ -17,16 +17,21 @@
 //! Example Pallet that shows how to send upward messages and how to receive
 //! downward messages.
 
-use frame_support::{decl_event, decl_module, traits::{Currency, WithdrawReason, ExistenceRequirement}};
+use frame_support::{
+	decl_event, decl_module, decl_storage,
+	traits::{Currency, ExistenceRequirement, WithdrawReason},
+};
 use frame_system::ensure_signed;
 
 use codec::{Decode, Encode};
 use cumulus_primitives::{
-	relay_chain::DownwardMessage, DownwardMessageHandler, UpwardMessageOrigin, UpwardMessageSender,
+	relay_chain::DownwardMessage, DownwardMessageHandler, ParaId, UpwardMessageOrigin,
+	UpwardMessageSender,
 };
 use cumulus_upward_message::BalancesMessage;
 
-type BalanceOf<T> = <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
+type BalanceOf<T> =
+	<<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
 
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {
@@ -41,6 +46,19 @@ pub trait Trait: frame_system::Trait {
 
 	/// Currency of the runtime.
 	type Currency: Currency<Self::AccountId>;
+}
+
+// This pallet's storage items.
+decl_storage! {
+	trait Store for Module<T: Trait> as ParachainUpgrade {}
+	add_extra_genesis {
+		config(parachain_id): ParaId;
+		build(|config: &Self| {
+			// This is basically a hack to make the parachain id easily configurable.
+			// Could also be done differently, but yeah..
+			crate::ParachainId::set(&config.parachain_id);
+		});
+	}
 }
 
 decl_event! {

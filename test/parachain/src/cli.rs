@@ -42,6 +42,10 @@ pub struct ExportGenesisStateCommand {
 	/// Output file name or stdout if unspecified.
 	#[structopt(parse(from_os_str))]
 	pub output: Option<PathBuf>,
+
+	/// Id of the parachain this state is for.
+	#[structopt(long, default_value = "100")]
+	pub parachain_id: u32,
 }
 
 #[derive(Debug, StructOpt)]

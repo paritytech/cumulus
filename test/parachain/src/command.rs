@@ -19,7 +19,7 @@ use crate::cli::{Cli, PolkadotCli, Subcommand};
 use codec::Encode;
 use log::info;
 use parachain_runtime::Block;
-use polkadot_parachain::primitives::{AccountIdConversion, Id as ParaId};
+use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
 	CliConfiguration, Error, ImportParams, KeystoreParams, NetworkParams, Result, SharedParams,
 	SubstrateCli,
@@ -32,6 +32,7 @@ use sp_runtime::{
 	BuildStorage,
 };
 use std::{net::SocketAddr, sync::Arc};
+use cumulus_primitives::ParaId;
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> &'static str {
@@ -66,7 +67,8 @@ impl SubstrateCli for Cli {
 	}
 
 	fn load_spec(&self, _id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		Ok(Box::new(chain_spec::get_chain_spec()))
+		// Such a hack :(
+		Ok(Box::new(chain_spec::get_chain_spec(self.run.parachain_id.into())))
 	}
 }
 
@@ -110,8 +112,8 @@ impl SubstrateCli for PolkadotCli {
 	}
 }
 
-fn generate_genesis_state() -> Result<Block> {
-	let storage = (&chain_spec::get_chain_spec()).build_storage()?;
+fn generate_genesis_state(para_id: ParaId) -> Result<Block> {
+	let storage = (&chain_spec::get_chain_spec(para_id)).build_storage()?;
 
 	let child_roots = storage.children_default.iter().map(|(sk, child_content)| {
 		let state_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
@@ -151,7 +153,7 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::ExportGenesisState(params)) => {
 			sc_cli::init_logger("");
 
-			let block = generate_genesis_state()?;
+			let block = generate_genesis_state(params.parachain_id.into())?;
 			let header_hex = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
 			if let Some(output) = &params.output {
@@ -215,7 +217,7 @@ pub fn run() -> Result<()> {
 			let parachain_account =
 				AccountIdConversion::<polkadot_primitives::AccountId>::into_account(&id);
 
-			let block = generate_genesis_state()?;
+			let block = generate_genesis_state(id)?;
 			let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
 			runner.run_full_node(

@@ -271,7 +271,7 @@ construct_runtime! {
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
 		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
-		TokenDealer: message_example::{Module, Call, Event<T>},
+		TokenDealer: message_example::{Module, Call, Event<T>, Config},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 	}
 }
