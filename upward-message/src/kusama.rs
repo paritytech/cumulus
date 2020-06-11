@@ -18,7 +18,8 @@
 
 use crate::*;
 use polkadot_core_primitives::{Balance, AccountId};
-use kusama_runtime::BalancesCall;
+use kusama_runtime::{BalancesCall, ParachainsCall};
+use sp_std::vec::Vec;
 
 /// The Kusama upward message.
 pub type UpwardMessage = kusama_runtime::Call;
@@ -26,5 +27,11 @@ pub type UpwardMessage = kusama_runtime::Call;
 impl BalancesMessage<AccountId, Balance> for UpwardMessage {
 	fn transfer(dest: AccountId, amount: Balance) -> Self {
 		BalancesCall::transfer(dest, amount).into()
+	}
+}
+
+impl XCMPMessage for UpwardMessage {
+	fn send_message(dest: ParaId, msg: Vec<u8>) -> Self {
+		ParachainsCall::send_xcmp_message(dest, msg).into()
 	}
 }

@@ -26,6 +26,7 @@ pub use polkadot_core_primitives::DownwardMessage;
 /// Besides the `data` it also holds the `origin` of the message.
 pub use polkadot_parachain::primitives::UpwardMessage as GenericUpwardMessage;
 pub use polkadot_parachain::primitives::ParachainDispatchOrigin as UpwardMessageOrigin;
+pub use polkadot_parachain::primitives::Id as ParaId;
 
 pub mod validation_function_params;
 pub mod xcmp;

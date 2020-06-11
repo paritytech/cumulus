@@ -124,6 +124,11 @@ pub const DAYS: BlockNumber = HOURS * 24;
 // 1 in 4 blocks (on average, not counting collisions) will be primary babe blocks.
 pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
 
+#[derive(codec::Encode, codec::Decode)]
+pub enum XCMPMessage {
+
+}
+
 /// The version infromation used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
@@ -233,10 +238,17 @@ impl cumulus_parachain_upgrade::Trait for Runtime {
 	type OnValidationFunctionParams = ();
 }
 
+parameter_types! {
+	pub storage ParachainId: cumulus_primitives::ParaId = 100.into();
+}
+
 impl cumulus_message_broker::Trait for Runtime {
 	type Event = Event;
 	type DownwardMessageHandlers = TokenDealer;
 	type UpwardMessage = cumulus_upward_message::WestendUpwardMessage;
+	type ParachainId = ParachainId;
+	type XCMPMessage = XCMPMessage;
+	type XCMPMessageHandlers = ();
 }
 
 impl message_example::Trait for Runtime {

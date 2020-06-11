@@ -21,12 +21,15 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::Encode;
+use codec::{Encode, Decode};
 use cumulus_primitives::{
 	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER},
-	well_known_keys, DownwardMessage, DownwardMessageHandler, GenericUpwardMessage,
-	UpwardMessageOrigin, UpwardMessageSender, xcmp::{XCMPMessageHandler, XCMPMessageSender}
+	well_known_keys,
+	xcmp::{RawXCMPMessage, XCMPMessageHandler, XCMPMessageSender},
+	DownwardMessage, DownwardMessageHandler, GenericUpwardMessage, ParaId, UpwardMessageOrigin,
+	UpwardMessageSender,
 };
+use cumulus_upward_message::XCMPMessage;
 use frame_support::{
 	decl_event, decl_module, storage,
 	traits::Get,
@@ -46,13 +49,16 @@ pub trait Trait: frame_system::Trait {
 	type DownwardMessageHandlers: DownwardMessageHandler;
 
 	/// The upward message type used by the Parachain runtime.
-	type UpwardMessage: codec::Codec;
+	type UpwardMessage: codec::Codec + XCMPMessage;
 
 	/// The XCMP message handlers that will be informed when a XCMP message is received.
-	type XCMPMessageHandlers: XCMPMessageHandler;
+	type XCMPMessageHandlers: XCMPMessageHandler<Self::XCMPMessage>;
 
 	/// The XCMP message type used by the Parachain runtime.
 	type XCMPMessage: codec::Codec;
+
+	/// The Id of the parachain.
+	type ParachainId: Get<ParaId>;
 }
 
 decl_event! {
@@ -77,7 +83,16 @@ decl_module! {
 			// weight used by the handlers.
 			let max_messages = 10;
 			messages.iter().take(max_messages).for_each(|msg| {
-				T::DownwardMessageHandlers::handle_downward_message(msg);
+				match msg {
+					DownwardMessage::XCMPMessage(msg) => {
+						if let Ok(msg) = RawXCMPMessage::decode(&mut &msg[..]) {
+							if let Ok(xcmp_msg) = T::XCMPMessage::decode(&mut &msg.data[..]) {
+								T::XCMPMessageHandlers::handle_xcmp_message(msg.from, &xcmp_msg);
+							}
+						}
+					},
+					msg => T::DownwardMessageHandlers::handle_downward_message(msg),
+				}
 			});
 
 			let processed = sp_std::cmp::min(messages.len(), max_messages) as u32;
@@ -110,8 +125,16 @@ impl<T: Trait> UpwardMessageSender<T::UpwardMessage> for Module<T> {
 }
 
 impl<T: Trait> XCMPMessageSender<T::XCMPMessage> for Module<T> {
-	fn send_xcmp_message(msg: &Message) -> Result<(), ()> {
-	
+	fn send_xcmp_message(dest: ParaId, msg: &T::XCMPMessage) -> Result<(), ()> {
+		let message = RawXCMPMessage {
+			from: T::ParachainId::get(),
+			data: msg.encode(),
+		};
+
+		Self::send_upward_message(
+			&T::UpwardMessage::send_message(dest, message.encode()),
+			UpwardMessageOrigin::Signed,
+		)
 	}
 }
 

@@ -5,8 +5,12 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 
 [dependencies]
+# Substrate dependencies
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch", default-features = false }
+
 # Polkadot deps
 polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch", default-features = false }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch", default-features = false }
 
 # All these should be optional dependenices, but given the perfect Cargo, it is not possible.
 polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch", default-features = false }
@@ -16,10 +20,12 @@ westend-runtime = { git = "https://github.com/paritytech/polkadot", branch = "bk
 [features]
 default = [ "std" ]
 std = [
+	"sp-std/std",
 	"polkadot-runtime/std",
 	"kusama-runtime/std",
 	"westend-runtime/std",
 	"polkadot-core-primitives/std",
+	"polkadot-parachain/std",
 ]
 # Should be enabled by when compiling the runtime for WASM.
 #

@@ -22,6 +22,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use polkadot_parachain::primitives::Id as ParaId;
+use sp_std::vec::Vec;
+
 mod polkadot;
 mod kusama;
 mod westend;
@@ -35,4 +38,10 @@ pub trait BalancesMessage<AccountId, Balance>: Sized {
 	/// Transfer the given `amount` from the parachain account to the given
 	/// `dest` account.
 	fn transfer(dest: AccountId, amount: Balance) -> Self;
+}
+
+/// A `XCMP` related upward message.
+pub trait XCMPMessage: Sized {
+	/// Send the given XCMP message to given parachain.
+	fn send_message(dest: ParaId, msg: Vec<u8>) -> Self;
 }
