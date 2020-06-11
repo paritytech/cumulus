@@ -16,7 +16,8 @@
 
 //! Cumulus message broker pallet.
 //!
-//! This pallet provides support for handling downward and upward messages.
+//! This pallet provides support for handling downward, upward messages and
+//! XMCP messages.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -24,7 +25,7 @@ use codec::Encode;
 use cumulus_primitives::{
 	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER},
 	well_known_keys, DownwardMessage, DownwardMessageHandler, GenericUpwardMessage,
-	UpwardMessageOrigin, UpwardMessageSender,
+	UpwardMessageOrigin, UpwardMessageSender, xcmp::{XCMPMessageHandler, XCMPMessageSender}
 };
 use frame_support::{
 	decl_event, decl_module, storage,
@@ -46,6 +47,12 @@ pub trait Trait: frame_system::Trait {
 
 	/// The upward message type used by the Parachain runtime.
 	type UpwardMessage: codec::Codec;
+
+	/// The XCMP message handlers that will be informed when a XCMP message is received.
+	type XCMPMessageHandlers: XCMPMessageHandler;
+
+	/// The XCMP message type used by the Parachain runtime.
+	type XCMPMessage: codec::Codec;
 }
 
 decl_event! {
@@ -69,7 +76,9 @@ decl_module! {
 			//TODO: max messages should not be hardcoded. It should be determined based on the
 			// weight used by the handlers.
 			let max_messages = 10;
-			messages.iter().take(max_messages).for_each(T::DownwardMessageHandlers::handle_downward_message);
+			messages.iter().take(max_messages).for_each(|msg| {
+				T::DownwardMessageHandlers::handle_downward_message(msg);
+			});
 
 			let processed = sp_std::cmp::min(messages.len(), max_messages) as u32;
 			storage::unhashed::put(well_known_keys::PROCESSED_DOWNWARD_MESSAGES, &processed);
@@ -97,6 +106,12 @@ impl<T: Trait> UpwardMessageSender<T::UpwardMessage> for Module<T> {
 		Self::deposit_event(RawEvent::UpwardMessageSent(data_hash));
 
 		Ok(())
+	}
+}
+
+impl<T: Trait> XCMPMessageSender<T::XCMPMessage> for Module<T> {
+	fn send_xcmp_message(msg: &Message) -> Result<(), ()> {
+	
 	}
 }
 

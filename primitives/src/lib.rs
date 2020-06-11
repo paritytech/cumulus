@@ -28,6 +28,7 @@ pub use polkadot_parachain::primitives::UpwardMessage as GenericUpwardMessage;
 pub use polkadot_parachain::primitives::ParachainDispatchOrigin as UpwardMessageOrigin;
 
 pub mod validation_function_params;
+pub mod xcmp;
 
 use codec::{Decode, Encode};
 use sp_runtime::traits::Block as BlockT;
