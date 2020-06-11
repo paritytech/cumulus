@@ -45,6 +45,24 @@ pub struct ExportGenesisStateCommand {
 }
 
 #[derive(Debug, StructOpt)]
+pub struct RunCmd {
+	#[structopt(flatten)]
+	pub base: sc_cli::RunCmd,
+
+	/// Id of the parachain this collator collates for.
+	#[structopt(long, default_value = "100")]
+	pub parachain_id: u32,
+}
+
+impl std::ops::Deref for RunCmd {
+	type Target = sc_cli::RunCmd;
+
+	fn deref(&self) -> &Self::Target {
+		&self.base
+	}
+}
+
+#[derive(Debug, StructOpt)]
 #[structopt(settings = &[
 	structopt::clap::AppSettings::GlobalVersion,
 	structopt::clap::AppSettings::ArgsNegateSubcommands,
@@ -55,7 +73,7 @@ pub struct Cli {
 	pub subcommand: Option<Subcommand>,
 
 	#[structopt(flatten)]
-	pub run: sc_cli::RunCmd,
+	pub run: RunCmd,
 
 	/// Relaychain arguments
 	#[structopt(raw = true)]

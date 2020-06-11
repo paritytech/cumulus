@@ -19,6 +19,7 @@ use crate::cli::{Cli, PolkadotCli, Subcommand};
 use codec::Encode;
 use log::info;
 use parachain_runtime::Block;
+use polkadot_parachain::primitives::{AccountIdConversion, Id as ParaId};
 use sc_cli::{
 	CliConfiguration, Error, ImportParams, KeystoreParams, NetworkParams, Result, SharedParams,
 	SubstrateCli,
@@ -30,10 +31,7 @@ use sp_runtime::{
 	traits::{Block as BlockT, Hash as HashT, Header as HeaderT, Zero},
 	BuildStorage,
 };
-use std::net::SocketAddr;
-use std::path::PathBuf;
-use std::sync::Arc;
-use polkadot_parachain::primitives::AccountIdConversion;
+use std::{net::SocketAddr, sync::Arc};
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> &'static str {
@@ -116,19 +114,17 @@ fn generate_genesis_state() -> Result<Block> {
 	let storage = (&chain_spec::get_chain_spec()).build_storage()?;
 
 	let child_roots = storage.children_default.iter().map(|(sk, child_content)| {
-		let state_root =
-			<<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
-				child_content.data.clone().into_iter().collect(),
-			);
+		let state_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
+			child_content.data.clone().into_iter().collect(),
+		);
 		(sk.clone(), state_root.encode())
 	});
 	let state_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
 		storage.top.clone().into_iter().chain(child_roots).collect(),
 	);
 
-	let extrinsics_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
-		Vec::new(),
-	);
+	let extrinsics_root =
+		<<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(Vec::new());
 
 	Ok(Block::new(
 		<<Block as BlockT>::Header as HeaderT>::new(
@@ -172,13 +168,14 @@ pub fn run() -> Result<()> {
 			let grandpa_pause = if polkadot_cli.run.grandpa_pause.is_empty() {
 				None
 			} else {
-				Some((polkadot_cli.run.grandpa_pause[0], polkadot_cli.run.grandpa_pause[1]))
+				Some((
+					polkadot_cli.run.grandpa_pause[0],
+					polkadot_cli.run.grandpa_pause[1],
+				))
 			};
 
 			runner.run_node(
-				|config| {
-					polkadot_service::polkadot_new_light(config)
-				},
+				|config| polkadot_service::polkadot_new_light(config),
 				|config| {
 					polkadot_service::polkadot_new_full(
 						config,
@@ -188,22 +185,23 @@ pub fn run() -> Result<()> {
 						6000,
 						grandpa_pause,
 						None,
-					).map(|(s, _, _)| s)
+					)
+					.map(|(s, _, _)| s)
 				},
-				polkadot_service::PolkadotExecutor::native_version().runtime_version
+				polkadot_service::PolkadotExecutor::native_version().runtime_version,
 			)
-		},
+		}
 		Some(Subcommand::PolkadotValidationWorker(cmd)) => {
 			sc_cli::init_logger("");
 			polkadot_service::run_validation_worker(&cmd.mem_id)?;
 
 			Ok(())
-		},
+		}
 		None => {
-			let runner = cli.create_runner(&cli.run)?;
+			let runner = cli.create_runner(&*cli.run)?;
 
 			// TODO
-			let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
+			let key = Arc::new(sp_core::Pair::generate().0);
 
 			let mut polkadot_cli = PolkadotCli::from_iter(
 				[PolkadotCli::executable_name().to_string()]
@@ -211,8 +209,14 @@ pub fn run() -> Result<()> {
 					.chain(cli.relaychain_args.iter()),
 			);
 
-			polkadot_cli.base_path = cli.run.base_path()?.map(|x| x.join("polkadot"));
-			let parachain_account = AccountIdConversion::<polkadot_primitives::AccountId>::into_account(&crate::PARA_ID);
+			polkadot_cli.base_path = cli.run.base_path()?.map(|x| x.path().join("polkadot"));
+			let id = ParaId::from(cli.run.parachain_id);
+
+			let parachain_account =
+				AccountIdConversion::<polkadot_primitives::AccountId>::into_account(&id);
+
+			let block = generate_genesis_state()?;
+			let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
 			runner.run_full_node(
 				|config| {
@@ -224,10 +228,11 @@ pub fn run() -> Result<()> {
 					)
 					.unwrap();
 
-					info!("Parachain id: {:?}", crate::PARA_ID);
+					info!("Parachain id: {:?}", id);
 					info!("Parachain Account: {}", parachain_account);
+					info!("Parachain genesis state: {}", genesis_state);
 
-					crate::service::run_collator(config, key, polkadot_config)
+					crate::service::run_collator(config, key, polkadot_config, id)
 				},
 				parachain_runtime::VERSION,
 			)
@@ -252,8 +257,11 @@ impl CliConfiguration for PolkadotCli {
 		self.base.base.keystore_params()
 	}
 
-	fn base_path(&self) -> Result<Option<PathBuf>> {
-		Ok(self.shared_params().base_path().or(self.base_path.clone()))
+	fn base_path(&self) -> Result<Option<sc_service::config::BasePath>> {
+		Ok(self
+			.shared_params()
+			.base_path()
+			.or(self.base_path.clone().map(Into::into)))
 	}
 
 	fn rpc_http(&self) -> Result<Option<SocketAddr>> {
