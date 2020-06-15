@@ -25,7 +25,7 @@ use sc_cli::{
 	SubstrateCli,
 };
 use sc_executor::NativeExecutionDispatch;
-use sc_service::config::PrometheusConfig;
+use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::{
 	traits::{Block as BlockT, Hash as HashT, Header as HeaderT, Zero},
@@ -211,7 +211,6 @@ pub fn run() -> Result<()> {
 					.chain(cli.relaychain_args.iter()),
 			);
 
-			polkadot_cli.base_path = cli.run.base_path()?.map(|x| x.path().join("polkadot"));
 			let id = ParaId::from(cli.run.parachain_id);
 
 			let parachain_account =
@@ -222,6 +221,9 @@ pub fn run() -> Result<()> {
 
 			runner.run_full_node(
 				|config| {
+					polkadot_cli.base_path =
+						config.base_path.as_ref().map(|x| x.path().join("polkadot"));
+
 					let task_executor = config.task_executor.clone();
 					let polkadot_config = SubstrateCli::create_configuration(
 						&polkadot_cli,
@@ -259,11 +261,12 @@ impl CliConfiguration for PolkadotCli {
 		self.base.base.keystore_params()
 	}
 
-	fn base_path(&self) -> Result<Option<sc_service::config::BasePath>> {
+	fn base_path(&self) -> Result<Option<BasePath>> {
 		Ok(self
 			.shared_params()
 			.base_path()
-			.or(self.base_path.clone().map(Into::into)))
+			.or_else(|| self.base_path.clone().map(Into::into))
+		)
 	}
 
 	fn rpc_http(&self) -> Result<Option<SocketAddr>> {
