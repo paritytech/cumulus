@@ -253,7 +253,8 @@ impl CliConfiguration for PolkadotCli {
 		Ok(self
 			.shared_params()
 			.base_path()
-			.or_else(|| self.base_path.clone().map(|x| BasePath::new(x))))
+			.or_else(|| self.base_path.clone().map(Into::into))
+		)
 	}
 
 	fn rpc_http(&self) -> Result<Option<SocketAddr>> {
