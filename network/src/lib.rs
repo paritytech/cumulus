@@ -105,7 +105,7 @@ where
 
 				Validation::Failure
 			} else {
-				Validation::Success
+				Validation::Success { is_new_best: false }
 			});
 		}
 
@@ -202,7 +202,7 @@ where
 			)) as Box<_>);
 		}
 
-		Ok(Validation::Success)
+		Ok(Validation::Success { is_new_best: true })
 	}
 }
 
@@ -232,9 +232,10 @@ impl<B: BlockT> BlockAnnounceValidator<B> for DelayedBlockAnnounceValidator<B> {
 		header: &B::Header,
 		data: &[u8],
 	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
-		self.0.lock().as_mut()
+		println!("VALIDATING");
+		dbg!(self.0.lock().as_mut()
 			.expect("BlockAnnounceValidator is set before validating the first announcement; qed")
-			.validate(header, data)
+			.validate(header, data))
 	}
 }
 
@@ -339,6 +340,7 @@ async fn wait_to_announce<Block: BlockT>(
 					signed_statement: statement,
 				}.into();
 
+				println!("ANNOUNCING!!!");
 				announce_block(hash, gossip_message.encode());
 
 				break;

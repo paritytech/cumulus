@@ -16,7 +16,7 @@
 
 use crate::chain_spec;
 use crate::cli::{Cli, PolkadotCli, Subcommand};
-use codec::Encode;
+use codec::{Encode, Decode};
 use log::info;
 use parachain_runtime::Block;
 use sc_cli::{
@@ -201,7 +201,7 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(&cli.run)?;
 
 			// TODO
-			let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
+			let key = Arc::new(sp_core::Pair::generate().0);
 
 			let mut polkadot_cli = PolkadotCli::from_iter(
 				[PolkadotCli::executable_name().to_string()]

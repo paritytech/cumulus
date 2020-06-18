@@ -17,7 +17,10 @@
 use sc_client_api::{Backend, Finalizer, UsageProvider};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Error as ClientError, Result as ClientResult};
-use sp_consensus::{Error as ConsensusError, SelectChain as SelectChainT};
+use sp_consensus::{
+	BlockImport, BlockImportParams, BlockOrigin, Error as ConsensusError, ForkChoiceStrategy,
+	SelectChain as SelectChainT,
+};
 use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, Header as HeaderT},
@@ -59,11 +62,14 @@ pub trait PolkadotClient: Clone + 'static {
 	/// The error type for interacting with the Polkadot client.
 	type Error: std::fmt::Debug + Send;
 
-	/// A stream that yields finalized head-data for a certain parachain.
-	type Finalized: Stream<Item = Vec<u8>> + Send + Unpin;
+	/// A stream that yields head-data for a parachain.
+	type HeadStream: Stream<Item = Vec<u8>> + Send + Unpin;
 
-	/// Get a stream of finalized heads.
-	fn finalized_heads(&self, para_id: ParaId) -> ClientResult<Self::Finalized>;
+	/// Get a stream of new best heads for the given parachain.
+	fn new_best_heads(&self, para_id: ParaId) -> ClientResult<Self::HeadStream>;
+
+	/// Get a stream of finalized heads for the given parachain.
+	fn finalized_heads(&self, para_id: ParaId) -> ClientResult<Self::HeadStream>;
 
 	/// Returns the parachain head for the given `para_id` at the given block id.
 	fn parachain_head_at(
@@ -103,15 +109,15 @@ pub fn follow_polkadot<L, P, Block, B>(
 where
 	Block: BlockT,
 	L: Finalizer<Block, B> + UsageProvider<Block> + Send + Sync,
+	for<'a> &'a L: BlockImport<Block>,
 	P: PolkadotClient,
 	B: Backend<Block>,
 {
-	let finalized_heads = polkadot.finalized_heads(para_id)?;
-
 	let follow_finalized = {
 		let local = local.clone();
 
-		finalized_heads
+		polkadot
+			.finalized_heads(para_id)?
 			.map(|head_data| {
 				<<Block as BlockT>::Header>::decode(&mut &head_data[..])
 					.map_err(|_| Error::InvalidHeadData)
@@ -123,11 +129,45 @@ where
 						.map(|_| ()),
 				)
 			})
+			.map_err(|e| warn!("Failed to finalize block: {:?}", e))
+			.map(|_| ())
 	};
 
-	Ok(follow_finalized
-		.map_err(|e| warn!("Could not follow relay-chain: {:?}", e))
-		.map(|_| ()))
+	let follow_new_best = {
+		polkadot
+			.new_best_heads(para_id)?
+			.filter_map(|head_data| {
+				let res = match <<Block as BlockT>::Header>::decode(&mut &head_data[..]) {
+					Ok(header) => Some(header),
+					Err(err) => {
+						warn!("Could not decode Parachain header: {:?}", err);
+						None
+					}
+				};
+
+				future::ready(res)
+			})
+			.for_each(move |h| {
+				let hash = h.hash();
+
+				// Make it the new best block
+				let mut block_import_params =
+					BlockImportParams::new(BlockOrigin::ConsensusBroadcast, h);
+				block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(true));
+				block_import_params.import_existing = true;
+
+				if let Err(err) = (&*local).import_block(block_import_params, Default::default()) {
+					warn!(
+						"Failed to set new best block `{}` with error: {:?}",
+						hash, err
+					);
+				}
+
+				future::ready(())
+			})
+	};
+
+	Ok(future::select(follow_finalized, follow_new_best).map(|_| ()))
 }
 
 impl<T> PolkadotClient for Arc<T>
@@ -137,9 +177,26 @@ where
 {
 	type Error = ClientError;
 
-	type Finalized = Box<dyn Stream<Item = Vec<u8>> + Send + Unpin>;
+	type HeadStream = Box<dyn Stream<Item = Vec<u8>> + Send + Unpin>;
 
-	fn finalized_heads(&self, para_id: ParaId) -> ClientResult<Self::Finalized> {
+	fn new_best_heads(&self, para_id: ParaId) -> ClientResult<Self::HeadStream> {
+		let polkadot = self.clone();
+
+		let s = self.import_notification_stream().filter_map(move |n| {
+			future::ready(if n.is_new_best {
+				polkadot
+					.parachain_head_at(&BlockId::hash(n.hash), para_id)
+					.ok()
+					.and_then(|h| h)
+			} else {
+				None
+			})
+		});
+
+		Ok(Box::new(s))
+	}
+
+	fn finalized_heads(&self, para_id: ParaId) -> ClientResult<Self::HeadStream> {
 		let polkadot = self.clone();
 
 		let s = self.finality_notification_stream().filter_map(move |n| {

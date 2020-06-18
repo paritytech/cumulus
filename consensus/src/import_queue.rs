@@ -89,7 +89,8 @@ where
 		let mut block_import_params = BlockImportParams::new(origin, header);
 		block_import_params.body = body;
 		block_import_params.justification = justification;
-		block_import_params.fork_choice = Some(ForkChoiceStrategy::LongestChain);
+		// Best block is determined by the relay chain.
+		block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(false));
 		block_import_params.post_hash = post_hash;
 
 		Ok((block_import_params, None))
