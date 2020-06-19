@@ -35,10 +35,12 @@ use std::{
 	env, fs,
 	io::Read,
 	path::PathBuf,
+	pin::Pin,
 	process::{Child, Command, Stdio},
+	sync::Arc,
 	time::Duration,
 };
-use substrate_test_runtime_client::AccountKeyring::Alice;
+use substrate_test_runtime_client::AccountKeyring::*;
 use tempfile::tempdir;
 
 static POLKADOT_ARGS: &[&str] = &["polkadot", "--chain=res/polkadot_chainspec.json"];
@@ -166,7 +168,7 @@ async fn wait_for_blocks(number_of_blocks: usize, mut client: &mut RawClient<Htt
 
 #[async_std::test]
 #[ignore]
-#[cfg(feature = "disabled")]
+//#[cfg(feature = "disabled")]
 async fn integration_test() {
 	assert!(
 		!net::TcpStream::connect("127.0.0.1:27015").await.is_ok(),
@@ -184,7 +186,21 @@ async fn integration_test() {
 	))
 	.fuse();
 	let t2 = async {
+		let task_executor = Arc::new(
+			move |fut: Pin<Box<dyn futures::Future<Output = ()> + Send>>, _| {
+				async_std::task::spawn(fut.unit_error());
+			},
+		);
+
 		// start alice
+		let alice = polkadot_test_service::run_test_node(
+			task_executor.clone(),
+			Alice,
+			|| {},
+			vec![],
+			//vec![alice.multiaddr_with_peer_id.clone()],
+		).unwrap();
+		/*
 		let polkadot_alice_dir = tempdir().unwrap();
 		let mut polkadot_alice = Command::new(cargo_bin("cumulus-test-parachain-collator"))
 			.stdout(Stdio::piped())
@@ -193,14 +209,23 @@ async fn integration_test() {
 			.arg("--base-path")
 			.arg(polkadot_alice_dir.path())
 			.arg("--alice")
+			// TODO?
 			.arg("--rpc-methods=unsafe")
 			.arg("--rpc-port=27015")
 			.arg("--port=27115")
 			.spawn()
 			.unwrap();
 		let polkadot_alice_helper = ChildHelper::new("alice", &mut polkadot_alice);
+		*/
 
 		// start bob
+		let bob = polkadot_test_service::run_test_node(
+			task_executor.clone(),
+			Bob,
+			|| {},
+			vec![alice.multiaddr_with_peer_id.clone()],
+		).unwrap();
+		/*
 		let polkadot_bob_dir = tempdir().unwrap();
 		let mut polkadot_bob = Command::new(cargo_bin("cumulus-test-parachain-collator"))
 			.stdout(Stdio::piped())
@@ -215,8 +240,10 @@ async fn integration_test() {
 			.spawn()
 			.unwrap();
 		let polkadot_bob_helper = ChildHelper::new("bob", &mut polkadot_bob);
+		*/
 
 		// wait for both nodes to be up and running
+		// TODO
 		join!(
 			wait_for_tcp("127.0.0.1:27015"),
 			wait_for_tcp("127.0.0.1:27016")

@@ -66,6 +66,7 @@ serde_json = "1.0"
 # Polkadot dependencies
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
 polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
 
 # Substrate dependencies
 substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
