@@ -24,8 +24,8 @@ use futures::{future::FutureExt, join, pin_mut, select};
 use jsonrpsee::{raw::RawClient, transport::http::HttpTransportClient};
 use polkadot_primitives::parachain::{Info, Scheduling};
 use polkadot_primitives::Hash as PHash;
-use polkadot_runtime::{Header, Runtime, SignedExtra, SignedPayload, IsCallable};
-use polkadot_runtime_common::{parachains, registrar, BlockHashCount, claims, TransactionCallFilter};
+use polkadot_runtime::{Header, Runtime, SignedExtra, SignedPayload};
+use polkadot_runtime_common::{parachains, registrar, BlockHashCount, claims};
 use serde_json::Value;
 use sp_arithmetic::traits::SaturatedConversion;
 use sp_runtime::generic;
@@ -292,7 +292,6 @@ async fn integration_test() {
 			.unwrap_or(2) as u64;
 		let tip = 0;
 		let extra: SignedExtra = (
-			TransactionCallFilter::<IsCallable, polkadot_runtime::Call>::new(),
 			frame_system::CheckSpecVersion::<Runtime>::new(),
 			frame_system::CheckTxVersion::<Runtime>::new(),
 			frame_system::CheckGenesis::<Runtime>::new(),

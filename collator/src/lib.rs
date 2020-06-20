@@ -497,9 +497,13 @@ mod tests {
 
 	impl cumulus_consensus::PolkadotClient for DummyPolkadotClient {
 		type Error = Error;
-		type Finalized = Box<dyn futures::Stream<Item = Vec<u8>> + Send + Unpin>;
+		type HeadStream = Box<dyn futures::Stream<Item = Vec<u8>> + Send + Unpin>;
 
-		fn finalized_heads(&self, _: ParaId) -> ClientResult<Self::Finalized> {
+		fn new_best_heads(&self, para_id: ParaId) -> ClientResult<Self::HeadStream> {
+			unimplemented!("Not required in tests")
+		}
+
+		fn finalized_heads(&self, _: ParaId) -> ClientResult<Self::HeadStream> {
 			unimplemented!("Not required in tests")
 		}
 
