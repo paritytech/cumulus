@@ -20,7 +20,7 @@ use cumulus_network::{
 	DelayedBlockAnnounceValidator, JustifiedBlockAnnounceValidator, WaitToAnnounce,
 };
 use cumulus_primitives::{
-	inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER as VFP_IDENT,
+	inherents::{VALIDATION_FUNCTION_PARAMS_IDENTIFIER as VFP_IDENT, DOWNWARD_MESSAGES_IDENTIFIER, DownwardMessagesType},
 	validation_function_params::ValidationFunctionParams, HeadData,
 };
 use cumulus_runtime::ParachainBlockData;
@@ -42,7 +42,7 @@ use polkadot_collator::{
 };
 use polkadot_primitives::{
 	parachain::{self, BlockData, GlobalValidationSchedule, Id as ParaId, LocalValidationData},
-	Block as PBlock, Hash as PHash,
+	Block as PBlock, DownwardMessage, Hash as PHash,
 };
 
 use codec::{Decode, Encode};
@@ -98,6 +98,7 @@ impl<Block: BlockT, PF, BI> Collator<Block, PF, BI> {
 		inherent_providers: InherentDataProviders,
 		global_validation: GlobalValidationSchedule,
 		local_validation: LocalValidationData,
+		downward_messages: DownwardMessagesType,
 	) -> Result<InherentData, InvalidHead> {
 		let mut inherent_data = inherent_providers.create_inherent_data().map_err(|e| {
 			error!(
@@ -116,7 +117,21 @@ impl<Block: BlockT, PF, BI> Collator<Block, PF, BI> {
 			.map_err(|e| {
 				error!(
 					target: "cumulus-collator",
-					"Failed to inject validation function params into inherents: {:?}",
+					"Failed to put validation function params into inherent data: {:?}",
+					e,
+				);
+				InvalidHead
+			})?;
+
+		inherent_data
+			.put_data(
+				DOWNWARD_MESSAGES_IDENTIFIER,
+				&downward_messages,
+			)
+			.map_err(|e| {
+				error!(
+					target: "cumulus-collator",
+					"Failed to put downward messages into inherent data: {:?}",
 					e,
 				);
 				InvalidHead
@@ -160,6 +175,7 @@ where
 		relay_chain_parent: PHash,
 		global_validation: GlobalValidationSchedule,
 		local_validation: LocalValidationData,
+		downward_messages: Vec<DownwardMessage>,
 	) -> Self::ProduceCandidate {
 		let factory = self.proposer_factory.clone();
 		let inherent_providers = self.inherent_data_providers.clone();
@@ -180,8 +196,6 @@ where
 		let wait_to_announce = self.wait_to_announce.clone();
 
 		Box::pin(async move {
-			let parent_state_root = *last_head.header.state_root();
-
 			let proposer = proposer_future.await.map_err(|e| {
 				error!(
 					target: "cumulus-collator",
@@ -191,8 +205,12 @@ where
 				InvalidHead
 			})?;
 
-			let inherent_data =
-				Self::inherent_data(inherent_providers, global_validation, local_validation)?;
+			let inherent_data = Self::inherent_data(
+				inherent_providers,
+				global_validation,
+				local_validation,
+				downward_messages,
+			)?;
 
 			let Proposal {
 				block,
@@ -231,7 +249,6 @@ where
 				header.clone(),
 				extrinsics,
 				proof.iter_nodes().collect(),
-				parent_state_root,
 			);
 
 			let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header);
@@ -551,6 +568,7 @@ mod tests {
 				balance: 10,
 				code_upgrade_allowed: None,
 			},
+			Vec::new(),
 			context,
 			Arc::new(Sr25519Keyring::Alice.pair().into()),
 		);
