@@ -29,7 +29,7 @@ use polkadot_test_runtime::VERSION;
 use polkadot_runtime_common::{parachains, registrar, BlockHashCount, claims, TransactionCallFilter};
 use serde_json::Value;
 use sp_arithmetic::traits::SaturatedConversion;
-use sp_runtime::generic;
+use sp_runtime::{generic, OpaqueExtrinsic};
 use sp_version::RuntimeVersion;
 use std::{
 	collections::HashSet,
@@ -394,11 +394,11 @@ async fn integration_test() {
 		let mut builder = alice.client.new_block(Default::default()).unwrap();
 
 		for extrinsic in polkadot_test_runtime_client::needed_extrinsics(vec![], current_block as u64) {
-			builder.push(extrinsic).unwrap()
+			builder.push(OpaqueExtrinsic(extrinsic.encode())).unwrap()
 		}
 
 		builder.push(
-			polkadot_test_runtime::UncheckedExtrinsic {
+			OpaqueExtrinsic(polkadot_test_runtime::UncheckedExtrinsic {
 				function: polkadot_test_runtime::Call::Registrar(registrar::Call::register_para(
 					100.into(),
 					Info {
@@ -408,7 +408,7 @@ async fn integration_test() {
 					genesis_state.into(),
 				)),
 				signature: None,
-			},
+			}.encode()),
 		).unwrap();
 
 		let block = builder.build().unwrap().block;
