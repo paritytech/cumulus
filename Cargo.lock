@@ -1001,8 +1001,11 @@ dependencies = [
  "polkadot-runtime",
  "polkadot-runtime-common",
  "polkadot-service",
+ "polkadot-test-runtime",
+ "polkadot-test-runtime-client",
  "polkadot-test-service",
  "sc-basic-authorship",
+ "sc-block-builder",
  "sc-cli",
  "sc-consensus",
  "sc-executor",
@@ -1012,6 +1015,7 @@ dependencies = [
  "sc-transaction-pool",
  "serde_json",
  "sp-arithmetic",
+ "sp-blockchain",
  "sp-consensus",
  "sp-core",
  "sp-inherents",
@@ -1022,6 +1026,7 @@ dependencies = [
  "sp-version",
  "structopt",
  "substrate-build-script-utils",
+ "substrate-test-client",
  "substrate-test-runtime-client",
  "tempfile",
  "trie-root 0.15.2",
@@ -2484,7 +2489,7 @@ dependencies = [
 [[package]]
 name = "kusama-runtime"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#e8d36f3a595e72d77e8a7f5a6c25b661b99d37a8"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#524c29b7ebd4c417c09dd895392af68e2f111760"
 dependencies = [
  "bitvec",
  "frame-executive",
@@ -4321,7 +4326,7 @@ checksum = "feb3b2b1033b8a60b4da6ee470325f887758c95d5320f52f9ce0df055a55940e"
 [[package]]
 name = "polkadot-availability-store"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#e8d36f3a595e72d77e8a7f5a6c25b661b99d37a8"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#524c29b7ebd4c417c09dd895392af68e2f111760"
 dependencies = [
  "derive_more 0.99.7",
  "exit-future 0.2.0",
@@ -4348,7 +4353,7 @@ dependencies = [
 [[package]]
 name = "polkadot-cli"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#e8d36f3a595e72d77e8a7f5a6c25b661b99d37a8"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#524c29b7ebd4c417c09dd895392af68e2f111760"
 dependencies = [
  "frame-benchmarking-cli",
  "futures 0.3.5",
@@ -4370,7 +4375,7 @@ dependencies = [
 [[package]]
 name = "polkadot-collator"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#e8d36f3a595e72d77e8a7f5a6c25b661b99d37a8"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#524c29b7ebd4c417c09dd895392af68e2f111760"
 dependencies = [
  "futures 0.3.5",
  "futures-timer 2.0.2",
@@ -4397,7 +4402,7 @@ dependencies = [
 [[package]]
 name = "polkadot-erasure-coding"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#e8d36f3a595e72d77e8a7f5a6c25b661b99d37a8"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#524c29b7ebd4c417c09dd895392af68e2f111760"
 dependencies = [
  "derive_more 0.15.0",
  "parity-scale-codec",
@@ -4410,7 +4415,7 @@ dependencies = [
 [[package]]
 name = "polkadot-network"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#e8d36f3a595e72d77e8a7f5a6c25b661b99d37a8"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#524c29b7ebd4c417c09dd895392af68e2f111760"
 dependencies = [
  "arrayvec 0.4.12",
  "bytes 0.5.4",
@@ -4437,7 +4442,7 @@ dependencies = [
 [[package]]
 name = "polkadot-parachain"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#e8d36f3a595e72d77e8a7f5a6c25b661b99d37a8"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#524c29b7ebd4c417c09dd895392af68e2f111760"
 dependencies = [
  "derive_more 0.99.7",
  "log 0.4.8",
@@ -4457,7 +4462,7 @@ dependencies = [
 [[package]]
 name = "polkadot-primitives"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#e8d36f3a595e72d77e8a7f5a6c25b661b99d37a8"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#524c29b7ebd4c417c09dd895392af68e2f111760"
 dependencies = [
  "bitvec",
  "frame-system",
@@ -4478,7 +4483,7 @@ dependencies = [
 [[package]]
 name = "polkadot-rpc"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#e8d36f3a595e72d77e8a7f5a6c25b661b99d37a8"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#524c29b7ebd4c417c09dd895392af68e2f111760"
 dependencies = [
  "jsonrpc-core",
  "pallet-transaction-payment-rpc",
@@ -4504,7 +4509,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#e8d36f3a595e72d77e8a7f5a6c25b661b99d37a8"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#524c29b7ebd4c417c09dd895392af68e2f111760"
 dependencies = [
  "bitvec",
  "frame-executive",
@@ -4568,7 +4573,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-common"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#e8d36f3a595e72d77e8a7f5a6c25b661b99d37a8"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#524c29b7ebd4c417c09dd895392af68e2f111760"
 dependencies = [
  "bitvec",
  "frame-support",
@@ -4600,7 +4605,7 @@ dependencies = [
 [[package]]
 name = "polkadot-service"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#e8d36f3a595e72d77e8a7f5a6c25b661b99d37a8"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#524c29b7ebd4c417c09dd895392af68e2f111760"
 dependencies = [
  "frame-benchmarking",
  "frame-system-rpc-runtime-api",
@@ -4658,7 +4663,7 @@ dependencies = [
 [[package]]
 name = "polkadot-statement-table"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#e8d36f3a595e72d77e8a7f5a6c25b661b99d37a8"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#524c29b7ebd4c417c09dd895392af68e2f111760"
 dependencies = [
  "parity-scale-codec",
  "polkadot-primitives",
@@ -4668,7 +4673,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-runtime"
 version = "0.8.7"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#e8d36f3a595e72d77e8a7f5a6c25b661b99d37a8"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#524c29b7ebd4c417c09dd895392af68e2f111760"
 dependencies = [
  "bitvec",
  "frame-executive",
@@ -4722,7 +4727,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-runtime-client"
 version = "2.0.0"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#e8d36f3a595e72d77e8a7f5a6c25b661b99d37a8"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#524c29b7ebd4c417c09dd895392af68e2f111760"
 dependencies = [
  "futures 0.3.5",
  "pallet-timestamp",
@@ -4745,7 +4750,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-service"
 version = "0.8.2"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#e8d36f3a595e72d77e8a7f5a6c25b661b99d37a8"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#524c29b7ebd4c417c09dd895392af68e2f111760"
 dependencies = [
  "frame-benchmarking",
  "futures 0.3.5",
@@ -4783,7 +4788,7 @@ dependencies = [
 [[package]]
 name = "polkadot-validation"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#e8d36f3a595e72d77e8a7f5a6c25b661b99d37a8"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#524c29b7ebd4c417c09dd895392af68e2f111760"
 dependencies = [
  "bitvec",
  "derive_more 0.14.1",
@@ -8681,7 +8686,7 @@ dependencies = [
 [[package]]
 name = "westend-runtime"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#e8d36f3a595e72d77e8a7f5a6c25b661b99d37a8"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#524c29b7ebd4c417c09dd895392af68e2f111760"
 dependencies = [
  "bitvec",
  "frame-executive",

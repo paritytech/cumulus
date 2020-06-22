@@ -67,6 +67,8 @@ serde_json = "1.0"
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
 polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
 polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
+polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
+polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
 
 # Substrate dependencies
 substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
@@ -76,3 +78,6 @@ sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "cec
 sp-version = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
 pallet-grandpa = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
+sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }

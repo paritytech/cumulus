@@ -25,6 +25,7 @@ use jsonrpsee::{raw::RawClient, transport::http::HttpTransportClient};
 use polkadot_primitives::parachain::{Info, Scheduling};
 use polkadot_primitives::Hash as PHash;
 use polkadot_runtime::{Header, Runtime, SignedExtra, SignedPayload, IsCallable};
+use polkadot_test_runtime::VERSION;
 use polkadot_runtime_common::{parachains, registrar, BlockHashCount, claims, TransactionCallFilter};
 use serde_json::Value;
 use sp_arithmetic::traits::SaturatedConversion;
@@ -42,6 +43,11 @@ use std::{
 };
 use substrate_test_runtime_client::AccountKeyring::*;
 use tempfile::tempdir;
+use sc_service::AbstractService;
+use polkadot_test_runtime_client::sp_consensus::BlockOrigin;
+use sp_blockchain::HeaderBackend;
+use sc_block_builder::BlockBuilderProvider;
+use substrate_test_client::ClientBlockImportExt;
 
 static POLKADOT_ARGS: &[&str] = &["polkadot", "--chain=res/polkadot_chainspec.json"];
 static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TEST_ALLOWED_TIME");
@@ -244,10 +250,12 @@ async fn integration_test() {
 
 		// wait for both nodes to be up and running
 		// TODO
+		/*
 		join!(
 			wait_for_tcp("127.0.0.1:27015"),
 			wait_for_tcp("127.0.0.1:27016")
 		);
+		*/
 
 		// export genesis state
 		let cmd = Command::new(cargo_bin("cumulus-test-parachain-collator"))
@@ -259,14 +267,19 @@ async fn integration_test() {
 		let genesis_state = hex::decode(&output[2..output.len() - 1]).unwrap();
 
 		// connect RPC clients
+		/*
 		let transport_client_alice =
 			jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:27015");
 		let mut client_alice = jsonrpsee::raw::RawClient::new(transport_client_alice);
 		let transport_client_bob =
 			jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:27016");
 		let mut client_bob = jsonrpsee::raw::RawClient::new(transport_client_bob);
+		*/
 
 		// retrieve nodes network id
+		let polkadot_alice_id = alice.multiaddr_with_peer_id.peer_id;
+		let polkadot_bob_id = alice.multiaddr_with_peer_id.peer_id;
+		/*
 		let polkadot_alice_id = System::network_state(&mut client_alice).await.unwrap()["peerId"]
 			.as_str()
 			.unwrap()
@@ -275,11 +288,16 @@ async fn integration_test() {
 			.as_str()
 			.unwrap()
 			.to_string();
+		*/
 
 		// retrieve runtime version
-		let runtime_version = State::runtime_version(&mut client_alice).await.unwrap();
+		//let runtime_version = State::runtime_version(&mut client_alice).await.unwrap();
+		let runtime_version = VERSION;
 
 		// get the current block
+		let current_block_hash = alice.client.info().best_hash;
+		let current_block = alice.client.info().best_number as u64; // TODO: not sure why the type is different here
+		/*
 		let current_block_hash = Chain::block_hash(&mut client_alice, None)
 			.await
 			.unwrap()
@@ -295,12 +313,15 @@ async fn integration_test() {
 			.await
 			.unwrap()
 			.unwrap();
+		*/
+		let genesis_block = alice.client.hash(0).unwrap().unwrap();
 
 		// create and sign transaction
 		let wasm = fs::read(target_dir().join(
 			"wbuild/cumulus-test-parachain-runtime/cumulus_test_parachain_runtime.compact.wasm",
 		))
 		.unwrap();
+		/*
 		let call = pallet_sudo::Call::sudo(Box::new(
 			registrar::Call::<Runtime>::register_para(
 				100.into(),
@@ -351,18 +372,47 @@ async fn integration_test() {
 			),
 		);
 		let signature = raw_payload.using_encoded(|e| Alice.sign(e));
+		*/
 
 		// register parachain
+		/*
 		let ex = polkadot_runtime::UncheckedExtrinsic::new_signed(
 			call.into(),
 			Alice.into(),
 			sp_runtime::MultiSignature::Sr25519(signature),
 			extra,
 		);
+		alice.service.transaction_pool().import(ex).await;
+		*/
+		/*
 		let _register_block_hash =
 			Author::submit_extrinsic(&mut client_alice, format!("0x{}", hex::encode(ex.encode())))
 				.await
 				.unwrap();
+		*/
+
+		let mut builder = alice.client.new_block(Default::default()).unwrap();
+
+		for extrinsic in polkadot_test_runtime_client::needed_extrinsics(vec![], current_block as u64) {
+			builder.push(extrinsic).unwrap()
+		}
+
+		builder.push(
+			polkadot_test_runtime::UncheckedExtrinsic {
+				function: polkadot_test_runtime::Call::Registrar(registrar::Call::register_para(
+					100.into(),
+					Info {
+						scheduling: Scheduling::Always,
+					},
+					wasm.into(),
+					genesis_state.into(),
+				)),
+				signature: None,
+			},
+		).unwrap();
+
+		let block = builder.build().unwrap().block;
+		alice.client.import(BlockOrigin::Own, block).unwrap();
 
 		// run cumulus charlie
 		let cumulus_charlie_dir = tempdir().unwrap();
