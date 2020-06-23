@@ -20,9 +20,8 @@ use codec::Encode;
 use futures::{future::FutureExt, join, pin_mut, select};
 use polkadot_primitives::parachain::{Info, Scheduling};
 use polkadot_primitives::Hash as PHash;
-use polkadot_runtime::{Header, Runtime, SignedExtra, SignedPayload, IsCallable};
 use polkadot_test_runtime::VERSION;
-use polkadot_runtime_common::{parachains, registrar, BlockHashCount, claims, TransactionCallFilter};
+use polkadot_runtime_common::{parachains, registrar, BlockHashCount, claims};
 use serde_json::Value;
 use sp_arithmetic::traits::SaturatedConversion;
 use sp_runtime::{generic, OpaqueExtrinsic};
@@ -54,6 +53,7 @@ use substrate_test_client::ClientBlockImportExt;
 use polkadot_service::ChainSpec;
 use sp_state_machine::BasicExternalities;
 use sc_network::{multiaddr, config::TransportConfig};
+use polkadot_test_runtime::{SignedExtra, Runtime, RestrictFunctionality};
 
 static POLKADOT_ARGS: &[&str] = &["polkadot", "--chain=res/polkadot_chainspec.json"];
 static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TEST_ALLOWED_TIME");
@@ -126,25 +126,51 @@ async fn integration_test() {
 			"wbuild/cumulus-test-parachain-runtime/cumulus_test_parachain_runtime.compact.wasm",
 		))
 		.unwrap();
+		let nonce = 0;
+		let period = BlockHashCount::get()
+			.checked_next_power_of_two()
+			.map(|c| c / 2)
+			.unwrap_or(2) as u64;
+		let tip = 0;
+		let extra: SignedExtra = (
+			RestrictFunctionality,
+			frame_system::CheckSpecVersion::<Runtime>::new(),
+			frame_system::CheckTxVersion::<Runtime>::new(),
+			frame_system::CheckGenesis::<Runtime>::new(),
+			frame_system::CheckEra::<Runtime>::from(generic::Era::mortal(period, current_block)),
+			frame_system::CheckNonce::<Runtime>::from(nonce),
+			frame_system::CheckWeight::<Runtime>::new(),
+			pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
+			registrar::LimitParathreadCommits::<Runtime>::new(),
+			parachains::ValidateDoubleVoteReports::<Runtime>::new(),
+		);
+		let function = polkadot_test_runtime::Call::Registrar(registrar::Call::register_para(
+			100.into(),
+			Info {
+				scheduling: Scheduling::Always,
+			},
+			wasm.into(),
+			genesis_state.into(),
+		));
+		let signature = function.using_encoded(|e| Alice.sign(e));
 
 		// register parachain
 		let mut builder = alice.client.new_block(Default::default()).unwrap();
 
+		/*
 		for extrinsic in polkadot_test_runtime_client::needed_extrinsics(vec![], current_block as u64) {
 			builder.push(OpaqueExtrinsic(extrinsic.encode())).unwrap()
 		}
+		*/
 
 		builder.push(
 			OpaqueExtrinsic(polkadot_test_runtime::UncheckedExtrinsic {
-				function: polkadot_test_runtime::Call::Registrar(registrar::Call::register_para(
-					100.into(),
-					Info {
-						scheduling: Scheduling::Always,
-					},
-					wasm.into(),
-					genesis_state.into(),
+				function,
+				signature: Some((
+					polkadot_test_runtime::Address::Id(Alice.public().into()),
+					polkadot_primitives::Signature::Sr25519(signature),
+					extra,
 				)),
-				signature: None,
 			}.encode()),
 		).unwrap();
 
