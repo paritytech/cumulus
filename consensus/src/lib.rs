@@ -33,7 +33,7 @@ use polkadot_primitives::{
 
 use codec::Decode;
 use futures::{future, Future, FutureExt, Stream, StreamExt, TryFutureExt, TryStreamExt};
-use log::warn;
+use log::{warn, trace};
 
 use std::{marker::PhantomData, sync::Arc};
 
@@ -129,7 +129,11 @@ where
 						.map(|_| ()),
 				)
 			})
-			.map_err(|e| warn!("Failed to finalize block: {:?}", e))
+			.map_err(|e| {
+				warn!(
+				target: "cumulus-consensus",
+				"Failed to finalize block: {:?}", e)
+			})
 			.map(|_| ())
 	};
 
@@ -140,7 +144,9 @@ where
 				let res = match <<Block as BlockT>::Header>::decode(&mut &head_data[..]) {
 					Ok(header) => Some(header),
 					Err(err) => {
-						warn!("Could not decode Parachain header: {:?}", err);
+						warn!(
+							target: "cumulus-consensus",
+							"Could not decode Parachain header: {:?}", err);
 						None
 					}
 				};
@@ -150,17 +156,28 @@ where
 			.for_each(move |h| {
 				let hash = h.hash();
 
-				// Make it the new best block
-				let mut block_import_params =
-					BlockImportParams::new(BlockOrigin::ConsensusBroadcast, h);
-				block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(true));
-				block_import_params.import_existing = true;
+				if local.usage_info().chain.best_hash == hash {
+					trace!(
+						target: "cumulus-consensus",
+						"Skipping set new best block, because block `{}` is already the best.",
+						hash,
+					)
+				} else {
+					// Make it the new best block
+					let mut block_import_params =
+						BlockImportParams::new(BlockOrigin::ConsensusBroadcast, h);
+					block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(true));
+					block_import_params.import_existing = true;
 
-				if let Err(err) = (&*local).import_block(block_import_params, Default::default()) {
-					warn!(
-						"Failed to set new best block `{}` with error: {:?}",
-						hash, err
-					);
+					if let Err(err) =
+						(&*local).import_block(block_import_params, Default::default())
+					{
+						warn!(
+							target: "cumulus-consensus",
+							"Failed to set new best block `{}` with error: {:?}",
+							hash, err
+						);
+					}
 				}
 
 				future::ready(())

@@ -232,10 +232,9 @@ impl<B: BlockT> BlockAnnounceValidator<B> for DelayedBlockAnnounceValidator<B> {
 		header: &B::Header,
 		data: &[u8],
 	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
-		println!("VALIDATING");
-		dbg!(self.0.lock().as_mut()
+		self.0.lock().as_mut()
 			.expect("BlockAnnounceValidator is set before validating the first announcement; qed")
-			.validate(header, data))
+			.validate(header, data)
 	}
 }
 
@@ -340,7 +339,6 @@ async fn wait_to_announce<Block: BlockT>(
 					signed_statement: statement,
 				}.into();
 
-				println!("ANNOUNCING!!!");
 				announce_block(hash, gossip_message.encode());
 
 				break;

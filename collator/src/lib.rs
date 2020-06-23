@@ -499,7 +499,7 @@ mod tests {
 		type Error = Error;
 		type HeadStream = Box<dyn futures::Stream<Item = Vec<u8>> + Send + Unpin>;
 
-		fn new_best_heads(&self, para_id: ParaId) -> ClientResult<Self::HeadStream> {
+		fn new_best_heads(&self, _: ParaId) -> ClientResult<Self::HeadStream> {
 			unimplemented!("Not required in tests")
 		}
 
