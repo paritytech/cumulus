@@ -16,7 +16,7 @@
 
 use crate::chain_spec;
 use crate::cli::{Cli, PolkadotCli, Subcommand};
-use codec::{Encode, Decode};
+use codec::Encode;
 use log::info;
 use parachain_runtime::Block;
 use polkadot_parachain::primitives::AccountIdConversion;
