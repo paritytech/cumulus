@@ -144,14 +144,16 @@ async fn integration_test() {
 			registrar::LimitParathreadCommits::<Runtime>::new(),
 			parachains::ValidateDoubleVoteReports::<Runtime>::new(),
 		);
-		let function = polkadot_test_runtime::Call::Registrar(registrar::Call::register_para(
-			100.into(),
-			Info {
-				scheduling: Scheduling::Always,
-			},
-			wasm.into(),
-			genesis_state.into(),
-		));
+		let function = polkadot_test_runtime::Call::Sudo(pallet_sudo::Call::sudo(Box::new(
+			polkadot_test_runtime::Call::Registrar(registrar::Call::register_para(
+				100.into(),
+				Info {
+					scheduling: Scheduling::Always,
+				},
+				wasm.into(),
+				genesis_state.into(),
+			)),
+		)));
 		let signature = function.using_encoded(|e| Alice.sign(e));
 
 		// register parachain
