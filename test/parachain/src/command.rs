@@ -222,7 +222,7 @@ pub fn run() -> Result<()> {
 					)
 					.unwrap();
 
-					info!("Parachain id: {:?}", crate::PARA_ID);
+					info!("Parachain id: {:?}", crate::service::PARA_ID);
 
 					crate::service::run_collator(config, key, polkadot_config)
 				},

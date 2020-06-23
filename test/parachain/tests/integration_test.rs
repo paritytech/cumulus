@@ -43,11 +43,21 @@ use std::{
 };
 use substrate_test_runtime_client::AccountKeyring::*;
 use tempfile::tempdir;
-use sc_service::AbstractService;
-use polkadot_test_runtime_client::sp_consensus::BlockOrigin;
+use sc_service::{
+	AbstractService, Configuration, Error as ServiceError,
+	config::{
+		MultiaddrWithPeerId, NetworkConfiguration, DatabaseConfig, KeystoreConfig,
+		WasmExecutionMethod,
+	}, TaskType,
+	BasePath, Role,
+};
+use polkadot_test_runtime_client::{sp_consensus::BlockOrigin, Sr25519Keyring};
 use sp_blockchain::HeaderBackend;
 use sc_block_builder::BlockBuilderProvider;
 use substrate_test_client::ClientBlockImportExt;
+use polkadot_service::ChainSpec;
+use sp_state_machine::BasicExternalities;
+use sc_network::{multiaddr, config::TransportConfig};
 
 static POLKADOT_ARGS: &[&str] = &["polkadot", "--chain=res/polkadot_chainspec.json"];
 static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TEST_ALLOWED_TIME");
@@ -277,8 +287,6 @@ async fn integration_test() {
 		*/
 
 		// retrieve nodes network id
-		let polkadot_alice_id = alice.multiaddr_with_peer_id.peer_id;
-		let polkadot_bob_id = alice.multiaddr_with_peer_id.peer_id;
 		/*
 		let polkadot_alice_id = System::network_state(&mut client_alice).await.unwrap()["peerId"]
 			.as_str()
@@ -412,9 +420,31 @@ async fn integration_test() {
 		).unwrap();
 
 		let block = builder.build().unwrap().block;
-		alice.client.import(BlockOrigin::Own, block).unwrap();
+		//alice.client.import(BlockOrigin::Own, block).unwrap(); // TODO
 
 		// run cumulus charlie
+		let charlie_temp_dir = tempdir().unwrap();
+		let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
+		let polkadot_config = polkadot_test_service::node_config(
+			|| {},
+			task_executor.clone(),
+			Charlie,
+			charlie_temp_dir,
+			vec![
+				alice.multiaddr_with_peer_id.clone(),
+				bob.multiaddr_with_peer_id.clone(),
+			],
+		).unwrap();
+		let parachain_config = parachain_config(
+			|| {},
+			task_executor.clone(),
+			Charlie,
+			vec![],
+		).unwrap();
+		let service = cumulus_test_parachain_collator::run_collator(parachain_config, key, polkadot_config).unwrap();
+		let _base_path = service.base_path();
+		service.fuse().await;
+		/*
 		let cumulus_charlie_dir = tempdir().unwrap();
 		let mut cumulus_charlie = Command::new(cargo_bin("cumulus-test-parachain-collator"))
 			.stdout(Stdio::piped())
@@ -438,14 +468,17 @@ async fn integration_test() {
 			.unwrap();
 		let cumulus_charlie_helper = ChildHelper::new("cumulus-charlie", &mut cumulus_charlie);
 		wait_for_tcp("127.0.0.1:27017").await;
+		*/
 
 		// connect rpc client to cumulus
+		/*
 		let transport_client_cumulus_charlie =
 			jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:27017");
 		let mut client_cumulus_charlie =
 			jsonrpsee::raw::RawClient::new(transport_client_cumulus_charlie);
 
 		wait_for_blocks(4, &mut client_cumulus_charlie).await;
+		*/
 	}
 	.fuse();
 
@@ -457,4 +490,83 @@ async fn integration_test() {
 		},
 		_ = t2 => {},
 	}
+}
+
+pub fn parachain_config(
+	storage_update_func: impl Fn(),
+	task_executor: Arc<
+		dyn Fn(Pin<Box<dyn futures::Future<Output = ()> + Send>>, TaskType) + Send + Sync,
+	>,
+	key: Sr25519Keyring,
+	boot_nodes: Vec<MultiaddrWithPeerId>,
+) -> Result<Configuration, ServiceError> {
+	let base_path = BasePath::new_temp_dir()?;
+	let root = base_path.path().to_path_buf();
+	let role = Role::Authority {
+		sentry_nodes: Vec::new(),
+	};
+	let key_seed = key.to_seed();
+	let mut spec = cumulus_test_parachain_collator::get_chain_spec();
+	let mut storage = spec.as_storage_builder().build_storage()?;
+
+	BasicExternalities::execute_with_storage(&mut storage, storage_update_func);
+	spec.set_storage(storage);
+
+	let mut network_config = NetworkConfiguration::new(
+		format!("Cumulus Test Node for: {}", key_seed),
+		"network/test/0.1",
+		Default::default(),
+		None,
+	);
+
+	network_config.boot_nodes = boot_nodes;
+
+	network_config.allow_non_globals_in_dht = true;
+
+	network_config
+		.listen_addresses
+		.push(multiaddr::Protocol::Memory(rand::random()).into());
+
+	network_config.transport = TransportConfig::MemoryOnly;
+
+	Ok(Configuration {
+		impl_name: "cumulus-test-node",
+		impl_version: "0.1",
+		role,
+		task_executor,
+		transaction_pool: Default::default(),
+		network: network_config,
+		keystore: KeystoreConfig::Path {
+			path: root.join("key"),
+			password: None,
+		},
+		database: DatabaseConfig::RocksDb {
+			path: root.join("db"),
+			cache_size: 128,
+		},
+		state_cache_size: 16777216,
+		state_cache_child_ratio: None,
+		pruning: Default::default(),
+		chain_spec: Box::new(spec),
+		wasm_method: WasmExecutionMethod::Interpreted,
+		execution_strategies: Default::default(),
+		rpc_http: None,
+		rpc_ws: None,
+		rpc_ws_max_connections: None,
+		rpc_cors: None,
+		rpc_methods: Default::default(),
+		prometheus_config: None,
+		telemetry_endpoints: None,
+		telemetry_external_transport: None,
+		default_heap_pages: None,
+		offchain_worker: Default::default(),
+		force_authoring: false,
+		disable_grandpa: false,
+		dev_key_seed: Some(key_seed),
+		tracing_targets: None,
+		tracing_receiver: Default::default(),
+		max_runtime_instances: 8,
+		announce_block: true,
+		base_path: Some(base_path),
+	})
 }

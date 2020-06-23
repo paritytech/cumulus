@@ -19,11 +19,14 @@ use std::sync::Arc;
 use sc_executor::native_executor_instance;
 use sc_service::{AbstractService, Configuration};
 use sc_finality_grandpa::{FinalityProofProvider as GrandpaFinalityProofProvider, StorageAndProofProvider};
-use polkadot_primitives::parachain::CollatorPair;
+use polkadot_primitives::parachain::{CollatorPair, Id as ParaId};
 use cumulus_collator::{CollatorBuilder, prepare_collator_config};
 use futures::FutureExt;
 pub use sc_executor::NativeExecutor;
 use cumulus_network::DelayedBlockAnnounceValidator;
+
+/// The parachain id of this parachain.
+pub const PARA_ID: ParaId = ParaId::new(100);
 
 // Our native executor instance.
 native_executor_instance!(
@@ -36,6 +39,7 @@ native_executor_instance!(
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
+#[macro_export]
 macro_rules! new_full_start {
 	($config:expr) => {{
 		let inherent_data_providers = sp_inherents::InherentDataProviders::new();
@@ -127,7 +131,7 @@ pub fn run_collator(
 		proposer_factory,
 		inherent_data_providers,
 		block_import,
-		crate::PARA_ID,
+		PARA_ID,
 		client,
 		announce_block,
 		block_announce_validator,
@@ -135,7 +139,7 @@ pub fn run_collator(
 
 	let polkadot_future = polkadot_collator::start_collator(
 		builder,
-		crate::PARA_ID,
+		PARA_ID,
 		key,
 		polkadot_config,
 		Some(format!("[{}] ", Color::Blue.bold().paint("Relaychain"))),

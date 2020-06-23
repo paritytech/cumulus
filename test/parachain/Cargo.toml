@@ -62,6 +62,7 @@ jsonrpsee = "0.1"
 async-std = { version = "1.2.0", features = [ "attributes" ] }
 hex = "0.4"
 serde_json = "1.0"
+rand = "0.7.3"
 
 # Polkadot dependencies
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
@@ -81,3 +82,4 @@ pallet-grandpa = { git = "https://github.com/paritytech/substrate", branch = "ce
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
 sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
 substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
