@@ -180,15 +180,29 @@ where
 			} else {
 				// Make sure the block is already known or otherwise we skip setting new best.
 				match local.block_status(&BlockId::Hash(hash)) {
-					Ok(BlockStatus::InChainWithState) => {}
+					Ok(BlockStatus::InChainWithState) => {
+						// Make it the new best block
+						let mut block_import_params =
+							BlockImportParams::new(BlockOrigin::ConsensusBroadcast, h);
+						block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(true));
+						block_import_params.import_existing = true;
+
+						if let Err(err) =
+							(&*local).import_block(block_import_params, Default::default())
+						{
+							warn!(
+								target: "cumulus-consensus",
+								"Failed to set new best block `{}` with error: {:?}",
+								hash, err
+							);
+						}
+					}
 					Ok(BlockStatus::InChainPruned) => {
 						error!(
 							target: "cumulus-collator",
 							"Trying to set pruned block `{:?}` as new best!",
 							hash,
 						);
-
-						return future::ready(());
 					}
 					Err(e) => {
 						error!(
@@ -197,24 +211,8 @@ where
 							hash,
 							e,
 						);
-
-						return future::ready(());
 					}
-					_ => return future::ready(()),
-				}
-
-				// Make it the new best block
-				let mut block_import_params =
-					BlockImportParams::new(BlockOrigin::ConsensusBroadcast, h);
-				block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(true));
-				block_import_params.import_existing = true;
-
-				if let Err(err) = (&*local).import_block(block_import_params, Default::default()) {
-					warn!(
-						target: "cumulus-consensus",
-						"Failed to set new best block `{}` with error: {:?}",
-						hash, err
-					);
+					_ => {}
 				}
 			}
 
