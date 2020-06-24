@@ -424,6 +424,7 @@ where
 		+ HeaderBackend<Block>
 		+ Send
 		+ Sync
+		+ BlockBackend<Block>
 		+ 'static,
 	for<'a> &'a Client: BlockImport<Block>,
 	BS: BlockBackend<Block>,

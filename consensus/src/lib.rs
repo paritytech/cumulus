@@ -14,12 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use sc_client_api::{Backend, Finalizer, UsageProvider};
+use sc_client_api::{Backend, BlockBackend, Finalizer, UsageProvider};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Error as ClientError, Result as ClientResult};
 use sp_consensus::{
-	BlockImport, BlockImportParams, BlockOrigin, Error as ConsensusError, ForkChoiceStrategy,
-	SelectChain as SelectChainT,
+	BlockImport, BlockImportParams, BlockOrigin, BlockStatus, Error as ConsensusError,
+	ForkChoiceStrategy, SelectChain as SelectChainT,
 };
 use sp_runtime::{
 	generic::BlockId,
@@ -33,7 +33,7 @@ use polkadot_primitives::{
 
 use codec::Decode;
 use futures::{future, Future, FutureExt, Stream, StreamExt, TryFutureExt, TryStreamExt};
-use log::{warn, trace};
+use log::{error, trace, warn};
 
 use std::{marker::PhantomData, sync::Arc};
 
@@ -108,7 +108,7 @@ pub fn follow_polkadot<L, P, Block, B>(
 ) -> ClientResult<impl Future<Output = ()> + Send + Unpin>
 where
 	Block: BlockT,
-	L: Finalizer<Block, B> + UsageProvider<Block> + Send + Sync,
+	L: Finalizer<Block, B> + UsageProvider<Block> + Send + Sync + BlockBackend<Block>,
 	for<'a> &'a L: BlockImport<Block>,
 	P: PolkadotClient,
 	B: Backend<Block>,
@@ -137,54 +137,89 @@ where
 			.map(|_| ())
 	};
 
-	let follow_new_best = {
-		polkadot
-			.new_best_heads(para_id)?
-			.filter_map(|head_data| {
-				let res = match <<Block as BlockT>::Header>::decode(&mut &head_data[..]) {
-					Ok(header) => Some(header),
-					Err(err) => {
-						warn!(
-							target: "cumulus-consensus",
-							"Could not decode Parachain header: {:?}", err);
-						None
-					}
-				};
+	Ok(future::select(follow_finalized, follow_new_best(para_id, local, polkadot)?).map(|_| ()))
+}
 
-				future::ready(res)
-			})
-			.for_each(move |h| {
-				let hash = h.hash();
-
-				if local.usage_info().chain.best_hash == hash {
-					trace!(
+/// Follow the relay chain new best head, to update the Parachain new best head.
+fn follow_new_best<L, P, Block, B>(
+	para_id: ParaId,
+	local: Arc<L>,
+	polkadot: P,
+) -> ClientResult<impl Future<Output = ()> + Send + Unpin>
+where
+	Block: BlockT,
+	L: Finalizer<Block, B> + UsageProvider<Block> + Send + Sync + BlockBackend<Block>,
+	for<'a> &'a L: BlockImport<Block>,
+	P: PolkadotClient,
+	B: Backend<Block>,
+{
+	Ok(polkadot
+		.new_best_heads(para_id)?
+		.filter_map(|head_data| {
+			let res = match <<Block as BlockT>::Header>::decode(&mut &head_data[..]) {
+				Ok(header) => Some(header),
+				Err(err) => {
+					warn!(
 						target: "cumulus-consensus",
-						"Skipping set new best block, because block `{}` is already the best.",
-						hash,
-					)
-				} else {
-					// Make it the new best block
-					let mut block_import_params =
-						BlockImportParams::new(BlockOrigin::ConsensusBroadcast, h);
-					block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(true));
-					block_import_params.import_existing = true;
+						"Could not decode Parachain header: {:?}", err);
+					None
+				}
+			};
 
-					if let Err(err) =
-						(&*local).import_block(block_import_params, Default::default())
-					{
-						warn!(
-							target: "cumulus-consensus",
-							"Failed to set new best block `{}` with error: {:?}",
-							hash, err
+			future::ready(res)
+		})
+		.for_each(move |h| {
+			let hash = h.hash();
+
+			if local.usage_info().chain.best_hash == hash {
+				trace!(
+					target: "cumulus-consensus",
+					"Skipping set new best block, because block `{}` is already the best.",
+					hash,
+				)
+			} else {
+				// Make sure the block is already known or otherwise we skip setting new best.
+				match local.block_status(&BlockId::Hash(hash)) {
+					Ok(BlockStatus::InChainWithState) => {}
+					Ok(BlockStatus::InChainPruned) => {
+						error!(
+							target: "cumulus-collator",
+							"Trying to set pruned block `{:?}` as new best!",
+							hash,
 						);
+
+						return future::ready(());
 					}
+					Err(e) => {
+						error!(
+							target: "cumulus-collator",
+							"Failed to get block status of block `{:?}`: {:?}",
+							hash,
+							e,
+						);
+
+						return future::ready(());
+					}
+					_ => return future::ready(()),
 				}
 
-				future::ready(())
-			})
-	};
+				// Make it the new best block
+				let mut block_import_params =
+					BlockImportParams::new(BlockOrigin::ConsensusBroadcast, h);
+				block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(true));
+				block_import_params.import_existing = true;
 
-	Ok(future::select(follow_finalized, follow_new_best).map(|_| ()))
+				if let Err(err) = (&*local).import_block(block_import_params, Default::default()) {
+					warn!(
+						target: "cumulus-consensus",
+						"Failed to set new best block `{}` with error: {:?}",
+						hash, err
+					);
+				}
+			}
+
+			future::ready(())
+		}))
 }
 
 impl<T> PolkadotClient for Arc<T>
