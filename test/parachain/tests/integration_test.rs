@@ -53,7 +53,14 @@ use substrate_test_client::ClientBlockImportExt;
 use polkadot_service::ChainSpec;
 use sp_state_machine::BasicExternalities;
 use sc_network::{multiaddr, config::TransportConfig};
-use polkadot_test_runtime::{SignedExtra, Runtime, RestrictFunctionality};
+use polkadot_test_runtime::{SignedExtra, Runtime, RestrictFunctionality, SignedPayload};
+use sc_client_api::execution_extensions::ExecutionStrategies;
+use sp_core::{Decode};
+use sp_consensus::{BlockImport, BlockImportParams, ForkChoiceStrategy};
+use sp_runtime::traits::Block as BlockT;
+use futures::future;
+use sp_runtime::traits::Checkable;
+use sp_runtime::traits::Verify;
 
 static POLKADOT_ARGS: &[&str] = &["polkadot", "--chain=res/polkadot_chainspec.json"];
 static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TEST_ALLOWED_TIME");
@@ -107,6 +114,9 @@ async fn integration_test() {
 			vec![alice.multiaddr_with_peer_id.clone()],
 		).unwrap();
 
+		future::join(alice.wait_for_blocks(2), bob.wait_for_blocks(2)).await;
+		//assert!(false);
+
 		// export genesis state
 		let cmd = Command::new(cargo_bin("cumulus-test-parachain-collator"))
 			.arg("export-genesis-state")
@@ -118,7 +128,7 @@ async fn integration_test() {
 
 		// get the current block
 		let current_block_hash = alice.client.info().best_hash;
-		let current_block = alice.client.info().best_number as u64; // TODO: not sure why the type is different here
+		let current_block = alice.client.info().best_number.saturated_into(); //.saturating_sub(1);
 		let genesis_block = alice.client.hash(0).unwrap().unwrap();
 
 		// create and sign transaction
@@ -154,32 +164,70 @@ async fn integration_test() {
 				genesis_state.into(),
 			)),
 		)));
-		let signature = function.using_encoded(|e| Alice.sign(e));
+		let raw_payload = SignedPayload::from_raw(
+			function.clone(),
+			extra.clone(),
+			((),
+			VERSION.spec_version,
+			VERSION.transaction_version,
+			genesis_block,
+			current_block_hash,
+			(), (), (), (), ()),
+		);
+		let signature = raw_payload.using_encoded(|e| Alice.sign(e));
 
 		// register parachain
 		let mut builder = alice.client.new_block(Default::default()).unwrap();
 
-		/*
 		for extrinsic in polkadot_test_runtime_client::needed_extrinsics(vec![], current_block as u64) {
-			builder.push(OpaqueExtrinsic(extrinsic.encode())).unwrap()
+			builder.push(OpaqueExtrinsic::decode(&mut extrinsic.encode().as_slice()).unwrap()).unwrap()
 		}
-		*/
 
+		// TODO: is the signature needed at all? both seem to work
+		let extrinsic = polkadot_test_runtime::UncheckedExtrinsic::new_unsigned(
+			function.clone(),
+		);
+		/*
+		let extrinsic = polkadot_test_runtime::UncheckedExtrinsic::new_signed(
+			function.clone(),
+			polkadot_test_runtime::Address::Id(Alice.public().into()),
+			polkadot_primitives::Signature::Sr25519(signature.clone()),
+			extra.clone(),
+		);
+		*/
+		//extrinsic.check().unwrap();
+		let signed = Alice.public();
+		println!("{:?}", ((),
+			VERSION.spec_version,
+			VERSION.transaction_version,
+			genesis_block,
+			current_block_hash,
+			(), (), (), (), ()));
+		println!("{:?}", raw_payload.using_encoded(|payload| signature.verify(payload, &signed)));
 		builder.push(
-			OpaqueExtrinsic(polkadot_test_runtime::UncheckedExtrinsic {
-				function,
-				signature: Some((
-					polkadot_test_runtime::Address::Id(Alice.public().into()),
-					polkadot_primitives::Signature::Sr25519(signature),
-					extra,
-				)),
-			}.encode()),
+			OpaqueExtrinsic::decode(&mut extrinsic.encode().as_slice()).unwrap(),
 		).unwrap();
 
 		let block = builder.build().unwrap().block;
+		println!("######### {}", block.header.parent_hash);
 		//alice.client.import(BlockOrigin::Own, block).unwrap(); // TODO
 
+		let origin = sp_consensus::BlockOrigin::Own;
+		let (header, extrinsics) = block.deconstruct();
+		let mut import = BlockImportParams::new(origin, header);
+		import.body = Some(extrinsics);
+		import.fork_choice = Some(ForkChoiceStrategy::LongestChain);
+		//println!("{}", *import.header.parent_hash());
+		alice.client.import_block(import, std::collections::HashMap::new());
+		//assert!(false);
+		future::join(alice.wait_for_blocks(3), bob.wait_for_blocks(3)).await;
+		assert!(false);
+		//assert!(false);
+		//let _telemetry = alice.service.telemetry();
+		//alice.service.fuse().await;
+
 		// run cumulus charlie
+		/*
 		let charlie_temp_dir = tempdir().unwrap();
 		let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
 		let polkadot_config = polkadot_test_service::node_config(
@@ -201,11 +249,17 @@ async fn integration_test() {
 		let service = cumulus_test_parachain_collator::run_collator(parachain_config, key, polkadot_config).unwrap();
 		let _base_path = service.base_path();
 		service.fuse().await;
+		*/
 
 		// connect rpc client to cumulus
 		/*
 		wait_for_blocks(4, &mut client_cumulus_charlie).await;
 		*/
+		sleep(Duration::from_secs(
+			INTEGRATION_TEST_ALLOWED_TIME
+				.and_then(|x| x.parse().ok())
+				.unwrap_or(600),
+		)).await;
 	}
 	.fuse();
 
@@ -276,7 +330,14 @@ pub fn parachain_config(
 		pruning: Default::default(),
 		chain_spec: Box::new(spec),
 		wasm_method: WasmExecutionMethod::Interpreted,
-		execution_strategies: Default::default(),
+		//execution_strategies: Default::default(),
+		execution_strategies: ExecutionStrategies {
+			syncing: sc_client_api::ExecutionStrategy::NativeWhenPossible,
+			importing: sc_client_api::ExecutionStrategy::NativeWhenPossible,
+			block_construction: sc_client_api::ExecutionStrategy::NativeWhenPossible,
+			offchain_worker: sc_client_api::ExecutionStrategy::NativeWhenPossible,
+			other: sc_client_api::ExecutionStrategy::NativeWhenPossible,
+		},
 		rpc_http: None,
 		rpc_ws: None,
 		rpc_ws_max_connections: None,

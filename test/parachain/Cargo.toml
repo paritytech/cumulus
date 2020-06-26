@@ -82,3 +82,4 @@ sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cec
 sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
 substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
