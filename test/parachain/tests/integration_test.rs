@@ -63,6 +63,7 @@ use futures::future;
 use sp_runtime::traits::Checkable;
 use sp_runtime::traits::Verify;
 use sp_transaction_pool::TransactionPool;
+use log::error;
 
 static POLKADOT_ARGS: &[&str] = &["polkadot", "--chain=res/polkadot_chainspec.json"];
 static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TEST_ALLOWED_TIME");
@@ -104,7 +105,7 @@ fn target_dir() -> PathBuf {
 #[ignore]
 async fn integration_test() {
 	//sc_cli::init_logger("runtime=debug,babe=trace");
-	sc_cli::init_logger("");
+	//sc_cli::init_logger("");
 
 	let t1 = sleep(Duration::from_secs(
 		INTEGRATION_TEST_ALLOWED_TIME
@@ -225,6 +226,7 @@ async fn integration_test() {
 			current_block_hash,
 			(), (), (), (), ()));
 		println!("{:?}", raw_payload.using_encoded(|payload| signature.verify(payload, &signed)));
+		//error!("===== start");
 		let transport_client_alice =
 			jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:27015");
 		let mut client_alice = jsonrpsee::raw::RawClient::new(transport_client_alice);
@@ -232,6 +234,9 @@ async fn integration_test() {
 			Author::submit_extrinsic(&mut client_alice, format!("0x{}", hex::encode(ex.encode())))
 				.await
 				.unwrap();
+		//sleep(Duration::from_secs(5)).await;
+		//error!("===== end");
+		//sleep(Duration::from_secs(600)).await;
 
 		//alice.service.transaction_pool().submit_one((), (), extrinsic);
 		/*
@@ -281,15 +286,15 @@ async fn integration_test() {
 		).unwrap();
 		let service = cumulus_test_parachain_collator::run_collator(parachain_config, key, polkadot_config).unwrap();
 		let _base_path = service.base_path();
-		//wait_for_blocks(service.client(), 4).await;
+		wait_for_blocks(service.client(), 4).await;
 		//service.fuse().await;
 
 		// connect rpc client to cumulus
 		/*
 		wait_for_blocks(4, &mut client_cumulus_charlie).await;
 		*/
-		sleep(Duration::from_secs(60)).await;
-		assert!(false);
+		//sleep(Duration::from_secs(60)).await;
+		//assert!(false);
 	}
 	.fuse();
 
@@ -340,6 +345,12 @@ pub fn parachain_config(
 
 	network_config.transport = TransportConfig::MemoryOnly;
 
+	use std::net::{SocketAddr, Ipv4Addr};
+	let rpc_ws = Some(SocketAddr::new(
+		Ipv4Addr::LOCALHOST.into(),
+		9944,
+	));
+
 	Ok(Configuration {
 		impl_name: "cumulus-test-node",
 		impl_version: "0.1",
@@ -369,7 +380,7 @@ pub fn parachain_config(
 			other: sc_client_api::ExecutionStrategy::NativeWhenPossible,
 		},
 		rpc_http: None,
-		rpc_ws: None,
+		rpc_ws,
 		rpc_ws_max_connections: None,
 		rpc_cors: None,
 		rpc_methods: Default::default(),
@@ -400,6 +411,8 @@ fn wait_for_blocks<Block: BlockT>(client: Arc<impl BlockchainEvents<Block>>, cou
 		while let Some(notification) = import_notification_stream.next().await {
 			blocks.insert(notification.hash);
 			if blocks.len() == 3 {
+				error!("################ {:?}", blocks);
+				println!("{:?}", blocks);
 				break;
 			}
 		}
