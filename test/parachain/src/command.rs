@@ -102,10 +102,8 @@ impl SubstrateCli for PolkadotCli {
 		"cumulus-test-parachain-collator"
 	}
 
-	fn load_spec(&self, _id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		polkadot_service::PolkadotChainSpec::from_json_bytes(
-			&include_bytes!("../res/polkadot_chainspec.json")[..],
-		)
+	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+		polkadot_test_service::PolkadotChainSpec::from_json_file(std::path::PathBuf::from(id))
 		.map(|r| Box::new(r) as Box<_>)
 	}
 }

@@ -143,7 +143,8 @@ pub fn run_collator(
 		key,
 		polkadot_config,
 		Some(format!("[{}] ", Color::Blue.bold().paint("Relaychain"))),
-	).map(|_| ());
+	).map(|err| panic!("================== {:?}", err));
+	//).map(|_| ());
 	service.spawn_essential_task("polkadot", polkadot_future);
 
 	Ok(service)
