@@ -35,11 +35,11 @@ use std::{net::SocketAddr, sync::Arc};
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		String::from("Cumulus Test Parachain Collator")
+		"Cumulus Test Parachain Collator".into()
 	}
 
 	fn impl_version() -> String {
-		String::from(env!("SUBSTRATE_CLI_IMPL_VERSION"))
+		env!("SUBSTRATE_CLI_IMPL_VERSION").into()
 	}
 
 	fn description() -> String {
@@ -50,11 +50,11 @@ impl SubstrateCli for Cli {
 	}
 
 	fn author() -> String {
-		String::from(env!("CARGO_PKG_AUTHORS"))
+		env!("CARGO_PKG_AUTHORS").into()
 	}
 
 	fn support_url() -> String {
-		String::from("https://github.com/paritytech/cumulus/issues/new")
+		"https://github.com/paritytech/cumulus/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {
@@ -62,7 +62,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn executable_name() -> String {
-		String::from("cumulus-test-parachain-collator")
+		"cumulus-test-parachain-collator".into()
 	}
 
 	fn load_spec(&self, _id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
@@ -79,11 +79,11 @@ impl SubstrateCli for Cli {
 
 impl SubstrateCli for PolkadotCli {
 	fn impl_name() -> String {
-		String::from("Cumulus Test Parachain Collator")
+		"Cumulus Test Parachain Collator".into()
 	}
 
 	fn impl_version() -> String {
-		String::from(env!("SUBSTRATE_CLI_IMPL_VERSION"))
+		env!("SUBSTRATE_CLI_IMPL_VERSION").into()
 	}
 
 	fn description() -> String {
@@ -94,11 +94,11 @@ impl SubstrateCli for PolkadotCli {
 	}
 
 	fn author() -> String {
-		String::from(env!("CARGO_PKG_AUTHORS"))
+		env!("CARGO_PKG_AUTHORS").into()
 	}
 
 	fn support_url() -> String {
-		String::from("https://github.com/paritytech/cumulus/issues/new")
+		"https://github.com/paritytech/cumulus/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {
@@ -106,7 +106,7 @@ impl SubstrateCli for PolkadotCli {
 	}
 
 	fn executable_name() -> String {
-		String::from("cumulus-test-parachain-collator")
+		"cumulus-test-parachain-collator".into()
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
