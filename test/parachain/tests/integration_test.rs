@@ -19,10 +19,9 @@ use async_std::{net, task::{sleep, spawn}};
 //use tokio::{time::delay_for as sleep, spawn};
 use codec::Encode;
 use futures::{future::{Future, FutureExt}, join, pin_mut, select, stream::StreamExt};
-use polkadot_primitives::parachain::{Info, Scheduling};
+use polkadot_primitives::parachain::{Info, Scheduling, Id as ParaId};
 use polkadot_primitives::Hash as PHash;
 use polkadot_test_runtime::{VERSION, Header};
-use polkadot_runtime::{Header, Runtime, SignedExtra, SignedPayload};
 use polkadot_runtime_common::{parachains, registrar, BlockHashCount, claims};
 use serde_json::Value;
 use sp_arithmetic::traits::SaturatedConversion;
@@ -41,12 +40,12 @@ use std::{
 use substrate_test_runtime_client::AccountKeyring::*;
 use tempfile::tempdir;
 use sc_service::{
-	AbstractService, Configuration, Error as ServiceError,
+	Configuration, Error as ServiceError,
 	config::{
 		MultiaddrWithPeerId, NetworkConfiguration, DatabaseConfig, KeystoreConfig,
 		WasmExecutionMethod,
 	}, TaskType,
-	BasePath, Role, RpcSession,
+	BasePath, Role, RpcSession, TaskExecutor,
 };
 use polkadot_test_runtime_client::{sp_consensus::BlockOrigin, Sr25519Keyring};
 use sp_blockchain::HeaderBackend;
@@ -74,17 +73,6 @@ jsonrpsee::rpc_api! {
 		#[rpc(method = "author_submitExtrinsic", positional_params)]
 		fn submit_extrinsic(extrinsic: String) -> PHash;
 	}
-
-	Chain {
-		#[rpc(method = "chain_getFinalizedHead")]
-		fn current_block_hash() -> PHash;
-
-		#[rpc(method = "chain_getHeader", positional_params)]
-		fn header(hash: PHash) -> Option<Header>;
-
-		#[rpc(method = "chain_getBlockHash", positional_params)]
-		fn block_hash(hash: Option<u64>) -> Option<PHash>;
-	}
 }
 
 // Adapted from
@@ -106,6 +94,10 @@ fn target_dir() -> PathBuf {
 #[async_std::test]
 #[ignore]
 async fn integration_test() {
+	let task_executor: TaskExecutor = (|fut, _| {
+		spawn(fut);
+	}).into();
+
 	//sc_cli::init_logger("runtime=debug,babe=trace");
 	sc_cli::init_logger("");
 
@@ -116,12 +108,6 @@ async fn integration_test() {
 	))
 	.fuse();
 	let t2 = async {
-		let task_executor = Arc::new(
-			move |fut: Pin<Box<dyn futures::Future<Output = ()> + Send>>, _| {
-				spawn(fut.unit_error());
-			},
-		);
-
 		// start alice
 		let alice = polkadot_test_service::run_test_node(
 			task_executor.clone(),
@@ -230,7 +216,7 @@ async fn integration_test() {
 		println!("{:?}", raw_payload.using_encoded(|payload| signature.verify(payload, &signed)));
 		let (tx, rx) = futures01::sync::mpsc::channel(0);
 		let mem = RpcSession::new(tx.into());
-		let res = alice.service.rpc_query(&mem, format!(r#"{{"jsonrpc":"2.0","method":"author_submitExtrinsic","params":["0x{}"],"id":0}}"#, hex::encode(ex.encode())).as_str()).await;
+		let (res, _, _) = alice.send_transaction(ex.into()).await;
 		error!("############# {:?}", res);
 		//error!("===== start");
 		//sleep(Duration::from_secs(5)).await;
@@ -265,13 +251,12 @@ async fn integration_test() {
 		*/
 
 		// run cumulus charlie
-		let charlie_temp_dir = tempdir().unwrap();
+		let para_id = ParaId::from(100);
 		let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
 		let mut polkadot_config = polkadot_test_service::node_config(
 			|| {},
 			task_executor.clone(),
 			Charlie,
-			charlie_temp_dir,
 			vec![
 				alice.multiaddr_with_peer_id.clone(),
 				bob.multiaddr_with_peer_id.clone(),
@@ -288,9 +273,9 @@ async fn integration_test() {
 			task_executor.clone(),
 			Charlie,
 			vec![],
+			para_id,
 		).unwrap();
-		let service = cumulus_test_parachain_collator::run_collator(parachain_config, key, polkadot_config).unwrap();
-		let _base_path = service.base_path();
+		let service = cumulus_test_parachain_collator::run_collator(parachain_config, key, polkadot_config, para_id).unwrap();
 		sleep(Duration::from_secs(3)).await;
 		/*
 		let transport_client_alice =
@@ -301,7 +286,7 @@ async fn integration_test() {
 				.await
 				.unwrap();
 		*/
-		wait_for_blocks(service.client(), 4).await;
+		wait_for_blocks(service.client.clone(), 4).await;
 		//service.fuse().await;
 
 		// connect rpc client to cumulus
@@ -325,11 +310,10 @@ async fn integration_test() {
 
 pub fn parachain_config(
 	storage_update_func: impl Fn(),
-	task_executor: Arc<
-		dyn Fn(Pin<Box<dyn futures::Future<Output = ()> + Send>>, TaskType) + Send + Sync,
-	>,
+	task_executor: TaskExecutor,
 	key: Sr25519Keyring,
 	boot_nodes: Vec<MultiaddrWithPeerId>,
+	para_id: ParaId,
 ) -> Result<Configuration, ServiceError> {
 	let base_path = BasePath::new_temp_dir()?;
 	let root = base_path.path().to_path_buf();
@@ -337,7 +321,7 @@ pub fn parachain_config(
 		sentry_nodes: Vec::new(),
 	};
 	let key_seed = key.to_seed();
-	let mut spec = cumulus_test_parachain_collator::get_chain_spec();
+	let mut spec = cumulus_test_parachain_collator::get_chain_spec(para_id);
 	let mut storage = spec.as_storage_builder().build_storage()?;
 
 	BasicExternalities::execute_with_storage(&mut storage, storage_update_func);
@@ -396,6 +380,7 @@ pub fn parachain_config(
 		},
 		rpc_http: None,
 		rpc_ws,
+		rpc_ipc: None,
 		rpc_ws_max_connections: None,
 		rpc_cors: None,
 		rpc_methods: Default::default(),
@@ -412,6 +397,7 @@ pub fn parachain_config(
 		max_runtime_instances: 8,
 		announce_block: true,
 		base_path: Some(base_path),
+		informant_output_format: Default::default(),
 	})
 }
 

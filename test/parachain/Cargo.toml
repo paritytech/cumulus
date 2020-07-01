@@ -53,6 +53,7 @@ polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
 polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
