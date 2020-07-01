@@ -24,22 +24,22 @@ ansi_term = "0.12.1"
 parachain-runtime = { package = "cumulus-test-parachain-runtime", path = "runtime" }
 
 # Substrate dependencies
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-cumulus-branch" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-sc-network = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch", version = "0.8.0-alpha.5" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-sc-informant = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-network = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", version = "0.8.0-alpha.5" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-informant = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../../consensus" }
@@ -48,14 +48,14 @@ cumulus-network = { path = "../../network" }
 cumulus-primitives = { path = "../../primitives" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 
 [dev-dependencies]
 assert_cmd = "0.12"
@@ -67,14 +67,14 @@ hex = "0.4"
 serde_json = "1.0"
 
 # Polkadot dependencies
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
-polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
+polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }
 
 # Substrate dependencies
-substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-pallet-grandpa = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-sp-version = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
-pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
+substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+pallet-grandpa = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-version = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
