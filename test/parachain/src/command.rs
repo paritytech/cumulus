@@ -34,35 +34,35 @@ use sp_runtime::{
 use std::{net::SocketAddr, sync::Arc};
 
 impl SubstrateCli for Cli {
-	fn impl_name() -> &'static str {
-		"Cumulus Test Parachain Collator"
+	fn impl_name() -> String {
+		String::from("Cumulus Test Parachain Collator")
 	}
 
-	fn impl_version() -> &'static str {
-		env!("SUBSTRATE_CLI_IMPL_VERSION")
+	fn impl_version() -> String {
+		String::from(env!("SUBSTRATE_CLI_IMPL_VERSION"))
 	}
 
-	fn description() -> &'static str {
-		"Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
+	fn description() -> String {
+		String::from("Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
-		cumulus-test-parachain-collator [parachain-args] -- [relaychain-args]"
+		cumulus-test-parachain-collator [parachain-args] -- [relaychain-args]")
 	}
 
-	fn author() -> &'static str {
-		env!("CARGO_PKG_AUTHORS")
+	fn author() -> String {
+		String::from(env!("CARGO_PKG_AUTHORS"))
 	}
 
-	fn support_url() -> &'static str {
-		"https://github.com/paritytech/cumulus/issues/new"
+	fn support_url() -> String {
+		String::from("https://github.com/paritytech/cumulus/issues/new")
 	}
 
 	fn copyright_start_year() -> i32 {
 		2017
 	}
 
-	fn executable_name() -> &'static str {
-		"cumulus-test-parachain-collator"
+	fn executable_name() -> String {
+		String::from("cumulus-test-parachain-collator")
 	}
 
 	fn load_spec(&self, _id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
@@ -78,35 +78,35 @@ impl SubstrateCli for Cli {
 }
 
 impl SubstrateCli for PolkadotCli {
-	fn impl_name() -> &'static str {
-		"Cumulus Test Parachain Collator"
+	fn impl_name() -> String {
+		String::from("Cumulus Test Parachain Collator")
 	}
 
-	fn impl_version() -> &'static str {
-		env!("SUBSTRATE_CLI_IMPL_VERSION")
+	fn impl_version() -> String {
+		String::from(env!("SUBSTRATE_CLI_IMPL_VERSION"))
 	}
 
-	fn description() -> &'static str {
-		"Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
+	fn description() -> String {
+		String::from("Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
-		cumulus-test-parachain-collator [parachain-args] -- [relaychain-args]"
+		cumulus-test-parachain-collator [parachain-args] -- [relaychain-args]")
 	}
 
-	fn author() -> &'static str {
-		env!("CARGO_PKG_AUTHORS")
+	fn author() -> String {
+		String::from(env!("CARGO_PKG_AUTHORS"))
 	}
 
-	fn support_url() -> &'static str {
-		"https://github.com/paritytech/cumulus/issues/new"
+	fn support_url() -> String {
+		String::from("https://github.com/paritytech/cumulus/issues/new")
 	}
 
 	fn copyright_start_year() -> i32 {
 		2017
 	}
 
-	fn executable_name() -> &'static str {
-		"cumulus-test-parachain-collator"
+	fn executable_name() -> String {
+		String::from("cumulus-test-parachain-collator")
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
