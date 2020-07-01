@@ -26,6 +26,61 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d2e7343e7fc9de883d1b0341e0b13970f764c14101234857d2ddafa1cb1cac2"
 
 [[package]]
+name = "aead"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4cf01b9b56e767bb57b94ebf91a58b338002963785cdd7013e21c0d4679471e4"
+dependencies = [
+ "generic-array",
+]
+
+[[package]]
+name = "aes"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54eb1d8fe354e5fc611daf4f2ea97dd45a765f4f1e4512306ec183ae2e8f20c9"
+dependencies = [
+ "aes-soft",
+ "aesni",
+ "block-cipher-trait",
+]
+
+[[package]]
+name = "aes-gcm"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "834a6bda386024dbb7c8fc51322856c10ffe69559f972261c868485f5759c638"
+dependencies = [
+ "aead",
+ "aes",
+ "block-cipher-trait",
+ "ghash",
+ "subtle 2.2.3",
+ "zeroize",
+]
+
+[[package]]
+name = "aes-soft"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfd7e7ae3f9a1fb5c03b389fc6bb9a51400d0c13053f0dca698c832bfd893a0d"
+dependencies = [
+ "block-cipher-trait",
+ "byteorder",
+ "opaque-debug",
+]
+
+[[package]]
+name = "aesni"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f70a6b5f971e473091ab7cfb5ffac6cde81666c4556751d8d5620ead8abf100"
+dependencies = [
+ "block-cipher-trait",
+ "opaque-debug",
+]
+
+[[package]]
 name = "ahash"
 version = "0.2.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -406,6 +461,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "block-cipher-trait"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c924d49bd09e7c06003acda26cd9742e796e34282ec6c1189404dee0c1f4774"
+dependencies = [
+ "generic-array",
+]
+
+[[package]]
 name = "block-padding"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -515,12 +579,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
 
 [[package]]
-name = "chacha20-poly1305-aead"
-version = "0.1.2"
+name = "chacha20"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77d2058ba29594f69c75e8a9018e0485e3914ca5084e3613cd64529042f5423b"
+checksum = "f6a7ae4c498f8447d86baef0fa0831909333f558866fabcb21600625ac5a31c7"
 dependencies = [
- "constant_time_eq",
+ "stream-cipher",
+ "zeroize",
+]
+
+[[package]]
+name = "chacha20poly1305"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "48901293601228db2131606f741db33561f7576b5d19c99cd66222380a7dc863"
+dependencies = [
+ "aead",
+ "chacha20",
+ "poly1305",
+ "stream-cipher",
+ "zeroize",
 ]
 
 [[package]]
@@ -864,10 +942,14 @@ name = "cumulus-message-broker"
 version = "0.1.0"
 dependencies = [
  "cumulus-primitives",
+ "cumulus-upward-message",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
  "sp-inherents",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -923,6 +1005,7 @@ version = "0.1.0"
 dependencies = [
  "impl-trait-for-tuples",
  "parity-scale-codec",
+ "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-primitives",
  "sp-inherents",
@@ -947,7 +1030,6 @@ dependencies = [
  "sp-blockchain",
  "sp-consensus",
  "sp-core",
- "sp-inherents",
  "sp-io",
  "sp-keyring",
  "sp-runtime",
@@ -981,6 +1063,7 @@ dependencies = [
  "cumulus-collator",
  "cumulus-consensus",
  "cumulus-network",
+ "cumulus-primitives",
  "cumulus-test-parachain-runtime",
  "derive_more 0.15.0",
  "exit-future 0.1.4",
@@ -1013,6 +1096,7 @@ dependencies = [
  "sc-consensus",
  "sc-executor",
  "sc-finality-grandpa",
+ "sc-informant",
  "sc-network",
  "sc-service",
  "sc-transaction-pool",
@@ -1040,18 +1124,21 @@ dependencies = [
 name = "cumulus-test-parachain-runtime"
 version = "0.1.0"
 dependencies = [
+ "cumulus-message-broker",
  "cumulus-parachain-upgrade",
+ "cumulus-primitives",
  "cumulus-runtime",
+ "cumulus-upward-message",
  "frame-executive",
  "frame-support",
  "frame-system",
  "pallet-balances",
- "pallet-indices",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "parity-scale-codec",
+ "polkadot-parachain",
  "serde",
  "sp-api",
  "sp-block-builder",
@@ -1074,6 +1161,18 @@ dependencies = [
  "cumulus-runtime",
  "substrate-test-runtime",
  "substrate-wasm-builder-runner 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "cumulus-upward-message"
+version = "0.1.0"
+dependencies = [
+ "kusama-runtime",
+ "polkadot-core-primitives",
+ "polkadot-parachain",
+ "polkadot-runtime",
+ "sp-std",
+ "westend-runtime",
 ]
 
 [[package]]
@@ -1444,16 +1543,16 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
 name = "fork-tree"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "parity-scale-codec",
 ]
 
 [[package]]
 name = "frame-benchmarking"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -1469,8 +1568,8 @@ dependencies = [
 
 [[package]]
 name = "frame-benchmarking-cli"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-benchmarking",
  "parity-scale-codec",
@@ -1487,8 +1586,8 @@ dependencies = [
 
 [[package]]
 name = "frame-executive"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -1502,8 +1601,8 @@ dependencies = [
 
 [[package]]
 name = "frame-metadata"
-version = "11.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "11.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "parity-scale-codec",
  "serde",
@@ -1513,8 +1612,8 @@ dependencies = [
 
 [[package]]
 name = "frame-support"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "bitmask",
  "frame-metadata",
@@ -1538,8 +1637,8 @@ dependencies = [
 
 [[package]]
 name = "frame-support-procedural"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support-procedural-tools",
  "proc-macro2 1.0.18",
@@ -1549,8 +1648,8 @@ dependencies = [
 
 [[package]]
 name = "frame-support-procedural-tools"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support-procedural-tools-derive",
  "proc-macro-crate",
@@ -1561,8 +1660,8 @@ dependencies = [
 
 [[package]]
 name = "frame-support-procedural-tools-derive"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "proc-macro2 1.0.18",
  "quote 1.0.7",
@@ -1571,8 +1670,8 @@ dependencies = [
 
 [[package]]
 name = "frame-system"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "impl-trait-for-tuples",
@@ -1587,8 +1686,8 @@ dependencies = [
 
 [[package]]
 name = "frame-system-rpc-runtime-api"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -1809,6 +1908,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "futures_codec"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce54d63f8b0c75023ed920d46fd71d0cbbb830b0ee012726b5b4f506fb6dea5b"
+dependencies = [
+ "bytes 0.5.4",
+ "futures 0.3.5",
+ "memchr",
+ "pin-project",
+]
+
+[[package]]
 name = "gcc"
 version = "0.3.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1854,6 +1965,15 @@ dependencies = [
  "cfg-if",
  "libc",
  "wasi",
+]
+
+[[package]]
+name = "ghash"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f0930ed19a7184089ea46d2fedead2f6dc2b674c5db4276b7da336c7cd83252"
+dependencies = [
+ "polyval",
 ]
 
 [[package]]
@@ -2387,6 +2507,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "jsonrpc-ipc-server"
+version = "14.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dedccd693325d833963b549e959137f30a7a0ea650cde92feda81dc0c1393cb5"
+dependencies = [
+ "jsonrpc-core",
+ "jsonrpc-server-utils",
+ "log 0.4.8",
+ "parity-tokio-ipc",
+ "parking_lot 0.10.2",
+ "tokio-service",
+]
+
+[[package]]
 name = "jsonrpc-pubsub"
 version = "14.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2454,7 +2588,7 @@ dependencies = [
  "serde",
  "serde_json",
  "smallvec 1.4.0",
- "soketto",
+ "soketto 0.3.2",
  "thiserror",
  "tokio 0.2.21",
  "unicase",
@@ -2492,8 +2626,8 @@ dependencies = [
 
 [[package]]
 name = "kusama-runtime"
-version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#73ae4732d07f7515c7c6c5d1b995040cbae8d537"
+version = "0.8.13"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
 dependencies = [
  "bitvec",
  "frame-executive",
@@ -2664,9 +2798,9 @@ checksum = "c7d73b3f436185384286bd8098d17ec07c9a7d2388a6599f824d8502b529702a"
 
 [[package]]
 name = "libp2p"
-version = "0.19.1"
+version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "057eba5432d3e740e313c6e13c9153d0cb76b4f71bfc2e5242ae5bdb7d41af67"
+checksum = "db81113df355dea9dddfcb01cd867555298dca29d915f25d1b1a0aad2e29338b"
 dependencies = [
  "bytes 0.5.4",
  "futures 0.3.5",
@@ -2686,7 +2820,7 @@ dependencies = [
  "libp2p-websocket",
  "libp2p-yamux",
  "multihash",
- "parity-multiaddr 0.9.0",
+ "parity-multiaddr 0.9.1",
  "parking_lot 0.10.2",
  "pin-project",
  "smallvec 1.4.0",
@@ -2695,9 +2829,9 @@ dependencies = [
 
 [[package]]
 name = "libp2p-core"
-version = "0.19.1"
+version = "0.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f5e30dcd8cb13a02ad534e214da234eca1595a76b5788b645dfa5c734d2124b"
+checksum = "3a0387b930c3d4c2533dc4893c1e0394185ddcc019846121b1b27491e45a2c08"
 dependencies = [
  "asn1_der",
  "bs58",
@@ -2711,7 +2845,7 @@ dependencies = [
  "log 0.4.8",
  "multihash",
  "multistream-select",
- "parity-multiaddr 0.9.0",
+ "parity-multiaddr 0.9.1",
  "parking_lot 0.10.2",
  "pin-project",
  "prost",
@@ -2722,7 +2856,7 @@ dependencies = [
  "sha2",
  "smallvec 1.4.0",
  "thiserror",
- "unsigned-varint",
+ "unsigned-varint 0.4.0",
  "void",
  "zeroize",
 ]
@@ -2750,9 +2884,9 @@ dependencies = [
 
 [[package]]
 name = "libp2p-identify"
-version = "0.19.1"
+version = "0.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6438ed8ca240c7635c9caa3be6c5258bc0058553ae97ba81737f04e5d33804f5"
+checksum = "62f76075b170d908bae616f550ade410d9d27c013fa69042551dbfc757c7c094"
 dependencies = [
  "futures 0.3.5",
  "libp2p-core",
@@ -2766,16 +2900,16 @@ dependencies = [
 
 [[package]]
 name = "libp2p-kad"
-version = "0.19.0"
+version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41d6c1d5100973527ae70d82687465b17049c1b717a7964de38b8e65000878ff"
+checksum = "f7c819a5425b2eb3416d67e9c868c5c1e922b6658655e06b9eeafaa41304b876"
 dependencies = [
  "arrayvec 0.5.1",
  "bytes 0.5.4",
  "either",
  "fnv",
  "futures 0.3.5",
- "futures_codec",
+ "futures_codec 0.4.1",
  "libp2p-core",
  "libp2p-swarm",
  "log 0.4.8",
@@ -2786,16 +2920,16 @@ dependencies = [
  "sha2",
  "smallvec 1.4.0",
  "uint",
- "unsigned-varint",
+ "unsigned-varint 0.4.0",
  "void",
  "wasm-timer",
 ]
 
 [[package]]
 name = "libp2p-mdns"
-version = "0.19.1"
+version = "0.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51b00163d13f705aae67c427bea0575f8aaf63da6524f9bd4a5a093b8bda0b38"
+checksum = "7f55b2d4b80986e5bf158270ab23268ec0e7f644ece5436fbaabc5155472f357"
 dependencies = [
  "async-std",
  "data-encoding",
@@ -2815,25 +2949,25 @@ dependencies = [
 
 [[package]]
 name = "libp2p-mplex"
-version = "0.19.1"
+version = "0.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34ce63313ad4bce2d76e54c292a1293ea47a0ebbe16708f1513fa62184992f53"
+checksum = "be7d913a4cd57de2013257ec73f07d77bfce390b370023e2d59083e5ca079864"
 dependencies = [
  "bytes 0.5.4",
  "fnv",
  "futures 0.3.5",
- "futures_codec",
+ "futures_codec 0.4.1",
  "libp2p-core",
  "log 0.4.8",
  "parking_lot 0.10.2",
- "unsigned-varint",
+ "unsigned-varint 0.4.0",
 ]
 
 [[package]]
 name = "libp2p-noise"
-version = "0.19.0"
+version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84fd504e27b0eadd451e06b67694ef714bd8374044e7db339bb0cdb83755ddf4"
+checksum = "a03db664653369f46ee03fcec483a378c20195089bb43a26cb9fb0058009ac88"
 dependencies = [
  "curve25519-dalek",
  "futures 0.3.5",
@@ -2852,9 +2986,9 @@ dependencies = [
 
 [[package]]
 name = "libp2p-ping"
-version = "0.19.1"
+version = "0.19.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c189cf1dfe4b3f01e2c0fe5e97a6f5df8aeb6f3569e26981015eb7c08015ce5f"
+checksum = "b8dedd34e35a9728d52d59ef36a218e411359a353f9011b2574b86ee790978f6"
 dependencies = [
  "futures 0.3.5",
  "libp2p-core",
@@ -2867,9 +3001,9 @@ dependencies = [
 
 [[package]]
 name = "libp2p-swarm"
-version = "0.19.0"
+version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4a8101a0e0d5f04562137a476bf5f5423cd5bdab2f7e43a75909668e63cb102"
+checksum = "ce53ff4d127cf8b39adf84dbd381ca32d49bd85788cee08e6669da2495993930"
 dependencies = [
  "futures 0.3.5",
  "libp2p-core",
@@ -2882,9 +3016,9 @@ dependencies = [
 
 [[package]]
 name = "libp2p-tcp"
-version = "0.19.1"
+version = "0.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "309f95fce9bec755eff5406f8b822fd3969990830c2b54f752e1fc181d5ace3e"
+checksum = "9481500c5774c62e8c413e9535b3f33a0e3dbacf2da63b8d3056c686a9df4146"
 dependencies = [
  "async-std",
  "futures 0.3.5",
@@ -2912,12 +3046,11 @@ dependencies = [
 
 [[package]]
 name = "libp2p-websocket"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "085fbe4c05c4116c2164ab4d5a521eb6e00516c444f61b3ee9f68c7b1e53580b"
+checksum = "7e4440551bf6519e0a684cd859ea809aec6d798f686e0d6ed03a28c3e76849b8"
 dependencies = [
  "async-tls 0.7.0",
- "bytes 0.5.4",
  "either",
  "futures 0.3.5",
  "libp2p-core",
@@ -2925,7 +3058,7 @@ dependencies = [
  "quicksink",
  "rustls 0.17.0",
  "rw-stream-sink",
- "soketto",
+ "soketto 0.4.1",
  "url 2.1.1",
  "webpki",
  "webpki-roots 0.18.0",
@@ -2933,9 +3066,9 @@ dependencies = [
 
 [[package]]
 name = "libp2p-yamux"
-version = "0.19.0"
+version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b305d3a8981e68f11c0e17f2d11d5c52fae95e0d7c283f9e462b5b2dab413b2"
+checksum = "8da33e7b5f49c75c6a8afb0b8d1e229f5fa48be9f39bd14cdbc21459a02ac6fc"
 dependencies = [
  "futures 0.3.5",
  "libp2p-core",
@@ -3136,9 +3269,9 @@ dependencies = [
 
 [[package]]
 name = "memory-db"
-version = "0.20.1"
+version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be512cb2ccb4ecbdca937fdd4a62ea5f09f8e7195466a85e4632b3d5bcce82e6"
+checksum = "fb2999ff7a65d5a1d72172f6d51fa2ea03024b51aee709ba5ff81c3c629a2410"
 dependencies = [
  "ahash 0.2.18",
  "hash-db",
@@ -3195,7 +3328,7 @@ dependencies = [
  "kernel32-sys",
  "libc",
  "log 0.4.8",
- "miow",
+ "miow 0.2.1",
  "net2",
  "slab",
  "winapi 0.2.8",
@@ -3211,6 +3344,18 @@ dependencies = [
  "log 0.4.8",
  "mio",
  "slab",
+]
+
+[[package]]
+name = "mio-named-pipes"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0840c1c50fd55e521b247f949c241c9997709f23bd7f023b9762cd561e935656"
+dependencies = [
+ "log 0.4.8",
+ "mio",
+ "miow 0.3.5",
+ "winapi 0.3.8",
 ]
 
 [[package]]
@@ -3237,6 +3382,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "miow"
+version = "0.3.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "07b88fb9795d4d36d62a012dfbf49a8f5cf12751f36d31a9dbe66d528e58979e"
+dependencies = [
+ "socket2",
+ "winapi 0.3.8",
+]
+
+[[package]]
 name = "more-asserts"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3254,7 +3409,7 @@ dependencies = [
  "sha-1",
  "sha2",
  "sha3",
- "unsigned-varint",
+ "unsigned-varint 0.3.3",
 ]
 
 [[package]]
@@ -3265,16 +3420,16 @@ checksum = "d8883adfde9756c1d30b0f519c9b8c502a94b41ac62f696453c37c7fc0a958ce"
 
 [[package]]
 name = "multistream-select"
-version = "0.8.1"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "991c33683908c588b8f2cf66c221d8f390818c1bdcd13fce55208408e027a796"
+checksum = "c9157e87afbc2ef0d84cc0345423d715f445edde00141c93721c162de35a05e5"
 dependencies = [
  "bytes 0.5.4",
  "futures 0.3.5",
  "log 0.4.8",
  "pin-project",
  "smallvec 1.4.0",
- "unsigned-varint",
+ "unsigned-varint 0.4.0",
 ]
 
 [[package]]
@@ -3505,8 +3660,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-authority-discovery"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3521,8 +3676,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-authorship"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3536,8 +3691,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-babe"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3558,8 +3713,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-balances"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -3572,8 +3727,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-collective"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3587,8 +3742,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-democracy"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -3602,8 +3757,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-elections-phragmen"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3616,8 +3771,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-finality-tracker"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3632,8 +3787,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-grandpa"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3652,8 +3807,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-identity"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "enumflags2",
  "frame-benchmarking",
@@ -3668,8 +3823,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-im-online"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3687,8 +3842,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-indices"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3703,8 +3858,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-membership"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3717,8 +3872,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-multisig"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3732,8 +3887,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-nicks"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3746,8 +3901,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-offences"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3761,8 +3916,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-proxy"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3776,8 +3931,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-randomness-collective-flip"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3789,8 +3944,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-recovery"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "enumflags2",
  "frame-support",
@@ -3804,8 +3959,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-scheduler"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -3819,8 +3974,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-session"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3828,6 +3983,8 @@ dependencies = [
  "pallet-timestamp",
  "parity-scale-codec",
  "serde",
+ "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-session",
  "sp-staking",
@@ -3837,8 +3994,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-society"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3851,8 +4008,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-staking"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3871,8 +4028,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-staking-reward-curve"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2 1.0.18",
@@ -3882,8 +4039,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-sudo"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3896,8 +4053,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-timestamp"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -3913,13 +4070,14 @@ dependencies = [
 
 [[package]]
 name = "pallet-transaction-payment"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
+ "serde",
  "smallvec 1.4.0",
  "sp-runtime",
  "sp-std",
@@ -3927,8 +4085,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-transaction-payment-rpc"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "jsonrpc-core",
  "jsonrpc-core-client",
@@ -3945,8 +4103,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-transaction-payment-rpc-runtime-api"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -3958,8 +4116,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-treasury"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3972,8 +4130,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-utility"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3987,8 +4145,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-vesting"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "enumflags2",
  "frame-support",
@@ -4027,15 +4185,15 @@ dependencies = [
  "percent-encoding 2.1.0",
  "serde",
  "static_assertions",
- "unsigned-varint",
+ "unsigned-varint 0.3.3",
  "url 2.1.1",
 ]
 
 [[package]]
 name = "parity-multiaddr"
-version = "0.9.0"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12ca96399f4a01aa89c59220c4f52ac371940eb4e53e3ce990da796f364bdf69"
+checksum = "cc20af3143a62c16e7c9e92ea5c6ae49f7d271d97d4d8fe73afc28f0514a3d0f"
 dependencies = [
  "arrayref",
  "bs58",
@@ -4045,7 +4203,7 @@ dependencies = [
  "percent-encoding 2.1.0",
  "serde",
  "static_assertions",
- "unsigned-varint",
+ "unsigned-varint 0.4.0",
  "url 2.1.1",
 ]
 
@@ -4061,14 +4219,14 @@ dependencies = [
  "sha-1",
  "sha2",
  "sha3",
- "unsigned-varint",
+ "unsigned-varint 0.3.3",
 ]
 
 [[package]]
 name = "parity-scale-codec"
-version = "1.3.0"
+version = "1.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "329c8f7f4244ddb5c37c103641027a76c530e65e8e4b8240b29f81ea40508b17"
+checksum = "a74f02beb35d47e0706155c9eac554b50c671e0d868fe8296bcdf44a9a4847bf"
 dependencies = [
  "arrayvec 0.5.1",
  "bitvec",
@@ -4094,6 +4252,25 @@ name = "parity-send-wrapper"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa9777aa91b8ad9dd5aaa04a9b6bcb02c7f1deb952fca5a66034d5e63afc5c6f"
+
+[[package]]
+name = "parity-tokio-ipc"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e57fea504fea33f9fbb5f49f378359030e7e026a6ab849bb9e8f0787376f1bf"
+dependencies = [
+ "bytes 0.4.12",
+ "futures 0.1.29",
+ "libc",
+ "log 0.4.8",
+ "mio-named-pipes",
+ "miow 0.3.5",
+ "rand 0.7.3",
+ "tokio 0.1.22",
+ "tokio-named-pipes",
+ "tokio-uds",
+ "winapi 0.3.8",
+]
 
 [[package]]
 name = "parity-util-mem"
@@ -4329,8 +4506,8 @@ checksum = "feb3b2b1033b8a60b4da6ee470325f887758c95d5320f52f9ce0df055a55940e"
 
 [[package]]
 name = "polkadot-availability-store"
-version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#73ae4732d07f7515c7c6c5d1b995040cbae8d537"
+version = "0.8.13"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
 dependencies = [
  "derive_more 0.99.7",
  "exit-future 0.2.0",
@@ -4356,14 +4533,13 @@ dependencies = [
 
 [[package]]
 name = "polkadot-cli"
-version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#73ae4732d07f7515c7c6c5d1b995040cbae8d537"
+version = "0.8.13"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
 dependencies = [
  "frame-benchmarking-cli",
  "futures 0.3.5",
  "log 0.4.8",
  "polkadot-service",
- "polkadot-test-service",
  "sc-cli",
  "sc-client-api",
  "sc-client-db",
@@ -4379,8 +4555,8 @@ dependencies = [
 
 [[package]]
 name = "polkadot-collator"
-version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#73ae4732d07f7515c7c6c5d1b995040cbae8d537"
+version = "0.8.13"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
 dependencies = [
  "futures 0.3.5",
  "futures-timer 2.0.2",
@@ -4390,7 +4566,6 @@ dependencies = [
  "polkadot-network",
  "polkadot-primitives",
  "polkadot-service",
- "polkadot-test-service",
  "polkadot-validation",
  "sc-cli",
  "sc-client-api",
@@ -4406,9 +4581,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "polkadot-core-primitives"
+version = "0.7.30"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
+dependencies = [
+ "parity-scale-codec",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "polkadot-erasure-coding"
-version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#73ae4732d07f7515c7c6c5d1b995040cbae8d537"
+version = "0.8.13"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
 dependencies = [
  "derive_more 0.15.0",
  "parity-scale-codec",
@@ -4420,8 +4606,8 @@ dependencies = [
 
 [[package]]
 name = "polkadot-network"
-version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#73ae4732d07f7515c7c6c5d1b995040cbae8d537"
+version = "0.8.13"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
 dependencies = [
  "arrayvec 0.4.12",
  "bytes 0.5.4",
@@ -4447,32 +4633,33 @@ dependencies = [
 
 [[package]]
 name = "polkadot-parachain"
-version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#73ae4732d07f7515c7c6c5d1b995040cbae8d537"
+version = "0.8.13"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
 dependencies = [
  "derive_more 0.99.7",
  "log 0.4.8",
  "parity-scale-codec",
  "parking_lot 0.10.2",
+ "polkadot-core-primitives",
  "sc-executor",
  "serde",
  "shared_memory",
  "sp-core",
  "sp-externalities",
  "sp-io",
- "sp-runtime-interface",
  "sp-std",
  "sp-wasm-interface",
 ]
 
 [[package]]
 name = "polkadot-primitives"
-version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#73ae4732d07f7515c7c6c5d1b995040cbae8d537"
+version = "0.8.13"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
 dependencies = [
  "bitvec",
  "frame-system",
  "parity-scale-codec",
+ "polkadot-core-primitives",
  "polkadot-parachain",
  "serde",
  "sp-api",
@@ -4488,8 +4675,8 @@ dependencies = [
 
 [[package]]
 name = "polkadot-rpc"
-version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#73ae4732d07f7515c7c6c5d1b995040cbae8d537"
+version = "0.8.13"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
 dependencies = [
  "jsonrpc-core",
  "pallet-transaction-payment-rpc",
@@ -4504,6 +4691,7 @@ dependencies = [
  "sc-keystore",
  "sc-rpc",
  "sp-api",
+ "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
  "sp-consensus-babe",
@@ -4514,8 +4702,8 @@ dependencies = [
 
 [[package]]
 name = "polkadot-runtime"
-version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#73ae4732d07f7515c7c6c5d1b995040cbae8d537"
+version = "0.8.13"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
 dependencies = [
  "bitvec",
  "frame-executive",
@@ -4578,8 +4766,8 @@ dependencies = [
 
 [[package]]
 name = "polkadot-runtime-common"
-version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#73ae4732d07f7515c7c6c5d1b995040cbae8d537"
+version = "0.8.13"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
 dependencies = [
  "bitvec",
  "frame-support",
@@ -4591,6 +4779,7 @@ dependencies = [
  "pallet-session",
  "pallet-staking",
  "pallet-timestamp",
+ "pallet-transaction-payment",
  "pallet-vesting",
  "parity-scale-codec",
  "polkadot-primitives",
@@ -4610,8 +4799,8 @@ dependencies = [
 
 [[package]]
 name = "polkadot-service"
-version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#73ae4732d07f7515c7c6c5d1b995040cbae8d537"
+version = "0.8.13"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
 dependencies = [
  "frame-benchmarking",
  "frame-system-rpc-runtime-api",
@@ -4668,8 +4857,8 @@ dependencies = [
 
 [[package]]
 name = "polkadot-statement-table"
-version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#73ae4732d07f7515c7c6c5d1b995040cbae8d537"
+version = "0.8.13"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
 dependencies = [
  "parity-scale-codec",
  "polkadot-primitives",
@@ -4678,8 +4867,8 @@ dependencies = [
 
 [[package]]
 name = "polkadot-test-runtime"
-version = "0.8.7"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#73ae4732d07f7515c7c6c5d1b995040cbae8d537"
+version = "0.8.13"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
 dependencies = [
  "bitvec",
  "frame-executive",
@@ -4733,7 +4922,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-runtime-client"
 version = "2.0.0"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#73ae4732d07f7515c7c6c5d1b995040cbae8d537"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
 dependencies = [
  "futures 0.3.5",
  "pallet-timestamp",
@@ -4756,10 +4945,12 @@ dependencies = [
 [[package]]
 name = "polkadot-test-service"
 version = "0.8.2"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#73ae4732d07f7515c7c6c5d1b995040cbae8d537"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
 dependencies = [
  "frame-benchmarking",
+ "futures 0.1.29",
  "futures 0.3.5",
+ "hex",
  "log 0.4.8",
  "pallet-staking",
  "polkadot-availability-store",
@@ -4793,8 +4984,8 @@ dependencies = [
 
 [[package]]
 name = "polkadot-validation"
-version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#73ae4732d07f7515c7c6c5d1b995040cbae8d537"
+version = "0.8.13"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
 dependencies = [
  "bitvec",
  "derive_more 0.14.1",
@@ -4827,6 +5018,25 @@ dependencies = [
  "sp-trie",
  "substrate-prometheus-endpoint",
  "tokio 0.2.21",
+]
+
+[[package]]
+name = "poly1305"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b5829f50f48e9ddb79f3f7c3097029d0caee30f8286accb241416df603b080b8"
+dependencies = [
+ "universal-hash",
+]
+
+[[package]]
+name = "polyval"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ec3341498978de3bfd12d1b22f1af1de22818f5473a11e8a6ef997989e3a212"
+dependencies = [
+ "cfg-if",
+ "universal-hash",
 ]
 
 [[package]]
@@ -5411,6 +5621,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "rental"
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8545debe98b2b139fb04cad8618b530e9b07c152d99a5de83c860b877d67847f"
+dependencies = [
+ "rental-impl",
+ "stable_deref_trait",
+]
+
+[[package]]
+name = "rental-impl"
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "475e68978dc5b743f2f40d8e0a8fdc83f1c5e78cbf4b8fa5e74e73beebc340de"
+dependencies = [
+ "proc-macro2 1.0.18",
+ "quote 1.0.7",
+ "syn 1.0.31",
+]
+
+[[package]]
 name = "ring"
 version = "0.16.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5562,8 +5793,8 @@ dependencies = [
 
 [[package]]
 name = "sc-authority-discovery"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "bytes 0.5.4",
  "derive_more 0.99.7",
@@ -5589,8 +5820,8 @@ dependencies = [
 
 [[package]]
 name = "sc-basic-authorship"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "futures 0.3.5",
  "futures-timer 3.0.2",
@@ -5613,8 +5844,8 @@ dependencies = [
 
 [[package]]
 name = "sc-block-builder"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "parity-scale-codec",
  "sc-client-api",
@@ -5629,8 +5860,8 @@ dependencies = [
 
 [[package]]
 name = "sc-chain-spec"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "impl-trait-for-tuples",
  "sc-chain-spec-derive",
@@ -5645,8 +5876,8 @@ dependencies = [
 
 [[package]]
 name = "sc-chain-spec-derive"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2 1.0.18",
@@ -5656,8 +5887,8 @@ dependencies = [
 
 [[package]]
 name = "sc-cli"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "ansi_term 0.12.1",
  "atty",
@@ -5696,8 +5927,8 @@ dependencies = [
 
 [[package]]
 name = "sc-client-api"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "derive_more 0.99.7",
  "fnv",
@@ -5732,8 +5963,8 @@ dependencies = [
 
 [[package]]
 name = "sc-client-db"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "blake2-rfc",
  "hash-db",
@@ -5761,8 +5992,8 @@ dependencies = [
 
 [[package]]
 name = "sc-consensus"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "sc-client-api",
  "sp-blockchain",
@@ -5772,8 +6003,8 @@ dependencies = [
 
 [[package]]
 name = "sc-consensus-babe"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "derive_more 0.99.7",
  "fork-tree",
@@ -5814,8 +6045,8 @@ dependencies = [
 
 [[package]]
 name = "sc-consensus-babe-rpc"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "derive_more 0.99.7",
  "futures 0.3.5",
@@ -5828,6 +6059,7 @@ dependencies = [
  "sc-rpc-api",
  "serde",
  "sp-api",
+ "sp-application-crypto",
  "sp-blockchain",
  "sp-consensus",
  "sp-consensus-babe",
@@ -5837,8 +6069,8 @@ dependencies = [
 
 [[package]]
 name = "sc-consensus-epochs"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "fork-tree",
  "parity-scale-codec",
@@ -5850,8 +6082,8 @@ dependencies = [
 
 [[package]]
 name = "sc-consensus-slots"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "futures 0.3.5",
  "futures-timer 3.0.2",
@@ -5872,8 +6104,8 @@ dependencies = [
 
 [[package]]
 name = "sc-consensus-uncles"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "log 0.4.8",
  "sc-client-api",
@@ -5886,8 +6118,8 @@ dependencies = [
 
 [[package]]
 name = "sc-executor"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "derive_more 0.99.7",
  "lazy_static",
@@ -5914,8 +6146,8 @@ dependencies = [
 
 [[package]]
 name = "sc-executor-common"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "derive_more 0.99.7",
  "log 0.4.8",
@@ -5931,8 +6163,8 @@ dependencies = [
 
 [[package]]
 name = "sc-executor-wasmi"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "log 0.4.8",
  "parity-scale-codec",
@@ -5946,8 +6178,8 @@ dependencies = [
 
 [[package]]
 name = "sc-executor-wasmtime"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "cranelift-codegen",
  "cranelift-wasm",
@@ -5967,8 +6199,8 @@ dependencies = [
 
 [[package]]
 name = "sc-finality-grandpa"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "assert_matches",
  "derive_more 0.99.7",
@@ -6005,8 +6237,8 @@ dependencies = [
 
 [[package]]
 name = "sc-finality-grandpa-rpc"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "derive_more 0.99.7",
  "finality-grandpa",
@@ -6022,13 +6254,14 @@ dependencies = [
 
 [[package]]
 name = "sc-informant"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "ansi_term 0.12.1",
  "futures 0.3.5",
  "log 0.4.8",
  "parity-util-mem 0.6.1",
+ "parking_lot 0.10.2",
  "sc-client-api",
  "sc-network",
  "sp-blockchain",
@@ -6040,11 +6273,12 @@ dependencies = [
 
 [[package]]
 name = "sc-keystore"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "derive_more 0.99.7",
  "hex",
+ "merlin",
  "parking_lot 0.10.2",
  "rand 0.7.3",
  "serde_json",
@@ -6055,8 +6289,8 @@ dependencies = [
 
 [[package]]
 name = "sc-light"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "hash-db",
  "lazy_static",
@@ -6074,8 +6308,8 @@ dependencies = [
 
 [[package]]
 name = "sc-network"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "bitflags",
  "bs58",
@@ -6087,7 +6321,7 @@ dependencies = [
  "fork-tree",
  "futures 0.3.5",
  "futures-timer 3.0.2",
- "futures_codec",
+ "futures_codec 0.3.4",
  "hex",
  "ip_network",
  "libp2p",
@@ -6118,7 +6352,7 @@ dependencies = [
  "sp-utils",
  "substrate-prometheus-endpoint",
  "thiserror",
- "unsigned-varint",
+ "unsigned-varint 0.3.3",
  "void",
  "wasm-timer",
  "zeroize",
@@ -6126,8 +6360,8 @@ dependencies = [
 
 [[package]]
 name = "sc-network-gossip"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "futures 0.3.5",
  "futures-timer 3.0.2",
@@ -6141,8 +6375,8 @@ dependencies = [
 
 [[package]]
 name = "sc-offchain"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "bytes 0.5.4",
  "fnv",
@@ -6168,8 +6402,8 @@ dependencies = [
 
 [[package]]
 name = "sc-peerset"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "futures 0.3.5",
  "libp2p",
@@ -6181,8 +6415,8 @@ dependencies = [
 
 [[package]]
 name = "sc-proposer-metrics"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "log 0.4.8",
  "substrate-prometheus-endpoint",
@@ -6190,8 +6424,8 @@ dependencies = [
 
 [[package]]
 name = "sc-rpc"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "futures 0.3.5",
  "hash-db",
@@ -6222,8 +6456,8 @@ dependencies = [
 
 [[package]]
 name = "sc-rpc-api"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "derive_more 0.99.7",
  "futures 0.3.5",
@@ -6246,11 +6480,12 @@ dependencies = [
 
 [[package]]
 name = "sc-rpc-server"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "jsonrpc-core",
  "jsonrpc-http-server",
+ "jsonrpc-ipc-server",
  "jsonrpc-pubsub",
  "jsonrpc-ws-server",
  "log 0.4.8",
@@ -6261,8 +6496,8 @@ dependencies = [
 
 [[package]]
 name = "sc-service"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "derive_more 0.99.7",
  "directories",
@@ -6324,8 +6559,8 @@ dependencies = [
 
 [[package]]
 name = "sc-state-db"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "log 0.4.8",
  "parity-scale-codec",
@@ -6338,10 +6573,9 @@ dependencies = [
 
 [[package]]
 name = "sc-telemetry"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
- "bytes 0.5.4",
  "futures 0.3.5",
  "futures-timer 3.0.2",
  "libp2p",
@@ -6360,23 +6594,25 @@ dependencies = [
 
 [[package]]
 name = "sc-tracing"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "erased-serde",
  "log 0.4.8",
  "parking_lot 0.10.2",
+ "rustc-hash",
  "sc-telemetry",
  "serde",
  "serde_json",
  "slog",
+ "sp-tracing",
  "tracing-core",
 ]
 
 [[package]]
 name = "sc-transaction-graph"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "derive_more 0.99.7",
  "futures 0.3.5",
@@ -6395,8 +6631,8 @@ dependencies = [
 
 [[package]]
 name = "sc-transaction-pool"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "derive_more 0.99.7",
  "futures 0.3.5",
@@ -6726,13 +6962,13 @@ checksum = "c7cb5678e1615754284ec264d9bb5b4c27d2018577fd90ac0ceb578591ed5ee4"
 
 [[package]]
 name = "snow"
-version = "0.6.2"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "afb767eee7d257ba202f0b9b08673bc13b22281632ef45267b19f13100accd2f"
+checksum = "ce0f91be479494dd92e69d9971bd23ed27037dd1c94fcf558f6c6e74e6afa654"
 dependencies = [
- "arrayref",
- "blake2-rfc",
- "chacha20-poly1305-aead",
+ "aes-gcm",
+ "blake2",
+ "chacha20poly1305",
  "rand 0.7.3",
  "rand_core 0.5.1",
  "ring",
@@ -6762,7 +6998,6 @@ checksum = "1c9dab3f95c9ebdf3a88268c19af668f637a3c5039c2c56ff2d40b1b2d64a25b"
 dependencies = [
  "base64 0.11.0",
  "bytes 0.5.4",
- "flate2",
  "futures 0.3.5",
  "http 0.2.1",
  "httparse",
@@ -6775,9 +7010,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "soketto"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85457366ae0c6ce56bf05a958aef14cd38513c236568618edbcd9a8c52cb80b0"
+dependencies = [
+ "base64 0.12.1",
+ "bytes 0.5.4",
+ "flate2",
+ "futures 0.3.5",
+ "httparse",
+ "log 0.4.8",
+ "rand 0.7.3",
+ "sha-1",
+]
+
+[[package]]
 name = "sp-allocator"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "derive_more 0.99.7",
  "log 0.4.8",
@@ -6788,8 +7039,8 @@ dependencies = [
 
 [[package]]
 name = "sp-api"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "hash-db",
  "parity-scale-codec",
@@ -6803,8 +7054,8 @@ dependencies = [
 
 [[package]]
 name = "sp-api-proc-macro"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "blake2-rfc",
  "proc-macro-crate",
@@ -6815,8 +7066,8 @@ dependencies = [
 
 [[package]]
 name = "sp-application-crypto"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "parity-scale-codec",
  "serde",
@@ -6827,8 +7078,8 @@ dependencies = [
 
 [[package]]
 name = "sp-arithmetic"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "integer-sqrt",
  "num-traits 0.2.12",
@@ -6840,8 +7091,8 @@ dependencies = [
 
 [[package]]
 name = "sp-authority-discovery"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -6852,8 +7103,8 @@ dependencies = [
 
 [[package]]
 name = "sp-authorship"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "parity-scale-codec",
  "sp-inherents",
@@ -6863,8 +7114,8 @@ dependencies = [
 
 [[package]]
 name = "sp-block-builder"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -6875,8 +7126,8 @@ dependencies = [
 
 [[package]]
 name = "sp-blockchain"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "derive_more 0.99.7",
  "log 0.4.8",
@@ -6891,8 +7142,8 @@ dependencies = [
 
 [[package]]
 name = "sp-chain-spec"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "serde",
  "serde_json",
@@ -6900,8 +7151,8 @@ dependencies = [
 
 [[package]]
 name = "sp-consensus"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "derive_more 0.99.7",
  "futures 0.3.5",
@@ -6919,12 +7170,13 @@ dependencies = [
  "sp-utils",
  "sp-version",
  "substrate-prometheus-endpoint",
+ "wasm-timer",
 ]
 
 [[package]]
 name = "sp-consensus-aura"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -6937,8 +7189,8 @@ dependencies = [
 
 [[package]]
 name = "sp-consensus-babe"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "merlin",
  "parity-scale-codec",
@@ -6946,6 +7198,7 @@ dependencies = [
  "sp-application-crypto",
  "sp-consensus",
  "sp-consensus-vrf",
+ "sp-core",
  "sp-inherents",
  "sp-runtime",
  "sp-std",
@@ -6954,8 +7207,8 @@ dependencies = [
 
 [[package]]
 name = "sp-consensus-vrf"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "parity-scale-codec",
  "schnorrkel",
@@ -6966,8 +7219,8 @@ dependencies = [
 
 [[package]]
 name = "sp-core"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "base58",
  "blake2-rfc",
@@ -7008,8 +7261,8 @@ dependencies = [
 
 [[package]]
 name = "sp-database"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "kvdb",
  "parking_lot 0.10.2",
@@ -7017,8 +7270,8 @@ dependencies = [
 
 [[package]]
 name = "sp-debug-derive"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "proc-macro2 1.0.18",
  "quote 1.0.7",
@@ -7027,8 +7280,8 @@ dependencies = [
 
 [[package]]
 name = "sp-externalities"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "environmental",
  "parity-scale-codec",
@@ -7038,8 +7291,8 @@ dependencies = [
 
 [[package]]
 name = "sp-finality-grandpa"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "finality-grandpa",
  "log 0.4.8",
@@ -7054,8 +7307,8 @@ dependencies = [
 
 [[package]]
 name = "sp-finality-tracker"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "parity-scale-codec",
  "sp-inherents",
@@ -7064,8 +7317,8 @@ dependencies = [
 
 [[package]]
 name = "sp-inherents"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "derive_more 0.99.7",
  "parity-scale-codec",
@@ -7076,8 +7329,8 @@ dependencies = [
 
 [[package]]
 name = "sp-io"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "futures 0.3.5",
  "hash-db",
@@ -7090,14 +7343,15 @@ dependencies = [
  "sp-runtime-interface",
  "sp-state-machine",
  "sp-std",
+ "sp-tracing",
  "sp-trie",
  "sp-wasm-interface",
 ]
 
 [[package]]
 name = "sp-keyring"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "lazy_static",
  "sp-core",
@@ -7107,8 +7361,8 @@ dependencies = [
 
 [[package]]
 name = "sp-npos-elections"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "parity-scale-codec",
  "serde",
@@ -7119,8 +7373,8 @@ dependencies = [
 
 [[package]]
 name = "sp-npos-elections-compact"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2 1.0.18",
@@ -7130,8 +7384,8 @@ dependencies = [
 
 [[package]]
 name = "sp-offchain"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "sp-api",
  "sp-core",
@@ -7140,8 +7394,8 @@ dependencies = [
 
 [[package]]
 name = "sp-panic-handler"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "backtrace",
  "log 0.4.8",
@@ -7149,8 +7403,8 @@ dependencies = [
 
 [[package]]
 name = "sp-rpc"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "serde",
  "sp-core",
@@ -7158,8 +7412,8 @@ dependencies = [
 
 [[package]]
 name = "sp-runtime"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "either",
  "hash256-std-hasher",
@@ -7180,8 +7434,8 @@ dependencies = [
 
 [[package]]
 name = "sp-runtime-interface"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "parity-scale-codec",
  "primitive-types",
@@ -7195,8 +7449,8 @@ dependencies = [
 
 [[package]]
 name = "sp-runtime-interface-proc-macro"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "Inflector",
  "proc-macro-crate",
@@ -7207,8 +7461,8 @@ dependencies = [
 
 [[package]]
 name = "sp-serializer"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "serde",
  "serde_json",
@@ -7216,8 +7470,8 @@ dependencies = [
 
 [[package]]
 name = "sp-session"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -7229,8 +7483,8 @@ dependencies = [
 
 [[package]]
 name = "sp-staking"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "parity-scale-codec",
  "sp-runtime",
@@ -7239,15 +7493,17 @@ dependencies = [
 
 [[package]]
 name = "sp-state-machine"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "hash-db",
+ "itertools 0.9.0",
  "log 0.4.8",
  "num-traits 0.2.12",
  "parity-scale-codec",
  "parking_lot 0.10.2",
  "rand 0.7.3",
+ "smallvec 1.4.0",
  "sp-core",
  "sp-externalities",
  "sp-panic-handler",
@@ -7258,13 +7514,13 @@ dependencies = [
 
 [[package]]
 name = "sp-std"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 
 [[package]]
 name = "sp-storage"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "impl-serde 0.2.3",
  "ref-cast",
@@ -7275,8 +7531,8 @@ dependencies = [
 
 [[package]]
 name = "sp-test-primitives"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "parity-scale-codec",
  "parity-util-mem 0.6.1",
@@ -7288,8 +7544,8 @@ dependencies = [
 
 [[package]]
 name = "sp-timestamp"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "impl-trait-for-tuples",
  "parity-scale-codec",
@@ -7302,16 +7558,18 @@ dependencies = [
 
 [[package]]
 name = "sp-tracing"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
+ "log 0.4.8",
+ "rental",
  "tracing",
 ]
 
 [[package]]
 name = "sp-transaction-pool"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "derive_more 0.99.7",
  "futures 0.3.5",
@@ -7326,11 +7584,11 @@ dependencies = [
 
 [[package]]
 name = "sp-trie"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "hash-db",
- "memory-db 0.20.1",
+ "memory-db 0.21.0",
  "parity-scale-codec",
  "sp-core",
  "sp-std",
@@ -7340,19 +7598,20 @@ dependencies = [
 
 [[package]]
 name = "sp-utils"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "futures 0.3.5",
  "futures-core",
+ "futures-timer 3.0.2",
  "lazy_static",
  "prometheus",
 ]
 
 [[package]]
 name = "sp-version"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "impl-serde 0.2.3",
  "parity-scale-codec",
@@ -7363,8 +7622,8 @@ dependencies = [
 
 [[package]]
 name = "sp-wasm-interface"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "impl-trait-for-tuples",
  "parity-scale-codec",
@@ -7397,6 +7656,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "10102ac8d55e35db2b3fafc26f81ba8647da2e15879ab686a67e6d19af2685e8"
 dependencies = [
  "rand 0.5.6",
+]
+
+[[package]]
+name = "stream-cipher"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8131256a5896cabcf5eb04f4d6dacbe1aefda854b0d9896e09cb58829ec5638c"
+dependencies = [
+ "generic-array",
 ]
 
 [[package]]
@@ -7482,16 +7750,16 @@ dependencies = [
 
 [[package]]
 name = "substrate-build-script-utils"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "platforms",
 ]
 
 [[package]]
 name = "substrate-frame-rpc-system"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "frame-system-rpc-runtime-api",
  "futures 0.3.5",
@@ -7501,8 +7769,10 @@ dependencies = [
  "log 0.4.8",
  "parity-scale-codec",
  "sc-client-api",
+ "sc-rpc-api",
  "serde",
  "sp-api",
+ "sp-block-builder",
  "sp-blockchain",
  "sp-core",
  "sp-runtime",
@@ -7511,8 +7781,8 @@ dependencies = [
 
 [[package]]
 name = "substrate-prometheus-endpoint"
-version = "0.8.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "0.8.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "async-std",
  "derive_more 0.99.7",
@@ -7525,8 +7795,8 @@ dependencies = [
 
 [[package]]
 name = "substrate-test-client"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "futures 0.3.5",
  "hash-db",
@@ -7547,8 +7817,8 @@ dependencies = [
 
 [[package]]
 name = "substrate-test-runtime"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "cfg-if",
  "frame-executive",
@@ -7556,7 +7826,7 @@ dependencies = [
  "frame-system",
  "frame-system-rpc-runtime-api",
  "log 0.4.8",
- "memory-db 0.20.1",
+ "memory-db 0.21.0",
  "pallet-babe",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -7581,14 +7851,14 @@ dependencies = [
  "sp-transaction-pool",
  "sp-trie",
  "sp-version",
- "substrate-wasm-builder-runner 1.0.6 (git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3)",
+ "substrate-wasm-builder-runner 1.0.6 (git+https://github.com/paritytech/substrate?branch=cumulus-branch)",
  "trie-db",
 ]
 
 [[package]]
 name = "substrate-test-runtime-client"
-version = "2.0.0-rc3"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+version = "2.0.0-rc4"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 dependencies = [
  "futures 0.3.5",
  "parity-scale-codec",
@@ -7609,7 +7879,7 @@ dependencies = [
 [[package]]
 name = "substrate-wasm-builder-runner"
 version = "1.0.6"
-source = "git+https://github.com/paritytech/substrate?branch=cecton-fix-int-test-3#d8162a15641ba02823b6a2ab01a279f089e50b5a"
+source = "git+https://github.com/paritytech/substrate?branch=cumulus-branch#e8f901868997be15635cba9b21a99b212009adc8"
 
 [[package]]
 name = "substrate-wasm-builder-runner"
@@ -8048,6 +8318,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "tokio-named-pipes"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d282d483052288b2308ba5ee795f5673b159c9bdf63c385a05609da782a5eae"
+dependencies = [
+ "bytes 0.4.12",
+ "futures 0.1.29",
+ "mio",
+ "mio-named-pipes",
+ "tokio 0.1.22",
+]
+
+[[package]]
 name = "tokio-reactor"
 version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8076,6 +8359,15 @@ dependencies = [
  "rustls 0.17.0",
  "tokio 0.2.21",
  "webpki",
+]
+
+[[package]]
+name = "tokio-service"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "24da22d077e0f15f55162bdbdc661228c1581892f52074fb242678d015b45162"
+dependencies = [
+ "futures 0.1.29",
 ]
 
 [[package]]
@@ -8243,9 +8535,9 @@ checksum = "a7f741b240f1a48843f9b8e0444fb55fb2a4ff67293b50a9179dfd5ea67f8d41"
 
 [[package]]
 name = "trie-db"
-version = "0.20.1"
+version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bcc309f34008563989045a4c4dbcc5770467f3a3785ee80a9b5cc0d83362475f"
+checksum = "cb230c24c741993b04cfccbabb45acff6f6480c5f00d3ed8794ea43db3a9d727"
 dependencies = [
  "hash-db",
  "hashbrown 0.6.3",
@@ -8363,6 +8655,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "826e7639553986605ec5979c7dd957c7895e93eabed50ab2ffa7f6128a75097c"
 
 [[package]]
+name = "universal-hash"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df0c900f2f9b4116803415878ff48b63da9edb268668e08cf9292d7503114a01"
+dependencies = [
+ "generic-array",
+ "subtle 2.2.3",
+]
+
+[[package]]
 name = "unsigned-varint"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8371,7 +8673,17 @@ dependencies = [
  "bytes 0.5.4",
  "futures-io",
  "futures-util",
- "futures_codec",
+ "futures_codec 0.3.4",
+]
+
+[[package]]
+name = "unsigned-varint"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "669d776983b692a906c881fcd0cfb34271a48e197e4d6cb8df32b05bfc3d3fa5"
+dependencies = [
+ "bytes 0.5.4",
+ "futures_codec 0.4.1",
 ]
 
 [[package]]
@@ -8691,8 +9003,8 @@ dependencies = [
 
 [[package]]
 name = "westend-runtime"
-version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#73ae4732d07f7515c7c6c5d1b995040cbae8d537"
+version = "0.8.13"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#350988c9639e0b0330c414617a495b91c49b7598"
 dependencies = [
  "bitvec",
  "frame-executive",

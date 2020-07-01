@@ -6,15 +6,15 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 
 # Polkadot dependencies
 polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
@@ -41,10 +41,10 @@ test-runtime = { package = "cumulus-test-runtime", path = "../test/runtime" }
 test-client = { package = "cumulus-test-client", path = "../test/client" }
 
 # Substrate dependencies
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 
 # Polkadot dependencies
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
