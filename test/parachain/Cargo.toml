@@ -39,11 +39,13 @@ sc-network = { git = "https://github.com/paritytech/substrate", branch = "cecton
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3", version = "0.8.0-alpha.5" }
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
 sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
+sc-informant = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3" }
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../../consensus" }
 cumulus-collator = { path = "../../collator" }
 cumulus-network = { path = "../../network" }
+cumulus-primitives = { path = "../../primitives" }
 
 # Polkadot dependencies
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }

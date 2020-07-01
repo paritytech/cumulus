@@ -15,15 +15,18 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use ansi_term::Color;
-use std::sync::Arc;
-use sc_executor::native_executor_instance;
-use sc_service::{AbstractService, Configuration};
-use sc_finality_grandpa::{FinalityProofProvider as GrandpaFinalityProofProvider, StorageAndProofProvider};
-use polkadot_primitives::parachain::{CollatorPair, Id as ParaId};
-use cumulus_collator::{CollatorBuilder, prepare_collator_config};
-use futures::FutureExt;
-pub use sc_executor::NativeExecutor;
+use cumulus_collator::{prepare_collator_config, CollatorBuilder};
 use cumulus_network::DelayedBlockAnnounceValidator;
+use futures::FutureExt;
+use polkadot_primitives::parachain::{CollatorPair, Id as ParaId};
+use sc_executor::native_executor_instance;
+pub use sc_executor::NativeExecutor;
+use sc_finality_grandpa::{
+	FinalityProofProvider as GrandpaFinalityProofProvider, StorageAndProofProvider,
+};
+use sc_informant::OutputFormat;
+use sc_service::{Configuration, TaskManager};
+use std::sync::Arc;
 
 /// The parachain id of this parachain.
 pub const PARA_ID: ParaId = ParaId::new(100);
@@ -51,9 +54,8 @@ macro_rules! new_full_start {
 		>($config)?
 		.with_select_chain(|_config, backend| Ok(sc_consensus::LongestChain::new(backend.clone())))?
 		.with_transaction_pool(|builder| {
-			let pool_api = Arc::new(sc_transaction_pool::FullChainApi::new(
-				builder.client().clone(),
-			));
+			let client = builder.client();
+			let pool_api = Arc::new(sc_transaction_pool::FullChainApi::new(client.clone()));
 			let pool = sc_transaction_pool::BasicPool::new(
 				builder.config().transaction_pool.clone(),
 				pool_api,
@@ -61,19 +63,12 @@ macro_rules! new_full_start {
 			);
 			Ok(pool)
 		})?
-		.with_import_queue(|
-			_config,
-			client,
-			_,
-			_,
-			spawn_task_handle,
-			registry,
-		| {
+		.with_import_queue(|_config, client, _, _, spawner, registry| {
 			let import_queue = cumulus_consensus::import_queue::import_queue(
 				client.clone(),
 				client,
 				inherent_data_providers.clone(),
-				spawn_task_handle,
+				spawner,
 				registry,
 			)?;
 
@@ -81,7 +76,7 @@ macro_rules! new_full_start {
 		})?;
 
 		(builder, inherent_data_providers)
-		}};
+	}};
 }
 
 /// Run a collator node with the given parachain `Configuration` and relaychain `Configuration`
@@ -90,9 +85,15 @@ macro_rules! new_full_start {
 pub fn run_collator(
 	parachain_config: Configuration,
 	key: Arc<CollatorPair>,
-	polkadot_config: polkadot_collator::Configuration,
-) -> sc_service::error::Result<impl AbstractService> {
-	let parachain_config = prepare_collator_config(parachain_config);
+	mut polkadot_config: polkadot_collator::Configuration,
+	id: polkadot_primitives::parachain::Id,
+) -> sc_service::error::Result<TaskManager> {
+	let mut parachain_config = prepare_collator_config(parachain_config);
+
+	parachain_config.informant_output_format = OutputFormat {
+		enable_color: true,
+		prefix: format!("[{}] ", Color::Yellow.bold().paint("Parachain")),
+	};
 
 	let (builder, inherent_data_providers) = new_full_start!(parachain_config);
 	inherent_data_providers
@@ -102,50 +103,48 @@ pub fn run_collator(
 	let block_announce_validator = DelayedBlockAnnounceValidator::new();
 	let block_announce_validator_copy = block_announce_validator.clone();
 	let service = builder
-		.with_informant_prefix(format!("[{}] ", Color::Yellow.bold().paint("Parachain")))?
 		.with_finality_proof_provider(|client, backend| {
 			// GenesisAuthoritySetProvider is implemented for StorageAndProofProvider
 			let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
 			Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
 		})?
-		.with_block_announce_validator(|_client| {
-			Box::new(block_announce_validator_copy)
-		})?
+		.with_block_announce_validator(|_client| Box::new(block_announce_validator_copy))?
 		.build_full()?;
 
-	let registry = service.prometheus_registry();
+	let registry = service.prometheus_registry.clone();
 
 	let proposer_factory = sc_basic_authorship::ProposerFactory::new(
-		service.client(),
-		service.transaction_pool(),
+		service.client.clone(),
+		service.transaction_pool.clone(),
 		registry.as_ref(),
 	);
 
-	let block_import = service.client();
-	let client = service.client();
-	let network = service.network();
-	let announce_block = Arc::new(move |hash, data| {
-		network.announce_block(hash, data)
-	});
+	let block_import = service.client.clone();
+	let client = service.client.clone();
+	let network = service.network.clone();
+	let announce_block = Arc::new(move |hash, data| network.announce_block(hash, data));
 	let builder = CollatorBuilder::new(
 		proposer_factory,
 		inherent_data_providers,
 		block_import,
-		PARA_ID,
+		id,
 		client,
 		announce_block,
 		block_announce_validator,
 	);
 
+	polkadot_config.informant_output_format = OutputFormat {
+		enable_color: true,
+		prefix: format!("[{}] ", Color::Blue.bold().paint("Relaychain")),
+	};
 	let polkadot_future = polkadot_collator::start_collator(
 		builder,
-		PARA_ID,
+		id,
 		key,
 		polkadot_config,
-		Some(format!("[{}] ", Color::Blue.bold().paint("Relaychain"))),
-	).map(|err| panic!("================== {:?}", err));
-	//).map(|_| ());
-	service.spawn_essential_task("polkadot", polkadot_future);
+	//).map(|err| panic!("================== {:?}", err));
+	).map(|_| ());
+	service.task_manager.spawn_essential_handle().spawn("polkadot", polkadot_future);
 
-	Ok(service)
+	Ok(service.task_manager)
 }

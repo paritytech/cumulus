@@ -22,6 +22,7 @@ use futures::{future::{Future, FutureExt}, join, pin_mut, select, stream::Stream
 use polkadot_primitives::parachain::{Info, Scheduling};
 use polkadot_primitives::Hash as PHash;
 use polkadot_test_runtime::{VERSION, Header};
+use polkadot_runtime::{Header, Runtime, SignedExtra, SignedPayload};
 use polkadot_runtime_common::{parachains, registrar, BlockHashCount, claims};
 use serde_json::Value;
 use sp_arithmetic::traits::SaturatedConversion;

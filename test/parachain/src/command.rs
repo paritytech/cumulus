@@ -17,21 +17,21 @@
 use crate::chain_spec;
 use crate::cli::{Cli, PolkadotCli, Subcommand};
 use codec::Encode;
+use cumulus_primitives::ParaId;
 use log::info;
 use parachain_runtime::Block;
+use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
-	CliConfiguration, Error, ImportParams, KeystoreParams, NetworkParams, Result, SharedParams,
-	SubstrateCli,
+	ChainSpec, CliConfiguration, Error, ImportParams, KeystoreParams, NetworkParams, Result, Role,
+	RuntimeVersion, SharedParams, SubstrateCli,
 };
-use sc_executor::NativeExecutionDispatch;
 use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::{
 	traits::{Block as BlockT, Hash as HashT, Header as HeaderT, Zero},
 	BuildStorage,
 };
-use std::net::SocketAddr;
-use std::sync::Arc;
+use std::{net::SocketAddr, sync::Arc};
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> &'static str {
@@ -66,7 +66,14 @@ impl SubstrateCli for Cli {
 	}
 
 	fn load_spec(&self, _id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		Ok(Box::new(chain_spec::get_chain_spec()))
+		// Such a hack :(
+		Ok(Box::new(chain_spec::get_chain_spec(
+			self.run.parachain_id.into(),
+		)))
+	}
+
+	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
+		&parachain_runtime::VERSION
 	}
 }
 
@@ -103,28 +110,36 @@ impl SubstrateCli for PolkadotCli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		polkadot_test_service::PolkadotChainSpec::from_json_file(std::path::PathBuf::from(id))
-		.map(|r| Box::new(r) as Box<_>)
+		Ok(match id {
+			"" | "local" | "dev" => Box::new(polkadot_test_service::PolkadotChainSpec::from_json_bytes(
+				&include_bytes!("../res/polkadot_chainspec.json")[..],
+			)?),
+			path => Box::new(chain_spec::ChainSpec::from_json_file(
+				std::path::PathBuf::from(path),
+			)?),
+		})
+	}
+
+	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
+		polkadot_cli::Cli::native_runtime_version(chain_spec)
 	}
 }
 
-fn generate_genesis_state() -> Result<Block> {
-	let storage = (&chain_spec::get_chain_spec()).build_storage()?;
+fn generate_genesis_state(para_id: ParaId) -> Result<Block> {
+	let storage = (&chain_spec::get_chain_spec(para_id)).build_storage()?;
 
 	let child_roots = storage.children_default.iter().map(|(sk, child_content)| {
-		let state_root =
-			<<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
-				child_content.data.clone().into_iter().collect(),
-			);
+		let state_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
+			child_content.data.clone().into_iter().collect(),
+		);
 		(sk.clone(), state_root.encode())
 	});
 	let state_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
 		storage.top.clone().into_iter().chain(child_roots).collect(),
 	);
 
-	let extrinsics_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
-		Vec::new(),
-	);
+	let extrinsics_root =
+		<<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(Vec::new());
 
 	Ok(Block::new(
 		<<Block as BlockT>::Header as HeaderT>::new(
@@ -151,7 +166,7 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::ExportGenesisState(params)) => {
 			sc_cli::init_logger("");
 
-			let block = generate_genesis_state()?;
+			let block = generate_genesis_state(params.parachain_id.into())?;
 			let header_hex = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
 			if let Some(output) = &params.output {
@@ -168,38 +183,36 @@ pub fn run() -> Result<()> {
 			let grandpa_pause = if polkadot_cli.run.grandpa_pause.is_empty() {
 				None
 			} else {
-				Some((polkadot_cli.run.grandpa_pause[0], polkadot_cli.run.grandpa_pause[1]))
+				Some((
+					polkadot_cli.run.grandpa_pause[0],
+					polkadot_cli.run.grandpa_pause[1],
+				))
 			};
 
-			runner.run_node(
-				|config| {
-					polkadot_service::polkadot_new_light(config)
-				},
-				|config| {
-					polkadot_service::polkadot_new_full(
-						config,
-						None,
-						None,
-						authority_discovery_enabled,
-						6000,
-						grandpa_pause,
-						None,
-					).map(|(s, _, _)| s)
-				},
-				polkadot_service::PolkadotExecutor::native_version().runtime_version
-			)
-		},
+			runner.run_node_until_exit(|config| match config.role {
+				Role::Light => polkadot_service::polkadot_new_light(config).map(|r| r.0),
+				_ => polkadot_service::polkadot_new_full(
+					config,
+					None,
+					None,
+					authority_discovery_enabled,
+					6000,
+					grandpa_pause,
+				)
+				.map(|(s, _, _)| s),
+			})
+		}
 		Some(Subcommand::PolkadotValidationWorker(cmd)) => {
 			sc_cli::init_logger("");
 			polkadot_service::run_validation_worker(&cmd.mem_id)?;
 
 			Ok(())
-		},
+		}
 		None => {
-			let runner = cli.create_runner(&cli.run)?;
+			let runner = cli.create_runner(&*cli.run)?;
 
 			// TODO
-			let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
+			let key = Arc::new(sp_core::Pair::generate().0);
 
 			let mut polkadot_cli = PolkadotCli::from_iter(
 				[PolkadotCli::executable_name().to_string()]
@@ -207,25 +220,33 @@ pub fn run() -> Result<()> {
 					.chain(cli.relaychain_args.iter()),
 			);
 
-			runner.run_full_node(
-				|config| {
-					polkadot_cli.base_path =
-						config.base_path.as_ref().map(|x| x.path().join("polkadot"));
+			let id = ParaId::from(cli.run.parachain_id);
 
-					let task_executor = config.task_executor.clone();
-					let polkadot_config = SubstrateCli::create_configuration(
-						&polkadot_cli,
-						&polkadot_cli,
-						task_executor,
-					)
-					.unwrap();
+			let parachain_account =
+				AccountIdConversion::<polkadot_primitives::AccountId>::into_account(&id);
 
-					info!("Parachain id: {:?}", crate::service::PARA_ID);
+			let block = generate_genesis_state(id)?;
+			let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
-					crate::service::run_collator(config, key, polkadot_config)
-				},
-				parachain_runtime::VERSION,
-			)
+			runner.run_node_until_exit(|config| {
+				if matches!(config.role, Role::Light) {
+					return Err("Light client not supporter!".into());
+				}
+
+				polkadot_cli.base_path =
+					config.base_path.as_ref().map(|x| x.path().join("polkadot"));
+
+				let task_executor = config.task_executor.clone();
+				let polkadot_config =
+					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, task_executor)
+						.unwrap();
+
+				info!("Parachain id: {:?}", id);
+				info!("Parachain Account: {}", parachain_account);
+				info!("Parachain genesis state: {}", genesis_state);
+
+				crate::service::run_collator(config, key, polkadot_config, id)
+			})
 		}
 	}
 }
@@ -251,8 +272,7 @@ impl CliConfiguration for PolkadotCli {
 		Ok(self
 			.shared_params()
 			.base_path()
-			.or_else(|| self.base_path.clone().map(Into::into))
-		)
+			.or_else(|| self.base_path.clone().map(Into::into)))
 	}
 
 	fn rpc_http(&self) -> Result<Option<SocketAddr>> {
