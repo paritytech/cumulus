@@ -15,8 +15,8 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
 use assert_cmd::cargo::cargo_bin;
-//use async_std::{net, task::{sleep, spawn}};
-use tokio::{time::delay_for as sleep, spawn};
+use async_std::{net, task::{sleep, spawn}};
+//use tokio::{time::delay_for as sleep, spawn};
 use codec::Encode;
 use futures::{future::{Future, FutureExt}, join, pin_mut, select, stream::StreamExt};
 use polkadot_primitives::parachain::{Info, Scheduling};
@@ -45,7 +45,7 @@ use sc_service::{
 		MultiaddrWithPeerId, NetworkConfiguration, DatabaseConfig, KeystoreConfig,
 		WasmExecutionMethod,
 	}, TaskType,
-	BasePath, Role,
+	BasePath, Role, RpcSession,
 };
 use polkadot_test_runtime_client::{sp_consensus::BlockOrigin, Sr25519Keyring};
 use sp_blockchain::HeaderBackend;
@@ -101,11 +101,12 @@ fn target_dir() -> PathBuf {
 		.unwrap()
 }
 
-#[tokio::test]
+//#[tokio::test]
+#[async_std::test]
 #[ignore]
 async fn integration_test() {
 	//sc_cli::init_logger("runtime=debug,babe=trace");
-	//sc_cli::init_logger("");
+	sc_cli::init_logger("");
 
 	let t1 = sleep(Duration::from_secs(
 		INTEGRATION_TEST_ALLOWED_TIME
@@ -226,14 +227,11 @@ async fn integration_test() {
 			current_block_hash,
 			(), (), (), (), ()));
 		println!("{:?}", raw_payload.using_encoded(|payload| signature.verify(payload, &signed)));
+		let (tx, rx) = futures01::sync::mpsc::channel(0);
+		let mem = RpcSession::new(tx.into());
+		let res = alice.service.rpc_query(&mem, format!(r#"{{"jsonrpc":"2.0","method":"author_submitExtrinsic","params":["0x{}"],"id":0}}"#, hex::encode(ex.encode())).as_str()).await;
+		error!("############# {:?}", res);
 		//error!("===== start");
-		let transport_client_alice =
-			jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:27015");
-		let mut client_alice = jsonrpsee::raw::RawClient::new(transport_client_alice);
-		let _register_block_hash =
-			Author::submit_extrinsic(&mut client_alice, format!("0x{}", hex::encode(ex.encode())))
-				.await
-				.unwrap();
 		//sleep(Duration::from_secs(5)).await;
 		//error!("===== end");
 		//sleep(Duration::from_secs(600)).await;
@@ -268,7 +266,7 @@ async fn integration_test() {
 		// run cumulus charlie
 		let charlie_temp_dir = tempdir().unwrap();
 		let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
-		let polkadot_config = polkadot_test_service::node_config(
+		let mut polkadot_config = polkadot_test_service::node_config(
 			|| {},
 			task_executor.clone(),
 			Charlie,
@@ -278,6 +276,12 @@ async fn integration_test() {
 				bob.multiaddr_with_peer_id.clone(),
 			],
 		).unwrap();
+		use std::net::{SocketAddr, Ipv4Addr};
+		polkadot_config.rpc_http = Some(SocketAddr::new(
+			Ipv4Addr::LOCALHOST.into(),
+			27016,
+		));
+		polkadot_config.rpc_methods = sc_service::config::RpcMethods::Unsafe;
 		let parachain_config = parachain_config(
 			|| {},
 			task_executor.clone(),
@@ -286,6 +290,16 @@ async fn integration_test() {
 		).unwrap();
 		let service = cumulus_test_parachain_collator::run_collator(parachain_config, key, polkadot_config).unwrap();
 		let _base_path = service.base_path();
+		sleep(Duration::from_secs(3)).await;
+		/*
+		let transport_client_alice =
+			jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:27016");
+		let mut client_alice = jsonrpsee::raw::RawClient::new(transport_client_alice);
+		let _register_block_hash =
+			Author::submit_extrinsic(&mut client_alice, format!("0x{}", hex::encode(ex.encode())))
+				.await
+				.unwrap();
+		*/
 		wait_for_blocks(service.client(), 4).await;
 		//service.fuse().await;
 

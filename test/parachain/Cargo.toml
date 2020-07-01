@@ -64,7 +64,9 @@ hex = "0.4"
 serde_json = "1.0"
 rand = "0.7.3"
 jsonrpsee = "0.1"
-tokio = { version = "0.2.13", features = ["full"] }
+#tokio = { version = "0.2.13", features = ["full"] }
+async-std = { version = "1.2.0", features = [ "attributes" ] }
+futures01 = { package = "futures", version = "0.1.29" }
 
 # Polkadot dependencies
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }

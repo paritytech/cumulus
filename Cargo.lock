@@ -160,11 +160,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7deb0a829ca7bcfaf5da70b073a8d128619259a7be8216a355e23f00763059e5"
 
 [[package]]
+name = "async-attributes"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "efd3d156917d94862e779f356c5acae312b08fd3121e792c857d7928c8088423"
+dependencies = [
+ "quote 1.0.7",
+ "syn 1.0.31",
+]
+
+[[package]]
 name = "async-std"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "538ecb01eb64eecd772087e5b6f7540cbc917f047727339a472dafed2185b267"
 dependencies = [
+ "async-attributes",
  "async-task",
  "broadcaster",
  "crossbeam-channel",
@@ -966,6 +977,7 @@ version = "0.1.0"
 dependencies = [
  "ansi_term 0.12.1",
  "assert_cmd",
+ "async-std",
  "cumulus-collator",
  "cumulus-consensus",
  "cumulus-network",
@@ -973,6 +985,7 @@ dependencies = [
  "derive_more 0.15.0",
  "exit-future 0.1.4",
  "frame-system",
+ "futures 0.1.29",
  "futures 0.3.5",
  "hex",
  "jsonrpsee",
@@ -1020,7 +1033,6 @@ dependencies = [
  "substrate-test-client",
  "substrate-test-runtime-client",
  "tempfile",
- "tokio 0.2.21",
  "trie-root 0.15.2",
 ]
 
@@ -2481,7 +2493,7 @@ dependencies = [
 [[package]]
 name = "kusama-runtime"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#5a195f1dae18015a58695946cc1e885eb0e0310b"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#3a49ab9a946266ce8118dc82016e15df1668be86"
 dependencies = [
  "bitvec",
  "frame-executive",
@@ -3183,7 +3195,7 @@ dependencies = [
  "kernel32-sys",
  "libc",
  "log 0.4.8",
- "miow 0.2.1",
+ "miow",
  "net2",
  "slab",
  "winapi 0.2.8",
@@ -3199,18 +3211,6 @@ dependencies = [
  "log 0.4.8",
  "mio",
  "slab",
-]
-
-[[package]]
-name = "mio-named-pipes"
-version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5e374eff525ce1c5b7687c4cef63943e7686524a387933ad27ca7ec43779cb3"
-dependencies = [
- "log 0.4.8",
- "mio",
- "miow 0.3.5",
- "winapi 0.3.8",
 ]
 
 [[package]]
@@ -3234,16 +3234,6 @@ dependencies = [
  "net2",
  "winapi 0.2.8",
  "ws2_32-sys",
-]
-
-[[package]]
-name = "miow"
-version = "0.3.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07b88fb9795d4d36d62a012dfbf49a8f5cf12751f36d31a9dbe66d528e58979e"
-dependencies = [
- "socket2",
- "winapi 0.3.8",
 ]
 
 [[package]]
@@ -4340,7 +4330,7 @@ checksum = "feb3b2b1033b8a60b4da6ee470325f887758c95d5320f52f9ce0df055a55940e"
 [[package]]
 name = "polkadot-availability-store"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#5a195f1dae18015a58695946cc1e885eb0e0310b"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#3a49ab9a946266ce8118dc82016e15df1668be86"
 dependencies = [
  "derive_more 0.99.7",
  "exit-future 0.2.0",
@@ -4367,12 +4357,13 @@ dependencies = [
 [[package]]
 name = "polkadot-cli"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#5a195f1dae18015a58695946cc1e885eb0e0310b"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#3a49ab9a946266ce8118dc82016e15df1668be86"
 dependencies = [
  "frame-benchmarking-cli",
  "futures 0.3.5",
  "log 0.4.8",
  "polkadot-service",
+ "polkadot-test-service",
  "sc-cli",
  "sc-client-api",
  "sc-client-db",
@@ -4389,7 +4380,7 @@ dependencies = [
 [[package]]
 name = "polkadot-collator"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#5a195f1dae18015a58695946cc1e885eb0e0310b"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#3a49ab9a946266ce8118dc82016e15df1668be86"
 dependencies = [
  "futures 0.3.5",
  "futures-timer 2.0.2",
@@ -4417,7 +4408,7 @@ dependencies = [
 [[package]]
 name = "polkadot-erasure-coding"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#5a195f1dae18015a58695946cc1e885eb0e0310b"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#3a49ab9a946266ce8118dc82016e15df1668be86"
 dependencies = [
  "derive_more 0.15.0",
  "parity-scale-codec",
@@ -4430,7 +4421,7 @@ dependencies = [
 [[package]]
 name = "polkadot-network"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#5a195f1dae18015a58695946cc1e885eb0e0310b"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#3a49ab9a946266ce8118dc82016e15df1668be86"
 dependencies = [
  "arrayvec 0.4.12",
  "bytes 0.5.4",
@@ -4457,7 +4448,7 @@ dependencies = [
 [[package]]
 name = "polkadot-parachain"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#5a195f1dae18015a58695946cc1e885eb0e0310b"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#3a49ab9a946266ce8118dc82016e15df1668be86"
 dependencies = [
  "derive_more 0.99.7",
  "log 0.4.8",
@@ -4477,7 +4468,7 @@ dependencies = [
 [[package]]
 name = "polkadot-primitives"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#5a195f1dae18015a58695946cc1e885eb0e0310b"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#3a49ab9a946266ce8118dc82016e15df1668be86"
 dependencies = [
  "bitvec",
  "frame-system",
@@ -4498,7 +4489,7 @@ dependencies = [
 [[package]]
 name = "polkadot-rpc"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#5a195f1dae18015a58695946cc1e885eb0e0310b"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#3a49ab9a946266ce8118dc82016e15df1668be86"
 dependencies = [
  "jsonrpc-core",
  "pallet-transaction-payment-rpc",
@@ -4524,7 +4515,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#5a195f1dae18015a58695946cc1e885eb0e0310b"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#3a49ab9a946266ce8118dc82016e15df1668be86"
 dependencies = [
  "bitvec",
  "frame-executive",
@@ -4588,7 +4579,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-common"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#5a195f1dae18015a58695946cc1e885eb0e0310b"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#3a49ab9a946266ce8118dc82016e15df1668be86"
 dependencies = [
  "bitvec",
  "frame-support",
@@ -4620,7 +4611,7 @@ dependencies = [
 [[package]]
 name = "polkadot-service"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#5a195f1dae18015a58695946cc1e885eb0e0310b"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#3a49ab9a946266ce8118dc82016e15df1668be86"
 dependencies = [
  "frame-benchmarking",
  "frame-system-rpc-runtime-api",
@@ -4678,7 +4669,7 @@ dependencies = [
 [[package]]
 name = "polkadot-statement-table"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#5a195f1dae18015a58695946cc1e885eb0e0310b"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#3a49ab9a946266ce8118dc82016e15df1668be86"
 dependencies = [
  "parity-scale-codec",
  "polkadot-primitives",
@@ -4688,7 +4679,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-runtime"
 version = "0.8.7"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#5a195f1dae18015a58695946cc1e885eb0e0310b"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#3a49ab9a946266ce8118dc82016e15df1668be86"
 dependencies = [
  "bitvec",
  "frame-executive",
@@ -4742,7 +4733,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-runtime-client"
 version = "2.0.0"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#5a195f1dae18015a58695946cc1e885eb0e0310b"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#3a49ab9a946266ce8118dc82016e15df1668be86"
 dependencies = [
  "futures 0.3.5",
  "pallet-timestamp",
@@ -4765,7 +4756,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-service"
 version = "0.8.2"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#5a195f1dae18015a58695946cc1e885eb0e0310b"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#3a49ab9a946266ce8118dc82016e15df1668be86"
 dependencies = [
  "frame-benchmarking",
  "futures 0.3.5",
@@ -4803,7 +4794,7 @@ dependencies = [
 [[package]]
 name = "polkadot-validation"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#5a195f1dae18015a58695946cc1e885eb0e0310b"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#3a49ab9a946266ce8118dc82016e15df1668be86"
 dependencies = [
  "bitvec",
  "derive_more 0.14.1",
@@ -7973,13 +7964,11 @@ dependencies = [
  "libc",
  "memchr",
  "mio",
- "mio-named-pipes",
  "mio-uds",
  "num_cpus",
  "pin-project-lite",
  "signal-hook-registry",
  "slab",
- "tokio-macros",
  "winapi 0.3.8",
 ]
 
@@ -8056,17 +8045,6 @@ dependencies = [
  "bytes 0.4.12",
  "futures 0.1.29",
  "log 0.4.8",
-]
-
-[[package]]
-name = "tokio-macros"
-version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0c3acc6aa564495a0f2e1d59fab677cd7f81a19994cfc7f3ad0e64301560389"
-dependencies = [
- "proc-macro2 1.0.18",
- "quote 1.0.7",
- "syn 1.0.31",
 ]
 
 [[package]]
@@ -8714,7 +8692,7 @@ dependencies = [
 [[package]]
 name = "westend-runtime"
 version = "0.8.8"
-source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#5a195f1dae18015a58695946cc1e885eb0e0310b"
+source = "git+https://github.com/paritytech/polkadot?branch=cecton-fix-int-test-3#3a49ab9a946266ce8118dc82016e15df1668be86"
 dependencies = [
  "bitvec",
  "frame-executive",
