@@ -7,17 +7,17 @@ edition = "2018"
 
 [dependencies]
 # substrate deps
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "bkchr-sync-stuff-fixes" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "bkchr-sync-stuff-fixes" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "bkchr-sync-stuff-fixes" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-sync-stuff-fixes" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
 
 # polkadot deps
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-sync-stuff-fixes" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-sync-stuff-fixes" }
-polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-sync-stuff-fixes" }
-polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-sync-stuff-fixes" }
-polkadot-network = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-sync-stuff-fixes" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
+polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
+polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
+polkadot-network = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
 
 # cumulus deps
 cumulus-primitives = { path = "../primitives" }
@@ -32,9 +32,9 @@ parking_lot = "0.10.2"
 cumulus-test-runtime = { path = "../test/runtime" }
 
 # substrate deps
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-sync-stuff-fixes" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "bkchr-sync-stuff-fixes" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "bkchr-sync-stuff-fixes" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "bkchr-cumulus-branch" }
 
 # polkadot deps
-polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-sync-stuff-fixes" }
+polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-cumulus-branch" }
