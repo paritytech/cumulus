@@ -105,10 +105,6 @@ impl SubstrateCli for PolkadotCli {
 		2017
 	}
 
-	fn executable_name() -> String {
-		"cumulus-test-parachain-collator".into()
-	}
-
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 		Ok(match id {
 			"" | "local" | "dev" => Box::new(polkadot_service::PolkadotChainSpec::from_json_bytes(
