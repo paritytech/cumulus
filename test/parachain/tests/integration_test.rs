@@ -121,7 +121,7 @@ async fn integration_test() {
 			task_executor.clone(),
 			Bob,
 			|| {},
-			vec![alice.multiaddr_with_peer_id.clone()],
+			vec![alice.addr.clone()],
 		).unwrap();
 
 		future::join(alice.wait_for_blocks(2), bob.wait_for_blocks(2)).await;
@@ -216,7 +216,7 @@ async fn integration_test() {
 		println!("{:?}", raw_payload.using_encoded(|payload| signature.verify(payload, &signed)));
 		let (tx, rx) = futures01::sync::mpsc::channel(0);
 		let mem = RpcSession::new(tx.into());
-		let (res, _, _) = alice.send_transaction(ex.into()).await;
+		let (res, _, _) = alice.call_function(function, Alice).await;
 		error!("############# {:?}", res);
 		//error!("===== start");
 		//sleep(Duration::from_secs(5)).await;
@@ -258,8 +258,8 @@ async fn integration_test() {
 			task_executor.clone(),
 			Charlie,
 			vec![
-				alice.multiaddr_with_peer_id.clone(),
-				bob.multiaddr_with_peer_id.clone(),
+				alice.addr.clone(),
+				bob.addr.clone(),
 			],
 		).unwrap();
 		use std::net::{SocketAddr, Ipv4Addr};
