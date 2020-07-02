@@ -114,7 +114,7 @@ impl SubstrateCli for PolkadotCli {
 			"" | "local" | "dev" => Box::new(polkadot_test_service::PolkadotChainSpec::from_json_bytes(
 				&include_bytes!("../res/polkadot_chainspec.json")[..],
 			)?),
-			path => Box::new(chain_spec::ChainSpec::from_json_file(
+			path => Box::new(polkadot_test_service::PolkadotChainSpec::from_json_file(
 				std::path::PathBuf::from(path),
 			)?),
 		})
