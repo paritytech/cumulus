@@ -5559,6 +5559,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "register-para"
+version = "0.1.0"
+dependencies = [
+ "async-std",
+ "frame-system",
+ "hex",
+ "jsonrpsee",
+ "pallet-grandpa",
+ "pallet-sudo",
+ "pallet-transaction-payment",
+ "polkadot-parachain",
+ "polkadot-primitives",
+ "polkadot-runtime",
+ "polkadot-runtime-common",
+ "schnorrkel",
+ "serde_json",
+ "sp-arithmetic",
+ "sp-keyring",
+ "sp-runtime",
+ "sp-version",
+ "substrate-test-runtime-client",
+ "tempfile",
+]
+
+[[package]]
 name = "remove_dir_all"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
