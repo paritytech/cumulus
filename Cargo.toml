@@ -11,6 +11,7 @@ members = [
 	"test/parachain/runtime",
 	"test/parachain/",
 	"upward-message",
+	"scripts/register-para",
 ]
 
 [profile.release]
