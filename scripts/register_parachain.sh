@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 usage() {
-	echo Usage:
-	echo "$0 <url> <seed> <wasm> <genesis> <parachain-id> <tokens> <account>"
-	exit 1
+    echo Usage:
+    echo "$0 <url> <seed> <wasm> <genesis> <parachain-id> <tokens> <account>"
+    exit 1
 }
 
 url=$1
@@ -22,14 +22,14 @@ account=$7
 [ -z "$tokens" ] && usage
 [ -z "$account" ] && usage
 if ! [ -r "$wasm" ]; then
-	echo "Could not read: $wasm"
-	exit 1
+    echo "Could not read: $wasm"
+    exit 1
 fi
 
 if ! which polkadot-js-api &> /dev/null; then
-	echo 'command `polkadot-js-api` not in PATH'
-	echo "npm install -g @polkadot/api-cli"
-	exit 1
+    echo 'command `polkadot-js-api` not in PATH'
+    echo "npm install -g @polkadot/api-cli"
+    exit 1
 fi
 
 set -e -x
@@ -37,20 +37,20 @@ set -e -x
 test -f "$seed" && seed="$(cat "$seed")"
 
 polkadot-js-api \
-	--ws "${url?}" \
-	--sudo \
-	--seed "${seed?}" \
-	tx.registrar.registerPara \
-		"${parachain_id?}" \
-		'{"scheduling":"Always"}' \
-		@"${wasm?}" \
-		"${genesis?}"
+    --ws "${url?}" \
+    --sudo \
+    --seed "${seed?}" \
+    tx.registrar.registerPara \
+        "${parachain_id?}" \
+        '{"scheduling":"Always"}' \
+        @"${wasm?}" \
+        "${genesis?}"
 
 polkadot-js-api \
-	--ws "${url?}" \
-	--sudo \
-	--seed "${seed?}" \
-	tx.balances.setBalance \
-		"${account?}" \
-		$((tokens * 10 ** 12)) \
-		0
+    --ws "${url?}" \
+    --sudo \
+    --seed "${seed?}" \
+    tx.balances.setBalance \
+        "${account?}" \
+        $((tokens * 10 ** 12)) \
+        0
