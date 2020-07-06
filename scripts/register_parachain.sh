@@ -31,6 +31,8 @@ fi
 
 set -e -x
 
+test -f "$seed" && seed="$(cat "$seed")"
+
 polkadot-js-api \
 	--ws "${url?}" \
 	--sudo \
