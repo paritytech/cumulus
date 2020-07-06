@@ -21,7 +21,10 @@ account=$7
 [ -z "$parachain_id" ] && usage
 [ -z "$tokens" ] && usage
 [ -z "$account" ] && usage
-[ -r "$wasm" ] && echo "Could not read: $wasm" && exit 1
+if ! [ -r "$wasm" ]; then
+	echo "Could not read: $wasm"
+	exit 1
+fi
 
 if ! which polkadot-js-api &> /dev/null; then
 	echo 'command `polkadot-js-api` not in PATH'
