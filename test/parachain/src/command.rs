@@ -162,7 +162,7 @@ pub fn run() -> Result<()> {
 			})
 		}
 		Some(Subcommand::ExportGenesisState(params)) => {
-			sc_cli::init_logger("", &<sc_cli::LogRotationOpt as structopt::StructOpt>::from_args())?;
+			sc_cli::init_logger("", None)?;
 
 			let block = generate_genesis_state(params.parachain_id.into())?;
 			let header_hex = format!("0x{:?}", HexDisplay::from(&block.header().encode()));

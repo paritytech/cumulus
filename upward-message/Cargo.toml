@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3", default-features = false }
 
 # Polkadot deps
 polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3", default-features = false }
