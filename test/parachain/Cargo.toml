@@ -24,22 +24,22 @@ ansi_term = "0.12.1"
 parachain-runtime = { package = "cumulus-test-parachain-runtime", path = "runtime" }
 
 # Substrate dependencies
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-testing-helpers" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sc-network = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers", version = "0.8.0-alpha.5" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sc-informant = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cumulus-branch" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-network = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", version = "0.8.0-alpha.5" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-informant = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../../consensus" }
@@ -48,15 +48,15 @@ cumulus-network = { path = "../../network" }
 cumulus-primitives = { path = "../../primitives" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-polkadot-test-runtime" }
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-polkadot-test-runtime" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-polkadot-test-runtime" }
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "cecton-polkadot-test-runtime" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-polkadot-test-runtime" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "cecton-polkadot-test-runtime" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 
 [dev-dependencies]
 assert_cmd = "0.12"
@@ -72,22 +72,22 @@ async-std = { version = "1.2.0", features = [ "attributes" ] }
 futures01 = { package = "futures", version = "0.1.29" }
 
 # Polkadot dependencies
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "cecton-polkadot-test-runtime" }
-polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cecton-polkadot-test-runtime" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-polkadot-test-runtime" }
-polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cecton-polkadot-test-runtime" }
-polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "cecton-polkadot-test-runtime" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
+polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
+polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
+polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3" }
 
 # Substrate dependencies
-substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sp-version = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-pallet-grandpa = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cecton-testing-helpers" }
+substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-version = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+pallet-grandpa = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }

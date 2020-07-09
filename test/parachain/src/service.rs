@@ -139,6 +139,7 @@ pub fn run_collator(
 		proposer_factory,
 		inherent_data_providers,
 		block_import,
+		client.clone(),
 		id,
 		client,
 		announce_block,
