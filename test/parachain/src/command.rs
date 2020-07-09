@@ -43,11 +43,10 @@ impl SubstrateCli for Cli {
 	}
 
 	fn description() -> String {
-		"Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
+		format!("Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
-		cumulus-test-parachain-collator [parachain-args] -- [relaychain-args]"
-			.into()
+		{} [parachain-args] -- [relaychain-args]", Self::executable_name())
 	}
 
 	fn author() -> String {
