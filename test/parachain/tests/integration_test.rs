@@ -99,7 +99,7 @@ async fn integration_test() {
 	}).into();
 
 	//sc_cli::init_logger("runtime=debug,babe=trace");
-	//sc_cli::init_logger("");
+	sc_cli::init_logger("", None);
 
 	let t1 = sleep(Duration::from_secs(
 		INTEGRATION_TEST_ALLOWED_TIME
@@ -128,13 +128,14 @@ async fn integration_test() {
 		//assert!(false);
 
 		// export genesis state
+		//let genesis_state = cumulus_test_parachain_collator::generate_genesis_state(); // TODO
 		let cmd = Command::new(cargo_bin("cumulus-test-parachain-collator"))
 			.arg("export-genesis-state")
 			.output()
 			.unwrap();
 		println!("{}", String::from_utf8_lossy(cmd.stdout.as_slice()));
 		println!("{}", String::from_utf8_lossy(cmd.stderr.as_slice()));
-		assert!(cmd.status.success()); // TODO: Found argument 'export-genesis-state' which wasn't expected, or isn't valid in this context
+		assert!(cmd.status.success());
 		let output = &cmd.stdout;
 		let genesis_state = hex::decode(&output[2..output.len() - 1]).unwrap();
 

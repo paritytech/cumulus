@@ -18,18 +18,15 @@ use ansi_term::Color;
 use cumulus_collator::{prepare_collator_config, CollatorBuilder};
 use cumulus_network::DelayedBlockAnnounceValidator;
 use futures::{future::ready, FutureExt};
-use polkadot_primitives::parachain::{CollatorPair, Id as ParaId};
+use polkadot_primitives::parachain::CollatorPair;
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_finality_grandpa::{
 	FinalityProofProvider as GrandpaFinalityProofProvider, StorageAndProofProvider,
 };
 use sc_informant::OutputFormat;
-use sc_service::{Configuration, ServiceComponents, TaskManager, TFullBackend, TFullClient};
+use sc_service::{Configuration, ServiceComponents, TFullBackend, TFullClient};
 use std::sync::Arc;
-
-/// The parachain id of this parachain.
-pub const PARA_ID: ParaId = ParaId::new(100);
 
 // Our native executor instance.
 native_executor_instance!(
@@ -42,7 +39,6 @@ native_executor_instance!(
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
-#[macro_export]
 macro_rules! new_full_start {
 	($config:expr) => {{
 		let inherent_data_providers = sp_inherents::InherentDataProviders::new();
@@ -59,10 +55,12 @@ macro_rules! new_full_start {
 				client.clone(),
 				builder.prometheus_registry(),
 			));
-			let pool = sc_transaction_pool::BasicPool::new(
+			let pool = sc_transaction_pool::BasicPool::new_full(
 				builder.config().transaction_pool.clone(),
 				pool_api,
 				builder.prometheus_registry(),
+				builder.spawn_handle(),
+				client.clone(),
 			);
 			Ok(pool)
 		})?

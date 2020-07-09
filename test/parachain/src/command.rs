@@ -121,7 +121,8 @@ impl SubstrateCli for PolkadotCli {
 	}
 }
 
-fn generate_genesis_state(para_id: ParaId) -> Result<Block> {
+/// Generate the genesis block
+pub fn generate_genesis_state(para_id: ParaId) -> Result<Block> {
 	let storage = (&chain_spec::get_chain_spec(para_id)).build_storage()?;
 
 	let child_roots = storage.children_default.iter().map(|(sk, child_content)| {
@@ -201,7 +202,7 @@ pub fn run() -> Result<()> {
 			})
 		}
 		Some(Subcommand::PolkadotValidationWorker(cmd)) => {
-			sc_cli::init_logger("", &<sc_cli::LogRotationOpt as structopt::StructOpt>::from_args())?;
+			sc_cli::init_logger("", None)?;
 			polkadot_service::run_validation_worker(&cmd.mem_id)?;
 
 			Ok(())
