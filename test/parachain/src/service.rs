@@ -55,10 +55,12 @@ macro_rules! new_full_start {
 				client.clone(),
 				builder.prometheus_registry(),
 			));
-			let pool = sc_transaction_pool::BasicPool::new(
+			let pool = sc_transaction_pool::BasicPool::new_full(
 				builder.config().transaction_pool.clone(),
 				pool_api,
 				builder.prometheus_registry(),
+				builder.spawn_handle(),
+				builder.client().clone(),
 			);
 			Ok(pool)
 		})?

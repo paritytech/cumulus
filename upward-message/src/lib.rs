@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus. If not, see <http://www.gnu.org/licenses/>.
 
-//! Upward messages types and traits for Polkadot, Kusama and Westend.
+//! Upward messages types and traits for Polkadot, Kusama, Rococo and Westend.
 //!
 //! As Cumulus needs to suits multiple Polkadot-like runtimes the upward message
 //! type is different for each of them. To support all of them, Cumulus provides
@@ -28,10 +28,12 @@ use sp_std::vec::Vec;
 mod polkadot;
 mod kusama;
 mod westend;
+mod rococo;
 
 pub use polkadot::UpwardMessage as PolkadotUpwardMessage;
 pub use kusama::UpwardMessage as KusamaUpwardMessage;
 pub use westend::UpwardMessage as WestendUpwardMessage;
+pub use rococo::UpwardMessage as RococoUpwardMessage;
 
 /// A `Balances` related upward message.
 pub trait BalancesMessage<AccountId, Balance>: Sized {

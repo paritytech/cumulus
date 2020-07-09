@@ -19,6 +19,7 @@ trie-root = '0.15.2'
 codec = { package = 'parity-scale-codec', version = '1.0.0' }
 structopt = "0.3.3"
 ansi_term = "0.12.1"
+serde = { version = "1.0.101", features = ["derive"] }
 
 # Parachain dependencies
 parachain-runtime = { package = "cumulus-test-parachain-runtime", path = "runtime" }
@@ -40,6 +41,7 @@ sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch 
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 sc-informant = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../../consensus" }
