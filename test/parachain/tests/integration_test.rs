@@ -99,7 +99,7 @@ async fn integration_test() {
 	}).into();
 
 	//sc_cli::init_logger("runtime=debug,babe=trace");
-	sc_cli::init_logger("");
+	//sc_cli::init_logger("");
 
 	let t1 = sleep(Duration::from_secs(
 		INTEGRATION_TEST_ALLOWED_TIME
@@ -114,7 +114,7 @@ async fn integration_test() {
 			Alice,
 			|| {},
 			vec![],
-		).unwrap();
+		);
 
 		// start bob
 		let bob = polkadot_test_service::run_test_node(
@@ -122,9 +122,9 @@ async fn integration_test() {
 			Bob,
 			|| {},
 			vec![alice.addr.clone()],
-		).unwrap();
+		);
 
-		future::join(alice.wait_for_blocks(2), bob.wait_for_blocks(2)).await;
+		future::join(alice.wait_for_blocks(2_usize), bob.wait_for_blocks(2_usize)).await;
 		//assert!(false);
 
 		// export genesis state
@@ -132,7 +132,9 @@ async fn integration_test() {
 			.arg("export-genesis-state")
 			.output()
 			.unwrap();
-		assert!(cmd.status.success());
+		println!("{}", String::from_utf8_lossy(cmd.stdout.as_slice()));
+		println!("{}", String::from_utf8_lossy(cmd.stderr.as_slice()));
+		assert!(cmd.status.success()); // TODO: Found argument 'export-genesis-state' which wasn't expected, or isn't valid in this context
 		let output = &cmd.stdout;
 		let genesis_state = hex::decode(&output[2..output.len() - 1]).unwrap();
 
@@ -153,6 +155,7 @@ async fn integration_test() {
 			.unwrap_or(2) as u64;
 		let tip = 0;
 		let extra: SignedExtra = (
+			RestrictFunctionality,
 			frame_system::CheckSpecVersion::<Runtime>::new(),
 			frame_system::CheckTxVersion::<Runtime>::new(),
 			frame_system::CheckGenesis::<Runtime>::new(),
@@ -215,8 +218,8 @@ async fn integration_test() {
 		println!("{:?}", raw_payload.using_encoded(|payload| signature.verify(payload, &signed)));
 		let (tx, rx) = futures01::sync::mpsc::channel(0);
 		let mem = RpcSession::new(tx.into());
-		let (res, _, _) = alice.call_function(function, Alice).await;
-		error!("############# {:?}", res);
+		let res = alice.call_function(function, Alice).await.unwrap();
+		error!("############# {:?}", res.result);
 		//error!("===== start");
 		//sleep(Duration::from_secs(5)).await;
 		//error!("===== end");
@@ -260,7 +263,7 @@ async fn integration_test() {
 				alice.addr.clone(),
 				bob.addr.clone(),
 			],
-		).unwrap();
+		);
 		use std::net::{SocketAddr, Ipv4Addr};
 		polkadot_config.rpc_http = Some(SocketAddr::new(
 			Ipv4Addr::LOCALHOST.into(),
@@ -350,8 +353,8 @@ pub fn parachain_config(
 	));
 
 	Ok(Configuration {
-		impl_name: "cumulus-test-node",
-		impl_version: "0.1",
+		impl_name: "cumulus-test-node".to_string(),
+		impl_version: "0.1".to_string(),
 		role,
 		task_executor,
 		transaction_pool: Default::default(),
