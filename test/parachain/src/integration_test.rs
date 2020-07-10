@@ -14,31 +14,28 @@
 // You should have received a copy of the GNU General Public License
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
-use tokio::{time::delay_for as sleep, spawn};
 use codec::Encode;
-use futures::{future::{FutureExt, self}, pin_mut, select};
-use polkadot_primitives::parachain::{Info, Scheduling, Id as ParaId};
-use polkadot_runtime_common::{registrar};
-use std::{
-	env, fs,
-	path::PathBuf,
-	sync::Arc,
-	time::Duration,
+use futures::{
+	future::{self, FutureExt},
+	pin_mut, select,
 };
-use substrate_test_runtime_client::AccountKeyring::*;
+use polkadot_primitives::parachain::{Id as ParaId, Info, Scheduling};
+use polkadot_runtime_common::registrar;
+use polkadot_service::ChainSpec;
+use polkadot_test_runtime_client::Sr25519Keyring;
+use sc_client_api::execution_extensions::ExecutionStrategies;
+use sc_network::{config::TransportConfig, multiaddr};
 use sc_service::{
-	Configuration, Error as ServiceError,
 	config::{
-		MultiaddrWithPeerId, NetworkConfiguration, DatabaseConfig, KeystoreConfig,
+		DatabaseConfig, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
 		WasmExecutionMethod,
 	},
-	BasePath, Role, TaskExecutor,
+	BasePath, Configuration, Error as ServiceError, Role, TaskExecutor,
 };
-use polkadot_test_runtime_client::Sr25519Keyring;
-use polkadot_service::ChainSpec;
-use sc_network::{multiaddr, config::TransportConfig};
-use sc_client_api::execution_extensions::ExecutionStrategies;
+use std::{env, fs, path::PathBuf, sync::Arc, time::Duration};
 use substrate_test_client::BlockchainEventsExt;
+use substrate_test_runtime_client::AccountKeyring::*;
+use tokio::{spawn, time::delay_for as sleep};
 
 static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TEST_ALLOWED_TIME");
 
@@ -62,15 +59,12 @@ fn target_dir() -> PathBuf {
 async fn integration_test() {
 	let task_executor: TaskExecutor = (|fut, _| {
 		spawn(fut);
-	}).into();
+	})
+	.into();
 
 	// start alice
-	let mut alice = polkadot_test_service::run_test_node(
-		task_executor.clone(),
-		Alice,
-		|| {},
-		vec![],
-	);
+	let mut alice =
+		polkadot_test_service::run_test_node(task_executor.clone(), Alice, || {}, vec![]);
 
 	// start bob
 	let mut bob = polkadot_test_service::run_test_node(
@@ -93,7 +87,9 @@ async fn integration_test() {
 		future::join(alice.wait_for_blocks(2_usize), bob.wait_for_blocks(2_usize)).await;
 
 		// export genesis state
-		let genesis_state = crate::command::generate_genesis_state(para_id).unwrap().encode();
+		let genesis_state = crate::command::generate_genesis_state(para_id)
+			.unwrap()
+			.encode();
 
 		// create and sign transaction
 		let wasm = fs::read(target_dir().join(
@@ -120,24 +116,15 @@ async fn integration_test() {
 			|| {},
 			task_executor.clone(),
 			Charlie,
-			vec![
-				alice.addr.clone(),
-				bob.addr.clone(),
-			],
+			vec![alice.addr.clone(), bob.addr.clone()],
 		);
-		use std::net::{SocketAddr, Ipv4Addr};
-		polkadot_config.rpc_http = Some(SocketAddr::new(
-			Ipv4Addr::LOCALHOST.into(),
-			27016,
-		));
+		use std::net::{Ipv4Addr, SocketAddr};
+		polkadot_config.rpc_http = Some(SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 27016));
 		polkadot_config.rpc_methods = sc_service::config::RpcMethods::Unsafe;
-		let parachain_config = parachain_config(
-			task_executor.clone(),
-			Charlie,
-			vec![],
-			para_id,
-		).unwrap();
-		let service = crate::service::run_collator(parachain_config, key, polkadot_config, para_id).unwrap();
+		let parachain_config =
+			parachain_config(task_executor.clone(), Charlie, vec![], para_id).unwrap();
+		let service =
+			crate::service::run_collator(parachain_config, key, polkadot_config, para_id).unwrap();
 		sleep(Duration::from_secs(3)).await;
 		service.client.wait_for_blocks(4).await;
 
@@ -187,11 +174,8 @@ pub fn parachain_config(
 
 	network_config.transport = TransportConfig::MemoryOnly;
 
-	use std::net::{SocketAddr, Ipv4Addr};
-	let rpc_ws = Some(SocketAddr::new(
-		Ipv4Addr::LOCALHOST.into(),
-		9944,
-	));
+	use std::net::{Ipv4Addr, SocketAddr};
+	let rpc_ws = Some(SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 9944));
 
 	Ok(Configuration {
 		impl_name: "cumulus-test-node".to_string(),
