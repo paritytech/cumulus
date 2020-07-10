@@ -65,9 +65,6 @@ async fn integration_test() {
 		spawn(fut);
 	}).into();
 
-	//sc_cli::init_logger("runtime=debug,babe=trace");
-	//sc_cli::init_logger("", None);
-
 	// start alice
 	let mut alice = polkadot_test_service::run_test_node(
 		task_executor.clone(),
@@ -95,21 +92,9 @@ async fn integration_test() {
 		let para_id = ParaId::from(100);
 
 		future::join(alice.wait_for_blocks(2_usize), bob.wait_for_blocks(2_usize)).await;
-		//assert!(false);
 
 		// export genesis state
 		let genesis_state = crate::command::generate_genesis_state(para_id).unwrap().encode();
-		/*
-		let cmd = Command::new(cargo_bin("cumulus-test-parachain-collator"))
-			.arg("export-genesis-state")
-			.output()
-			.unwrap();
-		println!("{}", String::from_utf8_lossy(cmd.stdout.as_slice()));
-		println!("{}", String::from_utf8_lossy(cmd.stderr.as_slice()));
-		assert!(cmd.status.success());
-		let output = &cmd.stdout;
-		let genesis_state = hex::decode(&output[2..output.len() - 1]).unwrap();
-		*/
 
 		// create and sign transaction
 		let wasm = fs::read(target_dir().join(
@@ -128,51 +113,7 @@ async fn integration_test() {
 		)));
 
 		// register parachain
-		/*
-		let mut builder = alice.client.new_block(Default::default()).unwrap();
-
-		for extrinsic in polkadot_test_runtime_client::needed_extrinsics(vec![], current_block as u64) {
-			builder.push(extrinsic.into()).unwrap()
-		}
-
-		// TODO: is the signature needed at all? both seem to work
-		let extrinsic = polkadot_test_runtime::UncheckedExtrinsic::new_unsigned(
-			function.clone(),
-		);
-		*/
-		//extrinsic.check().unwrap();
 		let _ = alice.call_function(function, Alice).await.unwrap();
-		//error!("===== start");
-		//sleep(Duration::from_secs(5)).await;
-		//error!("===== end");
-		//sleep(Duration::from_secs(600)).await;
-
-		//alice.service.transaction_pool().submit_one((), (), extrinsic);
-		/*
-		builder.push(
-			OpaqueExtrinsic::decode(&mut extrinsic.encode().as_slice()).unwrap(),
-		).unwrap();
-
-		let block = builder.build().unwrap().block;
-		println!("######### {}", block.header.parent_hash);
-		//alice.client.import(BlockOrigin::Own, block).unwrap(); // TODO
-		*/
-
-		/*
-		let origin = sp_consensus::BlockOrigin::Own;
-		let (header, extrinsics) = block.deconstruct();
-		let mut import = BlockImportParams::new(origin, header);
-		import.body = Some(extrinsics);
-		import.fork_choice = Some(ForkChoiceStrategy::LongestChain);
-		//println!("{}", *import.header.parent_hash());
-		alice.client.import_block(import, std::collections::HashMap::new());
-		//assert!(false);
-		future::join(alice.wait_for_blocks(3), bob.wait_for_blocks(3)).await;
-		assert!(false);
-		//assert!(false);
-		//let _telemetry = alice.service.telemetry();
-		//alice.service.fuse().await;
-		*/
 
 		// run cumulus charlie
 		let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
@@ -200,27 +141,10 @@ async fn integration_test() {
 		).unwrap();
 		let service = crate::service::run_collator(parachain_config, key, polkadot_config, para_id).unwrap();
 		sleep(Duration::from_secs(3)).await;
-		/*
-		let transport_client_alice =
-			jsonrpsee::transport::http::HttpTransportClient::new("http://127.0.0.1:27016");
-		let mut client_alice = jsonrpsee::raw::RawClient::new(transport_client_alice);
-		let _register_block_hash =
-			Author::submit_extrinsic(&mut client_alice, format!("0x{}", hex::encode(ex.encode())))
-				.await
-				.unwrap();
-		*/
 		service.client.wait_for_blocks(4).await;
 
 		alice.task_manager.terminate();
 		bob.task_manager.terminate();
-		//service.fuse().await;
-
-		// connect rpc client to cumulus
-		/*
-		wait_for_blocks(4, &mut client_cumulus_charlie).await;
-		*/
-		//sleep(Duration::from_secs(60)).await;
-		//assert!(false);
 	}
 	.fuse();
 
