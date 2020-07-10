@@ -14,66 +14,34 @@
 // You should have received a copy of the GNU General Public License
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
-use assert_cmd::cargo::cargo_bin;
 use tokio::{time::delay_for as sleep, spawn};
 use codec::Encode;
-use futures::{future::{Future, FutureExt}, join, pin_mut, select, stream::StreamExt};
+use futures::{future::{FutureExt, self}, pin_mut, select};
 use polkadot_primitives::parachain::{Info, Scheduling, Id as ParaId};
-use polkadot_primitives::Hash as PHash;
-use polkadot_test_runtime::{VERSION, Header};
-use polkadot_runtime_common::{parachains, registrar, BlockHashCount, claims};
-use serde_json::Value;
-use sp_arithmetic::traits::SaturatedConversion;
-use sp_runtime::{generic, OpaqueExtrinsic};
-use sp_version::RuntimeVersion;
+use polkadot_runtime_common::{registrar};
 use std::{
-	collections::HashSet,
 	env, fs,
-	io::Read,
 	path::PathBuf,
-	pin::Pin,
-	process::{Child, Command, Stdio},
 	sync::Arc,
 	time::Duration,
 };
 use substrate_test_runtime_client::AccountKeyring::*;
-use tempfile::tempdir;
 use sc_service::{
 	Configuration, Error as ServiceError,
 	config::{
 		MultiaddrWithPeerId, NetworkConfiguration, DatabaseConfig, KeystoreConfig,
 		WasmExecutionMethod,
-	}, TaskType,
-	BasePath, Role, RpcSession, TaskExecutor,
+	},
+	BasePath, Role, TaskExecutor,
 };
-use polkadot_test_runtime_client::{sp_consensus::BlockOrigin, Sr25519Keyring};
-use sp_blockchain::HeaderBackend;
-use sc_block_builder::BlockBuilderProvider;
-use substrate_test_client::ClientBlockImportExt;
+use polkadot_test_runtime_client::Sr25519Keyring;
 use polkadot_service::ChainSpec;
 use sp_state_machine::BasicExternalities;
 use sc_network::{multiaddr, config::TransportConfig};
-use polkadot_test_runtime::{SignedExtra, Runtime, RestrictFunctionality, SignedPayload};
-use sc_client_api::{execution_extensions::ExecutionStrategies, BlockchainEvents};
-use sp_core::{Decode};
-use sp_consensus::{BlockImport, BlockImportParams, ForkChoiceStrategy};
-use sp_runtime::traits::Block as BlockT;
-use futures::future;
-use sp_runtime::traits::Checkable;
-use sp_runtime::traits::Verify;
-use sp_transaction_pool::TransactionPool;
-use log::error;
+use sc_client_api::execution_extensions::ExecutionStrategies;
 use substrate_test_client::BlockchainEventsExt;
 
-static POLKADOT_ARGS: &[&str] = &["polkadot", "--chain=res/polkadot_chainspec.json"];
 static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TEST_ALLOWED_TIME");
-
-jsonrpsee::rpc_api! {
-	Author {
-		#[rpc(method = "author_submitExtrinsic", positional_params)]
-		fn submit_extrinsic(extrinsic: String) -> PHash;
-	}
-}
 
 // Adapted from
 // https://github.com/rust-lang/cargo/blob/485670b3983b52289a2f353d589c57fae2f60f82/tests/testsuite/support/mod.rs#L507
@@ -143,34 +111,11 @@ async fn integration_test() {
 		let genesis_state = hex::decode(&output[2..output.len() - 1]).unwrap();
 		*/
 
-		// get the current block
-		let current_block_hash = alice.client.info().best_hash;
-		let current_block = alice.client.info().best_number.saturated_into(); //.saturating_sub(1);
-		let genesis_block = alice.client.hash(0).unwrap().unwrap();
-
 		// create and sign transaction
 		let wasm = fs::read(target_dir().join(
 			"wbuild/cumulus-test-parachain-runtime/cumulus_test_parachain_runtime.compact.wasm",
 		))
 		.unwrap();
-		let nonce = 0;
-		let period = BlockHashCount::get()
-			.checked_next_power_of_two()
-			.map(|c| c / 2)
-			.unwrap_or(2) as u64;
-		let tip = 0;
-		let extra: SignedExtra = (
-			RestrictFunctionality,
-			frame_system::CheckSpecVersion::<Runtime>::new(),
-			frame_system::CheckTxVersion::<Runtime>::new(),
-			frame_system::CheckGenesis::<Runtime>::new(),
-			frame_system::CheckEra::<Runtime>::from(generic::Era::mortal(period, current_block)),
-			frame_system::CheckNonce::<Runtime>::from(nonce),
-			frame_system::CheckWeight::<Runtime>::new(),
-			pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
-			registrar::LimitParathreadCommits::<Runtime>::new(),
-			parachains::ValidateDoubleVoteReports::<Runtime>::new(),
-		);
 		let function = polkadot_test_runtime::Call::Sudo(pallet_sudo::Call::sudo(Box::new(
 			polkadot_test_runtime::Call::Registrar(registrar::Call::register_para(
 				para_id,
@@ -181,17 +126,6 @@ async fn integration_test() {
 				genesis_state.into(),
 			)),
 		)));
-		let raw_payload = SignedPayload::from_raw(
-			function.clone(),
-			extra.clone(),
-			((),
-			VERSION.spec_version,
-			VERSION.transaction_version,
-			genesis_block,
-			current_block_hash,
-			(), (), (), (), ()),
-		);
-		let signature = raw_payload.using_encoded(|e| Alice.sign(e));
 
 		// register parachain
 		/*
@@ -206,25 +140,8 @@ async fn integration_test() {
 			function.clone(),
 		);
 		*/
-		let ex = polkadot_test_runtime::UncheckedExtrinsic::new_signed(
-			function.clone(),
-			polkadot_test_runtime::Address::Id(Alice.public().into()),
-			polkadot_primitives::Signature::Sr25519(signature.clone()),
-			extra.clone(),
-		);
 		//extrinsic.check().unwrap();
-		let signed = Alice.public();
-		println!("{:?}", ((),
-			VERSION.spec_version,
-			VERSION.transaction_version,
-			genesis_block,
-			current_block_hash,
-			(), (), (), (), ()));
-		println!("{:?}", raw_payload.using_encoded(|payload| signature.verify(payload, &signed)));
-		let (tx, rx) = futures01::sync::mpsc::channel(0);
-		let mem = RpcSession::new(tx.into());
-		let res = alice.call_function(function, Alice).await.unwrap();
-		error!("############# {:?}", res.result);
+		let _ = alice.call_function(function, Alice).await.unwrap();
 		//error!("===== start");
 		//sleep(Duration::from_secs(5)).await;
 		//error!("===== end");
