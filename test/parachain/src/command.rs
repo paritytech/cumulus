@@ -106,14 +106,8 @@ impl SubstrateCli for PolkadotCli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		Ok(match id {
-			"" | "local" | "dev" => Box::new(polkadot_test_service::PolkadotChainSpec::from_json_bytes(
-				&include_bytes!("../res/polkadot_chainspec.json")[..],
-			)?),
-			path => Box::new(polkadot_test_service::PolkadotChainSpec::from_json_file(
-				std::path::PathBuf::from(path),
-			)?),
-		})
+		polkadot_cli::Cli::from_iter([PolkadotCli::executable_name().to_string()].iter())
+			.load_spec(id)
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
