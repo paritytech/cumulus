@@ -15,8 +15,7 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
 use assert_cmd::cargo::cargo_bin;
-use async_std::{net, task::{sleep, spawn}};
-//use tokio::{time::delay_for as sleep, spawn};
+use tokio::{time::delay_for as sleep, spawn};
 use codec::Encode;
 use futures::{future::{Future, FutureExt}, join, pin_mut, select, stream::StreamExt};
 use polkadot_primitives::parachain::{Info, Scheduling, Id as ParaId};
@@ -90,8 +89,7 @@ fn target_dir() -> PathBuf {
 		.unwrap()
 }
 
-//#[tokio::test]
-#[async_std::test]
+#[tokio::test]
 #[ignore]
 async fn integration_test() {
 	let task_executor: TaskExecutor = (|fut, _| {
