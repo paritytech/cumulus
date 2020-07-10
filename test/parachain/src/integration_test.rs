@@ -36,7 +36,6 @@ use sc_service::{
 };
 use polkadot_test_runtime_client::Sr25519Keyring;
 use polkadot_service::ChainSpec;
-use sp_state_machine::BasicExternalities;
 use sc_network::{multiaddr, config::TransportConfig};
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use substrate_test_client::BlockchainEventsExt;
@@ -133,7 +132,6 @@ async fn integration_test() {
 		));
 		polkadot_config.rpc_methods = sc_service::config::RpcMethods::Unsafe;
 		let parachain_config = parachain_config(
-			|| {},
 			task_executor.clone(),
 			Charlie,
 			vec![],
@@ -159,7 +157,6 @@ async fn integration_test() {
 }
 
 pub fn parachain_config(
-	storage_update_func: impl Fn(),
 	task_executor: TaskExecutor,
 	key: Sr25519Keyring,
 	boot_nodes: Vec<MultiaddrWithPeerId>,
@@ -172,10 +169,6 @@ pub fn parachain_config(
 	};
 	let key_seed = key.to_seed();
 	let mut spec = crate::chain_spec::get_chain_spec(para_id);
-	let mut storage = spec.as_storage_builder().build_storage()?;
-
-	BasicExternalities::execute_with_storage(&mut storage, storage_update_func);
-	spec.set_storage(storage);
 
 	let mut network_config = NetworkConfiguration::new(
 		format!("Cumulus Test Node for: {}", key_seed),

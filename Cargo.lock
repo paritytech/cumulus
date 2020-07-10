@@ -246,18 +246,6 @@ checksum = "c17772156ef2829aadc587461c7753af20b7e8db1529bc66855add962a3b35d3"
 
 [[package]]
 name = "async-tls"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ce6977f57fa68da77ffe5542950d47e9c23d65f5bc7cb0a9f8700996913eec7"
-dependencies = [
- "futures 0.3.5",
- "rustls 0.16.0",
- "webpki",
- "webpki-roots 0.17.0",
-]
-
-[[package]]
-name = "async-tls"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df097e3f506bec0e1a24f06bb3c962c228f36671de841ff579cb99f371772634"
@@ -309,15 +297,6 @@ name = "base58"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5024ee8015f02155eee35c711107ddd9a9bf3cb689cf2a9089c97e79b6e1ae83"
-
-[[package]]
-name = "base64"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b25d992356d2eb0ed82172f5248873db5560c4721f564b13cb5193bda5e668e"
-dependencies = [
- "byteorder",
-]
 
 [[package]]
 name = "base64"
@@ -1053,23 +1032,16 @@ dependencies = [
  "cumulus-test-parachain-runtime",
  "derive_more 0.15.0",
  "exit-future 0.1.4",
- "frame-system",
- "futures 0.1.29",
  "futures 0.3.5",
- "hex",
- "jsonrpsee",
  "log 0.4.8",
  "nix 0.17.0",
- "pallet-grandpa",
  "pallet-sudo",
- "pallet-transaction-payment",
  "parity-scale-codec",
  "parking_lot 0.9.0",
  "polkadot-cli",
  "polkadot-collator",
  "polkadot-parachain",
  "polkadot-primitives",
- "polkadot-runtime",
  "polkadot-runtime-common",
  "polkadot-service",
  "polkadot-test-runtime",
@@ -1077,7 +1049,6 @@ dependencies = [
  "polkadot-test-service",
  "rand 0.7.3",
  "sc-basic-authorship",
- "sc-block-builder",
  "sc-cli",
  "sc-client-api",
  "sc-consensus",
@@ -1087,23 +1058,17 @@ dependencies = [
  "sc-network",
  "sc-service",
  "sc-transaction-pool",
- "serde_json",
- "sp-arithmetic",
- "sp-blockchain",
  "sp-consensus",
  "sp-core",
  "sp-inherents",
  "sp-io",
  "sp-runtime",
- "sp-state-machine",
  "sp-timestamp",
  "sp-transaction-pool",
- "sp-version",
  "structopt",
  "substrate-build-script-utils",
  "substrate-test-client",
  "substrate-test-runtime-client",
- "tempfile",
  "tokio 0.2.21",
  "trie-root 0.15.2",
 ]
@@ -2116,16 +2081,6 @@ dependencies = [
 
 [[package]]
 name = "hashbrown"
-version = "0.7.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96282e96bfcd3da0d3aa9938bedf1e50df3269b6db08b4876d2da0bb1a0841cf"
-dependencies = [
- "ahash 0.3.8",
- "autocfg 1.0.0",
-]
-
-[[package]]
-name = "hashbrown"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab9b7860757ce258c89fd48d28b68c41713e597a7b09e793f6c6a6e2ea37c827"
@@ -2600,51 +2555,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "jsonrpsee"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5cc8a1da5a54b417cfb7edb9f932024d833dc333de50c21c0e1b28d0e8b4f853"
-dependencies = [
- "async-std",
- "async-tls 0.6.0",
- "bs58",
- "bytes 0.5.4",
- "fnv",
- "futures 0.3.5",
- "futures-timer 3.0.2",
- "globset",
- "hashbrown 0.7.2",
- "hyper 0.13.6",
- "jsonrpsee-proc-macros",
- "lazy_static",
- "log 0.4.8",
- "parking_lot 0.10.2",
- "pin-project",
- "rand 0.7.3",
- "serde",
- "serde_json",
- "smallvec 1.4.1",
- "soketto 0.3.2",
- "thiserror",
- "tokio 0.2.21",
- "unicase",
- "url 2.1.1",
- "webpki",
-]
-
-[[package]]
-name = "jsonrpsee-proc-macros"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1ed1b5f6937dd2c6c79a9ac6e0e3f41bbc64edb5d443840bdc73e606009ed70"
-dependencies = [
- "Inflector",
- "proc-macro2 1.0.18",
- "quote 1.0.7",
- "syn 1.0.31",
-]
-
-[[package]]
 name = "keccak"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3086,7 +2996,7 @@ version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "046a5201f6e471f22b22b394e4d084269ed1e28cf7300f7b49874385db84c7bd"
 dependencies = [
- "async-tls 0.8.0",
+ "async-tls",
  "either",
  "futures 0.3.5",
  "libp2p-core",
@@ -3094,7 +3004,7 @@ dependencies = [
  "quicksink",
  "rustls 0.18.0",
  "rw-stream-sink",
- "soketto 0.4.1",
+ "soketto",
  "url 2.1.1",
  "webpki",
  "webpki-roots 0.18.0",
@@ -5751,19 +5661,6 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b25a18b1bf7387f0145e7f8324e700805aade3842dd3db2e74e4cdeb4677c09e"
-dependencies = [
- "base64 0.10.1",
- "log 0.4.8",
- "ring",
- "sct",
- "webpki",
-]
-
-[[package]]
-name = "rustls"
 version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c0d4a31f5d68413404705d6982529b0e11a9aacd4839d1d6222ee3b8cb4015e1"
@@ -6871,12 +6768,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sha1"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2579985fda508104f7587689507983eadd6a6e84dd35d6d115361f530916fa0d"
-
-[[package]]
 name = "sha2"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7061,25 +6952,6 @@ dependencies = [
  "libc",
  "redox_syscall",
  "winapi 0.3.8",
-]
-
-[[package]]
-name = "soketto"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c9dab3f95c9ebdf3a88268c19af668f637a3c5039c2c56ff2d40b1b2d64a25b"
-dependencies = [
- "base64 0.11.0",
- "bytes 0.5.4",
- "futures 0.3.5",
- "http 0.2.1",
- "httparse",
- "log 0.4.8",
- "rand 0.7.3",
- "sha1",
- "smallvec 1.4.1",
- "static_assertions",
- "thiserror",
 ]
 
 [[package]]
@@ -8324,7 +8196,6 @@ dependencies = [
  "libc",
  "memchr",
  "mio",
- "mio-named-pipes",
  "mio-uds",
  "num_cpus",
  "pin-project-lite",
@@ -9081,15 +8952,6 @@ checksum = "ab146130f5f790d45f82aeeb09e55a256573373ec64409fc19a6fb82fb1032ae"
 dependencies = [
  "ring",
  "untrusted",
-]
-
-[[package]]
-name = "webpki-roots"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a262ae37dd9d60f60dd473d1158f9fbebf110ba7b6a5051c8160460f6043718b"
-dependencies = [
- "webpki",
 ]
 
 [[package]]

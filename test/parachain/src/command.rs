@@ -238,7 +238,7 @@ pub fn run() -> Result<()> {
 				info!("Parachain Account: {}", parachain_account);
 				info!("Parachain genesis state: {}", genesis_state);
 
-				Ok(crate::service::run_collator(config, key, polkadot_config, id)?.task_manager)
+				crate::service::run_collator(config, key, polkadot_config, id).map(|x| x.task_manager)
 			})
 		}
 	}
