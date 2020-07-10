@@ -173,9 +173,6 @@ pub fn parachain_config(
 
 	network_config.transport = TransportConfig::MemoryOnly;
 
-	use std::net::{Ipv4Addr, SocketAddr};
-	let rpc_ws = Some(SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 9944));
-
 	Ok(Configuration {
 		impl_name: "cumulus-test-node".to_string(),
 		impl_version: "0.1".to_string(),
@@ -205,7 +202,7 @@ pub fn parachain_config(
 			other: sc_client_api::ExecutionStrategy::NativeWhenPossible,
 		},
 		rpc_http: None,
-		rpc_ws,
+		rpc_ws: None,
 		rpc_ipc: None,
 		rpc_ws_max_connections: None,
 		rpc_cors: None,
