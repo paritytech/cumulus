@@ -78,7 +78,9 @@ impl SubstrateCli for Cli {
 			"" => Ok(Box::new(chain_spec::get_chain_spec(
 				self.run.parachain_id.unwrap_or(100).into(),
 			))),
-			path => Ok(Box::new(chain_spec::ChainSpec::from_json_file(path.into())?)),
+			path => Ok(Box::new(chain_spec::ChainSpec::from_json_file(
+				path.into(),
+			)?)),
 		}
 	}
 
@@ -170,7 +172,7 @@ pub fn run() -> Result<()> {
 			sc_cli::init_logger("");
 
 			let block = generate_genesis_state(
-				&(Box::new(chain_spec::get_chain_spec(params.parachain_id.into())) as Box<_>),
+				&cli.load_spec(&params.chain.clone().unwrap_or_default())?,
 			)?;
 			let header_hex = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
