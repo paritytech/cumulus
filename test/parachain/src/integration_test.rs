@@ -63,6 +63,7 @@ use sp_runtime::traits::Checkable;
 use sp_runtime::traits::Verify;
 use sp_transaction_pool::TransactionPool;
 use log::error;
+use substrate_test_client::BlockchainEventsExt;
 
 static POLKADOT_ARGS: &[&str] = &["polkadot", "--chain=res/polkadot_chainspec.json"];
 static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TEST_ALLOWED_TIME");
@@ -97,7 +98,23 @@ async fn integration_test() {
 	}).into();
 
 	//sc_cli::init_logger("runtime=debug,babe=trace");
-	sc_cli::init_logger("", None);
+	//sc_cli::init_logger("", None);
+
+	// start alice
+	let mut alice = polkadot_test_service::run_test_node(
+		task_executor.clone(),
+		Alice,
+		|| {},
+		vec![],
+	);
+
+	// start bob
+	let mut bob = polkadot_test_service::run_test_node(
+		task_executor.clone(),
+		Bob,
+		|| {},
+		vec![alice.addr.clone()],
+	);
 
 	let t1 = sleep(Duration::from_secs(
 		INTEGRATION_TEST_ALLOWED_TIME
@@ -105,28 +122,16 @@ async fn integration_test() {
 			.unwrap_or(600),
 	))
 	.fuse();
-	let t2 = async {
-		// start alice
-		let alice = polkadot_test_service::run_test_node(
-			task_executor.clone(),
-			Alice,
-			|| {},
-			vec![],
-		);
 
-		// start bob
-		let bob = polkadot_test_service::run_test_node(
-			task_executor.clone(),
-			Bob,
-			|| {},
-			vec![alice.addr.clone()],
-		);
+	let t2 = async {
+		let para_id = ParaId::from(100);
 
 		future::join(alice.wait_for_blocks(2_usize), bob.wait_for_blocks(2_usize)).await;
 		//assert!(false);
 
 		// export genesis state
-		//let genesis_state = cumulus_test_parachain_collator::generate_genesis_state(); // TODO
+		let genesis_state = crate::command::generate_genesis_state(para_id).unwrap().encode();
+		/*
 		let cmd = Command::new(cargo_bin("cumulus-test-parachain-collator"))
 			.arg("export-genesis-state")
 			.output()
@@ -136,6 +141,7 @@ async fn integration_test() {
 		assert!(cmd.status.success());
 		let output = &cmd.stdout;
 		let genesis_state = hex::decode(&output[2..output.len() - 1]).unwrap();
+		*/
 
 		// get the current block
 		let current_block_hash = alice.client.info().best_hash;
@@ -167,7 +173,7 @@ async fn integration_test() {
 		);
 		let function = polkadot_test_runtime::Call::Sudo(pallet_sudo::Call::sudo(Box::new(
 			polkadot_test_runtime::Call::Registrar(registrar::Call::register_para(
-				100.into(),
+				para_id,
 				Info {
 					scheduling: Scheduling::Always,
 				},
@@ -252,7 +258,6 @@ async fn integration_test() {
 		*/
 
 		// run cumulus charlie
-		let para_id = ParaId::from(100);
 		let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
 		let mut polkadot_config = polkadot_test_service::node_config(
 			|| {},
@@ -276,7 +281,7 @@ async fn integration_test() {
 			vec![],
 			para_id,
 		).unwrap();
-		let service = cumulus_test_parachain_collator::run_collator(parachain_config, key, polkadot_config, para_id).unwrap();
+		let service = crate::service::run_collator(parachain_config, key, polkadot_config, para_id).unwrap();
 		sleep(Duration::from_secs(3)).await;
 		/*
 		let transport_client_alice =
@@ -287,7 +292,10 @@ async fn integration_test() {
 				.await
 				.unwrap();
 		*/
-		wait_for_blocks(service.client.clone(), 4).await;
+		service.client.wait_for_blocks(4).await;
+
+		alice.task_manager.terminate();
+		bob.task_manager.terminate();
 		//service.fuse().await;
 
 		// connect rpc client to cumulus
@@ -322,7 +330,7 @@ pub fn parachain_config(
 		sentry_nodes: Vec::new(),
 	};
 	let key_seed = key.to_seed();
-	let mut spec = cumulus_test_parachain_collator::get_chain_spec(para_id);
+	let mut spec = crate::chain_spec::get_chain_spec(para_id);
 	let mut storage = spec.as_storage_builder().build_storage()?;
 
 	BasicExternalities::execute_with_storage(&mut storage, storage_update_func);
@@ -400,23 +408,4 @@ pub fn parachain_config(
 		base_path: Some(base_path),
 		informant_output_format: Default::default(),
 	})
-}
-
-fn wait_for_blocks<Block: BlockT>(client: Arc<impl BlockchainEvents<Block>>, count: usize) -> impl Future<Output = ()> {
-	assert_ne!(count, 0, "'count' argument must be greater than 1");
-	let client = client.clone();
-
-	async move {
-		let mut import_notification_stream = client.import_notification_stream();
-		let mut blocks = HashSet::new();
-
-		while let Some(notification) = import_notification_stream.next().await {
-			blocks.insert(notification.hash);
-			if blocks.len() == 3 {
-				error!("################ {:?}", blocks);
-				println!("{:?}", blocks);
-				break;
-			}
-		}
-	}
 }
