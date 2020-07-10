@@ -167,7 +167,7 @@ pub fn run() -> Result<()> {
 			})
 		}
 		Some(Subcommand::ExportGenesisState(params)) => {
-			sc_cli::init_logger("", None)?;
+			sc_cli::init_logger("");
 
 			let block = generate_genesis_state(
 				&(Box::new(chain_spec::get_chain_spec(params.parachain_id.into())) as Box<_>),
@@ -208,7 +208,7 @@ pub fn run() -> Result<()> {
 			})
 		}
 		Some(Subcommand::PolkadotValidationWorker(cmd)) => {
-			sc_cli::init_logger("", None)?;
+			sc_cli::init_logger("");
 			polkadot_service::run_validation_worker(&cmd.mem_id)?;
 
 			Ok(())
