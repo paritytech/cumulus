@@ -121,7 +121,7 @@ impl RelayChainCli {
 	pub fn new<'a>(
 		base_path: Option<PathBuf>,
 		chain_id: Option<String>,
-		relay_chain_args: impl Iterator<Item=&'a String>,
+		relay_chain_args: impl Iterator<Item = &'a String>,
 	) -> Self {
 		Self {
 			base_path,

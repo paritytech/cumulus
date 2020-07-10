@@ -14,8 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::chain_spec;
-use crate::cli::{Cli, RelayChainCli, Subcommand};
+use crate::{
+	chain_spec,
+	cli::{Cli, RelayChainCli, Subcommand},
+};
 use codec::Encode;
 use cumulus_primitives::ParaId;
 use log::info;
@@ -28,7 +30,7 @@ use sc_cli::{
 use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{Block as BlockT, Hash as HashT, Header as HeaderT, Zero};
-use std::{net::SocketAddr, sync::Arc};
+use std::{io::Write, net::SocketAddr, sync::Arc};
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
@@ -198,12 +200,10 @@ pub fn run() -> Result<()> {
 			let wasm_file =
 				extract_genesis_wasm(&cli.load_spec(&params.chain.clone().unwrap_or_default())?)?;
 
-			let hex = format!("0x{:?}", HexDisplay::from(&wasm_file));
-
 			if let Some(output) = &params.output {
-				std::fs::write(output, hex)?;
+				std::fs::write(output, wasm_file)?;
 			} else {
-				println!("{}", hex);
+				std::io::stdout().write_all(&wasm_file)?;
 			}
 
 			Ok(())

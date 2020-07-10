@@ -22,11 +22,13 @@ mod common;
 #[test]
 #[cfg(unix)]
 fn polkadot_argument_parsing() {
-	use nix::sys::signal::{
-		kill,
-		Signal::{self, SIGINT, SIGTERM},
+	use nix::{
+		sys::signal::{
+			kill,
+			Signal::{self, SIGINT, SIGTERM},
+		},
+		unistd::Pid,
 	};
-	use nix::unistd::Pid;
 
 	fn run_command_and_kill(signal: Signal) {
 		let _ = fs::remove_dir_all("polkadot_argument_parsing");

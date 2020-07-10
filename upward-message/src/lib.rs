@@ -25,15 +25,15 @@
 use polkadot_parachain::primitives::Id as ParaId;
 use sp_std::vec::Vec;
 
-mod polkadot;
 mod kusama;
-mod westend;
+mod polkadot;
 mod rococo;
+mod westend;
 
-pub use polkadot::UpwardMessage as PolkadotUpwardMessage;
 pub use kusama::UpwardMessage as KusamaUpwardMessage;
-pub use westend::UpwardMessage as WestendUpwardMessage;
+pub use polkadot::UpwardMessage as PolkadotUpwardMessage;
 pub use rococo::UpwardMessage as RococoUpwardMessage;
+pub use westend::UpwardMessage as WestendUpwardMessage;
 
 /// A `Balances` related upward message.
 pub trait BalancesMessage<AccountId, Balance>: Sized {

@@ -22,10 +22,12 @@ use async_std::{net, task::sleep};
 use codec::Encode;
 use futures::{future::FutureExt, join, pin_mut, select};
 use jsonrpsee::{raw::RawClient, transport::http::HttpTransportClient};
-use polkadot_primitives::parachain::{Info, Scheduling};
-use polkadot_primitives::Hash as PHash;
+use polkadot_primitives::{
+	parachain::{Info, Scheduling},
+	Hash as PHash,
+};
 use polkadot_runtime::{Header, Runtime, SignedExtra, SignedPayload};
-use polkadot_runtime_common::{parachains, registrar, BlockHashCount, claims};
+use polkadot_runtime_common::{claims, parachains, registrar, BlockHashCount};
 use serde_json::Value;
 use sp_arithmetic::traits::SaturatedConversion;
 use sp_runtime::generic;

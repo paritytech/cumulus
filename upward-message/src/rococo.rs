@@ -17,7 +17,7 @@
 //! Rococo upward message
 
 use crate::*;
-use polkadot_core_primitives::{Balance, AccountId};
+use polkadot_core_primitives::{AccountId, Balance};
 use rococo_runtime::{BalancesCall, ParachainsCall};
 use sp_std::vec::Vec;
 

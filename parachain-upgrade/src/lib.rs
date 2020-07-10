@@ -37,11 +37,11 @@ use cumulus_primitives::{
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure, storage, weights::DispatchClass,
 };
+use frame_system::ensure_none;
 use parachain::primitives::RelayChainBlockNumber;
 use sp_core::storage::well_known_keys;
 use sp_inherents::{InherentData, InherentIdentifier, ProvideInherent};
 use sp_std::vec::Vec;
-use frame_system::ensure_none;
 
 /// A ValidationFunction is a compiled WASM blob which, on execution, validates parachain blocks.
 pub type ValidationFunction = Vec<u8>;
@@ -239,6 +239,7 @@ mod tests {
 		traits::{OnFinalize, OnInitialize},
 		weights::Weight,
 	};
+	use frame_system::{InitKind, RawOrigin};
 	use sp_core::H256;
 	use sp_runtime::{
 		testing::Header,
@@ -246,7 +247,6 @@ mod tests {
 		Perbill,
 	};
 	use sp_version::RuntimeVersion;
-	use frame_system::{InitKind, RawOrigin};
 
 	impl_outer_origin! {
 		pub enum Origin for Test where system = frame_system {}
