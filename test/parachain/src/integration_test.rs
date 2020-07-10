@@ -21,7 +21,6 @@ use futures::{
 };
 use polkadot_primitives::parachain::{Id as ParaId, Info, Scheduling};
 use polkadot_runtime_common::registrar;
-use polkadot_service::ChainSpec;
 use polkadot_test_runtime_client::Sr25519Keyring;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_network::{config::TransportConfig, multiaddr};
@@ -155,7 +154,7 @@ pub fn parachain_config(
 		sentry_nodes: Vec::new(),
 	};
 	let key_seed = key.to_seed();
-	let mut spec = crate::chain_spec::get_chain_spec(para_id);
+	let spec = crate::chain_spec::get_chain_spec(para_id);
 
 	let mut network_config = NetworkConfiguration::new(
 		format!("Cumulus Test Node for: {}", key_seed),
