@@ -29,6 +29,10 @@ pub enum Subcommand {
 	#[structopt(name = "export-genesis-state")]
 	ExportGenesisState(ExportGenesisStateCommand),
 
+	/// Export the genesis wasm of the parachain.
+	#[structopt(name = "export-genesis-wasm")]
+	ExportGenesisWasm(ExportGenesisWasmCommand),
+
 	/// Run Polkadot for testing purpose
 	Polkadot(polkadot_cli::Cli),
 
@@ -48,6 +52,18 @@ pub struct ExportGenesisStateCommand {
 	pub parachain_id: u32,
 
 	/// The name of the chain for that the genesis state should be exported.
+	#[structopt(long)]
+	pub chain: Option<String>,
+}
+
+/// Command for exporting the genesis wasm file.
+#[derive(Debug, StructOpt)]
+pub struct ExportGenesisWasmCommand {
+	/// Output file name or stdout if unspecified.
+	#[structopt(parse(from_os_str))]
+	pub output: Option<PathBuf>,
+
+	/// The name of the chain for that the genesis wasm file should be exported.
 	#[structopt(long)]
 	pub chain: Option<String>,
 }

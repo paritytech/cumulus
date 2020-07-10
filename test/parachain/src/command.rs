@@ -156,6 +156,12 @@ fn generate_genesis_state(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result
 	))
 }
 
+fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<Vec<u8>> {
+	let mut storage = chain_spec.build_storage()?;
+
+	storage.top.remove(sp_core::storage::well_known_keys::CODE).ok_or_else(|| "Could not find wasm file in genesis state!".into())
+}
+
 /// Parse command line arguments into service configuration.
 pub fn run() -> Result<()> {
 	let cli = Cli::from_args();
@@ -180,6 +186,21 @@ pub fn run() -> Result<()> {
 				std::fs::write(output, header_hex)?;
 			} else {
 				println!("{}", header_hex);
+			}
+
+			Ok(())
+		}
+		Some(Subcommand::ExportGenesisWasm(params)) => {
+			sc_cli::init_logger("");
+
+			let wasm_file = extract_genesis_wasm(&cli.load_spec(&params.chain.clone().unwrap_or_default())?)?;
+
+			let hex = format!("0x{:?}", HexDisplay::from(&wasm_file));
+
+			if let Some(output) = &params.output {
+				std::fs::write(output, hex)?;
+			} else {
+				println!("{}", hex);
 			}
 
 			Ok(())
