@@ -547,7 +547,7 @@ mod tests {
 					));
 				},
 				|| {
-					let events = dbg!(System::<Test>::events());
+					let events = System::<Test>::events();
 					assert_eq!(
 						events[0].event,
 						TestEvent::parachain_upgrade(Event::ValidationFunctionStored(1123))
@@ -558,7 +558,7 @@ mod tests {
 				1234,
 				|| {},
 				|| {
-					let events = dbg!(System::<Test>::events());
+					let events = System::<Test>::events();
 					assert_eq!(
 						events[0].event,
 						TestEvent::parachain_upgrade(Event::ValidationFunctionApplied(1234))

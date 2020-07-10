@@ -159,7 +159,10 @@ fn generate_genesis_state(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result
 fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<Vec<u8>> {
 	let mut storage = chain_spec.build_storage()?;
 
-	storage.top.remove(sp_core::storage::well_known_keys::CODE).ok_or_else(|| "Could not find wasm file in genesis state!".into())
+	storage
+		.top
+		.remove(sp_core::storage::well_known_keys::CODE)
+		.ok_or_else(|| "Could not find wasm file in genesis state!".into())
 }
 
 /// Parse command line arguments into service configuration.
@@ -177,9 +180,8 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::ExportGenesisState(params)) => {
 			sc_cli::init_logger("");
 
-			let block = generate_genesis_state(
-				&cli.load_spec(&params.chain.clone().unwrap_or_default())?,
-			)?;
+			let block =
+				generate_genesis_state(&cli.load_spec(&params.chain.clone().unwrap_or_default())?)?;
 			let header_hex = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
 			if let Some(output) = &params.output {
@@ -193,7 +195,8 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::ExportGenesisWasm(params)) => {
 			sc_cli::init_logger("");
 
-			let wasm_file = extract_genesis_wasm(&cli.load_spec(&params.chain.clone().unwrap_or_default())?)?;
+			let wasm_file =
+				extract_genesis_wasm(&cli.load_spec(&params.chain.clone().unwrap_or_default())?)?;
 
 			let hex = format!("0x{:?}", HexDisplay::from(&wasm_file));
 
@@ -249,7 +252,7 @@ pub fn run() -> Result<()> {
 
 				let extension = chain_spec::Extensions::try_get(&config.chain_spec);
 				let relay_chain_id = extension.map(|e| e.relay_chain.clone());
-				let para_id = dbg!(extension.map(|e| e.para_id));
+				let para_id = extension.map(|e| e.para_id);
 
 				let polkadot_cli = RelayChainCli::new(
 					config.base_path.as_ref().map(|x| x.path().join("polkadot")),
