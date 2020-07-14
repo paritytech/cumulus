@@ -23,6 +23,7 @@ use polkadot_primitives::parachain::{Id as ParaId, Info, Scheduling};
 use polkadot_runtime_common::registrar;
 use polkadot_test_runtime_client::Sr25519Keyring;
 use sc_client_api::execution_extensions::ExecutionStrategies;
+use sc_informant::OutputFormat;
 use sc_network::{config::TransportConfig, multiaddr};
 use sc_service::{
 	config::{
@@ -31,27 +32,12 @@ use sc_service::{
 	},
 	BasePath, Configuration, Error as ServiceError, Role, TaskExecutor,
 };
-use std::{env, fs, path::PathBuf, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 use substrate_test_client::BlockchainEventsExt;
 use substrate_test_runtime_client::AccountKeyring::*;
 use tokio::{spawn, time::delay_for as sleep};
 
 static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TEST_ALLOWED_TIME");
-
-// Adapted from
-// https://github.com/rust-lang/cargo/blob/485670b3983b52289a2f353d589c57fae2f60f82/tests/testsuite/support/mod.rs#L507
-fn target_dir() -> PathBuf {
-	env::current_exe()
-		.ok()
-		.map(|mut path| {
-			path.pop();
-			if path.ends_with("deps") {
-				path.pop();
-			}
-			path
-		})
-		.unwrap()
-}
 
 #[tokio::test]
 #[ignore]
@@ -83,7 +69,7 @@ async fn integration_test() {
 	let t2 = async {
 		let para_id = ParaId::from(100);
 
-		future::join(alice.wait_for_blocks(2_usize), bob.wait_for_blocks(2_usize)).await;
+		future::join(alice.wait_for_blocks(2), bob.wait_for_blocks(2)).await;
 
 		// export genesis state
 		let genesis_state = crate::command::generate_genesis_state(para_id)
@@ -91,17 +77,13 @@ async fn integration_test() {
 			.encode();
 
 		// create and sign transaction
-		let wasm = fs::read(target_dir().join(
-			"wbuild/cumulus-test-parachain-runtime/cumulus_test_parachain_runtime.compact.wasm",
-		))
-		.unwrap();
 		let function = polkadot_test_runtime::Call::Sudo(pallet_sudo::Call::sudo(Box::new(
 			polkadot_test_runtime::Call::Registrar(registrar::Call::register_para(
 				para_id,
 				Info {
 					scheduling: Scheduling::Always,
 				},
-				wasm.into(),
+				parachain_runtime::WASM_BINARY.to_vec().into(),
 				genesis_state.into(),
 			)),
 		)));
@@ -162,6 +144,10 @@ pub fn parachain_config(
 		Default::default(),
 		None,
 	);
+	let informant_output_format = OutputFormat {
+		enable_color: false,
+		prefix: format!("[{}] ", key_seed),
+	};
 
 	network_config.boot_nodes = boot_nodes;
 
@@ -193,7 +179,7 @@ pub fn parachain_config(
 		pruning: Default::default(),
 		chain_spec: Box::new(spec),
 		wasm_method: WasmExecutionMethod::Interpreted,
-		//execution_strategies: Default::default(),
+		// NOTE: we enforce the use of the native runtime to make the errors more debuggable
 		execution_strategies: ExecutionStrategies {
 			syncing: sc_client_api::ExecutionStrategy::NativeWhenPossible,
 			importing: sc_client_api::ExecutionStrategy::NativeWhenPossible,
@@ -220,6 +206,6 @@ pub fn parachain_config(
 		max_runtime_instances: 8,
 		announce_block: true,
 		base_path: Some(base_path),
-		informant_output_format: Default::default(),
+		informant_output_format,
 	})
 }
