@@ -34,35 +34,34 @@ use sp_runtime::{
 use std::{net::SocketAddr, sync::Arc};
 
 impl SubstrateCli for Cli {
-	fn impl_name() -> &'static str {
-		"Cumulus Test Parachain Collator"
+	fn impl_name() -> String {
+		"Cumulus Test Parachain Collator".into()
 	}
 
-	fn impl_version() -> &'static str {
-		env!("SUBSTRATE_CLI_IMPL_VERSION")
+	fn impl_version() -> String {
+		env!("SUBSTRATE_CLI_IMPL_VERSION").into()
 	}
 
-	fn description() -> &'static str {
-		"Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
+	fn description() -> String {
+		format!(
+			"Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
-		cumulus-test-parachain-collator [parachain-args] -- [relaychain-args]"
+		{} [parachain-args] -- [relaychain-args]",
+			Self::executable_name()
+		)
 	}
 
-	fn author() -> &'static str {
-		env!("CARGO_PKG_AUTHORS")
+	fn author() -> String {
+		env!("CARGO_PKG_AUTHORS").into()
 	}
 
-	fn support_url() -> &'static str {
-		"https://github.com/paritytech/cumulus/issues/new"
+	fn support_url() -> String {
+		"https://github.com/paritytech/cumulus/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {
 		2017
-	}
-
-	fn executable_name() -> &'static str {
-		"cumulus-test-parachain-collator"
 	}
 
 	fn load_spec(&self, _id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
@@ -78,46 +77,37 @@ impl SubstrateCli for Cli {
 }
 
 impl SubstrateCli for PolkadotCli {
-	fn impl_name() -> &'static str {
-		"Cumulus Test Parachain Collator"
+	fn impl_name() -> String {
+		"Cumulus Test Parachain Collator".into()
 	}
 
-	fn impl_version() -> &'static str {
-		env!("SUBSTRATE_CLI_IMPL_VERSION")
+	fn impl_version() -> String {
+		env!("SUBSTRATE_CLI_IMPL_VERSION").into()
 	}
 
-	fn description() -> &'static str {
+	fn description() -> String {
 		"Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		cumulus-test-parachain-collator [parachain-args] -- [relaychain-args]"
+			.into()
 	}
 
-	fn author() -> &'static str {
-		env!("CARGO_PKG_AUTHORS")
+	fn author() -> String {
+		env!("CARGO_PKG_AUTHORS").into()
 	}
 
-	fn support_url() -> &'static str {
-		"https://github.com/paritytech/cumulus/issues/new"
+	fn support_url() -> String {
+		"https://github.com/paritytech/cumulus/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {
 		2017
 	}
 
-	fn executable_name() -> &'static str {
-		"cumulus-test-parachain-collator"
-	}
-
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		Ok(match id {
-			"" | "local" | "dev" => Box::new(polkadot_service::PolkadotChainSpec::from_json_bytes(
-				&include_bytes!("../res/polkadot_chainspec.json")[..],
-			)?),
-			path => Box::new(chain_spec::ChainSpec::from_json_file(
-				std::path::PathBuf::from(path),
-			)?),
-		})
+		polkadot_cli::Cli::from_iter([PolkadotCli::executable_name().to_string()].iter())
+			.load_spec(id)
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -161,10 +151,12 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::Base(subcommand)) => {
 			let runner = cli.create_runner(subcommand)?;
 
-			runner.run_subcommand(subcommand, |config| Ok(new_full_start!(config).0))
+			runner.run_subcommand(subcommand, |config| {
+				Ok(new_full_start!(config).0.to_chain_ops_parts())
+			})
 		}
 		Some(Subcommand::ExportGenesisState(params)) => {
-			sc_cli::init_logger("");
+			sc_cli::init_logger("", &<sc_cli::LogRotationOpt as structopt::StructOpt>::from_args())?;
 
 			let block = generate_genesis_state(params.parachain_id.into())?;
 			let header_hex = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
@@ -203,7 +195,7 @@ pub fn run() -> Result<()> {
 			})
 		}
 		Some(Subcommand::PolkadotValidationWorker(cmd)) => {
-			sc_cli::init_logger("");
+			sc_cli::init_logger("", &<sc_cli::LogRotationOpt as structopt::StructOpt>::from_args())?;
 			polkadot_service::run_validation_worker(&cmd.mem_id)?;
 
 			Ok(())
