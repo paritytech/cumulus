@@ -2,7 +2,14 @@
   "name": "Parachain Tick",
   "id": "parachain_tick",
   "chainType": "Live",
-  "bootNodes": [],
+  "bootNodes": [
+    "/ip4/34.91.61.167/tcp/30333/p2p/12D3KooWSurfjy3Aa6SDpCXK87zdXN6RN7WyNvPmfC4NaByFmXpx",
+    "/ip4/34.91.61.167/tcp/30334/ws/p2p/12D3KooWSurfjy3Aa6SDpCXK87zdXN6RN7WyNvPmfC4NaByFmXpx",
+    "/ip4/34.91.144.206/tcp/30333/p2p/12D3KooWLr4j6nYZJhn94wSPykStewnrgpuiNM6cFeyKBqZFN39w",
+    "/ip4/34.91.144.206/tcp/30334/ws/p2p/12D3KooWLr4j6nYZJhn94wSPykStewnrgpuiNM6cFeyKBqZFN39w",
+    "/ip4/34.90.55.186/tcp/30333/p2p/12D3KooWQVVSvZT8kg2YzTZricmQuPk9474UN3aTHDu7uuMQ5b7v",
+    "/ip4/34.90.55.186/tcp/30334/ws/p2p/12D3KooWQVVSvZT8kg2YzTZricmQuPk9474UN3aTHDu7uuMQ5b7v"
+  ],
   "telemetryEndpoints": null,
   "protocolId": null,
   "properties": null,
