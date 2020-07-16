@@ -2,7 +2,14 @@
   "name": "Parachain Track",
   "id": "parachain_track",
   "chainType": "Live",
-  "bootNodes": [],
+  "bootNodes": [
+    "/ip4/34.90.110.60/tcp/30333/p2p/12D3KooWJDtayrREFQcrNMp7YxxY4MqogrWJP1c5nAhKqZd2bLDt",
+    "/ip4/34.90.110.60/tcp/30334/ws/p2p/12D3KooWJDtayrREFQcrNMp7YxxY4MqogrWJP1c5nAhKqZd2bLDt",
+    "/ip4/35.204.157.238/tcp/30333/p2p/12D3KooWRyvujTPTVSkWfXfThtKoB3dH53m7APVxAhi9ChzoPghX",
+    "/ip4/35.204.157.238/tcp/30334/ws/p2p/12D3KooWRyvujTPTVSkWfXfThtKoB3dH53m7APVxAhi9ChzoPghX",
+    "/ip4/35.204.161.46/tcp/30333/p2p/12D3KooWRsFHzUNgVMPmggMJcPqkFX8zacz8p4k5QFWKtAw3mUKu",
+    "/ip4/35.204.161.46/tcp/30334/ws/p2p/12D3KooWRsFHzUNgVMPmggMJcPqkFX8zacz8p4k5QFWKtAw3mUKu"
+  ],
   "telemetryEndpoints": null,
   "protocolId": null,
   "properties": null,
