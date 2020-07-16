@@ -2,7 +2,14 @@
   "name": "Parachain Trick",
   "id": "parachain_trick",
   "chainType": "Live",
-  "bootNodes": [],
+  "bootNodes": [
+    "/ip4/34.90.155.1/tcp/30333/p2p/12D3KooWRtJZtrzLoMY92JigS1RwxdK9kLpVfLUCSMJjEjvDFtcQ",
+    "/ip4/34.90.155.1/tcp/30334/ws/p2p/12D3KooWRtJZtrzLoMY92JigS1RwxdK9kLpVfLUCSMJjEjvDFtcQ",
+    "/ip4/34.90.244.197/tcp/30333/p2p/12D3KooWCiK4UyJpQNARzq3TnwwNjWAgLnmrSuii6ygCA3mrvrt9",
+    "/ip4/34.90.244.197/tcp/30334/ws/p2p/12D3KooWCiK4UyJpQNARzq3TnwwNjWAgLnmrSuii6ygCA3mrvrt9",
+    "/ip4/34.90.248.40/tcp/30333/p2p/12D3KooWQitn1ZsY8Y37gomattzbRo74zt9fZR7nSLF5KJyGKr21",
+    "/ip4/34.90.248.40/tcp/30334/ws/p2p/12D3KooWQitn1ZsY8Y37gomattzbRo74zt9fZR7nSLF5KJyGKr21"
+  ],
   "telemetryEndpoints": null,
   "protocolId": null,
   "properties": null,
