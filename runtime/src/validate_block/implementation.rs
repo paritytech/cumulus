@@ -40,22 +40,33 @@ use cumulus_primitives::{
 	GenericUpwardMessage,
 };
 
+use sp_runtime::traits::Hash;
+
 /// Stores the global [`Storage`] instance.
 ///
 /// As wasm is always executed with one thread, this global varibale is safe!
 static mut STORAGE: Option<Box<dyn Storage>> = None;
 
-/// Returns a mutable reference to the [`Storage`] implementation.
+/// Executes the given `call` with the `Storage` instance as parameter.
+///
+/// Returns the result of `call`.
 ///
 /// # Panic
 ///
 /// Panics if the [`STORAGE`] is not initialized.
-fn storage() -> &'static mut dyn Storage {
+fn with_storage<R>(call: impl FnOnce(&mut dyn Storage) -> R) -> R {
+	let mut storage =
 	unsafe {
-		&mut **STORAGE
-			.as_mut()
-			.expect("`STORAGE` needs to be set before calling this function.")
+		STORAGE.take().expect("`STORAGE` needs to be set before calling this function.")
+	};
+
+	let res = call(&mut *storage);
+
+	unsafe {
+		STORAGE = Some(storage);
 	}
+
+	res
 }
 
 /// Abstract the storage into a trait without `Block` generic.
@@ -137,22 +148,22 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 
 	// If in the course of block execution new validation code was set, insert
 	// its scheduled upgrade so we can validate that block number later.
-	let new_validation_code = storage().get(NEW_VALIDATION_CODE).map(ValidationCode);
+	let new_validation_code = with_storage(|storage| storage.get(NEW_VALIDATION_CODE).map(ValidationCode));
 	if new_validation_code.is_some() && validation_function_params.code_upgrade_allowed.is_none() {
 		panic!("Attempt to upgrade validation function when not permitted!");
 	}
 
 	// Extract potential upward messages from the storage.
-	let upward_messages = match storage().get(UPWARD_MESSAGES) {
+	let upward_messages = match with_storage(|storage| storage.get(UPWARD_MESSAGES)) {
 		Some(encoded) => Vec::<GenericUpwardMessage>::decode(&mut &encoded[..])
 			.expect("Upward messages vec is not correctly encoded in the storage!"),
 		None => Vec::new(),
 	};
 
-	let processed_downward_messages = storage()
+	let processed_downward_messages = with_storage(|storage| storage
 		.get(PROCESSED_DOWNWARD_MESSAGES)
 		.and_then(|v| Decode::decode(&mut &v[..]).ok())
-		.unwrap_or_default();
+		.unwrap_or_default());
 
 	ValidationResult {
 		head_data,
@@ -176,18 +187,22 @@ impl<B: BlockT> WitnessStorage<B> {
 	///
 	/// Returns an error if given storage root was not found in the witness data.
 	fn new(
-		data: WitnessData,
+		mut data: WitnessData,
 		storage_root: B::Hash,
 		params: ValidationFunctionParams,
 	) -> Result<Self, &'static str> {
+		data.sort();
 		let mut db = MemoryDB::default();
+		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "hey you0".as_bytes());
 		data.into_iter().for_each(|i| {
 			db.insert(EMPTY_PREFIX, &i);
 		});
 
+		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "hey you".as_bytes());
 		if !HashDB::contains(&db, &storage_root, EMPTY_PREFIX) {
 			return Err("Witness data does not contain given storage root.");
 		}
+		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "hey you2".as_bytes());
 
 		Ok(Self {
 			witness_data: db,
@@ -200,6 +215,7 @@ impl<B: BlockT> WitnessStorage<B> {
 
 impl<B: BlockT> Storage for WitnessStorage<B> {
 	fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
+		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!("get: {:?}", <HashFor<B>>::hash(key)).as_bytes());
 		match key {
 			VALIDATION_FUNCTION_PARAMS => Some(self.params.encode()),
 			key => self
@@ -219,14 +235,17 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 	}
 
 	fn insert(&mut self, key: &[u8], value: &[u8]) {
+		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!("insert: {:?}", <HashFor<B>>::hash(key)).as_bytes());
 		self.overlay.insert(key.to_vec(), Some(value.to_vec()));
 	}
 
 	fn remove(&mut self, key: &[u8]) {
+		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!("remove: {:?}", <HashFor<B>>::hash(key)).as_bytes());
 		self.overlay.insert(key.to_vec(), None);
 	}
 
 	fn storage_root(&mut self) -> Vec<u8> {
+		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "storageroot".as_bytes());
 		let root = delta_trie_root::<Layout<HashFor<B>>, _, _, _, _, _>(
 			&mut self.witness_data,
 			self.storage_root.clone(),
@@ -246,33 +265,35 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 			}
 		});
 
+		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "create triedb".as_bytes());
 		let trie = match TrieDB::<Layout<HashFor<B>>>::new(&self.witness_data, &self.storage_root) {
 			Ok(r) => r,
 			Err(_) => panic!(),
 		};
 
+		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "before iterator".as_bytes());
 		for x in TrieDBIterator::new_prefixed(&trie, prefix).expect("Creates trie iterator") {
-			let (key, _) = x.expect("Iterating trie iterator");
-			self.overlay.insert(key, None);
+			panic!("");
 		}
+		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "after iterator".as_bytes());
 	}
 
 	fn storage_append(&mut self, key: &[u8], value: Vec<u8>) {
+		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "storage append".as_bytes());
 		let value_vec = sp_std::vec![EncodeOpaqueValue(value)];
-		let current_value = self.overlay.entry(key.to_vec()).or_default();
+		let current_value = self.get(key).unwrap_or_default();
 
-		let item = current_value.take().unwrap_or_default();
-		*current_value = Some(
-			match Vec::<EncodeOpaqueValue>::append_or_new(item, &value_vec) {
+		self.insert(key,
+			&match Vec::<EncodeOpaqueValue>::append_or_new(current_value, &value_vec) {
 				Ok(item) => item,
 				Err(_) => value_vec.encode(),
-			},
+			}
 		);
 	}
 }
 
 fn host_storage_read(key: &[u8], value_out: &mut [u8], value_offset: u32) -> Option<u32> {
-	match storage().get(key) {
+	match with_storage(|storage| storage.get(key)) {
 		Some(value) => {
 			let value_offset = value_offset as usize;
 			let data = &value[value_offset.min(value.len())..];
@@ -285,27 +306,27 @@ fn host_storage_read(key: &[u8], value_out: &mut [u8], value_offset: u32) -> Opt
 }
 
 fn host_storage_set(key: &[u8], value: &[u8]) {
-	storage().insert(key, value);
+	with_storage(|storage| storage.insert(key, value));
 }
 
 fn host_storage_get(key: &[u8]) -> Option<Vec<u8>> {
-	storage().get(key).clone()
+	with_storage(|storage| storage.get(key).clone())
 }
 
 fn host_storage_exists(key: &[u8]) -> bool {
-	storage().get(key).is_some()
+	with_storage(|storage| storage.get(key).is_some())
 }
 
 fn host_storage_clear(key: &[u8]) {
-	storage().remove(key);
+	with_storage(|storage| storage.remove(key));
 }
 
 fn host_storage_root() -> Vec<u8> {
-	storage().storage_root()
+	with_storage(|storage| storage.storage_root())
 }
 
 fn host_storage_clear_prefix(prefix: &[u8]) {
-	storage().clear_prefix(prefix)
+	with_storage(|storage| storage.clear_prefix(prefix));
 }
 
 fn host_storage_changes_root(_: &[u8]) -> Option<Vec<u8>> {
@@ -314,5 +335,5 @@ fn host_storage_changes_root(_: &[u8]) -> Option<Vec<u8>> {
 }
 
 fn host_storage_append(key: &[u8], value: Vec<u8>) {
-	storage().storage_append(key, value);
+	with_storage(|storage| storage.storage_append(key, value));
 }

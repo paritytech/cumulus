@@ -889,6 +889,7 @@ dependencies = [
  "cumulus-primitives",
  "cumulus-runtime",
  "cumulus-test-client",
+ "cumulus-test-parachain-runtime",
  "cumulus-test-runtime",
  "env_logger",
  "futures 0.3.5",
@@ -902,6 +903,7 @@ dependencies = [
  "polkadot-validation",
  "sc-cli",
  "sc-client-api",
+ "sc-executor",
  "sc-service",
  "sp-api",
  "sp-blockchain",
@@ -2082,8 +2084,7 @@ dependencies = [
 [[package]]
 name = "hash-db"
 version = "0.15.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d23bd4e7b5eda0d0f3a307e8b381fdc8ba9000f26fbe912250c0a4cc3956364a"
+source = "git+https://github.com/paritytech/trie?branch=bkchr-debugging#f0adeaddc6e168529d4bbc36ade30ba5f32c0bc6"
 
 [[package]]
 name = "hash256-std-hasher"
@@ -3272,9 +3273,9 @@ dependencies = [
 
 [[package]]
 name = "memory-db"
-version = "0.24.0"
+version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0777fbb396f666701d939e9b3876c18ada6b3581257d88631f2590bc366d8ebe"
+checksum = "36f36ddb0b2cdc25d38babba472108798e3477f02be5165f038c5e393e50c57a"
 dependencies = [
  "hash-db",
  "hashbrown 0.8.0",
@@ -9389,3 +9390,8 @@ dependencies = [
  "itertools 0.9.0",
  "libc",
 ]
+
+[[patch.unused]]
+name = "memory-db"
+version = "0.24.0"
+source = "git+https://github.com/paritytech/trie?branch=bkchr-debugging#f0adeaddc6e168529d4bbc36ade30ba5f32c0bc6"

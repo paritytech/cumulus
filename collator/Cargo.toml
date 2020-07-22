@@ -10,11 +10,14 @@ sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cum
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch" }
+cumulus-test-parachain-runtime = { path = "../test/parachain/runtime" }
 
 # Polkadot dependencies
 polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch" }

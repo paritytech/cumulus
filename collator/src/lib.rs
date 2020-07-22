@@ -51,6 +51,7 @@ use polkadot_primitives::{
 	parachain::{self, BlockData, GlobalValidationSchedule, Id as ParaId, LocalValidationData},
 	Block as PBlock, DownwardMessage, Hash as PHash,
 };
+use polkadot_parachain::primitives::ValidationParams;
 
 use codec::{Decode, Encode};
 
@@ -61,6 +62,12 @@ use futures::prelude::*;
 use std::{marker::PhantomData, pin::Pin, sync::Arc, time::Duration};
 
 use parking_lot::Mutex;
+
+sc_executor::native_executor_instance!(
+	pub Executor,
+	cumulus_test_parachain_runtime::api::dispatch,
+	cumulus_test_parachain_runtime::native_version,
+);
 
 /// The implementation of the Cumulus `Collator`.
 pub struct Collator<Block: BlockT, PF, BI, BS> {
@@ -279,8 +286,8 @@ where
 
 			let inherent_data = Self::inherent_data(
 				inherent_providers,
-				global_validation,
-				local_validation,
+				global_validation.clone(),
+				local_validation.clone(),
 				downward_messages,
 			)?;
 
@@ -324,7 +331,7 @@ where
 			let b = ParachainBlockData::<Block>::new(
 				header.clone(),
 				extrinsics,
-				proof.iter_nodes().collect(),
+				proof.clone().iter_nodes().collect(),
 			);
 
 			let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header);
@@ -354,6 +361,36 @@ where
 			let head_data = HeadData::<Block> { header };
 
 			let candidate = (block_data, parachain::HeadData(head_data.encode()));
+
+			let fetcher = sp_core::traits::WrappedRuntimeCode(cumulus_test_parachain_runtime::WASM_BINARY.into());
+			let runtime_code = sp_core::traits::RuntimeCode {
+				code_fetcher: &fetcher,
+				heap_pages: None,
+				hash: Vec::new(),
+			};
+			let spawner = sp_core::tasks::executor();
+			let mut overlay = sp_state_machine::OverlayedChanges::default();
+			let executor = sc_executor::NativeExecutor::<Executor>::new(Default::default(), None, 10);
+
+			let validation_params = ValidationParams {
+				block_data: candidate.0.clone(),
+				parent_head: local_validation.parent_head.clone(),
+				max_code_size: 2323455345,
+				max_head_data_size: 2343453554,
+				relay_chain_height: global_validation.block_number,
+				code_upgrade_allowed: local_validation.code_upgrade_allowed,
+			};
+
+			sp_state_machine::execution_proof_check::<HashFor<Block>, u32, _>(
+				last_head.header.state_root().clone(),
+				proof.clone(),
+				&mut overlay,
+				&executor,
+				spawner,
+				"validate_block",
+				&validation_params.encode(),
+				&runtime_code,
+			).unwrap();
 
 			wait_to_announce
 				.lock()
