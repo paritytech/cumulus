@@ -273,7 +273,8 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 
 		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "before iterator".as_bytes());
 		for x in TrieDBIterator::new_prefixed(&trie, prefix).expect("Creates trie iterator") {
-			panic!("");
+			// comment me out to crash
+			let _ = x.unwrap();
 		}
 		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "after iterator".as_bytes());
 	}
