@@ -191,16 +191,10 @@ impl<B: BlockT> WitnessStorage<B> {
 		storage_root: B::Hash,
 		params: ValidationFunctionParams,
 	) -> Result<Self, &'static str> {
-		// here sort is breaking things??
-//		data.sort();
-/*		data.iter().for_each(|i| {
-			sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!("db init: {:?}", <HashFor<B>>::hash(i.as_slice()).as_ref()).as_bytes());
-		});*/
-
+		data.sort();
 		let mut db = MemoryDB::default();
 		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "hey you0".as_bytes());
 		data.into_iter().for_each(|i| {
-			//sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!("db init: {:?}", <HashFor<B>>::hash(i.as_slice()).as_ref()).as_bytes());
 			db.insert(EMPTY_PREFIX, &i);
 		});
 
@@ -221,7 +215,7 @@ impl<B: BlockT> WitnessStorage<B> {
 
 impl<B: BlockT> Storage for WitnessStorage<B> {
 	fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
-		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!("get: {:?}", key).as_bytes());
+		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!("get: {:?}", <HashFor<B>>::hash(key)).as_bytes());
 		match key {
 			VALIDATION_FUNCTION_PARAMS => Some(self.params.encode()),
 			key => self
@@ -241,32 +235,23 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 	}
 
 	fn insert(&mut self, key: &[u8], value: &[u8]) {
-		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!("insert: {:?}", key).as_bytes());
+		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!("insert: {:?}", <HashFor<B>>::hash(key)).as_bytes());
 		self.overlay.insert(key.to_vec(), Some(value.to_vec()));
 	}
 
 	fn remove(&mut self, key: &[u8]) {
-		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!("remove: {:?}", key).as_bytes());
+		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!("remove: {:?}", <HashFor<B>>::hash(key)).as_bytes());
 		self.overlay.insert(key.to_vec(), None);
 	}
 
 	fn storage_root(&mut self) -> Vec<u8> {
 		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "storageroot".as_bytes());
-		self.overlay
-			.iter()
-			.for_each(|(k, v)| {
-				sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!("delta: {:?} {:?}", k, v.is_some()).as_bytes());
-			});
-		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "storageroot2".as_bytes());
 		let root = delta_trie_root::<Layout<HashFor<B>>, _, _, _, _, _>(
 			&mut self.witness_data,
 			self.storage_root.clone(),
 			self.overlay
 				.iter()
-				.map(|(k, v)| {
-					sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!("delta: {:?} {:?}", k, v.is_some()).as_bytes());
-					(k.as_ref(), v.as_ref().map(|v| v.as_ref()))
-				}),
+				.map(|(k, v)| (k.as_ref(), v.as_ref().map(|v| v.as_ref()))),
 		)
 		.expect("Calculates storage root");
 
@@ -283,32 +268,13 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "create triedb".as_bytes());
 		let trie = match TrieDB::<Layout<HashFor<B>>>::new(&self.witness_data, &self.storage_root) {
 			Ok(r) => r,
-			Err(_) => {
-				sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "trie_build_panic".as_bytes());
-				panic!()
-			},
+			Err(_) => panic!(),
 		};
 
-		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!("before iterator: {:?}", prefix).as_bytes());
-		if let Ok(it) =  TrieDBIterator::new_prefixed(&trie, prefix) {
-		for x in it {
-//			panic!("dd");
+		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "before iterator".as_bytes());
+		for x in TrieDBIterator::new_prefixed(&trie, prefix).expect("Creates trie iterator") {
 			// comment me out to crash
-			//let _ = x.unwrap();
-			//let (key, _) = x.expect("Iterating trie iterator");
-			match x {
-				Ok((key, _)) => {
-					sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!("delete by pref: {:?}", prefix).as_bytes());
-					self.overlay.insert(key, None);
-				},
-				Err(_) => {
-					// silent ignore
-					sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!("delete by pref ignore: {:?}", prefix).as_bytes());
-				},
-			}
-		}
-		} else {
-			sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "after no iterator".as_bytes());
+			let _ = x.unwrap();
 		}
 		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "after iterator".as_bytes());
 	}
