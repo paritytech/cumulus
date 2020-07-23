@@ -6,16 +6,16 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-3", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "cumulus-branch", default-features = false }
 
 # Polkadot deps
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3", default-features = false }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3", default-features = false }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch", default-features = false }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch", default-features = false }
 
 # All these should be optional dependenices, but given the perfect Cargo, it is not possible.
-polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3", default-features = false }
-kusama-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3", default-features = false }
-westend-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-3", default-features = false }
+polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch", default-features = false }
+kusama-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch", default-features = false }
+westend-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cumulus-branch", default-features = false }
 
 [features]
 default = [ "std" ]
