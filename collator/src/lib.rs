@@ -355,6 +355,10 @@ where
 			}
 
 			let block_data = BlockData(b.encode());
+			let mut b2 = b.clone();
+			b2.extrinsics.clear();
+			b2.header.set_extrinsics_root(Decode::decode(&mut &sp_io::trie::blake2_256_ordered_root(Vec::new()).encode()[..]).unwrap());
+			let block_data2 = BlockData(b2.encode());
 			let header = b.into_header();
 			let encoded_header = header.encode();
 			let hash = header.hash();
@@ -373,7 +377,7 @@ where
 			let executor = sc_executor::NativeExecutor::<Executor>::new(Default::default(), None, 10);
 
 			let validation_params = ValidationParams {
-				block_data: candidate.0.clone(),
+				block_data: block_data2,
 				parent_head: local_validation.parent_head.clone(),
 				max_code_size: 2323455345,
 				max_head_data_size: 2343453554,

@@ -140,7 +140,7 @@ decl_module! {
 		}
 
 		fn on_finalize() {
-			assert!(DidUpdateVFPs::take(), "VFPs must be updated once per block");
+			//assert!(DidUpdateVFPs::take(), "VFPs must be updated once per block");
 		}
 	}
 }
