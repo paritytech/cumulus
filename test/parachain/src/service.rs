@@ -88,6 +88,7 @@ pub fn run_collator(
 	key: Arc<CollatorPair>,
 	mut polkadot_config: polkadot_collator::Configuration,
 	id: polkadot_primitives::parachain::Id,
+	validator: bool,
 ) -> sc_service::error::Result<ServiceComponents<
 	parachain_runtime::opaque::Block,
 	TFullBackend<parachain_runtime::opaque::Block>,
@@ -124,47 +125,63 @@ pub fn run_collator(
 		.with_block_announce_validator(|_client| Box::new(block_announce_validator_copy))?
 		.build_full()?;
 
-	let registry = service.prometheus_registry.clone();
+	if validator {
+		let registry = service.prometheus_registry.clone();
 
-	let proposer_factory = sc_basic_authorship::ProposerFactory::new(
-		service.client.clone(),
-		service.transaction_pool.clone(),
-		registry.as_ref(),
-	);
+		let proposer_factory = sc_basic_authorship::ProposerFactory::new(
+			service.client.clone(),
+			service.transaction_pool.clone(),
+			registry.as_ref(),
+		);
 
-	let block_import = service.client.clone();
-	let client = service.client.clone();
-	let network = service.network.clone();
-	let announce_block = Arc::new(move |hash, data| network.announce_block(hash, data));
-	let builder = CollatorBuilder::new(
-		proposer_factory,
-		inherent_data_providers,
-		block_import,
-		client.clone(),
-		id,
-		client,
-		announce_block,
-		block_announce_validator,
-	);
+		let block_import = service.client.clone();
+		let client = service.client.clone();
+		let network = service.network.clone();
+		let announce_block = Arc::new(move |hash, data| network.announce_block(hash, data));
+		let builder = CollatorBuilder::new(
+			proposer_factory,
+			inherent_data_providers,
+			block_import,
+			client.clone(),
+			id,
+			client,
+			announce_block,
+			block_announce_validator,
+		);
 
-	polkadot_config.informant_output_format = OutputFormat {
-		enable_color: true,
-		prefix: format!("[{}] ", Color::Blue.bold().paint("Relaychain")),
-	};
+		polkadot_config.informant_output_format = OutputFormat {
+			enable_color: true,
+			prefix: format!("[{}] ", Color::Blue.bold().paint("Relaychain")),
+		};
 
-	let (polkadot_future, task_manager) =
-		polkadot_collator::start_collator(builder, id, key, polkadot_config)?;
+		let (polkadot_future, task_manager) =
+			polkadot_collator::start_collator(builder, id, key, polkadot_config)?;
 
-	// Make sure the polkadot task manager survives as long as the service.
-	let polkadot_future = polkadot_future.then(move |_| {
-		let _ = task_manager;
-		ready(())
-	});
+		// Make sure the polkadot task manager survives as long as the service.
+		let polkadot_future = polkadot_future.then(move |_| {
+			let _ = task_manager;
+			ready(())
+		});
 
-	service
-		.task_manager
-		.spawn_essential_handle()
-		.spawn("polkadot", polkadot_future);
+		service
+			.task_manager
+			.spawn_essential_handle()
+			.spawn("polkadot", polkadot_future);
+	} else {
+		service
+			.task_manager
+			.spawn_essential_handle()
+			.spawn("polkadot", polkadot_future);
+		polkadot_service::polkadot_new_full(
+			config,
+			None,
+			None,
+			authority_discovery_enabled,
+			6000,
+			grandpa_pause,
+		)
+		.map(|(s, _, _)| s)
+	}
 
 	Ok(service)
 }
