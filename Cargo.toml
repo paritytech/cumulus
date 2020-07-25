@@ -19,3 +19,12 @@ panic = 'unwind'
 [patch.crates-io]
 memory-db = { git = "https://github.com/paritytech/trie", branch = "bkchr-debugging" }
 hash-db = { git = "https://github.com/paritytech/trie", branch = "bkchr-debugging" }
+#wasmtime-environ = { git = "https://github.com/cheme/wasmtime", branch = "def_deb" }
+
+[patch.'https://github.com/paritytech/wasmtime']
+#wasmtime = { git = "https://github.com/cheme/wasmtime", branch = "update-upstream" }
+#wasmtime-runtime = { git = "https://github.com/cheme/wasmtime", branch = "update-upstream" }
+#wasmtime-environ = { git = "https://github.com/cheme/wasmtime", branch = "def_deb" }
+#cranelift-wasm = { git = "https://github.com/cheme/wasmtime", branch = "update-upstream" }
+#cranelift-codegen = { git = "https://github.com/cheme/wasmtime", branch = "update-upstream" }
+

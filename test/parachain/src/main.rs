@@ -26,5 +26,7 @@ mod cli;
 mod command;
 
 fn main() -> sc_cli::Result<()> {
-	command::run()
+	//command::run()
+	service::validate_block_issue_in();
+	Ok(())
 }

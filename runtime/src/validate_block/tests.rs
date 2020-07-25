@@ -135,7 +135,6 @@ fn build_block_with_proof(
 			.collect(),
 	)
 }
-
 #[test]
 fn validate_block_with_no_extrinsics() {
 	let (client, longest_chain) = create_test_client();

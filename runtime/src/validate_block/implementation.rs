@@ -104,6 +104,25 @@ impl Encode for EncodeOpaqueValue {
 /// Validate a given parachain block on a validator.
 #[doc(hidden)]
 pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -> ValidationResult {
+			sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!(
+				"block_data: {:?}", &params.block_data.0[..]
+			).as_bytes());
+			sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!(
+				"block_data: {:?}", &params.parent_head.0[..]
+			).as_bytes());
+			sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!(
+				"block_data: {:?}", params.relay_chain_height
+			).as_bytes());
+			sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!(
+				"block_data: {:?}", params.max_code_size
+			).as_bytes());
+			sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!(
+				"block_data: {:?}", params.max_head_data_size
+			).as_bytes());
+//2020-07-24 11:52:54 block_data: 138149
+//2020-07-24 11:52:54 block_data: 2323455345
+//2020-07-24 11:52:54 block_data: 2343453554
+	
 	let block_data = crate::ParachainBlockData::<B>::decode(&mut &params.block_data.0[..])
 		.expect("Invalid parachain block data");
 
@@ -183,6 +202,11 @@ struct WitnessStorage<B: BlockT> {
 }
 
 impl<B: BlockT> WitnessStorage<B> {
+	#[inline(never)]
+	fn db_insert(db: &mut MemoryDB<HashFor<B>>, i: &Vec<u8>) {
+		db.insert(EMPTY_PREFIX, i);
+	}
+
 	/// Initialize from the given witness data and storage root.
 	///
 	/// Returns an error if given storage root was not found in the witness data.
@@ -191,13 +215,31 @@ impl<B: BlockT> WitnessStorage<B> {
 		storage_root: B::Hash,
 		params: ValidationFunctionParams,
 	) -> Result<Self, &'static str> {
-		data.sort();
+		//let mut data1 = data.clone();
+		data.sort_unstable(); //sort is definitely triggering these compiler misbehave
 		let mut db = MemoryDB::default();
 		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "hey you0".as_bytes());
-		data.into_iter().for_each(|i| {
-			db.insert(EMPTY_PREFIX, &i);
+		data.iter().for_each(|i| {
+			sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!(
+				"input: {:?}", <HashFor<B>>::hash(i.as_slice())
+			).as_bytes());
 		});
 
+
+		data.into_iter().for_each(|i| {
+			db.insert(EMPTY_PREFIX, &i);
+			//Self::db_insert(&mut db, &i);
+		});
+/*		data1.sort_unstable();
+		let mut db1 = MemoryDB::default();
+		data1.into_iter().for_each(|i| {
+			db1.insert(EMPTY_PREFIX, &i);
+		});
+		if db1 == db {
+			sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "SAME".as_bytes());
+		} else {
+			sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "DIFFERENT".as_bytes());
+		}*/
 		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "hey you".as_bytes());
 		if !HashDB::contains(&db, &storage_root, EMPTY_PREFIX) {
 			return Err("Witness data does not contain given storage root.");
@@ -246,15 +288,22 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 
 	fn storage_root(&mut self) -> Vec<u8> {
 		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "storageroot".as_bytes());
+		let mut data: Vec<_> = 
+			self.overlay
+				.iter()
+				.map(|(k, v)| {
+					sp_io::logging::log(sp_core::LogLevel::Error, "runtime", sp_std::alloc::format!("delta: {:?}", k.as_slice()).as_bytes());
+					(k.as_ref(), v.as_ref().map(|v| v.as_ref()))
+				}).collect();
+// prev root 0x873dd45bc134063225e14a500ca2c168a64b77e92952aa2030a4d4ad75bfc307
+		//data.sort();
 		let root = delta_trie_root::<Layout<HashFor<B>>, _, _, _, _, _>(
 			&mut self.witness_data,
 			self.storage_root.clone(),
-			self.overlay
-				.iter()
-				.map(|(k, v)| (k.as_ref(), v.as_ref().map(|v| v.as_ref()))),
+			data,
 		)
 		.expect("Calculates storage root");
-
+// next root 0x0f2bca9766429456457d356a7e0521bb6a361774e4cd8a48997b131c31589f55
 		root.encode()
 	}
 
@@ -273,8 +322,8 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 
 		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "before iterator".as_bytes());
 		for x in TrieDBIterator::new_prefixed(&trie, prefix).expect("Creates trie iterator") {
-			// comment me out to crash
-			let _ = x.unwrap();
+			let (key, _) = x.expect("Iterating trie iterator");
+			self.overlay.insert(key, None);
 		}
 		sp_io::logging::log(sp_core::LogLevel::Error, "runtime", "after iterator".as_bytes());
 	}
