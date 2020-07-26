@@ -231,7 +231,7 @@ pub fn run() -> Result<()> {
 						.chain(cli.relaychain_args.iter()),
 				);
 
-				let id = ParaId::from(cli.run.parachain_id.and(para_id).unwrap_or(100));
+				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(100));
 
 				let parachain_account =
 					AccountIdConversion::<polkadot_primitives::AccountId>::into_account(&id);
