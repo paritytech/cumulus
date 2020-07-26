@@ -32,12 +32,6 @@ pub enum Subcommand {
 	/// Export the genesis wasm of the parachain.
 	#[structopt(name = "export-genesis-wasm")]
 	ExportGenesisWasm(ExportGenesisWasmCommand),
-
-	/// Run Polkadot for testing purpose
-	Polkadot(polkadot_cli::Cli),
-
-	#[structopt(name = "validation-worker", setting = structopt::clap::AppSettings::Hidden)]
-	PolkadotValidationWorker(polkadot_cli::ValidationWorkerCommand),
 }
 
 /// Command for exporting the genesis state of the parachain

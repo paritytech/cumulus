@@ -25,7 +25,7 @@ use sc_finality_grandpa::{
 	FinalityProofProvider as GrandpaFinalityProofProvider, StorageAndProofProvider,
 };
 use sc_informant::OutputFormat;
-use sc_service::{Configuration, TaskManager};
+use sc_service::{Configuration, ServiceComponents, TFullBackend, TFullClient};
 use std::sync::Arc;
 
 // Our native executor instance.
@@ -88,7 +88,19 @@ pub fn run_collator(
 	key: Arc<CollatorPair>,
 	mut polkadot_config: polkadot_collator::Configuration,
 	id: polkadot_primitives::parachain::Id,
-) -> sc_service::error::Result<TaskManager> {
+) -> sc_service::error::Result<ServiceComponents<
+	parachain_runtime::opaque::Block,
+	TFullBackend<parachain_runtime::opaque::Block>,
+	sc_consensus::LongestChain<TFullBackend<parachain_runtime::opaque::Block>, parachain_runtime::opaque::Block>,
+	sc_transaction_pool::BasicPool<
+		sc_transaction_pool::FullChainApi<
+			TFullClient<parachain_runtime::opaque::Block, parachain_runtime::RuntimeApi, crate::service::Executor>,
+			parachain_runtime::opaque::Block,
+		>,
+		parachain_runtime::opaque::Block,
+	>,
+	TFullClient<parachain_runtime::opaque::Block, parachain_runtime::RuntimeApi, crate::service::Executor>,
+>> {
 	let mut parachain_config = prepare_collator_config(parachain_config);
 
 	parachain_config.informant_output_format = OutputFormat {
@@ -154,5 +166,5 @@ pub fn run_collator(
 		.spawn_essential_handle()
 		.spawn("polkadot", polkadot_future);
 
-	Ok(service.task_manager)
+	Ok(service)
 }
