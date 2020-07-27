@@ -54,54 +54,54 @@ pub fn full_params(config: Configuration) -> Result<(
 	sp_inherents::InherentDataProviders,
 ), sc_service::Error>
 {
-		let inherent_data_providers = sp_inherents::InherentDataProviders::new();
+	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
-		let (client, backend, keystore, task_manager) =
-			sc_service::new_full_parts::<
-				parachain_runtime::opaque::Block,
-				parachain_runtime::RuntimeApi,
-				crate::service::Executor,
-			>(&config)?;
-		let client = Arc::new(client);
+	let (client, backend, keystore, task_manager) =
+		sc_service::new_full_parts::<
+			parachain_runtime::opaque::Block,
+			parachain_runtime::RuntimeApi,
+			crate::service::Executor,
+		>(&config)?;
+	let client = Arc::new(client);
 
-		let registry = config.prometheus_registry();
+	let registry = config.prometheus_registry();
 
-		let pool_api = sc_transaction_pool::FullChainApi::new(
-			client.clone(), registry.clone(),
-		);
-		let transaction_pool = sc_transaction_pool::BasicPool::new_full(
-			config.transaction_pool.clone(),
-			std::sync::Arc::new(pool_api),
-			config.prometheus_registry(),
-			task_manager.spawn_handle(),
-			client.clone(),
-		);
+	let pool_api = sc_transaction_pool::FullChainApi::new(
+		client.clone(), registry.clone(),
+	);
+	let transaction_pool = sc_transaction_pool::BasicPool::new_full(
+		config.transaction_pool.clone(),
+		std::sync::Arc::new(pool_api),
+		config.prometheus_registry(),
+		task_manager.spawn_handle(),
+		client.clone(),
+	);
 
-		let import_queue = cumulus_consensus::import_queue::import_queue(
-			client.clone(),
-			client.clone(),
-			inherent_data_providers.clone(),
-			&task_manager.spawn_handle(),
-			registry.clone(),
-		)?;
+	let import_queue = cumulus_consensus::import_queue::import_queue(
+		client.clone(),
+		client.clone(),
+		inherent_data_providers.clone(),
+		&task_manager.spawn_handle(),
+		registry.clone(),
+	)?;
 
-		let params = sc_service::ServiceParams {
-			config,
-			backend,
-			client,
-			import_queue,
-			keystore,
-			task_manager,
-			rpc_extensions_builder: Box::new(|_| ()),
-			transaction_pool,
-			block_announce_validator_builder: None,
-			finality_proof_provider: None,
-			finality_proof_request_builder: None,
-			on_demand: None,
-			remote_blockchain: None,
-		};
+	let params = sc_service::ServiceParams {
+		config,
+		backend,
+		client,
+		import_queue,
+		keystore,
+		task_manager,
+		rpc_extensions_builder: Box::new(|_| ()),
+		transaction_pool,
+		block_announce_validator_builder: None,
+		finality_proof_provider: None,
+		finality_proof_request_builder: None,
+		on_demand: None,
+		remote_blockchain: None,
+	};
 
-		Ok((params, inherent_data_providers))
+	Ok((params, inherent_data_providers))
 }
 
 /// Run a collator node with the given parachain `Configuration` and relaychain `Configuration`
