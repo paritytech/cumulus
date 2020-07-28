@@ -41,16 +41,16 @@ use parachain::primitives::RelayChainBlockNumber;
 use sp_core::storage::well_known_keys;
 use sp_inherents::{InherentData, InherentIdentifier, ProvideInherent};
 use sp_std::vec::Vec;
-use system::ensure_none;
+use frame_system::ensure_none;
 
 /// A ValidationFunction is a compiled WASM blob which, on execution, validates parachain blocks.
 pub type ValidationFunction = Vec<u8>;
-type System<T> = system::Module<T>;
+type System<T> = frame_system::Module<T>;
 
 /// The pallet's configuration trait.
-pub trait Trait: system::Trait {
+pub trait Trait: frame_system::Trait {
 	/// The overarching event type.
-	type Event: From<Event> + Into<<Self as system::Trait>::Event>;
+	type Event: From<Event> + Into<<Self as frame_system::Trait>::Event>;
 
 	/// Something which can be notified when the validation function params are set.
 	///
@@ -233,21 +233,23 @@ mod tests {
 
 	use codec::Encode;
 	use frame_support::{
-		assert_ok, impl_outer_event, impl_outer_origin, parameter_types,
+		assert_ok,
+		dispatch::UnfilteredDispatchable,
+		impl_outer_event, impl_outer_origin, parameter_types,
 		traits::{OnFinalize, OnInitialize},
 		weights::Weight,
 	};
 	use sp_core::H256;
 	use sp_runtime::{
 		testing::Header,
-		traits::{BlakeTwo256, Dispatchable, IdentityLookup},
+		traits::{BlakeTwo256, IdentityLookup},
 		Perbill,
 	};
 	use sp_version::RuntimeVersion;
-	use system::{InitKind, RawOrigin};
+	use frame_system::{InitKind, RawOrigin};
 
 	impl_outer_origin! {
-		pub enum Origin for Test {}
+		pub enum Origin for Test where system = frame_system {}
 	}
 
 	mod parachain_upgrade {
@@ -256,7 +258,7 @@ mod tests {
 
 	impl_outer_event! {
 		pub enum TestEvent for Test {
-			system<T>,
+			frame_system<T>,
 			parachain_upgrade,
 		}
 	}
@@ -281,7 +283,7 @@ mod tests {
 			transaction_version: 1,
 		};
 	}
-	impl system::Trait for Test {
+	impl frame_system::Trait for Test {
 		type Origin = Origin;
 		type Call = ();
 		type Index = u64;
@@ -305,6 +307,8 @@ mod tests {
 		type DbWeight = ();
 		type BlockExecutionWeight = ();
 		type ExtrinsicBaseWeight = ();
+		type BaseCallFilter = ();
+		type SystemWeightInfo = ();
 	}
 	impl Trait for Test {
 		type Event = TestEvent;
@@ -316,7 +320,7 @@ mod tests {
 	// This function basically just builds a genesis storage key/value store according to
 	// our desired mockup.
 	fn new_test_ext() -> sp_io::TestExternalities {
-		system::GenesisConfig::default()
+		frame_system::GenesisConfig::default()
 			.build_storage::<Test>()
 			.unwrap()
 			.into()
@@ -353,7 +357,7 @@ mod tests {
 	}
 
 	struct BlockTest {
-		n: <Test as system::Trait>::BlockNumber,
+		n: <Test as frame_system::Trait>::BlockNumber,
 		within_block: Box<dyn Fn()>,
 		after_block: Option<Box<dyn Fn()>>,
 	}
@@ -381,7 +385,7 @@ mod tests {
 			self
 		}
 
-		fn add<F>(self, n: <Test as system::Trait>::BlockNumber, within_block: F) -> Self
+		fn add<F>(self, n: <Test as frame_system::Trait>::BlockNumber, within_block: F) -> Self
 		where
 			F: 'static + Fn(),
 		{
@@ -394,7 +398,7 @@ mod tests {
 
 		fn add_with_post_test<F1, F2>(
 			self,
-			n: <Test as system::Trait>::BlockNumber,
+			n: <Test as frame_system::Trait>::BlockNumber,
 			within_block: F1,
 			after_block: F2,
 		) -> Self
@@ -472,7 +476,7 @@ mod tests {
 					ParachainUpgrade::on_initialize(*n);
 					ParachainUpgrade::create_inherent(&inherent_data)
 						.expect("got an inherent")
-						.dispatch(RawOrigin::None.into())
+						.dispatch_bypass_filter(RawOrigin::None.into())
 						.expect("dispatch succeeded");
 					within_block();
 					ParachainUpgrade::on_finalize(*n);

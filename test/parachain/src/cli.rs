@@ -20,7 +20,7 @@ use sc_cli;
 use structopt::StructOpt;
 
 /// Sub-commands supported by the collator.
-#[derive(Debug, StructOpt, Clone)]
+#[derive(Debug, StructOpt)]
 pub enum Subcommand {
 	#[structopt(flatten)]
 	Base(sc_cli::Subcommand),
@@ -28,23 +28,39 @@ pub enum Subcommand {
 	/// Export the genesis state of the parachain.
 	#[structopt(name = "export-genesis-state")]
 	ExportGenesisState(ExportGenesisStateCommand),
-
-	/// Run Polkadot for testing purpose
-	Polkadot(polkadot_cli::Cli),
-
-	#[structopt(name = "validation-worker", setting = structopt::clap::AppSettings::Hidden)]
-	PolkadotValidationWorker(polkadot_cli::ValidationWorkerCommand),
 }
 
 /// Command for exporting the genesis state of the parachain
-#[derive(Debug, StructOpt, Clone)]
+#[derive(Debug, StructOpt)]
 pub struct ExportGenesisStateCommand {
 	/// Output file name or stdout if unspecified.
 	#[structopt(parse(from_os_str))]
 	pub output: Option<PathBuf>,
+
+	/// Id of the parachain this state is for.
+	#[structopt(long, default_value = "100")]
+	pub parachain_id: u32,
 }
 
-#[derive(Debug, StructOpt, Clone)]
+#[derive(Debug, StructOpt)]
+pub struct RunCmd {
+	#[structopt(flatten)]
+	pub base: sc_cli::RunCmd,
+
+	/// Id of the parachain this collator collates for.
+	#[structopt(long, default_value = "100")]
+	pub parachain_id: u32,
+}
+
+impl std::ops::Deref for RunCmd {
+	type Target = sc_cli::RunCmd;
+
+	fn deref(&self) -> &Self::Target {
+		&self.base
+	}
+}
+
+#[derive(Debug, StructOpt)]
 #[structopt(settings = &[
 	structopt::clap::AppSettings::GlobalVersion,
 	structopt::clap::AppSettings::ArgsNegateSubcommands,
@@ -55,14 +71,14 @@ pub struct Cli {
 	pub subcommand: Option<Subcommand>,
 
 	#[structopt(flatten)]
-	pub run: sc_cli::RunCmd,
+	pub run: RunCmd,
 
 	/// Relaychain arguments
 	#[structopt(raw = true)]
 	pub relaychain_args: Vec<String>,
 }
 
-#[derive(Debug, StructOpt, Clone)]
+#[derive(Debug, StructOpt)]
 pub struct PolkadotCli {
 	#[structopt(flatten)]
 	pub base: polkadot_cli::RunCmd,

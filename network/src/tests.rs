@@ -104,7 +104,7 @@ fn valid_if_no_data_and_less_than_best_known_number() {
 
 	assert_eq!(
 		res.unwrap(),
-		Validation::Success,
+		Validation::Success { is_new_best: false },
 		"validating without data with block number < best known number is always a success",
 	);
 }
@@ -438,6 +438,10 @@ sp_api::mock_impl_runtime_apis! {
 				session_index: Default::default(),
 				parent_hash: Default::default(),
 			}
+		}
+
+		fn downward_messages(_: ParaId) -> Vec<polkadot_primitives::DownwardMessage> {
+			Vec::new()
 		}
 	}
 }

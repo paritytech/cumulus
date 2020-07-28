@@ -17,118 +17,120 @@
 use crate::chain_spec;
 use crate::cli::{Cli, PolkadotCli, Subcommand};
 use codec::Encode;
+use cumulus_primitives::ParaId;
 use log::info;
 use parachain_runtime::Block;
+use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
-	CliConfiguration, Error, ImportParams, KeystoreParams, NetworkParams, Result, SharedParams,
-	SubstrateCli,
+	ChainSpec, CliConfiguration, Error, ImportParams, KeystoreParams, NetworkParams, Result, Role,
+	RuntimeVersion, SharedParams, SubstrateCli,
 };
-use sc_executor::NativeExecutionDispatch;
-use sc_network::config::TransportConfig;
-use sc_service::config::{NetworkConfiguration, NodeKeyConfig, PrometheusConfig};
+use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::{
 	traits::{Block as BlockT, Hash as HashT, Header as HeaderT, Zero},
 	BuildStorage,
 };
-use std::net::SocketAddr;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::{net::SocketAddr, sync::Arc};
 
 impl SubstrateCli for Cli {
-	fn impl_name() -> &'static str {
-		"Cumulus Test Parachain Collator"
+	fn impl_name() -> String {
+		"Cumulus Test Parachain Collator".into()
 	}
 
-	fn impl_version() -> &'static str {
-		env!("SUBSTRATE_CLI_IMPL_VERSION")
+	fn impl_version() -> String {
+		env!("SUBSTRATE_CLI_IMPL_VERSION").into()
 	}
 
-	fn description() -> &'static str {
-		"Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
+	fn description() -> String {
+		format!(
+			"Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
-		cumulus-test-parachain-collator [parachain-args] -- [relaychain-args]"
+		{} [parachain-args] -- [relaychain-args]",
+			Self::executable_name()
+		)
 	}
 
-	fn author() -> &'static str {
-		env!("CARGO_PKG_AUTHORS")
+	fn author() -> String {
+		env!("CARGO_PKG_AUTHORS").into()
 	}
 
-	fn support_url() -> &'static str {
-		"https://github.com/paritytech/cumulus/issues/new"
+	fn support_url() -> String {
+		"https://github.com/paritytech/cumulus/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {
 		2017
 	}
 
-	fn executable_name() -> &'static str {
-		"cumulus-test-parachain-collator"
+	fn load_spec(&self, _id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+		// Such a hack :(
+		Ok(Box::new(chain_spec::get_chain_spec(
+			self.run.parachain_id.into(),
+		)))
 	}
 
-	fn load_spec(&self, _id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		Ok(Box::new(chain_spec::get_chain_spec()))
+	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
+		&parachain_runtime::VERSION
 	}
 }
 
 impl SubstrateCli for PolkadotCli {
-	fn impl_name() -> &'static str {
-		"Cumulus Test Parachain Collator"
+	fn impl_name() -> String {
+		"Cumulus Test Parachain Collator".into()
 	}
 
-	fn impl_version() -> &'static str {
-		env!("SUBSTRATE_CLI_IMPL_VERSION")
+	fn impl_version() -> String {
+		env!("SUBSTRATE_CLI_IMPL_VERSION").into()
 	}
 
-	fn description() -> &'static str {
+	fn description() -> String {
 		"Cumulus test parachain collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		cumulus-test-parachain-collator [parachain-args] -- [relaychain-args]"
+			.into()
 	}
 
-	fn author() -> &'static str {
-		env!("CARGO_PKG_AUTHORS")
+	fn author() -> String {
+		env!("CARGO_PKG_AUTHORS").into()
 	}
 
-	fn support_url() -> &'static str {
-		"https://github.com/paritytech/cumulus/issues/new"
+	fn support_url() -> String {
+		"https://github.com/paritytech/cumulus/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {
 		2017
 	}
 
-	fn executable_name() -> &'static str {
-		"cumulus-test-parachain-collator"
+	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+		polkadot_cli::Cli::from_iter([PolkadotCli::executable_name().to_string()].iter())
+			.load_spec(id)
 	}
 
-	fn load_spec(&self, _id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		polkadot_service::PolkadotChainSpec::from_json_bytes(
-			&include_bytes!("../res/polkadot_chainspec.json")[..],
-		)
-		.map(|r| Box::new(r) as Box<_>)
+	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
+		polkadot_cli::Cli::native_runtime_version(chain_spec)
 	}
 }
 
-fn generate_genesis_state() -> Result<Block> {
-	let storage = (&chain_spec::get_chain_spec()).build_storage()?;
+/// Generate the genesis block
+pub fn generate_genesis_state(para_id: ParaId) -> Result<Block> {
+	let storage = (&chain_spec::get_chain_spec(para_id)).build_storage()?;
 
 	let child_roots = storage.children_default.iter().map(|(sk, child_content)| {
-		let state_root =
-			<<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
-				child_content.data.clone().into_iter().collect(),
-			);
+		let state_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
+			child_content.data.clone().into_iter().collect(),
+		);
 		(sk.clone(), state_root.encode())
 	});
 	let state_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
 		storage.top.clone().into_iter().chain(child_roots).collect(),
 	);
 
-	let extrinsics_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
-		Vec::new(),
-	);
+	let extrinsics_root =
+		<<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(Vec::new());
 
 	Ok(Block::new(
 		<<Block as BlockT>::Header as HeaderT>::new(
@@ -150,12 +152,14 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::Base(subcommand)) => {
 			let runner = cli.create_runner(subcommand)?;
 
-			runner.run_subcommand(subcommand, |config| Ok(new_full_start!(config).0))
+			runner.run_subcommand(subcommand, |config| {
+				Ok(new_full_start!(config).0.to_chain_ops_parts())
+			})
 		}
 		Some(Subcommand::ExportGenesisState(params)) => {
 			sc_cli::init_logger("");
 
-			let block = generate_genesis_state()?;
+			let block = generate_genesis_state(params.parachain_id.into())?;
 			let header_hex = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
 			if let Some(output) = &params.output {
@@ -166,44 +170,11 @@ pub fn run() -> Result<()> {
 
 			Ok(())
 		}
-		Some(Subcommand::Polkadot(polkadot_cli)) => {
-			let runner = polkadot_cli.create_runner(&polkadot_cli.run.base)?;
-			let authority_discovery_enabled = polkadot_cli.run.authority_discovery_enabled;
-			let grandpa_pause = if polkadot_cli.run.grandpa_pause.is_empty() {
-				None
-			} else {
-				Some((polkadot_cli.run.grandpa_pause[0], polkadot_cli.run.grandpa_pause[1]))
-			};
-
-			runner.run_node(
-				|config| {
-					polkadot_service::polkadot_new_light(config)
-				},
-				|config| {
-					polkadot_service::polkadot_new_full(
-						config,
-						None,
-						None,
-						authority_discovery_enabled,
-						6000,
-						grandpa_pause
-					).map(|(s, _, _)| s)
-				},
-				polkadot_service::PolkadotExecutor::native_version().runtime_version
-			)
-		},
-		Some(Subcommand::PolkadotValidationWorker(cmd)) => {
-			sc_cli::init_logger("");
-			polkadot_service::run_validation_worker(&cmd.mem_id)?;
-
-			Ok(())
-		},
 		None => {
-			let runner = cli.create_runner(&cli.run)?;
+			let runner = cli.create_runner(&*cli.run)?;
 
 			// TODO
-			let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
-			let key2 = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
+			let key = Arc::new(sp_core::Pair::generate().0);
 
 			let mut polkadot_cli = PolkadotCli::from_iter(
 				[PolkadotCli::executable_name().to_string()]
@@ -211,37 +182,34 @@ pub fn run() -> Result<()> {
 					.chain(cli.relaychain_args.iter()),
 			);
 
-			polkadot_cli.base_path = cli.run.base_path()?.map(|x| x.join("polkadot"));
+			let id = ParaId::from(cli.run.parachain_id);
 
-			runner.run_node(
-				|config| {
-					let task_executor = config.task_executor.clone();
-					let polkadot_config = SubstrateCli::create_configuration(
-						&polkadot_cli,
-						&polkadot_cli,
-						task_executor,
-					)
-					.unwrap();
+			let parachain_account =
+				AccountIdConversion::<polkadot_primitives::AccountId>::into_account(&id);
 
-					info!("Parachain id: {:?}", crate::PARA_ID);
+			let block = generate_genesis_state(id)?;
+			let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
-					crate::service::run_collator(config, key2, polkadot_config)
-				},
-				|config| {
-					let task_executor = config.task_executor.clone();
-					let polkadot_config = SubstrateCli::create_configuration(
-						&polkadot_cli,
-						&polkadot_cli,
-						task_executor,
-					)
-					.unwrap();
+			runner.run_node_until_exit(|config| {
+				if matches!(config.role, Role::Light) {
+					return Err("Light client not supporter!".into());
+				}
 
-					info!("Parachain id: {:?}", crate::PARA_ID);
+				polkadot_cli.base_path =
+					config.base_path.as_ref().map(|x| x.path().join("polkadot"));
 
-					crate::service::run_collator(config, key, polkadot_config)
-				},
-				parachain_runtime::VERSION,
-			)
+				let task_executor = config.task_executor.clone();
+				let polkadot_config =
+					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, task_executor)
+						.unwrap();
+
+				info!("Parachain id: {:?}", id);
+				info!("Parachain Account: {}", parachain_account);
+				info!("Parachain genesis state: {}", genesis_state);
+
+				crate::service::run_collator(config, key, polkadot_config, id)
+					.map(|x| x.task_manager)
+			})
 		}
 	}
 }
@@ -263,8 +231,11 @@ impl CliConfiguration for PolkadotCli {
 		self.base.base.keystore_params()
 	}
 
-	fn base_path(&self) -> Result<Option<PathBuf>> {
-		Ok(self.shared_params().base_path().or(self.base_path.clone()))
+	fn base_path(&self) -> Result<Option<BasePath>> {
+		Ok(self
+			.shared_params()
+			.base_path()
+			.or_else(|| self.base_path.clone().map(Into::into)))
 	}
 
 	fn rpc_http(&self) -> Result<Option<SocketAddr>> {

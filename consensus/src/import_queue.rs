@@ -89,7 +89,12 @@ where
 		let mut block_import_params = BlockImportParams::new(origin, header);
 		block_import_params.body = body;
 		block_import_params.justification = justification;
-		block_import_params.fork_choice = Some(ForkChoiceStrategy::LongestChain);
+
+		// Best block is determined by the relay chain, or if we are doing the intial sync
+		// we import all blocks as new best.
+		block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(
+			origin == BlockOrigin::NetworkInitialSync,
+		));
 		block_import_params.post_hash = post_hash;
 
 		Ok((block_import_params, None))
@@ -101,12 +106,12 @@ pub fn import_queue<Client, Block: BlockT, I>(
 	client: Arc<Client>,
 	block_import: I,
 	inherent_data_providers: InherentDataProviders,
-	spawner: &impl sp_core::traits::SpawnBlocking,
+	spawner: &impl sp_core::traits::SpawnNamed,
 	registry: Option<&substrate_prometheus_endpoint::Registry>,
 ) -> ClientResult<BasicQueue<Block, I::Transaction>>
 where
 	I: BlockImport<Block, Error = ConsensusError> + Send + Sync + 'static,
- 	I::Transaction: Send,
+	I::Transaction: Send,
 	Client: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	<Client as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block>,
 {
