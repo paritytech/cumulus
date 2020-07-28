@@ -153,7 +153,9 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(subcommand)?;
 
 			runner.run_subcommand(subcommand, |config| {
-				Ok(new_full_start!(config).0.to_chain_ops_parts())
+				let (params, _) = crate::service::full_params(config)?;
+
+				Ok((params.client, params.backend, params.import_queue, params.task_manager))
 			})
 		}
 		Some(Subcommand::ExportGenesisState(params)) => {

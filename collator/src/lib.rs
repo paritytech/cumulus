@@ -47,8 +47,8 @@ use sp_runtime::{
 use polkadot_collator::{
 	BuildParachainContext, Network as CollatorNetwork, ParachainContext, RuntimeApiCollection,
 };
-use polkadot_primitives::{
-	parachain::{self, BlockData, GlobalValidationSchedule, Id as ParaId, LocalValidationData},
+use polkadot_primitives::v0::{
+	self as parachain, BlockData, GlobalValidationData, Id as ParaId, LocalValidationData,
 	Block as PBlock, DownwardMessage, Hash as PHash,
 };
 
@@ -105,7 +105,7 @@ impl<Block: BlockT, PF, BI, BS> Collator<Block, PF, BI, BS> {
 	/// Get the inherent data with validation function parameters injected
 	fn inherent_data(
 		inherent_providers: InherentDataProviders,
-		global_validation: GlobalValidationSchedule,
+		global_validation: GlobalValidationData,
 		local_validation: LocalValidationData,
 		downward_messages: DownwardMessagesType,
 	) -> Option<InherentData> {
@@ -239,7 +239,7 @@ where
 	fn produce_candidate(
 		&mut self,
 		relay_chain_parent: PHash,
-		global_validation: GlobalValidationSchedule,
+		global_validation: GlobalValidationData,
 		local_validation: LocalValidationData,
 		downward_messages: Vec<DownwardMessage>,
 	) -> Self::ProduceCandidate {
@@ -639,7 +639,7 @@ mod tests {
 		let collation = collate(
 			Default::default(),
 			id,
-			GlobalValidationSchedule {
+			GlobalValidationData {
 				block_number: 0,
 				max_code_size: 0,
 				max_head_data_size: 0,
