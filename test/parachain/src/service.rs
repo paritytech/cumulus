@@ -190,7 +190,7 @@ pub fn run_collator(
 		let is_light = matches!(polkadot_config.role, Role::Light);
 		let builder = polkadot_service::NodeBuilder::new(polkadot_config);
 		let mut task_manager = if is_light {
-			builder.build_light().map(|(task_manager, _)| task_manager)
+			return Err("Light client not supported.".into());
 		} else {
 			builder.build_full(
 				Some((key.public(), id)),
