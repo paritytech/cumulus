@@ -1090,6 +1090,7 @@ dependencies = [
  "polkadot-test-service",
  "rand 0.7.3",
  "sc-basic-authorship",
+ "sc-chain-spec",
  "sc-cli",
  "sc-client-api",
  "sc-consensus",

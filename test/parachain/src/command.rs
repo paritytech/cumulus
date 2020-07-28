@@ -187,7 +187,7 @@ pub fn run() -> Result<()> {
 			let id = ParaId::from(cli.run.parachain_id);
 
 			let parachain_account =
-				AccountIdConversion::<polkadot_primitives::AccountId>::into_account(&id);
+				AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
 
 			let block = generate_genesis_state(id)?;
 			let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
