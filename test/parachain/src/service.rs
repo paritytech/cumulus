@@ -113,11 +113,14 @@ pub fn run_collator(
 	mut polkadot_config: polkadot_collator::Configuration,
 	id: polkadot_primitives::v0::Id,
 	validator: bool,
-) -> sc_service::error::Result<ServiceComponents<
-	parachain_runtime::opaque::Block,
-	TFullBackend<parachain_runtime::opaque::Block>,
-	TFullClient<parachain_runtime::opaque::Block, parachain_runtime::RuntimeApi, crate::service::Executor>,
->> {
+) -> sc_service::error::Result<(
+	ServiceComponents<
+		parachain_runtime::opaque::Block,
+		TFullBackend<parachain_runtime::opaque::Block>,
+		TFullClient<parachain_runtime::opaque::Block, parachain_runtime::RuntimeApi, crate::service::Executor>,
+	>,
+	Arc<TFullClient<parachain_runtime::opaque::Block, parachain_runtime::RuntimeApi, crate::service::Executor>>,
+)> {
 	let mut parachain_config = prepare_collator_config(parachain_config);
 
 	parachain_config.informant_output_format = OutputFormat {
@@ -144,7 +147,7 @@ pub fn run_collator(
 	let client = params.client.clone();
 	let service_components = sc_service::build(params)?;
 
-	if validator || true {
+	if validator {
 		let proposer_factory = sc_basic_authorship::ProposerFactory::new(
 			client.clone(),
 			transaction_pool,
@@ -160,7 +163,7 @@ pub fn run_collator(
 			block_import,
 			client.clone(),
 			id,
-			client,
+			client.clone(),
 			announce_block,
 			block_announce_validator,
 		);
@@ -207,5 +210,5 @@ pub fn run_collator(
 			.spawn("polkadot", polkadot_future);
 	}
 
-	Ok(service_components)
+	Ok((service_components, client))
 }

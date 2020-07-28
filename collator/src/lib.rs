@@ -493,10 +493,10 @@ mod tests {
 	use std::time::Duration;
 
 	use polkadot_collator::{collate, SignedStatement};
-	use polkadot_primitives::parachain::Id as ParaId;
+	use polkadot_primitives::v0::Id as ParaId;
 
 	use sp_blockchain::Result as ClientResult;
-	use sp_core::testing::SpawnBlockingExecutor;
+	use sp_core::testing::TaskExecutor;
 	use sp_inherents::InherentData;
 	use sp_keyring::Sr25519Keyring;
 	use sp_runtime::traits::{DigestFor, Header as HeaderT};
@@ -601,7 +601,7 @@ mod tests {
 	fn collates_produces_a_block() {
 		let id = ParaId::from(100);
 		let _ = env_logger::try_init();
-		let spawner = SpawnBlockingExecutor::new();
+		let spawner = TaskExecutor::new();
 		let announce_block = |_, _| ();
 		let block_announce_validator = DelayedBlockAnnounceValidator::new();
 		let client = Arc::new(TestClientBuilder::new().build());

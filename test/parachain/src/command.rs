@@ -210,7 +210,7 @@ pub fn run() -> Result<()> {
 				info!("Parachain genesis state: {}", genesis_state);
 
 				crate::service::run_collator(config, key, polkadot_config, id, cli.run.base.validator)
-					.map(|x| x.task_manager)
+					.map(|(x, _)| x.task_manager)
 			})
 		}
 	}
