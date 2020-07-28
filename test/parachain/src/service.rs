@@ -18,15 +18,18 @@ use ansi_term::Color;
 use cumulus_collator::{prepare_collator_config, CollatorBuilder};
 use cumulus_network::DelayedBlockAnnounceValidator;
 use futures::{future::ready, FutureExt};
-use polkadot_primitives::parachain::CollatorPair;
+use polkadot_primitives::v0::CollatorPair;
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
-use sc_finality_grandpa::{
-	FinalityProofProvider as GrandpaFinalityProofProvider, StorageAndProofProvider,
-};
 use sc_informant::OutputFormat;
-use sc_service::{Configuration, ServiceComponents, TFullBackend, TFullClient};
+use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
 use std::sync::Arc;
+use parachain_runtime::{opaque::Block, RuntimeApi};
+use sp_consensus::{import_queue::BasicQueue, BlockImport};
+
+type FullClient = sc_service::TFullClient<Block, RuntimeApi, Executor>;
+type FullBackend = sc_service::TFullBackend<Block>;
+type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
 // Our native executor instance.
 native_executor_instance!(
@@ -35,49 +38,49 @@ native_executor_instance!(
 	parachain_runtime::native_version,
 );
 
-/// Starts a `ServiceBuilder` for a full service.
-///
-/// Use this macro if you don't actually need the full service, but just the builder in order to
-/// be able to perform chain operations.
-macro_rules! new_full_start {
-	($config:expr) => {{
-		let inherent_data_providers = sp_inherents::InherentDataProviders::new();
+/// Create the `PartialComponents` of the node service.
+pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponents<
+	FullClient,
+	FullBackend,
+	FullSelectChain,
+	BasicQueue<Block, <FullClient as BlockImport<Block>>::Transaction>,
+	sc_transaction_pool::FullPool<Block, FullClient>,
+	()
+>, ServiceError> {
+	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
-		let builder = sc_service::ServiceBuilder::new_full::<
-			parachain_runtime::opaque::Block,
-			parachain_runtime::RuntimeApi,
-			crate::service::Executor,
-		>($config)?
-		.with_select_chain(|_config, backend| Ok(sc_consensus::LongestChain::new(backend.clone())))?
-		.with_transaction_pool(|builder| {
-			let client = builder.client();
-			let pool_api = Arc::new(sc_transaction_pool::FullChainApi::new(
-				client.clone(),
-				builder.prometheus_registry(),
-			));
-			let pool = sc_transaction_pool::BasicPool::new_full(
-				builder.config().transaction_pool.clone(),
-				pool_api,
-				builder.prometheus_registry(),
-				builder.spawn_handle(),
-				client.clone(),
-			);
-			Ok(pool)
-		})?
-		.with_import_queue(|_config, client, _, _, spawner, registry| {
-			let import_queue = cumulus_consensus::import_queue::import_queue(
-				client.clone(),
-				client,
-				inherent_data_providers.clone(),
-				spawner,
-				registry,
-			)?;
+	let (client, backend, keystore, task_manager) =
+		sc_service::new_full_parts::<Block, RuntimeApi, Executor>(&config)?;
+	let client = Arc::new(client);
 
-			Ok(import_queue)
-		})?;
+	let select_chain = sc_consensus::LongestChain::new(backend.clone());
 
-		(builder, inherent_data_providers)
-		}};
+	let transaction_pool = sc_transaction_pool::BasicPool::new_full(
+		config.transaction_pool.clone(),
+		config.prometheus_registry(),
+		task_manager.spawn_handle(),
+		client.clone(),
+	);
+
+	let import_queue = cumulus_consensus::import_queue::import_queue(
+		client.clone(),
+		client.clone(),
+		inherent_data_providers.clone(),
+		&task_manager.spawn_handle(),
+		config.prometheus_registry(),
+	)?;
+
+	Ok(sc_service::PartialComponents {
+		client,
+		backend,
+		task_manager,
+		import_queue,
+		keystore,
+		select_chain,
+		transaction_pool,
+		inherent_data_providers,
+		other: (),
+	})
 }
 
 /// Run a collator node with the given parachain `Configuration` and relaychain `Configuration`
@@ -87,20 +90,8 @@ pub fn run_collator(
 	parachain_config: Configuration,
 	key: Arc<CollatorPair>,
 	mut polkadot_config: polkadot_collator::Configuration,
-	id: polkadot_primitives::parachain::Id,
-) -> sc_service::error::Result<ServiceComponents<
-	parachain_runtime::opaque::Block,
-	TFullBackend<parachain_runtime::opaque::Block>,
-	sc_consensus::LongestChain<TFullBackend<parachain_runtime::opaque::Block>, parachain_runtime::opaque::Block>,
-	sc_transaction_pool::BasicPool<
-		sc_transaction_pool::FullChainApi<
-			TFullClient<parachain_runtime::opaque::Block, parachain_runtime::RuntimeApi, crate::service::Executor>,
-			parachain_runtime::opaque::Block,
-		>,
-		parachain_runtime::opaque::Block,
-	>,
-	TFullClient<parachain_runtime::opaque::Block, parachain_runtime::RuntimeApi, crate::service::Executor>,
->> {
+	id: polkadot_primitives::v0::Id,
+) -> sc_service::error::Result<(TaskManager, Arc<FullClient>)> {
 	let mut parachain_config = prepare_collator_config(parachain_config);
 
 	parachain_config.informant_output_format = OutputFormat {
@@ -108,33 +99,70 @@ pub fn run_collator(
 		prefix: format!("[{}] ", Color::Yellow.bold().paint("Parachain")),
 	};
 
-	let (builder, inherent_data_providers) = new_full_start!(parachain_config);
+	let sc_service::PartialComponents {
+		client,
+		backend,
+		mut task_manager,
+		import_queue,
+		keystore,
+		transaction_pool,
+		inherent_data_providers,
+		..
+	} = new_partial(&parachain_config)?;
 	inherent_data_providers
 		.register_provider(sp_timestamp::InherentDataProvider)
 		.unwrap();
 
 	let block_announce_validator = DelayedBlockAnnounceValidator::new();
-	let block_announce_validator_copy = block_announce_validator.clone();
-	let service = builder
-		.with_finality_proof_provider(|client, backend| {
-			// GenesisAuthoritySetProvider is implemented for StorageAndProofProvider
-			let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
-			Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
-		})?
-		.with_block_announce_validator(|_client| Box::new(block_announce_validator_copy))?
-		.build_full()?;
+	let block_announce_validator_clone = block_announce_validator.clone();
 
-	let registry = service.prometheus_registry.clone();
+	let (network, network_status_sinks, system_rpc_tx) =
+		sc_service::build_network(sc_service::BuildNetworkParams {
+			config: &parachain_config,
+			client: client.clone(),
+			transaction_pool: transaction_pool.clone(),
+			spawn_handle: task_manager.spawn_handle(),
+			import_queue,
+			on_demand: None,
+			block_announce_validator_builder: Some(Box::new(|_| Box::new(block_announce_validator_clone))),
+			finality_proof_request_builder: None,
+			finality_proof_provider: None,
+		})?;
+
+	if parachain_config.offchain_worker.enabled {
+		sc_service::build_offchain_workers(
+			&parachain_config,
+			backend.clone(),
+			task_manager.spawn_handle(),
+			client.clone(),
+			network.clone(),
+		);
+	}
 
 	let proposer_factory = sc_basic_authorship::ProposerFactory::new(
-		service.client.clone(),
-		service.transaction_pool.clone(),
-		registry.as_ref(),
+		client.clone(),
+		transaction_pool.clone(),
+		parachain_config.prometheus_registry(),
 	);
 
-	let block_import = service.client.clone();
-	let client = service.client.clone();
-	let network = service.network.clone();
+	sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+		network: network.clone(),
+		client: client.clone(),
+		keystore,
+		task_manager: &mut task_manager,
+		transaction_pool: transaction_pool.clone(),
+		telemetry_connection_sinks: Default::default(),
+		rpc_extensions_builder: Box::new(|_| ()),
+		on_demand: None,
+		remote_blockchain: None,
+		backend,
+		network_status_sinks,
+		system_rpc_tx,
+		config: parachain_config,
+	})?;
+
+	let block_import = client.clone();
+	let client = client.clone();
 	let announce_block = Arc::new(move |hash, data| network.announce_block(hash, data));
 	let builder = CollatorBuilder::new(
 		proposer_factory,
@@ -142,7 +170,7 @@ pub fn run_collator(
 		block_import,
 		client.clone(),
 		id,
-		client,
+		client.clone(),
 		announce_block,
 		block_announce_validator,
 	);
@@ -152,19 +180,18 @@ pub fn run_collator(
 		prefix: format!("[{}] ", Color::Blue.bold().paint("Relaychain")),
 	};
 
-	let (polkadot_future, task_manager) =
+	let (polkadot_future, polkadot_task_manager) =
 		polkadot_collator::start_collator(builder, id, key, polkadot_config)?;
 
 	// Make sure the polkadot task manager survives as long as the service.
 	let polkadot_future = polkadot_future.then(move |_| {
-		let _ = task_manager;
+		let _ = polkadot_task_manager;
 		ready(())
 	});
 
-	service
-		.task_manager
+	task_manager
 		.spawn_essential_handle()
 		.spawn("polkadot", polkadot_future);
 
-	Ok(service)
+	Ok((task_manager, client))
 }

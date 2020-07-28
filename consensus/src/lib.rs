@@ -26,10 +26,7 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT},
 };
 
-use polkadot_primitives::{
-	parachain::{Id as ParaId, ParachainHost},
-	Block as PBlock, Hash as PHash,
-};
+use polkadot_primitives::v0::{Id as ParaId, ParachainHost, Block as PBlock, Hash as PHash};
 
 use codec::Decode;
 use futures::{future, Future, FutureExt, Stream, StreamExt, TryFutureExt, TryStreamExt};

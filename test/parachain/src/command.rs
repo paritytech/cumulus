@@ -153,7 +153,9 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(subcommand)?;
 
 			runner.run_subcommand(subcommand, |config| {
-				Ok(new_full_start!(config).0.to_chain_ops_parts())
+				let sc_service::PartialComponents { client, backend, task_manager, import_queue, .. }
+					= crate::service::new_partial(&config)?;
+				Ok((client, backend, import_queue, task_manager))
 			})
 		}
 		Some(Subcommand::ExportGenesisState(params)) => {
@@ -185,7 +187,7 @@ pub fn run() -> Result<()> {
 			let id = ParaId::from(cli.run.parachain_id);
 
 			let parachain_account =
-				AccountIdConversion::<polkadot_primitives::AccountId>::into_account(&id);
+				AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
 
 			let block = generate_genesis_state(id)?;
 			let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
@@ -208,7 +210,7 @@ pub fn run() -> Result<()> {
 				info!("Parachain genesis state: {}", genesis_state);
 
 				crate::service::run_collator(config, key, polkadot_config, id)
-					.map(|x| x.task_manager)
+					.map(|x| x.0)
 			})
 		}
 	}

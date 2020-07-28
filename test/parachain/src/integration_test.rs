@@ -19,7 +19,7 @@ use futures::{
 	future::{self, FutureExt},
 	pin_mut, select,
 };
-use polkadot_primitives::parachain::{Id as ParaId, Info, Scheduling};
+use polkadot_primitives::v0::{Id as ParaId, Info, Scheduling};
 use polkadot_runtime_common::registrar;
 use polkadot_test_runtime_client::Sr25519Keyring;
 use sc_client_api::execution_extensions::ExecutionStrategies;
@@ -40,12 +40,10 @@ use tokio::{spawn, time::delay_for as sleep};
 static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TEST_ALLOWED_TIME");
 
 #[tokio::test]
-#[ignore]
 async fn integration_test() {
 	let task_executor: TaskExecutor = (|fut, _| {
-		spawn(fut);
-	})
-	.into();
+		spawn(fut).map(drop)
+	}).into();
 
 	// start alice
 	let mut alice =
@@ -104,10 +102,10 @@ async fn integration_test() {
 		polkadot_config.rpc_methods = sc_service::config::RpcMethods::Unsafe;
 		let parachain_config =
 			parachain_config(task_executor.clone(), Charlie, vec![], para_id).unwrap();
-		let service =
+		let (_, parachain_client) =
 			crate::service::run_collator(parachain_config, key, polkadot_config, para_id).unwrap();
 		sleep(Duration::from_secs(3)).await;
-		service.client.wait_for_blocks(4).await;
+		parachain_client.wait_for_blocks(4).await;
 
 		alice.task_manager.terminate();
 		bob.task_manager.terminate();
