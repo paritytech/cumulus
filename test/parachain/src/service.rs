@@ -21,9 +21,6 @@ use futures::{future::ready, FutureExt};
 use polkadot_primitives::v0::CollatorPair;
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
-use sc_finality_grandpa::{
-	FinalityProofProvider as GrandpaFinalityProofProvider,
-};
 use sc_informant::OutputFormat;
 use sc_service::{Configuration, PartialComponents, TaskManager, TFullBackend, TFullClient, Role};
 use std::sync::Arc;
@@ -126,8 +123,6 @@ pub fn run_collator(
 	let client = params.client.clone();
 	let backend = params.backend.clone();
 	let block_announce_validator = DelayedBlockAnnounceValidator::new();
-	let finality_proof_provider =
-		GrandpaFinalityProofProvider::new_for_service(backend.clone(), client.clone());
 	let block_announce_validator_builder = {
 		let block_announce_validator = block_announce_validator.clone();
 		move |_| Box::new(block_announce_validator) as Box<_>
@@ -147,7 +142,7 @@ pub fn run_collator(
 				on_demand: None,
 				block_announce_validator_builder: Some(Box::new(block_announce_validator_builder)),
 				finality_proof_request_builder: None,
-				finality_proof_provider: Some(finality_proof_provider.clone()),
+				finality_proof_provider: None,
 		})?;
 
 	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
@@ -157,7 +152,7 @@ pub fn run_collator(
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
 			task_manager: &mut task_manager,
-			telemetry_connection_sinks: sc_service::TelemetryConnectionSinks::default(),
+			telemetry_connection_sinks: Default::default(),
 			config: parachain_config,
 			keystore: params.keystore,
 			backend,
