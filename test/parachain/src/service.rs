@@ -118,7 +118,7 @@ pub fn run_collator(
 		prefix: format!("[{}] ", Color::Yellow.bold().paint("Parachain")),
 	};
 
-	let mut params = new_partial(&mut parachain_config)?;
+	let params = new_partial(&mut parachain_config)?;
 	params.inherent_data_providers
 		.register_provider(sp_timestamp::InherentDataProvider)
 		.unwrap();
@@ -129,7 +129,7 @@ pub fn run_collator(
 		GrandpaFinalityProofProvider::new_for_service(params.backend.clone(), client.clone());
 	let block_announce_validator_builder = {
 		let block_announce_validator = block_announce_validator.clone();
-		move |_| Box::new(block_announce_validator)
+		move |_| Box::new(block_announce_validator) as Box<_>
 	};
 
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
@@ -157,7 +157,6 @@ pub fn run_collator(
 		);
 
 		let block_import = client.clone();
-		let network = network.clone();
 		let announce_block = Arc::new(move |hash, data| network.announce_block(hash, data));
 		let builder = CollatorBuilder::new(
 			proposer_factory,
@@ -175,12 +174,12 @@ pub fn run_collator(
 			prefix: format!("[{}] ", Color::Blue.bold().paint("Relaychain")),
 		};
 
-		let (polkadot_future, task_manager) =
+		let (polkadot_future, polkadpt_task_manager) =
 			polkadot_collator::start_collator(builder, id, key, polkadot_config)?;
 
 		// Make sure the polkadot task manager survives as long as the service.
 		let polkadot_future = polkadot_future.then(move |_| {
-			let _ = task_manager;
+			let _ = polkadpt_task_manager;
 			ready(())
 		});
 

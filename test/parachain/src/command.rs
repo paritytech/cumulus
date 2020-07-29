@@ -152,7 +152,7 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::Base(subcommand)) => {
 			let runner = cli.create_runner(subcommand)?;
 
-			runner.run_subcommand(subcommand, |config| {
+			runner.run_subcommand(subcommand, |mut config| {
 				let params = crate::service::new_partial(&mut config)?;
 
 				Ok((params.client, params.backend, params.import_queue, params.task_manager))
