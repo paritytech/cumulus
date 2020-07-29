@@ -114,6 +114,10 @@ pub fn run_collator(
 		enable_color: true,
 		prefix: format!("[{}] ", Color::Yellow.bold().paint("Parachain")),
 	};
+	polkadot_config.informant_output_format = OutputFormat {
+		enable_color: true,
+		prefix: format!("[{}] ", Color::Blue.bold().paint("Relaychain")),
+	};
 
 	let params = new_partial(&mut parachain_config)?;
 	params.inherent_data_providers
@@ -180,11 +184,6 @@ pub fn run_collator(
 			announce_block,
 			block_announce_validator,
 		);
-
-		polkadot_config.informant_output_format = OutputFormat {
-			enable_color: true,
-			prefix: format!("[{}] ", Color::Blue.bold().paint("Relaychain")),
-		};
 
 		let (polkadot_future, polkadpt_task_manager) =
 			polkadot_collator::start_collator(builder, id, key, polkadot_config)?;
