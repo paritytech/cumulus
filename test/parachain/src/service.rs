@@ -22,7 +22,7 @@ use polkadot_primitives::v0::CollatorPair;
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_finality_grandpa::{
-	FinalityProofProvider as GrandpaFinalityProofProvider, StorageAndProofProvider,
+	FinalityProofProvider as GrandpaFinalityProofProvider,
 };
 use sc_informant::OutputFormat;
 use sc_service::{Configuration, PartialComponents, TaskManager, TFullBackend, TFullClient, Role};
@@ -42,7 +42,7 @@ native_executor_instance!(
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
-pub fn new_partial(config: &mut Configuration) -> Result<(
+pub fn new_partial(config: &mut Configuration) -> Result<
 	PartialComponents<
 		TFullClient<parachain_runtime::opaque::Block, parachain_runtime::RuntimeApi, crate::service::Executor>,
 		TFullBackend<parachain_runtime::opaque::Block>,
@@ -51,8 +51,8 @@ pub fn new_partial(config: &mut Configuration) -> Result<(
 		sc_transaction_pool::FullPool<parachain_runtime::opaque::Block, TFullClient<parachain_runtime::opaque::Block, parachain_runtime::RuntimeApi, crate::service::Executor>>,
 		(),
 	>,
-	sp_inherents::InherentDataProviders,
-), sc_service::Error>
+	sc_service::Error,
+>
 {
 	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
@@ -67,11 +67,6 @@ pub fn new_partial(config: &mut Configuration) -> Result<(
 
 	let registry = config.prometheus_registry();
 
-	/*
-	let pool_api = sc_transaction_pool::FullChainApi::new(
-		client.clone(), registry.clone(),
-	);
-	*/
 	let transaction_pool = sc_transaction_pool::BasicPool::new_full(
 		config.transaction_pool.clone(),
 		//std::sync::Arc::new(pool_api),
@@ -94,19 +89,13 @@ pub fn new_partial(config: &mut Configuration) -> Result<(
 		import_queue,
 		keystore,
 		task_manager,
-		//rpc_extensions_builder: Box::new(|_| ()),
 		transaction_pool,
-		//block_announce_validator_builder: None,
-		//finality_proof_provider: None,
-		//finality_proof_request_builder: None,
-		//on_demand: None,
-		//remote_blockchain: None,
 		inherent_data_providers,
 		select_chain: (),
 		other: (),
 	};
 
-	Ok((params, inherent_data_providers))
+	Ok(params)
 }
 
 /// Run a collator node with the given parachain `Configuration` and relaychain `Configuration`
@@ -129,8 +118,8 @@ pub fn run_collator(
 		prefix: format!("[{}] ", Color::Yellow.bold().paint("Parachain")),
 	};
 
-	let (mut params, inherent_data_providers) = new_partial(&mut parachain_config)?;
-	inherent_data_providers
+	let mut params = new_partial(&mut parachain_config)?;
+	params.inherent_data_providers
 		.register_provider(sp_timestamp::InherentDataProvider)
 		.unwrap();
 
@@ -172,7 +161,7 @@ pub fn run_collator(
 		let announce_block = Arc::new(move |hash, data| network.announce_block(hash, data));
 		let builder = CollatorBuilder::new(
 			proposer_factory,
-			inherent_data_providers,
+			params.inherent_data_providers,
 			block_import,
 			client.clone(),
 			id,
