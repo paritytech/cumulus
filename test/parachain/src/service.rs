@@ -124,9 +124,10 @@ pub fn run_collator(
 		.unwrap();
 
 	let client = params.client.clone();
+	let backend = params.backend.clone();
 	let block_announce_validator = DelayedBlockAnnounceValidator::new();
 	let finality_proof_provider =
-		GrandpaFinalityProofProvider::new_for_service(params.backend.clone(), client.clone());
+		GrandpaFinalityProofProvider::new_for_service(backend.clone(), client.clone());
 	let block_announce_validator_builder = {
 		let block_announce_validator = block_announce_validator.clone();
 		move |_| Box::new(block_announce_validator) as Box<_>
@@ -134,9 +135,9 @@ pub fn run_collator(
 
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let transaction_pool = params.transaction_pool.clone();
-	let task_manager = params.task_manager;
+	let mut task_manager = params.task_manager;
 	let import_queue = params.import_queue;
-	let (network, _network_status_sinks, _system_rpc_tx) =
+	let (network, network_status_sinks, system_rpc_tx) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 				config: &parachain_config,
 				client: client.clone(),
@@ -148,6 +149,22 @@ pub fn run_collator(
 				finality_proof_request_builder: None,
 				finality_proof_provider: Some(finality_proof_provider.clone()),
 		})?;
+
+	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+			on_demand: None,
+			remote_blockchain: None,
+			rpc_extensions_builder: Box::new(|_| ()),
+			client: client.clone(),
+			transaction_pool: transaction_pool.clone(),
+			task_manager: &mut task_manager,
+			telemetry_connection_sinks: sc_service::TelemetryConnectionSinks::default(),
+			config: parachain_config,
+			keystore: params.keystore,
+			backend,
+			network: network.clone(),
+			network_status_sinks,
+			system_rpc_tx,
+	})?;
 
 	if validator {
 		let proposer_factory = sc_basic_authorship::ProposerFactory::new(
