@@ -205,7 +205,8 @@ pub fn run_collator(
 			.spawn("polkadot", polkadot_future);
 	} else {
 		let is_light = matches!(polkadot_config.role, Role::Light);
-		let builder = polkadot_service::NodeBuilder::new(polkadot_config);
+		let builder = polkadot_service::NodeBuilder::new(polkadot_config)
+			.with_block_announce_validator(block_announce_validator);
 		let mut polkadot_task_manager = if is_light {
 			return Err("Light client not supported.".into());
 		} else {
