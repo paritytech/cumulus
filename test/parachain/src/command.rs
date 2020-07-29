@@ -153,7 +153,7 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(subcommand)?;
 
 			runner.run_subcommand(subcommand, |config| {
-				let (params, _) = crate::service::full_params(config)?;
+				let (params, _) = crate::service::new_partial(&mut config)?;
 
 				Ok((params.client, params.backend, params.import_queue, params.task_manager))
 			})
@@ -210,7 +210,7 @@ pub fn run() -> Result<()> {
 				info!("Parachain genesis state: {}", genesis_state);
 
 				crate::service::run_collator(config, key, polkadot_config, id, cli.run.base.validator)
-					.map(|(x, _)| x.task_manager)
+					.map(|(x, _)| x)
 			})
 		}
 	}
