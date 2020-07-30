@@ -210,7 +210,7 @@ pub fn run() -> Result<()> {
 				info!("Parachain Account: {}", parachain_account);
 				info!("Parachain genesis state: {}", genesis_state);
 				info!(
-					"Is validator: {}",
+					"Is collating: {}",
 					if cli.run.base.validator { "yes" } else { "no" }
 				);
 
