@@ -31,7 +31,7 @@ fn purge_chain_works() {
 
 	let _ = fs::remove_dir_all(base_path);
 	let mut cmd = Command::new(cargo_bin("cumulus-test-parachain-collator"))
-		.args(&["-d", base_path])
+		.args(&["-d", base_path, "--", "--dev"])
 		.spawn()
 		.unwrap();
 

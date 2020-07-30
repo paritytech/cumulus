@@ -24,7 +24,7 @@ use log::info;
 use parachain_runtime::Block;
 use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
-	ChainSpec, CliConfiguration, Error, ImportParams, KeystoreParams, NetworkParams, Result, Role,
+	ChainSpec, CliConfiguration, Error, ImportParams, KeystoreParams, NetworkParams, Result,
 	RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
@@ -175,8 +175,15 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::Base(subcommand)) => {
 			let runner = cli.create_runner(subcommand)?;
 
-			runner.run_subcommand(subcommand, |config| {
-				Ok(new_full_start!(config).0.to_chain_ops_parts())
+			runner.run_subcommand(subcommand, |mut config| {
+				let params = crate::service::new_partial(&mut config)?;
+
+				Ok((
+					params.client,
+					params.backend,
+					params.import_queue,
+					params.task_manager,
+				))
 			})
 		}
 		Some(Subcommand::ExportGenesisState(params)) => {
@@ -212,10 +219,6 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(&*cli.run)?;
 
 			runner.run_node_until_exit(|config| {
-				if matches!(config.role, Role::Light) {
-					return Err("Light client not supporter!".into());
-				}
-
 				// TODO
 				let key = Arc::new(sp_core::Pair::generate().0);
 
@@ -234,7 +237,7 @@ pub fn run() -> Result<()> {
 				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(100));
 
 				let parachain_account =
-					AccountIdConversion::<polkadot_primitives::AccountId>::into_account(&id);
+					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
 
 				let block =
 					generate_genesis_state(&config.chain_spec).map_err(|e| format!("{:?}", e))?;
@@ -248,9 +251,19 @@ pub fn run() -> Result<()> {
 				info!("Parachain id: {:?}", id);
 				info!("Parachain Account: {}", parachain_account);
 				info!("Parachain genesis state: {}", genesis_state);
+				info!(
+					"Is collating: {}",
+					if cli.run.base.validator { "yes" } else { "no" }
+				);
 
-				crate::service::run_collator(config, key, polkadot_config, id)
-					.map(|x| x.task_manager)
+				crate::service::run_collator(
+					config,
+					key,
+					polkadot_config,
+					id,
+					cli.run.base.validator,
+				)
+				.map(|(x, _)| x)
 			})
 		}
 	}
@@ -292,6 +305,10 @@ impl CliConfiguration for RelayChainCli {
 			&format!("{}:{}", rpc_interface, 9934),
 			rpc_port,
 		)?))
+	}
+
+	fn rpc_ipc(&self) -> Result<Option<String>> {
+		self.base.base.rpc_ipc()
 	}
 
 	fn rpc_ws(&self) -> Result<Option<SocketAddr>> {
@@ -343,6 +360,54 @@ impl CliConfiguration for RelayChainCli {
 		} else {
 			chain_id
 		})
+	}
+
+	fn role(&self, is_dev: bool) -> Result<sc_service::Role> {
+		self.base.base.role(is_dev)
+	}
+
+	fn transaction_pool(&self) -> Result<sc_service::config::TransactionPoolOptions> {
+		self.base.base.transaction_pool()
+	}
+
+	fn state_cache_child_ratio(&self) -> Result<Option<usize>> {
+		self.base.base.state_cache_child_ratio()
+	}
+
+	fn rpc_methods(&self) -> Result<sc_service::config::RpcMethods> {
+		self.base.base.rpc_methods()
+	}
+
+	fn rpc_ws_max_connections(&self) -> Result<Option<usize>> {
+		self.base.base.rpc_ws_max_connections()
+	}
+
+	fn rpc_cors(&self, is_dev: bool) -> Result<Option<Vec<String>>> {
+		self.base.base.rpc_cors(is_dev)
+	}
+
+	fn telemetry_external_transport(&self) -> Result<Option<sc_service::config::ExtTransport>> {
+		self.base.base.telemetry_external_transport()
+	}
+
+	fn default_heap_pages(&self) -> Result<Option<u64>> {
+		self.base.base.default_heap_pages()
+	}
+
+	fn force_authoring(&self) -> Result<bool> {
+		self.base.base.force_authoring()
+	}
+
+	fn disable_grandpa(&self) -> Result<bool> {
+		self.base.base.disable_grandpa()
+	}
+
+	fn max_runtime_instances(&self) -> Result<Option<usize>> {
+		self.base.base.max_runtime_instances()
+	}
+
+	fn announce_block(&self) -> Result<bool> {
+		self.base.base.announce_block()
 	}
 }
 
