@@ -20,6 +20,7 @@ codec = { package = 'parity-scale-codec', version = '1.0.0' }
 structopt = "0.3.3"
 ansi_term = "0.12.1"
 serde = { version = "1.0.101", features = ["derive"] }
+hex-literal = "0.2.1"
 
 # Parachain dependencies
 parachain-runtime = { package = "cumulus-test-parachain-runtime", path = "runtime" }
