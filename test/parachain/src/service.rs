@@ -27,7 +27,7 @@ use std::sync::Arc;
 use sp_core::crypto::Pair;
 use sp_trie::PrefixedMemoryDB;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
-use polkadot_service::{PolkadotClient, RuntimeApiCollection};
+use polkadot_service::{AbstractClient, RuntimeApiCollection};
 
 // Our native executor instance.
 native_executor_instance!(
@@ -222,7 +222,7 @@ pub fn run_collator(
 		let polkadot_future = async move {
 			polkadot_task_manager.future().await.expect("polkadot essential task failed");
 		};
-		client.execute(SetDelayedBlockAnnounceValidator { block_announce_validator, para_id: id });
+		client.execute_with(SetDelayedBlockAnnounceValidator { block_announce_validator, para_id: id });
 
 		task_manager
 			.spawn_essential_handle()
@@ -245,7 +245,7 @@ impl<B: BlockT> polkadot_service::ExecuteWithClient for SetDelayedBlockAnnounceV
 		Backend: sc_client_api::Backend<PBlock>,
 		Backend::State: sp_api::StateBackend<BlakeTwo256>,
 		Api: RuntimeApiCollection<StateBackend = Backend::State>,
-		Client: PolkadotClient<PBlock, Backend, Api = Api> + 'static
+		Client: AbstractClient<PBlock, Backend, Api = Api> + 'static
 	{
 		self.block_announce_validator.set(Box::new(JustifiedBlockAnnounceValidator::new(client, self.para_id)));
 	}

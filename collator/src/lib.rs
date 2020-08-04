@@ -447,7 +447,7 @@ where
 			delayed_block_announce_validator,
 			_marker,
 		} = self;
-		polkadot_client.execute(CollatorBuilderWithClient {
+		polkadot_client.execute_with(CollatorBuilderWithClient {
 			spawner,
 			polkadot_network,
 			proposer_factory,
@@ -510,7 +510,7 @@ where
 		PBackend: sc_client_api::Backend<PBlock>,
 		PBackend::State: StateBackend<BlakeTwo256>,
 		Api: RuntimeApiCollection<StateBackend = PBackend::State>,
-		PClient: polkadot_service::PolkadotClient<PBlock, PBackend, Api = Api> + 'static,
+		PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
 	{
 		self.delayed_block_announce_validator
 			.set(Box::new(JustifiedBlockAnnounceValidator::new(
