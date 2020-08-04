@@ -1100,6 +1100,7 @@ dependencies = [
  "sc-network",
  "sc-service",
  "sc-transaction-pool",
+ "sp-api",
  "sp-consensus",
  "sp-core",
  "sp-inherents",
