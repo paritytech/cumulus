@@ -35,7 +35,7 @@ use sp_api::ApiExt;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, BlockStatus, Environment, Error as ConsensusError,
-	ForkChoiceStrategy, Proposal, Proposer, RecordProof,
+	ForkChoiceStrategy, Proposal, Proposer, RecordProof, SyncOracle,
 };
 use sp_core::traits::SpawnNamed;
 use sp_inherents::{InherentData, InherentDataProviders};
@@ -432,6 +432,7 @@ where
 		polkadot_client: polkadot_collator::Client,
 		spawner: Spawner,
 		polkadot_network: impl CollatorNetwork + Clone + 'static,
+		sync_oracle: impl SyncOracle + Clone + 'static,
 	) -> Result<Self::ParachainContext, ()>
 	where
 		Spawner: SpawnNamed + Clone + Send + Sync + 'static,
@@ -450,6 +451,7 @@ where
 		polkadot_client.execute_with(CollatorBuilderWithClient {
 			spawner,
 			polkadot_network,
+			sync_oracle,
 			proposer_factory,
 			inherent_data_providers,
 			block_import,
@@ -463,7 +465,7 @@ where
 	}
 }
 
-pub struct CollatorBuilderWithClient<Block: BlockT, PF, BI, Backend, Client, BS, Spawner, Network> {
+pub struct CollatorBuilderWithClient<Block: BlockT, PF, BI, Backend, Client, BS, Spawner, Network, SO> {
 	proposer_factory: PF,
 	inherent_data_providers: InherentDataProviders,
 	block_import: BI,
@@ -475,11 +477,12 @@ pub struct CollatorBuilderWithClient<Block: BlockT, PF, BI, Backend, Client, BS,
 	_marker: PhantomData<(Block, Backend)>,
 	spawner: Spawner,
 	polkadot_network: Network,
+	sync_oracle: SO,
 }
 
-impl<Block: BlockT, PF, BI, Backend, Client, BS, Spawner, Network>
+impl<Block: BlockT, PF, BI, Backend, Client, BS, Spawner, Network, SO>
 	polkadot_service::ExecuteWithClient
-	for CollatorBuilderWithClient<Block, PF, BI, Backend, Client, BS, Spawner, Network>
+	for CollatorBuilderWithClient<Block, PF, BI, Backend, Client, BS, Spawner, Network, SO>
 where
 	PF: Environment<Block> + Send + 'static,
 	BI: BlockImport<Block, Error = sp_consensus::Error, Transaction = TransactionFor<PF, Block>>
@@ -498,6 +501,7 @@ where
 	BS: BlockBackend<Block>,
 	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
 	Network: CollatorNetwork + Clone + 'static,
+	SO: SyncOracle + Clone + 'static,
 {
 	type Output = Result<Collator<Block, PF, BI, BS>, ()>;
 
@@ -512,7 +516,7 @@ where
 		Api: RuntimeApiCollection<StateBackend = PBackend::State>,
 		PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
 	{
-		let polkadot_network = self.polkadot_network.clone();
+		let sync_oracle = self.sync_oracle.clone();
 		self.delayed_block_announce_validator
 			.set(Box::new(JustifiedBlockAnnounceValidator::new(
 				polkadot_client.clone(),
