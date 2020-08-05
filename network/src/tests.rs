@@ -46,7 +46,7 @@ fn make_validator_and_client() -> (
 	let client = Arc::new(TestApi::new(Arc::new(builder.build())));
 
 	(
-		JustifiedBlockAnnounceValidator::new(client.clone(), ParaId::from(56)),
+		JustifiedBlockAnnounceValidator::new(client.clone(), ParaId::from(56), || false),
 		client,
 	)
 }

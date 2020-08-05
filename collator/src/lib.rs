@@ -644,6 +644,16 @@ mod tests {
 		}
 	}
 
+	impl SyncOracle for DummyCollatorNetwork {
+		fn is_major_syncing(&mut self) -> bool {
+			unimplemented!("Not required in tests")
+		}
+
+		fn is_offline(&mut self) -> bool {
+			unimplemented!("Not required in tests")
+		}
+	}
+
 	#[derive(Clone)]
 	struct DummyPolkadotClient;
 
