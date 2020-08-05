@@ -512,10 +512,12 @@ where
 		Api: RuntimeApiCollection<StateBackend = PBackend::State>,
 		PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
 	{
+		let polkadot_network = self.polkadot_network.clone();
 		self.delayed_block_announce_validator
 			.set(Box::new(JustifiedBlockAnnounceValidator::new(
 				polkadot_client.clone(),
 				self.para_id,
+				move || polkadot_network.is_major_syncing(),
 			)));
 
 		let follow =
