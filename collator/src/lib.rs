@@ -431,8 +431,7 @@ where
 		self,
 		polkadot_client: polkadot_collator::Client,
 		spawner: Spawner,
-		polkadot_network: impl CollatorNetwork + Clone + 'static,
-		sync_oracle: impl SyncOracle + Clone + Send + Sync + 'static,
+		polkadot_network: impl CollatorNetwork + SyncOracle + Clone + 'static,
 	) -> Result<Self::ParachainContext, ()>
 	where
 		Spawner: SpawnNamed + Clone + Send + Sync + 'static,
@@ -451,7 +450,6 @@ where
 		polkadot_client.execute_with(CollatorBuilderWithClient {
 			spawner,
 			polkadot_network,
-			sync_oracle,
 			proposer_factory,
 			inherent_data_providers,
 			block_import,
@@ -465,7 +463,7 @@ where
 	}
 }
 
-pub struct CollatorBuilderWithClient<Block: BlockT, PF, BI, Backend, Client, BS, Spawner, Network, SO> {
+pub struct CollatorBuilderWithClient<Block: BlockT, PF, BI, Backend, Client, BS, Spawner, Network> {
 	proposer_factory: PF,
 	inherent_data_providers: InherentDataProviders,
 	block_import: BI,
@@ -477,12 +475,11 @@ pub struct CollatorBuilderWithClient<Block: BlockT, PF, BI, Backend, Client, BS,
 	_marker: PhantomData<(Block, Backend)>,
 	spawner: Spawner,
 	polkadot_network: Network,
-	sync_oracle: SO,
 }
 
-impl<Block: BlockT, PF, BI, Backend, Client, BS, Spawner, Network, SO>
+impl<Block: BlockT, PF, BI, Backend, Client, BS, Spawner, Network>
 	polkadot_service::ExecuteWithClient
-	for CollatorBuilderWithClient<Block, PF, BI, Backend, Client, BS, Spawner, Network, SO>
+	for CollatorBuilderWithClient<Block, PF, BI, Backend, Client, BS, Spawner, Network>
 where
 	PF: Environment<Block> + Send + 'static,
 	BI: BlockImport<Block, Error = sp_consensus::Error, Transaction = TransactionFor<PF, Block>>
@@ -500,8 +497,7 @@ where
 	for<'a> &'a Client: BlockImport<Block>,
 	BS: BlockBackend<Block>,
 	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
-	Network: CollatorNetwork + Clone + 'static,
-	SO: SyncOracle + Clone + Send + Sync + 'static,
+	Network: CollatorNetwork + SyncOracle + Clone + 'static,
 {
 	type Output = Result<Collator<Block, PF, BI, BS>, ()>;
 
@@ -516,9 +512,11 @@ where
 		Api: RuntimeApiCollection<StateBackend = PBackend::State>,
 		PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
 	{
-		let mut sync_oracle = self.sync_oracle.clone();
-		let is_major_syncing = move || {
-			sync_oracle.is_major_syncing()
+		let is_major_syncing = {
+			let mut polkadot_network = self.polkadot_network.clone();
+			move || {
+				polkadot_network.is_major_syncing()
+			}
 		};
 		self.delayed_block_announce_validator
 			.set(Box::new(JustifiedBlockAnnounceValidator::new(

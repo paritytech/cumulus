@@ -28,6 +28,7 @@ use sp_core::crypto::Pair;
 use sp_trie::PrefixedMemoryDB;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
 use polkadot_service::{AbstractClient, RuntimeApiCollection};
+use sp_consensus::SyncOracle;
 
 // Our native executor instance.
 native_executor_instance!(
@@ -204,7 +205,7 @@ pub fn run_collator(
 			.spawn("polkadot", polkadot_future);
 	} else {
 		let is_light = matches!(polkadot_config.role, Role::Light);
-		let (mut polkadot_task_manager, client, _, network) = if is_light {
+		let (mut polkadot_task_manager, client, handles) = if is_light {
 			Err("Light client not supported.".into())
 		} else {
 			polkadot_service::build_full(
@@ -219,7 +220,8 @@ pub fn run_collator(
 		let polkadot_future = async move {
 			polkadot_task_manager.future().await.expect("polkadot essential task failed");
 		};
-		let is_major_syncing = Box::new(move || network.is_major_syncing());
+		let mut polkadot_network = handles.polkadot_network.expect("polkadot service is started; qed");
+		let is_major_syncing = Box::new(move || polkadot_network.is_major_syncing());
 		client.execute_with(SetDelayedBlockAnnounceValidator { block_announce_validator, para_id: id, is_major_syncing });
 
 		task_manager
