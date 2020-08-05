@@ -55,14 +55,20 @@ pub struct JustifiedBlockAnnounceValidator<B, P> {
 	phantom: PhantomData<B>,
 	polkadot_client: Arc<P>,
 	para_id: ParaId,
+	is_major_syncing: Box<dyn Fn() -> bool>,
 }
 
 impl<B, P> JustifiedBlockAnnounceValidator<B, P> {
-	pub fn new(polkadot_client: Arc<P>, para_id: ParaId) -> Self {
+	pub fn new(
+		polkadot_client: Arc<P>,
+		para_id: ParaId,
+		is_major_syncing: impl Fn() -> bool + 'static,
+	) -> Self {
 		Self {
 			phantom: Default::default(),
 			polkadot_client,
 			para_id,
+			is_major_syncing: Box::new(is_major_syncing),
 		}
 	}
 }
@@ -81,6 +87,10 @@ where
 		let polkadot_info = self.polkadot_client.info();
 
 		if data.is_empty() {
+			if (self.is_major_syncing)() {
+				return Ok(Validation::Failure);
+			}
+
 			// Check if block is equal or higher than best (this requires a justification)
 			let runtime_api_block_id = BlockId::Hash(polkadot_info.best_hash);
 			let block_number = header.number();
@@ -112,6 +122,10 @@ where
 			} else {
 				Validation::Success { is_new_best: false }
 			});
+		}
+
+		if (self.is_major_syncing)() {
+			return Ok(Validation::Success { is_new_best: true });
 		}
 
 		// Check data is a gossip message.
