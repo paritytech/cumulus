@@ -432,7 +432,7 @@ where
 		polkadot_client: polkadot_collator::Client,
 		spawner: Spawner,
 		polkadot_network: impl CollatorNetwork + Clone + 'static,
-		sync_oracle: impl SyncOracle + Clone + 'static,
+		sync_oracle: impl SyncOracle + Clone + Send + Sync + 'static,
 	) -> Result<Self::ParachainContext, ()>
 	where
 		Spawner: SpawnNamed + Clone + Send + Sync + 'static,
@@ -501,7 +501,7 @@ where
 	BS: BlockBackend<Block>,
 	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
 	Network: CollatorNetwork + Clone + 'static,
-	SO: SyncOracle + Clone + 'static,
+	SO: SyncOracle + Clone + Send + Sync + 'static,
 {
 	type Output = Result<Collator<Block, PF, BI, BS>, ()>;
 
@@ -521,7 +521,7 @@ where
 			.set(Box::new(JustifiedBlockAnnounceValidator::new(
 				polkadot_client.clone(),
 				self.para_id,
-				move || polkadot_network.is_major_syncing(),
+				move || sync_oracle.is_major_syncing(),
 			)));
 
 		let follow =
