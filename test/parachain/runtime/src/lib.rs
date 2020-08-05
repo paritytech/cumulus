@@ -36,6 +36,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 mod message_example;
+use message_example::ParachainId;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
@@ -241,10 +242,6 @@ impl pallet_sudo::Trait for Runtime {
 impl cumulus_parachain_upgrade::Trait for Runtime {
 	type Event = Event;
 	type OnValidationFunctionParams = ();
-}
-
-parameter_types! {
-	pub storage ParachainId: cumulus_primitives::ParaId = 100.into();
 }
 
 impl cumulus_message_broker::Trait for Runtime {

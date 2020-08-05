@@ -18,7 +18,7 @@
 //! downward messages.
 
 use frame_support::{
-	decl_event, decl_module, decl_storage,
+	decl_event, decl_module, decl_storage, parameter_types,
 	traits::{Currency, ExistenceRequirement, WithdrawReason},
 };
 use frame_system::ensure_signed;
@@ -55,6 +55,10 @@ pub trait Trait: frame_system::Trait {
 	type XCMPMessageSender: XCMPMessageSender<XCMPMessage<Self::AccountId, BalanceOf<Self>>>;
 }
 
+parameter_types! {
+	pub storage ParachainId: cumulus_primitives::ParaId = 100.into();
+}
+
 // This pallet's storage items.
 decl_storage! {
 	trait Store for Module<T: Trait> as ParachainUpgrade {}
@@ -63,7 +67,7 @@ decl_storage! {
 		build(|config: &Self| {
 			// This is basically a hack to make the parachain id easily configurable.
 			// Could also be done differently, but yeah..
-			crate::ParachainId::set(&config.parachain_id);
+			ParachainId::set(&config.parachain_id);
 		});
 	}
 }
