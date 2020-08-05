@@ -54,12 +54,12 @@ cumulus-network = { path = "../../network" }
 cumulus-primitives = { path = "../../primitives" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
@@ -71,10 +71,10 @@ rand = "0.7.3"
 tokio = { version = "0.2.13", features = ["macros"] }
 
 # Polkadot dependencies
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
+polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
+polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
 
 # Substrate dependencies
 pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
