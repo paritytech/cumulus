@@ -204,7 +204,7 @@ pub fn run_collator(
 			.spawn("polkadot", polkadot_future);
 	} else {
 		let is_light = matches!(polkadot_config.role, Role::Light);
-		let (mut polkadot_task_manager, client, _) = if is_light {
+		let (mut polkadot_task_manager, client, _, network) = if is_light {
 			Err("Light client not supported.".into())
 		} else {
 			polkadot_service::build_full(
@@ -219,7 +219,8 @@ pub fn run_collator(
 		let polkadot_future = async move {
 			polkadot_task_manager.future().await.expect("polkadot essential task failed");
 		};
-		client.execute_with(SetDelayedBlockAnnounceValidator { block_announce_validator, para_id: id });
+		let is_major_syncing = Box::new(move || network.is_major_syncing());
+		client.execute_with(SetDelayedBlockAnnounceValidator { block_announce_validator, para_id: id, is_major_syncing });
 
 		task_manager
 			.spawn_essential_handle()
@@ -232,6 +233,7 @@ pub fn run_collator(
 struct SetDelayedBlockAnnounceValidator<B: BlockT> {
 	block_announce_validator: DelayedBlockAnnounceValidator<B>,
 	para_id: ParaId,
+	is_major_syncing: Box<dyn FnMut() -> bool + Send + Sync>,
 }
 
 impl<B: BlockT> polkadot_service::ExecuteWithClient for SetDelayedBlockAnnounceValidator<B> {
@@ -244,6 +246,6 @@ impl<B: BlockT> polkadot_service::ExecuteWithClient for SetDelayedBlockAnnounceV
 		Api: RuntimeApiCollection<StateBackend = Backend::State>,
 		Client: AbstractClient<PBlock, Backend, Api = Api> + 'static
 	{
-		self.block_announce_validator.set(Box::new(JustifiedBlockAnnounceValidator::new(client, self.para_id)));
+		self.block_announce_validator.set(Box::new(JustifiedBlockAnnounceValidator::new(client, self.para_id, self.is_major_syncing)));
 	}
 }

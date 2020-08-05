@@ -516,12 +516,15 @@ where
 		Api: RuntimeApiCollection<StateBackend = PBackend::State>,
 		PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
 	{
-		let sync_oracle = self.sync_oracle.clone();
+		let mut sync_oracle = self.sync_oracle.clone();
+		let is_major_syncing = move || {
+			sync_oracle.is_major_syncing()
+		};
 		self.delayed_block_announce_validator
 			.set(Box::new(JustifiedBlockAnnounceValidator::new(
 				polkadot_client.clone(),
 				self.para_id,
-				move || sync_oracle.is_major_syncing(),
+				is_major_syncing,
 			)));
 
 		let follow =

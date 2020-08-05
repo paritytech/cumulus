@@ -55,20 +55,20 @@ pub struct JustifiedBlockAnnounceValidator<B, P> {
 	phantom: PhantomData<B>,
 	polkadot_client: Arc<P>,
 	para_id: ParaId,
-	is_major_syncing: Arc<dyn Fn() -> bool + Send + Sync>,
+	is_major_syncing: Box<dyn FnMut() -> bool + Send + Sync>,
 }
 
 impl<B, P> JustifiedBlockAnnounceValidator<B, P> {
 	pub fn new(
 		polkadot_client: Arc<P>,
 		para_id: ParaId,
-		is_major_syncing: impl Fn() -> bool + Send + Sync + 'static,
+		is_major_syncing: impl FnMut() -> bool + Send + Sync + 'static,
 	) -> Self {
 		Self {
 			phantom: Default::default(),
 			polkadot_client,
 			para_id,
-			is_major_syncing: Arc::new(is_major_syncing),
+			is_major_syncing: Box::new(is_major_syncing),
 		}
 	}
 }
