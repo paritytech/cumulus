@@ -83,14 +83,14 @@ where
 		header: &B::Header,
 		mut data: &[u8],
 	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
+		if (self.is_major_syncing)() {
+			return Ok(Validation::Success { is_new_best: false });
+		}
+
 		let runtime_api = self.polkadot_client.runtime_api();
 		let polkadot_info = self.polkadot_client.info();
 
 		if data.is_empty() {
-			if (self.is_major_syncing)() {
-				return Ok(Validation::Failure);
-			}
-
 			// Check if block is equal or higher than best (this requires a justification)
 			let runtime_api_block_id = BlockId::Hash(polkadot_info.best_hash);
 			let block_number = header.number();
@@ -122,10 +122,6 @@ where
 			} else {
 				Validation::Success { is_new_best: false }
 			});
-		}
-
-		if (self.is_major_syncing)() {
-			return Ok(Validation::Success { is_new_best: true });
 		}
 
 		// Check data is a gossip message.
