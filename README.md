@@ -9,8 +9,8 @@ It's easy to write blockchains using Substrate, and the overhead of writing para
 distribution, p2p, database, and synchronization layers should be just as low. This project aims to
 make it easy to write parachains for Polkadot by leveraging the power of Substrate.
 
-Cumulus clouds are shaped sort of like dots and are up in the air, like this project (as it is an
-initial prototype -- expect a rename when it gets cooler.)
+Cumulus clouds are shaped sort of like dots; together they form a system that is intricate,
+beautiful and functional.
 
 ## Consensus
 
