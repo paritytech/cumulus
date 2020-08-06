@@ -32,6 +32,8 @@ pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", 
 
 # In-Tree Fork of seal that does not use child trie nor storage transactions
 pallet-contracts = { path = "./pallet_contracts", default-features = false }
+pallet-contracts-primitives = {  path = "./pallet_contracts/common", default-features = false }
+pallet-contracts-rpc-runtime-api = { path = "./pallet_contracts/rpc/runtime-api", default-features = false }
 
 # Cumulus dependencies
 cumulus-runtime = { path = "../../../runtime", default-features = false }
@@ -67,6 +69,8 @@ std = [
 	"frame-system/std",
 	"pallet-balances/std",
 	"pallet-contracts/std",
+	"pallet-contracts-primitives/std",
+	"pallet-contracts-rpc-runtime-api/std",
 	"pallet-randomness-collective-flip/std",
 	"pallet-timestamp/std",
 	"pallet-sudo/std",
