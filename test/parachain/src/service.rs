@@ -224,7 +224,7 @@ pub fn run_collator(
 		client.execute_with(SetDelayedBlockAnnounceValidator {
 			block_announce_validator,
 			para_id: id,
-			sync_oracle: Box::new(polkadot_network),
+			polkadot_sync_oracle: Box::new(polkadot_network),
 		});
 
 		task_manager
@@ -238,7 +238,7 @@ pub fn run_collator(
 struct SetDelayedBlockAnnounceValidator<B: BlockT> {
 	block_announce_validator: DelayedBlockAnnounceValidator<B>,
 	para_id: ParaId,
-	sync_oracle: Box<dyn SyncOracle + Send>,
+	polkadot_sync_oracle: Box<dyn SyncOracle + Send>,
 }
 
 impl<B: BlockT> polkadot_service::ExecuteWithClient for SetDelayedBlockAnnounceValidator<B> {
@@ -254,7 +254,7 @@ impl<B: BlockT> polkadot_service::ExecuteWithClient for SetDelayedBlockAnnounceV
 		self.block_announce_validator.set(Box::new(JustifiedBlockAnnounceValidator::new(
 			client,
 			self.para_id,
-			self.sync_oracle,
+			self.polkadot_sync_oracle,
 		)));
 	}
 }

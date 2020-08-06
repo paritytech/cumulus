@@ -55,20 +55,20 @@ pub struct JustifiedBlockAnnounceValidator<B, P> {
 	phantom: PhantomData<B>,
 	polkadot_client: Arc<P>,
 	para_id: ParaId,
-	sync_oracle: Box<dyn SyncOracle + Send>,
+	polkadot_sync_oracle: Box<dyn SyncOracle + Send>,
 }
 
 impl<B, P> JustifiedBlockAnnounceValidator<B, P> {
 	pub fn new(
 		polkadot_client: Arc<P>,
 		para_id: ParaId,
-		sync_oracle: Box<dyn SyncOracle + Send>,
+		polkadot_sync_oracle: Box<dyn SyncOracle + Send>,
 	) -> Self {
 		Self {
 			phantom: Default::default(),
 			polkadot_client,
 			para_id,
-			sync_oracle,
+			polkadot_sync_oracle,
 		}
 	}
 }
@@ -83,7 +83,7 @@ where
 		header: &B::Header,
 		mut data: &[u8],
 	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
-		if self.sync_oracle.is_major_syncing() {
+		if self.polkadot_sync_oracle.is_major_syncing() {
 			return Ok(Validation::Success { is_new_best: false });
 		}
 
