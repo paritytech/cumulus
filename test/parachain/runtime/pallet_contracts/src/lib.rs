@@ -114,11 +114,11 @@ use frame_support::dispatch::{
 };
 use frame_support::{
 	Parameter, decl_module, decl_event, decl_storage, decl_error,
-	parameter_types, IsSubType, storage::child::{self, ChildInfo},
+	parameter_types, storage::child::{self, ChildInfo},
 };
 use frame_support::traits::{OnUnbalanced, Currency, Get, Time, Randomness};
 use frame_support::weights::GetDispatchInfo;
-use frame_system::{self as system, ensure_signed, RawOrigin, ensure_root};
+use frame_system::{ensure_signed, RawOrigin, ensure_root};
 use pallet_contracts_primitives::{RentProjection, ContractAccessError};
 use frame_support::weights::Weight;
 
@@ -327,7 +327,7 @@ pub trait Trait: frame_system::Trait {
 	type Call:
 		Parameter +
 		Dispatchable<PostInfo=PostDispatchInfo, Origin=<Self as frame_system::Trait>::Origin> +
-		IsSubType<Module<Self>, Self> + GetDispatchInfo;
+		GetDispatchInfo;
 
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
