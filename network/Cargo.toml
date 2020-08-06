@@ -14,11 +14,11 @@ sp-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-bra
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # polkadot deps
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
-polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
-polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
-polkadot-network = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-network = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
 
 # cumulus deps
 cumulus-primitives = { path = "../primitives" }
@@ -38,4 +38,4 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-br
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # polkadot deps
-polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
+polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }

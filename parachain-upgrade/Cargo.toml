@@ -11,7 +11,7 @@ cumulus-primitives = { path = "../primitives", default-features = false }
 cumulus-runtime = { path = "../runtime", default-features = false }
 
 # Polkadot dependencies
-parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing", default-features = false }
+parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", branch = "rococo-branch", default-features = false }
 
 # Substrate dependencies
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }

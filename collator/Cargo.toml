@@ -17,11 +17,11 @@ sc-service = { git = "https://github.com/paritytech/substrate", branch = "rococo
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # Polkadot dependencies
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
-polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../consensus" }
@@ -47,7 +47,7 @@ sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "roc
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # Polkadot dependencies
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-dont-validate-block-announcement-when-syncing" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
 
 # Other dependencies
 env_logger = "0.7.1"
