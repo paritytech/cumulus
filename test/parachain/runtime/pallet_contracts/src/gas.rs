@@ -179,7 +179,7 @@ impl<T: Trait> GasMeter<T> {
 	}
 
 	/// Returns how much gas left from the initial budget.
-	fn gas_spent(&self) -> Gas {
+	pub fn gas_spent(&self) -> Gas {
 		self.gas_limit - self.gas_left
 	}
 
