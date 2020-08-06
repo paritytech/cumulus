@@ -27,7 +27,7 @@ use sp_std::prelude::*;
 use sp_io::hashing::blake2_256;
 use sp_runtime::traits::{Bounded, Zero};
 use frame_support::traits::{Currency, Imbalance, SignedImbalance};
-use frame_support::{storage::child, StorageMap};
+use frame_support::{storage::unhashed as storage, StorageMap};
 use frame_system;
 
 // Note: we don't provide Option<Contract> because we can't create
@@ -134,7 +134,7 @@ impl<T: Trait> AccountDb<T> for DirectAccountDb {
 		location: &StorageKey,
 	) -> Option<Vec<u8>> {
 		trie_id
-			.and_then(|id| child::get_raw(&crate::child_trie_info(&id[..]), &blake2_256(location)))
+			.and_then(|id| storage::get_raw(&crate::prefixed_key(id, &blake2_256(location))))
 	}
 	fn get_code_hash(&self, account: &T::AccountId) -> Option<CodeHash<T>> {
 		<ContractInfoOf<T>>::get(account).and_then(|i| i.as_alive().map(|i| i.code_hash))
@@ -173,13 +173,13 @@ impl<T: Trait> AccountDb<T> for DirectAccountDb {
 					(false, Some(info), _) => info,
 					// Existing contract is being removed.
 					(true, Some(info), None) => {
-						child::kill_storage(&info.child_trie_info());
+						storage::kill_prefix(&info.trie_id);
 						<ContractInfoOf<T>>::remove(&address);
 						continue;
 					}
 					// Existing contract is being replaced by a new one.
 					(true, Some(info), Some(code_hash)) => {
-						child::kill_storage(&info.child_trie_info());
+						storage::kill_prefix(&info.trie_id);
 						AliveContractInfo::<T> {
 							code_hash,
 							storage_size: 0,
@@ -218,14 +218,10 @@ impl<T: Trait> AccountDb<T> for DirectAccountDb {
 					new_info.last_write = Some(<frame_system::Module<T>>::block_number());
 				}
 
-				// NB: this call allocates internally. To keep allocations to the minimum we cache
-				// the child trie info here.
-				let child_trie_info = new_info.child_trie_info();
-
 				// Here we iterate over all storage key-value pairs that were changed throughout the
 				// execution of a contract and apply them to the substrate storage.
 				for (key, opt_new_value) in changed.storage.into_iter() {
-					let hashed_key = blake2_256(&key);
+					let hashed_key = new_info.prefixed_key(&blake2_256(&key));
 
 					// In order to correctly update the book keeping we need to fetch the previous
 					// value of the key-value pair.
@@ -236,7 +232,7 @@ impl<T: Trait> AccountDb<T> for DirectAccountDb {
 					//
 					// That's not a show stopper in any case, since the performance cost is
 					// dominated by the trie traversal anyway.
-					let opt_prev_value = child::get_raw(&child_trie_info, &hashed_key);
+					let opt_prev_value = storage::get_raw(&hashed_key);
 
 					// Update the total number of KV pairs and the number of empty pairs.
 					match (&opt_prev_value, &opt_new_value) {
@@ -279,8 +275,8 @@ impl<T: Trait> AccountDb<T> for DirectAccountDb {
 
 					// Finally, perform the change on the storage.
 					match opt_new_value {
-						Some(new_value) => child::put_raw(&child_trie_info, &hashed_key, &new_value[..]),
-						None => child::kill(&child_trie_info, &hashed_key),
+						Some(new_value) => storage::put_raw(&hashed_key, &new_value[..]),
+						None => storage::kill(&hashed_key),
 					}
 				}
 

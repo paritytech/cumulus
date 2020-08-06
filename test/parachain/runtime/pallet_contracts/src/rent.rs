@@ -20,7 +20,7 @@ use crate::{
 	AliveContractInfo, BalanceOf, ContractInfo, ContractInfoOf, Module, RawEvent,
 	TombstoneContractInfo, Trait,
 };
-use frame_support::storage::child;
+use frame_support::storage::unhashed as storage;
 use frame_support::traits::{Currency, ExistenceRequirement, Get, OnUnbalanced, WithdrawReason};
 use frame_support::StorageMap;
 use pallet_contracts_primitives::{ContractAccessError, RentProjection, RentProjectionResult};
@@ -227,9 +227,7 @@ fn enact_verdict<T: Trait>(
 		Verdict::Exempt => return Some(ContractInfo::Alive(alive_contract_info)),
 		Verdict::Kill => {
 			<ContractInfoOf<T>>::remove(account);
-			child::kill_storage(
-				&alive_contract_info.child_trie_info(),
-			);
+			storage::kill_prefix(&alive_contract_info.trie_id);
 			<Module<T>>::deposit_event(RawEvent::Evicted(account.clone(), false));
 			None
 		}
@@ -238,21 +236,16 @@ fn enact_verdict<T: Trait>(
 				amount.withdraw(account);
 			}
 
-			// Note: this operation is heavy.
-			let child_storage_root = child::root(
-				&alive_contract_info.child_trie_info(),
-			);
-
+			// Use a dummy storage root because restoration is currentlyy unsupported
+			// for parachains anyways.
 			let tombstone = <TombstoneContractInfo<T>>::new(
-				&child_storage_root[..],
+				&[0u8; 32],
 				alive_contract_info.code_hash,
 			);
 			let tombstone_info = ContractInfo::Tombstone(tombstone);
 			<ContractInfoOf<T>>::insert(account, &tombstone_info);
 
-			child::kill_storage(
-				&alive_contract_info.child_trie_info(),
-			);
+			storage::kill_prefix(&alive_contract_info.trie_id);
 
 			<Module<T>>::deposit_event(RawEvent::Evicted(account.clone(), true));
 			Some(tombstone_info)

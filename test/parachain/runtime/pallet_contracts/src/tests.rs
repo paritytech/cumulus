@@ -1253,7 +1253,9 @@ fn restoration_different_storage() {
 	restoration(true, false);
 }
 
+// Restoration unsupported for parachains
 #[test]
+#[ignore]
 fn restoration_success() {
 	restoration(false, false);
 }
