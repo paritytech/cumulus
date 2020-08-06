@@ -23,7 +23,7 @@ mod tests;
 
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Error as ClientError, HeaderBackend};
-use sp_consensus::block_validation::{BlockAnnounceValidator, Validation};
+use sp_consensus::{block_validation::{BlockAnnounceValidator, Validation}, SyncOracle};
 use sp_core::traits::SpawnNamed;
 use sp_runtime::{
 	generic::BlockId,
@@ -55,20 +55,20 @@ pub struct JustifiedBlockAnnounceValidator<B, P> {
 	phantom: PhantomData<B>,
 	polkadot_client: Arc<P>,
 	para_id: ParaId,
-	is_major_syncing: Box<dyn FnMut() -> bool + Send + Sync>,
+	sync_oracle: Box<dyn SyncOracle + Send>,
 }
 
 impl<B, P> JustifiedBlockAnnounceValidator<B, P> {
 	pub fn new(
 		polkadot_client: Arc<P>,
 		para_id: ParaId,
-		is_major_syncing: impl FnMut() -> bool + Send + Sync + 'static,
+		sync_oracle: Box<dyn SyncOracle + Send>,
 	) -> Self {
 		Self {
 			phantom: Default::default(),
 			polkadot_client,
 			para_id,
-			is_major_syncing: Box::new(is_major_syncing),
+			sync_oracle,
 		}
 	}
 }
@@ -83,7 +83,7 @@ where
 		header: &B::Header,
 		mut data: &[u8],
 	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
-		if (self.is_major_syncing)() {
+		if self.sync_oracle.is_major_syncing() {
 			return Ok(Validation::Success { is_new_best: false });
 		}
 

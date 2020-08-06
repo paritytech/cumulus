@@ -220,9 +220,12 @@ pub fn run_collator(
 		let polkadot_future = async move {
 			polkadot_task_manager.future().await.expect("polkadot essential task failed");
 		};
-		let mut polkadot_network = handles.polkadot_network.expect("polkadot service is started; qed");
-		let is_major_syncing = Box::new(move || polkadot_network.is_major_syncing());
-		client.execute_with(SetDelayedBlockAnnounceValidator { block_announce_validator, para_id: id, is_major_syncing });
+		let polkadot_network = handles.polkadot_network.expect("polkadot service is started; qed");
+		client.execute_with(SetDelayedBlockAnnounceValidator {
+			block_announce_validator,
+			para_id: id,
+			sync_oracle: Box::new(polkadot_network),
+		});
 
 		task_manager
 			.spawn_essential_handle()
@@ -235,7 +238,7 @@ pub fn run_collator(
 struct SetDelayedBlockAnnounceValidator<B: BlockT> {
 	block_announce_validator: DelayedBlockAnnounceValidator<B>,
 	para_id: ParaId,
-	is_major_syncing: Box<dyn FnMut() -> bool + Send + Sync>,
+	sync_oracle: Box<dyn SyncOracle + Send>,
 }
 
 impl<B: BlockT> polkadot_service::ExecuteWithClient for SetDelayedBlockAnnounceValidator<B> {
@@ -248,6 +251,10 @@ impl<B: BlockT> polkadot_service::ExecuteWithClient for SetDelayedBlockAnnounceV
 		Api: RuntimeApiCollection<StateBackend = Backend::State>,
 		Client: AbstractClient<PBlock, Backend, Api = Api> + 'static
 	{
-		self.block_announce_validator.set(Box::new(JustifiedBlockAnnounceValidator::new(client, self.para_id, self.is_major_syncing)));
+		self.block_announce_validator.set(Box::new(JustifiedBlockAnnounceValidator::new(
+			client,
+			self.para_id,
+			self.sync_oracle,
+		)));
 	}
 }
