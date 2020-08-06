@@ -36,6 +36,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 mod message_example;
+mod para_id;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
@@ -264,6 +265,8 @@ impl message_example::Trait for Runtime {
 	type XCMPMessageSender = MessageBroker;
 }
 
+impl para_id::Trait for Runtime {}
+
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
@@ -277,8 +280,9 @@ construct_runtime! {
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
 		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
-		TokenDealer: message_example::{Module, Call, Event<T>, Config},
+		TokenDealer: message_example::{Module, Call, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
+		ParaId: para_id::{Module, Storage, Config},
 	}
 }
 
