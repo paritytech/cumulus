@@ -17,7 +17,7 @@
 use cumulus_primitives::ParaId;
 use parachain_runtime::{
 	AccountId, BalancesConfig, GenesisConfig, Signature, SudoConfig, SystemConfig,
-	TokenDealerConfig, WASM_BINARY,
+	TokenDealerConfig, WASM_BINARY, ContractsConfig,
 };
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
@@ -141,5 +141,6 @@ fn testnet_genesis(
 		}),
 		pallet_sudo: Some(SudoConfig { key: root_key }),
 		message_example: Some(TokenDealerConfig { parachain_id: id }),
+        pallet_contracts: Some(ContractsConfig { current_schedule: Default::default() }),
 	}
 }
