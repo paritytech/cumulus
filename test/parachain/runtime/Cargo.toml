@@ -30,6 +30,9 @@ pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-fe
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
 
+# In-Tree Fork of seal that does not use child trie nor storage transactions
+pallet-contracts = { path = "./pallet_contracts", default-features = false }
+
 # Cumulus dependencies
 cumulus-runtime = { path = "../../../runtime", default-features = false }
 cumulus-parachain-upgrade = { path = "../../../parachain-upgrade", default-features = false }
@@ -63,6 +66,7 @@ std = [
 	"frame-executive/std",
 	"frame-system/std",
 	"pallet-balances/std",
+	"pallet-contracts/std",
 	"pallet-randomness-collective-flip/std",
 	"pallet-timestamp/std",
 	"pallet-sudo/std",

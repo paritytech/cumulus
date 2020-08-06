@@ -12,11 +12,11 @@ description = "Runtime API definition required by Contracts RPC extensions."
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-sp-api = { version = "2.0.0-rc3", default-features = false, path = "../../../../primitives/api" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
 codec = { package = "parity-scale-codec", version = "1.3.1", default-features = false, features = ["derive"] }
-sp-std = { version = "2.0.0-rc3", default-features = false, path = "../../../../primitives/std" }
-sp-runtime = { version = "2.0.0-rc3", default-features = false, path = "../../../../primitives/runtime" }
-pallet-contracts-primitives = { version = "2.0.0-rc3", default-features = false, path = "../../common" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
+pallet-contracts-primitives = { version = "2.0.0-rc3", path = "../../common" }
 
 [features]
 default = ["std"]
