@@ -1,5 +1,5 @@
 [package]
-name = 'cumulus-test-parachain-runtime'
+name = 'cumulus-contracts-parachain-runtime'
 version = '0.1.0'
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = '2018'
@@ -29,6 +29,11 @@ pallet-randomness-collective-flip = { git = "https://github.com/paritytech/subst
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
+
+# In-Tree Fork of seal that does not use child trie nor storage transactions
+pallet-contracts = { path = "../pallets/contracts", default-features = false }
+pallet-contracts-primitives = {  path = "../pallets/contracts/common", default-features = false }
+pallet-contracts-rpc-runtime-api = { path = "../pallets/contracts/rpc/runtime-api", default-features = false }
 
 # Cumulus dependencies
 cumulus-runtime = { path = "../../../runtime", default-features = false }
@@ -63,6 +68,9 @@ std = [
 	"frame-executive/std",
 	"frame-system/std",
 	"pallet-balances/std",
+	"pallet-contracts/std",
+	"pallet-contracts-primitives/std",
+	"pallet-contracts-rpc-runtime-api/std",
 	"pallet-randomness-collective-flip/std",
 	"pallet-timestamp/std",
 	"pallet-sudo/std",

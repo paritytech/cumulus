@@ -156,14 +156,18 @@ pub fn run_collator(
 		})?;
 
 	let rpc_extensions_builder = {
-		let client = client.clone();
+		let _client = client.clone();
 
 		Box::new(move |_deny_unsafe| {
+			let io = jsonrpc_core::IoHandler::default();
+
+			// TODO: add this rpc when running the contracts runtime
+			/*
 			use pallet_contracts_rpc::{Contracts, ContractsApi};
-			let mut io = jsonrpc_core::IoHandler::default();
 			io.extend_with(
 				ContractsApi::to_delegate(Contracts::new(client.clone()))
 			);
+			*/
 			io
 		})
 	};
