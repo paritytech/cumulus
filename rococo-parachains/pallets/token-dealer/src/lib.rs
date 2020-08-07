@@ -73,7 +73,7 @@ decl_event! {
 }
 
 decl_module! {
-	pub struct Module<T: Trait> for enum Call where origin: T::Origin, system = frame_system {
+	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
 		/// Transfer `amount` of tokens on the relay chain from the Parachain account to
 		/// the given `dest` account.
 		#[weight = 10]
