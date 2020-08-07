@@ -48,10 +48,10 @@ sc-informant = { git = "https://github.com/paritytech/substrate", branch = "roco
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # Cumulus dependencies
-cumulus-consensus = { path = "../../consensus" }
-cumulus-collator = { path = "../../collator" }
-cumulus-network = { path = "../../network" }
-cumulus-primitives = { path = "../../primitives" }
+cumulus-consensus = { path = "../consensus" }
+cumulus-collator = { path = "../collator" }
+cumulus-network = { path = "../network" }
+cumulus-primitives = { path = "../primitives" }
 
 # Polkadot dependencies
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }

@@ -6,11 +6,11 @@ members = [
 	"parachain-upgrade",
 	"primitives",
 	"runtime",
+	"rococo-parachains/pallets/token-dealer",
+	"rococo-parachains/runtime",
+	"rococo-parachains/",
 	"test/runtime",
 	"test/client",
-	"test/parachain/pallets/token-dealer",
-	"test/parachain/runtime",
-	"test/parachain/",
 	"upward-message",
 ]
 
