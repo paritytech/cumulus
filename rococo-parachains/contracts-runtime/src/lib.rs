@@ -265,11 +265,12 @@ impl message_example::Trait for Runtime {
 	type XCMPMessageSender = MessageBroker;
 }
 
+// We disable the rent system for easier testing.
 parameter_types! {
-	pub const TombstoneDeposit: Balance = 16 * 1_000_000;
-	pub const RentByteFee: Balance = 4 * 1_000_000;
-	pub const RentDepositOffset: Balance = 1 * 1_000_000_000;
-	pub const SurchargeReward: Balance = 150 * 1_000_000;
+	pub const TombstoneDeposit: Balance = 0;
+	pub const RentByteFee: Balance = 0;
+	pub const RentDepositOffset: Balance = 0;
+	pub const SurchargeReward: Balance = 0;
 }
 
 impl pallet_contracts::Trait for Runtime {
