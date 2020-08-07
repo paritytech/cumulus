@@ -47,6 +47,10 @@ sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch 
 sc-informant = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
+# RPC related dependencies
+pallet-contracts-rpc = { path = "./runtime/pallet_contracts/rpc" }
+jsonrpc-core = "14.2.0"
+
 # Cumulus dependencies
 cumulus-consensus = { path = "../../consensus" }
 cumulus-collator = { path = "../../collator" }

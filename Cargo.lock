@@ -3739,6 +3739,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-contracts-rpc"
+version = "0.8.0-rc3"
+dependencies = [
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "pallet-contracts-primitives",
+ "pallet-contracts-rpc-runtime-api",
+ "parity-scale-codec",
+ "serde",
+ "serde_json",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
 name = "pallet-contracts-rpc-runtime-api"
 version = "0.8.0-rc3"
 dependencies = [
@@ -5712,8 +5731,10 @@ dependencies = [
  "exit-future 0.1.4",
  "futures 0.3.5",
  "hex-literal",
+ "jsonrpc-core",
  "log 0.4.11",
  "nix 0.17.0",
+ "pallet-contracts-rpc",
  "pallet-sudo",
  "parity-scale-codec",
  "parking_lot 0.9.0",
