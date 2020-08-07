@@ -11,6 +11,9 @@ members = [
 	"rococo-parachains/",
 	"test/runtime",
 	"test/client",
+	"rococo-parachains",
+	"rococo-parachains/runtime",
+	"rococo-parachains/contracts-runtime",
 	"upward-message",
 ]
 

@@ -24,6 +24,7 @@ hex-literal = "0.2.1"
 
 # Parachain dependencies
 parachain-runtime = { package = "cumulus-test-parachain-runtime", path = "runtime" }
+parachain-contracts-runtime = { package = "cumulus-contracts-parachain-runtime", path = "contracts-runtime" }
 
 # Substrate dependencies
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
@@ -46,6 +47,10 @@ sp-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-bra
 sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sc-informant = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+
+# RPC related dependencies
+pallet-contracts-rpc = { path = "./pallets/contracts/rpc" }
+jsonrpc-core = "14.2.0"
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../consensus" }
