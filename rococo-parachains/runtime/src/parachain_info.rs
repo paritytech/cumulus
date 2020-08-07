@@ -33,12 +33,6 @@ decl_storage! {
 	trait Store for Module<T: Trait> as ParachainUpgrade {
 		ParachainId get(fn parachain_id) config(): ParaId = 100.into();
 	}
-	// add_extra_genesis {
-	// 	config(parachain_id): ParaId;
-	// 	build(|config: &Self| {
-	// 		crate::ParachainId::set(&config.parachain_id);
-	// 	});
-	// }
 }
 
 decl_module! {

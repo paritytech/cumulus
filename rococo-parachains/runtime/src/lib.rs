@@ -246,10 +246,6 @@ impl cumulus_parachain_upgrade::Trait for Runtime {
 	type OnValidationFunctionParams = ();
 }
 
-// parameter_types! {
-// 	pub storage ParachainId: cumulus_primitives::ParaId = 100.into();
-// }
-
 impl cumulus_message_broker::Trait for Runtime {
 	type Event = Event;
 	type DownwardMessageHandlers = TokenDealer;
