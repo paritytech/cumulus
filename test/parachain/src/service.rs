@@ -197,7 +197,7 @@ pub fn run_collator(
 			.spawn_essential_handle()
 			.spawn("polkadot-collator", polkadot_future);
 
-		task_manager.add_children(polkadot_task_manager);
+		task_manager.add_child(polkadot_task_manager);
 	} else {
 		let is_light = matches!(polkadot_config.role, Role::Light);
 		let (polkadot_task_manager, client, handles) = if is_light {
@@ -219,7 +219,7 @@ pub fn run_collator(
 			polkadot_sync_oracle: Box::new(polkadot_network),
 		});
 
-		task_manager.add_children(polkadot_task_manager);
+		task_manager.add_child(polkadot_task_manager);
 	}
 
 	start_network.start_network();
