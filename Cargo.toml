@@ -6,6 +6,7 @@ members = [
 	"parachain-upgrade",
 	"primitives",
 	"runtime",
+	"service",
 	"test/runtime",
 	"test/client",
 	"test/parachain/runtime",

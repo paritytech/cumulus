@@ -49,9 +49,9 @@ sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "roc
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../../consensus" }
-cumulus-collator = { path = "../../collator" }
 cumulus-network = { path = "../../network" }
 cumulus-primitives = { path = "../../primitives" }
+cumulus-service = { path = "../../service" }
 
 # Polkadot dependencies
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
