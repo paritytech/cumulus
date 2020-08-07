@@ -141,6 +141,6 @@ fn testnet_genesis(
 		}),
 		pallet_sudo: Some(SudoConfig { key: root_key }),
 		message_example: Some(TokenDealerConfig { parachain_id: id }),
-        pallet_contracts: Some(ContractsConfig { current_schedule: Default::default() }),
+		pallet_contracts: Some(ContractsConfig { current_schedule: Default::default() }),
 	}
 }
