@@ -961,6 +961,7 @@ dependencies = [
  "cumulus-parachain-upgrade",
  "cumulus-primitives",
  "cumulus-runtime",
+ "cumulus-token-dealer",
  "cumulus-upward-message",
  "frame-executive",
  "frame-support",
@@ -973,6 +974,7 @@ dependencies = [
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
+ "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
  "serde",
@@ -988,7 +990,6 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder-runner 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "token-dealer",
 ]
 
 [[package]]
@@ -1115,6 +1116,7 @@ dependencies = [
  "cumulus-parachain-upgrade",
  "cumulus-primitives",
  "cumulus-runtime",
+ "cumulus-token-dealer",
  "cumulus-upward-message",
  "frame-executive",
  "frame-support",
@@ -1124,6 +1126,7 @@ dependencies = [
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
+ "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
  "serde",
@@ -1139,7 +1142,6 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder-runner 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "token-dealer",
 ]
 
 [[package]]
@@ -1149,6 +1151,18 @@ dependencies = [
  "cumulus-runtime",
  "substrate-test-runtime",
  "substrate-wasm-builder-runner 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "cumulus-token-dealer"
+version = "0.1.0"
+dependencies = [
+ "cumulus-primitives",
+ "cumulus-upward-message",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "polkadot-parachain",
 ]
 
 [[package]]
@@ -4223,6 +4237,17 @@ dependencies = [
  "serde",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "parachain-info"
+version = "0.1.0"
+dependencies = [
+ "cumulus-primitives",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde",
 ]
 
 [[package]]
@@ -8381,18 +8406,6 @@ name = "tinyvec"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "53953d2d3a5ad81d9f844a32f14ebb121f50b650cd59d0ee2a07cf13c617efed"
-
-[[package]]
-name = "token-dealer"
-version = "2.0.0-rc5"
-dependencies = [
- "cumulus-primitives",
- "cumulus-upward-message",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "polkadot-parachain",
-]
 
 [[package]]
 name = "tokio"
