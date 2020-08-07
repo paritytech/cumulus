@@ -267,7 +267,7 @@ impl token_dealer::Trait for Runtime {
 	type XCMPMessageSender = MessageBroker;
 }
 
-impl para_id::Trait for Runtime {}
+impl parachain_info::Trait for Runtime {}
 
 construct_runtime! {
 	pub enum Runtime where

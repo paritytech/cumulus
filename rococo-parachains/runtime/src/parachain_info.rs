@@ -23,7 +23,7 @@ use cumulus_primitives::ParaId;
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {}
 
-impl Get<ParaId> for Module {
+impl <T: Trait> Get<ParaId> for Module<T> {
 	fn get() -> ParaId {
 		Self::parachain_id()
 	}
@@ -31,7 +31,7 @@ impl Get<ParaId> for Module {
 
 decl_storage! {
 	trait Store for Module<T: Trait> as ParachainUpgrade {
-		ParachainId config(parachain_id): ParaId = 100.into();
+		ParachainId get(fn parachain_id) config(): ParaId = 100.into();
 	}
 	// add_extra_genesis {
 	// 	config(parachain_id): ParaId;
