@@ -312,7 +312,7 @@ mod tests {
 			let actual = serde_json::to_string(&res).unwrap();
 			assert_eq!(actual, expected);
 		}
-		test(r#"{"success":{"status":5,"data":"0x1234"}}"#);
+		test(r#"{"success":{"flags":5,"data":"0x1234","gas_consumed":99}}"#);
 		test(r#"{"error":null}"#);
 	}
 }
