@@ -195,7 +195,7 @@ pub fn run_collator(
 
 		task_manager
 			.spawn_essential_handle()
-			.spawn("polkadot-collator", polkadot_future);
+			.spawn("polkadot", polkadot_future);
 
 		task_manager.add_child(polkadot_task_manager);
 	} else {
