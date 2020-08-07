@@ -16,25 +16,29 @@
 
 //! Minimal Pallet that injects a ParachainId into Runtime storage from
 
-use frame_support::{decl_module, decl_storage};
+use frame_support::{decl_module, decl_storage, traits::Get};
 
 use cumulus_primitives::ParaId;
 
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {}
 
-
-// This is basically a hack to make the parachain id easily configurable.
-// Could also be done differently, but yeah..
-// Maybe a runtime interface and host function is a better long-term solution?
-decl_storage! {
-	trait Store for Module<T: Trait> as ParachainUpgrade {}
-	add_extra_genesis {
-		config(parachain_id): ParaId;
-		build(|config: &Self| {
-			crate::ParachainId::set(&config.parachain_id);
-		});
+impl Get<ParaId> for Module {
+	fn get() -> ParaId {
+		Self::parachain_id()
 	}
+}
+
+decl_storage! {
+	trait Store for Module<T: Trait> as ParachainUpgrade {
+		ParachainId config(parachain_id): ParaId = 100.into();
+	}
+	// add_extra_genesis {
+	// 	config(parachain_id): ParaId;
+	// 	build(|config: &Self| {
+	// 		crate::ParachainId::set(&config.parachain_id);
+	// 	});
+	// }
 }
 
 decl_module! {

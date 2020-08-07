@@ -35,7 +35,7 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-mod para_id;
+mod parachain_info;
 
 /// Import the token dealer pallet.
 pub use token_dealer;
@@ -246,15 +246,15 @@ impl cumulus_parachain_upgrade::Trait for Runtime {
 	type OnValidationFunctionParams = ();
 }
 
-parameter_types! {
-	pub storage ParachainId: cumulus_primitives::ParaId = 100.into();
-}
+// parameter_types! {
+// 	pub storage ParachainId: cumulus_primitives::ParaId = 100.into();
+// }
 
 impl cumulus_message_broker::Trait for Runtime {
 	type Event = Event;
 	type DownwardMessageHandlers = TokenDealer;
 	type UpwardMessage = cumulus_upward_message::RococoUpwardMessage;
-	type ParachainId = ParachainId;
+	type ParachainId = ParachainInfo;
 	type XCMPMessage = token_dealer::XCMPMessage<AccountId, Balance>;
 	type XCMPMessageHandlers = TokenDealer;
 }
@@ -284,7 +284,7 @@ construct_runtime! {
 		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
 		TokenDealer: token_dealer::{Module, Call, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
-		ParaId: para_id::{Module, Storage, Config},
+		ParachainInfo: parachain_info::{Module, Storage, Config},
 	}
 }
 
