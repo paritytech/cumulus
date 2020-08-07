@@ -163,21 +163,38 @@ pub fn run_node(
 	let import_queue = params.import_queue;
 	let (network, network_status_sinks, system_rpc_tx, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
-			config: &parachain_config,
-			client: client.clone(),
-			transaction_pool: transaction_pool.clone(),
-			spawn_handle: task_manager.spawn_handle(),
-			import_queue,
-			on_demand: None,
-			block_announce_validator_builder: Some(Box::new(block_announce_validator_builder)),
-			finality_proof_request_builder: None,
-			finality_proof_provider: None,
+				config: &parachain_config,
+				client: client.clone(),
+				transaction_pool: transaction_pool.clone(),
+				spawn_handle: task_manager.spawn_handle(),
+				import_queue,
+				on_demand: None,
+				block_announce_validator_builder: Some(Box::new(block_announce_validator_builder)),
+				finality_proof_request_builder: None,
+				finality_proof_provider: None,
 		})?;
+
+	let rpc_extensions_builder = {
+		let _client = client.clone();
+
+		Box::new(move |_deny_unsafe| {
+			let io = jsonrpc_core::IoHandler::default();
+
+			// TODO: add this rpc when running the contracts runtime
+			/*
+			use pallet_contracts_rpc::{Contracts, ContractsApi};
+			io.extend_with(
+				ContractsApi::to_delegate(Contracts::new(client.clone()))
+			);
+			*/
+			io
+		})
+	};
 
 	sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 		on_demand: None,
 		remote_blockchain: None,
-		rpc_extensions_builder: Box::new(|_| ()),
+		rpc_extensions_builder,
 		client: client.clone(),
 		transaction_pool: transaction_pool.clone(),
 		task_manager: &mut task_manager,
