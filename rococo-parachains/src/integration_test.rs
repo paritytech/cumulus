@@ -60,7 +60,8 @@ async fn integration_test() {
 		INTEGRATION_TEST_ALLOWED_TIME
 			.and_then(|x| x.parse().ok())
 			.unwrap_or(600),
-	)).fuse();
+	))
+	.fuse();
 
 	let t2 = async {
 		let para_id = ParaId::from(100);
