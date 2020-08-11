@@ -22,4 +22,4 @@ _In order to register a Rococo parachain, you will need to maintain a validator 
 
 # Contact Information
 
-- [Riot](https://app.element.io/#/room/!WuksvCDImqYSxvNmua:matrix.parity.io?via=matrix.parity.io&via=matrix.org&via=web3.foundation) username:
+- [Matrix](https://app.element.io/#/room/!WuksvCDImqYSxvNmua:matrix.parity.io?via=matrix.parity.io&via=matrix.org&via=web3.foundation) username:
