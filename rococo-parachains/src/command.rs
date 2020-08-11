@@ -297,7 +297,7 @@ pub fn run() -> Result<()> {
 						polkadot_config,
 						id,
 						cli.run.base.validator,
-					)
+					).map(|r| r.0)
 				}
 			})
 		}

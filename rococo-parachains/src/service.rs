@@ -126,7 +126,7 @@ fn start_node_impl<RuntimeApi, Executor, RB>(
 	id: polkadot_primitives::v0::Id,
 	validator: bool,
 	rpc_ext_builder: RB,
-) -> sc_service::error::Result<TaskManager>
+) -> sc_service::error::Result<(TaskManager, Arc<TFullClient<Block, RuntimeApi, Executor>>)>
 where
 	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, Executor>>
 		+ Send
@@ -146,7 +146,8 @@ where
 	RB: Fn(
 			Arc<TFullClient<Block, RuntimeApi, Executor>>,
 		) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
-		+ Send + 'static,
+		+ Send
+		+ 'static,
 {
 	if matches!(parachain_config.role, Role::Light) {
 		return Err("Light client not supported!".into());
@@ -256,7 +257,7 @@ where
 
 	start_network.start_network();
 
-	Ok(task_manager)
+	Ok((task_manager, client))
 }
 
 /// Start a normal parachain node.
@@ -266,7 +267,10 @@ pub fn start_node(
 	polkadot_config: polkadot_collator::Configuration,
 	id: polkadot_primitives::v0::Id,
 	validator: bool,
-) -> sc_service::error::Result<TaskManager> {
+) -> sc_service::error::Result<(
+	TaskManager,
+	Arc<TFullClient<Block, parachain_runtime::RuntimeApi, RuntimeExecutor>>,
+)> {
 	start_node_impl::<parachain_runtime::RuntimeApi, RuntimeExecutor, _>(
 		parachain_config,
 		collator_key,
@@ -299,4 +303,5 @@ pub fn start_contracts_node(
 			io
 		},
 	)
+	.map(|r| r.0)
 }
