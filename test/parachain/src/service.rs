@@ -190,8 +190,28 @@ pub fn run_collator(
 			block_announce_validator,
 		);
 
-		let (polkadot_future, polkadot_task_manager) =
-			polkadot_collator::start_collator(builder, id, key, polkadot_config)?;
+		let (polkadot_future, polkadot_task_manager) = if cfg!(test) {
+			let (task_manager, client, handles, _network, _rpc_handlers) = polkadot_test_service::polkadot_test_new_full(
+				polkadot_config,
+				Some((key.public(), id)),
+				None,
+				false,
+				6000,
+			)?;
+
+			let future = polkadot_collator::build_collator_service(
+				task_manager.spawn_handle(),
+				handles,
+				client,
+				id,
+				key,
+				builder,
+			)?;
+
+			(future, task_manager)
+		} else {
+			polkadot_collator::start_collator(builder, id, key, polkadot_config)?
+		};
 
 		task_manager
 			.spawn_essential_handle()

@@ -42,6 +42,7 @@ static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TE
 #[tokio::test]
 #[ignore]
 async fn integration_test() {
+	sc_cli::init_logger("");
 	let task_executor: TaskExecutor = (|fut, _| spawn(fut).map(|_| ())).into();
 
 	// start alice
@@ -123,6 +124,7 @@ async fn integration_test() {
 		},
 		_ = t2 => {},
 	}
+	assert!(false);
 }
 
 pub fn parachain_config(
