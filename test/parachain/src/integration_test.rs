@@ -124,7 +124,6 @@ async fn integration_test() {
 		},
 		_ = t2 => {},
 	}
-	assert!(false);
 }
 
 pub fn parachain_config(

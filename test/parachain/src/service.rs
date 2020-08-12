@@ -26,7 +26,7 @@ use std::sync::Arc;
 use sp_core::crypto::Pair;
 use sp_trie::PrefixedMemoryDB;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
-use polkadot_service::{AbstractClient, RuntimeApiCollection};
+use polkadot_service::{AbstractClient, RuntimeApiCollection, YaExecuteWithClient};
 use sp_consensus::SyncOracle;
 
 // Our native executor instance.
@@ -199,10 +199,12 @@ pub fn run_collator(
 				6000,
 			)?;
 
+			let test_client = polkadot_test_service::TestClient(client);
+
 			let future = polkadot_collator::build_collator_service(
 				task_manager.spawn_handle(),
 				handles,
-				client,
+				test_client,
 				id,
 				key,
 				builder,
