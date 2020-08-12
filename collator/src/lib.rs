@@ -428,19 +428,18 @@ where
 {
 	type ParachainContext = Collator<Block, PF, BI, BS>;
 
-	fn build<Spawner, Client2, Block2, Backend2>(
+	fn build<Spawner, PClient, Backend2>(
 		self,
-		polkadot_client: Arc<Client2>,
+		polkadot_client: Arc<PClient>,
 		spawner: Spawner,
 		polkadot_network: impl CollatorNetwork + SyncOracle + Clone + 'static,
 	) -> Result<Self::ParachainContext, ()>
 	where
 		Spawner: SpawnNamed + Clone + Send + Sync + 'static,
-		Block2: BlockT,
-		Backend2: BackendT<Block2>,
+		Backend2: BackendT<PBlock>,
 		Backend2::State: sp_api::StateBackend<BlakeTwo256>,
-		Client2: polkadot_service::AbstractClient<Block2, Backend2>,
-		Client2::Api: RuntimeApiCollection<StateBackend = Backend2::State>,
+		PClient: polkadot_service::AbstractClient<PBlock, Backend2> + 'static,
+		PClient::Api: RuntimeApiCollection<StateBackend = Backend2::State>,
 	{
 		let CollatorBuilder {
 			proposer_factory,
@@ -453,21 +452,6 @@ where
 			delayed_block_announce_validator,
 			_marker,
 		} = self;
-		/*
-		polkadot_client.execute_with(CollatorBuilderWithClient {
-			spawner,
-			polkadot_network,
-			proposer_factory,
-			inherent_data_providers,
-			block_import,
-			block_status,
-			para_id,
-			client,
-			announce_block,
-			delayed_block_announce_validator,
-			_marker,
-		})
-		*/
 		delayed_block_announce_validator
 			.set(Box::new(JustifiedBlockAnnounceValidator::new(
 				polkadot_client.clone(),
@@ -502,58 +486,6 @@ where
 		))
 	}
 }
-
-/*
-pub struct CollatorBuilderWithClient<Block: BlockT, PF, BI, Backend, Client, BS, Spawner, Network> {
-	proposer_factory: PF,
-	inherent_data_providers: InherentDataProviders,
-	block_import: BI,
-	block_status: Arc<BS>,
-	para_id: ParaId,
-	client: Arc<Client>,
-	announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
-	delayed_block_announce_validator: DelayedBlockAnnounceValidator<Block>,
-	_marker: PhantomData<(Block, Backend)>,
-	spawner: Spawner,
-	polkadot_network: Network,
-}
-
-impl<Block: BlockT, PF, BI, Backend, Client, BS, Spawner, Network>
-	polkadot_service::ExecuteWithClient
-	for CollatorBuilderWithClient<Block, PF, BI, Backend, Client, BS, Spawner, Network>
-where
-	PF: Environment<Block> + Send + 'static,
-	BI: BlockImport<Block, Error = sp_consensus::Error, Transaction = TransactionFor<PF, Block>>
-		+ Send
-		+ Sync
-		+ 'static,
-	Backend: sc_client_api::Backend<Block> + 'static,
-	Client: Finalizer<Block, Backend>
-		+ UsageProvider<Block>
-		+ HeaderBackend<Block>
-		+ Send
-		+ Sync
-		+ BlockBackend<Block>
-		+ 'static,
-	for<'a> &'a Client: BlockImport<Block>,
-	BS: BlockBackend<Block>,
-	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
-	Network: CollatorNetwork + SyncOracle + Clone + 'static,
-{
-	type Output = Result<Collator<Block, PF, BI, BS>, ()>;
-
-	fn execute_with_client<PClient, Api, PBackend>(
-		self,
-		polkadot_client: Arc<PClient>,
-	) -> Self::Output
-	where
-		<Api as ApiExt<PBlock>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
-		PBackend: sc_client_api::Backend<PBlock>,
-		PBackend::State: StateBackend<BlakeTwo256>,
-		Api: RuntimeApiCollection<StateBackend = PBackend::State>,
-		PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
-}
-*/
 
 /// Prepare the collator's node condifugration
 ///
