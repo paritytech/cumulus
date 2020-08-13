@@ -13,26 +13,26 @@ parachain-info = { path = "../pallets/parachain-info", default-features = false}
 rococo-parachain-primitives = { path = "../primitives", default-features = false}
 
 # Substrate dependencies
-sp-std = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-sp-api = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-sp-io = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-sp-version = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-sp-runtime = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-sp-core = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-sp-session = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-sp-offchain = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-sp-block-builder = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-sp-transaction-pool = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-sp-inherents = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+sp-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
 
-frame-support = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-frame-executive = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-frame-system = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-pallet-balances = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-pallet-randomness-collective-flip = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-pallet-timestamp = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-pallet-sudo = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-pallet-transaction-payment = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
 
 # In-Tree Fork of seal that does not use child trie nor storage transactions
 cumulus-pallet-contracts = { path = "../pallets/contracts", default-features = false }
@@ -47,7 +47,7 @@ cumulus-upward-message = { path = "../../upward-message", default-features = fal
 cumulus-primitives = { path = "../../primitives", default-features = false }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "file:///home/cecile/repos/polkadot", branch = "rococo-branch", default-features = false }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again", default-features = false }
 
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.6" }

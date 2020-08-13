@@ -7,19 +7,19 @@ edition = "2018"
 
 [dependencies]
 # substrate deps
-sc-client-api = { git = "file:///home/cecile/repos/substrate", branch = "rococo-branch" }
-sp-consensus = { git = "file:///home/cecile/repos/substrate", branch = "rococo-branch" }
-sp-core = { git = "file:///home/cecile/repos/substrate", branch = "rococo-branch" }
-sp-inherents = { git = "file:///home/cecile/repos/substrate", branch = "rococo-branch" }
-sp-runtime = { git = "file:///home/cecile/repos/substrate", branch = "rococo-branch" }
-sp-block-builder = { git = "file:///home/cecile/repos/substrate", branch = "rococo-branch" }
-sp-blockchain = { git = "file:///home/cecile/repos/substrate", branch = "rococo-branch" }
-sp-api = { git = "file:///home/cecile/repos/substrate", branch = "rococo-branch" }
-substrate-prometheus-endpoint = { git = "file:///home/cecile/repos/substrate", branch = "rococo-branch" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
 
 # polkadot deps
-polkadot-primitives = { git = "file:///home/cecile/repos/polkadot", branch = "rococo-branch" }
-polkadot-runtime = { git = "file:///home/cecile/repos/polkadot", branch = "rococo-branch" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
+polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
 
 # other deps
 futures = { version = "0.3.1", features = ["compat"] }

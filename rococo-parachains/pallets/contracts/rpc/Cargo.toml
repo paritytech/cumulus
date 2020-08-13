@@ -16,12 +16,12 @@ codec = { package = "parity-scale-codec", version = "1.3.1" }
 jsonrpc-core = "14.2.0"
 jsonrpc-core-client = "14.2.0"
 jsonrpc-derive = "14.2.1"
-sp-blockchain = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-sp-core = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-sp-rpc = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+sp-rpc = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
 serde = { version = "1.0.101", features = ["derive"] }
-sp-runtime = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
-sp-api = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "rococo-branch" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
 cumulus-pallet-contracts-primitives = { path = "../common" }
 cumulus-pallet-contracts-rpc-runtime-api = { path = "./runtime-api" }
 

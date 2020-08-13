@@ -47,13 +47,17 @@ async fn integration_test() {
 
 	// start alice
 	let mut alice =
-		polkadot_test_service::run_test_node(task_executor.clone(), Alice, || {}, vec![]);
+		polkadot_test_service::run_test_node(task_executor.clone(), Alice, || {
+			//polkadot_test_runtime::ExpectedBlockTime::set(&10000);
+		}, vec![]);
 
 	// start bob
 	let mut bob = polkadot_test_service::run_test_node(
 		task_executor.clone(),
 		Bob,
-		|| {},
+		|| {
+			//polkadot_test_runtime::ExpectedBlockTime::set(&10000);
+		},
 		vec![alice.addr.clone()],
 	);
 
