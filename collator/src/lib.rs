@@ -485,16 +485,6 @@ where
 	}
 }
 
-/// Prepare the collator's node condifugration
-///
-/// This function will disable the default announcement of Substrate for the parachain in favor
-/// of the one of Cumulus.
-pub fn prepare_collator_config(mut parachain_config: Configuration) -> Configuration {
-	parachain_config.announce_block = false;
-
-	parachain_config
-}
-
 #[cfg(test)]
 mod tests {
 	use super::*;
