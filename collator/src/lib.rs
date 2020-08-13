@@ -31,7 +31,6 @@ use cumulus_runtime::ParachainBlockData;
 
 use sc_client_api::{BlockBackend, Finalizer, StateBackend, UsageProvider, Backend as BackendT};
 use sc_service::Configuration;
-use sp_api::ApiExt;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, BlockStatus, Environment, Error as ConsensusError,
@@ -51,7 +50,6 @@ use polkadot_primitives::v0::{
 	self as parachain, Block as PBlock, BlockData, DownwardMessage, GlobalValidationData,
 	Hash as PHash, Id as ParaId, LocalValidationData,
 };
-use polkadot_service::YaExecuteWithClient;
 
 use codec::{Decode, Encode};
 
@@ -437,7 +435,7 @@ where
 	where
 		Spawner: SpawnNamed + Clone + Send + Sync + 'static,
 		Backend2: BackendT<PBlock>,
-		Backend2::State: sp_api::StateBackend<BlakeTwo256>,
+		Backend2::State: StateBackend<BlakeTwo256>,
 		PClient: polkadot_service::AbstractClient<PBlock, Backend2> + 'static,
 		PClient::Api: RuntimeApiCollection<StateBackend = Backend2::State>,
 	{

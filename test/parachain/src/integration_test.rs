@@ -94,22 +94,18 @@ async fn integration_test() {
 
 		// run cumulus charlie
 		let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
-		let mut polkadot_config = polkadot_test_service::node_config(
+		let polkadot_config = polkadot_test_service::node_config(
 			|| {},
 			task_executor.clone(),
 			Charlie,
 			vec![alice.addr.clone(), bob.addr.clone()],
 		);
-		use std::net::{Ipv4Addr, SocketAddr};
-		polkadot_config.rpc_http = Some(SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 27016));
-		polkadot_config.rpc_methods = sc_service::config::RpcMethods::Unsafe;
 		let parachain_config =
 			parachain_config(task_executor.clone(), Charlie, vec![], para_id).unwrap();
 		let (_service, charlie_client) =
 			crate::service::run_collator(parachain_config, key, polkadot_config, para_id, true)
 				.unwrap();
-		sleep(Duration::from_secs(3)).await;
-		charlie_client.wait_for_blocks(4).await;
+		charlie_client.wait_for_blocks(3).await;
 
 		alice.task_manager.terminate();
 		bob.task_manager.terminate();
