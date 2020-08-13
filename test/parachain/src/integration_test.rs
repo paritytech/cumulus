@@ -105,7 +105,7 @@ async fn integration_test() {
 		let (_service, charlie_client) =
 			crate::service::run_collator(parachain_config, key, polkadot_config, para_id, true)
 				.unwrap();
-		charlie_client.wait_for_blocks(3).await;
+		charlie_client.wait_for_blocks(4).await;
 
 		alice.task_manager.terminate();
 		bob.task_manager.terminate();
