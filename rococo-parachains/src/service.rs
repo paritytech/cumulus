@@ -26,7 +26,6 @@ pub use sc_executor::NativeExecutor;
 use sc_informant::OutputFormat;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sp_api::ConstructRuntimeApi;
-use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
 use sp_runtime::traits::BlakeTwo256;
 use std::sync::Arc;
@@ -127,6 +126,7 @@ fn start_node_impl<RuntimeApi, Executor, RB>(
 	id: polkadot_primitives::v0::Id,
 	validator: bool,
 	rpc_ext_builder: RB,
+	test: bool,
 ) -> sc_service::error::Result<(TaskManager, Arc<TFullClient<Block, RuntimeApi, Executor>>)>
 where
 	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, Executor>>
@@ -236,7 +236,7 @@ where
 			announce_block,
 			client: client.clone(),
 			block_announce_validator,
-<<<<<<< HEAD
+/*
 		);
 
 		let (polkadot_future, polkadot_task_manager) = if cfg!(test) {
@@ -267,12 +267,12 @@ where
 		task_manager
 			.spawn_essential_handle()
 			.spawn("polkadot", polkadot_future);
-=======
+*/
 			task_manager: &mut task_manager,
 			polkadot_config,
 			collator_key,
+			test,
 		};
->>>>>>> 9603b2fe5f2ea2955a4a8a34742c58e8a4f9bc54
 
 		start_collator(params)?;
 	} else {
@@ -301,6 +301,7 @@ pub fn start_node(
 	polkadot_config: polkadot_collator::Configuration,
 	id: polkadot_primitives::v0::Id,
 	validator: bool,
+	test: bool,
 ) -> sc_service::error::Result<(
 	TaskManager,
 	Arc<TFullClient<Block, parachain_runtime::RuntimeApi, RuntimeExecutor>>,
@@ -312,6 +313,7 @@ pub fn start_node(
 		id,
 		validator,
 		|_| Default::default(),
+		test,
 	)
 }
 
@@ -322,6 +324,7 @@ pub fn start_contracts_node(
 	polkadot_config: polkadot_collator::Configuration,
 	id: polkadot_primitives::v0::Id,
 	validator: bool,
+	test: bool,
 ) -> sc_service::error::Result<TaskManager> {
 	start_node_impl::<parachain_contracts_runtime::RuntimeApi, ContractsRuntimeExecutor, _>(
 		parachain_config,
@@ -336,6 +339,7 @@ pub fn start_contracts_node(
 			io.extend_with(ContractsApi::to_delegate(Contracts::new(client)));
 			io
 		},
+		test,
 	)
 	.map(|r| r.0)
 }

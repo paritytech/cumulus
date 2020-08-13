@@ -22,7 +22,7 @@ use cumulus_collator::CollatorBuilder;
 use cumulus_network::{DelayedBlockAnnounceValidator, JustifiedBlockAnnounceValidator};
 use cumulus_primitives::ParaId;
 use polkadot_primitives::v0::{Block as PBlock, CollatorPair};
-use polkadot_service::{AbstractClient, RuntimeApiCollection};
+use polkadot_service::{AbstractClient, RuntimeApiCollection, ClientHandle};
 use sc_client_api::{Backend as BackendT, BlockBackend, Finalizer, UsageProvider};
 use sc_service::{Configuration, Role, TaskManager};
 use sp_blockchain::{HeaderBackend, Result as ClientResult};
@@ -45,6 +45,7 @@ pub struct StartCollatorParams<'a, Block: BlockT, PF, BI, BS, Client> {
 	pub task_manager: &'a mut TaskManager,
 	pub polkadot_config: Configuration,
 	pub collator_key: Arc<CollatorPair>,
+	pub test: bool,
 }
 
 /// Start a collator node for a parachain.
@@ -65,6 +66,7 @@ pub fn start_collator<'a, Block, PF, BI, BS, Client, Backend>(
 		task_manager,
 		polkadot_config,
 		collator_key,
+		test,
 	}: StartCollatorParams<'a, Block, PF, BI, BS, Client>,
 ) -> sc_service::error::Result<()>
 where
@@ -99,8 +101,30 @@ where
 		block_announce_validator,
 	);
 
-	let (polkadot_future, polkadot_task_manager) =
-		polkadot_collator::start_collator(builder, para_id, collator_key, polkadot_config)?;
+	let (polkadot_future, polkadot_task_manager) = if test {
+		let (task_manager, client, handles, _network, _rpc_handlers) = polkadot_test_service::polkadot_test_new_full(
+			polkadot_config,
+			Some((collator_key.public(), para_id)),
+			None,
+			false,
+			6000,
+		)?;
+
+		let test_client = polkadot_test_service::TestClient(client);
+
+		let future = polkadot_collator::build_collator_service(
+			task_manager.spawn_handle(),
+			handles,
+			test_client,
+			para_id,
+			collator_key,
+			builder,
+		)?;
+
+		(future, task_manager)
+	} else {
+		polkadot_collator::start_collator(builder, para_id, collator_key, polkadot_config)?
+	};
 
 	task_manager
 		.spawn_essential_handle()
@@ -149,6 +173,7 @@ where
 	Backend: BackendT<Block> + 'static,
 {
 	let is_light = matches!(polkadot_config.role, Role::Light);
+
 	let (polkadot_task_manager, pclient, handles) = if is_light {
 		Err("Light client not supported.".into())
 	} else {

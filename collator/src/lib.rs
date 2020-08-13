@@ -30,7 +30,6 @@ use cumulus_primitives::{
 use cumulus_runtime::ParachainBlockData;
 
 use sc_client_api::{BlockBackend, Finalizer, StateBackend, UsageProvider, Backend as BackendT};
-use sc_service::Configuration;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, BlockStatus, Environment, Error as ConsensusError,
@@ -458,10 +457,10 @@ where
 			)));
 
 		let follow = match cumulus_consensus::follow_polkadot(
-			self.para_id,
+			para_id,
 			client,
 			polkadot_client,
-			self.announce_block.clone(),
+			announce_block.clone(),
 		) {
 			Ok(follow) => follow,
 			Err(e) => {
@@ -605,7 +604,6 @@ mod tests {
 	}
 
 	#[test]
-	// TODO
 	#[cfg(feature = "boo")]
 	fn collates_produces_a_block() {
 		let id = ParaId::from(100);
