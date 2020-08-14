@@ -36,6 +36,7 @@ use std::{sync::Arc, time::Duration};
 use substrate_test_client::BlockchainEventsExt;
 use substrate_test_runtime_client::AccountKeyring::*;
 use tokio::{spawn, time::delay_for as sleep};
+use sc_chain_spec::ChainSpec;
 
 static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TEST_ALLOWED_TIME");
 
@@ -74,8 +75,8 @@ async fn integration_test() {
 		future::join(alice.wait_for_blocks(2), bob.wait_for_blocks(2)).await;
 
 		// export genesis state
-		let spec = crate::chain_spec::get_chain_spec(para_id);
-		let genesis_state = crate::command::generate_genesis_state(&(Box::new(spec) as Box<_>))
+		let spec = Box::new(crate::chain_spec::get_chain_spec(para_id));
+		let genesis_state = crate::command::generate_genesis_state(&(spec.clone() as Box<_>))
 			.unwrap()
 			.encode();
 
@@ -106,7 +107,7 @@ async fn integration_test() {
 			vec![alice.addr.clone(), bob.addr.clone()],
 		);
 		let parachain_config =
-			parachain_config(task_executor.clone(), Charlie, vec![], para_id).unwrap();
+			parachain_config(task_executor.clone(), Charlie, vec![], spec).unwrap();
 		let (_service, charlie_client) =
 			crate::service::start_node(parachain_config, key, polkadot_config, para_id, true, true)
 				.unwrap();
@@ -131,7 +132,7 @@ pub fn parachain_config(
 	task_executor: TaskExecutor,
 	key: Sr25519Keyring,
 	boot_nodes: Vec<MultiaddrWithPeerId>,
-	para_id: ParaId,
+	spec: Box<dyn ChainSpec>,
 ) -> Result<Configuration, ServiceError> {
 	let base_path = BasePath::new_temp_dir()?;
 	let root = base_path.path().to_path_buf();
@@ -139,7 +140,6 @@ pub fn parachain_config(
 		sentry_nodes: Vec::new(),
 	};
 	let key_seed = key.to_seed();
-	let spec = crate::chain_spec::get_chain_spec(para_id);
 
 	let mut network_config = NetworkConfiguration::new(
 		format!("Cumulus Test Node for: {}", key_seed),
@@ -180,7 +180,7 @@ pub fn parachain_config(
 		state_cache_size: 16777216,
 		state_cache_child_ratio: None,
 		pruning: Default::default(),
-		chain_spec: Box::new(spec),
+		chain_spec: spec,
 		wasm_method: WasmExecutionMethod::Interpreted,
 		// NOTE: we enforce the use of the native runtime to make the errors more debuggable
 		execution_strategies: ExecutionStrategies {
