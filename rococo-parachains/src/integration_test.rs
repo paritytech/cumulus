@@ -46,47 +46,13 @@ async fn integration_test() {
 	sc_cli::init_logger("");
 	let task_executor: TaskExecutor = (|fut, _| spawn(fut).map(|_| ())).into();
 
-	//let polkadot_spec = polkadot_service::chain_spec::rococo_staging_testnet_config().unwrap();
-	let polkadot_spec = polkadot_service::chain_spec::rococo_local_testnet_config().unwrap();
-
 	// start alice
-	/*
 	let mut alice =
 		polkadot_test_service::run_test_node(task_executor.clone(), Alice, || {
 			//polkadot_test_runtime::ExpectedBlockTime::set(&10000);
 		}, vec![]);
-	*/
-	let mut alice_config = polkadot_test_service::node_config(
-		|| {},
-		task_executor.clone(),
-		Alice,
-		vec![],
-	);
-	alice_config.chain_spec = Box::new(polkadot_spec.clone());
-	let multiaddr = alice_config.network.listen_addresses[0].clone();
-	let authority_discovery_disabled = false;
-	let grandpa_pause = None;
-	let (task_manager, client, handles, network, rpc_handlers) = polkadot_service::new_full::<rococo_runtime::RuntimeApi, polkadot_service::RococoExecutor>(
-		alice_config,
-		None,
-		None,
-		authority_discovery_disabled,
-		6000,
-		grandpa_pause,
-		true,
-	).unwrap();
-	let peer_id = network.local_peer_id().clone();
-	let addr = MultiaddrWithPeerId { multiaddr, peer_id };
-	let mut alice = polkadot_test_service::PolkadotTestNode {
-		task_manager,
-		client,
-		handles,
-		addr,
-		rpc_handlers,
-	};
 
 	// start bob
-	/*
 	let mut bob = polkadot_test_service::run_test_node(
 		task_executor.clone(),
 		Bob,
@@ -95,35 +61,6 @@ async fn integration_test() {
 		},
 		vec![alice.addr.clone()],
 	);
-	*/
-	let mut bob_config = polkadot_test_service::node_config(
-		|| {},
-		task_executor.clone(),
-		Bob,
-		vec![alice.addr.clone()],
-	);
-	bob_config.chain_spec = Box::new(polkadot_spec.clone());
-	let multiaddr = bob_config.network.listen_addresses[0].clone();
-	let authority_discovery_disabled = false;
-	let grandpa_pause = None;
-	let (task_manager, client, handles, network, rpc_handlers) = polkadot_service::new_full::<rococo_runtime::RuntimeApi, polkadot_service::RococoExecutor>(
-		bob_config,
-		None,
-		None,
-		authority_discovery_disabled,
-		6000,
-		grandpa_pause,
-		true,
-	).unwrap();
-	let peer_id = network.local_peer_id().clone();
-	let addr = MultiaddrWithPeerId { multiaddr, peer_id };
-	let mut bob = polkadot_test_service::PolkadotTestNode {
-		task_manager,
-		client,
-		handles,
-		addr,
-		rpc_handlers,
-	};
 
 	let t1 = sleep(Duration::from_secs(
 		INTEGRATION_TEST_ALLOWED_TIME
@@ -138,17 +75,14 @@ async fn integration_test() {
 		future::join(alice.wait_for_blocks(2), bob.wait_for_blocks(2)).await;
 
 		// export genesis state
-		//let spec = Box::new(crate::chain_spec::get_chain_spec(para_id));
-		let spec = Box::new(crate::chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("./integration_test.json")[..],
-		).unwrap());
+		let spec = Box::new(crate::chain_spec::get_chain_spec(para_id));
 		let genesis_state = crate::command::generate_genesis_state(&(spec.clone() as Box<_>))
 			.unwrap()
 			.encode();
 
 		// create and sign transaction
-		let function = rococo_runtime::Call::Sudo(pallet_sudo::Call::sudo(Box::new(
-			rococo_runtime::Call::Registrar(registrar::Call::register_para(
+		let function = polkadot_test_runtime::Call::Sudo(pallet_sudo::Call::sudo(Box::new(
+			polkadot_test_runtime::Call::Registrar(registrar::Call::register_para(
 				para_id,
 				Info {
 					scheduling: Scheduling::Always,
@@ -161,72 +95,21 @@ async fn integration_test() {
 			)),
 		)));
 
-		use sp_blockchain::HeaderBackend;
-		use sp_runtime::SaturatedConversion;
-		use sp_runtime::generic;
-		use polkadot_runtime_common::BlockHashCount;
-		let caller = Alice;
-		let current_block_hash = alice.client.info().best_hash;
-		let current_block = alice.client.info().best_number.saturated_into();
-		let genesis_block = alice.client.hash(0).unwrap().unwrap();
-		let nonce = 0;
-		let period = BlockHashCount::get()
-			.checked_next_power_of_two()
-			.map(|c| c / 2)
-			.unwrap_or(2) as u64;
-		let tip = 0;
-		let extra: rococo_runtime::SignedExtra = (
-			//rococo_runtime::RestrictFunctionality,
-			frame_system::CheckSpecVersion::<rococo_runtime::Runtime>::new(),
-			frame_system::CheckTxVersion::<rococo_runtime::Runtime>::new(),
-			frame_system::CheckGenesis::<rococo_runtime::Runtime>::new(),
-			frame_system::CheckEra::<rococo_runtime::Runtime>::from(generic::Era::mortal(period, current_block)),
-			frame_system::CheckNonce::<rococo_runtime::Runtime>::from(nonce),
-			frame_system::CheckWeight::<rococo_runtime::Runtime>::new(),
-			pallet_transaction_payment::ChargeTransactionPayment::<rococo_runtime::Runtime>::from(tip),
-			registrar::LimitParathreadCommits::<rococo_runtime::Runtime>::new(),
-			polkadot_runtime_common::parachains::ValidateDoubleVoteReports::<rococo_runtime::Runtime>::new(),
-		);
-		let raw_payload = rococo_runtime::SignedPayload::from_raw(
-			function.clone(),
-			extra.clone(),
-			(
-				rococo_runtime::VERSION.spec_version,
-				rococo_runtime::VERSION.transaction_version,
-				genesis_block,
-				current_block_hash,
-				(),
-				(),
-				(),
-				(),
-				(),
-			),
-		);
-		let signature = raw_payload.using_encoded(|e| caller.sign(e));
-		let extrinsic = rococo_runtime::UncheckedExtrinsic::new_signed(
-			function.clone(),
-			caller.public().into(),
-			polkadot_primitives::v0::Signature::Sr25519(signature.clone()),
-			extra.clone(),
-		);
-
 		// register parachain
-		use substrate_test_client::RpcHandlersExt;
-		let _ = alice.rpc_handlers.send_transaction(extrinsic.into()).await.unwrap();
+		let _ = alice.call_function(function, Alice).await.unwrap();
 
 		// run cumulus charlie
-		let key = Arc::new(sp_core::Pair::generate().0);
-		let mut polkadot_config = polkadot_test_service::node_config(
+		let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
+		let polkadot_config = polkadot_test_service::node_config(
 			|| {},
 			task_executor.clone(),
 			Charlie,
 			vec![alice.addr.clone(), bob.addr.clone()],
 		);
-		polkadot_config.chain_spec = Box::new(polkadot_spec.clone());
 		let parachain_config =
 			parachain_config(task_executor.clone(), Charlie, vec![], spec).unwrap();
 		let (_service, charlie_client) =
-			crate::service::start_node(parachain_config, key, polkadot_config, para_id, true, false)
+			crate::service::start_node(parachain_config, key, polkadot_config, para_id, true, true)
 				.unwrap();
 		charlie_client.wait_for_blocks(4).await;
 
