@@ -43,7 +43,7 @@ static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TE
 #[tokio::test]
 #[ignore]
 async fn integration_test() {
-	sc_cli::init_logger("");
+	sc_cli::init_logger("network=warn,cumulus-network=trace,validation=warn");
 	let task_executor: TaskExecutor = (|fut, _| spawn(fut).map(|_| ())).into();
 
 	// start alice
@@ -183,6 +183,7 @@ pub fn parachain_config(
 		chain_spec: spec,
 		wasm_method: WasmExecutionMethod::Interpreted,
 		// NOTE: we enforce the use of the native runtime to make the errors more debuggable
+		/*
 		execution_strategies: ExecutionStrategies {
 			syncing: sc_client_api::ExecutionStrategy::NativeWhenPossible,
 			importing: sc_client_api::ExecutionStrategy::NativeWhenPossible,
@@ -190,6 +191,8 @@ pub fn parachain_config(
 			offchain_worker: sc_client_api::ExecutionStrategy::NativeWhenPossible,
 			other: sc_client_api::ExecutionStrategy::NativeWhenPossible,
 		},
+		*/
+		execution_strategies: Default::default(),
 		rpc_http: None,
 		rpc_ws: None,
 		rpc_ipc: None,

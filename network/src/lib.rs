@@ -86,6 +86,7 @@ where
 		header: &B::Header,
 		mut data: &[u8],
 	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
+		log::error!("##### validating... {}", data.is_empty());
 		if self.polkadot_sync_oracle.is_major_syncing() {
 			return Ok(Validation::Success { is_new_best: false });
 		}
@@ -259,6 +260,7 @@ impl<B: BlockT> BlockAnnounceValidator<B> for DelayedBlockAnnounceValidator<B> {
 			Some(validator) => validator.validate(header, data),
 			None => {
 				log::warn!("BlockAnnounce validator not yet set, rejecting block announcement");
+				panic!("boo");
 				Ok(Validation::Failure)
 			}
 		}
@@ -366,6 +368,7 @@ async fn wait_to_announce<Block: BlockT>(
 				}
 				.into();
 
+				log::error!("######## announcing");
 				announce_block(hash, gossip_message.encode());
 
 				break;

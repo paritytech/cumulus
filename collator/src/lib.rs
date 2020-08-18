@@ -241,6 +241,7 @@ where
 		local_validation: LocalValidationData,
 		downward_messages: Vec<DownwardMessage>,
 	) -> Self::ProduceCandidate {
+		error!("######## produce candidate");
 		let factory = self.proposer_factory.clone();
 		let inherent_providers = self.inherent_data_providers.clone();
 		let block_import = self.block_import.clone();
@@ -354,6 +355,7 @@ where
 				.wait_to_announce(hash, relay_chain_parent, encoded_header);
 
 			trace!(target: "cumulus-collator", "Produced candidate: {:?}", candidate);
+			error!("######## produce candidate succeeded");
 
 			Some(candidate)
 		})
