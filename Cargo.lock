@@ -939,7 +939,6 @@ dependencies = [
  "log 0.4.11",
  "parity-scale-codec",
  "polkadot-primitives",
- "polkadot-runtime",
  "sc-client-api",
  "sp-api",
  "sp-block-builder",
