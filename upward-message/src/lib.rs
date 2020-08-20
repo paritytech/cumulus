@@ -25,14 +25,22 @@
 use polkadot_parachain::primitives::Id as ParaId;
 use sp_std::vec::Vec;
 
+#[cfg(feature = "kusama")]
 mod kusama;
+#[cfg(feature = "polkadot")]
 mod polkadot;
+#[cfg(feature = "rococo")]
 mod rococo;
+#[cfg(feature = "westend")]
 mod westend;
 
+#[cfg(feature = "kusama")]
 pub use kusama::UpwardMessage as KusamaUpwardMessage;
+#[cfg(feature = "polkadot")]
 pub use polkadot::UpwardMessage as PolkadotUpwardMessage;
+#[cfg(feature = "rococo")]
 pub use rococo::UpwardMessage as RococoUpwardMessage;
+#[cfg(feature = "westend")]
 pub use westend::UpwardMessage as WestendUpwardMessage;
 
 /// A `Balances` related upward message.
