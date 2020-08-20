@@ -28,7 +28,7 @@ use sc_network::{config::TransportConfig, multiaddr};
 use sc_service::{
 	config::{
 		DatabaseConfig, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
-		WasmExecutionMethod,
+		WasmExecutionMethod, PruningMode, OffchainWorkerConfig,
 	},
 	BasePath, Configuration, Error as ServiceError, Role, TaskExecutor,
 };
@@ -43,7 +43,7 @@ static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TE
 #[tokio::test]
 #[ignore]
 async fn integration_test() {
-	sc_cli::init_logger("network=warn,cumulus-network=trace,validation=warn");
+	sc_cli::init_logger("network=warn,cumulus-network=trace,validation=debug");
 	let task_executor: TaskExecutor = (|fut, _| spawn(fut).map(|_| ())).into();
 
 	// start alice
@@ -99,15 +99,19 @@ async fn integration_test() {
 		let _ = alice.call_function(function, Alice).await.unwrap();
 
 		// run cumulus charlie
-		let key = Arc::new(sp_core::Pair::from_seed(&[10; 32]));
-		let polkadot_config = polkadot_test_service::node_config(
+		let key = Arc::new(sp_core::Pair::generate().0);
+		let mut polkadot_config = polkadot_test_service::node_config(
 			|| {},
 			task_executor.clone(),
 			Charlie,
 			vec![alice.addr.clone(), bob.addr.clone()],
 		);
+		polkadot_config.role = Role::Full;
+		polkadot_config.execution_strategies.importing = sc_client_api::ExecutionStrategy::NativeElseWasm;
+		println!("{:?}", polkadot_config);
 		let parachain_config =
 			parachain_config(task_executor.clone(), Charlie, vec![], spec).unwrap();
+		println!("{:?}", parachain_config);
 		let (_service, charlie_client) =
 			crate::service::start_node(parachain_config, key, polkadot_config, para_id, true, true)
 				.unwrap();
@@ -154,7 +158,7 @@ pub fn parachain_config(
 
 	network_config.boot_nodes = boot_nodes;
 
-	network_config.allow_non_globals_in_dht = true;
+	network_config.allow_non_globals_in_dht = false;
 
 	network_config
 		.listen_addresses
@@ -177,22 +181,20 @@ pub fn parachain_config(
 			path: root.join("db"),
 			cache_size: 128,
 		},
-		state_cache_size: 16777216,
+		state_cache_size: 67108864,
 		state_cache_child_ratio: None,
-		pruning: Default::default(),
+		pruning: PruningMode::ArchiveAll,
 		chain_spec: spec,
-		wasm_method: WasmExecutionMethod::Interpreted,
+		wasm_method: WasmExecutionMethod::default(),
 		// NOTE: we enforce the use of the native runtime to make the errors more debuggable
-		/*
 		execution_strategies: ExecutionStrategies {
-			syncing: sc_client_api::ExecutionStrategy::NativeWhenPossible,
-			importing: sc_client_api::ExecutionStrategy::NativeWhenPossible,
-			block_construction: sc_client_api::ExecutionStrategy::NativeWhenPossible,
+			syncing: sc_client_api::ExecutionStrategy::NativeElseWasm,
+			importing: sc_client_api::ExecutionStrategy::AlwaysWasm,
+			block_construction: sc_client_api::ExecutionStrategy::AlwaysWasm,
 			offchain_worker: sc_client_api::ExecutionStrategy::NativeWhenPossible,
 			other: sc_client_api::ExecutionStrategy::NativeWhenPossible,
 		},
-		*/
-		execution_strategies: Default::default(),
+		//execution_strategies: Default::default(),
 		rpc_http: None,
 		rpc_ws: None,
 		rpc_ipc: None,
@@ -203,7 +205,7 @@ pub fn parachain_config(
 		telemetry_endpoints: None,
 		telemetry_external_transport: None,
 		default_heap_pages: None,
-		offchain_worker: Default::default(),
+		offchain_worker: OffchainWorkerConfig { enabled: true, indexing_enabled: false },
 		force_authoring: false,
 		disable_grandpa: false,
 		dev_key_seed: Some(key_seed),

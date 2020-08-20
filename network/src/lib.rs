@@ -260,7 +260,6 @@ impl<B: BlockT> BlockAnnounceValidator<B> for DelayedBlockAnnounceValidator<B> {
 			Some(validator) => validator.validate(header, data),
 			None => {
 				log::warn!("BlockAnnounce validator not yet set, rejecting block announcement");
-				panic!("boo");
 				Ok(Validation::Failure)
 			}
 		}
