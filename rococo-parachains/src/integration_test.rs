@@ -44,7 +44,9 @@ static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TE
 #[ignore]
 async fn integration_test() {
 	sc_cli::init_logger("network=warn,cumulus-network=trace,validation=debug");
-	let task_executor: TaskExecutor = (|fut, _| spawn(fut).map(|_| ())).into();
+	let task_executor: TaskExecutor = (|fut, _| {
+		spawn(fut).map(|_| ())
+	}).into();
 
 	//let polkadot_spec = polkadot_service::chain_spec::rococo_staging_testnet_config().unwrap();
 	let polkadot_spec = polkadot_service::chain_spec::rococo_local_testnet_config().unwrap();
@@ -64,6 +66,27 @@ async fn integration_test() {
 	);
 	alice_config.chain_spec = Box::new(polkadot_spec.clone());
 	alice_config.pruning = PruningMode::ArchiveAll;
+	alice_config.offchain_worker = OffchainWorkerConfig { enabled: true, indexing_enabled: false };
+	/*
+	alice_config.rpc_http = Some("127.0.0.1:9933".parse().unwrap());
+	alice_config.rpc_ws = Some("127.0.0.1:9944".parse().unwrap());
+	alice_config.rpc_cors = Some(vec!["http://localhost:*".to_string(),
+		"http://127.0.0.1:*".to_string(),
+		"https://localhost:*".to_string(),
+		"https://127.0.0.1:*".to_string(),
+		"https://polkadot.js.org".to_string()]);
+	alice_config.network = NetworkConfiguration {
+		net_config_path: Some(alice_config.base_path.as_ref().unwrap().path().join("network")),
+		listen_addresses: vec!["/ip6/::/tcp/27015".parse().unwrap(), "/ip4/0.0.0.0/tcp/27015".parse().unwrap()],
+		transport: TransportConfig::Normal {
+			enable_mdns: true,
+			allow_private_ipv4: true,
+			wasm_external_transport: None,
+			use_yamux_flow_control: true,
+		},
+		..alice_config.network
+	};
+	*/
 	println!("{:?}", alice_config);
 	let multiaddr = alice_config.network.listen_addresses[0].clone();
 	let authority_discovery_disabled = false;
@@ -106,6 +129,20 @@ async fn integration_test() {
 	);
 	bob_config.chain_spec = Box::new(polkadot_spec.clone());
 	bob_config.pruning = PruningMode::ArchiveAll;
+	bob_config.offchain_worker = OffchainWorkerConfig { enabled: true, indexing_enabled: false };
+	/*
+	bob_config.network = NetworkConfiguration {
+		net_config_path: Some(bob_config.base_path.as_ref().unwrap().path().join("network")),
+		listen_addresses: vec!["/ip6/::/tcp/27016".parse().unwrap(), "/ip4/0.0.0.0/tcp/27016".parse().unwrap()],
+		transport: TransportConfig::Normal {
+			enable_mdns: true,
+			allow_private_ipv4: true,
+			wasm_external_transport: None,
+			use_yamux_flow_control: true,
+		},
+		..bob_config.network
+	};
+	*/
 	let multiaddr = bob_config.network.listen_addresses[0].clone();
 	let authority_discovery_disabled = false;
 	let grandpa_pause = None;
@@ -128,6 +165,8 @@ async fn integration_test() {
 		rpc_handlers,
 	};
 
+	//sleep(Duration::from_secs(60)).await;
+
 	let t1 = sleep(Duration::from_secs(
 		INTEGRATION_TEST_ALLOWED_TIME
 			.and_then(|x| x.parse().ok())
@@ -147,9 +186,11 @@ async fn integration_test() {
 			&include_bytes!("./integration_test.json")[..],
 		).unwrap());
 		*/
-		let genesis_state = crate::command::generate_genesis_state(&(spec.clone() as Box<_>))
-			.unwrap()
-			.encode();
+		use sp_api::BlockT;
+		let block = crate::command::generate_genesis_state(&(spec.clone() as Box<_>))
+			.unwrap();
+			//.encode();
+		let genesis_state = block.header().encode();
 
 		// create and sign transaction
 		let function = rococo_runtime::Call::Sudo(pallet_sudo::Call::sudo(Box::new(
@@ -217,7 +258,8 @@ async fn integration_test() {
 
 		// register parachain
 		use substrate_test_client::RpcHandlersExt;
-		let _ = alice.rpc_handlers.send_transaction(extrinsic.into()).await.unwrap();
+		let res = alice.rpc_handlers.send_transaction(extrinsic.into()).await.unwrap();
+		//panic!("{:?}", res);
 
 		// run cumulus charlie
 		let key = Arc::new(sp_core::Pair::generate().0);
