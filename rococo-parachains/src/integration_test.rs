@@ -63,6 +63,8 @@ async fn integration_test() {
 		vec![],
 	);
 	alice_config.chain_spec = Box::new(polkadot_spec.clone());
+	alice_config.pruning = PruningMode::ArchiveAll;
+	println!("{:?}", alice_config);
 	let multiaddr = alice_config.network.listen_addresses[0].clone();
 	let authority_discovery_disabled = false;
 	let grandpa_pause = None;
@@ -103,6 +105,7 @@ async fn integration_test() {
 		vec![alice.addr.clone()],
 	);
 	bob_config.chain_spec = Box::new(polkadot_spec.clone());
+	bob_config.pruning = PruningMode::ArchiveAll;
 	let multiaddr = bob_config.network.listen_addresses[0].clone();
 	let authority_discovery_disabled = false;
 	let grandpa_pause = None;
@@ -138,10 +141,12 @@ async fn integration_test() {
 		future::join(alice.wait_for_blocks(2), bob.wait_for_blocks(2)).await;
 
 		// export genesis state
-		//let spec = Box::new(crate::chain_spec::get_chain_spec(para_id));
+		let spec = Box::new(crate::chain_spec::get_chain_spec(para_id));
+		/*
 		let spec = Box::new(crate::chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("./integration_test.json")[..],
 		).unwrap());
+		*/
 		let genesis_state = crate::command::generate_genesis_state(&(spec.clone() as Box<_>))
 			.unwrap()
 			.encode();
@@ -225,6 +230,7 @@ async fn integration_test() {
 		polkadot_config.chain_spec = Box::new(polkadot_spec.clone());
 		polkadot_config.role = Role::Full;
 		polkadot_config.execution_strategies.importing = sc_client_api::ExecutionStrategy::NativeElseWasm;
+		polkadot_config.dev_key_seed = None;
 		println!("{:?}", polkadot_config);
 		let parachain_config =
 			parachain_config(task_executor.clone(), Charlie, vec![], spec).unwrap();
@@ -325,7 +331,8 @@ pub fn parachain_config(
 		offchain_worker: OffchainWorkerConfig { enabled: true, indexing_enabled: false },
 		force_authoring: false,
 		disable_grandpa: false,
-		dev_key_seed: Some(key_seed),
+		//dev_key_seed: Some(key_seed),
+		dev_key_seed: None,
 		tracing_targets: None,
 		tracing_receiver: Default::default(),
 		max_runtime_instances: 8,
