@@ -25,19 +25,15 @@ std = [
 	"polkadot-core-primitives/std",
 	"polkadot-parachain/std",
 ]
-kusama = [
-	"kusama-runtime",
+disable-kusama-runtime-api = [
 	"kusama-runtime/disable-runtime-api",
 ]
-polkadot = [
-	"polkadot-runtime",
+disable-polkadot-runtime-api = [
 	"polkadot-runtime/disable-runtime-api",
 ]
-rococo = [
-	"rococo-runtime",
+disable-rococo-runtime-api = [
 	"rococo-runtime/disable-runtime-api",
 ]
-westend = [
-	"westend-runtime",
+disable-westend-runtime-api = [
 	"westend-runtime/disable-runtime-api",
 ]

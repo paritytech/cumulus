@@ -25,22 +25,22 @@
 use polkadot_parachain::primitives::Id as ParaId;
 use sp_std::vec::Vec;
 
-#[cfg(feature = "kusama")]
+#[cfg(feature = "kusama-runtime")]
 mod kusama;
-#[cfg(feature = "polkadot")]
+#[cfg(feature = "polkadot-runtime")]
 mod polkadot;
-#[cfg(feature = "rococo")]
+#[cfg(feature = "rococo-runtime")]
 mod rococo;
-#[cfg(feature = "westend")]
+#[cfg(feature = "westend-runtime")]
 mod westend;
 
-#[cfg(feature = "kusama")]
+#[cfg(feature = "kusama-runtime")]
 pub use kusama::UpwardMessage as KusamaUpwardMessage;
-#[cfg(feature = "polkadot")]
+#[cfg(feature = "polkadot-runtime")]
 pub use polkadot::UpwardMessage as PolkadotUpwardMessage;
-#[cfg(feature = "rococo")]
+#[cfg(feature = "rococo-runtime")]
 pub use rococo::UpwardMessage as RococoUpwardMessage;
-#[cfg(feature = "westend")]
+#[cfg(feature = "westend-runtime")]
 pub use westend::UpwardMessage as WestendUpwardMessage;
 
 /// A `Balances` related upward message.

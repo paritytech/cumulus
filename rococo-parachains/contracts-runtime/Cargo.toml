@@ -43,7 +43,7 @@ cumulus-pallet-contracts-rpc-runtime-api = { path = "../pallets/contracts/rpc/ru
 cumulus-runtime = { path = "../../runtime", default-features = false }
 cumulus-parachain-upgrade = { path = "../../parachain-upgrade", default-features = false }
 cumulus-message-broker = { path = "../../message-broker", default-features = false }
-cumulus-upward-message = { path = "../../upward-message", default-features = false, features = ["rococo"] }
+cumulus-upward-message = { path = "../../upward-message", default-features = false, features = ["rococo-runtime"] }
 cumulus-primitives = { path = "../../primitives", default-features = false }
 
 # Polkadot dependencies
@@ -88,4 +88,9 @@ std = [
 	"cumulus-primitives/std",
 	"polkadot-parachain/std",
 	"cumulus-token-dealer/std",
+]
+
+# Will be enabled by the `wasm-builder` when building the runtime for WASM.
+runtime-wasm = [
+	"cumulus-upward-message/disable-rococo-runtime-api",
 ]
