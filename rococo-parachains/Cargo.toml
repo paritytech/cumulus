@@ -73,10 +73,7 @@ polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "cecto
 polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
 
-[build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-
-[dev-dependencies]
+#[dev-dependencies]
 assert_cmd = "0.12"
 nix = "0.17"
 rand = "0.7.3"
@@ -87,7 +84,7 @@ tokio = { version = "0.2.21", features = [ "signal", "rt-core", "rt-threaded", "
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
 polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
 polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
+#polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
 rococo-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
 
 # Substrate dependencies
@@ -96,3 +93,7 @@ substrate-test-client = { git = "https://github.com/paritytech/substrate", branc
 substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
+
+[build-dependencies]
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
+

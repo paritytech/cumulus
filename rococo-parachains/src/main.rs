@@ -24,9 +24,22 @@ mod chain_spec;
 mod service;
 mod cli;
 mod command;
-#[cfg(test)]
+//#[cfg(test)]
 mod integration_test;
 
 fn main() -> sc_cli::Result<()> {
-	command::run()
+	//command::run()
+	let args: Vec<_> = std::env::args().collect();
+	if args.len() > 1 {
+		if args[1] == "validation-worker" {
+			polkadot_service::run_validation_worker(args[2].as_str())?;
+			return Ok(());
+		} else {
+			panic!("########!! {:?}", args);
+		}
+	}
+	let mut runtime = sc_cli::build_runtime().unwrap();
+	runtime.block_on(integration_test::integration_test());
+	drop(runtime);
+	Ok(())
 }
