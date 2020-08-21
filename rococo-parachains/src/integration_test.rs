@@ -40,10 +40,9 @@ use sc_chain_spec::ChainSpec;
 
 static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TEST_ALLOWED_TIME");
 
-//#[tokio::main(core_threads = 6, max_threads = 12)]
-//#[tokio::test(core_threads = 6, max_threads = 12)]
-//#[ignore]
-pub async fn integration_test() {
+#[tokio::test(core_threads = 6, max_threads = 12)]
+#[ignore]
+async fn integration_test() {
 	sc_cli::init_logger("network=warn,cumulus-network=trace,validation=debug");
 	let task_executor: TaskExecutor = (|fut, _| {
 		spawn(fut).map(|_| ())
@@ -68,7 +67,6 @@ pub async fn integration_test() {
 	alice_config.chain_spec = Box::new(polkadot_spec.clone());
 	alice_config.pruning = PruningMode::ArchiveAll;
 	alice_config.offchain_worker = OffchainWorkerConfig { enabled: true, indexing_enabled: false };
-	/*
 	alice_config.rpc_http = Some("127.0.0.1:9933".parse().unwrap());
 	alice_config.rpc_ws = Some("127.0.0.1:9944".parse().unwrap());
 	alice_config.rpc_cors = Some(vec!["http://localhost:*".to_string(),
@@ -87,7 +85,6 @@ pub async fn integration_test() {
 		},
 		..alice_config.network
 	};
-	*/
 	println!("{:?}", alice_config);
 	let multiaddr = alice_config.network.listen_addresses[0].clone();
 	let authority_discovery_disabled = false;
@@ -131,7 +128,6 @@ pub async fn integration_test() {
 	bob_config.chain_spec = Box::new(polkadot_spec.clone());
 	bob_config.pruning = PruningMode::ArchiveAll;
 	bob_config.offchain_worker = OffchainWorkerConfig { enabled: true, indexing_enabled: false };
-	/*
 	bob_config.network = NetworkConfiguration {
 		net_config_path: Some(bob_config.base_path.as_ref().unwrap().path().join("network")),
 		listen_addresses: vec!["/ip6/::/tcp/27016".parse().unwrap(), "/ip4/0.0.0.0/tcp/27016".parse().unwrap()],
@@ -143,7 +139,6 @@ pub async fn integration_test() {
 		},
 		..bob_config.network
 	};
-	*/
 	let multiaddr = bob_config.network.listen_addresses[0].clone();
 	let authority_discovery_disabled = false;
 	let grandpa_pause = None;
@@ -166,7 +161,7 @@ pub async fn integration_test() {
 		rpc_handlers,
 	};
 
-	//sleep(Duration::from_secs(60)).await;
+	sleep(Duration::from_secs(60)).await;
 
 	let t1 = sleep(Duration::from_secs(
 		INTEGRATION_TEST_ALLOWED_TIME
