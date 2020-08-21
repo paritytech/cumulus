@@ -40,7 +40,7 @@ use sc_chain_spec::ChainSpec;
 
 static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TEST_ALLOWED_TIME");
 
-#[tokio::test]
+#[tokio::test(core_threads = 6, max_threads = 12)]
 #[ignore]
 async fn integration_test() {
 	sc_cli::init_logger("network=warn,cumulus-network=trace,validation=debug");
@@ -67,7 +67,6 @@ async fn integration_test() {
 	alice_config.chain_spec = Box::new(polkadot_spec.clone());
 	alice_config.pruning = PruningMode::ArchiveAll;
 	alice_config.offchain_worker = OffchainWorkerConfig { enabled: true, indexing_enabled: false };
-	/*
 	alice_config.rpc_http = Some("127.0.0.1:9933".parse().unwrap());
 	alice_config.rpc_ws = Some("127.0.0.1:9944".parse().unwrap());
 	alice_config.rpc_cors = Some(vec!["http://localhost:*".to_string(),
@@ -86,7 +85,6 @@ async fn integration_test() {
 		},
 		..alice_config.network
 	};
-	*/
 	println!("{:?}", alice_config);
 	let multiaddr = alice_config.network.listen_addresses[0].clone();
 	let authority_discovery_disabled = false;
@@ -130,7 +128,6 @@ async fn integration_test() {
 	bob_config.chain_spec = Box::new(polkadot_spec.clone());
 	bob_config.pruning = PruningMode::ArchiveAll;
 	bob_config.offchain_worker = OffchainWorkerConfig { enabled: true, indexing_enabled: false };
-	/*
 	bob_config.network = NetworkConfiguration {
 		net_config_path: Some(bob_config.base_path.as_ref().unwrap().path().join("network")),
 		listen_addresses: vec!["/ip6/::/tcp/27016".parse().unwrap(), "/ip4/0.0.0.0/tcp/27016".parse().unwrap()],
@@ -142,7 +139,6 @@ async fn integration_test() {
 		},
 		..bob_config.network
 	};
-	*/
 	let multiaddr = bob_config.network.listen_addresses[0].clone();
 	let authority_discovery_disabled = false;
 	let grandpa_pause = None;
@@ -165,7 +161,7 @@ async fn integration_test() {
 		rpc_handlers,
 	};
 
-	//sleep(Duration::from_secs(60)).await;
+	sleep(Duration::from_secs(60)).await;
 
 	let t1 = sleep(Duration::from_secs(
 		INTEGRATION_TEST_ALLOWED_TIME
@@ -193,6 +189,64 @@ async fn integration_test() {
 		let genesis_state = block.header().encode();
 
 		// create and sign transaction
+		macro_rules! call_function {
+			($function:expr) => {{
+				use sp_blockchain::HeaderBackend;
+				use sp_runtime::SaturatedConversion;
+				use sp_runtime::generic;
+				use polkadot_runtime_common::BlockHashCount;
+				let caller = Alice;
+				let current_block_hash = alice.client.info().best_hash;
+				let current_block = alice.client.info().best_number.saturated_into();
+				let genesis_block = alice.client.hash(0).unwrap().unwrap();
+				let nonce = 0;
+				let period = BlockHashCount::get()
+					.checked_next_power_of_two()
+					.map(|c| c / 2)
+					.unwrap_or(2) as u64;
+				let tip = 0;
+				let extra: rococo_runtime::SignedExtra = (
+					//rococo_runtime::RestrictFunctionality,
+					frame_system::CheckSpecVersion::<rococo_runtime::Runtime>::new(),
+					frame_system::CheckTxVersion::<rococo_runtime::Runtime>::new(),
+					frame_system::CheckGenesis::<rococo_runtime::Runtime>::new(),
+					frame_system::CheckEra::<rococo_runtime::Runtime>::from(generic::Era::mortal(period, current_block)),
+					frame_system::CheckNonce::<rococo_runtime::Runtime>::from(nonce),
+					frame_system::CheckWeight::<rococo_runtime::Runtime>::new(),
+					pallet_transaction_payment::ChargeTransactionPayment::<rococo_runtime::Runtime>::from(tip),
+					registrar::LimitParathreadCommits::<rococo_runtime::Runtime>::new(),
+					polkadot_runtime_common::parachains::ValidateDoubleVoteReports::<rococo_runtime::Runtime>::new(),
+				);
+				let raw_payload = rococo_runtime::SignedPayload::from_raw(
+					$function.clone(),
+					extra.clone(),
+					(
+						rococo_runtime::VERSION.spec_version,
+						rococo_runtime::VERSION.transaction_version,
+						genesis_block,
+						current_block_hash,
+						(),
+						(),
+						(),
+						(),
+						(),
+					),
+				);
+				let signature = raw_payload.using_encoded(|e| caller.sign(e));
+				let extrinsic = rococo_runtime::UncheckedExtrinsic::new_signed(
+					$function.clone(),
+					caller.public().into(),
+					polkadot_primitives::v0::Signature::Sr25519(signature.clone()),
+					extra.clone(),
+				);
+
+				// register parachain
+				use substrate_test_client::RpcHandlersExt;
+				let res = alice.rpc_handlers.send_transaction(extrinsic.into()).await.unwrap();
+				println!("###### {:?}", res);
+			}};
+		}
+
 		let function = rococo_runtime::Call::Sudo(pallet_sudo::Call::sudo(Box::new(
 			rococo_runtime::Call::Registrar(registrar::Call::register_para(
 				para_id,
@@ -206,60 +260,16 @@ async fn integration_test() {
 				genesis_state.into(),
 			)),
 		)));
+		call_function!(function);
 
-		use sp_blockchain::HeaderBackend;
-		use sp_runtime::SaturatedConversion;
-		use sp_runtime::generic;
-		use polkadot_runtime_common::BlockHashCount;
-		let caller = Alice;
-		let current_block_hash = alice.client.info().best_hash;
-		let current_block = alice.client.info().best_number.saturated_into();
-		let genesis_block = alice.client.hash(0).unwrap().unwrap();
-		let nonce = 0;
-		let period = BlockHashCount::get()
-			.checked_next_power_of_two()
-			.map(|c| c / 2)
-			.unwrap_or(2) as u64;
-		let tip = 0;
-		let extra: rococo_runtime::SignedExtra = (
-			//rococo_runtime::RestrictFunctionality,
-			frame_system::CheckSpecVersion::<rococo_runtime::Runtime>::new(),
-			frame_system::CheckTxVersion::<rococo_runtime::Runtime>::new(),
-			frame_system::CheckGenesis::<rococo_runtime::Runtime>::new(),
-			frame_system::CheckEra::<rococo_runtime::Runtime>::from(generic::Era::mortal(period, current_block)),
-			frame_system::CheckNonce::<rococo_runtime::Runtime>::from(nonce),
-			frame_system::CheckWeight::<rococo_runtime::Runtime>::new(),
-			pallet_transaction_payment::ChargeTransactionPayment::<rococo_runtime::Runtime>::from(tip),
-			registrar::LimitParathreadCommits::<rococo_runtime::Runtime>::new(),
-			polkadot_runtime_common::parachains::ValidateDoubleVoteReports::<rococo_runtime::Runtime>::new(),
-		);
-		let raw_payload = rococo_runtime::SignedPayload::from_raw(
-			function.clone(),
-			extra.clone(),
-			(
-				rococo_runtime::VERSION.spec_version,
-				rococo_runtime::VERSION.transaction_version,
-				genesis_block,
-				current_block_hash,
-				(),
-				(),
-				(),
-				(),
-				(),
-			),
-		);
-		let signature = raw_payload.using_encoded(|e| caller.sign(e));
-		let extrinsic = rococo_runtime::UncheckedExtrinsic::new_signed(
-			function.clone(),
-			caller.public().into(),
-			polkadot_primitives::v0::Signature::Sr25519(signature.clone()),
-			extra.clone(),
-		);
-
-		// register parachain
-		use substrate_test_client::RpcHandlersExt;
-		let res = alice.rpc_handlers.send_transaction(extrinsic.into()).await.unwrap();
-		//panic!("{:?}", res);
+		/*
+		let function = rococo_runtime::Call::Sudo(pallet_sudo::Call::sudo(Box::new(
+			rococo_runtime::Call::Registrar(registrar::Call::para_info(
+				para_id,
+			)),
+		)));
+		call_function!(function);
+		*/
 
 		// run cumulus charlie
 		let key = Arc::new(sp_core::Pair::generate().0);

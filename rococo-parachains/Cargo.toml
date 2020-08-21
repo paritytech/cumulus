@@ -80,7 +80,8 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 assert_cmd = "0.12"
 nix = "0.17"
 rand = "0.7.3"
-tokio = { version = "0.2.13", features = ["macros"] }
+# TODO: macros is used, rt-threaded is probably needed, not sure about the others
+tokio = { version = "0.2.21", features = [ "signal", "rt-core", "rt-threaded", "blocking", "macros" ] }
 
 # Polkadot dependencies
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
