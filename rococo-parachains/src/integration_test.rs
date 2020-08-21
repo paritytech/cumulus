@@ -49,15 +49,14 @@ async fn integration_test() {
 	}).into();
 
 	//let polkadot_spec = polkadot_service::chain_spec::rococo_staging_testnet_config().unwrap();
-	let polkadot_spec = polkadot_service::chain_spec::rococo_local_testnet_config().unwrap();
+	//let polkadot_spec = polkadot_service::chain_spec::rococo_local_testnet_config().unwrap();
 
 	// start alice
-	/*
 	let mut alice =
 		polkadot_test_service::run_test_node(task_executor.clone(), Alice, || {
 			//polkadot_test_runtime::ExpectedBlockTime::set(&10000);
 		}, vec![]);
-	*/
+	/*
 	let mut alice_config = polkadot_test_service::node_config(
 		|| {},
 		task_executor.clone(),
@@ -67,6 +66,7 @@ async fn integration_test() {
 	alice_config.chain_spec = Box::new(polkadot_spec.clone());
 	alice_config.pruning = PruningMode::ArchiveAll;
 	alice_config.offchain_worker = OffchainWorkerConfig { enabled: true, indexing_enabled: false };
+
 	alice_config.rpc_http = Some("127.0.0.1:9933".parse().unwrap());
 	alice_config.rpc_ws = Some("127.0.0.1:9944".parse().unwrap());
 	alice_config.rpc_cors = Some(vec!["http://localhost:*".to_string(),
@@ -85,6 +85,7 @@ async fn integration_test() {
 		},
 		..alice_config.network
 	};
+
 	println!("{:?}", alice_config);
 	let multiaddr = alice_config.network.listen_addresses[0].clone();
 	let authority_discovery_disabled = false;
@@ -107,9 +108,9 @@ async fn integration_test() {
 		addr,
 		rpc_handlers,
 	};
+	*/
 
 	// start bob
-	/*
 	let mut bob = polkadot_test_service::run_test_node(
 		task_executor.clone(),
 		Bob,
@@ -118,7 +119,7 @@ async fn integration_test() {
 		},
 		vec![alice.addr.clone()],
 	);
-	*/
+	/*
 	let mut bob_config = polkadot_test_service::node_config(
 		|| {},
 		task_executor.clone(),
@@ -128,6 +129,7 @@ async fn integration_test() {
 	bob_config.chain_spec = Box::new(polkadot_spec.clone());
 	bob_config.pruning = PruningMode::ArchiveAll;
 	bob_config.offchain_worker = OffchainWorkerConfig { enabled: true, indexing_enabled: false };
+
 	bob_config.network = NetworkConfiguration {
 		net_config_path: Some(bob_config.base_path.as_ref().unwrap().path().join("network")),
 		listen_addresses: vec!["/ip6/::/tcp/27016".parse().unwrap(), "/ip4/0.0.0.0/tcp/27016".parse().unwrap()],
@@ -139,6 +141,7 @@ async fn integration_test() {
 		},
 		..bob_config.network
 	};
+
 	let multiaddr = bob_config.network.listen_addresses[0].clone();
 	let authority_discovery_disabled = false;
 	let grandpa_pause = None;
@@ -160,8 +163,9 @@ async fn integration_test() {
 		addr,
 		rpc_handlers,
 	};
+	*/
 
-	sleep(Duration::from_secs(60)).await;
+	//sleep(Duration::from_secs(60)).await;
 
 	let t1 = sleep(Duration::from_secs(
 		INTEGRATION_TEST_ALLOWED_TIME
@@ -189,6 +193,20 @@ async fn integration_test() {
 		let genesis_state = block.header().encode();
 
 		// create and sign transaction
+		let function = polkadot_test_runtime::Call::Sudo(pallet_sudo::Call::sudo(Box::new(
+			polkadot_test_runtime::Call::Registrar(registrar::Call::register_para(
+				para_id,
+				Info {
+					scheduling: Scheduling::Always,
+				},
+				parachain_runtime::WASM_BINARY
+					.expect("You need to build the WASM binary to run this test!")
+					.to_vec()
+					.into(),
+				genesis_state.into(),
+			)),
+		)));
+		/*
 		macro_rules! call_function {
 			($function:expr) => {{
 				use sp_blockchain::HeaderBackend;
@@ -261,6 +279,7 @@ async fn integration_test() {
 			)),
 		)));
 		call_function!(function);
+		*/
 
 		/*
 		let function = rococo_runtime::Call::Sudo(pallet_sudo::Call::sudo(Box::new(
@@ -271,6 +290,9 @@ async fn integration_test() {
 		call_function!(function);
 		*/
 
+		// register parachain
+		let _ = alice.call_function(function, Alice).await.unwrap();
+
 		// run cumulus charlie
 		let key = Arc::new(sp_core::Pair::generate().0);
 		let mut polkadot_config = polkadot_test_service::node_config(
@@ -279,7 +301,7 @@ async fn integration_test() {
 			Charlie,
 			vec![alice.addr.clone(), bob.addr.clone()],
 		);
-		polkadot_config.chain_spec = Box::new(polkadot_spec.clone());
+		//polkadot_config.chain_spec = Box::new(polkadot_spec.clone());
 		polkadot_config.role = Role::Full;
 		polkadot_config.execution_strategies.importing = sc_client_api::ExecutionStrategy::NativeElseWasm;
 		polkadot_config.dev_key_seed = None;
@@ -288,7 +310,7 @@ async fn integration_test() {
 			parachain_config(task_executor.clone(), Charlie, vec![], spec).unwrap();
 		println!("{:?}", parachain_config);
 		let (_service, charlie_client) =
-			crate::service::start_node(parachain_config, key, polkadot_config, para_id, true, false)
+			crate::service::start_node(parachain_config, key, polkadot_config, para_id, true, true)
 				.unwrap();
 		charlie_client.wait_for_blocks(4).await;
 
@@ -392,4 +414,14 @@ pub fn parachain_config(
 		base_path: Some(base_path),
 		informant_output_format,
 	})
+}
+
+// This is not an actual test, but rather an entry point for out-of process WASM executor.
+// When executing tests the executor spawns currently executing binary, which happens to be test binary.
+// It then passes "validation_worker" on CLI effectivly making rust test executor to run this single test.
+#[test]
+fn validation_worker() {
+	if let Some(id) = std::env::args().find(|a| a.starts_with("/shmem_rs_")) {
+		polkadot_parachain::wasm_executor::run_worker(&id).unwrap()
+	}
 }
