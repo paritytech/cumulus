@@ -40,10 +40,9 @@ use sc_chain_spec::ChainSpec;
 
 static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TEST_ALLOWED_TIME");
 
-#[tokio::test(core_threads = 6, max_threads = 12)]
+#[tokio::test]
 #[ignore]
 async fn integration_test() {
-	sc_cli::init_logger("network=warn,cumulus-network=trace,validation=debug");
 	let task_executor: TaskExecutor = (|fut, _| {
 		spawn(fut).map(|_| ())
 	}).into();
@@ -105,7 +104,7 @@ async fn integration_test() {
 
 		// run cumulus charlie
 		let key = Arc::new(sp_core::Pair::generate().0);
-		let mut polkadot_config = polkadot_test_service::node_config(
+		let polkadot_config = polkadot_test_service::node_config(
 			|| {
 				// TODO
 				//polkadot_test_runtime::ExpectedBlockTime::set(&10000);

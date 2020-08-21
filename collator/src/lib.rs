@@ -487,6 +487,8 @@ where
 
 #[cfg(test)]
 mod tests {
+	#![allow(unused_imports)]
+
 	use super::*;
 	use std::time::Duration;
 
@@ -606,7 +608,7 @@ mod tests {
 	}
 
 	#[test]
-	#[cfg(feature = "boo")]
+	#[cfg(feature = "todo")]
 	fn collates_produces_a_block() {
 		let id = ParaId::from(100);
 		let _ = env_logger::try_init();
