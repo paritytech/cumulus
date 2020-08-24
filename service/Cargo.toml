@@ -12,16 +12,16 @@ cumulus-primitives = { path = "../primitives" }
 cumulus-network = { path = "../network" }
 
 # Substrate dependencies
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-service = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
+sc-client-api = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
+sp-consensus = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
+sp-runtime = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
+sp-api = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
+sp-core = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
+sp-inherents = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
+sp-blockchain = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
 
 # Polkadot dependencies
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-collator = { git = "https://github.com/cheme/polkadot-1", branch = "rococo-branch-witness_backend" }
+polkadot-primitives = { git = "https://github.com/cheme/polkadot-1", branch = "rococo-branch-witness_backend" }
+polkadot-service = { git = "https://github.com/cheme/polkadot-1", branch = "rococo-branch-witness_backend" }

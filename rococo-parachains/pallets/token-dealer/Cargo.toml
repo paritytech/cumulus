@@ -7,15 +7,15 @@ version = "0.1.0"
 [dependencies]
 codec = { package = "parity-scale-codec", version = "1.3.0", default-features = false, features = ["derive"] }
 
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
+frame-support = { git = "https://github.com/cheme/substrate", default-features = false, branch = "rococo-branch-witness_backend" }
+frame-system = { git = "https://github.com/cheme/substrate", default-features = false, branch = "rococo-branch-witness_backend" }
 
 # Cumulus dependencies
 cumulus-upward-message = { path = "../../../upward-message", default-features = false }
 cumulus-primitives = { path = "../../../primitives", default-features = false }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch", default-features = false }
+polkadot-parachain = { git = "https://github.com/cheme/polkadot-1", branch = "rococo-branch-witness_backend", default-features = false }
 
 [features]
 default = ["std"]

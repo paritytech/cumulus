@@ -50,7 +50,7 @@ const CONTRACT_IS_A_TOMBSTONE: i64 = 3;
 ///
 /// As 1 gas is equal to 1 weight we base this on the conducted benchmarks which
 /// determined runtime weights:
-/// https://github.com/paritytech/substrate/pull/5446
+/// https://github.com/cheme/substrate/pull/5446
 const GAS_PER_SECOND: u64 = 1_000_000_000_000;
 
 /// A private newtype for converting `ContractAccessError` into an RPC error.

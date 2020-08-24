@@ -39,56 +39,37 @@ use cumulus_primitives::{
 	GenericUpwardMessage,
 };
 
-/// Stores the global [`Storage`] instance.
+use sp_externalities::{Externalities, ExtensionStore, Error, Extension};
+use sp_std::{any::{TypeId, Any}};
+use sp_core::storage::ChildInfo;
+
+type StorageValue = Vec<u8>;
+type StorageKey = Vec<u8>;
+
+/// Stores the global [`Externalities`] instance.
 ///
 /// As wasm is always executed with one thread, this global varibale is safe!
-static mut STORAGE: Option<Box<dyn Storage>> = None;
+static mut EXT: Option<Box<dyn Externalities>> = None;
 
-/// Runs the given `call` with the global storage and returns the result of the call.
+/// Runs the given `call` with the global externalities and returns the result of the call.
 ///
 /// # Panic
 ///
-/// Panics if the [`STORAGE`] is not initialized.
-fn with_storage<R>(call: impl FnOnce(&mut dyn Storage) -> R) -> R {
-	let mut storage = unsafe {
-		STORAGE
+/// Panics if the [`EXT`] is not initialized.
+fn with_ext<R>(call: impl FnOnce(&mut dyn Externalities) -> R) -> R {
+	let mut ext = unsafe {
+		EXT
 			.take()
-			.expect("`STORAGE` needs to be set before calling this function.")
+			.expect("`EXT` needs to be set before calling this function.")
 	};
 
-	let res = call(&mut *storage);
+	let res = call(&mut *ext);
 
 	unsafe {
-		STORAGE = Some(storage);
+		EXT = Some(ext);
 	}
 
 	res
-}
-
-/// Abstract the storage into a trait without `Block` generic.
-trait Storage {
-	/// Retrieve the value for the given key.
-	fn get(&self, key: &[u8]) -> Option<Vec<u8>>;
-
-	/// Insert the given key and value.
-	fn insert(&mut self, key: &[u8], value: &[u8]);
-
-	/// Remove key and value.
-	fn remove(&mut self, key: &[u8]);
-
-	/// Calculate the storage root.
-	///
-	/// Returns the SCALE encoded hash.
-	fn storage_root(&mut self) -> Vec<u8>;
-
-	/// Clear all keys that start with the given prefix.
-	fn clear_prefix(&mut self, prefix: &[u8]);
-
-	/// Append the value to the given key
-	fn storage_append(&mut self, key: &[u8], value: Vec<u8>);
-
-	/// Get the next storage key after the given `key`.
-	fn next_key(&self, key: &[u8]) -> Option<Vec<u8>>;
 }
 
 /// Implement `Encode` by forwarding the stored raw vec.
@@ -120,7 +101,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	// make a copy for later use
 	let validation_function_params = (&params).into();
 
-	let storage_inner = WitnessStorage::<B>::new(
+	let ext_inner = WitnessExt::<B>::new(
 		block_data.storage_proof,
 		parent_head.state_root().clone(),
 		validation_function_params,
@@ -128,7 +109,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	.expect("Witness data and storage root always match; qed");
 
 	let _guard = unsafe {
-		STORAGE = Some(Box::new(storage_inner));
+		EXT = Some(Box::new(ext_inner));
 		(
 			// Replace storage calls with our own implementations
 			sp_io::storage::host_read.replace_implementation(host_storage_read),
@@ -149,20 +130,20 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	// If in the course of block execution new validation code was set, insert
 	// its scheduled upgrade so we can validate that block number later.
 	let new_validation_code =
-		with_storage(|storage| storage.get(NEW_VALIDATION_CODE)).map(ValidationCode);
+		with_ext(|ext| ext.storage(NEW_VALIDATION_CODE)).map(ValidationCode);
 	if new_validation_code.is_some() && validation_function_params.code_upgrade_allowed.is_none() {
 		panic!("Attempt to upgrade validation function when not permitted!");
 	}
 
 	// Extract potential upward messages from the storage.
-	let upward_messages = match with_storage(|storage| storage.get(UPWARD_MESSAGES)) {
+	let upward_messages = match with_ext(|ext| ext.storage(UPWARD_MESSAGES)) {
 		Some(encoded) => Vec::<GenericUpwardMessage>::decode(&mut &encoded[..])
 			.expect("Upward messages vec is not correctly encoded in the storage!"),
 		None => Vec::new(),
 	};
 
 	let processed_downward_messages =
-		with_storage(|storage| storage.get(PROCESSED_DOWNWARD_MESSAGES))
+		with_ext(|ext| ext.storage(PROCESSED_DOWNWARD_MESSAGES))
 			.and_then(|v| Decode::decode(&mut &v[..]).ok())
 			.unwrap_or_default();
 
@@ -176,14 +157,12 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 
 /// The storage implementation used when validating a block that is using the
 /// witness data as source.
-struct WitnessStorage<B: BlockT> {
-	witness_data: MemoryDB<HashFor<B>>,
-	overlay: BTreeMap<Vec<u8>, Option<Vec<u8>>>,
-	storage_root: B::Hash,
+struct WitnessExt<B: BlockT> {
+	inner: sp_state_machine::witness_ext::WitnessExt<HashFor<B>>,
 	params: ValidationFunctionParams,
 }
 
-impl<B: BlockT> WitnessStorage<B> {
+impl<B: BlockT> WitnessExt<B> {
 	/// Initialize from the given witness data and storage root.
 	///
 	/// Returns an error if given storage root was not found in the witness data.
@@ -198,147 +177,189 @@ impl<B: BlockT> WitnessStorage<B> {
 			return Err("Witness data does not contain given storage root.");
 		}
 
-		Ok(Self {
-			witness_data: db,
-			overlay: Default::default(),
+		let inner = sp_state_machine::witness_ext::WitnessExt::<HashFor<B>>::new(
+			db,
 			storage_root,
+		);
+		Ok(Self {
+			inner,
 			params,
 		})
 	}
 
-	/// Find the next storage key after the given `key` in the trie.
-	fn trie_next_key(&self, key: &[u8]) -> Option<Vec<u8>> {
-		let trie = TrieDB::<Layout<HashFor<B>>>::new(&self.witness_data, &self.storage_root)
-			.expect("Creates next storage key `TrieDB`");
-		let mut iter = trie.iter().expect("Creates trie iterator");
-
-		// The key just after the one given in input, basically `key++0`.
-		// Note: We are sure this is the next key if:
-		// * size of key has no limit (i.e. we can always add 0 to the path),
-		// * and no keys can be inserted between `key` and `key++0` (this is ensured by sp-io).
-		let mut potential_next_key = Vec::with_capacity(key.len() + 1);
-		potential_next_key.extend_from_slice(key);
-		potential_next_key.push(0);
-
-		iter.seek(&potential_next_key).expect("Seek trie iterator");
-
-		let next_element = iter.next();
-
-		if let Some(next_element) = next_element {
-			let (next_key, _) = next_element.expect("Extracts next key");
-			Some(next_key)
-		} else {
-			None
-		}
-	}
-
-	/// Find the next storage key after the given `key` in the overlay.
-	fn overlay_next_key(&self, key: &[u8]) -> Option<(&[u8], Option<&[u8]>)> {
-		let range = (Bound::Excluded(key), Bound::Unbounded);
-		self.overlay.range::<[u8], _>(range).next().map(|(k, v)| (&k[..], v.as_deref()))
-	}
 }
 
-impl<B: BlockT> Storage for WitnessStorage<B> {
-	fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
+impl<B: BlockT> Externalities for WitnessExt<B> {
+	fn storage(&self, key: &[u8]) -> Option<StorageValue> {
 		match key {
 			VALIDATION_FUNCTION_PARAMS => Some(self.params.encode()),
-			key => self
-				.overlay
-				.get(key)
-				.cloned()
-				.or_else(|| {
-					read_trie_value::<Layout<HashFor<B>>, _>(
-						&self.witness_data,
-						&self.storage_root,
-						key,
-					)
-					.ok()
-				})
-				.unwrap_or(None),
+			key => self.inner.storage(key),
 		}
 	}
 
-	fn insert(&mut self, key: &[u8], value: &[u8]) {
-		self.overlay.insert(key.to_vec(), Some(value.to_vec()));
+	fn set_offchain_storage(&mut self, key: &[u8], value: Option<&[u8]>) {
+		self.inner.set_offchain_storage(key, value)
 	}
 
-	fn remove(&mut self, key: &[u8]) {
-		self.overlay.insert(key.to_vec(), None);
+	fn storage_hash(&self, key: &[u8]) -> Option<Vec<u8>> {
+		self.inner.storage_hash(key)
 	}
 
-	fn storage_root(&mut self) -> Vec<u8> {
-		let root = delta_trie_root::<Layout<HashFor<B>>, _, _, _, _, _>(
-			&mut self.witness_data,
-			self.storage_root.clone(),
-			self.overlay
-				.iter()
-				.map(|(k, v)| (k.as_ref(), v.as_ref().map(|v| v.as_ref()))),
-		)
-		.expect("Calculates storage root");
+	fn child_storage(
+		&self,
+		child_info: &ChildInfo,
+		key: &[u8],
+	) -> Option<StorageValue> {
+		self.inner.child_storage(child_info, key)
+	}
 
-		root.encode()
+	fn child_storage_hash(
+		&self,
+		child_info: &ChildInfo,
+		key: &[u8],
+	) -> Option<Vec<u8>> {
+		self.inner.child_storage_hash(child_info, key)
+	}
+
+	fn exists_storage(&self, key: &[u8]) -> bool {
+		self.inner.exists_storage(key)
+	}
+
+	fn exists_child_storage(
+		&self,
+		child_info: &ChildInfo,
+		key: &[u8],
+	) -> bool {
+		self.inner.exists_child_storage(child_info, key)
+	}
+
+	fn next_storage_key(&self, key: &[u8]) -> Option<StorageKey> {
+		self.inner.next_storage_key(key)
+	}
+
+	fn next_child_storage_key(
+		&self,
+		child_info: &ChildInfo,
+		key: &[u8],
+	) -> Option<StorageKey> {
+		self.inner.next_child_storage_key(child_info, key)
+	}
+
+	fn place_storage(&mut self, key: StorageKey, value: Option<StorageValue>) {
+		self.inner.place_storage(key, value)
+	}
+
+	fn place_child_storage(
+		&mut self,
+		child_info: &ChildInfo,
+		key: StorageKey,
+		value: Option<StorageValue>,
+	) {
+		self.inner.place_child_storage(child_info, key, value)
+	}
+
+	fn kill_child_storage(
+		&mut self,
+		child_info: &ChildInfo,
+	) {
+		self.inner.kill_child_storage(child_info)
 	}
 
 	fn clear_prefix(&mut self, prefix: &[u8]) {
-		self.overlay.iter_mut().for_each(|(k, v)| {
-			if k.starts_with(prefix) {
-				*v = None;
-			}
-		});
-
-		let trie = match TrieDB::<Layout<HashFor<B>>>::new(&self.witness_data, &self.storage_root) {
-			Ok(r) => r,
-			Err(_) => panic!(),
-		};
-
-		for x in TrieDBIterator::new_prefixed(&trie, prefix).expect("Creates trie iterator") {
-			if let Ok((key, _)) = x {
-				self.overlay.insert(key, None);
-			}
-		}
+		self.inner.clear_prefix(prefix)
 	}
 
-	fn storage_append(&mut self, key: &[u8], value: Vec<u8>) {
-		let value_vec = sp_std::vec![EncodeOpaqueValue(value)];
-
-		let overlay = &mut self.overlay;
-		let witness_data = &self.witness_data;
-		let storage_root = &self.storage_root;
-
-		let current_value = overlay.entry(key.to_vec()).or_insert_with(|| {
-			read_trie_value::<Layout<HashFor<B>>, _>(witness_data, storage_root, key)
-				.ok()
-				.flatten()
-		});
-
-		let item = current_value.take().unwrap_or_default();
-		*current_value = Some(
-			match Vec::<EncodeOpaqueValue>::append_or_new(item, &value_vec) {
-				Ok(item) => item,
-				Err(_) => value_vec.encode(),
-			},
-		);
+	fn clear_child_prefix(
+		&mut self,
+		child_info: &ChildInfo,
+		prefix: &[u8],
+	) {
+		self.inner.clear_child_prefix(child_info, prefix)
 	}
 
-	fn next_key(&self, key: &[u8]) -> Option<Vec<u8>> {
-		let next_trie_key = self.trie_next_key(key);
-		let next_overlay_key = self.overlay_next_key(key);
+	fn storage_append(
+		&mut self,
+		key: Vec<u8>,
+		value: Vec<u8>,
+	) {
+		self.inner.storage_append(key, value)
+	}
 
-		match (next_trie_key, next_overlay_key) {
-			(Some(backend_key), Some(overlay_key)) if &backend_key[..] < overlay_key.0 => Some(backend_key),
-			(backend_key, None) => backend_key,
-			(_, Some(overlay_key)) => if overlay_key.1.is_some() {
-				Some(overlay_key.0.to_vec())
-			} else {
-				self.next_key(&overlay_key.0)
-			},
-		}
+	fn chain_id(&self) -> u64 {
+		42
+	}
+
+	fn storage_root(&mut self) -> Vec<u8> {
+		self.inner.storage_root()
+	}
+
+	fn child_storage_root(
+		&mut self,
+		child_info: &ChildInfo,
+	) -> Vec<u8> {
+		self.inner.child_storage_root(child_info)
+	}
+
+	fn storage_changes_root(&mut self, parent_hash: &[u8]) -> Result<Option<Vec<u8>>, ()> {
+		self.inner.storage_changes_root(parent_hash)
+	}
+
+	fn storage_start_transaction(&mut self) {
+		self.inner.storage_start_transaction()
+	}
+
+	fn storage_rollback_transaction(&mut self) -> Result<(), ()> {
+		self.inner.storage_rollback_transaction()
+	}
+
+	fn storage_commit_transaction(&mut self) -> Result<(), ()> {
+		self.inner.storage_commit_transaction()
+	}
+
+	fn wipe(&mut self) {
+		self.inner.wipe()
+	}
+
+	fn commit(&mut self) {
+		self.inner.commit()
+	}
+
+	fn read_write_count(&self) -> (u32, u32, u32, u32) {
+		self.inner.read_write_count()
+	}
+
+	fn reset_read_write_count(&mut self) {
+		self.inner.reset_read_write_count()
+	}
+
+	fn set_whitelist(&mut self, new: Vec<Vec<u8>>) {
+		self.inner.set_whitelist(new)
+	}
+}
+
+impl<B: BlockT> ExtensionStore for WitnessExt<B> {
+	fn extension_by_type_id(&mut self, type_id: TypeId) -> Option<&mut dyn Any> {
+		self.inner.extension_by_type_id(type_id)
+	}
+
+	fn register_extension_with_type_id(
+		&mut self,
+		type_id: TypeId,
+		extension: Box<dyn Extension>,
+	) -> Result<(), Error> {
+		self.inner.register_extension_with_type_id(type_id, extension)
+	}
+
+	fn deregister_extension_by_type_id(
+		&mut self,
+		type_id: TypeId,
+	) -> Result<(), Error> {
+		self.inner.deregister_extension_by_type_id(type_id)
 	}
 }
 
 fn host_storage_read(key: &[u8], value_out: &mut [u8], value_offset: u32) -> Option<u32> {
-	match with_storage(|storage| storage.get(key)) {
+	match with_ext(|ext| ext.storage(key)) {
 		Some(value) => {
 			let value_offset = value_offset as usize;
 			let data = &value[value_offset.min(value.len())..];
@@ -351,38 +372,37 @@ fn host_storage_read(key: &[u8], value_out: &mut [u8], value_offset: u32) -> Opt
 }
 
 fn host_storage_set(key: &[u8], value: &[u8]) {
-	with_storage(|storage| storage.insert(key, value));
+	with_ext(|ext| ext.place_storage(key.to_vec(), Some(value.to_vec())));
 }
 
 fn host_storage_get(key: &[u8]) -> Option<Vec<u8>> {
-	with_storage(|storage| storage.get(key).clone())
+	with_ext(|ext| ext.storage(key).clone())
 }
 
 fn host_storage_exists(key: &[u8]) -> bool {
-	with_storage(|storage| storage.get(key).is_some())
+	with_ext(|ext| ext.exists_storage(key))
 }
 
 fn host_storage_clear(key: &[u8]) {
-	with_storage(|storage| storage.remove(key));
+	with_ext(|ext| ext.place_storage(key.to_vec(), None));
 }
 
 fn host_storage_root() -> Vec<u8> {
-	with_storage(|storage| storage.storage_root())
+	with_ext(|ext| ext.storage_root())
 }
 
 fn host_storage_clear_prefix(prefix: &[u8]) {
-	with_storage(|storage| storage.clear_prefix(prefix))
+	with_ext(|ext| ext.clear_prefix(prefix))
 }
 
-fn host_storage_changes_root(_: &[u8]) -> Option<Vec<u8>> {
-	// TODO implement it properly
-	None
+fn host_storage_changes_root(parent_hash: &[u8]) -> Option<Vec<u8>> {
+	with_ext(|ext| ext.storage_changes_root(parent_hash).ok().flatten())
 }
 
 fn host_storage_append(key: &[u8], value: Vec<u8>) {
-	with_storage(|storage| storage.storage_append(key, value));
+	with_ext(|ext| ext.storage_append(key.to_vec(), value));
 }
 
 fn host_storage_next_key(key: &[u8]) -> Option<Vec<u8>> {
-	with_storage(|storage| storage.next_key(key))
+	with_ext(|ext| ext.next_storage_key(key))
 }

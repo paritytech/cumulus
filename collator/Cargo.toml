@@ -6,21 +6,21 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-blockchain = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
+sp-runtime = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
+sp-core = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
+sp-consensus = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
+sp-inherents = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
+sp-api = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
+sc-client-api = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
+sc-cli = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
 
 # Polkadot dependencies
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-collator = { git = "https://github.com/cheme/polkadot-1", branch = "rococo-branch-witness_backend" }
+polkadot-service = { git = "https://github.com/cheme/polkadot-1", branch = "rococo-branch-witness_backend" }
+polkadot-parachain = { git = "https://github.com/cheme/polkadot-1", branch = "rococo-branch-witness_backend" }
+polkadot-primitives = { git = "https://github.com/cheme/polkadot-1", branch = "rococo-branch-witness_backend" }
+polkadot-validation = { git = "https://github.com/cheme/polkadot-1", branch = "rococo-branch-witness_backend" }
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../consensus" }
@@ -40,13 +40,13 @@ test-runtime = { package = "cumulus-test-runtime", path = "../test/runtime" }
 test-client = { package = "cumulus-test-client", path = "../test/client" }
 
 # Substrate dependencies
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+substrate-test-client = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
+sp-keyring = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
+sp-blockchain = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
+sp-state-machine = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
 
 # Polkadot dependencies
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-service = { git = "https://github.com/cheme/polkadot-1", branch = "rococo-branch-witness_backend" }
 
 # Other dependencies
 env_logger = "0.7.1"
