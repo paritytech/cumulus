@@ -261,20 +261,14 @@ impl<B: BlockT> Storage for WitnessStorage<B> {
 				.overlay
 				.get(key)
 				.cloned()
-				.or_else(|| {
+				.unwrap_or_else(|| {
 					read_trie_value::<Layout<HashFor<B>>, _>(
 						&self.witness_data,
 						&self.storage_root,
 						key,
 					)
-					.map_err(|e| match *e {
-						TrieError::DecoderError(..) => panic!("Invalid encoding in proof"),
-						TrieError::IncompleteDatabase(..) => panic!("Incomplete proof"),
-						_ => panic!("Invalid proof"),
-					})
-					.ok()
+					.expect("Reading key from trie.")
 				})
-				.unwrap_or(None),
 		}
 	}
 
