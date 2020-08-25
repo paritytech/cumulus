@@ -23,7 +23,7 @@ use frame_support::{
 };
 use frame_system::ensure_signed;
 
-use codec::{Decode, Encode, Input, Output};
+use codec::{Encode, Decode, Input, Output, compact};
 use cumulus_primitives::{
 	relay_chain::DownwardMessage,
 	xcmp::{XcmpMessageHandler, XcmpMessageSender},
@@ -31,6 +31,126 @@ use cumulus_primitives::{
 };
 use cumulus_upward_message::BalancesMessage;
 use polkadot_parachain::primitives::AccountIdConversion;
+
+/// An envelope for an XCM. This is only really useful if you're not integrating into the runtime's
+/// `Call` system.
+pub struct XcmEnvelope(VersionedXcm);
+
+impl Encode for VersionedXcm {
+	fn encode_to<O: Output>(&self, dest: &mut O) {
+		// Just insert 0xff, 0x00 before the
+		dest.push_byte(0xff);
+		dest.push_byte(0x00);
+		dest.push(self.0);
+	}
+}
+
+impl Decode for VersionedXcm {
+	fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
+		if input.read_byte()? != 0xff || input.read_byte()? != 0x00 {
+			return None
+		}
+		Ok(Self(Decode::decode(input)))
+	}
+}
+
+/// A straight forward XCM, together with its version code.
+#[derive(Clone, Eq, PartialEq, Encode, Decode)]
+pub enum VersionedXcm {
+	V0(v0::Xcm),
+}
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode)]
+pub enum VersionedMultiLocation {
+	V0(v0::MultiLocation),
+}
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode)]
+pub enum VersionedMultiNetwork {
+	V0(v0::MultiNetwork),
+}
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode)]
+pub enum VersionedMultiAsset {
+	V0(v0::MultiAsset),
+}
+
+pub mod v0 {
+	use super::*;
+
+	#[derive(Clone, Eq, PartialEq, Encode, Decode)]
+	pub enum MultiNetwork {
+		Wildcard,
+		Identified(Vec<u8>),
+	}
+
+	#[derive(Clone, Eq, PartialEq, Encode, Decode)]
+	pub enum MultiLocation {
+		Null,
+		Parent,
+		ChildOf { primary: Box<MultiLocation>, subordinate: Box<MultiLocation> },
+		SiblingOf(Box<MultiLocation>),
+		Reserved4,
+		Reserved5,
+		Reserved6,
+		OpaqueRemark(Vec<u8>),
+		AccountId32 { network: MultiNetwork, id: [u8; 32] },
+		AccountIndex64 { network: MultiNetwork, #[compact] index: u64 },
+		ParachainPrimaryAccount { network: MultiNetwork, #[compact] id: u32 },
+		AccountKey20 { network: MultiNetwork, key: [u8; 20] },
+	}
+
+	#[derive(Clone, Eq)]
+	pub enum AssetInstance {
+		Undefined,
+		Index8(u8),
+		Index16(#[compact] u16),
+		Index32(#[compact] u32),
+		Index64(#[compact] u64),
+		Index128(#[compact] u128),
+		Array4([u8; 4]),
+		Array8([u8; 8]),
+		Array16([u8; 16]),
+		Array32([u8; 32]),
+		Blob(Vec<u8>),
+	}
+
+	#[derive(Clone, Eq, PartialEq, Encode, Decode)]
+	pub enum MultiAsset {
+		Wild,
+		WildFungible,
+		WildNonFungible,
+		WildAbstractFungible { id: Vec<u8> },
+		WildAbstractNonFungible { class: Vec<u8> },
+		WildConcreteFungible { id: MultiLocation },
+		WildConcreteNonFungible { class: MultiLocation },
+		AbstractFungible { id: Vec<u8>, #[compact] amount: u128 },
+		AbstractNonFungible { class: Vec<u8>, instance: AssetInstance },
+		ConcreteFungible { id: MultiLocation, #[compact] amount: u128 },
+		ConcreteNonFungible { class: MultiLocation, instance: AssetInstance },
+		Each(Vec<MultiAsset>),
+	}
+
+	#[derive(Clone, Eq, PartialEq, Encode, Decode)]
+	pub enum Ai {
+		Each(Vec<Ai>),
+		DepositAsset { asset: MultiAsset, dest: MultiLocation },
+		ExchangeAsset { give: MultiAsset, receive: MultiAsset },
+		InitiateReserveTransfer { asset: MultiAsset, dest: MultiLocation, effect: Ai },
+		InitiateTeleport { asset: MultiAsset, dest: MultiLocation, effect: Ai },
+		QueryHolding { #[compact] query_id: u64, dest: MultiLocation, assets: Vec<MultiAsset> },
+	}
+
+	#[derive(Clone, Eq, PartialEq, Encode, Decode)]
+	pub enum Xcm {
+		WithdrawAsset { asset: MultiAsset, effect: Ai },
+		ReserveAssetTransfer { asset: MultiAsset, dest: MultiLocation, effect: Ai },
+		ReserveAssetCredit { asset: MultiAsset, effect: Ai },
+		TeleportAsset { asset: MultiAsset, effect: Ai },
+		Balances { query_id: Vec<u8>, assets: Vec<MultiAsset> },
+	}
+}
+
 
 #[derive(Encode, Decode)]
 pub enum XcmpMessage<XAccountId, XBalance> {
