@@ -19,16 +19,14 @@
 use frame_executive::ExecuteBlock;
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT};
 
-use sp_std::{boxed::Box, vec::Vec, collections::btree_map::BTreeMap, ops::Bound};
-use sp_trie::{delta_trie_root, read_trie_value, Layout, MemoryDB, StorageProof};
+use sp_std::{boxed::Box, vec::Vec};
+use sp_trie::StorageProof;
 
 use hash_db::{HashDB, EMPTY_PREFIX};
 
-use trie_db::{TrieDB, TrieDBIterator, Trie};
-
 use parachain::primitives::{HeadData, ValidationCode, ValidationParams, ValidationResult};
 
-use codec::{Decode, Encode, EncodeAppend};
+use codec::{Decode, Encode};
 
 use cumulus_primitives::{
 	validation_function_params::ValidationFunctionParams,
@@ -46,17 +44,22 @@ use sp_core::storage::ChildInfo;
 type StorageValue = Vec<u8>;
 type StorageKey = Vec<u8>;
 
-/// Stores the global [`Externalities`] instance.
+trait ExternalitiesAndModified: Externalities {
+	/// Retrieve the value for the given key only if modified.
+	fn modified(&self, key: &[u8]) -> Option<Option<Vec<u8>>>;
+}
+
+/// Stores the global [`ExternalitiesAndModified`] instance.
 ///
 /// As wasm is always executed with one thread, this global varibale is safe!
-static mut EXT: Option<Box<dyn Externalities>> = None;
+static mut EXT: Option<Box<dyn ExternalitiesAndModified>> = None;
 
 /// Runs the given `call` with the global externalities and returns the result of the call.
 ///
 /// # Panic
 ///
 /// Panics if the [`EXT`] is not initialized.
-fn with_ext<R>(call: impl FnOnce(&mut dyn Externalities) -> R) -> R {
+fn with_ext<R>(call: impl FnOnce(&mut dyn ExternalitiesAndModified) -> R) -> R {
 	let mut ext = unsafe {
 		EXT
 			.take()
@@ -130,20 +133,20 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	// If in the course of block execution new validation code was set, insert
 	// its scheduled upgrade so we can validate that block number later.
 	let new_validation_code =
-		with_ext(|ext| ext.storage(NEW_VALIDATION_CODE)).map(ValidationCode);
+		with_ext(|ext| ext.modified(NEW_VALIDATION_CODE).flatten()).map(ValidationCode);
 	if new_validation_code.is_some() && validation_function_params.code_upgrade_allowed.is_none() {
 		panic!("Attempt to upgrade validation function when not permitted!");
 	}
 
 	// Extract potential upward messages from the storage.
-	let upward_messages = match with_ext(|ext| ext.storage(UPWARD_MESSAGES)) {
+	let upward_messages = match with_ext(|ext| ext.modified(UPWARD_MESSAGES).flatten()) {
 		Some(encoded) => Vec::<GenericUpwardMessage>::decode(&mut &encoded[..])
 			.expect("Upward messages vec is not correctly encoded in the storage!"),
 		None => Vec::new(),
 	};
 
 	let processed_downward_messages =
-		with_ext(|ext| ext.storage(PROCESSED_DOWNWARD_MESSAGES))
+		with_ext(|ext| ext.modified(PROCESSED_DOWNWARD_MESSAGES).flatten())
 			.and_then(|v| Decode::decode(&mut &v[..]).ok())
 			.unwrap_or_default();
 
@@ -334,6 +337,12 @@ impl<B: BlockT> Externalities for WitnessExt<B> {
 
 	fn set_whitelist(&mut self, new: Vec<Vec<u8>>) {
 		self.inner.set_whitelist(new)
+	}
+}
+
+impl<B: BlockT> ExternalitiesAndModified for WitnessExt<B> {
+	fn modified(&self, key: &[u8]) -> Option<Option<Vec<u8>>> {
+		self.inner.modified(key)
 	}
 }
 
