@@ -21,7 +21,7 @@ use sp_std::vec::Vec;
 
 /// A raw XCMP message that is being send between two Parachain's.
 #[derive(codec::Encode, codec::Decode)]
-pub struct RawXCMPMessage {
+pub struct RawXcmpMessage {
 	/// Parachain sending the message.
 	pub from: ParaId,
 	/// SCALE encoded message.
@@ -30,13 +30,13 @@ pub struct RawXCMPMessage {
 
 /// Something that can handle XCMP messages.
 #[impl_trait_for_tuples::impl_for_tuples(30)]
-pub trait XCMPMessageHandler<Message: codec::Decode> {
+pub trait XcmpMessageHandler<Message: codec::Decode> {
 	/// Handle a XCMP message.
 	fn handle_xcmp_message(src: ParaId, msg: &Message);
 }
 
 /// Something that can send XCMP messages.
-pub trait XCMPMessageSender<Message: codec::Encode> {
+pub trait XcmpMessageSender<Message: codec::Encode> {
 	/// Send a XCMP message to the given parachain.
 	fn send_xcmp_message(dest: ParaId, msg: &Message) -> Result<(), ()>;
 }

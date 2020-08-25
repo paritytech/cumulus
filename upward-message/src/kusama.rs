@@ -30,7 +30,7 @@ impl BalancesMessage<AccountId, Balance> for UpwardMessage {
 	}
 }
 
-impl XCMPMessage for UpwardMessage {
+impl XcmpMessage for UpwardMessage {
 	fn send_message(dest: ParaId, msg: Vec<u8>) -> Self {
 		ParachainsCall::send_xcmp_message(dest, msg).into()
 	}

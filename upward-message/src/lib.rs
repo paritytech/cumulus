@@ -43,7 +43,7 @@ pub trait BalancesMessage<AccountId, Balance>: Sized {
 }
 
 /// A `XCMP` related upward message.
-pub trait XCMPMessage: Sized {
+pub trait XcmpMessage: Sized {
 	/// Send the given XCMP message to given parachain.
 	fn send_message(dest: ParaId, msg: Vec<u8>) -> Self;
 }
