@@ -20,7 +20,6 @@ use frame_executive::ExecuteBlock;
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT};
 
 use sp_std::{boxed::Box, vec::Vec};
-use sp_trie::StorageProof;
 
 use hash_db::{HashDB, EMPTY_PREFIX};
 
@@ -36,44 +35,20 @@ use cumulus_primitives::{
 	},
 	GenericUpwardMessage,
 };
-
+use sp_externalities::{set_and_run_with_externalities, with_externalities};
 use sp_externalities::{Externalities, ExtensionStore, Error, Extension};
+use sp_trie::MemoryDB;
 use sp_std::{any::{TypeId, Any}};
 use sp_core::storage::ChildInfo;
 
 type StorageValue = Vec<u8>;
 type StorageKey = Vec<u8>;
 
-trait ExternalitiesAndModified: Externalities {
-	/// Retrieve the value for the given key only if modified.
-	fn modified(&self, key: &[u8]) -> Option<Option<Vec<u8>>>;
-}
-
-/// Stores the global [`ExternalitiesAndModified`] instance.
-///
-/// As wasm is always executed with one thread, this global varibale is safe!
-static mut EXT: Option<Box<dyn ExternalitiesAndModified>> = None;
-
-/// Runs the given `call` with the global externalities and returns the result of the call.
-///
-/// # Panic
-///
-/// Panics if the [`EXT`] is not initialized.
-fn with_ext<R>(call: impl FnOnce(&mut dyn ExternalitiesAndModified) -> R) -> R {
-	let mut ext = unsafe {
-		EXT
-			.take()
-			.expect("`EXT` needs to be set before calling this function.")
-	};
-
-	let res = call(&mut *ext);
-
-	unsafe {
-		EXT = Some(ext);
-	}
-
-	res
-}
+type ExtInner<'a, B: BlockT> = sp_state_machine::ExtInner<
+	'a,
+	HashFor<B>,
+	sp_state_machine::TrieBackend<MemoryDB<HashFor<B>>, HashFor<B>>,
+>;
 
 /// Implement `Encode` by forwarding the stored raw vec.
 struct EncodeOpaqueValue(Vec<u8>);
@@ -104,15 +79,23 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	// make a copy for later use
 	let validation_function_params = (&params).into();
 
-	let ext_inner = WitnessExt::<B>::new(
-		block_data.storage_proof,
-		parent_head.state_root().clone(),
-		validation_function_params,
-	)
-	.expect("Witness data and storage root always match; qed");
+	let db = block_data.storage_proof.into_memory_db();
+	let root = parent_head.state_root().clone();
+	if !HashDB::<HashFor<B>, _>::contains(&db, &root, EMPTY_PREFIX) {
+		panic!("Witness data does not contain given storage root.");
+	}
+	let backend = sp_state_machine::TrieBackend::new(
+		db,
+		root,
+	);
+	let mut overlay = sp_state_machine::OverlayedChanges::default();
+	let ext = sp_state_machine::ExtInner::new(&mut overlay, &backend);
+	let mut ext = WitnessExt::<B> {
+		inner: ExtInner::<B>::new(&mut overlay, &backend),
+		params: &validation_function_params,
+	};
 
 	let _guard = unsafe {
-		EXT = Some(Box::new(ext_inner));
 		(
 			// Replace storage calls with our own implementations
 			sp_io::storage::host_read.replace_implementation(host_storage_read),
@@ -128,27 +111,30 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 		)
 	};
 
-	E::execute_block(block);
+	set_and_run_with_externalities(&mut ext, || {
+		E::execute_block(block);
+	});
 
 	// If in the course of block execution new validation code was set, insert
 	// its scheduled upgrade so we can validate that block number later.
-	let new_validation_code =
-		with_ext(|ext| ext.modified(NEW_VALIDATION_CODE).flatten()).map(ValidationCode);
+	let new_validation_code = overlay.storage(NEW_VALIDATION_CODE).flatten()
+		.map(|slice| slice.to_vec())
+		.map(ValidationCode);
 	if new_validation_code.is_some() && validation_function_params.code_upgrade_allowed.is_none() {
 		panic!("Attempt to upgrade validation function when not permitted!");
 	}
 
 	// Extract potential upward messages from the storage.
-	let upward_messages = match with_ext(|ext| ext.modified(UPWARD_MESSAGES).flatten()) {
+	let upward_messages = match overlay.storage(UPWARD_MESSAGES).flatten() {
 		Some(encoded) => Vec::<GenericUpwardMessage>::decode(&mut &encoded[..])
 			.expect("Upward messages vec is not correctly encoded in the storage!"),
 		None => Vec::new(),
 	};
 
-	let processed_downward_messages =
-		with_ext(|ext| ext.modified(PROCESSED_DOWNWARD_MESSAGES).flatten())
-			.and_then(|v| Decode::decode(&mut &v[..]).ok())
-			.unwrap_or_default();
+	let processed_downward_messages = overlay.storage(PROCESSED_DOWNWARD_MESSAGES)
+		.flatten()
+		.and_then(|v| Decode::decode(&mut &v[..]).ok())
+		.unwrap_or_default();
 
 	ValidationResult {
 		head_data,
@@ -160,39 +146,12 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 
 /// The storage implementation used when validating a block that is using the
 /// witness data as source.
-struct WitnessExt<B: BlockT> {
-	inner: sp_state_machine::witness_ext::WitnessExt<HashFor<B>>,
-	params: ValidationFunctionParams,
+struct WitnessExt<'a, B: BlockT> {
+	inner: ExtInner<'a, B>,
+	params: &'a ValidationFunctionParams,
 }
 
-impl<B: BlockT> WitnessExt<B> {
-	/// Initialize from the given witness data and storage root.
-	///
-	/// Returns an error if given storage root was not found in the witness data.
-	fn new(
-		storage_proof: StorageProof,
-		storage_root: B::Hash,
-		params: ValidationFunctionParams,
-	) -> Result<Self, &'static str> {
-		let mut db = storage_proof.into_memory_db();
-
-		if !HashDB::contains(&db, &storage_root, EMPTY_PREFIX) {
-			return Err("Witness data does not contain given storage root.");
-		}
-
-		let inner = sp_state_machine::witness_ext::WitnessExt::<HashFor<B>>::new(
-			db,
-			storage_root,
-		);
-		Ok(Self {
-			inner,
-			params,
-		})
-	}
-
-}
-
-impl<B: BlockT> Externalities for WitnessExt<B> {
+impl<'a, B: BlockT> Externalities for WitnessExt<'a, B> {
 	fn storage(&self, key: &[u8]) -> Option<StorageValue> {
 		match key {
 			VALIDATION_FUNCTION_PARAMS => Some(self.params.encode()),
@@ -340,13 +299,7 @@ impl<B: BlockT> Externalities for WitnessExt<B> {
 	}
 }
 
-impl<B: BlockT> ExternalitiesAndModified for WitnessExt<B> {
-	fn modified(&self, key: &[u8]) -> Option<Option<Vec<u8>>> {
-		self.inner.modified(key)
-	}
-}
-
-impl<B: BlockT> ExtensionStore for WitnessExt<B> {
+impl<'a, B: BlockT> ExtensionStore for WitnessExt<'a, B> {
 	fn extension_by_type_id(&mut self, type_id: TypeId) -> Option<&mut dyn Any> {
 		self.inner.extension_by_type_id(type_id)
 	}
@@ -368,7 +321,8 @@ impl<B: BlockT> ExtensionStore for WitnessExt<B> {
 }
 
 fn host_storage_read(key: &[u8], value_out: &mut [u8], value_offset: u32) -> Option<u32> {
-	match with_ext(|ext| ext.storage(key)) {
+	match with_externalities(|ext| ext.storage(key))
+		.expect("Runing with a correct environment") {
 		Some(value) => {
 			let value_offset = value_offset as usize;
 			let data = &value[value_offset.min(value.len())..];
@@ -381,37 +335,46 @@ fn host_storage_read(key: &[u8], value_out: &mut [u8], value_offset: u32) -> Opt
 }
 
 fn host_storage_set(key: &[u8], value: &[u8]) {
-	with_ext(|ext| ext.place_storage(key.to_vec(), Some(value.to_vec())));
+	with_externalities(|ext| ext.place_storage(key.to_vec(), Some(value.to_vec())))
+		.expect("Runing with a correct environment");
 }
 
 fn host_storage_get(key: &[u8]) -> Option<Vec<u8>> {
-	with_ext(|ext| ext.storage(key).clone())
+	with_externalities(|ext| ext.storage(key).clone())
+		.expect("Runing with a correct environment")
 }
 
 fn host_storage_exists(key: &[u8]) -> bool {
-	with_ext(|ext| ext.exists_storage(key))
+	with_externalities(|ext| ext.exists_storage(key))
+		.expect("Runing with a correct environment")
 }
 
 fn host_storage_clear(key: &[u8]) {
-	with_ext(|ext| ext.place_storage(key.to_vec(), None));
+	with_externalities(|ext| ext.place_storage(key.to_vec(), None))
+		.expect("Runing with a correct environment");
 }
 
 fn host_storage_root() -> Vec<u8> {
-	with_ext(|ext| ext.storage_root())
+	with_externalities(|ext| ext.storage_root())
+		.expect("Runing with a correct environment")
 }
 
 fn host_storage_clear_prefix(prefix: &[u8]) {
-	with_ext(|ext| ext.clear_prefix(prefix))
+	with_externalities(|ext| ext.clear_prefix(prefix))
+		.expect("Runing with a correct environment");
 }
 
 fn host_storage_changes_root(parent_hash: &[u8]) -> Option<Vec<u8>> {
-	with_ext(|ext| ext.storage_changes_root(parent_hash).ok().flatten())
+	with_externalities(|ext| ext.storage_changes_root(parent_hash).ok().flatten())
+		.expect("Runing with a correct environment")
 }
 
 fn host_storage_append(key: &[u8], value: Vec<u8>) {
-	with_ext(|ext| ext.storage_append(key.to_vec(), value));
+	with_externalities(|ext| ext.storage_append(key.to_vec(), value))
+		.expect("Runing with a correct environment");
 }
 
 fn host_storage_next_key(key: &[u8]) -> Option<Vec<u8>> {
-	with_ext(|ext| ext.next_storage_key(key))
+	with_externalities(|ext| ext.next_storage_key(key))
+		.expect("Runing with a correct environment")
 }
