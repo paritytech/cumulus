@@ -26,14 +26,14 @@ use frame_system::ensure_signed;
 use codec::{Decode, Encode, Input, Output};
 use cumulus_primitives::{
 	relay_chain::DownwardMessage,
-	xcmp::{XcmpMessageHandler, XcmpMessageSender},
+	xcmp::{XCMPMessageHandler, XCMPMessageSender},
 	DownwardMessageHandler, ParaId, UpwardMessageOrigin, UpwardMessageSender,
 };
 use cumulus_upward_message::BalancesMessage;
 use polkadot_parachain::primitives::AccountIdConversion;
 
 #[derive(Encode, Decode)]
-pub enum XcmpMessage<XAccountId, XBalance> {
+pub enum XCMPMessage<XAccountId, XBalance> {
 	/// Transfer tokens to the given account from the Parachain account.
 	TransferToken(XAccountId, XBalance),
 }
@@ -56,7 +56,7 @@ pub trait Trait: frame_system::Trait {
 	type Currency: Currency<Self::AccountId>;
 
 	/// The sender of XCMP messages.
-	type XcmpMessageSender: XcmpMessageSender<XcmpMessage<Self::AccountId, BalanceOf<Self>>>;
+	type XCMPMessageSender: XCMPMessageSender<XCMPMessage<Self::AccountId, BalanceOf<Self>>>;
 }
 
 decl_event! {
@@ -113,9 +113,9 @@ decl_module! {
 				ExistenceRequirement::AllowDeath,
 			)?;
 
-			T::XcmpMessageSender::send_xcmp_message(
+			T::XCMPMessageSender::send_xcmp_message(
 				para_id.into(),
-				&XcmpMessage::TransferToken(dest, amount),
+				&XCMPMessage::TransferToken(dest, amount),
 			).expect("Should not fail; qed");
 		}
 
@@ -145,10 +145,10 @@ impl<T: Trait> DownwardMessageHandler for Module<T> {
 	}
 }
 
-impl<T: Trait> XcmpMessageHandler<XcmpMessage<T::AccountId, BalanceOf<T>>> for Module<T> {
-	fn handle_xcmp_message(src: ParaId, msg: &XcmpMessage<T::AccountId, BalanceOf<T>>) {
+impl<T: Trait> XCMPMessageHandler<XCMPMessage<T::AccountId, BalanceOf<T>>> for Module<T> {
+	fn handle_xcmp_message(src: ParaId, msg: &XCMPMessage<T::AccountId, BalanceOf<T>>) {
 		match msg {
-			XcmpMessage::TransferToken(dest, amount) => {
+			XCMPMessage::TransferToken(dest, amount) => {
 				let para_account = src.clone().into_account();
 
 				let res = T::Currency::transfer(

@@ -16,167 +16,50 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{
-	decl_event, decl_module,
-	dispatch::DispatchResult,
-	traits::{Currency, ExistenceRequirement, WithdrawReason},
-};
-use frame_system::ensure_signed;
+use frame_support::{decl_event, decl_module, dispatch::{Dispatchable, DispatchResult}, traits::{Currency, ExistenceRequirement, WithdrawReason, OriginTrait}, Parameter};
+use frame_system::{RawOrigin, ensure_signed};
 
-use codec::{Encode, Decode, Input, Output, compact};
+use codec::{Codec, Encode, Decode, Input, Output};
 use cumulus_primitives::{
 	relay_chain::DownwardMessage,
-	xcmp::{XcmpMessageHandler, XcmpMessageSender},
-	DownwardMessageHandler, ParaId, UpwardMessageOrigin, UpwardMessageSender,
+	xcmp::{XCMPMessageHandler, XCMPMessageSender},
+	xcm::{v0::Xcm, VersionedXcm},
+	DmpHandler, HmpHandler, HmpSender, UmpSender, ParaId
 };
 use cumulus_upward_message::BalancesMessage;
 use polkadot_parachain::primitives::AccountIdConversion;
+use frame_support::sp_std::result;
+use polkadot_parachain::xcm::v0::MultiOrigin;
 
-/// An envelope for an XCM. This is only really useful if you're not integrating into the runtime's
-/// `Call` system.
-pub struct XcmEnvelope(VersionedXcm);
-
-impl Encode for VersionedXcm {
-	fn encode_to<O: Output>(&self, dest: &mut O) {
-		// Just insert 0xff, 0x00 before the
-		dest.push_byte(0xff);
-		dest.push_byte(0x00);
-		dest.push(self.0);
-	}
+/// Origin for the parachains module.
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
+pub enum Origin {
+	/// It comes from the relay-chain.
+	RelayChain,
+	/// It comes from a parachain.
+	Parachain(ParaId),
 }
-
-impl Decode for VersionedXcm {
-	fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
-		if input.read_byte()? != 0xff || input.read_byte()? != 0x00 {
-			return None
-		}
-		Ok(Self(Decode::decode(input)))
-	}
-}
-
-/// A straight forward XCM, together with its version code.
-#[derive(Clone, Eq, PartialEq, Encode, Decode)]
-pub enum VersionedXcm {
-	V0(v0::Xcm),
-}
-
-#[derive(Clone, Eq, PartialEq, Encode, Decode)]
-pub enum VersionedMultiLocation {
-	V0(v0::MultiLocation),
-}
-
-#[derive(Clone, Eq, PartialEq, Encode, Decode)]
-pub enum VersionedMultiNetwork {
-	V0(v0::MultiNetwork),
-}
-
-#[derive(Clone, Eq, PartialEq, Encode, Decode)]
-pub enum VersionedMultiAsset {
-	V0(v0::MultiAsset),
-}
-
-pub mod v0 {
-	use super::*;
-
-	#[derive(Clone, Eq, PartialEq, Encode, Decode)]
-	pub enum MultiNetwork {
-		Wildcard,
-		Identified(Vec<u8>),
-	}
-
-	#[derive(Clone, Eq, PartialEq, Encode, Decode)]
-	pub enum MultiLocation {
-		Null,
-		Parent,
-		ChildOf { primary: Box<MultiLocation>, subordinate: Box<MultiLocation> },
-		SiblingOf(Box<MultiLocation>),
-		Reserved4,
-		Reserved5,
-		Reserved6,
-		OpaqueRemark(Vec<u8>),
-		AccountId32 { network: MultiNetwork, id: [u8; 32] },
-		AccountIndex64 { network: MultiNetwork, #[compact] index: u64 },
-		ParachainPrimaryAccount { network: MultiNetwork, #[compact] id: u32 },
-		AccountKey20 { network: MultiNetwork, key: [u8; 20] },
-	}
-
-	#[derive(Clone, Eq)]
-	pub enum AssetInstance {
-		Undefined,
-		Index8(u8),
-		Index16(#[compact] u16),
-		Index32(#[compact] u32),
-		Index64(#[compact] u64),
-		Index128(#[compact] u128),
-		Array4([u8; 4]),
-		Array8([u8; 8]),
-		Array16([u8; 16]),
-		Array32([u8; 32]),
-		Blob(Vec<u8>),
-	}
-
-	#[derive(Clone, Eq, PartialEq, Encode, Decode)]
-	pub enum MultiAsset {
-		Wild,
-		WildFungible,
-		WildNonFungible,
-		WildAbstractFungible { id: Vec<u8> },
-		WildAbstractNonFungible { class: Vec<u8> },
-		WildConcreteFungible { id: MultiLocation },
-		WildConcreteNonFungible { class: MultiLocation },
-		AbstractFungible { id: Vec<u8>, #[compact] amount: u128 },
-		AbstractNonFungible { class: Vec<u8>, instance: AssetInstance },
-		ConcreteFungible { id: MultiLocation, #[compact] amount: u128 },
-		ConcreteNonFungible { class: MultiLocation, instance: AssetInstance },
-		Each(Vec<MultiAsset>),
-	}
-
-	#[derive(Clone, Eq, PartialEq, Encode, Decode)]
-	pub enum Ai {
-		Each(Vec<Ai>),
-		DepositAsset { asset: MultiAsset, dest: MultiLocation },
-		ExchangeAsset { give: MultiAsset, receive: MultiAsset },
-		InitiateReserveTransfer { asset: MultiAsset, dest: MultiLocation, effect: Ai },
-		InitiateTeleport { asset: MultiAsset, dest: MultiLocation, effect: Ai },
-		QueryHolding { #[compact] query_id: u64, dest: MultiLocation, assets: Vec<MultiAsset> },
-	}
-
-	#[derive(Clone, Eq, PartialEq, Encode, Decode)]
-	pub enum Xcm {
-		WithdrawAsset { asset: MultiAsset, effect: Ai },
-		ReserveAssetTransfer { asset: MultiAsset, dest: MultiLocation, effect: Ai },
-		ReserveAssetCredit { asset: MultiAsset, effect: Ai },
-		TeleportAsset { asset: MultiAsset, effect: Ai },
-		Balances { query_id: Vec<u8>, assets: Vec<MultiAsset> },
-	}
-}
-
-
-#[derive(Encode, Decode)]
-pub enum XcmpMessage<XAccountId, XBalance> {
-	/// Transfer tokens to the given account from the Parachain account.
-	TransferToken(XAccountId, XBalance),
-}
-
-type BalanceOf<T> =
-	<<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
 
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {
 	/// Event type used by the runtime.
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 
+	/// The outer origin type.
+	type Origin: From<Origin>
+		+ From<<Self as system::Trait>::Origin>
+		+ Into<result::Result<Origin, <Self as Trait>::Origin>>;
+
+	/// The outer call dispatch type.
+	type Call: Parameter + Dispatchable<Origin=<Self as Trait>::Origin> + From<Call<Self>>;
+
 	/// The sender of upward messages.
-	type UpwardMessageSender: UpwardMessageSender<Self::UpwardMessage>;
+	type UmpSender: UmpSender;
 
-	/// The upward message type used by the Parachain runtime.
-	type UpwardMessage: codec::Codec + BalancesMessage<Self::AccountId, BalanceOf<Self>>;
+	/// The sender of horizontal/lateral messages.
+	type HmpSender: HmpSender;
 
-	/// Currency of the runtime.
-	type Currency: Currency<Self::AccountId>;
-
-	/// The sender of XCMP messages.
-	type XcmpMessageSender: XcmpMessageSender<XcmpMessage<Self::AccountId, BalanceOf<Self>>>;
+	// TODO: Configuration for how pallet instances map to Xcm concepts.
 }
 
 decl_event! {
@@ -189,58 +72,92 @@ decl_event! {
 		/// Transferred tokens to the account on request from the relay chain.
 		TransferredTokensFromRelayChain(AccountId, Balance),
 		/// Transferred tokens to the account from the given parachain account.
-		TransferredTokensViaXCMP(ParaId, AccountId, Balance, DispatchResult),
+		TransferredTokensViaXcmp(ParaId, AccountId, Balance, DispatchResult),
 	}
 }
 
 decl_module! {
 	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
-		/// Transfer `amount` of tokens on the relay chain from the Parachain account to
-		/// the given `dest` account.
-		#[weight = 10]
-		fn transfer_tokens_to_relay_chain(origin, dest: T::AccountId, amount: BalanceOf<T>) {
-			let who = ensure_signed(origin)?;
-
-			let _ = T::Currency::withdraw(
-				&who,
-				amount,
-				WithdrawReason::Transfer.into(),
-				ExistenceRequirement::AllowDeath,
-			)?;
-
-			let msg = <T as Trait>::UpwardMessage::transfer(dest.clone(), amount.clone());
-			<T as Trait>::UpwardMessageSender::send_upward_message(&msg, UpwardMessageOrigin::Signed)
-				.expect("Should not fail; qed");
-
-			Self::deposit_event(Event::<T>::TransferredTokensToRelayChain(dest, amount));
-		}
-
-		/// Transfer `amount` of tokens to another parachain.
-		#[weight = 10]
-		fn transfer_tokens_to_parachain_chain(
-			origin,
-			para_id: u32,
-			dest: T::AccountId,
-			amount: BalanceOf<T>,
-		) {
-			//TODO we don't make sure that the parachain has some tokens on the other parachain.
-			let who = ensure_signed(origin)?;
-
-			let _ = T::Currency::withdraw(
-				&who,
-				amount,
-				WithdrawReason::Transfer.into(),
-				ExistenceRequirement::AllowDeath,
-			)?;
-
-			T::XcmpMessageSender::send_xcmp_message(
-				para_id.into(),
-				&XcmpMessage::TransferToken(dest, amount),
-			).expect("Should not fail; qed");
-		}
-
 		fn deposit_event() = default;
 	}
+}
+
+impl<T: Trait> DmpHandler for Module<T> {
+	fn handle_downward(msg: VersionedXcm) {
+		match msg.into() {
+			Ok(Xcm::ReserveAssetCredit { asset, effect }) => {
+
+			},
+			Ok(Ok(Xcm::Transact{ origin_type, call })) => {
+				if let Ok(message_call) = <T as Trait>::Call::decode(&mut &call[..]) {
+					let origin: <T as Trait>::Origin = match origin_type {
+						MultiOrigin::SovereignAccount => {
+							// Unimplemented. Does the relay-chain have a sovereign account on the
+							// parachain?
+							Origin::RelayChain.into(),
+						}
+						MultiOrigin::Native =>
+							Origin::RelayChain.into(),
+						MultiOrigin::Superuser =>
+							<T as Trait>::Origin::from(<T as system::Trait>::Origin::from(system::RawOrigin::Root)),
+					};
+					let _ok = message_call.dispatch(origin).is_ok();
+					// Not much to do with the result as it is. It's up to the parachain to ensure that the
+					// message makes sense.
+				}
+			}
+		}
+	}
+}
+
+impl<T: Trait> HmpHandler for Module<T> {
+	fn handle_lateral(id: ParaId, msg: VersionedXcm) {
+
+	}
+}
+
+/// Transfer `amount` of tokens on the relay chain from the Parachain account to
+/// the given `dest` account.
+#[weight = 10]
+fn transfer_tokens_to_relay_chain(origin, dest: T::AccountId, amount: BalanceOf<T>) {
+	let who = ensure_signed(origin)?;
+
+	let _ = T::Currency::withdraw(
+		&who,
+		amount,
+		WithdrawReason::Transfer.into(),
+		ExistenceRequirement::AllowDeath,
+	)?;
+
+	let msg = <T as Trait>::UpwardMessage::transfer(dest.clone(), amount.clone());
+	<T as Trait>::UpwardMessageSender::send_upward_message(&msg, UpwardMessageOrigin::Signed)
+		.expect("Should not fail; qed");
+
+	Self::deposit_event(Event::<T>::TransferredTokensToRelayChain(dest, amount));
+}
+
+/// Transfer `amount` of tokens to another parachain.
+#[weight = 10]
+fn transfer_tokens_to_parachain_chain(
+	origin,
+	para_id: u32,
+	dest: T::AccountId,
+	amount: BalanceOf<T>,
+) {
+	//TODO we don't make sure that the parachain has some tokens on the other parachain.
+	let who = ensure_signed(origin)?;
+
+	let _ = T::Currency::withdraw(
+		&who,
+		amount,
+		WithdrawReason::Transfer.into(),
+		ExistenceRequirement::AllowDeath,
+	)?;
+
+	T::XCMPMessageSender::send_xcmp_message(
+		para_id.into(),
+		&XCMPMessage::TransferToken(dest, amount),
+	).expect("Should not fail; qed");
 }
 
 /// This is a hack to convert from one generic type to another where we are sure that both are the
@@ -265,10 +182,10 @@ impl<T: Trait> DownwardMessageHandler for Module<T> {
 	}
 }
 
-impl<T: Trait> XcmpMessageHandler<XcmpMessage<T::AccountId, BalanceOf<T>>> for Module<T> {
-	fn handle_xcmp_message(src: ParaId, msg: &XcmpMessage<T::AccountId, BalanceOf<T>>) {
+impl<T: Trait> XCMPMessageHandler<XCMPMessage<T::AccountId, BalanceOf<T>>> for Module<T> {
+	fn handle_xcmp_message(src: ParaId, msg: &XCMPMessage<T::AccountId, BalanceOf<T>>) {
 		match msg {
-			XcmpMessage::TransferToken(dest, amount) => {
+			XCMPMessage::TransferToken(dest, amount) => {
 				let para_account = src.clone().into_account();
 
 				let res = T::Currency::transfer(

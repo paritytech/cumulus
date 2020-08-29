@@ -19,18 +19,20 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use polkadot_core_primitives as relay_chain;
-pub use polkadot_core_primitives::DownwardMessage;
 /// A generic upward message from a Parachain to the Relay Chain.
 ///
 /// It is "generic" in such a way, that the actual message is encoded in the `data` field.
 /// Besides the `data` it also holds the `origin` of the message.
-pub use polkadot_parachain::primitives::UpwardMessage as GenericUpwardMessage;
-pub use polkadot_parachain::primitives::{
+pub use polkadot_parachain::{xcm, primitives::{
 	Id as ParaId, ParachainDispatchOrigin as UpwardMessageOrigin,
-};
+	UpwardMessage as GenericUpwardMessage
+}};
 
 pub mod validation_function_params;
-pub mod xcmp;
+
+pub use xcm::{
+	VersionedXcm, VersionedMultiAsset, VersionedMultiLocation, VersionedMultiNetwork, XcmEnvelope
+};
 
 use codec::{Decode, Encode};
 use sp_runtime::traits::Block as BlockT;
@@ -43,7 +45,7 @@ pub mod inherents {
 	pub const DOWNWARD_MESSAGES_IDENTIFIER: InherentIdentifier = *b"cumdownm";
 
 	/// The type of the inherent downward messages.
-	pub type DownwardMessagesType = sp_std::vec::Vec<crate::DownwardMessage>;
+	pub type DownwardMessagesType = sp_std::vec::Vec<sp_std::vec::Vec<u8>>;
 
 	/// The identifier for the `validation_function_params` inherent.
 	pub const VALIDATION_FUNCTION_PARAMS_IDENTIFIER: InherentIdentifier = *b"valfunp0";
@@ -71,23 +73,39 @@ pub mod well_known_keys {
 	pub const PROCESSED_DOWNWARD_MESSAGES: &'static [u8] = b":cumulus_processed_downward_messages:";
 }
 
-/// Something that should be called when a downward message is received.
-#[impl_trait_for_tuples::impl_for_tuples(30)]
-pub trait DownwardMessageHandler {
-	/// Handle the given downward message.
-	fn handle_downward_message(msg: &DownwardMessage);
-}
-
-/// Something that can send upward messages.
-pub trait UpwardMessageSender<UpwardMessage> {
-	/// Send an upward message to the relay chain.
-	///
-	/// Returns an error if sending failed.
-	fn send_upward_message(msg: &UpwardMessage, origin: UpwardMessageOrigin) -> Result<(), ()>;
-}
-
 /// The head data of the parachain, stored in the relay chain.
 #[derive(Decode, Encode, Debug)]
 pub struct HeadData<Block: BlockT> {
 	pub header: Block::Header,
+}
+
+
+
+
+/// Something that should be called when a downward message is received.
+pub trait DmpHandler {
+	/// Handle the given downward message.
+	fn handle_downward(msg: VersionedXcm);
+}
+
+/// Something that should be called when a HRMP/XCMP message is received.
+pub trait HmpHandler {
+	/// Handle the given lateral message. This is opaque.
+	fn handle_lateral(id: ParaId, msg: VersionedXcm);
+}
+
+/// Something that can send upward messages.
+pub trait UmpSender {
+	/// Send an upward message to the relay chain.
+	///
+	/// Returns an error if sending failed.
+	fn send_upward(msg: VersionedXcm) -> Result<(), ()>;
+}
+
+/// Something that can send upward messages.
+pub trait HmpSender {
+	/// Send a message to a sibling chain.
+	///
+	/// Returns an error if sending failed.
+	fn send_lateral(id: ParaId, msg: VersionedXcm) -> Result<(), ()>;
 }
