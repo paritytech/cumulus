@@ -116,6 +116,7 @@ impl<T: Trait> HmpHandler for Module<T> {
 	}
 }
 
+/*
 /// Transfer `amount` of tokens on the relay chain from the Parachain account to
 /// the given `dest` account.
 #[weight = 10]
@@ -205,3 +206,4 @@ impl<T: Trait> XCMPMessageHandler<XCMPMessage<T::AccountId, BalanceOf<T>>> for M
 		}
 	}
 }
+*/
