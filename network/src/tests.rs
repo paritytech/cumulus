@@ -454,7 +454,7 @@ sp_api::mock_impl_runtime_apis! {
 			}
 		}
 
-		fn downward_messages(_: ParaId) -> Vec<polkadot_primitives::v0::DownwardMessage> {
+		fn downward_messages(_: ParaId) -> Vec<Vec<u8>> {
 			Vec::new()
 		}
 	}

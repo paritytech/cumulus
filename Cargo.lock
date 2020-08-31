@@ -963,8 +963,7 @@ dependencies = [
  "cumulus-parachain-upgrade",
  "cumulus-primitives",
  "cumulus-runtime",
- "cumulus-token-dealer",
- "cumulus-upward-message",
+ "cumulus-xcm-handler",
  "frame-executive",
  "frame-support",
  "frame-system",
@@ -997,7 +996,6 @@ name = "cumulus-message-broker"
 version = "0.1.0"
 dependencies = [
  "cumulus-primitives",
- "cumulus-upward-message",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -1200,8 +1198,7 @@ dependencies = [
  "cumulus-parachain-upgrade",
  "cumulus-primitives",
  "cumulus-runtime",
- "cumulus-token-dealer",
- "cumulus-upward-message",
+ "cumulus-xcm-handler",
  "frame-executive",
  "frame-support",
  "frame-system",
@@ -1239,36 +1236,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-token-dealer"
-version = "0.1.0"
-dependencies = [
- "cumulus-primitives",
- "cumulus-upward-message",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "polkadot-parachain",
-]
-
-[[package]]
-name = "cumulus-upward-message"
-version = "0.1.0"
-dependencies = [
- "kusama-runtime",
- "polkadot-core-primitives",
- "polkadot-parachain",
- "polkadot-runtime",
- "rococo-runtime",
- "sp-std",
- "westend-runtime",
-]
-
-[[package]]
 name = "cumulus-xcm-handler"
 version = "0.1.0"
 dependencies = [
  "cumulus-primitives",
- "cumulus-upward-message",
  "frame-support",
  "frame-system",
  "parity-scale-codec",

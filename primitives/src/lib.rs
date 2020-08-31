@@ -23,15 +23,12 @@ pub use polkadot_core_primitives as relay_chain;
 ///
 /// It is "generic" in such a way, that the actual message is encoded in the `data` field.
 /// Besides the `data` it also holds the `origin` of the message.
-pub use polkadot_parachain::{xcm, primitives::{
-	Id as ParaId, ParachainDispatchOrigin as UpwardMessageOrigin,
-	UpwardMessage as GenericUpwardMessage
-}};
+pub use polkadot_parachain::{xcm, primitives::Id as ParaId};
 
 pub mod validation_function_params;
 
 pub use xcm::{
-	VersionedXcm, VersionedMultiAsset, VersionedMultiLocation, VersionedMultiNetwork, XcmEnvelope
+	VersionedXcm, VersionedMultiAsset, VersionedMultiLocation, XcmEnvelope
 };
 
 use codec::{Decode, Encode};
@@ -58,7 +55,7 @@ pub mod inherents {
 pub mod well_known_keys {
 	/// The storage key for the upward messages.
 	///
-	/// The upward messages are stored as SCALE encoded `Vec<GenericUpwardMessage>`.
+	/// The upward messages are stored as SCALE encoded `Vec<Vec<u8>>`.
 	pub const UPWARD_MESSAGES: &'static [u8] = b":cumulus_upward_messages:";
 
 	/// Current validation function parameters.

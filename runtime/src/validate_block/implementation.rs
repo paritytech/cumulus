@@ -36,7 +36,6 @@ use cumulus_primitives::{
 		NEW_VALIDATION_CODE, PROCESSED_DOWNWARD_MESSAGES, UPWARD_MESSAGES,
 		VALIDATION_FUNCTION_PARAMS,
 	},
-	GenericUpwardMessage,
 };
 
 /// Stores the global [`Storage`] instance.
@@ -159,7 +158,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 
 	// Extract potential upward messages from the storage.
 	let upward_messages = match with_storage(|storage| storage.modified(UPWARD_MESSAGES)) {
-		Some(encoded) => Vec::<GenericUpwardMessage>::decode(&mut &encoded[..])
+		Some(encoded) => Vec::<Vec<u8>>::decode(&mut &encoded[..])
 			.expect("Upward messages vec is not correctly encoded in the storage!"),
 		None => Vec::new(),
 	};

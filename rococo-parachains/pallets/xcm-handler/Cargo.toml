@@ -11,7 +11,6 @@ frame-support = { git = "https://github.com/paritytech/substrate", default-featu
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
 
 # Cumulus dependencies
-cumulus-upward-message = { path = "../../../upward-message", default-features = false }
 cumulus-primitives = { path = "../../../primitives", default-features = false }
 
 # Polkadot dependencies
@@ -21,7 +20,6 @@ polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = 
 default = ["std"]
 std = [
     "codec/std",
-    "cumulus-upward-message/std",
     "cumulus-primitives/std",
     "frame-support/std",
     "frame-system/std",

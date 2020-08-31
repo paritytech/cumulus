@@ -21,8 +21,6 @@ use frame_system::{RawOrigin, ensure_signed};
 
 use codec::{Codec, Encode, Decode, Input, Output};
 use cumulus_primitives::{
-	relay_chain::DownwardMessage,
-	xcmp::{XCMPMessageHandler, XCMPMessageSender},
 	xcm::{v0::Xcm, VersionedXcm},
 	DmpHandler, HmpHandler, HmpSender, UmpSender, ParaId
 };

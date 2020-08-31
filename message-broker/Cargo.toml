@@ -18,7 +18,6 @@ codec = { package = "parity-scale-codec", version = "1.3.0", features = [ "deriv
 
 # Cumulus dependencies
 cumulus-primitives = { path = "../primitives", default-features = false }
-cumulus-upward-message = { path = "../upward-message", default-features = false }
 
 [features]
 default = [ "std" ]
@@ -31,5 +30,4 @@ std = [
 	"sp-runtime/std",
 	"codec/std",
 	"cumulus-primitives/std",
-	"cumulus-upward-message/std",
 ]
