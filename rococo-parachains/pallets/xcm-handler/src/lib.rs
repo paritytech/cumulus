@@ -29,7 +29,10 @@ use cumulus_primitives::{
 use cumulus_upward_message::BalancesMessage;
 use polkadot_parachain::primitives::AccountIdConversion;
 use frame_support::sp_std::result;
-use polkadot_parachain::xcm::v0::MultiOrigin;
+use polkadot_parachain::xcm::{
+	VersionedMultiAsset, VersionedMultiLocation,
+	v0::{MultiOrigin, MultiAsset, MultiLocation, Junction, Ai}
+};
 
 /// Origin for the parachains module.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
@@ -59,7 +62,7 @@ pub trait Trait: frame_system::Trait {
 	/// The sender of horizontal/lateral messages.
 	type HmpSender: HmpSender;
 
-	// TODO: Configuration for how pallet instances map to Xcm concepts.
+	// TODO: Configuration for how pallets map to MultiAssets.
 }
 
 decl_event! {
@@ -68,38 +71,146 @@ decl_event! {
 		Balance = BalanceOf<T>
 	{
 		/// Transferred tokens to the account on the relay chain.
-		TransferredTokensToRelayChain(AccountId, Balance),
-		/// Transferred tokens to the account on request from the relay chain.
-		TransferredTokensFromRelayChain(AccountId, Balance),
+		TransferredToRelayChain(VersionedMultiLocation, VersionedMultiAsset),
+		/// Soem assets have been received.
+		ReceivedAssets(AccountId, VersionedMultiAsset),
 		/// Transferred tokens to the account from the given parachain account.
-		TransferredTokensViaXcmp(ParaId, AccountId, Balance, DispatchResult),
+		TransferredToParachainViaReserve(ParaId, VersionedMultiLocation, VersionedMultiAsset),
+	}
+}
+
+decl_error! {
+	pub enum Error<T> {
+		/// A version of a data format is unsupported.
+		UnsupportedVersion,
+		/// Asset given was invalid or unsupported.
+		BadAsset,
+		/// Location given was invalid or unsupported.
+		BadLocation,
 	}
 }
 
 decl_module! {
 	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
 		fn deposit_event() = default;
+
+		/// Transfer some `asset` from the Parachain to the given `dest`.
+		#[weight = 10]
+		fn transfer(origin, dest: VersionedMultiLocation, versioned_asset: VersionedMultiAsset) {
+			let who = ensure_signed(origin)?;
+
+			let asset = MultiAsset::try_from(versioned_asset).map_err(|_| Error::<T>::UnsupportedVersion)?;
+			let dest = MultiLocation::try_from(dest).map_err(|_| Error::<T>::UnsupportedVersion)?;
+
+			let (amount, asset) = match asset {
+				// The only asset whose reserve we recognise for now is native tokens from the
+				// relay chain, identified as the singular asset of the Relay-chain. From our
+				// context (i.e. a parachain) , this is `Parent`. From the Relay-chain's context,
+				// it is `Null`.
+				MultiAsset::ConcreteFungible { id: MultiLocation::X1(Junction::Parent), amount } =>
+					(MultiAsset::ConcreteFungible { id: MultiLocation::Null, amount }, amount),
+				_ => Err(Error::<T>::BadAsset)?,	// Asset not recognised.
+			};
+
+			match dest {
+				MultiLocation::X3(Junction::Parent, Junction::Parachain(dest_id), dest_loc) => {
+					// Reserve transfer using the Relay-chain.
+					let _ = T::Currency::withdraw(
+						&who,
+						amount,
+						WithdrawReason::Transfer.into(),
+						ExistenceRequirement::AllowDeath,
+					)?;
+
+					let dest_loc = MultiLocation::from(dest_loc);
+					let msg = Xcm::ReserveAssetTransfer(
+						asset,
+						Junction::Parachain(dest_id).into(),
+						Ai::DepositAsset(MultiAsset::Wild, dest_loc.clone())
+					);
+					// TODO: Check that this will work prior to withdraw.
+					let _ = T::UmpSender::send_upward(msg);
+
+					Self::deposit_event(Event::<T>::TransferredToParachainViaReserve(
+						dest_id,
+						dest_loc.into(),
+						versioned_asset,
+					));
+				}
+				MultiLocation::X2(Junction::Parent, dest_loc) => {
+					// Direct withdraw/deposit on the Relay-chain
+					let _ = T::Currency::withdraw(
+						&who,
+						amount,
+						WithdrawReason::Transfer.into(),
+						ExistenceRequirement::AllowDeath,
+					)?;
+
+					let dest_loc = MultiLocation::from(dest_loc);
+					let msg = Xcm::WithdrawAsset(
+						asset,
+						Ai::DepositAsset(MultiAsset::Wild, dest_loc.clone())
+					);
+					let _ = T::UmpSender::send_upward(msg);
+
+					Self::deposit_event(Event::<T>::TransferredToRelayChain(
+						dest_loc.into(),
+						versioned_asset,
+					));
+				}
+				_ => Err(Error::<T>::BadLocation)?,	// Invalid location.
+			}
+		}
 	}
 }
 
-impl<T: Trait> DmpHandler for Module<T> {
-	fn handle_downward(msg: VersionedXcm) {
-		match msg.into() {
-			Ok(Xcm::ReserveAssetCredit { asset, effect }) => {
-
+impl<T: Trait> Module<T> {
+	fn handle_message(origin: Origin, msg: VersionedXcm) {
+		match (origin, msg.into()) {
+			(Origin::RelayChain, Ok(Xcm::ReserveAssetCredit { asset, effect })) => {
+				let amount = match asset {
+					// The only asset whose reserve we recognise for now is native tokens from the
+					// relay chain, identified as the singular asset of the Relay-chain, `Parent`.
+					MultiAsset::ConcreteFungible { id: MultiLocation::Parent, ref amount } => *amount,
+					_ => return,	// Asset not recognised.
+				};
+				match effect {
+					// For now we only support wildcard asset here.
+					Ai::DepositAsset { asset: MultiAsset::Wild, dest_: MultiLocation::AccountId32 { id, .. } } => {
+						// deposit the holding account's contents into account `id`. holding
+						// account is just amount of DOT. We assume that `Currency` maps to this
+						// parachain's reserve-backed local derivative of the relay-chain's
+						// currency.
+						let _ = T::Currency::deposit_creating(id.into(), amount.into());
+						Self::deposit_event(Event::<T>::ReceivedAssets(dest, asset.into()));
+					},
+					_ => return,	// Assets are lost, since we don't support any other `Ai`s right now.
+				}
 			},
-			Ok(Ok(Xcm::Transact{ origin_type, call })) => {
+			(origin, Ok(Ok(Xcm::Transact{ origin_type, call }))) => {
+				// We assume that the Relay-chain is allowed to use transact on this parachain.
+				// TODO: allow this to be configurable in the trait.
+				// TODO: allow the trait to issue filters for the relay-chain
 				if let Ok(message_call) = <T as Trait>::Call::decode(&mut &call[..]) {
 					let origin: <T as Trait>::Origin = match origin_type {
 						MultiOrigin::SovereignAccount => {
-							// Unimplemented. Does the relay-chain have a sovereign account on the
-							// parachain?
-							Origin::RelayChain.into(),
+							match origin {
+								// Unimplemented. Relay-chain doesn't yet have a sovereign account
+								// on the parachain.
+								Origin::RelayChain => return,
+								Origin::Parachain(id) => RawOrigin::Signed(id.into_account()).into(),
+							}
 						}
-						MultiOrigin::Native =>
-							Origin::RelayChain.into(),
-						MultiOrigin::Superuser =>
-							<T as Trait>::Origin::from(<T as system::Trait>::Origin::from(system::RawOrigin::Root)),
+						MultiOrigin::Native => origin.into(),
+						MultiOrigin::Superuser => match origin {
+							Origin::RelayChain =>
+								// We assume that the relay-chain is allowed to execute with superuser
+								// privileges if it wants.
+								// TODO: allow this to be configurable in the trait.
+								RawOrigin::Root.into(),
+							Origin::Parachain(_) =>
+								return,
+						}
 					};
 					let _ok = message_call.dispatch(origin).is_ok();
 					// Not much to do with the result as it is. It's up to the parachain to ensure that the
@@ -110,100 +221,14 @@ impl<T: Trait> DmpHandler for Module<T> {
 	}
 }
 
+impl<T: Trait> DmpHandler for Module<T> {
+	fn handle_downward(msg: VersionedXcm) {
+		Self::handle_message(Origin::RelayChain, msg);
+	}
+}
+
 impl<T: Trait> HmpHandler for Module<T> {
 	fn handle_lateral(id: ParaId, msg: VersionedXcm) {
-
+		Self::handle_message(Origin::Parachain(id), msg);
 	}
 }
-
-/*
-/// Transfer `amount` of tokens on the relay chain from the Parachain account to
-/// the given `dest` account.
-#[weight = 10]
-fn transfer_tokens_to_relay_chain(origin, dest: T::AccountId, amount: BalanceOf<T>) {
-	let who = ensure_signed(origin)?;
-
-	let _ = T::Currency::withdraw(
-		&who,
-		amount,
-		WithdrawReason::Transfer.into(),
-		ExistenceRequirement::AllowDeath,
-	)?;
-
-	let msg = <T as Trait>::UpwardMessage::transfer(dest.clone(), amount.clone());
-	<T as Trait>::UpwardMessageSender::send_upward_message(&msg, UpwardMessageOrigin::Signed)
-		.expect("Should not fail; qed");
-
-	Self::deposit_event(Event::<T>::TransferredTokensToRelayChain(dest, amount));
-}
-
-/// Transfer `amount` of tokens to another parachain.
-#[weight = 10]
-fn transfer_tokens_to_parachain_chain(
-	origin,
-	para_id: u32,
-	dest: T::AccountId,
-	amount: BalanceOf<T>,
-) {
-	//TODO we don't make sure that the parachain has some tokens on the other parachain.
-	let who = ensure_signed(origin)?;
-
-	let _ = T::Currency::withdraw(
-		&who,
-		amount,
-		WithdrawReason::Transfer.into(),
-		ExistenceRequirement::AllowDeath,
-	)?;
-
-	T::XCMPMessageSender::send_xcmp_message(
-		para_id.into(),
-		&XCMPMessage::TransferToken(dest, amount),
-	).expect("Should not fail; qed");
-}
-
-/// This is a hack to convert from one generic type to another where we are sure that both are the
-/// same type/use the same encoding.
-fn convert_hack<O: Decode>(input: &impl Encode) -> O {
-	input.using_encoded(|e| Decode::decode(&mut &e[..]).expect("Must be compatible; qed"))
-}
-
-impl<T: Trait> DownwardMessageHandler for Module<T> {
-	fn handle_downward_message(msg: &DownwardMessage) {
-		match msg {
-			DownwardMessage::TransferInto(dest, amount, _) => {
-				let dest = convert_hack(&dest);
-				let amount: BalanceOf<T> = convert_hack(amount);
-
-				let _ = T::Currency::deposit_creating(&dest, amount.clone());
-
-				Self::deposit_event(Event::<T>::TransferredTokensFromRelayChain(dest, amount));
-			}
-			_ => {}
-		}
-	}
-}
-
-impl<T: Trait> XCMPMessageHandler<XCMPMessage<T::AccountId, BalanceOf<T>>> for Module<T> {
-	fn handle_xcmp_message(src: ParaId, msg: &XCMPMessage<T::AccountId, BalanceOf<T>>) {
-		match msg {
-			XCMPMessage::TransferToken(dest, amount) => {
-				let para_account = src.clone().into_account();
-
-				let res = T::Currency::transfer(
-					&para_account,
-					dest,
-					amount.clone(),
-					ExistenceRequirement::AllowDeath,
-				);
-
-				Self::deposit_event(Event::<T>::TransferredTokensViaXCMP(
-					src,
-					dest.clone(),
-					amount.clone(),
-					res,
-				));
-			}
-		}
-	}
-}
-*/
