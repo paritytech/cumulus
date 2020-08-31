@@ -1244,6 +1244,8 @@ dependencies = [
  "frame-system",
  "parity-scale-codec",
  "polkadot-parachain",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]

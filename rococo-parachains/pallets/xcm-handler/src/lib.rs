@@ -16,15 +16,19 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{decl_event, decl_module, dispatch::{Dispatchable, DispatchResult}, traits::{Currency, ExistenceRequirement, WithdrawReason, OriginTrait}, Parameter};
+use frame_support::{
+	decl_event, decl_error, decl_module, dispatch::Dispatchable,
+	traits::{Currency, ExistenceRequirement, WithdrawReason}, Parameter
+};
 use frame_system::{RawOrigin, ensure_signed};
+use sp_runtime::{RuntimeDebug, traits::CheckedConversion};
+use sp_std::convert::TryFrom;
 
-use codec::{Codec, Encode, Decode, Input, Output};
+use codec::{Encode, Decode};
 use cumulus_primitives::{
 	xcm::{v0::Xcm, VersionedXcm},
 	DmpHandler, HmpHandler, HmpSender, UmpSender, ParaId
 };
-use cumulus_upward_message::BalancesMessage;
 use polkadot_parachain::primitives::AccountIdConversion;
 use frame_support::sp_std::result;
 use polkadot_parachain::xcm::{
@@ -41,6 +45,8 @@ pub enum Origin {
 	Parachain(ParaId),
 }
 
+type BalanceOf<T> = <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
+
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {
 	/// Event type used by the runtime.
@@ -48,7 +54,7 @@ pub trait Trait: frame_system::Trait {
 
 	/// The outer origin type.
 	type Origin: From<Origin>
-		+ From<<Self as system::Trait>::Origin>
+		+ From<frame_system::RawOrigin<Self::AccountId>>
 		+ Into<result::Result<Origin, <Self as Trait>::Origin>>;
 
 	/// The outer call dispatch type.
@@ -60,13 +66,14 @@ pub trait Trait: frame_system::Trait {
 	/// The sender of horizontal/lateral messages.
 	type HmpSender: HmpSender;
 
+	type Currency: Currency<Self::AccountId>;
+
 	// TODO: Configuration for how pallets map to MultiAssets.
 }
 
 decl_event! {
 	pub enum Event<T> where
-		AccountId = <T as frame_system::Trait>::AccountId,
-		Balance = BalanceOf<T>
+		AccountId = <T as frame_system::Trait>::AccountId
 	{
 		/// Transferred tokens to the account on the relay chain.
 		TransferredToRelayChain(VersionedMultiLocation, VersionedMultiAsset),
@@ -78,7 +85,7 @@ decl_event! {
 }
 
 decl_error! {
-	pub enum Error<T> {
+	pub enum Error for Module<T: Trait> {
 		/// A version of a data format is unsupported.
 		UnsupportedVersion,
 		/// Asset given was invalid or unsupported.
@@ -89,7 +96,7 @@ decl_error! {
 }
 
 decl_module! {
-	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+	pub struct Module<T: Trait> for enum Call where origin: <T as frame_system::Trait>::Origin {
 		fn deposit_event() = default;
 
 		/// Transfer some `asset` from the Parachain to the given `dest`.
@@ -97,10 +104,11 @@ decl_module! {
 		fn transfer(origin, dest: VersionedMultiLocation, versioned_asset: VersionedMultiAsset) {
 			let who = ensure_signed(origin)?;
 
-			let asset = MultiAsset::try_from(versioned_asset).map_err(|_| Error::<T>::UnsupportedVersion)?;
+			let asset = MultiAsset::try_from(versioned_asset.clone())
+				.map_err(|_| Error::<T>::UnsupportedVersion)?;
 			let dest = MultiLocation::try_from(dest).map_err(|_| Error::<T>::UnsupportedVersion)?;
 
-			let (amount, asset) = match asset {
+			let (asset, amount) = match asset {
 				// The only asset whose reserve we recognise for now is native tokens from the
 				// relay chain, identified as the singular asset of the Relay-chain. From our
 				// context (i.e. a parachain) , this is `Parent`. From the Relay-chain's context,
@@ -110,8 +118,10 @@ decl_module! {
 				_ => Err(Error::<T>::BadAsset)?,	// Asset not recognised.
 			};
 
+			let amount: BalanceOf::<T> = amount.checked_into().ok_or(Error::<T>::BadAsset)?;
+
 			match dest {
-				MultiLocation::X3(Junction::Parent, Junction::Parachain(dest_id), dest_loc) => {
+				MultiLocation::X3(Junction::Parent, Junction::Parachain{ id: dest_id }, dest_loc) => {
 					// Reserve transfer using the Relay-chain.
 					let _ = T::Currency::withdraw(
 						&who,
@@ -121,16 +131,16 @@ decl_module! {
 					)?;
 
 					let dest_loc = MultiLocation::from(dest_loc);
-					let msg = Xcm::ReserveAssetTransfer(
+					let msg = Xcm::ReserveAssetTransfer {
 						asset,
-						Junction::Parachain(dest_id).into(),
-						Ai::DepositAsset(MultiAsset::Wild, dest_loc.clone())
-					);
+						dest_: Junction::Parachain { id: dest_id }.into(),
+						effect: Ai::DepositAsset { asset: MultiAsset::Wild, dest_: dest_loc.clone() },
+					};
 					// TODO: Check that this will work prior to withdraw.
-					let _ = T::UmpSender::send_upward(msg);
+					let _ = T::UmpSender::send_upward(msg.into());
 
 					Self::deposit_event(Event::<T>::TransferredToParachainViaReserve(
-						dest_id,
+						dest_id.into(),
 						dest_loc.into(),
 						versioned_asset,
 					));
@@ -145,11 +155,11 @@ decl_module! {
 					)?;
 
 					let dest_loc = MultiLocation::from(dest_loc);
-					let msg = Xcm::WithdrawAsset(
+					let msg = Xcm::WithdrawAsset {
 						asset,
-						Ai::DepositAsset(MultiAsset::Wild, dest_loc.clone())
-					);
-					let _ = T::UmpSender::send_upward(msg);
+						effect: Ai::DepositAsset { asset: MultiAsset::Wild, dest_: dest_loc.clone() },
+					};
+					let _ = T::UmpSender::send_upward(msg.into());
 
 					Self::deposit_event(Event::<T>::TransferredToRelayChain(
 						dest_loc.into(),
@@ -164,28 +174,32 @@ decl_module! {
 
 impl<T: Trait> Module<T> {
 	fn handle_message(origin: Origin, msg: VersionedXcm) {
-		match (origin, msg.into()) {
+		match (origin, Xcm::try_from(msg)) {
 			(Origin::RelayChain, Ok(Xcm::ReserveAssetCredit { asset, effect })) => {
 				let amount = match asset {
 					// The only asset whose reserve we recognise for now is native tokens from the
 					// relay chain, identified as the singular asset of the Relay-chain, `Parent`.
-					MultiAsset::ConcreteFungible { id: MultiLocation::Parent, ref amount } => *amount,
+					MultiAsset::ConcreteFungible { id: MultiLocation::X1(Junction::Parent), ref amount } => *amount,
 					_ => return,	// Asset not recognised.
 				};
 				match effect {
 					// For now we only support wildcard asset here.
-					Ai::DepositAsset { asset: MultiAsset::Wild, dest_: MultiLocation::AccountId32 { id, .. } } => {
+					Ai::DepositAsset { asset: MultiAsset::Wild, dest_: MultiLocation::X1(Junction::AccountId32 { id, .. }) } => {
 						// deposit the holding account's contents into account `id`. holding
 						// account is just amount of DOT. We assume that `Currency` maps to this
 						// parachain's reserve-backed local derivative of the relay-chain's
 						// currency.
-						let _ = T::Currency::deposit_creating(id.into(), amount.into());
-						Self::deposit_event(Event::<T>::ReceivedAssets(dest, asset.into()));
+
+						// we assume that the [u8; 32] is a direct representation of the AccountId.
+						let who = match T::AccountId::decode(&mut &id[..]) { Ok(x) => x, _ => return };
+						let amount = match amount.checked_into() { Some(x) => x, _ => return };
+						let _ = T::Currency::deposit_creating(&who, amount);
+						Self::deposit_event(Event::<T>::ReceivedAssets(who, asset.into()));
 					},
 					_ => return,	// Assets are lost, since we don't support any other `Ai`s right now.
 				}
 			},
-			(origin, Ok(Ok(Xcm::Transact{ origin_type, call }))) => {
+			(origin, Ok(Xcm::Transact{ origin_type, call })) => {
 				// We assume that the Relay-chain is allowed to use transact on this parachain.
 				// TODO: allow this to be configurable in the trait.
 				// TODO: allow the trait to issue filters for the relay-chain
@@ -215,6 +229,7 @@ impl<T: Trait> Module<T> {
 					// message makes sense.
 				}
 			}
+			_ => return,	// Unhandled XCM message.
 		}
 	}
 }
