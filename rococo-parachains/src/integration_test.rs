@@ -15,10 +15,7 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::Encode;
-use futures::{
-	future::{self, FutureExt},
-	pin_mut, select,
-};
+use futures::future;
 use polkadot_primitives::v0::{Id as ParaId, Info, Scheduling};
 use polkadot_runtime_common::registrar;
 use polkadot_test_runtime_client::Sr25519Keyring;
@@ -32,30 +29,26 @@ use sc_service::{
 	},
 	BasePath, Configuration, Error as ServiceError, Role, TaskExecutor,
 };
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 use substrate_test_client::BlockchainEventsExt;
 use substrate_test_runtime_client::AccountKeyring::*;
-use tokio::{spawn, time::delay_for as sleep};
 use sc_chain_spec::ChainSpec;
+use sp_api::BlockT;
 
-static INTEGRATION_TEST_ALLOWED_TIME: Option<&str> = option_env!("INTEGRATION_TEST_ALLOWED_TIME");
-
-#[tokio::test]
+#[substrate_test_utils::test]
 #[ignore]
-async fn integration_test() {
-	let task_executor: TaskExecutor = (|fut, _| {
-		spawn(fut).map(|_| ())
-	}).into();
+async fn integration_test(task_executor: TaskExecutor) {
+	let para_id = ParaId::from(100);
 
 	// start alice
-	let mut alice =
+	let alice =
 		polkadot_test_service::run_test_node(task_executor.clone(), Alice, || {
 			// TODO
 			//polkadot_test_runtime::ExpectedBlockTime::set(&10000);
 		}, vec![]);
 
 	// start bob
-	let mut bob = polkadot_test_service::run_test_node(
+	let bob = polkadot_test_service::run_test_node(
 		task_executor.clone(),
 		Bob,
 		|| {
@@ -65,79 +58,54 @@ async fn integration_test() {
 		vec![alice.addr.clone()],
 	);
 
-	let t1 = sleep(Duration::from_secs(
-		INTEGRATION_TEST_ALLOWED_TIME
-			.and_then(|x| x.parse().ok())
-			.unwrap_or(600),
-	))
-	.fuse();
+	// ensure alice and bob can produce blocks
+	future::join(alice.wait_for_blocks(2), bob.wait_for_blocks(2)).await;
 
-	let t2 = async {
-		let para_id = ParaId::from(100);
+	// export genesis state
+	let spec = Box::new(crate::chain_spec::get_chain_spec(para_id));
+	let block = crate::command::generate_genesis_state(&(spec.clone() as Box<_>))
+		.unwrap();
+	let genesis_state = block.header().encode();
 
-		future::join(alice.wait_for_blocks(2), bob.wait_for_blocks(2)).await;
-
-		// export genesis state
-		let spec = Box::new(crate::chain_spec::get_chain_spec(para_id));
-		use sp_api::BlockT;
-		let block = crate::command::generate_genesis_state(&(spec.clone() as Box<_>))
-			.unwrap();
-		let genesis_state = block.header().encode();
-
-		// create and sign transaction
-		let function = polkadot_test_runtime::Call::Sudo(pallet_sudo::Call::sudo(Box::new(
-			polkadot_test_runtime::Call::Registrar(registrar::Call::register_para(
-				para_id,
-				Info {
-					scheduling: Scheduling::Always,
-				},
-				parachain_runtime::WASM_BINARY
-					.expect("You need to build the WASM binary to run this test!")
-					.to_vec()
-					.into(),
-				genesis_state.into(),
-			)),
-		)));
-
-		// register parachain
-		let _ = alice.call_function(function, Alice).await.unwrap();
-
-		// run cumulus charlie
-		let key = Arc::new(sp_core::Pair::generate().0);
-		let polkadot_config = polkadot_test_service::node_config(
-			|| {
-				// TODO
-				//polkadot_test_runtime::ExpectedBlockTime::set(&10000);
+	// create and sign transaction to register parachain
+	let function = polkadot_test_runtime::Call::Sudo(pallet_sudo::Call::sudo(Box::new(
+		polkadot_test_runtime::Call::Registrar(registrar::Call::register_para(
+			para_id,
+			Info {
+				scheduling: Scheduling::Always,
 			},
-			task_executor.clone(),
-			Charlie,
-			vec![alice.addr.clone(), bob.addr.clone()],
-		);
-		/*
-		polkadot_config.role = Role::Full;
-		polkadot_config.execution_strategies.importing = sc_client_api::ExecutionStrategy::NativeElseWasm;
-		polkadot_config.dev_key_seed = None;
-		*/
-		let parachain_config =
-			parachain_config(task_executor.clone(), Charlie, vec![], spec).unwrap();
-		let (_service, charlie_client) =
-			crate::service::start_node(parachain_config, key, polkadot_config, para_id, true, true)
-				.unwrap();
-		charlie_client.wait_for_blocks(4).await;
+			parachain_runtime::WASM_BINARY
+				.expect("You need to build the WASM binary to run this test!")
+				.to_vec()
+				.into(),
+			genesis_state.into(),
+		)),
+	)));
 
-		alice.task_manager.terminate();
-		bob.task_manager.terminate();
-	}
-	.fuse();
+	// register parachain
+	let _ = alice.call_function(function, Alice).await.unwrap();
 
-	pin_mut!(t1, t2);
-
-	select! {
-		_ = t1 => {
-			panic!("the test took too long, maybe no parachain blocks have been produced");
+	// run cumulus charlie
+	let key = Arc::new(sp_core::Pair::generate().0);
+	let polkadot_config = polkadot_test_service::node_config(
+		|| {
+			// TODO
+			//polkadot_test_runtime::ExpectedBlockTime::set(&10000);
 		},
-		_ = t2 => {},
-	}
+		task_executor.clone(),
+		Charlie,
+		vec![alice.addr.clone(), bob.addr.clone()],
+	);
+	let parachain_config =
+		parachain_config(task_executor.clone(), Charlie, vec![], spec).unwrap();
+	let (charlie_task_manager, charlie_client) =
+		crate::service::start_node(parachain_config, key, polkadot_config, para_id, true, true)
+			.unwrap();
+	charlie_client.wait_for_blocks(4).await;
+
+	alice.task_manager.clean_shutdown();
+	bob.task_manager.clean_shutdown();
+	charlie_task_manager.clean_shutdown();
 }
 
 pub fn parachain_config(
