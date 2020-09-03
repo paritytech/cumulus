@@ -161,7 +161,7 @@ pub fn parachain_config(
 		state_cache_child_ratio: None,
 		pruning: PruningMode::ArchiveAll,
 		chain_spec: spec,
-		wasm_method: WasmExecutionMethod::default(),
+		wasm_method: WasmExecutionMethod::Interpreted,
 		// NOTE: we enforce the use of the native runtime to make the errors more debuggable
 		execution_strategies: ExecutionStrategies {
 			syncing: sc_client_api::ExecutionStrategy::NativeWhenPossible,
