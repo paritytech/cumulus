@@ -192,13 +192,3 @@ pub fn parachain_config(
 		informant_output_format,
 	})
 }
-
-// This is not an actual test, but rather an entry point for out-of process WASM executor.
-// When executing tests the executor spawns currently executing binary, which happens to be test binary.
-// It then passes "validation_worker" on CLI effectivly making rust test executor to run this single test.
-#[test]
-fn validation_worker() {
-	if let Some(id) = std::env::args().find(|a| a.starts_with("/shmem_rs_")) {
-		polkadot_parachain::wasm_executor::run_worker(&id).unwrap()
-	}
-}
