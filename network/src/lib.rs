@@ -86,7 +86,6 @@ where
 		header: &B::Header,
 		mut data: &[u8],
 	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
-		log::error!("##### validating... {}", data.is_empty());
 		if self.polkadot_sync_oracle.is_major_syncing() {
 			return Ok(Validation::Success { is_new_best: false });
 		}
@@ -367,7 +366,6 @@ async fn wait_to_announce<Block: BlockT>(
 				}
 				.into();
 
-				log::error!("######## announcing");
 				announce_block(hash, gossip_message.encode());
 
 				break;

@@ -241,7 +241,6 @@ where
 		local_validation: LocalValidationData,
 		downward_messages: Vec<DownwardMessage>,
 	) -> Self::ProduceCandidate {
-		error!("######## produce candidate");
 		let factory = self.proposer_factory.clone();
 		let inherent_providers = self.inherent_data_providers.clone();
 		let block_import = self.block_import.clone();
@@ -355,7 +354,6 @@ where
 				.wait_to_announce(hash, relay_chain_parent, encoded_header);
 
 			trace!(target: "cumulus-collator", "Produced candidate: {:?}", candidate);
-			error!("######## produce candidate succeeded");
 
 			Some(candidate)
 		})
@@ -427,7 +425,7 @@ where
 {
 	type ParachainContext = Collator<Block, PF, BI, BS>;
 
-	fn build<Spawner, PClient, Backend2>(
+	fn build<Spawner, PClient, PBackend>(
 		self,
 		polkadot_client: Arc<PClient>,
 		spawner: Spawner,
@@ -435,10 +433,10 @@ where
 	) -> Result<Self::ParachainContext, ()>
 	where
 		Spawner: SpawnNamed + Clone + Send + Sync + 'static,
-		Backend2: BackendT<PBlock>,
-		Backend2::State: StateBackend<BlakeTwo256>,
-		PClient: polkadot_service::AbstractClient<PBlock, Backend2> + 'static,
-		PClient::Api: RuntimeApiCollection<StateBackend = Backend2::State>,
+		PBackend: BackendT<PBlock>,
+		PBackend::State: StateBackend<BlakeTwo256>,
+		PClient: polkadot_service::AbstractClient<PBlock, PBackend> + 'static,
+		PClient::Api: RuntimeApiCollection<StateBackend = PBackend::State>,
 	{
 		let CollatorBuilder {
 			proposer_factory,

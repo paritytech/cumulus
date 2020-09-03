@@ -295,8 +295,6 @@ pub fn run() -> Result<()> {
 						false,
 					)
 				} else {
-					println!("{:?}", polkadot_config);
-					println!("{:?}", config);
 					crate::service::start_node(
 						config,
 						key,

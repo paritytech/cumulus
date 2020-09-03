@@ -173,7 +173,6 @@ where
 	Backend: BackendT<Block> + 'static,
 {
 	let is_light = matches!(polkadot_config.role, Role::Light);
-
 	let (polkadot_task_manager, pclient, handles) = if is_light {
 		Err("Light client not supported.".into())
 	} else {
