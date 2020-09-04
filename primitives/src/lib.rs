@@ -19,10 +19,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use polkadot_core_primitives as relay_chain;
-/// A generic upward message from a Parachain to the Relay Chain.
-///
-/// It is "generic" in such a way, that the actual message is encoded in the `data` field.
-/// Besides the `data` it also holds the `origin` of the message.
 pub use polkadot_parachain::{xcm, primitives::Id as ParaId};
 
 pub mod validation_function_params;

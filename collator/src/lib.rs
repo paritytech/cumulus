@@ -47,7 +47,7 @@ use polkadot_collator::{
 	BuildParachainContext, Network as CollatorNetwork, ParachainContext, RuntimeApiCollection,
 };
 use polkadot_primitives::v0::{
-	self as parachain, Block as PBlock, BlockData, DownwardMessage, GlobalValidationData,
+	self as parachain, Block as PBlock, BlockData, GlobalValidationData,
 	Hash as PHash, Id as ParaId, LocalValidationData,
 };
 
@@ -240,7 +240,7 @@ where
 		relay_chain_parent: PHash,
 		global_validation: GlobalValidationData,
 		local_validation: LocalValidationData,
-		downward_messages: Vec<DownwardMessage>,
+		downward_messages: Vec<Vec<u8>>,
 	) -> Self::ProduceCandidate {
 		let factory = self.proposer_factory.clone();
 		let inherent_providers = self.inherent_data_providers.clone();

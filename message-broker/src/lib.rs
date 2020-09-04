@@ -28,13 +28,11 @@ use cumulus_primitives::{
 	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER}, well_known_keys,
 	ParaId, DmpHandler, UmpSender, HmpHandler, HmpSender, VersionedXcm, xcm::v0::Xcm
 };
-use cumulus_upward_message::XCMPMessage;
-use frame_support::{decl_event, decl_module, storage, traits::Get, weights::{DispatchClass, Weight}, Parameter};
-use frame_support::dispatch::Dispatchable;
+use frame_support::{decl_event, decl_module, storage, traits::Get, weights::{DispatchClass, Weight}};
 use frame_system::ensure_none;
 use sp_inherents::{InherentData, InherentIdentifier, MakeFatalError, ProvideInherent};
 use sp_runtime::traits::Hash;
-use sp_std::vec::Vec;
+use sp_std::{convert::TryFrom, vec::Vec};
 
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {
@@ -73,11 +71,11 @@ decl_module! {
 			// weight used by the handlers.
 			let max_messages = 10;
 			messages.iter().take(max_messages).for_each(|msg| {
-				match VersionedXcm::decode(&mut &msg[..]).map(Xcm::try_into) {
-					Ok(Ok(Xcm::ForwardedFromParachain({ id, inner }))) =>
-						T::HmpHandler::handle_lateral(id, *inner),
+				match VersionedXcm::decode(&mut &msg[..]).map(Xcm::try_from) {
+					Ok(Ok(Xcm::ForwardedFromParachain{ id, inner })) =>
+						T::HmpHandler::handle_lateral(id.into(), *inner),
 					Ok(Ok(m)) =>
-						T::DmpHandler::handle_downward(msg),
+						T::DmpHandler::handle_downward(m.into()),
 					Ok(Err(_)) => (),	// Unsupported XCM version.
 					Err(_) => (),		// Bad format (can't decode).
 				}
@@ -99,7 +97,7 @@ decl_module! {
 
 impl<T: Trait> HmpSender for Module<T> {
 	fn send_lateral(id: ParaId, msg: VersionedXcm) -> Result<(), ()> {
-		Self::send_upward(Xcm::ForwardToParachain { id: id.into(), inner: msg }.into())
+		Self::send_upward(Xcm::ForwardToParachain { id: id.into(), inner: Box::new(msg) }.into())
 	}
 }
 
