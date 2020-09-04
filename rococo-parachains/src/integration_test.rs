@@ -19,42 +19,38 @@ use futures::future;
 use polkadot_primitives::v0::{Id as ParaId, Info, Scheduling};
 use polkadot_runtime_common::registrar;
 use polkadot_test_runtime_client::Sr25519Keyring;
+use sc_chain_spec::ChainSpec;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_informant::OutputFormat;
 use sc_network::{config::TransportConfig, multiaddr};
 use sc_service::{
 	config::{
 		DatabaseConfig, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
-		WasmExecutionMethod, PruningMode, OffchainWorkerConfig,
+		OffchainWorkerConfig, PruningMode, WasmExecutionMethod,
 	},
 	BasePath, Configuration, Error as ServiceError, Role, TaskExecutor,
 };
+use sp_api::BlockT;
 use std::sync::Arc;
 use substrate_test_client::BlockchainEventsExt;
 use substrate_test_runtime_client::AccountKeyring::*;
-use sc_chain_spec::ChainSpec;
-use sp_api::BlockT;
 
 #[substrate_test_utils::test]
 #[ignore]
 async fn integration_test(task_executor: TaskExecutor) {
 	let para_id = ParaId::from(100);
 
+	// generate parachain spec
+	let spec = Box::new(crate::chain_spec::get_chain_spec(para_id));
+
 	// start alice
-	let alice =
-		polkadot_test_service::run_test_node(task_executor.clone(), Alice, || {
-			// TODO
-			//polkadot_test_runtime::ExpectedBlockTime::set(&10000);
-		}, vec![]);
+	let alice = polkadot_test_service::run_test_node(task_executor.clone(), Alice, || {}, vec![]);
 
 	// start bob
 	let bob = polkadot_test_service::run_test_node(
 		task_executor.clone(),
 		Bob,
-		|| {
-			// TODO
-			//polkadot_test_runtime::ExpectedBlockTime::set(&10000);
-		},
+		|| {},
 		vec![alice.addr.clone()],
 	);
 
@@ -62,9 +58,7 @@ async fn integration_test(task_executor: TaskExecutor) {
 	future::join(alice.wait_for_blocks(2), bob.wait_for_blocks(2)).await;
 
 	// export genesis state
-	let spec = Box::new(crate::chain_spec::get_chain_spec(para_id));
-	let block = crate::command::generate_genesis_state(&(spec.clone() as Box<_>))
-		.unwrap();
+	let block = crate::command::generate_genesis_state(&(spec.clone() as Box<_>)).unwrap();
 	let genesis_state = block.header().encode();
 
 	// create and sign transaction to register parachain
@@ -88,16 +82,12 @@ async fn integration_test(task_executor: TaskExecutor) {
 	// run cumulus charlie
 	let key = Arc::new(sp_core::Pair::generate().0);
 	let polkadot_config = polkadot_test_service::node_config(
-		|| {
-			// TODO
-			//polkadot_test_runtime::ExpectedBlockTime::set(&10000);
-		},
+		|| {},
 		task_executor.clone(),
 		Charlie,
 		vec![alice.addr.clone(), bob.addr.clone()],
 	);
-	let parachain_config =
-		parachain_config(task_executor.clone(), Charlie, vec![], spec).unwrap();
+	let parachain_config = parachain_config(task_executor.clone(), Charlie, vec![], spec).unwrap();
 	let (charlie_task_manager, charlie_client) =
 		crate::service::start_node(parachain_config, key, polkadot_config, para_id, true, true)
 			.unwrap();
@@ -180,7 +170,10 @@ pub fn parachain_config(
 		telemetry_endpoints: None,
 		telemetry_external_transport: None,
 		default_heap_pages: None,
-		offchain_worker: OffchainWorkerConfig { enabled: true, indexing_enabled: false },
+		offchain_worker: OffchainWorkerConfig {
+			enabled: true,
+			indexing_enabled: false,
+		},
 		force_authoring: false,
 		disable_grandpa: false,
 		dev_key_seed: Some(key_seed),
