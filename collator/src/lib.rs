@@ -425,11 +425,11 @@ where
 {
 	type ParachainContext = Collator<Block, PF, BI, BS>;
 
-	fn build<Spawner, PClient, PBackend>(
+	fn build<Spawner, PClient, PBackend, PNetwork>(
 		self,
 		polkadot_client: Arc<PClient>,
 		spawner: Spawner,
-		polkadot_network: impl CollatorNetwork + SyncOracle + Clone + 'static,
+		polkadot_network: PNetwork,
 	) -> Result<Self::ParachainContext, ()>
 	where
 		Spawner: SpawnNamed + Clone + Send + Sync + 'static,
@@ -437,6 +437,7 @@ where
 		PBackend::State: StateBackend<BlakeTwo256>,
 		PClient: polkadot_service::AbstractClient<PBlock, PBackend> + 'static,
 		PClient::Api: RuntimeApiCollection<StateBackend = PBackend::State>,
+		PNetwork: CollatorNetwork + SyncOracle + Clone + 'static,
 	{
 		let CollatorBuilder {
 			proposer_factory,
@@ -606,7 +607,6 @@ mod tests {
 	}
 
 	#[test]
-	#[cfg(feature = "todo")]
 	fn collates_produces_a_block() {
 		let id = ParaId::from(100);
 		let _ = env_logger::try_init();
@@ -626,8 +626,8 @@ mod tests {
 			block_announce_validator,
 		);
 		let context = builder
-			.build(
-				polkadot_service::Client::Polkadot(Arc::new(
+			.build::<_, _, polkadot_service::FullBackend, _>(
+				Arc::new(
 					substrate_test_client::TestClientBuilder::<_, _, _, ()>::default()
 						.build_with_native_executor::<polkadot_service::polkadot_runtime::RuntimeApi, _>(
 							Some(NativeExecutor::<polkadot_service::PolkadotExecutor>::new(
@@ -637,7 +637,7 @@ mod tests {
 							)),
 						)
 						.0,
-				)),
+				),
 				spawner,
 				DummyCollatorNetwork,
 			)
