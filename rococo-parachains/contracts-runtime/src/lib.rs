@@ -212,6 +212,8 @@ impl cumulus_xcm_handler::Trait for Runtime {
 	type UmpSender = MessageBroker;
 	type HmpSender = MessageBroker;
 	type Currency = Balances;
+	type Call = Call;
+	type Origin = Origin;
 }
 
 impl parachain_info::Trait for Runtime {}
@@ -258,7 +260,7 @@ construct_runtime! {
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
 		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
-		XcmHandler: cumulus_xcm_handler::{Module, Call, Event<T>},
+		XcmHandler: cumulus_xcm_handler::{Module, Call, Event<T>, Origin},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		ParachainInfo: parachain_info::{Module, Storage, Config},
 	}
