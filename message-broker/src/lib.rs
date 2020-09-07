@@ -32,7 +32,7 @@ use frame_support::{decl_event, decl_module, storage, traits::Get, weights::{Dis
 use frame_system::ensure_none;
 use sp_inherents::{InherentData, InherentIdentifier, MakeFatalError, ProvideInherent};
 use sp_runtime::traits::Hash;
-use sp_std::{convert::TryFrom, vec::Vec};
+use sp_std::{convert::TryFrom, vec::Vec, boxed::Box};
 
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {
