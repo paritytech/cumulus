@@ -177,8 +177,8 @@ decl_module! {
 					let dest_loc = MultiLocation::from(dest_loc);
 					let msg = Xcm::ReserveAssetTransfer {
 						asset,
-						dest_: Junction::Parachain { id: dest_id }.into(),
-						effect: Ai::DepositAsset { asset: MultiAsset::Wild, dest_: dest_loc.clone() },
+						dest: Junction::Parachain { id: dest_id }.into(),
+						effect: Ai::DepositAsset { asset: MultiAsset::Wild, dest: dest_loc.clone() },
 					};
 					// TODO: Check that this will work prior to withdraw.
 					let _ = T::UmpSender::send_upward(msg.into());
@@ -201,7 +201,7 @@ decl_module! {
 					let dest_loc = MultiLocation::from(dest_loc);
 					let msg = Xcm::WithdrawAsset {
 						asset,
-						effect: Ai::DepositAsset { asset: MultiAsset::Wild, dest_: dest_loc.clone() },
+						effect: Ai::DepositAsset { asset: MultiAsset::Wild, dest: dest_loc.clone() },
 					};
 					let _ = T::UmpSender::send_upward(msg.into());
 
@@ -228,7 +228,7 @@ impl<T: Trait> Module<T> {
 				};
 				match effect {
 					// For now we only support wildcard asset here.
-					Ai::DepositAsset { asset: MultiAsset::Wild, dest_: MultiLocation::X1(Junction::AccountId32 { id, .. }) } => {
+					Ai::DepositAsset { asset: MultiAsset::Wild, dest: MultiLocation::X1(Junction::AccountId32 { id, .. }) } => {
 						// deposit the holding account's contents into account `id`. holding
 						// account is just amount of DOT. We assume that `Currency` maps to this
 						// parachain's reserve-backed local derivative of the relay-chain's
