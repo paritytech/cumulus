@@ -46,6 +46,48 @@ pub enum Origin {
 }
 
 type BalanceOf<T> = <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
+/*
+trait DepositAsset<AccountId> {
+	fn deposit_asset(what: MultiAsset, who: AccountId);
+}
+
+trait Contains<MultiAsset> {
+	fn contains(what: MultiAsset) -> bool;
+}
+
+struct MyRuntimesDepositAsset;
+impl<T: Trait> DepositAsset<[u8; 32]> for MyRuntimesDepositAsset<T> {
+	fn deposit_asset(what: MultiAsset, who: [u8; 32]) -> Result<(), ()> {
+		match what {
+			// The only asset whose reserve we recognise for now is native tokens from the
+			// relay chain, identified as the singular asset of the Relay-chain, `Parent`.
+			MultiAsset::ConcreteFungible { id: MultiLocation::X1(Junction::Parent), ref amount } => {
+				let who = match T::AccountId::decode(&mut &id[..]) { Ok(x) => x, _ => return };
+				let amount = match amount.checked_into() { Some(x) => x, _ => return };
+				let _ = T::Currency::deposit_creating(&who, amount);
+				Ok(())
+			}
+			_ => Err(()),	// Asset not recognised.
+		}
+	}
+}
+
+impl<T> DepositAsset<[u8; 32]> for balances_pallet::Module<T> where T::AccountId EncodeLike<[u8; 32]> {
+}
+
+
+parameter_types! {
+	static const DotLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
+	static const DotName: Vec<u8> = vec![0x43, 0x4f, 0x54];
+	static const MyLocation: MultiLocation = MultiLocation::Null;
+	static const MyName: Vec<u8> = vec![0x41, 0x42, 0x43];
+}
+type MyDepositAsset = (
+	((IsConcreteFungible<DotLocation>, IsAbstractFungible<DotName>), balances_pallet::Module::<T, Instance1>),
+	((IsConcreteFungible<MyLocation>, IsAbstractFungible<MyName>), balances_pallet::Module::<T, DefaultInstance>),
+	multiasset_pallet::Module::<T>,
+);
+*/
 
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {
@@ -67,6 +109,8 @@ pub trait Trait: frame_system::Trait {
 	type HmpSender: HmpSender;
 
 	type Currency: Currency<Self::AccountId>;
+
+//	type DepositAsset: DepositAsset<[u8; 32]>;
 
 	// TODO: Configuration for how pallets map to MultiAssets.
 }

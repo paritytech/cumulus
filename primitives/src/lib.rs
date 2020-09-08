@@ -24,7 +24,7 @@ pub use polkadot_parachain::{xcm, primitives::Id as ParaId};
 pub mod validation_function_params;
 
 pub use xcm::{
-	VersionedXcm, VersionedMultiAsset, VersionedMultiLocation, XcmEnvelope
+	VersionedXcm, VersionedMultiAsset, VersionedMultiLocation
 };
 
 use codec::{Decode, Encode};
