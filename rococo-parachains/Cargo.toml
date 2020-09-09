@@ -87,12 +87,9 @@ polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", bran
 polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
 polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
 polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-rococo-runtime = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
 
 # Substrate dependencies
 pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
