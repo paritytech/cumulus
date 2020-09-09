@@ -16,11 +16,11 @@ sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "roc
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # Polkadot dependencies
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
+polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../consensus" }
@@ -46,7 +46,7 @@ sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "roc
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # Polkadot dependencies
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
 
 # Other dependencies
 env_logger = "0.7.1"

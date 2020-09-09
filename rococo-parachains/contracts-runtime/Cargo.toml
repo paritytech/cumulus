@@ -47,7 +47,7 @@ cumulus-upward-message = { path = "../../upward-message", default-features = fal
 cumulus-primitives = { path = "../../primitives", default-features = false }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch", default-features = false }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again", default-features = false }
 
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.6" }
