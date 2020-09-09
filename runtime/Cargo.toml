@@ -15,22 +15,22 @@ trie-db = { version = "0.22.0", default-features = false }
 cumulus-primitives = { path = "../primitives", default-features = false }
 
 # Substrate dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
-frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
+frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
 
 # Polkadot dependencies
-parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again", default-features = false, features = [ "wasm-api" ] }
+parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", branch = "rococo-branch", default-features = false, features = [ "wasm-api" ] }
 
 [dev-dependencies]
-sc-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
+sc-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 test-client = { package = "cumulus-test-client", path = "../test/client" }
 
 [features]

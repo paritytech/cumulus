@@ -28,31 +28,31 @@ parachain-contracts-runtime = { package = "cumulus-contracts-parachain-runtime",
 rococo-parachain-primitives = { path = "primitives" }
 
 # Substrate dependencies
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-fix-int-test-again" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sp-session = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sc-network = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again", version = "0.8.0-rc5" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sc-informant = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-session = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-network = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", version = "0.8.0-rc5" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-trie = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-informant = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # RPC related dependencies
 cumulus-pallet-contracts-rpc = { path = "./pallets/contracts/rpc" }
@@ -66,15 +66,15 @@ cumulus-primitives = { path = "../primitives" }
 cumulus-service = { path = "../service" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 [dev-dependencies]
 assert_cmd = "0.12"
@@ -83,16 +83,16 @@ rand = "0.7.3"
 tokio = { version = "0.2.21", features = ["macros"] }
 
 # Polkadot dependencies
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
-polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
-polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
-rococo-runtime = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+rococo-runtime = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
 
 # Substrate dependencies
-pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }

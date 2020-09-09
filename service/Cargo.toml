@@ -12,20 +12,20 @@ cumulus-primitives = { path = "../primitives" }
 cumulus-network = { path = "../network" }
 
 # Substrate dependencies
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cecton-fix-int-test-again" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # Polkadot dependencies
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
 # TODO should be dev dependency
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
 
 [dev-dependencies]
