@@ -304,7 +304,7 @@ impl From<Vec<MultiAsset>> for Assets {
 }
 impl Assets {
 	/// Modify `self` to include `MultiAsset`, saturating if necessary.
-	fn saturating_subsume(&mut self, asset: MultiAsset) {
+	pub fn saturating_subsume(&mut self, asset: MultiAsset) {
 		match asset {
 			MultiAsset::ConcreteFungible { id, amount } => {
 				self.fungible
@@ -333,17 +333,71 @@ impl Assets {
 		}
 	}
 
+	pub fn saturating_subsume_fungible(&mut self, id: AssetId, amount: u128) {
+		self.fungible
+			.entry(id)
+			.and_modify(|e| *e = e.saturating_add(amount))
+			.or_insert(amount);
+	}
+
+	pub fn saturating_subsume_non_fungible(&mut self, class: AssetId, instance: AssetInstance) {
+		self.non_fungible.insert((class, instance));
+	}
+
 	/// Take all possible assets up to `assets` from `self`, mutating `self` and returning the
 	/// assets taken.
 	///
 	/// Wildcards work.
-	fn saturating_take(&mut self, assets: Vec<MultiAsset>) -> Assets {
-		// TODO: implement
+	pub fn saturating_take(&mut self, assets: Vec<MultiAsset>) -> Assets {
+		let mut result = Assets::default();
 		for asset in assets.into_iter() {
 			match asset {
-
+				MultiAsset::None => (),
+				MultiAsset::All => return self.swapped(Assets::default()),
+				x @ MultiAsset::ConcreteFungible {..} | MultiAsset::AbstractFungible {..} => {
+					let (id, amount) = match x {
+						MultiAsset::ConcreteFungible { id, amount } => (AssetId::Concrete(id), amount),
+						MultiAsset::AbstractFungible { id, amount } => (AssetId::Abstract(id), amount),
+						_ => unreachable!(),
+					};
+					// remove the maxmimum possible up to id/amount from self, add the removed onto
+					// result
+					self.fungible.entry(id.clone())
+						.and_modify(|e| if *e >= amount {
+							result.saturating_subsume_fungible(id, amount);
+							*e = *e - amount;
+						} else {
+							result.saturating_subsume_fungible(id, *e);
+							*e = 0
+						});
+				}
+				x @ MultiAsset::ConcreteNonFungible {..} | MultiAsset::AbstractNonFungible {..} => {
+					let (class, instance) = match x {
+						MultiAsset::ConcreteNonFungible { class, instance } => (AssetId::Concrete(class), instance),
+						MultiAsset::AbstractNonFungible { class, instance } => (AssetId::Abstract(class), instance),
+						_ => unreachable!(),
+					};
+					// remove the maxmimum possible up to id/amount from self, add the removed onto
+					// result
+					if let Some(entry) = self.non_fungible.take(&(class, instance)) {
+						self.non_fungible.insert(entry);
+					}
+				}
+				// TODO: implement partial wildcards.
+				MultiAsset::AllFungible
+				| MultiAsset::AllNonFungible
+				| MultiAsset::AllAbstractFungible { id }
+				| MultiAsset::AllAbstractNonFungible { class }
+				| MultiAsset::AllConcreteFungible { id }
+				| MultiAsset::AllConcreteNonFungible { class } => (),
 			}
 		}
+		result
+	}
+
+	pub fn swapped(&mut self, mut with: Assets) -> Self {
+		sp_std::mem::swap(&mut *self, &mut with);
+		with
 	}
 }
 
