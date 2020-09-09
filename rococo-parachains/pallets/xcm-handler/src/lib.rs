@@ -450,8 +450,8 @@ impl<Config: XcmExecutorConfig> ExecuteXcm for XcmExecutor<Config> {
 	fn execute_xcm(origin: MultiLocation, msg: VersionedXcm) -> XcmResult {
 		let (mut holding, effects) = match (origin, Xcm::try_from(msg)) {
 			(origin, Ok(Xcm::ForwardedFromParachain { id, inner })) => {
-				let new_origin = origin.pushed_with(Junction::Parachain(id)).map_err(|_| ())?;
-				Self::execute_from(new_origin, *inner)
+				let new_origin = origin.pushed_with(Junction::Parachain{id}).map_err(|_| ())?;
+				Self::execute_xcm(new_origin, *inner)
 			}
 			(_origin, Ok(Xcm::WithdrawAsset { assets, effects })) => {
 				// TODO: Take as much of `assets` from the origin account (on-chain) and place in holding.
