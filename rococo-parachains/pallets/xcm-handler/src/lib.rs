@@ -35,6 +35,11 @@ use polkadot_parachain::xcm::{
 	VersionedMultiAsset, VersionedMultiLocation,
 	v0::{MultiOrigin, MultiAsset, MultiLocation, Junction, Ai}
 };
+use frame_support::traits::Get;
+use sp_runtime::app_crypto::sp_core::crypto::UncheckedFrom;
+use polkadot_parachain::xcm::v0::AssetInstance;
+use sp_std::collections::btree_map::{BTreeMap, Entry};
+use sp_std::collections::btree_set::BTreeSet;
 
 /// Origin for the parachains module.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
@@ -46,48 +51,105 @@ pub enum Origin {
 }
 
 type BalanceOf<T> = <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
-/*
-trait DepositAsset<AccountId> {
-	fn deposit_asset(what: MultiAsset, who: AccountId);
+
+pub trait DepositAsset {
+	fn deposit_asset(what: &MultiAsset, who: &MultiLocation) -> Result<(), ()>;
+}
+impl<X: DepositAsset, Y: DepositAsset> DepositAsset for (X, Y) {
+	fn deposit_asset(what: &MultiAsset, who: &MultiLocation) -> Result<(), ()> {
+		X::deposit_asset(what, who).or_else(|| Y::deposit_asset(what, who))
+	}
 }
 
-trait Contains<MultiAsset> {
-	fn contains(what: MultiAsset) -> bool;
+pub trait MatchesFungible<Balance> {
+	fn matches_fungible(a: &MultiAsset) -> Option<Balance>;
+}
+pub struct IsConcrete<T>;
+impl<T: Get<MultiLocation>, B: CheckedFrom<u128>> MatchesFungible<B> for IsConcrete<T> {
+	fn matches_fungible(a: &MultiAsset) -> Option<B> {
+		match a {
+			MultiAsset::ConcreteFungible { id, amount } if id == T::get() =>
+				amount.checked_into(),
+			_ => false,
+		}
+	}
+}
+pub struct IsAbstract<T>;
+impl<T: Get<&'static [u8]>, B: CheckedFrom<u128>> MatchesFungible<B> for IsAbstract<T> {
+	fn matches_fungible(a: &MultiAsset) -> Option<B> {
+		match a {
+			MultiAsset::AbstractFungible { id, amount } if &id[..] == T::get() =>
+				amount.checked_into(),
+			_ => false,
+		}
+	}
+}
+impl<B: Balance, X: MatchesFungible<B>, Y: MatchesFungible<B>> MatchesFungible<B> for (X, Y) {
+	fn matches_fungible(a: &MultiAsset) -> Option<B> {
+		X::matches_fungible(a).or_else(|| Y::matches_fungible(a))
+	}
 }
 
-struct MyRuntimesDepositAsset;
-impl<T: Trait> DepositAsset<[u8; 32]> for MyRuntimesDepositAsset<T> {
-	fn deposit_asset(what: MultiAsset, who: [u8; 32]) -> Result<(), ()> {
-		match what {
-			// The only asset whose reserve we recognise for now is native tokens from the
-			// relay chain, identified as the singular asset of the Relay-chain, `Parent`.
-			MultiAsset::ConcreteFungible { id: MultiLocation::X1(Junction::Parent), ref amount } => {
-				let who = match T::AccountId::decode(&mut &id[..]) { Ok(x) => x, _ => return };
-				let amount = match amount.checked_into() { Some(x) => x, _ => return };
-				let _ = T::Currency::deposit_creating(&who, amount);
-				Ok(())
-			}
-			_ => Err(()),	// Asset not recognised.
+pub trait PunnFromLocation<T> {
+	fn punn_from_location(m: &MultiLocation) -> Option<T>;
+}
+
+pub struct AccountId32Punner<AccountId>;
+impl<AccountId: UncheckedFrom<[u8; 32]>> PunnFromLocation<AccountId> for AccountId32Punner<AccountId> {
+	fn punn_from_location(m: &MultiLocation) -> Option<AccountId> {
+		match m {
+			MultiLocation::X1(Junction::AccountId32 { ref id, .. }) =>
+				Some(AccountId::unchecked_from(id.clone())),
+			_ => None,
 		}
 	}
 }
 
-impl<T> DepositAsset<[u8; 32]> for balances_pallet::Module<T> where T::AccountId EncodeLike<[u8; 32]> {
+pub struct CurrencyAdapter<Currency, Matcher, AccountIdConverter, AccountId>;
+impl<
+	Matcher: MatchesAsset,
+	AccountIdConverter: PunnFromLocation<AccountId>,
+	Currency: Currency<AccountId>,
+	AccountId,	// can't get away without it since Currency is generic over it.
+> DepositAsset for CurrencyAdapter<Currency, Matcher, AccountIdConverter, AccountId> {
+	fn deposit_asset(what: &MultiAsset, who: &MultiLocation) -> Result<(), ()> {
+		// Check we handle this asset.
+		let amount = Matcher::matches_asset(&what).ok_or(())?;
+		let who = AccountIdConverter::punn_from_location(who)?;
+		T::Currency::deposit_creating(&who, amount).map_err(|_| ())?;
+		Ok(())
+	}
 }
-
 
 parameter_types! {
 	static const DotLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
-	static const DotName: Vec<u8> = vec![0x43, 0x4f, 0x54];
+	static const DotName: &'static [u8] = &b"DOT"[..];
 	static const MyLocation: MultiLocation = MultiLocation::Null;
-	static const MyName: Vec<u8> = vec![0x41, 0x42, 0x43];
+	static const MyName: &'static [u8] = &b"ABC"[..];
 }
+/*
 type MyDepositAsset = (
-	((IsConcreteFungible<DotLocation>, IsAbstractFungible<DotName>), balances_pallet::Module::<T, Instance1>),
-	((IsConcreteFungible<MyLocation>, IsAbstractFungible<MyName>), balances_pallet::Module::<T, DefaultInstance>),
-	multiasset_pallet::Module::<T>,
+	// Convert a Currency impl into a DepositAsset
+	CurrencyAdapter<
+		// Use this currency:
+		balances_pallet::Module::<T, Instance1>,
+		// Use this currency when it is a fungible asset matching the given location or name:
+		(IsConcrete<DotLocation>, IsAbstract<DotName>),
+		// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
+		AccountId32Punner<T::AccountId>,
+		// Our chain's account ID type (we can't get away without mentioning it explicitly):
+		T::AccountId,
+	>,
+	CurrencyAdapter<
+		balances_pallet::Module::<T, DefaultInstance>,
+		(IsConcrete<MyLocation>, IsAbstract<MyName>),
+		AccountId32Punner<T::AccountId>,
+		T::AccountId,
+	>,
 );
 */
+
+//	TODO: multiasset_pallet::Module::<T>,
 
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {
@@ -96,8 +158,8 @@ pub trait Trait: frame_system::Trait {
 
 	/// The outer origin type.
 	type Origin: From<Origin>
-		+ From<frame_system::RawOrigin<Self::AccountId>>
-		+ Into<result::Result<Origin, <Self as Trait>::Origin>>;
+	+ From<frame_system::RawOrigin<Self::AccountId>>
+	+ Into<result::Result<Origin, <Self as Trait>::Origin>>;
 
 	/// The outer call dispatch type.
 	type Call: Parameter + Dispatchable<Origin=<Self as Trait>::Origin> + From<Call<Self>>;
@@ -108,11 +170,7 @@ pub trait Trait: frame_system::Trait {
 	/// The sender of horizontal/lateral messages.
 	type HmpSender: HmpSender;
 
-	type Currency: Currency<Self::AccountId>;
-
-//	type DepositAsset: DepositAsset<[u8; 32]>;
-
-	// TODO: Configuration for how pallets map to MultiAssets.
+	type AssetDepositor: DepositAsset;
 }
 
 decl_event! {
@@ -143,10 +201,24 @@ decl_module! {
 	pub struct Module<T: Trait> for enum Call where origin: <T as frame_system::Trait>::Origin {
 		fn deposit_event() = default;
 
+		// TODO: Handle fee payment in terms of weight.
+		#[weight = 10]
+		fn execute(origin, xcm: VersionedXcm) {
+			// TODO: acceptable origins are Signed (which results in an XCM origin of
+			//   MultiLocation::AccountId32 and Parachain which corresponds to
+			//   MultiOrigin::Parachain).
+			let xcm_origin = origin.into();
+
+			Self::execute(xcm_origin, xcm);
+		}
+
 		/// Transfer some `asset` from the Parachain to the given `dest`.
+		// TODO: Remove
 		#[weight = 10]
 		fn transfer(origin, dest: VersionedMultiLocation, versioned_asset: VersionedMultiAsset) {
 			let who = ensure_signed(origin)?;
+
+			// TODO: all this should be removed and refactored into the `execute` function.
 
 			let asset = MultiAsset::try_from(versioned_asset.clone())
 				.map_err(|_| Error::<T>::UnsupportedVersion)?;
@@ -216,76 +288,197 @@ decl_module! {
 	}
 }
 
-impl<T: Trait> Module<T> {
-	fn handle_message(origin: Origin, msg: VersionedXcm) {
-		match (origin, Xcm::try_from(msg)) {
-			(Origin::RelayChain, Ok(Xcm::ReserveAssetCredit { asset, effect })) => {
-				let amount = match asset {
-					// The only asset whose reserve we recognise for now is native tokens from the
-					// relay chain, identified as the singular asset of the Relay-chain, `Parent`.
-					MultiAsset::ConcreteFungible { id: MultiLocation::X1(Junction::Parent), ref amount } => *amount,
-					_ => return,	// Asset not recognised.
-				};
-				match effect {
-					// For now we only support wildcard asset here.
-					Ai::DepositAsset { asset: MultiAsset::Wild, dest: MultiLocation::X1(Junction::AccountId32 { id, .. }) } => {
-						// deposit the holding account's contents into account `id`. holding
-						// account is just amount of DOT. We assume that `Currency` maps to this
-						// parachain's reserve-backed local derivative of the relay-chain's
-						// currency.
+enum AssetId {
+	Concrete(MultiLocation),
+	Abstract(Vec<u8>),
+}
 
-						// we assume that the [u8; 32] is a direct representation of the AccountId.
-						let who = match T::AccountId::decode(&mut &id[..]) { Ok(x) => x, _ => return };
-						let amount = match amount.checked_into() { Some(x) => x, _ => return };
-						let _ = T::Currency::deposit_creating(&who, amount);
-						Self::deposit_event(Event::<T>::ReceivedAssets(who, asset.into()));
-					},
-					_ => return,	// Assets are lost, since we don't support any other `Ai`s right now.
+#[derive(Default, Clone)]
+struct Assets {
+	pub fungible: BTreeMap<AssetId, u128>,
+	pub non_fungible: BTreeSet<(AssetId, AssetInstance)>,
+}
+
+impl From<Vec<MultiAsset>> for Assets {
+	fn from(assets: Vec<MultiAsset>) -> Assets {
+		let mut result = Self::default();
+		for asset in assets.into_iter() {
+			result.subsume(asset)
+		}
+		result
+	}
+}
+impl Assets {
+	/// Modify `self` to include `MultiAsset`, saturating if necessary.
+	fn saturating_subsume(&mut self, asset: MultiAsset) {
+		match asset {
+			MultiAsset::ConcreteFungible { id, amount } => {
+				self.fungible
+					.entry(AssetId::Concrete(id))
+					.and_modify(|e| *e = e.saturating_add(amount))
+					.or_insert(amount);
+			}
+			MultiAsset::AbstractFungible { id, amount } => {
+				self.fungible
+					.entry(AssetId::Abstract(id))
+					.and_modify(|e| *e = e.saturating_add(amount))
+					.or_insert(amount);
+			}
+			MultiAsset::ConcreteNonFungible { class, instance} => {
+				self.non_fungible.insert((AssetId::Concrete(class), instance));
+			}
+			MultiAsset::AbstractNonFungible { class, instance} => {
+				self.non_fungible.insert((AssetId::Abstract(class), instance));
+			}
+			MultiAsset::Each(ref assets) => {
+				for asset in assets.into_iter() {
+					self.saturating_subsume(asset.clone())
+				}
+			}
+			_ => (),
+		}
+	}
+
+	/// Take all possible assets up to `assets` from `self`, mutating `self` and returning the
+	/// assets taken.
+	///
+	/// Wildcards work.
+	fn saturating_take(&mut self, assets: Vec<MultiAsset>) -> Assets {
+		// TODO: implement
+		for asset in assets.into_iter() {
+			match asset {
+
+			}
+		}
+	}
+}
+
+impl<T: Trait> Module<T> {
+	fn execute_effects(origin: &Origin, holding: &mut Assets, effect: Ai) -> Result<(), ()> {
+		match effect {
+			Ai::DepositAsset { assets, dest } => {
+				let deposited = holding.saturating_take(assets);
+				for (id, amount) in deposited.fungible.into_iter() {
+					let asset = match id {
+						AssetId::Concrete(id) => MultiAsset::ConcreteFungible { id, amount },
+						AssetId::Abstract(id) => MultiAsset::AbstractFungible { id, amount },
+					};
+					T::AssetDepositor::deposit_asset(&asset, &dest)?;
+				}
+				for (id, instance) in deposited.non_fungible {
+					let asset = match id {
+						AssetId::Concrete(class) => MultiAsset::ConcreteNonFungible { class, instance },
+						AssetId::Abstract(class) => MultiAsset::AbstractNonFungible { class, instance },
+					};
+					T::AssetDepositor::deposit_asset(&asset, &dest)?;
 				}
 			},
-			(origin, Ok(Xcm::Transact{ origin_type, call })) => {
+			_ => Err(()),
+		}
+		Ok(())
+	}
+
+	fn execute(origin: MultiLocation, msg: VersionedXcm) -> Result<(), ()> {
+		let (mut holding, effects) = match (origin, Xcm::try_from(msg)) {
+			(_origin, Ok(Xcm::WithdrawAsset { assets, effects })) => {
+				// TODO: Take as much of `assets` from the origin account (on-chain) and place in holding.
+				let holding = Assets::from(assets); // << just a stub.
+
+				(holding, effects)
+			}
+			(origin, Ok(Xcm::ReserveAssetCredit { assets, effects })) => {
+				// TODO: check whether we trust origin to be our reserve location for this asset via
+				//   config trait.
+				if assets.len() == 1 &&
+					matches!(&assets[0], MultiAsset::ConcreteFungible { ref id, .. } if id == &origin)
+				{
+					// We only trust the origin to send us assets that they identify as their
+					// sovereign assets.
+					(Assets::from(assets), effects)
+				} else {
+					Err(())?
+				}
+			}
+			(_origin, Ok(Xcm::TeleportAsset { assets, effects })) => {
+				// TODO: check whether we trust origin to teleport this asset to us via config trait.
+				Err(())?	// << we don't trust any chains, for now.
+			}
+			(origin, Ok(Xcm::Transact { origin_type, call })) => {
 				// We assume that the Relay-chain is allowed to use transact on this parachain.
+
+				// TODO: Weight fees should be paid.
+
 				// TODO: allow this to be configurable in the trait.
 				// TODO: allow the trait to issue filters for the relay-chain
+
 				if let Ok(message_call) = <T as Trait>::Call::decode(&mut &call[..]) {
 					let origin: <T as Trait>::Origin = match origin_type {
+						// TODO: Allow sovereign accounts to be configured via the trait.
 						MultiOrigin::SovereignAccount => {
 							match origin {
-								// Unimplemented. Relay-chain doesn't yet have a sovereign account
-								// on the parachain.
-								Origin::RelayChain => return,
-								Origin::Parachain(id) => RawOrigin::Signed(id.into_account()).into(),
+								// Relay-chain doesn't yet have a sovereign account on the parachain.
+								MultiLocation::X1(Junction::Parent) => Err(())?,
+								MultiLocation::X2(Junction::Parent, Junction::Parachain(id)) =>
+									RawOrigin::Signed(id.into_account()).into(),
+								_ => Err(())?,
 							}
 						}
-						MultiOrigin::Native => origin.into(),
+						// We assume we are a parachain.
+						//
+						// TODO: Use the config trait to convert the multilocation into an origin.
+						MultiOrigin::Native => match origin {
+							MultiLocation::X1(Junction::Parent) => Origin::RelayChain.into(),
+							MultiLocation::X2(Junction::Parent, Junction::Parachain(id)) =>
+								Origin::Parachain(id.into()).into(),
+							_ => Err(())?,
+						},
 						MultiOrigin::Superuser => match origin {
-							Origin::RelayChain =>
+							MultiLocation::X1(Junction::Parent) =>
 								// We assume that the relay-chain is allowed to execute with superuser
 								// privileges if it wants.
 								// TODO: allow this to be configurable in the trait.
 								RawOrigin::Root.into(),
-							Origin::Parachain(_) =>
-								return,
+							MultiLocation::X2(Junction::Parent, Junction::Parachain(id)) =>
+								// We assume that parachains are not allowed to execute with
+								// superuser privileges.
+								// TODO: allow this to be configurable in the trait.
+								Err(())?,
+							_ => Err(())?,
 						}
 					};
 					let _ok = message_call.dispatch(origin).is_ok();
 					// Not much to do with the result as it is. It's up to the parachain to ensure that the
 					// message makes sense.
+					return Ok(());
 				}
 			}
-			_ => return,	// Unhandled XCM message.
+			_ => Err(())?,	// Unhandled XCM message.
+		};
+
+		// TODO: stuff that should happen after holding is populated but before effects,
+		//   including depositing fees for effects from holding account.
+
+		for effect in effects.into_iter() {
+			let _ = Self::execute_effects(&origin, &mut holding, effect)?;
 		}
+
+		// TODO: stuff that should happen after effects including refunding unused fees.
+
+		Ok(())
 	}
 }
 
+// TODO: remove in favour of a single `XcmHandler` trait that accepts MultiLocation directly.
+
+
 impl<T: Trait> DmpHandler for Module<T> {
 	fn handle_downward(msg: VersionedXcm) {
-		Self::handle_message(Origin::RelayChain, msg);
+		Self::execute(MultiLocation::X1(Junction::Parent), msg);
 	}
 }
 
 impl<T: Trait> HmpHandler for Module<T> {
 	fn handle_lateral(id: ParaId, msg: VersionedXcm) {
-		Self::handle_message(Origin::Parachain(id), msg);
+		Self::execute(MultiLocation::X2(Junction::Parent, Junction::Parachain { id: id.into() }), msg);
 	}
 }

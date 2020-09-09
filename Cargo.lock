@@ -1242,6 +1242,7 @@ dependencies = [
  "cumulus-primitives",
  "frame-support",
  "frame-system",
+ "pallet-balances",
  "parity-scale-codec",
  "polkadot-parachain",
  "sp-runtime",

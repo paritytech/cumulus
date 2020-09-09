@@ -18,6 +18,8 @@ cumulus-primitives = { path = "../../../primitives", default-features = false }
 # Polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch", default-features = false }
 
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
+
 [features]
 default = ["std"]
 std = [
@@ -28,4 +30,5 @@ std = [
 	"polkadot-parachain/std",
 	"sp-std/std",
 	"sp-runtime/std",
+	"pallet-balances/std",
 ]
