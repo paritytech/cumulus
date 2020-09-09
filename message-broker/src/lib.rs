@@ -26,24 +26,23 @@
 use codec::{Decode, Encode};
 use cumulus_primitives::{
 	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER}, well_known_keys,
-	ParaId, DmpHandler, UmpSender, HmpHandler, HmpSender, VersionedXcm, xcm::v0::Xcm
+	ParaId, VersionedXcm, xcm::v0::{Xcm, ExecuteXcm, SendXcm}
 };
 use frame_support::{decl_event, decl_module, storage, traits::Get, weights::{DispatchClass, Weight}};
 use frame_system::ensure_none;
 use sp_inherents::{InherentData, InherentIdentifier, MakeFatalError, ProvideInherent};
 use sp_runtime::traits::Hash;
 use sp_std::{convert::TryFrom, vec::Vec, boxed::Box};
+use cumulus_primitives::xcm::v0::{MultiLocation, Junction};
+use sp_std::convert::TryInto;
 
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {
 	/// Event type used by the runtime.
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 
-	/// A downward message. This will generally just be the parachain's `Call` type.
-	type DmpHandler: DmpHandler;
-
-	/// The XCMP message type used by the Parachain runtime.
-	type HmpHandler: HmpHandler;
+	/// Something to execute an XCM message.
+	type XcmExecutor: ExecuteXcm;
 
 	/// The Id of the parachain.
 	type ParachainId: Get<ParaId>;
@@ -71,14 +70,11 @@ decl_module! {
 			// weight used by the handlers.
 			let max_messages = 10;
 			messages.iter().take(max_messages).for_each(|msg| {
-				match VersionedXcm::decode(&mut &msg[..]).map(Xcm::try_from) {
-					Ok(Ok(Xcm::ForwardedFromParachain{ id, inner })) =>
-						T::HmpHandler::handle_lateral(id.into(), *inner),
-					Ok(Ok(m)) =>
-						T::DmpHandler::handle_downward(m.into()),
-					Ok(Err(_)) => (),	// Unsupported XCM version.
-					Err(_) => (),		// Bad format (can't decode).
+				if let Ok(Ok(xcm)) = VersionedXcm::decode(&mut &msg[..]).map(Xcm::try_from) {
+					let _result = T::XcmExecutor::execute_xcm(m);
+					// TODO: do something with the result.
 				}
+				// TODO: do something sensible if it doesn't decode or it's a bad version.
 			});
 
 			let processed = sp_std::cmp::min(messages.len(), max_messages) as u32;
@@ -95,22 +91,29 @@ decl_module! {
 	}
 }
 
-impl<T: Trait> HmpSender for Module<T> {
-	fn send_lateral(id: ParaId, msg: VersionedXcm) -> Result<(), ()> {
-		Self::send_upward(Xcm::ForwardToParachain { id: id.into(), inner: Box::new(msg) }.into())
-	}
-}
+impl<T: Trait> SendXcm for Module<T> {
+	fn send_xcm(dest: MultiLocation, msg: VersionedXcm) -> Result<(), ()> {
+		match dest.split_last() {
+			(MultiLocation::Null, None) => {
+				T::XcmExecutor::execute_xcm(MultiLocation::Null, msg.try_into().map_err(|_| ())?)
+			}
+			(MultiLocation::Null, Some(Junction::Parent)) => {
+				//TODO: check fee schedule
+				let data = msg.encode();
+				let data_hash = T::Hashing::hash(&data);
 
-impl<T: Trait> UmpSender for Module<T> {
-	fn send_upward(msg: VersionedXcm) -> Result<(), ()> {
-		//TODO: check fee schedule
-		let data = msg.encode();
-		let data_hash = T::Hashing::hash(&data);
+				sp_io::storage::append(well_known_keys::UPWARD_MESSAGES, data);
+				Self::deposit_event(RawEvent::UpwardMessageSent(data_hash));
 
-		sp_io::storage::append(well_known_keys::UPWARD_MESSAGES, data);
-		Self::deposit_event(RawEvent::UpwardMessageSent(data_hash));
-
-		Ok(())
+				Ok(())
+			}
+			(relayer, Some(Junction::Parachain { id })) =>
+				Self::send_xcm(
+					relayer,
+					Xcm::ForwardToParachain { id: id.into(), inner: Box::new(msg) }.into()
+				),
+			_ => Err(())?,
+		}
 	}
 }
 

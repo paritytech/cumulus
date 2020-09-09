@@ -26,8 +26,7 @@ use sp_std::convert::TryFrom;
 
 use codec::{Encode, Decode};
 use cumulus_primitives::{
-	xcm::{v0::Xcm, VersionedXcm},
-	DmpHandler, HmpHandler, HmpSender, UmpSender, ParaId
+	xcm::{v0::{Xcm, XcmError, XcmResult, SendXcm, ExecuteXcm}, VersionedXcm}, ParaId
 };
 use polkadot_parachain::primitives::AccountIdConversion;
 use frame_support::sp_std::result;
@@ -53,10 +52,10 @@ pub enum Origin {
 type BalanceOf<T> = <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
 
 pub trait DepositAsset {
-	fn deposit_asset(what: &MultiAsset, who: &MultiLocation) -> Result<(), ()>;
+	fn deposit_asset(what: &MultiAsset, who: &MultiLocation) -> XcmResult;
 }
 impl<X: DepositAsset, Y: DepositAsset> DepositAsset for (X, Y) {
-	fn deposit_asset(what: &MultiAsset, who: &MultiLocation) -> Result<(), ()> {
+	fn deposit_asset(what: &MultiAsset, who: &MultiLocation) -> XcmResult {
 		X::deposit_asset(what, who).or_else(|| Y::deposit_asset(what, who))
 	}
 }
@@ -112,7 +111,7 @@ impl<
 	Currency: Currency<AccountId>,
 	AccountId,	// can't get away without it since Currency is generic over it.
 > DepositAsset for CurrencyAdapter<Currency, Matcher, AccountIdConverter, AccountId> {
-	fn deposit_asset(what: &MultiAsset, who: &MultiLocation) -> Result<(), ()> {
+	fn deposit_asset(what: &MultiAsset, who: &MultiLocation) -> XcmResult {
 		// Check we handle this asset.
 		let amount = Matcher::matches_asset(&what).ok_or(())?;
 		let who = AccountIdConverter::punn_from_location(who)?;
@@ -164,13 +163,7 @@ pub trait Trait: frame_system::Trait {
 	/// The outer call dispatch type.
 	type Call: Parameter + Dispatchable<Origin=<Self as Trait>::Origin> + From<Call<Self>>;
 
-	/// The sender of upward messages.
-	type UmpSender: UmpSender;
-
-	/// The sender of horizontal/lateral messages.
-	type HmpSender: HmpSender;
-
-	type AssetDepositor: DepositAsset;
+	type XcmExecutive: ExecuteXcm;
 }
 
 decl_event! {
@@ -209,9 +202,9 @@ decl_module! {
 			//   MultiOrigin::Parachain).
 			let xcm_origin = origin.into();
 
-			Self::execute(xcm_origin, xcm);
+			T::ExecuteXcm::execute_xcm(xcm_origin, xcm);
 		}
-
+/*
 		/// Transfer some `asset` from the Parachain to the given `dest`.
 		// TODO: Remove
 		#[weight = 10]
@@ -285,6 +278,7 @@ decl_module! {
 				_ => Err(Error::<T>::BadLocation)?,	// Invalid location.
 			}
 		}
+		*/
 	}
 }
 
@@ -353,8 +347,27 @@ impl Assets {
 	}
 }
 
-impl<T: Trait> Module<T> {
-	fn execute_effects(origin: &Origin, holding: &mut Assets, effect: Ai) -> Result<(), ()> {
+pub trait XcmExecutorConfig {
+	/// The outer origin type.
+	type Origin: From<Origin>
+	+ From<frame_system::RawOrigin<Self::AccountId>>
+	+ Into<result::Result<Origin, <Self as Trait>::Origin>>;
+
+	/// The outer call dispatch type.
+	type Call: Parameter + Dispatchable<Origin=<Self as Trait>::Origin> + From<Call<Self>>;
+
+	type XcmSender: SendXcm;
+
+	/// How to deposit an asset.
+	type AssetDepositor: DepositAsset;
+
+	/// TODO: How to withdraw an asset.
+}
+
+pub struct XcmExecutor<Config>;
+
+impl<Config: XcmExecutorConfig> XcmExecutor<Config> {
+	fn execute_effects(origin: &Origin, holding: &mut Assets, effect: Ai) -> XcmResult {
 		match effect {
 			Ai::DepositAsset { assets, dest } => {
 				let deposited = holding.saturating_take(assets);
@@ -363,25 +376,34 @@ impl<T: Trait> Module<T> {
 						AssetId::Concrete(id) => MultiAsset::ConcreteFungible { id, amount },
 						AssetId::Abstract(id) => MultiAsset::AbstractFungible { id, amount },
 					};
-					T::AssetDepositor::deposit_asset(&asset, &dest)?;
+					Config::AssetDepositor::deposit_asset(&asset, &dest)?;
 				}
 				for (id, instance) in deposited.non_fungible {
 					let asset = match id {
 						AssetId::Concrete(class) => MultiAsset::ConcreteNonFungible { class, instance },
 						AssetId::Abstract(class) => MultiAsset::AbstractNonFungible { class, instance },
 					};
-					T::AssetDepositor::deposit_asset(&asset, &dest)?;
+					Config::AssetDepositor::deposit_asset(&asset, &dest)?;
 				}
 			},
 			_ => Err(()),
 		}
 		Ok(())
 	}
+}
 
-	fn execute(origin: MultiLocation, msg: VersionedXcm) -> Result<(), ()> {
+impl<Config: XcmExecutorConfig> ExecuteXcm for XcmExecutor<Config> {
+	fn execute_xcm(origin: MultiLocation, msg: VersionedXcm) -> XcmResult {
 		let (mut holding, effects) = match (origin, Xcm::try_from(msg)) {
+			(origin, Ok(Xcm::ForwardedFromParachain { id, inner })) => {
+				let new_origin = origin.pushed_with(Junction::Parachain(id)).map_err(|_| ())?;
+				Self::execute_from(new_origin, *inner)
+			}
 			(_origin, Ok(Xcm::WithdrawAsset { assets, effects })) => {
 				// TODO: Take as much of `assets` from the origin account (on-chain) and place in holding.
+
+				// TODO: This will require either a new config trait `AssetWithdrawer`, or to
+				//   introduce withdraw facilities into `AssetDepositor` (and renaming accordingly).
 				let holding = Assets::from(assets); // << just a stub.
 
 				(holding, effects)
@@ -465,20 +487,5 @@ impl<T: Trait> Module<T> {
 		// TODO: stuff that should happen after effects including refunding unused fees.
 
 		Ok(())
-	}
-}
-
-// TODO: remove in favour of a single `XcmHandler` trait that accepts MultiLocation directly.
-
-
-impl<T: Trait> DmpHandler for Module<T> {
-	fn handle_downward(msg: VersionedXcm) {
-		Self::execute(MultiLocation::X1(Junction::Parent), msg);
-	}
-}
-
-impl<T: Trait> HmpHandler for Module<T> {
-	fn handle_lateral(id: ParaId, msg: VersionedXcm) {
-		Self::execute(MultiLocation::X2(Junction::Parent, Junction::Parachain { id: id.into() }), msg);
 	}
 }
