@@ -38,7 +38,6 @@ use substrate_test_runtime_client::AccountKeyring::*;
 #[substrate_test_utils::test]
 #[ignore]
 async fn integration_test(task_executor: TaskExecutor) {
-	sc_cli::init_logger("cumulus-network=trace");
 	let para_id = ParaId::from(100);
 
 	// generate parachain spec
