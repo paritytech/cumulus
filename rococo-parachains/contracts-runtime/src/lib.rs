@@ -210,22 +210,18 @@ parameter_types! {
 	pub const PolkadotNetwork: MultiNetwork = MultiNetwork::Polkadot;
 }
 
-use polkadot_parachain::primitives::{AccountIdConversion, Id as ParaId};
+use polkadot_parachain::primitives::{AccountIdConversion, Id as ParaId, Sibling};
 use xcm::v0::{MultiOrigin, Junction};
 use xcm_executor::traits::{PunnFromLocation, PunnIntoLocation, ConvertOrigin};
 use codec::Encode;
 
 // TODO: Maybe make something generic for this.
-// NOTE: Here we encode *SIBLING* chains using `ParaId::from`: On the relay chain we encode *child*
-// chains with these AccountIds. If ever we have a chain that is both a Relay and a Parachain, then
-// the naming conventions will clash. Instead, we should have a separate, derivative, convention for
-// sibling chains on parachains.
 pub struct LocalPunner;
 impl PunnFromLocation<AccountId> for LocalPunner {
 	fn punn_from_location(location: &MultiLocation) -> Option<AccountId> {
 		Some(match location {
 			MultiLocation::X1(Junction::Parent) => AccountId::default(),
-			MultiLocation::X2(Junction::Parent, Junction::Parachain { id }) => ParaId::from(*id).into_account(),
+			MultiLocation::X2(Junction::Parent, Junction::Parachain { id }) => Sibling((*id).into()).into_account(),
 			MultiLocation::X1(Junction::AccountId32 { id, network: MultiNetwork::Polkadot }) |
 			MultiLocation::X1(Junction::AccountId32 { id, network: MultiNetwork::Any }) => (*id).into(),
 			x => ("multiloc", x).using_encoded(sp_io::hashing::blake2_256).into(),
@@ -237,8 +233,8 @@ impl PunnIntoLocation<AccountId> for LocalPunner {
 		if who == AccountId::default() {
 			return Some(Junction::Parent.into())
 		}
-		if let Some(id) = ParaId::try_from_account(&who) {
-			return Some(MultiLocation::X2(Junction::Parent, Junction::Parachain { id: id.into() }))
+		if let Some(id) = Sibling::try_from_account(&who) {
+			return Some(MultiLocation::X2(Junction::Parent, Junction::Parachain { id: id.0.into() }))
 		}
 		Some(Junction::AccountId32 { id: who.into(), network: MultiNetwork::Polkadot }.into())
 	}
@@ -263,10 +259,13 @@ impl ConvertOrigin<Origin> for LocalOriginConverter {
 			(MultiOrigin::SovereignAccount, origin)
 				=> frame_system::RawOrigin::Signed(LocalPunner::punn_from_location(&origin).ok_or(())?).into(),
 
-			// Sibling Parachain don't yet have a special origin.
-/*			(MultiOrigin::Native, MultiLocation::X2(Junction::Parent, Junction::Parachain { id }))
-				=> parachains::Origin::Parachain(id.into()).into(),
-*/
+			// Our Relay-chain has a native origin.
+			(MultiOrigin::Native, MultiLocation::X1(Junction::Parent))
+				=> cumulus_message_broker::Origin::Relay.into(),
+
+			// Sibling Parachains have a native origin.
+			(MultiOrigin::Native, MultiLocation::X2(Junction::Parent, Junction::Parachain { id }))
+				=> cumulus_message_broker::Origin::SiblingParachain(id.into()).into(),
 
 			// AccountIds for either Polkadot or "Any" network are treated literally.
 			(MultiOrigin::Native, MultiLocation::X1(Junction::AccountId32 { id, network: MultiNetwork::Polkadot })) |
@@ -347,7 +346,7 @@ construct_runtime! {
 		Sudo: pallet_sudo::{Module, Call, Storage, Config<T>, Event<T>},
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
-		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
+		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>, Origin},
 		XcmHandler: cumulus_xcm_handler::{Module, Call, Event},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		ParachainInfo: parachain_info::{Module, Storage, Config},

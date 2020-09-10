@@ -27,12 +27,22 @@ use sp_std::{convert::{TryFrom, TryInto}, vec::Vec, boxed::Box};
 use sp_inherents::{InherentData, InherentIdentifier, MakeFatalError, ProvideInherent};
 use sp_runtime::traits::Hash;
 use codec::{Decode, Encode};
-use xcm::{VersionedXcm, v0::{Xcm, ExecuteXcm, SendXcm, MultiLocation, Junction}};
+use xcm::{VersionedXcm, v0::{Xcm, ExecuteXcm, SendXcm, MultiLocation, Junction, Error as XcmError}};
 use frame_support::{decl_event, decl_module, storage, traits::Get, weights::{DispatchClass, Weight}};
 use frame_system::ensure_none;
 use cumulus_primitives::{
 	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER}, well_known_keys, ParaId
 };
+
+/// Origin for the parachains module.
+#[derive(PartialEq, Eq, Clone, Encode, Decode)]
+#[cfg_attr(feature = "std", derive(Debug))]
+pub enum Origin {
+	/// It comes from the (parent) relay chain.
+	Relay,
+	/// It comes from a (sibling) parachain.
+	SiblingParachain(ParaId),
+}
 
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {
@@ -51,7 +61,15 @@ decl_event! {
 		/// An upward message was sent to the relay chain.
 		///
 		/// The hash corresponds to the hash of the encoded upward message.
-		UpwardMessageSent(Hash),
+		UmpMessageSent(Hash),
+		/// Some downward message was executed ok.
+		DmpSuccess(Hash),
+		/// Some downward message failed.
+		DmpFail(Hash, XcmError),
+		/// DMP message had a bad XCM version.
+		DmpBadVersion(Hash),
+		/// DMP message was of an invalid format.
+		DmpBadFormat(Hash),
 	}
 }
 
@@ -64,16 +82,22 @@ decl_module! {
 		fn execute_downward_messages(origin, messages: Vec<Vec<u8>>) {
 			ensure_none(origin)?;
 
-			//TODO: max messages should not be hardcoded. It should be determined based on the
-			// weight used by the handlers.
+			// TODO: max messages should not be hardcoded. It should be determined based on the
+			//   weight used by the handlers.
 			let max_messages = 10;
 			messages.iter().take(max_messages).for_each(|msg| {
-				if let Ok(Ok(xcm)) = VersionedXcm::decode(&mut &msg[..]).map(Xcm::try_from) {
-					// TODO: CHECK ORIGIN
-					let _result = T::XcmExecutor::execute_xcm(MultiLocation::Null, xcm);
-					// TODO: do something with the result.
+				let hash = T::Hashing::hash(&msg);
+				match VersionedXcm::decode(&mut &msg[..]).map(Xcm::try_from) {
+					Ok(Ok(xcm)) => {
+						let event = match T::XcmExecutor::execute_xcm(Junction::Parent.into(), xcm) {
+							Ok(..) => RawEvent::DmpSuccess(hash),
+							Err(e) => RawEvent::DmpFail(hash, e),
+						};
+						Self::deposit_event(event);
+					}
+					Ok(Err(..)) => Self::deposit_event(RawEvent::DmpBadVersion(hash)),
+					Err(..) => Self::deposit_event(RawEvent::DmpBadFormat(hash)),
 				}
-				// TODO: do something sensible if it doesn't decode or it's a bad version.
 			});
 
 			let processed = sp_std::cmp::min(messages.len(), max_messages) as u32;
@@ -100,10 +124,10 @@ impl<T: Trait> SendXcm for Module<T> {
 			(MultiLocation::Null, Some(Junction::Parent)) => {
 				//TODO: check fee schedule
 				let data = msg.encode();
-				let data_hash = T::Hashing::hash(&data);
+				let hash = T::Hashing::hash(&data);
 
 				sp_io::storage::append(well_known_keys::UPWARD_MESSAGES, data);
-				Self::deposit_event(RawEvent::UpwardMessageSent(data_hash));
+				Self::deposit_event(RawEvent::UmpMessageSent(hash));
 
 				Ok(())
 			}
