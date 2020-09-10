@@ -67,34 +67,3 @@ pub mod well_known_keys {
 pub struct HeadData<Block: BlockT> {
 	pub header: Block::Header,
 }
-
-
-
-
-/// Something that should be called when a downward message is received.
-pub trait DmpHandler {
-	/// Handle the given downward message.
-	fn handle_downward(msg: VersionedXcm);
-}
-
-/// Something that should be called when a HRMP/XCMP message is received.
-pub trait HmpHandler {
-	/// Handle the given lateral message. This is opaque.
-	fn handle_lateral(id: ParaId, msg: VersionedXcm);
-}
-
-/// Something that can send upward messages.
-pub trait UmpSender {
-	/// Send an upward message to the relay chain.
-	///
-	/// Returns an error if sending failed.
-	fn send_upward(msg: VersionedXcm) -> Result<(), ()>;
-}
-
-/// Something that can send upward messages.
-pub trait HmpSender {
-	/// Send a message to a sibling chain.
-	///
-	/// Returns an error if sending failed.
-	fn send_lateral(id: ParaId, msg: VersionedXcm) -> Result<(), ()>;
-}
