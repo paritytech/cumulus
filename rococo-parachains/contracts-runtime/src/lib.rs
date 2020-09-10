@@ -38,7 +38,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use xcm_executor::{
 	XcmExecutor, Config, CurrencyAdapter,
-	traits::{NativeAsset, IsConcrete, AccountId32Punner},
+	traits::{NativeAsset, IsConcrete},
 };
 use xcm::v0::{MultiLocation, MultiNetwork}; // TODO, could move this to `xcm_executor`
 
@@ -206,29 +206,90 @@ impl cumulus_parachain_upgrade::Trait for Runtime {
 }
 
 parameter_types! {
-	pub const Location: MultiLocation = MultiLocation::Null; // TODO FIX
-	pub const Network: MultiNetwork = MultiNetwork::Polkadot;
+	pub const RocLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
+	pub const PolkadotNetwork: MultiNetwork = MultiNetwork::Polkadot;
+}
+
+use polkadot_parachain::primitives::{AccountIdConversion, Id as ParaId};
+use xcm::v0::{MultiOrigin, Junction};
+use xcm_executor::traits::{PunnFromLocation, PunnIntoLocation, ConvertOrigin};
+use codec::Encode;
+
+// TODO: Maybe make something generic for this.
+// NOTE: Here we encode *SIBLING* chains using `ParaId::from`: On the relay chain we encode *child*
+// chains with these AccountIds. If ever we have a chain that is both a Relay and a Parachain, then
+// the naming conventions will clash. Instead, we should have a separate, derivative, convention for
+// sibling chains on parachains.
+pub struct LocalPunner;
+impl PunnFromLocation<AccountId> for LocalPunner {
+	fn punn_from_location(location: &MultiLocation) -> Option<AccountId> {
+		Some(match location {
+			MultiLocation::X1(Junction::Parent) => AccountId::default(),
+			MultiLocation::X2(Junction::Parent, Junction::Parachain { id }) => ParaId::from(*id).into_account(),
+			MultiLocation::X1(Junction::AccountId32 { id, network: MultiNetwork::Polkadot }) |
+			MultiLocation::X1(Junction::AccountId32 { id, network: MultiNetwork::Any }) => (*id).into(),
+			x => ("multiloc", x).using_encoded(sp_io::hashing::blake2_256).into(),
+		})
+	}
+}
+impl PunnIntoLocation<AccountId> for LocalPunner {
+	fn punn_into_location(who: AccountId) -> Option<MultiLocation> {
+		if who == AccountId::default() {
+			return Some(Junction::Parent.into())
+		}
+		if let Some(id) = ParaId::try_from_account(&who) {
+			return Some(MultiLocation::X2(Junction::Parent, Junction::Parachain { id: id.into() }))
+		}
+		Some(Junction::AccountId32 { id: who.into(), network: MultiNetwork::Polkadot }.into())
+	}
+}
+
+pub type LocalAssetTransactor =
+	CurrencyAdapter<
+		// Use this currency:
+		Balances,
+		// Use this currency when it is a fungible asset matching the given location or name:
+		IsConcrete<RocLocation>,
+		// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
+		LocalPunner,
+		// Our chain's account ID type (we can't get away without mentioning it explicitly):
+		AccountId,
+	>;
+pub struct LocalOriginConverter;
+impl ConvertOrigin<Origin> for LocalOriginConverter {
+	fn convert_origin(origin: MultiLocation, kind: MultiOrigin) -> Result<Origin, xcm::v0::Error> {
+		Ok(match (kind, origin) {
+			// Sovereign accounts are handled by our `LocalPunner`.
+			(MultiOrigin::SovereignAccount, origin)
+				=> frame_system::RawOrigin::Signed(LocalPunner::punn_from_location(&origin).ok_or(())?).into(),
+
+			// Sibling Parachain don't yet have a special origin.
+/*			(MultiOrigin::Native, MultiLocation::X2(Junction::Parent, Junction::Parachain { id }))
+				=> parachains::Origin::Parachain(id.into()).into(),
+*/
+
+			// AccountIds for either Polkadot or "Any" network are treated literally.
+			(MultiOrigin::Native, MultiLocation::X1(Junction::AccountId32 { id, network: MultiNetwork::Polkadot })) |
+			(MultiOrigin::Native, MultiLocation::X1(Junction::AccountId32 { id, network: MultiNetwork::Any })) => frame_system::RawOrigin::Signed(id.into()).into(),
+
+			// We assume that system parahains and the relay chain both run with Root privs:
+			(MultiOrigin::Superuser, MultiLocation::X2(Junction::Parent, Junction::Parachain { id })) if ParaId::from(id).is_system()
+				=> frame_system::RawOrigin::Root.into(),
+			(MultiOrigin::Superuser, MultiLocation::X1(Junction::Parent)) => frame_system::RawOrigin::Root.into(),
+			_ => Err(())?,
+		})
+	}
 }
 
 pub struct XcmConfig;
 impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = MessageBroker;
-		/// How to withdraw and deposit an asset.
-	type AssetTransactor = CurrencyAdapter<
-		Balances,
-		IsConcrete<Location>,
-		AccountId32Punner<AccountId, Network>,
-		AccountId,
-	>;
-	/// How to get a call origin from a `MultiOrigin` value.
-	type OriginConverter = (); // TODO: Will always return ERR
-
-	// Combinations of (Location, Asset) pairs which we unilateral trust as reserves.
+	// How to withdraw and deposit an asset.
+	type AssetTransactor = LocalAssetTransactor;
+	type OriginConverter = LocalOriginConverter;
 	type IsReserve = NativeAsset;
-
-	// Combinations of (Location, Asset) pairs which we bilateral trust as teleporters.
-	type IsTeleporter = NativeAsset; // TODO: FIX
+	type IsTeleporter = ();
 }
 
 impl cumulus_message_broker::Trait for Runtime {
@@ -239,7 +300,7 @@ impl cumulus_message_broker::Trait for Runtime {
 
 impl cumulus_xcm_handler::Trait for Runtime {
 	type Event = Event;
-	type AccountIdConverter = AccountId32Punner<AccountId, Network>; // TODO
+	type AccountIdConverter = LocalPunner;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
