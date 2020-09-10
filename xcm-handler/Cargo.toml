@@ -26,10 +26,10 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "gav-x
 [features]
 default = ["std"]
 std = [
-    "codec/std",
-    "cumulus-primitives/std",
-    "frame-support/std",
-    "frame-system/std",
+	"codec/std",
+	"cumulus-primitives/std",
+	"frame-support/std",
+	"frame-system/std",
 	"polkadot-parachain/std",
 	"sp-std/std",
 	"sp-runtime/std",

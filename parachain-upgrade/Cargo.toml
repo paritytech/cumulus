@@ -47,4 +47,5 @@ std = [
 	'sp-std/std',
 	'frame-system/std',
 	'cumulus-primitives/std',
+	'parachain/std',
 ]
