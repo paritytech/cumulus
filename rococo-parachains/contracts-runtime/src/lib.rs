@@ -212,13 +212,13 @@ parameter_types! {
 
 use polkadot_parachain::primitives::{AccountIdConversion, Id as ParaId, Sibling};
 use xcm::v0::{MultiOrigin, Junction};
-use xcm_executor::traits::{PunnFromLocation, PunnIntoLocation, ConvertOrigin};
+use xcm_executor::traits::{LocationConversion, ConvertOrigin};
 use codec::Encode;
 
 // TODO: Maybe make something generic for this.
-pub struct LocalPunner;
-impl PunnFromLocation<AccountId> for LocalPunner {
-	fn punn_from_location(location: &MultiLocation) -> Option<AccountId> {
+pub struct LocationConverter;
+impl LocationConversion<AccountId> for LocationConverter {
+	fn from_location(location: &MultiLocation) -> Option<AccountId> {
 		Some(match location {
 			MultiLocation::X1(Junction::Parent) => AccountId::default(),
 			MultiLocation::X2(Junction::Parent, Junction::Parachain { id }) => Sibling((*id).into()).into_account(),
@@ -227,9 +227,8 @@ impl PunnFromLocation<AccountId> for LocalPunner {
 			x => ("multiloc", x).using_encoded(sp_io::hashing::blake2_256).into(),
 		})
 	}
-}
-impl PunnIntoLocation<AccountId> for LocalPunner {
-	fn punn_into_location(who: AccountId) -> Option<MultiLocation> {
+
+	fn into_location(who: AccountId) -> Option<MultiLocation> {
 		if who == AccountId::default() {
 			return Some(Junction::Parent.into())
 		}
@@ -247,7 +246,7 @@ pub type LocalAssetTransactor =
 		// Use this currency when it is a fungible asset matching the given location or name:
 		IsConcrete<RocLocation>,
 		// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
-		LocalPunner,
+		LocationConverter,
 		// Our chain's account ID type (we can't get away without mentioning it explicitly):
 		AccountId,
 	>;
@@ -255,9 +254,9 @@ pub struct LocalOriginConverter;
 impl ConvertOrigin<Origin> for LocalOriginConverter {
 	fn convert_origin(origin: MultiLocation, kind: MultiOrigin) -> Result<Origin, xcm::v0::Error> {
 		Ok(match (kind, origin) {
-			// Sovereign accounts are handled by our `LocalPunner`.
+			// Sovereign accounts are handled by our `LocationConverter`.
 			(MultiOrigin::SovereignAccount, origin)
-				=> frame_system::RawOrigin::Signed(LocalPunner::punn_from_location(&origin).ok_or(())?).into(),
+				=> frame_system::RawOrigin::Signed(LocationConverter::from_location(&origin).ok_or(())?).into(),
 
 			// Our Relay-chain has a native origin.
 			(MultiOrigin::Native, MultiLocation::X1(Junction::Parent))
@@ -299,7 +298,7 @@ impl cumulus_message_broker::Trait for Runtime {
 
 impl cumulus_xcm_handler::Trait for Runtime {
 	type Event = Event;
-	type AccountIdConverter = LocalPunner;
+	type AccountIdConverter = LocationConverter;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 

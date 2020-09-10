@@ -20,7 +20,7 @@ use sp_std::convert::TryInto;
 use frame_support::{decl_event, decl_error, decl_module};
 use frame_system::ensure_signed;
 use xcm::{VersionedXcm, v0::{Error as XcmError, ExecuteXcm}};
-use xcm_executor::traits::PunnIntoLocation;
+use xcm_executor::traits::LocationConversion;
 
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {
@@ -29,7 +29,7 @@ pub trait Trait: frame_system::Trait {
 
 	/// Utility for converting from the signed origin (of type `Self::AccountId`) into a sensible
 	/// `MultiLocation` ready for passing to the XCM interpreter.
-	type AccountIdConverter: PunnIntoLocation<Self::AccountId>;
+	type AccountIdConverter: LocationConversion<Self::AccountId>;
 
 	/// The interpreter.
 	type XcmExecutor: ExecuteXcm;
@@ -61,7 +61,7 @@ decl_module! {
 		#[weight = 10]
 		fn execute(origin, xcm: VersionedXcm) {
 			let who = ensure_signed(origin)?;
-			let xcm_origin = T::AccountIdConverter::punn_into_location(who)
+			let xcm_origin = T::AccountIdConverter::into_location(who)
 				.ok_or(Error::<T>::BadLocation)?;
 
 			let xcm = xcm.try_into().map_err(|_| Error::<T>::BadVersion)?;
