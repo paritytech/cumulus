@@ -23,18 +23,16 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
-use cumulus_primitives::{
-	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER}, well_known_keys,
-	ParaId, VersionedXcm, xcm::v0::{Xcm, ExecuteXcm, SendXcm}
-};
-use frame_support::{decl_event, decl_module, storage, traits::Get, weights::{DispatchClass, Weight}};
-use frame_system::ensure_none;
+use sp_std::{convert::{TryFrom, TryInto}, vec::Vec, boxed::Box};
 use sp_inherents::{InherentData, InherentIdentifier, MakeFatalError, ProvideInherent};
 use sp_runtime::traits::Hash;
-use sp_std::{convert::TryFrom, vec::Vec, boxed::Box};
-use cumulus_primitives::xcm::v0::{MultiLocation, Junction};
-use sp_std::convert::TryInto;
+use codec::{Decode, Encode};
+use xcm::{VersionedXcm, v0::{Xcm, ExecuteXcm, SendXcm, MultiLocation, Junction}};
+use frame_support::{decl_event, decl_module, storage, traits::Get, weights::{DispatchClass, Weight}};
+use frame_system::ensure_none;
+use cumulus_primitives::{
+	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER}, well_known_keys, ParaId
+};
 
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {
@@ -93,7 +91,8 @@ decl_module! {
 }
 
 impl<T: Trait> SendXcm for Module<T> {
-	fn send_xcm(dest: MultiLocation, msg: VersionedXcm) -> Result<(), ()> {
+	fn send_xcm(dest: MultiLocation, msg: Xcm) -> Result<(), ()> {
+		let msg: VersionedXcm = msg.into();
 		match dest.split_last() {
 			(MultiLocation::Null, None) => {
 				T::XcmExecutor::execute_xcm(MultiLocation::Null, msg.try_into().map_err(|_| ())?)
