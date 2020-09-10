@@ -221,9 +221,11 @@ impl LocationConversion<AccountId> for LocationConverter {
 	fn from_location(location: &MultiLocation) -> Option<AccountId> {
 		Some(match location {
 			MultiLocation::X1(Junction::Parent) => AccountId::default(),
-			MultiLocation::X2(Junction::Parent, Junction::Parachain { id }) => Sibling((*id).into()).into_account(),
-			MultiLocation::X1(Junction::AccountId32 { id, network: MultiNetwork::Polkadot }) |
-			MultiLocation::X1(Junction::AccountId32 { id, network: MultiNetwork::Any }) => (*id).into(),
+			MultiLocation::X2(Junction::Parent, Junction::Parachain { id })
+				=> Sibling((*id).into()).into_account(),
+			MultiLocation::X1(Junction::AccountId32 { id, network })
+				if matches!(*network, MultiNetwork::Polkadot | MultiNetwork::Any)
+				=> (*id).into(),
 			x => ("multiloc", x).using_encoded(sp_io::hashing::blake2_256).into(),
 		})
 	}
@@ -267,13 +269,17 @@ impl ConvertOrigin<Origin> for LocalOriginConverter {
 				=> cumulus_message_broker::Origin::SiblingParachain(id.into()).into(),
 
 			// AccountIds for either Polkadot or "Any" network are treated literally.
-			(MultiOrigin::Native, MultiLocation::X1(Junction::AccountId32 { id, network: MultiNetwork::Polkadot })) |
-			(MultiOrigin::Native, MultiLocation::X1(Junction::AccountId32 { id, network: MultiNetwork::Any })) => frame_system::RawOrigin::Signed(id.into()).into(),
+			(MultiOrigin::Native, MultiLocation::X1(Junction::AccountId32 { id, network }))
+				if matches!(network, MultiNetwork::Polkadot | MultiNetwork::Any)
+				=> frame_system::RawOrigin::Signed(id.into()).into(),
 
-			// We assume that system parahains and the relay chain both run with Root privs:
-			(MultiOrigin::Superuser, MultiLocation::X2(Junction::Parent, Junction::Parachain { id })) if ParaId::from(id).is_system()
+			// We assume that system parachains and the relay chain both run with Root privs:
+			(MultiOrigin::Superuser, MultiLocation::X2(Junction::Parent, Junction::Parachain { id }))
+				if ParaId::from(id).is_system()
 				=> frame_system::RawOrigin::Root.into(),
-			(MultiOrigin::Superuser, MultiLocation::X1(Junction::Parent)) => frame_system::RawOrigin::Root.into(),
+			(MultiOrigin::Superuser, MultiLocation::X1(Junction::Parent))
+				=> frame_system::RawOrigin::Root.into(),
+
 			_ => Err(())?,
 		})
 	}
