@@ -19,7 +19,7 @@
 use sp_std::convert::TryInto;
 use frame_support::{decl_event, decl_error, decl_module};
 use frame_system::ensure_signed;
-use xcm::{VersionedXcm, v0::{XcmError, ExecuteXcm}};
+use xcm::{VersionedXcm, v0::{Error as XcmError, ExecuteXcm}};
 use xcm_executor::traits::PunnIntoLocation;
 
 /// Configuration trait of this pallet.
