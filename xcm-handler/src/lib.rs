@@ -32,7 +32,7 @@ pub trait Trait: frame_system::Trait {
 	type AccountIdConverter: PunnIntoLocation<Self::AccountId>;
 
 	/// The interpreter.
-	type XcmExecutive: ExecuteXcm;
+	type XcmExecutor: ExecuteXcm;
 }
 
 decl_event! {
@@ -65,7 +65,7 @@ decl_module! {
 				.ok_or(Error::<T>::BadLocation)?;
 
 			let xcm = xcm.try_into().map_err(|_| Error::<T>::BadVersion)?;
-			let xcm_result = T::XcmExecutive::execute_xcm(xcm_origin, xcm);
+			let xcm_result = T::XcmExecutor::execute_xcm(xcm_origin, xcm);
 			let event = match xcm_result {
 				Ok(_) => Event::XcmSuccess,
 				Err(e) => Event::XcmFail(e),
