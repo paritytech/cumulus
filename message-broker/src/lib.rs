@@ -71,7 +71,8 @@ decl_module! {
 			let max_messages = 10;
 			messages.iter().take(max_messages).for_each(|msg| {
 				if let Ok(Ok(xcm)) = VersionedXcm::decode(&mut &msg[..]).map(Xcm::try_from) {
-					let _result = T::XcmExecutor::execute_xcm(m);
+					// TODO: CHECK ORIGIN
+					let _result = T::XcmExecutor::execute_xcm(MultiLocation::Null, xcm);
 					// TODO: do something with the result.
 				}
 				// TODO: do something sensible if it doesn't decode or it's a bad version.

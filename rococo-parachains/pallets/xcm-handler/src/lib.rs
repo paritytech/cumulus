@@ -18,7 +18,8 @@
 
 use frame_support::{
 	decl_event, decl_error, decl_module, dispatch::Dispatchable,
-	traits::{Currency, ExistenceRequirement, WithdrawReason}, Parameter
+	traits::{Currency, ExistenceRequirement, WithdrawReason},
+	Parameter, parameter_types
 };
 use frame_system::{RawOrigin, ensure_signed};
 use sp_runtime::{RuntimeDebug, traits::CheckedConversion};
@@ -115,16 +116,16 @@ impl<
 		// Check we handle this asset.
 		let amount = Matcher::matches_asset(&what).ok_or(())?;
 		let who = AccountIdConverter::punn_from_location(who)?;
-		T::Currency::deposit_creating(&who, amount).map_err(|_| ())?;
+		Currency::deposit_creating(&who, amount).map_err(|_| ())?;
 		Ok(())
 	}
 }
 
 parameter_types! {
-	static const DotLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
-	static const DotName: &'static [u8] = &b"DOT"[..];
-	static const MyLocation: MultiLocation = MultiLocation::Null;
-	static const MyName: &'static [u8] = &b"ABC"[..];
+	const DotLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
+	const DotName: &'static [u8] = &b"DOT"[..];
+	const MyLocation: MultiLocation = MultiLocation::Null;
+	const MyName: &'static [u8] = &b"ABC"[..];
 }
 /*
 type MyDepositAsset = (
@@ -164,6 +165,8 @@ pub trait Trait: frame_system::Trait {
 	type Call: Parameter + Dispatchable<Origin=<Self as Trait>::Origin> + From<Call<Self>>;
 
 	type XcmExecutive: ExecuteXcm;
+
+	type Currency: Currency;
 }
 
 decl_event! {
@@ -415,7 +418,7 @@ pub trait XcmExecutorConfig {
 	/// How to deposit an asset.
 	type AssetDepositor: DepositAsset;
 
-	/// TODO: How to withdraw an asset.
+	// TODO: How to withdraw an asset.
 }
 
 pub struct XcmExecutor<Config>;
@@ -494,7 +497,7 @@ impl<Config: XcmExecutorConfig> ExecuteXcm for XcmExecutor<Config> {
 							match origin {
 								// Relay-chain doesn't yet have a sovereign account on the parachain.
 								MultiLocation::X1(Junction::Parent) => Err(())?,
-								MultiLocation::X2(Junction::Parent, Junction::Parachain(id)) =>
+								MultiLocation::X2(Junction::Parent, Junction::Parachain{ id }) =>
 									RawOrigin::Signed(id.into_account()).into(),
 								_ => Err(())?,
 							}
@@ -504,7 +507,7 @@ impl<Config: XcmExecutorConfig> ExecuteXcm for XcmExecutor<Config> {
 						// TODO: Use the config trait to convert the multilocation into an origin.
 						MultiOrigin::Native => match origin {
 							MultiLocation::X1(Junction::Parent) => Origin::RelayChain.into(),
-							MultiLocation::X2(Junction::Parent, Junction::Parachain(id)) =>
+							MultiLocation::X2(Junction::Parent, Junction::Parachain{id}) =>
 								Origin::Parachain(id.into()).into(),
 							_ => Err(())?,
 						},
@@ -514,7 +517,7 @@ impl<Config: XcmExecutorConfig> ExecuteXcm for XcmExecutor<Config> {
 								// privileges if it wants.
 								// TODO: allow this to be configurable in the trait.
 								RawOrigin::Root.into(),
-							MultiLocation::X2(Junction::Parent, Junction::Parachain(id)) =>
+							MultiLocation::X2(Junction::Parent, Junction::Parachain{id}) =>
 								// We assume that parachains are not allowed to execute with
 								// superuser privileges.
 								// TODO: allow this to be configurable in the trait.
