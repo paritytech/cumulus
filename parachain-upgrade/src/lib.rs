@@ -31,8 +31,8 @@
 
 use cumulus_primitives::{
 	inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER as INHERENT_IDENTIFIER,
-	validation_function_params::{OnValidationFunctionParams, ValidationFunctionParams},
-	well_known_keys::{NEW_VALIDATION_CODE, VALIDATION_FUNCTION_PARAMS},
+	OnValidationData, ValidationData,
+	well_known_keys::{NEW_VALIDATION_CODE, VALIDATION_DATA},
 };
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure, storage, weights::DispatchClass,
@@ -53,7 +53,7 @@ pub trait Trait: frame_system::Trait {
 	/// Something which can be notified when the validation function params are set.
 	///
 	/// Set this to `()` if not needed.
-	type OnValidationFunctionParams: OnValidationFunctionParams;
+	type OnValidationFunctionParams: OnValidationData;
 }
 
 // This pallet's storage items.
@@ -93,7 +93,7 @@ decl_module! {
 			Self::schedule_upgrade_impl(validation_function)?;
 		}
 
-		/// Set the current validation function parameters
+		/// Set the current validation data.
 		///
 		/// This should be invoked exactly once per block. It will panic at the finalization
 		/// phease if the call was not invoked.
@@ -103,7 +103,7 @@ decl_module! {
 		/// As a side effect, this function upgrades the current validation function
 		/// if the appropriate time has come.
 		#[weight = (0, DispatchClass::Mandatory)]
-		fn set_validation_function_parameters(origin, vfp: ValidationFunctionParams) {
+		fn set_validation_data(origin, vfp: ValidationData) {
 			ensure_none(origin)?;
 			assert!(!DidUpdateVFPs::exists(), "VFPs must be updated only once in the block");
 
@@ -118,9 +118,9 @@ decl_module! {
 				}
 			}
 
-			storage::unhashed::put(VALIDATION_FUNCTION_PARAMS, &vfp);
+			storage::unhashed::put(VALIDATION_DATA, &vfp);
 			DidUpdateVFPs::put(true);
-			<T::OnValidationFunctionParams as OnValidationFunctionParams>::on_validation_function_params(vfp);
+			<T::OnValidationData as OnValidationData>::on_validation_data(vfp);
 		}
 
 		fn on_finalize() {
@@ -130,15 +130,15 @@ decl_module! {
 }
 
 impl<T: Trait> Module<T> {
-	/// Get validation function parameters.
+	/// Get validation data.
 	///
 	/// This will return `None` if this module's inherent has not yet run.
-	/// If it returns `Some(_)`, the validation function params are current for this block.
-	pub fn validation_function_params() -> Option<ValidationFunctionParams> {
+	/// If it returns `Some(_)`, the validation data are current for this block.
+	pub fn validation_data() -> Option<ValidationData> {
 		if DidUpdateVFPs::get() {
 			// this storage value is set by cumulus during block validation,
 			// and also by the inherent from this module.
-			storage::unhashed::get(VALIDATION_FUNCTION_PARAMS)
+			storage::unhashed::get(VALIDATION_DATA)
 		} else {
 			None
 		}
@@ -172,7 +172,7 @@ impl<T: Trait> Module<T> {
 	/// The implementation of the runtime upgrade scheduling.
 	fn schedule_upgrade_impl(validation_function: Vec<u8>) -> frame_support::dispatch::DispatchResult {
 		ensure!(!PendingValidationFunction::exists(), Error::<T>::OverlappingUpgrades);
-		let vfp = Self::validation_function_params().ok_or(Error::<T>::ValidationFunctionParamsNotAvailable)?;
+		let vfp = Self::validation_data().ok_or(Error::<T>::ValidationDataNotAvailable)?;
 		ensure!(validation_function.len() <= vfp.max_code_size as usize, Error::<T>::TooBig);
 		let apply_block = vfp.code_upgrade_allowed.ok_or(Error::<T>::ProhibitedByPolkadot)?;
 
@@ -197,15 +197,13 @@ impl<T: Trait> ProvideInherent for Module<T> {
 	const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
 
 	fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-		// If the inherent is not present, this returns None early. This in turn will
-		// cause the on_finalize assertion to fail.
-		let vfp: ValidationFunctionParams = data
+		let data: ValidationData = data
 			.get_data(&INHERENT_IDENTIFIER)
 			.ok()
 			.flatten()
 			.expect("validation function params are always injected into inherent data; qed");
 
-		Some(Call::set_validation_function_parameters(vfp))
+		Some(Call::set_validation_data(data))
 	}
 }
 
@@ -226,8 +224,8 @@ decl_error! {
 		ProhibitedByPolkadot,
 		/// The supplied validation function has compiled into a blob larger than Polkadot is willing to run
 		TooBig,
-		/// The inherent which supplies the validation function params did not run this block
-		ValidationFunctionParamsNotAvailable,
+		/// The inherent which supplies the validation data did not run this block
+		ValidationFunctionDataNotAvailable,
 	}
 }
 

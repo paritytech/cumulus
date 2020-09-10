@@ -26,10 +26,9 @@ pub use polkadot_core_primitives::DownwardMessage;
 /// Besides the `data` it also holds the `origin` of the message.
 pub use polkadot_parachain::primitives::UpwardMessage as GenericUpwardMessage;
 pub use polkadot_parachain::primitives::{
-	Id as ParaId, ParachainDispatchOrigin as UpwardMessageOrigin,
+	Id as ParaId, ParachainDispatchOrigin as UpwardMessageOrigin, ValidationData,
 };
 
-pub mod validation_function_params;
 pub mod xcmp;
 
 use codec::{Decode, Encode};
@@ -48,8 +47,7 @@ pub mod inherents {
 	/// The identifier for the `validation_function_params` inherent.
 	pub const VALIDATION_FUNCTION_PARAMS_IDENTIFIER: InherentIdentifier = *b"valfunp0";
 	/// The type of the inherent.
-	pub type ValidationFunctionParamsType =
-		crate::validation_function_params::ValidationFunctionParams;
+	pub type ValidationFunctionParamsType = crate::ValidationData;
 }
 
 /// Well known keys for values in the storage.
@@ -59,8 +57,8 @@ pub mod well_known_keys {
 	/// The upward messages are stored as SCALE encoded `Vec<GenericUpwardMessage>`.
 	pub const UPWARD_MESSAGES: &'static [u8] = b":cumulus_upward_messages:";
 
-	/// Current validation function parameters.
-	pub const VALIDATION_FUNCTION_PARAMS: &'static [u8] = b":cumulus_validation_function_params";
+	/// Current validation data.
+	pub const VALIDATION_DATA: &'static [u8] = b":cumulus_validation_function_params";
 
 	/// Code upgarde (set as appropriate by a pallet).
 	pub const NEW_VALIDATION_CODE: &'static [u8] = b":cumulus_new_validation_code";
@@ -90,4 +88,10 @@ pub trait UpwardMessageSender<UpwardMessage> {
 #[derive(Decode, Encode, Debug)]
 pub struct HeadData<Block: BlockT> {
 	pub header: Block::Header,
+}
+
+/// A trait which is called when the validation data is set.
+#[impl_trait_for_tuples::impl_for_tuples(30)]
+pub trait OnValidationData {
+	fn on_validation_data(data: ValidationData);
 }
