@@ -16,22 +16,16 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::{result::Result, convert::TryFrom};
-use sp_runtime::{RuntimeDebug, DispatchResult, traits::CheckedConversion};
-use codec::{Encode, Decode};
+use sp_std::convert::TryInto;
 use frame_support::{decl_event, decl_error, decl_module};
-use frame_system::{RawOrigin, ensure_signed};
-
-use xcm::{VersionedMultiAsset, VersionedMultiLocation, VersionedXcm, v0::{
-	Xcm, XcmError, XcmResult, SendXcm, ExecuteXcm, MultiOrigin, MultiAsset, MultiLocation,
-	Junction, Ai, AssetInstance
-}};
+use frame_system::ensure_signed;
+use xcm::{VersionedXcm, v0::{XcmError, ExecuteXcm}};
 use xcm_executor::traits::PunnIntoLocation;
 
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {
 	/// Event type used by the runtime.
-	type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
+	type Event: From<Event> + Into<<Self as frame_system::Trait>::Event>;
 
 	/// Utility for converting from the signed origin (of type `Self::AccountId`) into a sensible
 	/// `MultiLocation` ready for passing to the XCM interpreter.
@@ -42,9 +36,7 @@ pub trait Trait: frame_system::Trait {
 }
 
 decl_event! {
-	pub enum Event<T> where
-		AccountId = <T as frame_system::Trait>::AccountId
-	{
+	pub enum Event {
 		/// Xcm execution completed OK.
 		XcmSuccess,
 		/// Xcm execution had some issues.
@@ -56,6 +48,8 @@ decl_error! {
 	pub enum Error for Module<T: Trait> {
 		/// Location given was invalid or unsupported.
 		BadLocation,
+		/// The XCM message version is not supported.
+		BadVersion,
 	}
 }
 
@@ -67,13 +61,14 @@ decl_module! {
 		#[weight = 10]
 		fn execute(origin, xcm: VersionedXcm) {
 			let who = ensure_signed(origin)?;
-			let xcm_origin = AccountIdConverter::punn_into_location(who)
+			let xcm_origin = T::AccountIdConverter::punn_into_location(who)
 				.ok_or(Error::<T>::BadLocation)?;
 
-			let xcm_result = T::ExecuteXcm::execute_xcm(xcm_origin, xcm);
+			let xcm = xcm.try_into().map_err(|_| Error::<T>::BadVersion)?;
+			let xcm_result = T::XcmExecutive::execute_xcm(xcm_origin, xcm);
 			let event = match xcm_result {
-				Ok(_) => RawEvent::XcmSuccess,
-				Error(e) => RawEvent::XcmFail(e),
+				Ok(_) => Event::XcmSuccess,
+				Err(e) => Event::XcmFail(e),
 			};
 			Self::deposit_event(event);
 		}
