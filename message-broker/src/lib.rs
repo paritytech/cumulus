@@ -110,7 +110,7 @@ impl<T: Trait> SendXcm for Module<T> {
 			(relayer, Some(Junction::Parachain { id })) =>
 				Self::send_xcm(
 					relayer,
-					Xcm::ForwardToParachain { id: id.into(), inner: Box::new(msg) }.into()
+					Xcm::RelayToParachain { id: id.into(), inner: Box::new(msg) }.into()
 				),
 			_ => Err(())?,
 		}

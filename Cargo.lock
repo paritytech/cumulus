@@ -989,6 +989,8 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder-runner 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "xcm",
+ "xcm-executor",
 ]
 
 [[package]]
