@@ -45,12 +45,6 @@ decl_event! {
 	pub enum Event<T> where
 		AccountId = <T as frame_system::Trait>::AccountId
 	{
-		/// Transferred tokens to the account on the relay chain.
-		TransferredToRelayChain(VersionedMultiLocation, VersionedMultiAsset),
-		/// Soem assets have been received.
-		ReceivedAssets(AccountId, VersionedMultiAsset),
-		/// Transferred tokens to the account from the given parachain account.
-		TransferredToParachainViaReserve(ParaId, VersionedMultiLocation, VersionedMultiAsset),
 		/// Xcm execution completed OK.
 		XcmSuccess,
 		/// Xcm execution had some issues.
@@ -60,10 +54,6 @@ decl_event! {
 
 decl_error! {
 	pub enum Error for Module<T: Trait> {
-		/// A version of a data format is unsupported.
-		UnsupportedVersion,
-		/// Asset given was invalid or unsupported.
-		BadAsset,
 		/// Location given was invalid or unsupported.
 		BadLocation,
 	}
@@ -76,7 +66,6 @@ decl_module! {
 		// TODO: Handle fee payment in terms of weight.
 		#[weight = 10]
 		fn execute(origin, xcm: VersionedXcm) {
-
 			let who = ensure_signed(origin)?;
 			let xcm_origin = AccountIdConverter::punn_into_location(who)
 				.ok_or(Error::<T>::BadLocation)?;

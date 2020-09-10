@@ -8,7 +8,7 @@ edition = '2018'
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "1.3.0", default-features = false, features = ["derive"] }
 
-cumulus-xcm-handler = { path = "../pallets/xcm-handler", default-features = false}
+cumulus-xcm-handler = { path = "../../xcm-handler", default-features = false}
 parachain-info = { path = "../pallets/parachain-info", default-features = false}
 rococo-parachain-primitives = { path = "../primitives", default-features = false}
 
