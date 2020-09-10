@@ -18,17 +18,13 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::{Decode, Encode};
+pub use xcm::{VersionedXcm, VersionedMultiAsset, VersionedMultiLocation};
+use sp_runtime::traits::Block as BlockT;
 pub use polkadot_core_primitives as relay_chain;
-pub use polkadot_parachain::{xcm, primitives::Id as ParaId};
+pub use polkadot_parachain::primitives::Id as ParaId;
 
 pub mod validation_function_params;
-
-pub use xcm::{
-	VersionedXcm, VersionedMultiAsset, VersionedMultiLocation
-};
-
-use codec::{Decode, Encode};
-use sp_runtime::traits::Block as BlockT;
 
 /// Identifiers and types related to Cumulus Inherents
 pub mod inherents {
