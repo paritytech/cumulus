@@ -55,7 +55,6 @@ fn call_validate_block(
 
 	let executor = WasmExecutor::new(
 		WasmExecutionMethod::Interpreted,
-		//WasmExecutionMethod::Compiled,
 		Some(1024),
 		sp_io::SubstrateHostFunctions::host_functions(),
 		1,
