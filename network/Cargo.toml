@@ -14,11 +14,11 @@ sp-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-bra
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # polkadot deps
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working" }
-polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working" }
-polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working" }
-polkadot-network = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp" }
+polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp" }
+polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp" }
+polkadot-network = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp" }
 
 # cumulus deps
 cumulus-primitives = { path = "../primitives" }
@@ -38,4 +38,4 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-br
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # polkadot deps
-polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working" }
+polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp" }

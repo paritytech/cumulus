@@ -36,10 +36,16 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use xcm_executor::{
-	XcmExecutor, Config, CurrencyAdapter,
-	traits::{NativeAsset, IsConcrete, AccountId32Punner},
+	XcmExecutor, Config,
+	traits::{NativeAsset, IsConcrete},
 };
-use xcm::v0::{MultiLocation, MultiNetwork}; // TODO, could move this to `xcm_executor`
+use polkadot_parachain::primitives::Sibling;
+use xcm::v0::{MultiLocation, MultiNetwork, Junction};
+use xcm_builder::{
+	ParentIsDefault, SiblingParachainConvertsVia, AccountId32Aliases,
+	SovereignSignedViaLocation, SiblingParachainAsNative,
+	RelayChainAsNative, SignedAccountId32AsNative, CurrencyAdapter
+};
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
@@ -205,29 +211,45 @@ impl cumulus_parachain_upgrade::Trait for Runtime {
 }
 
 parameter_types! {
-	pub const Location: MultiLocation = MultiLocation::Null; // TODO FIX
-	pub const Network: MultiNetwork = MultiNetwork::Polkadot;
+	pub const RocLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
+	pub const RococoNetwork: MultiNetwork = MultiNetwork::Polkadot;
+	pub RelayChainOrigin: Origin = cumulus_message_broker::Origin::Relay.into();
 }
+
+type LocationConverter = (
+	ParentIsDefault<AccountId>,
+	SiblingParachainConvertsVia<Sibling, AccountId>,
+	AccountId32Aliases<RococoNetwork, AccountId>,
+);
+
+type LocalAssetTransactor =
+CurrencyAdapter<
+	// Use this currency:
+	Balances,
+	// Use this currency when it is a fungible asset matching the given location or name:
+	IsConcrete<RocLocation>,
+	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
+	LocationConverter,
+	// Our chain's account ID type (we can't get away without mentioning it explicitly):
+	AccountId,
+>;
+
+type LocalOriginConverter = (
+	SovereignSignedViaLocation<LocationConverter, Origin>,
+	RelayChainAsNative<RelayChainOrigin, Origin>,
+	SiblingParachainAsNative<cumulus_message_broker::Origin, Origin>,
+	SignedAccountId32AsNative<RococoNetwork, Origin>,
+);
 
 pub struct XcmConfig;
 impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = MessageBroker;
-		/// How to withdraw and deposit an asset.
-	type AssetTransactor = CurrencyAdapter<
-		Balances,
-		IsConcrete<Location>,
-		AccountId32Punner<AccountId, Network>,
-		AccountId,
-	>;
-	/// How to get a call origin from a `MultiOrigin` value.
-	type OriginConverter = (); // TODO: Will always return ERR
-
-	// Combinations of (Location, Asset) pairs which we unilateral trust as reserves.
+	// How to withdraw and deposit an asset.
+	type AssetTransactor = LocalAssetTransactor;
+	type OriginConverter = LocalOriginConverter;
 	type IsReserve = NativeAsset;
-
-	// Combinations of (Location, Asset) pairs which we bilateral trust as teleporters.
-	type IsTeleporter = NativeAsset; // TODO: FIX
+	type IsTeleporter = ();
 }
 
 impl cumulus_message_broker::Trait for Runtime {

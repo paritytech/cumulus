@@ -16,11 +16,11 @@ sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "roc
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # Polkadot dependencies
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working" }
-polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp" }
+polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp" }
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../consensus" }
@@ -46,7 +46,7 @@ sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "roc
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # Polkadot dependencies
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp" }
 
 # Other dependencies
 env_logger = "0.7.1"

@@ -45,11 +45,11 @@ cumulus-message-broker = { path = "../../message-broker", default-features = fal
 cumulus-primitives = { path = "../../primitives", default-features = false }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working", default-features = false }
-xcm = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working", default-features = false }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working", default-features = false }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working", default-features = false }
-pallet-xcm-handler = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working", default-features = false }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp", default-features = false }
+xcm = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp", default-features = false }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp", default-features = false }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp", default-features = false }
+pallet-xcm-handler = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp", default-features = false }
 
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.6" }

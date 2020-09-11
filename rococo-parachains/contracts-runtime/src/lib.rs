@@ -37,7 +37,7 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use xcm_executor::{
-	XcmExecutor, Config, CurrencyAdapter,
+	XcmExecutor, Config,
 	traits::{NativeAsset, IsConcrete},
 };
 use polkadot_parachain::primitives::Sibling;
@@ -45,7 +45,7 @@ use xcm::v0::{MultiLocation, MultiNetwork, Junction};
 use xcm_builder::{
 	ParentIsDefault, SiblingParachainConvertsVia, AccountId32Aliases,
 	SovereignSignedViaLocation, SiblingParachainAsNative,
-	RelayChainAsNative, SignedAccountId32AsNative
+	RelayChainAsNative, SignedAccountId32AsNative, CurrencyAdapter
 };
 
 // A few exports that help ease life for downstream crates.
