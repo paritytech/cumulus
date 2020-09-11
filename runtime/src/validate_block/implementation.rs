@@ -17,7 +17,7 @@
 //! The actual implementation of the validate block functionality.
 
 use frame_executive::ExecuteBlock;
-use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT};
+use sp_runtime::traits::{Block as BlockT, HashFor, NumberFor, Header as HeaderT};
 
 use sp_std::{boxed::Box, vec::Vec};
 
@@ -44,9 +44,10 @@ use sp_core::storage::ChildInfo;
 type StorageValue = Vec<u8>;
 type StorageKey = Vec<u8>;
 
-type ExtInner<'a, B: BlockT> = sp_state_machine::ExtInner<
+type Ext<'a, B: BlockT> = sp_state_machine::Ext<
 	'a,
 	HashFor<B>,
+	NumberFor<B>,
 	sp_state_machine::TrieBackend<MemoryDB<HashFor<B>>, HashFor<B>>,
 >;
 
@@ -89,9 +90,9 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 		root,
 	);
 	let mut overlay = sp_state_machine::OverlayedChanges::default();
-	let ext = sp_state_machine::ExtInner::new(&mut overlay, &backend);
+	let mut cache = Default::default();
 	let mut ext = WitnessExt::<B> {
-		inner: ExtInner::<B>::new(&mut overlay, &backend),
+		inner: Ext::<B>::new(&mut overlay, &mut cache, &backend),
 		params: &validation_function_params,
 	};
 
@@ -108,6 +109,30 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 			sp_io::storage::host_changes_root.replace_implementation(host_storage_changes_root),
 			sp_io::storage::host_append.replace_implementation(host_storage_append),
 			sp_io::storage::host_next_key.replace_implementation(host_storage_next_key),
+			sp_io::storage::host_start_transaction.replace_implementation(host_storage_start_transaction),
+			sp_io::storage::host_rollback_transaction.replace_implementation(
+				host_storage_rollback_transaction
+			),
+			sp_io::storage::host_commit_transaction.replace_implementation(
+				host_storage_commit_transaction
+			),
+			sp_io::default_child_storage::host_get.replace_implementation(host_default_child_storage_get),
+			sp_io::default_child_storage::host_read.replace_implementation(host_default_child_storage_read),
+			sp_io::default_child_storage::host_set.replace_implementation(host_default_child_storage_set),
+			sp_io::default_child_storage::host_clear.replace_implementation(
+				host_default_child_storage_clear
+			),
+			sp_io::default_child_storage::host_storage_kill.replace_implementation(
+				host_default_child_storage_storage_kill
+			),
+			sp_io::default_child_storage::host_exists.replace_implementation(
+				host_default_child_storage_exists
+			),
+			sp_io::default_child_storage::host_clear_prefix.replace_implementation(
+				host_default_child_storage_clear_prefix
+			),
+			sp_io::default_child_storage::host_root.replace_implementation(host_default_child_storage_root),
+			sp_io::default_child_storage::host_next_key.replace_implementation(host_default_child_storage_next_key),
 		)
 	};
 
@@ -147,7 +172,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 /// The storage implementation used when validating a block that is using the
 /// witness data as source.
 struct WitnessExt<'a, B: BlockT> {
-	inner: ExtInner<'a, B>,
+	inner: Ext<'a, B>,
 	params: &'a ValidationFunctionParams,
 }
 
@@ -376,5 +401,110 @@ fn host_storage_append(key: &[u8], value: Vec<u8>) {
 
 fn host_storage_next_key(key: &[u8]) -> Option<Vec<u8>> {
 	with_externalities(|ext| ext.next_storage_key(key))
+		.expect("Runing with a correct environment")
+}
+
+fn host_storage_start_transaction() {
+	with_externalities(|ext| ext.storage_start_transaction())
+		.expect("Runing with a correct environment")
+}
+
+fn host_storage_rollback_transaction() {
+	with_externalities(|ext| ext.storage_rollback_transaction().ok())
+		.flatten()
+		.expect("Runing with a correct environment")
+}
+
+fn host_storage_commit_transaction() {
+	with_externalities(|ext| ext.storage_commit_transaction().ok())
+		.flatten()
+		.expect("Runing with a correct environment")
+}
+
+fn host_default_child_storage_get(storage_key: &[u8], key: &[u8]) -> Option<Vec<u8>> {
+	let child_info = ChildInfo::new_default(storage_key);
+	with_externalities(|ext| ext.child_storage(&child_info, key))
+		.expect("Runing with a correct environment")
+}
+
+fn host_default_child_storage_read(
+	storage_key: &[u8],
+	key: &[u8],
+	value_out: &mut [u8],
+	value_offset: u32,
+) -> Option<u32> {
+	let child_info = ChildInfo::new_default(storage_key);
+	match with_externalities(|ext| ext.child_storage(&child_info, key))
+		.expect("Runing with a correct environment") {
+		Some(value) => {
+			let value_offset = value_offset as usize;
+			let data = &value[value_offset.min(value.len())..];
+			let written = sp_std::cmp::min(data.len(), value_out.len());
+			value_out[..written].copy_from_slice(&data[..written]);
+			Some(value.len() as u32)
+		}
+		None => None,
+	}
+}
+
+fn host_default_child_storage_set(
+	storage_key: &[u8],
+	key: &[u8],
+	value: &[u8],
+) {
+	let child_info = ChildInfo::new_default(storage_key);
+	with_externalities(|ext| ext.place_child_storage(&child_info, key.to_vec(), Some(value.to_vec())))
+		.expect("Runing with a correct environment")
+}
+
+fn host_default_child_storage_clear(
+	storage_key: &[u8],
+	key: &[u8],
+) {
+	let child_info = ChildInfo::new_default(storage_key);
+	with_externalities(|ext| ext.place_child_storage(&child_info, key.to_vec(), None))
+		.expect("Runing with a correct environment")
+}
+
+fn host_default_child_storage_storage_kill(
+	storage_key: &[u8],
+) {
+	let child_info = ChildInfo::new_default(storage_key);
+	with_externalities(|ext| ext.kill_child_storage(&child_info))
+		.expect("Runing with a correct environment")
+}
+
+fn host_default_child_storage_exists(
+	storage_key: &[u8],
+	key: &[u8],
+) -> bool {
+	let child_info = ChildInfo::new_default(storage_key);
+	with_externalities(|ext| ext.exists_child_storage(&child_info, key))
+		.expect("Runing with a correct environment")
+}
+
+fn host_default_child_storage_clear_prefix(
+	storage_key: &[u8],
+	prefix: &[u8],
+) {
+	let child_info = ChildInfo::new_default(storage_key);
+	with_externalities(|ext| ext.clear_child_prefix(&child_info, prefix))
+		.expect("Runing with a correct environment")
+}
+
+fn host_default_child_storage_root(
+	storage_key: &[u8],
+) -> Vec<u8> {
+	let child_info = ChildInfo::new_default(storage_key);
+	with_externalities(|ext| ext.child_storage_root(&child_info))
+		.expect("Runing with a correct environment")
+}
+
+fn host_default_child_storage_next_key(
+	storage_key: &[u8],
+	key: &[u8],
+) -> Option<Vec<u8>> {
+	let child_info = ChildInfo::new_default(storage_key);
+	with_externalities(|ext| ext.next_child_storage_key(&child_info, key))
 		.expect("Runing with a correct environment")
 }
