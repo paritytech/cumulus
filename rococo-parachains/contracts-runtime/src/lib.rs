@@ -36,6 +36,17 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+use xcm_executor::{
+	XcmExecutor, Config, CurrencyAdapter,
+	traits::{NativeAsset, IsConcrete},
+};
+use polkadot_parachain::primitives::Sibling;
+use xcm::v0::{MultiLocation, MultiNetwork, Junction};
+use xcm_builder::{
+	ParentIsDefault, SiblingParachainConvertsVia, AccountId32Aliases,
+	SovereignSignedViaLocation, SiblingParachainAsNative,
+	RelayChainAsNative, SignedAccountId32AsNative
+};
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
@@ -200,20 +211,58 @@ impl cumulus_parachain_upgrade::Trait for Runtime {
 	type OnValidationFunctionParams = ();
 }
 
+parameter_types! {
+	pub const RocLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
+	pub const RococoNetwork: MultiNetwork = MultiNetwork::Polkadot;
+	pub RelayChainOrigin: Origin = cumulus_message_broker::Origin::Relay.into();
+}
+
+type LocationConverter = (
+	ParentIsDefault<AccountId>,
+	SiblingParachainConvertsVia<Sibling, AccountId>,
+	AccountId32Aliases<RococoNetwork, AccountId>,
+);
+
+type LocalAssetTransactor =
+	CurrencyAdapter<
+		// Use this currency:
+		Balances,
+		// Use this currency when it is a fungible asset matching the given location or name:
+		IsConcrete<RocLocation>,
+		// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
+		LocationConverter,
+		// Our chain's account ID type (we can't get away without mentioning it explicitly):
+		AccountId,
+	>;
+
+type LocalOriginConverter = (
+	SovereignSignedViaLocation<LocationConverter, Origin>,
+	RelayChainAsNative<RelayChainOrigin, Origin>,
+	SiblingParachainAsNative<cumulus_message_broker::Origin, Origin>,
+	SignedAccountId32AsNative<RococoNetwork, Origin>,
+);
+
+pub struct XcmConfig;
+impl Config for XcmConfig {
+	type Call = Call;
+	type XcmSender = MessageBroker;
+	// How to withdraw and deposit an asset.
+	type AssetTransactor = LocalAssetTransactor;
+	type OriginConverter = LocalOriginConverter;
+	type IsReserve = NativeAsset;
+	type IsTeleporter = ();
+}
+
 impl cumulus_message_broker::Trait for Runtime {
 	type Event = Event;
-	type DmpHandler = XcmHandler;
-	type HmpHandler = XcmHandler;
+	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ParachainId = ParachainInfo;
 }
 
-impl cumulus_xcm_handler::Trait for Runtime {
+impl pallet_xcm_handler::Trait for Runtime {
 	type Event = Event;
-	type UmpSender = MessageBroker;
-	type HmpSender = MessageBroker;
-	type Currency = Balances;
-	type Call = Call;
-	type Origin = Origin;
+	type AccountIdConverter = LocationConverter;
+	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
 impl parachain_info::Trait for Runtime {}
@@ -259,8 +308,8 @@ construct_runtime! {
 		Sudo: pallet_sudo::{Module, Call, Storage, Config<T>, Event<T>},
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
-		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
-		XcmHandler: cumulus_xcm_handler::{Module, Call, Event<T>, Origin},
+		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>, Origin},
+		XcmHandler: pallet_xcm_handler::{Module, Call, Event},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		ParachainInfo: parachain_info::{Module, Storage, Config},
 	}

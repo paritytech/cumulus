@@ -8,7 +8,6 @@ edition = '2018'
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "1.3.0", default-features = false, features = ["derive"] }
 
-cumulus-xcm-handler = { path = "../pallets/xcm-handler", default-features = false }
 parachain-info = { path = "../pallets/parachain-info", default-features = false }
 rococo-parachain-primitives = { path = "../primitives", default-features = false }
 
@@ -41,7 +40,10 @@ cumulus-message-broker = { path = "../../message-broker", default-features = fal
 cumulus-primitives = { path = "../../primitives", default-features = false }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch", default-features = false }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working", default-features = false }
+xcm = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working", default-features = false }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working", default-features = false }
+pallet-xcm-handler = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working", default-features = false }
 
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.6" }
@@ -70,13 +72,16 @@ std = [
 	"pallet-timestamp/std",
 	"pallet-sudo/std",
 	"pallet-transaction-payment/std",
+	"pallet-xcm-handler/std",
 	"parachain-info/std",
 	"rococo-parachain-primitives/std",
 	"cumulus-runtime/std",
 	"cumulus-parachain-upgrade/std",
 	"cumulus-message-broker/std",
 	"cumulus-primitives/std",
-	"cumulus-xcm-handler/std",
+	"polkadot-parachain/std",
+	"xcm/std",
+	"xcm-executor/std",
 ]
 runtime-wasm = [
 ]

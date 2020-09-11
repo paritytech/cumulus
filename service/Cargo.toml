@@ -22,6 +22,6 @@ sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "roco
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # Polkadot dependencies
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working" }

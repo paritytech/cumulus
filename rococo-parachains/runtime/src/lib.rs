@@ -35,6 +35,11 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+use xcm_executor::{
+	XcmExecutor, Config, CurrencyAdapter,
+	traits::{NativeAsset, IsConcrete, AccountId32Punner},
+};
+use xcm::v0::{MultiLocation, MultiNetwork}; // TODO, could move this to `xcm_executor`
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
@@ -199,20 +204,42 @@ impl cumulus_parachain_upgrade::Trait for Runtime {
 	type OnValidationFunctionParams = ();
 }
 
+parameter_types! {
+	pub const Location: MultiLocation = MultiLocation::Null; // TODO FIX
+	pub const Network: MultiNetwork = MultiNetwork::Polkadot;
+}
+
+pub struct XcmConfig;
+impl Config for XcmConfig {
+	type Call = Call;
+	type XcmSender = MessageBroker;
+		/// How to withdraw and deposit an asset.
+	type AssetTransactor = CurrencyAdapter<
+		Balances,
+		IsConcrete<Location>,
+		AccountId32Punner<AccountId, Network>,
+		AccountId,
+	>;
+	/// How to get a call origin from a `MultiOrigin` value.
+	type OriginConverter = (); // TODO: Will always return ERR
+
+	// Combinations of (Location, Asset) pairs which we unilateral trust as reserves.
+	type IsReserve = NativeAsset;
+
+	// Combinations of (Location, Asset) pairs which we bilateral trust as teleporters.
+	type IsTeleporter = NativeAsset; // TODO: FIX
+}
+
 impl cumulus_message_broker::Trait for Runtime {
 	type Event = Event;
-	type DmpHandler = XcmHandler;
-	type HmpHandler = XcmHandler;
+	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ParachainId = ParachainInfo;
 }
 
-impl cumulus_xcm_handler::Trait for Runtime {
+impl pallet_xcm_handler::Trait for Runtime {
 	type Event = Event;
-	type UmpSender = MessageBroker;
-	type HmpSender = MessageBroker;
-	type Currency = Balances;
-	type Call = Call;
-	type Origin = Origin;
+	type AccountIdConverter = AccountId32Punner<AccountId, Network>; // TODO
+	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
 impl parachain_info::Trait for Runtime {}
@@ -230,7 +257,7 @@ construct_runtime! {
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
 		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
-		XcmHandler: cumulus_xcm_handler::{Module, Call, Event<T>, Origin},
+		XcmHandler: pallet_xcm_handler::{Module, Call, Event},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		ParachainInfo: parachain_info::{Module, Storage, Config},
 	}

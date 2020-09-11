@@ -18,17 +18,13 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::{Decode, Encode};
+pub use xcm::{VersionedXcm, VersionedMultiAsset, VersionedMultiLocation};
+use sp_runtime::traits::Block as BlockT;
 pub use polkadot_core_primitives as relay_chain;
-pub use polkadot_parachain::{xcm, primitives::Id as ParaId};
+pub use polkadot_parachain::primitives::Id as ParaId;
 
 pub mod validation_function_params;
-
-pub use xcm::{
-	VersionedXcm, VersionedMultiAsset, VersionedMultiLocation
-};
-
-use codec::{Decode, Encode};
-use sp_runtime::traits::Block as BlockT;
 
 /// Identifiers and types related to Cumulus Inherents
 pub mod inherents {
@@ -70,35 +66,4 @@ pub mod well_known_keys {
 #[derive(Decode, Encode, Debug)]
 pub struct HeadData<Block: BlockT> {
 	pub header: Block::Header,
-}
-
-
-
-
-/// Something that should be called when a downward message is received.
-pub trait DmpHandler {
-	/// Handle the given downward message.
-	fn handle_downward(msg: VersionedXcm);
-}
-
-/// Something that should be called when a HRMP/XCMP message is received.
-pub trait HmpHandler {
-	/// Handle the given lateral message. This is opaque.
-	fn handle_lateral(id: ParaId, msg: VersionedXcm);
-}
-
-/// Something that can send upward messages.
-pub trait UmpSender {
-	/// Send an upward message to the relay chain.
-	///
-	/// Returns an error if sending failed.
-	fn send_upward(msg: VersionedXcm) -> Result<(), ()>;
-}
-
-/// Something that can send upward messages.
-pub trait HmpSender {
-	/// Send a message to a sibling chain.
-	///
-	/// Returns an error if sending failed.
-	fn send_lateral(id: ParaId, msg: VersionedXcm) -> Result<(), ()>;
 }
