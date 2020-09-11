@@ -22,10 +22,10 @@ sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "roco
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # Polkadot dependencies
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
 # TODO should be dev dependency
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
 
 [dev-dependencies]

@@ -23,7 +23,7 @@ frame-executive = { git = "https://github.com/paritytech/substrate", default-fea
 sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
 
 # Polkadot dependencies
-parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", branch = "cecton-fix-int-test-again", default-features = false, features = [ "wasm-api" ] }
+parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", branch = "rococo-branch", default-features = false, features = [ "wasm-api" ] }
 
 [dev-dependencies]
 sc-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
