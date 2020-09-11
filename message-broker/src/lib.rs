@@ -44,6 +44,17 @@ pub enum Origin {
 	SiblingParachain(ParaId),
 }
 
+impl From<ParaId> for Origin {
+	fn from(id: ParaId) -> Origin {
+		Origin::SiblingParachain(id)
+	}
+}
+impl From<u32> for Origin {
+	fn from(id: u32) -> Origin {
+		Origin::SiblingParachain(id.into())
+	}
+}
+
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {
 	/// Event type used by the runtime.
