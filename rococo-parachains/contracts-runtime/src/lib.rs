@@ -43,7 +43,7 @@ use xcm_executor::{
 use polkadot_parachain::primitives::Sibling;
 use xcm::v0::{MultiLocation, MultiNetwork, Junction};
 use xcm_builder::{
-	ParentIsDefault, SiblingParachainConvertsVia, AccountId32Aliases,
+	ParentIsDefault, SiblingParachainConvertsVia, AccountId32Aliases, LocationInverter,
 	SovereignSignedViaLocation, SiblingParachainAsNative,
 	RelayChainAsNative, SignedAccountId32AsNative, CurrencyAdapter
 };
@@ -215,6 +215,7 @@ parameter_types! {
 	pub const RocLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
 	pub const RococoNetwork: MultiNetwork = MultiNetwork::Polkadot;
 	pub RelayChainOrigin: Origin = cumulus_message_broker::Origin::Relay.into();
+	pub Ancestry: MultiLocation = Junction::Parachain(ParachainInfo::parachain_id().into()).into();
 }
 
 type LocationConverter = (
@@ -251,6 +252,7 @@ impl Config for XcmConfig {
 	type OriginConverter = LocalOriginConverter;
 	type IsReserve = NativeAsset;
 	type IsTeleporter = ();
+	type LocationInverter = LocationInverter<Ancestry>;
 }
 
 impl cumulus_message_broker::Trait for Runtime {
