@@ -8,7 +8,6 @@ edition = '2018'
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "1.3.0", default-features = false, features = ["derive"] }
 
-cumulus-xcm-handler = { path = "../../xcm-handler", default-features = false}
 parachain-info = { path = "../pallets/parachain-info", default-features = false}
 rococo-parachain-primitives = { path = "../primitives", default-features = false}
 
@@ -49,6 +48,7 @@ cumulus-primitives = { path = "../../primitives", default-features = false }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working", default-features = false }
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working", default-features = false }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working", default-features = false }
+pallet-xcm-handler = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working", default-features = false }
 
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.6" }
@@ -87,7 +87,7 @@ std = [
 	"cumulus-message-broker/std",
 	"cumulus-primitives/std",
 	"polkadot-parachain/std",
-	"cumulus-xcm-handler/std",
+	"pallet-xcm-handler/std",
 	"xcm/std",
 	"xcm-executor/std",
 ]

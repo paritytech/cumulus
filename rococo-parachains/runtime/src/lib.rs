@@ -236,7 +236,7 @@ impl cumulus_message_broker::Trait for Runtime {
 	type ParachainId = ParachainInfo;
 }
 
-impl cumulus_xcm_handler::Trait for Runtime {
+impl pallet_xcm_handler::Trait for Runtime {
 	type Event = Event;
 	type AccountIdConverter = AccountId32Punner<AccountId, Network>; // TODO
 	type XcmExecutor = XcmExecutor<XcmConfig>;
@@ -257,7 +257,7 @@ construct_runtime! {
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
 		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
-		XcmHandler: cumulus_xcm_handler::{Module, Call, Event},
+		XcmHandler: pallet_xcm_handler::{Module, Call, Event},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		ParachainInfo: parachain_info::{Module, Storage, Config},
 	}
