@@ -31,7 +31,7 @@ use parachain::primitives::{HeadData, ValidationCode, ValidationParams, Validati
 use codec::{Decode, Encode, EncodeAppend};
 
 use cumulus_primitives::{
-	validation_function_params::ValidationFunctionParams,
+	validation_function_params::ValidationFunctionParams, VersionedXcm,
 	well_known_keys::{
 		NEW_VALIDATION_CODE, PROCESSED_DOWNWARD_MESSAGES, UPWARD_MESSAGES,
 		VALIDATION_FUNCTION_PARAMS,
@@ -158,7 +158,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 
 	// Extract potential upward messages from the storage.
 	let upward_messages = match with_storage(|storage| storage.modified(UPWARD_MESSAGES)) {
-		Some(encoded) => Vec::<Vec<u8>>::decode(&mut &encoded[..])
+		Some(encoded) => Vec::<VersionedXcm>::decode(&mut &encoded[..])
 			.expect("Upward messages vec is not correctly encoded in the storage!"),
 		None => Vec::new(),
 	};
@@ -171,7 +171,8 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	ValidationResult {
 		head_data,
 		new_validation_code,
-		upward_messages,
+		// This is shit and we should improve this!
+		upward_messages: upward_messages.iter().map(Encode::encode).collect(),
 		processed_downward_messages,
 	}
 }
