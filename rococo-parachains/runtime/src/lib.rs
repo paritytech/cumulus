@@ -223,16 +223,16 @@ type LocationConverter = (
 );
 
 type LocalAssetTransactor =
-CurrencyAdapter<
-	// Use this currency:
-	Balances,
-	// Use this currency when it is a fungible asset matching the given location or name:
-	IsConcrete<RocLocation>,
-	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
-	LocationConverter,
-	// Our chain's account ID type (we can't get away without mentioning it explicitly):
-	AccountId,
->;
+	CurrencyAdapter<
+		// Use this currency:
+		Balances,
+		// Use this currency when it is a fungible asset matching the given location or name:
+		IsConcrete<RocLocation>,
+		// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
+		LocationConverter,
+		// Our chain's account ID type (we can't get away without mentioning it explicitly):
+		AccountId,
+	>;
 
 type LocalOriginConverter = (
 	SovereignSignedViaLocation<LocationConverter, Origin>,
@@ -260,7 +260,7 @@ impl cumulus_message_broker::Trait for Runtime {
 
 impl pallet_xcm_handler::Trait for Runtime {
 	type Event = Event;
-	type AccountIdConverter = AccountId32Punner<AccountId, Network>; // TODO
+	type AccountIdConverter = LocationConverter;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
@@ -278,7 +278,7 @@ construct_runtime! {
 		Sudo: pallet_sudo::{Module, Call, Storage, Config<T>, Event<T>},
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
-		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
+		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>, Origin},
 		XcmHandler: pallet_xcm_handler::{Module, Call, Event},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		ParachainInfo: parachain_info::{Module, Storage, Config},
