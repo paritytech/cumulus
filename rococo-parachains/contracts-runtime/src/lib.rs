@@ -215,7 +215,9 @@ parameter_types! {
 	pub const RocLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
 	pub const RococoNetwork: MultiNetwork = MultiNetwork::Polkadot;
 	pub RelayChainOrigin: Origin = cumulus_message_broker::Origin::Relay.into();
-	pub Ancestry: MultiLocation = Junction::Parachain(ParachainInfo::parachain_id().into()).into();
+	pub Ancestry: MultiLocation = Junction::Parachain {
+		id: ParachainInfo::parachain_id().into()
+	}.into();
 }
 
 type LocationConverter = (
