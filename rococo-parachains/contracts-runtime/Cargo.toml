@@ -47,6 +47,7 @@ cumulus-primitives = { path = "../../primitives", default-features = false }
 # Polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working", default-features = false }
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working", default-features = false }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working", default-features = false }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working", default-features = false }
 pallet-xcm-handler = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp-working", default-features = false }
 
@@ -89,6 +90,7 @@ std = [
 	"polkadot-parachain/std",
 	"pallet-xcm-handler/std",
 	"xcm/std",
+	"xcm-builder/std",
 	"xcm-executor/std",
 ]
 # Will be enabled by the `wasm-builder` when building the runtime for WASM.

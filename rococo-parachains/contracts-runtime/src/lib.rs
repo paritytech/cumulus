@@ -41,6 +41,7 @@ use xcm_executor::{
 	traits::{NativeAsset, IsConcrete},
 };
 use xcm::v0::{MultiLocation, MultiNetwork}; // TODO, could move this to `xcm_executor`
+use xcm_builder::{ParentIsDefault, SiblingParachainConvertsVia, AccountId32Aliases};
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
@@ -207,39 +208,18 @@ impl cumulus_parachain_upgrade::Trait for Runtime {
 
 parameter_types! {
 	pub const RocLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
-	pub const PolkadotNetwork: MultiNetwork = MultiNetwork::Polkadot;
+	pub const RococoNetwork: MultiNetwork = MultiNetwork::Polkadot;
 }
 
-use polkadot_parachain::primitives::{AccountIdConversion, Id as ParaId, Sibling};
+use polkadot_parachain::primitives::{Id as ParaId, Sibling};
 use xcm::v0::{MultiOrigin, Junction};
 use xcm_executor::traits::{LocationConversion, ConvertOrigin};
-use codec::Encode;
 
-// TODO: Maybe make something generic for this.
-pub struct LocationConverter;
-impl LocationConversion<AccountId> for LocationConverter {
-	fn from_location(location: &MultiLocation) -> Option<AccountId> {
-		Some(match location {
-			MultiLocation::X1(Junction::Parent) => AccountId::default(),
-			MultiLocation::X2(Junction::Parent, Junction::Parachain { id })
-				=> Sibling((*id).into()).into_account(),
-			MultiLocation::X1(Junction::AccountId32 { id, network })
-				if matches!(*network, MultiNetwork::Polkadot | MultiNetwork::Any)
-				=> (*id).into(),
-			x => ("multiloc", x).using_encoded(sp_io::hashing::blake2_256).into(),
-		})
-	}
-
-	fn into_location(who: AccountId) -> Option<MultiLocation> {
-		if who == AccountId::default() {
-			return Some(Junction::Parent.into())
-		}
-		if let Some(id) = Sibling::try_from_account(&who) {
-			return Some(MultiLocation::X2(Junction::Parent, Junction::Parachain { id: id.0.into() }))
-		}
-		Some(Junction::AccountId32 { id: who.into(), network: MultiNetwork::Polkadot }.into())
-	}
-}
+type LocationConverter = (
+	ParentIsDefault<AccountId>,
+	SiblingParachainConvertsVia<Sibling, AccountId>,
+	AccountId32Aliases<RococoNetwork, AccountId>,
+);
 
 pub type LocalAssetTransactor =
 	CurrencyAdapter<
