@@ -41,7 +41,7 @@ use xcm_executor::{
 	traits::{NativeAsset, IsConcrete},
 };
 use polkadot_parachain::primitives::Sibling;
-use xcm::v0::{MultiLocation, MultiNetwork, Junction};
+use xcm::v0::{MultiLocation, NetworkId, Junction};
 use xcm_builder::{
 	ParentIsDefault, SiblingParachainConvertsVia, AccountId32Aliases, LocationInverter,
 	SovereignSignedViaLocation, SiblingParachainAsNative,
@@ -213,7 +213,7 @@ impl cumulus_parachain_upgrade::Trait for Runtime {
 
 parameter_types! {
 	pub const RocLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
-	pub const RococoNetwork: MultiNetwork = MultiNetwork::Polkadot;
+	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
 	pub RelayChainOrigin: Origin = cumulus_message_broker::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Junction::Parachain {
 		id: ParachainInfo::parachain_id().into()
