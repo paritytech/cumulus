@@ -261,6 +261,7 @@ impl cumulus_message_broker::Trait for Runtime {
 	type Event = Event;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ParachainId = ParachainInfo;
+	type SendDownward = ();
 }
 
 impl pallet_xcm_handler::Trait for Runtime {

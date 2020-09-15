@@ -55,6 +55,14 @@ impl From<u32> for Origin {
 	}
 }
 
+pub trait SendDownward {
+	fn send_downward(dest: MultiLocation, msg: VersionedXcm) -> Result<(), ()>;
+}
+
+impl SendDownward for () {
+	fn send_downward(_dest: MultiLocation, _msg: VersionedXcm) -> Result<(), ()> { Err(()) }
+}
+
 /// Configuration trait of this pallet.
 pub trait Trait: frame_system::Trait {
 	/// Event type used by the runtime.
@@ -65,6 +73,9 @@ pub trait Trait: frame_system::Trait {
 
 	/// The Id of the parachain.
 	type ParachainId: Get<ParaId>;
+
+	/// Some way of sending a message downward.
+	type SendDownward: SendDownward;
 }
 
 decl_event! {
@@ -125,14 +136,18 @@ decl_module! {
 	}
 }
 
+
+
 impl<T: Trait> SendXcm for Module<T> {
 	fn send_xcm(dest: MultiLocation, msg: Xcm) -> Result<(), ()> {
 		let msg: VersionedXcm = msg.into();
-		match dest.split_last() {
-			(MultiLocation::Null, None) => {
+		match dest.first() {
+			// A message for us. Execute directly.
+			None => {
 				T::XcmExecutor::execute_xcm(MultiLocation::Null, msg.try_into().map_err(|_| ())?)
 			}
-			(MultiLocation::Null, Some(Junction::Parent)) => {
+			// An upward message - just send to the relay-chain.
+			Some(Junction::Parent) if dest.len() == 1 => {
 				//TODO: check fee schedule
 				let data = msg.encode();
 				let hash = T::Hashing::hash(&data);
@@ -142,12 +157,16 @@ impl<T: Trait> SendXcm for Module<T> {
 
 				Ok(())
 			}
-			(relayer, Some(Junction::Parachain { id })) =>
+			// A message which needs routing via the relay-chain.
+			Some(Junction::Parent) =>
 				Self::send_xcm(
-					relayer,
-					Xcm::RelayToParachain { id: id.into(), inner: Box::new(msg) }.into()
+					MultiLocation::X1(Junction::Parent),
+					Xcm::RelayTo { dest: dest.split_first().0, inner: Box::new(msg) }.into()
 				),
-			_ => Err(())?,
+			// A downward message
+			_ => {
+				T::SendDownward::send_downward(dest, msg)
+			},
 		}
 	}
 }
