@@ -22,7 +22,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use rococo_parachain_primitives::*;
+use test_primitives::*;
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
@@ -37,7 +37,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 /// Import the token dealer pallet.
-pub use cumulus_token_dealer;
+pub use cumulus_test_token_dealer;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
@@ -207,11 +207,11 @@ impl cumulus_message_broker::Trait for Runtime {
 	type DownwardMessageHandlers = TokenDealer;
 	type UpwardMessage = cumulus_upward_message::RococoUpwardMessage;
 	type ParachainId = ParachainInfo;
-	type XCMPMessage = cumulus_token_dealer::XCMPMessage<AccountId, Balance>;
+	type XCMPMessage = cumulus_test_token_dealer::XCMPMessage<AccountId, Balance>;
 	type XCMPMessageHandlers = TokenDealer;
 }
 
-impl cumulus_token_dealer::Trait for Runtime {
+impl cumulus_test_token_dealer::Trait for Runtime {
 	type Event = Event;
 	type UpwardMessageSender = MessageBroker;
 	type UpwardMessage = cumulus_upward_message::RococoUpwardMessage;
@@ -219,12 +219,12 @@ impl cumulus_token_dealer::Trait for Runtime {
 	type XCMPMessageSender = MessageBroker;
 }
 
-impl parachain_info::Trait for Runtime {}
+impl test_parachain_info::Trait for Runtime {}
 
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
-		NodeBlock = rococo_parachain_primitives::Block,
+		NodeBlock = test_primitives::Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Module, Call, Storage, Config, Event<T>},
@@ -234,9 +234,9 @@ construct_runtime! {
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
 		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
-		TokenDealer: cumulus_token_dealer::{Module, Call, Event<T>},
+		TokenDealer: cumulus_test_token_dealer::{Module, Call, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
-		ParachainInfo: parachain_info::{Module, Storage, Config},
+		ParachainInfo: test_parachain_info::{Module, Storage, Config},
 	}
 }
 

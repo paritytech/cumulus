@@ -1258,6 +1258,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-test-pallet-contracts"
+version = "2.0.0-rc3"
+dependencies = [
+ "assert_matches",
+ "cumulus-test-pallet-contracts-primitives",
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "pallet-balances",
+ "pallet-randomness-collective-flip",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "parity-wasm",
+ "pwasm-utils",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-sandbox",
+ "sp-std",
+ "wabt",
+ "wasmi-validation",
+]
+
+[[package]]
+name = "cumulus-test-pallet-contracts-primitives"
+version = "2.0.0-rc3"
+dependencies = [
+ "parity-scale-codec",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "cumulus-test-parachain-runtime"
 version = "0.1.0"
 dependencies = [
@@ -1298,9 +1332,49 @@ dependencies = [
 name = "cumulus-test-runtime"
 version = "0.1.0"
 dependencies = [
+ "cumulus-message-broker",
+ "cumulus-parachain-upgrade",
+ "cumulus-primitives",
  "cumulus-runtime",
- "substrate-test-runtime",
+ "cumulus-test-token-dealer",
+ "cumulus-upward-message",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-randomness-collective-flip",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-transaction-payment",
+ "parity-scale-codec",
+ "polkadot-parachain",
+ "serde",
+ "sp-api",
+ "sp-block-builder",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-std",
+ "sp-transaction-pool",
+ "sp-version",
  "substrate-wasm-builder-runner 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "test-parachain-info",
+ "test-primitives",
+]
+
+[[package]]
+name = "cumulus-test-token-dealer"
+version = "0.1.0"
+dependencies = [
+ "cumulus-primitives",
+ "cumulus-upward-message",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "polkadot-parachain",
 ]
 
 [[package]]
@@ -8507,6 +8581,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bb6bfa289a4d7c5766392812c0a1f4c1ba45afa1ad47803c11e1f407d846d75f"
 dependencies = [
  "winapi-util",
+]
+
+[[package]]
+name = "test-parachain-info"
+version = "0.1.0"
+dependencies = [
+ "cumulus-primitives",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde",
+]
+
+[[package]]
+name = "test-primitives"
+version = "0.1.0"
+dependencies = [
+ "sp-core",
+ "sp-runtime",
 ]
 
 [[package]]
