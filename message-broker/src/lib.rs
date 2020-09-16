@@ -56,11 +56,13 @@ impl From<u32> for Origin {
 }
 
 pub trait SendDownward {
-	fn send_downward(dest: MultiLocation, msg: VersionedXcm) -> Result<(), ()>;
+	fn send_downward(dest: MultiLocation, msg: VersionedXcm) -> Result<(), XcmError>;
 }
 
 impl SendDownward for () {
-	fn send_downward(_dest: MultiLocation, _msg: VersionedXcm) -> Result<(), ()> { Err(()) }
+	fn send_downward(_dest: MultiLocation, _msg: VersionedXcm) -> Result<(), XcmError> {
+		Err(XcmError::Unimplemented)
+	}
 }
 
 /// Configuration trait of this pallet.
@@ -139,12 +141,13 @@ decl_module! {
 
 
 impl<T: Trait> SendXcm for Module<T> {
-	fn send_xcm(dest: MultiLocation, msg: Xcm) -> Result<(), ()> {
+	fn send_xcm(dest: MultiLocation, msg: Xcm) -> Result<(), XcmError> {
 		let msg: VersionedXcm = msg.into();
 		match dest.first() {
 			// A message for us. Execute directly.
 			None => {
-				T::XcmExecutor::execute_xcm(MultiLocation::Null, msg.try_into().map_err(|_| ())?)
+				let msg = msg.try_into().map_err(|_| XcmError::UnhandledXcmVersion)?;
+				T::XcmExecutor::execute_xcm(MultiLocation::Null, msg)
 			}
 			// An upward message - just send to the relay-chain.
 			Some(Junction::Parent) if dest.len() == 1 => {
