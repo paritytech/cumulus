@@ -17,14 +17,18 @@
 //! A Cumulus test client.
 
 pub use runtime;
+use std::collections::BTreeMap;
 use runtime::{
 	GenesisConfig,
 	Block,
 };
 use sc_service::client;
-use sp_core::{sr25519, storage::Storage, ChangesTrieConfiguration};
+use sp_core::{sr25519, storage::Storage, ChangesTrieConfiguration, map, twox_128};
 use sp_keyring::{AccountKeyring, Sr25519Keyring};
-use sp_runtime::traits::{Block as BlockT, Hash as HashT, Header as HeaderT};
+use sp_runtime::{
+	traits::{Block as BlockT, Hash as HashT, Header as HeaderT},
+	BuildStorage,
+};
 pub use test_client::*;
 
 mod local_executor {
@@ -63,7 +67,6 @@ pub struct GenesisParameters {
 
 impl test_client::GenesisInit for GenesisParameters {
 	fn genesis_storage(&self) -> Storage {
-		/*
 		use codec::Encode;
 
 		let changes_trie_config: Option<ChangesTrieConfiguration> = if self.support_changes_trie {
@@ -71,7 +74,7 @@ impl test_client::GenesisInit for GenesisParameters {
 		} else {
 			None
 		};
-		let mut storage = genesis_config(changes_trie_config).genesis_map();
+		let mut storage = genesis_config(changes_trie_config).build_storage().unwrap();
 
 		let child_roots = storage.children_default.iter().map(|(sk, child_content)| {
 			let state_root =
@@ -88,8 +91,6 @@ impl test_client::GenesisInit for GenesisParameters {
 		storage.top.extend(additional_storage_with_genesis(&block));
 
 		storage
-		*/
-		todo!("3f8cfb7d806802915a396087fcd346522d27f76a")
 	}
 }
 
@@ -150,4 +151,10 @@ fn genesis_config(changes_trie_config: Option<ChangesTrieConfiguration>) -> Gene
 	)
 	*/
 	todo!("3f8cfb7d806802915a396087fcd346522d27f76a")
+}
+
+fn additional_storage_with_genesis(genesis_block: &Block) -> BTreeMap<Vec<u8>, Vec<u8>> {
+	map![
+		twox_128(&b"latest"[..]).to_vec() => genesis_block.hash().as_fixed_bytes().to_vec()
+	]
 }
