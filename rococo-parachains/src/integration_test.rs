@@ -106,7 +106,7 @@ async fn integration_test(task_executor: TaskExecutor) {
 		|| {},
 		task_executor.clone(),
 		Dave,
-		vec![],
+		vec![alice.addr.clone(), bob.addr.clone()],
 	);
 	let dave_config = parachain_config(task_executor.clone(), Dave, vec![charlie_addr], spec.clone()).unwrap();
 	let (dave_task_manager, dave_client, _dave_network) =
