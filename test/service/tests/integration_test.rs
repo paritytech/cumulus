@@ -41,7 +41,7 @@ async fn integration_test(task_executor: TaskExecutor) {
 	let para_id = ParaId::from(100);
 
 	// generate parachain spec
-	let spec = Box::new(crate::chain_spec::get_chain_spec(para_id));
+	let spec = Box::new(cumulus_test_service::get_chain_spec(para_id));
 
 	// start alice
 	let alice = polkadot_test_service::run_test_node(task_executor.clone(), Alice, || {}, vec![]);
@@ -58,7 +58,7 @@ async fn integration_test(task_executor: TaskExecutor) {
 	future::join(alice.wait_for_blocks(2), bob.wait_for_blocks(2)).await;
 
 	// export genesis state
-	let block = crate::command::generate_genesis_state(&(spec.clone() as Box<_>)).unwrap();
+	let block = cumulus_test_service::generate_genesis_state(&(spec.clone() as Box<_>)).unwrap();
 	let genesis_state = block.header().encode();
 
 	// create and sign transaction to register parachain
@@ -68,7 +68,7 @@ async fn integration_test(task_executor: TaskExecutor) {
 			Info {
 				scheduling: Scheduling::Always,
 			},
-			parachain_runtime::WASM_BINARY
+			cumulus_test_runtime::WASM_BINARY
 				.expect("You need to build the WASM binary to run this test!")
 				.to_vec()
 				.into(),
@@ -91,7 +91,7 @@ async fn integration_test(task_executor: TaskExecutor) {
 		parachain_config(task_executor.clone(), Charlie, vec![], spec.clone()).unwrap();
 	let multiaddr = charlie_config.network.listen_addresses[0].clone();
 	let (charlie_task_manager, charlie_client, charlie_network) =
-		crate::service::start_node(charlie_config, key, polkadot_config, para_id, true, true)
+		cumulus_test_service::start_node(charlie_config, key, polkadot_config, para_id, true, true)
 			.unwrap();
 	charlie_client.wait_for_blocks(4).await;
 	let peer_id = charlie_network.local_peer_id().clone();
@@ -116,7 +116,7 @@ async fn integration_test(task_executor: TaskExecutor) {
 	)
 	.unwrap();
 	let (dave_task_manager, dave_client, _dave_network) =
-		crate::service::start_node(dave_config, key, polkadot_config, para_id, false, true)
+		cumulus_test_service::start_node(dave_config, key, polkadot_config, para_id, false, true)
 			.unwrap();
 	dave_client.wait_for_blocks(4).await;
 

@@ -24,8 +24,6 @@ mod chain_spec;
 mod service;
 mod cli;
 mod command;
-#[cfg(test)]
-mod integration_test;
 
 fn main() -> sc_cli::Result<()> {
 	command::run()
