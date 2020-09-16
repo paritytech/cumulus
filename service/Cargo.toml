@@ -25,5 +25,3 @@ sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "roc
 polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-
-[dev-dependencies]
