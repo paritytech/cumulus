@@ -29,7 +29,7 @@ use cumulus_primitives::{
 };
 use cumulus_runtime::ParachainBlockData;
 
-use sc_client_api::{BlockBackend, Finalizer, StateBackend, UsageProvider, Backend as BackendT};
+use sc_client_api::{Backend as BackendT, BlockBackend, Finalizer, StateBackend, UsageProvider};
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, BlockStatus, Environment, Error as ConsensusError,
@@ -450,12 +450,11 @@ where
 			delayed_block_announce_validator,
 			_marker,
 		} = self;
-		delayed_block_announce_validator
-			.set(Box::new(JustifiedBlockAnnounceValidator::new(
-				polkadot_client.clone(),
-				para_id,
-				Box::new(polkadot_network.clone()),
-			)));
+		delayed_block_announce_validator.set(Box::new(JustifiedBlockAnnounceValidator::new(
+			polkadot_client.clone(),
+			para_id,
+			Box::new(polkadot_network.clone()),
+		)));
 
 		let follow = match cumulus_consensus::follow_polkadot(
 			para_id,
@@ -469,8 +468,7 @@ where
 			}
 		};
 
-		spawner
-			.spawn("cumulus-follow-polkadot", follow.map(|_| ()).boxed());
+		spawner.spawn("cumulus-follow-polkadot", follow.map(|_| ()).boxed());
 
 		Ok(Collator::new(
 			proposer_factory,

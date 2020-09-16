@@ -15,25 +15,25 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use ansi_term::Color;
+use cumulus_collator::CollatorBuilder;
 use cumulus_network::DelayedBlockAnnounceValidator;
 use cumulus_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use polkadot_primitives::v0::CollatorPair;
 use rococo_parachain_primitives::Block;
+use sc_client_api::{Backend as BackendT, BlockBackend, Finalizer, UsageProvider};
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_informant::OutputFormat;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sp_api::ConstructRuntimeApi;
-use sp_trie::PrefixedMemoryDB;
-use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
-use std::sync::Arc;
-use sc_client_api::{Backend as BackendT, BlockBackend, Finalizer, UsageProvider};
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{BlockImport, Environment, Error as ConsensusError, Proposer};
 use sp_core::crypto::Pair;
-use cumulus_collator::CollatorBuilder;
+use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
+use sp_trie::PrefixedMemoryDB;
+use std::sync::Arc;
 
 // Native executor instance.
 native_executor_instance!(
@@ -174,13 +174,14 @@ where
 	);
 
 	let (polkadot_future, polkadot_task_manager) = {
-		let (task_manager, client, handles, _network, _rpc_handlers) = polkadot_test_service::polkadot_test_new_full(
-			polkadot_config,
-			Some((collator_key.public(), para_id)),
-			None,
-			false,
-			6000,
-		)?;
+		let (task_manager, client, handles, _network, _rpc_handlers) =
+			polkadot_test_service::polkadot_test_new_full(
+				polkadot_config,
+				Some((collator_key.public(), para_id)),
+				None,
+				false,
+				6000,
+			)?;
 
 		let test_client = polkadot_test_service::TestClient(client);
 

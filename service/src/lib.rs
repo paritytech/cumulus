@@ -22,7 +22,7 @@ use cumulus_collator::CollatorBuilder;
 use cumulus_network::{DelayedBlockAnnounceValidator, JustifiedBlockAnnounceValidator};
 use cumulus_primitives::ParaId;
 use polkadot_primitives::v0::{Block as PBlock, CollatorPair};
-use polkadot_service::{AbstractClient, RuntimeApiCollection, ClientHandle};
+use polkadot_service::{AbstractClient, ClientHandle, RuntimeApiCollection};
 use sc_client_api::{Backend as BackendT, BlockBackend, Finalizer, UsageProvider};
 use sc_service::{Configuration, Role, TaskManager};
 use sp_blockchain::{HeaderBackend, Result as ClientResult};
