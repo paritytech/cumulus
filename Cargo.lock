@@ -1247,6 +1247,7 @@ name = "cumulus-test-client"
 version = "0.1.0"
 dependencies = [
  "cumulus-test-runtime",
+ "cumulus-test-service",
  "parity-scale-codec",
  "sc-consensus",
  "sc-service",
@@ -1362,6 +1363,20 @@ dependencies = [
  "sp-version",
  "substrate-wasm-builder-runner 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "test-parachain-info",
+ "test-primitives",
+]
+
+[[package]]
+name = "cumulus-test-service"
+version = "0.1.0"
+dependencies = [
+ "cumulus-primitives",
+ "cumulus-test-runtime",
+ "sc-chain-spec",
+ "sc-service",
+ "serde",
+ "sp-core",
+ "sp-runtime",
  "test-primitives",
 ]
 

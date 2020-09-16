@@ -1,0 +1,19 @@
+[package]
+name = 'cumulus-test-service'
+version = '0.1.0'
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = '2018'
+
+[dependencies]
+serde = { version = "1.0.101", features = ["derive"] }
+
+# Substrate
+sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
+
+# Cumulus
+test-primitives = { path = "../primitives" }
+cumulus-test-runtime = { path = "../runtime" }
+cumulus-primitives = { path = "../../primitives" }

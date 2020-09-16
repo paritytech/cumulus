@@ -132,25 +132,7 @@ impl DefaultTestClientBuilderExt for TestClientBuilder {
 }
 
 fn genesis_config(changes_trie_config: Option<ChangesTrieConfiguration>) -> GenesisConfig {
-	/*
-	GenesisConfig::new(
-		changes_trie_config,
-		vec![
-			sr25519::Public::from(Sr25519Keyring::Alice).into(),
-			sr25519::Public::from(Sr25519Keyring::Bob).into(),
-			sr25519::Public::from(Sr25519Keyring::Charlie).into(),
-		],
-		vec![
-			AccountKeyring::Alice.into(),
-			AccountKeyring::Bob.into(),
-			AccountKeyring::Charlie.into(),
-		],
-		1000,
-		Default::default(),
-		Default::default(),
-	)
-	*/
-	todo!("3f8cfb7d806802915a396087fcd346522d27f76a")
+	cumulus_test_service::local_testnet_genesis(changes_trie_config, 100.into())
 }
 
 fn additional_storage_with_genesis(genesis_block: &Block) -> BTreeMap<Vec<u8>, Vec<u8>> {

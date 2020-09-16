@@ -19,6 +19,7 @@ members = [
 	"test/pallets/parachain-info",
 	"test/pallets/token-dealer",
 	"test/primitives",
+	"test/service",
 	"upward-message",
 ]
 
