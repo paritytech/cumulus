@@ -26,6 +26,7 @@ use sc_client_api::{Backend as BackendT, BlockBackend, Finalizer, UsageProvider}
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_informant::OutputFormat;
+use sc_network::NetworkService;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sp_api::ConstructRuntimeApi;
 use sp_blockchain::HeaderBackend;
@@ -34,7 +35,6 @@ use sp_core::{crypto::Pair, H256};
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
 use sp_trie::PrefixedMemoryDB;
 use std::sync::Arc;
-use sc_network::NetworkService;
 
 // Native executor instance.
 native_executor_instance!(

@@ -38,7 +38,6 @@ use substrate_test_runtime_client::AccountKeyring::*;
 #[substrate_test_utils::test]
 #[ignore]
 async fn integration_test(task_executor: TaskExecutor) {
-	sc_cli::init_logger("");
 	let para_id = ParaId::from(100);
 
 	// generate parachain spec
@@ -88,7 +87,8 @@ async fn integration_test(task_executor: TaskExecutor) {
 		Charlie,
 		vec![alice.addr.clone(), bob.addr.clone()],
 	);
-	let charlie_config = parachain_config(task_executor.clone(), Charlie, vec![], spec.clone()).unwrap();
+	let charlie_config =
+		parachain_config(task_executor.clone(), Charlie, vec![], spec.clone()).unwrap();
 	let multiaddr = charlie_config.network.listen_addresses[0].clone();
 	let (charlie_task_manager, charlie_client, charlie_network) =
 		crate::service::start_node(charlie_config, key, polkadot_config, para_id, true, true)
@@ -108,7 +108,13 @@ async fn integration_test(task_executor: TaskExecutor) {
 		Dave,
 		vec![alice.addr.clone(), bob.addr.clone()],
 	);
-	let dave_config = parachain_config(task_executor.clone(), Dave, vec![charlie_addr], spec.clone()).unwrap();
+	let dave_config = parachain_config(
+		task_executor.clone(),
+		Dave,
+		vec![charlie_addr],
+		spec.clone(),
+	)
+	.unwrap();
 	let (dave_task_manager, dave_client, _dave_network) =
 		crate::service::start_node(dave_config, key, polkadot_config, para_id, false, true)
 			.unwrap();
