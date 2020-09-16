@@ -1232,7 +1232,6 @@ dependencies = [
  "polkadot-collator",
  "polkadot-primitives",
  "polkadot-service",
- "polkadot-test-service",
  "sc-client-api",
  "sc-service",
  "sp-api",
