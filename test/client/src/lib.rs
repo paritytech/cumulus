@@ -18,7 +18,7 @@
 
 pub use runtime;
 use runtime::{
-	genesismap::{additional_storage_with_genesis, GenesisConfig},
+	GenesisConfig,
 	Block,
 };
 use sc_service::client;
@@ -63,6 +63,7 @@ pub struct GenesisParameters {
 
 impl test_client::GenesisInit for GenesisParameters {
 	fn genesis_storage(&self) -> Storage {
+		/*
 		use codec::Encode;
 
 		let changes_trie_config: Option<ChangesTrieConfiguration> = if self.support_changes_trie {
@@ -87,6 +88,8 @@ impl test_client::GenesisInit for GenesisParameters {
 		storage.top.extend(additional_storage_with_genesis(&block));
 
 		storage
+		*/
+		todo!("3f8cfb7d806802915a396087fcd346522d27f76a")
 	}
 }
 
@@ -128,6 +131,7 @@ impl DefaultTestClientBuilderExt for TestClientBuilder {
 }
 
 fn genesis_config(changes_trie_config: Option<ChangesTrieConfiguration>) -> GenesisConfig {
+	/*
 	GenesisConfig::new(
 		changes_trie_config,
 		vec![
@@ -144,4 +148,6 @@ fn genesis_config(changes_trie_config: Option<ChangesTrieConfiguration>) -> Gene
 		Default::default(),
 		Default::default(),
 	)
+	*/
+	todo!("3f8cfb7d806802915a396087fcd346522d27f76a")
 }

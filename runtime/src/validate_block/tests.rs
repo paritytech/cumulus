@@ -31,7 +31,7 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT},
 };
 use test_client::{
-	runtime::{Block, Hash, Header, Transfer, WASM_BINARY},
+	runtime::{Block, Hash, Header, WASM_BINARY},
 	Client, DefaultTestClientBuilderExt, LongestChain, TestClientBuilder, TestClientBuilderExt,
 };
 
@@ -75,6 +75,9 @@ fn call_validate_block(
 }
 
 fn create_extrinsics() -> Vec<<Block as BlockT>::Extrinsic> {
+	todo!();
+	/*
+	use test_client::runtime::Transfer;
 	vec![
 		Transfer {
 			from: AccountKeyring::Alice.into(),
@@ -105,6 +108,7 @@ fn create_extrinsics() -> Vec<<Block as BlockT>::Extrinsic> {
 		}
 		.into_signed_tx(),
 	]
+	*/
 }
 
 fn create_test_client() -> (Client, LongestChain) {
