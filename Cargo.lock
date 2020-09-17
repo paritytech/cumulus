@@ -1201,22 +1201,18 @@ dependencies = [
 name = "cumulus-runtime"
 version = "0.1.0"
 dependencies = [
- "cumulus-parachain-upgrade",
  "cumulus-primitives",
  "cumulus-test-client",
  "cumulus-test-runtime",
  "frame-executive",
- "frame-system",
  "hash-db",
  "memory-db",
- "pallet-sudo",
- "pallet-transaction-payment",
  "parity-scale-codec",
  "polkadot-parachain",
  "sc-block-builder",
  "sc-client-api",
  "sc-executor",
- "sp-arithmetic",
+ "sp-api",
  "sp-blockchain",
  "sp-consensus",
  "sp-core",
@@ -1226,7 +1222,6 @@ dependencies = [
  "sp-std",
  "sp-timestamp",
  "sp-trie",
- "test-primitives",
  "trie-db",
 ]
 
