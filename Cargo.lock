@@ -5860,6 +5860,7 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-test-client",
  "substrate-test-runtime-client",
+ "substrate-test-utils",
  "tokio 0.2.22",
  "trie-root 0.15.2",
 ]
@@ -7474,7 +7475,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-aura"
 version = "0.8.0-rc5"
-source = "git+https://github.com/paritytech/substrate?branch=rococo-branch#c89995d18dee55e02d25fc29dcb803b3e743b340"
+source = "git+https://github.com/paritytech/substrate?branch=rococo-branch#83544d41abcc0e3d3cbbd6aa510e04dc50863e5c"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -7772,7 +7773,7 @@ dependencies = [
 [[package]]
 name = "sp-sandbox"
 version = "0.8.0-rc5"
-source = "git+https://github.com/paritytech/substrate?branch=rococo-branch#c89995d18dee55e02d25fc29dcb803b3e743b340"
+source = "git+https://github.com/paritytech/substrate?branch=rococo-branch#83544d41abcc0e3d3cbbd6aa510e04dc50863e5c"
 dependencies = [
  "parity-scale-codec",
  "sp-core",
@@ -7855,7 +7856,7 @@ dependencies = [
 [[package]]
 name = "sp-test-primitives"
 version = "2.0.0-rc5"
-source = "git+https://github.com/paritytech/substrate?branch=rococo-branch#c89995d18dee55e02d25fc29dcb803b3e743b340"
+source = "git+https://github.com/paritytech/substrate?branch=rococo-branch#83544d41abcc0e3d3cbbd6aa510e04dc50863e5c"
 dependencies = [
  "parity-scale-codec",
  "parity-util-mem",
@@ -8135,7 +8136,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-runtime"
 version = "2.0.0-rc5"
-source = "git+https://github.com/paritytech/substrate?branch=rococo-branch#c89995d18dee55e02d25fc29dcb803b3e743b340"
+source = "git+https://github.com/paritytech/substrate?branch=rococo-branch#83544d41abcc0e3d3cbbd6aa510e04dc50863e5c"
 dependencies = [
  "cfg-if",
  "frame-executive",
@@ -8175,7 +8176,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-runtime-client"
 version = "2.0.0-rc5"
-source = "git+https://github.com/paritytech/substrate?branch=rococo-branch#c89995d18dee55e02d25fc29dcb803b3e743b340"
+source = "git+https://github.com/paritytech/substrate?branch=rococo-branch#83544d41abcc0e3d3cbbd6aa510e04dc50863e5c"
 dependencies = [
  "futures 0.3.5",
  "parity-scale-codec",
@@ -8194,9 +8195,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "substrate-test-utils"
+version = "2.0.0-rc5"
+source = "git+https://github.com/paritytech/substrate?branch=rococo-branch#83544d41abcc0e3d3cbbd6aa510e04dc50863e5c"
+dependencies = [
+ "futures 0.3.5",
+ "substrate-test-utils-derive",
+ "tokio 0.2.22",
+]
+
+[[package]]
+name = "substrate-test-utils-derive"
+version = "0.8.0-rc5"
+source = "git+https://github.com/paritytech/substrate?branch=rococo-branch#83544d41abcc0e3d3cbbd6aa510e04dc50863e5c"
+dependencies = [
+ "proc-macro-crate",
+ "quote 1.0.7",
+ "syn 1.0.38",
+]
+
+[[package]]
 name = "substrate-wasm-builder-runner"
 version = "1.0.6"
-source = "git+https://github.com/paritytech/substrate?branch=rococo-branch#c89995d18dee55e02d25fc29dcb803b3e743b340"
+source = "git+https://github.com/paritytech/substrate?branch=rococo-branch#83544d41abcc0e3d3cbbd6aa510e04dc50863e5c"
 
 [[package]]
 name = "substrate-wasm-builder-runner"
