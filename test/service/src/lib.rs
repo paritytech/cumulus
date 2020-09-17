@@ -1,9 +1,3 @@
-mod chain_spec;
-mod genesis;
-
-pub use chain_spec::*;
-pub use genesis::*;
-
 // Copyright 2019 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
@@ -20,11 +14,17 @@ pub use genesis::*;
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+mod chain_spec;
+mod genesis;
+
+pub use chain_spec::*;
+pub use genesis::*;
+
 use ansi_term::Color;
 use cumulus_collator::CollatorBuilder;
 use cumulus_network::DelayedBlockAnnounceValidator;
 use cumulus_service::{
-	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
+	prepare_node_config, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use polkadot_primitives::v0::CollatorPair;
 use sc_client_api::{Backend as BackendT, BlockBackend, Finalizer, UsageProvider};
@@ -216,7 +216,6 @@ fn start_node_impl<RuntimeApi, Executor, RB>(
 	id: polkadot_primitives::v0::Id,
 	validator: bool,
 	rpc_ext_builder: RB,
-	test: bool,
 ) -> sc_service::error::Result<(
 	TaskManager,
 	Arc<TFullClient<Block, RuntimeApi, Executor>>,
@@ -338,11 +337,7 @@ where
 			collator_key,
 		};
 
-		if test {
-			start_test_collator(params)?;
-		} else {
-			start_collator(params)?;
-		}
+		start_test_collator(params)?;
 	} else {
 		let params = StartFullNodeParams {
 			client: client.clone(),
@@ -369,7 +364,6 @@ pub fn start_node(
 	polkadot_config: polkadot_collator::Configuration,
 	id: polkadot_primitives::v0::Id,
 	validator: bool,
-	test: bool,
 ) -> sc_service::error::Result<(
 	TaskManager,
 	Arc<TFullClient<Block, cumulus_test_runtime::RuntimeApi, RuntimeExecutor>>,
@@ -382,6 +376,5 @@ pub fn start_node(
 		id,
 		validator,
 		|_| Default::default(),
-		test,
 	)
 }

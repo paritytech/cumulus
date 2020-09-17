@@ -91,7 +91,7 @@ async fn integration_test(task_executor: TaskExecutor) {
 		parachain_config(task_executor.clone(), Charlie, vec![], spec.clone()).unwrap();
 	let multiaddr = charlie_config.network.listen_addresses[0].clone();
 	let (charlie_task_manager, charlie_client, charlie_network) =
-		cumulus_test_service::start_node(charlie_config, key, polkadot_config, para_id, true, true)
+		cumulus_test_service::start_node(charlie_config, key, polkadot_config, para_id, true)
 			.unwrap();
 	charlie_client.wait_for_blocks(4).await;
 	let peer_id = charlie_network.local_peer_id().clone();
@@ -116,7 +116,7 @@ async fn integration_test(task_executor: TaskExecutor) {
 	)
 	.unwrap();
 	let (dave_task_manager, dave_client, _dave_network) =
-		cumulus_test_service::start_node(dave_config, key, polkadot_config, para_id, false, true)
+		cumulus_test_service::start_node(dave_config, key, polkadot_config, para_id, false)
 			.unwrap();
 	dave_client.wait_for_blocks(4).await;
 
