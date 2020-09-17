@@ -27,7 +27,6 @@ use cumulus_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use polkadot_primitives::v0::CollatorPair;
-use test_primitives::Block;
 use sc_client_api::{Backend as BackendT, BlockBackend, Finalizer, UsageProvider};
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
@@ -41,6 +40,7 @@ use sp_core::{crypto::Pair, H256};
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
 use sp_trie::PrefixedMemoryDB;
 use std::sync::Arc;
+use test_primitives::Block;
 
 // Native executor instance.
 native_executor_instance!(

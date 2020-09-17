@@ -17,17 +17,14 @@
 //! A Cumulus test client.
 
 pub use runtime;
-use std::collections::BTreeMap;
-use runtime::{
-	GenesisConfig,
-	Block,
-};
+use runtime::{Block, GenesisConfig};
 use sc_service::client;
-use sp_core::{storage::Storage, ChangesTrieConfiguration, map, twox_128};
+use sp_core::{map, storage::Storage, twox_128, ChangesTrieConfiguration};
 use sp_runtime::{
 	traits::{Block as BlockT, Hash as HashT, Header as HeaderT},
 	BuildStorage,
 };
+use std::collections::BTreeMap;
 pub use test_client::*;
 
 mod local_executor {

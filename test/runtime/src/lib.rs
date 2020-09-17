@@ -22,8 +22,6 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use test_primitives::*;
-pub use test_primitives::Hash;
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
@@ -36,6 +34,8 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+pub use test_primitives::Hash;
+use test_primitives::*;
 
 /// Import the token dealer pallet.
 pub use cumulus_test_token_dealer;
