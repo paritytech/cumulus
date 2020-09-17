@@ -1307,7 +1307,6 @@ dependencies = [
  "cumulus-parachain-upgrade",
  "cumulus-primitives",
  "cumulus-runtime",
- "cumulus-test-token-dealer",
  "cumulus-upward-message",
  "frame-executive",
  "frame-support",
@@ -1332,7 +1331,6 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder-runner 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "test-parachain-info",
  "test-primitives",
 ]
 
@@ -1385,18 +1383,6 @@ dependencies = [
  "substrate-test-utils",
  "test-primitives",
  "tokio 0.2.22",
-]
-
-[[package]]
-name = "cumulus-test-token-dealer"
-version = "0.1.0"
-dependencies = [
- "cumulus-primitives",
- "cumulus-upward-message",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "polkadot-parachain",
 ]
 
 [[package]]
@@ -8592,17 +8578,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bb6bfa289a4d7c5766392812c0a1f4c1ba45afa1ad47803c11e1f407d846d75f"
 dependencies = [
  "winapi-util",
-]
-
-[[package]]
-name = "test-parachain-info"
-version = "0.1.0"
-dependencies = [
- "cumulus-primitives",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "serde",
 ]
 
 [[package]]

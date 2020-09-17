@@ -126,6 +126,6 @@ fn testnet_genesis(
 				.collect(),
 		}),
 		pallet_sudo: Some(cumulus_test_runtime::SudoConfig { key: root_key }),
-		test_parachain_info: Some(cumulus_test_runtime::ParachainInfoConfig { parachain_id: id }),
+		message_example: Some(cumulus_test_runtime::TokenDealerConfig { parachain_id: id }),
 	}
 }

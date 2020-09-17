@@ -37,8 +37,7 @@ use sp_version::RuntimeVersion;
 pub use test_primitives::Hash;
 use test_primitives::*;
 
-/// Import the token dealer pallet.
-pub use cumulus_test_token_dealer;
+mod message_example;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
@@ -203,24 +202,26 @@ impl cumulus_parachain_upgrade::Trait for Runtime {
 	type OnValidationFunctionParams = ();
 }
 
+parameter_types! {
+	pub storage ParachainId: cumulus_primitives::ParaId = 100.into();
+}
+
 impl cumulus_message_broker::Trait for Runtime {
 	type Event = Event;
 	type DownwardMessageHandlers = TokenDealer;
 	type UpwardMessage = cumulus_upward_message::RococoUpwardMessage;
-	type ParachainId = ParachainInfo;
-	type XCMPMessage = cumulus_test_token_dealer::XCMPMessage<AccountId, Balance>;
+	type ParachainId = ParachainId;
+	type XCMPMessage = XCMPMessage<AccountId, Balance>;
 	type XCMPMessageHandlers = TokenDealer;
 }
 
-impl cumulus_test_token_dealer::Trait for Runtime {
+impl message_example::Trait for Runtime {
 	type Event = Event;
 	type UpwardMessageSender = MessageBroker;
 	type UpwardMessage = cumulus_upward_message::RococoUpwardMessage;
 	type Currency = Balances;
 	type XCMPMessageSender = MessageBroker;
 }
-
-impl test_parachain_info::Trait for Runtime {}
 
 construct_runtime! {
 	pub enum Runtime where
@@ -235,9 +236,8 @@ construct_runtime! {
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
 		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
-		TokenDealer: cumulus_test_token_dealer::{Module, Call, Event<T>},
+		TokenDealer: message_example::{Module, Call, Event<T>, Config},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
-		ParachainInfo: test_parachain_info::{Module, Storage, Config},
 	}
 }
 
