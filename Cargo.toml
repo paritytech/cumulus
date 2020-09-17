@@ -15,7 +15,6 @@ members = [
 	"service",
 	"test/runtime",
 	"test/client",
-	"test/pallets/contracts",
 	"test/pallets/parachain-info",
 	"test/pallets/token-dealer",
 	"test/primitives",

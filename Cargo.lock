@@ -1263,40 +1263,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-test-pallet-contracts"
-version = "2.0.0-rc3"
-dependencies = [
- "assert_matches",
- "cumulus-test-pallet-contracts-primitives",
- "frame-support",
- "frame-system",
- "hex-literal",
- "pallet-balances",
- "pallet-randomness-collective-flip",
- "pallet-timestamp",
- "parity-scale-codec",
- "parity-wasm",
- "pwasm-utils",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-sandbox",
- "sp-std",
- "wabt",
- "wasmi-validation",
-]
-
-[[package]]
-name = "cumulus-test-pallet-contracts-primitives"
-version = "2.0.0-rc3"
-dependencies = [
- "parity-scale-codec",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "cumulus-test-parachain-runtime"
 version = "0.1.0"
 dependencies = [
