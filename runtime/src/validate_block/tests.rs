@@ -24,9 +24,8 @@ use sc_executor::{
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::SelectChain;
-use sp_core::traits::CallInWasm;
+use sp_core::{traits::CallInWasm, ExecutionContext};
 use sp_io::TestExternalities;
-use sp_keyring::AccountKeyring;
 use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, Header as HeaderT},
@@ -35,7 +34,6 @@ use test_client::{
 	runtime::{Block, Hash, Header, WASM_BINARY},
 	Client, DefaultTestClientBuilderExt, LongestChain, TestClientBuilder, TestClientBuilderExt,
 };
-use sp_core::ExecutionContext;
 
 use codec::{Decode, Encode};
 

@@ -23,8 +23,7 @@ use runtime::{
 	Block,
 };
 use sc_service::client;
-use sp_core::{sr25519, storage::Storage, ChangesTrieConfiguration, map, twox_128};
-use sp_keyring::{AccountKeyring, Sr25519Keyring};
+use sp_core::{storage::Storage, ChangesTrieConfiguration, map, twox_128};
 use sp_runtime::{
 	traits::{Block as BlockT, Hash as HashT, Header as HeaderT},
 	BuildStorage,
