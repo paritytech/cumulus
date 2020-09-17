@@ -32,6 +32,15 @@ sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "roc
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 test-client = { package = "cumulus-test-client", path = "../test/client" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+cumulus-test-runtime = { path = "../test/runtime" }
+test-primitives = { path = "../test/primitives" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+cumulus-parachain-upgrade = { path = "../parachain-upgrade" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 [features]
 default = ["std"]
