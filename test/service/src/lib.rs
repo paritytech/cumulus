@@ -1,27 +1,46 @@
 mod chain_spec;
+mod genesis;
 
 pub use chain_spec::*;
+pub use genesis::*;
 
-use cumulus_network::DelayedBlockAnnounceValidator;
-use cumulus_service::{prepare_node_config, StartCollatorParams, StartFullNodeParams, start_full_node};
-use cumulus_collator::CollatorBuilder;
-use sp_runtime::traits::{Block as BlockT, Hash as HashT, Header as HeaderT, Zero, BlakeTwo256};
-use cumulus_test_runtime::Block;
-use codec::Encode;
-use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
-use std::sync::Arc;
-use polkadot_primitives::v0::CollatorPair;
-pub use sc_executor::NativeExecutor;
-use sc_executor::native_executor_instance;
-use sc_network::NetworkService;
-use sp_core::{crypto::Pair, H256};
-use sp_api::ConstructRuntimeApi;
-use sc_informant::OutputFormat;
-use sp_consensus::{BlockImport, Environment, Error as ConsensusError, Proposer};
-use sc_client_api::{Backend as BackendT, BlockBackend, Finalizer, UsageProvider};
-use sp_blockchain::HeaderBackend;
-use sp_trie::PrefixedMemoryDB;
+// Copyright 2019 Parity Technologies (UK) Ltd.
+// This file is part of Cumulus.
+
+// Cumulus is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Cumulus is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
+
 use ansi_term::Color;
+use cumulus_collator::CollatorBuilder;
+use cumulus_network::DelayedBlockAnnounceValidator;
+use cumulus_service::{
+	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
+};
+use polkadot_primitives::v0::CollatorPair;
+use test_primitives::Block;
+use sc_client_api::{Backend as BackendT, BlockBackend, Finalizer, UsageProvider};
+use sc_executor::native_executor_instance;
+pub use sc_executor::NativeExecutor;
+use sc_informant::OutputFormat;
+use sc_network::NetworkService;
+use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
+use sp_api::ConstructRuntimeApi;
+use sp_blockchain::HeaderBackend;
+use sp_consensus::{BlockImport, Environment, Error as ConsensusError, Proposer};
+use sp_core::{crypto::Pair, H256};
+use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
+use sp_trie::PrefixedMemoryDB;
+use std::sync::Arc;
 
 // Native executor instance.
 native_executor_instance!(
@@ -29,34 +48,6 @@ native_executor_instance!(
 	cumulus_test_runtime::api::dispatch,
 	cumulus_test_runtime::native_version,
 );
-
-pub fn generate_genesis_state(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<Block, String> {
-	let storage = chain_spec.build_storage()?;
-
-	let child_roots = storage.children_default.iter().map(|(sk, child_content)| {
-		let state_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
-			child_content.data.clone().into_iter().collect(),
-		);
-		(sk.clone(), state_root.encode())
-	});
-	let state_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
-		storage.top.clone().into_iter().chain(child_roots).collect(),
-	);
-
-	let extrinsics_root =
-		<<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(Vec::new());
-
-	Ok(Block::new(
-		<<Block as BlockT>::Header as HeaderT>::new(
-			Zero::zero(),
-			extrinsics_root,
-			state_root,
-			Default::default(),
-			Default::default(),
-		),
-		Default::default(),
-	))
-}
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
@@ -225,6 +216,7 @@ fn start_node_impl<RuntimeApi, Executor, RB>(
 	id: polkadot_primitives::v0::Id,
 	validator: bool,
 	rpc_ext_builder: RB,
+	test: bool,
 ) -> sc_service::error::Result<(
 	TaskManager,
 	Arc<TFullClient<Block, RuntimeApi, Executor>>,
@@ -346,7 +338,11 @@ where
 			collator_key,
 		};
 
-		start_test_collator(params)?;
+		if test {
+			start_test_collator(params)?;
+		} else {
+			start_collator(params)?;
+		}
 	} else {
 		let params = StartFullNodeParams {
 			client: client.clone(),
@@ -373,6 +369,7 @@ pub fn start_node(
 	polkadot_config: polkadot_collator::Configuration,
 	id: polkadot_primitives::v0::Id,
 	validator: bool,
+	test: bool,
 ) -> sc_service::error::Result<(
 	TaskManager,
 	Arc<TFullClient<Block, cumulus_test_runtime::RuntimeApi, RuntimeExecutor>>,
@@ -385,5 +382,6 @@ pub fn start_node(
 		id,
 		validator,
 		|_| Default::default(),
+		test,
 	)
 }
