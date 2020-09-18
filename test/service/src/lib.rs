@@ -21,25 +21,38 @@ pub use chain_spec::*;
 pub use genesis::*;
 
 use ansi_term::Color;
+use core::future::Future;
 use cumulus_collator::CollatorBuilder;
 use cumulus_network::DelayedBlockAnnounceValidator;
+use cumulus_primitives::ParaId;
 use cumulus_service::{
 	prepare_node_config, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use polkadot_primitives::v0::CollatorPair;
+use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_client_api::{Backend as BackendT, BlockBackend, Finalizer, UsageProvider};
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_informant::OutputFormat;
-use sc_network::NetworkService;
-use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
+use sc_network::{config::TransportConfig, multiaddr, NetworkService};
+use sc_service::{
+	config::{
+		DatabaseConfig, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
+		OffchainWorkerConfig, PruningMode, WasmExecutionMethod,
+	},
+	BasePath, ChainSpec, Configuration, Error as ServiceError, PartialComponents, Role,
+	RpcHandlers, TFullBackend, TFullClient, TaskExecutor, TaskManager,
+};
 use sp_api::ConstructRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{BlockImport, Environment, Error as ConsensusError, Proposer};
 use sp_core::{crypto::Pair, H256};
+use sp_keyring::Sr25519Keyring;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
+use sp_state_machine::BasicExternalities;
 use sp_trie::PrefixedMemoryDB;
 use std::sync::Arc;
+use substrate_test_client::BlockchainEventsExt;
 use test_primitives::Block;
 
 // Native executor instance.
@@ -213,13 +226,14 @@ fn start_node_impl<RuntimeApi, Executor, RB>(
 	parachain_config: Configuration,
 	collator_key: Arc<CollatorPair>,
 	mut polkadot_config: polkadot_collator::Configuration,
-	id: polkadot_primitives::v0::Id,
+	para_id: ParaId,
 	validator: bool,
 	rpc_ext_builder: RB,
 ) -> sc_service::error::Result<(
 	TaskManager,
 	Arc<TFullClient<Block, RuntimeApi, Executor>>,
 	Arc<NetworkService<Block, H256>>,
+	Arc<RpcHandlers>,
 )>
 where
 	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, Executor>>
@@ -295,7 +309,7 @@ where
 		Box::new(move |_deny_unsafe| rpc_ext_builder(client.clone()))
 	};
 
-	sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+	let rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 		on_demand: None,
 		remote_blockchain: None,
 		rpc_extensions_builder,
@@ -324,7 +338,7 @@ where
 		);
 
 		let params = StartCollatorParams {
-			para_id: id,
+			para_id,
 			block_import: client.clone(),
 			proposer_factory,
 			inherent_data_providers: params.inherent_data_providers,
@@ -346,7 +360,7 @@ where
 			collator_key,
 			block_announce_validator,
 			task_manager: &mut task_manager,
-			para_id: id,
+			para_id,
 		};
 
 		start_full_node(params)?;
@@ -354,27 +368,183 @@ where
 
 	start_network.start_network();
 
-	Ok((task_manager, client, network))
+	Ok((task_manager, client, network, rpc_handlers))
 }
 
-/// Start a normal parachain node.
-pub fn start_node(
-	parachain_config: Configuration,
-	collator_key: Arc<CollatorPair>,
-	polkadot_config: polkadot_collator::Configuration,
-	id: polkadot_primitives::v0::Id,
+/// A Cumulus test node instance used for testing.
+pub struct CumulusTestNode {
+	/// TaskManager's instance.
+	pub task_manager: TaskManager,
+	/// Client's instance.
+	pub client: Arc<TFullClient<Block, cumulus_test_runtime::RuntimeApi, RuntimeExecutor>>,
+	/// Node's network.
+	pub network: Arc<NetworkService<Block, H256>>,
+	/// The `MultiaddrWithPeerId` to this node. This is useful if you want to pass it as "boot node"
+	/// to other nodes.
+	pub addr: MultiaddrWithPeerId,
+	/// RPCHandlers to make RPC queries.
+	pub rpc_handlers: Arc<RpcHandlers>,
+}
+
+/// Run a Cumulus test node using the Cumulus test runtime. The node will be using an in-memory
+/// socket, therefore you need to provide boot nodes if you want it to be connected to other nodes.
+/// The `storage_update_func` can be used to make adjustements to the runtime before the node
+/// starts.
+pub fn run_test_node(
+	task_executor: TaskExecutor,
+	key: Sr25519Keyring,
+	parachain_storage_update_func: impl Fn(),
+	polkadot_storage_update_func: impl Fn(),
+	parachain_boot_nodes: Vec<MultiaddrWithPeerId>,
+	polkadot_boot_nodes: Vec<MultiaddrWithPeerId>,
+	para_id: ParaId,
 	validator: bool,
-) -> sc_service::error::Result<(
-	TaskManager,
-	Arc<TFullClient<Block, cumulus_test_runtime::RuntimeApi, RuntimeExecutor>>,
-	Arc<NetworkService<Block, H256>>,
-)> {
-	start_node_impl::<cumulus_test_runtime::RuntimeApi, RuntimeExecutor, _>(
-		parachain_config,
-		collator_key,
-		polkadot_config,
-		id,
-		validator,
-		|_| Default::default(),
+) -> CumulusTestNode {
+	let collator_key = Arc::new(sp_core::Pair::generate().0);
+	let parachain_config = node_config(
+		parachain_storage_update_func,
+		task_executor.clone(),
+		key,
+		parachain_boot_nodes,
+		para_id,
 	)
+	.expect("could not generate Configuration");
+	let polkadot_config = polkadot_test_service::node_config(
+		polkadot_storage_update_func,
+		task_executor.clone(),
+		key,
+		polkadot_boot_nodes,
+	);
+	let multiaddr = parachain_config.network.listen_addresses[0].clone();
+	let (task_manager, client, network, rpc_handlers) =
+		start_node_impl::<cumulus_test_runtime::RuntimeApi, RuntimeExecutor, _>(
+			parachain_config,
+			collator_key,
+			polkadot_config,
+			para_id,
+			validator,
+			|_| Default::default(),
+		)
+		.expect("could not create Cumulus test service");
+
+	let peer_id = network.local_peer_id().clone();
+	let addr = MultiaddrWithPeerId { multiaddr, peer_id };
+
+	CumulusTestNode {
+		task_manager,
+		client,
+		network,
+		addr,
+		rpc_handlers,
+	}
+}
+
+/// Create a Cumulus `Configuration`. By default an in-memory socket will be used, therefore you
+/// need to provide boot nodes if you want the future node to be connected to other nodes. The
+/// `storage_update_func` can be used to make adjustments to the runtime before the node starts.
+pub fn node_config(
+	storage_update_func: impl Fn(),
+	task_executor: TaskExecutor,
+	key: Sr25519Keyring,
+	boot_nodes: Vec<MultiaddrWithPeerId>,
+	para_id: ParaId,
+) -> Result<Configuration, ServiceError> {
+	let base_path = BasePath::new_temp_dir()?;
+	let root = base_path.path().to_path_buf();
+	let role = Role::Authority {
+		sentry_nodes: Vec::new(),
+	};
+	let key_seed = key.to_seed();
+	let mut spec = Box::new(chain_spec::get_chain_spec(para_id));
+
+	let mut storage = spec
+		.as_storage_builder()
+		.build_storage()
+		.expect("could not build storage");
+
+	BasicExternalities::execute_with_storage(&mut storage, storage_update_func);
+	spec.set_storage(storage);
+
+	let mut network_config = NetworkConfiguration::new(
+		format!("Cumulus Test Node for: {}", key_seed),
+		"network/test/0.1",
+		Default::default(),
+		None,
+	);
+	let informant_output_format = OutputFormat {
+		enable_color: false,
+		prefix: format!("[{}] ", key_seed),
+	};
+
+	network_config.boot_nodes = boot_nodes;
+
+	network_config.allow_non_globals_in_dht = false;
+
+	network_config
+		.listen_addresses
+		.push(multiaddr::Protocol::Memory(rand::random()).into());
+
+	network_config.transport = TransportConfig::MemoryOnly;
+
+	Ok(Configuration {
+		impl_name: "cumulus-test-node".to_string(),
+		impl_version: "0.1".to_string(),
+		role,
+		task_executor,
+		transaction_pool: Default::default(),
+		network: network_config,
+		keystore: KeystoreConfig::Path {
+			path: root.join("key"),
+			password: None,
+		},
+		database: DatabaseConfig::RocksDb {
+			path: root.join("db"),
+			cache_size: 128,
+		},
+		state_cache_size: 67108864,
+		state_cache_child_ratio: None,
+		pruning: PruningMode::ArchiveAll,
+		chain_spec: spec,
+		wasm_method: WasmExecutionMethod::Interpreted,
+		// NOTE: we enforce the use of the native runtime to make the errors more debuggable
+		execution_strategies: ExecutionStrategies {
+			syncing: sc_client_api::ExecutionStrategy::NativeWhenPossible,
+			importing: sc_client_api::ExecutionStrategy::NativeWhenPossible,
+			block_construction: sc_client_api::ExecutionStrategy::NativeWhenPossible,
+			offchain_worker: sc_client_api::ExecutionStrategy::NativeWhenPossible,
+			other: sc_client_api::ExecutionStrategy::NativeWhenPossible,
+		},
+		rpc_http: None,
+		rpc_ws: None,
+		rpc_ipc: None,
+		rpc_ws_max_connections: None,
+		rpc_cors: None,
+		rpc_methods: Default::default(),
+		prometheus_config: None,
+		telemetry_endpoints: None,
+		telemetry_external_transport: None,
+		default_heap_pages: None,
+		offchain_worker: OffchainWorkerConfig {
+			enabled: true,
+			indexing_enabled: false,
+		},
+		force_authoring: false,
+		disable_grandpa: false,
+		dev_key_seed: Some(key_seed),
+		tracing_targets: None,
+		tracing_receiver: Default::default(),
+		max_runtime_instances: 8,
+		announce_block: true,
+		base_path: Some(base_path),
+		informant_output_format,
+	})
+}
+
+impl CumulusTestNode {
+	/// Wait for `count` blocks to be imported in the node and then exit. This function will not
+	/// return if no blocks are ever created, thus you should restrict the maximum amount of time of
+	/// the test execution.
+	pub fn wait_for_blocks(&self, count: usize) -> impl Future<Output = ()> {
+		self.client.wait_for_blocks(count)
+	}
 }

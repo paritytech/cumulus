@@ -1,8 +1,28 @@
-use sp_runtime::traits::{Block as BlockT, Hash as HashT, Header as HeaderT, Zero};
-use cumulus_test_runtime::Block;
-use codec::Encode;
+// Copyright 2020 Parity Technologies (UK) Ltd.
+// This file is part of Cumulus.
 
-pub fn generate_genesis_state(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<Block, String> {
+// Cumulus is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Cumulus is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
+
+use codec::Encode;
+use cumulus_primitives::ParaId;
+use cumulus_test_runtime::Block;
+use polkadot_primitives::v0::HeadData;
+use sp_runtime::traits::{Block as BlockT, Hash as HashT, Header as HeaderT, Zero};
+
+pub fn generate_genesis_state(
+	chain_spec: &Box<dyn sc_service::ChainSpec>,
+) -> Result<Block, String> {
 	let storage = chain_spec.build_storage()?;
 
 	let child_roots = storage.children_default.iter().map(|(sk, child_content)| {
@@ -28,4 +48,11 @@ pub fn generate_genesis_state(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Re
 		),
 		Default::default(),
 	))
+}
+
+pub fn initial_head_data(para_id: ParaId) -> HeadData {
+	let spec = Box::new(crate::chain_spec::get_chain_spec(para_id));
+	let block = generate_genesis_state(&(spec as Box<_>)).unwrap();
+	let genesis_state = block.header().encode();
+	genesis_state.into()
 }
