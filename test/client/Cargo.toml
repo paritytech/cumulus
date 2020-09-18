@@ -23,5 +23,4 @@ sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "roc
 # Cumulus dependencies
 cumulus-test-service = { path = "../service" }
 cumulus-primitives = { path = "../../primitives" }
-test-primitives = { path = "../primitives" }
 runtime = { package = "cumulus-test-runtime", path = "../runtime" }

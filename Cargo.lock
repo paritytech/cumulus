@@ -1213,7 +1213,6 @@ dependencies = [
  "sc-block-builder",
  "sc-client-api",
  "sc-executor",
- "sp-api",
  "sp-blockchain",
  "sp-consensus",
  "sp-core",
@@ -1268,7 +1267,6 @@ dependencies = [
  "sp-test-primitives",
  "sp-timestamp",
  "substrate-test-client",
- "test-primitives",
 ]
 
 [[package]]
