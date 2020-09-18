@@ -260,12 +260,11 @@ pub struct TwoHundredOrThreeHundred;
 impl FilterAssetLocation for TwoHundredOrThreeHundred {
 	fn filter_asset_location(_asset: &MultiAsset, origin: &MultiLocation) -> bool {
 		frame_support::debug::print!("filter_asset_location {:?}", origin);
-		true
-		/*matches!(
+		matches!(
 			origin,
 			&MultiLocation::X2(Junction::Parent, Junction::Parachain { id })
 				if id == 200 || id == 300
-		)*/
+		)
 	}
 }
 
