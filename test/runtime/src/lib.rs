@@ -37,8 +37,6 @@ use sp_version::RuntimeVersion;
 pub use test_primitives::Hash;
 use test_primitives::*;
 
-mod message_example;
-
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, parameter_types,
@@ -208,19 +206,11 @@ parameter_types! {
 
 impl cumulus_message_broker::Trait for Runtime {
 	type Event = Event;
-	type DownwardMessageHandlers = TokenDealer;
+	type DownwardMessageHandlers = ();
 	type UpwardMessage = cumulus_upward_message::RococoUpwardMessage;
 	type ParachainId = ParachainId;
 	type XCMPMessage = XCMPMessage<AccountId, Balance>;
-	type XCMPMessageHandlers = TokenDealer;
-}
-
-impl message_example::Trait for Runtime {
-	type Event = Event;
-	type UpwardMessageSender = MessageBroker;
-	type UpwardMessage = cumulus_upward_message::RococoUpwardMessage;
-	type Currency = Balances;
-	type XCMPMessageSender = MessageBroker;
+	type XCMPMessageHandlers = ();
 }
 
 construct_runtime! {
@@ -236,7 +226,6 @@ construct_runtime! {
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
 		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
-		TokenDealer: message_example::{Module, Call, Event<T>, Config},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 	}
 }
