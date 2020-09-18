@@ -85,7 +85,6 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
 				None,
-				id,
 			)
 		},
 		vec![],
@@ -102,7 +101,6 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 /// Local testnet genesis for testing.
 pub fn local_testnet_genesis(
 	changes_trie_config: Option<ChangesTrieConfiguration>,
-	id: ParaId,
 ) -> cumulus_test_runtime::GenesisConfig {
 	testnet_genesis(
 		get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -121,7 +119,6 @@ pub fn local_testnet_genesis(
 			get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 		],
 		changes_trie_config,
-		id,
 	)
 }
 
@@ -129,7 +126,6 @@ fn testnet_genesis(
 	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
 	changes_trie_config: Option<ChangesTrieConfiguration>,
-	id: ParaId,
 ) -> cumulus_test_runtime::GenesisConfig {
 	cumulus_test_runtime::GenesisConfig {
 		frame_system: Some(cumulus_test_runtime::SystemConfig {
@@ -146,6 +142,5 @@ fn testnet_genesis(
 				.collect(),
 		}),
 		pallet_sudo: Some(cumulus_test_runtime::SudoConfig { key: root_key }),
-		message_example: Some(cumulus_test_runtime::TokenDealerConfig { parachain_id: id }),
 	}
 }

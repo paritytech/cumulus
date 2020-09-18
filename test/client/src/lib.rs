@@ -128,7 +128,7 @@ impl DefaultTestClientBuilderExt for TestClientBuilder {
 }
 
 fn genesis_config(changes_trie_config: Option<ChangesTrieConfiguration>) -> GenesisConfig {
-	cumulus_test_service::local_testnet_genesis(changes_trie_config, 100.into())
+	cumulus_test_service::local_testnet_genesis(changes_trie_config)
 }
 
 fn additional_storage_with_genesis(genesis_block: &Block) -> BTreeMap<Vec<u8>, Vec<u8>> {
