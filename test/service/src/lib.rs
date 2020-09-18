@@ -14,6 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+//! Crate used for testing with Cumulus.
+
+#![warn(missing_docs)]
+
 mod chain_spec;
 mod genesis;
 

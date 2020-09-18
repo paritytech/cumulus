@@ -1,3 +1,21 @@
+// Copyright 2020 Parity Technologies (UK) Ltd.
+// This file is part of Cumulus.
+
+// Cumulus is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Cumulus is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
+
+#![allow(missing_docs)]
+
 use cumulus_primitives::ParaId;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
@@ -35,7 +53,7 @@ impl Extensions {
 
 type AccountPublic = <Signature as Verify>::Signer;
 
-/// Helper function to generate an account ID from seed
+/// Helper function to generate an account ID from seed.
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
 where
 	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
@@ -43,6 +61,7 @@ where
 	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
 
+/// Get the chain spec for a specific parachain ID.
 pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 	ChainSpec::from_genesis(
 		"Local Testnet",
@@ -80,6 +99,7 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 	)
 }
 
+/// Local testnet genesis for testing.
 pub fn local_testnet_genesis(
 	changes_trie_config: Option<ChangesTrieConfiguration>,
 	id: ParaId,

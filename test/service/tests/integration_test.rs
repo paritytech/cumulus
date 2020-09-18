@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
+use cumulus_test_service::initial_head_data;
 use cumulus_primitives::ParaId;
 use futures::join;
 use polkadot_primitives::v0::{Info, Scheduling};
@@ -51,7 +52,7 @@ async fn integration_test(task_executor: TaskExecutor) {
 				.expect("You need to build the WASM binary to run this test!")
 				.to_vec()
 				.into(),
-			cumulus_test_service::initial_head_data(para_id),
+			initial_head_data(para_id),
 		)),
 	)));
 

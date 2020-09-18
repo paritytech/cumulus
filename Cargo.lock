@@ -1192,6 +1192,7 @@ dependencies = [
  "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-primitives",
+ "sc-service",
  "sp-inherents",
  "sp-runtime",
  "sp-std",
