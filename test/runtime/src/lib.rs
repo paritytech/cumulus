@@ -153,7 +153,7 @@ impl frame_system::Trait for Runtime {
 }
 
 parameter_types! {
-	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
+	pub storage MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
 
 impl pallet_timestamp::Trait for Runtime {
