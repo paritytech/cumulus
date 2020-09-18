@@ -99,15 +99,15 @@ pub fn native_version() -> NativeVersion {
 }
 
 parameter_types! {
-	pub const BlockHashCount: BlockNumber = 250;
-	pub const MaximumBlockWeight: Weight = 2 * WEIGHT_PER_SECOND;
+	pub storage BlockHashCount: BlockNumber = 250;
+	pub storage MaximumBlockWeight: Weight = 2 * WEIGHT_PER_SECOND;
 	/// Assume 10% of weight for average on_initialize calls.
 	pub MaximumExtrinsicWeight: Weight = AvailableBlockRatio::get()
 		.saturating_sub(Perbill::from_percent(10)) * MaximumBlockWeight::get();
-	pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
-	pub const MaximumBlockLength: u32 = 5 * 1024 * 1024;
+	pub storage AvailableBlockRatio: Perbill = Perbill::from_percent(75);
+	pub storage MaximumBlockLength: u32 = 5 * 1024 * 1024;
 	pub const Version: RuntimeVersion = VERSION;
-	pub const ExtrinsicBaseWeight: Weight = 10_000_000;
+	pub storage ExtrinsicBaseWeight: Weight = 10_000_000;
 }
 
 impl frame_system::Trait for Runtime {
@@ -155,7 +155,7 @@ impl frame_system::Trait for Runtime {
 }
 
 parameter_types! {
-	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
+	pub storage MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
 
 impl pallet_timestamp::Trait for Runtime {
@@ -167,10 +167,10 @@ impl pallet_timestamp::Trait for Runtime {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: u128 = 500;
-	pub const TransferFee: u128 = 0;
-	pub const CreationFee: u128 = 0;
-	pub const TransactionByteFee: u128 = 1;
+	pub storage ExistentialDeposit: u128 = 500;
+	pub storage TransferFee: u128 = 0;
+	pub storage CreationFee: u128 = 0;
+	pub storage TransactionByteFee: u128 = 1;
 }
 
 impl pallet_balances::Trait for Runtime {
