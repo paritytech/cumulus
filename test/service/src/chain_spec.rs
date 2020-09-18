@@ -2,7 +2,7 @@ use cumulus_primitives::ParaId;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use sp_core::{sr25519, Pair, Public, ChangesTrieConfiguration};
+use sp_core::{sr25519, ChangesTrieConfiguration, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use test_primitives::{AccountId, Signature};
 

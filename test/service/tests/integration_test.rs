@@ -38,10 +38,7 @@ async fn integration_test(task_executor: TaskExecutor) {
 	);
 
 	// ensure alice and bob can produce blocks
-	join!(
-		alice.wait_for_blocks(2),
-		bob.wait_for_blocks(2),
-	);
+	join!(alice.wait_for_blocks(2), bob.wait_for_blocks(2));
 
 	// call function to register the parachain
 	let function = polkadot_test_runtime::Call::Sudo(pallet_sudo::Call::sudo(Box::new(

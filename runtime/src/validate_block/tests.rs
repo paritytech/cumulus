@@ -17,7 +17,7 @@
 use crate::ParachainBlockData;
 
 use parachain::primitives::{BlockData, HeadData, ValidationParams, ValidationResult};
-use sc_block_builder::{BlockBuilderProvider, BlockBuilderApi};
+use sc_block_builder::{BlockBuilderApi, BlockBuilderProvider};
 use sc_executor::{
 	error::Result, sp_wasm_interface::HostFunctions, WasmExecutionMethod, WasmExecutor,
 };
@@ -81,9 +81,7 @@ fn create_test_client() -> (Client, LongestChain) {
 		.build_with_longest_chain()
 }
 
-fn build_block_with_proof(
-	client: &Client,
-) -> (Block, sp_trie::StorageProof) {
+fn build_block_with_proof(client: &Client) -> (Block, sp_trie::StorageProof) {
 	let block_id = BlockId::Hash(client.info().best_hash);
 	let mut builder = client
 		.new_block_at(&block_id, Default::default(), true)
@@ -91,18 +89,23 @@ fn build_block_with_proof(
 
 	let mut inherent_data = sp_consensus::InherentData::new();
 	let timestamp = cumulus_test_runtime::MinimumPeriod::get();
-	inherent_data.put_data(sp_timestamp::INHERENT_IDENTIFIER, &timestamp)
+	inherent_data
+		.put_data(sp_timestamp::INHERENT_IDENTIFIER, &timestamp)
 		.expect("Put timestamp failed");
-	inherent_data.put_data(
-		cumulus_primitives::inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER,
-		&cumulus_primitives::validation_function_params::ValidationFunctionParams::default(),
-	).expect("Put validation function params failed");
-	client.runtime_api()
+	inherent_data
+		.put_data(
+			cumulus_primitives::inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER,
+			&cumulus_primitives::validation_function_params::ValidationFunctionParams::default(),
+		)
+		.expect("Put validation function params failed");
+	client
+		.runtime_api()
 		.inherent_extrinsics_with_context(
 			&BlockId::number(0),
 			ExecutionContext::BlockConstruction,
 			inherent_data,
-		).expect("Get inherents failed")
+		)
+		.expect("Get inherents failed")
 		.into_iter()
 		.for_each(|e| builder.push(e).expect("Pushes an extrinsic"));
 
