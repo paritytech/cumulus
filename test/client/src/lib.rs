@@ -16,6 +16,10 @@
 
 //! A Cumulus test client.
 
+mod block_builder;
+
+pub use block_builder::*;
+
 pub use runtime;
 use runtime::{Block, GenesisConfig};
 use sc_service::client;

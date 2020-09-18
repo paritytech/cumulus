@@ -13,7 +13,15 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-br
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 codec = { package = "parity-scale-codec", version = "1.0.5", default-features = false, features = [ "derive" ] }
 sp-test-primitives = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # Cumulus dependencies
 cumulus-test-service = { path = "../service" }
+cumulus-primitives = { path = "../../primitives" }
+test-primitives = { path = "../primitives" }
 runtime = { package = "cumulus-test-runtime", path = "../runtime" }

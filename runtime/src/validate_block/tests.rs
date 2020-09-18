@@ -31,7 +31,7 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT},
 };
 use test_client::{
-	runtime::{Block, Hash, Header, WASM_BINARY},
+	runtime::{Block, Hash, Header, WASM_BINARY}, PushInherents,
 	Client, DefaultTestClientBuilderExt, LongestChain, TestClientBuilder, TestClientBuilderExt,
 };
 
@@ -86,6 +86,8 @@ fn build_block_with_proof(client: &Client) -> (Block, sp_trie::StorageProof) {
 	let mut builder = client
 		.new_block_at(&block_id, Default::default(), true)
 		.expect("Initializes new block");
+
+	builder.push_inherents(client);
 
 	let mut inherent_data = sp_consensus::InherentData::new();
 	let timestamp = cumulus_test_runtime::MinimumPeriod::get();

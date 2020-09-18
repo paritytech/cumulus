@@ -1251,16 +1251,24 @@ dependencies = [
 name = "cumulus-test-client"
 version = "0.1.0"
 dependencies = [
+ "cumulus-primitives",
  "cumulus-test-runtime",
  "cumulus-test-service",
  "parity-scale-codec",
+ "sc-block-builder",
+ "sc-client-api",
  "sc-consensus",
  "sc-service",
+ "sp-api",
+ "sp-blockchain",
+ "sp-consensus",
  "sp-core",
  "sp-keyring",
  "sp-runtime",
  "sp-test-primitives",
+ "sp-timestamp",
  "substrate-test-client",
+ "test-primitives",
 ]
 
 [[package]]
@@ -1357,6 +1365,7 @@ dependencies = [
  "polkadot-test-service",
  "rand 0.7.3",
  "sc-basic-authorship",
+ "sc-block-builder",
  "sc-chain-spec",
  "sc-client-api",
  "sc-executor",
