@@ -69,7 +69,7 @@ async fn integration_test(task_executor: TaskExecutor) {
 		para_id,
 		true,
 	);
-	charlie.wait_for_blocks(4).await;
+	charlie.wait_for_blocks(2).await;
 
 	// run cumulus dave (not a validator)
 	//
