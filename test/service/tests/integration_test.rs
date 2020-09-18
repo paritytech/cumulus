@@ -15,7 +15,7 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
 use cumulus_primitives::ParaId;
-use futures::future;
+use futures::join;
 use polkadot_primitives::v0::{Info, Scheduling};
 use polkadot_runtime_common::registrar;
 use sc_service::TaskExecutor;
@@ -38,7 +38,10 @@ async fn integration_test(task_executor: TaskExecutor) {
 	);
 
 	// ensure alice and bob can produce blocks
-	future::join(alice.wait_for_blocks(2), bob.wait_for_blocks(2)).await;
+	join!(
+		alice.wait_for_blocks(2),
+		bob.wait_for_blocks(2),
+	);
 
 	// call function to register the parachain
 	let function = polkadot_test_runtime::Call::Sudo(pallet_sudo::Call::sudo(Box::new(
@@ -87,8 +90,10 @@ async fn integration_test(task_executor: TaskExecutor) {
 	);
 	dave.wait_for_blocks(4).await;
 
-	alice.task_manager.clean_shutdown();
-	bob.task_manager.clean_shutdown();
-	charlie.task_manager.clean_shutdown();
-	dave.task_manager.clean_shutdown();
+	join!(
+		alice.task_manager.clean_shutdown(),
+		bob.task_manager.clean_shutdown(),
+		charlie.task_manager.clean_shutdown(),
+		dave.task_manager.clean_shutdown(),
+	);
 }
