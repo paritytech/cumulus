@@ -28,9 +28,10 @@ use cumulus_primitives::ParaId;
 use cumulus_service::{
 	prepare_node_config, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
+use cumulus_test_runtime::RuntimeApi;
 use polkadot_primitives::v0::CollatorPair;
 use sc_client_api::execution_extensions::ExecutionStrategies;
-use sc_client_api::{Backend as BackendT, BlockBackend, Finalizer, UsageProvider};
+use sc_client_api::BlockBackend;
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_informant::OutputFormat;
@@ -43,12 +44,10 @@ use sc_service::{
 	BasePath, ChainSpec, Configuration, Error as ServiceError, PartialComponents, Role,
 	RpcHandlers, TFullBackend, TFullClient, TaskExecutor, TaskManager,
 };
-use sp_api::ConstructRuntimeApi;
-use sp_blockchain::HeaderBackend;
 use sp_consensus::{BlockImport, Environment, Error as ConsensusError, Proposer};
 use sp_core::{crypto::Pair, H256};
 use sp_keyring::Sr25519Keyring;
-use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
+use sp_runtime::traits::BlakeTwo256;
 use sp_state_machine::BasicExternalities;
 use sp_trie::PrefixedMemoryDB;
 use std::sync::Arc;
@@ -66,40 +65,23 @@ native_executor_instance!(
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
-pub fn new_partial<RuntimeApi, Executor>(
+pub fn new_partial(
 	config: &mut Configuration,
 ) -> Result<
 	PartialComponents<
-		TFullClient<Block, RuntimeApi, Executor>,
+		TFullClient<Block, RuntimeApi, RuntimeExecutor>,
 		TFullBackend<Block>,
 		(),
 		sp_consensus::import_queue::BasicQueue<Block, PrefixedMemoryDB<BlakeTwo256>>,
-		sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, Executor>>,
+		sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, RuntimeExecutor>>,
 		(),
 	>,
 	sc_service::Error,
->
-where
-	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, Executor>>
-		+ Send
-		+ Sync
-		+ 'static,
-	RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
-		+ sp_api::Metadata<Block>
-		+ sp_session::SessionKeys<Block>
-		+ sp_api::ApiExt<
-			Block,
-			Error = sp_blockchain::Error,
-			StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
-		> + sp_offchain::OffchainWorkerApi<Block>
-		+ sp_block_builder::BlockBuilder<Block>,
-	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
-	Executor: sc_executor::NativeExecutionDispatch + 'static,
-{
+> {
 	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
 	let (client, backend, keystore, task_manager) =
-		sc_service::new_full_parts::<Block, RuntimeApi, Executor>(&config)?;
+		sc_service::new_full_parts::<Block, RuntimeApi, RuntimeExecutor>(&config)?;
 	let client = Arc::new(client);
 
 	let registry = config.prometheus_registry();
@@ -139,7 +121,7 @@ where
 /// A collator is similar to a validator in a normal blockchain.
 /// It is responsible for producing blocks and sending the blocks to a
 /// parachain validator for validation and inclusion into the relay chain.
-pub fn start_test_collator<'a, Block, PF, BI, BS, Client, Backend>(
+pub fn start_test_collator<'a, PF, BI, BS>(
 	StartCollatorParams {
 		para_id,
 		proposer_factory,
@@ -152,10 +134,9 @@ pub fn start_test_collator<'a, Block, PF, BI, BS, Client, Backend>(
 		task_manager,
 		polkadot_config,
 		collator_key,
-	}: StartCollatorParams<'a, Block, PF, BI, BS, Client>,
+	}: StartCollatorParams<'a, Block, PF, BI, BS, TFullClient<Block, RuntimeApi, RuntimeExecutor>>,
 ) -> sc_service::error::Result<()>
 where
-	Block: BlockT,
 	PF: Environment<Block> + Send + 'static,
 	BI: BlockImport<
 			Block,
@@ -165,15 +146,6 @@ where
 		+ Sync
 		+ 'static,
 	BS: BlockBackend<Block> + Send + Sync + 'static,
-	Client: Finalizer<Block, Backend>
-		+ UsageProvider<Block>
-		+ HeaderBackend<Block>
-		+ Send
-		+ Sync
-		+ BlockBackend<Block>
-		+ 'static,
-	for<'b> &'b Client: BlockImport<Block>,
-	Backend: BackendT<Block> + 'static,
 {
 	let builder = CollatorBuilder::new(
 		proposer_factory,
@@ -222,7 +194,7 @@ where
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
-fn start_node_impl<RuntimeApi, Executor, RB>(
+fn start_node_impl<RB>(
 	parachain_config: Configuration,
 	collator_key: Arc<CollatorPair>,
 	mut polkadot_config: polkadot_collator::Configuration,
@@ -231,28 +203,13 @@ fn start_node_impl<RuntimeApi, Executor, RB>(
 	rpc_ext_builder: RB,
 ) -> sc_service::error::Result<(
 	TaskManager,
-	Arc<TFullClient<Block, RuntimeApi, Executor>>,
+	Arc<TFullClient<Block, RuntimeApi, RuntimeExecutor>>,
 	Arc<NetworkService<Block, H256>>,
 	Arc<RpcHandlers>,
 )>
 where
-	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, Executor>>
-		+ Send
-		+ Sync
-		+ 'static,
-	RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
-		+ sp_api::Metadata<Block>
-		+ sp_session::SessionKeys<Block>
-		+ sp_api::ApiExt<
-			Block,
-			Error = sp_blockchain::Error,
-			StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
-		> + sp_offchain::OffchainWorkerApi<Block>
-		+ sp_block_builder::BlockBuilder<Block>,
-	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
-	Executor: sc_executor::NativeExecutionDispatch + 'static,
 	RB: Fn(
-			Arc<TFullClient<Block, RuntimeApi, Executor>>,
+			Arc<TFullClient<Block, RuntimeApi, RuntimeExecutor>>,
 		) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
 		+ Send
 		+ 'static,
@@ -272,7 +229,7 @@ where
 		prefix: format!("[{}] ", Color::Blue.bold().paint("Relaychain")),
 	};
 
-	let params = new_partial::<RuntimeApi, Executor>(&mut parachain_config)?;
+	let params = new_partial(&mut parachain_config)?;
 	params
 		.inherent_data_providers
 		.register_provider(sp_timestamp::InherentDataProvider)
@@ -376,7 +333,7 @@ pub struct CumulusTestNode {
 	/// TaskManager's instance.
 	pub task_manager: TaskManager,
 	/// Client's instance.
-	pub client: Arc<TFullClient<Block, cumulus_test_runtime::RuntimeApi, RuntimeExecutor>>,
+	pub client: Arc<TFullClient<Block, RuntimeApi, RuntimeExecutor>>,
 	/// Node's network.
 	pub network: Arc<NetworkService<Block, H256>>,
 	/// The `MultiaddrWithPeerId` to this node. This is useful if you want to pass it as "boot node"
@@ -416,16 +373,15 @@ pub fn run_test_node(
 		polkadot_boot_nodes,
 	);
 	let multiaddr = parachain_config.network.listen_addresses[0].clone();
-	let (task_manager, client, network, rpc_handlers) =
-		start_node_impl::<cumulus_test_runtime::RuntimeApi, RuntimeExecutor, _>(
-			parachain_config,
-			collator_key,
-			polkadot_config,
-			para_id,
-			validator,
-			|_| Default::default(),
-		)
-		.expect("could not create Cumulus test service");
+	let (task_manager, client, network, rpc_handlers) = start_node_impl::<_>(
+		parachain_config,
+		collator_key,
+		polkadot_config,
+		para_id,
+		validator,
+		|_| Default::default(),
+	)
+	.expect("could not create Cumulus test service");
 
 	let peer_id = network.local_peer_id().clone();
 	let addr = MultiaddrWithPeerId { multiaddr, peer_id };
