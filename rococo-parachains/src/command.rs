@@ -19,7 +19,7 @@ use crate::{
 	cli::{Cli, RelayChainCli, Subcommand},
 };
 use codec::Encode;
-use cumulus_primitives::{ParaId, genesis::generate_genesis_state};
+use cumulus_primitives::{genesis::generate_genesis_state, ParaId};
 use log::info;
 use parachain_runtime::Block;
 use polkadot_parachain::primitives::AccountIdConversion;

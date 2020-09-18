@@ -15,10 +15,10 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::Encode;
-use cumulus_primitives::{ParaId, genesis::generate_genesis_state};
-use polkadot_primitives::v0::HeadData;
-use sp_runtime::traits::{Block as BlockT};
+use cumulus_primitives::{genesis::generate_genesis_state, ParaId};
 use cumulus_test_runtime::Block;
+use polkadot_primitives::v0::HeadData;
+use sp_runtime::traits::Block as BlockT;
 
 /// Returns the initial head data for a parachain ID.
 pub fn initial_head_data(para_id: ParaId) -> HeadData {
