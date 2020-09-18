@@ -37,10 +37,10 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use xcm_executor::{
 	XcmExecutor, Config,
-	traits::{NativeAsset, IsConcrete},
+	traits::{NativeAsset, IsConcrete, FilterAssetLocation},
 };
 use polkadot_parachain::primitives::Sibling;
-use xcm::v0::{MultiLocation, NetworkId, Junction};
+use xcm::v0::{MultiLocation, NetworkId, Junction, MultiAsset};
 use xcm_builder::{
 	ParentIsDefault, SiblingParachainConvertsVia, AccountId32Aliases, LocationInverter,
 	SovereignSignedViaLocation, SiblingParachainAsNative,
@@ -252,8 +252,21 @@ impl Config for XcmConfig {
 	type AssetTransactor = LocalAssetTransactor;
 	type OriginConverter = LocalOriginConverter;
 	type IsReserve = NativeAsset;
-	type IsTeleporter = ();
+	type IsTeleporter = TwoHundredOrThreeHundred;
 	type LocationInverter = LocationInverter<Ancestry>;
+}
+
+pub struct TwoHundredOrThreeHundred;
+impl FilterAssetLocation for TwoHundredOrThreeHundred {
+	fn filter_asset_location(_asset: &MultiAsset, origin: &MultiLocation) -> bool {
+		frame_support::debug::print!("filter_asset_location {:?}", origin);
+		true
+		/*matches!(
+			origin,
+			&MultiLocation::X2(Junction::Parent, Junction::Parachain { id })
+				if id == 200 || id == 300
+		)*/
+	}
 }
 
 impl cumulus_message_broker::Trait for Runtime {

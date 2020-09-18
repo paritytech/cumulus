@@ -28,7 +28,9 @@ use sp_inherents::{InherentData, InherentIdentifier, MakeFatalError, ProvideInhe
 use sp_runtime::traits::Hash;
 use codec::{Decode, Encode};
 use xcm::{VersionedXcm, v0::{Xcm, ExecuteXcm, SendXcm, MultiLocation, Junction, Error as XcmError}};
-use frame_support::{decl_event, decl_module, storage, traits::Get, weights::{DispatchClass, Weight}};
+use frame_support::{
+	decl_event, decl_module, storage, traits::Get, weights::{DispatchClass, Weight}, debug
+};
 use frame_system::ensure_none;
 use cumulus_primitives::{
 	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER}, well_known_keys, ParaId
@@ -111,6 +113,7 @@ decl_module! {
 			let max_messages = 10;
 			messages.iter().take(max_messages).for_each(|msg| {
 				let hash = T::Hashing::hash(&msg);
+				debug::print!("Processing downward message: {:?}", &hash);
 				match VersionedXcm::decode(&mut &msg[..]).map(Xcm::try_from) {
 					Ok(Ok(xcm)) => {
 						let event = match T::XcmExecutor::execute_xcm(Junction::Parent.into(), xcm) {
