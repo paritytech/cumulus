@@ -259,7 +259,6 @@ impl Config for XcmConfig {
 pub struct TwoHundredOrThreeHundred;
 impl FilterAssetLocation for TwoHundredOrThreeHundred {
 	fn filter_asset_location(_asset: &MultiAsset, origin: &MultiLocation) -> bool {
-		frame_support::debug::print!("filter_asset_location {:?}", origin);
 		matches!(
 			origin,
 			&MultiLocation::X2(Junction::Parent, Junction::Parachain { id })
