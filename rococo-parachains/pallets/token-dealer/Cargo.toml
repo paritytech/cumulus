@@ -15,7 +15,7 @@ cumulus-upward-message = { path = "../../../upward-message", default-features = 
 cumulus-primitives = { path = "../../../primitives", default-features = false }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch", default-features = false }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "poc-rococo", default-features = false }
 
 [features]
 default = ["std"]

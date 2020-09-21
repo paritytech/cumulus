@@ -9,14 +9,14 @@ edition = "2018"
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }
 
 # Polkadot deps
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch", default-features = false }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch", default-features = false }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", branch = "poc-rococo", default-features = false }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "poc-rococo", default-features = false }
 
 # All these should be optional dependenices, but given the perfect Cargo, it is not possible.
-polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch", default-features = false }
-kusama-runtime = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch", default-features = false }
-westend-runtime = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch", default-features = false }
-rococo-runtime = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch", default-features = false }
+polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "poc-rococo", default-features = false }
+kusama-runtime = { git = "https://github.com/paritytech/polkadot", branch = "poc-rococo", default-features = false }
+westend-runtime = { git = "https://github.com/paritytech/polkadot", branch = "poc-rococo", default-features = false }
+rococo-runtime = { git = "https://github.com/paritytech/polkadot", branch = "poc-rococo", default-features = false }
 
 [features]
 default = [ "std" ]

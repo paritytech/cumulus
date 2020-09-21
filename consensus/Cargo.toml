@@ -18,8 +18,8 @@ sp-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-bra
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "poc-rococo" }
+polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "poc-rococo" }
 
 # other deps
 futures = { version = "0.3.1", features = ["compat"] }
