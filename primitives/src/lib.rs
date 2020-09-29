@@ -26,8 +26,9 @@ pub use polkadot_core_primitives::DownwardMessage;
 /// Besides the `data` it also holds the `origin` of the message.
 pub use polkadot_parachain::primitives::UpwardMessage as GenericUpwardMessage;
 pub use polkadot_parachain::primitives::{
-	Id as ParaId, ParachainDispatchOrigin as UpwardMessageOrigin, ValidationData,
+	Id as ParaId, ParachainDispatchOrigin as UpwardMessageOrigin, ValidationParams,
 };
+pub use polkadot_primitives::v1::{ValidationData, PersistedValidationData, TransientValidationData};
 
 pub mod xcmp;
 
@@ -44,10 +45,10 @@ pub mod inherents {
 	/// The type of the inherent downward messages.
 	pub type DownwardMessagesType = sp_std::vec::Vec<crate::DownwardMessage>;
 
-	/// The identifier for the `validation_function_params` inherent.
-	pub const VALIDATION_FUNCTION_PARAMS_IDENTIFIER: InherentIdentifier = *b"valfunp0";
+	/// The identifier for the `set_validation_data` inherent.
+	pub const VALIDATION_DATA_IDENTIFIER: InherentIdentifier = *b"valfunp0";
 	/// The type of the inherent.
-	pub type ValidationFunctionParamsType = crate::ValidationData;
+	pub type ValidationDataType = crate::ValidationData;
 }
 
 /// Well known keys for values in the storage.

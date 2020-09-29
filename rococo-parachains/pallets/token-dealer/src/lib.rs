@@ -29,7 +29,6 @@ use cumulus_primitives::{
 	xcmp::{XCMPMessageHandler, XCMPMessageSender},
 	DownwardMessageHandler, ParaId, UpwardMessageOrigin, UpwardMessageSender,
 };
-use cumulus_upward_message::BalancesMessage;
 use polkadot_parachain::primitives::AccountIdConversion;
 
 #[derive(Encode, Decode)]

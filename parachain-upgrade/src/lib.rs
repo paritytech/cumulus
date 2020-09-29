@@ -30,9 +30,9 @@
 //! Users must ensure that they register this pallet as an inherent provider.
 
 use cumulus_primitives::{
-	inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER as INHERENT_IDENTIFIER,
-	OnValidationData, ValidationData,
+	inherents::VALIDATION_DATA_IDENTIFIER as INHERENT_IDENTIFIER,
 	well_known_keys::{NEW_VALIDATION_CODE, VALIDATION_DATA},
+	OnValidationData, ValidationData,
 };
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure, storage, weights::DispatchClass,
@@ -50,10 +50,8 @@ pub trait Trait: frame_system::Trait {
 	/// The overarching event type.
 	type Event: From<Event> + Into<<Self as frame_system::Trait>::Event>;
 
-	/// Something which can be notified when the validation function params are set.
-	///
-	/// Set this to `()` if not needed.
-	type OnValidationFunctionParams: OnValidationData;
+	/// Something which can be notified when the validation data is set.
+	type OnValidationData: OnValidationData;
 }
 
 // This pallet's storage items.
@@ -79,7 +77,8 @@ decl_module! {
 		// TODO: figure out a better weight than this
 		#[weight = (0, DispatchClass::Operational)]
 		pub fn schedule_upgrade(origin, validation_function: Vec<u8>) {
-			System::<T>::can_set_code(origin, &validation_function)?;
+			ensure_root(origin)?;
+			System::<T>::can_set_code(&validation_function)?;
 			Self::schedule_upgrade_impl(validation_function)?;
 		}
 
@@ -111,10 +110,10 @@ decl_module! {
 			// which means we can put the initialization logic here to remove the
 			// sequencing problem.
 			if let Some((apply_block, validation_function)) = PendingValidationFunction::get() {
-				if vfp.relay_chain_height >= apply_block {
+				if vfp.persisted.block_number >= apply_block {
 					PendingValidationFunction::kill();
 					Self::put_parachain_code(&validation_function);
-					Self::deposit_event(Event::ValidationFunctionApplied(vfp.relay_chain_height));
+					Self::deposit_event(Event::ValidationFunctionApplied(vfp.persisted.block_number));
 				}
 			}
 
@@ -159,22 +158,33 @@ impl<T: Trait> Module<T> {
 
 	/// `true` when a code upgrade is currently legal
 	pub fn can_set_code() -> bool {
-		Self::validation_function_params()
-			.map(|vfp| vfp.code_upgrade_allowed.is_some())
+		Self::validation_data()
+			.map(|vfp| vfp.transient.code_upgrade_allowed.is_some())
 			.unwrap_or_default()
 	}
 
 	/// The maximum code size permitted, in bytes.
 	pub fn max_code_size() -> Option<u32> {
-		Self::validation_function_params().map(|vfp| vfp.max_code_size)
+		Self::validation_data().map(|vfp| vfp.transient.max_code_size)
 	}
 
 	/// The implementation of the runtime upgrade scheduling.
-	fn schedule_upgrade_impl(validation_function: Vec<u8>) -> frame_support::dispatch::DispatchResult {
-		ensure!(!PendingValidationFunction::exists(), Error::<T>::OverlappingUpgrades);
+	fn schedule_upgrade_impl(
+		validation_function: Vec<u8>,
+	) -> frame_support::dispatch::DispatchResult {
+		ensure!(
+			!PendingValidationFunction::exists(),
+			Error::<T>::OverlappingUpgrades
+		);
 		let vfp = Self::validation_data().ok_or(Error::<T>::ValidationDataNotAvailable)?;
-		ensure!(validation_function.len() <= vfp.max_code_size as usize, Error::<T>::TooBig);
-		let apply_block = vfp.code_upgrade_allowed.ok_or(Error::<T>::ProhibitedByPolkadot)?;
+		ensure!(
+			validation_function.len() <= vfp.transient.max_code_size as usize,
+			Error::<T>::TooBig
+		);
+		let apply_block = vfp
+			.transient
+			.code_upgrade_allowed
+			.ok_or(Error::<T>::ProhibitedByPolkadot)?;
 
 		// When a code upgrade is scheduled, it has to be applied in two
 		// places, synchronized: both polkadot and the individual parachain
@@ -225,7 +235,7 @@ decl_error! {
 		/// The supplied validation function has compiled into a blob larger than Polkadot is willing to run
 		TooBig,
 		/// The inherent which supplies the validation data did not run this block
-		ValidationFunctionDataNotAvailable,
+		ValidationDataNotAvailable,
 	}
 }
 
@@ -250,6 +260,7 @@ mod tests {
 		Perbill,
 	};
 	use sp_version::RuntimeVersion;
+	use cumulus_primitives::{TransientValidationData, PersistedValidationData};
 
 	impl_outer_origin! {
 		pub enum Origin for Test where system = frame_system {}
@@ -315,7 +326,7 @@ mod tests {
 	}
 	impl Trait for Test {
 		type Event = TestEvent;
-		type OnValidationFunctionParams = ();
+		type OnValidationData = ();
 	}
 
 	type ParachainUpgrade = Module<Test>;
@@ -375,7 +386,7 @@ mod tests {
 		pending_upgrade: Option<RelayChainBlockNumber>,
 		ran: bool,
 		vfp_maker:
-			Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber) -> ValidationFunctionParams>>,
+			Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber) -> ValidationData>>,
 	}
 
 	impl BlockTests {
@@ -416,9 +427,9 @@ mod tests {
 			})
 		}
 
-		fn with_validation_function_params<F>(mut self, f: F) -> Self
+		fn with_validation_data<F>(mut self, f: F) -> Self
 		where
-			F: 'static + Fn(&BlockTests, RelayChainBlockNumber) -> ValidationFunctionParams,
+			F: 'static + Fn(&BlockTests, RelayChainBlockNumber) -> ValidationData,
 		{
 			self.vfp_maker = Some(Box::new(f));
 			self
@@ -451,18 +462,24 @@ mod tests {
 
 					// now mess with the storage the way validate_block does
 					let vfp = match self.vfp_maker {
-						None => ValidationFunctionParams {
-							max_code_size: 10 * 1024 * 1024, // 10 mb
-							relay_chain_height: *n as RelayChainBlockNumber,
-							code_upgrade_allowed: if self.pending_upgrade.is_some() {
-								None
-							} else {
-								Some(*n as RelayChainBlockNumber + 1000)
+						None => ValidationData {
+							persisted: PersistedValidationData {
+								block_number: *n as RelayChainBlockNumber,
+								..Default::default()
 							},
+							transient: TransientValidationData {
+								max_code_size: 10 * 1024 * 1024, // 10 mb
+								code_upgrade_allowed: if self.pending_upgrade.is_some() {
+									None
+								} else {
+									Some(*n as RelayChainBlockNumber + 1000)
+								},
+								..Default::default()
+							}
 						},
 						Some(ref maker) => maker(self, *n as RelayChainBlockNumber),
 					};
-					storage::unhashed::put(VALIDATION_FUNCTION_PARAMS, &vfp);
+					storage::unhashed::put(VALIDATION_DATA, &vfp);
 					storage::unhashed::kill(NEW_VALIDATION_CODE);
 
 					// It is insufficient to push the validation function params
@@ -489,7 +506,7 @@ mod tests {
 						if self.pending_upgrade.is_some() {
 							panic!("attempted to set validation code while upgrade was pending");
 						}
-						self.pending_upgrade = vfp.code_upgrade_allowed;
+						self.pending_upgrade = vfp.transient.code_upgrade_allowed;
 					}
 
 					// clean up
@@ -619,10 +636,16 @@ mod tests {
 	#[test]
 	fn checks_size() {
 		BlockTests::new()
-			.with_validation_function_params(|_, n| ValidationFunctionParams {
-				max_code_size: 32,
-				relay_chain_height: n,
-				code_upgrade_allowed: Some(n + 1000),
+			.with_validation_data(|_, n| ValidationData {
+				persisted: PersistedValidationData {
+					block_number: n,
+					..Default::default()
+				},
+				transient: TransientValidationData {
+					max_code_size: 32,
+					code_upgrade_allowed: Some(n + 1000),
+					..Default::default()
+				}
 			})
 			.add(123, || {
 				assert_eq!(
