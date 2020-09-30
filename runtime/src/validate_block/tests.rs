@@ -129,7 +129,6 @@ fn validate_block_with_extra_extrinsics() {
 	let parent_head = longest_chain.best_chain().expect("Best block exists");
 	let extra_extrinsics = vec![
 		transfer(&client, Alice, Bob, 69),
-		transfer(&client, Alice, Charlie, 100),
 		transfer(&client, Bob, Charlie, 100),
 		transfer(&client, Charlie, Alice, 500),
 	];
