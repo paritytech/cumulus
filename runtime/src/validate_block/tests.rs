@@ -30,7 +30,7 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT},
 };
 use test_client::{
-	runtime::{Block, Hash, Header, WASM_BINARY},
+	runtime::{Block, Hash, Header, WASM_BINARY, UncheckedExtrinsic},
 	Client, DefaultTestClientBuilderExt, LongestChain, PushInherents, TestClientBuilder,
 	TestClientBuilderExt,
 };
@@ -81,7 +81,7 @@ fn create_test_client() -> (Client, LongestChain) {
 		.build_with_longest_chain()
 }
 
-fn build_block_with_proof(client: &Client) -> (Block, sp_trie::StorageProof) {
+fn build_block_with_proof(client: &Client, extra_extrinsics: Vec<UncheckedExtrinsic>) -> (Block, sp_trie::StorageProof) {
 	let block_id = BlockId::Hash(client.info().best_hash);
 	let mut builder = client
 		.new_block_at(&block_id, Default::default(), true)
@@ -89,6 +89,10 @@ fn build_block_with_proof(client: &Client) -> (Block, sp_trie::StorageProof) {
 
 	builder
 		.cumulus_inherents(client)
+		.into_iter()
+		.for_each(|e| builder.push(e).expect("Pushes an extrinsic"));
+
+	extra_extrinsics
 		.into_iter()
 		.for_each(|e| builder.push(e).expect("Pushes an extrinsic"));
 
@@ -103,10 +107,34 @@ fn build_block_with_proof(client: &Client) -> (Block, sp_trie::StorageProof) {
 }
 
 #[test]
-fn validate_block_no_extrinsics() {
+fn validate_block_no_extra_extrinsics() {
 	let (client, longest_chain) = create_test_client();
 	let parent_head = longest_chain.best_chain().expect("Best block exists");
-	let (block, witness_data) = build_block_with_proof(&client);
+	let (block, witness_data) = build_block_with_proof(&client, vec![]);
+	let (header, extrinsics) = block.deconstruct();
+
+	let block_data = ParachainBlockData::new(header.clone(), extrinsics, witness_data);
+
+	let res_header = call_validate_block(parent_head, block_data).expect("Calls `validate_block`");
+	assert_eq!(header, res_header);
+}
+
+#[test]
+fn validate_block_with_extra_extrinsics() {
+	let (client, longest_chain) = create_test_client();
+	let parent_head = longest_chain.best_chain().expect("Best block exists");
+	let extra_extrinsics = vec![
+		/*
+		Transfer {
+			from: AccountKeyring::Alice.into(),
+			to: AccountKeyring::Bob.into(),
+			amount: 69,
+			nonce: 0,
+		}
+		.into_signed_tx(),
+		*/
+	];
+	let (block, witness_data) = build_block_with_proof(&client, extra_extrinsics);
 	let (header, extrinsics) = block.deconstruct();
 
 	let block_data = ParachainBlockData::new(header.clone(), extrinsics, witness_data);
@@ -120,7 +148,7 @@ fn validate_block_no_extrinsics() {
 fn validate_block_invalid_parent_hash() {
 	let (client, longest_chain) = create_test_client();
 	let parent_head = longest_chain.best_chain().expect("Best block exists");
-	let (block, witness_data) = build_block_with_proof(&client);
+	let (block, witness_data) = build_block_with_proof(&client, vec![]);
 	let (mut header, extrinsics) = block.deconstruct();
 	header.set_parent_hash(Hash::from_low_u64_be(1));
 
