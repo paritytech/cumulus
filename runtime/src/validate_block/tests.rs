@@ -25,13 +25,14 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::SelectChain;
 use sp_core::traits::CallInWasm;
 use sp_io::TestExternalities;
+use sp_keyring::AccountKeyring::*;
 use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, Header as HeaderT},
 };
 use test_client::{
-	runtime::{Block, Hash, Header, WASM_BINARY, UncheckedExtrinsic},
-	Client, DefaultTestClientBuilderExt, LongestChain, PushInherents, TestClientBuilder,
+	runtime::{Block, Hash, Header, UncheckedExtrinsic, WASM_BINARY},
+	transfer, Client, DefaultTestClientBuilderExt, LongestChain, PushInherents, TestClientBuilder,
 	TestClientBuilderExt,
 };
 
@@ -81,7 +82,10 @@ fn create_test_client() -> (Client, LongestChain) {
 		.build_with_longest_chain()
 }
 
-fn build_block_with_proof(client: &Client, extra_extrinsics: Vec<UncheckedExtrinsic>) -> (Block, sp_trie::StorageProof) {
+fn build_block_with_proof(
+	client: &Client,
+	extra_extrinsics: Vec<UncheckedExtrinsic>,
+) -> (Block, sp_trie::StorageProof) {
 	let block_id = BlockId::Hash(client.info().best_hash);
 	let mut builder = client
 		.new_block_at(&block_id, Default::default(), true)
@@ -124,16 +128,12 @@ fn validate_block_with_extra_extrinsics() {
 	let (client, longest_chain) = create_test_client();
 	let parent_head = longest_chain.best_chain().expect("Best block exists");
 	let extra_extrinsics = vec![
-		/*
-		Transfer {
-			from: AccountKeyring::Alice.into(),
-			to: AccountKeyring::Bob.into(),
-			amount: 69,
-			nonce: 0,
-		}
-		.into_signed_tx(),
-		*/
+		transfer(&client, Alice, Bob, 69),
+		transfer(&client, Alice, Charlie, 100),
+		transfer(&client, Bob, Charlie, 100),
+		transfer(&client, Charlie, Alice, 500),
 	];
+
 	let (block, witness_data) = build_block_with_proof(&client, extra_extrinsics);
 	let (header, extrinsics) = block.deconstruct();
 

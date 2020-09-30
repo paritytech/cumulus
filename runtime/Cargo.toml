@@ -36,7 +36,6 @@ sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "rococo
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # Cumulus dependencies
-cumulus-test-runtime = { path = "../test/runtime" }
 test-client = { package = "cumulus-test-client", path = "../test/client" }
 
 [features]

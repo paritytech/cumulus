@@ -20,13 +20,19 @@ mod block_builder;
 
 pub use block_builder::*;
 
+use codec::Encode;
 pub use runtime;
-use runtime::{Block, GenesisConfig};
+use runtime::{
+	Balance, Block, BlockHashCount, Call, GenesisConfig, Runtime, Signature, SignedExtra,
+	SignedPayload, UncheckedExtrinsic, VERSION,
+};
 use sc_service::client;
+use sp_blockchain::HeaderBackend;
 use sp_core::{map, storage::Storage, twox_128, ChangesTrieConfiguration};
 use sp_runtime::{
+	generic::Era,
 	traits::{Block as BlockT, Hash as HashT, Header as HeaderT},
-	BuildStorage,
+	BuildStorage, SaturatedConversion,
 };
 use std::collections::BTreeMap;
 pub use test_client::*;
@@ -67,8 +73,6 @@ pub struct GenesisParameters {
 
 impl test_client::GenesisInit for GenesisParameters {
 	fn genesis_storage(&self) -> Storage {
-		use codec::Encode;
-
 		let changes_trie_config: Option<ChangesTrieConfiguration> = if self.support_changes_trie {
 			Some(sp_test_primitives::changes_trie_config())
 		} else {
@@ -139,4 +143,52 @@ fn additional_storage_with_genesis(genesis_block: &Block) -> BTreeMap<Vec<u8>, V
 	map![
 		twox_128(&b"latest"[..]).to_vec() => genesis_block.hash().as_fixed_bytes().to_vec()
 	]
+}
+
+/// Transfer some token from one account to another using a provided test `Client`.
+pub fn transfer(
+	client: &Client,
+	origin: sp_keyring::AccountKeyring,
+	dest: sp_keyring::AccountKeyring,
+	value: Balance,
+) -> UncheckedExtrinsic {
+	let function = Call::Balances(pallet_balances::Call::transfer(dest.public().into(), value));
+
+	let current_block_hash = client.info().best_hash;
+	let current_block = client.info().best_number.saturated_into();
+	let genesis_block = client.hash(0).unwrap().unwrap();
+	let nonce = 0;
+	let period = BlockHashCount::get()
+		.checked_next_power_of_two()
+		.map(|c| c / 2)
+		.unwrap_or(2) as u64;
+	let tip = 0;
+	let extra: SignedExtra = (
+		frame_system::CheckSpecVersion::<Runtime>::new(),
+		frame_system::CheckGenesis::<Runtime>::new(),
+		frame_system::CheckEra::<Runtime>::from(Era::mortal(period, current_block)),
+		frame_system::CheckNonce::<Runtime>::from(nonce),
+		frame_system::CheckWeight::<Runtime>::new(),
+		pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
+	);
+	let raw_payload = SignedPayload::from_raw(
+		function.clone(),
+		extra.clone(),
+		(
+			VERSION.spec_version,
+			genesis_block,
+			current_block_hash,
+			(),
+			(),
+			(),
+		),
+	);
+	let signature = raw_payload.using_encoded(|e| origin.sign(e));
+
+	UncheckedExtrinsic::new_signed(
+		function.clone(),
+		origin.public().into(),
+		Signature::Sr25519(signature.clone()),
+		extra.clone(),
+	)
 }

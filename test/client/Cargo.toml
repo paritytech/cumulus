@@ -19,6 +19,9 @@ sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "roco
 sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
 
 # Cumulus dependencies
 cumulus-test-service = { path = "../service" }

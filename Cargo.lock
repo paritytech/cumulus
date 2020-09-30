@@ -1218,7 +1218,6 @@ version = "0.1.0"
 dependencies = [
  "cumulus-primitives",
  "cumulus-test-client",
- "cumulus-test-runtime",
  "frame-executive",
  "hash-db",
  "memory-db",
@@ -1267,6 +1266,9 @@ dependencies = [
  "cumulus-primitives",
  "cumulus-test-runtime",
  "cumulus-test-service",
+ "frame-system",
+ "pallet-balances",
+ "pallet-transaction-payment",
  "parity-scale-codec",
  "sc-block-builder",
  "sc-client-api",
