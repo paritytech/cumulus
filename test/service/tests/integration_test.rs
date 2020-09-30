@@ -17,8 +17,6 @@
 use cumulus_primitives::ParaId;
 use cumulus_test_service::initial_head_data;
 use futures::join;
-use polkadot_primitives::v0::{Info, Scheduling};
-use polkadot_runtime_common::registrar;
 use sc_service::TaskExecutor;
 use substrate_test_runtime_client::AccountKeyring::*;
 
@@ -41,23 +39,18 @@ async fn integration_test(task_executor: TaskExecutor) {
 	// ensure alice and bob can produce blocks
 	join!(alice.wait_for_blocks(2), bob.wait_for_blocks(2));
 
-	// call function to register the parachain
-	let function = polkadot_test_runtime::Call::Sudo(pallet_sudo::Call::sudo(Box::new(
-		polkadot_test_runtime::Call::Registrar(registrar::Call::register_para(
+	// register parachain
+	alice
+		.register_para(
 			para_id,
-			Info {
-				scheduling: Scheduling::Always,
-			},
 			cumulus_test_runtime::WASM_BINARY
 				.expect("You need to build the WASM binary to run this test!")
 				.to_vec()
 				.into(),
 			initial_head_data(para_id),
-		)),
-	)));
-
-	// register parachain
-	let _ = alice.call_function(function, Alice).await.unwrap();
+		)
+		.await
+		.unwrap();
 
 	// run cumulus charlie (a validator)
 	let charlie = cumulus_test_service::run_test_node(

@@ -58,7 +58,6 @@ futures = { version = "0.3.5" }
 tokio = { version = "0.2.21", features = ["macros"] }
 
 # Polkadot dependencies
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
 polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
 polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
 
