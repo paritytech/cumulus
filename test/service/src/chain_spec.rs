@@ -17,12 +17,12 @@
 #![allow(missing_docs)]
 
 use cumulus_primitives::ParaId;
+use cumulus_test_runtime::{AccountId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, ChangesTrieConfiguration, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use test_primitives::{AccountId, Signature};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<cumulus_test_runtime::GenesisConfig, Extensions>;

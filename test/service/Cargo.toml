@@ -48,7 +48,6 @@ cumulus-network = { path = "../../network" }
 cumulus-primitives = { path = "../../primitives" }
 cumulus-service = { path = "../../service" }
 cumulus-test-runtime = { path = "../runtime" }
-test-primitives = { path = "../primitives" }
 
 # RPC related dependencies
 jsonrpc-core = "14.2.0"

@@ -32,7 +32,7 @@ use cumulus_primitives::ParaId;
 use cumulus_service::{
 	prepare_node_config, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
-use cumulus_test_runtime::RuntimeApi;
+use cumulus_test_runtime::{NodeBlock as Block, RuntimeApi};
 use polkadot_primitives::v0::CollatorPair;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_client_api::BlockBackend;
@@ -56,7 +56,6 @@ use sp_state_machine::BasicExternalities;
 use sp_trie::PrefixedMemoryDB;
 use std::sync::Arc;
 use substrate_test_client::BlockchainEventsExt;
-use test_primitives::Block;
 
 // Native executor instance.
 native_executor_instance!(

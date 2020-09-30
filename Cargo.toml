@@ -15,7 +15,6 @@ members = [
 	"service",
 	"test/runtime",
 	"test/client",
-	"test/primitives",
 	"test/service",
 	"upward-message",
 ]

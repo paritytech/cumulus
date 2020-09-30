@@ -35,7 +35,6 @@ cumulus-parachain-upgrade = { path = "../../parachain-upgrade", default-features
 cumulus-primitives = { path = "../../primitives", default-features = false }
 cumulus-runtime = { path = "../../runtime", default-features = false }
 cumulus-upward-message = { path = "../../upward-message", default-features = false }
-test-primitives = { path = "../primitives", default-features = false }
 
 # Polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch", default-features = false }
@@ -72,7 +71,6 @@ std = [
 	"sp-std/std",
 	"sp-transaction-pool/std",
 	"sp-version/std",
-	"test-primitives/std",
 ]
 # Will be enabled by the `wasm-builder` when building the runtime for WASM.
 runtime-wasm = [
