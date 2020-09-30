@@ -14,30 +14,29 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use sp_core::{ExecutionContext};
-use sp_runtime::{
-	generic::BlockId,
-};
-use sp_api::{ProvideRuntimeApi, ApiExt, BlockT};
+use crate::Client;
 use sc_block_builder::{BlockBuilder, BlockBuilderApi};
-use crate::{Client, Backend};
 use sc_client_api::backend;
+use sp_api::{ApiExt, BlockT, ProvideRuntimeApi};
 use sp_blockchain::Error;
-use crate::runtime::{NodeBlock as Block};
+use sp_core::ExecutionContext;
+use sp_runtime::generic::BlockId;
 
 /// Push the inherents to a block so you don't have to.
 pub trait PushInherents {
 	/// Push the inherents to a block so you don't have to.
-	fn push_inherents(&mut self, client: &Client);
+	fn cumulus_inherents(&mut self, client: &Client) -> Vec<runtime::UncheckedExtrinsic>;
 }
 
-impl<'a, A> PushInherents for BlockBuilder<'a, Block, A, Backend>
+impl<'a, Block, A, B> PushInherents for BlockBuilder<'a, Block, A, B>
 where
+	Block: BlockT,
 	A: ProvideRuntimeApi<Block> + 'a,
-	A::Api: BlockBuilderApi<Block, Error = Error> +
-		ApiExt<Block, StateBackend = backend::StateBackendFor<Backend, Block>>,
+	A::Api: BlockBuilderApi<Block, Error = Error>
+		+ ApiExt<Block, StateBackend = backend::StateBackendFor<B, Block>>,
+	B: backend::Backend<Block>,
 {
-	fn push_inherents(&mut self, client: &Client) {
+	fn cumulus_inherents(&mut self, client: &Client) -> Vec<runtime::UncheckedExtrinsic> {
 		let mut inherent_data = sp_consensus::InherentData::new();
 		let timestamp = runtime::MinimumPeriod::get();
 
@@ -47,7 +46,8 @@ where
 		inherent_data
 			.put_data(
 				cumulus_primitives::inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER,
-				&cumulus_primitives::validation_function_params::ValidationFunctionParams::default(),
+				&cumulus_primitives::validation_function_params::ValidationFunctionParams::default(
+				),
 			)
 			.expect("Put validation function params failed");
 
@@ -59,7 +59,5 @@ where
 				inherent_data,
 			)
 			.expect("Get inherents failed")
-			.into_iter()
-			.for_each(|e| self.push(e.into()).expect("Pushes an extrinsic"));
 	}
 }
