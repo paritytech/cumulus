@@ -30,6 +30,7 @@ parachain = { package = "polkadot-parachain", git = "https://github.com/parityte
 sc-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-branch" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }

@@ -17,22 +17,23 @@
 use crate::ParachainBlockData;
 
 use parachain::primitives::{BlockData, HeadData, ValidationParams, ValidationResult};
-use sc_block_builder::BlockBuilderProvider;
+use sc_block_builder::{BlockBuilderApi, BlockBuilderProvider};
 use sc_executor::{
 	error::Result, sp_wasm_interface::HostFunctions, WasmExecutionMethod, WasmExecutor,
 };
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::SelectChain;
-use sp_core::traits::CallInWasm;
+use sp_core::{traits::CallInWasm, ExecutionContext};
 use sp_io::TestExternalities;
 use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, Header as HeaderT},
 };
 use test_client::{
-	runtime::{Block, Hash, Header, WASM_BINARY, UncheckedExtrinsic},
-	Client, DefaultTestClientBuilderExt, LongestChain, PushInherents, TestClientBuilder,
-	TestClientBuilderExt,
+	runtime::{Block, Hash, Header, WASM_BINARY, UncheckedExtrinsic}, PushInherents,
+	Client, DefaultTestClientBuilderExt, LongestChain, TestClientBuilder, TestClientBuilderExt,
+	PushInherents,
 };
 
 use codec::{Decode, Encode};
@@ -87,8 +88,27 @@ fn build_block_with_proof(client: &Client, extra_extrinsics: Vec<UncheckedExtrin
 		.new_block_at(&block_id, Default::default(), true)
 		.expect("Initializes new block");
 
-	builder
-		.cumulus_inherents(client)
+	builder.push_inherents(client);
+
+	let mut inherent_data = sp_consensus::InherentData::new();
+	let timestamp = cumulus_test_runtime::MinimumPeriod::get();
+	inherent_data
+		.put_data(sp_timestamp::INHERENT_IDENTIFIER, &timestamp)
+		.expect("Put timestamp failed");
+	inherent_data
+		.put_data(
+			cumulus_primitives::inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER,
+			&cumulus_primitives::validation_function_params::ValidationFunctionParams::default(),
+		)
+		.expect("Put validation function params failed");
+	client
+		.runtime_api()
+		.inherent_extrinsics_with_context(
+			&BlockId::number(0),
+			ExecutionContext::BlockConstruction,
+			inherent_data,
+		)
+		.expect("Get inherents failed")
 		.into_iter()
 		.for_each(|e| builder.push(e).expect("Pushes an extrinsic"));
 
