@@ -53,9 +53,9 @@ sc-informant = { git = "https://github.com/paritytech/substrate", branch = "mast
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-contracts-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # RPC related dependencies
-cumulus-pallet-contracts-rpc = { path = "./pallets/contracts/rpc" }
 jsonrpc-core = "14.2.0"
 
 # Cumulus dependencies

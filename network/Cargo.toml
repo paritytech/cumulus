@@ -17,6 +17,9 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # cumulus deps
 cumulus-primitives = { path = "../primitives" }

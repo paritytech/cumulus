@@ -202,23 +202,6 @@ impl cumulus_parachain_upgrade::Trait for Runtime {
 	type OnValidationFunctionParams = ();
 }
 
-impl cumulus_message_broker::Trait for Runtime {
-	type Event = Event;
-	type DownwardMessageHandlers = TokenDealer;
-	type UpwardMessage = cumulus_upward_message::RococoUpwardMessage;
-	type ParachainId = ParachainInfo;
-	type XCMPMessage = cumulus_token_dealer::XCMPMessage<AccountId, Balance>;
-	type XCMPMessageHandlers = TokenDealer;
-}
-
-impl cumulus_token_dealer::Trait for Runtime {
-	type Event = Event;
-	type UpwardMessageSender = MessageBroker;
-	type UpwardMessage = cumulus_upward_message::RococoUpwardMessage;
-	type Currency = Balances;
-	type XCMPMessageSender = MessageBroker;
-}
-
 impl parachain_info::Trait for Runtime {}
 
 construct_runtime! {
@@ -233,8 +216,6 @@ construct_runtime! {
 		Sudo: pallet_sudo::{Module, Call, Storage, Config<T>, Event<T>},
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
-		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
-		TokenDealer: cumulus_token_dealer::{Module, Call, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		ParachainInfo: parachain_info::{Module, Storage, Config},
 	}

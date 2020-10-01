@@ -8,7 +8,6 @@ edition = '2018'
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "1.3.0", default-features = false, features = ["derive"] }
 
-cumulus-token-dealer = { path = "../pallets/token-dealer", default-features = false}
 parachain-info = { path = "../pallets/parachain-info", default-features = false}
 rococo-parachain-primitives = { path = "../primitives", default-features = false}
 
@@ -24,6 +23,9 @@ sp-offchain = { git = "https://github.com/paritytech/substrate", default-feature
 sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-contracts = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-contracts-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -33,11 +35,6 @@ pallet-randomness-collective-flip = { git = "https://github.com/paritytech/subst
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-
-# In-Tree Fork of seal that does not use child trie nor storage transactions
-cumulus-pallet-contracts = { path = "../pallets/contracts", default-features = false }
-cumulus-pallet-contracts-primitives = {  path = "../pallets/contracts/common", default-features = false }
-cumulus-pallet-contracts-rpc-runtime-api = { path = "../pallets/contracts/rpc/runtime-api", default-features = false }
 
 # Cumulus dependencies
 cumulus-runtime = { path = "../../runtime", default-features = false }
@@ -70,9 +67,9 @@ std = [
 	"frame-executive/std",
 	"frame-system/std",
 	"pallet-balances/std",
-	"cumulus-pallet-contracts/std",
-	"cumulus-pallet-contracts-primitives/std",
-	"cumulus-pallet-contracts-rpc-runtime-api/std",
+	"pallet-contracts/std",
+	"pallet-contracts-primitives/std",
+	"pallet-contracts-rpc-runtime-api/std",
 	"pallet-randomness-collective-flip/std",
 	"pallet-timestamp/std",
 	"pallet-sudo/std",
@@ -83,5 +80,4 @@ std = [
 	"cumulus-parachain-upgrade/std",
 	"cumulus-primitives/std",
 	"polkadot-parachain/std",
-	"cumulus-token-dealer/std",
 ]

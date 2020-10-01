@@ -7,7 +7,6 @@ members = [
 	"rococo-parachains/",
 	"rococo-parachains/contracts-runtime",
 	"rococo-parachains/pallets/parachain-info",
-	"rococo-parachains/pallets/token-dealer",
 	"rococo-parachains/primitives",
 	"rococo-parachains/runtime",
 	"runtime",

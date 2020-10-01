@@ -33,17 +33,18 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT},
 };
 
-use polkadot_collator::Network as CollatorNetwork;
-use polkadot_network::legacy::gossip::{GossipMessage, GossipStatement};
-use polkadot_primitives::v0::{Block as PBlock, Hash as PHash, Id as ParaId, ParachainHost};
-use polkadot_statement_table::v0::{SignedStatement, Statement};
-use polkadot_validation::check_statement;
+use polkadot_overseer::OverseerHandler;
+use polkadot_primitives::v0::{
+	Block as PBlock, Hash as PHash, Id as ParaId, ParachainHost,
+};
+use polkadot_node_primitives::{Statement, SignedFullStatement};
+use polkadot_node_subsystem::messages::{StatementDistributionMessage, AllMessages};
 
 use cumulus_primitives::HeadData;
 
 use codec::{Decode, Encode};
-use futures::{channel::oneshot, future::FutureExt, pin_mut, select, StreamExt};
-use log::trace;
+use futures::{channel::oneshot, future::FutureExt, pin_mut, select, StreamExt, channel::mpsc};
+use log::{trace, warn};
 
 use parking_lot::Mutex;
 use std::{marker::PhantomData, sync::Arc};
@@ -127,47 +128,40 @@ where
 			});
 		}
 
-		// Check data is a gossip message.
-		let gossip_message = GossipMessage::decode(&mut data).map_err(|_| {
+		let signed_stmt = SignedFullStatement::decode(&mut data).map_err(|_| {
 			Box::new(ClientError::BadJustification(
-				"cannot decode block announced justification, must be a gossip message".to_string(),
+				"cannot decode block announcement justification, must be a `SignedFullStatement`".to_string(),
 			)) as Box<_>
 		})?;
 
-		// Check message is a gossip statement.
-		let gossip_statement = match gossip_message {
-			GossipMessage::Statement(gossip_statement) => gossip_statement,
+
+		// Check statement is a candidate statement.
+		let candidate_receipt = match signed_stmt.payload() {
+			Statement::Seconded(ref candidate_receipt) => candidate_receipt,
 			_ => {
 				return Err(Box::new(ClientError::BadJustification(
-					"block announced justification statement must be a gossip statement"
+					"block announcement justification must be a `Statement::Seconded`"
 						.to_string(),
 				)) as Box<_>)
 			}
 		};
 
-		let GossipStatement {
-			relay_chain_leaf,
-			signed_statement: SignedStatement {
-				statement,
-				signature,
-				sender,
-			},
-		} = gossip_statement;
-
 		// Check that the relay chain parent of the block is the relay chain head
 		let best_number = polkadot_info.best_number;
+		let validator_index = signed_stmt.validator_index();
+		let relay_parent = &candidate_receipt.descriptor.relay_parent;
 
-		match self.polkadot_client.number(relay_chain_leaf) {
+		match self.polkadot_client.number(*relay_parent) {
 			Err(err) => {
 				return Err(Box::new(ClientError::Backend(format!(
 					"could not find block number for {}: {}",
-					relay_chain_leaf, err,
+					relay_parent, err,
 				))));
 			}
 			Ok(Some(x)) if x == best_number => {}
 			Ok(None) => {
 				return Err(Box::new(ClientError::UnknownBlock(
-					relay_chain_leaf.to_string(),
+					relay_parent.to_string(),
 				)));
 			}
 			Ok(Some(_)) => {
@@ -175,14 +169,15 @@ where
 					target: "cumulus-network",
 					"validation failed because the relay chain parent ({}) is not the relay chain \
 					head ({})",
-					relay_chain_leaf, best_number,
+					relay_parent,
+					best_number,
 				);
 
 				return Ok(Validation::Failure);
 			}
 		}
 
-		let runtime_api_block_id = BlockId::Hash(relay_chain_leaf);
+		let runtime_api_block_id = BlockId::Hash(*relay_parent);
 		let signing_context = runtime_api
 			.signing_context(&runtime_api_block_id)
 			.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?;
@@ -191,30 +186,19 @@ where
 		let authorities = runtime_api
 			.validators(&runtime_api_block_id)
 			.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?;
-		let signer = authorities.get(sender as usize).ok_or_else(|| {
+		let signer = authorities.get(validator_index as usize).ok_or_else(|| {
 			Box::new(ClientError::BadJustification(
-				"block accounced justification signer is a validator index out of bound"
+				"block accouncement justification signer is a validator index out of bound"
 					.to_string(),
 			)) as Box<_>
 		})?;
 
 		// Check statement is correctly signed.
-		if !check_statement(&statement, &signature, signer.clone(), &signing_context) {
+		if signed_stmt.check_signature(&signing_context, &signer).is_err() {
 			return Err(Box::new(ClientError::BadJustification(
 				"block announced justification signature is invalid".to_string(),
 			)) as Box<_>);
 		}
-
-		// Check statement is a candidate statement.
-		let candidate_receipt = match statement {
-			Statement::Candidate(candidate_receipt) => candidate_receipt,
-			_ => {
-				return Err(Box::new(ClientError::BadJustification(
-					"block announced justification statement must be a candidate statement"
-						.to_string(),
-				)) as Box<_>)
-			}
-		};
 
 		// Check the header in the candidate_receipt match header given header.
 		if header.encode() != candidate_receipt.head_data.0 {
@@ -273,7 +257,7 @@ impl<B: BlockT> BlockAnnounceValidator<B> for DelayedBlockAnnounceValidator<B> {
 pub struct WaitToAnnounce<Block: BlockT> {
 	spawner: Arc<dyn SpawnNamed + Send + Sync>,
 	announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
-	collator_network: Arc<dyn CollatorNetwork>,
+	overseer_handler: OverseerHandler,
 	current_trigger: oneshot::Sender<()>,
 }
 
@@ -282,14 +266,14 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 	pub fn new(
 		spawner: Arc<dyn SpawnNamed + Send + Sync>,
 		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
-		collator_network: Arc<dyn CollatorNetwork>,
+		overseer_handler: OverseerHandler,
 	) -> WaitToAnnounce<Block> {
 		let (tx, _rx) = oneshot::channel();
 
 		WaitToAnnounce {
 			spawner,
 			announce_block,
-			collator_network,
+			overseer_handler,
 			current_trigger: tx,
 		}
 	}
@@ -298,13 +282,12 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 	/// message will be added as justification to the block announcement.
 	pub fn wait_to_announce(
 		&mut self,
-		hash: <Block as BlockT>::Hash,
-		relay_chain_leaf: PHash,
-		head_data: Vec<u8>,
+		block_hash: <Block as BlockT>::Hash,
+		pov_hash: PHash,
 	) {
 		let (tx, rx) = oneshot::channel();
 		let announce_block = self.announce_block.clone();
-		let collator_network = self.collator_network.clone();
+		let overseer_handler = self.overseer_handler.clone();
 
 		self.current_trigger = tx;
 
@@ -312,11 +295,10 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 			"cumulus-wait-to-announce",
 			async move {
 				let t1 = wait_to_announce::<Block>(
-					hash,
-					relay_chain_leaf,
+					block_hash,
+					pov_hash,
 					announce_block,
-					collator_network,
-					&head_data,
+					overseer_handler,
 				)
 				.fuse();
 				let t2 = rx.fuse();
@@ -349,24 +331,24 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 }
 
 async fn wait_to_announce<Block: BlockT>(
-	hash: <Block as BlockT>::Hash,
-	relay_chain_leaf: PHash,
+	block_hash: <Block as BlockT>::Hash,
+	pov_hash: PHash,
 	announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
-	collator_network: Arc<dyn CollatorNetwork>,
-	head_data: &Vec<u8>,
+	mut overseer_handler: OverseerHandler,
 ) {
-	let mut checked_statements = collator_network.checked_statements(relay_chain_leaf);
+	let (sender, mut receiver) = mpsc::channel(5);
+	if overseer_handler.send_msg(AllMessages::StatementDistribution(StatementDistributionMessage::RegisterStatementListener(sender))).await.is_err() {
+		warn!(
+			target: "cumulus-network",
+			"Failed to register the statement listener!",
+		);
+		return
+	}
 
-	while let Some(statement) = checked_statements.next().await {
-		match &statement.statement {
-			Statement::Candidate(c) if &c.head_data.0 == head_data => {
-				let gossip_message: GossipMessage = GossipStatement {
-					relay_chain_leaf,
-					signed_statement: statement,
-				}
-				.into();
-
-				announce_block(hash, gossip_message.encode());
+	while let Some(statement) = receiver.next().await {
+		match &statement.payload() {
+			Statement::Seconded(c) if &c.descriptor.pov_hash == &pov_hash => {
+				announce_block(block_hash, statement.encode());
 
 				break;
 			}
