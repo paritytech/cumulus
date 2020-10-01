@@ -93,6 +93,10 @@ pub struct Cli {
 	#[structopt(flatten)]
 	pub run: RunCmd,
 
+	/// Run a collator node.
+	#[structopt(long)]
+	pub collator: bool,
+
 	/// Relaychain arguments
 	#[structopt(raw = true)]
 	pub relaychain_args: Vec<String>,
