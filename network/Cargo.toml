@@ -14,9 +14,9 @@ sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-start-cumulus" }
-polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-start-cumulus" }
-polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-start-cumulus" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # cumulus deps
 cumulus-primitives = { path = "../primitives" }
@@ -36,4 +36,4 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # polkadot deps
-polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-start-cumulus" }
+polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }

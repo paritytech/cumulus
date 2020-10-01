@@ -142,7 +142,7 @@ impl frame_system::Trait for Runtime {
 	/// Runtime version.
 	type Version = Version;
 	/// Converts a module to an index of this module in the runtime.
-	type ModuleToIndex = ModuleToIndex;
+	type PalletInfo = PalletInfo;
 	type AccountData = pallet_balances::AccountData<Balance>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
