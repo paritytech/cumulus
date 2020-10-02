@@ -19,7 +19,7 @@ use crate::{
 	cli::{Cli, RelayChainCli, Subcommand},
 };
 use codec::Encode;
-use cumulus_primitives::{genesis::generate_genesis_state, ParaId};
+use cumulus_primitives::{genesis::generate_genesis_block, ParaId};
 use log::info;
 use parachain_runtime::Block;
 use polkadot_parachain::primitives::AccountIdConversion;
@@ -188,7 +188,7 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::ExportGenesisState(params)) => {
 			sc_cli::init_logger("");
 
-			let block: Block = generate_genesis_state(&load_spec(
+			let block: Block = generate_genesis_block(&load_spec(
 				&params.chain.clone().unwrap_or_default(),
 				params.parachain_id.into(),
 			)?)?;
@@ -241,7 +241,7 @@ pub fn run() -> Result<()> {
 					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
 
 				let block: Block =
-					generate_genesis_state(&config.chain_spec).map_err(|e| format!("{:?}", e))?;
+					generate_genesis_block(&config.chain_spec).map_err(|e| format!("{:?}", e))?;
 				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
 				let task_executor = config.task_executor.clone();

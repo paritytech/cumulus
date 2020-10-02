@@ -18,7 +18,7 @@ use codec::Encode;
 use sc_service::ChainSpec;
 use sp_runtime::traits::{Block as BlockT, Hash as HashT, Header as HeaderT, Zero};
 
-pub fn generate_genesis_state<Block: BlockT>(
+pub fn generate_genesis_block<Block: BlockT>(
 	chain_spec: &Box<dyn ChainSpec>,
 ) -> Result<Block, String> {
 	let storage = chain_spec.build_storage()?;
