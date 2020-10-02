@@ -245,6 +245,7 @@ mod tests {
 	use super::*;
 
 	use codec::Encode;
+	use cumulus_primitives::{PersistedValidationData, TransientValidationData};
 	use frame_support::{
 		assert_ok,
 		dispatch::UnfilteredDispatchable,
@@ -260,7 +261,6 @@ mod tests {
 		Perbill,
 	};
 	use sp_version::RuntimeVersion;
-	use cumulus_primitives::{TransientValidationData, PersistedValidationData};
 
 	impl_outer_origin! {
 		pub enum Origin for Test where system = frame_system {}
@@ -385,8 +385,7 @@ mod tests {
 		tests: Vec<BlockTest>,
 		pending_upgrade: Option<RelayChainBlockNumber>,
 		ran: bool,
-		vfp_maker:
-			Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber) -> ValidationData>>,
+		vfp_maker: Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber) -> ValidationData>>,
 	}
 
 	impl BlockTests {
@@ -475,7 +474,7 @@ mod tests {
 									Some(*n as RelayChainBlockNumber + 1000)
 								},
 								..Default::default()
-							}
+							},
 						},
 						Some(ref maker) => maker(self, *n as RelayChainBlockNumber),
 					};
@@ -645,7 +644,7 @@ mod tests {
 					max_code_size: 32,
 					code_upgrade_allowed: Some(n + 1000),
 					..Default::default()
-				}
+				},
 			})
 			.add(123, || {
 				assert_eq!(

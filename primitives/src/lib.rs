@@ -28,7 +28,9 @@ pub use polkadot_parachain::primitives::UpwardMessage as GenericUpwardMessage;
 pub use polkadot_parachain::primitives::{
 	Id as ParaId, ParachainDispatchOrigin as UpwardMessageOrigin, ValidationParams,
 };
-pub use polkadot_primitives::v1::{ValidationData, PersistedValidationData, TransientValidationData};
+pub use polkadot_primitives::v1::{
+	PersistedValidationData, TransientValidationData, ValidationData,
+};
 
 pub mod xcmp;
 
@@ -59,10 +61,10 @@ pub mod well_known_keys {
 	pub const UPWARD_MESSAGES: &'static [u8] = b":cumulus_upward_messages:";
 
 	/// Current validation data.
-	pub const VALIDATION_DATA: &'static [u8] = b":cumulus_validation_function_params";
+	pub const VALIDATION_DATA: &'static [u8] = b":cumulus_validation_data:";
 
 	/// Code upgarde (set as appropriate by a pallet).
-	pub const NEW_VALIDATION_CODE: &'static [u8] = b":cumulus_new_validation_code";
+	pub const NEW_VALIDATION_CODE: &'static [u8] = b":cumulus_new_validation_code:";
 
 	/// The storage key for the processed downward messages.
 	///

@@ -33,17 +33,22 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT},
 };
 
+use polkadot_node_primitives::{SignedFullStatement, Statement};
+use polkadot_node_subsystem::messages::StatementDistributionMessage;
 use polkadot_overseer::OverseerHandler;
-use polkadot_primitives::v0::{
-	Block as PBlock, Hash as PHash, Id as ParaId, ParachainHost,
+use polkadot_primitives::v1::{
+	Block as PBlock, Hash as PHash, Id as ParaId, OccupiedCoreAssumption, ParachainHost,
+	SigningContext,
 };
-use polkadot_node_primitives::{Statement, SignedFullStatement};
-use polkadot_node_subsystem::messages::{StatementDistributionMessage, AllMessages};
 
 use cumulus_primitives::HeadData;
 
 use codec::{Decode, Encode};
-use futures::{channel::oneshot, future::FutureExt, pin_mut, select, StreamExt, channel::mpsc};
+use futures::{
+	channel::{mpsc, oneshot},
+	future::FutureExt,
+	pin_mut, select, StreamExt,
+};
 use log::{trace, warn};
 
 use parking_lot::Mutex;
@@ -100,7 +105,11 @@ where
 			let block_number = header.number();
 
 			let local_validation_data = runtime_api
-				.local_validation_data(&runtime_api_block_id, self.para_id)
+				.persisted_validation_data(
+					&runtime_api_block_id,
+					self.para_id,
+					OccupiedCoreAssumption::TimedOut,
+				)
 				.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?
 				.ok_or_else(|| {
 					Box::new(ClientError::Msg(
@@ -130,18 +139,17 @@ where
 
 		let signed_stmt = SignedFullStatement::decode(&mut data).map_err(|_| {
 			Box::new(ClientError::BadJustification(
-				"cannot decode block announcement justification, must be a `SignedFullStatement`".to_string(),
+				"cannot decode block announcement justification, must be a `SignedFullStatement`"
+					.to_string(),
 			)) as Box<_>
 		})?;
-
 
 		// Check statement is a candidate statement.
 		let candidate_receipt = match signed_stmt.payload() {
 			Statement::Seconded(ref candidate_receipt) => candidate_receipt,
 			_ => {
 				return Err(Box::new(ClientError::BadJustification(
-					"block announcement justification must be a `Statement::Seconded`"
-						.to_string(),
+					"block announcement justification must be a `Statement::Seconded`".to_string(),
 				)) as Box<_>)
 			}
 		};
@@ -178,9 +186,14 @@ where
 		}
 
 		let runtime_api_block_id = BlockId::Hash(*relay_parent);
-		let signing_context = runtime_api
-			.signing_context(&runtime_api_block_id)
+		let session_index = runtime_api
+			.session_index_for_child(&runtime_api_block_id)
 			.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?;
+
+		let signing_context = SigningContext {
+			parent_hash: *relay_parent,
+			session_index,
+		};
 
 		// Check that the signer is a legit validator.
 		let authorities = runtime_api
@@ -194,14 +207,17 @@ where
 		})?;
 
 		// Check statement is correctly signed.
-		if signed_stmt.check_signature(&signing_context, &signer).is_err() {
+		if signed_stmt
+			.check_signature(&signing_context, &signer)
+			.is_err()
+		{
 			return Err(Box::new(ClientError::BadJustification(
 				"block announced justification signature is invalid".to_string(),
 			)) as Box<_>);
 		}
 
 		// Check the header in the candidate_receipt match header given header.
-		if header.encode() != candidate_receipt.head_data.0 {
+		if header.encode() != candidate_receipt.commitments.head_data.0 {
 			return Err(Box::new(ClientError::BadJustification(
 				"block announced header does not match the one justified".to_string(),
 			)) as Box<_>);
@@ -280,11 +296,7 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 
 	/// Wait for a candidate message for the block, then announce the block. The candidate
 	/// message will be added as justification to the block announcement.
-	pub fn wait_to_announce(
-		&mut self,
-		block_hash: <Block as BlockT>::Hash,
-		pov_hash: PHash,
-	) {
+	pub fn wait_to_announce(&mut self, block_hash: <Block as BlockT>::Hash, pov_hash: PHash) {
 		let (tx, rx) = oneshot::channel();
 		let announce_block = self.announce_block.clone();
 		let overseer_handler = self.overseer_handler.clone();
@@ -337,12 +349,18 @@ async fn wait_to_announce<Block: BlockT>(
 	mut overseer_handler: OverseerHandler,
 ) {
 	let (sender, mut receiver) = mpsc::channel(5);
-	if overseer_handler.send_msg(AllMessages::StatementDistribution(StatementDistributionMessage::RegisterStatementListener(sender))).await.is_err() {
+	if overseer_handler
+		.send_msg(StatementDistributionMessage::RegisterStatementListener(
+			sender,
+		))
+		.await
+		.is_err()
+	{
 		warn!(
 			target: "cumulus-network",
 			"Failed to register the statement listener!",
 		);
-		return
+		return;
 	}
 
 	while let Some(statement) = receiver.next().await {
