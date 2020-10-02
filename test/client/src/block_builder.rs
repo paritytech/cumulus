@@ -19,15 +19,22 @@ use cumulus_primitives::{
 	inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER,
 	validation_function_params::ValidationFunctionParams,
 };
+use runtime::GetLastTimestamp;
 use sc_block_builder::BlockBuilderApi;
 use sp_api::ProvideRuntimeApi;
+use sp_blockchain::HeaderBackend;
 use sp_core::ExecutionContext;
 use sp_runtime::generic::BlockId;
 
 /// Generate the inherents to a block so you don't have to.
 pub fn generate_block_inherents(client: &Client) -> Vec<runtime::UncheckedExtrinsic> {
 	let mut inherent_data = sp_consensus::InherentData::new();
-	let timestamp = runtime::MinimumPeriod::get();
+	let block_id = BlockId::Hash(client.info().best_hash);
+	let timestamp = (client
+		.runtime_api()
+		.get_last_timestamp(&block_id)
+		.expect("Get last timestamp")
+		+ runtime::MinimumPeriod::get());
 
 	inherent_data
 		.put_data(sp_timestamp::INHERENT_IDENTIFIER, &timestamp)

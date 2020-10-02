@@ -22,7 +22,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use sp_api::impl_runtime_apis;
+use sp_api::{decl_runtime_apis, impl_runtime_apis};
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
@@ -272,6 +272,13 @@ pub type Executive = frame_executive::Executive<
 /// The payload being signed in transactions.
 pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
 
+decl_runtime_apis! {
+	pub trait GetLastTimestamp {
+		/// Returns the last timestamp of a runtime.
+		fn get_last_timestamp() -> u64;
+	}
+}
+
 impl_runtime_apis! {
 	impl sp_api::Core<Block> for Runtime {
 		fn version() -> RuntimeVersion {
@@ -341,6 +348,12 @@ impl_runtime_apis! {
 
 		fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
 			SessionKeys::generate(seed)
+		}
+	}
+
+	impl crate::GetLastTimestamp<Block> for Runtime {
+		fn get_last_timestamp() -> u64 {
+			<pallet_timestamp::Module<Self>>::now()
 		}
 	}
 }
