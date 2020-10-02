@@ -30,11 +30,11 @@ use sp_runtime::generic::BlockId;
 pub fn generate_block_inherents(client: &Client) -> Vec<runtime::UncheckedExtrinsic> {
 	let mut inherent_data = sp_consensus::InherentData::new();
 	let block_id = BlockId::Hash(client.info().best_hash);
-	let timestamp = (client
+	let last_timestamp = client
 		.runtime_api()
 		.get_last_timestamp(&block_id)
-		.expect("Get last timestamp")
-		+ runtime::MinimumPeriod::get());
+		.expect("Get last timestamp");
+	let timestamp = last_timestamp + runtime::MinimumPeriod::get();
 
 	inherent_data
 		.put_data(sp_timestamp::INHERENT_IDENTIFIER, &timestamp)
