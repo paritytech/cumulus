@@ -22,7 +22,7 @@ use substrate_test_runtime_client::AccountKeyring::*;
 
 #[substrate_test_utils::test]
 #[ignore]
-async fn integration_test(task_executor: TaskExecutor) {
+async fn test_collating_and_non_collator_mode_catching_up(task_executor: TaskExecutor) {
 	let para_id = ParaId::from(100);
 
 	// start alice
