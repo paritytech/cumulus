@@ -145,15 +145,12 @@ fn additional_storage_with_genesis(genesis_block: &Block) -> BTreeMap<Vec<u8>, V
 	]
 }
 
-/// Transfer some token from one account to another using a provided test `Client`.
-pub fn transfer(
+/// Generate an extrinsic from the provided function call, origin and [`Client`].
+pub fn generate_extrinsic(
 	client: &Client,
 	origin: sp_keyring::AccountKeyring,
-	dest: sp_keyring::AccountKeyring,
-	value: Balance,
+	function: Call,
 ) -> UncheckedExtrinsic {
-	let function = Call::Balances(pallet_balances::Call::transfer(dest.public().into(), value));
-
 	let current_block_hash = client.info().best_hash;
 	let current_block = client.info().best_number.saturated_into();
 	let genesis_block = client.hash(0).unwrap().unwrap();
@@ -191,4 +188,16 @@ pub fn transfer(
 		Signature::Sr25519(signature.clone()),
 		extra.clone(),
 	)
+}
+
+/// Transfer some token from one account to another using a provided test [`Client`].
+pub fn transfer(
+	client: &Client,
+	origin: sp_keyring::AccountKeyring,
+	dest: sp_keyring::AccountKeyring,
+	value: Balance,
+) -> UncheckedExtrinsic {
+	let function = Call::Balances(pallet_balances::Call::transfer(dest.public().into(), value));
+
+	generate_extrinsic(client, origin, function)
 }
