@@ -31,8 +31,9 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT},
 };
 use test_client::{
+	generate_block_inherents,
 	runtime::{Block, Hash, Header, UncheckedExtrinsic, WASM_BINARY},
-	transfer, Client, DefaultTestClientBuilderExt, LongestChain, PushInherents, TestClientBuilder,
+	transfer, Client, DefaultTestClientBuilderExt, LongestChain, TestClientBuilder,
 	TestClientBuilderExt,
 };
 
@@ -91,8 +92,7 @@ fn build_block_with_proof(
 		.new_block_at(&block_id, Default::default(), true)
 		.expect("Initializes new block");
 
-	builder
-		.cumulus_inherents(client)
+	generate_block_inherents(client)
 		.into_iter()
 		.for_each(|e| builder.push(e).expect("Pushes an inherent"));
 

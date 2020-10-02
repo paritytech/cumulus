@@ -19,48 +19,32 @@ use cumulus_primitives::{
 	inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER,
 	validation_function_params::ValidationFunctionParams,
 };
-use sc_block_builder::{BlockBuilder, BlockBuilderApi};
-use sc_client_api::backend;
-use sp_api::{ApiExt, BlockT, ProvideRuntimeApi};
-use sp_blockchain::Error;
+use sc_block_builder::BlockBuilderApi;
+use sp_api::ProvideRuntimeApi;
 use sp_core::ExecutionContext;
 use sp_runtime::generic::BlockId;
 
-/// Push the inherents to a block so you don't have to.
-pub trait PushInherents {
-	/// Push the inherents to a block so you don't have to.
-	fn cumulus_inherents(&mut self, client: &Client) -> Vec<runtime::UncheckedExtrinsic>;
-}
+/// Generate the inherents to a block so you don't have to.
+pub fn generate_block_inherents(client: &Client) -> Vec<runtime::UncheckedExtrinsic> {
+	let mut inherent_data = sp_consensus::InherentData::new();
+	let timestamp = runtime::MinimumPeriod::get();
 
-impl<'a, Block, A, B> PushInherents for BlockBuilder<'a, Block, A, B>
-where
-	Block: BlockT,
-	A: ProvideRuntimeApi<Block> + 'a,
-	A::Api: BlockBuilderApi<Block, Error = Error>
-		+ ApiExt<Block, StateBackend = backend::StateBackendFor<B, Block>>,
-	B: backend::Backend<Block>,
-{
-	fn cumulus_inherents(&mut self, client: &Client) -> Vec<runtime::UncheckedExtrinsic> {
-		let mut inherent_data = sp_consensus::InherentData::new();
-		let timestamp = runtime::MinimumPeriod::get();
+	inherent_data
+		.put_data(sp_timestamp::INHERENT_IDENTIFIER, &timestamp)
+		.expect("Put timestamp failed");
+	inherent_data
+		.put_data(
+			VALIDATION_FUNCTION_PARAMS_IDENTIFIER,
+			&ValidationFunctionParams::default(),
+		)
+		.expect("Put validation function params failed");
 
-		inherent_data
-			.put_data(sp_timestamp::INHERENT_IDENTIFIER, &timestamp)
-			.expect("Put timestamp failed");
-		inherent_data
-			.put_data(
-				VALIDATION_FUNCTION_PARAMS_IDENTIFIER,
-				&ValidationFunctionParams::default(),
-			)
-			.expect("Put validation function params failed");
-
-		client
-			.runtime_api()
-			.inherent_extrinsics_with_context(
-				&BlockId::number(0),
-				ExecutionContext::BlockConstruction,
-				inherent_data,
-			)
-			.expect("Get inherents failed")
-	}
+	client
+		.runtime_api()
+		.inherent_extrinsics_with_context(
+			&BlockId::number(0),
+			ExecutionContext::BlockConstruction,
+			inherent_data,
+		)
+		.expect("Get inherents failed")
 }
