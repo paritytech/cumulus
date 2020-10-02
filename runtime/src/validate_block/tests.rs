@@ -94,7 +94,7 @@ fn build_block_with_proof(
 	builder
 		.cumulus_inherents(client)
 		.into_iter()
-		.for_each(|e| builder.push(e).expect("Pushes an extrinsic"));
+		.for_each(|e| builder.push(e).expect("Pushes an inherent"));
 
 	extra_extrinsics
 		.into_iter()

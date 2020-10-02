@@ -15,6 +15,10 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::Client;
+use cumulus_primitives::{
+	inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER,
+	validation_function_params::ValidationFunctionParams,
+};
 use sc_block_builder::{BlockBuilder, BlockBuilderApi};
 use sc_client_api::backend;
 use sp_api::{ApiExt, BlockT, ProvideRuntimeApi};
@@ -45,9 +49,8 @@ where
 			.expect("Put timestamp failed");
 		inherent_data
 			.put_data(
-				cumulus_primitives::inherents::VALIDATION_FUNCTION_PARAMS_IDENTIFIER,
-				&cumulus_primitives::validation_function_params::ValidationFunctionParams::default(
-				),
+				VALIDATION_FUNCTION_PARAMS_IDENTIFIER,
+				&ValidationFunctionParams::default(),
 			)
 			.expect("Put validation function params failed");
 
