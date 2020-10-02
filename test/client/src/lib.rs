@@ -139,6 +139,12 @@ fn genesis_config(changes_trie_config: Option<ChangesTrieConfiguration>) -> Gene
 	cumulus_test_service::local_testnet_genesis(changes_trie_config)
 }
 
+fn additional_storage_with_genesis(genesis_block: &Block) -> BTreeMap<Vec<u8>, Vec<u8>> {
+	map![
+		twox_128(&b"latest"[..]).to_vec() => genesis_block.hash().as_fixed_bytes().to_vec()
+	]
+}
+
 /// Transfer some token from one account to another using a provided test `Client`.
 pub fn transfer(
 	client: &Client,
