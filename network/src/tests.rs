@@ -32,6 +32,7 @@ use sp_consensus::block_validation::BlockAnnounceValidator;
 use sp_core::H256;
 use sp_keyring::Sr25519Keyring;
 use sp_runtime::traits::{NumberFor, Zero};
+use futures::executor::block_on;
 
 #[derive(Clone)]
 struct DummyCollatorNetwork;
@@ -120,7 +121,7 @@ fn valid_if_no_data_and_less_than_best_known_number() {
 		number: 0,
 		..default_header()
 	};
-	let res = validator.validate(&header, &[]);
+	let res = block_on(validator.validate(&header, &[]));
 
 	assert_eq!(
 		res.unwrap(),
@@ -136,7 +137,7 @@ fn invalid_if_no_data_exceeds_best_known_number() {
 		number: 1,
 		..default_header()
 	};
-	let res = validator.validate(&header, &[]);
+	let res = block_on(validator.validate(&header, &[]));
 
 	assert_eq!(
 		res.unwrap(),
@@ -149,8 +150,8 @@ fn invalid_if_no_data_exceeds_best_known_number() {
 fn check_statement_is_encoded_correctly() {
 	let mut validator = make_validator();
 	let header = default_header();
-	let res = validator
-		.validate(&header, &[0x42])
+	let res = block_on(validator
+		.validate(&header, &[0x42]))
 		.err()
 		.expect("Should fail on invalid encoded statement");
 
@@ -166,7 +167,7 @@ fn check_relay_parent_is_head() {
 	let relay_chain_leaf = H256::zero();
 	let (gossip_message, header) = make_gossip_message_and_header(client, relay_chain_leaf, 0);
 	let data = gossip_message.encode();
-	let res = validator.validate(&header, data.as_slice());
+	let res = block_on(validator.validate(&header, data.as_slice()));
 
 	assert_eq!(
 		res.unwrap(),
@@ -181,8 +182,8 @@ fn check_relay_parent_actually_exists() {
 	let relay_parent = H256::from_low_u64_be(42);
 	let (signed_statement, header) = make_gossip_message_and_header(client, relay_parent, 0);
 	let data = signed_statement.encode();
-	let res = validator
-		.validate(&header, &data)
+	let res = block_on(validator
+		.validate(&header, &data))
 		.err()
 		.expect("Should fail on unknown relay parent");
 
@@ -198,8 +199,8 @@ fn check_relay_parent_fails_if_cannot_retrieve_number() {
 	let relay_parent = H256::from_low_u64_be(0xdead);
 	let (signed_statement, header) = make_gossip_message_and_header(client, relay_parent, 0);
 	let data = signed_statement.encode();
-	let res = validator
-		.validate(&header, &data)
+	let res = block_on(validator
+		.validate(&header, &data))
 		.err()
 		.expect("Should fail when the relay chain number could not be retrieved");
 
@@ -217,8 +218,8 @@ fn check_signer_is_legit_validator() {
 	let (signed_statement, header) = make_gossip_message_and_header(client, relay_parent, 1);
 	let data = signed_statement.encode();
 
-	let res = validator
-		.validate(&header, &data)
+	let res = block_on(validator
+		.validate(&header, &data))
 		.err()
 		.expect("Should fail on invalid validator");
 
@@ -241,8 +242,8 @@ fn check_statement_is_correctly_signed() {
 	let last = data.len() - 1;
 	data[last] = data[last].wrapping_add(1);
 
-	let res = validator
-		.validate(&header, &data)
+	let res = block_on(validator
+		.validate(&header, &data))
 		.err()
 		.expect("Validation should fail if the statement is not signed correctly");
 
@@ -273,8 +274,8 @@ fn check_statement_seconded() {
 	let signed_statement = SignedFullStatement::sign(statement, &signing_context, 0, &key);
 	let data = signed_statement.encode();
 
-	let res = validator
-		.validate(&header, &data)
+	let res = block_on(validator
+		.validate(&header, &data))
 		.err()
 		.expect("validation should fail if not seconded statement");
 
@@ -293,8 +294,8 @@ fn check_header_match_candidate_receipt_header() {
 	let data = signed_statement.encode();
 	header.number = 300;
 
-	let res = validator
-		.validate(&header, &data)
+	let res = block_on(validator
+		.validate(&header, &data))
 		.err()
 		.expect("validation should fail if the header in doesn't match");
 

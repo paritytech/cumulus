@@ -46,10 +46,8 @@ fn call_validate_block(
 	let params = ValidationParams {
 		block_data: BlockData(block_data.encode()),
 		parent_head: HeadData(parent_head.encode()),
-		code_upgrade_allowed: None,
-		max_code_size: 1024,
-		max_head_data_size: 1024,
 		relay_chain_height: 1,
+		hrmp_mqc_heads: Vec::new(),
 	}
 	.encode();
 

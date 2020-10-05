@@ -46,13 +46,13 @@ use cumulus_primitives::HeadData;
 use codec::{Decode, Encode};
 use futures::{
 	channel::{mpsc, oneshot},
-	future::FutureExt,
+	future::{ready, FutureExt}, Future,
 	pin_mut, select, StreamExt,
 };
 use log::{trace, warn};
 
 use parking_lot::Mutex;
-use std::{marker::PhantomData, sync::Arc};
+use std::{marker::PhantomData, sync::Arc, pin::Pin};
 
 /// Validate that data is a valid justification from a relay-chain validator that the block is a
 /// valid parachain-block candidate.
@@ -84,73 +84,82 @@ impl<B, P> JustifiedBlockAnnounceValidator<B, P> {
 
 impl<B: BlockT, P> BlockAnnounceValidator<B> for JustifiedBlockAnnounceValidator<B, P>
 where
-	P: ProvideRuntimeApi<PBlock> + HeaderBackend<PBlock>,
+	P: ProvideRuntimeApi<PBlock> + HeaderBackend<PBlock> + 'static,
 	P::Api: ParachainHost<PBlock>,
 {
 	fn validate(
 		&mut self,
 		header: &B::Header,
 		mut data: &[u8],
-	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
+	) -> Pin<Box<dyn Future<Output = Result<Validation, Box<dyn std::error::Error + Send>>> + Send>> {
 		if self.polkadot_sync_oracle.is_major_syncing() {
-			return Ok(Validation::Success { is_new_best: false });
+			return ready(Ok(Validation::Success { is_new_best: false })).boxed();
 		}
 
 		let runtime_api = self.polkadot_client.runtime_api();
 		let polkadot_info = self.polkadot_client.info();
 
 		if data.is_empty() {
-			// Check if block is equal or higher than best (this requires a justification)
-			let runtime_api_block_id = BlockId::Hash(polkadot_info.best_hash);
-			let block_number = header.number();
+			let polkadot_client = self.polkadot_client.clone();
+			let header = header.clone();
+			let para_id = self.para_id;
 
-			let local_validation_data = runtime_api
-				.persisted_validation_data(
-					&runtime_api_block_id,
-					self.para_id,
-					OccupiedCoreAssumption::TimedOut,
-				)
-				.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?
+			return async move {
+				// Check if block is equal or higher than best (this requires a justification)
+				let runtime_api_block_id = BlockId::Hash(polkadot_info.best_hash);
+				let block_number = header.number();
+
+				let local_validation_data = polkadot_client.runtime_api()
+					.persisted_validation_data(
+						&runtime_api_block_id,
+						para_id,
+						OccupiedCoreAssumption::TimedOut,
+					)
+					.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?
 				.ok_or_else(|| {
 					Box::new(ClientError::Msg(
 						"Could not find parachain head in relay chain".into(),
 					)) as Box<_>
 				})?;
-			let parent_head = HeadData::<B>::decode(&mut &local_validation_data.parent_head.0[..])
-				.map_err(|e| {
-					Box::new(ClientError::Msg(format!(
-						"Failed to decode parachain head: {:?}",
-						e
-					))) as Box<_>
-				})?;
-			let known_best_number = parent_head.header.number();
+				let parent_head = HeadData::<B>::decode(&mut &local_validation_data.parent_head.0[..])
+					.map_err(|e| {
+						Box::new(ClientError::Msg(format!(
+							"Failed to decode parachain head: {:?}",
+							e
+						))) as Box<_>
+					})?;
+				let known_best_number = parent_head.header.number();
 
-			return Ok(if block_number >= known_best_number {
-				trace!(
-					target: "cumulus-network",
-					"validation failed because a justification is needed if the block at the top of the chain."
-				);
+				if block_number >= known_best_number {
+					trace!(
+						target: "cumulus-network",
+						"validation failed because a justification is needed if the block at the top of the chain."
+					);
 
-				Validation::Failure
-			} else {
-				Validation::Success { is_new_best: false }
-			});
+					Ok(Validation::Failure)
+				} else {
+					Ok(Validation::Success { is_new_best: false })
+				}
+			}.boxed()
 		}
 
-		let signed_stmt = SignedFullStatement::decode(&mut data).map_err(|_| {
-			Box::new(ClientError::BadJustification(
+		let signed_stmt = match SignedFullStatement::decode(&mut data) {
+			Ok(r) => r,
+			Err(_) => return ready(
+			Err(Box::new(ClientError::BadJustification(
 				"cannot decode block announcement justification, must be a `SignedFullStatement`"
 					.to_string(),
-			)) as Box<_>
-		})?;
+			)) as Box<_>)
+		).boxed(),
+		};
 
 		// Check statement is a candidate statement.
 		let candidate_receipt = match signed_stmt.payload() {
 			Statement::Seconded(ref candidate_receipt) => candidate_receipt,
 			_ => {
-				return Err(Box::new(ClientError::BadJustification(
+				return ready(Err(Box::new(ClientError::BadJustification(
 					"block announcement justification must be a `Statement::Seconded`".to_string(),
-				)) as Box<_>)
+				)) as Box<_>)).boxed()
 			}
 		};
 
@@ -161,16 +170,16 @@ where
 
 		match self.polkadot_client.number(*relay_parent) {
 			Err(err) => {
-				return Err(Box::new(ClientError::Backend(format!(
+				return ready(Err(Box::new(ClientError::Backend(format!(
 					"could not find block number for {}: {}",
 					relay_parent, err,
-				))));
+				))) as Box<_>)).boxed();
 			}
 			Ok(Some(x)) if x == best_number => {}
 			Ok(None) => {
-				return Err(Box::new(ClientError::UnknownBlock(
+				return ready(Err(Box::new(ClientError::UnknownBlock(
 					relay_parent.to_string(),
-				)));
+				)) as Box<_>)).boxed();
 			}
 			Ok(Some(_)) => {
 				trace!(
@@ -181,14 +190,16 @@ where
 					best_number,
 				);
 
-				return Ok(Validation::Failure);
+				return ready(Ok(Validation::Failure)).boxed();
 			}
 		}
 
 		let runtime_api_block_id = BlockId::Hash(*relay_parent);
-		let session_index = runtime_api
-			.session_index_for_child(&runtime_api_block_id)
-			.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?;
+		let session_index = match runtime_api
+			.session_index_for_child(&runtime_api_block_id) {
+				Ok(r) => r,
+				Err(e) => return ready(Err(Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)).boxed(),
+			};
 
 		let signing_context = SigningContext {
 			parent_hash: *relay_parent,
@@ -196,34 +207,37 @@ where
 		};
 
 		// Check that the signer is a legit validator.
-		let authorities = runtime_api
-			.validators(&runtime_api_block_id)
-			.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?;
-		let signer = authorities.get(validator_index as usize).ok_or_else(|| {
-			Box::new(ClientError::BadJustification(
+		let authorities = match runtime_api
+			.validators(&runtime_api_block_id) {
+				Ok(r) => r,
+				Err(e) => return ready(Err(Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)).boxed(),
+			};
+		let signer = match authorities.get(validator_index as usize) {
+			Some(r) => r,
+			None => return ready(Err(Box::new(ClientError::BadJustification(
 				"block accouncement justification signer is a validator index out of bound"
 					.to_string(),
-			)) as Box<_>
-		})?;
+			)) as Box<_>)).boxed(),
+		};
 
 		// Check statement is correctly signed.
 		if signed_stmt
 			.check_signature(&signing_context, &signer)
 			.is_err()
 		{
-			return Err(Box::new(ClientError::BadJustification(
+			return ready(Err(Box::new(ClientError::BadJustification(
 				"block announced justification signature is invalid".to_string(),
-			)) as Box<_>);
+			)) as Box<_>)).boxed()
 		}
 
 		// Check the header in the candidate_receipt match header given header.
 		if header.encode() != candidate_receipt.commitments.head_data.0 {
-			return Err(Box::new(ClientError::BadJustification(
+			return ready(Err(Box::new(ClientError::BadJustification(
 				"block announced header does not match the one justified".to_string(),
-			)) as Box<_>);
+			)) as Box<_>)).boxed();
 		}
 
-		Ok(Validation::Success { is_new_best: true })
+		ready(Ok(Validation::Success { is_new_best: true })).boxed()
 	}
 }
 
@@ -254,12 +268,12 @@ impl<B: BlockT> BlockAnnounceValidator<B> for DelayedBlockAnnounceValidator<B> {
 		&mut self,
 		header: &B::Header,
 		data: &[u8],
-	) -> Result<Validation, Box<dyn std::error::Error + Send>> {
+	) -> Pin<Box<dyn Future<Output = Result<Validation, Box<dyn std::error::Error + Send>>> + Send>> {
 		match self.0.lock().as_mut() {
 			Some(validator) => validator.validate(header, data),
 			None => {
 				log::warn!("BlockAnnounce validator not yet set, rejecting block announcement");
-				Ok(Validation::Failure)
+				ready(Ok(Validation::Failure)).boxed()
 			}
 		}
 	}
