@@ -22,9 +22,9 @@ use cumulus_network::{
 use cumulus_primitives::{
 	inherents::{
 		DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER,
-		VALIDATION_FUNCTION_PARAMS_IDENTIFIER as VFP_IDENT,
+		VALIDATION_DATA_IDENTIFIER,
 	},
-	validation_function_params::ValidationFunctionParams,
+	ValidationData,
 	HeadData,
 };
 use cumulus_runtime::ParachainBlockData;
@@ -43,13 +43,12 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, Header as HeaderT},
 };
 
-use polkadot_collator::{
-	BuildParachainContext, Network as CollatorNetwork, ParachainContext, RuntimeApiCollection,
+use polkadot_primitives::v1::{
+	self as parachain, Block as PBlock, BlockData,
+	Hash as PHash, Id as ParaId,
 };
-use polkadot_primitives::v0::{
-	self as parachain, Block as PBlock, BlockData, DownwardMessage, GlobalValidationData,
-	Hash as PHash, Id as ParaId, LocalValidationData,
-};
+use polkadot_overseer::OverseerHandler;
+use polkadot_node_primitives::Collation;
 
 use codec::{Decode, Encode};
 
@@ -70,82 +69,6 @@ pub struct Collator<Block: BlockT, PF, BI, BS> {
 	block_import: Arc<Mutex<BI>>,
 	block_status: Arc<BS>,
 	wait_to_announce: Arc<Mutex<WaitToAnnounce<Block>>>,
-}
-
-impl<Block: BlockT, PF, BI, BS> Collator<Block, PF, BI, BS> {
-	/// Create a new instance.
-	fn new(
-		proposer_factory: PF,
-		inherent_data_providers: InherentDataProviders,
-		collator_network: impl CollatorNetwork + Clone + 'static,
-		block_import: BI,
-		block_status: Arc<BS>,
-		spawner: Arc<dyn SpawnNamed + Send + Sync>,
-		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
-	) -> Self {
-		let collator_network = Arc::new(collator_network);
-		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(
-			spawner,
-			announce_block,
-			collator_network.clone(),
-		)));
-
-		Self {
-			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
-			inherent_data_providers,
-			_phantom: PhantomData,
-			collator_network,
-			block_import: Arc::new(Mutex::new(block_import)),
-			block_status,
-			wait_to_announce,
-		}
-	}
-
-	/// Get the inherent data with validation function parameters injected
-	fn inherent_data(
-		inherent_providers: InherentDataProviders,
-		global_validation: GlobalValidationData,
-		local_validation: LocalValidationData,
-		downward_messages: DownwardMessagesType,
-	) -> Option<InherentData> {
-		let mut inherent_data = inherent_providers
-			.create_inherent_data()
-			.map_err(|e| {
-				error!(
-					target: "cumulus-collator",
-					"Failed to create inherent data: {:?}",
-					e,
-				)
-			})
-			.ok()?;
-
-		inherent_data
-			.put_data(
-				VFP_IDENT,
-				&ValidationFunctionParams::from((global_validation, local_validation)),
-			)
-			.map_err(|e| {
-				error!(
-					target: "cumulus-collator",
-					"Failed to put validation function params into inherent data: {:?}",
-					e,
-				)
-			})
-			.ok()?;
-
-		inherent_data
-			.put_data(DOWNWARD_MESSAGES_IDENTIFIER, &downward_messages)
-			.map_err(|e| {
-				error!(
-					target: "cumulus-collator",
-					"Failed to put downward messages into inherent data: {:?}",
-					e,
-				)
-			})
-			.ok()?;
-
-		Some(inherent_data)
-	}
 }
 
 impl<Block: BlockT, PF, BI, BS> Clone for Collator<Block, PF, BI, BS> {
@@ -176,6 +99,79 @@ where
 		+ 'static,
 	BS: BlockBackend<Block>,
 {
+	/// Create a new instance.
+	fn new(
+		proposer_factory: PF,
+		inherent_data_providers: InherentDataProviders,
+		collator_network: impl CollatorNetwork + Clone + 'static,
+		block_import: BI,
+		block_status: Arc<BS>,
+		spawner: Arc<dyn SpawnNamed + Send + Sync>,
+		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
+	) -> Self {
+		let collator_network = Arc::new(collator_network);
+		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(
+			spawner,
+			announce_block,
+			overseer_handler,
+		)));
+
+		Self {
+			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
+			inherent_data_providers,
+			_phantom: PhantomData,
+			collator_network,
+			block_import: Arc::new(Mutex::new(block_import)),
+			block_status,
+			wait_to_announce,
+		}
+	}
+
+	/// Get the inherent data with validation function parameters injected
+	fn inherent_data(
+		inherent_providers: InherentDataProviders,
+		validation_data: &ValidationData,
+		downward_messages: DownwardMessagesType,
+	) -> Option<InherentData> {
+		let mut inherent_data = inherent_providers
+			.create_inherent_data()
+			.map_err(|e| {
+				error!(
+					target: "cumulus-collator",
+					"Failed to create inherent data: {:?}",
+					e,
+				)
+			})
+			.ok()?;
+
+		inherent_data
+			.put_data(
+				VALIDATION_DATA_IDENTIFIER,
+				validation_data,
+			)
+			.map_err(|e| {
+				error!(
+					target: "cumulus-collator",
+					"Failed to put validation function params into inherent data: {:?}",
+					e,
+				)
+			})
+			.ok()?;
+
+		inherent_data
+			.put_data(DOWNWARD_MESSAGES_IDENTIFIER, &downward_messages)
+			.map_err(|e| {
+				error!(
+					target: "cumulus-collator",
+					"Failed to put downward messages into inherent data: {:?}",
+					e,
+				)
+			})
+			.ok()?;
+
+		Some(inherent_data)
+	}
+
 	/// Checks the status of the given block hash in the Parachain.
 	///
 	/// Returns `true` if the block could be found and is good to be build on.
@@ -216,253 +212,138 @@ where
 			}
 		}
 	}
-}
 
-impl<Block, PF, BI, BS> ParachainContext for Collator<Block, PF, BI, BS>
-where
-	Block: BlockT,
-	PF: Environment<Block> + 'static + Send,
-	PF::Proposer: Send,
-	BI: BlockImport<
-			Block,
-			Error = ConsensusError,
-			Transaction = <PF::Proposer as Proposer<Block>>::Transaction,
-		> + Send
-		+ Sync
-		+ 'static,
-	BS: BlockBackend<Block>,
-{
-	type ProduceCandidate =
-		Pin<Box<dyn Future<Output = Option<(BlockData, parachain::HeadData)>> + Send>>;
-
-	fn produce_candidate(
+	async fn produce_candidate(
 		&mut self,
-		relay_chain_parent: PHash,
-		global_validation: GlobalValidationData,
-		local_validation: LocalValidationData,
-		downward_messages: Vec<DownwardMessage>,
-	) -> Self::ProduceCandidate {
-		let factory = self.proposer_factory.clone();
-		let inherent_providers = self.inherent_data_providers.clone();
-		let block_import = self.block_import.clone();
-
+		validation_data: &ValidationData,
+	) -> Option<Collation> {
 		trace!(target: "cumulus-collator", "Producing candidate");
 
 		let last_head = match HeadData::<Block>::decode(&mut &local_validation.parent_head.0[..]) {
 			Ok(x) => x,
 			Err(e) => {
 				error!(target: "cumulus-collator", "Could not decode the head data: {:?}", e);
-				return Box::pin(future::ready(None));
+				return None
 			}
 		};
 
 		if !self.check_block_status(last_head.header.hash()) {
-			return future::ready(None).boxed();
+			return None
 		}
 
-		let proposer_future = factory.lock().init(&last_head.header);
+		let proposer_future = self.proposer_factory.lock().init(&last_head.header);
 
-		let wait_to_announce = self.wait_to_announce.clone();
-
-		Box::pin(async move {
-			let proposer = proposer_future
-				.await
-				.map_err(|e| {
-					error!(
-						target: "cumulus-collator",
-						"Could not create proposer: {:?}",
-						e,
-					)
-				})
-				.ok()?;
-
-			let inherent_data = Self::inherent_data(
-				inherent_providers,
-				global_validation,
-				local_validation,
-				downward_messages,
-			)?;
-
-			let Proposal {
-				block,
-				storage_changes,
-				proof,
-			} = proposer
-				.propose(
-					inherent_data,
-					Default::default(),
-					//TODO: Fix this.
-					Duration::from_millis(500),
-					RecordProof::Yes,
-				)
-				.await
-				.map_err(|e| {
-					error!(
-						target: "cumulus-collator",
-						"Proposing failed: {:?}",
-						e,
-					)
-				})
-				.ok()?;
-
-			let proof = match proof {
-				Some(proof) => proof,
-				None => {
-					error!(
-						target: "cumulus-collator",
-						"Proposer did not return the requested proof.",
-					);
-
-					return None;
-				}
-			};
-
-			let (header, extrinsics) = block.deconstruct();
-
-			// Create the parachain block data for the validators.
-			let b = ParachainBlockData::<Block>::new(header.clone(), extrinsics, proof);
-
-			let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header);
-			block_import_params.body = Some(b.extrinsics().to_vec());
-			// Best block is determined by the relay chain.
-			block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(false));
-			block_import_params.storage_changes = Some(storage_changes);
-
-			if let Err(err) = block_import
-				.lock()
-				.import_block(block_import_params, Default::default())
-			{
+		let proposer = proposer_future
+			.await
+			.map_err(|e| {
 				error!(
 					target: "cumulus-collator",
-					"Error importing build block (at {:?}): {:?}",
-					b.header().parent_hash(),
-					err,
+					"Could not create proposer: {:?}",
+					e,
+				)
+			})
+			.ok()?;
+
+		let inherent_data = Self::inherent_data(
+			inherent_providers,
+			validation_data,
+			downward_messages,
+		)?;
+
+		let Proposal {
+			block,
+			storage_changes,
+			proof,
+		} = proposer
+			.propose(
+				inherent_data,
+				Default::default(),
+				//TODO: Fix this.
+				Duration::from_millis(500),
+				RecordProof::Yes,
+			)
+			.await
+			.map_err(|e| {
+				error!(
+					target: "cumulus-collator",
+					"Proposing failed: {:?}",
+					e,
+				)
+			})
+			.ok()?;
+
+		let proof = match proof {
+			Some(proof) => proof,
+			None => {
+				error!(
+					target: "cumulus-collator",
+					"Proposer did not return the requested proof.",
 				);
 
 				return None;
 			}
+		};
 
-			let block_data = BlockData(b.encode());
-			let header = b.into_header();
-			let encoded_header = header.encode();
-			let hash = header.hash();
-			let head_data = HeadData::<Block> { header };
+		let (header, extrinsics) = block.deconstruct();
 
-			let candidate = (block_data, parachain::HeadData(head_data.encode()));
+		// Create the parachain block data for the validators.
+		let b = ParachainBlockData::<Block>::new(header.clone(), extrinsics, proof);
 
-			wait_to_announce
-				.lock()
-				.wait_to_announce(hash, relay_chain_parent, encoded_header);
+		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header);
+		block_import_params.body = Some(b.extrinsics().to_vec());
+		// Best block is determined by the relay chain.
+		block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(false));
+		block_import_params.storage_changes = Some(storage_changes);
 
-			trace!(target: "cumulus-collator", "Produced candidate: {:?}", candidate);
+		if let Err(err) = self.block_import
+			.lock()
+			.import_block(block_import_params, Default::default())
+		{
+			error!(
+				target: "cumulus-collator",
+				"Error importing build block (at {:?}): {:?}",
+				b.header().parent_hash(),
+				err,
+			);
 
-			Some(candidate)
-		})
-	}
-}
-
-/// Implements `BuildParachainContext` to build a collator instance.
-pub struct CollatorBuilder<Block: BlockT, PF, BI, Backend, Client, BS> {
-	proposer_factory: PF,
-	inherent_data_providers: InherentDataProviders,
-	block_import: BI,
-	block_status: Arc<BS>,
-	para_id: ParaId,
-	client: Arc<Client>,
-	announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
-	delayed_block_announce_validator: DelayedBlockAnnounceValidator<Block>,
-	_marker: PhantomData<(Block, Backend)>,
-}
-
-impl<Block: BlockT, PF, BI, Backend, Client, BS>
-	CollatorBuilder<Block, PF, BI, Backend, Client, BS>
-{
-	/// Create a new instance of self.
-	pub fn new(
-		proposer_factory: PF,
-		inherent_data_providers: InherentDataProviders,
-		block_import: BI,
-		block_status: Arc<BS>,
-		para_id: ParaId,
-		client: Arc<Client>,
-		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
-		delayed_block_announce_validator: DelayedBlockAnnounceValidator<Block>,
-	) -> Self {
-		Self {
-			proposer_factory,
-			inherent_data_providers,
-			block_import,
-			block_status,
-			para_id,
-			client,
-			announce_block,
-			delayed_block_announce_validator,
-			_marker: PhantomData,
+			return None
 		}
+
+		let block_data = BlockData(b.encode());
+		let header = b.into_header();
+		let encoded_header = header.encode();
+		let hash = header.hash();
+		let head_data = HeadData::<Block> { header };
+
+		let candidate = (block_data, parachain::HeadData(head_data.encode()));
+
+		wait_to_announce
+			.lock()
+			.wait_to_announce(hash, relay_chain_parent, encoded_header);
+
+		trace!(target: "cumulus-collator", "Produced candidate: {:?}", candidate);
+
+		Some(candidate)
 	}
 }
 
-type TransactionFor<E, Block> =
-	<<E as Environment<Block>>::Proposer as Proposer<Block>>::Transaction;
-
-impl<Block: BlockT, PF, BI, Backend, Client, BS> BuildParachainContext
-	for CollatorBuilder<Block, PF, BI, Backend, Client, BS>
-where
-	PF: Environment<Block> + Send + 'static,
-	BI: BlockImport<Block, Error = sp_consensus::Error, Transaction = TransactionFor<PF, Block>>
-		+ Send
-		+ Sync
-		+ 'static,
-	Backend: sc_client_api::Backend<Block> + 'static,
-	Client: Finalizer<Block, Backend>
-		+ UsageProvider<Block>
-		+ HeaderBackend<Block>
-		+ Send
-		+ Sync
-		+ BlockBackend<Block>
-		+ 'static,
-	for<'a> &'a Client: BlockImport<Block>,
-	BS: BlockBackend<Block>,
-{
-	type ParachainContext = Collator<Block, PF, BI, BS>;
-
-	fn build<Spawner>(
-		self,
-		polkadot_client: polkadot_collator::Client,
-		spawner: Spawner,
-		polkadot_network: impl CollatorNetwork + SyncOracle + Clone + 'static,
-	) -> Result<Self::ParachainContext, ()>
-	where
-		Spawner: SpawnNamed + Clone + Send + Sync + 'static,
-	{
-		let CollatorBuilder {
-			proposer_factory,
-			inherent_data_providers,
-			block_import,
-			block_status,
-			para_id,
-			client,
-			announce_block,
-			delayed_block_announce_validator,
-			_marker,
-		} = self;
-		polkadot_client.execute_with(CollatorBuilderWithClient {
-			spawner,
-			polkadot_network,
-			proposer_factory,
-			inherent_data_providers,
-			block_import,
-			block_status,
-			para_id,
-			client,
-			announce_block,
-			delayed_block_announce_validator,
-			_marker,
-		})
-	}
+/// Parameters for [`start_collator`].
+pub struct StartCollatorParams<PF, BI, Backend, Client, BS> {
+	pub proposer_factory: PF,
+	pub inherent_data_providers: InherentDataProviders,
+	pub block_import: BI,
+	pub block_status: BS,
+	pub para_id: ParaId,
+	pub client: Arc<Client>,
+	pub announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
+	pub overseer_handler: OverseerHandler,
 }
 
-pub struct CollatorBuilderWithClient<Block: BlockT, PF, BI, Backend, Client, BS, Spawner, Network> {
+pub fn start_collator<Block: BlockT, PF, BI, Backend, Client, BS>(params: StartCollatorParams<PF, BI, Backend, Client, BS>) -> Result<(), String> {
+
+}
+
+pub struct BuildCollator<Block: BlockT, PF, BI, Backend, Client, BS, Spawner, Network> {
 	proposer_factory: PF,
 	inherent_data_providers: InherentDataProviders,
 	block_import: BI,
@@ -511,13 +392,6 @@ where
 		Api: RuntimeApiCollection<StateBackend = PBackend::State>,
 		PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
 	{
-		self.delayed_block_announce_validator
-			.set(Box::new(JustifiedBlockAnnounceValidator::new(
-				polkadot_client.clone(),
-				self.para_id,
-				Box::new(self.polkadot_network.clone()),
-			)));
-
 		let follow = match cumulus_consensus::follow_polkadot(
 			self.para_id,
 			self.client,

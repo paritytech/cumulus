@@ -20,6 +20,8 @@ polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "m
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus dependencies
 cumulus-consensus = { path = "../consensus" }
