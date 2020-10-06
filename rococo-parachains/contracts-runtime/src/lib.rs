@@ -22,7 +22,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use cumulus_pallet_contracts_rpc_runtime_api::ContractExecResult;
+use pallet_contracts_rpc_runtime_api::ContractExecResult;
 use rococo_parachain_primitives::*;
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
@@ -197,7 +197,7 @@ impl pallet_sudo::Trait for Runtime {
 
 impl cumulus_parachain_upgrade::Trait for Runtime {
 	type Event = Event;
-	type OnValidationFunctionParams = ();
+	type OnValidationData = ();
 }
 
 impl cumulus_message_broker::Trait for Runtime {
@@ -207,14 +207,6 @@ impl cumulus_message_broker::Trait for Runtime {
 	type ParachainId = ParachainInfo;
 	type XCMPMessage = cumulus_token_dealer::XCMPMessage<AccountId, Balance>;
 	type XCMPMessageHandlers = TokenDealer;
-}
-
-impl cumulus_token_dealer::Trait for Runtime {
-	type Event = Event;
-	type UpwardMessageSender = MessageBroker;
-	type UpwardMessage = cumulus_upward_message::RococoUpwardMessage;
-	type Currency = Balances;
-	type XCMPMessageSender = MessageBroker;
 }
 
 impl parachain_info::Trait for Runtime {}
@@ -261,7 +253,6 @@ construct_runtime! {
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
 		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
-		TokenDealer: cumulus_token_dealer::{Module, Call, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		ParachainInfo: parachain_info::{Module, Storage, Config},
 	}

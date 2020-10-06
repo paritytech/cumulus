@@ -36,9 +36,6 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-/// Import the token dealer pallet.
-pub use cumulus_token_dealer;
-
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, parameter_types,
@@ -171,6 +168,7 @@ parameter_types! {
 	pub const TransferFee: u128 = 0;
 	pub const CreationFee: u128 = 0;
 	pub const TransactionByteFee: u128 = 1;
+	pub const MaxLocks: u32 = 50;
 }
 
 impl pallet_balances::Trait for Runtime {
@@ -182,6 +180,7 @@ impl pallet_balances::Trait for Runtime {
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = ();
+	type MaxLocks = MaxLocks;
 }
 
 impl pallet_transaction_payment::Trait for Runtime {
@@ -199,7 +198,7 @@ impl pallet_sudo::Trait for Runtime {
 
 impl cumulus_parachain_upgrade::Trait for Runtime {
 	type Event = Event;
-	type OnValidationFunctionParams = ();
+	type OnValidationData = ();
 }
 
 impl parachain_info::Trait for Runtime {}
