@@ -37,7 +37,7 @@ use cumulus_primitives::{
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure, storage, weights::DispatchClass,
 };
-use frame_system::{ensure_none, ensure_root};
+use frame_system::{ensure_none, ensure_root, weights::Weight};
 use parachain::primitives::RelayChainBlockNumber;
 use sp_core::storage::well_known_keys;
 use sp_inherents::{InherentData, InherentIdentifier, ProvideInherent};
@@ -62,8 +62,11 @@ decl_storage! {
 		PendingValidationFunction get(fn new_validation_function):
 			Option<(RelayChainBlockNumber, Vec<u8>)>;
 
-		/// Were the VFPs updated this block?
-		DidUpdateVFPs: bool;
+		/// Were the [`ValidationData`] updated in this block?
+		DidUpdateValidationData: bool;
+
+		/// Were the validation data set to notify the relay chain?
+		DidSetValidationCode: bool;
 	}
 }
 
@@ -104,7 +107,7 @@ decl_module! {
 		#[weight = (0, DispatchClass::Mandatory)]
 		fn set_validation_data(origin, vfp: ValidationData) {
 			ensure_none(origin)?;
-			assert!(!DidUpdateVFPs::exists(), "VFPs must be updated only once in the block");
+			assert!(!DidUpdateValidationData::exists(), "ValidationData must be updated only once in a block");
 
 			// initialization logic: we know that this runs exactly once every block,
 			// which means we can put the initialization logic here to remove the
@@ -118,12 +121,26 @@ decl_module! {
 			}
 
 			storage::unhashed::put(VALIDATION_DATA, &vfp);
-			DidUpdateVFPs::put(true);
+			DidUpdateValidationData::put(true);
 			<T::OnValidationData as OnValidationData>::on_validation_data(vfp);
 		}
 
 		fn on_finalize() {
-			assert!(DidUpdateVFPs::take(), "VFPs must be updated once per block");
+			assert!(DidUpdateValidationData::take(), "VFPs must be updated once per block");
+			DidSetValidationCode::take();
+		}
+
+		fn on_initialize(n: T::BlockNumber) -> Weight {
+			// To prevent removing `NEW_VALIDATION_CODE` that was set by another `on_initialize` like
+			// for example from scheduler, we only kill the storage entry if it was not yet updated
+			// in the current block.
+			if !DidSetValidationCode::get() {
+				storage::unhashed::kill(NEW_VALIDATION_CODE);
+			}
+
+			storage::unhashed::kill(VALIDATION_DATA);
+
+			0
 		}
 	}
 }
@@ -131,16 +148,9 @@ decl_module! {
 impl<T: Trait> Module<T> {
 	/// Get validation data.
 	///
-	/// This will return `None` if this module's inherent has not yet run.
-	/// If it returns `Some(_)`, the validation data are current for this block.
+	/// Returns `Some(_)` after the inherent set the data for the current block.
 	pub fn validation_data() -> Option<ValidationData> {
-		if DidUpdateVFPs::get() {
-			// this storage value is set by cumulus during block validation,
-			// and also by the inherent from this module.
-			storage::unhashed::get(VALIDATION_DATA)
-		} else {
-			None
-		}
+		storage::unhashed::get(VALIDATION_DATA)
 	}
 
 	/// Put a new validation function into a particular location where polkadot
@@ -148,6 +158,7 @@ impl<T: Trait> Module<T> {
 	/// upgrade has been scheduled.
 	fn notify_polkadot_of_pending_upgrade(code: &[u8]) {
 		storage::unhashed::put_raw(NEW_VALIDATION_CODE, code);
+		DidSetValidationCode::put(true);
 	}
 
 	/// Put a new validation function into a particular location where this

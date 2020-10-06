@@ -41,18 +41,16 @@ use polkadot_primitives::v1::{
 	SigningContext,
 };
 
-use cumulus_primitives::HeadData;
-
 use codec::{Decode, Encode};
 use futures::{
 	channel::{mpsc, oneshot},
-	future::{ready, FutureExt}, Future,
-	pin_mut, select, StreamExt,
+	future::{ready, FutureExt},
+	pin_mut, select, Future, StreamExt,
 };
 use log::{trace, warn};
 
 use parking_lot::Mutex;
-use std::{marker::PhantomData, sync::Arc, pin::Pin};
+use std::{marker::PhantomData, pin::Pin, sync::Arc};
 
 /// Validate that data is a valid justification from a relay-chain validator that the block is a
 /// valid parachain-block candidate.
@@ -91,7 +89,8 @@ where
 		&mut self,
 		header: &B::Header,
 		mut data: &[u8],
-	) -> Pin<Box<dyn Future<Output = Result<Validation, Box<dyn std::error::Error + Send>>> + Send>> {
+	) -> Pin<Box<dyn Future<Output = Result<Validation, Box<dyn std::error::Error + Send>>> + Send>>
+	{
 		if self.polkadot_sync_oracle.is_major_syncing() {
 			return ready(Ok(Validation::Success { is_new_best: false })).boxed();
 		}
@@ -109,26 +108,27 @@ where
 				let runtime_api_block_id = BlockId::Hash(polkadot_info.best_hash);
 				let block_number = header.number();
 
-				let local_validation_data = polkadot_client.runtime_api()
+				let local_validation_data = polkadot_client
+					.runtime_api()
 					.persisted_validation_data(
 						&runtime_api_block_id,
 						para_id,
 						OccupiedCoreAssumption::TimedOut,
 					)
 					.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?
-				.ok_or_else(|| {
-					Box::new(ClientError::Msg(
-						"Could not find parachain head in relay chain".into(),
-					)) as Box<_>
-				})?;
-				let parent_head = HeadData::<B>::decode(&mut &local_validation_data.parent_head.0[..])
+					.ok_or_else(|| {
+						Box::new(ClientError::Msg(
+							"Could not find parachain head in relay chain".into(),
+						)) as Box<_>
+					})?;
+				let parent_head = B::Header::decode(&mut &local_validation_data.parent_head.0[..])
 					.map_err(|e| {
 						Box::new(ClientError::Msg(format!(
 							"Failed to decode parachain head: {:?}",
 							e
 						))) as Box<_>
 					})?;
-				let known_best_number = parent_head.header.number();
+				let known_best_number = parent_head.number();
 
 				if block_number >= known_best_number {
 					trace!(
@@ -140,17 +140,17 @@ where
 				} else {
 					Ok(Validation::Success { is_new_best: false })
 				}
-			}.boxed()
+			}
+			.boxed();
 		}
 
 		let signed_stmt = match SignedFullStatement::decode(&mut data) {
 			Ok(r) => r,
-			Err(_) => return ready(
-			Err(Box::new(ClientError::BadJustification(
+			Err(_) => return ready(Err(Box::new(ClientError::BadJustification(
 				"cannot decode block announcement justification, must be a `SignedFullStatement`"
 					.to_string(),
-			)) as Box<_>)
-		).boxed(),
+			)) as Box<_>))
+			.boxed(),
 		};
 
 		// Check statement is a candidate statement.
@@ -159,7 +159,8 @@ where
 			_ => {
 				return ready(Err(Box::new(ClientError::BadJustification(
 					"block announcement justification must be a `Statement::Seconded`".to_string(),
-				)) as Box<_>)).boxed()
+				)) as Box<_>))
+				.boxed()
 			}
 		};
 
@@ -173,13 +174,15 @@ where
 				return ready(Err(Box::new(ClientError::Backend(format!(
 					"could not find block number for {}: {}",
 					relay_parent, err,
-				))) as Box<_>)).boxed();
+				))) as Box<_>))
+				.boxed();
 			}
 			Ok(Some(x)) if x == best_number => {}
 			Ok(None) => {
-				return ready(Err(Box::new(ClientError::UnknownBlock(
-					relay_parent.to_string(),
-				)) as Box<_>)).boxed();
+				return ready(Err(
+					Box::new(ClientError::UnknownBlock(relay_parent.to_string())) as Box<_>,
+				))
+				.boxed();
 			}
 			Ok(Some(_)) => {
 				trace!(
@@ -195,11 +198,12 @@ where
 		}
 
 		let runtime_api_block_id = BlockId::Hash(*relay_parent);
-		let session_index = match runtime_api
-			.session_index_for_child(&runtime_api_block_id) {
-				Ok(r) => r,
-				Err(e) => return ready(Err(Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)).boxed(),
-			};
+		let session_index = match runtime_api.session_index_for_child(&runtime_api_block_id) {
+			Ok(r) => r,
+			Err(e) => {
+				return ready(Err(Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)).boxed()
+			}
+		};
 
 		let signing_context = SigningContext {
 			parent_hash: *relay_parent,
@@ -207,17 +211,21 @@ where
 		};
 
 		// Check that the signer is a legit validator.
-		let authorities = match runtime_api
-			.validators(&runtime_api_block_id) {
-				Ok(r) => r,
-				Err(e) => return ready(Err(Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)).boxed(),
-			};
+		let authorities = match runtime_api.validators(&runtime_api_block_id) {
+			Ok(r) => r,
+			Err(e) => {
+				return ready(Err(Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)).boxed()
+			}
+		};
 		let signer = match authorities.get(validator_index as usize) {
 			Some(r) => r,
-			None => return ready(Err(Box::new(ClientError::BadJustification(
-				"block accouncement justification signer is a validator index out of bound"
-					.to_string(),
-			)) as Box<_>)).boxed(),
+			None => {
+				return ready(Err(Box::new(ClientError::BadJustification(
+					"block accouncement justification signer is a validator index out of bound"
+						.to_string(),
+				)) as Box<_>))
+				.boxed()
+			}
 		};
 
 		// Check statement is correctly signed.
@@ -227,14 +235,16 @@ where
 		{
 			return ready(Err(Box::new(ClientError::BadJustification(
 				"block announced justification signature is invalid".to_string(),
-			)) as Box<_>)).boxed()
+			)) as Box<_>))
+			.boxed();
 		}
 
 		// Check the header in the candidate_receipt match header given header.
 		if header.encode() != candidate_receipt.commitments.head_data.0 {
 			return ready(Err(Box::new(ClientError::BadJustification(
 				"block announced header does not match the one justified".to_string(),
-			)) as Box<_>)).boxed();
+			)) as Box<_>))
+			.boxed();
 		}
 
 		ready(Ok(Validation::Success { is_new_best: true })).boxed()
@@ -268,7 +278,8 @@ impl<B: BlockT> BlockAnnounceValidator<B> for DelayedBlockAnnounceValidator<B> {
 		&mut self,
 		header: &B::Header,
 		data: &[u8],
-	) -> Pin<Box<dyn Future<Output = Result<Validation, Box<dyn std::error::Error + Send>>> + Send>> {
+	) -> Pin<Box<dyn Future<Output = Result<Validation, Box<dyn std::error::Error + Send>>> + Send>>
+	{
 		match self.0.lock().as_mut() {
 			Some(validator) => validator.validate(header, data),
 			None => {
