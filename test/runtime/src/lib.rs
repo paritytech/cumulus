@@ -196,15 +196,6 @@ parameter_types! {
 	pub storage ParachainId: cumulus_primitives::ParaId = 100.into();
 }
 
-impl cumulus_message_broker::Trait for Runtime {
-	type Event = Event;
-	type DownwardMessageHandlers = ();
-	type UpwardMessage = cumulus_upward_message::RococoUpwardMessage;
-	type ParachainId = ParachainId;
-	type XCMPMessage = ();
-	type XCMPMessageHandlers = ();
-}
-
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
@@ -217,7 +208,6 @@ construct_runtime! {
 		Sudo: pallet_sudo::{Module, Call, Storage, Config<T>, Event<T>},
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
-		MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 	}
 }

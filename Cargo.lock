@@ -1326,7 +1326,6 @@ dependencies = [
 name = "cumulus-test-runtime"
 version = "0.1.0"
 dependencies = [
- "cumulus-message-broker",
  "cumulus-parachain-upgrade",
  "cumulus-primitives",
  "cumulus-runtime",
