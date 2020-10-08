@@ -47,7 +47,6 @@ fn load_spec(
 		"track" => Ok(Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../res/track.json")[..],
 		)?)),
-		"contracts" => Ok(Box::new(chain_spec::get_contracts_chain_spec(para_id))),
 		"" => Ok(Box::new(chain_spec::get_chain_spec(para_id))),
 		path => Ok(Box::new(chain_spec::ChainSpec::from_json_file(
 			path.into(),
@@ -171,10 +170,6 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 		.ok_or_else(|| "Could not find wasm file in genesis state!".into())
 }
 
-fn use_contracts_runtime(chain_spec: &Box<dyn ChainSpec>) -> bool {
-	chain_spec.id().starts_with("trick") || chain_spec.id().starts_with("contracts")
-}
-
 /// Parse command line arguments into service configuration.
 pub fn run() -> Result<()> {
 	let cli = Cli::from_args();
@@ -183,35 +178,19 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::Base(subcommand)) => {
 			let runner = cli.create_runner(subcommand)?;
 
-			if use_contracts_runtime(&runner.config().chain_spec) {
-				runner.run_subcommand(subcommand, |mut config| {
-					let params = crate::service::new_partial::<
-						parachain_contracts_runtime::RuntimeApi,
-						crate::service::ContractsRuntimeExecutor,
-					>(&mut config)?;
+			runner.run_subcommand(subcommand, |mut config| {
+				let params = crate::service::new_partial::<
+					parachain_runtime::RuntimeApi,
+					crate::service::RuntimeExecutor,
+				>(&mut config)?;
 
-					Ok((
-						params.client,
-						params.backend,
-						params.import_queue,
-						params.task_manager,
-					))
-				})
-			} else {
-				runner.run_subcommand(subcommand, |mut config| {
-					let params = crate::service::new_partial::<
-						parachain_runtime::RuntimeApi,
-						crate::service::RuntimeExecutor,
-					>(&mut config)?;
-
-					Ok((
-						params.client,
-						params.backend,
-						params.import_queue,
-						params.task_manager,
-					))
-				})
-			}
+				Ok((
+					params.client,
+					params.backend,
+					params.import_queue,
+					params.task_manager,
+				))
+			})
 		}
 		Some(Subcommand::ExportGenesisState(params)) => {
 			sc_cli::init_logger("");
@@ -285,24 +264,14 @@ pub fn run() -> Result<()> {
 					if cli.run.base.validator { "yes" } else { "no" }
 				);
 
-				if use_contracts_runtime(&config.chain_spec) {
-					crate::service::start_contracts_node(
-						config,
-						key,
-						polkadot_config,
-						id,
-						cli.run.base.validator,
-					)
-				} else {
-					crate::service::start_node(
-						config,
-						key,
-						polkadot_config,
-						id,
-						cli.run.base.validator,
-					)
-					.map(|r| r.0)
-				}
+				crate::service::start_node(
+					config,
+					key,
+					polkadot_config,
+					id,
+					cli.run.base.validator,
+				)
+				.map(|r| r.0)
 			})
 		}
 	}

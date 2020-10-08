@@ -37,13 +37,6 @@ native_executor_instance!(
 	parachain_runtime::native_version,
 );
 
-// Native executor instance for the contracts runtime.
-native_executor_instance!(
-	pub ContractsRuntimeExecutor,
-	parachain_contracts_runtime::api::dispatch,
-	parachain_contracts_runtime::native_version,
-);
-
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
@@ -279,29 +272,4 @@ pub fn start_node(
 		validator,
 		|_| Default::default(),
 	)
-}
-
-/// Start a contracts parachain node.
-pub fn start_contracts_node(
-	parachain_config: Configuration,
-	collator_key: Arc<CollatorPair>,
-	polkadot_config: polkadot_collator::Configuration,
-	id: polkadot_primitives::v0::Id,
-	validator: bool,
-) -> sc_service::error::Result<TaskManager> {
-	start_node_impl::<parachain_contracts_runtime::RuntimeApi, ContractsRuntimeExecutor, _>(
-		parachain_config,
-		collator_key,
-		polkadot_config,
-		id,
-		validator,
-		|client| {
-			let mut io = jsonrpc_core::IoHandler::default();
-
-			use cumulus_pallet_contracts_rpc::{Contracts, ContractsApi};
-			io.extend_with(ContractsApi::to_delegate(Contracts::new(client)));
-			io
-		},
-	)
-	.map(|r| r.0)
 }

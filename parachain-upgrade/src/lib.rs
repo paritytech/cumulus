@@ -35,9 +35,9 @@ use cumulus_primitives::{
 	OnValidationData, ValidationData,
 };
 use frame_support::{
-	decl_error, decl_event, decl_module, decl_storage, ensure, storage, weights::DispatchClass,
+	decl_error, decl_event, decl_module, decl_storage, ensure, storage, weights::DispatchClass, weights::Weight
 };
-use frame_system::{ensure_none, ensure_root, weights::Weight};
+use frame_system::{ensure_none, ensure_root};
 use parachain::primitives::RelayChainBlockNumber;
 use sp_core::storage::well_known_keys;
 use sp_inherents::{InherentData, InherentIdentifier, ProvideInherent};
