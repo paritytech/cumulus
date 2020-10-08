@@ -7,10 +7,15 @@ edition = "2018"
 [dependencies]
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
 test-client = { package = "substrate-test-client", git = "https://github.com/paritytech/substrate", branch = "master" }
-runtime = { package = "cumulus-test-runtime", path = "../runtime" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
 codec = { package = "parity-scale-codec", version = "1.0.5", default-features = false, features = [ "derive" ] }
 sp-test-primitives = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
+# Cumulus deps
+cumulus-test-runtime = { path = "../runtime" }
+cumulus-primitives = { path = "../../primitives" }

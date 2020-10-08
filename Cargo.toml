@@ -12,6 +12,7 @@ members = [
 	"service",
 	"test/runtime",
 	"test/client",
+	"test/service",
 ]
 
 [profile.release]

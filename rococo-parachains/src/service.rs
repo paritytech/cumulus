@@ -210,7 +210,10 @@ where
 		system_rpc_tx,
 	})?;
 
-	let announce_block = Arc::new(move |hash, data| network.announce_block(hash, data));
+	let announce_block = {
+		let network = network.clone();
+		Arc::new(move |hash, data| network.announce_block(hash, data))
+	};
 
 	if validator {
 		let proposer_factory = sc_basic_authorship::ProposerFactory::new(

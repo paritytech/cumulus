@@ -32,6 +32,8 @@ pub use polkadot_primitives::v1::{
 	PersistedValidationData, TransientValidationData, ValidationData,
 };
 
+#[cfg(feature = "std")]
+pub mod genesis;
 pub mod xcmp;
 
 /// Identifiers and types related to Cumulus Inherents

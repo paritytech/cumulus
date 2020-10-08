@@ -6,13 +6,14 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sc-chain-spec = { git = "https://github.com/paritytech/substrate", optional = true, branch = "master" }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 # Other dependencies
 codec = { package = "parity-scale-codec", version = "1.0.5", default-features = false, features = [ "derive" ] }
@@ -24,6 +25,7 @@ polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", def
 [features]
 default = [ "std" ]
 std = [
+	"sc-chain-spec",
 	"sp-std/std",
 	"codec/std",
 	"polkadot-primitives/std",
