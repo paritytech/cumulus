@@ -50,7 +50,7 @@ sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "mas
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot dependencies
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Other dependencies
 env_logger = "0.7.1"

@@ -245,7 +245,7 @@ where
 			let new_validation_code = sp_io::storage::get(well_known_keys::NEW_VALIDATION_CODE);
 
 			Some(Collation {
-				//TODO: What should be do here?
+				//TODO: What should we do here?
 				fees: 0,
 				upward_messages,
 				new_validation_code: new_validation_code.map(Into::into),
@@ -257,7 +257,7 @@ where
 
 	async fn produce_candidate(
 		mut self,
-		relay_parent: PHash,
+		_: PHash,
 		validation_data: ValidationData,
 	) -> Option<Collation> {
 		trace!(target: "cumulus-collator", "Producing candidate");
@@ -489,7 +489,8 @@ mod tests {
 	use test_client::{DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt};
 	use test_runtime::{Block, Header};
 
-	use polkadot_node_subsystem::{messages::CollationGenerationMessage, ForwardSubsystem};
+	use polkadot_node_subsystem::messages::CollationGenerationMessage;
+	use polkadot_node_subsystem_test_helpers::ForwardSubsystem;
 	use polkadot_overseer::{AllSubsystems, Overseer};
 
 	use futures::{channel::mpsc, executor::block_on, future, Stream};
@@ -547,30 +548,6 @@ mod tests {
 		}
 	}
 
-	#[derive(Clone)]
-	struct DummyPolkadotClient;
-
-	impl cumulus_consensus::PolkadotClient for DummyPolkadotClient {
-		type Error = Error;
-		type HeadStream = Box<dyn futures::Stream<Item = Vec<u8>> + Send + Unpin>;
-
-		fn new_best_heads(&self, _: ParaId) -> ClientResult<Self::HeadStream> {
-			unimplemented!("Not required in tests")
-		}
-
-		fn finalized_heads(&self, _: ParaId) -> ClientResult<Self::HeadStream> {
-			unimplemented!("Not required in tests")
-		}
-
-		fn parachain_head_at(
-			&self,
-			_: &BlockId<PBlock>,
-			_: ParaId,
-		) -> ClientResult<Option<Vec<u8>>> {
-			unimplemented!("Not required in tests")
-		}
-	}
-
 	#[test]
 	fn collates_produces_a_block() {
 		let _ = env_logger::try_init();
@@ -582,6 +559,19 @@ mod tests {
 		let backend = client_builder.backend();
 		let client = Arc::new(client_builder.build());
 		let header = client.header(&BlockId::Number(0)).unwrap().unwrap();
+		// The header of the block that will be build by the dummy proposer.
+		let result_header = Header::new(
+				1337,
+				Default::default(),
+				Default::default(),
+				Default::default(),
+				digest,
+			);
+
+		let result_block = Block::new(result_header, Vec::new());
+
+		// We need to import the block, because the dummy
+		client.import(BlockOrigin::Own, result_block.clone()).expect("Should be imported");
 
 		let (sub_tx, sub_rx) = mpsc::channel(64);
 
@@ -618,12 +608,21 @@ mod tests {
 		});
 		block_on(collator_start).expect("Should start collator");
 
-		// let collation = futures::executor::block_on(collation).unwrap();
+		let msg = block_on(sub_rx.into_future()).0.expect("message should be send by `start_collator` above.");
 
-		// let block_data = collation.pov.block_data;
+		let config = match msg {
+			CollationGenerationMessage::Initialize(config) => config,
+		};
 
-		// let block = Block::decode(&mut &block_data.0[..]).expect("Is a valid block");
+		let mut validation_data = ValidationData::default();
+		validation_data.persisted.parent_head = header.encode().into();
 
-		// assert_eq!(1337, *block.header().number());
+		let collation = block_on((config.collator)(Default::default(), &validation_data)).expect("Collation is build");
+
+		let block_data = collation.proof_of_validity.block_data;
+
+		let block = Block::decode(&mut &block_data.0[..]).expect("Is a valid block");
+
+		assert_eq!(1337, *block.header().number());
 	}
 }
