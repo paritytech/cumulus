@@ -15,10 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::Client;
-use cumulus_primitives::{
-	inherents::VALIDATION_DATA_IDENTIFIER,
-	ValidationData,
-};
+use cumulus_primitives::{inherents::VALIDATION_DATA_IDENTIFIER, ValidationData};
 use cumulus_test_runtime::GetLastTimestamp;
 use sc_block_builder::BlockBuilderApi;
 use sp_api::ProvideRuntimeApi;
@@ -27,7 +24,7 @@ use sp_core::ExecutionContext;
 use sp_runtime::generic::BlockId;
 
 /// Generate the inherents to a block so you don't have to.
-pub fn generate_block_inherents(client: &Client) -> Vec<runtime::UncheckedExtrinsic> {
+pub fn generate_block_inherents(client: &Client) -> Vec<cumulus_test_runtime::UncheckedExtrinsic> {
 	let mut inherent_data = sp_consensus::InherentData::new();
 	let block_id = BlockId::Hash(client.info().best_hash);
 	let last_timestamp = client
@@ -40,10 +37,7 @@ pub fn generate_block_inherents(client: &Client) -> Vec<runtime::UncheckedExtrin
 		.put_data(sp_timestamp::INHERENT_IDENTIFIER, &timestamp)
 		.expect("Put timestamp failed");
 	inherent_data
-		.put_data(
-			VALIDATION_DATA_IDENTIFIER,
-			&ValidationFunctionParams::default(),
-		)
+		.put_data(VALIDATION_DATA_IDENTIFIER, &ValidationData::default())
 		.expect("Put validation function params failed");
 
 	client

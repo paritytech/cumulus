@@ -35,14 +35,14 @@ use sp_runtime::{
 	BuildStorage, SaturatedConversion,
 };
 use std::collections::BTreeMap;
-pub use test_client::*;
+pub use substrate_test_client::*;
 
 mod local_executor {
-	use test_client::sc_executor::native_executor_instance;
+	use substrate_test_client::sc_executor::native_executor_instance;
 	native_executor_instance!(
 		pub LocalExecutor,
-		runtime::api::dispatch,
-		runtime::native_version,
+		cumulus_test_runtime::api::dispatch,
+		cumulus_test_runtime::native_version,
 	);
 }
 
@@ -56,8 +56,7 @@ pub type Backend = test_client::Backend<Block>;
 pub type Executor = client::LocalCallExecutor<Backend, sc_executor::NativeExecutor<LocalExecutor>>;
 
 /// Test client builder for Cumulus
-pub type TestClientBuilder =
-	test_client::TestClientBuilder<Block, Executor, Backend, GenesisParameters>;
+pub type TestClientBuilder = TestClientBuilder<Block, Executor, Backend, GenesisParameters>;
 
 /// LongestChain type for the test runtime/client.
 pub type LongestChain = sc_consensus::LongestChain<Backend, Block>;
@@ -71,7 +70,7 @@ pub struct GenesisParameters {
 	support_changes_trie: bool,
 }
 
-impl test_client::GenesisInit for GenesisParameters {
+impl substrate_test_client::GenesisInit for GenesisParameters {
 	fn genesis_storage(&self) -> Storage {
 		let changes_trie_config: Option<ChangesTrieConfiguration> = if self.support_changes_trie {
 			Some(sp_test_primitives::changes_trie_config())

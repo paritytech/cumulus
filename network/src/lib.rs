@@ -14,9 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Cumulus-specific network implementation.
+//! Parachain specific networking
 //!
-//! Contains message send between collators and logic to process them.
+//! Provides a custom block announcement implementation for parachains
+//! that use the relay chain provided consensus. See [`BlockAnnounceValidator`]
+//! and [`WaitToAnnounce`] for more information about this implementation.
 
 #[cfg(test)]
 mod tests;
@@ -24,7 +26,7 @@ mod tests;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Error as ClientError, HeaderBackend};
 use sp_consensus::{
-	block_validation::{BlockAnnounceValidator, Validation},
+	block_validation::{BlockAnnounceValidator as BlockAnnounceValidatorT, Validation},
 	SyncOracle,
 };
 use sp_core::traits::SpawnNamed;
@@ -49,23 +51,43 @@ use futures::{
 };
 use log::{trace, warn};
 
-use parking_lot::Mutex;
 use std::{marker::PhantomData, pin::Pin, sync::Arc};
 
-/// Validate that data is a valid justification from a relay-chain validator that the block is a
-/// valid parachain-block candidate.
-/// Data encoding is just `GossipMessage`, the relay-chain validator candidate statement message is
-/// the justification.
+/// Parachain specific block announce validator.
 ///
-/// Note: if no justification is provided the annouce is considered valid.
-pub struct JustifiedBlockAnnounceValidator<B, P> {
+/// This block announce validator is required if the parachain is running
+/// with the relay chain provided consensus to make sure each node only
+/// imports a reasonable number of blocks per round. The relay chain provided
+/// consensus doesn't have any authorities and so it could happen that without
+/// this special block announce validator a node would need to import *millions*
+/// of blocks per round, which is clearly not doable.
+///
+/// To solve this problem, each block announcement is delayed until a collator
+/// has received a [`Statement::Seconded`] for its `PoV`. This message tells the
+/// collator that its `PoV` was validated successfully by a parachain validator and
+/// that it is very likely that this `PoV` will be included in the relay chain. Every
+/// collator that doesn't receive the message for its `PoV` will not announce its block.
+/// For more information on the block announcement, see [`WaitToAnnounce`].
+///
+/// For each block announcement that is received, the generic block announcement validation
+/// will call this validator and provides the extra data that was attached to the announcement.
+/// We call this extra data `justification`.
+/// It is expected that the attached data is a SCALE encoded [`SignedFullStatement`]. The
+/// statement is checked to be a [`Statement::Seconded`] and that it is signed by an active
+/// parachain validator.
+///
+/// If no justification was provided we check if the block announcement is at the tip of the known
+/// chain. If it is at the tip, it is required to provide a justification or otherwise we reject
+/// it. However, if the announcement is for a block below the tip the announcement is accepted
+/// as it probably comes from a node that is currently syncing the chain.
+pub struct BlockAnnounceValidator<B, P> {
 	phantom: PhantomData<B>,
 	polkadot_client: Arc<P>,
 	para_id: ParaId,
 	polkadot_sync_oracle: Box<dyn SyncOracle + Send>,
 }
 
-impl<B, P> JustifiedBlockAnnounceValidator<B, P> {
+impl<B, P> BlockAnnounceValidator<B, P> {
 	pub fn new(
 		polkadot_client: Arc<P>,
 		para_id: ParaId,
@@ -80,7 +102,7 @@ impl<B, P> JustifiedBlockAnnounceValidator<B, P> {
 	}
 }
 
-impl<B: BlockT, P> BlockAnnounceValidator<B> for JustifiedBlockAnnounceValidator<B, P>
+impl<B: BlockT, P> BlockAnnounceValidatorT<B> for BlockAnnounceValidator<B, P>
 where
 	P: ProvideRuntimeApi<PBlock> + HeaderBackend<PBlock> + 'static,
 	P::Api: ParachainHost<PBlock>,
@@ -248,45 +270,6 @@ where
 		}
 
 		ready(Ok(Validation::Success { is_new_best: true })).boxed()
-	}
-}
-
-/// A `BlockAnnounceValidator` that will be able to validate data when its internal
-/// `BlockAnnounceValidator` is set.
-pub struct DelayedBlockAnnounceValidator<B: BlockT>(
-	Arc<Mutex<Option<Box<dyn BlockAnnounceValidator<B> + Send>>>>,
-);
-
-impl<B: BlockT> DelayedBlockAnnounceValidator<B> {
-	pub fn new() -> DelayedBlockAnnounceValidator<B> {
-		DelayedBlockAnnounceValidator(Arc::new(Mutex::new(None)))
-	}
-
-	pub fn set(&self, validator: Box<dyn BlockAnnounceValidator<B> + Send>) {
-		*self.0.lock() = Some(validator);
-	}
-}
-
-impl<B: BlockT> Clone for DelayedBlockAnnounceValidator<B> {
-	fn clone(&self) -> DelayedBlockAnnounceValidator<B> {
-		DelayedBlockAnnounceValidator(self.0.clone())
-	}
-}
-
-impl<B: BlockT> BlockAnnounceValidator<B> for DelayedBlockAnnounceValidator<B> {
-	fn validate(
-		&mut self,
-		header: &B::Header,
-		data: &[u8],
-	) -> Pin<Box<dyn Future<Output = Result<Validation, Box<dyn std::error::Error + Send>>> + Send>>
-	{
-		match self.0.lock().as_mut() {
-			Some(validator) => validator.validate(header, data),
-			None => {
-				log::warn!("BlockAnnounce validator not yet set, rejecting block announcement");
-				ready(Ok(Validation::Failure)).boxed()
-			}
-		}
 	}
 }
 

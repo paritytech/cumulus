@@ -232,19 +232,9 @@ pub fn run() -> Result<()> {
 				info!("Parachain id: {:?}", id);
 				info!("Parachain Account: {}", parachain_account);
 				info!("Parachain genesis state: {}", genesis_state);
-				info!(
-					"Is collating: {}",
-					if collator { "yes" } else { "no" }
-				);
+				info!("Is collating: {}", if collator { "yes" } else { "no" });
 
-				crate::service::start_node(
-					config,
-					key,
-					polkadot_config,
-					id,
-					collator,
-				)
-				.map(|r| r.0)
+				crate::service::start_node(config, key, polkadot_config, id, collator).map(|r| r.0)
 			})
 		}
 	}

@@ -9,7 +9,6 @@ edition = "2018"
 cumulus-consensus = { path = "../consensus" }
 cumulus-collator = { path = "../collator" }
 cumulus-primitives = { path = "../primitives" }
-cumulus-network = { path = "../network" }
 
 # Substrate dependencies
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -24,3 +23,7 @@ sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "mas
 # Polkadot dependencies
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+
+# Other deps
+futures = "0.3.6"

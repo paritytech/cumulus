@@ -26,7 +26,6 @@ pub use genesis::*;
 
 use ansi_term::Color;
 use core::future::Future;
-use cumulus_collator::CollatorBuilder;
 use cumulus_network::DelayedBlockAnnounceValidator;
 use cumulus_primitives::ParaId;
 use cumulus_service::{
@@ -34,8 +33,7 @@ use cumulus_service::{
 };
 use cumulus_test_runtime::{NodeBlock as Block, RuntimeApi};
 use polkadot_primitives::v0::CollatorPair;
-use sc_client_api::execution_extensions::ExecutionStrategies;
-use sc_client_api::BlockBackend;
+use sc_client_api::{execution_extensions::ExecutionStrategies, BlockBackend};
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_informant::OutputFormat;

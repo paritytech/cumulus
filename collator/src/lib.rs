@@ -16,9 +16,7 @@
 
 //! Cumulus Collator implementation for Substrate.
 
-use cumulus_network::{
-	DelayedBlockAnnounceValidator, JustifiedBlockAnnounceValidator, WaitToAnnounce,
-};
+use cumulus_network::WaitToAnnounce;
 use cumulus_primitives::{
 	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER, VALIDATION_DATA_IDENTIFIER},
 	well_known_keys, ValidationData,
@@ -29,7 +27,7 @@ use sc_client_api::{Backend as BackendT, BlockBackend, Finalizer, StateBackend, 
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, BlockStatus, Environment, Error as ConsensusError,
-	ForkChoiceStrategy, Proposal, Proposer, RecordProof, SyncOracle,
+	ForkChoiceStrategy, Proposal, Proposer, RecordProof,
 };
 use sp_core::traits::SpawnNamed;
 use sp_inherents::{InherentData, InherentDataProviders};
@@ -46,7 +44,7 @@ use polkadot_primitives::v1::{
 	Block as PBlock, BlockData, CollatorPair, Hash as PHash, HeadData, Id as ParaId, PoV,
 	UpwardMessage,
 };
-use polkadot_service::{ClientHandle, RuntimeApiCollection};
+use polkadot_service::RuntimeApiCollection;
 
 use codec::{Decode, Encode};
 
@@ -54,7 +52,7 @@ use log::{debug, error, info, trace};
 
 use futures::prelude::*;
 
-use std::{marker::PhantomData, pin::Pin, sync::Arc, time::Duration};
+use std::{marker::PhantomData, sync::Arc, time::Duration};
 
 use parking_lot::Mutex;
 
@@ -560,17 +558,19 @@ mod tests {
 		let header = client.header(&BlockId::Number(0)).unwrap().unwrap();
 		// The header of the block that will be build by the dummy proposer.
 		let result_header = Header::new(
-				1337,
-				Default::default(),
-				Default::default(),
-				Default::default(),
-				digest,
-			);
+			1337,
+			Default::default(),
+			Default::default(),
+			Default::default(),
+			digest,
+		);
 
 		let result_block = Block::new(result_header, Vec::new());
 
 		// We need to import the block, because the dummy
-		client.import(BlockOrigin::Own, result_block.clone()).expect("Should be imported");
+		client
+			.import(BlockOrigin::Own, result_block.clone())
+			.expect("Should be imported");
 
 		let (sub_tx, sub_rx) = mpsc::channel(64);
 
@@ -581,33 +581,38 @@ mod tests {
 
 		spawner.spawn("overseer", overseer.run().then(|_| async { () }).boxed());
 
-		let collator_start = start_collator::<_, _, _, _, _, _, _, _, polkadot_service::FullBackend, _>(StartCollatorParams {
-			proposer_factory: DummyFactory,
-			inherent_data_providers: Default::default(),
-			backend,
-			block_import: client.clone(),
-			block_status: client.clone(),
-			client,
-			announce_block: Arc::new(announce_block),
-			overseer_handler: handler,
-			spawner,
-			para_id,
-			key: CollatorPair::generate().0,
-			polkadot_client: Arc::new(
-				substrate_test_client::TestClientBuilder::<_, _, _, ()>::default()
-					.build_with_native_executor::<polkadot_service::polkadot_runtime::RuntimeApi, _>(
-						Some(NativeExecutor::<polkadot_service::PolkadotExecutor>::new(
-							Interpreted,
-							None,
-							1,
-						)),
-					)
-					.0,
-			),
-		});
+		let collator_start =
+			start_collator::<_, _, _, _, _, _, _, _, polkadot_service::FullBackend, _>(
+				StartCollatorParams {
+					proposer_factory: DummyFactory,
+					inherent_data_providers: Default::default(),
+					backend,
+					block_import: client.clone(),
+					block_status: client.clone(),
+					client,
+					announce_block: Arc::new(announce_block),
+					overseer_handler: handler,
+					spawner,
+					para_id,
+					key: CollatorPair::generate().0,
+					polkadot_client: Arc::new(
+						substrate_test_client::TestClientBuilder::<_, _, _, ()>::default()
+							.build_with_native_executor::<polkadot_service::polkadot_runtime::RuntimeApi, _>(
+								Some(NativeExecutor::<polkadot_service::PolkadotExecutor>::new(
+									Interpreted,
+									None,
+									1,
+								)),
+							)
+							.0,
+					),
+				},
+			);
 		block_on(collator_start).expect("Should start collator");
 
-		let msg = block_on(sub_rx.into_future()).0.expect("message should be send by `start_collator` above.");
+		let msg = block_on(sub_rx.into_future())
+			.0
+			.expect("message should be send by `start_collator` above.");
 
 		let config = match msg {
 			CollationGenerationMessage::Initialize(config) => config,
@@ -616,7 +621,8 @@ mod tests {
 		let mut validation_data = ValidationData::default();
 		validation_data.persisted.parent_head = header.encode().into();
 
-		let collation = block_on((config.collator)(Default::default(), &validation_data)).expect("Collation is build");
+		let collation = block_on((config.collator)(Default::default(), &validation_data))
+			.expect("Collation is build");
 
 		let block_data = collation.proof_of_validity.block_data;
 

@@ -47,21 +47,18 @@ impl SyncOracle for DummyCollatorNetwork {
 	}
 }
 
-fn make_validator() -> JustifiedBlockAnnounceValidator<Block, TestApi> {
+fn make_validator() -> BlockAnnounceValidator<Block, TestApi> {
 	let (validator, _client) = make_validator_and_client();
 
 	validator
 }
 
-fn make_validator_and_client() -> (
-	JustifiedBlockAnnounceValidator<Block, TestApi>,
-	Arc<TestApi>,
-) {
+fn make_validator_and_client() -> (BlockAnnounceValidator<Block, TestApi>, Arc<TestApi>) {
 	let builder = TestClientBuilder::new();
 	let client = Arc::new(TestApi::new(Arc::new(builder.build())));
 
 	(
-		JustifiedBlockAnnounceValidator::new(
+		BlockAnnounceValidator::new(
 			client.clone(),
 			ParaId::from(56),
 			Box::new(DummyCollatorNetwork),

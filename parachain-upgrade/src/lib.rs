@@ -35,7 +35,8 @@ use cumulus_primitives::{
 	OnValidationData, ValidationData,
 };
 use frame_support::{
-	decl_error, decl_event, decl_module, decl_storage, ensure, storage, weights::DispatchClass, weights::Weight
+	decl_error, decl_event, decl_module, decl_storage, ensure, storage,
+	weights::{DispatchClass, Weight},
 };
 use frame_system::{ensure_none, ensure_root};
 use parachain::primitives::RelayChainBlockNumber;
