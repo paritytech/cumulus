@@ -19,11 +19,15 @@ sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "mast
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Cumulus deps
 cumulus-test-runtime = { path = "../runtime" }
 cumulus-test-service = { path = "../service" }
 cumulus-primitives = { path = "../../primitives" }
+
+# Polkadot deps
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Other deps
 codec = { package = "parity-scale-codec", version = "1.0.5", default-features = false, features = [ "derive" ] }

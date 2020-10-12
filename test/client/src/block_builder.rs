@@ -22,22 +22,23 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::ExecutionContext;
 use sp_runtime::generic::BlockId;
+use polkadot_primitives::v1::BlockNumber as PBlockNumber;
 
 /// Generate the inherents to a block so you don't have to.
 pub fn generate_block_inherents(client: &Client) -> Vec<cumulus_test_runtime::UncheckedExtrinsic> {
-	let mut inherent_data = sp_consensus::InherentData::new();
+	let mut inherent_data = sp_inherents::InherentData::new();
 	let block_id = BlockId::Hash(client.info().best_hash);
 	let last_timestamp = client
 		.runtime_api()
 		.get_last_timestamp(&block_id)
 		.expect("Get last timestamp");
-	let timestamp = last_timestamp + runtime::MinimumPeriod::get();
+	let timestamp = last_timestamp + cumulus_test_runtime::MinimumPeriod::get();
 
 	inherent_data
 		.put_data(sp_timestamp::INHERENT_IDENTIFIER, &timestamp)
 		.expect("Put timestamp failed");
 	inherent_data
-		.put_data(VALIDATION_DATA_IDENTIFIER, &ValidationData::default())
+		.put_data(VALIDATION_DATA_IDENTIFIER, &ValidationData::<PBlockNumber>::default())
 		.expect("Put validation function params failed");
 
 	client

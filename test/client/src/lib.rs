@@ -50,13 +50,13 @@ mod local_executor {
 pub use local_executor::LocalExecutor;
 
 /// Test client database backend.
-pub type Backend = test_client::Backend<Block>;
+pub type Backend = substrate_test_client::Backend<Block>;
 
 /// Test client executor.
 pub type Executor = client::LocalCallExecutor<Backend, sc_executor::NativeExecutor<LocalExecutor>>;
 
 /// Test client builder for Cumulus
-pub type TestClientBuilder = TestClientBuilder<Block, Executor, Backend, GenesisParameters>;
+pub type TestClientBuilder = substrate_test_client::TestClientBuilder<Block, Executor, Backend, GenesisParameters>;
 
 /// LongestChain type for the test runtime/client.
 pub type LongestChain = sc_consensus::LongestChain<Backend, Block>;
