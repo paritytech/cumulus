@@ -16,6 +16,7 @@ sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot dependencies
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -40,11 +41,10 @@ parking_lot = "0.9"
 
 [dev-dependencies]
 # Cumulus dependencies
-test-runtime = { package = "cumulus-test-runtime", path = "../test/runtime" }
-test-client = { package = "cumulus-test-client", path = "../test/client" }
+cumulus-test-runtime = { path = "../test/runtime" }
+cumulus-test-client = { path = "../test/client" }
 
 # Substrate dependencies
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }

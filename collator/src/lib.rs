@@ -473,7 +473,7 @@ where
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use std::time::Duration;
+	use std::{pin::Pin, time::Duration};
 
 	use sp_blockchain::Result as ClientResult;
 	use sp_core::{testing::TaskExecutor, Pair};
@@ -481,10 +481,13 @@ mod tests {
 	use sp_keyring::Sr25519Keyring;
 	use sp_runtime::traits::{DigestFor, Header as HeaderT};
 	use sp_state_machine::StorageProof;
-	use substrate_test_client::{NativeExecutor, WasmExecutionMethod::Interpreted};
+	use sc_block_builder::BlockBuilderProvider;
 
-	use test_client::{DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt};
-	use test_runtime::{Block, Header};
+	use cumulus_test_client::{
+		Client, DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt, generate_block_inherents,
+	ClientBlockImportExt, NativeExecutor, WasmExecutionMethod::Interpreted,
+	};
+	use cumulus_test_runtime::{Block, Header};
 
 	use polkadot_node_subsystem::messages::CollationGenerationMessage;
 	use polkadot_node_subsystem_test_helpers::ForwardSubsystem;
@@ -501,7 +504,7 @@ mod tests {
 		}
 	}
 
-	struct DummyFactory;
+	struct DummyFactory(Arc<Client>);
 
 	impl Environment<Block> for DummyFactory {
 		type Proposer = DummyProposer;
@@ -510,37 +513,48 @@ mod tests {
 			Box<dyn Future<Output = Result<Self::Proposer, Self::Error>> + Send + Unpin + 'static>,
 		>;
 
-		fn init(&mut self, _: &Header) -> Self::CreateProposer {
-			Box::pin(future::ready(Ok(DummyProposer)))
+		fn init(&mut self, header: &Header) -> Self::CreateProposer {
+			Box::pin(future::ready(Ok(DummyProposer {
+				client: self.0.clone(),
+				header: header.clone(),
+			})))
 		}
 	}
 
-	struct DummyProposer;
+	struct DummyProposer {
+		client: Arc<Client>,
+		header: Header,
+	}
 
 	impl Proposer<Block> for DummyProposer {
 		type Error = Error;
 		type Proposal = future::Ready<Result<Proposal<Block, Self::Transaction>, Error>>;
-		type Transaction = sc_client_api::TransactionFor<test_client::Backend, Block>;
+		type Transaction = sc_client_api::TransactionFor<cumulus_test_client::Backend, Block>;
 
 		fn propose(
 			self,
 			_: InherentData,
 			digest: DigestFor<Block>,
 			_: Duration,
-			_: RecordProof,
+			record_proof: RecordProof,
 		) -> Self::Proposal {
-			let header = Header::new(
-				1337,
-				Default::default(),
-				Default::default(),
-				Default::default(),
-				digest,
-			);
+			let block_id = BlockId::Hash(self.header.hash());
+			let mut builder = self
+				.client
+				.new_block_at(&block_id, Default::default(), true)
+				.expect("Initializes new block");
+
+			generate_block_inherents(&*self.client)
+				.into_iter()
+				.for_each(|e| builder.push(e).expect("Pushes an inherent"));
+
+			let (block, storage_changes, proof) =
+				builder.build().expect("Creates block").into_inner();
 
 			future::ready(Ok(Proposal {
-				block: Block::new(header, Vec::new()),
-				storage_changes: Default::default(),
-				proof: Some(StorageProof::empty()),
+				block,
+				storage_changes,
+				proof,
 			}))
 		}
 	}
@@ -556,21 +570,6 @@ mod tests {
 		let backend = client_builder.backend();
 		let client = Arc::new(client_builder.build());
 		let header = client.header(&BlockId::Number(0)).unwrap().unwrap();
-		// The header of the block that will be build by the dummy proposer.
-		let result_header = Header::new(
-			1337,
-			Default::default(),
-			Default::default(),
-			Default::default(),
-			digest,
-		);
-
-		let result_block = Block::new(result_header, Vec::new());
-
-		// We need to import the block, because the dummy
-		client
-			.import(BlockOrigin::Own, result_block.clone())
-			.expect("Should be imported");
 
 		let (sub_tx, sub_rx) = mpsc::channel(64);
 
@@ -584,7 +583,7 @@ mod tests {
 		let collator_start =
 			start_collator::<_, _, _, _, _, _, _, _, polkadot_service::FullBackend, _>(
 				StartCollatorParams {
-					proposer_factory: DummyFactory,
+					proposer_factory: DummyFactory(client.clone()),
 					inherent_data_providers: Default::default(),
 					backend,
 					block_import: client.clone(),
@@ -596,7 +595,7 @@ mod tests {
 					para_id,
 					key: CollatorPair::generate().0,
 					polkadot_client: Arc::new(
-						substrate_test_client::TestClientBuilder::<_, _, _, ()>::default()
+						cumulus_test_client::TestClientBuilder::<_, _, _, ()>::default()
 							.build_with_native_executor::<polkadot_service::polkadot_runtime::RuntimeApi, _>(
 								Some(NativeExecutor::<polkadot_service::PolkadotExecutor>::new(
 									Interpreted,
