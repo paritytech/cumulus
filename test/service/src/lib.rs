@@ -26,14 +26,14 @@ pub use genesis::*;
 
 use ansi_term::Color;
 use core::future::Future;
-use cumulus_network::DelayedBlockAnnounceValidator;
+use cumulus_network::BlockAnnounceValidator;
 use cumulus_primitives::ParaId;
 use cumulus_service::{
-	prepare_node_config, start_full_node, StartCollatorParams, StartFullNodeParams,
+	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_test_runtime::{NodeBlock as Block, RuntimeApi};
-use polkadot_primitives::v0::CollatorPair;
-use sc_client_api::{execution_extensions::ExecutionStrategies, BlockBackend};
+use polkadot_primitives::v1::CollatorPair;
+use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_informant::OutputFormat;
@@ -46,8 +46,7 @@ use sc_service::{
 	BasePath, ChainSpec, Configuration, Error as ServiceError, PartialComponents, Role,
 	RpcHandlers, TFullBackend, TFullClient, TaskExecutor, TaskManager,
 };
-use sp_consensus::{BlockImport, Environment, Error as ConsensusError, Proposer};
-use sp_core::{crypto::Pair, H256};
+use sp_core::H256;
 use sp_keyring::Sr25519Keyring;
 use sp_runtime::traits::BlakeTwo256;
 use sp_state_machine::BasicExternalities;
@@ -81,7 +80,7 @@ pub fn new_partial(
 > {
 	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
-	let (client, backend, keystore, task_manager) =
+	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, RuntimeExecutor>(&config)?;
 	let client = Arc::new(client);
 
@@ -106,7 +105,7 @@ pub fn new_partial(
 		backend,
 		client,
 		import_queue,
-		keystore,
+		keystore_container,
 		task_manager,
 		transaction_pool,
 		inherent_data_providers,
@@ -117,88 +116,13 @@ pub fn new_partial(
 	Ok(params)
 }
 
-/// Start a test collator node for a parachain.
-///
-/// A collator is similar to a validator in a normal blockchain.
-/// It is responsible for producing blocks and sending the blocks to a
-/// parachain validator for validation and inclusion into the relay chain.
-pub fn start_test_collator<'a, PF, BI, BS>(
-	StartCollatorParams {
-		para_id,
-		proposer_factory,
-		inherent_data_providers,
-		block_import,
-		block_status,
-		announce_block,
-		client,
-		block_announce_validator,
-		task_manager,
-		polkadot_config,
-		collator_key,
-	}: StartCollatorParams<'a, Block, PF, BI, BS, TFullClient<Block, RuntimeApi, RuntimeExecutor>>,
-) -> sc_service::error::Result<()>
-where
-	PF: Environment<Block> + Send + 'static,
-	BI: BlockImport<
-			Block,
-			Error = ConsensusError,
-			Transaction = <PF::Proposer as Proposer<Block>>::Transaction,
-		> + Send
-		+ Sync
-		+ 'static,
-	BS: BlockBackend<Block> + Send + Sync + 'static,
-{
-	let builder = CollatorBuilder::new(
-		proposer_factory,
-		inherent_data_providers,
-		block_import,
-		block_status,
-		para_id,
-		client,
-		announce_block,
-		block_announce_validator,
-	);
-
-	let (polkadot_future, polkadot_task_manager) = {
-		let (task_manager, client, handles, _network, _rpc_handlers) =
-			polkadot_test_service::polkadot_test_new_full(
-				polkadot_config,
-				Some((collator_key.public(), para_id)),
-				None,
-				false,
-				6000,
-			)?;
-
-		let test_client = polkadot_test_service::TestClient(client);
-
-		let future = polkadot_collator::build_collator_service(
-			task_manager.spawn_handle(),
-			handles,
-			test_client,
-			para_id,
-			collator_key,
-			builder,
-		)?;
-
-		(future, task_manager)
-	};
-
-	task_manager
-		.spawn_essential_handle()
-		.spawn("polkadot", polkadot_future);
-
-	task_manager.add_child(polkadot_task_manager);
-
-	Ok(())
-}
-
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
-fn start_node_impl<RB>(
+async fn start_node_impl<RB>(
 	parachain_config: Configuration,
-	collator_key: Arc<CollatorPair>,
-	mut polkadot_config: polkadot_collator::Configuration,
+	collator_key: CollatorPair,
+	mut polkadot_config: Configuration,
 	para_id: ParaId,
 	validator: bool,
 	rpc_ext_builder: RB,
@@ -206,7 +130,7 @@ fn start_node_impl<RB>(
 	TaskManager,
 	Arc<TFullClient<Block, RuntimeApi, RuntimeExecutor>>,
 	Arc<NetworkService<Block, H256>>,
-	Arc<RpcHandlers>,
+	RpcHandlers,
 )>
 where
 	RB: Fn(
@@ -234,19 +158,23 @@ where
 	params
 		.inherent_data_providers
 		.register_provider(sp_timestamp::InherentDataProvider)
-		.unwrap();
+		.expect("Registers timestamp inherent data provider.");
+
+	let transaction_pool = params.transaction_pool.clone();
+	let mut task_manager = params.task_manager;
+
+	let polkadot_full_node = polkadot_test_service::polkadot_test_new_full(polkadot_config, true)?;
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
-	let block_announce_validator = DelayedBlockAnnounceValidator::new();
-	let block_announce_validator_builder = {
-		let block_announce_validator = block_announce_validator.clone();
-		move |_| Box::new(block_announce_validator) as Box<_>
-	};
+	let block_announce_validator = BlockAnnounceValidator::new(
+		polkadot_full_node.client.clone(),
+		para_id,
+		Box::new(polkadot_full_node.network.clone()),
+	);
+	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
 
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
-	let transaction_pool = params.transaction_pool.clone();
-	let mut task_manager = params.task_manager;
 	let import_queue = params.import_queue;
 	let (network, network_status_sinks, system_rpc_tx, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
@@ -264,7 +192,7 @@ where
 	let rpc_extensions_builder = {
 		let client = client.clone();
 
-		Box::new(move |_deny_unsafe| rpc_ext_builder(client.clone()))
+		Box::new(move |_, _| rpc_ext_builder(client.clone()))
 	};
 
 	let rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
@@ -276,7 +204,7 @@ where
 		task_manager: &mut task_manager,
 		telemetry_connection_sinks: Default::default(),
 		config: parachain_config,
-		keystore: params.keystore,
+		keystore: params.keystore_container.sync_keystore(),
 		backend,
 		network: network.clone(),
 		network_status_sinks,
@@ -288,6 +216,7 @@ where
 		Arc::new(move |hash, data| network.announce_block(hash, data))
 	};
 
+	let polkadot_full_node = polkadot_full_node.with_client(polkadot_test_service::TestClient);
 	if validator {
 		let proposer_factory = sc_basic_authorship::ProposerFactory::new(
 			client.clone(),
@@ -296,29 +225,28 @@ where
 		);
 
 		let params = StartCollatorParams {
-			para_id,
-			block_import: client.clone(),
 			proposer_factory,
 			inherent_data_providers: params.inherent_data_providers,
+			backend: params.backend,
+			block_import: client.clone(),
 			block_status: client.clone(),
 			announce_block,
 			client: client.clone(),
-			block_announce_validator,
+			spawner: task_manager.spawn_handle(),
 			task_manager: &mut task_manager,
-			polkadot_config,
+			para_id,
 			collator_key,
+			polkadot_full_node,
 		};
 
-		start_test_collator(params)?;
+		start_collator(params).await?;
 	} else {
 		let params = StartFullNodeParams {
 			client: client.clone(),
 			announce_block,
-			polkadot_config,
-			collator_key,
-			block_announce_validator,
 			task_manager: &mut task_manager,
 			para_id,
+			polkadot_full_node,
 		};
 
 		start_full_node(params)?;
@@ -341,14 +269,14 @@ pub struct CumulusTestNode {
 	/// to other nodes.
 	pub addr: MultiaddrWithPeerId,
 	/// RPCHandlers to make RPC queries.
-	pub rpc_handlers: Arc<RpcHandlers>,
+	pub rpc_handlers: RpcHandlers,
 }
 
 /// Run a Cumulus test node using the Cumulus test runtime. The node will be using an in-memory
 /// socket, therefore you need to provide boot nodes if you want it to be connected to other nodes.
 /// The `storage_update_func` can be used to make adjustements to the runtime before the node
 /// starts.
-pub fn run_test_node(
+pub async fn run_test_node(
 	task_executor: TaskExecutor,
 	key: Sr25519Keyring,
 	parachain_storage_update_func: impl Fn(),
@@ -358,7 +286,7 @@ pub fn run_test_node(
 	para_id: ParaId,
 	validator: bool,
 ) -> CumulusTestNode {
-	let collator_key = Arc::new(sp_core::Pair::generate().0);
+	let collator_key = sp_core::Pair::generate().0;
 	let parachain_config = node_config(
 		parachain_storage_update_func,
 		task_executor.clone(),
@@ -374,7 +302,7 @@ pub fn run_test_node(
 		polkadot_boot_nodes,
 	);
 	let multiaddr = parachain_config.network.listen_addresses[0].clone();
-	let (task_manager, client, network, rpc_handlers) = start_node_impl::<_>(
+	let (task_manager, client, network, rpc_handlers) = start_node_impl(
 		parachain_config,
 		collator_key,
 		polkadot_config,
@@ -382,6 +310,7 @@ pub fn run_test_node(
 		validator,
 		|_| Default::default(),
 	)
+	.await
 	.expect("could not create Cumulus test service");
 
 	let peer_id = network.local_peer_id().clone();

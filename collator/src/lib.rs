@@ -23,7 +23,7 @@ use cumulus_primitives::{
 };
 use cumulus_runtime::ParachainBlockData;
 
-use sc_client_api::{Backend as BackendT, BlockBackend, Finalizer, StateBackend, UsageProvider};
+use sc_client_api::{BlockBackend, Finalizer, StateBackend, UsageProvider};
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, BlockStatus, Environment, Error as ConsensusError,

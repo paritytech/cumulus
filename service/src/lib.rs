@@ -24,7 +24,7 @@ use polkadot_overseer::OverseerHandler;
 use polkadot_primitives::v1::{Block as PBlock, CollatorPair};
 use polkadot_service::{AbstractClient, Client as PClient, ClientHandle, RuntimeApiCollection};
 use sc_client_api::{Backend as BackendT, BlockBackend, Finalizer, UsageProvider};
-use sc_service::{Configuration, error::Result as ServiceResult, Role, TaskManager};
+use sc_service::{error::Result as ServiceResult, Configuration, Role, TaskManager};
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{BlockImport, Environment, Error as ConsensusError, Proposer};
 use sp_core::traits::SpawnNamed;
@@ -33,10 +33,10 @@ use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
 use std::{marker::PhantomData, sync::Arc};
 
 /// Polkadot full node handles.
-type PFullNode = polkadot_service::NewFull<PClient>;
+type PFullNode<C> = polkadot_service::NewFull<C>;
 
 /// Parameters given to [`start_collator`].
-pub struct StartCollatorParams<'a, Block: BlockT, PF, BI, BS, Client, Backend, Spawner> {
+pub struct StartCollatorParams<'a, Block: BlockT, PF, BI, BS, Client, Backend, Spawner, PClient> {
 	pub proposer_factory: PF,
 	pub inherent_data_providers: InherentDataProviders,
 	pub backend: Arc<Backend>,
@@ -44,11 +44,10 @@ pub struct StartCollatorParams<'a, Block: BlockT, PF, BI, BS, Client, Backend, S
 	pub block_status: Arc<BS>,
 	pub client: Arc<Client>,
 	pub announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
-	pub overseer_handler: OverseerHandler,
 	pub spawner: Spawner,
 	pub para_id: ParaId,
 	pub collator_key: CollatorPair,
-	pub polkadot_full_node: PFullNode,
+	pub polkadot_full_node: PFullNode<PClient>,
 	pub task_manager: &'a mut TaskManager,
 }
 
@@ -57,7 +56,7 @@ pub struct StartCollatorParams<'a, Block: BlockT, PF, BI, BS, Client, Backend, S
 /// A collator is similar to a validator in a normal blockchain.
 /// It is responsible for producing blocks and sending the blocks to a
 /// parachain validator for validation and inclusion into the relay chain.
-pub async fn start_collator<'a, Block, PF, BI, BS, Client, Backend, Spawner>(
+pub async fn start_collator<'a, Block, PF, BI, BS, Client, Backend, Spawner, PClient>(
 	StartCollatorParams {
 		proposer_factory,
 		inherent_data_providers,
@@ -66,13 +65,12 @@ pub async fn start_collator<'a, Block, PF, BI, BS, Client, Backend, Spawner>(
 		block_status,
 		client,
 		announce_block,
-		overseer_handler,
 		spawner,
 		para_id,
 		collator_key,
 		polkadot_full_node,
 		task_manager,
-	}: StartCollatorParams<'a, Block, PF, BI, BS, Client, Backend, Spawner>,
+	}: StartCollatorParams<'a, Block, PF, BI, BS, Client, Backend, Spawner, PClient>,
 ) -> sc_service::error::Result<()>
 where
 	Block: BlockT,
@@ -95,6 +93,7 @@ where
 	for<'b> &'b Client: BlockImport<Block>,
 	Backend: BackendT<Block> + 'static,
 	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
+	PClient: ClientHandle,
 {
 	polkadot_full_node
 		.client
@@ -104,7 +103,7 @@ where
 			backend,
 			client,
 			announce_block,
-			overseer_handler,
+			overseer_handler: polkadot_full_node.overseer_handler,
 			spawner,
 			para_id,
 			collator_key,
@@ -189,10 +188,10 @@ where
 }
 
 /// Parameters given to [`start_full_node`].
-pub struct StartFullNodeParams<'a, Block: BlockT, Client> {
+pub struct StartFullNodeParams<'a, Block: BlockT, Client, PClient> {
 	pub para_id: ParaId,
 	pub client: Arc<Client>,
-	pub polkadot_full_node: PFullNode,
+	pub polkadot_full_node: PFullNode<PClient>,
 	pub task_manager: &'a mut TaskManager,
 	pub announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
 }
@@ -201,14 +200,14 @@ pub struct StartFullNodeParams<'a, Block: BlockT, Client> {
 ///
 /// A full node will only sync the given parachain and will follow the
 /// tip of the chain.
-pub fn start_full_node<Block, Client, Backend>(
+pub fn start_full_node<Block, Client, Backend, PClient>(
 	StartFullNodeParams {
 		client,
 		announce_block,
 		task_manager,
 		polkadot_full_node,
 		para_id,
-	}: StartFullNodeParams<Block, Client>,
+	}: StartFullNodeParams<Block, Client, PClient>,
 ) -> sc_service::error::Result<()>
 where
 	Block: BlockT,
@@ -220,6 +219,7 @@ where
 		+ 'static,
 	for<'a> &'a Client: BlockImport<Block>,
 	Backend: BackendT<Block> + 'static,
+	PClient: ClientHandle,
 {
 	polkadot_full_node.client.execute_with(StartFullNode {
 		announce_block,
@@ -290,7 +290,9 @@ pub fn prepare_node_config(mut parachain_config: Configuration) -> Configuration
 }
 
 /// Build the Polkadot service using the given `config`.
-pub fn build_polkadot_service(config: Configuration) -> sc_service::error::Result<PFullNode> {
+pub fn build_polkadot_service(
+	config: Configuration,
+) -> sc_service::error::Result<PFullNode<PClient>> {
 	let is_light = matches!(config.role, Role::Light);
 	if is_light {
 		Err("Light client not supported.".into())
