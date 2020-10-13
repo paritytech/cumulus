@@ -27,6 +27,7 @@ parachain = { package = "polkadot-parachain", git = "https://github.com/parityte
 
 [dev-dependencies]
 sc-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }

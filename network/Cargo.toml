@@ -37,6 +37,4 @@ cumulus-test-runtime = { path = "../test/runtime" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
-
-# polkadot deps
-polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
