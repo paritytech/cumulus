@@ -289,8 +289,8 @@ pub fn prepare_node_config(mut parachain_config: Configuration) -> Configuration
 	parachain_config
 }
 
-/// Build the Polkadot service using the given `config`.
-pub fn build_polkadot_service(
+/// Build the Polkadot full node using the given `config`.
+pub fn build_polkadot_full_node(
 	config: Configuration,
 ) -> sc_service::error::Result<PFullNode<PClient>> {
 	let is_light = matches!(config.role, Role::Light);

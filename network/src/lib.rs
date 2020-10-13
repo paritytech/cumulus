@@ -42,6 +42,7 @@ use polkadot_primitives::v1::{
 	Block as PBlock, Hash as PHash, Id as ParaId, OccupiedCoreAssumption, ParachainHost,
 	SigningContext,
 };
+use polkadot_service::ClientHandle;
 
 use codec::{Decode, Encode};
 use futures::{
@@ -270,6 +271,71 @@ where
 		}
 
 		ready(Ok(Validation::Success { is_new_best: true })).boxed()
+	}
+}
+
+/// Build a block announce validator instance.
+///
+/// Returns a boxed [`BlockAnnounceValidator`].
+pub fn build_block_announce_validator<B: BlockT>(
+	polkadot_client: polkadot_service::Client,
+	para_id: ParaId,
+	polkadot_sync_oracle: Box<dyn SyncOracle + Send>,
+) -> Box<dyn BlockAnnounceValidatorT<B> + Send> {
+	BlockAnnounceValidatorBuilder::new(polkadot_client, para_id, polkadot_sync_oracle).build()
+}
+
+/// Block announce validator builder.
+///
+/// Builds a [`BlockAnnounceValidator`] for a parachain. As this requires
+/// a concrete Polkadot client instance, the builder takes a [`polkadot_service::Client`]
+/// that wraps this concrete instanace. By using [`polkadot_service::ExecuteWithClient`]
+/// the builder gets access to this concrete instance.
+struct BlockAnnounceValidatorBuilder<B> {
+	phantom: PhantomData<B>,
+	polkadot_client: polkadot_service::Client,
+	para_id: ParaId,
+	polkadot_sync_oracle: Box<dyn SyncOracle + Send>,
+}
+
+impl<B: BlockT> BlockAnnounceValidatorBuilder<B> {
+	/// Create a new instance of the builder.
+	fn new(
+		polkadot_client: polkadot_service::Client,
+		para_id: ParaId,
+		polkadot_sync_oracle: Box<dyn SyncOracle + Send>,
+	) -> Self {
+		Self {
+			polkadot_client,
+			para_id,
+			polkadot_sync_oracle,
+			phantom: PhantomData,
+		}
+	}
+
+	/// Build the block announce validator.
+	fn build(self) -> Box<dyn BlockAnnounceValidatorT<B> + Send> {
+		self.polkadot_client.clone().execute_with(self)
+	}
+}
+
+impl<B: BlockT> polkadot_service::ExecuteWithClient for BlockAnnounceValidatorBuilder<B> {
+	type Output = Box<dyn BlockAnnounceValidatorT<B> + Send>;
+
+	fn execute_with_client<PClient, Api, PBackend>(self, client: Arc<PClient>) -> Self::Output
+	where
+		<Api as sp_api::ApiExt<PBlock>>::StateBackend:
+			sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
+		PBackend: sc_client_api::Backend<PBlock>,
+		PBackend::State: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
+		Api: polkadot_service::RuntimeApiCollection<StateBackend = PBackend::State>,
+		PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
+	{
+		Box::new(BlockAnnounceValidator::new(
+			client,
+			self.para_id,
+			self.polkadot_sync_oracle,
+		))
 	}
 }
 

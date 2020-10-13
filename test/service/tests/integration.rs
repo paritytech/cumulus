@@ -41,7 +41,7 @@ async fn test_collating_and_non_collator_mode_catching_up(task_executor: TaskExe
 
 	// register parachain
 	alice
-		.register_para(
+		.register_parachain(
 			para_id,
 			cumulus_test_runtime::WASM_BINARY
 				.expect("You need to build the WASM binary to run this test!")
@@ -62,7 +62,8 @@ async fn test_collating_and_non_collator_mode_catching_up(task_executor: TaskExe
 		vec![alice.addr.clone(), bob.addr.clone()],
 		para_id,
 		true,
-	);
+	)
+	.await;
 	charlie.wait_for_blocks(2).await;
 
 	// run cumulus dave (not a validator)
@@ -78,7 +79,8 @@ async fn test_collating_and_non_collator_mode_catching_up(task_executor: TaskExe
 		vec![alice.addr.clone(), bob.addr.clone()],
 		para_id,
 		false,
-	);
+	)
+	.await;
 	dave.wait_for_blocks(4).await;
 
 	join!(
