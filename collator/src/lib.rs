@@ -475,17 +475,14 @@ mod tests {
 	use super::*;
 	use std::{pin::Pin, time::Duration};
 
-	use sp_blockchain::Result as ClientResult;
+	use sc_block_builder::BlockBuilderProvider;
 	use sp_core::{testing::TaskExecutor, Pair};
 	use sp_inherents::InherentData;
-	use sp_keyring::Sr25519Keyring;
-	use sp_runtime::traits::{DigestFor, Header as HeaderT};
-	use sp_state_machine::StorageProof;
-	use sc_block_builder::BlockBuilderProvider;
+	use sp_runtime::traits::DigestFor;
 
 	use cumulus_test_client::{
-		Client, DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt, generate_block_inherents,
-	ClientBlockImportExt, NativeExecutor, WasmExecutionMethod::Interpreted,
+		generate_block_inherents, Client, DefaultTestClientBuilderExt, NativeExecutor,
+		TestClientBuilder, TestClientBuilderExt, WasmExecutionMethod::Interpreted,
 	};
 	use cumulus_test_runtime::{Block, Header};
 
@@ -493,7 +490,7 @@ mod tests {
 	use polkadot_node_subsystem_test_helpers::ForwardSubsystem;
 	use polkadot_overseer::{AllSubsystems, Overseer};
 
-	use futures::{channel::mpsc, executor::block_on, future, Stream};
+	use futures::{channel::mpsc, executor::block_on, future};
 
 	#[derive(Debug)]
 	struct Error;
@@ -541,7 +538,7 @@ mod tests {
 			let block_id = BlockId::Hash(self.header.hash());
 			let mut builder = self
 				.client
-				.new_block_at(&block_id, Default::default(), true)
+				.new_block_at(&block_id, digest, record_proof.yes())
 				.expect("Initializes new block");
 
 			generate_block_inherents(&*self.client)
@@ -588,14 +585,14 @@ mod tests {
 					backend,
 					block_import: client.clone(),
 					block_status: client.clone(),
-					client,
+					client: client.clone(),
 					announce_block: Arc::new(announce_block),
 					overseer_handler: handler,
 					spawner,
 					para_id,
 					key: CollatorPair::generate().0,
 					polkadot_client: Arc::new(
-						cumulus_test_client::TestClientBuilder::<_, _, _, ()>::default()
+						substrate_test_client::TestClientBuilder::<_, _, _, ()>::default()
 							.build_with_native_executor::<polkadot_service::polkadot_runtime::RuntimeApi, _>(
 								Some(NativeExecutor::<polkadot_service::PolkadotExecutor>::new(
 									Interpreted,
@@ -627,6 +624,6 @@ mod tests {
 
 		let block = Block::decode(&mut &block_data.0[..]).expect("Is a valid block");
 
-		assert_eq!(1337, *block.header().number());
+		assert_eq!(1, *block.header().number());
 	}
 }
