@@ -115,7 +115,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	let block = B::new(block_data.header, block_data.extrinsics);
 	assert!(
 		parent_head.hash() == *block.header().parent_hash(),
-		"Invalid parent hash"
+		"Invalid parent hash",
 	);
 
 	let storage_inner = WitnessStorage::<B>::new(

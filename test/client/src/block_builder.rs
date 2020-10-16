@@ -24,8 +24,15 @@ use sp_blockchain::HeaderBackend;
 use sp_core::ExecutionContext;
 use sp_runtime::generic::BlockId;
 
-/// Generate the inherents to a block so you don't have to.
-pub fn generate_block_inherents(client: &Client) -> Vec<cumulus_test_runtime::UncheckedExtrinsic> {
+/// Generate the inherents required by the test runtime.
+///
+/// - `validation_data`: The [`ValidationData`] that will be passed as inherent
+///                      data into the runtime when building the inherents. If
+///                      `None` is passed, the default value will be used.
+pub fn generate_block_inherents(
+	client: &Client,
+	validation_data: Option<ValidationData<PBlockNumber>>,
+) -> Vec<cumulus_test_runtime::UncheckedExtrinsic> {
 	let mut inherent_data = sp_inherents::InherentData::new();
 	let block_id = BlockId::Hash(client.info().best_hash);
 	let last_timestamp = client
@@ -40,7 +47,7 @@ pub fn generate_block_inherents(client: &Client) -> Vec<cumulus_test_runtime::Un
 	inherent_data
 		.put_data(
 			VALIDATION_DATA_IDENTIFIER,
-			&ValidationData::<PBlockNumber>::default(),
+			&validation_data.unwrap_or_default(),
 		)
 		.expect("Put validation function params failed");
 

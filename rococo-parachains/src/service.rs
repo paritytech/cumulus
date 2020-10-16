@@ -19,6 +19,7 @@ use cumulus_network::build_block_announce_validator;
 use cumulus_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
+use parachain_runtime::RuntimeApi;
 use polkadot_primitives::v0::CollatorPair;
 use rococo_parachain_primitives::Block;
 use sc_executor::native_executor_instance;
@@ -28,7 +29,6 @@ use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClie
 use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
 use std::sync::Arc;
-use parachain_runtime::RuntimeApi;
 
 // Native executor instance.
 native_executor_instance!(
@@ -53,8 +53,7 @@ pub fn new_partial(
 		(),
 	>,
 	sc_service::Error,
->
-{
+> {
 	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
 	let (client, backend, keystore_container, task_manager) =
@@ -231,10 +230,7 @@ pub async fn start_node(
 	polkadot_config: Configuration,
 	id: polkadot_primitives::v0::Id,
 	validator: bool,
-) -> sc_service::error::Result<(
-	TaskManager,
-	Arc<TFullClient<Block, RuntimeApi, Executor>>,
-)> {
+) -> sc_service::error::Result<(TaskManager, Arc<TFullClient<Block, RuntimeApi, Executor>>)> {
 	start_node_impl(
 		parachain_config,
 		collator_key,

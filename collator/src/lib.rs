@@ -541,7 +541,7 @@ mod tests {
 				.new_block_at(&block_id, digest, record_proof.yes())
 				.expect("Initializes new block");
 
-			generate_block_inherents(&*self.client)
+			generate_block_inherents(&*self.client, None)
 				.into_iter()
 				.for_each(|e| builder.push(e).expect("Pushes an inherent"));
 
