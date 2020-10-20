@@ -16,7 +16,7 @@
 
 use super::*;
 use cumulus_test_runtime::{Block, Header};
-use futures::executor::block_on;
+use futures::{executor::block_on, poll};
 use polkadot_node_primitives::{SignedFullStatement, Statement};
 use polkadot_primitives::v1::{
 	AuthorityDiscoveryId, Block as PBlock, BlockNumber, CandidateCommitments, CandidateDescriptor,
@@ -312,6 +312,28 @@ fn check_header_match_candidate_receipt_header() {
 		*res.downcast::<ClientError>().unwrap(),
 		ClientError::BadJustification(x) if x.contains("header does not match")
 	));
+}
+
+/// Test that ensures that we postpone the block announce verification until
+/// a relay chain block is imported. This is important for when we receive a
+/// block announcement before we have imported the associated relay chain block
+/// which can happen on slow nodes or nodes with a slow network connection.
+#[test]
+fn relay_parent_not_imported_when_block_announce_is_processed() {
+	block_on(async move {
+		let (mut validator, api) = make_validator_and_api();
+		let relay_parent = H256::from_low_u64_be(1);
+
+		let (signed_statement, header) = make_gossip_message_and_header(api, relay_parent, 0);
+
+		let mut data = signed_statement.encode();
+
+		let validation = validator.validate(&header, &data);
+
+		// The relay chain block is not available yet, so the first poll should return
+		// that the future is still pending.
+		assert!(poll!(&mut validation).is_pending());
+	});
 }
 
 #[derive(Default)]
