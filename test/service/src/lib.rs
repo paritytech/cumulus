@@ -153,7 +153,7 @@ where
 	let transaction_pool = params.transaction_pool.clone();
 	let mut task_manager = params.task_manager;
 
-	let polkadot_full_node = polkadot_test_service::polkadot_test_new_full(polkadot_config, true)?;
+	let polkadot_full_node = polkadot_test_service::polkadot_test_new_full(polkadot_config, false)?;
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();

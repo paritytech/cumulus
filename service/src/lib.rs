@@ -103,7 +103,9 @@ where
 			backend,
 			client,
 			announce_block,
-			overseer_handler: polkadot_full_node.overseer_handler,
+			overseer_handler: polkadot_full_node
+				.overseer_handler
+				.ok_or_else(|| "Polkadot full node did not provided an `OverseerHandler`!")?,
 			spawner,
 			para_id,
 			collator_key,

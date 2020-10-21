@@ -112,7 +112,7 @@ where
 		return Err("Light client not supported!".into());
 	}
 
-	let mut parachain_config = prepare_node_config(parachain_config);
+	let parachain_config = prepare_node_config(parachain_config);
 
 	let polkadot_full_node = cumulus_service::build_polkadot_full_node(polkadot_config)?;
 
