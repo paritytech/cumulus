@@ -21,7 +21,6 @@ use sc_service::TaskExecutor;
 use substrate_test_runtime_client::AccountKeyring::*;
 
 #[substrate_test_utils::test]
-#[ignore]
 async fn test_collating_and_non_collator_mode_catching_up(task_executor: TaskExecutor) {
 	let para_id = ParaId::from(100);
 
