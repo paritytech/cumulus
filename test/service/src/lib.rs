@@ -24,7 +24,6 @@ mod genesis;
 pub use chain_spec::*;
 pub use genesis::*;
 
-use ansi_term::Color;
 use core::future::Future;
 use cumulus_network::BlockAnnounceValidator;
 use cumulus_primitives::ParaId;
@@ -122,7 +121,7 @@ pub fn new_partial(
 async fn start_node_impl<RB>(
 	parachain_config: Configuration,
 	collator_key: CollatorPair,
-	mut polkadot_config: Configuration,
+	polkadot_config: Configuration,
 	para_id: ParaId,
 	validator: bool,
 	rpc_ext_builder: RB,
@@ -144,15 +143,6 @@ where
 	}
 
 	let mut parachain_config = prepare_node_config(parachain_config);
-
-	parachain_config.informant_output_format = OutputFormat {
-		enable_color: true,
-		prefix: format!("[{}] ", Color::Yellow.bold().paint("Parachain")),
-	};
-	polkadot_config.informant_output_format = OutputFormat {
-		enable_color: true,
-		prefix: format!("[{}] ", Color::Blue.bold().paint("Relaychain")),
-	};
 
 	let params = new_partial(&mut parachain_config)?;
 	params
@@ -219,6 +209,7 @@ where
 	let polkadot_full_node = polkadot_full_node.with_client(polkadot_test_service::TestClient);
 	if validator {
 		let proposer_factory = sc_basic_authorship::ProposerFactory::new(
+			task_manager.spawn_handle(),
 			client.clone(),
 			transaction_pool,
 			prometheus_registry.as_ref(),
@@ -359,7 +350,6 @@ pub fn node_config(
 	);
 	let informant_output_format = OutputFormat {
 		enable_color: false,
-		prefix: format!("[{}] ", key_seed),
 	};
 
 	network_config.boot_nodes = boot_nodes;

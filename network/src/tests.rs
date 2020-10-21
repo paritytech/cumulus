@@ -159,7 +159,7 @@ fn check_statement_is_encoded_correctly() {
 
 	assert!(matches!(
 		*res.downcast::<ClientError>().unwrap(),
-		ClientError::BadJustification(x) if x.contains("must be a `SignedFullStatement`"),
+		ClientError::BadJustification(x) if x.contains("must be a `SignedFullStatement`")
 	));
 }
 
@@ -190,7 +190,7 @@ fn check_relay_parent_actually_exists() {
 
 	assert!(matches!(
 		*res.downcast::<ClientError>().unwrap(),
-		ClientError::UnknownBlock(_),
+		ClientError::UnknownBlock(_)
 	));
 }
 
@@ -206,7 +206,7 @@ fn check_relay_parent_fails_if_cannot_retrieve_number() {
 
 	assert!(matches!(
 		*res.downcast::<ClientError>().unwrap(),
-		ClientError::Backend(_),
+		ClientError::Backend(_)
 	));
 }
 

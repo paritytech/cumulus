@@ -5,7 +5,6 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = '2018'
 
 [dependencies]
-ansi_term = "0.12.1"
 codec = { package = 'parity-scale-codec', version = '1.0.0' }
 rand = "0.7.3"
 serde = { version = "1.0.101", features = ["derive"] }
