@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use ansi_term::Color;
 use cumulus_network::build_block_announce_validator;
 use cumulus_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
@@ -98,7 +97,7 @@ pub fn new_partial(
 async fn start_node_impl<RB>(
 	parachain_config: Configuration,
 	collator_key: CollatorPair,
-	mut polkadot_config: Configuration,
+	polkadot_config: Configuration,
 	id: polkadot_primitives::v0::Id,
 	validator: bool,
 	rpc_ext_builder: RB,
@@ -114,17 +113,7 @@ where
 		return Err("Light client not supported!".into());
 	}
 
-	let mut parachain_config = prepare_node_config(parachain_config);
-
-	parachain_config.informant_output_format = OutputFormat {
-		enable_color: true,
-		prefix: format!("[{}] ", Color::Yellow.bold().paint("Parachain")),
-	};
-	polkadot_config.informant_output_format = OutputFormat {
-		enable_color: true,
-		prefix: format!("[{}] ", Color::Blue.bold().paint("Relaychain")),
-	};
-
+	let parachain_config = prepare_node_config(parachain_config);
 	let polkadot_full_node = cumulus_service::build_polkadot_full_node(polkadot_config)?;
 
 	let params = new_partial(&parachain_config)?;

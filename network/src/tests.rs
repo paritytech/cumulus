@@ -15,7 +15,7 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use cumulus_test_runtime::{Block, Header};
+use cumulus_test_service::runtime::{Block, Header};
 use futures::{executor::block_on, poll};
 use polkadot_node_primitives::{SignedFullStatement, Statement};
 use polkadot_primitives::v1::{
@@ -23,7 +23,7 @@ use polkadot_primitives::v1::{
 	CandidateEvent, CommittedCandidateReceipt, CoreState, GroupRotationInfo, Hash as PHash,
 	HeadData, Header as PHeader, Id as ParaId, OccupiedCoreAssumption, ParachainHost,
 	PersistedValidationData, SessionIndex, SigningContext, ValidationCode, ValidationData,
-	ValidatorId, ValidatorIndex,
+	ValidatorId, ValidatorIndex, ValidationOutputs,
 };
 use sp_api::{ApiRef, ProvideRuntimeApi};
 use sp_blockchain::{Error as ClientError, HeaderBackend};
@@ -31,10 +31,7 @@ use sp_consensus::block_validation::BlockAnnounceValidator as _;
 use sp_core::H256;
 use sp_keyring::Sr25519Keyring;
 use sp_keystore::{testing::KeyStore, SyncCryptoStore, SyncCryptoStorePtr};
-use sp_runtime::{
-	traits::{NumberFor, Zero},
-	RuntimeAppPublic,
-};
+use sp_runtime::{traits::{NumberFor, Zero}, RuntimeAppPublic};
 
 #[derive(Clone)]
 struct DummyCollatorNetwork;
@@ -72,7 +69,7 @@ fn default_header() -> Header {
 	}
 }
 
-fn make_gossip_message_and_header(
+async fn make_gossip_message_and_header(
 	api: Arc<TestApi>,
 	relay_parent: H256,
 	validator_index: u32,
@@ -105,13 +102,14 @@ fn make_gossip_message_and_header(
 		},
 	};
 	let statement = Statement::Seconded(candidate_receipt);
-	let signed = block_on(SignedFullStatement::sign(
+	let signed = SignedFullStatement::sign(
 		&keystore,
 		statement,
 		&signing_context,
 		validator_index,
 		&alice_public.into(),
-	))
+	)
+	.await
 	.expect("Signing statement");
 
 	(signed, header)
@@ -159,7 +157,7 @@ fn check_statement_is_encoded_correctly() {
 
 	assert!(matches!(
 		*res.downcast::<ClientError>().unwrap(),
-		ClientError::BadJustification(x) if x.contains("must be a `SignedFullStatement`"),
+		ClientError::BadJustification(x) if x.contains("must be a `SignedFullStatement`")
 	));
 }
 
@@ -167,7 +165,8 @@ fn check_statement_is_encoded_correctly() {
 fn check_relay_parent_is_head() {
 	let (mut validator, api) = make_validator_and_api();
 	let relay_chain_leaf = H256::zero();
-	let (gossip_message, header) = make_gossip_message_and_header(api, relay_chain_leaf, 0);
+	let (gossip_message, header) =
+		block_on(make_gossip_message_and_header(api, relay_chain_leaf, 0));
 	let data = gossip_message.encode();
 	let res = block_on(validator.validate(&header, data.as_slice()));
 
@@ -182,7 +181,7 @@ fn check_relay_parent_is_head() {
 fn check_relay_parent_actually_exists() {
 	let (mut validator, api) = make_validator_and_api();
 	let relay_parent = H256::from_low_u64_be(42);
-	let (signed_statement, header) = make_gossip_message_and_header(api, relay_parent, 0);
+	let (signed_statement, header) = block_on(make_gossip_message_and_header(api, relay_parent, 0));
 	let data = signed_statement.encode();
 	let res = block_on(validator.validate(&header, &data))
 		.err()
@@ -190,7 +189,7 @@ fn check_relay_parent_actually_exists() {
 
 	assert!(matches!(
 		*res.downcast::<ClientError>().unwrap(),
-		ClientError::UnknownBlock(_),
+		ClientError::UnknownBlock(_)
 	));
 }
 
@@ -198,7 +197,7 @@ fn check_relay_parent_actually_exists() {
 fn check_relay_parent_fails_if_cannot_retrieve_number() {
 	let (mut validator, api) = make_validator_and_api();
 	let relay_parent = H256::from_low_u64_be(0xdead);
-	let (signed_statement, header) = make_gossip_message_and_header(api, relay_parent, 0);
+	let (signed_statement, header) = block_on(make_gossip_message_and_header(api, relay_parent, 0));
 	let data = signed_statement.encode();
 	let res = block_on(validator.validate(&header, &data))
 		.err()
@@ -206,7 +205,7 @@ fn check_relay_parent_fails_if_cannot_retrieve_number() {
 
 	assert!(matches!(
 		*res.downcast::<ClientError>().unwrap(),
-		ClientError::Backend(_),
+		ClientError::Backend(_)
 	));
 }
 
@@ -215,7 +214,7 @@ fn check_signer_is_legit_validator() {
 	let (mut validator, api) = make_validator_and_api();
 	let relay_parent = H256::from_low_u64_be(1);
 
-	let (signed_statement, header) = make_gossip_message_and_header(api, relay_parent, 1);
+	let (signed_statement, header) = block_on(make_gossip_message_and_header(api, relay_parent, 1));
 	let data = signed_statement.encode();
 
 	let res = block_on(validator.validate(&header, &data))
@@ -233,7 +232,7 @@ fn check_statement_is_correctly_signed() {
 	let (mut validator, api) = make_validator_and_api();
 	let relay_parent = H256::from_low_u64_be(1);
 
-	let (signed_statement, header) = make_gossip_message_and_header(api, relay_parent, 0);
+	let (signed_statement, header) = block_on(make_gossip_message_and_header(api, relay_parent, 0));
 
 	let mut data = signed_statement.encode();
 
@@ -300,7 +299,8 @@ fn check_header_match_candidate_receipt_header() {
 	let (mut validator, api) = make_validator_and_api();
 	let relay_parent = H256::from_low_u64_be(1);
 
-	let (signed_statement, mut header) = make_gossip_message_and_header(api, relay_parent, 0);
+	let (signed_statement, mut header) =
+		block_on(make_gossip_message_and_header(api, relay_parent, 0));
 	let data = signed_statement.encode();
 	header.number = 300;
 
@@ -324,11 +324,11 @@ fn relay_parent_not_imported_when_block_announce_is_processed() {
 		let (mut validator, api) = make_validator_and_api();
 		let relay_parent = H256::from_low_u64_be(1);
 
-		let (signed_statement, header) = make_gossip_message_and_header(api, relay_parent, 0);
+		let (signed_statement, header) = make_gossip_message_and_header(api, relay_parent, 0).await;
 
-		let mut data = signed_statement.encode();
+		let data = signed_statement.encode();
 
-		let validation = validator.validate(&header, &data);
+		let mut validation = validator.validate(&header, &data);
 
 		// The relay chain block is not available yet, so the first poll should return
 		// that the future is still pending.
@@ -416,6 +416,10 @@ sp_api::mock_impl_runtime_apis! {
 
 		fn validator_discovery(_: Vec<ValidatorId>) -> Vec<Option<AuthorityDiscoveryId>> {
 			Vec::new()
+		}
+
+		fn check_validation_outputs(_: ParaId, _: ValidationOutputs) -> bool {
+			false
 		}
 	}
 }

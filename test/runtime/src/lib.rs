@@ -343,7 +343,7 @@ impl_runtime_apis! {
 
 	impl crate::GetLastTimestamp<Block> for Runtime {
 		fn get_last_timestamp() -> u64 {
-			<pallet_timestamp::Module<Self>>::now()
+			Timestamp::now()
 		}
 	}
 }

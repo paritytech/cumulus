@@ -23,8 +23,8 @@ mod genesis;
 
 pub use chain_spec::*;
 pub use genesis::*;
+pub use cumulus_test_runtime as runtime;
 
-use ansi_term::Color;
 use core::future::Future;
 use cumulus_network::BlockAnnounceValidator;
 use cumulus_primitives::ParaId;
@@ -35,8 +35,6 @@ use cumulus_test_runtime::{NodeBlock as Block, RuntimeApi};
 use polkadot_primitives::v1::CollatorPair;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_executor::native_executor_instance;
-pub use sc_executor::NativeExecutor;
-use sc_informant::OutputFormat;
 use sc_network::{config::TransportConfig, multiaddr, NetworkService};
 use sc_service::{
 	config::{
@@ -122,7 +120,7 @@ pub fn new_partial(
 async fn start_node_impl<RB>(
 	parachain_config: Configuration,
 	collator_key: CollatorPair,
-	mut polkadot_config: Configuration,
+	polkadot_config: Configuration,
 	para_id: ParaId,
 	validator: bool,
 	rpc_ext_builder: RB,
@@ -144,16 +142,6 @@ where
 	}
 
 	let mut parachain_config = prepare_node_config(parachain_config);
-
-	parachain_config.informant_output_format = OutputFormat {
-		enable_color: true,
-		prefix: format!("[{}] ", Color::Yellow.bold().paint("Parachain")),
-	};
-	polkadot_config.informant_output_format = OutputFormat {
-		enable_color: true,
-		prefix: format!("[{}] ", Color::Blue.bold().paint("Relaychain")),
-	};
-
 	let params = new_partial(&mut parachain_config)?;
 	params
 		.inherent_data_providers
@@ -219,6 +207,7 @@ where
 	let polkadot_full_node = polkadot_full_node.with_client(polkadot_test_service::TestClient);
 	if validator {
 		let proposer_factory = sc_basic_authorship::ProposerFactory::new(
+			task_manager.spawn_handle(),
 			client.clone(),
 			transaction_pool,
 			prometheus_registry.as_ref(),
@@ -357,10 +346,6 @@ pub fn node_config(
 		Default::default(),
 		None,
 	);
-	let informant_output_format = OutputFormat {
-		enable_color: false,
-		prefix: format!("[{}] ", key_seed),
-	};
 
 	network_config.boot_nodes = boot_nodes;
 
@@ -422,7 +407,7 @@ pub fn node_config(
 		max_runtime_instances: 8,
 		announce_block: true,
 		base_path: Some(base_path),
-		informant_output_format,
+		informant_output_format: Default::default(),
 	})
 }
 

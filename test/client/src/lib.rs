@@ -12,23 +12,23 @@
 // GNU General Public License for more details.
 
 // You should have received a copy of the GNU General Public License
-// along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
+// along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
-//! A Cumulus test client.
+//! A Polkadot test client.
 
 mod block_builder;
 
 pub use block_builder::*;
+pub use cumulus_test_runtime as runtime;
 
 use codec::Encode;
-pub use cumulus_test_runtime as runtime;
-use runtime::{
+use cumulus_test_runtime::{
 	Balance, Block, BlockHashCount, Call, GenesisConfig, Runtime, Signature, SignedExtra,
 	SignedPayload, UncheckedExtrinsic, VERSION,
 };
 use sc_service::client;
 use sp_blockchain::HeaderBackend;
-use sp_core::{map, storage::Storage, twox_128, ChangesTrieConfiguration};
+use sp_core::storage::Storage;
 use sp_runtime::{
 	generic::Era,
 	traits::{Block as BlockT, Hash as HashT, Header as HeaderT},
@@ -67,42 +67,16 @@ pub type Client = client::Client<Backend, Executor, Block, runtime::RuntimeApi>;
 
 /// Parameters of test-client builder with test-runtime.
 #[derive(Default)]
-pub struct GenesisParameters {
-	support_changes_trie: bool,
-}
+pub struct GenesisParameters;
 
 impl substrate_test_client::GenesisInit for GenesisParameters {
 	fn genesis_storage(&self) -> Storage {
-		let changes_trie_config: Option<ChangesTrieConfiguration> = if self.support_changes_trie {
-			Some(sp_test_primitives::changes_trie_config())
-		} else {
-			None
-		};
-		let mut storage = genesis_config(changes_trie_config).build_storage().unwrap();
-
-		let child_roots = storage.children_default.iter().map(|(sk, child_content)| {
-			let state_root =
-				<<<runtime::Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
-					child_content.data.clone().into_iter().collect(),
-				);
-			(sk.clone(), state_root.encode())
-		});
-		let state_root =
-			<<<runtime::Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
-				storage.top.clone().into_iter().chain(child_roots).collect(),
-			);
-		let block: runtime::Block = client::genesis::construct_genesis_block(state_root);
-		storage.top.extend(additional_storage_with_genesis(&block));
-
-		storage
+		genesis_config().build_storage().unwrap()
 	}
 }
 
 /// A `test-runtime` extensions to `TestClientBuilder`.
 pub trait TestClientBuilderExt: Sized {
-	/// Enable or disable support for changes trie in genesis.
-	fn set_support_changes_trie(self, support_changes_trie: bool) -> Self;
-
 	/// Build the test client.
 	fn build(self) -> Client {
 		self.build_with_longest_chain().0
@@ -135,14 +109,8 @@ impl DefaultTestClientBuilderExt for TestClientBuilder {
 	}
 }
 
-fn genesis_config(changes_trie_config: Option<ChangesTrieConfiguration>) -> GenesisConfig {
-	cumulus_test_service::local_testnet_genesis(changes_trie_config)
-}
-
-fn additional_storage_with_genesis(genesis_block: &Block) -> BTreeMap<Vec<u8>, Vec<u8>> {
-	map![
-		twox_128(&b"latest"[..]).to_vec() => genesis_block.hash().as_fixed_bytes().to_vec()
-	]
+fn genesis_config() -> GenesisConfig {
+	cumulus_test_service::local_testnet_genesis()
 }
 
 /// Generate an extrinsic from the provided function call, origin and [`Client`].

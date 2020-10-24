@@ -22,6 +22,7 @@
 
 #[cfg(test)]
 mod tests;
+mod wait_on_relay_chain_block;
 
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Error as ClientError, HeaderBackend};
@@ -53,6 +54,8 @@ use futures::{
 use log::{trace, warn};
 
 use std::{marker::PhantomData, pin::Pin, sync::Arc};
+
+type BlockAnnounceError = Box<dyn std::error::Error + Send>;
 
 /// Parachain specific block announce validator.
 ///
@@ -103,6 +106,61 @@ impl<B, P> BlockAnnounceValidator<B, P> {
 	}
 }
 
+impl<B: BlockT, P> BlockAnnounceValidator<B, P>
+where
+	P: ProvideRuntimeApi<PBlock> + HeaderBackend<PBlock> + 'static,
+	P::Api: ParachainHost<PBlock>,
+{
+	/// Handle a block announcement with empty data (no statement) attached to it.
+	fn handle_empty_block_announce_data(
+		&self,
+		header: B::Header,
+	) -> impl Future<Output = Result<Validation, BlockAnnounceError>> {
+		let polkadot_client = self.polkadot_client.clone();
+		let para_id = self.para_id;
+
+		async move {
+			// Check if block is equal or higher than best (this requires a justification)
+			let polkadot_info = polkadot_client.info();
+			let runtime_api_block_id = BlockId::Hash(polkadot_info.best_hash);
+			let block_number = header.number();
+
+			let local_validation_data = polkadot_client
+				.runtime_api()
+				.persisted_validation_data(
+					&runtime_api_block_id,
+					para_id,
+					OccupiedCoreAssumption::TimedOut,
+				)
+				.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?
+				.ok_or_else(|| {
+					Box::new(ClientError::Msg(
+						"Could not find parachain head in relay chain".into(),
+					)) as Box<_>
+				})?;
+			let parent_head = B::Header::decode(&mut &local_validation_data.parent_head.0[..])
+				.map_err(|e| {
+					Box::new(ClientError::Msg(format!(
+						"Failed to decode parachain head: {:?}",
+						e
+					))) as Box<_>
+				})?;
+			let known_best_number = parent_head.number();
+
+			if block_number >= known_best_number {
+				trace!(
+					target: "cumulus-network",
+					"validation failed because a justification is needed if the block at the top of the chain."
+				);
+
+				Ok(Validation::Failure)
+			} else {
+				Ok(Validation::Success { is_new_best: false })
+			}
+		}
+	}
+}
+
 impl<B: BlockT, P> BlockAnnounceValidatorT<B> for BlockAnnounceValidator<B, P>
 where
 	P: ProvideRuntimeApi<PBlock> + HeaderBackend<PBlock> + 'static,
@@ -112,8 +170,7 @@ where
 		&mut self,
 		header: &B::Header,
 		mut data: &[u8],
-	) -> Pin<Box<dyn Future<Output = Result<Validation, Box<dyn std::error::Error + Send>>> + Send>>
-	{
+	) -> Pin<Box<dyn Future<Output = Result<Validation, BlockAnnounceError>> + Send>> {
 		if self.polkadot_sync_oracle.is_major_syncing() {
 			return ready(Ok(Validation::Success { is_new_best: false })).boxed();
 		}
@@ -122,49 +179,9 @@ where
 		let polkadot_info = self.polkadot_client.info();
 
 		if data.is_empty() {
-			let polkadot_client = self.polkadot_client.clone();
-			let header = header.clone();
-			let para_id = self.para_id;
-
-			return async move {
-				// Check if block is equal or higher than best (this requires a justification)
-				let runtime_api_block_id = BlockId::Hash(polkadot_info.best_hash);
-				let block_number = header.number();
-
-				let local_validation_data = polkadot_client
-					.runtime_api()
-					.persisted_validation_data(
-						&runtime_api_block_id,
-						para_id,
-						OccupiedCoreAssumption::TimedOut,
-					)
-					.map_err(|e| Box::new(ClientError::Msg(format!("{:?}", e))) as Box<_>)?
-					.ok_or_else(|| {
-						Box::new(ClientError::Msg(
-							"Could not find parachain head in relay chain".into(),
-						)) as Box<_>
-					})?;
-				let parent_head = B::Header::decode(&mut &local_validation_data.parent_head.0[..])
-					.map_err(|e| {
-						Box::new(ClientError::Msg(format!(
-							"Failed to decode parachain head: {:?}",
-							e
-						))) as Box<_>
-					})?;
-				let known_best_number = parent_head.number();
-
-				if block_number >= known_best_number {
-					trace!(
-						target: "cumulus-network",
-						"validation failed because a justification is needed if the block at the top of the chain."
-					);
-
-					Ok(Validation::Failure)
-				} else {
-					Ok(Validation::Success { is_new_best: false })
-				}
-			}
-			.boxed();
+			return self
+				.handle_empty_block_announce_data(header.clone())
+				.boxed();
 		}
 
 		let signed_stmt = match SignedFullStatement::decode(&mut data) {
