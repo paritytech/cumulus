@@ -15,13 +15,13 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-testing-cleanup" }
-polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-testing-cleanup" }
-polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-testing-cleanup" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-testing-cleanup" }
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-testing-cleanup" }
-polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-testing-cleanup" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-testing-cleanup" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # cumulus deps
 cumulus-primitives = { path = "../primitives" }
@@ -36,7 +36,7 @@ derive_more = "0.99.2"
 
 [dev-dependencies]
 cumulus-test-service = { path = "../test/service" }
-polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-testing-cleanup" }
+polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # substrate deps
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
