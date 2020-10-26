@@ -31,15 +31,15 @@ const TIMEOUT_IN_SECONDS: u64 = 6;
 /// Custom error type used by [`WaitOnRelayChainBlock`].
 #[derive(Debug, derive_more::Display)]
 pub enum Error {
-	#[display(fmt = "Timeout while waiting for block `{}` to be imported.", _0)]
+	#[display(fmt = "Timeout while waiting for relay-chain block `{}` to be imported.", _0)]
 	Timeout(PHash),
 	#[display(
-		fmt = "Import listener closed while waiting for block `{}` to be imported.",
+		fmt = "Import listener closed while waiting for relay-chain block `{}` to be imported.",
 		_0
 	)]
 	ImportListenerClosed(PHash),
 	#[display(
-		fmt = "Blockchain returned an error while waiting for block `{}` to be imported: {:?}",
+		fmt = "Blockchain returned an error while waiting for relay-chain block `{}` to be imported: {:?}",
 		_0,
 		_1
 	)]
@@ -77,13 +77,7 @@ impl<B, BCE> Clone for WaitOnRelayChainBlock<B, BCE> {
 	}
 }
 
-impl<B, BCE> WaitOnRelayChainBlock<B, BCE>
-where
-	B: Backend<PBlock>,
-	BCE: BlockchainEvents<PBlock>,
-	// Rust bug: https://github.com/rust-lang/rust/issues/24159
-	sc_client_api::StateBackendFor<B, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
-{
+impl<B, BCE> WaitOnRelayChainBlock<B, BCE> {
 	/// Creates a new instance of `Self`.
 	pub fn new(backend: Arc<B>, block_chain_events: Arc<BCE>) -> Self {
 		Self {
@@ -91,7 +85,15 @@ where
 			block_chain_events,
 		}
 	}
+}
 
+impl<B, BCE> WaitOnRelayChainBlock<B, BCE>
+where
+	B: Backend<PBlock>,
+	BCE: BlockchainEvents<PBlock>,
+	// Rust bug: https://github.com/rust-lang/rust/issues/24159
+	sc_client_api::StateBackendFor<B, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
+{
 	pub fn wait_on_relay_chain_block(
 		&self,
 		hash: PHash,

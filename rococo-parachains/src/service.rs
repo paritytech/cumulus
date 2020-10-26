@@ -23,7 +23,6 @@ use polkadot_primitives::v0::CollatorPair;
 use rococo_parachain_primitives::Block;
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
-use sc_informant::OutputFormat;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
@@ -128,6 +127,7 @@ where
 		polkadot_full_node.client.clone(),
 		id,
 		Box::new(polkadot_full_node.network.clone()),
+		polkadot_full_node.backend.clone(),
 	);
 
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
@@ -173,6 +173,7 @@ where
 
 	if validator {
 		let proposer_factory = sc_basic_authorship::ProposerFactory::new(
+			task_manager.spawn_handle(),
 			client.clone(),
 			transaction_pool,
 			prometheus_registry.as_ref(),

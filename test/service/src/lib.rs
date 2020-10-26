@@ -159,6 +159,8 @@ where
 		polkadot_full_node.client.clone(),
 		para_id,
 		Box::new(polkadot_full_node.network.clone()),
+		polkadot_full_node.backend.clone(),
+		polkadot_full_node.client.clone(),
 	);
 	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
 
@@ -408,6 +410,7 @@ pub fn node_config(
 		announce_block: true,
 		base_path: Some(base_path),
 		informant_output_format: Default::default(),
+		wasm_runtime_overrides: None,
 	})
 }
 

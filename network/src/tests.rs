@@ -16,22 +16,35 @@
 
 use super::*;
 use cumulus_test_service::runtime::{Block, Header};
-use futures::{executor::block_on, poll};
+use futures::{executor::block_on, poll, task::Poll};
 use polkadot_node_primitives::{SignedFullStatement, Statement};
 use polkadot_primitives::v1::{
 	AuthorityDiscoveryId, Block as PBlock, BlockNumber, CandidateCommitments, CandidateDescriptor,
 	CandidateEvent, CommittedCandidateReceipt, CoreState, GroupRotationInfo, Hash as PHash,
-	HeadData, Header as PHeader, Id as ParaId, OccupiedCoreAssumption, ParachainHost,
-	PersistedValidationData, SessionIndex, SigningContext, ValidationCode, ValidationData,
-	ValidatorId, ValidatorIndex, ValidationOutputs,
+	HeadData, Id as ParaId, OccupiedCoreAssumption, ParachainHost, PersistedValidationData,
+	SessionIndex, SigningContext, ValidationCode, ValidationData, ValidationOutputs, ValidatorId,
+	ValidatorIndex,
+};
+use polkadot_test_client::{
+	Client as PClient, ClientBlockImportExt, DefaultTestClientBuilderExt, FullBackend as PBackend,
+	InitPolkadotBlockBuilder, TestClientBuilder, TestClientBuilderExt,
 };
 use sp_api::{ApiRef, ProvideRuntimeApi};
 use sp_blockchain::{Error as ClientError, HeaderBackend};
-use sp_consensus::block_validation::BlockAnnounceValidator as _;
+use sp_consensus::{block_validation::BlockAnnounceValidator as _, BlockOrigin};
 use sp_core::H256;
 use sp_keyring::Sr25519Keyring;
 use sp_keystore::{testing::KeyStore, SyncCryptoStore, SyncCryptoStorePtr};
-use sp_runtime::{traits::{NumberFor, Zero}, RuntimeAppPublic};
+use sp_runtime::RuntimeAppPublic;
+
+fn check_error(error: crate::BlockAnnounceError, check_error: impl Fn(&ClientError) -> bool) {
+	let error = *error
+		.downcast::<ClientError>()
+		.expect("Downcasts error to `ClientError`");
+	if !check_error(&error) {
+		panic!("Invalid error: {:?}", error);
+	}
+}
 
 #[derive(Clone)]
 struct DummyCollatorNetwork;
@@ -46,7 +59,10 @@ impl SyncOracle for DummyCollatorNetwork {
 	}
 }
 
-fn make_validator_and_api() -> (BlockAnnounceValidator<Block, TestApi>, Arc<TestApi>) {
+fn make_validator_and_api() -> (
+	BlockAnnounceValidator<Block, TestApi, PBackend, PClient>,
+	Arc<TestApi>,
+) {
 	let api = Arc::new(TestApi::new());
 
 	(
@@ -54,6 +70,8 @@ fn make_validator_and_api() -> (BlockAnnounceValidator<Block, TestApi>, Arc<Test
 			api.clone(),
 			ParaId::from(56),
 			Box::new(DummyCollatorNetwork),
+			api.relay_backend.clone(),
+			api.relay_client.clone(),
 		),
 		api,
 	)
@@ -67,6 +85,21 @@ fn default_header() -> Header {
 		parent_hash: Default::default(),
 		state_root: Default::default(),
 	}
+}
+
+/// Same as [`make_gossip_message_and_header`], but using the genesis header as relay parent.
+async fn make_gossip_message_and_header_using_genesis(
+	api: Arc<TestApi>,
+	validator_index: u32,
+) -> (SignedFullStatement, Header) {
+	let relay_parent = api
+		.relay_client
+		.hash(0)
+		.ok()
+		.flatten()
+		.expect("Genesis hash exists");
+
+	make_gossip_message_and_header(api, relay_parent, validator_index).await
 }
 
 async fn make_gossip_message_and_header(
@@ -155,66 +188,19 @@ fn check_statement_is_encoded_correctly() {
 		.err()
 		.expect("Should fail on invalid encoded statement");
 
-	assert!(matches!(
-		*res.downcast::<ClientError>().unwrap(),
-		ClientError::BadJustification(x) if x.contains("must be a `SignedFullStatement`")
-	));
-}
-
-#[test]
-fn check_relay_parent_is_head() {
-	let (mut validator, api) = make_validator_and_api();
-	let relay_chain_leaf = H256::zero();
-	let (gossip_message, header) =
-		block_on(make_gossip_message_and_header(api, relay_chain_leaf, 0));
-	let data = gossip_message.encode();
-	let res = block_on(validator.validate(&header, data.as_slice()));
-
-	assert_eq!(
-		res.unwrap(),
-		Validation::Failure,
-		"validation fails if the relay chain parent is not the relay chain head",
-	);
-}
-
-#[test]
-fn check_relay_parent_actually_exists() {
-	let (mut validator, api) = make_validator_and_api();
-	let relay_parent = H256::from_low_u64_be(42);
-	let (signed_statement, header) = block_on(make_gossip_message_and_header(api, relay_parent, 0));
-	let data = signed_statement.encode();
-	let res = block_on(validator.validate(&header, &data))
-		.err()
-		.expect("Should fail on unknown relay parent");
-
-	assert!(matches!(
-		*res.downcast::<ClientError>().unwrap(),
-		ClientError::UnknownBlock(_)
-	));
-}
-
-#[test]
-fn check_relay_parent_fails_if_cannot_retrieve_number() {
-	let (mut validator, api) = make_validator_and_api();
-	let relay_parent = H256::from_low_u64_be(0xdead);
-	let (signed_statement, header) = block_on(make_gossip_message_and_header(api, relay_parent, 0));
-	let data = signed_statement.encode();
-	let res = block_on(validator.validate(&header, &data))
-		.err()
-		.expect("Should fail when the relay chain number could not be retrieved");
-
-	assert!(matches!(
-		*res.downcast::<ClientError>().unwrap(),
-		ClientError::Backend(_)
-	));
+	check_error(res, |error| {
+		matches!(
+			error,
+			ClientError::Msg(x) if x.contains("must be a `SignedFullStatement`")
+		)
+	});
 }
 
 #[test]
 fn check_signer_is_legit_validator() {
 	let (mut validator, api) = make_validator_and_api();
-	let relay_parent = H256::from_low_u64_be(1);
 
-	let (signed_statement, header) = block_on(make_gossip_message_and_header(api, relay_parent, 1));
+	let (signed_statement, header) = block_on(make_gossip_message_and_header_using_genesis(api, 1));
 	let data = signed_statement.encode();
 
 	let res = block_on(validator.validate(&header, &data))
@@ -223,16 +209,15 @@ fn check_signer_is_legit_validator() {
 
 	assert!(matches!(
 		*res.downcast::<ClientError>().unwrap(),
-		ClientError::BadJustification(x) if x.contains("signer is a validator")
+		ClientError::Msg(x) if x.contains("signer is a validator")
 	));
 }
 
 #[test]
 fn check_statement_is_correctly_signed() {
 	let (mut validator, api) = make_validator_and_api();
-	let relay_parent = H256::from_low_u64_be(1);
 
-	let (signed_statement, header) = block_on(make_gossip_message_and_header(api, relay_parent, 0));
+	let (signed_statement, header) = block_on(make_gossip_message_and_header_using_genesis(api, 0));
 
 	let mut data = signed_statement.encode();
 
@@ -244,10 +229,12 @@ fn check_statement_is_correctly_signed() {
 		.err()
 		.expect("Validation should fail if the statement is not signed correctly");
 
-	assert!(matches!(
-		*res.downcast::<ClientError>().unwrap(),
-		ClientError::BadJustification(x) if x.contains("signature is invalid")
-	));
+	check_error(res, |error| {
+		matches!(
+			error,
+			ClientError::Msg(x) if x.contains("signature is invalid")
+		)
+	});
 }
 
 #[test]
@@ -288,19 +275,20 @@ fn check_statement_seconded() {
 		.err()
 		.expect("validation should fail if not seconded statement");
 
-	assert!(matches!(
-		*res.downcast::<ClientError>().unwrap(),
-		ClientError::BadJustification(x) if x.contains("must be a `Statement::Seconded`")
-	));
+	check_error(res, |error| {
+		matches!(
+			error,
+			ClientError::Msg(x) if x.contains("must be a `Statement::Seconded`")
+		)
+	});
 }
 
 #[test]
 fn check_header_match_candidate_receipt_header() {
 	let (mut validator, api) = make_validator_and_api();
-	let relay_parent = H256::from_low_u64_be(1);
 
 	let (signed_statement, mut header) =
-		block_on(make_gossip_message_and_header(api, relay_parent, 0));
+		block_on(make_gossip_message_and_header_using_genesis(api, 0));
 	let data = signed_statement.encode();
 	header.number = 300;
 
@@ -308,10 +296,12 @@ fn check_header_match_candidate_receipt_header() {
 		.err()
 		.expect("validation should fail if the header in doesn't match");
 
-	assert!(matches!(
-		*res.downcast::<ClientError>().unwrap(),
-		ClientError::BadJustification(x) if x.contains("header does not match")
-	));
+	check_error(res, |error| {
+		matches!(
+			error,
+			ClientError::Msg(x) if x.contains("header does not match")
+		)
+	});
 }
 
 /// Test that ensures that we postpone the block announce verification until
@@ -322,9 +312,15 @@ fn check_header_match_candidate_receipt_header() {
 fn relay_parent_not_imported_when_block_announce_is_processed() {
 	block_on(async move {
 		let (mut validator, api) = make_validator_and_api();
-		let relay_parent = H256::from_low_u64_be(1);
 
-		let (signed_statement, header) = make_gossip_message_and_header(api, relay_parent, 0).await;
+		let mut client = api.relay_client.clone();
+		let block = client
+			.init_polkadot_block_builder()
+			.build()
+			.expect("Build new block")
+			.block;
+
+		let (signed_statement, header) = make_gossip_message_and_header(api, block.hash(), 0).await;
 
 		let data = signed_statement.encode();
 
@@ -333,6 +329,15 @@ fn relay_parent_not_imported_when_block_announce_is_processed() {
 		// The relay chain block is not available yet, so the first poll should return
 		// that the future is still pending.
 		assert!(poll!(&mut validation).is_pending());
+
+		client
+			.import(BlockOrigin::Own, block)
+			.expect("Imports the block");
+
+		assert!(matches!(
+			poll!(validation),
+			Poll::Ready(Ok(Validation::Success { is_new_best: true }))
+		));
 	});
 }
 
@@ -343,14 +348,21 @@ struct ApiData {
 
 struct TestApi {
 	data: Arc<ApiData>,
+	relay_client: Arc<PClient>,
+	relay_backend: Arc<PBackend>,
 }
 
 impl TestApi {
 	fn new() -> Self {
+		let builder = TestClientBuilder::new();
+		let relay_backend = builder.backend();
+
 		Self {
 			data: Arc::new(ApiData {
 				validators: vec![Sr25519Keyring::Alice.public().into()],
 			}),
+			relay_client: Arc::new(builder.build()),
+			relay_backend,
 		}
 	}
 }
@@ -421,57 +433,5 @@ sp_api::mock_impl_runtime_apis! {
 		fn check_validation_outputs(_: ParaId, _: ValidationOutputs) -> bool {
 			false
 		}
-	}
-}
-
-/// Blockchain database header backend. Does not perform any validation.
-impl HeaderBackend<PBlock> for TestApi {
-	fn header(
-		&self,
-		_id: BlockId<PBlock>,
-	) -> std::result::Result<Option<PHeader>, sp_blockchain::Error> {
-		Ok(None)
-	}
-
-	fn info(&self) -> sc_client_api::blockchain::Info<PBlock> {
-		let best_hash = H256::from_low_u64_be(1);
-
-		sc_client_api::blockchain::Info {
-			best_hash,
-			best_number: 1,
-			finalized_hash: Default::default(),
-			finalized_number: Zero::zero(),
-			genesis_hash: Default::default(),
-			number_leaves: Default::default(),
-		}
-	}
-
-	fn status(
-		&self,
-		_id: BlockId<PBlock>,
-	) -> std::result::Result<sc_client_api::blockchain::BlockStatus, sp_blockchain::Error> {
-		Ok(sc_client_api::blockchain::BlockStatus::Unknown)
-	}
-
-	fn number(
-		&self,
-		hash: PHash,
-	) -> std::result::Result<Option<NumberFor<PBlock>>, sp_blockchain::Error> {
-		if hash == H256::zero() {
-			Ok(Some(0))
-		} else if hash == H256::from_low_u64_be(1) {
-			Ok(Some(1))
-		} else if hash == H256::from_low_u64_be(0xdead) {
-			Err(sp_blockchain::Error::Backend("dead".to_string()))
-		} else {
-			Ok(None)
-		}
-	}
-
-	fn hash(
-		&self,
-		_number: NumberFor<PBlock>,
-	) -> std::result::Result<Option<PHash>, sp_blockchain::Error> {
-		Ok(None)
 	}
 }

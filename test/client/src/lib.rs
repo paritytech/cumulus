@@ -29,12 +29,7 @@ use cumulus_test_runtime::{
 use sc_service::client;
 use sp_blockchain::HeaderBackend;
 use sp_core::storage::Storage;
-use sp_runtime::{
-	generic::Era,
-	traits::{Block as BlockT, Hash as HashT, Header as HeaderT},
-	BuildStorage, SaturatedConversion,
-};
-use std::collections::BTreeMap;
+use sp_runtime::{generic::Era, BuildStorage, SaturatedConversion};
 pub use substrate_test_client::*;
 
 mod local_executor {
@@ -87,11 +82,6 @@ pub trait TestClientBuilderExt: Sized {
 }
 
 impl TestClientBuilderExt for TestClientBuilder {
-	fn set_support_changes_trie(mut self, support_changes_trie: bool) -> Self {
-		self.genesis_init_mut().support_changes_trie = support_changes_trie;
-		self
-	}
-
 	fn build_with_longest_chain(self) -> (Client, LongestChain) {
 		self.build_with_native_executor(None)
 	}
