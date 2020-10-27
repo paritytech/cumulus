@@ -223,7 +223,7 @@ where
 		let state = match self.backend.state_at(BlockId::Hash(block_hash)) {
 			Ok(state) => state,
 			Err(e) => {
-				error!(target: "cumulus-collator", "Failed to get state of the freshly build block: {:?}", e);
+				error!(target: "cumulus-collator", "Failed to get state of the freshly built block: {:?}", e);
 				return None;
 			}
 		};
