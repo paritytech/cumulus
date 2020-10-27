@@ -299,6 +299,6 @@ pub fn build_polkadot_full_node(
 	if is_light {
 		Err("Light client not supported.".into())
 	} else {
-		polkadot_service::build_full(config, true, None)
+		polkadot_service::build_full(config, false, true, None)
 	}
 }

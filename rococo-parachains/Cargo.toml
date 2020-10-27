@@ -80,7 +80,7 @@ tokio = { version = "0.2.13", features = ["macros"] }
 # Polkadot dependencies
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "prgn-real-overseer" }
 polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "prgn-real-overseer" }
-polkadot-test-runtime-client = { git = "https://github.com/paritytech/polkadot", branch = "prgn-real-overseer" }
+polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "prgn-real-overseer" }
 polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "prgn-real-overseer" }
 
 # Substrate dependencies

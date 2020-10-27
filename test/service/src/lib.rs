@@ -35,7 +35,6 @@ use polkadot_primitives::v1::CollatorPair;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
-use sc_informant::OutputFormat;
 use sc_network::{config::TransportConfig, multiaddr, NetworkService};
 use sc_service::{
 	config::{
@@ -348,9 +347,6 @@ pub fn node_config(
 		Default::default(),
 		None,
 	);
-	let informant_output_format = OutputFormat {
-		enable_color: false,
-	};
 
 	network_config.boot_nodes = boot_nodes;
 
@@ -412,7 +408,8 @@ pub fn node_config(
 		max_runtime_instances: 8,
 		announce_block: true,
 		base_path: Some(base_path),
-		informant_output_format,
+		informant_output_format: Default::default(),
+		wasm_runtime_overrides: None,
 	})
 }
 
