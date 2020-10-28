@@ -242,12 +242,12 @@ where
 			let new_validation_code = sp_io::storage::get(well_known_keys::NEW_VALIDATION_CODE);
 
 			Some(Collation {
-				//TODO: What should we do here?
-				fees: 0,
 				upward_messages,
 				new_validation_code: new_validation_code.map(Into::into),
 				head_data,
 				proof_of_validity: PoV { block_data },
+				// TODO!
+				processed_downward_messages: 0,
 			})
 		})
 	}

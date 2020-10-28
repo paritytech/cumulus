@@ -23,7 +23,7 @@ use polkadot_primitives::v1::{
 	CandidateEvent, CommittedCandidateReceipt, CoreState, GroupRotationInfo, Hash as PHash,
 	HeadData, Header as PHeader, Id as ParaId, OccupiedCoreAssumption, ParachainHost,
 	PersistedValidationData, SessionIndex, SigningContext, ValidationCode, ValidationData,
-	ValidationOutputs, ValidatorId, ValidatorIndex,
+	ValidationOutputs, ValidatorId, ValidatorIndex, InboundDownwardMessage,
 };
 use sp_api::{ApiRef, ProvideRuntimeApi};
 use sp_blockchain::{Error as ClientError, HeaderBackend};
@@ -398,6 +398,10 @@ sp_api::mock_impl_runtime_apis! {
 
 		fn check_validation_outputs(_: ParaId, _: ValidationOutputs) -> bool {
 			false
+		}
+
+		fn dmq_contents(_: ParaId) -> Vec<InboundDownwardMessage<BlockNumber>> {
+			Vec::new()
 		}
 	}
 }

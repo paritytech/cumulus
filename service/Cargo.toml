@@ -21,9 +21,9 @@ sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "mast
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "prgn-real-overseer" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "prgn-real-overseer" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "prgn-real-overseer" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Other deps
 futures = "0.3.6"
