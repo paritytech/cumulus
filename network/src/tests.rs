@@ -273,7 +273,7 @@ fn check_statement_seconded() {
 		session_index,
 	};
 
-	let statement = Statement::Valid(H256::zero());
+	let statement = Statement::Valid(Default::default());
 
 	let signed_statement = block_on(SignedFullStatement::sign(
 		&keystore,
@@ -402,6 +402,10 @@ sp_api::mock_impl_runtime_apis! {
 
 		fn dmq_contents(_: ParaId) -> Vec<InboundDownwardMessage<BlockNumber>> {
 			Vec::new()
+		}
+
+		fn historical_validation_code(_: ParaId, _: BlockNumber) -> Option<ValidationCode> {
+			None
 		}
 	}
 }
