@@ -21,7 +21,7 @@
 use cumulus_primitives::ParaId;
 use futures::{Future, FutureExt};
 use polkadot_overseer::OverseerHandler;
-use polkadot_primitives::v1::{Block as PBlock, CollatorPair};
+use polkadot_primitives::v1::{Block as PBlock, CollatorId, CollatorPair};
 use polkadot_service::{AbstractClient, Client as PClient, ClientHandle, RuntimeApiCollection};
 use sc_client_api::{Backend as BackendT, BlockBackend, Finalizer, UsageProvider};
 use sc_service::{error::Result as ServiceResult, Configuration, Role, TaskManager};
@@ -103,7 +103,9 @@ where
 			backend,
 			client,
 			announce_block,
-			overseer_handler: polkadot_full_node.overseer_handler,
+			overseer_handler: polkadot_full_node
+				.overseer_handler
+				.ok_or_else(|| "Polkadot full node did not provided an `OverseerHandler`!")?,
 			spawner,
 			para_id,
 			collator_key,
@@ -292,11 +294,17 @@ pub fn prepare_node_config(mut parachain_config: Configuration) -> Configuration
 /// Build the Polkadot full node using the given `config`.
 pub fn build_polkadot_full_node(
 	config: Configuration,
+	collator_id: CollatorId,
 ) -> sc_service::error::Result<PFullNode<PClient>> {
 	let is_light = matches!(config.role, Role::Light);
 	if is_light {
 		Err("Light client not supported.".into())
 	} else {
-		polkadot_service::build_full(config, true, None)
+		polkadot_service::build_full(
+			config,
+			polkadot_service::IsCollator::Yes(collator_id),
+			None,
+			None,
+		)
 	}
 }

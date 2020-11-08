@@ -25,9 +25,7 @@ pub use polkadot_core_primitives::DownwardMessage;
 /// It is "generic" in such a way, that the actual message is encoded in the `data` field.
 /// Besides the `data` it also holds the `origin` of the message.
 pub use polkadot_parachain::primitives::UpwardMessage as GenericUpwardMessage;
-pub use polkadot_parachain::primitives::{
-	Id as ParaId, ParachainDispatchOrigin as UpwardMessageOrigin, ValidationParams,
-};
+pub use polkadot_parachain::primitives::{Id as ParaId, ValidationParams};
 pub use polkadot_primitives::v1::{
 	PersistedValidationData, TransientValidationData, ValidationData,
 };
@@ -76,14 +74,6 @@ pub mod well_known_keys {
 pub trait DownwardMessageHandler {
 	/// Handle the given downward message.
 	fn handle_downward_message(msg: &DownwardMessage);
-}
-
-/// Something that can send upward messages.
-pub trait UpwardMessageSender<UpwardMessage> {
-	/// Send an upward message to the relay chain.
-	///
-	/// Returns an error if sending failed.
-	fn send_upward_message(msg: &UpwardMessage, origin: UpwardMessageOrigin) -> Result<(), ()>;
 }
 
 /// A trait which is called when the validation data is set.

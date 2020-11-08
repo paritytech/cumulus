@@ -24,6 +24,7 @@ use rococo_parachain_primitives::Block;
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
+use sp_core::Pair;
 use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
 use std::sync::Arc;
@@ -113,7 +114,9 @@ where
 	}
 
 	let parachain_config = prepare_node_config(parachain_config);
-	let polkadot_full_node = cumulus_service::build_polkadot_full_node(polkadot_config)?;
+
+	let polkadot_full_node =
+		cumulus_service::build_polkadot_full_node(polkadot_config, collator_key.public())?;
 
 	let params = new_partial(&parachain_config)?;
 	params

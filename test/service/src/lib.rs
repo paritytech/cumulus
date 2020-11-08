@@ -35,6 +35,7 @@ use cumulus_test_runtime::{NodeBlock as Block, RuntimeApi};
 use polkadot_primitives::v1::CollatorPair;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_executor::native_executor_instance;
+pub use sc_executor::NativeExecutor;
 use sc_network::{config::TransportConfig, multiaddr, NetworkService};
 use sc_service::{
 	config::{
@@ -44,7 +45,7 @@ use sc_service::{
 	BasePath, ChainSpec, Configuration, Error as ServiceError, PartialComponents, Role,
 	RpcHandlers, TFullBackend, TFullClient, TaskExecutor, TaskManager,
 };
-use sp_core::H256;
+use sp_core::{Pair, H256};
 use sp_keyring::Sr25519Keyring;
 use sp_runtime::traits::BlakeTwo256;
 use sp_state_machine::BasicExternalities;
@@ -117,12 +118,13 @@ pub fn new_partial(
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
+#[sc_cli::prefix_logs_with(parachain_config.network.node_name.as_str())]
 async fn start_node_impl<RB>(
 	parachain_config: Configuration,
 	collator_key: CollatorPair,
 	polkadot_config: Configuration,
 	para_id: ParaId,
-	validator: bool,
+	is_collator: bool,
 	rpc_ext_builder: RB,
 ) -> sc_service::error::Result<(
 	TaskManager,
@@ -142,6 +144,7 @@ where
 	}
 
 	let mut parachain_config = prepare_node_config(parachain_config);
+
 	let params = new_partial(&mut parachain_config)?;
 	params
 		.inherent_data_providers
@@ -151,7 +154,10 @@ where
 	let transaction_pool = params.transaction_pool.clone();
 	let mut task_manager = params.task_manager;
 
-	let polkadot_full_node = polkadot_test_service::polkadot_test_new_full(polkadot_config, true)?;
+	let polkadot_full_node = polkadot_test_service::new_full(
+		polkadot_config,
+		polkadot_service::IsCollator::Yes(collator_key.public()),
+	)?;
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -207,7 +213,7 @@ where
 	};
 
 	let polkadot_full_node = polkadot_full_node.with_client(polkadot_test_service::TestClient);
-	if validator {
+	if is_collator {
 		let proposer_factory = sc_basic_authorship::ProposerFactory::new(
 			task_manager.spawn_handle(),
 			client.clone(),
@@ -275,30 +281,36 @@ pub async fn run_test_node(
 	parachain_boot_nodes: Vec<MultiaddrWithPeerId>,
 	polkadot_boot_nodes: Vec<MultiaddrWithPeerId>,
 	para_id: ParaId,
-	validator: bool,
+	is_collator: bool,
 ) -> CumulusTestNode {
-	let collator_key = sp_core::Pair::generate().0;
+	let collator_key = CollatorPair::generate().0;
 	let parachain_config = node_config(
 		parachain_storage_update_func,
 		task_executor.clone(),
 		key,
 		parachain_boot_nodes,
 		para_id,
+		is_collator,
 	)
 	.expect("could not generate Configuration");
-	let polkadot_config = polkadot_test_service::node_config(
+	let mut polkadot_config = polkadot_test_service::node_config(
 		polkadot_storage_update_func,
 		task_executor.clone(),
 		key,
 		polkadot_boot_nodes,
+		false,
 	);
+
+	polkadot_config.network.node_name =
+		format!("{} (relay chain)", polkadot_config.network.node_name);
+
 	let multiaddr = parachain_config.network.listen_addresses[0].clone();
 	let (task_manager, client, network, rpc_handlers) = start_node_impl(
 		parachain_config,
 		collator_key,
 		polkadot_config,
 		para_id,
-		validator,
+		is_collator,
 		|_| Default::default(),
 	)
 	.await
@@ -325,11 +337,16 @@ pub fn node_config(
 	key: Sr25519Keyring,
 	boot_nodes: Vec<MultiaddrWithPeerId>,
 	para_id: ParaId,
+	is_collator: bool,
 ) -> Result<Configuration, ServiceError> {
 	let base_path = BasePath::new_temp_dir()?;
 	let root = base_path.path().to_path_buf();
-	let role = Role::Authority {
-		sentry_nodes: Vec::new(),
+	let role = if is_collator {
+		Role::Authority {
+			sentry_nodes: Vec::new(),
+		}
+	} else {
+		Role::Full
 	};
 	let key_seed = key.to_seed();
 	let mut spec = Box::new(chain_spec::get_chain_spec(para_id));
@@ -343,7 +360,7 @@ pub fn node_config(
 	spec.set_storage(storage);
 
 	let mut network_config = NetworkConfiguration::new(
-		format!("Cumulus Test Node for: {}", key_seed),
+		format!("{} (parachain)", key_seed.to_string()),
 		"network/test/0.1",
 		Default::default(),
 		None,
@@ -351,7 +368,7 @@ pub fn node_config(
 
 	network_config.boot_nodes = boot_nodes;
 
-	network_config.allow_non_globals_in_dht = false;
+	network_config.allow_non_globals_in_dht = true;
 
 	network_config
 		.listen_addresses
@@ -366,10 +383,7 @@ pub fn node_config(
 		task_executor,
 		transaction_pool: Default::default(),
 		network: network_config,
-		keystore: KeystoreConfig::Path {
-			path: root.join("key"),
-			password: None,
-		},
+		keystore: KeystoreConfig::InMemory,
 		database: DatabaseConfig::RocksDb {
 			path: root.join("db"),
 			cache_size: 128,

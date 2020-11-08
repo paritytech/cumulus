@@ -51,6 +51,7 @@ fn call_validate_block(
 		parent_head: HeadData(parent_head.encode()),
 		relay_chain_height: 1,
 		hrmp_mqc_heads: Vec::new(),
+		dmq_mqc_head: Default::default(),
 	}
 	.encode();
 

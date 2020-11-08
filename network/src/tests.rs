@@ -21,9 +21,9 @@ use polkadot_node_primitives::{SignedFullStatement, Statement};
 use polkadot_primitives::v1::{
 	AuthorityDiscoveryId, Block as PBlock, BlockNumber, CandidateCommitments, CandidateDescriptor,
 	CandidateEvent, CommittedCandidateReceipt, CoreState, GroupRotationInfo, Hash as PHash,
-	HeadData, Id as ParaId, OccupiedCoreAssumption, ParachainHost, PersistedValidationData,
-	SessionIndex, SigningContext, ValidationCode, ValidationData, ValidationOutputs, ValidatorId,
-	ValidatorIndex,
+	HeadData, Id as ParaId, InboundDownwardMessage, OccupiedCoreAssumption, ParachainHost,
+	PersistedValidationData, SessionIndex, SigningContext, ValidationCode, ValidationData,
+	ValidationOutputs, ValidatorId, ValidatorIndex,
 };
 use polkadot_test_client::{
 	Client as PClient, ClientBlockImportExt, DefaultTestClientBuilderExt, FullBackend as PBackend,
@@ -259,7 +259,7 @@ fn check_statement_seconded() {
 		session_index,
 	};
 
-	let statement = Statement::Valid(H256::zero());
+	let statement = Statement::Valid(Default::default());
 
 	let signed_statement = block_on(SignedFullStatement::sign(
 		&keystore,
@@ -432,6 +432,14 @@ sp_api::mock_impl_runtime_apis! {
 
 		fn check_validation_outputs(_: ParaId, _: ValidationOutputs) -> bool {
 			false
+		}
+
+		fn dmq_contents(_: ParaId) -> Vec<InboundDownwardMessage<BlockNumber>> {
+			Vec::new()
+		}
+
+		fn historical_validation_code(_: ParaId, _: BlockNumber) -> Option<ValidationCode> {
+			None
 		}
 	}
 }

@@ -38,7 +38,7 @@ use sp_runtime::{
 use sp_state_machine::InspectState;
 
 use polkadot_node_primitives::{Collation, CollationGenerationConfig};
-use polkadot_node_subsystem::messages::CollationGenerationMessage;
+use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
 use polkadot_overseer::OverseerHandler;
 use polkadot_primitives::v1::{
 	Block as PBlock, BlockData, CollatorPair, Hash as PHash, HeadData, Id as ParaId, PoV,
@@ -223,7 +223,7 @@ where
 		let state = match self.backend.state_at(BlockId::Hash(block_hash)) {
 			Ok(state) => state,
 			Err(e) => {
-				error!(target: "cumulus-collator", "Failed to get state of the freshly build block: {:?}", e);
+				error!(target: "cumulus-collator", "Failed to get state of the freshly built block: {:?}", e);
 				return None;
 			}
 		};
@@ -242,19 +242,19 @@ where
 			let new_validation_code = sp_io::storage::get(well_known_keys::NEW_VALIDATION_CODE);
 
 			Some(Collation {
-				//TODO: What should we do here?
-				fees: 0,
 				upward_messages,
 				new_validation_code: new_validation_code.map(Into::into),
 				head_data,
 				proof_of_validity: PoV { block_data },
+				// TODO!
+				processed_downward_messages: 0,
 			})
 		})
 	}
 
 	async fn produce_candidate(
 		mut self,
-		_: PHash,
+		relay_parent: PHash,
 		validation_data: ValidationData,
 	) -> Option<Collation> {
 		trace!(target: "cumulus-collator", "Producing candidate");
@@ -268,9 +268,17 @@ where
 				}
 			};
 
-		if !self.check_block_status(last_head.hash()) {
+		let last_head_hash = last_head.hash();
+		if !self.check_block_status(last_head_hash) {
 			return None;
 		}
+
+		info!(
+			target: "cumulus-collator",
+			"Starting collation for relay parent `{}` on parent `{}`.",
+			relay_parent,
+			last_head_hash,
+		);
 
 		let proposer_future = self.proposer_factory.lock().init(&last_head);
 
@@ -467,7 +475,12 @@ where
 	overseer_handler
 		.send_msg(CollationGenerationMessage::Initialize(config))
 		.await
-		.map_err(|e| format!("Failed to register collator: {:?}", e))
+		.map_err(|e| format!("Failed to send `Initialize` message: {:?}", e))?;
+
+	overseer_handler
+		.send_msg(CollatorProtocolMessage::CollateOn(para_id))
+		.await
+		.map_err(|e| format!("Failed to send `CollateOn` message: {:?}", e))
 }
 
 #[cfg(test)]

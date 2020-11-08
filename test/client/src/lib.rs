@@ -17,12 +17,8 @@
 //! A Polkadot test client.
 
 mod block_builder;
-
-pub use block_builder::*;
-pub use cumulus_test_runtime as runtime;
-
 use codec::Encode;
-use cumulus_test_runtime::{
+use runtime::{
 	Balance, Block, BlockHashCount, Call, GenesisConfig, Runtime, Signature, SignedExtra,
 	SignedPayload, UncheckedExtrinsic, VERSION,
 };
@@ -30,6 +26,9 @@ use sc_service::client;
 use sp_blockchain::HeaderBackend;
 use sp_core::storage::Storage;
 use sp_runtime::{generic::Era, BuildStorage, SaturatedConversion};
+
+pub use block_builder::*;
+pub use cumulus_test_runtime as runtime;
 pub use substrate_test_client::*;
 
 mod local_executor {
