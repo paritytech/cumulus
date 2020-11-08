@@ -275,7 +275,7 @@ where
 
 		info!(
 			target: "cumulus-collator",
-			"Starting collation for relay parent `{}` on parent `{}`.",
+			"Starting collation for relay parent {:?} on parent {:?}.",
 			relay_parent,
 			last_head_hash,
 		);
@@ -367,7 +367,12 @@ where
 			.lock()
 			.wait_to_announce(block_hash, pov_hash);
 
-		info!(target: "cumulus-collator", "Produced proof-of-validity candidate `{:?}` from block `{:?}`.", pov_hash, block_hash);
+		info!(
+			target: "cumulus-collator",
+			"Produced proof-of-validity candidate {:?} from block {:?}.",
+			pov_hash,
+			block_hash,
+		);
 
 		Some(collation)
 	}
