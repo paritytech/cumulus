@@ -38,7 +38,7 @@ use sp_runtime::{
 use sp_state_machine::InspectState;
 
 use polkadot_node_primitives::{Collation, CollationGenerationConfig};
-use polkadot_node_subsystem::messages::CollationGenerationMessage;
+use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
 use polkadot_overseer::OverseerHandler;
 use polkadot_primitives::v1::{
 	Block as PBlock, BlockData, CollatorPair, Hash as PHash, HeadData, Id as ParaId, PoV,
@@ -254,7 +254,7 @@ where
 
 	async fn produce_candidate(
 		mut self,
-		_: PHash,
+		relay_parent: PHash,
 		validation_data: ValidationData,
 	) -> Option<Collation> {
 		trace!(target: "cumulus-collator", "Producing candidate");
@@ -268,9 +268,17 @@ where
 				}
 			};
 
-		if !self.check_block_status(last_head.hash()) {
+		let last_head_hash = last_head.hash();
+		if !self.check_block_status(last_head_hash) {
 			return None;
 		}
+
+		info!(
+			target: "cumulus-collator",
+			"Starting collation for relay parent `{}` on parent `{}`.",
+			relay_parent,
+			last_head_hash,
+		);
 
 		let proposer_future = self.proposer_factory.lock().init(&last_head);
 
@@ -467,7 +475,12 @@ where
 	overseer_handler
 		.send_msg(CollationGenerationMessage::Initialize(config))
 		.await
-		.map_err(|e| format!("Failed to register collator: {:?}", e))
+		.map_err(|e| format!("Failed to send `Initialize` message: {:?}", e))?;
+
+	overseer_handler
+		.send_msg(CollatorProtocolMessage::CollateOn(para_id))
+		.await
+		.map_err(|e| format!("Failed to send `CollateOn` message: {:?}", e))
 }
 
 #[cfg(test)]
