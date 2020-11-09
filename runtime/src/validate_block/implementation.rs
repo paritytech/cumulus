@@ -158,8 +158,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 		.and_then(|v| Decode::decode(&mut &v[..]).ok())
 		.unwrap_or_default();
 
-	let validation_data: ValidationData =
-		with_storage(|storage| storage.modified(VALIDATION_DATA))
+	let validation_data: ValidationData = overlay.storage(VALIDATION_DATA).flatten()
 			.and_then(|v| Decode::decode(&mut &v[..]).ok())
 			.expect("`ValidationData` is required to be placed into the storage!");
 
