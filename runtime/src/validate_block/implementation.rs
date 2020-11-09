@@ -33,7 +33,7 @@ use cumulus_primitives::{
 	},
 	GenericUpwardMessage, ValidationData,
 };
-use sp_externalities::{set_and_run_with_externalities, with_externalities};
+use sp_externalities::{set_and_run_with_externalities};
 use sp_externalities::{Externalities, ExtensionStore, Error, Extension};
 use sp_trie::MemoryDB;
 use sp_std::{any::{TypeId, Any}};
@@ -48,6 +48,11 @@ type Ext<'a, B: BlockT> = sp_state_machine::Ext<
 	NumberFor<B>,
 	sp_state_machine::TrieBackend<MemoryDB<HashFor<B>>, HashFor<B>>,
 >;
+
+fn with_externalities<F: FnOnce(&mut dyn Externalities) -> R, R>(f: F) -> R {
+	sp_externalities::with_externalities(f)
+		.expect("Environmental externalities not set.")
+}
 
 /// Implement `Encode` by forwarding the stored raw vec.
 struct EncodeOpaqueValue(Vec<u8>);
@@ -368,8 +373,7 @@ impl<'a, B: BlockT> ExtensionStore for WitnessExt<'a, B> {
 }
 
 fn host_storage_read(key: &[u8], value_out: &mut [u8], value_offset: u32) -> Option<u32> {
-	match with_externalities(|ext| ext.storage(key))
-		.expect("Runing with a correct environment") {
+	match with_externalities(|ext| ext.storage(key)) {
 		Some(value) => {
 			let value_offset = value_offset as usize;
 			let data = &value[value_offset.min(value.len())..];
@@ -383,70 +387,57 @@ fn host_storage_read(key: &[u8], value_out: &mut [u8], value_offset: u32) -> Opt
 
 fn host_storage_set(key: &[u8], value: &[u8]) {
 	with_externalities(|ext| ext.place_storage(key.to_vec(), Some(value.to_vec())))
-		.expect("Runing with a correct environment");
 }
 
 fn host_storage_get(key: &[u8]) -> Option<Vec<u8>> {
 	with_externalities(|ext| ext.storage(key).clone())
-		.expect("Runing with a correct environment")
 }
 
 fn host_storage_exists(key: &[u8]) -> bool {
 	with_externalities(|ext| ext.exists_storage(key))
-		.expect("Runing with a correct environment")
 }
 
 fn host_storage_clear(key: &[u8]) {
 	with_externalities(|ext| ext.place_storage(key.to_vec(), None))
-		.expect("Runing with a correct environment");
 }
 
 fn host_storage_root() -> Vec<u8> {
 	with_externalities(|ext| ext.storage_root())
-		.expect("Runing with a correct environment")
 }
 
 fn host_storage_clear_prefix(prefix: &[u8]) {
 	with_externalities(|ext| ext.clear_prefix(prefix))
-		.expect("Runing with a correct environment");
 }
 
 fn host_storage_changes_root(parent_hash: &[u8]) -> Option<Vec<u8>> {
 	with_externalities(|ext| ext.storage_changes_root(parent_hash).ok().flatten())
-		.expect("Runing with a correct environment")
 }
 
 fn host_storage_append(key: &[u8], value: Vec<u8>) {
 	with_externalities(|ext| ext.storage_append(key.to_vec(), value))
-		.expect("Runing with a correct environment");
 }
 
 fn host_storage_next_key(key: &[u8]) -> Option<Vec<u8>> {
 	with_externalities(|ext| ext.next_storage_key(key))
-		.expect("Runing with a correct environment")
 }
 
 fn host_storage_start_transaction() {
 	with_externalities(|ext| ext.storage_start_transaction())
-		.expect("Runing with a correct environment")
 }
 
 fn host_storage_rollback_transaction() {
 	with_externalities(|ext| ext.storage_rollback_transaction().ok())
-		.flatten()
-		.expect("Runing with a correct environment")
+		.expect("No open transaction that can be rolled back.");
 }
 
 fn host_storage_commit_transaction() {
 	with_externalities(|ext| ext.storage_commit_transaction().ok())
-		.flatten()
-		.expect("Runing with a correct environment")
+		.expect("No open transaction that can be committed.");
 }
 
 fn host_default_child_storage_get(storage_key: &[u8], key: &[u8]) -> Option<Vec<u8>> {
 	let child_info = ChildInfo::new_default(storage_key);
 	with_externalities(|ext| ext.child_storage(&child_info, key))
-		.expect("Runing with a correct environment")
 }
 
 fn host_default_child_storage_read(
@@ -456,8 +447,7 @@ fn host_default_child_storage_read(
 	value_offset: u32,
 ) -> Option<u32> {
 	let child_info = ChildInfo::new_default(storage_key);
-	match with_externalities(|ext| ext.child_storage(&child_info, key))
-		.expect("Runing with a correct environment") {
+	match with_externalities(|ext| ext.child_storage(&child_info, key)) {
 		Some(value) => {
 			let value_offset = value_offset as usize;
 			let data = &value[value_offset.min(value.len())..];
@@ -476,7 +466,6 @@ fn host_default_child_storage_set(
 ) {
 	let child_info = ChildInfo::new_default(storage_key);
 	with_externalities(|ext| ext.place_child_storage(&child_info, key.to_vec(), Some(value.to_vec())))
-		.expect("Runing with a correct environment")
 }
 
 fn host_default_child_storage_clear(
@@ -485,7 +474,6 @@ fn host_default_child_storage_clear(
 ) {
 	let child_info = ChildInfo::new_default(storage_key);
 	with_externalities(|ext| ext.place_child_storage(&child_info, key.to_vec(), None))
-		.expect("Runing with a correct environment")
 }
 
 fn host_default_child_storage_storage_kill(
@@ -493,7 +481,6 @@ fn host_default_child_storage_storage_kill(
 ) {
 	let child_info = ChildInfo::new_default(storage_key);
 	with_externalities(|ext| ext.kill_child_storage(&child_info))
-		.expect("Runing with a correct environment")
 }
 
 fn host_default_child_storage_exists(
@@ -502,7 +489,6 @@ fn host_default_child_storage_exists(
 ) -> bool {
 	let child_info = ChildInfo::new_default(storage_key);
 	with_externalities(|ext| ext.exists_child_storage(&child_info, key))
-		.expect("Runing with a correct environment")
 }
 
 fn host_default_child_storage_clear_prefix(
@@ -511,7 +497,6 @@ fn host_default_child_storage_clear_prefix(
 ) {
 	let child_info = ChildInfo::new_default(storage_key);
 	with_externalities(|ext| ext.clear_child_prefix(&child_info, prefix))
-		.expect("Runing with a correct environment")
 }
 
 fn host_default_child_storage_root(
@@ -519,7 +504,6 @@ fn host_default_child_storage_root(
 ) -> Vec<u8> {
 	let child_info = ChildInfo::new_default(storage_key);
 	with_externalities(|ext| ext.child_storage_root(&child_info))
-		.expect("Runing with a correct environment")
 }
 
 fn host_default_child_storage_next_key(
@@ -528,5 +512,4 @@ fn host_default_child_storage_next_key(
 ) -> Option<Vec<u8>> {
 	let child_info = ChildInfo::new_default(storage_key);
 	with_externalities(|ext| ext.next_child_storage_key(&child_info, key))
-		.expect("Runing with a correct environment")
 }
