@@ -37,7 +37,7 @@ use sp_externalities::{set_and_run_with_externalities, with_externalities};
 use sp_externalities::{Externalities, ExtensionStore, Error, Extension};
 use sp_trie::MemoryDB;
 use sp_std::{any::{TypeId, Any}};
-use sp_core::storage::ChildInfo;
+use sp_core::storage::{ChildInfo, TrackedStorageKey};
 
 type StorageValue = Vec<u8>;
 type StorageKey = Vec<u8>;
@@ -75,9 +75,6 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 		"Invalid parent hash",
 	);
 
-	// make a copy for later use
-	let validation_params = (&params).into();
-
 	let db = block_data.storage_proof.into_memory_db();
 	let root = parent_head.state_root().clone();
 	if !HashDB::<HashFor<B>, _>::contains(&db, &root, EMPTY_PREFIX) {
@@ -91,7 +88,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	let mut cache = Default::default();
 	let mut ext = WitnessExt::<B> {
 		inner: Ext::<B>::new(&mut overlay, &mut cache, &backend),
-		params: &validation_params,
+		params: &params,
 	};
 
 	let _guard = unsafe {
@@ -171,7 +168,7 @@ struct WitnessExt<'a, B: BlockT> {
 	params: &'a ValidationParams,
 }
 
-impl<B: BlockT> WitnessExt<'a, B> {
+impl<'a, B: BlockT> WitnessExt<'a, B> {
 	/// Checks that the encoded `ValidationData` in `data` is correct.
 	///
 	/// Should be removed with: https://github.com/paritytech/cumulus/issues/217
@@ -180,15 +177,15 @@ impl<B: BlockT> WitnessExt<'a, B> {
 		let validation_data = ValidationData::decode(&mut data).expect("Invalid `ValidationData`");
 
 		assert_eq!(
-			self.validation_params.parent_head,
+			self.params.parent_head,
 			validation_data.persisted.parent_head
 		);
 		assert_eq!(
-			self.validation_params.relay_chain_height,
+			self.params.relay_chain_height,
 			validation_data.persisted.block_number
 		);
 		assert_eq!(
-			self.validation_params.hrmp_mqc_heads,
+			self.params.hrmp_mqc_heads,
 			validation_data.persisted.hrmp_mqc_heads
 		);
 	}
@@ -248,8 +245,10 @@ impl<'a, B: BlockT> Externalities for WitnessExt<'a, B> {
 	}
 
 	fn place_storage(&mut self, key: StorageKey, value: Option<StorageValue>) {
-		if key == VALIDATION_DATA {
-			self.check_validation_data(value);
+		if let Some(value) = value.as_ref() {
+			if key == VALIDATION_DATA {
+				self.check_validation_data(value);
+			}
 		}
 
 		self.inner.place_storage(key, value)
@@ -338,7 +337,11 @@ impl<'a, B: BlockT> Externalities for WitnessExt<'a, B> {
 		self.inner.reset_read_write_count()
 	}
 
-	fn set_whitelist(&mut self, new: Vec<Vec<u8>>) {
+	fn get_whitelist(&self) -> Vec<TrackedStorageKey> {
+		self.inner.get_whitelist()
+	}
+
+	fn set_whitelist(&mut self, new: Vec<TrackedStorageKey>) {
 		self.inner.set_whitelist(new)
 	}
 }
