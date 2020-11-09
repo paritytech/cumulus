@@ -19,7 +19,7 @@ use crate::{
 	cli::{Cli, RelayChainCli, Subcommand},
 };
 use codec::Encode;
-use cumulus_primitives::ParaId;
+use cumulus_primitives::{genesis::generate_genesis_block, ParaId};
 use log::info;
 use parachain_runtime::Block;
 use polkadot_parachain::primitives::AccountIdConversion;
@@ -27,10 +27,13 @@ use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
 };
-use sc_service::config::{BasePath, PrometheusConfig};
+use sc_service::{
+	config::{BasePath, PrometheusConfig},
+	PartialComponents,
+};
 use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::traits::{Block as BlockT, Hash as HashT, Header as HeaderT, Zero};
-use std::{io::Write, net::SocketAddr, sync::Arc};
+use sp_runtime::traits::Block as BlockT;
+use std::{io::Write, net::SocketAddr};
 
 fn load_spec(
 	id: &str,
@@ -47,7 +50,6 @@ fn load_spec(
 		"track" => Ok(Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../res/track.json")[..],
 		)?)),
-		"contracts" => Ok(Box::new(chain_spec::get_contracts_chain_spec(para_id))),
 		"" => Ok(Box::new(chain_spec::get_chain_spec(para_id))),
 		path => Ok(Box::new(chain_spec::ChainSpec::from_json_file(
 			path.into(),
@@ -134,34 +136,6 @@ impl SubstrateCli for RelayChainCli {
 	}
 }
 
-pub fn generate_genesis_state(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<Block> {
-	let storage = chain_spec.build_storage()?;
-
-	let child_roots = storage.children_default.iter().map(|(sk, child_content)| {
-		let state_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
-			child_content.data.clone().into_iter().collect(),
-		);
-		(sk.clone(), state_root.encode())
-	});
-	let state_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
-		storage.top.clone().into_iter().chain(child_roots).collect(),
-	);
-
-	let extrinsics_root =
-		<<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(Vec::new());
-
-	Ok(Block::new(
-		<<Block as BlockT>::Header as HeaderT>::new(
-			Zero::zero(),
-			extrinsics_root,
-			state_root,
-			Default::default(),
-			Default::default(),
-		),
-		Default::default(),
-	))
-}
-
 fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<Vec<u8>> {
 	let mut storage = chain_spec.build_storage()?;
 
@@ -171,52 +145,81 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 		.ok_or_else(|| "Could not find wasm file in genesis state!".into())
 }
 
-fn use_contracts_runtime(chain_spec: &Box<dyn ChainSpec>) -> bool {
-	chain_spec.id().starts_with("trick") || chain_spec.id().starts_with("contracts")
-}
-
 /// Parse command line arguments into service configuration.
 pub fn run() -> Result<()> {
 	let cli = Cli::from_args();
 
 	match &cli.subcommand {
-		Some(Subcommand::Base(subcommand)) => {
-			let runner = cli.create_runner(subcommand)?;
-
-			if use_contracts_runtime(&runner.config().chain_spec) {
-				runner.run_subcommand(subcommand, |mut config| {
-					let params = crate::service::new_partial::<
-						parachain_contracts_runtime::RuntimeApi,
-						crate::service::ContractsRuntimeExecutor,
-					>(&mut config)?;
-
-					Ok((
-						params.client,
-						params.backend,
-						params.import_queue,
-						params.task_manager,
-					))
-				})
-			} else {
-				runner.run_subcommand(subcommand, |mut config| {
-					let params = crate::service::new_partial::<
-						parachain_runtime::RuntimeApi,
-						crate::service::RuntimeExecutor,
-					>(&mut config)?;
-
-					Ok((
-						params.client,
-						params.backend,
-						params.import_queue,
-						params.task_manager,
-					))
-				})
-			}
+		Some(Subcommand::BuildSpec(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
+		}
+		Some(Subcommand::CheckBlock(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			runner.async_run(|config| {
+				let PartialComponents {
+					client,
+					task_manager,
+					import_queue,
+					..
+				} = crate::service::new_partial(&config)?;
+				Ok((cmd.run(client, import_queue), task_manager))
+			})
+		}
+		Some(Subcommand::ExportBlocks(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			runner.async_run(|config| {
+				let PartialComponents {
+					client,
+					task_manager,
+					..
+				} = crate::service::new_partial(&config)?;
+				Ok((cmd.run(client, config.database), task_manager))
+			})
+		}
+		Some(Subcommand::ExportState(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			runner.async_run(|config| {
+				let PartialComponents {
+					client,
+					task_manager,
+					..
+				} = crate::service::new_partial(&config)?;
+				Ok((cmd.run(client, config.chain_spec), task_manager))
+			})
+		}
+		Some(Subcommand::ImportBlocks(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			runner.async_run(|config| {
+				let PartialComponents {
+					client,
+					task_manager,
+					import_queue,
+					..
+				} = crate::service::new_partial(&config)?;
+				Ok((cmd.run(client, import_queue), task_manager))
+			})
+		}
+		Some(Subcommand::PurgeChain(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			runner.sync_run(|config| cmd.run(config.database))
+		}
+		Some(Subcommand::Revert(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			runner.async_run(|config| {
+				let PartialComponents {
+					client,
+					task_manager,
+					backend,
+					..
+				} = crate::service::new_partial(&config)?;
+				Ok((cmd.run(client, backend), task_manager))
+			})
 		}
 		Some(Subcommand::ExportGenesisState(params)) => {
-			sc_cli::init_logger("");
+			sc_cli::init_logger("", sc_tracing::TracingReceiver::Log, None)?;
 
-			let block = generate_genesis_state(&load_spec(
+			let block: Block = generate_genesis_block(&load_spec(
 				&params.chain.clone().unwrap_or_default(),
 				params.parachain_id.into(),
 			)?)?;
@@ -231,7 +234,7 @@ pub fn run() -> Result<()> {
 			Ok(())
 		}
 		Some(Subcommand::ExportGenesisWasm(params)) => {
-			sc_cli::init_logger("");
+			sc_cli::init_logger("", sc_tracing::TracingReceiver::Log, None)?;
 
 			let wasm_file =
 				extract_genesis_wasm(&cli.load_spec(&params.chain.clone().unwrap_or_default())?)?;
@@ -247,9 +250,9 @@ pub fn run() -> Result<()> {
 		None => {
 			let runner = cli.create_runner(&*cli.run)?;
 
-			runner.run_node_until_exit(|config| {
+			runner.run_node_until_exit(|config| async move {
 				// TODO
-				let key = Arc::new(sp_core::Pair::generate().0);
+				let key = sp_core::Pair::generate().0;
 
 				let extension = chain_spec::Extensions::try_get(&config.chain_spec);
 				let relay_chain_id = extension.map(|e| e.relay_chain.clone());
@@ -268,41 +271,24 @@ pub fn run() -> Result<()> {
 				let parachain_account =
 					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
 
-				let block =
-					generate_genesis_state(&config.chain_spec).map_err(|e| format!("{:?}", e))?;
+				let block: Block =
+					generate_genesis_block(&config.chain_spec).map_err(|e| format!("{:?}", e))?;
 				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
 				let task_executor = config.task_executor.clone();
 				let polkadot_config =
 					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, task_executor)
 						.map_err(|err| format!("Relay chain argument error: {}", err))?;
+				let collator = cli.run.base.validator || cli.collator;
 
 				info!("Parachain id: {:?}", id);
 				info!("Parachain Account: {}", parachain_account);
 				info!("Parachain genesis state: {}", genesis_state);
-				info!(
-					"Is collating: {}",
-					if cli.run.base.validator { "yes" } else { "no" }
-				);
+				info!("Is collating: {}", if collator { "yes" } else { "no" });
 
-				if use_contracts_runtime(&config.chain_spec) {
-					crate::service::start_contracts_node(
-						config,
-						key,
-						polkadot_config,
-						id,
-						cli.run.base.validator,
-					)
-				} else {
-					crate::service::start_node(
-						config,
-						key,
-						polkadot_config,
-						id,
-						cli.run.base.validator,
-					)
+				crate::service::start_node(config, key, polkadot_config, id, collator)
+					.await
 					.map(|r| r.0)
-				}
 			})
 		}
 	}

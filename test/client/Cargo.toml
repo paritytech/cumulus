@@ -5,12 +5,29 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 
 [dependencies]
-sc-service = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
-sc-consensus = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
-test-client = { package = "substrate-test-client", git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
-runtime = { package = "cumulus-test-runtime", path = "../runtime" }
-sp-runtime = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
-sp-core = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
-sp-keyring = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-test-primitives = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
+# Cumulus deps
+cumulus-test-runtime = { path = "../runtime" }
+cumulus-test-service = { path = "../service" }
+cumulus-primitives = { path = "../../primitives" }
+
+# Polkadot deps
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-adder-collator-integration-test" }
+
+# Other deps
 codec = { package = "parity-scale-codec", version = "1.0.5", default-features = false, features = [ "derive" ] }
-sp-test-primitives = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }

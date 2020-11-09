@@ -7,33 +7,35 @@ edition = "2018"
 [dependencies]
 # Other dependencies
 codec = { package = "parity-scale-codec", version = "1.3.0", default-features = false, features = [ "derive" ] }
-memory-db = { version = "0.24.0", default-features = false }
 hash-db = { version = "0.15.2", default-features = false }
+memory-db = { version = "0.24.0", default-features = false }
 trie-db = { version = "0.22.0", default-features = false }
 
 # Cumulus dependencies
 cumulus-primitives = { path = "../primitives", default-features = false }
 
 # Substrate dependencies
-sp-std = { git = "https://github.com/cheme/substrate", default-features = false, branch = "rococo-branch-witness_backend" }
-sp-runtime = { git = "https://github.com/cheme/substrate", default-features = false, branch = "rococo-branch-witness_backend" }
-sp-core = { git = "https://github.com/cheme/substrate", default-features = false, branch = "rococo-branch-witness_backend" }
-sp-io = { git = "https://github.com/cheme/substrate", default-features = false, branch = "rococo-branch-witness_backend" }
-frame-executive = { git = "https://github.com/cheme/substrate", default-features = false, branch = "rococo-branch-witness_backend" }
-sp-state-machine = { git = "https://github.com/cheme/substrate", default-features = false, branch = "rococo-branch-witness_backend" }
-sp-externalities = { git = "https://github.com/cheme/substrate", default-features = false, branch = "rococo-branch-witness_backend" }
-sp-trie = { git = "https://github.com/cheme/substrate", default-features = false, branch = "rococo-branch-witness_backend" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-externalities = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot dependencies
-parachain = { package = "polkadot-parachain", git = "https://github.com/cheme/polkadot-1", branch = "rococo-branch-witness_backend", default-features = false, features = [ "wasm-api" ] }
+parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", default-features = false, features = [ "wasm-api" ] , branch = "bkchr-adder-collator-integration-test" }
 
 [dev-dependencies]
-sc-block-builder = { git = "https://github.com/cheme/substrate", default-features = false, branch = "rococo-branch-witness_backend" }
-sp-keyring = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
-sp-blockchain = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
-sc-executor = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend", features = ["std", "wasmtime"] }
-sp-consensus = { git = "https://github.com/cheme/substrate", branch = "rococo-branch-witness_backend" }
-test-client = { package = "cumulus-test-client", path = "../test/client" }
+sc-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+cumulus-test-client = { path = "../test/client" }
+env_logger = "0.7.1"
 
 [features]
 default = ["std"]

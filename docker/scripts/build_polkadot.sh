@@ -6,7 +6,7 @@ cumulus_repo=$(cd "$(dirname "$0")" && git rev-parse --show-toplevel)
 polkadot_repo=$(dirname "$cumulus_repo")/polkadot
 if [ ! -d "$polkadot_repo/.git" ]; then
     echo "please clone polkadot in parallel to this repo:"
-    echo "  (cd .. && git clone git@github.com:cheme/polkadot-1.git)"
+    echo "  (cd .. && git clone git@github.com:paritytech/polkadot.git)"
     exit 1
 fi
 

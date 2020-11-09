@@ -28,12 +28,10 @@ use parachain::primitives::{HeadData, ValidationCode, ValidationParams, Validati
 use codec::{Decode, Encode};
 
 use cumulus_primitives::{
-	validation_function_params::ValidationFunctionParams,
 	well_known_keys::{
-		NEW_VALIDATION_CODE, PROCESSED_DOWNWARD_MESSAGES, UPWARD_MESSAGES,
-		VALIDATION_FUNCTION_PARAMS,
+		NEW_VALIDATION_CODE, PROCESSED_DOWNWARD_MESSAGES, UPWARD_MESSAGES, VALIDATION_DATA,
 	},
-	GenericUpwardMessage,
+	GenericUpwardMessage, ValidationData,
 };
 use sp_externalities::{set_and_run_with_externalities, with_externalities};
 use sp_externalities::{Externalities, ExtensionStore, Error, Extension};
@@ -74,11 +72,11 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	let block = B::new(block_data.header, block_data.extrinsics);
 	assert!(
 		parent_head.hash() == *block.header().parent_hash(),
-		"Invalid parent hash"
+		"Invalid parent hash",
 	);
 
 	// make a copy for later use
-	let validation_function_params = (&params).into();
+	let validation_params = (&params).into();
 
 	let db = block_data.storage_proof.into_memory_db();
 	let root = parent_head.state_root().clone();
@@ -93,7 +91,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	let mut cache = Default::default();
 	let mut ext = WitnessExt::<B> {
 		inner: Ext::<B>::new(&mut overlay, &mut cache, &backend),
-		params: &validation_function_params,
+		params: &validation_params,
 	};
 
 	let _guard = unsafe {
@@ -145,9 +143,6 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	let new_validation_code = overlay.storage(NEW_VALIDATION_CODE).flatten()
 		.map(|slice| slice.to_vec())
 		.map(ValidationCode);
-	if new_validation_code.is_some() && validation_function_params.code_upgrade_allowed.is_none() {
-		panic!("Attempt to upgrade validation function when not permitted!");
-	}
 
 	// Extract potential upward messages from the storage.
 	let upward_messages = match overlay.storage(UPWARD_MESSAGES).flatten() {
@@ -173,15 +168,35 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 /// witness data as source.
 struct WitnessExt<'a, B: BlockT> {
 	inner: Ext<'a, B>,
-	params: &'a ValidationFunctionParams,
+	params: &'a ValidationParams,
+}
+
+impl<B: BlockT> WitnessExt<'a, B> {
+	/// Checks that the encoded `ValidationData` in `data` is correct.
+	///
+	/// Should be removed with: https://github.com/paritytech/cumulus/issues/217
+	/// When removed `WitnessExt` could also be removed.
+	fn check_validation_data(&self, mut data: &[u8]) {
+		let validation_data = ValidationData::decode(&mut data).expect("Invalid `ValidationData`");
+
+		assert_eq!(
+			self.validation_params.parent_head,
+			validation_data.persisted.parent_head
+		);
+		assert_eq!(
+			self.validation_params.relay_chain_height,
+			validation_data.persisted.block_number
+		);
+		assert_eq!(
+			self.validation_params.hrmp_mqc_heads,
+			validation_data.persisted.hrmp_mqc_heads
+		);
+	}
 }
 
 impl<'a, B: BlockT> Externalities for WitnessExt<'a, B> {
 	fn storage(&self, key: &[u8]) -> Option<StorageValue> {
-		match key {
-			VALIDATION_FUNCTION_PARAMS => Some(self.params.encode()),
-			key => self.inner.storage(key),
-		}
+		self.inner.storage(key)
 	}
 
 	fn set_offchain_storage(&mut self, key: &[u8], value: Option<&[u8]>) {
@@ -233,6 +248,10 @@ impl<'a, B: BlockT> Externalities for WitnessExt<'a, B> {
 	}
 
 	fn place_storage(&mut self, key: StorageKey, value: Option<StorageValue>) {
+		if key == VALIDATION_DATA {
+			self.check_validation_data(value);
+		}
+
 		self.inner.place_storage(key, value)
 	}
 
