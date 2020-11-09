@@ -2907,7 +2907,7 @@ dependencies = [
 [[package]]
 name = "kusama-runtime"
 version = "0.8.26"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "bitvec",
  "frame-executive",
@@ -5019,7 +5019,7 @@ checksum = "feb3b2b1033b8a60b4da6ee470325f887758c95d5320f52f9ce0df055a55940e"
 [[package]]
 name = "polkadot-availability-bitfield-distribution"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "futures 0.3.7",
  "log 0.4.11",
@@ -5033,7 +5033,7 @@ dependencies = [
 [[package]]
 name = "polkadot-availability-distribution"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "futures 0.3.7",
  "log 0.4.11",
@@ -5051,7 +5051,7 @@ dependencies = [
 [[package]]
 name = "polkadot-cli"
 version = "0.8.26"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "frame-benchmarking-cli",
  "log 0.4.11",
@@ -5070,7 +5070,7 @@ dependencies = [
 [[package]]
 name = "polkadot-collator-protocol"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "futures 0.3.7",
  "log 0.4.11",
@@ -5084,7 +5084,7 @@ dependencies = [
 [[package]]
 name = "polkadot-core-primitives"
 version = "0.7.30"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "parity-scale-codec",
  "sp-core",
@@ -5095,7 +5095,7 @@ dependencies = [
 [[package]]
 name = "polkadot-erasure-coding"
 version = "0.8.26"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "parity-scale-codec",
  "polkadot-primitives",
@@ -5108,7 +5108,7 @@ dependencies = [
 [[package]]
 name = "polkadot-network-bridge"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "async-trait",
  "futures 0.3.7",
@@ -5125,7 +5125,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-collation-generation"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "futures 0.3.7",
  "log 0.4.11",
@@ -5141,7 +5141,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-av-store"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "futures 0.3.7",
  "futures-timer 3.0.2",
@@ -5161,7 +5161,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-backing"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "bitvec",
  "futures 0.3.7",
@@ -5179,7 +5179,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-bitfield-signing"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "derive_more 0.99.11",
  "futures 0.3.7",
@@ -5195,7 +5195,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-candidate-selection"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "futures 0.3.7",
  "log 0.4.11",
@@ -5208,7 +5208,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-candidate-validation"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "futures 0.3.7",
  "log 0.4.11",
@@ -5224,7 +5224,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-chain-api"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "futures 0.3.7",
  "polkadot-node-subsystem",
@@ -5236,7 +5236,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-proposer"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "futures 0.3.7",
  "futures-timer 3.0.2",
@@ -5260,7 +5260,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-provisioner"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "bitvec",
  "futures 0.3.7",
@@ -5274,7 +5274,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-runtime-api"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "futures 0.3.7",
  "polkadot-node-subsystem",
@@ -5286,7 +5286,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-network-protocol"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "parity-scale-codec",
  "polkadot-node-primitives",
@@ -5297,7 +5297,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-primitives"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "futures 0.3.7",
  "parity-scale-codec",
@@ -5310,7 +5310,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-subsystem"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "async-trait",
  "derive_more 0.99.11",
@@ -5333,7 +5333,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-subsystem-test-helpers"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "async-trait",
  "futures 0.3.7",
@@ -5355,7 +5355,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-subsystem-util"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "async-trait",
  "futures 0.3.7",
@@ -5378,7 +5378,7 @@ dependencies = [
 [[package]]
 name = "polkadot-overseer"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "async-trait",
  "futures 0.3.7",
@@ -5395,7 +5395,7 @@ dependencies = [
 [[package]]
 name = "polkadot-parachain"
 version = "0.8.26"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "derive_more 0.99.11",
  "futures 0.3.7",
@@ -5418,7 +5418,7 @@ dependencies = [
 [[package]]
 name = "polkadot-pov-distribution"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "futures 0.3.7",
  "log 0.4.11",
@@ -5431,7 +5431,7 @@ dependencies = [
 [[package]]
 name = "polkadot-primitives"
 version = "0.8.26"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "bitvec",
  "frame-system",
@@ -5456,7 +5456,7 @@ dependencies = [
 [[package]]
 name = "polkadot-rpc"
 version = "0.8.26"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "jsonrpc-core",
  "pallet-transaction-payment-rpc",
@@ -5486,7 +5486,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime"
 version = "0.8.26"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "bitvec",
  "frame-executive",
@@ -5549,7 +5549,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-common"
 version = "0.8.26"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "bitvec",
  "frame-support",
@@ -5584,7 +5584,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-parachains"
 version = "0.8.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "bitvec",
  "frame-support",
@@ -5613,12 +5613,13 @@ dependencies = [
  "sp-session",
  "sp-staking",
  "sp-std",
+ "xcm",
 ]
 
 [[package]]
 name = "polkadot-service"
 version = "0.8.3"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "frame-benchmarking",
  "frame-system-rpc-runtime-api",
@@ -5697,7 +5698,7 @@ dependencies = [
 [[package]]
 name = "polkadot-statement-distribution"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "arrayvec 0.5.2",
  "futures 0.3.7",
@@ -5714,7 +5715,7 @@ dependencies = [
 [[package]]
 name = "polkadot-statement-table"
 version = "0.8.26"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "parity-scale-codec",
  "polkadot-primitives",
@@ -5724,7 +5725,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-client"
 version = "0.8.26"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "parity-scale-codec",
  "polkadot-node-subsystem",
@@ -5748,7 +5749,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-runtime"
 version = "0.8.26"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "bitvec",
  "frame-executive",
@@ -5802,7 +5803,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-service"
 version = "0.8.26"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "frame-benchmarking",
  "frame-system",
@@ -5853,7 +5854,7 @@ dependencies = [
 [[package]]
 name = "polkadot-validation"
 version = "0.8.26"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "futures 0.3.7",
  "log 0.4.11",
@@ -6596,7 +6597,7 @@ dependencies = [
 [[package]]
 name = "rococo-runtime"
 version = "0.8.26"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "frame-executive",
  "frame-support",
@@ -8229,7 +8230,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-aura"
 version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#2e7292cd84121db8bcd2317c1ad70e348ee52f7a"
+source = "git+https://github.com/paritytech/substrate?branch=master#9ec43d880823e9ad082de7e3038ac9777613fa15"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -8624,7 +8625,7 @@ dependencies = [
 [[package]]
 name = "sp-test-primitives"
 version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#2e7292cd84121db8bcd2317c1ad70e348ee52f7a"
+source = "git+https://github.com/paritytech/substrate?branch=master#9ec43d880823e9ad082de7e3038ac9777613fa15"
 dependencies = [
  "parity-scale-codec",
  "parity-util-mem",
@@ -8922,7 +8923,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-runtime"
 version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#2e7292cd84121db8bcd2317c1ad70e348ee52f7a"
+source = "git+https://github.com/paritytech/substrate?branch=master#9ec43d880823e9ad082de7e3038ac9777613fa15"
 dependencies = [
  "cfg-if 0.1.10",
  "frame-executive",
@@ -8964,7 +8965,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-runtime-client"
 version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#2e7292cd84121db8bcd2317c1ad70e348ee52f7a"
+source = "git+https://github.com/paritytech/substrate?branch=master#9ec43d880823e9ad082de7e3038ac9777613fa15"
 dependencies = [
  "futures 0.3.7",
  "parity-scale-codec",
@@ -8985,7 +8986,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-utils"
 version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#2e7292cd84121db8bcd2317c1ad70e348ee52f7a"
+source = "git+https://github.com/paritytech/substrate?branch=master#9ec43d880823e9ad082de7e3038ac9777613fa15"
 dependencies = [
  "futures 0.3.7",
  "substrate-test-utils-derive",
@@ -8995,7 +8996,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-utils-derive"
 version = "0.8.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#2e7292cd84121db8bcd2317c1ad70e348ee52f7a"
+source = "git+https://github.com/paritytech/substrate?branch=master#9ec43d880823e9ad082de7e3038ac9777613fa15"
 dependencies = [
  "proc-macro-crate",
  "quote 1.0.7",
@@ -9011,7 +9012,7 @@ checksum = "54cab12167e32b38a62c5ea5825aa0874cde315f907a46aad2b05aa8ef3d862f"
 [[package]]
 name = "substrate-wasm-builder-runner"
 version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#2e7292cd84121db8bcd2317c1ad70e348ee52f7a"
+source = "git+https://github.com/paritytech/substrate?branch=master#9ec43d880823e9ad082de7e3038ac9777613fa15"
 
 [[package]]
 name = "subtle"
@@ -10191,7 +10192,7 @@ dependencies = [
 [[package]]
 name = "westend-runtime"
 version = "0.8.26"
-source = "git+https://github.com/paritytech/polkadot?branch=bkchr-adder-collator-integration-test#11347d4d050f9c405dea096d8de1ed388399bc1f"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
 dependencies = [
  "bitvec",
  "frame-executive",
@@ -10326,6 +10327,14 @@ dependencies = [
  "curve25519-dalek 3.0.0",
  "rand_core 0.5.1",
  "zeroize",
+]
+
+[[package]]
+name = "xcm"
+version = "0.8.22"
+source = "git+https://github.com/paritytech/polkadot?branch=master#cfde07678a4086b724c6333f8607df92c7fbf92b"
+dependencies = [
+ "parity-scale-codec",
 ]
 
 [[package]]
