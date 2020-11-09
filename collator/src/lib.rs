@@ -38,11 +38,13 @@ use sp_runtime::{
 use sp_state_machine::InspectState;
 
 use polkadot_node_primitives::{Collation, CollationGenerationConfig};
-use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
+use polkadot_node_subsystem::messages::{
+	CollationGenerationMessage, CollatorProtocolMessage, RuntimeApiMessage, RuntimeApiRequest,
+};
 use polkadot_overseer::OverseerHandler;
 use polkadot_primitives::v1::{
-	Block as PBlock, BlockData, CollatorPair, Hash as PHash, HeadData, Id as ParaId, PoV,
-	UpwardMessage, BlockNumber as PBlockNumber,
+	Block as PBlock, BlockData, BlockNumber as PBlockNumber, CollatorPair, Hash as PHash, HeadData,
+	Id as ParaId, PoV, UpwardMessage,
 };
 use polkadot_service::RuntimeApiCollection;
 
@@ -50,7 +52,7 @@ use codec::{Decode, Encode};
 
 use log::{debug, error, info, trace};
 
-use futures::prelude::*;
+use futures::{channel::oneshot, prelude::*};
 
 use std::{marker::PhantomData, sync::Arc, time::Duration};
 
@@ -61,6 +63,7 @@ type TransactionFor<E, Block> =
 
 /// The implementation of the Cumulus `Collator`.
 pub struct Collator<Block: BlockT, PF, BI, BS, Backend> {
+	para_id: ParaId,
 	proposer_factory: Arc<Mutex<PF>>,
 	_phantom: PhantomData<Block>,
 	inherent_data_providers: InherentDataProviders,
@@ -68,11 +71,13 @@ pub struct Collator<Block: BlockT, PF, BI, BS, Backend> {
 	block_status: Arc<BS>,
 	wait_to_announce: Arc<Mutex<WaitToAnnounce<Block>>>,
 	backend: Arc<Backend>,
+	overseer_handler: OverseerHandler,
 }
 
 impl<Block: BlockT, PF, BI, BS, Backend> Clone for Collator<Block, PF, BI, BS, Backend> {
 	fn clone(&self) -> Self {
 		Self {
+			para_id: self.para_id.clone(),
 			proposer_factory: self.proposer_factory.clone(),
 			inherent_data_providers: self.inherent_data_providers.clone(),
 			_phantom: PhantomData,
@@ -80,6 +85,7 @@ impl<Block: BlockT, PF, BI, BS, Backend> Clone for Collator<Block, PF, BI, BS, B
 			block_status: self.block_status.clone(),
 			wait_to_announce: self.wait_to_announce.clone(),
 			backend: self.backend.clone(),
+			overseer_handler: self.overseer_handler.clone(),
 		}
 	}
 }
@@ -90,10 +96,10 @@ where
 	PF: Environment<Block> + 'static + Send,
 	PF::Proposer: Send,
 	BI: BlockImport<
-			Block,
-			Error = ConsensusError,
-			Transaction = <PF::Proposer as Proposer<Block>>::Transaction,
-		> + Send
+		Block,
+		Error = ConsensusError,
+		Transaction = <PF::Proposer as Proposer<Block>>::Transaction,
+	> + Send
 		+ Sync
 		+ 'static,
 	BS: BlockBackend<Block>,
@@ -101,6 +107,7 @@ where
 {
 	/// Create a new instance.
 	fn new(
+		para_id: ParaId,
 		proposer_factory: PF,
 		inherent_data_providers: InherentDataProviders,
 		overseer_handler: OverseerHandler,
@@ -113,10 +120,11 @@ where
 		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(
 			spawner,
 			announce_block,
-			overseer_handler,
+			overseer_handler.clone(),
 		)));
 
 		Self {
+			para_id,
 			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
 			inherent_data_providers,
 			_phantom: PhantomData,
@@ -124,14 +132,53 @@ where
 			block_status,
 			wait_to_announce,
 			backend,
+			overseer_handler,
+		}
+	}
+
+	/// Returns the contents of the downward message queue at the state of the given relay-parent.
+	async fn retrieve_dmq_contents(&mut self, relay_parent: PHash) -> Option<DownwardMessagesType> {
+		let (tx, rx) = oneshot::channel();
+		self.overseer_handler
+			.send_msg(RuntimeApiMessage::Request(
+				relay_parent,
+				RuntimeApiRequest::DmqContents(self.para_id, tx),
+			))
+			.await
+			.map_err(|e| {
+				error!(
+					target: "cumulus-collator",
+					"Unable to send runtime API request to obtain downward messages: {:?}",
+					e,
+				)
+			})
+			.ok()?;
+
+		match rx.await {
+			Ok(Ok(downward_messages)) => Some(downward_messages),
+			Ok(Err(e)) => {
+				error!(
+					target: "cumulus-collator",
+					"The runtime API failed to return downward messages: {:?}",
+					e,
+				);
+				None
+			}
+			Err(_) => {
+				error!(
+					target: "cumulus-collator",
+					"The runtime API hung up during downward messages request",
+				);
+				None
+			}
 		}
 	}
 
 	/// Get the inherent data with validation function parameters injected
-	fn inherent_data(
+	async fn inherent_data(
 		&mut self,
 		validation_data: &ValidationData,
-		downward_messages: DownwardMessagesType,
+		relay_parent: PHash,
 	) -> Option<InherentData> {
 		let mut inherent_data = self
 			.inherent_data_providers
@@ -156,6 +203,7 @@ where
 			})
 			.ok()?;
 
+		let downward_messages = self.retrieve_dmq_contents(relay_parent).await?;
 		inherent_data
 			.put_data(DOWNWARD_MESSAGES_IDENTIFIER, &downward_messages)
 			.map_err(|e| {
@@ -284,6 +332,8 @@ where
 			last_head_hash,
 		);
 
+		let inherent_data = self.inherent_data(&validation_data, relay_parent).await?;
+
 		let proposer_future = self.proposer_factory.lock().init(&last_head);
 
 		let proposer = proposer_future
@@ -296,12 +346,6 @@ where
 				)
 			})
 			.ok()?;
-
-		let inherent_data = self.inherent_data(
-			&validation_data,
-			// TODO get the downward messages
-			Vec::new(),
-		)?;
 
 		let Proposal {
 			block,
@@ -455,6 +499,7 @@ where
 	spawner.spawn("cumulus-follow-polkadot", follow.map(|_| ()).boxed());
 
 	let collator = Collator::new(
+		para_id,
 		proposer_factory,
 		inherent_data_providers,
 		overseer_handler.clone(),
@@ -506,6 +551,7 @@ mod tests {
 	use polkadot_node_subsystem::messages::CollationGenerationMessage;
 	use polkadot_node_subsystem_test_helpers::ForwardSubsystem;
 	use polkadot_overseer::{AllSubsystems, Overseer};
+	use polkadot_primitives::v1::InboundDownwardMessage;
 
 	use futures::{channel::mpsc, executor::block_on, future};
 
@@ -585,10 +631,12 @@ mod tests {
 		let client = Arc::new(client_builder.build());
 		let header = client.header(&BlockId::Number(0)).unwrap().unwrap();
 
-		let (sub_tx, sub_rx) = mpsc::channel(64);
+		let (collation_gen_tx, collation_gen_rx) = mpsc::channel(64);
+		let (runtime_api_tx, runtime_api_rx) = mpsc::channel(64);
 
-		let all_subsystems =
-			AllSubsystems::<()>::dummy().replace_collation_generation(ForwardSubsystem(sub_tx));
+		let all_subsystems = AllSubsystems::<()>::dummy()
+			.replace_collation_generation(ForwardSubsystem(collation_gen_tx))
+			.replace_runtime_api(ForwardSubsystem(runtime_api_tx));
 		let (overseer, handler) = Overseer::new(Vec::new(), all_subsystems, None, spawner.clone())
 			.expect("Creates overseer");
 
@@ -623,24 +671,42 @@ mod tests {
 			);
 		block_on(collator_start).expect("Should start collator");
 
-		let msg = block_on(sub_rx.into_future())
+		let msg = block_on(collation_gen_rx.into_future())
 			.0
-			.expect("message should be send by `start_collator` above.");
+			.expect("message should be sent by `start_collator` above.");
 
-		let config = match msg {
-			CollationGenerationMessage::Initialize(config) => config,
-		};
+		let CollationGenerationMessage::Initialize(config) = msg;
 
 		let mut validation_data = ValidationData::default();
 		validation_data.persisted.parent_head = header.encode().into();
 
-		let collation = block_on((config.collator)(Default::default(), &validation_data))
-			.expect("Collation is build");
+		let collation_fut =
+			(config.collator)(Default::default(), &validation_data).map(|collation| {
+				let collation = collation.unwrap();
+				let block_data = collation.proof_of_validity.block_data;
+				let block = Block::decode(&mut &block_data.0[..]).expect("Is a valid block");
+				assert_eq!(1, *block.header().number());
+			});
 
-		let block_data = collation.proof_of_validity.block_data;
+		let runtime_api_mock_fut = async move {
+			// Catch a request for the contents of downward message queue and send back an empty
+			// vector of messages.
+			let msg = runtime_api_rx.into_future().await.0.unwrap();
+			match msg {
+				RuntimeApiMessage::Request(_, RuntimeApiRequest::DmqContents(_, result_tx)) => {
+					result_tx
+						.send(Ok(vec![InboundDownwardMessage {
+							sent_at: 0,
+							msg: b"hello world!".to_vec(),
+						}]))
+						.unwrap();
+				}
+				_ => {
+					panic!("unexpected message sent to runtime API {:?}", msg);
+				}
+			}
+		};
 
-		let block = Block::decode(&mut &block_data.0[..]).expect("Is a valid block");
-
-		assert_eq!(1, *block.header().number());
+		block_on(async move { futures::join!(collation_fut, runtime_api_mock_fut) });
 	}
 }
