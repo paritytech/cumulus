@@ -68,6 +68,7 @@ pub struct Collator<Block: BlockT, PF, BI, BS, Backend> {
 	block_status: Arc<BS>,
 	wait_to_announce: Arc<Mutex<WaitToAnnounce<Block>>>,
 	backend: Arc<Backend>,
+	retrieve_dmq_contents: Arc<dyn Fn(PHash) -> Option<DownwardMessagesType> + Send + Sync>,
 }
 
 impl<Block: BlockT, PF, BI, BS, Backend> Clone for Collator<Block, PF, BI, BS, Backend> {
@@ -80,6 +81,7 @@ impl<Block: BlockT, PF, BI, BS, Backend> Clone for Collator<Block, PF, BI, BS, B
 			block_status: self.block_status.clone(),
 			wait_to_announce: self.wait_to_announce.clone(),
 			backend: self.backend.clone(),
+			retrieve_dmq_contents: self.retrieve_dmq_contents.clone(),
 		}
 	}
 }
@@ -109,6 +111,7 @@ where
 		spawner: Arc<dyn SpawnNamed + Send + Sync>,
 		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
 		backend: Arc<Backend>,
+		retrieve_dmq_contents: Arc<dyn Fn(PHash) -> Option<DownwardMessagesType> + Send + Sync>,
 	) -> Self {
 		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(
 			spawner,
@@ -124,6 +127,7 @@ where
 			block_status,
 			wait_to_announce,
 			backend,
+			retrieve_dmq_contents,
 		}
 	}
 
@@ -131,7 +135,7 @@ where
 	fn inherent_data(
 		&mut self,
 		validation_data: &ValidationData,
-		downward_messages: DownwardMessagesType,
+		relay_parent: PHash,
 	) -> Option<InherentData> {
 		let mut inherent_data = self
 			.inherent_data_providers
@@ -156,6 +160,7 @@ where
 			})
 			.ok()?;
 
+		let downward_messages = (self.retrieve_dmq_contents)(relay_parent)?;
 		inherent_data
 			.put_data(DOWNWARD_MESSAGES_IDENTIFIER, &downward_messages)
 			.map_err(|e| {
@@ -297,11 +302,7 @@ where
 			})
 			.ok()?;
 
-		let inherent_data = self.inherent_data(
-			&validation_data,
-			// TODO get the downward messages
-			Vec::new(),
-		)?;
+		let inherent_data = self.inherent_data(&validation_data, relay_parent)?;
 
 		let Proposal {
 			block,
@@ -442,6 +443,26 @@ where
 	PApi: RuntimeApiCollection<StateBackend = PBackend::State>,
 	PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = PApi> + 'static,
 {
+	let retrieve_dmq_contents = {
+		let polkadot_client = polkadot_client.clone();
+		move |relay_parent: PHash| {
+			polkadot_client.runtime_api()
+				.dmq_contents_with_context(
+					&BlockId::hash(relay_parent),
+					sp_core::ExecutionContext::Importing,
+					para_id,
+				)
+				.map_err(|e| {
+					error!(
+						target: "cumulus-collator",
+						"An error occured during requesting the downward messages for {}: {:?}",
+						relay_parent, e,
+					);
+				})
+				.ok()
+		}
+	};
+
 	let follow = match cumulus_consensus::follow_polkadot(
 		para_id,
 		client,
@@ -463,6 +484,7 @@ where
 		Arc::new(spawner),
 		announce_block,
 		backend,
+		Arc::new(retrieve_dmq_contents),
 	);
 
 	let config = CollationGenerationConfig {
@@ -498,8 +520,8 @@ mod tests {
 	use sp_runtime::traits::DigestFor;
 
 	use cumulus_test_client::{
-		generate_block_inherents, Client, DefaultTestClientBuilderExt, NativeExecutor,
-		TestClientBuilder, TestClientBuilderExt, WasmExecutionMethod::Interpreted,
+		generate_block_inherents, Client, DefaultTestClientBuilderExt,
+		TestClientBuilder, TestClientBuilderExt,
 	};
 	use cumulus_test_runtime::{Block, Header};
 
@@ -594,6 +616,20 @@ mod tests {
 
 		spawner.spawn("overseer", overseer.run().then(|_| async { () }).boxed());
 
+		let (polkadot_client, relay_parent) = {
+			// Create a polkadot client with a block imported.
+			use polkadot_test_client::{
+				TestClientBuilderExt as _, DefaultTestClientBuilderExt as _,
+				InitPolkadotBlockBuilder as _, ClientBlockImportExt as _
+			};
+			let mut client = polkadot_test_client::TestClientBuilder::new().build();
+			let block_builder = client.init_polkadot_block_builder();
+			let block = block_builder.build().expect("Finalizes the block").block;
+			let hash = block.header().hash();
+			client.import_as_best(BlockOrigin::Own, block).expect("Imports the block");
+			(client, hash)
+		};
+
 		let collator_start =
 			start_collator::<_, _, _, _, _, _, _, _, polkadot_service::FullBackend, _>(
 				StartCollatorParams {
@@ -608,17 +644,7 @@ mod tests {
 					spawner,
 					para_id,
 					key: CollatorPair::generate().0,
-					polkadot_client: Arc::new(
-						substrate_test_client::TestClientBuilder::<_, _, _, ()>::default()
-							.build_with_native_executor::<polkadot_service::polkadot_runtime::RuntimeApi, _>(
-								Some(NativeExecutor::<polkadot_service::PolkadotExecutor>::new(
-									Interpreted,
-									None,
-									1,
-								)),
-							)
-							.0,
-					),
+					polkadot_client: Arc::new(polkadot_client,),
 				},
 			);
 		block_on(collator_start).expect("Should start collator");
@@ -634,7 +660,7 @@ mod tests {
 		let mut validation_data = ValidationData::default();
 		validation_data.persisted.parent_head = header.encode().into();
 
-		let collation = block_on((config.collator)(Default::default(), &validation_data))
+		let collation = block_on((config.collator)(relay_parent, &validation_data))
 			.expect("Collation is build");
 
 		let block_data = collation.proof_of_validity.block_data;
