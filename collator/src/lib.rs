@@ -247,13 +247,28 @@ where
 
 			let new_validation_code = sp_io::storage::get(well_known_keys::NEW_VALIDATION_CODE);
 
+			let processed_downward_messages = sp_io::storage::get(well_known_keys::PROCESSED_DOWNWARD_MESSAGES);
+			let processed_downward_messages = match processed_downward_messages
+				.map(|v| u32::decode(&mut &v[..]))
+			{
+				Some(Ok(processed_cnt)) => processed_cnt,
+				Some(Err(e)) => {
+					error!(
+						target: "cumulus-collator",
+						"Failed to decode the count of processed downward messages: {:?}",
+						e
+					);
+					return None
+				}
+				None => 0,
+			};
+
 			Some(Collation {
 				upward_messages,
 				new_validation_code: new_validation_code.map(Into::into),
 				head_data,
 				proof_of_validity: PoV { block_data },
-				// TODO!
-				processed_downward_messages: 0,
+				processed_downward_messages,
 				// TODO!
 				horizontal_messages: Vec::new(),
 				hrmp_watermark: relay_block_number,
