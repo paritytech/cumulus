@@ -79,6 +79,10 @@ pub struct ExportGenesisWasmCommand {
 	#[structopt(parse(from_os_str))]
 	pub output: Option<PathBuf>,
 
+	/// Write output in binary. Default is to write in hex.
+	#[structopt(short, long)]
+	pub raw: bool,
+
 	/// The name of the chain for that the genesis wasm file should be exported.
 	#[structopt(long)]
 	pub chain: Option<String>,
