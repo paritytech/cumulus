@@ -41,9 +41,9 @@ cumulus-message-broker = { path = "../../message-broker", default-features = fal
 
 # Polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "shawntabrizi-xcm-sink" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "shawntabrizi-xcm-sink" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "shawntabrizi-xcm-sink" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
 
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "2.0.0" }
