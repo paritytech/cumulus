@@ -41,6 +41,9 @@ cumulus-message-broker = { path = "../../message-broker", default-features = fal
 
 # Polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "shawntabrizi-xcm-sink" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "shawntabrizi-xcm-sink" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "shawntabrizi-xcm-sink" }
 
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "2.0.0" }
@@ -75,4 +78,7 @@ std = [
 	"cumulus-parachain-upgrade/std",
 	"cumulus-message-broker/std",
 	"cumulus-primitives/std",
+	"xcm/std",
+	"xcm-builder/std",
+	"xcm-executor/std",
 ]
