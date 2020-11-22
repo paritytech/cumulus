@@ -21,9 +21,9 @@ use polkadot_node_primitives::{SignedFullStatement, Statement};
 use polkadot_primitives::v1::{
 	AuthorityDiscoveryId, Block as PBlock, BlockNumber, CandidateCommitments, CandidateDescriptor,
 	CandidateEvent, CommittedCandidateReceipt, CoreState, GroupRotationInfo, Hash as PHash,
-	HeadData, Id as ParaId, InboundDownwardMessage, OccupiedCoreAssumption, ParachainHost,
-	PersistedValidationData, SessionIndex, SigningContext, ValidationCode, ValidationData,
-	ValidationOutputs, ValidatorId, ValidatorIndex,
+	HeadData, Id as ParaId, InboundDownwardMessage, InboundHrmpMessage, OccupiedCoreAssumption,
+	ParachainHost, PersistedValidationData, SessionIndex, SigningContext, ValidationCode,
+	ValidationData, ValidationOutputs, ValidatorId, ValidatorIndex,
 };
 use polkadot_test_client::{
 	Client as PClient, ClientBlockImportExt, DefaultTestClientBuilderExt, FullBackend as PBackend,
@@ -36,6 +36,7 @@ use sp_core::H256;
 use sp_keyring::Sr25519Keyring;
 use sp_keystore::{testing::KeyStore, SyncCryptoStore, SyncCryptoStorePtr};
 use sp_runtime::RuntimeAppPublic;
+use std::collections::BTreeMap;
 
 fn check_error(error: crate::BlockAnnounceError, check_error: impl Fn(&ClientError) -> bool) {
 	let error = *error
@@ -440,6 +441,12 @@ sp_api::mock_impl_runtime_apis! {
 
 		fn historical_validation_code(_: ParaId, _: BlockNumber) -> Option<ValidationCode> {
 			None
+		}
+
+		fn inbound_hrmp_channels_contents(
+			_: ParaId,
+		) -> BTreeMap<ParaId, Vec<InboundHrmpMessage<BlockNumber>>> {
+			BTreeMap::new()
 		}
 	}
 }

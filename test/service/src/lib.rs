@@ -22,8 +22,8 @@ mod chain_spec;
 mod genesis;
 
 pub use chain_spec::*;
-pub use genesis::*;
 pub use cumulus_test_runtime as runtime;
+pub use genesis::*;
 
 use core::future::Future;
 use cumulus_network::BlockAnnounceValidator;

@@ -31,7 +31,10 @@ const TIMEOUT_IN_SECONDS: u64 = 6;
 /// Custom error type used by [`WaitOnRelayChainBlock`].
 #[derive(Debug, derive_more::Display)]
 pub enum Error {
-	#[display(fmt = "Timeout while waiting for relay-chain block `{}` to be imported.", _0)]
+	#[display(
+		fmt = "Timeout while waiting for relay-chain block `{}` to be imported.",
+		_0
+	)]
 	Timeout(PHash),
 	#[display(
 		fmt = "Import listener closed while waiting for relay-chain block `{}` to be imported.",
