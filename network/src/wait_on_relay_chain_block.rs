@@ -140,8 +140,8 @@ mod tests {
 
 	use polkadot_test_client::{
 		construct_transfer_extrinsic, BlockBuilderExt, Client, ClientBlockImportExt,
-		DefaultTestClientBuilderExt, FullBackend, InitPolkadotBlockBuilder, TestClientBuilder,
-		TestClientBuilderExt,
+		DefaultTestClientBuilderExt, ExecutionStrategy, FullBackend, InitPolkadotBlockBuilder,
+		TestClientBuilder, TestClientBuilderExt,
 	};
 	use sp_consensus::BlockOrigin;
 	use sp_runtime::traits::Block as BlockT;
@@ -149,7 +149,8 @@ mod tests {
 	use futures::{executor::block_on, poll, task::Poll};
 
 	fn build_client_backend_and_block() -> (Arc<Client>, Arc<FullBackend>, PBlock) {
-		let builder = TestClientBuilder::new();
+		let builder =
+			TestClientBuilder::new().set_execution_strategy(ExecutionStrategy::NativeWhenPossible);
 		let backend = builder.backend();
 		let client = Arc::new(builder.build());
 
