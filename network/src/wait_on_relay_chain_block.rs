@@ -138,10 +138,10 @@ where
 mod tests {
 	use super::*;
 
-	use codec::{Decode, Encode};
 	use polkadot_test_client::{
-		construct_transfer_extrinsic, Client, ClientBlockImportExt, DefaultTestClientBuilderExt,
-		FullBackend, InitPolkadotBlockBuilder, TestClientBuilder, TestClientBuilderExt,
+		construct_transfer_extrinsic, BlockBuilderExt, Client, ClientBlockImportExt,
+		DefaultTestClientBuilderExt, FullBackend, InitPolkadotBlockBuilder, TestClientBuilder,
+		TestClientBuilderExt,
 	};
 	use sp_consensus::BlockOrigin;
 	use sp_runtime::traits::Block as BlockT;
@@ -228,7 +228,7 @@ mod tests {
 		let mut block_builder = client.init_polkadot_block_builder();
 		// Push an extrinsic to get a different block hash.
 		block_builder
-			.push(Decode::decode(&mut &ext.encode()[..]).unwrap())
+			.push_polkadot_extrinsic(ext)
 			.expect("Push extrinsic");
 		let block2 = block_builder.build().expect("Build second block").block;
 		let hash2 = block2.hash();
