@@ -1122,6 +1122,7 @@ dependencies = [
  "cumulus-primitives",
  "cumulus-test-service",
  "derive_more 0.99.11",
+ "env_logger",
  "futures 0.3.8",
  "futures-timer 3.0.2",
  "log",

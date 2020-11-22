@@ -216,6 +216,8 @@ mod tests {
 
 	#[test]
 	fn do_not_resolve_after_different_block_import_notification_was_received() {
+		let _ = env_logger::builder().filter_level(log::LevelFilter::Trace).is_test(true).try_init();
+
 		let (mut client, backend, block) = build_client_backend_and_block();
 		let hash = block.hash();
 
@@ -232,6 +234,7 @@ mod tests {
 			.expect("Push extrinsic");
 		let block2 = block_builder.build().expect("Build second block").block;
 		let hash2 = block2.hash();
+		panic!();
 
 		let wait = WaitOnRelayChainBlock::new(backend, client.clone());
 
