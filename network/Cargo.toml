@@ -6,7 +6,7 @@ description = "Cumulus-specific networking protocol"
 edition = "2018"
 
 [dependencies]
-# substrate deps
+# Substrate deps
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -14,7 +14,7 @@ sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
-# polkadot deps
+# Polkadot deps
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -23,7 +23,7 @@ polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", bra
 polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
-# cumulus deps
+# Cumulus deps
 cumulus-primitives = { path = "../primitives" }
 
 # other deps
@@ -35,10 +35,10 @@ parking_lot = "0.10.2"
 derive_more = "0.99.2"
 
 [dev-dependencies]
-env_logger = "0.7.1"
-
+# Cumulus deps
 cumulus-test-service = { path = "../test/service" }
 
+# Polkadot deps
 polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # substrate deps
