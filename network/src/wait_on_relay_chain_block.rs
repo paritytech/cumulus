@@ -216,7 +216,7 @@ mod tests {
 
 	#[test]
 	fn do_not_resolve_after_different_block_import_notification_was_received() {
-		let _ = env_logger::builder().filter_level(log::LevelFilter::Trace).is_test(true).try_init();
+		let _ = env_logger::builder().filter_level(log::LevelFilter::Debug).is_test(true).try_init();
 
 		let (mut client, backend, block) = build_client_backend_and_block();
 		let hash = block.hash();
