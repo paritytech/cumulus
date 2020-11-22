@@ -234,7 +234,6 @@ mod tests {
 			.expect("Push extrinsic");
 		let block2 = block_builder.build().expect("Build second block").block;
 		let hash2 = block2.hash();
-		panic!();
 
 		let wait = WaitOnRelayChainBlock::new(backend, client.clone());
 
