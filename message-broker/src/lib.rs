@@ -21,18 +21,19 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::{prelude::*, convert::{TryFrom, TryInto}};
+use frame_support::{
+	decl_module, decl_storage, storage,
+	traits::Get,
+	weights::{DispatchClass, Weight},
+	StorageValue,
+};
 use frame_system::ensure_none;
-use frame_support::{decl_module, decl_event, storage, weights::DispatchClass};
 use sp_inherents::{InherentData, InherentIdentifier, MakeFatalError, ProvideInherent};
-use xcm::{VersionedXcm, v0::{Xcm, Junction, Error as XcmError, ExecuteXcm, MultiLocation, SendXcm}};
-use frame_support::sp_runtime::traits::Hash;
-use codec::{Encode, Decode};
+use sp_std::{cmp, prelude::*};
 
 use cumulus_primitives::{
 	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER},
-	well_known_keys, ParaId,
-	DownwardMessageHandler, InboundDownwardMessage,
+	well_known_keys, DownwardMessageHandler, InboundDownwardMessage, UpwardMessage,
 };
 
 /// Origin for the parachains module.
@@ -81,6 +82,12 @@ decl_event! {
 		DmpBadVersion(Hash),
 		/// DMP message was of an invalid format.
 		DmpBadFormat(Hash),
+	}
+}
+
+decl_storage! {
+	trait Store for Module<T: Trait> as MessageBroker {
+		PendingUpwardMessages: Vec<UpwardMessage>;
 	}
 }
 
@@ -139,6 +146,25 @@ decl_module! {
 				&processed
 			);
 		}
+
+		fn on_initialize() -> Weight {
+			// Reads and writes performed by `on_finalize`.
+			T::DbWeight::get().reads_writes(1, 2)
+		}
+
+		fn on_finalize() {
+			// TODO: this should be not a constant, but sourced from the relay-chain configuration.
+			const UMP_MSG_NUM_PER_CANDIDATE: usize = 5;
+
+			<Self as Store>::PendingUpwardMessages::mutate(|up| {
+				let num = cmp::min(UMP_MSG_NUM_PER_CANDIDATE, up.len());
+				storage::unhashed::put(
+					well_known_keys::UPWARD_MESSAGES,
+					&up[0..num],
+				);
+				*up = up.split_off(num);
+			});
+		}
 	}
 }
 
@@ -176,13 +202,18 @@ impl<T: Trait> SendXcm for Module<T> {
 	}
 }
 
-pub trait SendDownward {
-	fn send_downward(dest: MultiLocation, msg: VersionedXcm) -> Result<(), XcmError>;
+/// An error that can be raised upon sending an upward message.
+pub enum SendUpErr {
+	/// The message sent is too big.
+	TooBig,
 }
 
-impl SendDownward for () {
-	fn send_downward(_dest: MultiLocation, _msg: VersionedXcm) -> Result<(), XcmError> {
-		Err(XcmError::Unimplemented)
+impl<T: Trait> Module<T> {
+	pub fn send_upward_message(message: UpwardMessage) -> Result<(), SendUpErr> {
+		// TODO: check the message against the limit. The limit should be sourced from the
+		// relay-chain configuration.
+		<Self as Store>::PendingUpwardMessages::append(message);
+		Ok(())
 	}
 }
 

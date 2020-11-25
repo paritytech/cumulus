@@ -94,6 +94,7 @@ pub fn new_partial(
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
+#[sc_cli::prefix_logs_with("Parachain")]
 async fn start_node_impl<RB>(
 	parachain_config: Configuration,
 	collator_key: CollatorPair,
@@ -130,6 +131,7 @@ where
 		polkadot_full_node.client.clone(),
 		id,
 		Box::new(polkadot_full_node.network.clone()),
+		polkadot_full_node.backend.clone(),
 	);
 
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
@@ -145,8 +147,6 @@ where
 			import_queue,
 			on_demand: None,
 			block_announce_validator_builder: Some(Box::new(|_| block_announce_validator)),
-			finality_proof_request_builder: None,
-			finality_proof_provider: None,
 		})?;
 
 	let rpc_client = client.clone();
