@@ -128,14 +128,19 @@ decl_module! {
 		fn execute_downward_messages(origin, messages: Vec<InboundDownwardMessage>) {
 			ensure_none(origin)?;
 
+			sp_std::if_std!{ println!("Enter Execute Downward Message: {:?}", messages); }
+
+
 			// TODO: max messages should not be hardcoded. It should be determined based on the
 			//   weight used by the handlers.
 			let max_messages = 10;
 			messages.iter().take(max_messages).for_each(|msg| {
+				sp_std::if_std!{ println!("Iter on message: {:?}", msg); }
 				let hash = msg.using_encoded(T::Hashing::hash);
 				frame_support::debug::print!("Processing downward message: {:?}", &hash);
 				match VersionedXcm::decode(&mut &msg.msg[..]).map(Xcm::try_from) {
 					Ok(Ok(xcm)) => {
+						sp_std::if_std!{ println!("Decoded XCM: {:?}", xcm); }
 						let event = match T::XcmExecutor::execute_xcm(Junction::Parent.into(), xcm) {
 							Ok(..) => RawEvent::DmpSuccess(hash),
 							Err(e) => RawEvent::DmpFail(hash, e),
@@ -178,11 +183,16 @@ decl_module! {
 impl<T: Trait> SendXcm for Module<T> {
 	fn send_xcm(dest: MultiLocation, msg: Xcm) -> Result<(), XcmError> {
 		let msg: VersionedXcm = msg.into();
+		sp_std::if_std!{ println!("Enter Send XCM: {:?}", msg); }
 		match dest.first() {
 			// A message for us. Execute directly.
 			None => {
+				sp_std::if_std!{ println!("Message for Us: {:?}", msg); }
 				let msg = msg.try_into().map_err(|_| XcmError::UnhandledXcmVersion)?;
-				T::XcmExecutor::execute_xcm(MultiLocation::Null, msg)
+				sp_std::if_std!{ println!("Message converted: {:?}", msg); }
+				let res = T::XcmExecutor::execute_xcm(MultiLocation::Null, msg);
+				sp_std::if_std!{ println!("Execute XCM Result: {:?}", res); }
+				res
 			}
 			// An upward message - just send to the relay-chain.
 			Some(Junction::Parent) if dest.len() == 1 => {
