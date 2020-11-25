@@ -1087,7 +1087,9 @@ dependencies = [
  "frame-system",
  "parity-scale-codec",
  "sp-inherents",
+ "sp-io",
  "sp-std",
+ "xcm",
 ]
 
 [[package]]
@@ -1146,7 +1148,7 @@ dependencies = [
 name = "cumulus-primitives"
 version = "0.1.0"
 dependencies = [
- "impl-trait-for-tuples",
+ "impl-trait-for-tuples 0.1.3",
  "parity-scale-codec",
  "polkadot-core-primitives",
  "polkadot-parachain",
@@ -1266,6 +1268,9 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder 3.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
 ]
 
 [[package]]
@@ -1835,7 +1840,7 @@ dependencies = [
  "bitflags",
  "frame-metadata",
  "frame-support-procedural",
- "impl-trait-for-tuples",
+ "impl-trait-for-tuples 0.1.3",
  "log",
  "once_cell",
  "parity-scale-codec",
@@ -1891,7 +1896,7 @@ version = "2.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#1ec8a7f57ba5faac74c09296eab9977fb331c386"
 dependencies = [
  "frame-support",
- "impl-trait-for-tuples",
+ "impl-trait-for-tuples 0.1.3",
  "parity-scale-codec",
  "serde",
  "sp-core",
@@ -2603,6 +2608,17 @@ name = "impl-trait-for-tuples"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ef5550a42e3740a0e71f909d4c861056a284060af885ae7aa6242820f920d9d"
+dependencies = [
+ "proc-macro2 1.0.24",
+ "quote 1.0.7",
+ "syn 1.0.48",
+]
+
+[[package]]
+name = "impl-trait-for-tuples"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f65a8ecf74feeacdab8d38cb129e550ca871cccaa7d1921d8636ecd75534903"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.7",
@@ -4048,7 +4064,7 @@ source = "git+https://github.com/paritytech/substrate?branch=master#1ec8a7f57ba5
 dependencies = [
  "frame-support",
  "frame-system",
- "impl-trait-for-tuples",
+ "impl-trait-for-tuples 0.1.3",
  "parity-scale-codec",
  "sp-authorship",
  "sp-inherents",
@@ -4334,7 +4350,7 @@ source = "git+https://github.com/paritytech/substrate?branch=master#1ec8a7f57ba5
 dependencies = [
  "frame-support",
  "frame-system",
- "impl-trait-for-tuples",
+ "impl-trait-for-tuples 0.1.3",
  "pallet-timestamp",
  "parity-scale-codec",
  "serde",
@@ -4414,7 +4430,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "impl-trait-for-tuples",
+ "impl-trait-for-tuples 0.1.3",
  "parity-scale-codec",
  "serde",
  "sp-inherents",
@@ -4615,7 +4631,7 @@ checksum = "297ff91fa36aec49ce183484b102f6b75b46776822bd81525bfc4cc9b0dd0f5c"
 dependencies = [
  "cfg-if 0.1.10",
  "hashbrown 0.8.2",
- "impl-trait-for-tuples",
+ "impl-trait-for-tuples 0.1.3",
  "parity-util-mem-derive",
  "parking_lot 0.10.2",
  "primitive-types",
@@ -6802,7 +6818,7 @@ name = "sc-chain-spec"
 version = "2.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#1ec8a7f57ba5faac74c09296eab9977fb331c386"
 dependencies = [
- "impl-trait-for-tuples",
+ "impl-trait-for-tuples 0.1.3",
  "parity-scale-codec",
  "sc-chain-spec-derive",
  "sc-consensus-babe",
@@ -8500,7 +8516,7 @@ source = "git+https://github.com/paritytech/substrate?branch=master#1ec8a7f57ba5
 dependencies = [
  "either",
  "hash256-std-hasher",
- "impl-trait-for-tuples",
+ "impl-trait-for-tuples 0.1.3",
  "log",
  "parity-scale-codec",
  "parity-util-mem",
@@ -8645,7 +8661,7 @@ name = "sp-timestamp"
 version = "2.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#1ec8a7f57ba5faac74c09296eab9977fb331c386"
 dependencies = [
- "impl-trait-for-tuples",
+ "impl-trait-for-tuples 0.1.3",
  "parity-scale-codec",
  "sp-api",
  "sp-inherents",
@@ -8725,7 +8741,7 @@ name = "sp-wasm-interface"
 version = "2.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#1ec8a7f57ba5faac74c09296eab9977fb331c386"
 dependencies = [
- "impl-trait-for-tuples",
+ "impl-trait-for-tuples 0.1.3",
  "parity-scale-codec",
  "sp-std",
  "wasmi",
@@ -9648,7 +9664,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.6.5",
+ "rand 0.7.3",
  "static_assertions",
 ]
 
@@ -10350,6 +10366,38 @@ version = "0.8.22"
 source = "git+https://github.com/paritytech/polkadot?branch=master#9a32ab1d9f22386dedc9a7e65aeb5e07949f26f3"
 dependencies = [
  "parity-scale-codec",
+]
+
+[[package]]
+name = "xcm-builder"
+version = "0.8.22"
+source = "git+https://github.com/paritytech/polkadot?branch=master#9a32ab1d9f22386dedc9a7e65aeb5e07949f26f3"
+dependencies = [
+ "frame-support",
+ "parity-scale-codec",
+ "polkadot-parachain",
+ "sp-arithmetic",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-executor",
+]
+
+[[package]]
+name = "xcm-executor"
+version = "0.8.22"
+source = "git+https://github.com/paritytech/polkadot?branch=master#9a32ab1d9f22386dedc9a7e65aeb5e07949f26f3"
+dependencies = [
+ "frame-support",
+ "impl-trait-for-tuples 0.2.0",
+ "parity-scale-codec",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
 ]
 
 [[package]]

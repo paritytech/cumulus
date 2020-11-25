@@ -21,19 +21,26 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::{Encode, Decode};
 use frame_support::{
-	decl_module, decl_storage, storage,
+	decl_module, decl_storage, decl_event, storage,
 	traits::Get,
 	weights::{DispatchClass, Weight},
 	StorageValue,
+	sp_runtime::traits::Hash,
 };
 use frame_system::ensure_none;
 use sp_inherents::{InherentData, InherentIdentifier, MakeFatalError, ProvideInherent};
-use sp_std::{cmp, prelude::*};
+use sp_std::{cmp, prelude::*, convert::{TryFrom, TryInto}};
 
 use cumulus_primitives::{
 	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER},
-	well_known_keys, DownwardMessageHandler, InboundDownwardMessage, UpwardMessage,
+	well_known_keys, DownwardMessageHandler, InboundDownwardMessage, UpwardMessage, ParaId,
+};
+
+use xcm::{
+	VersionedXcm,
+	v0::{Xcm, MultiLocation, Error as XcmError, Junction, SendXcm, ExecuteXcm}
 };
 
 /// Origin for the parachains module.
@@ -199,6 +206,16 @@ impl<T: Trait> SendXcm for Module<T> {
 				T::SendDownward::send_downward(dest, msg)
 			},
 		}
+	}
+}
+
+pub trait SendDownward {
+	fn send_downward(dest: MultiLocation, msg: VersionedXcm) -> Result<(), XcmError>;
+}
+
+impl SendDownward for () {
+	fn send_downward(_dest: MultiLocation, _msg: VersionedXcm) -> Result<(), XcmError> {
+		Err(XcmError::Unimplemented)
 	}
 }
 
