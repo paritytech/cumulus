@@ -60,18 +60,19 @@ type TransactionFor<E, Block> =
 	<<E as Environment<Block>>::Proposer as Proposer<Block>>::Transaction;
 
 /// The implementation of the Cumulus `Collator`.
-pub struct Collator<Block: BlockT, PF, BI, BS, Backend> {
+pub struct Collator<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> {
 	proposer_factory: Arc<Mutex<PF>>,
-	_phantom: PhantomData<Block>,
+	_phantom: PhantomData<(Block, PBackend)>,
 	inherent_data_providers: InherentDataProviders,
 	block_import: Arc<Mutex<BI>>,
 	block_status: Arc<BS>,
 	wait_to_announce: Arc<Mutex<WaitToAnnounce<Block>>>,
 	backend: Arc<Backend>,
 	retrieve_dmq_contents: Arc<dyn Fn(PHash) -> Option<DownwardMessagesType> + Send + Sync>,
+	polkadot_client: Arc<PClient>,
 }
 
-impl<Block: BlockT, PF, BI, BS, Backend> Clone for Collator<Block, PF, BI, BS, Backend> {
+impl<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> Clone for Collator<Block, PF, BI, BS, Backend, PBackend, PClient> {
 	fn clone(&self) -> Self {
 		Self {
 			proposer_factory: self.proposer_factory.clone(),
@@ -82,11 +83,12 @@ impl<Block: BlockT, PF, BI, BS, Backend> Clone for Collator<Block, PF, BI, BS, B
 			wait_to_announce: self.wait_to_announce.clone(),
 			backend: self.backend.clone(),
 			retrieve_dmq_contents: self.retrieve_dmq_contents.clone(),
+			polkadot_client: self.polkadot_client.clone(),
 		}
 	}
 }
 
-impl<Block, PF, BI, BS, Backend> Collator<Block, PF, BI, BS, Backend>
+impl<Block, PF, BI, BS, Backend, PBackend, PApi, PClient> Collator<Block, PF, BI, BS, Backend, PBackend, PClient>
 where
 	Block: BlockT,
 	PF: Environment<Block> + 'static + Send,
@@ -100,6 +102,10 @@ where
 		+ 'static,
 	BS: BlockBackend<Block>,
 	Backend: sc_client_api::Backend<Block> + 'static,
+	PBackend: sc_client_api::Backend<PBlock> + 'static,
+	PBackend::State: StateBackend<BlakeTwo256>,
+	PApi: RuntimeApiCollection<StateBackend = PBackend::State>,
+	PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = PApi> + 'static,
 {
 	/// Create a new instance.
 	fn new(
@@ -112,6 +118,7 @@ where
 		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
 		backend: Arc<Backend>,
 		retrieve_dmq_contents: Arc<dyn Fn(PHash) -> Option<DownwardMessagesType> + Send + Sync>,
+		polkadot_client: Arc<PClient>,
 	) -> Self {
 		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(
 			spawner,
@@ -128,6 +135,7 @@ where
 			wait_to_announce,
 			backend,
 			retrieve_dmq_contents,
+			polkadot_client,
 		}
 	}
 
@@ -459,7 +467,7 @@ where
 	for<'a> &'a Client: BlockImport<Block>,
 	BS: BlockBackend<Block> + Send + Sync + 'static,
 	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
-	PBackend: sc_client_api::Backend<PBlock>,
+	PBackend: sc_client_api::Backend<PBlock> + 'static,
 	PBackend::State: StateBackend<BlakeTwo256>,
 	PApi: RuntimeApiCollection<StateBackend = PBackend::State>,
 	PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = PApi> + 'static,
@@ -488,7 +496,7 @@ where
 	let follow = match cumulus_consensus::follow_polkadot(
 		para_id,
 		client,
-		polkadot_client,
+		polkadot_client.clone(),
 		announce_block.clone(),
 	) {
 		Ok(follow) => follow,
@@ -507,6 +515,7 @@ where
 		announce_block,
 		backend,
 		Arc::new(retrieve_dmq_contents),
+		polkadot_client,
 	);
 
 	let config = CollationGenerationConfig {
