@@ -29,7 +29,7 @@ use frame_support::{
 	StorageValue,
 	sp_runtime::traits::Hash,
 };
-use frame_system::ensure_none;
+use frame_system::{ensure_none, ensure_root};
 use sp_inherents::{InherentData, InherentIdentifier, MakeFatalError, ProvideInherent};
 use sp_std::{cmp, prelude::*, convert::{TryFrom, TryInto}};
 
@@ -102,25 +102,6 @@ decl_module! {
 	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
 		fn deposit_event() = default;
 
-		/// An entrypoint for an inherent to deposit downward messages into the runtime. It accepts
-		/// and processes the list of downward messages.
-		#[weight = (10, DispatchClass::Mandatory)]
-		fn receive_downward_messages(origin, messages: Vec<InboundDownwardMessage>) {
-			ensure_none(origin)?;
-
-			let messages_len = messages.len() as u32;
-			for message in messages {
-				T::DownwardMessageHandlers::handle_downward_message(message);
-			}
-
-			// Store the processed_downward_messages here so that it's will be accessible from
-			// PVF's `validate_block` wrapper and collation pipeline.
-			storage::unhashed::put(
-				well_known_keys::PROCESSED_DOWNWARD_MESSAGES,
-				&messages_len,
-			);
-		}
-
 		/// Executes the given downward messages by calling the message handlers.
 		///
 		/// The origin of this call needs to be `None` as this is an inherent.
@@ -157,6 +138,12 @@ decl_module! {
 				well_known_keys::PROCESSED_DOWNWARD_MESSAGES,
 				&processed
 			);
+		}
+
+		#[weight = 10]
+		fn sudo_send_upward_xcm(origin, message: VersionedXcm) {
+			ensure_root(origin)?;
+			let _ = Self::send_upward_message(message.encode());
 		}
 
 		fn on_initialize() -> Weight {
