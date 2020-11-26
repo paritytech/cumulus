@@ -61,6 +61,7 @@ type TransactionFor<E, Block> =
 
 /// The implementation of the Cumulus `Collator`.
 pub struct Collator<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> {
+	para_id: ParaId,
 	proposer_factory: Arc<Mutex<PF>>,
 	_phantom: PhantomData<(Block, PBackend)>,
 	inherent_data_providers: InherentDataProviders,
@@ -75,6 +76,7 @@ pub struct Collator<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> {
 impl<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> Clone for Collator<Block, PF, BI, BS, Backend, PBackend, PClient> {
 	fn clone(&self) -> Self {
 		Self {
+			para_id: self.para_id.clone(),
 			proposer_factory: self.proposer_factory.clone(),
 			inherent_data_providers: self.inherent_data_providers.clone(),
 			_phantom: PhantomData,
@@ -109,6 +111,7 @@ where
 {
 	/// Create a new instance.
 	fn new(
+		para_id: ParaId,
 		proposer_factory: PF,
 		inherent_data_providers: InherentDataProviders,
 		overseer_handler: OverseerHandler,
@@ -127,6 +130,7 @@ where
 		)));
 
 		Self {
+			para_id,
 			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
 			inherent_data_providers,
 			_phantom: PhantomData,
@@ -506,6 +510,7 @@ where
 	spawner.spawn("cumulus-follow-polkadot", follow.map(|_| ()).boxed());
 
 	let collator = Collator::new(
+		para_id,
 		proposer_factory,
 		inherent_data_providers,
 		overseer_handler.clone(),
