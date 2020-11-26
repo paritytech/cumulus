@@ -143,6 +143,29 @@ where
 		}
 	}
 
+	/// Returns the whole contents of the downward message queue for the parachain we are collating
+	/// for.
+	///
+	/// Returns `None` in case of an error.
+	fn retrieve_dmq_contents(&self, relay_parent: PHash) -> Option<DownwardMessagesType> {
+		self
+			.polkadot_client
+			.runtime_api()
+			.dmq_contents_with_context(
+				&BlockId::hash(relay_parent),
+				sp_core::ExecutionContext::Importing,
+				self.para_id,
+			)
+			.map_err(|e| {
+				error!(
+					target: "cumulus-collator",
+					"An error occured during requesting the downward messages for {}: {:?}",
+					relay_parent, e,
+				);
+			})
+			.ok()
+	}
+
 	/// Get the inherent data with validation function parameters injected
 	fn inherent_data(
 		&mut self,
@@ -172,7 +195,7 @@ where
 			})
 			.ok()?;
 
-		let downward_messages = (self.retrieve_dmq_contents)(relay_parent)?;
+		let downward_messages = self.retrieve_dmq_contents(relay_parent)?;
 		inherent_data
 			.put_data(DOWNWARD_MESSAGES_IDENTIFIER, &downward_messages)
 			.map_err(|e| {
