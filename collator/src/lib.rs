@@ -69,7 +69,6 @@ pub struct Collator<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> {
 	block_status: Arc<BS>,
 	wait_to_announce: Arc<Mutex<WaitToAnnounce<Block>>>,
 	backend: Arc<Backend>,
-	retrieve_dmq_contents: Arc<dyn Fn(PHash) -> Option<DownwardMessagesType> + Send + Sync>,
 	polkadot_client: Arc<PClient>,
 }
 
@@ -84,7 +83,6 @@ impl<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> Clone for Collator<B
 			block_status: self.block_status.clone(),
 			wait_to_announce: self.wait_to_announce.clone(),
 			backend: self.backend.clone(),
-			retrieve_dmq_contents: self.retrieve_dmq_contents.clone(),
 			polkadot_client: self.polkadot_client.clone(),
 		}
 	}
@@ -120,7 +118,6 @@ where
 		spawner: Arc<dyn SpawnNamed + Send + Sync>,
 		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
 		backend: Arc<Backend>,
-		retrieve_dmq_contents: Arc<dyn Fn(PHash) -> Option<DownwardMessagesType> + Send + Sync>,
 		polkadot_client: Arc<PClient>,
 	) -> Self {
 		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(
@@ -138,7 +135,6 @@ where
 			block_status,
 			wait_to_announce,
 			backend,
-			retrieve_dmq_contents,
 			polkadot_client,
 		}
 	}
@@ -499,27 +495,6 @@ where
 	PApi: RuntimeApiCollection<StateBackend = PBackend::State>,
 	PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = PApi> + 'static,
 {
-	let retrieve_dmq_contents = {
-		let polkadot_client = polkadot_client.clone();
-		move |relay_parent: PHash| {
-			polkadot_client
-				.runtime_api()
-				.dmq_contents_with_context(
-					&BlockId::hash(relay_parent),
-					sp_core::ExecutionContext::Importing,
-					para_id,
-				)
-				.map_err(|e| {
-					error!(
-						target: "cumulus-collator",
-						"An error occured during requesting the downward messages for {}: {:?}",
-						relay_parent, e,
-					);
-				})
-				.ok()
-		}
-	};
-
 	let follow = match cumulus_consensus::follow_polkadot(
 		para_id,
 		client,
@@ -542,7 +517,6 @@ where
 		Arc::new(spawner),
 		announce_block,
 		backend,
-		Arc::new(retrieve_dmq_contents),
 		polkadot_client,
 	);
 
