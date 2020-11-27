@@ -32,14 +32,16 @@ use sp_inherents::{InherentData, InherentIdentifier, MakeFatalError, ProvideInhe
 use sp_std::{cmp, prelude::*};
 
 use cumulus_primitives::{
-	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER},
-	well_known_keys, DownwardMessageHandler, InboundDownwardMessage, UpwardMessage,
+	inherents::{MESSAGE_INGESTION_IDENTIFIER, MessageIngestionType},
+	well_known_keys, DownwardMessageHandler, HrmpMessageHandler, UpwardMessage,
 };
 
 /// Configuration trait of the message broker pallet.
 pub trait Config: frame_system::Config {
 	/// The downward message handlers that will be informed when a message is received.
 	type DownwardMessageHandlers: DownwardMessageHandler;
+	/// The HRMP message handlers that will be informed when a message is received.
+	type HrmpMessageHandlers: HrmpMessageHandler;
 }
 
 decl_storage! {
@@ -51,22 +53,33 @@ decl_storage! {
 decl_module! {
 	pub struct Module<T: Config> for enum Call where origin: T::Origin {
 		/// An entrypoint for an inherent to deposit downward messages into the runtime. It accepts
-		/// and processes the list of downward messages.
+		/// and processes the list of downward messages and inbound HRMP messages.
 		#[weight = (10, DispatchClass::Mandatory)]
-		fn receive_downward_messages(origin, messages: Vec<InboundDownwardMessage>) {
+		fn ingest_inbound_messages(origin, messages: MessageIngestionType) {
 			ensure_none(origin)?;
 
-			let messages_len = messages.len() as u32;
-			for message in messages {
-				T::DownwardMessageHandlers::handle_downward_message(message);
+			let MessageIngestionType {
+				dmp,
+				hrmp,
+			} = messages;
+
+			let dmp_count = dmp.len() as u32;
+			for dmp_message in dmp {
+				T::DownwardMessageHandlers::handle_downward_message(dmp_message);
 			}
 
 			// Store the processed_downward_messages here so that it's will be accessible from
 			// PVF's `validate_block` wrapper and collation pipeline.
 			storage::unhashed::put(
 				well_known_keys::PROCESSED_DOWNWARD_MESSAGES,
-				&messages_len,
+				&dmp_count,
 			);
+
+			for (sender, channel_contents) in hrmp {
+				for hrmp_message in channel_contents {
+					T::HrmpMessageHandlers::handle_hrmp_message(sender, hrmp_message);
+				}
+			}
 		}
 
 		fn on_initialize() -> Weight {
@@ -108,11 +121,11 @@ impl<T: Config> Module<T> {
 impl<T: Config> ProvideInherent for Module<T> {
 	type Call = Call<T>;
 	type Error = MakeFatalError<()>;
-	const INHERENT_IDENTIFIER: InherentIdentifier = DOWNWARD_MESSAGES_IDENTIFIER;
+	const INHERENT_IDENTIFIER: InherentIdentifier = MESSAGE_INGESTION_IDENTIFIER;
 
 	fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-		data.get_data::<DownwardMessagesType>(&DOWNWARD_MESSAGES_IDENTIFIER)
+		data.get_data::<MessageIngestionType>(&MESSAGE_INGESTION_IDENTIFIER)
 			.expect("Downward messages inherent data failed to decode")
-			.map(|msgs| Call::receive_downward_messages(msgs))
+			.map(|msgs| Call::ingest_inbound_messages(msgs))
 	}
 }

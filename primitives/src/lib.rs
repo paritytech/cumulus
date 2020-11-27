@@ -29,15 +29,29 @@ pub use polkadot_primitives::v1::{
 pub mod genesis;
 pub mod xcmp;
 
+/// An inbound HRMP message.
+pub type InboundHrmpMessage = polkadot_primitives::v1::InboundHrmpMessage<polkadot_core_primitives::BlockNumber>;
+
 /// Identifiers and types related to Cumulus Inherents
 pub mod inherents {
 	use sp_inherents::InherentIdentifier;
+	use sp_std::{
+		vec::Vec,
+		collections::btree_map::BTreeMap,
+	};
+	use super::{InboundDownwardMessage, InboundHrmpMessage, ParaId};
 
-	/// Inherent identifier for downward messages.
-	pub const DOWNWARD_MESSAGES_IDENTIFIER: InherentIdentifier = *b"cumdownm";
-
-	/// The type of the inherent downward messages.
-	pub type DownwardMessagesType = sp_std::vec::Vec<crate::InboundDownwardMessage>;
+	/// Inherent identifier for message ingestion inherent.
+	pub const MESSAGE_INGESTION_IDENTIFIER: InherentIdentifier = *b"msgingst";
+	/// The data passed via a message ingestion inherent. Consists of a bundle of
+	/// DMP and HRMP messages.
+	#[derive(codec::Encode, codec::Decode, sp_core::RuntimeDebug, Clone, PartialEq)]
+	pub struct MessageIngestionType {
+		/// downward messages.
+		pub dmp: Vec<InboundDownwardMessage>,
+		/// HRMP messages grouped by channels.
+		pub hrmp: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
+	}
 
 	/// The identifier for the `set_validation_data` inherent.
 	pub const VALIDATION_DATA_IDENTIFIER: InherentIdentifier = *b"valfunp0";
@@ -69,6 +83,11 @@ pub mod well_known_keys {
 pub trait DownwardMessageHandler {
 	/// Handle the given downward message.
 	fn handle_downward_message(msg: InboundDownwardMessage);
+}
+
+#[impl_trait_for_tuples::impl_for_tuples(30)]
+pub trait HrmpMessageHandler {
+	fn handle_hrmp_message(sender: ParaId, msg: InboundHrmpMessage);
 }
 
 /// A trait which is called when the validation data is set.

@@ -18,8 +18,8 @@
 
 use cumulus_network::WaitToAnnounce;
 use cumulus_primitives::{
-	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER, VALIDATION_DATA_IDENTIFIER},
-	well_known_keys, ValidationData,
+	inherents::{self, VALIDATION_DATA_IDENTIFIER},
+	well_known_keys, ValidationData, InboundHrmpMessage, InboundDownwardMessage,
 };
 use cumulus_runtime::ParachainBlockData;
 
@@ -52,7 +52,7 @@ use log::{debug, error, info, trace};
 
 use futures::prelude::*;
 
-use std::{marker::PhantomData, sync::Arc, time::Duration};
+use std::{marker::PhantomData, sync::Arc, time::Duration, collections::BTreeMap};
 
 use parking_lot::Mutex;
 
@@ -143,7 +143,7 @@ where
 	/// for.
 	///
 	/// Returns `None` in case of an error.
-	fn retrieve_dmq_contents(&self, relay_parent: PHash) -> Option<DownwardMessagesType> {
+	fn retrieve_dmq_contents(&self, relay_parent: PHash) -> Option<Vec<InboundDownwardMessage>> {
 		self
 			.polkadot_client
 			.runtime_api()
@@ -156,6 +156,31 @@ where
 				error!(
 					target: "cumulus-collator",
 					"An error occured during requesting the downward messages for {}: {:?}",
+					relay_parent, e,
+				);
+			})
+			.ok()
+	}
+
+	/// Returns channels contents for each inbound HRMP channel addressed to the parachain we are
+	/// collating for.
+	///
+	/// Empty channels are also included.
+	fn retrieve_inbound_hrmp_channels_contents(&self, relay_parent: PHash)
+		-> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>>
+	{
+		self
+			.polkadot_client
+			.runtime_api()
+			.inbound_hrmp_channels_contents_with_context(
+				&BlockId::hash(relay_parent),
+				sp_core::ExecutionContext::Importing,
+				self.para_id,
+			)
+			.map_err(|e| {
+				error!(
+					target: "cumulus-collator",
+					"An error occured during requesting the inbound HRMP messages for {}: {:?}",
 					relay_parent, e,
 				);
 			})
@@ -191,9 +216,18 @@ where
 			})
 			.ok()?;
 
-		let downward_messages = self.retrieve_dmq_contents(relay_parent)?;
+		let message_ingestion_data = {
+			let dmp = self.retrieve_dmq_contents(relay_parent)?;
+			let hrmp = self.retrieve_inbound_hrmp_channels_contents(relay_parent)?;
+
+			inherents::MessageIngestionType {
+				dmp,
+				hrmp,
+			}
+		};
+
 		inherent_data
-			.put_data(DOWNWARD_MESSAGES_IDENTIFIER, &downward_messages)
+			.put_data(inherents::MESSAGE_INGESTION_IDENTIFIER, &message_ingestion_data)
 			.map_err(|e| {
 				error!(
 					target: "cumulus-collator",
