@@ -328,6 +328,26 @@ where
 				None => 0,
 			};
 
+			let hrmp_watermark = sp_io::storage::get(well_known_keys::HRMP_WATERMARK);
+			let hrmp_watermark = match hrmp_watermark.map(|v| PBlockNumber::decode(&mut &v[..])) {
+				Some(Ok(hrmp_watermark)) => hrmp_watermark,
+				Some(Err(e)) => {
+					error!(
+						target: "cumulus-collator",
+						"Failed to decode the HRMP watermark: {:?}",
+						e
+					);
+					return None
+				}
+				None => {
+					// If the runtime didn't set `HRMP_WATERMARK`, then it means no messages were
+					// supplied via the message ingestion inherent. Assuming that the PVF/runtime
+					// checks that legitly there are no pending messages we can therefore move the
+					// watermark up to the relay-block number.
+					relay_block_number
+				}
+			};
+
 			Some(Collation {
 				upward_messages,
 				new_validation_code: new_validation_code.map(Into::into),
@@ -336,7 +356,7 @@ where
 				processed_downward_messages,
 				// TODO!
 				horizontal_messages: Vec::new(),
-				hrmp_watermark: relay_block_number,
+				hrmp_watermark,
 			})
 		})
 	}

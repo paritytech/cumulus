@@ -30,7 +30,7 @@ pub mod genesis;
 pub mod xcmp;
 
 /// An inbound HRMP message.
-pub type InboundHrmpMessage = polkadot_primitives::v1::InboundHrmpMessage<polkadot_core_primitives::BlockNumber>;
+pub type InboundHrmpMessage = polkadot_primitives::v1::InboundHrmpMessage<relay_chain::BlockNumber>;
 
 /// Identifiers and types related to Cumulus Inherents
 pub mod inherents {
@@ -47,9 +47,11 @@ pub mod inherents {
 	/// DMP and HRMP messages.
 	#[derive(codec::Encode, codec::Decode, sp_core::RuntimeDebug, Clone, PartialEq)]
 	pub struct MessageIngestionType {
-		/// downward messages.
+		/// Downward messages in the order they were sent.
 		pub dmp: Vec<InboundDownwardMessage>,
-		/// HRMP messages grouped by channels.
+		/// HRMP messages grouped by channels. The messages in the inner vec must be in order they
+		/// were sent. In combination with the rule of no more than one message in a channel per block,
+		/// this means `sent_at` is **strictly** greater than the previous one (if any).
 		pub hrmp: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
 	}
 
@@ -71,6 +73,12 @@ pub mod well_known_keys {
 
 	/// Code upgarde (set as appropriate by a pallet).
 	pub const NEW_VALIDATION_CODE: &'static [u8] = b":cumulus_new_validation_code:";
+
+	/// The storage key for communicating the HRMP watermark from the runtime to the PVF. Cleared by
+	/// the runtime each block and set after  message ingestion, but only if there were messages.
+	///
+	/// The value is stored as SCALE encoded relay-chain's `BlockNumber`.
+	pub const HRMP_WATERMARK: &'static [u8] = b":cumulus_hrmp_watermark:";
 
 	/// The storage key for the processed downward messages.
 	///

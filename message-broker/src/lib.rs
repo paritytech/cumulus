@@ -34,6 +34,7 @@ use sp_std::{cmp, prelude::*};
 use cumulus_primitives::{
 	inherents::{MESSAGE_INGESTION_IDENTIFIER, MessageIngestionType},
 	well_known_keys, DownwardMessageHandler, HrmpMessageHandler, UpwardMessage,
+	relay_chain,
 };
 
 /// Configuration trait of the message broker pallet.
@@ -75,16 +76,32 @@ decl_module! {
 				&dmp_count,
 			);
 
+			let mut hrmp_watermark = None::<relay_chain::BlockNumber>;
 			for (sender, channel_contents) in hrmp {
 				for hrmp_message in channel_contents {
+					hrmp_watermark = Some(hrmp_message.sent_at);
+
 					T::HrmpMessageHandlers::handle_hrmp_message(sender, hrmp_message);
 				}
+			}
+
+			// If we read at least one message, then advance watermark to that location.
+			if let Some(hrmp_watermark) = hrmp_watermark {
+				storage::unhashed::put(
+					well_known_keys::HRMP_WATERMARK,
+					&hrmp_watermark,
+				);
 			}
 		}
 
 		fn on_initialize() -> Weight {
+			let mut weight = T::DbWeight::get().writes(1);
+			storage::unhashed::kill(well_known_keys::HRMP_WATERMARK);
+
 			// Reads and writes performed by `on_finalize`.
-			T::DbWeight::get().reads_writes(1, 2)
+			weight += T::DbWeight::get().reads_writes(1, 2);
+
+			weight
 		}
 
 		fn on_finalize() {
