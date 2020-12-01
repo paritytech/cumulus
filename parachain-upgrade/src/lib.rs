@@ -47,9 +47,9 @@ use sp_std::vec::Vec;
 type System<T> = frame_system::Module<T>;
 
 /// The pallet's configuration trait.
-pub trait Trait: frame_system::Trait {
+pub trait Trait: frame_system::Config {
 	/// The overarching event type.
-	type Event: From<Event> + Into<<Self as frame_system::Trait>::Event>;
+	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
 
 	/// Something which can be notified when the validation data is set.
 	type OnValidationData: OnValidationData;
@@ -309,7 +309,7 @@ mod tests {
 			transaction_version: 1,
 		};
 	}
-	impl frame_system::Trait for Test {
+	impl frame_system::Config for Test {
 		type Origin = Origin;
 		type Call = ();
 		type Index = u64;
@@ -383,7 +383,7 @@ mod tests {
 	}
 
 	struct BlockTest {
-		n: <Test as frame_system::Trait>::BlockNumber,
+		n: <Test as frame_system::Config>::BlockNumber,
 		within_block: Box<dyn Fn()>,
 		after_block: Option<Box<dyn Fn()>>,
 	}
@@ -410,7 +410,7 @@ mod tests {
 			self
 		}
 
-		fn add<F>(self, n: <Test as frame_system::Trait>::BlockNumber, within_block: F) -> Self
+		fn add<F>(self, n: <Test as frame_system::Config>::BlockNumber, within_block: F) -> Self
 		where
 			F: 'static + Fn(),
 		{
@@ -423,7 +423,7 @@ mod tests {
 
 		fn add_with_post_test<F1, F2>(
 			self,
-			n: <Test as frame_system::Trait>::BlockNumber,
+			n: <Test as frame_system::Config>::BlockNumber,
 			within_block: F1,
 			after_block: F2,
 		) -> Self

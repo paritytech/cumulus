@@ -37,7 +37,7 @@ use cumulus_primitives::{
 };
 
 /// Configuration trait of the message broker pallet.
-pub trait Trait: frame_system::Trait {
+pub trait Trait: frame_system::Config {
 	/// The downward message handlers that will be informed when a message is received.
 	type DownwardMessageHandlers: DownwardMessageHandler;
 }
