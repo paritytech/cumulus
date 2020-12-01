@@ -195,16 +195,16 @@ impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 }
 
-impl cumulus_parachain_upgrade::Trait for Runtime {
+impl cumulus_parachain_upgrade::Config for Runtime {
 	type Event = Event;
 	type OnValidationData = ();
 }
 
-impl cumulus_message_broker::Trait for Runtime {
+impl cumulus_message_broker::Config for Runtime {
 	type DownwardMessageHandlers = ();
 }
 
-impl parachain_info::Trait for Runtime {}
+impl parachain_info::Config for Runtime {}
 
 construct_runtime! {
 	pub enum Runtime where

@@ -194,12 +194,12 @@ impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 }
 
-impl cumulus_parachain_upgrade::Trait for Runtime {
+impl cumulus_parachain_upgrade::Config for Runtime {
 	type Event = Event;
 	type OnValidationFunctionParams = ();
 }
 
-impl cumulus_message_broker::Trait for Runtime {
+impl cumulus_message_broker::Config for Runtime {
 	type Event = Event;
 	type DownwardMessageHandlers = TokenDealer;
 	type UpwardMessage = cumulus_upward_message::RococoUpwardMessage;
@@ -208,7 +208,7 @@ impl cumulus_message_broker::Trait for Runtime {
 	type XCMPMessageHandlers = TokenDealer;
 }
 
-impl cumulus_token_dealer::Trait for Runtime {
+impl cumulus_token_dealer::Config for Runtime {
 	type Event = Event;
 	type UpwardMessageSender = MessageBroker;
 	type UpwardMessage = cumulus_upward_message::RococoUpwardMessage;
@@ -216,7 +216,7 @@ impl cumulus_token_dealer::Trait for Runtime {
 	type XCMPMessageSender = MessageBroker;
 }
 
-impl parachain_info::Trait for Runtime {}
+impl parachain_info::Config for Runtime {}
 
 // We disable the rent system for easier testing.
 parameter_types! {
@@ -226,7 +226,7 @@ parameter_types! {
 	pub const SurchargeReward: Balance = 0;
 }
 
-impl cumulus_pallet_contracts::Trait for Runtime {
+impl cumulus_pallet_contracts::Config for Runtime {
 	type Time = Timestamp;
 	type Randomness = RandomnessCollectiveFlip;
 	type Currency = Balances;
