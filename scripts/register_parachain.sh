@@ -40,11 +40,9 @@ polkadot-js-api \
     --ws "${url?}" \
     --sudo \
     --seed "${seed?}" \
-    tx.registrar.registerPara \
+    tx.parasSudoWrapper.sudoScheduleParaInitialize \
         "${parachain_id?}" \
-        '{"scheduling":"Always"}' \
-        @"${wasm?}" \
-        "${genesis?}"
+        @"{ \"genesisHead\":\"${genesis?}\", \"validationCode\":\"${wasm?}\", \"parachain\": true }" \
 
 polkadot-js-api \
     --ws "${url?}" \
