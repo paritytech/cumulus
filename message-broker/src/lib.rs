@@ -32,9 +32,9 @@ use sp_inherents::{InherentData, InherentIdentifier, MakeFatalError, ProvideInhe
 use sp_std::{cmp, prelude::*};
 
 use cumulus_primitives::{
-	inherents::{MESSAGE_INGESTION_IDENTIFIER, MessageIngestionType},
-	well_known_keys, DownwardMessageHandler, HrmpMessageHandler, UpwardMessage,
-	relay_chain,
+	inherents::{MessageIngestionType, MESSAGE_INGESTION_IDENTIFIER},
+	relay_chain, well_known_keys, DownwardMessageHandler, HrmpMessageHandler, OutboundHrmpMessage,
+	UpwardMessage, ParaId,
 };
 
 /// Configuration trait of the message broker pallet.
@@ -48,6 +48,12 @@ pub trait Config: frame_system::Config {
 decl_storage! {
 	trait Store for Module<T: Config> as MessageBroker {
 		PendingUpwardMessages: Vec<UpwardMessage>;
+
+		/// Essentially `OutboundHrmpMessage`s grouped by the recipients.
+		OutboundHrmpMessages: map hasher(twox_64_concat) ParaId => Vec<Vec<u8>>;
+		/// HRMP channels with the given recipients are awaiting to be processed. If a `ParaId` is
+		/// present in this vector then `OutboundHrmpMessages` for it should be not empty.
+		NonEmptyHrmpChannels: Vec<ParaId>;
 	}
 }
 
@@ -95,18 +101,20 @@ decl_module! {
 		}
 
 		fn on_initialize() -> Weight {
-			let mut weight = T::DbWeight::get().writes(1);
+			let mut weight = T::DbWeight::get().writes(2);
 			storage::unhashed::kill(well_known_keys::HRMP_WATERMARK);
+			storage::unhashed::kill(well_known_keys::HRMP_OUTBOUND_MESSAGES);
 
 			// Reads and writes performed by `on_finalize`.
-			weight += T::DbWeight::get().reads_writes(1, 2);
+			weight += T::DbWeight::get().reads_writes(1, 2); // TODO: <- this is tricky
 
 			weight
 		}
 
 		fn on_finalize() {
-			// TODO: this should be not a constant, but sourced from the relay-chain configuration.
+			// TODO: these should be not a constant, but sourced from the relay-chain configuration.
 			const UMP_MSG_NUM_PER_CANDIDATE: usize = 5;
+			const HRMP_MSG_NUM_PER_CANDIDATE: usize = 5;
 
 			<Self as Store>::PendingUpwardMessages::mutate(|up| {
 				let num = cmp::min(UMP_MSG_NUM_PER_CANDIDATE, up.len());
@@ -116,6 +124,50 @@ decl_module! {
 				);
 				*up = up.split_off(num);
 			});
+
+			// Sending HRMP messages is a little bit more involved. On top of the number of messages
+			// per block limit, there is also a constraint that it's possible to send only a single
+			// message to a given recipient per candidate.
+			let mut non_empty_hrmp_channels = <Self as Store>::NonEmptyHrmpChannels::get();
+			let outbound_hrmp_num = cmp::min(HRMP_MSG_NUM_PER_CANDIDATE, non_empty_hrmp_channels.len());
+			let mut outbound_hrmp_messages = Vec::with_capacity(outbound_hrmp_num);
+			let mut prune_empty = Vec::with_capacity(outbound_hrmp_num);
+
+			for &recipient in non_empty_hrmp_channels.iter().take(outbound_hrmp_num) {
+				let (message_payload, became_empty) =
+					<Self as Store>::OutboundHrmpMessages::mutate(&recipient, |v| {
+						// this panics if `v` is empty. However, we are iterating only once over non-empty
+						// channels, therefore it cannot panic.
+						let first = v.remove(0);
+						let became_empty = v.is_empty();
+						(first, became_empty)
+					});
+
+				outbound_hrmp_messages.push(OutboundHrmpMessage {
+					recipient,
+					data: message_payload,
+				});
+				if became_empty {
+					prune_empty.push(recipient);
+				}
+			}
+
+			// Prune hrmp channels that became empty. Additionally, because it may so happen that we
+			// only gave attention to some channels in `non_empty_hrmp_channels` it's important to
+			// change the order. Otherwise, the next `on_finalize` we will again give attention
+			// only to those channels that happen to be in the beginning, until they are emptied.
+			// This leads to "starvation" of the channels near to the end.
+			//
+			// To mitigate this we shift all processed elements towards the end of the vector using
+			// `rotate_left`. To get intution how it works see the examples in its rustdoc.
+			non_empty_hrmp_channels.retain(|x| !prune_empty.contains(x));
+			non_empty_hrmp_channels.rotate_left(outbound_hrmp_num - prune_empty.len());
+
+			<Self as Store>::NonEmptyHrmpChannels::put(non_empty_hrmp_channels);
+			storage::unhashed::put(
+				well_known_keys::HRMP_OUTBOUND_MESSAGES,
+				&outbound_hrmp_messages,
+			);
 		}
 	}
 }
@@ -126,11 +178,36 @@ pub enum SendUpErr {
 	TooBig,
 }
 
+/// An error that can be raised upon sending a horizontal message.
+pub enum SendHorizonalErr {
+	/// The message sent is too big.
+	TooBig,
+	/// There is no channel to the specified destination.
+	NoChannel,
+}
+
 impl<T: Config> Module<T> {
 	pub fn send_upward_message(message: UpwardMessage) -> Result<(), SendUpErr> {
 		// TODO: check the message against the limit. The limit should be sourced from the
 		// relay-chain configuration.
 		<Self as Store>::PendingUpwardMessages::append(message);
+		Ok(())
+	}
+
+	pub fn send_hrmp_message(message: OutboundHrmpMessage) -> Result<(), SendHorizonalErr> {
+		// TODO:
+		// (a) check against the size limit sourced from the relay-chain configuration
+		// (b) check if the channel to the recipient is actually opened.
+
+		let OutboundHrmpMessage { recipient, data } = message;
+		<Self as Store>::OutboundHrmpMessages::append(&recipient, data);
+
+		<Self as Store>::NonEmptyHrmpChannels::mutate(|v| {
+			if let Err(i) = v.binary_search(&recipient) {
+				v.insert(i, recipient);
+			}
+		});
+
 		Ok(())
 	}
 }
