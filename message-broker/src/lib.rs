@@ -101,8 +101,9 @@ decl_module! {
 		}
 
 		fn on_initialize() -> Weight {
-			let mut weight = T::DbWeight::get().writes(2);
+			let mut weight = T::DbWeight::get().writes(3);
 			storage::unhashed::kill(well_known_keys::HRMP_WATERMARK);
+			storage::unhashed::kill(well_known_keys::UPWARD_MESSAGES);
 			storage::unhashed::kill(well_known_keys::HRMP_OUTBOUND_MESSAGES);
 
 			// Reads and writes performed by `on_finalize`.
