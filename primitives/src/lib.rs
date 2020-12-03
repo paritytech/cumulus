@@ -101,8 +101,10 @@ pub trait DownwardMessageHandler {
 	fn handle_downward_message(msg: InboundDownwardMessage);
 }
 
+/// Something that should be called when an HRMP message is received.
 #[impl_trait_for_tuples::impl_for_tuples(30)]
 pub trait HrmpMessageHandler {
+	/// Handle the given HRMP message.
 	fn handle_hrmp_message(sender: ParaId, msg: InboundHrmpMessage);
 }
 
