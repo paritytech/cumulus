@@ -2,7 +2,12 @@
   "name": "Tick",
   "id": "tick_v1",
   "chainType": "Live",
-  "bootNodes": [],
+  "bootNodes": [
+    "/ip4/35.204.161.46/tcp/30333/p2p/12D3KooW9vw7UNUYQtPWK3RS8eyhjJgp4qBwbbiirYQcWLw5bCsf",
+    "/ip4/34.91.188.144/tcp/30333/p2p/12D3KooWDE1awihCBKPwqncHmzQZ8fT9Wc7zHBmNWZqRsB329ddx",
+    "/ip4/34.90.244.197/tcp/30333/p2p/12D3KooWLmYcnrT1eruNYc74Na9Cq7EqCKkDDr5N2tdHKvm4RWcw",
+    "/ip4/34.90.155.1/tcp/30333/p2p/12D3KooWHNQaFF8uSQBoKkXpowi1Z1pxRkxmngpq95Ngcw8JjiNj"
+  ],
   "telemetryEndpoints": null,
   "protocolId": null,
   "properties": {
