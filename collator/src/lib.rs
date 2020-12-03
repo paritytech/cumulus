@@ -19,7 +19,7 @@
 use cumulus_network::WaitToAnnounce;
 use cumulus_primitives::{
 	inherents::{self, VALIDATION_DATA_IDENTIFIER},
-	well_known_keys, ValidationData, InboundHrmpMessage, InboundDownwardMessage,
+	well_known_keys, ValidationData, InboundHrmpMessage, OutboundHrmpMessage, InboundDownwardMessage,
 };
 use cumulus_runtime::ParachainBlockData;
 
@@ -328,6 +328,22 @@ where
 				None => 0,
 			};
 
+			let horizontal_messages = sp_io::storage::get(well_known_keys::HRMP_OUTBOUND_MESSAGES);
+			let horizontal_messages = match horizontal_messages
+				.map(|v| Vec::<OutboundHrmpMessage>::decode(&mut &v[..]))
+			{
+				Some(Ok(horizontal_messages)) => horizontal_messages,
+				Some(Err(e)) => {
+					error!(
+						target: "cumulus-collator",
+						"Failed to decode the horizontal messages: {:?}",
+						e
+					);
+					return None
+				}
+				None => Vec::new(),
+			};
+
 			let hrmp_watermark = sp_io::storage::get(well_known_keys::HRMP_WATERMARK);
 			let hrmp_watermark = match hrmp_watermark.map(|v| PBlockNumber::decode(&mut &v[..])) {
 				Some(Ok(hrmp_watermark)) => hrmp_watermark,
@@ -354,8 +370,7 @@ where
 				head_data,
 				proof_of_validity: PoV { block_data },
 				processed_downward_messages,
-				// TODO!
-				horizontal_messages: Vec::new(),
+				horizontal_messages,
 				hrmp_watermark,
 			})
 		})

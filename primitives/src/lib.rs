@@ -32,6 +32,9 @@ pub mod xcmp;
 /// An inbound HRMP message.
 pub type InboundHrmpMessage = polkadot_primitives::v1::InboundHrmpMessage<relay_chain::BlockNumber>;
 
+/// And outbound HRMP message
+pub type OutboundHrmpMessage = polkadot_primitives::v1::OutboundHrmpMessage<ParaId>;
+
 /// Identifiers and types related to Cumulus Inherents
 pub mod inherents {
 	use sp_inherents::InherentIdentifier;
@@ -73,6 +76,12 @@ pub mod well_known_keys {
 
 	/// Code upgarde (set as appropriate by a pallet).
 	pub const NEW_VALIDATION_CODE: &'static [u8] = b":cumulus_new_validation_code:";
+
+	/// The storage key with which the runtime passes outbound HRMP messages it wants to send to the
+	/// PVF.
+	///
+	/// The value is stored as SCALE encoded `Vec<OutboundHrmpMessage>`
+	pub const HRMP_OUTBOUND_MESSAGES: &'static [u8] = b":cumulus_hrmp_outbound_messages:";
 
 	/// The storage key for communicating the HRMP watermark from the runtime to the PVF. Cleared by
 	/// the runtime each block and set after  message ingestion, but only if there were messages.
