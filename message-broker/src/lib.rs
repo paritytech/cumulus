@@ -27,7 +27,7 @@ use frame_support::{
 	weights::{DispatchClass, Weight},
 	StorageValue,
 };
-use frame_system::ensure_none;
+use frame_system::{ensure_none, ensure_root};
 use sp_inherents::{InherentData, InherentIdentifier, MakeFatalError, ProvideInherent};
 use sp_std::{cmp, prelude::*};
 
@@ -98,6 +98,18 @@ decl_module! {
 					&hrmp_watermark,
 				);
 			}
+		}
+
+		#[weight = (1_000, DispatchClass::Operational)]
+		fn sudo_send_upward_message(origin, message: UpwardMessage) {
+			ensure_root(origin)?;
+			let _ = Self::send_upward_message(message);
+		}
+
+		#[weight = (1_000, DispatchClass::Operational)]
+		fn sudo_send_hrmp_message(origin, message: OutboundHrmpMessage) {
+			ensure_root(origin)?;
+			let _ = Self::send_hrmp_message(message);
 		}
 
 		fn on_initialize() -> Weight {
