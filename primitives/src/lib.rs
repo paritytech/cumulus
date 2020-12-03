@@ -27,7 +27,6 @@ pub use polkadot_primitives::v1::{
 
 #[cfg(feature = "std")]
 pub mod genesis;
-pub mod xcmp;
 
 /// An inbound HRMP message.
 pub type InboundHrmpMessage = polkadot_primitives::v1::InboundHrmpMessage<relay_chain::BlockNumber>;
