@@ -37,6 +37,10 @@ use cumulus_primitives::{
 	UpwardMessage, ParaId,
 };
 
+// TODO: these should be not a constant, but sourced from the relay-chain configuration.
+const UMP_MSG_NUM_PER_CANDIDATE: usize = 5;
+const HRMP_MSG_NUM_PER_CANDIDATE: usize = 5;
+
 /// Configuration trait of the message broker pallet.
 pub trait Config: frame_system::Config {
 	/// The downward message handlers that will be informed when a message is received.
@@ -118,17 +122,17 @@ decl_module! {
 			storage::unhashed::kill(well_known_keys::UPWARD_MESSAGES);
 			storage::unhashed::kill(well_known_keys::HRMP_OUTBOUND_MESSAGES);
 
-			// Reads and writes performed by `on_finalize`.
-			weight += T::DbWeight::get().reads_writes(1, 2); // TODO: <- this is tricky
+			// Reads and writes performed by `on_finalize`. This may actually turn out to be lower,
+			// but we should err on the safe side.
+			weight += T::DbWeight::get().reads_writes(
+				2 + HRMP_MSG_NUM_PER_CANDIDATE as u64,
+				4 + HRMP_MSG_NUM_PER_CANDIDATE as u64,
+			);
 
 			weight
 		}
 
 		fn on_finalize() {
-			// TODO: these should be not a constant, but sourced from the relay-chain configuration.
-			const UMP_MSG_NUM_PER_CANDIDATE: usize = 5;
-			const HRMP_MSG_NUM_PER_CANDIDATE: usize = 5;
-
 			<Self as Store>::PendingUpwardMessages::mutate(|up| {
 				let num = cmp::min(UMP_MSG_NUM_PER_CANDIDATE, up.len());
 				storage::unhashed::put(
