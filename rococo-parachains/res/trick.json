@@ -2,7 +2,12 @@
   "name": "Trick",
   "id": "trick_v1",
   "chainType": "Live",
-  "bootNodes": [],
+  "bootNodes": [
+    "/ip4/34.91.144.206/tcp/30333/p2p/12D3KooWHrjwgK7w18wCYuLAYPm4EvYtxsnWCcPqmz9nxvDXgEPs",
+    "/ip4/34.91.198.14/tcp/30333/p2p/12D3KooWMkaC5D6fpJRGDXkri4X8UCNrfRjmLGhUnJaH4yLdZJoB",
+    "/ip4/35.204.157.238/tcp/30333/p2p/12D3KooWMmWxFRPW9XzaSe7jGhSxmfbkcxUNaUh9npHSg4HvCG5N",
+    "/ip4/34.90.169.248/tcp/30333/p2p/12D3KooWCaDuTzTxgKWimXxYjCLXhaRRZWjNAeMHDjnFVXmHBLss" 
+  ],
   "telemetryEndpoints": null,
   "protocolId": null,
   "properties": {
