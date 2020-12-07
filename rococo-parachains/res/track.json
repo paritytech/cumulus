@@ -2,7 +2,12 @@
   "name": "Track",
   "id": "track_v1",
   "chainType": "Live",
-  "bootNodes": [],
+  "bootNodes": [
+    "/ip4/34.90.214.205/tcp/30333/p2p/12D3KooWSNvfxTYrtxqAGmYM1VAtg6YMuAGWvjQ28UvoYoBBgANr",
+    "/ip4/34.91.145.171/tcp/30333/p2p/12D3KooWJdoJVgsUSqF5uovCDnAo7mQBjaaXroo6chzebNPnX5ep",
+    "/ip4/34.91.225.237/tcp/30333/p2p/12D3KooWHD8iRVnrXHCzNTtN2nE7DAmFc13k8Ltyng7X7TjRbhod",
+    "/ip4/34.90.240.154/tcp/30333/p2p/12D3KooWHhUfiS39qTD75GgD5YPqugSyyT81Jw1dnGDLqqZ6vWsD"
+  ],
   "telemetryEndpoints": null,
   "protocolId": null,
   "properties": {
