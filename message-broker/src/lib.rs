@@ -33,7 +33,7 @@ use sp_std::{cmp, prelude::*};
 
 use cumulus_primitives::{
 	inherents::{MessageIngestionType, MESSAGE_INGESTION_IDENTIFIER},
-	relay_chain, well_known_keys, DownwardMessageHandler, HrmpMessageHandler, OutboundHrmpMessage,
+	well_known_keys, DownwardMessageHandler, HrmpMessageHandler, OutboundHrmpMessage,
 	UpwardMessage, ParaId,
 };
 
@@ -86,7 +86,7 @@ decl_module! {
 				&dmp_count,
 			);
 
-			let mut hrmp_watermark = None::<relay_chain::BlockNumber>;
+			let mut hrmp_watermark = None;
 			for (sender, channel_contents) in hrmp {
 				for hrmp_message in channel_contents {
 					hrmp_watermark = Some(hrmp_message.sent_at);
