@@ -200,6 +200,7 @@ where
 			polkadot_full_node,
 			spawner,
 			backend,
+			polkadot_backend: polkadot_full_node.backend.clone(),
 		};
 
 		start_collator(params).await?;

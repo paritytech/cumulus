@@ -71,6 +71,7 @@ pub struct Collator<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> {
 	wait_to_announce: Arc<Mutex<WaitToAnnounce<Block>>>,
 	backend: Arc<Backend>,
 	polkadot_client: Arc<PClient>,
+	polkadot_backend: Arc<PBackend>,
 }
 
 impl<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> Clone
@@ -87,6 +88,7 @@ impl<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> Clone
 			wait_to_announce: self.wait_to_announce.clone(),
 			backend: self.backend.clone(),
 			polkadot_client: self.polkadot_client.clone(),
+			polkadot_backend: self.polkadot_backend.clone(),
 		}
 	}
 }
@@ -123,6 +125,7 @@ where
 		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
 		backend: Arc<Backend>,
 		polkadot_client: Arc<PClient>,
+		polkadot_backend: Arc<PBackend>,
 	) -> Self {
 		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(
 			spawner,
@@ -140,6 +143,7 @@ where
 			wait_to_announce,
 			backend,
 			polkadot_client,
+			polkadot_backend,
 		}
 	}
 
@@ -208,8 +212,17 @@ where
 			})
 			.ok()?;
 
+		let validation_data = {
+			// TODO:
+			let relay_chain_state = sp_state_machine::StorageProof::empty();
+			inherents::ValidationDataType {
+				validation_data: validation_data.clone(),
+				relay_chain_state,
+			}
+		};
+
 		inherent_data
-			.put_data(VALIDATION_DATA_IDENTIFIER, validation_data)
+			.put_data(VALIDATION_DATA_IDENTIFIER, &validation_data)
 			.map_err(|e| {
 				error!(
 					target: "cumulus-collator",
@@ -507,7 +520,7 @@ where
 }
 
 /// Parameters for [`start_collator`].
-pub struct StartCollatorParams<Block: BlockT, PF, BI, Backend, Client, BS, Spawner, PClient> {
+pub struct StartCollatorParams<Block: BlockT, PF, BI, Backend, Client, BS, Spawner, PClient, PBackend> {
 	pub proposer_factory: PF,
 	pub inherent_data_providers: InherentDataProviders,
 	pub backend: Arc<Backend>,
@@ -520,6 +533,7 @@ pub struct StartCollatorParams<Block: BlockT, PF, BI, Backend, Client, BS, Spawn
 	pub para_id: ParaId,
 	pub key: CollatorPair,
 	pub polkadot_client: Arc<PClient>,
+	pub polkadot_backend: Arc<PBackend>,
 }
 
 pub async fn start_collator<
@@ -547,7 +561,8 @@ pub async fn start_collator<
 		para_id,
 		key,
 		polkadot_client,
-	}: StartCollatorParams<Block, PF, BI, Backend, Client, BS, Spawner, PClient>,
+		polkadot_backend,
+	}: StartCollatorParams<Block, PF, BI, Backend, Client, BS, Spawner, PClient, PBackend>,
 ) -> Result<(), String>
 where
 	PF: Environment<Block> + Send + 'static,
@@ -594,6 +609,7 @@ where
 		announce_block,
 		backend,
 		polkadot_client,
+		polkadot_backend,
 	);
 
 	let config = CollationGenerationConfig {
