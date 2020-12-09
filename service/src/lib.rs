@@ -23,7 +23,7 @@ use futures::{Future, FutureExt};
 use polkadot_overseer::OverseerHandler;
 use polkadot_primitives::v1::{Block as PBlock, CollatorId, CollatorPair};
 use polkadot_service::{AbstractClient, Client as PClient, ClientHandle, RuntimeApiCollection};
-use sc_client_api::{Backend as BackendT, BlockBackend, Finalizer, UsageProvider};
+use sc_client_api::{Backend as BackendT, BlockBackend, Finalizer, UsageProvider, StateBackend};
 use sc_service::{error::Result as ServiceResult, Configuration, Role, TaskManager};
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{BlockImport, Environment, Error as ConsensusError, Proposer};
@@ -96,6 +96,8 @@ where
 	Backend: BackendT<Block> + 'static,
 	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
 	PClient: ClientHandle,
+	PBackend: BackendT<PBlock> + 'static,
+	PBackend::State: StateBackend<BlakeTwo256>,
 {
 	polkadot_full_node
 		.client

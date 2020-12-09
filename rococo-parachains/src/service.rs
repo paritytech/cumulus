@@ -182,6 +182,8 @@ where
 		);
 		let spawner = task_manager.spawn_handle();
 
+		let polkadot_backend = polkadot_full_node.backend.clone();
+
 		let params = StartCollatorParams {
 			para_id: id,
 			block_import: client.clone(),
@@ -195,7 +197,7 @@ where
 			polkadot_full_node,
 			spawner,
 			backend,
-			polkadot_backend: polkadot_full_node.backend.clone(),
+			polkadot_backend,
 		};
 
 		start_collator(params).await?;
