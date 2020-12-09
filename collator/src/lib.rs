@@ -61,7 +61,7 @@ type TransactionFor<E, Block> =
 	<<E as Environment<Block>>::Proposer as Proposer<Block>>::Transaction;
 
 /// The implementation of the Cumulus `Collator`.
-pub struct Collator<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> {
+pub struct Collator<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient, PBackend2> {
 	para_id: ParaId,
 	proposer_factory: Arc<Mutex<PF>>,
 	_phantom: PhantomData<(Block, PBackend)>,
@@ -71,11 +71,11 @@ pub struct Collator<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> {
 	wait_to_announce: Arc<Mutex<WaitToAnnounce<Block>>>,
 	backend: Arc<Backend>,
 	polkadot_client: Arc<PClient>,
-	polkadot_backend: Arc<PBackend>,
+	polkadot_backend: Arc<PBackend2>,
 }
 
-impl<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> Clone
-	for Collator<Block, PF, BI, BS, Backend, PBackend, PClient>
+impl<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient, PBackend2> Clone
+	for Collator<Block, PF, BI, BS, Backend, PBackend, PClient, PBackend2>
 {
 	fn clone(&self) -> Self {
 		Self {
@@ -93,8 +93,8 @@ impl<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> Clone
 	}
 }
 
-impl<Block, PF, BI, BS, Backend, PBackend, PApi, PClient>
-	Collator<Block, PF, BI, BS, Backend, PBackend, PClient>
+impl<Block, PF, BI, BS, Backend, PBackend, PApi, PClient, PBackend2>
+	Collator<Block, PF, BI, BS, Backend, PBackend, PClient, PBackend2>
 where
 	Block: BlockT,
 	PF: Environment<Block> + 'static + Send,
@@ -112,6 +112,8 @@ where
 	PBackend::State: StateBackend<BlakeTwo256>,
 	PApi: RuntimeApiCollection<StateBackend = PBackend::State>,
 	PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = PApi> + 'static,
+	PBackend2: sc_client_api::Backend<PBlock> + 'static,
+	PBackend2::State: StateBackend<BlakeTwo256>,
 {
 	/// Create a new instance.
 	fn new(
@@ -125,7 +127,7 @@ where
 		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
 		backend: Arc<Backend>,
 		polkadot_client: Arc<PClient>,
-		polkadot_backend: Arc<PBackend>,
+		polkadot_backend: Arc<PBackend2>,
 	) -> Self {
 		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(
 			spawner,
@@ -546,6 +548,7 @@ pub async fn start_collator<
 	Spawner,
 	PClient,
 	PBackend,
+	PBackend2,
 	PApi,
 >(
 	StartCollatorParams {
@@ -562,7 +565,7 @@ pub async fn start_collator<
 		key,
 		polkadot_client,
 		polkadot_backend,
-	}: StartCollatorParams<Block, PF, BI, Backend, Client, BS, Spawner, PClient, PBackend>,
+	}: StartCollatorParams<Block, PF, BI, Backend, Client, BS, Spawner, PClient, PBackend2>,
 ) -> Result<(), String>
 where
 	PF: Environment<Block> + Send + 'static,
@@ -585,6 +588,8 @@ where
 	PBackend::State: StateBackend<BlakeTwo256>,
 	PApi: RuntimeApiCollection<StateBackend = PBackend::State>,
 	PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = PApi> + 'static,
+	PBackend2: sc_client_api::Backend<PBlock> + 'static,
+	PBackend2::State: StateBackend<BlakeTwo256>,
 {
 	let follow = match cumulus_consensus::follow_polkadot(
 		para_id,
