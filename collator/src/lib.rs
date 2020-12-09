@@ -746,24 +746,27 @@ mod tests {
 
 		spawner.spawn("overseer", overseer.run().then(|_| async { () }).boxed());
 
-		let (polkadot_client, relay_parent) = {
+		let (polkadot_client, polkadot_backend, relay_parent) = {
 			// Create a polkadot client with a block imported.
 			use polkadot_test_client::{
 				ClientBlockImportExt as _, DefaultTestClientBuilderExt as _,
 				InitPolkadotBlockBuilder as _, TestClientBuilderExt as _,
 			};
-			let mut client = polkadot_test_client::TestClientBuilder::new().build();
+
+			let client_builder = polkadot_test_client::TestClientBuilder::new();
+			let polkadot_backend = client_builder.backend();
+			let mut client = client_builder.build();
 			let block_builder = client.init_polkadot_block_builder();
 			let block = block_builder.build().expect("Finalizes the block").block;
 			let hash = block.header().hash();
 			client
 				.import_as_best(BlockOrigin::Own, block)
 				.expect("Imports the block");
-			(client, hash)
+			(client, polkadot_backend, hash)
 		};
 
 		let collator_start =
-			start_collator::<_, _, _, _, _, _, _, _, polkadot_service::FullBackend, _>(
+			start_collator::<_, _, _, _, _, _, _, _, polkadot_service::FullBackend, _, _>(
 				StartCollatorParams {
 					proposer_factory: DummyFactory(client.clone()),
 					inherent_data_providers: Default::default(),
@@ -777,6 +780,7 @@ mod tests {
 					para_id,
 					key: CollatorPair::generate().0,
 					polkadot_client: Arc::new(polkadot_client),
+					polkadot_backend,
 				},
 			);
 		block_on(collator_start).expect("Should start collator");
