@@ -72,7 +72,9 @@ pub struct Collator<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> {
 	polkadot_client: Arc<PClient>,
 }
 
-impl<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> Clone for Collator<Block, PF, BI, BS, Backend, PBackend, PClient> {
+impl<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> Clone
+	for Collator<Block, PF, BI, BS, Backend, PBackend, PClient>
+{
 	fn clone(&self) -> Self {
 		Self {
 			para_id: self.para_id.clone(),
@@ -88,7 +90,8 @@ impl<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> Clone for Collator<B
 	}
 }
 
-impl<Block, PF, BI, BS, Backend, PBackend, PApi, PClient> Collator<Block, PF, BI, BS, Backend, PBackend, PClient>
+impl<Block, PF, BI, BS, Backend, PBackend, PApi, PClient>
+	Collator<Block, PF, BI, BS, Backend, PBackend, PClient>
 where
 	Block: BlockT,
 	PF: Environment<Block> + 'static + Send,
