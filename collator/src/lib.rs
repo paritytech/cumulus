@@ -169,7 +169,7 @@ where
 	/// collating for.
 	///
 	/// Empty channels are also included.
-	fn retrieve_inbound_hrmp_channels_contents(&self, relay_parent: PHash)
+	fn retrieve_all_inbound_hrmp_channel_contents(&self, relay_parent: PHash)
 		-> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>>
 	{
 		self
@@ -221,7 +221,7 @@ where
 
 		let message_ingestion_data = {
 			let dmp = self.retrieve_dmq_contents(relay_parent)?;
-			let hrmp = self.retrieve_inbound_hrmp_channels_contents(relay_parent)?;
+			let hrmp = self.retrieve_all_inbound_hrmp_channel_contents(relay_parent)?;
 
 			inherents::MessageIngestionType {
 				dmp,
