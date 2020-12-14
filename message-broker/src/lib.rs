@@ -95,7 +95,7 @@ decl_module! {
 				}
 			}
 
-			// If we read at least one message, then advance watermark to that location.
+			// If we processed at least one message, then advance watermark to that location.
 			if let Some(hrmp_watermark) = hrmp_watermark {
 				storage::unhashed::put(
 					well_known_keys::HRMP_WATERMARK,
@@ -145,7 +145,7 @@ decl_module! {
 			// Sending HRMP messages is a little bit more involved. On top of the number of messages
 			// per block limit, there is also a constraint that it's possible to send only a single
 			// message to a given recipient per candidate.
-			let mut non_empty_hrmp_channels = <Self as Store>::NonEmptyHrmpChannels::get();
+			let mut non_empty_hrmp_channels = NonEmptyHrmpChannels::get();
 			let outbound_hrmp_num = cmp::min(HRMP_MSG_NUM_PER_CANDIDATE, non_empty_hrmp_channels.len());
 			let mut outbound_hrmp_messages = Vec::with_capacity(outbound_hrmp_num);
 			let mut prune_empty = Vec::with_capacity(outbound_hrmp_num);

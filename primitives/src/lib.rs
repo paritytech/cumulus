@@ -83,7 +83,7 @@ pub mod well_known_keys {
 	pub const HRMP_OUTBOUND_MESSAGES: &'static [u8] = b":cumulus_hrmp_outbound_messages:";
 
 	/// The storage key for communicating the HRMP watermark from the runtime to the PVF. Cleared by
-	/// the runtime each block and set after  message ingestion, but only if there were messages.
+	/// the runtime each block and set after message inclusion, but only if there were messages.
 	///
 	/// The value is stored as SCALE encoded relay-chain's `BlockNumber`.
 	pub const HRMP_WATERMARK: &'static [u8] = b":cumulus_hrmp_watermark:";

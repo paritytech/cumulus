@@ -168,7 +168,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 
 	let horizontal_messages = match overlay.storage(HRMP_OUTBOUND_MESSAGES).flatten() {
 		Some(encoded) => Vec::<OutboundHrmpMessage>::decode(&mut &encoded[..])
-			.expect("Outbound HRMP messages vec is not correclty encoded in the storage!"),
+			.expect("Outbound HRMP messages vec is not correctly encoded in the storage!"),
 		None => Vec::new(),
 	};
 
