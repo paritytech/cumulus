@@ -220,8 +220,8 @@ impl<T: Config> Module<T> {
 		<Self as Store>::OutboundHrmpMessages::append(&recipient, data);
 
 		<Self as Store>::NonEmptyHrmpChannels::mutate(|v| {
-			if let Err(i) = v.binary_search(&recipient) {
-				v.insert(i, recipient);
+			if !v.contains(&recipient) {
+				v.push(recipient);
 			}
 		});
 
