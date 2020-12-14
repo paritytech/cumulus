@@ -89,7 +89,12 @@ decl_module! {
 			let mut hrmp_watermark = None;
 			for (sender, channel_contents) in horizontal_messages {
 				for horizontal_message in channel_contents {
-					hrmp_watermark = Some(horizontal_message.sent_at);
+					if hrmp_watermark
+						.map(|w| w < horizontal_message.sent_at)
+						.unwrap_or(true)
+					{
+						hrmp_watermark = Some(horizontal_message.sent_at);
+					}
 
 					T::HrmpMessageHandlers::handle_hrmp_message(sender, horizontal_message);
 				}
