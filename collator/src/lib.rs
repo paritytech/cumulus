@@ -220,12 +220,12 @@ where
 			.ok()?;
 
 		let message_ingestion_data = {
-			let dmp = self.retrieve_dmq_contents(relay_parent)?;
-			let hrmp = self.retrieve_all_inbound_hrmp_channel_contents(relay_parent)?;
+			let downward_messages = self.retrieve_dmq_contents(relay_parent)?;
+			let horizontal_messages = self.retrieve_all_inbound_hrmp_channel_contents(relay_parent)?;
 
 			inherents::MessageIngestionType {
-				dmp,
-				hrmp,
+				downward_messages,
+				horizontal_messages,
 			}
 		};
 

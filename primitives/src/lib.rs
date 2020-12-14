@@ -50,11 +50,11 @@ pub mod inherents {
 	#[derive(codec::Encode, codec::Decode, sp_core::RuntimeDebug, Clone, PartialEq)]
 	pub struct MessageIngestionType {
 		/// Downward messages in the order they were sent.
-		pub dmp: Vec<InboundDownwardMessage>,
+		pub downward_messages: Vec<InboundDownwardMessage>,
 		/// HRMP messages grouped by channels. The messages in the inner vec must be in order they
 		/// were sent. In combination with the rule of no more than one message in a channel per block,
 		/// this means `sent_at` is **strictly** greater than the previous one (if any).
-		pub hrmp: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
+		pub horizontal_messages: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
 	}
 
 	/// The identifier for the `set_validation_data` inherent.

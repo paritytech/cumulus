@@ -70,28 +70,28 @@ decl_module! {
 			ensure_none(origin)?;
 
 			let MessageIngestionType {
-				dmp,
-				hrmp,
+				downward_messages,
+				horizontal_messages,
 			} = messages;
 
-			let dmp_count = dmp.len() as u32;
-			for dmp_message in dmp {
-				T::DownwardMessageHandlers::handle_downward_message(dmp_message);
+			let dm_count = downward_messages.len() as u32;
+			for downward_message in downward_messages {
+				T::DownwardMessageHandlers::handle_downward_message(downward_message);
 			}
 
 			// Store the processed_downward_messages here so that it's will be accessible from
 			// PVF's `validate_block` wrapper and collation pipeline.
 			storage::unhashed::put(
 				well_known_keys::PROCESSED_DOWNWARD_MESSAGES,
-				&dmp_count,
+				&dm_count,
 			);
 
 			let mut hrmp_watermark = None;
-			for (sender, channel_contents) in hrmp {
-				for hrmp_message in channel_contents {
-					hrmp_watermark = Some(hrmp_message.sent_at);
+			for (sender, channel_contents) in horizontal_messages {
+				for horizontal_message in channel_contents {
+					hrmp_watermark = Some(horizontal_message.sent_at);
 
-					T::HrmpMessageHandlers::handle_hrmp_message(sender, hrmp_message);
+					T::HrmpMessageHandlers::handle_hrmp_message(sender, horizontal_message);
 				}
 			}
 
