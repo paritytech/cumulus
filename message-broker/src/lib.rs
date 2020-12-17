@@ -34,7 +34,7 @@ use sp_std::{cmp, prelude::*};
 use cumulus_primitives::{
 	inherents::{MessageIngestionType, MESSAGE_INGESTION_IDENTIFIER},
 	well_known_keys, DownwardMessageHandler, HrmpMessageHandler, OutboundHrmpMessage, ParaId,
-	UpwardMessage,
+	UpwardMessage, UpwardMessageSender, HrmpMessageSender,
 };
 
 // TODO: these should be not a constant, but sourced from the relay-chain configuration.
@@ -231,6 +231,20 @@ impl<T: Config> Module<T> {
 		});
 
 		Ok(())
+	}
+}
+
+impl<T: Config> UpwardMessageSender for Module<T> {
+	fn send_upward_message(message: UpwardMessage) {
+		// TODO: Manage result.
+		let _ = Self::send_upward_message(message);
+	}
+}
+
+impl<T: Config> HrmpMessageSender for Module<T> {
+	fn send_hrmp_message(message: OutboundHrmpMessage) {
+		// TODO: Manage result.
+		let _ = Self::send_hrmp_message(message);
 	}
 }
 
