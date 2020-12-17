@@ -209,14 +209,14 @@ pub enum SendHorizonalErr {
 }
 
 impl<T: Config> Module<T> {
-	pub fn send_upward_message(message: UpwardMessage) -> Result<(), SendUpErr> {
+	pub fn send_upward_message(message: UpwardMessage) -> Result<(), ()> {
 		// TODO: check the message against the limit. The limit should be sourced from the
 		// relay-chain configuration.
 		<Self as Store>::PendingUpwardMessages::append(message);
 		Ok(())
 	}
 
-	pub fn send_hrmp_message(message: OutboundHrmpMessage) -> Result<(), SendHorizonalErr> {
+	pub fn send_hrmp_message(message: OutboundHrmpMessage) -> Result<(), ()> {
 		// TODO:
 		// (a) check against the size limit sourced from the relay-chain configuration
 		// (b) check if the channel to the recipient is actually opened.
@@ -235,16 +235,14 @@ impl<T: Config> Module<T> {
 }
 
 impl<T: Config> UpwardMessageSender for Module<T> {
-	fn send_upward_message(message: UpwardMessage) {
-		// TODO: Manage result.
-		let _ = Self::send_upward_message(message);
+	fn send_upward_message(message: UpwardMessage) -> Result<(), ()> {
+		Self::send_upward_message(message)
 	}
 }
 
 impl<T: Config> HrmpMessageSender for Module<T> {
-	fn send_hrmp_message(message: OutboundHrmpMessage) {
-		// TODO: Manage result.
-		let _ = Self::send_hrmp_message(message);
+	fn send_hrmp_message(message: OutboundHrmpMessage) -> Result<(), ()> {
+		Self::send_hrmp_message(message)
 	}
 }
 
