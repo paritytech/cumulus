@@ -14,9 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! A pallet which implements the message-broker APIs for handling XCM:
+//! A pallet which implements the message-broker APIs for handling incoming XCM:
 //! * `DownwardMessageHandler`
 //! * `HrmpMessageHandler`
+//!
+//! Also provides an implementation of `SendXcm` to handle outgoing XCM.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
