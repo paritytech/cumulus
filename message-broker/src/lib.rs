@@ -201,7 +201,7 @@ pub enum SendUpErr {
 }
 
 /// An error that can be raised upon sending a horizontal message.
-pub enum SendHorizonalErr {
+pub enum SendHorizontalErr {
 	/// The message sent is too big.
 	TooBig,
 	/// There is no channel to the specified destination.
@@ -209,14 +209,14 @@ pub enum SendHorizonalErr {
 }
 
 impl<T: Config> Module<T> {
-	pub fn send_upward_message(message: UpwardMessage) -> Result<(), ()> {
+	pub fn send_upward_message(message: UpwardMessage) -> Result<(), SendUpErr> {
 		// TODO: check the message against the limit. The limit should be sourced from the
 		// relay-chain configuration.
 		<Self as Store>::PendingUpwardMessages::append(message);
 		Ok(())
 	}
 
-	pub fn send_hrmp_message(message: OutboundHrmpMessage) -> Result<(), ()> {
+	pub fn send_hrmp_message(message: OutboundHrmpMessage) -> Result<(), SendHorizontalErr> {
 		// TODO:
 		// (a) check against the size limit sourced from the relay-chain configuration
 		// (b) check if the channel to the recipient is actually opened.
@@ -236,13 +236,13 @@ impl<T: Config> Module<T> {
 
 impl<T: Config> UpwardMessageSender for Module<T> {
 	fn send_upward_message(message: UpwardMessage) -> Result<(), ()> {
-		Self::send_upward_message(message)
+		Self::send_upward_message(message).map_err(|_| ())
 	}
 }
 
 impl<T: Config> HrmpMessageSender for Module<T> {
 	fn send_hrmp_message(message: OutboundHrmpMessage) -> Result<(), ()> {
-		Self::send_hrmp_message(message)
+		Self::send_hrmp_message(message).map_err(|_| ())
 	}
 }
 
