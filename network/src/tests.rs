@@ -19,11 +19,11 @@ use cumulus_test_service::runtime::{Block, Header};
 use futures::{executor::block_on, poll, task::Poll};
 use polkadot_node_primitives::{SignedFullStatement, Statement};
 use polkadot_primitives::v1::{
-	Block as PBlock, BlockNumber, CandidateCommitments, CandidateDescriptor,
-	CandidateEvent, CommittedCandidateReceipt, CoreState, GroupRotationInfo, Hash as PHash,
-	HeadData, Id as ParaId, InboundDownwardMessage, InboundHrmpMessage, OccupiedCoreAssumption,
-	ParachainHost, PersistedValidationData, SessionIndex, SigningContext, ValidationCode,
-	ValidationData, ValidatorId, ValidatorIndex, SessionInfo,
+	Block as PBlock, BlockNumber, CandidateCommitments, CandidateDescriptor, CandidateEvent,
+	CommittedCandidateReceipt, CoreState, GroupRotationInfo, Hash as PHash, HeadData, Id as ParaId,
+	InboundDownwardMessage, InboundHrmpMessage, OccupiedCoreAssumption, ParachainHost,
+	PersistedValidationData, SessionIndex, SessionInfo, SigningContext, ValidationCode,
+	ValidationData, ValidatorId, ValidatorIndex,
 };
 use polkadot_test_client::{
 	Client as PClient, ClientBlockImportExt, DefaultTestClientBuilderExt, FullBackend as PBackend,
@@ -176,7 +176,7 @@ fn invalid_if_no_data_exceeds_best_known_number() {
 
 	assert_eq!(
 		res.unwrap(),
-		Validation::Failure,
+		Validation::Failure { disconnect: false },
 		"validation fails if no justification and block number >= best known number",
 	);
 }
@@ -396,7 +396,7 @@ sp_api::mock_impl_runtime_apis! {
 			(Vec::new(), GroupRotationInfo { session_start_block: 0, group_rotation_frequency: 0, now: 0 })
 		}
 
-		fn availability_cores(&self) -> Vec<CoreState<BlockNumber>> {
+		fn availability_cores(&self) -> Vec<CoreState<PHash>> {
 			Vec::new()
 		}
 

@@ -157,7 +157,11 @@ where
 	let polkadot_full_node = polkadot_test_service::new_full(
 		polkadot_config,
 		polkadot_service::IsCollator::Yes(collator_key.public()),
-	)?;
+	)
+	.map_err(|e| match e {
+		polkadot_service::Error::Sub(x) => x,
+		s => format!("{}", s).into(),
+	})?;
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -382,6 +386,7 @@ pub fn node_config(
 		transaction_pool: Default::default(),
 		network: network_config,
 		keystore: KeystoreConfig::InMemory,
+		keystore_remote: Default::default(),
 		database: DatabaseConfig::RocksDb {
 			path: root.join("db"),
 			cache_size: 128,

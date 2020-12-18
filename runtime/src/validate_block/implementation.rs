@@ -29,9 +29,10 @@ use codec::{Decode, Encode};
 
 use cumulus_primitives::{
 	well_known_keys::{
-		NEW_VALIDATION_CODE, PROCESSED_DOWNWARD_MESSAGES, UPWARD_MESSAGES, VALIDATION_DATA,
+		HRMP_OUTBOUND_MESSAGES, HRMP_WATERMARK, NEW_VALIDATION_CODE, PROCESSED_DOWNWARD_MESSAGES,
+		UPWARD_MESSAGES, VALIDATION_DATA,
 	},
-	UpwardMessage, ValidationData,
+	OutboundHrmpMessage, UpwardMessage, ValidationData,
 };
 use sp_core::storage::{ChildInfo, TrackedStorageKey};
 use sp_externalities::{
@@ -165,15 +166,25 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 		.and_then(|v| Decode::decode(&mut &v[..]).ok())
 		.expect("`ValidationData` is required to be placed into the storage!");
 
+	let horizontal_messages = match overlay.storage(HRMP_OUTBOUND_MESSAGES).flatten() {
+		Some(encoded) => Vec::<OutboundHrmpMessage>::decode(&mut &encoded[..])
+			.expect("Outbound HRMP messages vec is not correctly encoded in the storage!"),
+		None => Vec::new(),
+	};
+
+	let hrmp_watermark = overlay
+		.storage(HRMP_WATERMARK)
+		.flatten()
+		.map(|v| Decode::decode(&mut &v[..]).expect("HRMP watermark is not encoded correctly"))
+		.unwrap_or(validation_data.persisted.block_number);
+
 	ValidationResult {
 		head_data,
 		new_validation_code,
 		upward_messages,
 		processed_downward_messages,
-		//TODO!
-		horizontal_messages: Vec::new(),
-		//TODO!
-		hrmp_watermark: validation_data.persisted.block_number,
+		horizontal_messages,
+		hrmp_watermark,
 	}
 }
 
@@ -263,8 +274,8 @@ impl<'a, B: BlockT> Externalities for WitnessExt<'a, B> {
 		self.inner.place_child_storage(child_info, key, value)
 	}
 
-	fn kill_child_storage(&mut self, child_info: &ChildInfo) {
-		self.inner.kill_child_storage(child_info)
+	fn kill_child_storage(&mut self, child_info: &ChildInfo, limit: Option<u32>) -> bool {
+		self.inner.kill_child_storage(child_info, limit)
 	}
 
 	fn clear_prefix(&mut self, prefix: &[u8]) {
@@ -450,9 +461,9 @@ fn host_default_child_storage_clear(storage_key: &[u8], key: &[u8]) {
 	with_externalities(|ext| ext.place_child_storage(&child_info, key.to_vec(), None))
 }
 
-fn host_default_child_storage_storage_kill(storage_key: &[u8]) {
+fn host_default_child_storage_storage_kill(storage_key: &[u8], limit: Option<u32>) -> bool {
 	let child_info = ChildInfo::new_default(storage_key);
-	with_externalities(|ext| ext.kill_child_storage(&child_info))
+	with_externalities(|ext| ext.kill_child_storage(&child_info, limit))
 }
 
 fn host_default_child_storage_exists(storage_key: &[u8], key: &[u8]) -> bool {

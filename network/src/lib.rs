@@ -54,7 +54,7 @@ use futures::{
 };
 use log::trace;
 
-use std::{marker::PhantomData, pin::Pin, sync::Arc, fmt};
+use std::{fmt, marker::PhantomData, pin::Pin, sync::Arc};
 
 use wait_on_relay_chain_block::WaitOnRelayChainBlock;
 
@@ -62,7 +62,7 @@ type BoxedError = Box<dyn std::error::Error + Send>;
 
 #[derive(Debug)]
 struct BlockAnnounceError(String);
-impl std::error::Error for BlockAnnounceError { }
+impl std::error::Error for BlockAnnounceError {}
 
 impl fmt::Display for BlockAnnounceError {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -180,7 +180,7 @@ where
 					"validation failed because a justification is needed if the block at the top of the chain."
 				);
 
-				Ok(Validation::Failure)
+				Ok(Validation::Failure { disconnect: false })
 			} else {
 				Ok(Validation::Success { is_new_best: false })
 			}
