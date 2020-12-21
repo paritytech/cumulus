@@ -1234,6 +1234,7 @@ dependencies = [
  "sp-inherents",
  "sp-keyring",
  "sp-runtime",
+ "sp-state-machine",
  "sp-test-primitives",
  "sp-timestamp",
  "substrate-test-client",
