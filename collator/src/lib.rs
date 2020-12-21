@@ -215,7 +215,7 @@ where
 			.ok()?;
 
 		let validation_data = {
-			// TODO:
+			// TODO: Actual proof is to be created in the upcoming PRs.
 			let relay_chain_state = sp_state_machine::StorageProof::empty();
 			inherents::ValidationDataType {
 				validation_data: validation_data.clone(),
