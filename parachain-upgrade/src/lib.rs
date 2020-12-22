@@ -458,7 +458,6 @@ mod tests {
 						&n,
 						&Default::default(),
 						&Default::default(),
-						&Default::default(),
 						InitKind::Full,
 					);
 
