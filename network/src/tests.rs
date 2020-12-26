@@ -176,7 +176,7 @@ fn invalid_if_no_data_exceeds_best_known_number() {
 
 	assert_eq!(
 		res.unwrap(),
-		Validation::Failure,
+		Validation::Failure { disconnect: false },
 		"validation fails if no justification and block number >= best known number",
 	);
 }
@@ -396,7 +396,7 @@ sp_api::mock_impl_runtime_apis! {
 			(Vec::new(), GroupRotationInfo { session_start_block: 0, group_rotation_frequency: 0, now: 0 })
 		}
 
-		fn availability_cores(&self) -> Vec<CoreState<BlockNumber>> {
+		fn availability_cores(&self) -> Vec<CoreState<PHash>> {
 			Vec::new()
 		}
 

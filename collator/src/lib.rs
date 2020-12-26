@@ -18,8 +18,9 @@
 
 use cumulus_network::WaitToAnnounce;
 use cumulus_primitives::{
-	inherents::{DownwardMessagesType, DOWNWARD_MESSAGES_IDENTIFIER, VALIDATION_DATA_IDENTIFIER},
-	well_known_keys, ValidationData,
+	inherents::{self, VALIDATION_DATA_IDENTIFIER},
+	well_known_keys, InboundDownwardMessage, InboundHrmpMessage, OutboundHrmpMessage,
+	ValidationData,
 };
 use cumulus_runtime::ParachainBlockData;
 
@@ -51,7 +52,7 @@ use log::{debug, error, info, trace};
 
 use futures::prelude::*;
 
-use std::{marker::PhantomData, sync::Arc, time::Duration};
+use std::{collections::BTreeMap, marker::PhantomData, sync::Arc, time::Duration};
 
 use parking_lot::Mutex;
 
@@ -59,7 +60,7 @@ type TransactionFor<E, Block> =
 	<<E as Environment<Block>>::Proposer as Proposer<Block>>::Transaction;
 
 /// The implementation of the Cumulus `Collator`.
-pub struct Collator<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> {
+pub struct Collator<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient, PBackend2> {
 	para_id: ParaId,
 	proposer_factory: Arc<Mutex<PF>>,
 	_phantom: PhantomData<(Block, PBackend)>,
@@ -69,10 +70,11 @@ pub struct Collator<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> {
 	wait_to_announce: Arc<Mutex<WaitToAnnounce<Block>>>,
 	backend: Arc<Backend>,
 	polkadot_client: Arc<PClient>,
+	polkadot_backend: Arc<PBackend2>,
 }
 
-impl<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> Clone
-	for Collator<Block, PF, BI, BS, Backend, PBackend, PClient>
+impl<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient, PBackend2> Clone
+	for Collator<Block, PF, BI, BS, Backend, PBackend, PClient, PBackend2>
 {
 	fn clone(&self) -> Self {
 		Self {
@@ -85,12 +87,13 @@ impl<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient> Clone
 			wait_to_announce: self.wait_to_announce.clone(),
 			backend: self.backend.clone(),
 			polkadot_client: self.polkadot_client.clone(),
+			polkadot_backend: self.polkadot_backend.clone(),
 		}
 	}
 }
 
-impl<Block, PF, BI, BS, Backend, PBackend, PApi, PClient>
-	Collator<Block, PF, BI, BS, Backend, PBackend, PClient>
+impl<Block, PF, BI, BS, Backend, PBackend, PApi, PClient, PBackend2>
+	Collator<Block, PF, BI, BS, Backend, PBackend, PClient, PBackend2>
 where
 	Block: BlockT,
 	PF: Environment<Block> + 'static + Send,
@@ -108,6 +111,8 @@ where
 	PBackend::State: StateBackend<BlakeTwo256>,
 	PApi: RuntimeApiCollection<StateBackend = PBackend::State>,
 	PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = PApi> + 'static,
+	PBackend2: sc_client_api::Backend<PBlock> + 'static,
+	PBackend2::State: StateBackend<BlakeTwo256>,
 {
 	/// Create a new instance.
 	fn new(
@@ -121,6 +126,7 @@ where
 		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
 		backend: Arc<Backend>,
 		polkadot_client: Arc<PClient>,
+		polkadot_backend: Arc<PBackend2>,
 	) -> Self {
 		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(
 			spawner,
@@ -138,6 +144,7 @@ where
 			wait_to_announce,
 			backend,
 			polkadot_client,
+			polkadot_backend,
 		}
 	}
 
@@ -145,7 +152,7 @@ where
 	/// for.
 	///
 	/// Returns `None` in case of an error.
-	fn retrieve_dmq_contents(&self, relay_parent: PHash) -> Option<DownwardMessagesType> {
+	fn retrieve_dmq_contents(&self, relay_parent: PHash) -> Option<Vec<InboundDownwardMessage>> {
 		self.polkadot_client
 			.runtime_api()
 			.dmq_contents_with_context(
@@ -157,6 +164,31 @@ where
 				error!(
 					target: "cumulus-collator",
 					"An error occured during requesting the downward messages for {}: {:?}",
+					relay_parent, e,
+				);
+			})
+			.ok()
+	}
+
+	/// Returns channels contents for each inbound HRMP channel addressed to the parachain we are
+	/// collating for.
+	///
+	/// Empty channels are also included.
+	fn retrieve_all_inbound_hrmp_channel_contents(
+		&self,
+		relay_parent: PHash,
+	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
+		self.polkadot_client
+			.runtime_api()
+			.inbound_hrmp_channels_contents_with_context(
+				&BlockId::hash(relay_parent),
+				sp_core::ExecutionContext::Importing,
+				self.para_id,
+			)
+			.map_err(|e| {
+				error!(
+					target: "cumulus-collator",
+					"An error occured during requesting the inbound HRMP messages for {}: {:?}",
 					relay_parent, e,
 				);
 			})
@@ -181,8 +213,17 @@ where
 			})
 			.ok()?;
 
+		let validation_data = {
+			// TODO: Actual proof is to be created in the upcoming PRs.
+			let relay_chain_state = sp_state_machine::StorageProof::empty();
+			inherents::ValidationDataType {
+				validation_data: validation_data.clone(),
+				relay_chain_state,
+			}
+		};
+
 		inherent_data
-			.put_data(VALIDATION_DATA_IDENTIFIER, validation_data)
+			.put_data(VALIDATION_DATA_IDENTIFIER, &validation_data)
 			.map_err(|e| {
 				error!(
 					target: "cumulus-collator",
@@ -192,9 +233,22 @@ where
 			})
 			.ok()?;
 
-		let downward_messages = self.retrieve_dmq_contents(relay_parent)?;
+		let message_ingestion_data = {
+			let downward_messages = self.retrieve_dmq_contents(relay_parent)?;
+			let horizontal_messages =
+				self.retrieve_all_inbound_hrmp_channel_contents(relay_parent)?;
+
+			inherents::MessageIngestionType {
+				downward_messages,
+				horizontal_messages,
+			}
+		};
+
 		inherent_data
-			.put_data(DOWNWARD_MESSAGES_IDENTIFIER, &downward_messages)
+			.put_data(
+				inherents::MESSAGE_INGESTION_IDENTIFIER,
+				&message_ingestion_data,
+			)
 			.map_err(|e| {
 				error!(
 					target: "cumulus-collator",
@@ -295,15 +349,50 @@ where
 				None => 0,
 			};
 
+			let horizontal_messages = sp_io::storage::get(well_known_keys::HRMP_OUTBOUND_MESSAGES);
+			let horizontal_messages = match horizontal_messages
+				.map(|v| Vec::<OutboundHrmpMessage>::decode(&mut &v[..]))
+			{
+				Some(Ok(horizontal_messages)) => horizontal_messages,
+				Some(Err(e)) => {
+					error!(
+						target: "cumulus-collator",
+						"Failed to decode the horizontal messages: {:?}",
+						e
+					);
+					return None
+				}
+				None => Vec::new(),
+			};
+
+			let hrmp_watermark = sp_io::storage::get(well_known_keys::HRMP_WATERMARK);
+			let hrmp_watermark = match hrmp_watermark.map(|v| PBlockNumber::decode(&mut &v[..])) {
+				Some(Ok(hrmp_watermark)) => hrmp_watermark,
+				Some(Err(e)) => {
+					error!(
+						target: "cumulus-collator",
+						"Failed to decode the HRMP watermark: {:?}",
+						e
+					);
+					return None
+				}
+				None => {
+					// If the runtime didn't set `HRMP_WATERMARK`, then it means no messages were
+					// supplied via the message ingestion inherent. Assuming that the PVF/runtime
+					// checks that legitly there are no pending messages we can therefore move the
+					// watermark up to the relay-block number.
+					relay_block_number
+				}
+			};
+
 			Some(Collation {
 				upward_messages,
 				new_validation_code: new_validation_code.map(Into::into),
 				head_data,
 				proof_of_validity: PoV { block_data },
 				processed_downward_messages,
-				// TODO!
-				horizontal_messages: Vec::new(),
-				hrmp_watermark: relay_block_number,
+				horizontal_messages,
+				hrmp_watermark,
 			})
 		})
 	}
@@ -432,7 +521,7 @@ where
 }
 
 /// Parameters for [`start_collator`].
-pub struct StartCollatorParams<Block: BlockT, PF, BI, Backend, BS, Spawner, PClient> {
+pub struct StartCollatorParams<Block: BlockT, PF, BI, Backend, BS, Spawner, PClient, PBackend> {
 	pub proposer_factory: PF,
 	pub inherent_data_providers: InherentDataProviders,
 	pub backend: Arc<Backend>,
@@ -444,9 +533,21 @@ pub struct StartCollatorParams<Block: BlockT, PF, BI, Backend, BS, Spawner, PCli
 	pub para_id: ParaId,
 	pub key: CollatorPair,
 	pub polkadot_client: Arc<PClient>,
+	pub polkadot_backend: Arc<PBackend>,
 }
 
-pub async fn start_collator<Block: BlockT, PF, BI, Backend, BS, Spawner, PClient, PBackend, PApi>(
+pub async fn start_collator<
+	Block: BlockT,
+	PF,
+	BI,
+	Backend,
+	BS,
+	Spawner,
+	PClient,
+	PBackend,
+	PBackend2,
+	PApi,
+>(
 	StartCollatorParams {
 		proposer_factory,
 		inherent_data_providers,
@@ -459,7 +560,8 @@ pub async fn start_collator<Block: BlockT, PF, BI, Backend, BS, Spawner, PClient
 		para_id,
 		key,
 		polkadot_client,
-	}: StartCollatorParams<Block, PF, BI, Backend, BS, Spawner, PClient>,
+		polkadot_backend,
+	}: StartCollatorParams<Block, PF, BI, Backend, BS, Spawner, PClient, PBackend2>,
 ) -> Result<(), String>
 where
 	PF: Environment<Block> + Send + 'static,
@@ -474,6 +576,8 @@ where
 	PBackend::State: StateBackend<BlakeTwo256>,
 	PApi: RuntimeApiCollection<StateBackend = PBackend::State>,
 	PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = PApi> + 'static,
+	PBackend2: sc_client_api::Backend<PBlock> + 'static,
+	PBackend2::State: StateBackend<BlakeTwo256>,
 {
 	let collator = Collator::new(
 		para_id,
@@ -486,6 +590,7 @@ where
 		announce_block,
 		backend,
 		polkadot_client,
+		polkadot_backend,
 	);
 
 	let config = CollationGenerationConfig {
@@ -609,24 +714,27 @@ mod tests {
 
 		spawner.spawn("overseer", overseer.run().then(|_| async { () }).boxed());
 
-		let (polkadot_client, relay_parent) = {
+		let (polkadot_client, polkadot_backend, relay_parent) = {
 			// Create a polkadot client with a block imported.
 			use polkadot_test_client::{
 				ClientBlockImportExt as _, DefaultTestClientBuilderExt as _,
 				InitPolkadotBlockBuilder as _, TestClientBuilderExt as _,
 			};
-			let mut client = polkadot_test_client::TestClientBuilder::new().build();
+
+			let client_builder = polkadot_test_client::TestClientBuilder::new();
+			let polkadot_backend = client_builder.backend();
+			let mut client = client_builder.build();
 			let block_builder = client.init_polkadot_block_builder();
 			let block = block_builder.build().expect("Finalizes the block").block;
 			let hash = block.header().hash();
 			client
 				.import_as_best(BlockOrigin::Own, block)
 				.expect("Imports the block");
-			(client, hash)
+			(client, polkadot_backend, hash)
 		};
 
 		let collator_start =
-			start_collator::<_, _, _, _, _, _, _, polkadot_service::FullBackend, _>(
+			start_collator::<_, _, _, _, _, _, _, polkadot_service::FullBackend, _, _>(
 				StartCollatorParams {
 					proposer_factory: DummyFactory(client.clone()),
 					inherent_data_providers: Default::default(),
@@ -639,6 +747,7 @@ mod tests {
 					para_id,
 					key: CollatorPair::generate().0,
 					polkadot_client: Arc::new(polkadot_client),
+					polkadot_backend,
 				},
 			);
 		block_on(collator_start).expect("Should start collator");

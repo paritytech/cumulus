@@ -29,9 +29,10 @@ use codec::{Decode, Encode};
 
 use cumulus_primitives::{
 	well_known_keys::{
-		NEW_VALIDATION_CODE, PROCESSED_DOWNWARD_MESSAGES, UPWARD_MESSAGES, VALIDATION_DATA,
+		HRMP_OUTBOUND_MESSAGES, HRMP_WATERMARK, NEW_VALIDATION_CODE, PROCESSED_DOWNWARD_MESSAGES,
+		UPWARD_MESSAGES, VALIDATION_DATA,
 	},
-	UpwardMessage, ValidationData,
+	OutboundHrmpMessage, UpwardMessage, ValidationData,
 };
 use sp_core::storage::{ChildInfo, TrackedStorageKey};
 use sp_externalities::{
@@ -165,15 +166,25 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 		.and_then(|v| Decode::decode(&mut &v[..]).ok())
 		.expect("`ValidationData` is required to be placed into the storage!");
 
+	let horizontal_messages = match overlay.storage(HRMP_OUTBOUND_MESSAGES).flatten() {
+		Some(encoded) => Vec::<OutboundHrmpMessage>::decode(&mut &encoded[..])
+			.expect("Outbound HRMP messages vec is not correctly encoded in the storage!"),
+		None => Vec::new(),
+	};
+
+	let hrmp_watermark = overlay
+		.storage(HRMP_WATERMARK)
+		.flatten()
+		.map(|v| Decode::decode(&mut &v[..]).expect("HRMP watermark is not encoded correctly"))
+		.unwrap_or(validation_data.persisted.block_number);
+
 	ValidationResult {
 		head_data,
 		new_validation_code,
 		upward_messages,
 		processed_downward_messages,
-		//TODO!
-		horizontal_messages: Vec::new(),
-		//TODO!
-		hrmp_watermark: validation_data.persisted.block_number,
+		horizontal_messages,
+		hrmp_watermark,
 	}
 }
 

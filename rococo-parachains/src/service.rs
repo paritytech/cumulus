@@ -117,7 +117,12 @@ where
 	let parachain_config = prepare_node_config(parachain_config);
 
 	let polkadot_full_node =
-		cumulus_service::build_polkadot_full_node(polkadot_config, collator_key.public())?;
+		cumulus_service::build_polkadot_full_node(polkadot_config, collator_key.public()).map_err(
+			|e| match e {
+				polkadot_service::Error::Sub(x) => x,
+				s => format!("{}", s).into(),
+			},
+		)?;
 
 	let params = new_partial(&parachain_config)?;
 	params
@@ -182,6 +187,8 @@ where
 		);
 		let spawner = task_manager.spawn_handle();
 
+		let polkadot_backend = polkadot_full_node.backend.clone();
+
 		let params = StartCollatorParams {
 			para_id: id,
 			block_import: client.clone(),
@@ -195,6 +202,7 @@ where
 			polkadot_full_node,
 			spawner,
 			backend,
+			polkadot_backend,
 		};
 
 		start_collator(params).await?;

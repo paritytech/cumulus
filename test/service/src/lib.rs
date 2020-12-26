@@ -157,7 +157,11 @@ where
 	let polkadot_full_node = polkadot_test_service::new_full(
 		polkadot_config,
 		polkadot_service::IsCollator::Yes(collator_key.public()),
-	)?;
+	)
+	.map_err(|e| match e {
+		polkadot_service::Error::Sub(x) => x,
+		s => format!("{}", s).into(),
+	})?;
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -219,6 +223,7 @@ where
 			prometheus_registry.as_ref(),
 		);
 
+		let polkadot_backend = polkadot_full_node.backend.clone();
 		let params = StartCollatorParams {
 			proposer_factory,
 			inherent_data_providers: params.inherent_data_providers,
@@ -232,6 +237,7 @@ where
 			para_id,
 			collator_key,
 			polkadot_full_node,
+			polkadot_backend,
 		};
 
 		start_collator(params).await?;

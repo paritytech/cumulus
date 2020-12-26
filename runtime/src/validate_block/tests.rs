@@ -99,7 +99,9 @@ fn build_block_with_proof(
 		}),
 	);
 
-	extra_extrinsics.into_iter().for_each(|e| builder.push(e).unwrap());
+	extra_extrinsics
+		.into_iter()
+		.for_each(|e| builder.push(e).unwrap());
 
 	let built_block = builder.build().expect("Creates block");
 

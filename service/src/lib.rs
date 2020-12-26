@@ -24,7 +24,7 @@ use polkadot_overseer::OverseerHandler;
 use polkadot_primitives::v1::{Block as PBlock, CollatorId, CollatorPair};
 use polkadot_service::{AbstractClient, Client as PClient, ClientHandle, RuntimeApiCollection};
 use sc_client_api::{
-	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, UsageProvider,
+	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, StateBackend, UsageProvider,
 };
 use sc_service::{error::Result as ServiceResult, Configuration, Role, TaskManager};
 use sp_blockchain::HeaderBackend;
@@ -38,7 +38,18 @@ use std::{marker::PhantomData, sync::Arc};
 type PFullNode<C> = polkadot_service::NewFull<C>;
 
 /// Parameters given to [`start_collator`].
-pub struct StartCollatorParams<'a, Block: BlockT, PF, BI, BS, Client, Backend, Spawner, PClient> {
+pub struct StartCollatorParams<
+	'a,
+	Block: BlockT,
+	PF,
+	BI,
+	BS,
+	Client,
+	Backend,
+	Spawner,
+	PClient,
+	PBackend,
+> {
 	pub proposer_factory: PF,
 	pub inherent_data_providers: InherentDataProviders,
 	pub backend: Arc<Backend>,
@@ -51,6 +62,7 @@ pub struct StartCollatorParams<'a, Block: BlockT, PF, BI, BS, Client, Backend, S
 	pub collator_key: CollatorPair,
 	pub polkadot_full_node: PFullNode<PClient>,
 	pub task_manager: &'a mut TaskManager,
+	pub polkadot_backend: Arc<PBackend>,
 }
 
 /// Start a collator node for a parachain.
@@ -58,7 +70,7 @@ pub struct StartCollatorParams<'a, Block: BlockT, PF, BI, BS, Client, Backend, S
 /// A collator is similar to a validator in a normal blockchain.
 /// It is responsible for producing blocks and sending the blocks to a
 /// parachain validator for validation and inclusion into the relay chain.
-pub async fn start_collator<'a, Block, PF, BI, BS, Client, Backend, Spawner, PClient>(
+pub async fn start_collator<'a, Block, PF, BI, BS, Client, Backend, Spawner, PClient, PBackend>(
 	StartCollatorParams {
 		proposer_factory,
 		inherent_data_providers,
@@ -72,7 +84,8 @@ pub async fn start_collator<'a, Block, PF, BI, BS, Client, Backend, Spawner, PCl
 		collator_key,
 		polkadot_full_node,
 		task_manager,
-	}: StartCollatorParams<'a, Block, PF, BI, BS, Client, Backend, Spawner, PClient>,
+		polkadot_backend,
+	}: StartCollatorParams<'a, Block, PF, BI, BS, Client, Backend, Spawner, PClient, PBackend>,
 ) -> sc_service::error::Result<()>
 where
 	Block: BlockT,
@@ -97,6 +110,8 @@ where
 	Backend: BackendT<Block> + 'static,
 	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
 	PClient: ClientHandle,
+	PBackend: BackendT<PBlock> + 'static,
+	PBackend::State: StateBackend<BlakeTwo256>,
 {
 	polkadot_full_node.client.execute_with(StartConsensus {
 		para_id,
@@ -121,6 +136,7 @@ where
 			collator_key,
 			block_import,
 			block_status,
+			polkadot_backend,
 		})
 		.await?;
 
@@ -129,7 +145,7 @@ where
 	Ok(())
 }
 
-struct StartCollator<Block: BlockT, Backend, PF, BI, BS, Spawner> {
+struct StartCollator<Block: BlockT, Backend, PF, BI, BS, Spawner, PBackend> {
 	proposer_factory: PF,
 	inherent_data_providers: InherentDataProviders,
 	backend: Arc<Backend>,
@@ -140,10 +156,11 @@ struct StartCollator<Block: BlockT, Backend, PF, BI, BS, Spawner> {
 	spawner: Spawner,
 	para_id: ParaId,
 	collator_key: CollatorPair,
+	polkadot_backend: Arc<PBackend>,
 }
 
-impl<Block, Backend, PF, BI, BS, Spawner> polkadot_service::ExecuteWithClient
-	for StartCollator<Block, Backend, PF, BI, BS, Spawner>
+impl<Block, Backend, PF, BI, BS, Spawner, PBackend2> polkadot_service::ExecuteWithClient
+	for StartCollator<Block, Backend, PF, BI, BS, Spawner, PBackend2>
 where
 	Block: BlockT,
 	PF: Environment<Block> + Send + 'static,
@@ -157,6 +174,8 @@ where
 	BS: BlockBackend<Block> + Send + Sync + 'static,
 	Backend: BackendT<Block> + 'static,
 	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
+	PBackend2: sc_client_api::Backend<PBlock> + 'static,
+	PBackend2::State: sp_api::StateBackend<BlakeTwo256>,
 {
 	type Output = std::pin::Pin<Box<dyn Future<Output = ServiceResult<()>>>>;
 
@@ -181,6 +200,7 @@ where
 				para_id: self.para_id,
 				key: self.collator_key,
 				polkadot_client: client,
+				polkadot_backend: self.polkadot_backend,
 			})
 			.await
 			.map_err(Into::into)
@@ -308,11 +328,18 @@ pub fn prepare_node_config(mut parachain_config: Configuration) -> Configuration
 pub fn build_polkadot_full_node(
 	config: Configuration,
 	collator_id: CollatorId,
-) -> sc_service::error::Result<PFullNode<PClient>> {
+) -> Result<PFullNode<PClient>, polkadot_service::Error> {
 	let is_light = matches!(config.role, Role::Light);
 	if is_light {
-		Err("Light client not supported.".into())
+		Err(polkadot_service::Error::Sub(
+			"Light client not supported.".into(),
+		))
 	} else {
-		polkadot_service::build_full(config, polkadot_service::IsCollator::Yes(collator_id), None)
+		polkadot_service::build_full(
+			config,
+			polkadot_service::IsCollator::Yes(collator_id),
+			None,
+			None,
+		)
 	}
 }
