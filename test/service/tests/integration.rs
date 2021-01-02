@@ -19,10 +19,11 @@ use cumulus_test_service::initial_head_data;
 use futures::join;
 use sc_service::TaskExecutor;
 use substrate_test_runtime_client::AccountKeyring::*;
+use sc_cli::InitLoggerParams;
 
 #[substrate_test_utils::test]
 async fn test_collating_and_non_collator_mode_catching_up(task_executor: TaskExecutor) {
-	sc_cli::init_logger("", Default::default(), None, false).expect("Sets up logger");
+	sc_cli::init_logger(Default::default()).expect("Sets up logger");
 
 	let para_id = ParaId::from(100);
 
