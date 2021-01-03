@@ -23,7 +23,10 @@ use cumulus_primitives::{genesis::generate_genesis_block, ParaId};
 use log::info;
 use parachain_runtime::Block;
 use polkadot_parachain::primitives::AccountIdConversion;
-use sc_cli::{ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams, NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli, InitLoggerParams};
+use sc_cli::{
+	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, InitLoggerParams,
+	KeystoreParams, NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
+};
 use sc_service::{
 	config::{BasePath, PrometheusConfig},
 	PartialComponents,
