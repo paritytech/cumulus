@@ -1138,8 +1138,10 @@ version = "0.1.0"
 dependencies = [
  "cumulus-primitives",
  "cumulus-runtime",
+ "cumulus-test-relay-sproof-builder",
  "frame-support",
  "frame-system",
+ "hash-db",
  "pallet-balances",
  "parity-scale-codec",
  "polkadot-parachain",
@@ -1151,6 +1153,7 @@ dependencies = [
  "sp-runtime",
  "sp-state-machine",
  "sp-std",
+ "sp-trie",
  "sp-version",
  "substrate-test-runtime-client",
 ]
