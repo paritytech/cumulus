@@ -17,6 +17,7 @@
 use crate::Client;
 use cumulus_primitives::{inherents::{VALIDATION_DATA_IDENTIFIER, ValidationDataType}, ValidationData};
 use cumulus_test_runtime::GetLastTimestamp;
+use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use polkadot_primitives::v1::BlockNumber as PBlockNumber;
 use sc_block_builder::BlockBuilderApi;
 use sp_api::ProvideRuntimeApi;
@@ -44,12 +45,25 @@ pub fn generate_block_inherents(
 	inherent_data
 		.put_data(sp_timestamp::INHERENT_IDENTIFIER, &timestamp)
 		.expect("Put timestamp failed");
+
+	// Generate a proof of a relay chain storage.
+	let (relay_storage_root, relay_chain_state) =
+		RelayStateSproofBuilder::default().into_state_root_and_proof();
+
+	let mut validation_data = validation_data.unwrap_or_default();
+	assert_eq!(
+		validation_data.persisted.relay_storage_root,
+		Default::default(),
+		"Overriding the relay storage root is not implemented",
+	);
+	validation_data.persisted.relay_storage_root = relay_storage_root;
+
 	inherent_data
 		.put_data(
 			VALIDATION_DATA_IDENTIFIER,
 			&ValidationDataType {
-				validation_data: validation_data.unwrap_or_default(),
-				relay_chain_state: sp_state_machine::StorageProof::empty(),
+				validation_data,
+				relay_chain_state,
 			},
 		)
 		.expect("Put validation function params failed");
