@@ -18,15 +18,22 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub use polkadot_core_primitives as relay_chain;
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use polkadot_parachain::primitives::{Id as ParaId, UpwardMessage, ValidationParams};
 pub use polkadot_primitives::v1::{
-	PersistedValidationData, TransientValidationData, ValidationData,
+	PersistedValidationData, TransientValidationData, ValidationData, AbridgedHostConfiguration,
+	AbridgedHrmpChannel,
 };
 
 #[cfg(feature = "std")]
 pub mod genesis;
+
+/// A module that re-exports relevant relay chain definitions.
+pub mod relay_chain {
+	pub use polkadot_core_primitives::*;
+	pub use polkadot_primitives::v1;
+	pub use polkadot_primitives::v1::well_known_keys;
+}
 
 /// An inbound HRMP message.
 pub type InboundHrmpMessage = polkadot_primitives::v1::InboundHrmpMessage<relay_chain::BlockNumber>;
