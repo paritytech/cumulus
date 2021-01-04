@@ -1094,6 +1094,7 @@ dependencies = [
 name = "cumulus-message-broker"
 version = "0.1.0"
 dependencies = [
+ "cumulus-parachain-upgrade",
  "cumulus-primitives",
  "frame-support",
  "frame-system",
