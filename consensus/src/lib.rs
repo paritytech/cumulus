@@ -72,7 +72,8 @@ pub trait RelaychainClient: Clone + 'static {
 
 /// Follow the finalized head of the given parachain.
 ///
-/// For every finalized block of the relay chain,
+/// For every finalized block of the relay chain, it will get the included parachain header
+/// corresponding to `para_id` and will finalize it in the parachain.
 async fn follow_finalized_head<P, Block, B, R>(
 	para_id: ParaId,
 	parachain: Arc<P>,
