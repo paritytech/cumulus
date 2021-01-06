@@ -55,15 +55,15 @@ pub use sp_runtime::{Perbill, Permill};
 
 // XCM imports
 use polkadot_parachain::primitives::Sibling;
-use xcm::v0::{MultiLocation, NetworkId, Junction};
+use xcm::v0::{Junction, MultiLocation, NetworkId};
 use xcm_builder::{
-	ParentIsDefault, SiblingParachainConvertsVia, AccountId32Aliases, LocationInverter,
-	SovereignSignedViaLocation, SiblingParachainAsNative,
-	RelayChainAsNative, SignedAccountId32AsNative, CurrencyAdapter
+	AccountId32Aliases, CurrencyAdapter, LocationInverter, ParentIsDefault, RelayChainAsNative,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SovereignSignedViaLocation,
 };
 use xcm_executor::{
-	XcmExecutor, Config,
-	traits::{NativeAsset, IsConcrete},
+	traits::{IsConcrete, NativeAsset},
+	Config, XcmExecutor,
 };
 
 pub type SessionHandlers = ();
@@ -77,7 +77,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("cumulus-test-parachain"),
 	impl_name: create_runtime_str!("cumulus-test-parachain"),
 	authoring_version: 1,
-	spec_version: 3,
+	spec_version: 1,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -257,17 +257,16 @@ type LocationConverter = (
 	AccountId32Aliases<RococoNetwork, AccountId>,
 );
 
-type LocalAssetTransactor =
-	CurrencyAdapter<
-		// Use this currency:
-		Balances,
-		// Use this currency when it is a fungible asset matching the given location or name:
-		IsConcrete<RococoLocation>,
-		// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
-		LocationConverter,
-		// Our chain's account ID type (we can't get away without mentioning it explicitly):
-		AccountId,
-	>;
+type LocalAssetTransactor = CurrencyAdapter<
+	// Use this currency:
+	Balances,
+	// Use this currency when it is a fungible asset matching the given location or name:
+	IsConcrete<RococoLocation>,
+	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
+	LocationConverter,
+	// Our chain's account ID type (we can't get away without mentioning it explicitly):
+	AccountId,
+>;
 
 type LocalOriginConverter = (
 	SovereignSignedViaLocation<LocationConverter, Origin>,
