@@ -77,3 +77,53 @@ parachain ID used for registration with the relay chain:
 The network uses horizontal message passing (HRMP) to enable communication between parachains and
 the relay chain and, in turn, between parachains. This means that every message is sent to the relay
 chain, and from the relay chain to its destination parachain.
+
+## Launch a local setup including RelayChain and Parachain
+
+### Launch the Relay Chain
+
+```bash
+# Compile Polkadot with the real overseer feature
+git clone https://github.com/paritytech/polkadot
+git checkout master
+cargo build --release --features=real-overseer
+./target/release/polkadot --version
+
+# Generate a raw chain spec
+./target/release/polkadot build-spec --chain rococo-local --disable-default-bootnode --raw > rococo-local-cfde-real-overseer.json
+
+# Alice
+./target/release/polkadot --chain rococo-local-cfde-real-overseer.json --alice --tmp --discover-local
+
+# Bob (In a separate terminal)
+./target/release/polkadot --chain rococo-local-cfde-real-overseer.json --bob --tmp --discover-local --port 30334
+```
+
+### Launch the Parachain
+
+```bash
+# Compile
+git clone https://github.com/paritytech/cumulus
+git checkout master
+cargo build --release
+./target/release/rococo-collator --version
+
+# Export genesis state
+./target/release/rococo-collator export-genesis-state --parachain-id 200 > genesis-state
+
+# Export genesis wasm
+./target/release/rococo-collator export-genesis-wasm > genesis-wasm
+
+# Collator1
+./target/release/rococo-collator --collator --discover-local --tmp --parachain-id 200 --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde-real-overseer.json --port 30335 --discover-local
+
+# Collator2
+./target/release/rococo-collator --collator --discover-local --tmp --parachain-id 200 --port 40336 --ws-port 9947 -- --execution wasm --chain ../polkadot/rococo-local-cfde-real-overseer.json --port 30336 --discover-local
+
+# Parachain Full Node 1
+./target/release/rococo-collator --discover-local --tmp --parachain-id 200 --port 40337 --ws-port 9948 -- --execution wasm --chain ../polkadot/rococo-local-cfde-real-overseer.json --port 30337 --discover-local
+```
+### Register the parachain
+![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
+
+You can use [these types](https://github.com/KILTprotocol/kilt-parachain#152-polkadot-apps-extrinsics-error) in Apps so that the UI can decode the inBlock event.
