@@ -78,7 +78,7 @@ The network uses horizontal message passing (HRMP) to enable communication betwe
 the relay chain and, in turn, between parachains. This means that every message is sent to the relay
 chain, and from the relay chain to its destination parachain.
 
-## Launch a local setup including Relay Chain and a Parachain
+## Launch a local setup including a Relay Chain and a Parachain
 
 ### Launch the Relay Chain
 
