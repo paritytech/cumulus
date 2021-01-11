@@ -107,7 +107,7 @@ git checkout master
 cargo build --release
 
 # Export genesis state
-# --parachain-id 200 as an example and should be changed according to your parachain id (u32 type range)
+# --parachain-id 200 as an example that can be chosen freely. Make sure to everywhere use the same parachain id
 ./target/release/rococo-collator export-genesis-state --parachain-id 200 > genesis-state
 
 # Export genesis wasm
