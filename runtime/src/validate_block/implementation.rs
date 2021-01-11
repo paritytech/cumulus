@@ -216,6 +216,10 @@ impl<'a, B: BlockT> WitnessExt<'a, B> {
 			validation_data.persisted.hrmp_mqc_heads
 		);
 		assert_eq!(
+			self.params.dmq_mqc_head,
+			validation_data.persisted.dmq_mqc_head,
+		);
+		assert_eq!(
 			self.params.relay_storage_root,
 			validation_data.persisted.relay_storage_root,
 		);
