@@ -9,12 +9,12 @@ edition = "2018"
 codec = { package = "parity-scale-codec", version = "1.3.0", features = [ "derive" ], default-features = false }
 
 # Substrate Dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "rococo-v1" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "rococo-v1" }
 
 # Polkadot Dependencies
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
 
 # Cumulus Dependencies
 cumulus-primitives = { path = "../primitives", default-features = false }

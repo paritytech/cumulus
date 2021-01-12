@@ -7,19 +7,19 @@ edition = "2018"
 
 [dependencies]
 # Substrate deps
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 
 # Polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 
 # Other deps
 futures = { version = "0.3.8", features = ["compat"] }
@@ -29,7 +29,7 @@ tracing = "0.1.22"
 
 [dev-dependencies]
 # Substrate deps
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 
 # Cumulus dependencies
 cumulus-test-runtime = { path = "../test/runtime" }

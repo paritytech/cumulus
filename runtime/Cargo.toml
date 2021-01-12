@@ -15,24 +15,24 @@ trie-db = { version = "0.22.0", default-features = false }
 cumulus-primitives = { path = "../primitives", default-features = false }
 
 # Substrate dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-externalities = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-externalities = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
 
 # Polkadot dependencies
-parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", default-features = false, features = [ "wasm-api" ], branch = "master" }
+parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", default-features = false, features = [ "wasm-api" ], branch = "rococo-v1" }
 
 [dev-dependencies]
-sc-client-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 cumulus-test-client = { path = "../test/client" }
 env_logger = "0.7.1"
 
