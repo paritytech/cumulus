@@ -16,7 +16,11 @@
 
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use rococo_parachain_runtime::{AccountId, AuraId, Signature};
+use parachain_runtime::{
+	BalanceType, CeremonyPhaseType, EncointerCeremoniesConfig, EncointerCommunitiesConfig,
+	EncointerSchedulerConfig,
+};
+use rococo_parachain_primitives::{AccountId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
@@ -24,10 +28,7 @@ use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec = sc_service::GenericChainSpec<rococo_parachain_runtime::GenesisConfig, Extensions>;
-
-/// Specialized `ChainSpec` for the shell parachain runtime.
-pub type ShellChainSpec = sc_service::GenericChainSpec<shell_runtime::GenesisConfig, Extensions>;
+pub type ChainSpec = sc_service::GenericChainSpec<parachain_runtime::GenesisConfig, Extensions>;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -103,23 +104,6 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 	)
 }
 
-pub fn get_shell_chain_spec(id: ParaId) -> ShellChainSpec {
-	ShellChainSpec::from_genesis(
-		"Shell Local Testnet",
-		"shell_local_testnet",
-		ChainType::Local,
-		move || shell_testnet_genesis(id),
-		vec![],
-		None,
-		None,
-		None,
-		Extensions {
-			relay_chain: "westend-dev".into(),
-			para_id: id.into(),
-		},
-	)
-}
-
 pub fn staging_test_net(id: ParaId) -> ChainSpec {
 	ChainSpec::from_genesis(
 		"Staging Testnet",
@@ -153,43 +137,94 @@ pub fn staging_test_net(id: ParaId) -> ChainSpec {
 	)
 }
 
+pub fn encointer_spec(id: ParaId, use_well_known_keys: bool) -> ChainSpec {
+	// encointer_root
+	let mut root_account: AccountId =
+		hex!["107f9c5385955bc57ac108b46b36498c4a8348eb964258b9b2ac53797d94794b"].into();
+	let mut endowed_accounts = vec![root_account.clone()];
+	let mut chain_type = ChainType::Live;
+
+	if use_well_known_keys {
+		root_account = get_account_id_from_seed::<sr25519::Public>("Alice");
+		endowed_accounts = vec![
+			get_account_id_from_seed::<sr25519::Public>("Alice"),
+			get_account_id_from_seed::<sr25519::Public>("Bob"),
+			get_account_id_from_seed::<sr25519::Public>("Charlie"),
+		];
+		chain_type = ChainType::Local;
+	}
+
+	ChainSpec::from_genesis(
+		"Encointer PC1",
+		"encointer-rococo-v1",
+		chain_type,
+		move || testnet_genesis(root_account.clone(), endowed_accounts.clone(), id),
+		Vec::new(),
+		// telemetry endpoints
+		None,
+		// protocol id
+		Some("encointer-rococo-v1"),
+		// properties
+		Some(
+			serde_json::from_str(
+				r#"{
+			"ss58Format": 42,
+			"tokenDecimals": 12,
+			"tokenSymbol": "ERT"
+		  }"#,
+			)
+			.unwrap(),
+		),
+		Extensions {
+			relay_chain: "rococo".into(),
+			para_id: id.into(),
+		},
+	)
+}
+
 fn testnet_genesis(
 	root_key: AccountId,
 	initial_authorities: Vec<AuraId>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> rococo_parachain_runtime::GenesisConfig {
-	rococo_parachain_runtime::GenesisConfig {
-		frame_system: rococo_parachain_runtime::SystemConfig {
-			code: rococo_parachain_runtime::WASM_BINARY
+) -> parachain_runtime::GenesisConfig {
+	parachain_runtime::GenesisConfig {
+		frame_system: parachain_runtime::SystemConfig {
+			code: parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 			changes_trie_config: Default::default(),
 		},
-		pallet_balances: rococo_parachain_runtime::BalancesConfig {
+		pallet_balances: parachain_runtime::BalancesConfig {
 			balances: endowed_accounts
 				.iter()
 				.cloned()
 				.map(|k| (k, 1 << 60))
 				.collect(),
 		},
-		pallet_sudo: rococo_parachain_runtime::SudoConfig { key: root_key },
-		parachain_info: rococo_parachain_runtime::ParachainInfoConfig { parachain_id: id },
-		pallet_aura: rococo_parachain_runtime::AuraConfig {
+		pallet_sudo: parachain_runtime::SudoConfig { key: root_key },
+		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },
+		pallet_aura: parachain_runtime::AuraConfig {
 			authorities: initial_authorities,
 		},
 		cumulus_pallet_aura_ext: Default::default(),
-	}
-}
-
-fn shell_testnet_genesis(parachain_id: ParaId) -> shell_runtime::GenesisConfig {
-	shell_runtime::GenesisConfig {
-		frame_system: shell_runtime::SystemConfig {
-			code: shell_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-			changes_trie_config: Default::default(),
-		},
-		parachain_info: shell_runtime::ParachainInfoConfig { parachain_id },
-	}
+	},
+	encointer_scheduler: EncointerSchedulerConfig {
+		current_phase: CeremonyPhaseType::REGISTERING,
+		current_ceremony_index: 1,
+		ceremony_master: root_key.clone(),
+		phase_durations: vec![
+			(CeremonyPhaseType::REGISTERING, 600_000),
+			(CeremonyPhaseType::ASSIGNING, 600_000),
+			(CeremonyPhaseType::ATTESTING, 600_000),
+		],
+	},
+	encointer_ceremonies: EncointerCeremoniesConfig {
+		ceremony_reward: BalanceType::from_num(1),
+		time_tolerance: 600_000,   // +-10min
+		location_tolerance: 1_000, // [m]
+	},
+	encointer_communities: EncointerCommunitiesConfig {
+		community_master: root_key,
+	},
 }
