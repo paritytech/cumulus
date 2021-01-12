@@ -123,6 +123,31 @@ pub fn staging_test_net(id: ParaId) -> ChainSpec {
 	)
 }
 
+pub fn rococo_test_net(id: ParaId) -> ChainSpec {
+	ChainSpec::from_genesis(
+		"Encointer Rococo",
+		"encointer-rococo-v1",
+		ChainType::Live,
+		move || {
+			testnet_genesis(
+				hex!["107f9c5385955bc57ac108b46b36498c4a8348eb964258b9b2ac53797d94794b"].into(),
+				vec![
+					hex!["107f9c5385955bc57ac108b46b36498c4a8348eb964258b9b2ac53797d94794b"].into(),
+				],
+				id,
+			)
+		},
+		Vec::new(),
+		None,
+		None,
+		None,
+		Extensions {
+			relay_chain: "rococo".into(),
+			para_id: id.into(),
+		},
+	)
+}
+
 fn testnet_genesis(
 	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
@@ -142,16 +167,16 @@ fn testnet_genesis(
 				.map(|k| (k, 1 << 60))
 				.collect(),
 		}),
-		pallet_sudo: Some(parachain_runtime::SudoConfig { key: root_key }),
+		pallet_sudo: Some(parachain_runtime::SudoConfig { key: root_key.clone() }),
 		parachain_info: Some(parachain_runtime::ParachainInfoConfig { parachain_id: id }),
 	    encointer_scheduler: Some(EncointerSchedulerConfig {
             current_phase: CeremonyPhaseType::REGISTERING,
 			current_ceremony_index: 1,
-			ceremony_master: get_account_id_from_seed::<sr25519::Public>("Alice"),
+			ceremony_master: root_key.clone(),
 			phase_durations: vec![
-                (CeremonyPhaseType::REGISTERING, 57600000),
-                (CeremonyPhaseType::ASSIGNING, 28800000),
-                (CeremonyPhaseType::ATTESTING, 172800000),
+                (CeremonyPhaseType::REGISTERING, 600_000),
+                (CeremonyPhaseType::ASSIGNING, 600_000),
+                (CeremonyPhaseType::ATTESTING, 600_000),
             ],
 		}),
 		encointer_ceremonies: Some(EncointerCeremoniesConfig {
@@ -160,7 +185,7 @@ fn testnet_genesis(
 			location_tolerance: 1_000, // [m] 
 		}),
 		encointer_currencies: Some(EncointerCurrenciesConfig {
-            currency_master: get_account_id_from_seed::<sr25519::Public>("Alice"),
+            currency_master: root_key,
         }),
 	}
 }
