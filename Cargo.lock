@@ -128,6 +128,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "arc-swap"
+version = "0.4.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dabe5a181f83789739c194cbe5a897dde195078fac08568d09221fd6137a7ba8"
+
+[[package]]
 name = "arrayref"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1250,56 +1256,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-test-parachain-runtime"
-version = "0.1.0"
-dependencies = [
- "cumulus-message-broker",
- "cumulus-parachain-upgrade",
- "cumulus-primitives",
- "cumulus-runtime",
- "frame-executive",
- "frame-support",
- "frame-system",
- "pallet-balances",
- "pallet-randomness-collective-flip",
- "pallet-sudo",
- "pallet-timestamp",
- "pallet-transaction-payment",
- "parachain-info",
- "parity-scale-codec",
- "polkadot-parachain",
- "rococo-parachain-primitives",
- "serde",
- "sp-api",
- "sp-block-builder",
- "sp-core",
- "sp-inherents",
- "sp-io",
- "sp-offchain",
- "sp-runtime",
- "sp-session",
- "sp-std",
- "sp-transaction-pool",
- "sp-version",
- "substrate-wasm-builder 3.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "xcm",
- "xcm-builder",
- "xcm-executor",
- "xcm-handler",
-]
-
-[[package]]
-name = "cumulus-test-relay-sproof-builder"
-version = "0.1.0"
-dependencies = [
- "cumulus-primitives",
- "parity-scale-codec",
- "polkadot-primitives",
- "sp-runtime",
- "sp-state-machine",
-]
-
-[[package]]
 name = "cumulus-test-runtime"
 version = "0.1.0"
 dependencies = [
@@ -1564,6 +1520,109 @@ name = "either"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
+
+[[package]]
+name = "encointer-collator"
+version = "0.1.0"
+dependencies = [
+ "assert_cmd",
+ "cumulus-collator",
+ "cumulus-consensus",
+ "cumulus-network",
+ "cumulus-primitives",
+ "cumulus-service",
+ "derive_more 0.15.0",
+ "encointer-parachain-runtime",
+ "exit-future 0.1.4",
+ "futures 0.3.9",
+ "hex-literal 0.2.1",
+ "jsonrpc-core",
+ "log",
+ "nix 0.17.0",
+ "pallet-sudo",
+ "parity-scale-codec",
+ "parking_lot 0.9.0",
+ "polkadot-cli",
+ "polkadot-parachain",
+ "polkadot-primitives",
+ "polkadot-runtime-common",
+ "polkadot-service",
+ "polkadot-test-client",
+ "polkadot-test-runtime",
+ "polkadot-test-service",
+ "rand 0.7.3",
+ "rococo-parachain-primitives",
+ "sc-basic-authorship",
+ "sc-chain-spec",
+ "sc-cli",
+ "sc-client-api",
+ "sc-consensus",
+ "sc-executor",
+ "sc-finality-grandpa",
+ "sc-network",
+ "sc-rpc",
+ "sc-service",
+ "sc-tracing",
+ "sc-transaction-pool",
+ "serde",
+ "sp-block-builder",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-timestamp",
+ "sp-transaction-pool",
+ "sp-trie",
+ "structopt",
+ "substrate-build-script-utils",
+ "substrate-test-client",
+ "substrate-test-runtime-client",
+ "tokio 0.2.24",
+ "trie-root 0.15.2",
+]
+
+[[package]]
+name = "encointer-parachain-runtime"
+version = "0.1.0"
+dependencies = [
+ "cumulus-message-broker",
+ "cumulus-parachain-upgrade",
+ "cumulus-primitives",
+ "cumulus-runtime",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-randomness-collective-flip",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-transaction-payment",
+ "parachain-info",
+ "parity-scale-codec",
+ "polkadot-parachain",
+ "rococo-parachain-primitives",
+ "serde",
+ "sp-api",
+ "sp-block-builder",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-std",
+ "sp-transaction-pool",
+ "sp-version",
+ "substrate-wasm-builder 3.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
+ "xcm-handler",
+]
 
 [[package]]
 name = "enum_primitive"
@@ -6730,7 +6789,7 @@ dependencies = [
  "cumulus-test-parachain-runtime",
  "derive_more 0.15.0",
  "exit-future 0.1.4",
- "futures 0.3.12",
+ "futures 0.3.9",
  "hex-literal 0.2.1",
  "jsonrpc-core",
  "log",
@@ -6758,7 +6817,6 @@ dependencies = [
  "sc-network",
  "sc-rpc",
  "sc-service",
- "sc-telemetry",
  "sc-tracing",
  "sc-transaction-pool",
  "serde",
