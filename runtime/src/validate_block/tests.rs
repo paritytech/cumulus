@@ -53,7 +53,6 @@ fn call_validate_block(
 		relay_storage_root,
 		hrmp_mqc_heads: Vec::new(),
 		dmq_mqc_head: Default::default(),
-		relay_storage_root: Default::default(),
 	}
 	.encode();
 
