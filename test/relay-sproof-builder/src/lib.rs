@@ -19,6 +19,7 @@ use sp_state_machine::MemoryDB;
 use cumulus_primitives::relay_chain;
 
 /// Builds a sproof (portmanteau of 'spoof' and 'proof') of the relay chain state.
+#[derive(Clone)]
 pub struct RelayStateSproofBuilder {
 	pub host_config: cumulus_primitives::AbridgedHostConfiguration,
 }

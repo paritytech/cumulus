@@ -750,7 +750,9 @@ mod tests {
 			_: RecordProof,
 		) -> Self::Proposal {
 			let block_id = BlockId::Hash(self.header.hash());
-			let builder = self.client.init_block_builder_at(&block_id, None);
+			let builder = self
+				.client
+				.init_block_builder_at(&block_id, None, Default::default());
 
 			let (block, storage_changes, proof) =
 				builder.build().expect("Creates block").into_inner();
