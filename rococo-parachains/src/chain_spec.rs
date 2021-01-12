@@ -22,7 +22,9 @@ use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-
+use parachain_runtime::{CeremonyPhaseType, BalanceType,
+	EncointerCeremoniesConfig, EncointerCurrenciesConfig, EncointerSchedulerConfig,
+};
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<parachain_runtime::GenesisConfig, Extensions>;
 
@@ -142,5 +144,23 @@ fn testnet_genesis(
 		}),
 		pallet_sudo: Some(parachain_runtime::SudoConfig { key: root_key }),
 		parachain_info: Some(parachain_runtime::ParachainInfoConfig { parachain_id: id }),
+	    encointer_scheduler: Some(EncointerSchedulerConfig {
+            current_phase: CeremonyPhaseType::REGISTERING,
+			current_ceremony_index: 1,
+			ceremony_master: get_account_id_from_seed::<sr25519::Public>("Alice"),
+			phase_durations: vec![
+                (CeremonyPhaseType::REGISTERING, 57600000),
+                (CeremonyPhaseType::ASSIGNING, 28800000),
+                (CeremonyPhaseType::ATTESTING, 172800000),
+            ],
+		}),
+		encointer_ceremonies: Some(EncointerCeremoniesConfig {
+			ceremony_reward: BalanceType::from_num(1),
+			time_tolerance: 600_000, // +-10min
+			location_tolerance: 1_000, // [m] 
+		}),
+		encointer_currencies: Some(EncointerCurrenciesConfig {
+            currency_master: get_account_id_from_seed::<sr25519::Public>("Alice"),
+        }),
 	}
 }

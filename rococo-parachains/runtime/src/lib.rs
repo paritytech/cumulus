@@ -27,9 +27,10 @@ use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{BlakeTwo256, Block as BlockT, IdentityLookup},
+	traits::{BlakeTwo256, Block as BlockT, IdentityLookup, Verify},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
+	MultiSignature
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -49,6 +50,15 @@ pub use frame_support::{
 use frame_system::limits::{BlockLength, BlockWeights};
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
+pub use encointer_scheduler::Call as EncointerSchedulerCall;
+pub use encointer_ceremonies::Call as EncointerCeremoniesCall;
+pub use encointer_currencies::Call as EncointerCurrenciesCall;
+pub use encointer_balances::Call as EncointerBalancesCall;
+pub use encointer_bazaar::Call as EncointerBazaarCall;
+
+pub use encointer_scheduler::CeremonyPhaseType;
+pub use encointer_balances::{BalanceType, BalanceEntry};
+
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -93,6 +103,10 @@ pub const EPOCH_DURATION_IN_BLOCKS: u32 = 10 * MINUTES;
 pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
+
+/// A type to hold UTC unix epoch [ms]
+pub type Moment = u64;
+pub const ONE_DAY: Moment = 86_400_000;
 
 // 1 in 4 blocks (on average, not counting collisions) will be primary babe blocks.
 pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
@@ -294,6 +308,34 @@ impl xcm_handler::Config for Runtime {
 	type HrmpMessageSender = MessageBroker;
 }
 
+parameter_types! {
+	pub const MomentsPerDay: Moment = 86_400_000; // [ms/d]
+}
+impl encointer_scheduler::Config for Runtime {
+	type Event = Event;
+	type OnCeremonyPhaseChange = encointer_ceremonies::Module<Runtime>;
+	type MomentsPerDay = MomentsPerDay;
+}
+
+impl encointer_ceremonies::Config for Runtime {
+	type Event = Event;
+	type Public = <MultiSignature as Verify>::Signer;
+	type Signature = MultiSignature;
+}
+
+impl encointer_currencies::Config for Runtime {
+	type Event = Event;
+}
+
+impl encointer_balances::Config for Runtime {
+	type Event = Event; 
+}
+
+impl encointer_bazaar::Config for Runtime {
+	type Event = Event; 
+}
+
+
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
@@ -310,6 +352,11 @@ construct_runtime! {
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		ParachainInfo: parachain_info::{Module, Storage, Config},
 		XcmHandler: xcm_handler::{Module, Event<T>, Origin},
+		EncointerScheduler: encointer_scheduler::{Module, Call, Storage, Config<T>, Event},
+		EncointerCeremonies: encointer_ceremonies::{Module, Call, Storage, Config<T>, Event<T>},
+		EncointerCurrencies: encointer_currencies::{Module, Call, Storage, Config<T>, Event<T>},
+		EncointerBalances: encointer_balances::{Module, Call, Storage, Event<T>},	
+		EncointerBazaar: encointer_bazaar::{Module, Call, Storage, Event<T>},			
 	}
 }
 
