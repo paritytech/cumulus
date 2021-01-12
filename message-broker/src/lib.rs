@@ -252,9 +252,8 @@ decl_module! {
 
 				// If we reached here, then the channel has capacity to receive this message. However,
 				// it doesn't mean that we are sending it just yet.
-				OutboundHrmpMessages::insert(&recipient, pending);
 				if became_empty {
-				        OutboundHrmpMessages::remove(&recipient);
+					OutboundHrmpMessages::remove(&recipient);
 					prune_empty.push(recipient);
 				} else {
 					OutboundHrmpMessages::insert(&recipient, pending);
