@@ -209,7 +209,8 @@ where
 			.map_err(|e| {
 				error!(
 					target: "cumulus-collator",
-					"Cannot obtain the state backend for the relay-parent: {:?}",
+					"Cannot obtain the state of the relay chain at `{:?}`: {:?}",
+					relay_parent,
 					e,
 				)
 			})
@@ -238,7 +239,7 @@ where
 				)
 			})
 			.ok()?
-			.unwrap_or(vec![]);
+			.unwrap_or_default();
 
 		let mut relevant_keys = vec![];
 		relevant_keys.push(relay_well_known_keys::ACTIVE_CONFIG.to_vec());
@@ -259,7 +260,8 @@ where
 			.map_err(|e| {
 				error!(
 					target: "cumulus-collator",
-					"Failed to collect required relay chain state storage proof: {:?}",
+					"Failed to collect required relay chain state storage proof at `{:?}`: {:?}",
+					relay_parent,
 					e,
 				)
 			})

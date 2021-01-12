@@ -250,7 +250,7 @@ decl_module! {
 
 				// If we reached here, then the channel has capacity to receive this message. However,
 				// it doesn't mean that we are sending it just yet.
-				<Self as Store>::OutboundHrmpMessages::insert(&recipient, pending);
+				OutboundHrmpMessages::insert(&recipient, pending);
 				if became_empty {
 					prune_empty.push(recipient);
 				}

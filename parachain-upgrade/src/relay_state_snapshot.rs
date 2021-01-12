@@ -72,7 +72,7 @@ pub enum ReadEntryErr {
 /// to the proof is empty, the `fallback` value will be returned.
 ///
 /// Returns `Err` in case the backend can't return the value under the specific key (likely due to
-/// a misformed proof), in case the decoding fails, or in case where the value is empty in the relay
+/// a malformed proof), in case the decoding fails, or in case where the value is empty in the relay
 /// chain state and no fallback was provided.
 fn read_entry<T, B>(backend: &B, key: &[u8], fallback: Option<T>) -> Result<T, ReadEntryErr>
 where
