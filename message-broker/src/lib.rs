@@ -161,8 +161,10 @@ decl_module! {
 		}
 
 		fn on_finalize() {
-			let host_config = <cumulus_parachain_upgrade::Module<T>>::host_configuration().unwrap();
-			let relevant_messaging_state = <cumulus_parachain_upgrade::Module<T>>::relevant_messaging_state().unwrap();
+			let host_config = <cumulus_parachain_upgrade::Module<T>>::host_configuration()
+				.expect("host configuration is promised to set until `on_finalize`; qed");
+			let relevant_messaging_state = <cumulus_parachain_upgrade::Module<T>>::relevant_messaging_state()
+				.expect("relevant messaging state is promised to be set until `on_finalize`; qed");
 
 			<Self as Store>::PendingUpwardMessages::mutate(|up| {
 				let (count, size) = relevant_messaging_state.relay_dispatch_queue_size;
@@ -313,10 +315,36 @@ pub enum SendHorizontalErr {
 
 impl<T: Config> Module<T> {
 	pub fn send_upward_message(message: UpwardMessage) -> Result<(), SendUpErr> {
-		let host_config = <cumulus_parachain_upgrade::Module<T>>::host_configuration().unwrap();
-		if message.len() > host_config.max_upward_message_size as usize {
-			return Err(SendUpErr::TooBig)
-		}
+		// Check if the message fits into the relay-chain constraints.
+		//
+		// Note, that we are using `host_configuration` here which may be from the previous
+		// block, in case this is called from `on_initialize`, i.e. before the inherent with fresh
+		// data is submitted.
+		//
+		// That shouldn't be a problem since this is a preliminary check and the actual check would
+		// be performed just before submitting the message from the candidate, and it already can
+		// happen that during the time the message is buffered for sending the relay-chain setting
+		// may change so that the message is no longer valid.
+		//
+		// However, changing this setting is expected to be rare.
+		match <cumulus_parachain_upgrade::Module<T>>::host_configuration() {
+			Some(cfg) => {
+				if message.len() > cfg.max_upward_message_size as usize {
+					return Err(SendUpErr::TooBig)
+				}
+			},
+			None => {
+				// This storage field should carry over from the previous block. So if it's None
+				// then it must be that this is an edge-case where a message is attempted to be
+				// sent at the first block.
+				//
+				// Let's pass this message through. I think it's not unreasonable to expect that the
+				// message is not huge and it comes through, but if it doesn't it can be returned
+				// back to the sender.
+				//
+				// Thus fall through here.
+			}
+		};
 		<Self as Store>::PendingUpwardMessages::append(message);
 		Ok(())
 	}
