@@ -1,12 +1,12 @@
 [package]
-name = 'rococo-collator'
+name = 'encointer-collator'
 version = '0.1.0'
 authors = ["Parity Technologies <admin@parity.io>"]
 build = 'build.rs'
 edition = '2018'
 
 [[bin]]
-name = 'rococo-collator'
+name = 'encointer-collator'
 path = 'src/main.rs'
 
 [dependencies]
@@ -22,7 +22,7 @@ serde = { version = "1.0.101", features = ["derive"] }
 hex-literal = "0.2.1"
 
 # Parachain dependencies
-parachain-runtime = { package = "cumulus-test-parachain-runtime", path = "runtime" }
+parachain-runtime = { package = "encointer-parachain-runtime", path = "runtime" }
 rococo-parachain-primitives = { path = "primitives" }
 
 # Substrate dependencies
