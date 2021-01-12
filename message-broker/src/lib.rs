@@ -252,7 +252,10 @@ decl_module! {
 				// it doesn't mean that we are sending it just yet.
 				OutboundHrmpMessages::insert(&recipient, pending);
 				if became_empty {
+				        OutboundHrmpMessages::remove(&recipient);
 					prune_empty.push(recipient);
+				} else {
+					OutboundHrmpMessages::insert(&recipient, pending);
 				}
 
 				if message_payload.len() as u32 > channel_meta.max_message_size {
