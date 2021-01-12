@@ -96,7 +96,7 @@ fn build_block_with_witness(
 	parent_head: Header,
 ) -> TestBlockData {
 	let sproof_builder = RelayStateSproofBuilder::default();
-	let (relay_storage_root, _) = (&sproof_builder).clone().into_state_root_and_proof();
+	let (relay_storage_root, _) = sproof_builder.clone().into_state_root_and_proof();
 	let block_id = BlockId::Hash(client.info().best_hash);
 	let mut builder = client.init_block_builder_at(
 		&block_id,
