@@ -20,6 +20,7 @@ codec = { package = 'parity-scale-codec', version = '1.0.0' }
 structopt = "0.3.3"
 serde = { version = "1.0.101", features = ["derive"] }
 hex-literal = "0.2.1"
+serde_json = "1.0.41"
 
 # Parachain dependencies
 parachain-runtime = { package = "encointer-parachain-runtime", path = "runtime" }
