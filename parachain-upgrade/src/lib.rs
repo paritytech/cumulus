@@ -106,6 +106,17 @@ decl_module! {
 		#[weight = (0, DispatchClass::Operational)]
 		pub fn schedule_upgrade(origin, validation_function: Vec<u8>) {
 			ensure_root(origin)?;
+			<frame_system::Module<T>>::can_set_code(&validation_function)?;
+			Self::schedule_upgrade_impl(validation_function)?;
+		}
+
+		/// Schedule a validation function upgrade without further checks.
+		///
+		/// Same as [`Module::schedule_upgrade`], but without checking that the new `validation_function`
+		/// is correct. This makes it more flexible, but also opens the door to easily brick the chain.
+		#[weight = (0, DispatchClass::Operational)]
+		pub fn schedule_upgrade_without_checks(origin, validation_function: Vec<u8>) {
+			ensure_root(origin)?;
 			Self::schedule_upgrade_impl(validation_function)?;
 		}
 
