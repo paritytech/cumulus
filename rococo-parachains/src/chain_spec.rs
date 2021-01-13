@@ -124,6 +124,7 @@ pub fn staging_test_net(id: ParaId) -> ChainSpec {
 }
 
 pub fn rococo_test_net(id: ParaId) -> ChainSpec {
+
 	ChainSpec::from_genesis(
 		"Encointer Rococo",
 		"encointer-rococo-v1",
@@ -138,9 +139,17 @@ pub fn rococo_test_net(id: ParaId) -> ChainSpec {
 			)
 		},
 		Vec::new(),
-		None,
-		None,
-		None,
+		// telemetry endpoints
+		None, 
+		// protocol id
+		Some("encointer-rococo-v1"),
+		// properties
+		Some(serde_json::from_str(
+		r#"{
+			"ss58Format": 42,
+			"tokenDecimals": 12,
+			"tokenSymbol": "ERT"
+		  }"#).unwrap()),
 		Extensions {
 			relay_chain: "rococo".into(),
 			para_id: id.into(),
