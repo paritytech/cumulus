@@ -33,6 +33,7 @@ sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "rococo
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+cumulus-test-relay-sproof-builder = { path = "../test/relay-sproof-builder" }
 cumulus-test-client = { path = "../test/client" }
 env_logger = "0.7.1"
 
