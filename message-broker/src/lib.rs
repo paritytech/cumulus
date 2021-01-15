@@ -38,7 +38,7 @@ use cumulus_primitives::{
 };
 
 /// Configuration trait of the message broker pallet.
-pub trait Config: frame_system::Config + cumulus_parachain_upgrade::Config {
+pub trait Config: frame_system::Config + cumulus_parachain_system::Config {
 	/// The downward message handlers that will be informed when a message is received.
 	type DownwardMessageHandlers: DownwardMessageHandler;
 	/// The HRMP message handlers that will be informed when a message is received.
@@ -146,7 +146,7 @@ decl_module! {
 			// greater than the announced, we will miss opportunity to send a couple of messages.
 			weight += T::DbWeight::get().reads_writes(1, 1);
 			let hrmp_max_message_num_per_candidate =
-				<cumulus_parachain_upgrade::Module<T>>::host_configuration()
+				<cumulus_parachain_system::Module<T>>::host_configuration()
 					.map(|cfg| cfg.hrmp_max_message_num_per_candidate)
 					.unwrap_or(0);
 			AnnouncedHrmpMessagesPerCandidate::put(hrmp_max_message_num_per_candidate);
@@ -161,9 +161,9 @@ decl_module! {
 		}
 
 		fn on_finalize() {
-			let host_config = <cumulus_parachain_upgrade::Module<T>>::host_configuration()
+			let host_config = <cumulus_parachain_system::Module<T>>::host_configuration()
 				.expect("host configuration is promised to set until `on_finalize`; qed");
-			let relevant_messaging_state = <cumulus_parachain_upgrade::Module<T>>::relevant_messaging_state()
+			let relevant_messaging_state = <cumulus_parachain_system::Module<T>>::relevant_messaging_state()
 				.expect("relevant messaging state is promised to be set until `on_finalize`; qed");
 
 			<Self as Store>::PendingUpwardMessages::mutate(|up| {
@@ -326,7 +326,7 @@ impl<T: Config> Module<T> {
 		// may change so that the message is no longer valid.
 		//
 		// However, changing this setting is expected to be rare.
-		match <cumulus_parachain_upgrade::Module<T>>::host_configuration() {
+		match <cumulus_parachain_system::Module<T>>::host_configuration() {
 			Some(cfg) => {
 				if message.len() > cfg.max_upward_message_size as usize {
 					return Err(SendUpErr::TooBig)
@@ -366,7 +366,7 @@ impl<T: Config> Module<T> {
 		//
 		// Here it a similar case, with the difference that the realization that the channel is closed
 		// came the same block.
-		let relevant_messaging_state = match <cumulus_parachain_upgrade::Module<T>>::relevant_messaging_state() {
+		let relevant_messaging_state = match <cumulus_parachain_system::Module<T>>::relevant_messaging_state() {
 			Some(s) => s,
 			None => {
 				// This storage field should carry over from the previous block. So if it's None

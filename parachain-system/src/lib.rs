@@ -344,14 +344,14 @@ mod tests {
 		pub enum Origin for Test where system = frame_system {}
 	}
 
-	mod parachain_upgrade {
+	mod parachain_system {
 		pub use crate::Event;
 	}
 
 	impl_outer_event! {
 		pub enum TestEvent for Test {
 			frame_system<T>,
-			parachain_upgrade,
+			parachain_system,
 		}
 	}
 
@@ -644,7 +644,7 @@ mod tests {
 					let events = System::events();
 					assert_eq!(
 						events[0].event,
-						TestEvent::parachain_upgrade(Event::ValidationFunctionStored(1123))
+						TestEvent::parachain_system(Event::ValidationFunctionStored(1123))
 					);
 				},
 			)
@@ -655,7 +655,7 @@ mod tests {
 					let events = System::events();
 					assert_eq!(
 						events[0].event,
-						TestEvent::parachain_upgrade(Event::ValidationFunctionApplied(1234))
+						TestEvent::parachain_system(Event::ValidationFunctionApplied(1234))
 					);
 				},
 			);
