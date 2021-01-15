@@ -75,7 +75,7 @@ decl_module! {
 
 			let dm_count = downward_messages.len() as u32;
 			for downward_message in downward_messages {
-				T::DownwardMessageHandlers::handle_downward_message(downward_message);
+				<T as Config>::DownwardMessageHandlers::handle_downward_message(downward_message);
 			}
 
 			// Store the processed_downward_messages here so that it's will be accessible from
@@ -95,7 +95,7 @@ decl_module! {
 						hrmp_watermark = Some(horizontal_message.sent_at);
 					}
 
-					T::HrmpMessageHandlers::handle_hrmp_message(sender, horizontal_message);
+					<T as Config>::HrmpMessageHandlers::handle_hrmp_message(sender, horizontal_message);
 				}
 			}
 

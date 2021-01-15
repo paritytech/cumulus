@@ -233,6 +233,8 @@ impl cumulus_parachain_system::Config for Runtime {
 	type Event = Event;
 	type OnValidationData = ();
 	type SelfParaId = parachain_info::Module<Runtime>;
+	type DownwardMessageHandlers = ();
+	type HrmpMessageHandlers = ();
 }
 
 impl cumulus_message_broker::Config for Runtime {
