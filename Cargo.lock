@@ -1092,19 +1092,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-message-broker"
-version = "0.1.0"
-dependencies = [
- "cumulus-parachain-system",
- "cumulus-primitives",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "sp-inherents",
- "sp-std",
-]
-
-[[package]]
 name = "cumulus-network"
 version = "0.1.0"
 dependencies = [
@@ -1259,7 +1246,6 @@ dependencies = [
 name = "cumulus-test-parachain-runtime"
 version = "0.1.0"
 dependencies = [
- "cumulus-message-broker",
  "cumulus-parachain-system",
  "cumulus-primitives",
  "cumulus-runtime",

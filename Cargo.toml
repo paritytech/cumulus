@@ -1,7 +1,6 @@
 [workspace]
 members = [
 	"consensus",
-	"message-broker",
 	"network",
 	"parachain-system",
 	"primitives",

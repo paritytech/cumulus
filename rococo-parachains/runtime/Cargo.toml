@@ -37,7 +37,6 @@ pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", 
 cumulus-runtime = { path = "../../runtime", default-features = false }
 cumulus-parachain-system = { path = "../../parachain-system", default-features = false }
 cumulus-primitives = { path = "../../primitives", default-features = false }
-cumulus-message-broker = { path = "../../message-broker", default-features = false }
 xcm-handler = { path = "../../xcm-handler", default-features = false }
 
 # Polkadot dependencies
@@ -77,7 +76,6 @@ std = [
 	"rococo-parachain-primitives/std",
 	"cumulus-runtime/std",
 	"cumulus-parachain-system/std",
-	"cumulus-message-broker/std",
 	"cumulus-primitives/std",
 	"xcm/std",
 	"xcm-builder/std",

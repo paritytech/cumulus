@@ -67,7 +67,7 @@ pub trait Config: frame_system::Config {
 
 // This pallet's storage items.
 decl_storage! {
-	trait Store for Module<T: Config> as ParachainUpgrade {
+	trait Store for Module<T: Config> as ParachainSystem {
 		// we need to store the new validation function for the span between
 		// setting it and applying it.
 		PendingValidationFunction get(fn new_validation_function):
@@ -755,7 +755,7 @@ mod tests {
 		type HrmpMessageHandlers = ();
 	}
 
-	type ParachainUpgrade = Module<Test>;
+	type ParachainSystem = Module<Test>;
 	type System = frame_system::Module<Test>;
 
 	// This function basically just builds a genesis storage key/value store according to
@@ -919,13 +919,13 @@ mod tests {
 					};
 
 					// execute the block
-					ParachainUpgrade::on_initialize(*n);
-					ParachainUpgrade::create_inherent(&inherent_data)
+					ParachainSystem::on_initialize(*n);
+					ParachainSystem::create_inherent(&inherent_data)
 						.expect("got an inherent")
 						.dispatch_bypass_filter(RawOrigin::None.into())
 						.expect("dispatch succeeded");
 					within_block();
-					ParachainUpgrade::on_finalize(*n);
+					ParachainSystem::on_finalize(*n);
 
 					// did block execution set new validation code?
 					if storage::unhashed::exists(NEW_VALIDATION_CODE) {
@@ -964,7 +964,7 @@ mod tests {
 	fn requires_root() {
 		BlockTests::new().add(123, || {
 			assert_eq!(
-				ParachainUpgrade::schedule_upgrade(Origin::signed(1), Default::default()),
+				ParachainSystem::schedule_upgrade(Origin::signed(1), Default::default()),
 				Err(sp_runtime::DispatchError::BadOrigin),
 			);
 		});
@@ -973,7 +973,7 @@ mod tests {
 	#[test]
 	fn requires_root_2() {
 		BlockTests::new().add(123, || {
-			assert_ok!(ParachainUpgrade::schedule_upgrade(
+			assert_ok!(ParachainSystem::schedule_upgrade(
 				RawOrigin::Root.into(),
 				Default::default()
 			));
@@ -989,7 +989,7 @@ mod tests {
 			.add_with_post_test(
 				123,
 				|| {
-					assert_ok!(ParachainUpgrade::schedule_upgrade(
+					assert_ok!(ParachainSystem::schedule_upgrade(
 						RawOrigin::Root.into(),
 						Default::default()
 					));
@@ -1022,14 +1022,14 @@ mod tests {
 				builder.host_config.validation_upgrade_delay = 1000;
 			})
 			.add(123, || {
-				assert_ok!(ParachainUpgrade::schedule_upgrade(
+				assert_ok!(ParachainSystem::schedule_upgrade(
 					RawOrigin::Root.into(),
 					Default::default()
 				));
 			})
 			.add(234, || {
 				assert_eq!(
-					ParachainUpgrade::schedule_upgrade(RawOrigin::Root.into(), Default::default()),
+					ParachainSystem::schedule_upgrade(RawOrigin::Root.into(), Default::default()),
 					Err(Error::<Test>::OverlappingUpgrades.into()),
 				)
 			});
@@ -1043,7 +1043,7 @@ mod tests {
 					!PendingValidationFunction::exists(),
 					"validation function must not exist yet"
 				);
-				assert_ok!(ParachainUpgrade::schedule_upgrade(
+				assert_ok!(ParachainSystem::schedule_upgrade(
 					RawOrigin::Root.into(),
 					Default::default()
 				));
@@ -1072,7 +1072,7 @@ mod tests {
 			})
 			.add(123, || {
 				assert_eq!(
-					ParachainUpgrade::schedule_upgrade(RawOrigin::Root.into(), vec![0; 64]),
+					ParachainSystem::schedule_upgrade(RawOrigin::Root.into(), vec![0; 64]),
 					Err(Error::<Test>::TooBig.into()),
 				);
 			});
