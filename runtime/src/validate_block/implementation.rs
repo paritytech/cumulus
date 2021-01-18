@@ -84,9 +84,10 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	// Uncompress
 	let mut db = MemoryDB::default();
 	// TODO useless proof copy, 'decode_compact' should use iterator as parameter.
+	// see https://github.com/paritytech/trie/pull/121
 	let mut input = Vec::new();
 	input.extend(block_data.storage_proof.iter_nodes());
-	let (read_root, _used) = trie_db::decode_compact::<sp_trie::Layout<HashFor<B>>, _, _>(
+	let (read_root, nb_used) = trie_db::decode_compact::<sp_trie::Layout<HashFor<B>>, _, _>(
 		&mut db,
 		input.as_slice(),
 	).expect("Proof is not properly compacted.");
@@ -97,9 +98,58 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 		panic!("Mismatch root between header and compacted proof");
 	}
 
+	let mut child_tries = Vec::new();
+	{
+		// fetch child trie roots
+		let trie = sp_trie::TrieDB::<sp_trie::Layout<HashFor<B>>>::new(&db, &read_root)
+			.expect("Invalid trie proof.");
+		use trie_db::Trie;
+		let mut iter = trie.iter()
+			.expect("Invalid trie proof.");
+		// Should be DEFAULT_CHILD_STORAGE_KEY_PREFIX, but at the time we only got the default child trie
+		// type.
+		let childtrie_roots = sp_core::storage::well_known_keys::CHILD_STORAGE_KEY_PREFIX;
+		if iter.seek(childtrie_roots).is_ok() {
+			loop {
+				match iter.next() {
+					Some(Ok((key, value))) if key.starts_with(childtrie_roots) => {
+						let root: B::Hash = Decode::decode(&mut value.as_slice())
+							.expect("Valid child trie root in proof");
+						child_tries.push(root);
+					},
+					// allow incomplete database error: we only
+					// require access to data in the proof.
+					Some(Err(error)) => match *error {
+						trie_db::TrieError::IncompleteDatabase(..) => (),
+						e => panic!("{:?}", e),
+					},
+					_ => break,
+				}
+			}
+		}
+	}
 	if !HashDB::<HashFor<B>, _>::contains(&db, &root, EMPTY_PREFIX) {
 		panic!("Witness data does not contain given storage root.");
 	}
+
+	let mut nb_used = nb_used;
+	for child_root in child_tries.into_iter() {
+		let (read_root, used) = trie_db::decode_compact::<sp_trie::Layout<HashFor<B>>, _, _>(
+			&mut db,
+			&input[nb_used..],
+		).expect("Proof is not properly compacted.");
+
+		if child_root != read_root {
+			panic!("Mismatch root between child root in proof and compacted proof");
+		}
+
+		nb_used += used;
+	}
+
+	if nb_used != input.len() {
+		panic!("Unused nodes in proof");
+	}
+
 	let backend = sp_state_machine::TrieBackend::new(db, root);
 	let mut overlay = sp_state_machine::OverlayedChanges::default();
 	let mut cache = Default::default();
