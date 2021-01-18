@@ -16,16 +16,14 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-//! Enable Parachain validation function upgrades.
+//! parachain-system is a base module for cumulus-based parachains.
 //!
-//! Allow a user to determine when a parachain validation function upgrade
-//! is legal, and perform the upgrade, triggering runtime events
-//! for both storing and applying the new validation function.
+//! This module handles low-level details of being a parachain. It's responsibilities include:
 //!
-//! Depends on no external pallets or traits.
-//!
-//! This pallet depends on certain environmental conditions provided by
-//! Cumulus. It will not work outside a Cumulus Parachain.
+//! - ingestion of the parachain validation data
+//! - ingestion of incoming downward and lateral messages and dispatching them
+//! - coordinating upgrades with the relay-chain
+//! - communication of parachain outputs, such as sent messages, signalling an upgrade, etc.
 //!
 //! Users must ensure that they register this pallet as an inherent provider.
 
@@ -1076,5 +1074,10 @@ mod tests {
 					Err(Error::<Test>::TooBig.into()),
 				);
 			});
+	}
+
+	#[test]
+	fn message_sending() {
+
 	}
 }
