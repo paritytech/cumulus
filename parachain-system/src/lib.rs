@@ -258,9 +258,15 @@ decl_module! {
 					.iter()
 					.scan(
 						(available_capacity as usize, available_size as usize),
-						|(cnt, size), msg| match (cnt.checked_sub(1), size.checked_sub(msg.len())) {
-							(Some(cnt), Some(size)) => Some((cnt, size)),
-							_ => None,
+						|state, msg| {
+							let (cap_left, size_left) = *state;
+							match (cap_left.checked_sub(1), size_left.checked_sub(msg.len())) {
+								(Some(new_cap), Some(new_size)) => {
+									*state = (new_cap, new_size);
+									Some(())
+								}
+								_ => None,
+							}
 						},
 					)
 					.count();
@@ -510,12 +516,14 @@ impl<T: Config> Module<T> {
 
 
 /// An error that can be raised upon sending an upward message.
+#[derive(Debug, PartialEq)]
 pub enum SendUpErr {
 	/// The message sent is too big.
 	TooBig,
 }
 
 /// An error that can be raised upon sending a horizontal message.
+#[derive(Debug, PartialEq)]
 pub enum SendHorizontalErr {
 	/// The message sent is too big.
 	TooBig,
@@ -1077,7 +1085,69 @@ mod tests {
 	}
 
 	#[test]
-	fn message_sending() {
+	fn send_upward_message_num_per_candidate() {
+		BlockTests::new()
+			.with_relay_sproof_builder(|_, _, sproof| {
+				sproof.host_config.max_upward_message_num_per_candidate = 1;
+				sproof.relay_dispatch_queue_size = None;
+			})
+			.add_with_post_test(1,
+				|| {
+					ParachainSystem::send_upward_message(b"Mr F was here".to_vec()).unwrap();
+					ParachainSystem::send_upward_message(b"message 2".to_vec()).unwrap();
+				},
+				|| {
+					let v: Option<Vec<Vec<u8>>> = storage::unhashed::get(well_known_keys::UPWARD_MESSAGES);
+					assert_eq!(
+						v,
+						Some(vec![b"Mr F was here".to_vec()]),
+					);
+				})
+			.add_with_post_test(2,
+				|| { /* do nothing within block */ },
+			    || {
+					let v: Option<Vec<Vec<u8>>> = storage::unhashed::get(well_known_keys::UPWARD_MESSAGES);
+					assert_eq!(
+						v,
+						Some(vec![b"message 2".to_vec()]),
+					);
+				});
+	}
 
+	#[test]
+	fn send_upward_message_relay_bottleneck() {
+		BlockTests::new()
+			.with_relay_sproof_builder(|_, relay_block_num, sproof| {
+				sproof.host_config.max_upward_message_num_per_candidate = 2;
+				sproof.host_config.max_upward_queue_count = 5;
+
+				match relay_block_num {
+					1 => sproof.relay_dispatch_queue_size = Some((5, 0)),
+					2 => sproof.relay_dispatch_queue_size = Some((4, 0)),
+					_ => unreachable!(),
+				}
+
+			})
+			.add_with_post_test(1,
+				|| {
+					ParachainSystem::send_upward_message(vec![0u8; 8]).unwrap();
+				},
+				|| {
+					// The message won't be sent because there is already one message in queue.
+					let v: Option<Vec<Vec<u8>>> = storage::unhashed::get(well_known_keys::UPWARD_MESSAGES);
+					assert_eq!(
+						v,
+						Some(vec![]),
+					);
+				})
+			.add_with_post_test(2,
+				|| { /* do nothing within block */ },
+			    || {
+					let v: Option<Vec<Vec<u8>>> = storage::unhashed::get(well_known_keys::UPWARD_MESSAGES);
+					assert_eq!(
+						v,
+						Some(vec![vec![0u8; 8]]),
+					);
+				});
 	}
 }

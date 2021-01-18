@@ -16,17 +16,20 @@
 
 use sp_runtime::traits::HashFor;
 use sp_state_machine::MemoryDB;
-use cumulus_primitives::relay_chain;
+use cumulus_primitives::{ParaId, relay_chain};
 
 /// Builds a sproof (portmanteau of 'spoof' and 'proof') of the relay chain state.
 #[derive(Clone)]
 pub struct RelayStateSproofBuilder {
+	pub para_id: ParaId,
 	pub host_config: cumulus_primitives::AbridgedHostConfiguration,
+	pub relay_dispatch_queue_size: Option<(u32, u32)>,
 }
 
 impl Default for RelayStateSproofBuilder {
 	fn default() -> Self {
 		RelayStateSproofBuilder {
+			para_id: ParaId::from(200),
 			host_config: cumulus_primitives::AbridgedHostConfiguration {
 				max_code_size: 2 * 1024 * 1024,
 				max_head_data_size: 1024 * 1024,
@@ -38,6 +41,7 @@ impl Default for RelayStateSproofBuilder {
 				validation_upgrade_frequency: 6,
 				validation_upgrade_delay: 6,
 			},
+			relay_dispatch_queue_size: None,
 		}
 	}
 }
@@ -65,6 +69,12 @@ impl RelayStateSproofBuilder {
 				relay_chain::well_known_keys::ACTIVE_CONFIG.to_vec(),
 				self.host_config.encode(),
 			);
+			if let Some(relay_dispatch_queue_size) = self.relay_dispatch_queue_size {
+				insert(
+					relay_chain::well_known_keys::relay_dispatch_queue_size(self.para_id),
+					relay_dispatch_queue_size.encode(),
+				);
+			}
 		}
 
 		let root = backend.root().clone();
