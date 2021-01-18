@@ -294,12 +294,21 @@ decl_module! {
 			let outbound_hrmp_num =
 				non_empty_hrmp_channels.len()
 					.min(host_config.hrmp_max_message_num_per_candidate as usize)
-					.min(AnnouncedHrmpMessagesPerCandidate::get() as usize);
+					.min(AnnouncedHrmpMessagesPerCandidate::take() as usize);
 
 			let mut outbound_hrmp_messages = Vec::with_capacity(outbound_hrmp_num);
 			let mut prune_empty = Vec::with_capacity(outbound_hrmp_num);
 
 			for &recipient in non_empty_hrmp_channels.iter() {
+				if outbound_hrmp_messages.len() == outbound_hrmp_num {
+					// We have picked the required number of messages for the batch, no reason to
+					// iterate further.
+					//
+					// We check this condition in the beginning of the loop so that we don't include
+					// a message where the limit is 0.
+					break;
+				}
+
 				let idx = match relevant_messaging_state
 					.egress_channels
 					.binary_search_by_key(&recipient, |(recipient, _)| *recipient)
@@ -370,6 +379,9 @@ decl_module! {
 			// To mitigate this we shift all processed elements towards the end of the vector using
 			// `rotate_left`. To get intution how it works see the examples in its rustdoc.
 			non_empty_hrmp_channels.retain(|x| !prune_empty.contains(x));
+			// `prune_empty.len()` is greater or equal to `outbound_hrmp_num` because the loop above
+			// can only do `outbound_hrmp_num` iterations and `prune_empty` is appended to only inside
+			// the loop body.
 			non_empty_hrmp_channels.rotate_left(outbound_hrmp_num - prune_empty.len());
 
 			<Self as Store>::NonEmptyHrmpChannels::put(non_empty_hrmp_channels);
@@ -680,7 +692,7 @@ mod tests {
 	use super::*;
 
 	use codec::Encode;
-	use cumulus_primitives::PersistedValidationData;
+	use cumulus_primitives::{AbridgedHrmpChannel, PersistedValidationData};
 	use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 	use frame_support::{
 		assert_ok,
@@ -689,6 +701,7 @@ mod tests {
 		traits::{OnFinalize, OnInitialize},
 	};
 	use frame_system::{InitKind, RawOrigin};
+	use relay_chain::v1::HrmpChannelId;
 	use sp_core::H256;
 	use sp_runtime::{
 		testing::Header,
@@ -1149,5 +1162,193 @@ mod tests {
 						Some(vec![vec![0u8; 8]]),
 					);
 				});
+	}
+
+	#[test]
+	fn send_hrmp_preliminary_no_channel() {
+		BlockTests::new()
+			.with_relay_sproof_builder(|_, _, sproof| {
+				sproof.para_id = ParaId::from(200);
+
+				// no channels established
+				sproof.hrmp_egress_channel_index = Some(vec![]);
+			})
+			.add(1, || {})
+			.add(2, || {
+				assert!(
+					ParachainSystem::send_hrmp_message(OutboundHrmpMessage {
+						recipient: ParaId::from(300),
+						data: b"derp".to_vec(),
+					})
+					.is_err()
+				);
+			});
+	}
+
+	#[test]
+	fn send_hrmp_message_simple() {
+		BlockTests::new()
+			.with_relay_sproof_builder(|_, _, sproof| {
+				sproof.para_id = ParaId::from(200);
+				sproof.hrmp_egress_channel_index = Some(vec![ParaId::from(300)]);
+				sproof.hrmp_channels.insert(
+					HrmpChannelId {
+						sender: ParaId::from(200),
+						recipient: ParaId::from(300),
+					},
+					AbridgedHrmpChannel {
+						max_capacity: 1,
+						max_total_size: 1024,
+						max_message_size: 8,
+						msg_count: 0,
+						total_size: 0,
+						mqc_head: Default::default(),
+					},
+				);
+			})
+			.add_with_post_test(
+				1,
+				|| {
+					ParachainSystem::send_hrmp_message(OutboundHrmpMessage {
+						recipient: ParaId::from(300),
+						data: b"derp".to_vec(),
+					})
+					.unwrap()
+				},
+				|| {
+					// there are no outbound messages since the special logic for handling the
+					// first block kicks in.
+					let v: Option<Vec<OutboundHrmpMessage>> =
+						storage::unhashed::get(well_known_keys::HRMP_OUTBOUND_MESSAGES);
+					assert_eq!(v, Some(vec![]));
+				},
+			)
+			.add_with_post_test(
+				2,
+				|| {},
+				|| {
+					let v: Option<Vec<OutboundHrmpMessage>> =
+						storage::unhashed::get(well_known_keys::HRMP_OUTBOUND_MESSAGES);
+					assert_eq!(
+						v,
+						Some(vec![OutboundHrmpMessage {
+							recipient: ParaId::from(300),
+							data: b"derp".to_vec(),
+						}])
+					);
+				},
+			);
+	}
+
+	#[test]
+	fn send_hrmp_message_buffer_channel_close() {
+		BlockTests::new()
+			.with_relay_sproof_builder(|_, relay_block_num, sproof| {
+				//
+				// Base case setup
+				//
+				sproof.para_id = ParaId::from(200);
+				sproof.hrmp_egress_channel_index = Some(vec![ParaId::from(300), ParaId::from(400)]);
+				sproof.hrmp_channels.insert(
+					HrmpChannelId {
+						sender: ParaId::from(200),
+						recipient: ParaId::from(300),
+					},
+					AbridgedHrmpChannel {
+						max_capacity: 1,
+						msg_count: 1, // <- 1/1 means the channel is full
+						max_total_size: 1024,
+						max_message_size: 8,
+						total_size: 0,
+						mqc_head: Default::default(),
+					},
+				);
+				sproof.hrmp_channels.insert(
+					HrmpChannelId {
+						sender: ParaId::from(200),
+						recipient: ParaId::from(400),
+					},
+					AbridgedHrmpChannel {
+						max_capacity: 1,
+						msg_count: 1,
+						max_total_size: 1024,
+						max_message_size: 8,
+						total_size: 0,
+						mqc_head: Default::default(),
+					},
+				);
+
+				//
+				// Adjustement according to block
+				//
+				match relay_block_num {
+					1 => {}
+					2 => {}
+					3 => {
+						// The channel 200->400 ceases to exist at the relay chain block 3
+						sproof
+							.hrmp_egress_channel_index
+							.as_mut()
+							.unwrap()
+							.retain(|n| n != &ParaId::from(400));
+						sproof.hrmp_channels.remove(&HrmpChannelId {
+							sender: ParaId::from(200),
+							recipient: ParaId::from(400),
+						});
+
+						// We also free up space for a message in the 200->300 channel.
+						sproof
+							.hrmp_channels
+							.get_mut(&HrmpChannelId {
+								sender: ParaId::from(200),
+								recipient: ParaId::from(300),
+							})
+							.unwrap()
+							.msg_count = 0;
+					}
+					_ => unreachable!(),
+				}
+			})
+			.add_with_post_test(
+				1,
+				|| {
+					ParachainSystem::send_hrmp_message(OutboundHrmpMessage {
+						recipient: ParaId::from(300),
+						data: b"1".to_vec(),
+					})
+					.unwrap();
+					ParachainSystem::send_hrmp_message(OutboundHrmpMessage {
+						recipient: ParaId::from(400),
+						data: b"2".to_vec(),
+					})
+					.unwrap()
+				},
+				|| {},
+			)
+			.add_with_post_test(
+				2,
+				|| {},
+				|| {
+					// both channels are at capacity so we do not expect any messages.
+					let v: Option<Vec<OutboundHrmpMessage>> =
+						storage::unhashed::get(well_known_keys::HRMP_OUTBOUND_MESSAGES);
+					assert_eq!(v, Some(vec![]));
+				},
+			)
+			.add_with_post_test(
+				3,
+				|| {},
+				|| {
+					let v: Option<Vec<OutboundHrmpMessage>> =
+						storage::unhashed::get(well_known_keys::HRMP_OUTBOUND_MESSAGES);
+					assert_eq!(
+						v,
+						Some(vec![OutboundHrmpMessage {
+							recipient: ParaId::from(300),
+							data: b"1".to_vec(),
+						}])
+					);
+				},
+			);
 	}
 }

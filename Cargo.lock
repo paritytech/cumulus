@@ -1289,6 +1289,7 @@ dependencies = [
  "polkadot-primitives",
  "sp-runtime",
  "sp-state-machine",
+ "sp-std",
 ]
 
 [[package]]
