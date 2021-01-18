@@ -476,6 +476,20 @@ where
 
 		let (header, extrinsics) = block.deconstruct();
 		let block_hash = header.hash();
+		// compact proof
+		// TODO this does not look very good StorageProof being compact
+		// without additional indication.
+		// Also may better to use RecordProof variant 'Compress' in
+		// substrate but keeping thing local to cumulus is also interesting
+		// to avoid exposing it.
+		let compact_proof = {
+			let partial_db = proof.into_memory_db();
+			let root = sp_core::H256::from_slice(last_head.state_root().as_ref());
+			let trie = <sp_trie::TrieDB<sp_trie::Layout<BlakeTwo256>>>::new(&partial_db, &root).unwrap();
+			trie_db::encode_compact::<sp_trie::Layout<BlakeTwo256>>(&trie).unwrap()
+		};
+
+		let proof = sp_state_machine::StorageProof::new(compact_proof);
 
 		// Create the parachain block data for the validators.
 		let b = ParachainBlockData::<Block>::new(header.clone(), extrinsics, proof);

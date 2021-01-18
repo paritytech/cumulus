@@ -81,8 +81,22 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 		"Invalid parent hash",
 	);
 
-	let db = block_data.storage_proof.into_memory_db();
+	// Uncompress
+	let mut db = MemoryDB::default();
+	// TODO useless proof copy, 'decode_compact' should use iterator as parameter.
+	let mut input = Vec::new();
+	input.extend(block_data.storage_proof.iter_nodes());
+	let (read_root, _used) = trie_db::decode_compact::<sp_trie::Layout<HashFor<B>>, _, _>(
+		&mut db,
+		input.as_slice(),
+	).expect("Proof is not properly compacted.");
+
 	let root = parent_head.state_root().clone();
+
+	if root != read_root {
+		panic!("Mismatch root between header and compacted proof");
+	}
+
 	if !HashDB::<HashFor<B>, _>::contains(&db, &root, EMPTY_PREFIX) {
 		panic!("Witness data does not contain given storage root.");
 	}
