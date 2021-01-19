@@ -130,6 +130,8 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 			.replace_implementation(host_default_child_storage_root),
 		sp_io::default_child_storage::host_next_key
 			.replace_implementation(host_default_child_storage_next_key),
+		sp_io::default_child_storage::host_set_offchain_storage
+			.replace_implementation(host_default_set_offchain_storage),
 	);
 
 	set_and_run_with_externalities(&mut ext, || {
