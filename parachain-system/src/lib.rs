@@ -29,18 +29,24 @@
 
 use cumulus_primitives::{
 	inherents::{SystemInherentData, SYSTEM_INHERENT_IDENTIFIER},
-	well_known_keys::{self, NEW_VALIDATION_CODE, VALIDATION_DATA}, AbridgedHostConfiguration, DownwardMessageHandler,
-	HrmpMessageHandler, HrmpMessageSender, UpwardMessageSender,
-	OnValidationData, OutboundHrmpMessage, UpwardMessage, PersistedValidationData, ParaId, relay_chain,
+	relay_chain,
+	well_known_keys::{self, NEW_VALIDATION_CODE, VALIDATION_DATA},
+	AbridgedHostConfiguration, DownwardMessageHandler, HrmpMessageHandler, HrmpMessageSender,
+	InboundDownwardMessage, InboundHrmpMessage, OnValidationData, OutboundHrmpMessage, ParaId,
+	PersistedValidationData, UpwardMessage, UpwardMessageSender,
 };
 use frame_support::{
-	decl_error, decl_event, decl_module, decl_storage, ensure, storage,
-	weights::{DispatchClass, Weight}, dispatch::DispatchResult, traits::Get,
+	decl_error, decl_event, decl_module, decl_storage,
+	dispatch::DispatchResult,
+	ensure, storage,
+	traits::Get,
+	weights::{DispatchClass, Weight},
 };
 use frame_system::{ensure_none, ensure_root};
 use parachain::primitives::RelayChainBlockNumber;
 use sp_inherents::{InherentData, InherentIdentifier, ProvideInherent};
-use sp_std::{vec::Vec, cmp};
+use sp_runtime::traits::{BlakeTwo256, Hash};
+use sp_std::{cmp, collections::btree_map::BTreeMap, vec::Vec};
 
 mod relay_state_snapshot;
 use relay_state_snapshot::MessagingStateSnapshot;
@@ -95,6 +101,19 @@ decl_storage! {
 		///
 		/// This data is also absent from the genesis.
 		HostConfiguration get(fn host_configuration): Option<AbridgedHostConfiguration>;
+
+		/// The last downward message queue chain head we have observed or all zeroes if we haven't observed
+		/// any.
+		///
+		/// This value is loaded before and saved after processing inbound downward messages carried
+		/// by the system inherent.
+		LastDmqMqcHead: relay_chain::Hash;
+		/// The message queue chain heads we have observed per each channel incoming channel. If the
+		/// value is missing it is treated as all zeores.
+		///
+		/// This value is loaded before and saved after processing inbound downward messages carried
+		/// by the system inherent.
+		LastHrmpMqcHeads: BTreeMap<ParaId, relay_chain::Hash>;
 
 		PendingUpwardMessages: Vec<UpwardMessage>;
 
@@ -183,41 +202,10 @@ decl_module! {
 			RelevantMessagingState::put(relevant_messaging_state);
 			HostConfiguration::put(host_config);
 
-			<T::OnValidationData as OnValidationData>::on_validation_data(vfp);
+			<T::OnValidationData as OnValidationData>::on_validation_data(vfp.clone());
 
-			let dm_count = downward_messages.len() as u32;
-			for downward_message in downward_messages {
-				T::DownwardMessageHandlers::handle_downward_message(downward_message);
-			}
-
-			// Store the processed_downward_messages here so that it's will be accessible from
-			// PVF's `validate_block` wrapper and collation pipeline.
-			storage::unhashed::put(
-				well_known_keys::PROCESSED_DOWNWARD_MESSAGES,
-				&dm_count,
-			);
-
-			let mut hrmp_watermark = None;
-			for (sender, channel_contents) in horizontal_messages {
-				for horizontal_message in channel_contents {
-					if hrmp_watermark
-						.map(|w| w < horizontal_message.sent_at)
-						.unwrap_or(true)
-					{
-						hrmp_watermark = Some(horizontal_message.sent_at);
-					}
-
-					T::HrmpMessageHandlers::handle_hrmp_message(sender, horizontal_message);
-				}
-			}
-
-			// If we processed at least one message, then advance watermark to that location.
-			if let Some(hrmp_watermark) = hrmp_watermark {
-				storage::unhashed::put(
-					well_known_keys::HRMP_WATERMARK,
-					&hrmp_watermark,
-				);
-			}
+			Self::process_inbound_downward_messages(&vfp, downward_messages)?;
+			Self::process_inbound_horizontal_messages(&vfp, horizontal_messages)?;
 
 			Ok(())
 		}
@@ -443,6 +431,98 @@ decl_module! {
 }
 
 impl<T: Config> Module<T> {
+	fn process_inbound_downward_messages(
+		vfp: &PersistedValidationData,
+		downward_messages: Vec<InboundDownwardMessage>,
+	) -> DispatchResult {
+		let mut running_mqc_head = LastDmqMqcHead::get();
+		let dm_count = downward_messages.len() as u32;
+		for downward_message in downward_messages {
+			running_mqc_head = BlakeTwo256::hash_of(&(
+				running_mqc_head,
+				downward_message.sent_at,
+				BlakeTwo256::hash_of(&downward_message.msg),
+			));
+			T::DownwardMessageHandlers::handle_downward_message(downward_message);
+		}
+		ensure!(running_mqc_head == vfp.dmq_mqc_head, Error::<T>::DmpMqcMismatch,);
+
+		LastDmqMqcHead::put(running_mqc_head);
+		// Store the processed_downward_messages here so that it's will be accessible from
+		// PVF's `validate_block` wrapper and collation pipeline.
+		storage::unhashed::put(well_known_keys::PROCESSED_DOWNWARD_MESSAGES, &dm_count);
+
+		Ok(())
+	}
+
+	fn process_inbound_horizontal_messages(
+		vfp: &PersistedValidationData,
+		horizontal_messages: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
+	) -> DispatchResult {
+		let mut horizontal_messages = horizontal_messages
+			.into_iter()
+			.flat_map(|(sender, channel_contents)| {
+				channel_contents
+					.into_iter()
+					.map(move |message| (sender, message))
+			})
+			.collect::<Vec<_>>();
+		horizontal_messages.sort_by(|a, b| {
+			// first sort by sent-at and then by the para id
+			match a.1.sent_at.cmp(&b.1.sent_at) {
+				cmp::Ordering::Equal => a.0.cmp(&b.0),
+				ord => ord,
+			}
+		});
+
+		let last_mqc_heads = LastHrmpMqcHeads::get();
+		let mut running_mqc_heads = BTreeMap::new();
+		let mut hrmp_watermark = None;
+
+		for (sender, horizontal_message) in horizontal_messages {
+			if hrmp_watermark
+				.map(|w| w < horizontal_message.sent_at)
+				.unwrap_or(true)
+			{
+				hrmp_watermark = Some(horizontal_message.sent_at);
+			}
+
+			let cur_mqc_head = running_mqc_heads
+				.entry(sender)
+				.or_insert_with(|| last_mqc_heads.get(&sender).cloned().unwrap_or_default());
+			*cur_mqc_head = BlakeTwo256::hash_of(&(
+				*cur_mqc_head,
+				horizontal_message.sent_at,
+				BlakeTwo256::hash_of(&horizontal_message.data),
+			));
+
+			ensure!(
+				vfp.hrmp_mqc_heads
+					.binary_search_by_key(&sender, |&(s, _)| s)
+					.is_ok(),
+				Error::<T>::HrmpNoMqc,
+			);
+			T::HrmpMessageHandlers::handle_hrmp_message(sender, horizontal_message);
+		}
+
+		for &(ref sender, ref target_head) in &vfp.hrmp_mqc_heads {
+			let cur_head = running_mqc_heads
+				.get(&sender)
+				.cloned()
+				.unwrap_or_else(|| last_mqc_heads.get(&sender).cloned().unwrap_or_default());
+			ensure!(&cur_head == target_head, Error::<T>::HrmpMqcMismatch,);
+		}
+
+		LastHrmpMqcHeads::put(running_mqc_heads);
+
+		// If we processed at least one message, then advance watermark to that location.
+		if let Some(hrmp_watermark) = hrmp_watermark {
+			storage::unhashed::put(well_known_keys::HRMP_WATERMARK, &hrmp_watermark);
+		}
+
+		Ok(())
+	}
+
 	/// Get validation data.
 	///
 	/// Returns `Some(_)` after the inherent set the data for the current block.
@@ -683,6 +763,21 @@ decl_error! {
 		HostConfigurationNotAvailable,
 		/// Invalid relay-chain storage merkle proof
 		InvalidRelayChainMerkleProof,
+		/// The messages submitted by the collator in the system inherent when hashed sequentially
+		/// do not produce the hash that is produced by the relay-chain.
+		///
+		/// This means that at least some of the submitted messages were altered, omitted or added
+		/// illegaly.
+		DmpMqcMismatch,
+		/// The collator submitted a message that is received from a sender that doesn't have a
+		/// channel opened to this parachain, according to the relay-parent state.
+		HrmpNoMqc,
+		/// After processing all messages submitted by the collator and extending hash chains we
+		/// haven't arrived to the MQCs that were produced by the relay-chain.
+		///
+		/// That means that one or more channels had at least some of the submitted messages altered,
+		/// omitted or added illegaly.
+		HrmpMqcMismatch,
 	}
 }
 
@@ -692,7 +787,9 @@ mod tests {
 	use super::*;
 
 	use codec::Encode;
-	use cumulus_primitives::{AbridgedHrmpChannel, PersistedValidationData};
+	use cumulus_primitives::{
+		AbridgedHrmpChannel, InboundDownwardMessage, InboundHrmpMessage, PersistedValidationData,
+	};
 	use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 	use frame_support::{
 		assert_ok,
@@ -701,13 +798,12 @@ mod tests {
 		traits::{OnFinalize, OnInitialize},
 	};
 	use frame_system::{InitKind, RawOrigin};
+	use hex_literal::hex;
 	use relay_chain::v1::HrmpChannelId;
 	use sp_core::H256;
-	use sp_runtime::{
-		testing::Header,
-		traits::{BlakeTwo256, IdentityLookup},
-	};
+	use sp_runtime::{testing::Header, traits::IdentityLookup};
 	use sp_version::RuntimeVersion;
+	use std::cell::RefCell;
 
 	impl_outer_origin! {
 		pub enum Origin for Test where system = frame_system {}
@@ -770,16 +866,42 @@ mod tests {
 		type Event = TestEvent;
 		type OnValidationData = ();
 		type SelfParaId = ParachainId;
-		type DownwardMessageHandlers = ();
-		type HrmpMessageHandlers = ();
+		type DownwardMessageHandlers = SaveIntoThreadLocal;
+		type HrmpMessageHandlers = SaveIntoThreadLocal;
 	}
 
 	type ParachainSystem = Module<Test>;
 	type System = frame_system::Module<Test>;
 
+	pub struct SaveIntoThreadLocal;
+
+	std::thread_local! {
+		static HANDLED_DOWNWARD_MESSAGES: RefCell<Vec<InboundDownwardMessage>> = RefCell::new(Vec::new());
+		static HANDLED_HRMP_MESSAGES: RefCell<Vec<(ParaId, InboundHrmpMessage)>> = RefCell::new(Vec::new());
+	}
+
+	impl DownwardMessageHandler for SaveIntoThreadLocal {
+		fn handle_downward_message(msg: InboundDownwardMessage) {
+			HANDLED_DOWNWARD_MESSAGES.with(|m| {
+				m.borrow_mut().push(msg);
+			});
+		}
+	}
+
+	impl HrmpMessageHandler for SaveIntoThreadLocal {
+		fn handle_hrmp_message(sender: ParaId, msg: InboundHrmpMessage) {
+			HANDLED_HRMP_MESSAGES.with(|m| {
+				m.borrow_mut().push((sender, msg));
+			})
+		}
+	}
+
 	// This function basically just builds a genesis storage key/value store according to
 	// our desired mockup.
 	fn new_test_ext() -> sp_io::TestExternalities {
+		HANDLED_DOWNWARD_MESSAGES.with(|m| m.borrow_mut().clear());
+		HANDLED_HRMP_MESSAGES.with(|m| m.borrow_mut().clear());
+
 		frame_system::GenesisConfig::default()
 			.build_storage::<Test>()
 			.unwrap()
@@ -831,9 +953,12 @@ mod tests {
 		tests: Vec<BlockTest>,
 		pending_upgrade: Option<RelayChainBlockNumber>,
 		ran: bool,
-		relay_sproof_builder_hook: Option<
-			Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut RelayStateSproofBuilder)>
-		>,
+		relay_sproof_builder_hook:
+			Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut RelayStateSproofBuilder)>>,
+		persisted_validation_data_hook:
+			Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut PersistedValidationData)>>,
+		inherent_data_hook:
+			Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut SystemInherentData)>>,
 	}
 
 	impl BlockTests {
@@ -876,9 +1001,25 @@ mod tests {
 
 		fn with_relay_sproof_builder<F>(mut self, f: F) -> Self
 		where
-			F: 'static + Fn(&BlockTests, RelayChainBlockNumber, &mut RelayStateSproofBuilder)
+			F: 'static + Fn(&BlockTests, RelayChainBlockNumber, &mut RelayStateSproofBuilder),
 		{
 			self.relay_sproof_builder_hook = Some(Box::new(f));
+			self
+		}
+
+		fn with_validation_data<F>(mut self, f: F) -> Self
+		where
+			F: 'static + Fn(&BlockTests, RelayChainBlockNumber, &mut PersistedValidationData),
+		{
+			self.persisted_validation_data_hook = Some(Box::new(f));
+			self
+		}
+
+		fn with_inherent_data<F>(mut self, f: F) -> Self
+		where
+			F: 'static + Fn(&BlockTests, RelayChainBlockNumber, &mut SystemInherentData),
+		{
+			self.inherent_data_hook = Some(Box::new(f));
 			self
 		}
 
@@ -913,11 +1054,14 @@ mod tests {
 					}
 					let (relay_storage_root, relay_chain_state) =
 						sproof_builder.into_state_root_and_proof();
-					let vfp = PersistedValidationData {
+					let mut vfp = PersistedValidationData {
 						block_number: *n as RelayChainBlockNumber,
 						relay_storage_root,
 						..Default::default()
 					};
+					if let Some(ref hook) = self.persisted_validation_data_hook {
+						hook(self, *n as RelayChainBlockNumber, &mut vfp);
+					}
 
 					storage::unhashed::put(VALIDATION_DATA, &vfp);
 					storage::unhashed::kill(NEW_VALIDATION_CODE);
@@ -926,13 +1070,17 @@ mod tests {
 					// to storage; they must also be included in the inherent data.
 					let inherent_data = {
 						let mut inherent_data = InherentData::default();
+						let mut system_inherent_data = SystemInherentData {
+							validation_data: vfp.clone(),
+							relay_chain_state,
+							downward_messages: Default::default(),
+							horizontal_messages: Default::default(),
+						};
+						if let Some(ref hook) = self.inherent_data_hook {
+							hook(self, *n as RelayChainBlockNumber, &mut system_inherent_data);
+						}
 						inherent_data
-							.put_data(SYSTEM_INHERENT_IDENTIFIER, &SystemInherentData {
-								validation_data: vfp.clone(),
-								relay_chain_state,
-							    downward_messages: Default::default(),
-							    horizontal_messages: Default::default(),
-							})
+							.put_data(SYSTEM_INHERENT_IDENTIFIER, &system_inherent_data)
 							.expect("failed to put VFP inherent");
 						inherent_data
 					};
@@ -1118,7 +1266,7 @@ mod tests {
 				})
 			.add_with_post_test(2,
 				|| { /* do nothing within block */ },
-			    || {
+				|| {
 					let v: Option<Vec<Vec<u8>>> = storage::unhashed::get(well_known_keys::UPWARD_MESSAGES);
 					assert_eq!(
 						v,
@@ -1155,7 +1303,7 @@ mod tests {
 				})
 			.add_with_post_test(2,
 				|| { /* do nothing within block */ },
-			    || {
+				|| {
 					let v: Option<Vec<Vec<u8>>> = storage::unhashed::get(well_known_keys::UPWARD_MESSAGES);
 					assert_eq!(
 						v,
@@ -1350,5 +1498,301 @@ mod tests {
 					);
 				},
 			);
+	}
+
+	#[test]
+	fn receive_dmp() {
+		BlockTests::new()
+			.with_validation_data(
+				|_, relay_block_num, validation_data| match relay_block_num {
+					1 => {
+						validation_data.dmq_mqc_head = hex![
+							"0f62484bb072376abd2a05bcac252b023e4564242b3487c978a860d6312af7cd"
+						]
+						.into();
+					}
+					_ => unreachable!(),
+				},
+			)
+			.with_inherent_data(|_, relay_block_num, data| match relay_block_num {
+				1 => {
+					data.downward_messages.push(InboundDownwardMessage {
+						sent_at: 1,
+						msg: b"down".to_vec(),
+					});
+				}
+				_ => unreachable!(),
+			})
+			.add(1, || {
+				HANDLED_DOWNWARD_MESSAGES.with(|m| {
+					let mut m = m.borrow_mut();
+					assert_eq!(
+						&*m,
+						&[InboundDownwardMessage {
+							sent_at: 1,
+							msg: b"down".to_vec(),
+						}]
+					);
+					m.clear();
+				});
+			});
+	}
+
+	#[test]
+	fn receive_hrmp() {
+		BlockTests::new()
+			.with_validation_data(
+				|_, relay_block_num, validation_data| match relay_block_num {
+					1 => {
+						// 200 - doesn't exist yet
+						// 300 - one new message
+						validation_data.hrmp_mqc_heads.push((
+							ParaId::from(300),
+							hex![
+								"d8d73e427fbcb01793aae939418c28af9f570da4f3d8430076a58844397c78a5"
+							]
+							.into(),
+						));
+					}
+					2 => {
+						// 200 - two new messages
+						// 300 - now present with one message.
+						validation_data.hrmp_mqc_heads.push((
+							ParaId::from(200),
+							hex![
+								"6a320919805c27d66eac92ab499942ad2bff0359185a2ba73806672f3a6f4329"
+							]
+							.into(),
+						));
+						validation_data.hrmp_mqc_heads.push((
+							ParaId::from(300),
+							hex![
+								"11508e4faec05009887192062f2abf713a6e6d39c12d28ccf166f999b4b099f4"
+							]
+							.into(),
+						));
+					}
+					3 => {
+						// 200 - no new messages
+						// 300 - is gone
+						validation_data.hrmp_mqc_heads.push((
+							ParaId::from(200),
+							hex![
+								"6a320919805c27d66eac92ab499942ad2bff0359185a2ba73806672f3a6f4329"
+							]
+							.into(),
+						));
+					}
+					_ => unreachable!(),
+				},
+			)
+			.with_inherent_data(|_, relay_block_num, data| match relay_block_num {
+				1 => {
+					data.horizontal_messages.insert(
+						ParaId::from(300),
+						vec![InboundHrmpMessage {
+							sent_at: 1,
+							data: b"aquadisco".to_vec(),
+						}],
+					);
+				}
+				2 => {
+					data.horizontal_messages.insert(
+						ParaId::from(300),
+						vec![
+							InboundHrmpMessage {
+								// can't be sent at the block 1 actually. However, we cheat here
+								// because we want to test the case where there are multiple messages
+								// but the harness at the moment doesn't support block skipping.
+								sent_at: 1,
+								data: b"mudroom".to_vec(),
+							},
+							InboundHrmpMessage {
+								sent_at: 2,
+								data: b"eggpeeling".to_vec(),
+							},
+						],
+					);
+					data.horizontal_messages.insert(
+						ParaId::from(200),
+						vec![InboundHrmpMessage {
+							sent_at: 2,
+							data: b"casino".to_vec(),
+						}],
+					);
+				}
+				3 => {}
+				_ => unreachable!(),
+			})
+			.add(1, || {
+				HANDLED_HRMP_MESSAGES.with(|m| {
+					let mut m = m.borrow_mut();
+					assert_eq!(
+						&*m,
+						&[(
+							ParaId::from(300),
+							InboundHrmpMessage {
+								sent_at: 1,
+								data: b"aquadisco".to_vec(),
+							}
+						)]
+					);
+					m.clear();
+				});
+			})
+			.add(2, || {
+				HANDLED_HRMP_MESSAGES.with(|m| {
+					let mut m = m.borrow_mut();
+					assert_eq!(
+						&*m,
+						&[
+							(
+								ParaId::from(300),
+								InboundHrmpMessage {
+									sent_at: 1,
+									data: b"mudroom".to_vec(),
+								}
+							),
+							(
+								ParaId::from(200),
+								InboundHrmpMessage {
+									sent_at: 2,
+									data: b"casino".to_vec(),
+								},
+							),
+							(
+								ParaId::from(300),
+								InboundHrmpMessage {
+									sent_at: 2,
+									data: b"eggpeeling".to_vec(),
+								},
+							),
+						]
+					);
+					m.clear();
+				});
+			})
+			.add(3, || {});
+	}
+
+	#[test]
+	fn receive_hrmp_empty_channel() {
+		BlockTests::new()
+			.with_validation_data(
+				|_, relay_block_num, validation_data| match relay_block_num {
+					1 => {
+						// no channels
+					}
+					2 => {
+						// one new channel
+						validation_data.hrmp_mqc_heads.push((
+							ParaId::from(300),
+							hex![
+								"0000000000000000000000000000000000000000000000000000000000000000"
+							]
+							.into(),
+						));
+					}
+					_ => unreachable!(),
+				},
+			)
+			.add(1, || {})
+			.add(2, || {});
+	}
+
+	#[test]
+	fn receive_hrmp_after_pause() {
+		BlockTests::new()
+			.with_validation_data(
+				|_, relay_block_num, validation_data| match relay_block_num {
+					1 => {
+						validation_data.hrmp_mqc_heads.push((
+							ParaId::from(300),
+							hex![
+								"dc11c5f88a93568a3f63b7d8243dc955a978085c60ccff760bc5be11f8212129"
+							]
+							.into(),
+						));
+					}
+					2 => {
+						// 300 - no new messages, mqc stayed the same.
+						validation_data.hrmp_mqc_heads.push((
+							ParaId::from(300),
+							hex![
+								"dc11c5f88a93568a3f63b7d8243dc955a978085c60ccff760bc5be11f8212129"
+							]
+							.into(),
+						));
+					}
+					3 => {
+						// 300 - new message.
+						validation_data.hrmp_mqc_heads.push((
+							ParaId::from(300),
+							hex![
+								"24ccf4e834deb7656fad108b2710884ae814d61de4ce60eca75cc872eed4a02c"
+							]
+							.into(),
+						));
+					}
+					_ => unreachable!(),
+				},
+			)
+			.with_inherent_data(|_, relay_block_num, data| match relay_block_num {
+				1 => {
+					data.horizontal_messages.insert(
+						ParaId::from(300),
+						vec![InboundHrmpMessage {
+							sent_at: 1,
+							data: b"mikhailinvanovich".to_vec(),
+						}],
+					);
+				}
+				2 => {
+					// no new messages
+				}
+				3 => {
+					data.horizontal_messages.insert(
+						ParaId::from(300),
+						vec![InboundHrmpMessage {
+							sent_at: 3,
+							data: b"1000000000".to_vec(),
+						}],
+					);
+				}
+				_ => unreachable!(),
+			})
+			.add(1, || {
+				HANDLED_HRMP_MESSAGES.with(|m| {
+					let mut m = m.borrow_mut();
+					assert_eq!(
+						&*m,
+						&[(
+							ParaId::from(300),
+							InboundHrmpMessage {
+								sent_at: 1,
+								data: b"mikhailinvanovich".to_vec(),
+							}
+						)]
+					);
+					m.clear();
+				});
+			})
+			.add(2, || {})
+			.add(3, || {
+				HANDLED_HRMP_MESSAGES.with(|m| {
+					let mut m = m.borrow_mut();
+					assert_eq!(
+						&*m,
+						&[(
+							ParaId::from(300),
+							InboundHrmpMessage {
+								sent_at: 3,
+								data: b"1000000000".to_vec(),
+							}
+						)]
+					);
+					m.clear();
+				});
+			});
 	}
 }
