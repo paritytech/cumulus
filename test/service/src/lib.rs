@@ -212,7 +212,7 @@ where
 
 	let announce_block = {
 		let network = network.clone();
-		Arc::new(move |hash, data| network.announce_block(hash, data))
+		Arc::new(move |hash, data| network.announce_block(hash, Some(data)))
 	};
 
 	let polkadot_full_node = polkadot_full_node.with_client(polkadot_test_service::TestClient);
