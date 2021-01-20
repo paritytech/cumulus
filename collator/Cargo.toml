@@ -20,7 +20,6 @@ sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1"
 polkadot-service = { git = "https://github.com/paritytech/polkadot", features = [ "real-overseer" ] , branch = "rococo-v1" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
-polkadot-validation = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }

@@ -18,7 +18,7 @@ parking_lot = '0.9.0'
 trie-root = '0.15.2'
 codec = { package = 'parity-scale-codec', version = '1.0.0' }
 structopt = "0.3.3"
-serde = { version = "1.0.101", features = ["derive"] }
+serde = { version = "1.0.119", features = ["derive"] }
 hex-literal = "0.2.1"
 
 # Parachain dependencies
@@ -37,6 +37,7 @@ sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1"
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }

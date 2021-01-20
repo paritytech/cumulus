@@ -13,7 +13,7 @@ cumulus-primitives = { path = "../primitives" }
 # Substrate dependencies
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
