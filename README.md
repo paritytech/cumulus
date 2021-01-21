@@ -1,6 +1,6 @@
 # Encointer Parachain:
 
-This is the repository to run encointer as a parachain in the rococo-v1 testnet. It is forked from the Cumulus repo and only adds the encointer-pallets and configuration.
+This is the repository to run encointer as a parachain in the rococo-v1 testnet. It is forked from the [Cumulus](https://github.com/paritytech/cumulus) repository and only adds the encointer-pallets and configuration.
 
 ## Launch a local setup including a Relay Chain and a Parachain
 
@@ -42,9 +42,17 @@ cargo build --release
 ```
 
 ### Register the Parachain
-Go to [polkadot.js.org/apps/](https://polkadot.js.org/apps/) and register the parachain via the paraSudoWrapper. After registering, the collator should start producing blocks when the next era starts.
+Go to [Polkadot Apps](https://polkadot.js.org/apps/) connect to the default local port (Alice) and register the parachain via the `paraSudoWrapper` pallet. After registering, the collator should start producing blocks when the next era starts.
 
-**Note:** Change the parachain-id to 1862 when registering the parachain and do not forget to enable file upload if you perform drag and drop. If it is not enabled, Polkadot-js will interpred the path as a string and won't complain. But the registration will fail.
+**Note:** Change the `ParaId` to 1862 when registering the parachain.
 
 ![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
 
+### Caveats
+* Don't forget to enable file upload if you perform drag and drop for the `genesisHead` and `validationCode`. If it is not enabled, Polkadot-js will interpret the path as a string and won't complain but the registration will fail.
+* Don't forget to add the argument `--chain encointer-rococo` for the custom chain config. This argument is omitted in the [Cumulus Workshop](https://substrate.dev/cumulus-workshop/).
+* The relay chain and the collator need to be about equally recent. This might require frequent rebasing of this repository on the `rococo-v1` branch.
+
+### More Resources
+* Thorough Readme about Rococo and Collators in general in the original [repository](https://github.com/paritytech/cumulus) of this fork.
+* Parachains on Rococo in the [Polkadot Wiki](https://wiki.polkadot.network/docs/en/build-parachains-rococo#rococo-v1-parachain-requirements)
