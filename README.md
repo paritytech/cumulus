@@ -37,12 +37,14 @@ cargo build --release
 # Export genesis wasm
 ./target/release/encointer-collator export-genesis-wasm > genesis-wasm
 
-# Collator1
+# Collator
 ./target/release/encointer-collator --collator --tmp --parachain-id 1862 --chain encointer-rococo --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde-real-overseer.json --port 30337 --ws-port 9981
-
-# Collator2 (optional)
-./target/release/encointer-collator --collator --tmp --chain encointer-rococo --parachain-id 1862 --port 40336 --ws-port 9947 -- --execution wasm --chain ../polkadot/rococo-local-cfde-real-overseer.json --port 30338 --ws-port 9982
-
-# Parachain Full Node 1
-./target/release/encointer-collator --tmp --parachain-id 1862 --port 40337 --ws-port 9948 -- --execution wasm --chain ../polkadot/rococo-local-cfde-real-overseer.json --port 30339
 ```
+
+### Register the Parachain
+Go to [polkadot.js.org/apps/](https://polkadot.js.org/apps/) and register the parachain via the paraSudoWrapper. After registering, the collator should start producing blocks when the next era starts.
+
+**Note:** Change the parachain-id to 1862 when registering the parachain.
+
+![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
+
