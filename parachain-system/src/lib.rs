@@ -44,6 +44,8 @@ use sp_std::{vec::Vec, cmp};
 
 mod relay_state_snapshot;
 use relay_state_snapshot::MessagingStateSnapshot;
+use sp_runtime::DigestItem;
+use codec::Encode;
 
 /// The pallet's configuration trait.
 pub trait Config: frame_system::Config {
@@ -153,6 +155,7 @@ decl_module! {
 				relay_chain_state,
 				downward_messages,
 				horizontal_messages,
+				relay_parent,
 			} = data;
 
 			// initialization logic: we know that this runs exactly once every block,
@@ -218,6 +221,12 @@ decl_module! {
 					&hrmp_watermark,
 				);
 			}
+
+			// Add the relay parent to a digest to track which parents this block was built on.
+			frame_system::Module::<T>::deposit_log(DigestItem::<T::Hash>::Consensus(
+				*b"rlyp", // "rlyp" -> "relay parent"
+				relay_parent.encode(),
+			));
 
 			Ok(())
 		}

@@ -107,6 +107,7 @@ impl InitBlockBuilder for Client {
 					relay_chain_state,
 					downward_messages: Default::default(),
 					horizontal_messages: Default::default(),
+					relay_parent: Default::default(),
 				},
 			)
 			.expect("Put validation function params failed");

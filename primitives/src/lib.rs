@@ -45,6 +45,7 @@ pub mod inherents {
 	use super::{InboundDownwardMessage, InboundHrmpMessage, ParaId};
 	use sp_inherents::InherentIdentifier;
 	use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
+	use polkadot_primitives::v1::Hash as PHash;
 
 	/// The identifier for the parachain-system inherent.
 	pub const SYSTEM_INHERENT_IDENTIFIER: InherentIdentifier = *b"sysi1337";
@@ -68,6 +69,8 @@ pub mod inherents {
 		/// were sent. In combination with the rule of no more than one message in a channel per block,
 		/// this means `sent_at` is **strictly** greater than the previous one (if any).
 		pub horizontal_messages: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
+		/// The hash of the relay parent block on which this block is built.
+		pub relay_parent: PHash,
 	}
 }
 

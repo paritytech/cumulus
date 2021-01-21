@@ -297,6 +297,7 @@ where
 				horizontal_messages,
 				validation_data: validation_data.clone(),
 				relay_chain_state,
+				relay_parent,
 			}
 		};
 
