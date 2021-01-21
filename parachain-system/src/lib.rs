@@ -941,6 +941,7 @@ mod tests {
 								relay_chain_state,
 							    downward_messages: Default::default(),
 							    horizontal_messages: Default::default(),
+								relay_parent: Default::default(),
 							})
 							.expect("failed to put VFP inherent");
 						inherent_data
