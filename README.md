@@ -31,11 +31,11 @@ git checkout master
 cargo build --release
 
 # Export genesis state
-# --parachain-id 200 as an example that can be chosen freely. Make sure to everywhere use the same parachain id
-./target/release/encointer-collator export-genesis-state --parachain-id 1862 > genesis-state
+# --parachain-id 1862 as an example that can be chosen freely. Make sure to everywhere use the same parachain id
+./target/release/encointer-collator export-genesis-state --chain encointer-rococo --parachain-id 1862 > genesis-state
 
 # Export genesis wasm
-./target/release/encointer-collator export-genesis-wasm > genesis-wasm
+./target/release/encointer-collator export-genesis-wasm --chain encointer-rococo > genesis-wasm
 
 # Collator
 ./target/release/encointer-collator --collator --tmp --parachain-id 1862 --chain encointer-rococo --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde-real-overseer.json --port 30337 --ws-port 9981
@@ -44,7 +44,7 @@ cargo build --release
 ### Register the Parachain
 Go to [polkadot.js.org/apps/](https://polkadot.js.org/apps/) and register the parachain via the paraSudoWrapper. After registering, the collator should start producing blocks when the next era starts.
 
-**Note:** Change the parachain-id to 1862 when registering the parachain.
+**Note:** Change the parachain-id to 1862 when registering the parachain and do not forget to enable file upload if you perform drag and drop. If it is not enabled, Polkadot-js will interpred the path as a string and won't complain. But the registration will fail.
 
 ![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
 
