@@ -445,7 +445,7 @@ impl<T: Config> Module<T> {
 			));
 			T::DownwardMessageHandlers::handle_downward_message(downward_message);
 		}
-		ensure!(running_mqc_head == vfp.dmq_mqc_head, Error::<T>::DmpMqcMismatch,);
+		ensure!(running_mqc_head == vfp.dmq_mqc_head, Error::<T>::DmpMqcMismatch);
 
 		LastDmqMqcHead::put(running_mqc_head);
 		// Store the processed_downward_messages here so that it's will be accessible from
@@ -510,7 +510,7 @@ impl<T: Config> Module<T> {
 				.get(&sender)
 				.cloned()
 				.unwrap_or_else(|| last_mqc_heads.get(&sender).cloned().unwrap_or_default());
-			ensure!(&cur_head == target_head, Error::<T>::HrmpMqcMismatch,);
+			ensure!(&cur_head == target_head, Error::<T>::HrmpMqcMismatch);
 		}
 
 		LastHrmpMqcHeads::put(running_mqc_heads);
