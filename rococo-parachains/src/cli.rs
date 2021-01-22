@@ -172,7 +172,7 @@ pub struct PurgeChainCmd {
 	base: sc_cli::PurgeChainCmd,
 
 	/// Only delete the para chain database
-	#[structopt(long = "para-chain", aliases = &["para", "parachain"])]
+	#[structopt(long = "parachain", aliases = &["para"])]
 	parachain: bool,
 
 	/// Only delete the relay chain database
