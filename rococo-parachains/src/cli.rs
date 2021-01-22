@@ -1,4 +1,4 @@
-// Copyright 2019 Parity Technologies (UK) Ltd.
+// Copyright 2019-2021 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -16,11 +16,7 @@
 
 use crate::chain_spec;
 use sc_cli;
-use std::{
-	fs,
-	io::{self, Write},
-	path::PathBuf,
-};
+use std::path::PathBuf;
 use structopt::StructOpt;
 
 /// Sub-commands supported by the collator.
@@ -50,7 +46,7 @@ pub enum Subcommand {
 	ImportBlocks(sc_cli::ImportBlocksCmd),
 
 	/// Remove the whole chain.
-	PurgeChain(PurgeChainCmd),
+	PurgeChain(cumulus_cli::PurgeChainCmd),
 
 	/// Revert the chain to a previous state.
 	Revert(sc_cli::RevertCmd),
@@ -163,87 +159,5 @@ impl RelayChainCli {
 			chain_id,
 			base: polkadot_cli::RunCmd::from_iter(relay_chain_args),
 		}
-	}
-}
-
-#[derive(Debug, StructOpt)]
-pub struct PurgeChainCmd {
-	#[structopt(flatten)]
-	base: sc_cli::PurgeChainCmd,
-
-	/// Only delete the para chain database
-	#[structopt(long = "parachain", aliases = &["para"])]
-	parachain: bool,
-
-	/// Only delete the relay chain database
-	#[structopt(long = "relay-chain", aliases = &["relay", "relaychain"])]
-	relaychain: bool,
-}
-
-impl PurgeChainCmd {
-	/// Run the purge command
-	pub fn run(
-		&self,
-		para_config: sc_service::Configuration,
-		relay_config: sc_service::Configuration,
-	) -> sc_cli::Result<()> {
-		let databases = match (self.parachain, self.relaychain) {
-			(true, true) | (false, false) => vec![para_config.database, relay_config.database],
-			(true, false) => vec![para_config.database],
-			(false, true) => vec![relay_config.database],
-		};
-
-		let db_paths = databases
-			.iter()
-			.map(|x| {
-				x.path().ok_or_else(|| {
-					sc_cli::Error::Input("Cannot purge custom database implementation".into())
-				})
-			})
-			.collect::<sc_cli::Result<Vec<_>>>()?;
-
-		if !self.base.yes {
-			for db_path in &db_paths {
-				println!("{}", db_path.display());
-			}
-			print!("Are you sure to remove? [y/N]: ");
-			io::stdout().flush().expect("failed to flush stdout");
-
-			let mut input = String::new();
-			io::stdin().read_line(&mut input)?;
-			let input = input.trim();
-
-			match input.chars().nth(0) {
-				Some('y') | Some('Y') => {}
-				_ => {
-					println!("Aborted");
-					return Ok(());
-				}
-			}
-		}
-
-		for db_path in &db_paths {
-			match fs::remove_dir_all(&db_path) {
-				Ok(_) => {
-					println!("{:?} removed.", &db_path);
-				}
-				Err(ref err) if err.kind() == io::ErrorKind::NotFound => {
-					eprintln!("{:?} did not exist.", &db_path);
-				}
-				Err(err) => return Result::Err(err.into()),
-			}
-		}
-
-		Ok(())
-	}
-}
-
-impl sc_cli::CliConfiguration for PurgeChainCmd {
-	fn shared_params(&self) -> &sc_cli::SharedParams {
-		&self.base.shared_params
-	}
-
-	fn database_params(&self) -> Option<&sc_cli::DatabaseParams> {
-		Some(&self.base.database_params)
 	}
 }

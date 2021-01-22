@@ -1025,6 +1025,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-cli"
+version = "0.1.0"
+dependencies = [
+ "sc-cli",
+ "sc-service",
+ "structopt",
+]
+
+[[package]]
 name = "cumulus-collator"
 version = "0.1.0"
 dependencies = [
@@ -6720,6 +6729,7 @@ name = "rococo-collator"
 version = "0.1.0"
 dependencies = [
  "assert_cmd",
+ "cumulus-cli",
  "cumulus-collator",
  "cumulus-consensus",
  "cumulus-network",
