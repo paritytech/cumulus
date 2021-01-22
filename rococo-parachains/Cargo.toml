@@ -77,6 +77,7 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 assert_cmd = "0.12"
 nix = "0.17"
 rand = "0.7.3"
+tempfile = "3.2.0"
 tokio = { version = "0.2.13", features = ["macros"] }
 
 # Polkadot dependencies

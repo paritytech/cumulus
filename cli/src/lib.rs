@@ -14,6 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+//! Cumulus CLI library.
+
+#![warn(missing_docs)]
+
 use sc_cli;
 use std::{
 	fs,
@@ -21,18 +25,20 @@ use std::{
 };
 use structopt::StructOpt;
 
+/// The `purge-chain` command used to remove the whole chain: the parachain and the relaychain.
 #[derive(Debug, StructOpt)]
 pub struct PurgeChainCmd {
+	/// The base struct of the purge-chain command.
 	#[structopt(flatten)]
-	base: sc_cli::PurgeChainCmd,
+	pub base: sc_cli::PurgeChainCmd,
 
 	/// Only delete the para chain database
 	#[structopt(long = "parachain", aliases = &["para"])]
-	parachain: bool,
+	pub parachain: bool,
 
 	/// Only delete the relay chain database
 	#[structopt(long = "relaychain", aliases = &["relay"])]
-	relaychain: bool,
+	pub relaychain: bool,
 }
 
 impl PurgeChainCmd {

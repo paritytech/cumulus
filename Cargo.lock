@@ -6786,6 +6786,7 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-test-client",
  "substrate-test-runtime-client",
+ "tempfile",
  "tokio 0.2.24",
  "trie-root 0.15.2",
 ]
