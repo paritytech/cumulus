@@ -18,9 +18,9 @@
 
 use cumulus_network::WaitToAnnounce;
 use cumulus_primitives::{
-	inherents::{self, VALIDATION_DATA_IDENTIFIER},
+	inherents,
 	well_known_keys, InboundDownwardMessage, InboundHrmpMessage, OutboundHrmpMessage,
-	ValidationData, relay_chain,
+	PersistedValidationData, relay_chain,
 };
 use cumulus_runtime::ParachainBlockData;
 
@@ -271,7 +271,7 @@ where
 	/// Get the inherent data with validation function parameters injected
 	fn inherent_data(
 		&mut self,
-		validation_data: &ValidationData,
+		validation_data: &PersistedValidationData,
 		relay_parent: PHash,
 	) -> Option<InherentData> {
 		let mut inherent_data = self
@@ -286,45 +286,29 @@ where
 			})
 			.ok()?;
 
-		let validation_data = {
+		let system_inherent_data = {
 			let relay_chain_state = self.collect_relay_storage_proof(relay_parent)?;
-			inherents::ValidationDataType {
+			let downward_messages = self.retrieve_dmq_contents(relay_parent)?;
+			let horizontal_messages =
+				self.retrieve_all_inbound_hrmp_channel_contents(relay_parent)?;
+
+			inherents::SystemInherentData {
+				downward_messages,
+				horizontal_messages,
 				validation_data: validation_data.clone(),
 				relay_chain_state,
 			}
 		};
 
 		inherent_data
-			.put_data(VALIDATION_DATA_IDENTIFIER, &validation_data)
-			.map_err(|e| {
-				error!(
-					target: "cumulus-collator",
-					"Failed to put validation function params into inherent data: {:?}",
-					e,
-				)
-			})
-			.ok()?;
-
-		let message_ingestion_data = {
-			let downward_messages = self.retrieve_dmq_contents(relay_parent)?;
-			let horizontal_messages =
-				self.retrieve_all_inbound_hrmp_channel_contents(relay_parent)?;
-
-			inherents::MessageIngestionType {
-				downward_messages,
-				horizontal_messages,
-			}
-		};
-
-		inherent_data
 			.put_data(
-				inherents::MESSAGE_INGESTION_IDENTIFIER,
-				&message_ingestion_data,
+				inherents::SYSTEM_INHERENT_IDENTIFIER,
+				&system_inherent_data,
 			)
 			.map_err(|e| {
 				error!(
 					target: "cumulus-collator",
-					"Failed to put downward messages into inherent data: {:?}",
+					"Failed to put the system inherent into inherent data: {:?}",
 					e,
 				)
 			})
@@ -472,12 +456,12 @@ where
 	async fn produce_candidate(
 		mut self,
 		relay_parent: PHash,
-		validation_data: ValidationData,
+		validation_data: PersistedValidationData,
 	) -> Option<Collation> {
 		trace!(target: "cumulus-collator", "Producing candidate");
 
 		let last_head =
-			match Block::Header::decode(&mut &validation_data.persisted.parent_head.0[..]) {
+			match Block::Header::decode(&mut &validation_data.parent_head.0[..]) {
 				Ok(x) => x,
 				Err(e) => {
 					error!(target: "cumulus-collator", "Could not decode the head data: {:?}", e);
@@ -573,8 +557,16 @@ where
 			return None;
 		}
 
+		trace!(
+			target: "cumulus-collator",
+			"PoV size {{ header: {}kb, extrinsics: {}kb, storage_proof: {}kb }}",
+			b.header().encode().len() as f64 / 1024f64,
+			b.extrinsics().encode().len() as f64 / 1024f64,
+			b.storage_proof().encode().len() as f64 / 1024f64,
+		);
+
 		let collation =
-			self.build_collation(b, block_hash, validation_data.persisted.block_number)?;
+			self.build_collation(b, block_hash, validation_data.block_number)?;
 		let pov_hash = collation.proof_of_validity.hash();
 
 		self.wait_to_announce
@@ -834,8 +826,8 @@ mod tests {
 			CollationGenerationMessage::Initialize(config) => config,
 		};
 
-		let mut validation_data = ValidationData::default();
-		validation_data.persisted.parent_head = header.encode().into();
+		let mut validation_data = PersistedValidationData::default();
+		validation_data.parent_head = header.encode().into();
 
 		let collation = block_on((config.collator)(relay_parent, &validation_data))
 			.expect("Collation is build");

@@ -17,7 +17,7 @@ sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "roc
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 
 # Polkadot dependencies
-polkadot-service = { git = "https://github.com/paritytech/polkadot", features = [ "real-overseer" ] , branch = "rococo-v1" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", features = [ "real-overseer" ], branch = "rococo-v1" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
