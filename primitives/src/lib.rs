@@ -18,6 +18,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use sp_std::vec::Vec;
+
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use polkadot_parachain::primitives::{Id as ParaId, UpwardMessage, ValidationParams};
 pub use polkadot_primitives::v1::{
@@ -29,8 +31,10 @@ pub use polkadot_primitives::v1::{
 pub mod genesis;
 
 
+
 /// Storage proof in compress form.
-pub type CompressedProof {
+#[derive(codec::Encode, codec::Decode, sp_core::RuntimeDebug, Clone, PartialEq)]
+pub struct CompressedProof {
 	pub encoded_nodes: Vec<Vec<u8>>,
 }
 

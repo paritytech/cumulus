@@ -83,15 +83,8 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 
 	// Uncompress
 	let mut db = MemoryDB::default();
-	//let mut nodes_iter = block_data.storage_proof.iter_nodes();
-	// TODO useless proof copy, need a node iter that is not consuming!!
-	// (internally trie only use reference to slice so we cannot use
-	// vec::as_slice on consuming iter.
-	let mut input = Vec::new();
-	input.extend(block_data.storage_proof.iter_nodes());
-	let mut nodes_iter = input.iter();
-
-	let mut nodes_iter = nodes_iter.map(|encoded_node| encoded_node.as_slice());
+	let mut nodes_iter = block_data.storage_proof.encoded_nodes.iter()
+		.map(|encoded_node| encoded_node.as_slice());
 	let (read_root, _nb_used) = trie_db::decode_compact_from_iter::<sp_trie::Layout<HashFor<B>>, _, _, _>(
 		&mut db,
 		&mut nodes_iter,

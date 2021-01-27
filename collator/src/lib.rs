@@ -20,7 +20,7 @@ use cumulus_network::WaitToAnnounce;
 use cumulus_primitives::{
 	inherents::{self, VALIDATION_DATA_IDENTIFIER},
 	well_known_keys, InboundDownwardMessage, InboundHrmpMessage, OutboundHrmpMessage,
-	ValidationData, relay_chain,
+	ValidationData, relay_chain, CompressedProof,
 };
 use cumulus_runtime::ParachainBlockData;
 
@@ -599,7 +599,7 @@ where
 			compact_proof.extend(child_proof);
 		}
 
-		let proof = sp_state_machine::StorageProof::new(compact_proof);
+		let proof = CompressedProof { encoded_nodes: compact_proof };
 
 		// Create the parachain block data for the validators.
 		let b = ParachainBlockData::<Block>::new(header.clone(), extrinsics, proof);
