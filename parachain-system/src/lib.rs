@@ -66,6 +66,10 @@ pub trait Config: frame_system::Config {
 	type DownwardMessageHandlers: DownwardMessageHandler;
 
 	/// The HRMP message handlers that will be informed when a message is received.
+	///
+	/// The messages are dispatched in the order they were relayed by the relay chain. If multiple
+	/// messages were relayed at one block, these will be dispatched in order of the sender's para ID
+	/// ascension.
 	type HrmpMessageHandlers: HrmpMessageHandler;
 }
 
@@ -431,6 +435,10 @@ decl_module! {
 }
 
 impl<T: Config> Module<T> {
+	/// Process all inbound downward messages relayed by the collator.
+	///
+	/// Checks if the sequence of the messages is valid, dispatches them and communicates the number
+	/// of processed messages to cumulus via a storage update.
 	fn process_inbound_downward_messages(
 		vfp: &PersistedValidationData,
 		downward_messages: Vec<InboundDownwardMessage>,
@@ -445,20 +453,34 @@ impl<T: Config> Module<T> {
 			));
 			T::DownwardMessageHandlers::handle_downward_message(downward_message);
 		}
+
+		// After hashing each message in the message queue chain submitted by the collator, we should
+		// arrive to the MQC head provided by the relay chain.
 		ensure!(running_mqc_head == vfp.dmq_mqc_head, Error::<T>::DmpMqcMismatch);
 
 		LastDmqMqcHead::put(running_mqc_head);
-		// Store the processed_downward_messages here so that it's will be accessible from
+		// Store the processed_downward_messages here so that it will be accessible from
 		// PVF's `validate_block` wrapper and collation pipeline.
 		storage::unhashed::put(well_known_keys::PROCESSED_DOWNWARD_MESSAGES, &dm_count);
 
 		Ok(())
 	}
 
+	/// Process all inbound horizontal messages relayed by the collator.
+	///
+	/// This is similar to `process_inbound_downward_messages`, but works on multiple inbound
+	/// channels.
 	fn process_inbound_horizontal_messages(
 		vfp: &PersistedValidationData,
 		horizontal_messages: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
 	) -> DispatchResult {
+		// First prepare horizontal messages for a more convenient processing:
+		//
+		// instead of a mapping from a para to a list of inbound HRMP messages, we will have a list
+		// of tuples `(sender, message)` first ordered by `sent_at` (the relay chain block number
+		// in which the message hit the relay-chain) and second ordered by para id ascending.
+		//
+		// The messages will be dispatched in this order.
 		let mut horizontal_messages = horizontal_messages
 			.into_iter()
 			.flat_map(|(sender, channel_contents)| {
@@ -502,9 +524,12 @@ impl<T: Config> Module<T> {
 					.is_ok(),
 				Error::<T>::HrmpNoMqc,
 			);
+
 			T::HrmpMessageHandlers::handle_hrmp_message(sender, horizontal_message);
 		}
 
+		// Check that the MQC heads for each channel provided by the relay chain match the MQC heads
+		// we have after processing all incoming messages.
 		for &(ref sender, ref target_head) in &vfp.hrmp_mqc_heads {
 			let cur_head = running_mqc_heads
 				.get(&sender)
