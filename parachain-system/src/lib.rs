@@ -109,7 +109,7 @@ decl_storage! {
 		/// by the system inherent.
 		LastDmqMqcHead: relay_chain::Hash;
 		/// The message queue chain heads we have observed per each channel incoming channel. If the
-		/// value is missing it is treated as all zeores.
+		/// value is missing it is treated as all zeroes.
 		///
 		/// This value is loaded before and saved after processing inbound downward messages carried
 		/// by the system inherent.
