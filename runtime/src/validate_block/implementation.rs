@@ -83,13 +83,18 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 
 	// Uncompress
 	let mut db = MemoryDB::default();
-	// TODO useless proof copy, 'decode_compact' should use iterator as parameter.
-	// see https://github.com/paritytech/trie/pull/121
+	//let mut nodes_iter = block_data.storage_proof.iter_nodes();
+	// TODO useless proof copy, need a node iter that is not consuming!!
+	// (internally trie only use reference to slice so we cannot use
+	// vec::as_slice on consuming iter.
 	let mut input = Vec::new();
 	input.extend(block_data.storage_proof.iter_nodes());
-	let (read_root, nb_used) = trie_db::decode_compact::<sp_trie::Layout<HashFor<B>>, _, _>(
+	let mut nodes_iter = input.iter();
+
+	let mut nodes_iter = nodes_iter.map(|encoded_node| encoded_node.as_slice());
+	let (read_root, _nb_used) = trie_db::decode_compact_from_iter::<sp_trie::Layout<HashFor<B>>, _, _, _>(
 		&mut db,
-		input.as_slice(),
+		&mut nodes_iter,
 	).expect("Proof is not properly compacted.");
 
 	let root = parent_head.state_root().clone();
@@ -132,21 +137,18 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 		panic!("Witness data does not contain given storage root.");
 	}
 
-	let mut nb_used = nb_used;
 	for child_root in child_tries.into_iter() {
-		let (read_root, used) = trie_db::decode_compact::<sp_trie::Layout<HashFor<B>>, _, _>(
+		let (read_root, _nb_used) = trie_db::decode_compact_from_iter::<sp_trie::Layout<HashFor<B>>, _, _, _>(
 			&mut db,
-			&input[nb_used..],
+			&mut nodes_iter,
 		).expect("Proof is not properly compacted.");
 
 		if child_root != read_root {
 			panic!("Mismatch root between child root in proof and compacted proof");
 		}
-
-		nb_used += used;
 	}
 
-	if nb_used != input.len() {
+	if nodes_iter.next().is_some() {
 		panic!("Unused nodes in proof");
 	}
 

@@ -20,7 +20,7 @@
 use codec::{Decode, Encode};
 use sp_runtime::traits::Block as BlockT;
 use sp_std::vec::Vec;
-use sp_trie::StorageProof;
+pub sp_trie::StorageProof;
 
 #[cfg(not(feature = "std"))]
 #[doc(hidden)]
