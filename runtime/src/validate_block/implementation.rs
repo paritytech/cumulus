@@ -85,9 +85,11 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 	let mut db = MemoryDB::default();
 	let mut nodes_iter = block_data.storage_proof.encoded_nodes.iter()
 		.map(|encoded_node| encoded_node.as_slice());
-	let (read_root, _nb_used) = trie_db::decode_compact_from_iter::<sp_trie::Layout<HashFor<B>>, _, _, _>(
+	let (read_root, _nb_used) = trie_db::decode_compact_with_skipped_values::<sp_trie::Layout<HashFor<B>>, _, _, _, _, _>(
 		&mut db,
 		&mut nodes_iter,
+		// TODO unimplemented plug code fetcher instead of empty bytes
+		[(sp_core::storage::well_known_keys::CODE, b"")].iter().map(|(slice, v)| (*slice, &v[..])),
 	).expect("Proof is not properly compacted.");
 
 	let root = parent_head.state_root().clone();

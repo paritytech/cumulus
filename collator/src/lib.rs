@@ -586,8 +586,10 @@ where
 				}
 			}
 
-			trie_db::encode_compact::<sp_trie::Layout<BlakeTwo256>>(&trie)
-				.expect("Valid proof should compact without error")
+			trie_db::encode_compact_skip_values::<sp_trie::Layout<BlakeTwo256>, _>(
+				&trie,
+				[sp_core::storage::well_known_keys::CODE].iter().map(|slice| *slice),
+			).expect("Valid proof should compact without error")
 		};
 
 		for child_root in child_tries {
