@@ -1057,7 +1057,9 @@ dependencies = [
  "sp-keyring",
  "sp-runtime",
  "sp-state-machine",
+ "sp-trie",
  "substrate-test-client",
+ "trie-db",
 ]
 
 [[package]]
