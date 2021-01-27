@@ -83,7 +83,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 
 	// Uncompress
 	let mut db = MemoryDB::default();
-	let code = parachain::validation::validation_code();
+	let code = sp_io::validation::validation_code();
 	let mut nodes_iter = block_data.storage_proof.encoded_nodes.iter()
 		.map(|encoded_node| encoded_node.as_slice());
 	let (read_root, _nb_used) = trie_db::decode_compact_with_skipped_values::<sp_trie::Layout<HashFor<B>>, _, _, _, _, _>(

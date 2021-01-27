@@ -134,6 +134,8 @@ substrate-test-utils = { git="https://github.com/cheme/substrate", branch="valid
 
 [patch.'https://github.com/paritytech/polkadot']
 kusama-runtime = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
+westend-runtime = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
+rococo-runtime = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
 polkadot-cli = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
 polkadot-rpc = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
 polkadot-parachain = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
