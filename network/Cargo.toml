@@ -7,20 +7,20 @@ edition = "2018"
 
 [dependencies]
 # Substrate deps
-sp-blockchain = { git = "https://github.com/cheme/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/cheme/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/cheme/substrate", branch = "master" }
-sp-api = { git = "https://github.com/cheme/substrate", branch = "master" }
-sp-core = { git = "https://github.com/cheme/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/cheme/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot deps
-polkadot-primitives = { git = "https://github.com/cheme/polkadot-1", branch = "master" }
-polkadot-statement-table = { git = "https://github.com/cheme/polkadot-1", branch = "master" }
-polkadot-overseer = { git = "https://github.com/cheme/polkadot-1", branch = "master" }
-polkadot-node-primitives = { git = "https://github.com/cheme/polkadot-1", branch = "master" }
-polkadot-node-subsystem = { git = "https://github.com/cheme/polkadot-1", branch = "master" }
-polkadot-service = { git = "https://github.com/cheme/polkadot-1", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus deps
 cumulus-primitives = { path = "../primitives" }
@@ -38,11 +38,11 @@ derive_more = "0.99.2"
 cumulus-test-service = { path = "../test/service" }
 
 # Polkadot deps
-polkadot-test-client = { git = "https://github.com/cheme/polkadot-1", branch = "master" }
+polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # substrate deps
-sc-client-api = { git = "https://github.com/cheme/substrate", branch = "master" }
-sp-core = { git = "https://github.com/cheme/substrate", branch = "master" }
-sp-keyring = { git = "https://github.com/cheme/substrate", branch = "master" }
-sp-keystore = { git = "https://github.com/cheme/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/cheme/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
