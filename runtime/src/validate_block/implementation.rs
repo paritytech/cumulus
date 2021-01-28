@@ -19,7 +19,7 @@
 use frame_executive::ExecuteBlock;
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT, NumberFor};
 
-use sp_std::{boxed::Box, vec::Vec};
+use sp_std::{boxed::Box, vec::Vec, borrow::Cow};
 
 use hash_db::{HashDB, EMPTY_PREFIX};
 
@@ -64,6 +64,16 @@ impl Encode for EncodeOpaqueValue {
 	}
 }
 
+#[derive(Clone, Copy)]
+struct CodeFetcher;
+
+impl<'a> trie_db::LazyValue<'a> for CodeFetcher {
+	fn fetch(&self) -> Option<Cow<'a, [u8]>> {
+		let code = sp_io::validation::validation_code();
+		Some(code.into())
+	}
+}
+
 /// Validate a given parachain block on a validator.
 #[doc(hidden)]
 pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -> ValidationResult {
@@ -83,14 +93,13 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 
 	// Uncompress
 	let mut db = MemoryDB::default();
-	let code = sp_io::validation::validation_code();
 	let mut nodes_iter = block_data.storage_proof.encoded_nodes.iter()
 		.map(|encoded_node| encoded_node.as_slice());
 	let (read_root, _nb_used) = trie_db::decode_compact_with_skipped_values::<sp_trie::Layout<HashFor<B>>, _, _, _, _, _>(
 		&mut db,
 		&mut nodes_iter,
 		// TODO unimplemented plug code fetcher instead of empty bytes
-		[(sp_core::storage::well_known_keys::CODE, code.as_slice())].iter().map(|(slice, v)| (*slice, &v[..])),
+		[(sp_core::storage::well_known_keys::CODE, CodeFetcher)].iter().map(|(slice, v)| (*slice, *v)),
 	).expect("Proof is not properly compacted.");
 
 	let root = parent_head.state_root().clone();
