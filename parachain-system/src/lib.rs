@@ -68,8 +68,7 @@ pub trait Config: frame_system::Config {
 	/// The HRMP message handlers that will be informed when a message is received.
 	///
 	/// The messages are dispatched in the order they were relayed by the relay chain. If multiple
-	/// messages were relayed at one block, these will be dispatched in order of the sender's para ID
-	/// ascension.
+	/// messages were relayed at one block, these will be dispatched in ascending order of the sender's para ID.
 	type HrmpMessageHandlers: HrmpMessageHandler;
 }
 
@@ -468,7 +467,7 @@ impl<T: Config> Module<T> {
 
 	/// Process all inbound horizontal messages relayed by the collator.
 	///
-	/// This is similar to `process_inbound_downward_messages`, but works on multiple inbound
+	/// This is similar to [`process_inbound_downward_messages`], but works on multiple inbound
 	/// channels.
 	fn process_inbound_horizontal_messages(
 		vfp: &PersistedValidationData,
