@@ -1572,31 +1572,33 @@ mod tests {
 		// Note that the resulting hashes are the same for HRMP and DMP. That's because even though
 		// the types are nominally different, they have the same structure and computation of the
 		// new head doesn't differ.
+		//
+		// These cases are taken from https://github.com/paritytech/polkadot/pull/2351
 		assert_eq!(
 			MessageQueueChain::default()
 				.extend_downward(&InboundDownwardMessage {
-					sent_at: 1,
+					sent_at: 2,
 					msg: vec![1, 2, 3],
 				})
 				.extend_downward(&InboundDownwardMessage {
-					sent_at: 2,
+					sent_at: 3,
 					msg: vec![4, 5, 6],
 				})
 				.head(),
-			hex!["e122104ff8780316bb3856d9bae2527e23989e90ad57e7be783e917e6c0b5635"].into(),
+			hex!["88dc00db8cc9d22aa62b87807705831f164387dfa49f80a8600ed1cbe1704b6b"].into(),
 		);
 		assert_eq!(
 			MessageQueueChain::default()
 				.extend_hrmp(&InboundHrmpMessage {
-					sent_at: 1,
+					sent_at: 2,
 					data: vec![1, 2, 3],
 				})
 				.extend_hrmp(&InboundHrmpMessage {
-					sent_at: 2,
+					sent_at: 3,
 					data: vec![4, 5, 6],
 				})
 				.head(),
-			hex!["e122104ff8780316bb3856d9bae2527e23989e90ad57e7be783e917e6c0b5635"].into(),
+			hex!["88dc00db8cc9d22aa62b87807705831f164387dfa49f80a8600ed1cbe1704b6b"].into(),
 		);
 	}
 
