@@ -49,10 +49,8 @@ fn call_validate_block(
 	let params = ValidationParams {
 		block_data: BlockData(block_data.encode()),
 		parent_head: HeadData(parent_head.encode()),
-		relay_chain_height: 1,
+		relay_parent_number: 1,
 		relay_storage_root,
-		hrmp_mqc_heads: Vec::new(),
-		dmq_mqc_head: Default::default(),
 	}
 	.encode();
 
@@ -101,7 +99,7 @@ fn build_block_with_witness(
 	let mut builder = client.init_block_builder_at(
 		&block_id,
 		Some(PersistedValidationData {
-			block_number: 1,
+			relay_parent_number: 1,
 			parent_head: parent_head.encode().into(),
 			..Default::default()
 		}),

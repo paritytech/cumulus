@@ -24,7 +24,9 @@ use sp_std::collections::btree_map::BTreeMap;
 pub struct RelayStateSproofBuilder {
 	pub para_id: ParaId,
 	pub host_config: AbridgedHostConfiguration,
+	pub dmq_mqc_head: Option<relay_chain::Hash>,
 	pub relay_dispatch_queue_size: Option<(u32, u32)>,
+	pub hrmp_ingress_channel_index: Option<Vec<ParaId>>,
 	pub hrmp_egress_channel_index: Option<Vec<ParaId>>,
 	pub hrmp_channels: BTreeMap<relay_chain::v1::HrmpChannelId, AbridgedHrmpChannel>,
 }
@@ -44,7 +46,9 @@ impl Default for RelayStateSproofBuilder {
 				validation_upgrade_frequency: 6,
 				validation_upgrade_delay: 6,
 			},
+			dmq_mqc_head: None,
 			relay_dispatch_queue_size: None,
+			hrmp_ingress_channel_index: None,
 			hrmp_egress_channel_index: None,
 			hrmp_channels: BTreeMap::new(),
 		}
@@ -74,16 +78,32 @@ impl RelayStateSproofBuilder {
 				relay_chain::well_known_keys::ACTIVE_CONFIG.to_vec(),
 				self.host_config.encode(),
 			);
+			if let Some(dmq_mqc_head) = self.dmq_mqc_head {
+				insert(
+					relay_chain::well_known_keys::dmq_mqc_head(self.para_id),
+					dmq_mqc_head.encode(),
+				);
+			}
 			if let Some(relay_dispatch_queue_size) = self.relay_dispatch_queue_size {
 				insert(
 					relay_chain::well_known_keys::relay_dispatch_queue_size(self.para_id),
 					relay_dispatch_queue_size.encode(),
 				);
 			}
+			if let Some(hrmp_ingress_channel_index) = self.hrmp_ingress_channel_index {
+				let mut sorted = hrmp_ingress_channel_index.clone();
+				sorted.sort();
+				assert_eq!(sorted, hrmp_ingress_channel_index);
+
+				insert(
+					relay_chain::well_known_keys::hrmp_ingress_channel_index(self.para_id),
+					hrmp_ingress_channel_index.encode(),
+				);
+			}
 			if let Some(hrmp_egress_channel_index) = self.hrmp_egress_channel_index {
 				let mut sorted = hrmp_egress_channel_index.clone();
 				sorted.sort();
-				assert_eq!(sorted, hrmp_egress_channel_index,);
+				assert_eq!(sorted, hrmp_egress_channel_index);
 
 				insert(
 					relay_chain::well_known_keys::hrmp_egress_channel_index(self.para_id),
