@@ -203,7 +203,7 @@ decl_module! {
 			RelevantMessagingState::put(relevant_messaging_state);
 			HostConfiguration::put(host_config);
 
-			<T::OnValidationData as OnValidationData>::on_validation_data(vfp.clone());
+			<T::OnValidationData as OnValidationData>::on_validation_data(&vfp);
 
 			Self::process_inbound_downward_messages(&vfp, downward_messages)?;
 			Self::process_inbound_horizontal_messages(&vfp, horizontal_messages)?;
