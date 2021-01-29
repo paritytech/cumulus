@@ -528,11 +528,15 @@ impl<T: Config> Module<T> {
 
 		// Check that the MQC heads for each channel provided by the relay chain match the MQC heads
 		// we have after processing all incoming messages.
+		//
+		// Along the way we also carry over the relevant entries from the `last_mqc_heads` to
+		// `running_mqc_heads`. Otherwise, in a block where no messages were sent in a channel
+		// it won't get into next block's `last_mqc_heads` and thus will be all zeros, which
+		// would corrupt the message queue chain.
 		for &(ref sender, ref target_head) in &vfp.hrmp_mqc_heads {
 			let cur_head = running_mqc_heads
-				.get(&sender)
-				.cloned()
-				.unwrap_or_else(|| last_mqc_heads.get(&sender).cloned().unwrap_or_default())
+				.entry(*sender)
+				.or_insert_with(|| last_mqc_heads.get(&sender).cloned().unwrap_or_default())
 				.head();
 
 			ensure!(&cur_head == target_head, Error::<T>::HrmpMqcMismatch);
