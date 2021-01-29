@@ -294,7 +294,7 @@ pub fn run() -> Result<()> {
 						&polkadot_cli,
 						&polkadot_cli,
 						task_executor,
-						None,
+						config.telemetry_handle.clone(),
 					).map_err(|err| format!("Relay chain argument error: {}", err))?;
 				let collator = cli.run.base.validator || cli.collator;
 
@@ -430,5 +430,12 @@ impl CliConfiguration<Self> for RelayChainCli {
 
 	fn announce_block(&self) -> Result<bool> {
 		self.base.base.announce_block()
+	}
+
+	fn telemetry_endpoints(
+		&self,
+		chain_spec: &Box<dyn ChainSpec>,
+	) -> Result<Option<sc_telemetry::TelemetryEndpoints>> {
+		self.base.base.telemetry_endpoints(chain_spec)
 	}
 }
