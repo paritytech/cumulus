@@ -18,7 +18,6 @@ use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
 };
-use codec::Encode;
 use cumulus_primitives::{genesis::generate_genesis_block, ParaId};
 use log::info;
 use parachain_runtime::Block;
@@ -31,7 +30,7 @@ use sc_service::{
 	config::{BasePath, PrometheusConfig},
 	PartialComponents,
 };
-use sp_core::hexdisplay::HexDisplay;
+use sp_core::{hexdisplay::HexDisplay, Encode};
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 
@@ -217,7 +216,7 @@ pub fn run() -> Result<()> {
 			})
 		}
 		Some(Subcommand::ExportGenesisState(params)) => {
-			let mut builder = sc_cli::GlobalLoggerBuilder::new("");
+			let mut builder = sc_cli::LoggerBuilder::new("");
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
 			let _ = builder.init();
 
@@ -241,7 +240,7 @@ pub fn run() -> Result<()> {
 			Ok(())
 		}
 		Some(Subcommand::ExportGenesisWasm(params)) => {
-			let mut builder = sc_cli::GlobalLoggerBuilder::new("");
+			let mut builder = sc_cli::LoggerBuilder::new("");
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
 			let _ = builder.init();
 
