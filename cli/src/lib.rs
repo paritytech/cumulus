@@ -39,10 +39,6 @@ pub struct PurgeChainCmd {
 	/// Only delete the relay chain database
 	#[structopt(long = "relaychain", aliases = &["relay"])]
 	pub relaychain: bool,
-
-	/// This flag is normally copied from the para chain.
-	#[structopt(skip)]
-	pub dev: bool,
 }
 
 impl PurgeChainCmd {

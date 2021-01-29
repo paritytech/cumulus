@@ -60,7 +60,7 @@ fn purge_chain_works() {
 		let status = Command::new(cargo_bin("rococo-collator"))
 			.args(&["purge-chain", "-d"])
 			.arg(base_path.path())
-			.args(&["-y", "--", "--dev"])
+			.arg("-y")
 			.status()
 			.unwrap();
 		assert!(status.success());
