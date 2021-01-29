@@ -2,9 +2,8 @@
 members = [
 	"cli",
 	"consensus",
-	"message-broker",
 	"network",
-	"parachain-upgrade",
+	"parachain-system",
 	"primitives",
 	"rococo-parachains/",
 	"rococo-parachains/pallets/parachain-info",
