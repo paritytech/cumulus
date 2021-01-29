@@ -179,7 +179,7 @@ where
 {
 	type Output = std::pin::Pin<Box<dyn Future<Output = ServiceResult<()>>>>;
 
-	#[sc_tracing::logging::prefix_logs_with("Relaychain")]
+	#[sc_tracing::logging::prefix_logs_with("Parachain")]
 	fn execute_with_client<PClient, Api, PBackend>(self, client: Arc<PClient>) -> Self::Output
 	where
 		<Api as sp_api::ApiExt<PBlock>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
