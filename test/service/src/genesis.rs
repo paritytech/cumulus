@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+use codec::Encode;
 use cumulus_primitives::{genesis::generate_genesis_block, ParaId};
 use cumulus_test_runtime::Block;
 use polkadot_primitives::v0::HeadData;
-use sp_core::Encode;
 use sp_runtime::traits::Block as BlockT;
 
 /// Returns the initial head data for a parachain ID.
