@@ -105,18 +105,16 @@ decl_storage! {
 		/// This data is also absent from the genesis.
 		HostConfiguration get(fn host_configuration): Option<AbridgedHostConfiguration>;
 
-		/// The last downward message queue chain head we have observed or all zeroes if we haven't observed
-		/// any.
+		/// The last downward message queue chain head we have observed.
 		///
 		/// This value is loaded before and saved after processing inbound downward messages carried
 		/// by the system inherent.
-		LastDmqMqcHead: relay_chain::Hash;
-		/// The message queue chain heads we have observed per each channel incoming channel. If the
-		/// value is missing it is treated as all zeroes.
+		LastDmqMqcHead: MessageQueueChain;
+		/// The message queue chain heads we have observed per each channel incoming channel.
 		///
 		/// This value is loaded before and saved after processing inbound downward messages carried
 		/// by the system inherent.
-		LastHrmpMqcHeads: BTreeMap<ParaId, relay_chain::Hash>;
+		LastHrmpMqcHeads: BTreeMap<ParaId, MessageQueueChain>;
 
 		PendingUpwardMessages: Vec<UpwardMessage>;
 
@@ -442,22 +440,23 @@ impl<T: Config> Module<T> {
 		vfp: &PersistedValidationData,
 		downward_messages: Vec<InboundDownwardMessage>,
 	) -> DispatchResult {
-		let mut running_mqc_head = LastDmqMqcHead::get();
 		let dm_count = downward_messages.len() as u32;
-		for downward_message in downward_messages {
-			running_mqc_head = BlakeTwo256::hash_of(&(
-				running_mqc_head,
-				downward_message.sent_at,
-				BlakeTwo256::hash_of(&downward_message.msg),
-			));
-			T::DownwardMessageHandlers::handle_downward_message(downward_message);
-		}
+
+		let result_mqc_head = LastDmqMqcHead::mutate(move |mqc| {
+			for downward_message in downward_messages {
+				mqc.extend_downward(&downward_message);
+				T::DownwardMessageHandlers::handle_downward_message(downward_message);
+			}
+			mqc.0
+		});
 
 		// After hashing each message in the message queue chain submitted by the collator, we should
 		// arrive to the MQC head provided by the relay chain.
-		ensure!(running_mqc_head == vfp.dmq_mqc_head, Error::<T>::DmpMqcMismatch);
+		ensure!(
+			result_mqc_head == vfp.dmq_mqc_head,
+			Error::<T>::DmpMqcMismatch
+		);
 
-		LastDmqMqcHead::put(running_mqc_head);
 		// Store the processed_downward_messages here so that it will be accessible from
 		// PVF's `validate_block` wrapper and collation pipeline.
 		storage::unhashed::put(well_known_keys::PROCESSED_DOWNWARD_MESSAGES, &dm_count);
@@ -508,14 +507,10 @@ impl<T: Config> Module<T> {
 				hrmp_watermark = Some(horizontal_message.sent_at);
 			}
 
-			let cur_mqc_head = running_mqc_heads
+			running_mqc_heads
 				.entry(sender)
-				.or_insert_with(|| last_mqc_heads.get(&sender).cloned().unwrap_or_default());
-			*cur_mqc_head = BlakeTwo256::hash_of(&(
-				*cur_mqc_head,
-				horizontal_message.sent_at,
-				BlakeTwo256::hash_of(&horizontal_message.data),
-			));
+				.or_insert_with(|| last_mqc_heads.get(&sender).cloned().unwrap_or_default())
+				.extend_hrmp(&horizontal_message);
 
 			ensure!(
 				vfp.hrmp_mqc_heads
@@ -533,7 +528,9 @@ impl<T: Config> Module<T> {
 			let cur_head = running_mqc_heads
 				.get(&sender)
 				.cloned()
-				.unwrap_or_else(|| last_mqc_heads.get(&sender).cloned().unwrap_or_default());
+				.unwrap_or_else(|| last_mqc_heads.get(&sender).cloned().unwrap_or_default())
+				.head();
+
 			ensure!(&cur_head == target_head, Error::<T>::HrmpMqcMismatch);
 		}
 
@@ -630,6 +627,42 @@ impl<T: Config> Module<T> {
 	}
 }
 
+/// This struct provides ability to extend a message queue chain (MQC) and compute a new head.
+///
+/// MQC is an instance of a [hash chain] applied to a message queue. Using a hash chain it's possible
+/// to represent a sequence of messages using only a single hash.
+///
+/// A head for an empty chain is agreed to be a zero hash.
+///
+/// [hash chain]: https://en.wikipedia.org/wiki/Hash_chain
+#[derive(Default, Clone, codec::Encode, codec::Decode)]
+struct MessageQueueChain(relay_chain::Hash);
+
+impl MessageQueueChain {
+	fn extend_hrmp(&mut self, horizontal_message: &InboundHrmpMessage) -> &mut Self {
+		let prev_head = self.0;
+		self.0 = BlakeTwo256::hash_of(&(
+			prev_head,
+			horizontal_message.sent_at,
+			BlakeTwo256::hash_of(&horizontal_message.data),
+		));
+		self
+	}
+
+	fn extend_downward(&mut self, downward_message: &InboundDownwardMessage) -> &mut Self {
+		let prev_head = self.0;
+		self.0 = BlakeTwo256::hash_of(&(
+			prev_head,
+			downward_message.sent_at,
+			BlakeTwo256::hash_of(&downward_message.msg),
+		));
+		self
+	}
+
+	fn head(&self) -> relay_chain::Hash {
+		self.0
+	}
+}
 
 /// An error that can be raised upon sending an upward message.
 #[derive(Debug, PartialEq)]
@@ -1525,38 +1558,69 @@ mod tests {
 	}
 
 	#[test]
+	fn message_queue_chain() {
+		assert_eq!(MessageQueueChain::default().head(), H256::zero());
+
+		// Note that the resulting hashes are the same for HRMP and DMP. That's because even though
+		// the types are nominally different, they have the same structure and computation of the
+		// new head doesn't differ.
+		assert_eq!(
+			MessageQueueChain::default()
+				.extend_downward(&InboundDownwardMessage {
+					sent_at: 1,
+					msg: vec![1, 2, 3],
+				})
+				.extend_downward(&InboundDownwardMessage {
+					sent_at: 2,
+					msg: vec![4, 5, 6],
+				})
+				.head(),
+			hex!["e122104ff8780316bb3856d9bae2527e23989e90ad57e7be783e917e6c0b5635"].into(),
+		);
+		assert_eq!(
+			MessageQueueChain::default()
+				.extend_hrmp(&InboundHrmpMessage {
+					sent_at: 1,
+					data: vec![1, 2, 3],
+				})
+				.extend_hrmp(&InboundHrmpMessage {
+					sent_at: 2,
+					data: vec![4, 5, 6],
+				})
+				.head(),
+			hex!["e122104ff8780316bb3856d9bae2527e23989e90ad57e7be783e917e6c0b5635"].into(),
+		);
+	}
+
+	#[test]
 	fn receive_dmp() {
+		lazy_static::lazy_static! {
+			static ref MSG: InboundDownwardMessage = InboundDownwardMessage {
+				sent_at: 1,
+				msg: b"down".to_vec(),
+			};
+		}
+
 		BlockTests::new()
 			.with_validation_data(
 				|_, relay_block_num, validation_data| match relay_block_num {
 					1 => {
-						validation_data.dmq_mqc_head = hex![
-							"0f62484bb072376abd2a05bcac252b023e4564242b3487c978a860d6312af7cd"
-						]
-						.into();
+						validation_data.dmq_mqc_head =
+							MessageQueueChain::default().extend_downward(&MSG).head();
 					}
 					_ => unreachable!(),
 				},
 			)
 			.with_inherent_data(|_, relay_block_num, data| match relay_block_num {
 				1 => {
-					data.downward_messages.push(InboundDownwardMessage {
-						sent_at: 1,
-						msg: b"down".to_vec(),
-					});
+					data.downward_messages.push(MSG.clone());
 				}
 				_ => unreachable!(),
 			})
 			.add(1, || {
 				HANDLED_DOWNWARD_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
-					assert_eq!(
-						&*m,
-						&[InboundDownwardMessage {
-							sent_at: 1,
-							msg: b"down".to_vec(),
-						}]
-					);
+					assert_eq!(&*m, &[MSG.clone()]);
 					m.clear();
 				});
 			});
@@ -1564,6 +1628,28 @@ mod tests {
 
 	#[test]
 	fn receive_hrmp() {
+		lazy_static::lazy_static! {
+			static ref MSG_1: InboundHrmpMessage = InboundHrmpMessage {
+				sent_at: 1,
+				data: b"aquadisco".to_vec(),
+			};
+
+			static ref MSG_2: InboundHrmpMessage = InboundHrmpMessage {
+				sent_at: 1,
+				data: b"mudroom".to_vec(),
+			};
+
+			static ref MSG_3: InboundHrmpMessage = InboundHrmpMessage {
+				sent_at: 2,
+				data: b"eggpeeling".to_vec(),
+			};
+
+			static ref MSG_4: InboundHrmpMessage = InboundHrmpMessage {
+				sent_at: 2,
+				data: b"casino".to_vec(),
+			};
+		}
+
 		BlockTests::new()
 			.with_validation_data(
 				|_, relay_block_num, validation_data| match relay_block_num {
@@ -1572,10 +1658,7 @@ mod tests {
 						// 300 - one new message
 						validation_data.hrmp_mqc_heads.push((
 							ParaId::from(300),
-							hex![
-								"d8d73e427fbcb01793aae939418c28af9f570da4f3d8430076a58844397c78a5"
-							]
-							.into(),
+							MessageQueueChain::default().extend_hrmp(&MSG_1).head(),
 						));
 					}
 					2 => {
@@ -1583,17 +1666,15 @@ mod tests {
 						// 300 - now present with one message.
 						validation_data.hrmp_mqc_heads.push((
 							ParaId::from(200),
-							hex![
-								"6a320919805c27d66eac92ab499942ad2bff0359185a2ba73806672f3a6f4329"
-							]
-							.into(),
+							MessageQueueChain::default().extend_hrmp(&MSG_4).head(),
 						));
 						validation_data.hrmp_mqc_heads.push((
 							ParaId::from(300),
-							hex![
-								"11508e4faec05009887192062f2abf713a6e6d39c12d28ccf166f999b4b099f4"
-							]
-							.into(),
+							MessageQueueChain::default()
+								.extend_hrmp(&MSG_1)
+								.extend_hrmp(&MSG_2)
+								.extend_hrmp(&MSG_3)
+								.head(),
 						));
 					}
 					3 => {
@@ -1601,10 +1682,7 @@ mod tests {
 						// 300 - is gone
 						validation_data.hrmp_mqc_heads.push((
 							ParaId::from(200),
-							hex![
-								"6a320919805c27d66eac92ab499942ad2bff0359185a2ba73806672f3a6f4329"
-							]
-							.into(),
+							MessageQueueChain::default().extend_hrmp(&MSG_4).head(),
 						));
 					}
 					_ => unreachable!(),
@@ -1612,38 +1690,22 @@ mod tests {
 			)
 			.with_inherent_data(|_, relay_block_num, data| match relay_block_num {
 				1 => {
-					data.horizontal_messages.insert(
-						ParaId::from(300),
-						vec![InboundHrmpMessage {
-							sent_at: 1,
-							data: b"aquadisco".to_vec(),
-						}],
-					);
+					data.horizontal_messages
+						.insert(ParaId::from(300), vec![MSG_1.clone()]);
 				}
 				2 => {
 					data.horizontal_messages.insert(
 						ParaId::from(300),
 						vec![
-							InboundHrmpMessage {
-								// can't be sent at the block 1 actually. However, we cheat here
-								// because we want to test the case where there are multiple messages
-								// but the harness at the moment doesn't support block skipping.
-								sent_at: 1,
-								data: b"mudroom".to_vec(),
-							},
-							InboundHrmpMessage {
-								sent_at: 2,
-								data: b"eggpeeling".to_vec(),
-							},
+							// can't be sent at the block 1 actually. However, we cheat here
+							// because we want to test the case where there are multiple messages
+							// but the harness at the moment doesn't support block skipping.
+							MSG_2.clone(),
+							MSG_3.clone(),
 						],
 					);
-					data.horizontal_messages.insert(
-						ParaId::from(200),
-						vec![InboundHrmpMessage {
-							sent_at: 2,
-							data: b"casino".to_vec(),
-						}],
-					);
+					data.horizontal_messages
+						.insert(ParaId::from(200), vec![MSG_4.clone()]);
 				}
 				3 => {}
 				_ => unreachable!(),
@@ -1651,16 +1713,7 @@ mod tests {
 			.add(1, || {
 				HANDLED_HRMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
-					assert_eq!(
-						&*m,
-						&[(
-							ParaId::from(300),
-							InboundHrmpMessage {
-								sent_at: 1,
-								data: b"aquadisco".to_vec(),
-							}
-						)]
-					);
+					assert_eq!(&*m, &[(ParaId::from(300), MSG_1.clone())]);
 					m.clear();
 				});
 			})
@@ -1670,27 +1723,9 @@ mod tests {
 					assert_eq!(
 						&*m,
 						&[
-							(
-								ParaId::from(300),
-								InboundHrmpMessage {
-									sent_at: 1,
-									data: b"mudroom".to_vec(),
-								}
-							),
-							(
-								ParaId::from(200),
-								InboundHrmpMessage {
-									sent_at: 2,
-									data: b"casino".to_vec(),
-								},
-							),
-							(
-								ParaId::from(300),
-								InboundHrmpMessage {
-									sent_at: 2,
-									data: b"eggpeeling".to_vec(),
-								},
-							),
+							(ParaId::from(300), MSG_2.clone()),
+							(ParaId::from(200), MSG_4.clone()),
+							(ParaId::from(300), MSG_3.clone()),
 						]
 					);
 					m.clear();
@@ -1711,10 +1746,7 @@ mod tests {
 						// one new channel
 						validation_data.hrmp_mqc_heads.push((
 							ParaId::from(300),
-							hex![
-								"0000000000000000000000000000000000000000000000000000000000000000"
-							]
-							.into(),
+							MessageQueueChain::default().head(),
 						));
 					}
 					_ => unreachable!(),
@@ -1726,36 +1758,44 @@ mod tests {
 
 	#[test]
 	fn receive_hrmp_after_pause() {
+		lazy_static::lazy_static! {
+			static ref MSG_1: InboundHrmpMessage = InboundHrmpMessage {
+				sent_at: 1,
+				data: b"mikhailinvanovich".to_vec(),
+			};
+
+			static ref MSG_2: InboundHrmpMessage = InboundHrmpMessage {
+				sent_at: 3,
+				data: b"1000000000".to_vec(),
+			};
+		}
+
+		const ALICE: ParaId = ParaId::new(300);
+
 		BlockTests::new()
 			.with_validation_data(
 				|_, relay_block_num, validation_data| match relay_block_num {
 					1 => {
 						validation_data.hrmp_mqc_heads.push((
-							ParaId::from(300),
-							hex![
-								"dc11c5f88a93568a3f63b7d8243dc955a978085c60ccff760bc5be11f8212129"
-							]
-							.into(),
+							ALICE,
+							MessageQueueChain::default().extend_hrmp(&MSG_1).head(),
 						));
 					}
 					2 => {
 						// 300 - no new messages, mqc stayed the same.
 						validation_data.hrmp_mqc_heads.push((
-							ParaId::from(300),
-							hex![
-								"dc11c5f88a93568a3f63b7d8243dc955a978085c60ccff760bc5be11f8212129"
-							]
-							.into(),
+							ALICE,
+							MessageQueueChain::default().extend_hrmp(&MSG_1).head(),
 						));
 					}
 					3 => {
 						// 300 - new message.
 						validation_data.hrmp_mqc_heads.push((
-							ParaId::from(300),
-							hex![
-								"24ccf4e834deb7656fad108b2710884ae814d61de4ce60eca75cc872eed4a02c"
-							]
-							.into(),
+							ALICE,
+							MessageQueueChain::default()
+								.extend_hrmp(&MSG_1)
+								.extend_hrmp(&MSG_2)
+								.head(),
 						));
 					}
 					_ => unreachable!(),
@@ -1763,41 +1803,20 @@ mod tests {
 			)
 			.with_inherent_data(|_, relay_block_num, data| match relay_block_num {
 				1 => {
-					data.horizontal_messages.insert(
-						ParaId::from(300),
-						vec![InboundHrmpMessage {
-							sent_at: 1,
-							data: b"mikhailinvanovich".to_vec(),
-						}],
-					);
+					data.horizontal_messages.insert(ALICE, vec![MSG_1.clone()]);
 				}
 				2 => {
 					// no new messages
 				}
 				3 => {
-					data.horizontal_messages.insert(
-						ParaId::from(300),
-						vec![InboundHrmpMessage {
-							sent_at: 3,
-							data: b"1000000000".to_vec(),
-						}],
-					);
+					data.horizontal_messages.insert(ALICE, vec![MSG_2.clone()]);
 				}
 				_ => unreachable!(),
 			})
 			.add(1, || {
 				HANDLED_HRMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
-					assert_eq!(
-						&*m,
-						&[(
-							ParaId::from(300),
-							InboundHrmpMessage {
-								sent_at: 1,
-								data: b"mikhailinvanovich".to_vec(),
-							}
-						)]
-					);
+					assert_eq!(&*m, &[(ALICE, MSG_1.clone())]);
 					m.clear();
 				});
 			})
@@ -1805,16 +1824,7 @@ mod tests {
 			.add(3, || {
 				HANDLED_HRMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
-					assert_eq!(
-						&*m,
-						&[(
-							ParaId::from(300),
-							InboundHrmpMessage {
-								sent_at: 3,
-								data: b"1000000000".to_vec(),
-							}
-						)]
-					);
+					assert_eq!(&*m, &[(ALICE, MSG_2.clone())]);
 					m.clear();
 				});
 			});
