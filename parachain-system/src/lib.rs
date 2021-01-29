@@ -435,7 +435,7 @@ impl<T: Config> Module<T> {
 	/// Process all inbound downward messages relayed by the collator.
 	///
 	/// Checks if the sequence of the messages is valid, dispatches them and communicates the number
-	/// of processed messages to cumulus via a storage update.
+	/// of processed messages to the collator via a storage update.
 	fn process_inbound_downward_messages(
 		vfp: &PersistedValidationData,
 		downward_messages: Vec<InboundDownwardMessage>,
