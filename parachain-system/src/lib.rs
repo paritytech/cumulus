@@ -472,7 +472,18 @@ impl<T: Config> Module<T> {
 		vfp: &PersistedValidationData,
 		horizontal_messages: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
 	) -> DispatchResult {
-		// First prepare horizontal messages for a more convenient processing:
+		// First, check that all submitted messages are sent from channels that exist. The channel
+		// exists if its MQC head is present in `vfp.hrmp_mqc_heads`.
+		for sender in horizontal_messages.keys() {
+			ensure!(
+				vfp.hrmp_mqc_heads
+					.binary_search_by_key(sender, |&(s, _)| s)
+					.is_ok(),
+				Error::<T>::HrmpNoMqc,
+			);
+		}
+
+		// Second, prepare horizontal messages for a more convenient processing:
 		//
 		// instead of a mapping from a para to a list of inbound HRMP messages, we will have a list
 		// of tuples `(sender, message)` first ordered by `sent_at` (the relay chain block number
@@ -511,13 +522,6 @@ impl<T: Config> Module<T> {
 				.entry(sender)
 				.or_insert_with(|| last_mqc_heads.get(&sender).cloned().unwrap_or_default())
 				.extend_hrmp(&horizontal_message);
-
-			ensure!(
-				vfp.hrmp_mqc_heads
-					.binary_search_by_key(&sender, |&(s, _)| s)
-					.is_ok(),
-				Error::<T>::HrmpNoMqc,
-			);
 
 			T::HrmpMessageHandlers::handle_hrmp_message(sender, horizontal_message);
 		}
