@@ -126,7 +126,6 @@ where
 
 	let params = new_partial(&parachain_config)?;
 	let telemetry_span = params.other;
-	let _telemetry_span_entered = telemetry_span.as_ref().map(|x| x.enter());
 	params
 		.inherent_data_providers
 		.register_provider(sp_timestamp::InherentDataProvider)
@@ -172,7 +171,7 @@ where
 		network: network.clone(),
 		network_status_sinks,
 		system_rpc_tx,
-		telemetry_span: telemetry_span.clone(),
+		telemetry_span,
 	})?;
 
 	let announce_block = {
