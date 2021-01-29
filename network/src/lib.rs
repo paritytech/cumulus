@@ -154,7 +154,7 @@ impl BlockAnnounceData {
 			None => {
 				log::debug!(
 					target: LOG_TARGET,
-					"Block accouncement justification signer is a validator index out of bound",
+					"Block announcement justification signer is a validator index out of bound",
 				);
 
 				return Ok(Validation::Failure { disconnect: true })
