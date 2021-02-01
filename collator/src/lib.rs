@@ -20,7 +20,7 @@ use cumulus_network::WaitToAnnounce;
 use cumulus_primitives::{
 	inherents::{self, VALIDATION_DATA_IDENTIFIER},
 	well_known_keys, InboundDownwardMessage, InboundHrmpMessage, OutboundHrmpMessage,
-	ValidationData, relay_chain, CompressedProof,
+	ValidationData, relay_chain,
 };
 use cumulus_runtime::ParachainBlockData;
 
@@ -548,63 +548,22 @@ where
 
 		let (header, extrinsics) = block.deconstruct();
 		let block_hash = header.hash();
-		let mut child_tries = Vec::new();
-		// compact proof
-		// TODO this does not look very good StorageProof being compact
-		// without additional indication TODO consider defining in validationparam?.
-		// Also may better to have these compress logic in sp_trie.
-		// substrate but keeping thing local to cumulus is also interesting
-		// to avoid exposing it.
-		let partial_db = proof.into_memory_db();
-		let mut compact_proof = {
-			let root = sp_core::H256::from_slice(last_head.state_root().as_ref());
-			let trie = <sp_trie::TrieDB<sp_trie::Layout<BlakeTwo256>>>::new(&partial_db, &root)
-				.expect("Invalid trie proof.");
 
-			use trie_db::Trie;
-			let mut iter = trie.iter()
-				.expect("Invalid trie proof.");
-			// Should be DEFAULT_CHILD_STORAGE_KEY_PREFIX, but at the time we only got the default child trie
-			// type.
-			let childtrie_roots = sp_core::storage::well_known_keys::CHILD_STORAGE_KEY_PREFIX;
-			if iter.seek(childtrie_roots).is_ok() {
-				loop {
-					match iter.next() {
-						Some(Ok((key, value))) if key.starts_with(childtrie_roots) => {
-							let root: sp_core::H256 = Decode::decode(&mut value.as_slice())
-								.expect("Valid child trie root in proof");
-							child_tries.push(root);
-						},
-						// allow incomplete database error: we only
-						// require access to data in the proof.
-						Some(Err(error)) => match *error {
-							trie_db::TrieError::IncompleteDatabase(..) => (),
-							e => panic!("{:?}", e),
-						},
-						_ => break,
-					}
-				}
+		let root = sp_core::H256::from_slice(last_head.state_root().as_ref());
+		let compact_proof = match sp_trie::encode_compact::<sp_trie::Layout<BlakeTwo256>, _>(
+			proof,
+			root,
+			core::iter::once(sp_core::storage::well_known_keys::CODE),
+		) {
+			Ok(proof) => proof,
+			Err(e) => {
+				error!(target: "cumulus-collator", "Failed to compact proof: {:?}", e);
+				return None;
 			}
-
-			trie_db::encode_compact_skip_values::<sp_trie::Layout<BlakeTwo256>, _>(
-				&trie,
-				[sp_core::storage::well_known_keys::CODE].iter().map(|slice| *slice),
-			).expect("Valid proof should compact without error")
 		};
 
-		for child_root in child_tries {
-			let trie = <sp_trie::TrieDB<sp_trie::Layout<BlakeTwo256>>>::new(&partial_db, &child_root)
-				.expect("Invalid trie proof.");
-			let child_proof = trie_db::encode_compact::<sp_trie::Layout<BlakeTwo256>>(&trie)
-				.expect("Valid child proof should compact without error");
-
-			compact_proof.extend(child_proof);
-		}
-
-		let proof = CompressedProof { encoded_nodes: compact_proof };
-
 		// Create the parachain block data for the validators.
-		let b = ParachainBlockData::<Block>::new(header.clone(), extrinsics, proof);
+		let b = ParachainBlockData::<Block>::new(header.clone(), extrinsics, compact_proof);
 
 		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header);
 		block_import_params.body = Some(b.extrinsics().to_vec());

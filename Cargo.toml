@@ -131,7 +131,7 @@ substrate-test-client = { git="https://github.com/cheme/substrate", branch="vali
 substrate-test-runtime = { git="https://github.com/cheme/substrate", branch="validation_io" }
 substrate-test-runtime-client = { git="https://github.com/cheme/substrate", branch="validation_io" }
 substrate-test-utils = { git="https://github.com/cheme/substrate", branch="validation_io" }
-#substrate-wasm-builder = { git="https://github.com/cheme/substrate", branch="validation_io" }
+substrate-wasm-builder = { git="https://github.com/cheme/substrate", branch="validation_io" }
 
 [patch.'https://github.com/paritytech/polkadot']
 kusama-runtime = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }

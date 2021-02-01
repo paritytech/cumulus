@@ -20,8 +20,7 @@ use frame_executive::ExecuteBlock;
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT, NumberFor};
 
 use sp_std::{boxed::Box, vec::Vec, borrow::Cow};
-
-use hash_db::{HashDB, EMPTY_PREFIX};
+use sp_core::storage::well_known_keys::CODE;
 
 use parachain::primitives::{HeadData, ValidationCode, ValidationParams, ValidationResult};
 
@@ -67,10 +66,13 @@ impl Encode for EncodeOpaqueValue {
 #[derive(Clone, Copy)]
 struct CodeFetcher;
 
-impl<'a> trie_db::LazyValue<'a> for CodeFetcher {
-	fn fetch(&self) -> Option<Cow<'a, [u8]>> {
-		let code = sp_io::validation::validation_code();
-		Some(code.into())
+impl<'a> sp_trie::LazyFetcher<'a> for CodeFetcher {
+	fn fetch(&self, key: &[u8]) -> Option<Cow<'a, [u8]>> {
+		if key == CODE {
+			Some(parachain::validation::validation_code().into())
+		} else {
+			None
+		}
 	}
 }
 
@@ -93,69 +95,16 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 
 	// Uncompress
 	let mut db = MemoryDB::default();
-	let mut nodes_iter = block_data.storage_proof.encoded_nodes.iter()
-		.map(|encoded_node| encoded_node.as_slice());
-	let (read_root, _nb_used) = trie_db::decode_compact_with_skipped_values::<sp_trie::Layout<HashFor<B>>, _, _, _, _, _>(
+	let root = match sp_trie::decode_compact::<sp_trie::Layout<HashFor<B>>, _, _, _, _>(
 		&mut db,
-		&mut nodes_iter,
-		// TODO unimplemented plug code fetcher instead of empty bytes
-		[(sp_core::storage::well_known_keys::CODE, CodeFetcher)].iter().map(|(slice, v)| (*slice, *v)),
-	).expect("Proof is not properly compacted.");
-
-	let root = parent_head.state_root().clone();
-
-	if root != read_root {
-		panic!("Mismatch root between header and compacted proof");
-	}
-
-	let mut child_tries = Vec::new();
-	{
-		// fetch child trie roots
-		let trie = sp_trie::TrieDB::<sp_trie::Layout<HashFor<B>>>::new(&db, &read_root)
-			.expect("Invalid trie proof.");
-		use trie_db::Trie;
-		let mut iter = trie.iter()
-			.expect("Invalid trie proof.");
-		// Should be DEFAULT_CHILD_STORAGE_KEY_PREFIX, but at the time we only got the default child trie
-		// type.
-		let childtrie_roots = sp_core::storage::well_known_keys::CHILD_STORAGE_KEY_PREFIX;
-		if iter.seek(childtrie_roots).is_ok() {
-			loop {
-				match iter.next() {
-					Some(Ok((key, value))) if key.starts_with(childtrie_roots) => {
-						let root: B::Hash = Decode::decode(&mut value.as_slice())
-							.expect("Valid child trie root in proof");
-						child_tries.push(root);
-					},
-					// allow incomplete database error: we only
-					// require access to data in the proof.
-					Some(Err(error)) => match *error {
-						trie_db::TrieError::IncompleteDatabase(..) => (),
-						e => panic!("{:?}", e),
-					},
-					_ => break,
-				}
-			}
-		}
-	}
-	if !HashDB::<HashFor<B>, _>::contains(&db, &root, EMPTY_PREFIX) {
-		panic!("Witness data does not contain given storage root.");
-	}
-
-	for child_root in child_tries.into_iter() {
-		let (read_root, _nb_used) = trie_db::decode_compact_from_iter::<sp_trie::Layout<HashFor<B>>, _, _, _>(
-			&mut db,
-			&mut nodes_iter,
-		).expect("Proof is not properly compacted.");
-
-		if child_root != read_root {
-			panic!("Mismatch root between child root in proof and compacted proof");
-		}
-	}
-
-	if nodes_iter.next().is_some() {
-		panic!("Unused nodes in proof");
-	}
+		block_data.storage_proof.iter_compact_encoded_nodes(),
+		CodeFetcher,
+		Some(core::iter::once(CODE)),
+		Some(parent_head.state_root()),
+	) {
+		Ok(root) => root,
+		Err(_e) => panic!("Compact proof decoding failure."),
+	};
 
 	let backend = sp_state_machine::TrieBackend::new(db, root);
 	let mut overlay = sp_state_machine::OverlayedChanges::default();

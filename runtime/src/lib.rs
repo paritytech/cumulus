@@ -20,7 +20,7 @@
 use codec::{Decode, Encode};
 use sp_runtime::traits::Block as BlockT;
 use sp_std::vec::Vec;
-use cumulus_primitives::CompressedProof;
+use sp_trie::CompactProof;
 
 #[cfg(not(feature = "std"))]
 #[doc(hidden)]
@@ -37,7 +37,7 @@ pub struct ParachainBlockData<B: BlockT> {
 	/// The extrinsics of the parachain block without the `PolkadotInherent`.
 	extrinsics: Vec<<B as BlockT>::Extrinsic>,
 	/// The data that is required to emulate the storage accesses executed by all extrinsics.
-	storage_proof: CompressedProof,
+	storage_proof: CompactProof,
 }
 
 impl<B: BlockT> ParachainBlockData<B> {
@@ -45,7 +45,7 @@ impl<B: BlockT> ParachainBlockData<B> {
 	pub fn new(
 		header: <B as BlockT>::Header,
 		extrinsics: Vec<<B as BlockT>::Extrinsic>,
-		storage_proof: CompressedProof,
+		storage_proof: CompactProof,
 	) -> Self {
 		Self {
 			header,
@@ -69,8 +69,8 @@ impl<B: BlockT> ParachainBlockData<B> {
 		&self.extrinsics
 	}
 
-	/// Returns the [`CompressedProof`].
-	pub fn storage_proof(&self) -> &CompressedProof {
+	/// Returns the [`CompactProof`].
+	pub fn storage_proof(&self) -> &CompactProof {
 		&self.storage_proof
 	}
 }
