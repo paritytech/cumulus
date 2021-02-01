@@ -37,6 +37,7 @@ mod local_executor {
 		pub LocalExecutor,
 		cumulus_test_runtime::api::dispatch,
 		cumulus_test_runtime::native_version,
+		polkadot_parachain::Validation::HostFunctions,
 	);
 }
 

@@ -9,7 +9,6 @@ edition = "2018"
 codec = { package = "parity-scale-codec", version = "1.3.0", default-features = false, features = [ "derive" ] }
 hash-db = { version = "0.15.2", default-features = false }
 memory-db = { version = "0.25.0", default-features = false }
-trie-db = { version = "0.22.0", default-features = false }
 
 # Cumulus dependencies
 cumulus-primitives = { path = "../primitives", default-features = false }
@@ -49,7 +48,6 @@ std = [
 	"frame-executive/std",
 	"memory-db/std",
 	"hash-db/std",
-	"trie-db/std",
 	"sp-state-machine/std",
 	"sp-externalities/std",
 	"sp-trie/std",

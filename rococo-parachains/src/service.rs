@@ -34,6 +34,7 @@ native_executor_instance!(
 	pub Executor,
 	parachain_runtime::api::dispatch,
 	parachain_runtime::native_version,
+	polkadot_parachain::Validation::HostFunctions,
 );
 
 /// Starts a `ServiceBuilder` for a full service.
