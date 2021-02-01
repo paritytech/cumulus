@@ -6,23 +6,23 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "ser-tmp-rococo-v1" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "ser-tmp-rococo-v1" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "ser-tmp-rococo-v1" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "ser-tmp-rococo-v1" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "ser-tmp-rococo-v1" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "ser-tmp-rococo-v1" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "ser-tmp-rococo-v1" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "ser-tmp-rococo-v1" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "ser-tmp-rococo-v1" }
 
 # Polkadot dependencies
-polkadot-service = { git = "https://github.com/paritytech/polkadot", features = [ "real-overseer" ], branch = "rococo-v1" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
-polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", features = [ "real-overseer" ], branch = "ser-tmp-rococo-v1" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "ser-tmp-rococo-v1" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "ser-tmp-rococo-v1" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "ser-tmp-rococo-v1" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "ser-tmp-rococo-v1" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "ser-tmp-rococo-v1" }
 
 # Cumulus dependencies
 cumulus-network = { path = "../network" }
@@ -40,14 +40,14 @@ cumulus-test-runtime = { path = "../test/runtime" }
 cumulus-test-client = { path = "../test/client" }
 
 # Substrate dependencies
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "ser-tmp-rococo-v1" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "ser-tmp-rococo-v1" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "ser-tmp-rococo-v1" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "ser-tmp-rococo-v1" }
 
 # Polkadot dependencies
-polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
-polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "ser-tmp-rococo-v1" }
+polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "ser-tmp-rococo-v1" }
 
 # Other dependencies
 env_logger = "0.7.1"
