@@ -190,7 +190,7 @@ decl_module! {
 			let (host_config, relevant_messaging_state) =
 				relay_state_snapshot::extract_from_proof(
 					T::SelfParaId::get(),
-					vfp.relay_storage_root,
+					vfp.relay_parent_storage_root,
 					relay_chain_state
 				)
 				.map_err(|err| {
@@ -1124,11 +1124,11 @@ mod tests {
 					if let Some(ref hook) = self.relay_sproof_builder_hook {
 						hook(self, *n as RelayChainBlockNumber, &mut sproof_builder);
 					}
-					let (relay_storage_root, relay_chain_state) =
+					let (relay_parent_storage_root, relay_chain_state) =
 						sproof_builder.into_state_root_and_proof();
 					let mut vfp = PersistedValidationData {
 						relay_parent_number: *n as RelayChainBlockNumber,
-						relay_storage_root,
+						relay_parent_storage_root,
 						..Default::default()
 					};
 					if let Some(ref hook) = self.persisted_validation_data_hook {

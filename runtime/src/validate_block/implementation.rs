@@ -217,8 +217,8 @@ impl<'a, B: BlockT> WitnessExt<'a, B> {
 			validation_data.relay_parent_number,
 		);
 		assert_eq!(
-			self.params.relay_storage_root,
-			validation_data.relay_storage_root,
+			self.params.relay_parent_storage_root,
+			validation_data.relay_parent_storage_root,
 		);
 	}
 }

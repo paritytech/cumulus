@@ -109,14 +109,14 @@ where
 /// of the current parachain and the expected storage root the proof should stem from.
 pub fn extract_from_proof(
 	para_id: ParaId,
-	relay_storage_root: relay_chain::v1::Hash,
+	relay_parent_storage_root: relay_chain::v1::Hash,
 	proof: StorageProof,
 ) -> Result<(AbridgedHostConfiguration, MessagingStateSnapshot), Error> {
 	let db = proof.into_memory_db::<HashFor<relay_chain::Block>>();
-	if !db.contains(&relay_storage_root, EMPTY_PREFIX) {
+	if !db.contains(&relay_parent_storage_root, EMPTY_PREFIX) {
 		return Err(Error::RootMismatch);
 	}
-	let backend = TrieBackend::new(db, relay_storage_root);
+	let backend = TrieBackend::new(db, relay_parent_storage_root);
 
 	let host_config: AbridgedHostConfiguration = read_entry(
 		&backend,
