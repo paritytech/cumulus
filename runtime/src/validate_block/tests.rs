@@ -46,6 +46,11 @@ fn call_validate_block(
 ) -> Result<Header> {
 	let mut ext = TestExternalities::default();
 	let mut ext_ext = ext.ext();
+	WASM_BINARY.map(|wasm| {
+		use sp_externalities::{Externalities, ExternalitiesExt};
+		let mut ext_ext: &mut dyn Externalities = &mut ext_ext;
+		ext_ext.register_extension(parachain::ValidationExt::new(wasm))
+	});
 	let params = ValidationParams {
 		block_data: BlockData(block_data.encode()),
 		parent_head: HeadData(parent_head.encode()),
@@ -56,10 +61,12 @@ fn call_validate_block(
 	}
 	.encode();
 
+	let mut host_functions = sp_io::SubstrateHostFunctions::host_functions();
+	host_functions.extend(parachain::validation::HostFunctions::host_functions());
 	let executor = WasmExecutor::new(
 		WasmExecutionMethod::Interpreted,
 		Some(1024),
-		sp_io::SubstrateHostFunctions::host_functions(),
+		host_functions,
 		1,
 	);
 
@@ -125,7 +132,19 @@ fn build_block_with_witness(
 		relay_storage_root,
 	}
 }
-/*  TODO compress witness in build_block
+
+fn encode_witness(
+	witness: sp_trie::StorageProof,
+	root: &Hash,
+) -> sp_trie::CompactProof {
+	type Layout = sp_trie::Layout<<Header as HeaderT>::Hashing>;
+	sp_trie::encode_compact::<Layout, _>(
+		witness,
+		root.clone(),
+		std::iter::once(sp_core::storage::well_known_keys::CODE),
+	).unwrap()
+}
+
 #[test]
 fn validate_block_no_extra_extrinsics() {
 	let _ = env_logger::try_init();
@@ -137,6 +156,7 @@ fn validate_block_no_extra_extrinsics() {
 		witness,
 		relay_storage_root,
 	} = build_block_with_witness(&client, vec![], parent_head.clone());
+	let witness = encode_witness(witness, parent_head.state_root());
 	let (header, extrinsics) = block.deconstruct();
 
 	let block_data = ParachainBlockData::new(header.clone(), extrinsics, witness);
@@ -163,6 +183,7 @@ fn validate_block_with_extra_extrinsics() {
 		witness,
 		relay_storage_root,
 	} = build_block_with_witness(&client, extra_extrinsics, parent_head.clone());
+	let witness = encode_witness(witness, parent_head.state_root());
 	let (header, extrinsics) = block.deconstruct();
 
 	let block_data = ParachainBlockData::new(header.clone(), extrinsics, witness);
@@ -184,6 +205,7 @@ fn validate_block_invalid_parent_hash() {
 		witness,
 		relay_storage_root,
 	} = build_block_with_witness(&client, vec![], parent_head.clone());
+	let witness = encode_witness(witness, parent_head.state_root());
 	let (mut header, extrinsics) = block.deconstruct();
 	header.set_parent_hash(Hash::from_low_u64_be(1));
 
@@ -191,4 +213,3 @@ fn validate_block_invalid_parent_hash() {
 	call_validate_block(parent_head, block_data, relay_storage_root)
 		.expect("Calls `validate_block`");
 }
-*/
