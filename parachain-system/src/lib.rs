@@ -1079,6 +1079,7 @@ mod tests {
 			self
 		}
 
+		#[allow(dead_code)] // might come in handy in future. If now is future and it still hasn't - feel free.
 		fn with_validation_data<F>(mut self, f: F) -> Self
 		where
 			F: 'static + Fn(&BlockTests, RelayChainBlockNumber, &mut PersistedValidationData),
@@ -1619,11 +1620,11 @@ mod tests {
 		}
 
 		BlockTests::new()
-			.with_validation_data(
-				|_, relay_block_num, validation_data| match relay_block_num {
+			.with_relay_sproof_builder(
+				|_, relay_block_num, sproof| match relay_block_num {
 					1 => {
-						validation_data.dmq_mqc_head =
-							MessageQueueChain::default().extend_downward(&MSG).head();
+						sproof.dmq_mqc_head =
+							Some(MessageQueueChain::default().extend_downward(&MSG).head());
 					}
 					_ => unreachable!(),
 				},
@@ -1668,39 +1669,31 @@ mod tests {
 		}
 
 		BlockTests::new()
-			.with_validation_data(
-				|_, relay_block_num, validation_data| match relay_block_num {
+			.with_relay_sproof_builder(
+				|_, relay_block_num, sproof| match relay_block_num {
 					1 => {
 						// 200 - doesn't exist yet
 						// 300 - one new message
-						validation_data.hrmp_mqc_heads.push((
-							ParaId::from(300),
-							MessageQueueChain::default().extend_hrmp(&MSG_1).head(),
-						));
+						sproof.upsert_inbound_channel(ParaId::from(300)).mqc_head =
+							Some(MessageQueueChain::default().extend_hrmp(&MSG_1).head());
 					}
 					2 => {
 						// 200 - two new messages
 						// 300 - now present with one message.
-						validation_data.hrmp_mqc_heads.push((
-							ParaId::from(200),
-							MessageQueueChain::default().extend_hrmp(&MSG_4).head(),
-						));
-						validation_data.hrmp_mqc_heads.push((
-							ParaId::from(300),
-							MessageQueueChain::default()
+						sproof.upsert_inbound_channel(ParaId::from(200)).mqc_head =
+							Some(MessageQueueChain::default().extend_hrmp(&MSG_4).head());
+						sproof.upsert_inbound_channel(ParaId::from(300)).mqc_head =
+							Some(MessageQueueChain::default()
 								.extend_hrmp(&MSG_1)
 								.extend_hrmp(&MSG_2)
 								.extend_hrmp(&MSG_3)
-								.head(),
-						));
+								.head());
 					}
 					3 => {
 						// 200 - no new messages
 						// 300 - is gone
-						validation_data.hrmp_mqc_heads.push((
-							ParaId::from(200),
-							MessageQueueChain::default().extend_hrmp(&MSG_4).head(),
-						));
+						sproof.upsert_inbound_channel(ParaId::from(200)).mqc_head =
+							Some(MessageQueueChain::default().extend_hrmp(&MSG_4).head());
 					}
 					_ => unreachable!(),
 				},
@@ -1754,21 +1747,17 @@ mod tests {
 	#[test]
 	fn receive_hrmp_empty_channel() {
 		BlockTests::new()
-			.with_validation_data(
-				|_, relay_block_num, validation_data| match relay_block_num {
-					1 => {
-						// no channels
-					}
-					2 => {
-						// one new channel
-						validation_data.hrmp_mqc_heads.push((
-							ParaId::from(300),
-							MessageQueueChain::default().head(),
-						));
-					}
-					_ => unreachable!(),
-				},
-			)
+			.with_relay_sproof_builder(|_, relay_block_num, sproof| match relay_block_num {
+				1 => {
+					// no channels
+				}
+				2 => {
+					// one new channel
+					sproof.upsert_inbound_channel(ParaId::from(300)).mqc_head =
+						Some(MessageQueueChain::default().head());
+				}
+				_ => unreachable!(),
+			})
 			.add(1, || {})
 			.add(2, || {});
 	}
@@ -1790,30 +1779,24 @@ mod tests {
 		const ALICE: ParaId = ParaId::new(300);
 
 		BlockTests::new()
-			.with_validation_data(
-				|_, relay_block_num, validation_data| match relay_block_num {
+			.with_relay_sproof_builder(
+				|_, relay_block_num, sproof| match relay_block_num {
 					1 => {
-						validation_data.hrmp_mqc_heads.push((
-							ALICE,
-							MessageQueueChain::default().extend_hrmp(&MSG_1).head(),
-						));
+						sproof.upsert_inbound_channel(ALICE).mqc_head
+							= Some(MessageQueueChain::default().extend_hrmp(&MSG_1).head());
 					}
 					2 => {
 						// 300 - no new messages, mqc stayed the same.
-						validation_data.hrmp_mqc_heads.push((
-							ALICE,
-							MessageQueueChain::default().extend_hrmp(&MSG_1).head(),
-						));
+						sproof.upsert_inbound_channel(ALICE).mqc_head
+							= Some(MessageQueueChain::default().extend_hrmp(&MSG_1).head());
 					}
 					3 => {
 						// 300 - new message.
-						validation_data.hrmp_mqc_heads.push((
-							ALICE,
-							MessageQueueChain::default()
-								.extend_hrmp(&MSG_1)
-								.extend_hrmp(&MSG_2)
-								.head(),
-						));
+						sproof.upsert_inbound_channel(ALICE).mqc_head
+							= Some(MessageQueueChain::default()
+							.extend_hrmp(&MSG_1)
+							.extend_hrmp(&MSG_2)
+							.head());
 					}
 					_ => unreachable!(),
 				},

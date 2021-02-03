@@ -22,7 +22,16 @@ use sp_std::collections::btree_map::BTreeMap;
 /// Builds a sproof (portmanteau of 'spoof' and 'proof') of the relay chain state.
 #[derive(Clone)]
 pub struct RelayStateSproofBuilder {
+	/// The para id of the current parachain.
+	///
+	/// This doesn't get into the storage proof produced by the builder, however, it is used for
+	/// generation of the storage image and by auxilary methods.
+	///
+	/// It's recommended to change this value once in the very beginning of usage.
+	///
+	/// The default value is 200.
 	pub para_id: ParaId,
+
 	pub host_config: AbridgedHostConfiguration,
 	pub dmq_mqc_head: Option<relay_chain::Hash>,
 	pub relay_dispatch_queue_size: Option<(u32, u32)>,
@@ -56,6 +65,33 @@ impl Default for RelayStateSproofBuilder {
 }
 
 impl RelayStateSproofBuilder {
+	/// Returns a mutable reference to HRMP channel metadata for a channel (`sender`, `self.para_id`).
+	///
+	/// If there is no channel, a new default one is created.
+	///
+	/// It also updates the `hrmp_ingress_channel_index`, creating it if needed.
+	pub fn upsert_inbound_channel(&mut self, sender: ParaId) -> &mut AbridgedHrmpChannel {
+		let in_index = self.hrmp_ingress_channel_index.get_or_insert_with(Vec::new);
+		match in_index.binary_search(&sender) {
+			Ok(_idx) => {}
+			Err(idx) => in_index.insert(idx, sender),
+		}
+
+		self.hrmp_channels
+			.entry(relay_chain::v1::HrmpChannelId {
+				sender,
+				recipient: self.para_id,
+			})
+			.or_insert_with(|| AbridgedHrmpChannel {
+				max_capacity: 0,
+				max_total_size: 0,
+				max_message_size: 0,
+				msg_count: 0,
+				total_size: 0,
+				mqc_head: None,
+			})
+	}
+
 	pub fn into_state_root_and_proof(
 		self,
 	) -> (
