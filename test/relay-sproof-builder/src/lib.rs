@@ -72,9 +72,8 @@ impl RelayStateSproofBuilder {
 	/// It also updates the `hrmp_ingress_channel_index`, creating it if needed.
 	pub fn upsert_inbound_channel(&mut self, sender: ParaId) -> &mut AbridgedHrmpChannel {
 		let in_index = self.hrmp_ingress_channel_index.get_or_insert_with(Vec::new);
-		match in_index.binary_search(&sender) {
-			Ok(_idx) => {}
-			Err(idx) => in_index.insert(idx, sender),
+		if let Err(idx) = in_index.binary_search(&sender) {
+			in_index.insert(idx, sender);
 		}
 
 		self.hrmp_channels
