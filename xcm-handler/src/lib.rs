@@ -159,18 +159,22 @@ impl<T: Config> SendXcm for Module<T> {
 				Ok(())
 			}
 			// An HRMP message for a sibling parachain.
-			Some(Junction::Parachain { id }) => {
-				let data = msg.encode();
-				let hash = T::Hashing::hash(&data);
-				let message = OutboundHrmpMessage {
-					recipient: (*id).into(),
-					data,
-				};
-				// TODO: Better error here
-				T::HrmpMessageSender::send_hrmp_message(message)
-					.map_err(|_| XcmError::Undefined)?;
-				Self::deposit_event(RawEvent::HrmpMessageSent(hash));
-				Ok(())
+			Some(Junction::Parent) if dest.len() == 2 => {
+				if let Some(Junction::Parachain { id }) = dest.at(1) {
+					let data = msg.encode();
+					let hash = T::Hashing::hash(&data);
+					let message = OutboundHrmpMessage {
+						recipient: (*id).into(),
+						data,
+					};
+					// TODO: Better error here
+					T::HrmpMessageSender::send_hrmp_message(message)
+						.map_err(|_| XcmError::Undefined)?;
+					Self::deposit_event(RawEvent::HrmpMessageSent(hash));
+					Ok(())
+				} else {
+					Err(XcmError::UnhandledXcmMessage)
+				}
 			}
 			_ => {
 				/* TODO: Handle other cases, like downward message */
