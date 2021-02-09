@@ -24,9 +24,6 @@ pub use polkadot_primitives::v1::{
 	PersistedValidationData, AbridgedHostConfiguration, AbridgedHrmpChannel,
 };
 
-#[cfg(feature = "std")]
-pub mod genesis;
-
 /// A module that re-exports relevant relay chain definitions.
 pub mod relay_chain {
 	pub use polkadot_core_primitives::*;

@@ -9,7 +9,6 @@ edition = "2018"
 sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sc-chain-spec = { git = "https://github.com/paritytech/substrate", optional = true, branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
@@ -27,7 +26,6 @@ polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", def
 [features]
 default = [ "std" ]
 std = [
-	"sc-chain-spec",
 	"sp-std/std",
 	"codec/std",
 	"polkadot-primitives/std",

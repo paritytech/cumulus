@@ -11,8 +11,9 @@ cumulus-collator = { path = "../collator" }
 cumulus-primitives = { path = "../primitives" }
 
 # Substrate dependencies
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -29,3 +30,4 @@ polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "
 # Other deps
 futures = "0.3.6"
 tracing = "0.1.22"
+codec = { package = "parity-scale-codec", version = "2.0.0" }

@@ -34,6 +34,8 @@ use sp_inherents::InherentDataProviders;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
 use std::{marker::PhantomData, sync::Arc};
 
+pub mod genesis;
+
 /// Polkadot full node handles.
 type PFullNode<C> = polkadot_service::NewFull<C>;
 
