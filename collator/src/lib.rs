@@ -18,11 +18,10 @@
 
 use cumulus_network::WaitToAnnounce;
 use cumulus_primitives_core::{
-	inherents,
+	inherents, ParachainBlockData,
 	well_known_keys, InboundDownwardMessage, InboundHrmpMessage, OutboundHrmpMessage,
 	PersistedValidationData, relay_chain,
 };
-use cumulus_runtime::ParachainBlockData;
 
 use sc_client_api::{BlockBackend, StateBackend};
 use sp_consensus::{

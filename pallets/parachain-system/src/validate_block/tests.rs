@@ -14,16 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::ParachainBlockData;
-
-use cumulus_primitives_core::PersistedValidationData;
+use cumulus_primitives_core::{PersistedValidationData, ParachainBlockData};
 use cumulus_test_client::{
 	runtime::{Block, Hash, Header, UncheckedExtrinsic, WASM_BINARY},
 	transfer, Client, DefaultTestClientBuilderExt, InitBlockBuilder, LongestChain,
 	TestClientBuilder, TestClientBuilderExt,
 };
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
-use parachain::primitives::{BlockData, HeadData, ValidationParams, ValidationResult};
+use polkadot_parachain::primitives::{BlockData, HeadData, ValidationParams, ValidationResult};
 use sc_executor::{
 	error::Result, sp_wasm_interface::HostFunctions, WasmExecutionMethod, WasmExecutor,
 };

@@ -34,7 +34,6 @@ pallet-sudo = { git = "https://github.com/paritytech/substrate", default-feature
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Cumulus dependencies
-cumulus-runtime = { path = "../../runtime", default-features = false }
 cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false }
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 cumulus-pallet-xcm-handler = { path = "../../pallets/xcm-handler", default-features = false }
@@ -74,7 +73,6 @@ std = [
 	"pallet-transaction-payment/std",
 	"parachain-info/std",
 	"rococo-parachain-primitives/std",
-	"cumulus-runtime/std",
 	"cumulus-pallet-parachain-system/std",
 	"cumulus-pallet-xcm-handler/std",
 	"cumulus-primitives-core/std",

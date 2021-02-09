@@ -27,7 +27,6 @@ polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", bran
 # Cumulus dependencies
 cumulus-network = { path = "../network" }
 cumulus-primitives-core = { path = "../primitives/core" }
-cumulus-runtime = { path = "../runtime" }
 
 # Other dependencies
 log = "0.4.8"

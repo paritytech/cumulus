@@ -24,7 +24,7 @@ mod tests;
 
 #[cfg(not(feature = "std"))]
 #[doc(hidden)]
-pub use parachain;
+pub use polkadot_parachain;
 
 /// Register the `validate_block` function that is used by parachains to validate blocks on a
 /// validator.
@@ -39,7 +39,7 @@ pub use parachain;
 ///     struct Block;
 ///     struct BlockExecutor;
 ///
-///     cumulus_runtime::register_validate_block!(Block, BlockExecutor);
+///     cumulus_pallet_parachain_system::register_validate_block!(Block, BlockExecutor);
 ///
 /// # fn main() {}
 /// ```
@@ -63,14 +63,14 @@ macro_rules! register_validate_block_impl {
 			#[no_mangle]
 			unsafe fn validate_block(arguments: *const u8, arguments_len: usize) -> u64 {
 				let params =
-					$crate::validate_block::parachain::load_params(arguments, arguments_len);
+					$crate::validate_block::polkadot_parachain::load_params(arguments, arguments_len);
 
 				let res = $crate::validate_block::implementation::validate_block::<
 					$block,
 					$block_executor,
 				>(params);
 
-				$crate::validate_block::parachain::write_result(&res)
+				$crate::validate_block::polkadot_parachain::write_result(&res)
 			}
 		}
 	};

@@ -23,7 +23,7 @@ use sp_std::{boxed::Box, vec::Vec};
 
 use hash_db::{HashDB, EMPTY_PREFIX};
 
-use parachain::primitives::{HeadData, ValidationCode, ValidationParams, ValidationResult};
+use polkadot_parachain::primitives::{HeadData, ValidationCode, ValidationParams, ValidationResult};
 
 use codec::{Decode, Encode};
 
@@ -32,7 +32,7 @@ use cumulus_primitives_core::{
 		HRMP_OUTBOUND_MESSAGES, HRMP_WATERMARK, NEW_VALIDATION_CODE, PROCESSED_DOWNWARD_MESSAGES,
 		UPWARD_MESSAGES, VALIDATION_DATA,
 	},
-	OutboundHrmpMessage, UpwardMessage, PersistedValidationData,
+	OutboundHrmpMessage, PersistedValidationData, UpwardMessage,
 };
 use sp_core::storage::{ChildInfo, TrackedStorageKey};
 use sp_externalities::{
@@ -67,21 +67,24 @@ impl Encode for EncodeOpaqueValue {
 /// Validate a given parachain block on a validator.
 #[doc(hidden)]
 pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -> ValidationResult {
-	let block_data = crate::ParachainBlockData::<B>::decode(&mut &params.block_data.0[..])
-		.expect("Invalid parachain block data");
+	let block_data =
+		cumulus_primitives_core::ParachainBlockData::<B>::decode(&mut &params.block_data.0[..])
+			.expect("Invalid parachain block data");
 
 	let parent_head =
 		B::Header::decode(&mut &params.parent_head.0[..]).expect("Invalid parent head");
 
-	let head_data = HeadData(block_data.header.encode());
+	let (header, extrinsics, storage_proof) = block_data.deconstruct();
 
-	let block = B::new(block_data.header, block_data.extrinsics);
+	let head_data = HeadData(header.encode());
+
+	let block = B::new(header, extrinsics);
 	assert!(
 		parent_head.hash() == *block.header().parent_hash(),
 		"Invalid parent hash",
 	);
 
-	let db = block_data.storage_proof.into_memory_db();
+	let db = storage_proof.into_memory_db();
 	let root = parent_head.state_root().clone();
 	if !HashDB::<HashFor<B>, _>::contains(&db, &root, EMPTY_PREFIX) {
 		panic!("Witness data does not contain given storage root.");
@@ -130,10 +133,8 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>>(params: ValidationParams) -
 			.replace_implementation(host_default_child_storage_root),
 		sp_io::default_child_storage::host_next_key
 			.replace_implementation(host_default_child_storage_next_key),
-		sp_io::offchain_index::host_set
-			.replace_implementation(host_offchain_index_set),
-		sp_io::offchain_index::host_clear
-			.replace_implementation(host_offchain_index_clear),
+		sp_io::offchain_index::host_set.replace_implementation(host_offchain_index_set),
+		sp_io::offchain_index::host_clear.replace_implementation(host_offchain_index_clear),
 	);
 
 	set_and_run_with_externalities(&mut ext, || {
@@ -205,13 +206,10 @@ impl<'a, B: BlockT> WitnessExt<'a, B> {
 	/// Should be removed with: https://github.com/paritytech/cumulus/issues/217
 	/// When removed `WitnessExt` could also be removed.
 	fn check_validation_data(&self, mut data: &[u8]) {
-		let validation_data = PersistedValidationData::decode(&mut data)
-			.expect("Invalid `PersistedValidationData`");
+		let validation_data =
+			PersistedValidationData::decode(&mut data).expect("Invalid `PersistedValidationData`");
 
-		assert_eq!(
-			self.params.parent_head,
-			validation_data.parent_head,
-		);
+		assert_eq!(self.params.parent_head, validation_data.parent_head,);
 		assert_eq!(
 			self.params.relay_parent_number,
 			validation_data.relay_parent_number,
@@ -487,6 +485,6 @@ fn host_default_child_storage_next_key(storage_key: &[u8], key: &[u8]) -> Option
 	with_externalities(|ext| ext.next_child_storage_key(&child_info, key))
 }
 
-fn host_offchain_index_set(_key: &[u8], _value: &[u8]) { }
+fn host_offchain_index_set(_key: &[u8], _value: &[u8]) {}
 
-fn host_offchain_index_clear(_key: &[u8]) { }
+fn host_offchain_index_clear(_key: &[u8]) {}

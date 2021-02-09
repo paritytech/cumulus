@@ -43,13 +43,15 @@ use frame_support::{
 	weights::{DispatchClass, Weight},
 };
 use frame_system::{ensure_none, ensure_root};
-use parachain::primitives::RelayChainBlockNumber;
+use polkadot_parachain::primitives::RelayChainBlockNumber;
+use relay_state_snapshot::MessagingStateSnapshot;
 use sp_inherents::{InherentData, InherentIdentifier, ProvideInherent};
 use sp_runtime::traits::{BlakeTwo256, Hash};
 use sp_std::{cmp, collections::btree_map::BTreeMap, vec::Vec};
 
 mod relay_state_snapshot;
-use relay_state_snapshot::MessagingStateSnapshot;
+#[macro_use]
+pub mod validate_block;
 
 /// The pallet's configuration trait.
 pub trait Config: frame_system::Config {
@@ -598,9 +600,8 @@ impl<T: Config> Module<T> {
 			return None;
 		}
 
-		let relay_blocks_since_last_upgrade = vfp
-			.relay_parent_number
-			.saturating_sub(LastUpgrade::get());
+		let relay_blocks_since_last_upgrade =
+			vfp.relay_parent_number.saturating_sub(LastUpgrade::get());
 
 		if relay_blocks_since_last_upgrade <= cfg.validation_upgrade_frequency {
 			// The cooldown after the last upgrade hasn't elapsed yet. Upgrade is not allowed.
@@ -611,9 +612,7 @@ impl<T: Config> Module<T> {
 	}
 
 	/// The implementation of the runtime upgrade scheduling.
-	fn schedule_upgrade_impl(
-		validation_function: Vec<u8>,
-	) -> DispatchResult {
+	fn schedule_upgrade_impl(validation_function: Vec<u8>) -> DispatchResult {
 		ensure!(
 			!PendingValidationFunction::exists(),
 			Error::<T>::OverlappingUpgrades
@@ -712,9 +711,9 @@ impl<T: Config> Module<T> {
 		match Self::host_configuration() {
 			Some(cfg) => {
 				if message.len() > cfg.max_upward_message_size as usize {
-					return Err(SendUpErr::TooBig)
+					return Err(SendUpErr::TooBig);
 				}
-			},
+			}
 			None => {
 				// This storage field should carry over from the previous block. So if it's None
 				// then it must be that this is an edge-case where a message is attempted to be
@@ -758,7 +757,7 @@ impl<T: Config> Module<T> {
 				// opened at all so early. At least, relying on this assumption seems to be a better
 				// tradeoff, compared to introducing an error variant that the clients should be
 				// prepared to handle.
-				return Err(SendHorizontalErr::NoChannel)
+				return Err(SendHorizontalErr::NoChannel);
 			}
 		};
 		let channel_meta = match relevant_messaging_state
@@ -769,7 +768,7 @@ impl<T: Config> Module<T> {
 			Err(_) => return Err(SendHorizontalErr::NoChannel),
 		};
 		if data.len() as u32 > channel_meta.max_message_size {
-			return Err(SendHorizontalErr::TooBig)
+			return Err(SendHorizontalErr::TooBig);
 		}
 
 		// And then at last update the storage.
@@ -1325,27 +1324,27 @@ mod tests {
 				sproof.host_config.max_upward_message_num_per_candidate = 1;
 				sproof.relay_dispatch_queue_size = None;
 			})
-			.add_with_post_test(1,
+			.add_with_post_test(
+				1,
 				|| {
 					ParachainSystem::send_upward_message(b"Mr F was here".to_vec()).unwrap();
 					ParachainSystem::send_upward_message(b"message 2".to_vec()).unwrap();
 				},
 				|| {
-					let v: Option<Vec<Vec<u8>>> = storage::unhashed::get(well_known_keys::UPWARD_MESSAGES);
-					assert_eq!(
-						v,
-						Some(vec![b"Mr F was here".to_vec()]),
-					);
-				})
-			.add_with_post_test(2,
+					let v: Option<Vec<Vec<u8>>> =
+						storage::unhashed::get(well_known_keys::UPWARD_MESSAGES);
+					assert_eq!(v, Some(vec![b"Mr F was here".to_vec()]),);
+				},
+			)
+			.add_with_post_test(
+				2,
 				|| { /* do nothing within block */ },
 				|| {
-					let v: Option<Vec<Vec<u8>>> = storage::unhashed::get(well_known_keys::UPWARD_MESSAGES);
-					assert_eq!(
-						v,
-						Some(vec![b"message 2".to_vec()]),
-					);
-				});
+					let v: Option<Vec<Vec<u8>>> =
+						storage::unhashed::get(well_known_keys::UPWARD_MESSAGES);
+					assert_eq!(v, Some(vec![b"message 2".to_vec()]),);
+				},
+			);
 	}
 
 	#[test]
@@ -1360,29 +1359,28 @@ mod tests {
 					2 => sproof.relay_dispatch_queue_size = Some((4, 0)),
 					_ => unreachable!(),
 				}
-
 			})
-			.add_with_post_test(1,
+			.add_with_post_test(
+				1,
 				|| {
 					ParachainSystem::send_upward_message(vec![0u8; 8]).unwrap();
 				},
 				|| {
 					// The message won't be sent because there is already one message in queue.
-					let v: Option<Vec<Vec<u8>>> = storage::unhashed::get(well_known_keys::UPWARD_MESSAGES);
-					assert_eq!(
-						v,
-						Some(vec![]),
-					);
-				})
-			.add_with_post_test(2,
+					let v: Option<Vec<Vec<u8>>> =
+						storage::unhashed::get(well_known_keys::UPWARD_MESSAGES);
+					assert_eq!(v, Some(vec![]),);
+				},
+			)
+			.add_with_post_test(
+				2,
 				|| { /* do nothing within block */ },
 				|| {
-					let v: Option<Vec<Vec<u8>>> = storage::unhashed::get(well_known_keys::UPWARD_MESSAGES);
-					assert_eq!(
-						v,
-						Some(vec![vec![0u8; 8]]),
-					);
-				});
+					let v: Option<Vec<Vec<u8>>> =
+						storage::unhashed::get(well_known_keys::UPWARD_MESSAGES);
+					assert_eq!(v, Some(vec![vec![0u8; 8]]),);
+				},
+			);
 	}
 
 	#[test]
@@ -1396,13 +1394,11 @@ mod tests {
 			})
 			.add(1, || {})
 			.add(2, || {
-				assert!(
-					ParachainSystem::send_hrmp_message(OutboundHrmpMessage {
-						recipient: ParaId::from(300),
-						data: b"derp".to_vec(),
-					})
-					.is_err()
-				);
+				assert!(ParachainSystem::send_hrmp_message(OutboundHrmpMessage {
+					recipient: ParaId::from(300),
+					data: b"derp".to_vec(),
+				})
+				.is_err());
 			});
 	}
 
@@ -1620,15 +1616,13 @@ mod tests {
 		}
 
 		BlockTests::new()
-			.with_relay_sproof_builder(
-				|_, relay_block_num, sproof| match relay_block_num {
-					1 => {
-						sproof.dmq_mqc_head =
-							Some(MessageQueueChain::default().extend_downward(&MSG).head());
-					}
-					_ => unreachable!(),
-				},
-			)
+			.with_relay_sproof_builder(|_, relay_block_num, sproof| match relay_block_num {
+				1 => {
+					sproof.dmq_mqc_head =
+						Some(MessageQueueChain::default().extend_downward(&MSG).head());
+				}
+				_ => unreachable!(),
+			})
 			.with_inherent_data(|_, relay_block_num, data| match relay_block_num {
 				1 => {
 					data.downward_messages.push(MSG.clone());
@@ -1669,35 +1663,34 @@ mod tests {
 		}
 
 		BlockTests::new()
-			.with_relay_sproof_builder(
-				|_, relay_block_num, sproof| match relay_block_num {
-					1 => {
-						// 200 - doesn't exist yet
-						// 300 - one new message
-						sproof.upsert_inbound_channel(ParaId::from(300)).mqc_head =
-							Some(MessageQueueChain::default().extend_hrmp(&MSG_1).head());
-					}
-					2 => {
-						// 200 - two new messages
-						// 300 - now present with one message.
-						sproof.upsert_inbound_channel(ParaId::from(200)).mqc_head =
-							Some(MessageQueueChain::default().extend_hrmp(&MSG_4).head());
-						sproof.upsert_inbound_channel(ParaId::from(300)).mqc_head =
-							Some(MessageQueueChain::default()
-								.extend_hrmp(&MSG_1)
-								.extend_hrmp(&MSG_2)
-								.extend_hrmp(&MSG_3)
-								.head());
-					}
-					3 => {
-						// 200 - no new messages
-						// 300 - is gone
-						sproof.upsert_inbound_channel(ParaId::from(200)).mqc_head =
-							Some(MessageQueueChain::default().extend_hrmp(&MSG_4).head());
-					}
-					_ => unreachable!(),
-				},
-			)
+			.with_relay_sproof_builder(|_, relay_block_num, sproof| match relay_block_num {
+				1 => {
+					// 200 - doesn't exist yet
+					// 300 - one new message
+					sproof.upsert_inbound_channel(ParaId::from(300)).mqc_head =
+						Some(MessageQueueChain::default().extend_hrmp(&MSG_1).head());
+				}
+				2 => {
+					// 200 - two new messages
+					// 300 - now present with one message.
+					sproof.upsert_inbound_channel(ParaId::from(200)).mqc_head =
+						Some(MessageQueueChain::default().extend_hrmp(&MSG_4).head());
+					sproof.upsert_inbound_channel(ParaId::from(300)).mqc_head = Some(
+						MessageQueueChain::default()
+							.extend_hrmp(&MSG_1)
+							.extend_hrmp(&MSG_2)
+							.extend_hrmp(&MSG_3)
+							.head(),
+					);
+				}
+				3 => {
+					// 200 - no new messages
+					// 300 - is gone
+					sproof.upsert_inbound_channel(ParaId::from(200)).mqc_head =
+						Some(MessageQueueChain::default().extend_hrmp(&MSG_4).head());
+				}
+				_ => unreachable!(),
+			})
 			.with_inherent_data(|_, relay_block_num, data| match relay_block_num {
 				1 => {
 					data.horizontal_messages
@@ -1779,28 +1772,27 @@ mod tests {
 		const ALICE: ParaId = ParaId::new(300);
 
 		BlockTests::new()
-			.with_relay_sproof_builder(
-				|_, relay_block_num, sproof| match relay_block_num {
-					1 => {
-						sproof.upsert_inbound_channel(ALICE).mqc_head
-							= Some(MessageQueueChain::default().extend_hrmp(&MSG_1).head());
-					}
-					2 => {
-						// 300 - no new messages, mqc stayed the same.
-						sproof.upsert_inbound_channel(ALICE).mqc_head
-							= Some(MessageQueueChain::default().extend_hrmp(&MSG_1).head());
-					}
-					3 => {
-						// 300 - new message.
-						sproof.upsert_inbound_channel(ALICE).mqc_head
-							= Some(MessageQueueChain::default()
+			.with_relay_sproof_builder(|_, relay_block_num, sproof| match relay_block_num {
+				1 => {
+					sproof.upsert_inbound_channel(ALICE).mqc_head =
+						Some(MessageQueueChain::default().extend_hrmp(&MSG_1).head());
+				}
+				2 => {
+					// 300 - no new messages, mqc stayed the same.
+					sproof.upsert_inbound_channel(ALICE).mqc_head =
+						Some(MessageQueueChain::default().extend_hrmp(&MSG_1).head());
+				}
+				3 => {
+					// 300 - new message.
+					sproof.upsert_inbound_channel(ALICE).mqc_head = Some(
+						MessageQueueChain::default()
 							.extend_hrmp(&MSG_1)
 							.extend_hrmp(&MSG_2)
-							.head());
-					}
-					_ => unreachable!(),
-				},
-			)
+							.head(),
+					);
+				}
+				_ => unreachable!(),
+			})
 			.with_inherent_data(|_, relay_block_num, data| match relay_block_num {
 				1 => {
 					data.horizontal_messages.insert(ALICE, vec![MSG_1.clone()]);

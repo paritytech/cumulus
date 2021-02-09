@@ -1075,7 +1075,6 @@ version = "0.1.0"
 dependencies = [
  "cumulus-network",
  "cumulus-primitives-core",
- "cumulus-runtime",
  "cumulus-test-client",
  "cumulus-test-runtime",
  "env_logger",
@@ -1164,27 +1163,36 @@ name = "cumulus-pallet-parachain-system"
 version = "0.1.0"
 dependencies = [
  "cumulus-primitives-core",
- "cumulus-runtime",
+ "cumulus-test-client",
  "cumulus-test-relay-sproof-builder",
+ "env_logger",
+ "frame-executive",
  "frame-support",
  "frame-system",
  "hash-db",
  "hex-literal 0.2.1",
  "lazy_static",
+ "memory-db",
  "pallet-balances",
  "parity-scale-codec",
  "polkadot-parachain",
+ "sc-client-api",
+ "sc-executor",
  "serde",
+ "sp-blockchain",
+ "sp-consensus",
  "sp-core",
  "sp-externalities",
  "sp-inherents",
  "sp-io",
+ "sp-keyring",
  "sp-runtime",
  "sp-state-machine",
  "sp-std",
  "sp-trie",
  "sp-version",
  "substrate-test-runtime-client",
+ "trie-db",
 ]
 
 [[package]]
@@ -1203,7 +1211,7 @@ dependencies = [
 name = "cumulus-primitives-core"
 version = "0.1.0"
 dependencies = [
- "impl-trait-for-tuples 0.1.3",
+ "impl-trait-for-tuples 0.2.1",
  "parity-scale-codec",
  "polkadot-core-primitives",
  "polkadot-parachain",
@@ -1213,34 +1221,6 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-trie",
-]
-
-[[package]]
-name = "cumulus-runtime"
-version = "0.1.0"
-dependencies = [
- "cumulus-primitives-core",
- "cumulus-test-client",
- "cumulus-test-relay-sproof-builder",
- "env_logger",
- "frame-executive",
- "hash-db",
- "memory-db",
- "parity-scale-codec",
- "polkadot-parachain",
- "sc-client-api",
- "sc-executor",
- "sp-blockchain",
- "sp-consensus",
- "sp-core",
- "sp-externalities",
- "sp-io",
- "sp-keyring",
- "sp-runtime",
- "sp-state-machine",
- "sp-std",
- "sp-trie",
- "trie-db",
 ]
 
 [[package]]
@@ -1303,7 +1283,6 @@ dependencies = [
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm-handler",
  "cumulus-primitives-core",
- "cumulus-runtime",
  "frame-executive",
  "frame-support",
  "frame-system",
@@ -1352,7 +1331,6 @@ version = "0.1.0"
 dependencies = [
  "cumulus-pallet-parachain-system",
  "cumulus-primitives-core",
- "cumulus-runtime",
  "frame-executive",
  "frame-support",
  "frame-system",
@@ -1982,7 +1960,7 @@ dependencies = [
  "bitflags",
  "frame-metadata",
  "frame-support-procedural",
- "impl-trait-for-tuples 0.2.0",
+ "impl-trait-for-tuples 0.2.1",
  "log",
  "once_cell",
  "parity-scale-codec",
@@ -2040,7 +2018,7 @@ version = "2.0.1"
 source = "git+https://github.com/paritytech/substrate#cc71cca1d3087bf62381a9d60b14ca6235b4b916"
 dependencies = [
  "frame-support",
- "impl-trait-for-tuples 0.2.0",
+ "impl-trait-for-tuples 0.2.1",
  "parity-scale-codec",
  "serde",
  "sp-core",
@@ -2792,9 +2770,9 @@ dependencies = [
 
 [[package]]
 name = "impl-trait-for-tuples"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f65a8ecf74feeacdab8d38cb129e550ca871cccaa7d1921d8636ecd75534903"
+checksum = "d5dacb10c5b3bb92d46ba347505a9041e676bb20ad220101326bffb0c93031ee"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.8",
@@ -4308,7 +4286,7 @@ source = "git+https://github.com/paritytech/substrate#cc71cca1d3087bf62381a9d60b
 dependencies = [
  "frame-support",
  "frame-system",
- "impl-trait-for-tuples 0.2.0",
+ "impl-trait-for-tuples 0.2.1",
  "parity-scale-codec",
  "sp-authorship",
  "sp-inherents",
@@ -4687,7 +4665,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "impl-trait-for-tuples 0.2.0",
+ "impl-trait-for-tuples 0.2.1",
  "parity-scale-codec",
  "serde",
  "sp-inherents",
@@ -4761,7 +4739,7 @@ source = "git+https://github.com/paritytech/substrate#cc71cca1d3087bf62381a9d60b
 dependencies = [
  "frame-support",
  "frame-system",
- "impl-trait-for-tuples 0.2.0",
+ "impl-trait-for-tuples 0.2.1",
  "pallet-balances",
  "parity-scale-codec",
  "serde",
@@ -4902,7 +4880,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "ethereum-types",
  "hashbrown",
- "impl-trait-for-tuples 0.2.0",
+ "impl-trait-for-tuples 0.2.1",
  "lru",
  "parity-util-mem-derive",
  "parking_lot 0.11.1",
@@ -7231,7 +7209,7 @@ name = "sc-chain-spec"
 version = "2.0.1"
 source = "git+https://github.com/paritytech/substrate#cc71cca1d3087bf62381a9d60b14ca6235b4b916"
 dependencies = [
- "impl-trait-for-tuples 0.2.0",
+ "impl-trait-for-tuples 0.2.1",
  "parity-scale-codec",
  "sc-chain-spec-derive",
  "sc-consensus-babe",
@@ -8930,7 +8908,7 @@ source = "git+https://github.com/paritytech/substrate#cc71cca1d3087bf62381a9d60b
 dependencies = [
  "either",
  "hash256-std-hasher",
- "impl-trait-for-tuples 0.2.0",
+ "impl-trait-for-tuples 0.2.1",
  "log",
  "parity-scale-codec",
  "parity-util-mem",
@@ -8949,7 +8927,7 @@ name = "sp-runtime-interface"
 version = "2.0.1"
 source = "git+https://github.com/paritytech/substrate#cc71cca1d3087bf62381a9d60b14ca6235b4b916"
 dependencies = [
- "impl-trait-for-tuples 0.2.0",
+ "impl-trait-for-tuples 0.2.1",
  "parity-scale-codec",
  "primitive-types",
  "sp-externalities",
@@ -9076,7 +9054,7 @@ name = "sp-timestamp"
 version = "2.0.1"
 source = "git+https://github.com/paritytech/substrate#cc71cca1d3087bf62381a9d60b14ca6235b4b916"
 dependencies = [
- "impl-trait-for-tuples 0.2.0",
+ "impl-trait-for-tuples 0.2.1",
  "parity-scale-codec",
  "sp-api",
  "sp-inherents",
@@ -9157,7 +9135,7 @@ name = "sp-wasm-interface"
 version = "2.0.1"
 source = "git+https://github.com/paritytech/substrate#cc71cca1d3087bf62381a9d60b14ca6235b4b916"
 dependencies = [
- "impl-trait-for-tuples 0.2.0",
+ "impl-trait-for-tuples 0.2.1",
  "parity-scale-codec",
  "sp-std",
  "wasmi",
@@ -10108,7 +10086,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.3.23",
+ "rand 0.7.3",
  "static_assertions",
 ]
 
@@ -10857,7 +10835,7 @@ version = "0.8.22"
 source = "git+https://github.com/paritytech/polkadot#e526a15b1fa9bb7ac5378541d9f32667618e18c4"
 dependencies = [
  "frame-support",
- "impl-trait-for-tuples 0.2.0",
+ "impl-trait-for-tuples 0.2.1",
  "parity-scale-codec",
  "sp-arithmetic",
  "sp-core",

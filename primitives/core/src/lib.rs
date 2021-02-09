@@ -18,6 +18,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use sp_runtime::traits::Block as BlockT;
+
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use polkadot_parachain::primitives::{Id as ParaId, UpwardMessage, ValidationParams};
 pub use polkadot_primitives::v1::{
@@ -129,4 +131,58 @@ pub trait HrmpMessageSender {
 #[impl_trait_for_tuples::impl_for_tuples(30)]
 pub trait OnValidationData {
 	fn on_validation_data(data: &PersistedValidationData);
+}
+
+/// The parachain block that is created by a collator.
+///
+/// This is send as PoV (proof of validity block) to the relay-chain validators. There it will be
+/// passed to the parachain validation Wasm blob to be validated.
+#[derive(codec::Encode, codec::Decode)]
+pub struct ParachainBlockData<B: BlockT> {
+	/// The header of the parachain block.
+	header: B::Header,
+	/// The extrinsics of the parachain block.
+	extrinsics: sp_std::vec::Vec<B::Extrinsic>,
+	/// The data that is required to emulate the storage accesses executed by all extrinsics.
+	storage_proof: sp_trie::StorageProof,
+}
+
+impl<B: BlockT> ParachainBlockData<B> {
+	/// Creates a new instance of `Self`.
+	pub fn new(
+		header: <B as BlockT>::Header,
+		extrinsics: sp_std::vec::Vec<<B as BlockT>::Extrinsic>,
+		storage_proof: sp_trie::StorageProof,
+	) -> Self {
+		Self {
+			header,
+			extrinsics,
+			storage_proof,
+		}
+	}
+
+	/// Convert `self` into the stored header.
+	pub fn into_header(self) -> B::Header {
+		self.header
+	}
+
+	/// Returns the header.
+	pub fn header(&self) -> &B::Header {
+		&self.header
+	}
+
+	/// Returns the extrinsics.
+	pub fn extrinsics(&self) -> &[B::Extrinsic] {
+		&self.extrinsics
+	}
+
+	/// Returns the [`StorageProof`](sp_trie::StorageProof).
+	pub fn storage_proof(&self) -> &sp_trie::StorageProof {
+		&self.storage_proof
+	}
+
+	/// Deconstruct into the inner parts.
+	pub fn deconstruct(self) -> (B::Header, sp_std::vec::Vec<B::Extrinsic>, sp_trie::StorageProof) {
+		(self.header, self.extrinsics, self.storage_proof)
+	}
 }
