@@ -16,7 +16,7 @@
 
 //! Cumulus Collator implementation for Substrate.
 
-use cumulus_network::WaitToAnnounce;
+use cumulus_client_network::WaitToAnnounce;
 use cumulus_primitives_core::{
 	inherents, ParachainBlockData,
 	well_known_keys, InboundDownwardMessage, InboundHrmpMessage, OutboundHrmpMessage,

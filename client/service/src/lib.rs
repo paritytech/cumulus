@@ -190,7 +190,7 @@ where
 		PClient: AbstractClient<PBlock, PBackend, Api = Api> + 'static,
 	{
 		async move {
-			cumulus_collator::start_collator(cumulus_collator::StartCollatorParams {
+			cumulus_client_collator::start_collator(cumulus_client_collator::StartCollatorParams {
 				proposer_factory: self.proposer_factory,
 				inherent_data_providers: self.inherent_data_providers,
 				backend: self.backend,
@@ -291,7 +291,7 @@ where
 		Api: RuntimeApiCollection<StateBackend = PBackend::State>,
 		PClient: AbstractClient<PBlock, PBackend, Api = Api> + 'static,
 	{
-		let consensus = cumulus_consensus::run_parachain_consensus(
+		let consensus = cumulus_client_consensus::run_parachain_consensus(
 			self.para_id,
 			self.client,
 			client,

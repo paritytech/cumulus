@@ -1,5 +1,5 @@
 [package]
-name = "cumulus-network"
+name = "cumulus-client-network"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 description = "Cumulus-specific networking protocol"
@@ -33,7 +33,7 @@ derive_more = "0.99.2"
 
 [dev-dependencies]
 # Cumulus deps
-cumulus-test-service = { path = "../test/service" }
+cumulus-test-service = { path = "../../test/service" }
 
 # Polkadot deps
 polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }

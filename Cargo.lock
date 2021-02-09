@@ -1070,10 +1070,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-collator"
+name = "cumulus-client-collator"
 version = "0.1.0"
 dependencies = [
- "cumulus-network",
+ "cumulus-client-network",
  "cumulus-primitives-core",
  "cumulus-test-client",
  "cumulus-test-runtime",
@@ -1105,7 +1105,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-consensus"
+name = "cumulus-client-consensus"
 version = "0.1.0"
 dependencies = [
  "cumulus-test-client",
@@ -1130,7 +1130,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-network"
+name = "cumulus-client-network"
 version = "0.1.0"
 dependencies = [
  "cumulus-test-service",
@@ -1156,6 +1156,31 @@ dependencies = [
  "sp-keyring",
  "sp-keystore",
  "sp-runtime",
+]
+
+[[package]]
+name = "cumulus-client-service"
+version = "0.1.0"
+dependencies = [
+ "cumulus-client-collator",
+ "cumulus-client-consensus",
+ "cumulus-primitives-core",
+ "futures 0.3.12",
+ "parity-scale-codec",
+ "polkadot-overseer",
+ "polkadot-primitives",
+ "polkadot-service",
+ "sc-chain-spec",
+ "sc-client-api",
+ "sc-service",
+ "sc-tracing",
+ "sp-api",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
+ "tracing",
 ]
 
 [[package]]
@@ -1221,31 +1246,6 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-trie",
-]
-
-[[package]]
-name = "cumulus-service"
-version = "0.1.0"
-dependencies = [
- "cumulus-collator",
- "cumulus-consensus",
- "cumulus-primitives-core",
- "futures 0.3.12",
- "parity-scale-codec",
- "polkadot-overseer",
- "polkadot-primitives",
- "polkadot-service",
- "sc-chain-spec",
- "sc-client-api",
- "sc-service",
- "sc-tracing",
- "sp-api",
- "sp-blockchain",
- "sp-consensus",
- "sp-core",
- "sp-inherents",
- "sp-runtime",
- "tracing",
 ]
 
 [[package]]
@@ -1360,10 +1360,10 @@ dependencies = [
 name = "cumulus-test-service"
 version = "0.1.0"
 dependencies = [
- "cumulus-consensus",
- "cumulus-network",
+ "cumulus-client-consensus",
+ "cumulus-client-network",
+ "cumulus-client-service",
  "cumulus-primitives-core",
- "cumulus-service",
  "cumulus-test-runtime",
  "futures 0.3.12",
  "jsonrpc-core",
@@ -6878,11 +6878,11 @@ name = "rococo-collator"
 version = "0.1.0"
 dependencies = [
  "assert_cmd",
- "cumulus-collator",
- "cumulus-consensus",
- "cumulus-network",
+ "cumulus-client-collator",
+ "cumulus-client-consensus",
+ "cumulus-client-network",
+ "cumulus-client-service",
  "cumulus-primitives-core",
- "cumulus-service",
  "cumulus-test-parachain-runtime",
  "derive_more 0.15.0",
  "exit-future 0.1.4",

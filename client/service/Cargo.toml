@@ -1,14 +1,14 @@
 [package]
-name = "cumulus-service"
+name = "cumulus-client-service"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 
 [dependencies]
 # Cumulus dependencies
-cumulus-consensus = { path = "../consensus" }
-cumulus-collator = { path = "../collator" }
-cumulus-primitives-core = { path = "../primitives/core" }
+cumulus-client-consensus = { path = "../consensus" }
+cumulus-client-collator = { path = "../collator" }
+cumulus-primitives-core = { path = "../../primitives/core" }
 
 # Substrate dependencies
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "master" }
