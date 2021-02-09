@@ -16,7 +16,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-//! parachain-system is a base module for cumulus-based parachains.
+//! cumulus-pallet-parachain-system is a base module for cumulus-based parachains.
 //!
 //! This module handles low-level details of being a parachain. It's responsibilities include:
 //!

@@ -1,5 +1,5 @@
 [package]
-name = "xcm-handler"
+name = "cumulus-pallet-xcm-handler"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
@@ -17,7 +17,7 @@ frame-system = { git = "https://github.com/paritytech/substrate", default-featur
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 # Cumulus Dependencies
-cumulus-primitives = { path = "../primitives", default-features = false }
+cumulus-primitives = { path = "../../primitives", default-features = false }
 
 [features]
 default = [ "std" ]

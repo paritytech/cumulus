@@ -2,8 +2,9 @@
 members = [
 	"consensus",
 	"network",
-	"parachain-system",
 	"primitives",
+	"pallets/parachain-system",
+	"pallets/xcm-handler",
 	"rococo-parachains/",
 	"rococo-parachains/pallets/parachain-info",
 	"rococo-parachains/primitives",
@@ -14,8 +15,7 @@ members = [
 	"test/client",
 	"test/service",
 	"test/relay-sproof-builder",
-	"xcm-handler",
 ]
 
 [profile.release]
-panic = 'unwind'
+panic = "unwind"

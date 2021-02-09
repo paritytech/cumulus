@@ -1161,7 +1161,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-parachain-system"
+name = "cumulus-pallet-parachain-system"
 version = "0.1.0"
 dependencies = [
  "cumulus-primitives",
@@ -1186,6 +1186,18 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "substrate-test-runtime-client",
+]
+
+[[package]]
+name = "cumulus-pallet-xcm-handler"
+version = "0.1.0"
+dependencies = [
+ "cumulus-primitives",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "sp-std",
+ "xcm",
 ]
 
 [[package]]
@@ -1288,7 +1300,8 @@ dependencies = [
 name = "cumulus-test-parachain-runtime"
 version = "0.1.0"
 dependencies = [
- "cumulus-parachain-system",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcm-handler",
  "cumulus-primitives",
  "cumulus-runtime",
  "frame-executive",
@@ -1319,7 +1332,6 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
- "xcm-handler",
 ]
 
 [[package]]
@@ -1338,7 +1350,7 @@ dependencies = [
 name = "cumulus-test-runtime"
 version = "0.1.0"
 dependencies = [
- "cumulus-parachain-system",
+ "cumulus-pallet-parachain-system",
  "cumulus-primitives",
  "cumulus-runtime",
  "frame-executive",
@@ -10851,18 +10863,6 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
- "sp-std",
- "xcm",
-]
-
-[[package]]
-name = "xcm-handler"
-version = "0.1.0"
-dependencies = [
- "cumulus-primitives",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
  "sp-std",
  "xcm",
 ]

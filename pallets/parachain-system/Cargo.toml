@@ -1,14 +1,14 @@
 [package]
-name = "cumulus-parachain-system"
+name = "cumulus-pallet-parachain-system"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
-description = "pallet to manage parachain upgrades"
+description = "Base pallet for cumulus-based parachains"
 
 [dependencies]
 # Cumulus dependencies
-cumulus-primitives = { path = "../primitives", default-features = false }
-cumulus-runtime = { path = "../runtime", default-features = false }
+cumulus-primitives = { path = "../../primitives", default-features = false }
+cumulus-runtime = { path = "../../runtime", default-features = false }
 
 # Polkadot dependencies
 parachain = { package = "polkadot-parachain", git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -35,25 +35,25 @@ hash-db = { version = "0.15.2", default-features = false }
 sp-externalities = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-cumulus-test-relay-sproof-builder = { path = "../test/relay-sproof-builder" }
+cumulus-test-relay-sproof-builder = { path = "../../test/relay-sproof-builder" }
 hex-literal = "0.2.1"
 lazy_static = "1.4"
 
 [features]
-default = ['std']
+default = [ "std" ]
 std = [
-	'serde',
-	'codec/std',
-	'frame-support/std',
-	'pallet-balances/std',
-	'cumulus-runtime/std',
-	'sp-core/std',
-	'sp-runtime/std',
-	'sp-io/std',
-	'sp-std/std',
-	'hash-db/std',
-	'sp-state-machine/std',
-	'sp-trie/std',
-	'frame-system/std',
-	'cumulus-primitives/std',
+	"serde",
+	"codec/std",
+	"frame-support/std",
+	"pallet-balances/std",
+	"cumulus-runtime/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"sp-io/std",
+	"sp-std/std",
+	"hash-db/std",
+	"sp-state-machine/std",
+	"sp-trie/std",
+	"frame-system/std",
+	"cumulus-primitives/std",
 ]
