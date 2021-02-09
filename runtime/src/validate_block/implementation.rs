@@ -27,7 +27,7 @@ use parachain::primitives::{HeadData, ValidationCode, ValidationParams, Validati
 
 use codec::{Decode, Encode};
 
-use cumulus_primitives::{
+use cumulus_primitives_core::{
 	well_known_keys::{
 		HRMP_OUTBOUND_MESSAGES, HRMP_WATERMARK, NEW_VALIDATION_CODE, PROCESSED_DOWNWARD_MESSAGES,
 		UPWARD_MESSAGES, VALIDATION_DATA,

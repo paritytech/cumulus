@@ -12,7 +12,7 @@ memory-db = { version = "0.26.0", default-features = false }
 trie-db = { version = "0.22.0", default-features = false }
 
 # Cumulus dependencies
-cumulus-primitives = { path = "../primitives", default-features = false }
+cumulus-primitives-core = { path = "../primitives/core", default-features = false }
 
 # Substrate dependencies
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -41,7 +41,7 @@ env_logger = "0.7.1"
 default = ["std"]
 std = [
 	"codec/std",
-	"cumulus-primitives/std",
+	"cumulus-primitives-core/std",
 	"sp-std/std",
 	"sp-io/std",
 	"sp-runtime/std",

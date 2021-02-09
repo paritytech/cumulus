@@ -23,7 +23,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use cumulus_primitives::{
+use cumulus_primitives_core::{
 	DownwardMessageHandler, HrmpMessageHandler, HrmpMessageSender, InboundDownwardMessage,
 	InboundHrmpMessage, OutboundHrmpMessage, ParaId, UpwardMessageSender,
 };

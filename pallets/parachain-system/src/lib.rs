@@ -27,7 +27,7 @@
 //!
 //! Users must ensure that they register this pallet as an inherent provider.
 
-use cumulus_primitives::{
+use cumulus_primitives_core::{
 	inherents::{SystemInherentData, SYSTEM_INHERENT_IDENTIFIER},
 	relay_chain,
 	well_known_keys::{self, NEW_VALIDATION_CODE, VALIDATION_DATA},
@@ -475,7 +475,7 @@ impl<T: Config> Module<T> {
 	/// This is similar to [`process_inbound_downward_messages`], but works on multiple inbound
 	/// channels.
 	fn process_inbound_horizontal_messages(
-		ingress_channels: &[(ParaId, cumulus_primitives::AbridgedHrmpChannel)],
+		ingress_channels: &[(ParaId, cumulus_primitives_core::AbridgedHrmpChannel)],
 		horizontal_messages: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
 	) -> DispatchResult {
 		// First, check that all submitted messages are sent from channels that exist. The channel
@@ -859,7 +859,7 @@ mod tests {
 	use super::*;
 
 	use codec::Encode;
-	use cumulus_primitives::{
+	use cumulus_primitives_core::{
 		AbridgedHrmpChannel, InboundDownwardMessage, InboundHrmpMessage, PersistedValidationData,
 	};
 	use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;

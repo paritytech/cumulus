@@ -16,7 +16,7 @@
 
 use crate::ParachainBlockData;
 
-use cumulus_primitives::PersistedValidationData;
+use cumulus_primitives_core::PersistedValidationData;
 use cumulus_test_client::{
 	runtime::{Block, Hash, Header, UncheckedExtrinsic, WASM_BINARY},
 	transfer, Client, DefaultTestClientBuilderExt, InitBlockBuilder, LongestChain,

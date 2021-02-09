@@ -1074,7 +1074,7 @@ name = "cumulus-collator"
 version = "0.1.0"
 dependencies = [
  "cumulus-network",
- "cumulus-primitives",
+ "cumulus-primitives-core",
  "cumulus-runtime",
  "cumulus-test-client",
  "cumulus-test-runtime",
@@ -1134,7 +1134,6 @@ dependencies = [
 name = "cumulus-network"
 version = "0.1.0"
 dependencies = [
- "cumulus-primitives",
  "cumulus-test-service",
  "derive_more 0.99.11",
  "futures 0.3.12",
@@ -1164,7 +1163,7 @@ dependencies = [
 name = "cumulus-pallet-parachain-system"
 version = "0.1.0"
 dependencies = [
- "cumulus-primitives",
+ "cumulus-primitives-core",
  "cumulus-runtime",
  "cumulus-test-relay-sproof-builder",
  "frame-support",
@@ -1192,7 +1191,7 @@ dependencies = [
 name = "cumulus-pallet-xcm-handler"
 version = "0.1.0"
 dependencies = [
- "cumulus-primitives",
+ "cumulus-primitives-core",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -1201,7 +1200,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-primitives"
+name = "cumulus-primitives-core"
 version = "0.1.0"
 dependencies = [
  "impl-trait-for-tuples 0.1.3",
@@ -1220,7 +1219,7 @@ dependencies = [
 name = "cumulus-runtime"
 version = "0.1.0"
 dependencies = [
- "cumulus-primitives",
+ "cumulus-primitives-core",
  "cumulus-test-client",
  "cumulus-test-relay-sproof-builder",
  "env_logger",
@@ -1250,7 +1249,7 @@ version = "0.1.0"
 dependencies = [
  "cumulus-collator",
  "cumulus-consensus",
- "cumulus-primitives",
+ "cumulus-primitives-core",
  "futures 0.3.12",
  "parity-scale-codec",
  "polkadot-overseer",
@@ -1273,7 +1272,7 @@ dependencies = [
 name = "cumulus-test-client"
 version = "0.1.0"
 dependencies = [
- "cumulus-primitives",
+ "cumulus-primitives-core",
  "cumulus-test-relay-sproof-builder",
  "cumulus-test-runtime",
  "cumulus-test-service",
@@ -1303,7 +1302,7 @@ version = "0.1.0"
 dependencies = [
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm-handler",
- "cumulus-primitives",
+ "cumulus-primitives-core",
  "cumulus-runtime",
  "frame-executive",
  "frame-support",
@@ -1339,7 +1338,7 @@ dependencies = [
 name = "cumulus-test-relay-sproof-builder"
 version = "0.1.0"
 dependencies = [
- "cumulus-primitives",
+ "cumulus-primitives-core",
  "parity-scale-codec",
  "polkadot-primitives",
  "sp-runtime",
@@ -1352,7 +1351,7 @@ name = "cumulus-test-runtime"
 version = "0.1.0"
 dependencies = [
  "cumulus-pallet-parachain-system",
- "cumulus-primitives",
+ "cumulus-primitives-core",
  "cumulus-runtime",
  "frame-executive",
  "frame-support",
@@ -1385,7 +1384,7 @@ version = "0.1.0"
 dependencies = [
  "cumulus-consensus",
  "cumulus-network",
- "cumulus-primitives",
+ "cumulus-primitives-core",
  "cumulus-service",
  "cumulus-test-runtime",
  "futures 0.3.12",
@@ -4803,7 +4802,7 @@ dependencies = [
 name = "parachain-info"
 version = "0.1.0"
 dependencies = [
- "cumulus-primitives",
+ "cumulus-primitives-core",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -6904,7 +6903,7 @@ dependencies = [
  "cumulus-collator",
  "cumulus-consensus",
  "cumulus-network",
- "cumulus-primitives",
+ "cumulus-primitives-core",
  "cumulus-service",
  "cumulus-test-parachain-runtime",
  "derive_more 0.15.0",

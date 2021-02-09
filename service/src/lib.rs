@@ -18,7 +18,7 @@
 //!
 //! Provides functions for starting a collator node or a normal full node.
 
-use cumulus_primitives::ParaId;
+use cumulus_primitives_core::ParaId;
 use futures::{Future, FutureExt};
 use polkadot_overseer::OverseerHandler;
 use polkadot_primitives::v1::{Block as PBlock, CollatorId, CollatorPair};

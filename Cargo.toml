@@ -2,7 +2,7 @@
 members = [
 	"consensus",
 	"network",
-	"primitives",
+	"primitives/core",
 	"pallets/parachain-system",
 	"pallets/xcm-handler",
 	"rococo-parachains/",

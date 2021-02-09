@@ -15,7 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::Encode;
-use cumulus_primitives::ParaId;
+use cumulus_primitives_core::ParaId;
 use cumulus_service::genesis::generate_genesis_block;
 use cumulus_test_runtime::Block;
 use polkadot_primitives::v0::HeadData;

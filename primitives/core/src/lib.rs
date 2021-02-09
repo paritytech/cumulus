@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Cumulus related primitive types and traits.
+//! Cumulus related core primitive types and traits.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 

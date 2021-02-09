@@ -29,12 +29,15 @@ pub use sp_std::slice;
 #[macro_use]
 pub mod validate_block;
 
-/// The parachain block that is created on a collator and validated by a validator.
+/// The parachain block that is created by a collator.
+///
+/// This is send as PoV (proof of validity block) to the relay-chain validators. There it will be
+/// passed to the parachain validation Wasm blob to be validated.
 #[derive(Encode, Decode)]
 pub struct ParachainBlockData<B: BlockT> {
 	/// The header of the parachain block.
 	header: <B as BlockT>::Header,
-	/// The extrinsics of the parachain block without the `PolkadotInherent`.
+	/// The extrinsics of the parachain block.
 	extrinsics: Vec<<B as BlockT>::Extrinsic>,
 	/// The data that is required to emulate the storage accesses executed by all extrinsics.
 	storage_proof: StorageProof,

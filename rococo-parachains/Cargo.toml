@@ -59,7 +59,7 @@ jsonrpc-core = "15.1.0"
 cumulus-consensus = { path = "../consensus" }
 cumulus-collator = { path = "../collator" }
 cumulus-network = { path = "../network" }
-cumulus-primitives = { path = "../primitives" }
+cumulus-primitives-core = { path = "../primitives/core" }
 cumulus-service = { path = "../service" }
 
 # Polkadot dependencies

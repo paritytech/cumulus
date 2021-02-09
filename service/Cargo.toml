@@ -8,7 +8,7 @@ edition = "2018"
 # Cumulus dependencies
 cumulus-consensus = { path = "../consensus" }
 cumulus-collator = { path = "../collator" }
-cumulus-primitives = { path = "../primitives" }
+cumulus-primitives-core = { path = "../primitives/core" }
 
 # Substrate dependencies
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "master" }

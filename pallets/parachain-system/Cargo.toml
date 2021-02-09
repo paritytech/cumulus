@@ -7,7 +7,7 @@ description = "Base pallet for cumulus-based parachains"
 
 [dependencies]
 # Cumulus dependencies
-cumulus-primitives = { path = "../../primitives", default-features = false }
+cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 cumulus-runtime = { path = "../../runtime", default-features = false }
 
 # Polkadot dependencies
@@ -55,5 +55,5 @@ std = [
 	"sp-state-machine/std",
 	"sp-trie/std",
 	"frame-system/std",
-	"cumulus-primitives/std",
+	"cumulus-primitives-core/std",
 ]

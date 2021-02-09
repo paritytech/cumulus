@@ -15,7 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::{Encode, Decode};
-use cumulus_primitives::{relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId};
+use cumulus_primitives_core::{relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId};
 use hash_db::{HashDB, EMPTY_PREFIX};
 use sp_runtime::traits::HashFor;
 use sp_state_machine::{Backend, TrieBackend};

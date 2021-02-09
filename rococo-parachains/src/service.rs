@@ -15,6 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use cumulus_network::build_block_announce_validator;
+use cumulus_primitives_core::ParaId;
 use cumulus_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
@@ -100,7 +101,7 @@ async fn start_node_impl<RB>(
 	parachain_config: Configuration,
 	collator_key: CollatorPair,
 	polkadot_config: Configuration,
-	id: polkadot_primitives::v0::Id,
+	id: ParaId,
 	validator: bool,
 	rpc_ext_builder: RB,
 ) -> sc_service::error::Result<(TaskManager, Arc<TFullClient<Block, RuntimeApi, Executor>>)>
@@ -228,7 +229,7 @@ pub async fn start_node(
 	parachain_config: Configuration,
 	collator_key: CollatorPair,
 	polkadot_config: Configuration,
-	id: polkadot_primitives::v0::Id,
+	id: ParaId,
 	validator: bool,
 ) -> sc_service::error::Result<(TaskManager, Arc<TFullClient<Block, RuntimeApi, Executor>>)> {
 	start_node_impl(

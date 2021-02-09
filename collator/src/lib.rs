@@ -17,7 +17,7 @@
 //! Cumulus Collator implementation for Substrate.
 
 use cumulus_network::WaitToAnnounce;
-use cumulus_primitives::{
+use cumulus_primitives_core::{
 	inherents,
 	well_known_keys, InboundDownwardMessage, InboundHrmpMessage, OutboundHrmpMessage,
 	PersistedValidationData, relay_chain,

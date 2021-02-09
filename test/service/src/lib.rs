@@ -27,7 +27,7 @@ pub use genesis::*;
 
 use core::future::Future;
 use cumulus_network::BlockAnnounceValidator;
-use cumulus_primitives::ParaId;
+use cumulus_primitives_core::ParaId;
 use cumulus_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };

@@ -216,7 +216,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 }
 
 parameter_types! {
-	pub storage ParachainId: cumulus_primitives::ParaId = 100.into();
+	pub storage ParachainId: cumulus_primitives_core::ParaId = 100.into();
 }
 
 construct_runtime! {
