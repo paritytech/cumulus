@@ -1,6 +1,6 @@
 [package]
-name = "cumulus-client-consensus"
-description = "Proxy Polkadot's consensus as a consensus engine for Substrate"
+name = "cumulus-client-consensus-common"
+description = "Cumulus specific common consensus implementations"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
@@ -32,8 +32,8 @@ tracing = "0.1.22"
 sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Cumulus dependencies
-cumulus-test-runtime = { path = "../../test/runtime" }
-cumulus-test-client = { path = "../../test/client" }
+cumulus-test-runtime = { path = "../../../test/runtime" }
+cumulus-test-client = { path = "../../../test/client" }
 
 # Other deps
 futures-timer = "3.0.2"

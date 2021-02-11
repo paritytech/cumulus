@@ -291,7 +291,7 @@ where
 		Api: RuntimeApiCollection<StateBackend = PBackend::State>,
 		PClient: AbstractClient<PBlock, PBackend, Api = Api> + 'static,
 	{
-		let consensus = cumulus_client_consensus::run_parachain_consensus(
+		let consensus = cumulus_client_consensus_common::run_parachain_consensus(
 			self.para_id,
 			self.client,
 			client,

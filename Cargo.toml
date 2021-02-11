@@ -1,6 +1,6 @@
 [workspace]
 members = [
-	"client/consensus",
+	"client/consensus/common",
 	"client/network",
 	"client/service",
 	"pallets/parachain-system",

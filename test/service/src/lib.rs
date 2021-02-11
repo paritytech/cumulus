@@ -93,7 +93,7 @@ pub fn new_partial(
 		client.clone(),
 	);
 
-	let import_queue = cumulus_client_consensus::import_queue::import_queue(
+	let import_queue = cumulus_client_consensus_common::import_queue::import_queue(
 		client.clone(),
 		client.clone(),
 		inherent_data_providers.clone(),

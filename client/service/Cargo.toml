@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 # Cumulus dependencies
-cumulus-client-consensus = { path = "../consensus" }
+cumulus-client-consensus-common = { path = "../consensus/common" }
 cumulus-client-collator = { path = "../collator" }
 cumulus-primitives-core = { path = "../../primitives/core" }
 

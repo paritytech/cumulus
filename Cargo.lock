@@ -1106,7 +1106,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-client-consensus"
+name = "cumulus-client-consensus-common"
 version = "0.1.0"
 dependencies = [
  "cumulus-test-client",
@@ -1164,7 +1164,7 @@ name = "cumulus-client-service"
 version = "0.1.0"
 dependencies = [
  "cumulus-client-collator",
- "cumulus-client-consensus",
+ "cumulus-client-consensus-common",
  "cumulus-primitives-core",
  "futures 0.3.12",
  "parity-scale-codec",
@@ -1378,7 +1378,7 @@ dependencies = [
 name = "cumulus-test-service"
 version = "0.1.0"
 dependencies = [
- "cumulus-client-consensus",
+ "cumulus-client-consensus-common",
  "cumulus-client-network",
  "cumulus-client-service",
  "cumulus-primitives-core",
@@ -6897,7 +6897,7 @@ version = "0.1.0"
 dependencies = [
  "assert_cmd",
  "cumulus-client-collator",
- "cumulus-client-consensus",
+ "cumulus-client-consensus-common",
  "cumulus-client-network",
  "cumulus-client-service",
  "cumulus-primitives-core",
