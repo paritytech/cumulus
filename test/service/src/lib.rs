@@ -155,7 +155,7 @@ where
 	let transaction_pool = params.transaction_pool.clone();
 	let mut task_manager = params.task_manager;
 
-	let polkadot_full_node = polkadot_test_service::new_full(
+	let relay_chain_full_node = polkadot_test_service::new_full(
 		polkadot_config,
 		polkadot_service::IsCollator::Yes(collator_key.public()),
 	)
@@ -167,11 +167,11 @@ where
 	let client = params.client.clone();
 	let backend = params.backend.clone();
 	let block_announce_validator = BlockAnnounceValidator::new(
-		polkadot_full_node.client.clone(),
+		relay_chain_full_node.client.clone(),
 		para_id,
-		Box::new(polkadot_full_node.network.clone()),
-		polkadot_full_node.backend.clone(),
-		polkadot_full_node.client.clone(),
+		Box::new(relay_chain_full_node.network.clone()),
+		relay_chain_full_node.backend.clone(),
+		relay_chain_full_node.client.clone(),
 	);
 	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
 
@@ -214,21 +214,11 @@ where
 		Arc::new(move |hash, data| network.announce_block(hash, Some(data)))
 	};
 
-	let polkadot_full_node = polkadot_full_node.with_client(polkadot_test_service::TestClient);
+	let relay_chain_full_node = relay_chain_full_node.with_client(polkadot_test_service::TestClient);
 	if is_collator {
-		let proposer_factory = sc_basic_authorship::ProposerFactory::new(
-			task_manager.spawn_handle(),
-			client.clone(),
-			transaction_pool,
-			prometheus_registry.as_ref(),
-		);
-
-		let polkadot_backend = polkadot_full_node.backend.clone();
+		let polkadot_backend = relay_chain_full_node.backend.clone();
 		let params = StartCollatorParams {
-			proposer_factory,
-			inherent_data_providers: params.inherent_data_providers,
 			backend: params.backend,
-			block_import: client.clone(),
 			block_status: client.clone(),
 			announce_block,
 			client: client.clone(),
@@ -236,8 +226,8 @@ where
 			task_manager: &mut task_manager,
 			para_id,
 			collator_key,
-			polkadot_full_node,
-			polkadot_backend,
+			parachain_consensus: todo!(),
+			relay_chain_full_node,
 		};
 
 		start_collator(params).await?;
@@ -247,7 +237,7 @@ where
 			announce_block,
 			task_manager: &mut task_manager,
 			para_id,
-			polkadot_full_node,
+			polkadot_full_node: relay_chain_full_node,
 		};
 
 		start_full_node(params)?;

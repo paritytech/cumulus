@@ -200,7 +200,7 @@ where
 			client: client.clone(),
 			task_manager: &mut task_manager,
 			collator_key,
-			polkadot_full_node,
+			relay_chain_full_node: polkadot_full_node,
 			spawner,
 			backend,
 			polkadot_backend,
