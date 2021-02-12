@@ -37,6 +37,8 @@ pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", 
 cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false }
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 cumulus-pallet-xcm-handler = { path = "../../pallets/xcm-handler", default-features = false }
+author-inherent = { path = "../../pallets/author-inherent", default-features = false }
+pallet-author-filter = { path = "../../pallets/author-filter", default-features = false }
 
 # Polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -79,4 +81,6 @@ std = [
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
+	"author-inherent/std",
+	"pallet-author-filter/std",
 ]

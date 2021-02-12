@@ -291,6 +291,17 @@ impl cumulus_pallet_xcm_handler::Config for Runtime {
 	type HrmpMessageSender = ParachainSystem;
 }
 
+impl author_inherent::Config for Runtime {
+	type EventHandler = (); // might need to grab impl from test crate
+	type CanAuthor = AuthorFilter;
+}
+
+impl pallet_author_filter::Config for Runtime {
+	type Event = Event;
+	type RandomnessSource = RandomnessCollectiveFlip;
+	type PotentialAuthors = AuthorFilter;
+}
+
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
@@ -306,6 +317,8 @@ construct_runtime! {
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		ParachainInfo: parachain_info::{Module, Storage, Config},
 		XcmHandler: cumulus_pallet_xcm_handler::{Module, Call, Event<T>, Origin},
+		AuthorInherent: author_inherent::{Module, Call, Storage, Inherent},
+		AuthorFilter: pallet_author_filter::{Module, Storage, Event<T>,}
 	}
 }
 

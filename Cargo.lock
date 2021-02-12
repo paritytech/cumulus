@@ -1313,12 +1313,14 @@ dependencies = [
 name = "cumulus-test-parachain-runtime"
 version = "0.1.0"
 dependencies = [
+ "author-inherent",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm-handler",
  "cumulus-primitives-core",
  "frame-executive",
  "frame-support",
  "frame-system",
+ "pallet-author-filter",
  "pallet-balances",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
@@ -4294,6 +4296,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ff55baddef9e4ad00f88b6c743a2a8062d4c6ade126c2a528644b8e444d52ce"
 dependencies = [
  "stable_deref_trait",
+]
+
+[[package]]
+name = "pallet-author-filter"
+version = "0.1.0"
+dependencies = [
+ "author-inherent",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "sp-core",
+ "sp-runtime",
 ]
 
 [[package]]
