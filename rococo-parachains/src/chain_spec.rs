@@ -142,5 +142,12 @@ fn testnet_genesis(
 		}),
 		pallet_sudo: Some(parachain_runtime::SudoConfig { key: root_key }),
 		parachain_info: Some(parachain_runtime::ParachainInfoConfig { parachain_id: id }),
+		pallet_author_filter: Some(parachain_runtime::AuthorFilterConfig {
+			potential_authors: vec![
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				get_account_id_from_seed::<sr25519::Public>("Bob"),
+			]
+			eligible_ratio: 50,
+		})
 	}
 }

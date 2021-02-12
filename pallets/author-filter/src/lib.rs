@@ -145,6 +145,35 @@ pub mod pallet {
 		}
 	}
 
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config>	{
+		potential_authors: Vec<T::AccountId>,
+		eligible_ratio: u8,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T:Config> Default for GenesisConfig<T> {
+		fn default() -> Self {
+			Self {
+				potential_authors: Vec::new(),
+				eligible_ratio: 50,
+			}
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+		fn build(&self) {
+			//TODO ensure that the u8 is less than or equal 100 so it can be apercent
+
+			EligibleRatio::<T>::put(Percent::from_percent(self.eligible_ratio));
+
+			for potential_author in &self.potential_authors {
+				PotentialAuthors::<T>::append(potential_author);
+			}
+		}
+	}
+
 	#[pallet::event]
 	#[pallet::generate_deposit(fn deposit_event)]
 	pub enum Event<T: Config> {
