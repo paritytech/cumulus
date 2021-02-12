@@ -123,7 +123,7 @@ pub fn new_partial(
 async fn start_node_impl<RB>(
 	parachain_config: Configuration,
 	collator_key: CollatorPair,
-	polkadot_config: Configuration,
+	relay_chain_config: Configuration,
 	para_id: ParaId,
 	is_collator: bool,
 	rpc_ext_builder: RB,
@@ -156,7 +156,7 @@ where
 	let mut task_manager = params.task_manager;
 
 	let relay_chain_full_node = polkadot_test_service::new_full(
-		polkadot_config,
+		relay_chain_config,
 		polkadot_service::IsCollator::Yes(collator_key.public()),
 	)
 	.map_err(|e| match e {
@@ -271,9 +271,9 @@ pub async fn run_test_node(
 	task_executor: TaskExecutor,
 	key: Sr25519Keyring,
 	parachain_storage_update_func: impl Fn(),
-	polkadot_storage_update_func: impl Fn(),
+	relay_chain_storage_update_func: impl Fn(),
 	parachain_boot_nodes: Vec<MultiaddrWithPeerId>,
-	polkadot_boot_nodes: Vec<MultiaddrWithPeerId>,
+	relay_chain_boot_nodes: Vec<MultiaddrWithPeerId>,
 	para_id: ParaId,
 	is_collator: bool,
 ) -> CumulusTestNode {
@@ -287,22 +287,22 @@ pub async fn run_test_node(
 		is_collator,
 	)
 	.expect("could not generate Configuration");
-	let mut polkadot_config = polkadot_test_service::node_config(
-		polkadot_storage_update_func,
+	let mut relay_chain_config = polkadot_test_service::node_config(
+		relay_chain_storage_update_func,
 		task_executor.clone(),
 		key,
-		polkadot_boot_nodes,
+		relay_chain_boot_nodes,
 		false,
 	);
 
-	polkadot_config.network.node_name =
-		format!("{} (relay chain)", polkadot_config.network.node_name);
+	relay_chain_config.network.node_name =
+		format!("{} (relay chain)", relay_chain_config.network.node_name);
 
 	let multiaddr = parachain_config.network.listen_addresses[0].clone();
 	let (task_manager, client, network, rpc_handlers) = start_node_impl(
 		parachain_config,
 		collator_key,
-		polkadot_config,
+		relay_chain_config,
 		para_id,
 		is_collator,
 		|_| Default::default(),

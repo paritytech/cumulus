@@ -21,15 +21,12 @@ use cumulus_primitives_core::{
 	well_known_keys, OutboundHrmpMessage, ParachainBlockData, PersistedValidationData,
 };
 
-use sc_client_api::{BlockBackend, StateBackend};
-use sp_consensus::{
-	BlockImport, BlockImportParams, BlockOrigin, BlockStatus, Environment, Error as ConsensusError,
-	ForkChoiceStrategy, Proposal, Proposer, RecordProof,
-};
+use sc_client_api::BlockBackend;
+use sp_consensus::BlockStatus;
 use sp_core::traits::SpawnNamed;
 use sp_runtime::{
 	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, Zero},
+	traits::{Block as BlockT, Header as HeaderT, Zero},
 };
 use sp_state_machine::InspectState;
 
@@ -38,20 +35,17 @@ use polkadot_node_primitives::{Collation, CollationGenerationConfig};
 use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
 use polkadot_overseer::OverseerHandler;
 use polkadot_primitives::v1::{
-	Block as PBlock, BlockData, BlockNumber as PBlockNumber, CollatorPair, Hash as PHash, HeadData,
-	Id as ParaId, PoV, UpwardMessage,
+	BlockData, BlockNumber as PBlockNumber, CollatorPair, Hash as PHash, HeadData, Id as ParaId,
+	PoV, UpwardMessage,
 };
 
 use codec::{Decode, Encode};
 
-use futures::prelude::*;
+use futures::FutureExt;
 
-use std::{marker::PhantomData, sync::Arc, time::Duration};
+use std::sync::Arc;
 
 use parking_lot::Mutex;
-
-type TransactionFor<E, Block> =
-	<<E as Environment<Block>>::Proposer as Proposer<Block>>::Transaction;
 
 /// The logging target.
 const LOG_TARGET: &str = "cumulus-collator";
@@ -359,8 +353,7 @@ pub async fn start_collator<Block, Backend, BS, Spawner, PS>(
 		parachain_consensus,
 		backend,
 	}: StartCollatorParams<Block, Backend, BS, Spawner, PS>,
-)
-where
+) where
 	Block: BlockT,
 	Backend: sc_client_api::Backend<Block> + 'static,
 	BS: BlockBackend<Block> + Send + Sync + 'static,
