@@ -392,25 +392,20 @@ pub async fn start_collator<Block, Backend, BS, Spawner, PS>(
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use std::{pin::Pin, time::Duration};
-
-	use sp_core::{testing::TaskExecutor, Pair};
-	use sp_runtime::traits::DigestFor;
-
 	use cumulus_client_consensus_common::ParachainCandidate;
 	use cumulus_test_client::{
-		Client, DefaultTestClientBuilderExt, InitBlockBuilder, TestClientBuilder,
-		TestClientBuilderExt,
+		Client, ClientBlockImportExt, DefaultTestClientBuilderExt, InitBlockBuilder,
+		TestClientBuilder, TestClientBuilderExt,
 	};
 	use cumulus_test_runtime::{Block, Header};
-	use polkadot_overseer::{Overseer, AllSubsystems};
+	use futures::{channel::mpsc, executor::block_on, StreamExt};
 	use polkadot_node_subsystem_test_helpers::ForwardSubsystem;
-
-	use futures::{channel::mpsc, executor::block_on, future};
+	use polkadot_overseer::{AllSubsystems, Overseer};
+	use sp_consensus::BlockOrigin;
+	use sp_core::{testing::TaskExecutor, Pair};
 
 	struct DummyParachainConsensus {
-		client: Arc<Client>,
-		header: Header,
+		client: Mutex<Arc<Client>>,
 	}
 
 	#[async_trait::async_trait]
@@ -421,22 +416,24 @@ mod tests {
 			_: PHash,
 			validation_data: &PersistedValidationData,
 		) -> Option<ParachainCandidate<Block>> {
-			let block_id = BlockId::Hash(self.header.hash());
-			let builder = self
-				.client
-				.init_block_builder_at(&block_id, Some(validation_data.clone()), Default::default());
+			let block_id = BlockId::Hash(parent.hash());
+			let mut client = self.client.lock();
+			let builder = client.init_block_builder_at(
+				&block_id,
+				Some(validation_data.clone()),
+				Default::default(),
+			);
 
-			let (block, storage_changes, proof) =
-				builder.build().expect("Creates block").into_inner();
+			let (block, _, proof) = builder.build().expect("Creates block").into_inner();
 
 			client
-				.import(BlockOrigin::Own, block)
+				.import(BlockOrigin::Own, block.clone())
 				.expect("Imports the block");
 
-			ParachainCandidate {
+			Some(ParachainCandidate {
 				block,
 				proof: proof.expect("Proof is returned"),
-			}
+			})
 		}
 	}
 
@@ -461,23 +458,19 @@ mod tests {
 
 		spawner.spawn("overseer", overseer.run().then(|_| async { () }).boxed());
 
-		let collator_start =
-			start_collator(
-				StartCollatorParams {
-					backend,
-					block_status: client.clone(),
-					announce_block: Arc::new(announce_block),
-					overseer_handler: handler,
-					spawner,
-					para_id,
-					key: CollatorPair::generate().0,
-					parachain_consensus: DummyParachainConsensus {
-						client: client.clone(),
-						header,
-					},
-				},
-			);
-		block_on(collator_start).expect("Should start collator");
+		let collator_start = start_collator(StartCollatorParams {
+			backend,
+			block_status: client.clone(),
+			announce_block: Arc::new(announce_block),
+			overseer_handler: handler,
+			spawner,
+			para_id,
+			key: CollatorPair::generate().0,
+			parachain_consensus: DummyParachainConsensus {
+				client: Mutex::new(client.clone()),
+			},
+		});
+		block_on(collator_start);
 
 		let msg = block_on(sub_rx.into_future())
 			.0
@@ -490,7 +483,7 @@ mod tests {
 		let mut validation_data = PersistedValidationData::default();
 		validation_data.parent_head = header.encode().into();
 
-		let collation = block_on((config.collator)(relay_parent, &validation_data))
+		let collation = block_on((config.collator)(Default::default(), &validation_data))
 			.expect("Collation is build");
 
 		let block_data = collation.proof_of_validity.block_data;
