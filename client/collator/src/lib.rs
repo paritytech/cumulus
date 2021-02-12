@@ -53,12 +53,12 @@ const LOG_TARGET: &str = "cumulus-collator";
 /// The implementation of the Cumulus `Collator`.
 pub struct Collator<Block: BlockT, BS, Backend, PC> {
 	block_status: Arc<BS>,
-	parachain_consensus: Arc<PC>,
+	parachain_consensus: PC,
 	wait_to_announce: Arc<Mutex<WaitToAnnounce<Block>>>,
 	backend: Arc<Backend>,
 }
 
-impl<Block: BlockT, BS, Backend, PC> Clone for Collator<Block, BS, Backend, PC> {
+impl<Block: BlockT, BS, Backend, PC: Clone> Clone for Collator<Block, BS, Backend, PC> {
 	fn clone(&self) -> Self {
 		Self {
 			block_status: self.block_status.clone(),
@@ -74,7 +74,7 @@ where
 	Block: BlockT,
 	BS: BlockBackend<Block>,
 	Backend: sc_client_api::Backend<Block> + 'static,
-	PC: ParachainConsensus<Block>,
+	PC: ParachainConsensus<Block> + Clone,
 {
 	/// Create a new instance.
 	fn new(
@@ -95,7 +95,7 @@ where
 			block_status,
 			wait_to_announce,
 			backend,
-			parachain_consensus: Arc::new(parachain_consensus),
+			parachain_consensus,
 		}
 	}
 
@@ -358,7 +358,7 @@ pub async fn start_collator<Block, Backend, BS, Spawner, PS>(
 	Backend: sc_client_api::Backend<Block> + 'static,
 	BS: BlockBackend<Block> + Send + Sync + 'static,
 	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
-	PS: ParachainConsensus<Block> + Send + Sync + 'static,
+	PS: ParachainConsensus<Block> + Clone + Send + Sync + 'static,
 {
 	let collator = Collator::new(
 		overseer_handler.clone(),
@@ -404,21 +404,21 @@ mod tests {
 	use sp_consensus::BlockOrigin;
 	use sp_core::{testing::TaskExecutor, Pair};
 
+	#[derive(Clone)]
 	struct DummyParachainConsensus {
-		client: Mutex<Arc<Client>>,
+		client: Arc<Client>,
 	}
 
 	#[async_trait::async_trait]
 	impl ParachainConsensus<Block> for DummyParachainConsensus {
 		async fn produce_candidate(
-			&self,
+			&mut self,
 			parent: &Header,
 			_: PHash,
 			validation_data: &PersistedValidationData,
 		) -> Option<ParachainCandidate<Block>> {
 			let block_id = BlockId::Hash(parent.hash());
-			let mut client = self.client.lock();
-			let builder = client.init_block_builder_at(
+			let builder = self.client.init_block_builder_at(
 				&block_id,
 				Some(validation_data.clone()),
 				Default::default(),
@@ -426,7 +426,7 @@ mod tests {
 
 			let (block, _, proof) = builder.build().expect("Creates block").into_inner();
 
-			client
+			self.client
 				.import(BlockOrigin::Own, block.clone())
 				.expect("Imports the block");
 
@@ -467,7 +467,7 @@ mod tests {
 			para_id,
 			key: CollatorPair::generate().0,
 			parachain_consensus: DummyParachainConsensus {
-				client: Mutex::new(client.clone()),
+				client: client.clone(),
 			},
 		});
 		block_on(collator_start);

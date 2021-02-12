@@ -59,11 +59,25 @@ const LOG_TARGET: &str = "cumulus-consensus-relay-chain";
 pub struct RelayChainConsensus<B, PF, BI, RClient, RBackend> {
 	para_id: ParaId,
 	_phantom: PhantomData<B>,
-	proposer_factory: Mutex<PF>,
+	proposer_factory: Arc<Mutex<PF>>,
 	inherent_data_providers: InherentDataProviders,
-	block_import: Mutex<BI>,
+	block_import: Arc<Mutex<BI>>,
 	polkadot_client: Arc<RClient>,
 	polkadot_backend: Arc<RBackend>,
+}
+
+impl<B, PF, BI, RClient, RBackend> Clone for RelayChainConsensus<B, PF, BI, RClient, RBackend> {
+	fn clone(&self) -> Self {
+		Self {
+			para_id: self.para_id,
+			_phantom: PhantomData,
+			proposer_factory: self.proposer_factory.clone(),
+			inherent_data_providers: self.inherent_data_providers.clone(),
+			block_import: self.block_import.clone(),
+			polkadot_backend: self.polkadot_backend.clone(),
+			polkadot_client: self.polkadot_client.clone(),
+		}
+	}
 }
 
 impl<B, PF, BI, RClient, RBackend> RelayChainConsensus<B, PF, BI, RClient, RBackend>
@@ -84,9 +98,9 @@ where
 	) -> Self {
 		Self {
 			para_id,
-			proposer_factory: Mutex::new(proposer_factory),
+			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
 			inherent_data_providers,
-			block_import: Mutex::new(block_import),
+			block_import: Arc::new(Mutex::new(block_import)),
 			polkadot_backend,
 			polkadot_client,
 			_phantom: PhantomData,
@@ -150,7 +164,7 @@ where
 	PF::Proposer: Proposer<B, Transaction = BI::Transaction>,
 {
 	async fn produce_candidate(
-		&self,
+		&mut self,
 		parent: &B::Header,
 		relay_parent: PHash,
 		validation_data: &PersistedValidationData,

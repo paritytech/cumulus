@@ -87,7 +87,7 @@ where
 	for<'b> &'b Client: BlockImport<Block>,
 	Backend: BackendT<Block> + 'static,
 	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
-	PC: ParachainConsensus<Block> + Send + Sync + 'static,
+	PC: ParachainConsensus<Block> + Clone + Send + Sync + 'static,
 	RClient: ClientHandle,
 {
 	relay_chain_full_node.client.execute_with(StartConsensus {

@@ -537,7 +537,7 @@ pub trait ParachainConsensus<B: BlockT> {
 	///
 	/// It is expected that the block is
 	async fn produce_candidate(
-		&self,
+		&mut self,
 		parent: &B::Header,
 		relay_parent: PHash,
 		validation_data: &PersistedValidationData,
