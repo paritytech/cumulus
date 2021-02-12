@@ -49,11 +49,14 @@ pub mod pallet {
 
 	/// Configuration trait of this pallet.
 	#[pallet::config]
-	pub trait Config: frame_system::Config + stake::Config {
+	pub trait Config: frame_system::Config {
 		/// The overarching event type
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// Deterministic on-chain pseudo-randomness used to do the filtering
 		type RandomnessSource: Randomness<H256>;
+		/// A source for the complete set of potential authors.
+		/// The starting point of the filtering.
+		type PotentialAuthors: Get<Vec<Self::AccountId>>;
 	}
 
 	// This code will be called by the author-inherent pallet to check whether the reported author
@@ -61,7 +64,7 @@ pub mod pallet {
 	// record it instorage (although we do emit a debugging event for now).
 	impl<T: Config> author_inherent::CanAuthor<T::AccountId> for Pallet<T> {
 		fn can_author(account: &T::AccountId) -> bool {
-			let mut staked: Vec<T::AccountId> = stake::Module::<T>::validators();
+			let mut staked: Vec<T::AccountId> = T::PotentialAuthors::get();
 
 			let num_eligible = EligibleRatio::<T>::get().mul_ceil(staked.len());
 			let mut eligible = Vec::with_capacity(num_eligible);
@@ -75,7 +78,10 @@ pub mod pallet {
 				// chain inherent.
 				let subject: [u8; 7] = [b'f', b'i', b'l', b't', b'e', b'r', i as u8];
 				let randomness = T::RandomnessSource::random(&subject);
-				let index = randomness.to_low_u64_be() as usize;
+				//TODO this is 100% hack.
+				// Why does to_low_u64_be not exist on H256?
+				// https://docs.rs/primitive-types/0.9.0/primitive_types/struct.H256.html#method.to_low_u64_be
+				let index = 0;//randomness.to_low_u64_be() as usize;
 
 				// Move the selected author from the original vector into the eligible vector
 				// TODO we could short-circuit this check by returning early when the claimed
@@ -95,8 +101,8 @@ pub mod pallet {
 			}
 
 			// Emit an event for debugging purposes
-			// let our_height = frame_system::Module::<T>::block_number();
-			// <Pallet<T>>::deposit_event(Event::Filtered(our_height, eligible.clone()));
+			let our_height = frame_system::Module::<T>::block_number();
+			<Pallet<T>>::deposit_event(Event::Filtered(our_height, eligible.clone()));
 
 			eligible.contains(account)
 		}
@@ -127,6 +133,16 @@ pub mod pallet {
 	#[pallet::type_value]
 	pub fn Half<T: Config>() -> Percent {
 		Percent::from_percent(50)
+	}
+
+	/// A vector of staked authors. This can be used as a dead simple way to test the pallet.
+	#[pallet::storage]
+	pub type PotentialAuthors<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+
+	impl<T: Config> Get<Vec<T::AccountId>> for Pallet<T> {
+		fn get() -> Vec<T::AccountId> {
+			PotentialAuthors::<T>::get()
+		}
 	}
 
 	#[pallet::event]
