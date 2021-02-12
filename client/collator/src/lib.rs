@@ -395,7 +395,6 @@ mod tests {
 	use std::{pin::Pin, time::Duration};
 
 	use sp_core::{testing::TaskExecutor, Pair};
-	use sp_inherents::InherentData;
 	use sp_runtime::traits::DigestFor;
 
 	use cumulus_client_consensus_common::ParachainCandidate;
@@ -404,6 +403,8 @@ mod tests {
 		TestClientBuilderExt,
 	};
 	use cumulus_test_runtime::{Block, Header};
+	use polkadot_overseer::{Overseer, AllSubsystems};
+	use polkadot_node_subsystem_test_helpers::ForwardSubsystem;
 
 	use futures::{channel::mpsc, executor::block_on, future};
 
@@ -416,14 +417,14 @@ mod tests {
 	impl ParachainConsensus<Block> for DummyParachainConsensus {
 		async fn produce_candidate(
 			&self,
-			parent: &B::Header,
-			relay_parent: PHash,
+			parent: &Header,
+			_: PHash,
 			validation_data: &PersistedValidationData,
-		) -> Option<ParachainCandidate<B>> {
+		) -> Option<ParachainCandidate<Block>> {
 			let block_id = BlockId::Hash(self.header.hash());
 			let builder = self
 				.client
-				.init_block_builder_at(&block_id, None, Default::default());
+				.init_block_builder_at(&block_id, Some(validation_data.clone()), Default::default());
 
 			let (block, storage_changes, proof) =
 				builder.build().expect("Creates block").into_inner();
@@ -461,7 +462,7 @@ mod tests {
 		spawner.spawn("overseer", overseer.run().then(|_| async { () }).boxed());
 
 		let collator_start =
-			start_collator::<_, _, _, _, _, _, _, polkadot_service::FullBackend, _, _>(
+			start_collator(
 				StartCollatorParams {
 					backend,
 					block_status: client.clone(),

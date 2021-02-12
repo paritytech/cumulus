@@ -33,33 +33,69 @@
 //!
 //! 5. After the parachain candidate got backed and included, all collators start at 1.
 
-use cumulus_client_consensus_common::{ParachainConsensus, ParachainCandidate};
-use sp_runtime::traits::Block as BlockT;
-use sp_consensus::{
-	BlockImport, BlockImportParams, BlockOrigin, BlockStatus, Environment, Error as ConsensusError,
-	ForkChoiceStrategy, Proposal, Proposer, RecordProof,
+use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
+use cumulus_primitives_core::{
+	relay_chain::v1::{Block as PBlock, Hash as PHash, ParachainHost},
+	ParaId, PersistedValidationData,
 };
-use cumulus_primitives_core::relay_chain::v1::Hash as PHash;
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
+use parking_lot::Mutex;
+use sc_client_api::Backend;
+use sp_api::ProvideRuntimeApi;
+use sp_consensus::{
+	BlockImport, BlockImportParams, BlockOrigin, Environment, ForkChoiceStrategy, Proposal,
+	Proposer, RecordProof,
+};
 use sp_inherents::{InherentData, InherentDataProviders};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
+use std::{marker::PhantomData, sync::Arc, time::Duration};
+pub use import_queue::import_queue;
+
+mod import_queue;
 
 const LOG_TARGET: &str = "cumulus-consensus-relay-chain";
 
 /// The implementation of the relay-chain provided consensus for parachains.
-pub struct RelayChainConsensus<B: BlockT, PF, BI, PClient, PBackend, PBackend2> {
+pub struct RelayChainConsensus<B, PF, BI, RClient, RBackend> {
 	para_id: ParaId,
-	_phantom: PhantomData<(Block, PBackend)>,
-	proposer_factory: Arc<Mutex<PF>>,
+	_phantom: PhantomData<B>,
+	proposer_factory: Mutex<PF>,
 	inherent_data_providers: InherentDataProviders,
-	block_import: Arc<Mutex<BI>>,
-	polkadot_client: Arc<PClient>,
-	polkadot_backend: Arc<PBackend2>,
+	block_import: Mutex<BI>,
+	polkadot_client: Arc<RClient>,
+	polkadot_backend: Arc<RBackend>,
 }
 
-impl<B: BlockT> ParachainConsensus<B> {
+impl<B, PF, BI, RClient, RBackend> RelayChainConsensus<B, PF, BI, RClient, RBackend>
+where
+	B: BlockT,
+	RClient: ProvideRuntimeApi<PBlock>,
+	RClient::Api: ParachainHost<PBlock>,
+	RBackend: Backend<PBlock>,
+{
+	/// Create a new instance of relay-chain provided consensus.
+	pub fn new(
+		para_id: ParaId,
+		proposer_factory: PF,
+		inherent_data_providers: InherentDataProviders,
+		block_import: BI,
+		polkadot_client: Arc<RClient>,
+		polkadot_backend: Arc<RBackend>,
+	) -> Self {
+		Self {
+			para_id,
+			proposer_factory: Mutex::new(proposer_factory),
+			inherent_data_providers,
+			block_import: Mutex::new(block_import),
+			polkadot_backend,
+			polkadot_client,
+			_phantom: PhantomData,
+		}
+	}
+
 	/// Get the inherent data with validation function parameters injected
 	fn inherent_data(
-		&mut self,
+		&self,
 		validation_data: &PersistedValidationData,
 		relay_parent: PHash,
 	) -> Option<InherentData> {
@@ -89,9 +125,10 @@ impl<B: BlockT> ParachainConsensus<B> {
 				&parachain_inherent_data,
 			)
 			.map_err(|e| {
-				error!(
+				tracing::error!(
 					target: LOG_TARGET,
-					"Failed to put the system inherent into inherent data: {:?}", e,
+					error = ?e,
+					"Failed to put the system inherent into inherent data.",
 				)
 			})
 			.ok()?;
@@ -101,20 +138,31 @@ impl<B: BlockT> ParachainConsensus<B> {
 }
 
 #[async_trait::async_trait]
-impl<B: BlockT> ParachainConsensus for RelayChainConsensus<B> {
+impl<B, PF, BI, RClient, RBackend> ParachainConsensus<B>
+	for RelayChainConsensus<B, PF, BI, RClient, RBackend>
+where
+	B: BlockT,
+	RClient: ProvideRuntimeApi<PBlock> + Send + Sync,
+	RClient::Api: ParachainHost<PBlock>,
+	RBackend: Backend<PBlock>,
+	BI: BlockImport<B> + Send + Sync,
+	PF: Environment<B> + Send + Sync,
+	PF::Proposer: Proposer<B, Transaction = BI::Transaction>,
+{
 	async fn produce_candidate(
 		&self,
 		parent: &B::Header,
 		relay_parent: PHash,
 		validation_data: &PersistedValidationData,
-	) -> ParachainCandidate<B> {
+	) -> Option<ParachainCandidate<B>> {
 		let proposer_future = self.proposer_factory.lock().init(&parent);
 
 		let proposer = proposer_future
 			.await
-			.map_err(|e|
-				tracing::error!(target: LOG_TARGET, error = ?e, "Could not create proposer.")
-			).ok()?;
+			.map_err(
+				|e| tracing::error!(target: LOG_TARGET, error = ?e, "Could not create proposer."),
+			)
+			.ok()?;
 
 		let inherent_data = self.inherent_data(&validation_data, relay_parent)?;
 
