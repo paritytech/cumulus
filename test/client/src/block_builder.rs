@@ -15,11 +15,10 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{Backend, Client};
-use cumulus_primitives::{
-	inherents::{SystemInherentData, SYSTEM_INHERENT_IDENTIFIER}, PersistedValidationData,
-};
-use cumulus_test_runtime::{Block, GetLastTimestamp};
+use cumulus_primitives_core::PersistedValidationData;
+use cumulus_primitives_parachain_inherent::{ParachainInherentData, INHERENT_IDENTIFIER};
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
+use cumulus_test_runtime::{Block, GetLastTimestamp};
 use polkadot_primitives::v1::BlockNumber as PBlockNumber;
 use sc_block_builder::{BlockBuilder, BlockBuilderProvider};
 use sp_api::ProvideRuntimeApi;
@@ -88,21 +87,21 @@ impl InitBlockBuilder for Client {
 			.put_data(sp_timestamp::INHERENT_IDENTIFIER, &timestamp)
 			.expect("Put timestamp failed");
 
-		let (relay_storage_root, relay_chain_state) =
+		let (relay_parent_storage_root, relay_chain_state) =
 			relay_sproof_builder.into_state_root_and_proof();
 
 		let mut validation_data = validation_data.unwrap_or_default();
 		assert_eq!(
-			validation_data.relay_storage_root,
+			validation_data.relay_parent_storage_root,
 			Default::default(),
 			"Overriding the relay storage root is not implemented",
 		);
-		validation_data.relay_storage_root = relay_storage_root;
+		validation_data.relay_parent_storage_root = relay_parent_storage_root;
 
 		inherent_data
 			.put_data(
-				SYSTEM_INHERENT_IDENTIFIER,
-				&SystemInherentData {
+				INHERENT_IDENTIFIER,
+				&ParachainInherentData {
 					validation_data,
 					relay_chain_state,
 					downward_messages: Default::default(),

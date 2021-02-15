@@ -1,22 +1,22 @@
 [package]
-name = 'rococo-collator'
-version = '0.1.0'
+name = "rococo-collator"
+version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
-build = 'build.rs'
-edition = '2018'
+build = "build.rs"
+edition = "2018"
 
 [[bin]]
-name = 'rococo-collator'
-path = 'src/main.rs'
+name = "rococo-collator"
+path = "src/main.rs"
 
 [dependencies]
-derive_more = '0.15.0'
-exit-future = '0.1.4'
+derive_more = "0.15.0"
+exit-future = "0.1.4"
 futures = { version = "0.3.1", features = ["compat"] }
 log = "0.4.13"
-parking_lot = '0.9.0'
-trie-root = '0.15.2'
-codec = { package = 'parity-scale-codec', version = '1.0.0' }
+parking_lot = "0.9.0"
+trie-root = "0.15.2"
+codec = { package = "parity-scale-codec", version = "2.0.0" }
 structopt = "0.3.3"
 serde = { version = "1.0.119", features = ["derive"] }
 hex-literal = "0.2.1"
@@ -41,7 +41,7 @@ sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "roco
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate", version = "0.8.0-rc5", branch = "rococo-v1" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
@@ -56,11 +56,11 @@ sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "rococ
 jsonrpc-core = "15.1.0"
 
 # Cumulus dependencies
-cumulus-consensus = { path = "../consensus" }
-cumulus-collator = { path = "../collator" }
-cumulus-network = { path = "../network" }
-cumulus-primitives = { path = "../primitives" }
-cumulus-service = { path = "../service" }
+cumulus-client-consensus = { path = "../client/consensus" }
+cumulus-client-collator = { path = "../client/collator" }
+cumulus-client-service = { path = "../client/service" }
+cumulus-client-network = { path = "../client/network" }
+cumulus-primitives-core = { path = "../primitives/core" }
 
 # Polkadot dependencies
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }

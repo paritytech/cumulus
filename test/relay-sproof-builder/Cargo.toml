@@ -6,7 +6,7 @@ edition = '2018'
 
 [dependencies]
 # Other dependencies
-codec = { package = "parity-scale-codec", version = "1.0.5", default-features = false, features = [ "derive" ] }
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = [ "derive" ] }
 
 # Substrate dependencies
 sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
@@ -17,7 +17,7 @@ sp-std = { git = "https://github.com/paritytech/substrate", default-features = f
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
 
 # Cumulus dependencies
-cumulus-primitives = { path = "../../primitives", default-features = false }
+cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 
 [features]
 default = [ "std" ]
@@ -26,5 +26,5 @@ std = [
 	"sp-state-machine/std",
 	"sp-runtime/std",
 	"sp-std/std",
-	"cumulus-primitives/std",
+	"cumulus-primitives-core/std",
 ]

@@ -26,10 +26,11 @@ pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "r
 cumulus-test-runtime = { path = "../runtime" }
 cumulus-test-service = { path = "../service" }
 cumulus-test-relay-sproof-builder = { path = "../relay-sproof-builder" }
-cumulus-primitives = { path = "../../primitives" }
+cumulus-primitives-core = { path = "../../primitives/core" }
+cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent" }
 
 # Polkadot deps
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 
 # Other deps
-codec = { package = "parity-scale-codec", version = "1.0.5", default-features = false, features = [ "derive" ] }
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = [ "derive" ] }

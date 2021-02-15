@@ -1,16 +1,16 @@
 [package]
 name = "cumulus-test-service"
-version = '0.1.0'
+version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = '2018'
+edition = "2018"
 
 [dependencies]
-codec = { package = 'parity-scale-codec', version = '1.0.0' }
+codec = { package = "parity-scale-codec", version = "2.0.0" }
 rand = "0.7.3"
 serde = { version = "1.0.119", features = ["derive"] }
 
 # Substrate
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate", version = "0.8.0-rc5", branch = "rococo-v1" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
@@ -43,10 +43,10 @@ polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch
 polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 
 # Cumulus
-cumulus-consensus = { path = "../../consensus" }
-cumulus-network = { path = "../../network" }
-cumulus-primitives = { path = "../../primitives" }
-cumulus-service = { path = "../../service" }
+cumulus-client-consensus = { path = "../../client/consensus" }
+cumulus-client-network = { path = "../../client/network" }
+cumulus-client-service = { path = "../../client/service" }
+cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-test-runtime = { path = "../runtime" }
 
 # RPC related dependencies

@@ -1,0 +1,44 @@
+[package]
+name = "cumulus-client-network"
+version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+description = "Cumulus-specific networking protocol"
+edition = "2018"
+
+[dependencies]
+# Substrate deps
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+
+# Polkadot deps
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+
+# other deps
+codec = { package = "parity-scale-codec", version = "2.0.0", features = [ "derive" ] }
+futures = { version = "0.3.1", features = ["compat"] }
+futures-timer = "3.0.2"
+tracing = "0.1.22"
+parking_lot = "0.10.2"
+derive_more = "0.99.2"
+
+[dev-dependencies]
+# Cumulus deps
+cumulus-test-service = { path = "../../test/service" }
+
+# Polkadot deps
+polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+
+# substrate deps
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
