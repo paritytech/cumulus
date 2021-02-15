@@ -1119,6 +1119,7 @@ dependencies = [
  "async-trait",
  "cumulus-test-client",
  "cumulus-test-runtime",
+ "dyn-clone",
  "futures 0.3.12",
  "futures-timer 3.0.2",
  "parity-scale-codec",
@@ -1199,7 +1200,6 @@ dependencies = [
  "cumulus-primitives-core",
  "futures 0.3.12",
  "parity-scale-codec",
- "polkadot-overseer",
  "polkadot-primitives",
  "polkadot-service",
  "sc-chain-spec",
@@ -1210,7 +1210,6 @@ dependencies = [
  "sp-blockchain",
  "sp-consensus",
  "sp-core",
- "sp-inherents",
  "sp-runtime",
  "tracing",
 ]
@@ -1409,7 +1408,6 @@ dependencies = [
 name = "cumulus-test-service"
 version = "0.1.0"
 dependencies = [
- "cumulus-client-consensus-common",
  "cumulus-client-consensus-relay-chain",
  "cumulus-client-network",
  "cumulus-client-service",
@@ -6936,7 +6934,7 @@ version = "0.1.0"
 dependencies = [
  "assert_cmd",
  "cumulus-client-collator",
- "cumulus-client-consensus-common",
+ "cumulus-client-consensus-relay-chain",
  "cumulus-client-network",
  "cumulus-client-service",
  "cumulus-primitives-core",

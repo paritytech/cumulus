@@ -51,14 +51,14 @@ use parking_lot::Mutex;
 const LOG_TARGET: &str = "cumulus-collator";
 
 /// The implementation of the Cumulus `Collator`.
-pub struct Collator<Block: BlockT, BS, Backend, PC> {
+pub struct Collator<Block: BlockT, BS, Backend> {
 	block_status: Arc<BS>,
-	parachain_consensus: PC,
+	parachain_consensus: Box<dyn ParachainConsensus<Block>>,
 	wait_to_announce: Arc<Mutex<WaitToAnnounce<Block>>>,
 	backend: Arc<Backend>,
 }
 
-impl<Block: BlockT, BS, Backend, PC: Clone> Clone for Collator<Block, BS, Backend, PC> {
+impl<Block: BlockT, BS, Backend> Clone for Collator<Block, BS, Backend> {
 	fn clone(&self) -> Self {
 		Self {
 			block_status: self.block_status.clone(),
@@ -69,12 +69,11 @@ impl<Block: BlockT, BS, Backend, PC: Clone> Clone for Collator<Block, BS, Backen
 	}
 }
 
-impl<Block, BS, Backend, PC> Collator<Block, BS, Backend, PC>
+impl<Block, BS, Backend> Collator<Block, BS, Backend>
 where
 	Block: BlockT,
 	BS: BlockBackend<Block>,
 	Backend: sc_client_api::Backend<Block> + 'static,
-	PC: ParachainConsensus<Block> + Clone,
 {
 	/// Create a new instance.
 	fn new(
@@ -82,7 +81,7 @@ where
 		spawner: Arc<dyn SpawnNamed + Send + Sync>,
 		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
 		backend: Arc<Backend>,
-		parachain_consensus: PC,
+		parachain_consensus: Box<dyn ParachainConsensus<Block>>,
 	) -> Self {
 		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(spawner, announce_block)));
 
@@ -330,7 +329,7 @@ where
 }
 
 /// Parameters for [`start_collator`].
-pub struct StartCollatorParams<Block: BlockT, Backend, BS, Spawner, PS> {
+pub struct StartCollatorParams<Block: BlockT, Backend, BS, Spawner> {
 	pub para_id: ParaId,
 	pub backend: Arc<Backend>,
 	pub block_status: Arc<BS>,
@@ -338,11 +337,11 @@ pub struct StartCollatorParams<Block: BlockT, Backend, BS, Spawner, PS> {
 	pub overseer_handler: OverseerHandler,
 	pub spawner: Spawner,
 	pub key: CollatorPair,
-	pub parachain_consensus: PS,
+	pub parachain_consensus: Box<dyn ParachainConsensus<Block>>,
 }
 
 /// Start the collator.
-pub async fn start_collator<Block, Backend, BS, Spawner, PS>(
+pub async fn start_collator<Block, Backend, BS, Spawner>(
 	StartCollatorParams {
 		para_id,
 		block_status,
@@ -352,13 +351,12 @@ pub async fn start_collator<Block, Backend, BS, Spawner, PS>(
 		key,
 		parachain_consensus,
 		backend,
-	}: StartCollatorParams<Block, Backend, BS, Spawner, PS>,
+	}: StartCollatorParams<Block, Backend, BS, Spawner>,
 ) where
 	Block: BlockT,
 	Backend: sc_client_api::Backend<Block> + 'static,
 	BS: BlockBackend<Block> + Send + Sync + 'static,
 	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
-	PS: ParachainConsensus<Block> + Clone + Send + Sync + 'static,
 {
 	let collator = Collator::new(
 		block_status,
@@ -465,9 +463,9 @@ mod tests {
 			spawner,
 			para_id,
 			key: CollatorPair::generate().0,
-			parachain_consensus: DummyParachainConsensus {
+			parachain_consensus: Box::new(DummyParachainConsensus {
 				client: client.clone(),
-			},
+			}),
 		});
 		block_on(collator_start);
 

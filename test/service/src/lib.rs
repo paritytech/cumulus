@@ -93,7 +93,7 @@ pub fn new_partial(
 		client.clone(),
 	);
 
-	let import_queue = cumulus_client_consensus_common::import_queue::import_queue(
+	let import_queue = cumulus_client_consensus_relay_chain::import_queue(
 		client.clone(),
 		client.clone(),
 		inherent_data_providers.clone(),
@@ -135,8 +135,8 @@ async fn start_node_impl<RB>(
 )>
 where
 	RB: Fn(
-		Arc<TFullClient<Block, RuntimeApi, RuntimeExecutor>>,
-	) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
+			Arc<TFullClient<Block, RuntimeApi, RuntimeExecutor>>,
+		) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
 		+ Send
 		+ 'static,
 {
@@ -242,7 +242,7 @@ where
 			task_manager: &mut task_manager,
 			para_id,
 			collator_key,
-			parachain_consensus,
+			parachain_consensus: Box::new(parachain_consensus),
 			relay_chain_full_node,
 		};
 

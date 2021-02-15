@@ -20,18 +20,16 @@
 
 use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_primitives_core::ParaId;
-use futures::{Future, FutureExt};
-use polkadot_overseer::OverseerHandler;
+use futures::FutureExt;
 use polkadot_primitives::v1::{Block as PBlock, CollatorId, CollatorPair};
 use polkadot_service::{AbstractClient, Client as PClient, ClientHandle, RuntimeApiCollection};
 use sc_client_api::{
-	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, StateBackend, UsageProvider,
+	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, UsageProvider,
 };
 use sc_service::{error::Result as ServiceResult, Configuration, Role, TaskManager};
 use sp_blockchain::HeaderBackend;
-use sp_consensus::{BlockImport, Environment, Error as ConsensusError, Proposer};
+use sp_consensus::BlockImport;
 use sp_core::traits::SpawnNamed;
-use sp_inherents::InherentDataProviders;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
 use std::{marker::PhantomData, sync::Arc};
 
@@ -41,7 +39,7 @@ pub mod genesis;
 type RFullNode<C> = polkadot_service::NewFull<C>;
 
 /// Parameters given to [`start_collator`].
-pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, Backend, Spawner, RClient, PC> {
+pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, Backend, Spawner, RClient> {
 	pub backend: Arc<Backend>,
 	pub block_status: Arc<BS>,
 	pub client: Arc<Client>,
@@ -51,7 +49,7 @@ pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, Backend, Spawner, 
 	pub collator_key: CollatorPair,
 	pub relay_chain_full_node: RFullNode<RClient>,
 	pub task_manager: &'a mut TaskManager,
-	pub parachain_consensus: PC,
+	pub parachain_consensus: Box<dyn ParachainConsensus<Block>>,
 }
 
 /// Start a collator node for a parachain.
@@ -59,7 +57,7 @@ pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, Backend, Spawner, 
 /// A collator is similar to a validator in a normal blockchain.
 /// It is responsible for producing blocks and sending the blocks to a
 /// parachain validator for validation and inclusion into the relay chain.
-pub async fn start_collator<'a, Block, BS, Client, Backend, Spawner, RClient, PC>(
+pub async fn start_collator<'a, Block, BS, Client, Backend, Spawner, RClient>(
 	StartCollatorParams {
 		backend,
 		block_status,
@@ -71,7 +69,7 @@ pub async fn start_collator<'a, Block, BS, Client, Backend, Spawner, RClient, PC
 		task_manager,
 		relay_chain_full_node,
 		parachain_consensus,
-	}: StartCollatorParams<'a, Block, BS, Client, Backend, Spawner, RClient, PC>,
+	}: StartCollatorParams<'a, Block, BS, Client, Backend, Spawner, RClient>,
 ) -> sc_service::error::Result<()>
 where
 	Block: BlockT,
@@ -87,7 +85,6 @@ where
 	for<'b> &'b Client: BlockImport<Block>,
 	Backend: BackendT<Block> + 'static,
 	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
-	PC: ParachainConsensus<Block> + Clone + Send + Sync + 'static,
 	RClient: ClientHandle,
 {
 	relay_chain_full_node.client.execute_with(StartConsensus {
@@ -115,52 +112,6 @@ where
 	task_manager.add_child(relay_chain_full_node.task_manager);
 
 	Ok(())
-}
-
-struct StartCollator<Block: BlockT, Backend, PF, BI, BS, Spawner, PBackend> {
-	proposer_factory: PF,
-	inherent_data_providers: InherentDataProviders,
-	backend: Arc<Backend>,
-	block_import: BI,
-	block_status: Arc<BS>,
-	announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
-	overseer_handler: OverseerHandler,
-	spawner: Spawner,
-	para_id: ParaId,
-	collator_key: CollatorPair,
-	polkadot_backend: Arc<PBackend>,
-}
-
-impl<Block, Backend, PF, BI, BS, Spawner, PBackend2> polkadot_service::ExecuteWithClient
-	for StartCollator<Block, Backend, PF, BI, BS, Spawner, PBackend2>
-where
-	Block: BlockT,
-	PF: Environment<Block> + Send + 'static,
-	BI: BlockImport<
-			Block,
-			Error = ConsensusError,
-			Transaction = <PF::Proposer as Proposer<Block>>::Transaction,
-		> + Send
-		+ Sync
-		+ 'static,
-	BS: BlockBackend<Block> + Send + Sync + 'static,
-	Backend: BackendT<Block> + 'static,
-	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
-	PBackend2: sc_client_api::Backend<PBlock> + 'static,
-	PBackend2::State: sp_api::StateBackend<BlakeTwo256>,
-{
-	type Output = std::pin::Pin<Box<dyn Future<Output = ServiceResult<()>>>>;
-
-	fn execute_with_client<PClient, Api, PBackend>(self, client: Arc<PClient>) -> Self::Output
-	where
-		<Api as sp_api::ApiExt<PBlock>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
-		PBackend: sc_client_api::Backend<PBlock> + 'static,
-		PBackend::State: sp_api::StateBackend<BlakeTwo256>,
-		Api: RuntimeApiCollection<StateBackend = PBackend::State>,
-		PClient: AbstractClient<PBlock, PBackend, Api = Api> + 'static,
-	{
-		async move { Ok(()) }.boxed()
-	}
 }
 
 /// Parameters given to [`start_full_node`].

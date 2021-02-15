@@ -39,7 +39,9 @@ use cumulus_primitives_core::{
 	ParaId, PersistedValidationData,
 };
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
+pub use import_queue::import_queue;
 use parking_lot::Mutex;
+use polkadot_service::ClientHandle;
 use sc_client_api::Backend;
 use sp_api::ProvideRuntimeApi;
 use sp_consensus::{
@@ -47,9 +49,8 @@ use sp_consensus::{
 	Proposer, RecordProof,
 };
 use sp_inherents::{InherentData, InherentDataProviders};
-use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
+use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT};
 use std::{marker::PhantomData, sync::Arc, time::Duration};
-pub use import_queue::import_queue;
 
 mod import_queue;
 
@@ -62,8 +63,8 @@ pub struct RelayChainConsensus<B, PF, BI, RClient, RBackend> {
 	proposer_factory: Arc<Mutex<PF>>,
 	inherent_data_providers: InherentDataProviders,
 	block_import: Arc<Mutex<BI>>,
-	polkadot_client: Arc<RClient>,
-	polkadot_backend: Arc<RBackend>,
+	relay_chain_client: Arc<RClient>,
+	relay_chain_backend: Arc<RBackend>,
 }
 
 impl<B, PF, BI, RClient, RBackend> Clone for RelayChainConsensus<B, PF, BI, RClient, RBackend> {
@@ -74,8 +75,8 @@ impl<B, PF, BI, RClient, RBackend> Clone for RelayChainConsensus<B, PF, BI, RCli
 			proposer_factory: self.proposer_factory.clone(),
 			inherent_data_providers: self.inherent_data_providers.clone(),
 			block_import: self.block_import.clone(),
-			polkadot_backend: self.polkadot_backend.clone(),
-			polkadot_client: self.polkadot_client.clone(),
+			relay_chain_backend: self.relay_chain_backend.clone(),
+			relay_chain_client: self.relay_chain_client.clone(),
 		}
 	}
 }
@@ -101,8 +102,8 @@ where
 			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
 			inherent_data_providers,
 			block_import: Arc::new(Mutex::new(block_import)),
-			polkadot_backend,
-			polkadot_client,
+			relay_chain_backend: polkadot_backend,
+			relay_chain_client: polkadot_client,
 			_phantom: PhantomData,
 		}
 	}
@@ -127,8 +128,8 @@ where
 
 		let parachain_inherent_data = ParachainInherentData::create_at(
 			relay_parent,
-			&*self.polkadot_client,
-			&*self.polkadot_backend,
+			&*self.relay_chain_client,
+			&*self.relay_chain_backend,
 			validation_data,
 			self.para_id,
 		)?;
@@ -232,5 +233,132 @@ where
 		}
 
 		Some(ParachainCandidate { block, proof })
+	}
+}
+
+/// Paramaters of [`build_relay_chain_consensus`].
+pub struct BuildRelayChainConsensusParams<PF, BI, RBackend> {
+	pub para_id: ParaId,
+	pub proposer_factory: PF,
+	pub inherent_data_providers: InherentDataProviders,
+	pub block_import: BI,
+	pub relay_chain_client: polkadot_service::Client,
+	pub relay_chain_backend: Arc<RBackend>,
+}
+
+/// Build the [`RelayChainConsensus`].
+///
+/// Returns a boxed [`ParachainConsensus`].
+pub fn build_relay_chain_consensus<Block, PF, BI, RBackend>(
+	BuildRelayChainConsensusParams {
+		para_id,
+		proposer_factory,
+		inherent_data_providers,
+		block_import,
+		relay_chain_client,
+		relay_chain_backend,
+	}: BuildRelayChainConsensusParams<PF, BI, RBackend>,
+) -> Box<dyn ParachainConsensus<Block>>
+where
+	Block: BlockT,
+	PF: Environment<Block> + Send + Sync + 'static,
+	PF::Proposer: Proposer<Block, Transaction = BI::Transaction>,
+	BI: BlockImport<Block> + Send + Sync + 'static,
+	RBackend: Backend<PBlock> + 'static,
+	// Rust bug: https://github.com/rust-lang/rust/issues/24159
+	sc_client_api::StateBackendFor<RBackend, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
+{
+	RelayChainConsensusBuilder::new(
+		para_id,
+		proposer_factory,
+		block_import,
+		inherent_data_providers,
+		relay_chain_client,
+		relay_chain_backend,
+	)
+	.build()
+}
+
+/// Relay chain consensus builder.
+///
+/// Builds a [`RelayChainConsensus`] for a parachain. As this requires
+/// a concrete relay chain client instance, the builder takes a [`polkadot_service::Client`]
+/// that wraps this concrete instanace. By using [`polkadot_service::ExecuteWithClient`]
+/// the builder gets access to this concrete instance.
+struct RelayChainConsensusBuilder<Block, PF, BI, RBackend> {
+	para_id: ParaId,
+	_phantom: PhantomData<Block>,
+	proposer_factory: PF,
+	inherent_data_providers: InherentDataProviders,
+	block_import: BI,
+	relay_chain_backend: Arc<RBackend>,
+	relay_chain_client: polkadot_service::Client,
+}
+
+impl<Block, PF, BI, RBackend> RelayChainConsensusBuilder<Block, PF, BI, RBackend>
+where
+	Block: BlockT,
+	// Rust bug: https://github.com/rust-lang/rust/issues/24159
+	sc_client_api::StateBackendFor<RBackend, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
+	PF: Environment<Block> + Send + Sync + 'static,
+	PF::Proposer: Proposer<Block, Transaction = BI::Transaction>,
+	BI: BlockImport<Block> + Send + Sync + 'static,
+	RBackend: Backend<PBlock> + 'static,
+{
+	/// Create a new instance of the builder.
+	fn new(
+		para_id: ParaId,
+		proposer_factory: PF,
+		block_import: BI,
+		inherent_data_providers: InherentDataProviders,
+		relay_chain_client: polkadot_service::Client,
+		relay_chain_backend: Arc<RBackend>,
+	) -> Self {
+		Self {
+			para_id,
+			_phantom: PhantomData,
+			proposer_factory,
+			block_import,
+			inherent_data_providers,
+			relay_chain_backend,
+			relay_chain_client,
+		}
+	}
+
+	/// Build the relay chain consensus.
+	fn build(self) -> Box<dyn ParachainConsensus<Block>> {
+		self.relay_chain_client.clone().execute_with(self)
+	}
+}
+
+impl<Block, PF, BI, RBackend> polkadot_service::ExecuteWithClient
+	for RelayChainConsensusBuilder<Block, PF, BI, RBackend>
+where
+	Block: BlockT,
+	// Rust bug: https://github.com/rust-lang/rust/issues/24159
+	sc_client_api::StateBackendFor<RBackend, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
+	PF: Environment<Block> + Send + Sync + 'static,
+	PF::Proposer: Proposer<Block, Transaction = BI::Transaction>,
+	BI: BlockImport<Block> + Send + Sync + 'static,
+	RBackend: Backend<PBlock> + 'static,
+{
+	type Output = Box<dyn ParachainConsensus<Block>>;
+
+	fn execute_with_client<PClient, Api, PBackend>(self, client: Arc<PClient>) -> Self::Output
+	where
+		<Api as sp_api::ApiExt<PBlock>>::StateBackend: sp_api::StateBackend<HashFor<PBlock>>,
+		PBackend: Backend<PBlock>,
+		PBackend::State: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
+		Api: polkadot_service::RuntimeApiCollection<StateBackend = PBackend::State>,
+		PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
+	{
+		Box::new(RelayChainConsensus::new(
+			self.para_id,
+			self.proposer_factory,
+			self.inherent_data_providers,
+			self.block_import,
+			client.clone(),
+			self.relay_chain_backend,
+		))
 	}
 }

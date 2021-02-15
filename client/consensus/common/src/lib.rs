@@ -38,8 +38,6 @@ use futures::{future, select, FutureExt, Stream, StreamExt};
 
 use std::{marker::PhantomData, sync::Arc};
 
-pub mod import_queue;
-
 /// Errors that can occur while following the polkadot relay-chain.
 #[derive(Debug)]
 pub enum Error {
@@ -527,7 +525,7 @@ pub struct ParachainCandidate<B> {
 /// specific collator should build candidate for the given relay chain block. The consensus
 /// implementation could for example check if this specific collator is part of the validator.
 #[async_trait::async_trait]
-pub trait ParachainConsensus<B: BlockT> {
+pub trait ParachainConsensus<B: BlockT>: Send + Sync + dyn_clone::DynClone {
 	/// Produce a new candidate at the given parent block.
 	///
 	/// Should return `None` if the consensus implementation decided that it shouldn't build a
@@ -542,6 +540,20 @@ pub trait ParachainConsensus<B: BlockT> {
 		relay_parent: PHash,
 		validation_data: &PersistedValidationData,
 	) -> Option<ParachainCandidate<B>>;
+}
+
+dyn_clone::clone_trait_object!(<B> ParachainConsensus<B> where B: BlockT);
+
+#[async_trait::async_trait]
+impl<B: BlockT> ParachainConsensus<B> for Box<dyn ParachainConsensus<B> + Send + Sync> {
+	async fn produce_candidate(
+		&mut self,
+		parent: &B::Header,
+		relay_parent: PHash,
+		validation_data: &PersistedValidationData,
+	) -> Option<ParachainCandidate<B>> {
+		(*self).produce_candidate(parent, relay_parent, validation_data).await
+	}
 }
 
 #[cfg(test)]
