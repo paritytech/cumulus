@@ -31,7 +31,7 @@ use sp_runtime::{
 use sp_state_machine::InspectState;
 
 use cumulus_client_consensus_common::ParachainConsensus;
-use polkadot_node_primitives::{Collation, CollationGenerationConfig};
+use polkadot_node_primitives::{Collation, CollationGenerationConfig, CollationResult};
 use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
 use polkadot_overseer::OverseerHandler;
 use polkadot_primitives::v1::{
@@ -41,7 +41,7 @@ use polkadot_primitives::v1::{
 
 use codec::{Decode, Encode};
 
-use futures::FutureExt;
+use futures::{channel::oneshot, FutureExt};
 
 use std::sync::Arc;
 
@@ -78,18 +78,13 @@ where
 {
 	/// Create a new instance.
 	fn new(
-		overseer_handler: OverseerHandler,
 		block_status: Arc<BS>,
 		spawner: Arc<dyn SpawnNamed + Send + Sync>,
 		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
 		backend: Arc<Backend>,
 		parachain_consensus: PC,
 	) -> Self {
-		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(
-			spawner,
-			announce_block,
-			overseer_handler,
-		)));
+		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(spawner, announce_block)));
 
 		Self {
 			block_status,
@@ -265,7 +260,7 @@ where
 		mut self,
 		relay_parent: PHash,
 		validation_data: PersistedValidationData,
-	) -> Option<Collation> {
+	) -> Option<CollationResult> {
 		tracing::trace!(target: LOG_TARGET, "Producing candidate");
 
 		let last_head = match Block::Header::decode(&mut &validation_data.parent_head.0[..]) {
@@ -314,9 +309,11 @@ where
 		let collation = self.build_collation(b, block_hash, validation_data.relay_parent_number)?;
 		let pov_hash = collation.proof_of_validity.hash();
 
+		let (result_sender, signed_stmt_recv) = oneshot::channel();
+
 		self.wait_to_announce
 			.lock()
-			.wait_to_announce(block_hash, pov_hash);
+			.wait_to_announce(block_hash, pov_hash, signed_stmt_recv);
 
 		tracing::info!(
 			target: LOG_TARGET,
@@ -325,7 +322,10 @@ where
 			"Produced proof-of-validity candidate.",
 		);
 
-		Some(collation)
+		Some(CollationResult {
+			collation,
+			result_sender: Some(result_sender),
+		})
 	}
 }
 
@@ -361,7 +361,6 @@ pub async fn start_collator<Block, Backend, BS, Spawner, PS>(
 	PS: ParachainConsensus<Block> + Clone + Send + Sync + 'static,
 {
 	let collator = Collator::new(
-		overseer_handler.clone(),
 		block_status,
 		Arc::new(spawner),
 		announce_block,
@@ -482,9 +481,11 @@ mod tests {
 
 		let mut validation_data = PersistedValidationData::default();
 		validation_data.parent_head = header.encode().into();
+		let relay_parent = Default::default();
 
-		let collation = block_on((config.collator)(Default::default(), &validation_data))
-			.expect("Collation is build");
+		let collation = block_on((config.collator)(relay_parent, &validation_data))
+			.expect("Collation is build")
+			.collation;
 
 		let block_data = collation.proof_of_validity.block_data;
 
