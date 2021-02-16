@@ -600,14 +600,8 @@ impl<T: Config> Module<T> {
 			return None;
 		}
 
-<<<<<<< variant A
-		let relay_blocks_since_last_upgrade = vfp
-			.relay_parent_number
-			.saturating_sub(LastUpgrade::get());
->>>>>>> variant B
 		let relay_blocks_since_last_upgrade =
 			vfp.relay_parent_number.saturating_sub(LastUpgrade::get());
-======= end
 
 		if relay_blocks_since_last_upgrade <= cfg.validation_upgrade_frequency {
 			// The cooldown after the last upgrade hasn't elapsed yet. Upgrade is not allowed.
@@ -1619,17 +1613,6 @@ mod tests {
 		}
 
 		BlockTests::new()
-<<<<<<< variant A
-			.with_relay_sproof_builder(
-				|_, relay_block_num, sproof| match relay_block_num {
-					1 => {
-						sproof.dmq_mqc_head =
-							Some(MessageQueueChain::default().extend_downward(&MSG).head());
-					}
-					_ => unreachable!(),
-				},
-			)
->>>>>>> variant B
 			.with_relay_sproof_builder(|_, relay_block_num, sproof| match relay_block_num {
 				1 => {
 					sproof.dmq_mqc_head =
@@ -1637,7 +1620,6 @@ mod tests {
 				}
 				_ => unreachable!(),
 			})
-======= end
 			.with_inherent_data(|_, relay_block_num, data| match relay_block_num {
 				1 => {
 					data.downward_messages.push(MSG.clone());
@@ -1678,37 +1660,6 @@ mod tests {
 		}
 
 		BlockTests::new()
-<<<<<<< variant A
-			.with_relay_sproof_builder(
-				|_, relay_block_num, sproof| match relay_block_num {
-					1 => {
-						// 200 - doesn't exist yet
-						// 300 - one new message
-						sproof.upsert_inbound_channel(ParaId::from(300)).mqc_head =
-							Some(MessageQueueChain::default().extend_hrmp(&MSG_1).head());
-					}
-					2 => {
-						// 200 - two new messages
-						// 300 - now present with one message.
-						sproof.upsert_inbound_channel(ParaId::from(200)).mqc_head =
-							Some(MessageQueueChain::default().extend_hrmp(&MSG_4).head());
-						sproof.upsert_inbound_channel(ParaId::from(300)).mqc_head =
-							Some(MessageQueueChain::default()
-								.extend_hrmp(&MSG_1)
-								.extend_hrmp(&MSG_2)
-								.extend_hrmp(&MSG_3)
-								.head());
-					}
-					3 => {
-						// 200 - no new messages
-						// 300 - is gone
-						sproof.upsert_inbound_channel(ParaId::from(200)).mqc_head =
-							Some(MessageQueueChain::default().extend_hrmp(&MSG_4).head());
-					}
-					_ => unreachable!(),
-				},
-			)
->>>>>>> variant B
 			.with_relay_sproof_builder(|_, relay_block_num, sproof| match relay_block_num {
 				1 => {
 					// 200 - doesn't exist yet
@@ -1737,7 +1688,6 @@ mod tests {
 				}
 				_ => unreachable!(),
 			})
-======= end
 			.with_inherent_data(|_, relay_block_num, data| match relay_block_num {
 				1 => {
 					data.horizontal_messages
@@ -1819,23 +1769,6 @@ mod tests {
 		const ALICE: ParaId = ParaId::new(300);
 
 		BlockTests::new()
-<<<<<<< variant A
-			.with_relay_sproof_builder(
-				|_, relay_block_num, sproof| match relay_block_num {
-					1 => {
-						sproof.upsert_inbound_channel(ALICE).mqc_head
-							= Some(MessageQueueChain::default().extend_hrmp(&MSG_1).head());
-					}
-					2 => {
-						// 300 - no new messages, mqc stayed the same.
-						sproof.upsert_inbound_channel(ALICE).mqc_head
-							= Some(MessageQueueChain::default().extend_hrmp(&MSG_1).head());
-					}
-					3 => {
-						// 300 - new message.
-						sproof.upsert_inbound_channel(ALICE).mqc_head
-							= Some(MessageQueueChain::default()
->>>>>>> variant B
 			.with_relay_sproof_builder(|_, relay_block_num, sproof| match relay_block_num {
 				1 => {
 					sproof.upsert_inbound_channel(ALICE).mqc_head =
@@ -1850,22 +1783,13 @@ mod tests {
 					// 300 - new message.
 					sproof.upsert_inbound_channel(ALICE).mqc_head = Some(
 						MessageQueueChain::default()
-======= end
 							.extend_hrmp(&MSG_1)
 							.extend_hrmp(&MSG_2)
-<<<<<<< variant A
-							.head());
-					}
-					_ => unreachable!(),
-				},
-			)
->>>>>>> variant B
 							.head(),
 					);
 				}
 				_ => unreachable!(),
 			})
-======= end
 			.with_inherent_data(|_, relay_block_num, data| match relay_block_num {
 				1 => {
 					data.horizontal_messages.insert(ALICE, vec![MSG_1.clone()]);

@@ -210,7 +210,8 @@ impl ParachainInherentData {
 		PClient: ProvideRuntimeApi<PBlock>,
 		PClient::Api: ParachainHost<PBlock>,
 	{
-		let relay_chain_state = collect_relay_storage_proof(polkadot_backend, para_id, relay_parent)?;
+		let relay_chain_state =
+			collect_relay_storage_proof(polkadot_backend, para_id, relay_parent)?;
 		let downward_messages = retrieve_dmq_contents(polkadot_client, para_id, relay_parent)?;
 		let horizontal_messages =
 			retrieve_all_inbound_hrmp_channel_contents(polkadot_client, para_id, relay_parent)?;
@@ -221,5 +222,22 @@ impl ParachainInherentData {
 			validation_data: validation_data.clone(),
 			relay_chain_state,
 		})
+	}
+}
+
+impl sp_inherents::InherentDataProvider for ParachainInherentData {
+	fn provide_inherent_data(
+		&self,
+		inherent_data: &mut sp_inherents::InherentData,
+	) -> Result<(), sp_inherents::Error> {
+		inherent_data.put_data(crate::INHERENT_IDENTIFIER, &self)
+	}
+
+	fn try_handle_error(
+		&self,
+		_: &sp_inherents::InherentIdentifier,
+		_: &[u8],
+	) -> sp_inherents::TryHandleErrorResult {
+		None
 	}
 }
