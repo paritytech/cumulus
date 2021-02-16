@@ -41,7 +41,7 @@ sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "mast
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate", version = "0.8.0-rc5", branch = "master" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -56,11 +56,11 @@ sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "maste
 jsonrpc-core = "15.1.0"
 
 # Cumulus dependencies
-cumulus-consensus = { path = "../consensus" }
-cumulus-collator = { path = "../collator" }
-cumulus-network = { path = "../network" }
-cumulus-primitives = { path = "../primitives" }
-cumulus-service = { path = "../service" }
+cumulus-client-consensus-relay-chain = { path = "../client/consensus/relay-chain" }
+cumulus-client-collator = { path = "../client/collator" }
+cumulus-client-service = { path = "../client/service" }
+cumulus-client-network = { path = "../client/network" }
+cumulus-primitives-core = { path = "../primitives/core" }
 
 # Polkadot dependencies
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
