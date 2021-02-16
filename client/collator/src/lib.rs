@@ -260,7 +260,11 @@ where
 		relay_parent: PHash,
 		validation_data: PersistedValidationData,
 	) -> Option<CollationResult> {
-		tracing::trace!(target: LOG_TARGET, "Producing candidate");
+		tracing::trace!(
+			target: LOG_TARGET,
+			relay_parent = ?relay_parent,
+			"Producing candidate",
+		);
 
 		let last_head = match Block::Header::decode(&mut &validation_data.parent_head.0[..]) {
 			Ok(x) => x,

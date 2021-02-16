@@ -533,7 +533,7 @@ pub trait ParachainConsensus<B: BlockT>: Send + Sync + dyn_clone::DynClone {
 	///
 	/// # NOTE
 	///
-	/// It is expected that the block is
+	/// It is expected that the block is already imported when the future resolves.
 	async fn produce_candidate(
 		&mut self,
 		parent: &B::Header,
