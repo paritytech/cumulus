@@ -55,8 +55,6 @@ pub fn new_partial(
 	>,
 	sc_service::Error,
 > {
-	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
-
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, Executor>(&config)?;
 	let client = Arc::new(client);
@@ -74,7 +72,9 @@ pub fn new_partial(
 	let import_queue = cumulus_client_consensus_relay_chain::import_queue(
 		client.clone(),
 		client.clone(),
-		inherent_data_providers.clone(),
+		|_, _| async move {
+			Ok(())
+		},
 		&task_manager.spawn_handle(),
 		registry.clone(),
 	)?;
@@ -86,7 +86,6 @@ pub fn new_partial(
 		keystore_container,
 		task_manager,
 		transaction_pool,
-		inherent_data_providers,
 		select_chain: (),
 		other: (),
 	};
@@ -128,10 +127,6 @@ where
 		)?;
 
 	let params = new_partial(&parachain_config)?;
-	params
-		.inherent_data_providers
-		.register_provider(sp_timestamp::InherentDataProvider)
-		.unwrap();
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -189,10 +184,29 @@ where
 		);
 		let spawner = task_manager.spawn_handle();
 
+		let relay_chain_backend = polkadot_full_node.backend.clone();
+		let relay_chain_client = polkadot_full_node.client.clone();
 		let parachain_consensus = build_relay_chain_consensus(BuildRelayChainConsensusParams {
 			para_id: id,
 			proposer_factory,
-			inherent_data_providers: params.inherent_data_providers,
+			inherent_data_providers: move |_, (relay_parent, validation_data)| {
+				let parachain_inherent =
+					cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
+						relay_parent,
+						&relay_chain_client,
+						&*relay_chain_backend,
+						&validation_data,
+						id,
+					);
+				async move {
+					let time = sp_timestamp::InherentDataProvider::from_system_time();
+
+					let parachain_inherent = parachain_inherent.ok_or_else(|| {
+						Box::<dyn std::error::Error + Send + Sync>::from(String::from("error"))
+					})?;
+					Ok((time, parachain_inherent))
+				}
+			},
 			block_import: client.clone(),
 			relay_chain_client: polkadot_full_node.client.clone(),
 			relay_chain_backend: polkadot_full_node.backend.clone(),

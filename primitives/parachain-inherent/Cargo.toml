@@ -15,6 +15,9 @@ sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "
 sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 
+# Polkadot dependencies
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master", optional = true }
+
 # Cumulus dependencies
 cumulus-primitives-core = { path = "../core", default-features = false }
 
@@ -36,4 +39,5 @@ std = [
 	"sp-runtime",
 	"sc-client-api",
 	"sp-api",
+	"polkadot-service",
 ]

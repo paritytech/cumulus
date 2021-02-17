@@ -216,7 +216,7 @@ where
 		);
 
 		let relay_chain_client = relay_chain_full_node.client.clone();
-		let relay_chain_backed = relay_chain_full_node.backend.clone();
+		let relay_chain_backend = relay_chain_full_node.backend.clone();
 
 		let parachain_consensus = cumulus_client_consensus_relay_chain::RelayChainConsensus::new(
 			para_id,
@@ -226,7 +226,7 @@ where
 					cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 						relay_parent,
 						&*relay_chain_client,
-						&*relay_chain_backed,
+						&*relay_chain_backend,
 						&validation_data,
 						para_id,
 					);
