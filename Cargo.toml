@@ -16,8 +16,6 @@ members = [
 	"test/client",
 	"test/service",
 	"test/relay-sproof-builder",
-	"pallets/author-inherent",
-	#"pallets/author-filter",
 ]
 
 [profile.release]
