@@ -31,7 +31,7 @@ use polkadot_test_client::{
 };
 use sp_api::{ApiRef, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
-use sp_consensus::{block_validation::BlockAnnounceValidator as _, BlockOrigin};
+use sp_consensus::BlockOrigin;
 use sp_core::H256;
 use sp_keyring::Sr25519Keyring;
 use sp_keystore::{testing::KeyStore, SyncCryptoStore, SyncCryptoStorePtr};
@@ -360,8 +360,6 @@ impl ProvideRuntimeApi<PBlock> for TestApi {
 
 sp_api::mock_impl_runtime_apis! {
 	impl ParachainHost<PBlock> for RuntimeApi {
-		type Error = sp_blockchain::Error;
-
 		fn validators(&self) -> Vec<ValidatorId> {
 			self.data.validators.clone()
 		}
