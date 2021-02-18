@@ -82,7 +82,8 @@ pub mod pallet {
 				// TODO why could we not use the same method as in moonbeam?
 				// Why does to_low_u64_be not exist on H256?
 				// https://docs.rs/primitive-types/0.9.0/primitive_types/struct.H256.html#method.to_low_u64_be
-				let index = randomness.to_fixed_bytes()[0] as usize;
+				// Cast to u32 first so we get consistent results on 32- and 64-bit platforms.
+				let index = (randomness.to_fixed_bytes()[0] as u32) as usize;
 
 				// Move the selected author from the original vector into the eligible vector
 				// TODO we could short-circuit this check by returning early when the claimed
