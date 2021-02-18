@@ -275,6 +275,8 @@ pub fn run() -> Result<()> {
 				// 2. Better yet, use the keystore.
 				let author = if cli.run.base.alice {
 					Some(AccountId32::from_ss58check("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").expect("Alice is valid"))
+				} else if cli.run.base.bob {
+					Some(AccountId32::from_ss58check("5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty").expect("Bob is valid"))
 				} else {
 					None
 				};
