@@ -284,7 +284,9 @@ mod tests {
 		type Event = ();
 		type BlockHashCount = BlockHashCount;
 		type Version = ();
-		type PalletInfo = ();
+		// This changed in https://github.com/paritytech/substrate/pull/8090
+		// Requires a little more shuffling in the test harness. Putting it off.
+		type PalletInfo = PalletInfo;
 		type AccountData = ();
 		type OnNewAccount = ();
 		type OnKilledAccount = ();
