@@ -33,6 +33,7 @@ use sc_service::{
 	PartialComponents,
 };
 use sp_core::hexdisplay::HexDisplay;
+use sp_core::crypto::{AccountId32, Ss58Codec};
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 
@@ -269,6 +270,15 @@ pub fn run() -> Result<()> {
 				// TODO
 				let key = sp_core::Pair::generate().0;
 
+				//TODO This currently only works with Alice Bob etc, make it better in the future.
+				// 1. At least wire it back to cli
+				// 2. Better yet, use the keystore.
+				let author = if cli.run.base.alice {
+					Some(AccountId32::from_ss58check("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").expect("Alice is valid"))
+				} else {
+					None
+				};
+
 				let extension = chain_spec::Extensions::try_get(&*config.chain_spec);
 				let relay_chain_id = extension.map(|e| e.relay_chain.clone());
 				let para_id = extension.map(|e| e.para_id);
@@ -305,7 +315,7 @@ pub fn run() -> Result<()> {
 				info!("Parachain genesis state: {}", genesis_state);
 				info!("Is collating: {}", if collator { "yes" } else { "no" });
 
-				crate::service::start_node(config, key, polkadot_config, id, collator)
+				crate::service::start_node(config, key, author, polkadot_config, id, collator)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)

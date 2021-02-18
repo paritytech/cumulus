@@ -317,8 +317,8 @@ construct_runtime! {
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		ParachainInfo: parachain_info::{Module, Storage, Config},
 		XcmHandler: cumulus_pallet_xcm_handler::{Module, Call, Event<T>, Origin},
-		AuthorInherent: author_inherent::{Module, Call, Storage, Inherent, Config<T>},
-		AuthorFilter: pallet_author_filter::{Module, Storage, Event<T>,}
+		AuthorInherent: author_inherent::{Module, Call, Storage, Inherent},
+		AuthorFilter: pallet_author_filter::{Module, Storage, Event<T>, Config<T>}
 	}
 }
 

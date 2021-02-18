@@ -148,8 +148,8 @@ pub mod pallet {
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config>	{
-		potential_authors: Vec<T::AccountId>,
-		eligible_ratio: u8,
+		pub potential_authors: Vec<T::AccountId>,
+		pub eligible_ratio: u8,
 	}
 
 	#[cfg(feature = "std")]

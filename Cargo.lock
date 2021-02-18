@@ -6926,6 +6926,7 @@ name = "rococo-collator"
 version = "0.1.0"
 dependencies = [
  "assert_cmd",
+ "author-inherent",
  "cumulus-client-collator",
  "cumulus-client-consensus",
  "cumulus-client-network",

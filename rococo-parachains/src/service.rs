@@ -26,9 +26,11 @@ use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sp_core::Pair;
+use sp_core::crypto::AccountId32;
 use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
 use std::sync::Arc;
+use codec::Encode;
 
 // Native executor instance.
 native_executor_instance!(
@@ -100,6 +102,7 @@ pub fn new_partial(
 async fn start_node_impl<RB>(
 	parachain_config: Configuration,
 	collator_key: CollatorPair,
+	author: Option<AccountId32>,
 	polkadot_config: Configuration,
 	id: ParaId,
 	validator: bool,
@@ -131,6 +134,12 @@ where
 		.inherent_data_providers
 		.register_provider(sp_timestamp::InherentDataProvider)
 		.unwrap();
+	if let Some(author) = author {
+		params
+			.inherent_data_providers
+			.register_provider(author_inherent::InherentDataProvider(author.encode()))
+			.unwrap();
+	}
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -228,6 +237,7 @@ where
 pub async fn start_node(
 	parachain_config: Configuration,
 	collator_key: CollatorPair,
+	author: Option<AccountId32>,
 	polkadot_config: Configuration,
 	id: ParaId,
 	validator: bool,
@@ -235,6 +245,7 @@ pub async fn start_node(
 	start_node_impl(
 		parachain_config,
 		collator_key,
+		author,
 		polkadot_config,
 		id,
 		validator,
