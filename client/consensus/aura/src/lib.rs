@@ -58,6 +58,7 @@ use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvid
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, Member, NumberFor};
 use std::{convert::TryFrom, hash::Hash, marker::PhantomData, sync::Arc};
+use sc_consensus_slots::SlotInfo;
 
 mod import_queue;
 
@@ -189,7 +190,24 @@ where
 		relay_parent: PHash,
 		validation_data: &PersistedValidationData,
 	) -> Option<ParachainCandidate<B>> {
-		todo!()
+		let timestamp = std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap();
+
+		let info = SlotInfo {
+			slot: (validation_data.relay_parent_number as u64).into(),
+			duration: 12000,
+			inherent_data: self.inherent_data(parent.hash(), validation_data, relay_parent).await?,
+			chain_head: parent.clone(),
+			timestamp,
+			ends_at: std::time::Instant::now() + std::time::Duration::from_millis(500),
+		};
+
+		let future = self.aura_worker.lock().on_slot(info);
+		let res = future.await?;
+
+		Some(ParachainCandidate {
+			block: res.block,
+			proof: res.storage_proof.expect("storage proof"),
+		})
 	}
 }
 
