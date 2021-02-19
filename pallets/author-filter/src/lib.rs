@@ -77,7 +77,7 @@ pub mod pallet {
 				// height. This will be aleviated in the future by adding entropy from the relay
 				// chain inherent.
 				let subject: [u8; 7] = [b'f', b'i', b'l', b't', b'e', b'r', i as u8];
-				let randomness : sp_core::H256 = T::RandomnessSource::random(&subject);
+				let randomness: sp_core::H256 = T::RandomnessSource::random(&subject);
 
 				// TODO why could we not use the same method as in moonbeam?
 				// Why does to_low_u64_be not exist on H256?
@@ -98,12 +98,13 @@ pub mod pallet {
 			<Pallet<T>>::deposit_event(Event::Filtered(our_height, eligible.clone()));
 
 			// Print some logs for debugging purposes.
-			debug::RuntimeLogger::init();
-			debug::info!("Filtering Authors");
-			debug::info!("Eligible Authors are: {:?}", eligible);
-			debug::info!("NOT Eligible Authors: {:?}", &staked);
-			debug::info!("The id I'm checking is: {:?}", account);
-			debug::info!("Was that author eligible: {}", eligible.contains(account));
+			debug::debug!(target: "author-filter", "Eligible Authors are: {:?}", eligible);
+			debug::debug!(target: "author-filter", "NOT Eligible Authors: {:?}", &staked);
+			debug::debug!(target: "author-filter",
+				"Current author, {:?}, is eligible: {}",
+				account,
+				eligible.contains(account)
+			);
 
 			eligible.contains(account)
 		}
@@ -147,13 +148,13 @@ pub mod pallet {
 	}
 
 	#[pallet::genesis_config]
-	pub struct GenesisConfig<T: Config>	{
+	pub struct GenesisConfig<T: Config> {
 		pub potential_authors: Vec<T::AccountId>,
 		pub eligible_ratio: u8,
 	}
 
 	#[cfg(feature = "std")]
-	impl<T:Config> Default for GenesisConfig<T> {
+	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
 			Self {
 				potential_authors: Vec::new(),
