@@ -1128,6 +1128,7 @@ dependencies = [
  "sc-consensus-aura",
  "sc-consensus-slots",
  "sp-api",
+ "sp-application-crypto",
  "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
@@ -10845,26 +10846,6 @@ dependencies = [
 ]
 
 [[patch.unused]]
-name = "polkadot"
-version = "0.8.28"
-
-[[patch.unused]]
-name = "test-parachain-adder"
-version = "0.8.28"
-
-[[patch.unused]]
-name = "test-parachain-adder-collator"
-version = "0.7.26"
-
-[[patch.unused]]
-name = "test-parachain-halt"
-version = "0.8.28"
-
-[[patch.unused]]
-name = "test-parachains"
-version = "0.7.22"
-
-[[patch.unused]]
 name = "chain-spec-builder"
 version = "2.0.0"
 
@@ -11091,3 +11072,23 @@ version = "2.0.0"
 [[patch.unused]]
 name = "substrate-test-utils-test-crate"
 version = "0.1.0"
+
+[[patch.unused]]
+name = "polkadot"
+version = "0.8.28"
+
+[[patch.unused]]
+name = "test-parachain-adder"
+version = "0.8.28"
+
+[[patch.unused]]
+name = "test-parachain-adder-collator"
+version = "0.7.26"
+
+[[patch.unused]]
+name = "test-parachain-halt"
+version = "0.8.28"
+
+[[patch.unused]]
+name = "test-parachains"
+version = "0.7.22"
