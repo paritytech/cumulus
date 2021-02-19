@@ -23,6 +23,7 @@ sp-offchain = { git = "https://github.com/paritytech/substrate", default-feature
 sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -32,6 +33,7 @@ pallet-randomness-collective-flip = { git = "https://github.com/paritytech/subst
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Cumulus dependencies
 cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false }
@@ -79,4 +81,6 @@ std = [
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
+	"pallet-aura/std",
+	"sp-consensus-aura/std",
 ]

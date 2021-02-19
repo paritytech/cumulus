@@ -19,7 +19,7 @@ use cumulus_primitives_core::ParaId;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
-use cumulus_client_consensus_relay_chain::{build_relay_chain_consensus, BuildRelayChainConsensusParams};
+use cumulus_client_consensus_aura::{build_aura_consensus, BuildAuraConsensusParams};
 use parachain_runtime::RuntimeApi;
 use polkadot_primitives::v0::CollatorPair;
 use rococo_parachain_primitives::Block;
@@ -69,7 +69,7 @@ pub fn new_partial(
 		client.clone(),
 	);
 
-	let import_queue = cumulus_client_consensus_relay_chain::import_queue(
+	let import_queue = cumulus_client_consensus_aura::import_queue(
 		client.clone(),
 		client.clone(),
 		|_, _| async move {
@@ -137,6 +137,8 @@ where
 		polkadot_full_node.backend.clone(),
 	);
 
+	let force_authoring = parachain_config.force_authoring;
+
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let transaction_pool = params.transaction_pool.clone();
 	let mut task_manager = params.task_manager;
@@ -186,8 +188,7 @@ where
 
 		let relay_chain_backend = polkadot_full_node.backend.clone();
 		let relay_chain_client = polkadot_full_node.client.clone();
-		let parachain_consensus = build_relay_chain_consensus(BuildRelayChainConsensusParams {
-			para_id: id,
+		let parachain_consensus = build_aura_consensus::<sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _, _, _, _>(BuildAuraConsensusParams {
 			proposer_factory,
 			inherent_data_providers: move |_, (relay_parent, validation_data)| {
 				let parachain_inherent =
@@ -210,6 +211,11 @@ where
 			block_import: client.clone(),
 			relay_chain_client: polkadot_full_node.client.clone(),
 			relay_chain_backend: polkadot_full_node.backend.clone(),
+			para_client: client.clone(),
+			backoff_authoring_blocks: Option::<()>::None,
+			sync_oracle: network.clone(),
+			keystore: params.keystore_container.sync_keystore(),
+			force_authoring,
 		});
 
 		let params = StartCollatorParams {

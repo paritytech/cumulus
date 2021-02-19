@@ -231,7 +231,7 @@ pub struct BuildAuraConsensusParams<PF, BI, RBackend, CIDP, Client, BS, SO> {
 /// Build the [`AuraConsensus`].
 ///
 /// Returns a boxed [`ParachainConsensus`].
-pub fn build_relay_chain_consensus<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Error>(
+pub fn build_aura_consensus<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Error>(
 	BuildAuraConsensusParams {
 		proposer_factory,
 		inherent_data_providers,

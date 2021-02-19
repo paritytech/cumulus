@@ -1364,6 +1364,7 @@ dependencies = [
  "frame-executive",
  "frame-support",
  "frame-system",
+ "pallet-aura",
  "pallet-balances",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
@@ -1376,6 +1377,7 @@ dependencies = [
  "serde",
  "sp-api",
  "sp-block-builder",
+ "sp-consensus-aura",
  "sp-core",
  "sp-inherents",
  "sp-io",
@@ -4270,6 +4272,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-aura"
+version = "3.0.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-session",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "serde",
+ "sp-application-crypto",
+ "sp-consensus-aura",
+ "sp-runtime",
+ "sp-std",
+ "sp-timestamp",
+]
+
+[[package]]
 name = "pallet-authority-discovery"
 version = "3.0.0"
 dependencies = [
@@ -6883,7 +6902,7 @@ version = "0.1.0"
 dependencies = [
  "assert_cmd",
  "cumulus-client-collator",
- "cumulus-client-consensus-relay-chain",
+ "cumulus-client-consensus-aura",
  "cumulus-client-network",
  "cumulus-client-service",
  "cumulus-primitives-core",
@@ -6926,6 +6945,7 @@ dependencies = [
  "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
+ "sp-consensus-aura",
  "sp-core",
  "sp-inherents",
  "sp-io",
@@ -10911,10 +10931,6 @@ version = "3.0.0"
 
 [[patch.unused]]
 name = "pallet-atomic-swap"
-version = "3.0.0"
-
-[[patch.unused]]
-name = "pallet-aura"
 version = "3.0.0"
 
 [[patch.unused]]

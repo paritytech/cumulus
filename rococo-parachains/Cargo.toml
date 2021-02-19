@@ -51,12 +51,13 @@ sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "mas
 sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # RPC related dependencies
 jsonrpc-core = "15.1.0"
 
 # Cumulus dependencies
-cumulus-client-consensus-relay-chain = { path = "../client/consensus/relay-chain" }
+cumulus-client-consensus-aura = { path = "../client/consensus/aura" }
 cumulus-client-collator = { path = "../client/collator" }
 cumulus-client-service = { path = "../client/service" }
 cumulus-client-network = { path = "../client/network" }

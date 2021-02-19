@@ -52,6 +52,7 @@ pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
+pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 
 // XCM imports
 use polkadot_parachain::primitives::Sibling;
@@ -69,7 +70,9 @@ use xcm_executor::{
 pub type SessionHandlers = ();
 
 impl_opaque_keys! {
-	pub struct SessionKeys {}
+	pub struct SessionKeys {
+		pub aura: Aura,
+	}
 }
 
 /// This runtime version.
@@ -85,7 +88,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 
 pub const MILLISECS_PER_BLOCK: u64 = 6000;
 
-pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
+pub const SLOT_DURATION: u64 = 2 * MILLISECS_PER_BLOCK;
 
 pub const EPOCH_DURATION_IN_BLOCKS: u32 = 10 * MINUTES;
 
@@ -291,6 +294,10 @@ impl cumulus_pallet_xcm_handler::Config for Runtime {
 	type HrmpMessageSender = ParachainSystem;
 }
 
+impl pallet_aura::Config for Runtime {
+	type AuthorityId = AuraId;
+}
+
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
@@ -306,6 +313,7 @@ construct_runtime! {
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		ParachainInfo: parachain_info::{Module, Storage, Config},
 		XcmHandler: cumulus_pallet_xcm_handler::{Module, Call, Event<T>, Origin},
+		Aura: pallet_aura::{Module, Config<T>},
 	}
 }
 
@@ -410,6 +418,16 @@ impl_runtime_apis! {
 
 		fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
 			SessionKeys::generate(seed)
+		}
+	}
+
+	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
+		fn slot_duration() -> u64 {
+			Aura::slot_duration()
+		}
+
+		fn authorities() -> Vec<AuraId> {
+			Aura::authorities()
 		}
 	}
 }

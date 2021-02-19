@@ -16,6 +16,7 @@
 
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
+use parachain_runtime::AuraId;
 use rococo_parachain_primitives::{AccountId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
@@ -69,6 +70,10 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 			testnet_genesis(
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				vec![
+					get_from_seed::<AuraId>("Alice"),
+					get_from_seed::<AuraId>("Bob"),
+				],
+				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
 					get_account_id_from_seed::<sr25519::Public>("Charlie"),
@@ -104,6 +109,7 @@ pub fn staging_test_net(id: ParaId) -> ChainSpec {
 		move || {
 			testnet_genesis(
 				hex!["9ed7705e3c7da027ba0583a22a3212042f7e715d3c168ba14f1424e2bc111d00"].into(),
+				todo!(),
 				vec![
 					hex!["9ed7705e3c7da027ba0583a22a3212042f7e715d3c168ba14f1424e2bc111d00"].into(),
 				],
@@ -123,6 +129,7 @@ pub fn staging_test_net(id: ParaId) -> ChainSpec {
 
 fn testnet_genesis(
 	root_key: AccountId,
+	initial_authorities: Vec<AuraId>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> parachain_runtime::GenesisConfig {
@@ -142,5 +149,8 @@ fn testnet_genesis(
 		}),
 		pallet_sudo: Some(parachain_runtime::SudoConfig { key: root_key }),
 		parachain_info: Some(parachain_runtime::ParachainInfoConfig { parachain_id: id }),
+		pallet_aura: Some(parachain_runtime::AuraConfig {
+			authorities: initial_authorities,
+		}),
 	}
 }
