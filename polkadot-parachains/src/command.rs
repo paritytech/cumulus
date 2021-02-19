@@ -40,6 +40,7 @@ fn load_spec(
 		"staging" => Ok(Box::new(chain_spec::staging_test_net(para_id))),
 		"encointer-rococo" => Ok(Box::new(chain_spec::encointer_spec(para_id, false))),
 		"encointer-local" => Ok(Box::new(chain_spec::encointer_spec(para_id, true))),
+		"sybil-dummy" => Ok(Box::new(chain_spec::sybil_dummy_spec(para_id))),
 		"tick" => Ok(Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../res/tick.json")[..],
 		)?)),

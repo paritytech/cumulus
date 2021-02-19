@@ -58,7 +58,9 @@ pub use encointer_balances::Call as EncointerBalancesCall;
 pub use encointer_bazaar::Call as EncointerBazaarCall;
 pub use encointer_ceremonies::Call as EncointerCeremoniesCall;
 pub use encointer_communities::Call as EncointerCommunitiesCall;
+pub use encointer_personhood_oracle::Call as EncointerPersonhoodOracleCall;
 pub use encointer_scheduler::Call as EncointerSchedulerCall;
+pub use encointer_sybil_gate::Call as EncointerSybilGateCall;
 
 pub use encointer_primitives::balances::{BalanceEntry, BalanceType};
 pub use encointer_primitives::scheduler::CeremonyPhaseType;
@@ -315,6 +317,19 @@ impl encointer_bazaar::Config for Runtime {
 	type Event = Event;
 }
 
+impl encointer_personhood_oracle::Config for Runtime {
+	type Event = Event;
+	type XcmSender = XcmHandler;
+}
+
+impl encointer_sybil_gate::Config for Runtime {
+	type Event = Event;
+	type XcmSender = XcmHandler;
+	type Currency = Balances;
+	type Public = <MultiSignature as Verify>::Signer;
+	type Signature = MultiSignature;
+}
+
 /// The address format for describing accounts.
 pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
 
@@ -333,14 +348,19 @@ construct_runtime! {
 		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event},
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
-		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
-		EncointerCeremonies: encointer_ceremonies::{Pallet, Call, Storage, Config<T>, Event<T>},
-		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>},
-		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>},
-		EncointerBazaar: encointer_bazaar::{Pallet, Call, Storage, Event<T>},
+		EncointerScheduler: encointer_scheduler::{Module, Call, Storage, Config<T>, Event},
+		EncointerCeremonies: encointer_ceremonies::{Module, Call, Storage, Config<T>, Event<T>},
+		EncointerCommunities: encointer_communities::{Module, Call, Storage, Config<T>, Event<T>},
+		EncointerBalances: encointer_balances::{Module, Call, Storage, Event<T>},
+		EncointerBazaar: encointer_bazaar::{Module, Call, Storage, Event<T>},
+		// Module index = 14/15 is the default. But I want to be explicit here, such that we know
+		// for sure, what to enter in the polkadot-ui.
+		EncointerPersonhoodOracle: encointer_personhood_oracle::{Module, Call, Event} = 14,
+		EncointerSybilGate: encointer_sybil_gate::{Module, Call, Storage, Event<T>} = 15,
 
-		// DMP handler.
+				// DMP handler.
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin},
+
 	}
 }
 
