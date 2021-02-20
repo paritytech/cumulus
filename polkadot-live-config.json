@@ -1,0 +1,133 @@
+{
+	"relaychain": {
+		"bin": "../polkadot/target/release/polkadot",
+		"chain": "rococo-local",
+		"nodes": [
+			{
+				"name": "alice",
+				"wsPort": 9999,
+				"port": 30444
+			},
+			{
+				"name": "bob",
+				"wsPort": 9988,
+				"port": 30555
+			},
+			{
+				"name": "charlie",
+				"wsPort": 9977,
+				"port": 30666
+			}
+		]
+	},
+	"parachains": [
+		{
+			"bin": "./target/release/encointer-collator",
+			"chain": "encointer-rococo",
+			"id": "1862",
+			"wsPort": 9944,
+			"port": 31200,
+			"flags": ["-lencointer=debug", "--", "--execution=wasm"]
+		},
+		{
+			"bin": "./target/release/encointer-collator",
+			"chain": "sybil-dummy",
+			"id": "1863",
+			"wsPort": 9955,
+			"port": 31300,
+			"flags": ["-lencointer=debug", "--", "--execution=wasm"]
+		}
+	],
+	"simpleParachains": [
+	],
+	"hrmpChannels": [
+		{
+			"sender": "1862",
+			"recipient": "1863",
+			"maxCapacity": 8,
+			"maxMessageSize": 512
+		},
+		{
+			"sender": "1863",
+			"recipient": "1862",
+			"maxCapacity": 8,
+			"maxMessageSize": 512
+		}
+	],
+	"types": {
+		"CeremonyPhaseType": {
+			"_enum": [
+				"Registering",
+				"Assigning",
+				"Attesting"
+			]
+		},
+		"ShopIdentifier": "Text",
+		"ArticleIdentifier": "Text",
+		"CeremonyIndexType": "u32",
+		"ParticipantIndexType": "u64",
+		"MeetupIndexType": "u64",
+		"AttestationIndexType": "u64",
+		"CommunityIdentifier": "Hash",
+		"BalanceType": "i128",
+		"BalanceEntry": {
+			"principal": "i128",
+			"last_update": "BlockNumber"
+		},
+		"CommunityCeremony": "(CommunityIdentifier,CeremonyIndexType)",
+		"CommunityPropertiesType": {
+			"name_utf8": "Vec<u8>",
+			"demurrage_per_block": "Demurrage"
+		},
+		"Demurrage": "i128",
+		"Location": {
+			"lat": "i64",
+			"lon": "i64"
+		},
+		"Reputation": {
+			"_enum": [
+				"Unverified",
+				"UnverifiedReputable",
+				"VerifiedUnlinked",
+				"VerifiedLinked"
+			]
+		},
+		"ClaimOfAttendance": {
+			"claimant_public": "AccountId",
+			"ceremony_index": "CeremonyIndexType",
+			"community_identifier": "CommunityIdentifier",
+			"meetup_index": "MeetupIndexType",
+			"location": "Location",
+			"timestamp": "Moment",
+			"number_of_participants_confirmed": "u32"
+		},
+		"Attestation": {
+			"claim": "ClaimOfAttendance",
+			"signature": "MultiSignature",
+			"public": "AccountId"
+		},
+		"ProofOfAttendance": {
+			"prover_public": "AccountId",
+			"ceremony_index": "CeremonyIndexType",
+			"community_identifier": "CommunityIdentifier",
+			"attendee_public": "AccountId",
+			"attendee_signature": "MultiSignature"
+		},
+		"ShardIdentifier": "Hash",
+		"Request": {
+			"shard": "ShardIdentifier",
+			"cyphertext": "Vec<u8>"
+		},
+		"Enclave": {
+			"pubkey": "AccountId",
+			"mrenclave": "Hash",
+			"timestamp": "u64",
+			"url": "Text"
+		},
+		"ProofOfPersonHoodRequest": "Vec<(CommunityIdentifier, ProofOfAttendance<Signature, AccountId>)>",
+		"ProofOfPersonhoodConfidence": {
+			"attested": "u8",
+			"last_n_ceremonies": "u8"
+		}
+	}
+}
