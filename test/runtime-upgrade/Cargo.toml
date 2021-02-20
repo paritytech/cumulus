@@ -1,8 +1,8 @@
 [package]
 name = 'encointer-parachain-runtime'
-# minor revision must match node/client
+# minor revision must match collator node
 # patch revision must match runtime spec_version
-version = '0.2.5'
+version = '0.3.6'
 authors = ["Encointer <info@encointer.org>"]
 license = "GPL-3.0"
 edition = '2018'
