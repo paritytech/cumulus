@@ -90,10 +90,6 @@ pub mod pallet {
 				eligible.push(staked.remove(index % staked.len()));
 			}
 
-			// Emit an event for debugging purposes
-			let our_height = frame_system::Module::<T>::block_number();
-			<Pallet<T>>::deposit_event(Event::Filtered(our_height, eligible.clone()));
-
 			// Print some logs for debugging purposes.
 			debug!(target: "author-filter", "Eligible Authors are: {:?}", eligible);
 			debug!(target: "author-filter", "NOT Eligible Authors: {:?}", &staked);
@@ -178,9 +174,5 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// The amount of eligible authors for the filter to select has been changed.
 		EligibleUpdated(Percent),
-		/// The staked authors have been filtered to these eligible authors in this block.
-		/// This is a debugging and development event and should be removed eventually.
-		/// Fields are: para block height, eligible authors
-		Filtered(T::BlockNumber, Vec<T::AccountId>),
 	}
 }

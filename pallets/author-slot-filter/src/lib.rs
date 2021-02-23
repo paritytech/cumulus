@@ -61,15 +61,16 @@ pub mod pallet {
 	// record it instorage (although we do emit a debugging event for now).
 	impl<T: Config> author_inherent::CanAuthor<T::AccountId> for Pallet<T> {
 		fn can_author(account: &T::AccountId) -> bool {
-			let mut staked: Vec<T::AccountId> = T::PotentialAuthors::get();
-
-			let num_eligible = EligibleRatio::<T>::get().mul_ceil(staked.len());
-			let mut eligible = Vec::with_capacity(num_eligible);
 
 			// Grab the relay parent height as a temporary source of relay-based entropy
 			let validation_data = cumulus_pallet_parachain_system::Module::<T>::validation_data()
 				.expect("validation data was set in parachain system inherent");
 			let relay_height = validation_data.relay_parent_number;
+
+			let mut staked: Vec<T::AccountId> = T::PotentialAuthors::get();
+
+			let num_eligible = EligibleRatio::<T>::get().mul_ceil(staked.len());
+			let mut eligible = Vec::with_capacity(num_eligible);
 
 			for i in 0..num_eligible {
 				// A context identifier for grabbing the randomness. Consists of three parts
@@ -100,10 +101,6 @@ pub mod pallet {
 				// 2. we currently show the entire filtered set in the debug event
 				eligible.push(staked.remove(index % staked.len()));
 			}
-
-			// Emit an event for debugging purposes
-			let our_height = frame_system::Module::<T>::block_number();
-			<Pallet<T>>::deposit_event(Event::Filtered(our_height, eligible.clone()));
 
 			// Print some logs for debugging purposes.
 			debug!(target: "author-filter", "Eligible Authors are: {:?}", eligible);
@@ -189,9 +186,5 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// The amount of eligible authors for the filter to select has been changed.
 		EligibleUpdated(Percent),
-		/// The staked authors have been filtered to these eligible authors in this block.
-		/// This is a debugging and development event and should be removed eventually.
-		/// Fields are: para block height, eligible authors
-		Filtered(T::BlockNumber, Vec<T::AccountId>),
 	}
 }
