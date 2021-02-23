@@ -35,7 +35,7 @@ pub use pallet::*;
 #[pallet]
 pub mod pallet {
 
-	use frame_support::debug;
+	use frame_support::debug::debug;
 	use frame_support::pallet_prelude::*;
 	use frame_support::traits::Randomness;
 	use frame_support::traits::Vec;
@@ -98,9 +98,9 @@ pub mod pallet {
 			<Pallet<T>>::deposit_event(Event::Filtered(our_height, eligible.clone()));
 
 			// Print some logs for debugging purposes.
-			debug::debug!(target: "author-filter", "Eligible Authors are: {:?}", eligible);
-			debug::debug!(target: "author-filter", "NOT Eligible Authors: {:?}", &staked);
-			debug::debug!(target: "author-filter",
+			debug!(target: "author-filter", "Eligible Authors are: {:?}", eligible);
+			debug!(target: "author-filter", "NOT Eligible Authors: {:?}", &staked);
+			debug!(target: "author-filter",
 				"Current author, {:?}, is eligible: {}",
 				account,
 				eligible.contains(account)
