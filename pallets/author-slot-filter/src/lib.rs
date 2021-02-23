@@ -15,10 +15,7 @@
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Small pallet responsible determining which accounts are eligible to author at the current
-//! block height.
-//!
-//! Currently this pallet is tightly coupled to our stake pallet, but this design
-//! should be generalized in the future.
+//! slot. The slot is determined by the relay parent block number from the parachain inherent.
 //!
 //! Using a randomness beacon supplied by the `Randomness` trait, this pallet takes the set of
 //! currently staked accounts from pallet stake, and filters them down to a pseudorandom subset.
@@ -49,7 +46,7 @@ pub mod pallet {
 
 	/// Configuration trait of this pallet.
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config: frame_system::Config + cumulus_pallet_parachain_system::Config {
 		/// The overarching event type
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// Deterministic on-chain pseudo-randomness used to do the filtering
@@ -69,19 +66,30 @@ pub mod pallet {
 			let num_eligible = EligibleRatio::<T>::get().mul_ceil(staked.len());
 			let mut eligible = Vec::with_capacity(num_eligible);
 
+			// Grab the relay parent height as a temporary source of relay-based entropy
+			let validation_data = cumulus_pallet_parachain_system::Module::<T>::validation_data()
+				.expect("validation data was set in parachain system inherent");
+			let relay_height = validation_data.relay_parent_number;
+
 			for i in 0..num_eligible {
-				// A context identifier for grabbing the randomness. Consists of two parts
+				// A context identifier for grabbing the randomness. Consists of three parts
 				// - The constant string *b"filter" - to identify this pallet
 				// - The index `i` when we're selecting the ith eligible author
-				// Currently this has the weakness that the authors are based only on para-block
-				// height. This will be aleviated in the future by adding entropy from the relay
-				// chain inherent.
-				let subject: [u8; 7] = [b'f', b'i', b'l', b't', b'e', b'r', i as u8];
+				// - The relay parent block number so that the eligible authors at the next height
+				//   change. Avoids liveness attacks from colluding minorities of active authors.
+				// Third one may not be necessary once we leverage the relay chain's randomness.
+				let subject: [u8; 8] = [
+					b'f',
+					b'i',
+					b'l',
+					b't',
+					b'e',
+					b'r',
+					i as u8,
+					relay_height as u8,
+				];
 				let randomness: sp_core::H256 = T::RandomnessSource::random(&subject);
 
-				// TODO why could we not use the same method as in moonbeam?
-				// Why does to_low_u64_be not exist on H256?
-				// https://docs.rs/primitive-types/0.9.0/primitive_types/struct.H256.html#method.to_low_u64_be
 				// Cast to u32 first so we get consistent results on 32- and 64-bit platforms.
 				let index = (randomness.to_fixed_bytes()[0] as u32) as usize;
 

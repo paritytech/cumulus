@@ -1350,7 +1350,7 @@ dependencies = [
  "frame-executive",
  "frame-support",
  "frame-system",
- "pallet-author-filter",
+ "pallet-author-slot-filter",
  "pallet-balances",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
@@ -4269,10 +4269,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-author-filter"
+name = "pallet-author-height-filter"
 version = "0.1.0"
 dependencies = [
  "author-inherent",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-author-slot-filter"
+version = "0.1.0"
+dependencies = [
+ "author-inherent",
+ "cumulus-pallet-parachain-system",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
