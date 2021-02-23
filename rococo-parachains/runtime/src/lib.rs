@@ -39,7 +39,7 @@ use sp_version::RuntimeVersion;
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, parameter_types,
-	traits::Randomness,
+	traits::{Randomness, OnInitialize},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -426,11 +426,14 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl author_filter_api::AuthorFilterAPI<Block> for Runtime {
-        fn can_author(author: Vec<u8>, relay_parent: u32) -> bool {
-			//initialize entropy source
+	impl author_filter_api::AuthorFilterAPI<Block, AccountId> for Runtime {
+        fn can_author(author: AccountId, relay_parent: u32) -> bool {
+			// Initialize entropy source
+			let our_height = System::block_number();
+			// Is it safe to assume that all entropy sources will be initialized this way?
+			<Self as pallet_author_filter::Config>::RandomnessSource::on_initialize(our_height);
 
-			//Call helper
+			// Call helper
 
 			unimplemented!()
 		}
