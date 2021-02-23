@@ -434,8 +434,7 @@ impl_runtime_apis! {
 			<Self as pallet_author_filter::Config>::RandomnessSource::on_initialize(our_height);
 
 			// Call helper
-
-			unimplemented!()
+			AuthorFilter::can_author_helper(&author, relay_parent)
 		}
     }
 }

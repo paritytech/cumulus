@@ -67,6 +67,13 @@ pub mod pallet {
 				.expect("validation data was set in parachain system inherent");
 			let relay_height = validation_data.relay_parent_number;
 
+			Self::can_author_helper(account, relay_height)
+		}
+	}
+
+	impl<T: Config> Pallet<T> {
+		/// Helper method to calculate eligible authors
+		pub fn can_author_helper(account: &T::AccountId, relay_height: u32) -> bool {
 			let mut staked: Vec<T::AccountId> = T::PotentialAuthors::get();
 
 			let num_eligible = EligibleRatio::<T>::get().mul_ceil(staked.len());
