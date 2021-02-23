@@ -61,6 +61,16 @@ pub mod pallet {
 	// record it instorage (although we do emit a debugging event for now).
 	impl<T: Config> author_inherent::CanAuthor<T::AccountId> for Pallet<T> {
 		fn can_author(account: &T::AccountId) -> bool {
+			// Use 0 as a bogus relay block.
+			Self::can_author_helper(account, 0)
+		}
+	}
+
+	impl<T: Config> Pallet<T> {
+		/// Helper method to calculate eligible authors
+		/// This function still takes _relay_height as a parameter even though it won't be used
+		/// This is ground work to help me understand what needs abstracted out into a trait.
+		pub fn can_author_helper(account: &T::AccountId, _relay_height: u32) -> bool {
 			let mut staked: Vec<T::AccountId> = T::PotentialAuthors::get();
 
 			let num_eligible = EligibleRatio::<T>::get().mul_ceil(staked.len());
