@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use cumulus_client_consensus_relay_chain::{
+use cumulus_client_consensus_filter::{
 	build_relay_chain_consensus, BuildRelayChainConsensusParams,
 };
 use cumulus_client_network::build_block_announce_validator;
@@ -76,7 +76,7 @@ pub fn new_partial(
 		client.clone(),
 	);
 
-	let import_queue = cumulus_client_consensus_relay_chain::import_queue(
+	let import_queue = cumulus_client_consensus_filter::import_queue(
 		client.clone(),
 		client.clone(),
 		inherent_data_providers.clone(),

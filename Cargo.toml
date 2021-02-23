@@ -2,7 +2,7 @@
 members = [
 	"client/consensus/common",
 	"client/consensus/relay-chain",
-	# "client/consensus/filtering",
+	"client/consensus/filtering",
 	"client/consensus/filtering/runtime-api",
 	"client/network",
 	"client/service",
