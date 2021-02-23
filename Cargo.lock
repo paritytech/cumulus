@@ -350,6 +350,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "author-filter-api"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-std",
+]
+
+[[package]]
 name = "author-inherent"
 version = "0.1.0"
 dependencies = [
@@ -1343,6 +1354,7 @@ dependencies = [
 name = "cumulus-test-parachain-runtime"
 version = "0.1.0"
 dependencies = [
+ "author-filter-api",
  "author-inherent",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm-handler",
@@ -6764,7 +6776,7 @@ dependencies = [
  "cfg-if 0.1.10",
  "libc",
  "nix",
- "rand 0.6.5",
+ "rand 0.8.3",
  "winapi 0.3.9",
 ]
 
@@ -8453,7 +8465,7 @@ dependencies = [
  "libc",
  "nix",
  "quick-error 2.0.0",
- "rand 0.6.5",
+ "rand 0.8.3",
  "winapi 0.3.9",
 ]
 
@@ -10156,7 +10168,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.6.5",
+ "rand 0.7.3",
  "static_assertions",
 ]
 

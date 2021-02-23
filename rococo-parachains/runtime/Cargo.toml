@@ -38,6 +38,7 @@ cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", def
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 cumulus-pallet-xcm-handler = { path = "../../pallets/xcm-handler", default-features = false }
 author-inherent = { path = "../../pallets/author-inherent", default-features = false }
+author-filter-api = { path = "../../client/consensus/filtering/runtime-api", default-features = false }
 # pallet-author-filter = {package = "pallet-author-height-filter", path = "../../pallets/author-height-filter", default-features = false }
 pallet-author-filter = {package = "pallet-author-slot-filter", path = "../../pallets/author-slot-filter", default-features = false }
 
@@ -84,4 +85,5 @@ std = [
 	"xcm-executor/std",
 	"author-inherent/std",
 	"pallet-author-filter/std",
+	"author-filter-api/std",
 ]

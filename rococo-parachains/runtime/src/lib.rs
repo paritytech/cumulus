@@ -425,6 +425,16 @@ impl_runtime_apis! {
 			SessionKeys::generate(seed)
 		}
 	}
+
+	impl author_filter_api::AuthorFilterAPI<Block> for Runtime {
+        fn can_author(author: Vec<u8>, relay_parent: u32) -> bool {
+			//initialize entropy source
+
+			//Call helper
+
+			unimplemented!()
+		}
+    }
 }
 
 cumulus_pallet_parachain_system::register_validate_block!(Block, Executive);
