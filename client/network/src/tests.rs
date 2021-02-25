@@ -145,6 +145,8 @@ async fn make_gossip_message_and_header(
 		&alice_public.into(),
 	)
 	.await
+	.ok()
+	.flatten()
 	.expect("Signing statement");
 
 	(signed, header)
@@ -256,6 +258,8 @@ fn check_statement_seconded() {
 		0,
 		&alice_public.into(),
 	))
+	.ok()
+	.flatten()
 	.expect("Signs statement");
 	let data = BlockAnnounceData {
 		receipt: Default::default(),
