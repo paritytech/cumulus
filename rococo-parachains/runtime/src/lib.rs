@@ -46,7 +46,7 @@ pub use frame_support::{
 	},
 	StorageValue,
 };
-use frame_system::limits::{BlockLength, BlockWeights};
+use frame_system::{EnsureRoot, limits::{BlockLength, BlockWeights}};
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
@@ -292,6 +292,7 @@ impl cumulus_pallet_xcm_handler::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type UpwardMessageSender = ParachainSystem;
 	type HrmpMessageSender = ParachainSystem;
+	type SendXcmOrigin = EnsureRoot<AccountId>;
 }
 
 impl pallet_aura::Config for Runtime {
@@ -432,4 +433,4 @@ impl_runtime_apis! {
 	}
 }
 
-cumulus_pallet_parachain_system::register_validate_block!(Block, Executive);
+cumulus_pallet_parachain_system::register_validate_block!(Runtime, Executive);

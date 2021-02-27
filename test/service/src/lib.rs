@@ -95,7 +95,7 @@ pub fn new_partial(
 		client.clone(),
 		client.clone(),
 		|_, _| async move { Ok(()) },
-		&task_manager.spawn_handle(),
+		&task_manager.spawn_essential_handle(),
 		registry.clone(),
 	)?;
 
@@ -200,6 +200,7 @@ where
 		network: network.clone(),
 		network_status_sinks,
 		system_rpc_tx,
+		telemetry_span: None,
 	})?;
 
 	let announce_block = {
@@ -208,7 +209,7 @@ where
 	};
 
 	if is_collator {
-		let proposer_factory = sc_basic_authorship::ProposerFactory::new(
+		let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
 			task_manager.spawn_handle(),
 			client.clone(),
 			transaction_pool,
@@ -439,7 +440,6 @@ pub fn node_config(
 		telemetry_handle: None,
 		telemetry_endpoints: None,
 		telemetry_external_transport: None,
-		telemetry_span: None,
 		default_heap_pages: None,
 		offchain_worker: OffchainWorkerConfig {
 			enabled: true,

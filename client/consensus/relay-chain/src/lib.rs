@@ -45,8 +45,8 @@ use polkadot_service::ClientHandle;
 use sc_client_api::Backend;
 use sp_api::ProvideRuntimeApi;
 use sp_consensus::{
-	BlockImport, BlockImportParams, BlockOrigin, Environment, ForkChoiceStrategy, Proposal,
-	Proposer, RecordProof,
+	BlockImport, BlockImportParams, BlockOrigin, EnableProofRecording, Environment,
+	ForkChoiceStrategy, ProofRecording, Proposal, Proposer,
 };
 use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvider};
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT};
@@ -154,7 +154,12 @@ where
 	RBackend: Backend<PBlock>,
 	BI: BlockImport<B> + Send + Sync,
 	PF: Environment<B> + Send + Sync,
-	PF::Proposer: Proposer<B, Transaction = BI::Transaction>,
+	PF::Proposer: Proposer<
+		B,
+		Transaction = BI::Transaction,
+		ProofRecording = EnableProofRecording,
+		Proof = <EnableProofRecording as ProofRecording>::Proof,
+	>,
 	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)> + Send + Sync,
 {
 	async fn produce_candidate(
@@ -186,23 +191,10 @@ where
 				Default::default(),
 				//TODO: Fix this.
 				Duration::from_millis(500),
-				RecordProof::Yes,
 			)
 			.await
 			.map_err(|e| tracing::error!(target: LOG_TARGET, error = ?e, "Proposing failed."))
 			.ok()?;
-
-		let proof = match proof {
-			Some(proof) => proof,
-			None => {
-				tracing::error!(
-					target: LOG_TARGET,
-					"Proposer did not return the requested proof.",
-				);
-
-				return None;
-			}
-		};
 
 		let (header, extrinsics) = block.clone().deconstruct();
 
@@ -257,7 +249,12 @@ pub fn build_relay_chain_consensus<Block, PF, BI, RBackend, CIDP>(
 where
 	Block: BlockT,
 	PF: Environment<Block> + Send + Sync + 'static,
-	PF::Proposer: Proposer<Block, Transaction = BI::Transaction>,
+	PF::Proposer: Proposer<
+		Block,
+		Transaction = BI::Transaction,
+		ProofRecording = EnableProofRecording,
+		Proof = <EnableProofRecording as ProofRecording>::Proof,
+	>,
 	BI: BlockImport<Block> + Send + Sync + 'static,
 	RBackend: Backend<PBlock> + 'static,
 	// Rust bug: https://github.com/rust-lang/rust/issues/24159
@@ -297,7 +294,12 @@ where
 	// Rust bug: https://github.com/rust-lang/rust/issues/24159
 	sc_client_api::StateBackendFor<RBackend, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
 	PF: Environment<Block> + Send + Sync + 'static,
-	PF::Proposer: Proposer<Block, Transaction = BI::Transaction>,
+	PF::Proposer: Proposer<
+		Block,
+		Transaction = BI::Transaction,
+		ProofRecording = EnableProofRecording,
+		Proof = <EnableProofRecording as ProofRecording>::Proof,
+	>,
 	BI: BlockImport<Block> + Send + Sync + 'static,
 	RBackend: Backend<PBlock> + 'static,
 	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)> + Send + Sync + 'static,
@@ -335,7 +337,12 @@ where
 	// Rust bug: https://github.com/rust-lang/rust/issues/24159
 	sc_client_api::StateBackendFor<RBackend, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
 	PF: Environment<Block> + Send + Sync + 'static,
-	PF::Proposer: Proposer<Block, Transaction = BI::Transaction>,
+	PF::Proposer: Proposer<
+		Block,
+		Transaction = BI::Transaction,
+		ProofRecording = EnableProofRecording,
+		Proof = <EnableProofRecording as ProofRecording>::Proof,
+	>,
 	BI: BlockImport<Block> + Send + Sync + 'static,
 	RBackend: Backend<PBlock> + 'static,
 	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)> + Send + Sync + 'static,

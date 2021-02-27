@@ -117,7 +117,7 @@ pub fn import_queue<Client, Block: BlockT, I, IDP>(
 	client: Arc<Client>,
 	block_import: I,
 	inherent_data_providers: IDP,
-	spawner: &impl sp_core::traits::SpawnNamed,
+	spawner: &impl sp_core::traits::SpawnEssentialNamed,
 	registry: Option<&substrate_prometheus_endpoint::Registry>,
 ) -> ClientResult<BasicQueue<Block, I::Transaction>>
 where
