@@ -33,11 +33,11 @@ pub struct PurgeChainCmd {
 	pub base: sc_cli::PurgeChainCmd,
 
 	/// Only delete the para chain database
-	#[structopt(long = "parachain", aliases = &["para"])]
+	#[structopt(long, aliases = &["para"])]
 	pub parachain: bool,
 
 	/// Only delete the relay chain database
-	#[structopt(long = "relaychain", aliases = &["relay"])]
+	#[structopt(long, aliases = &["relay"])]
 	pub relaychain: bool,
 }
 
@@ -91,7 +91,7 @@ impl PurgeChainCmd {
 				Err(ref err) if err.kind() == io::ErrorKind::NotFound => {
 					eprintln!("{:?} did not exist.", &db_path);
 				}
-				Err(err) => return Result::Err(err.into()),
+				Err(err) => return Err(err.into()),
 			}
 		}
 
