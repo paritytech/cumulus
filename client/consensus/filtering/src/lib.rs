@@ -51,6 +51,7 @@ use sp_consensus::{
 use sp_inherents::{InherentData, InherentDataProviders};
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT};
 use std::{marker::PhantomData, sync::Arc, time::Duration};
+use tracing::error;
 
 mod import_queue;
 
@@ -118,7 +119,7 @@ where
 			.inherent_data_providers
 			.create_inherent_data()
 			.map_err(|e| {
-				tracing::error!(
+				error!(
 					target: LOG_TARGET,
 					error = ?e,
 					"Failed to create inherent data.",
@@ -140,7 +141,7 @@ where
 				&parachain_inherent_data,
 			)
 			.map_err(|e| {
-				tracing::error!(
+				error!(
 					target: LOG_TARGET,
 					error = ?e,
 					"Failed to put the system inherent into inherent data.",
@@ -175,7 +176,7 @@ where
 		let proposer = proposer_future
 			.await
 			.map_err(
-				|e| tracing::error!(target: LOG_TARGET, error = ?e, "Could not create proposer."),
+				|e| error!(target: LOG_TARGET, error = ?e, "Could not create proposer."),
 			)
 			.ok()?;
 
@@ -194,13 +195,13 @@ where
 				RecordProof::Yes,
 			)
 			.await
-			.map_err(|e| tracing::error!(target: LOG_TARGET, error = ?e, "Proposing failed."))
+			.map_err(|e| error!(target: LOG_TARGET, error = ?e, "Proposing failed."))
 			.ok()?;
 
 		let proof = match proof {
 			Some(proof) => proof,
 			None => {
-				tracing::error!(
+				error!(
 					target: LOG_TARGET,
 					"Proposer did not return the requested proof.",
 				);
@@ -222,7 +223,7 @@ where
 			.lock()
 			.import_block(block_import_params, Default::default())
 		{
-			tracing::error!(
+			error!(
 				target: LOG_TARGET,
 				at = ?parent.hash(),
 				error = ?err,
