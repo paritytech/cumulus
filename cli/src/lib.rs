@@ -49,17 +49,21 @@ impl PurgeChainCmd {
 		relay_config: sc_service::Configuration,
 	) -> sc_cli::Result<()> {
 		let databases = match (self.parachain, self.relaychain) {
-			(true, true) | (false, false) => vec![para_config.database, relay_config.database],
-			(true, false) => vec![para_config.database],
-			(false, true) => vec![relay_config.database],
+			(true, true) | (false, false) => vec![
+				("parachain", para_config.database),
+				("relaychain", relay_config.database),
+			],
+			(true, false) => vec![("parachain", para_config.database)],
+			(false, true) => vec![("relaychain", relay_config.database)],
 		};
 
 		let db_paths = databases
 			.iter()
-			.map(|x| {
-				x.path().ok_or_else(|| {
-					sc_cli::Error::Input("Cannot purge custom database implementation".into())
-				})
+			.map(|(chain_label, database)| {
+				database.path().ok_or_else(|| sc_cli::Error::Input(format!(
+					"Cannot purge custom database implementation of: {}",
+					chain_label,
+				)))
 			})
 			.collect::<sc_cli::Result<Vec<_>>>()?;
 
