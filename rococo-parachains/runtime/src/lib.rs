@@ -426,11 +426,16 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl author_filter_api::AuthorFilterAPI<Block, AccountId> for Runtime {
-        fn can_author(author: AccountId, relay_parent: u32) -> bool {
+	impl author_filter_api::AuthorFilterAPI<Block> for Runtime {
+        fn can_author(author_bytes: sp_std::vec::Vec<u8>, relay_parent: u32) -> bool {
+
+			//TODO How to decode?
+			// use codec::Decode;
+			// let author: AccountId = AccountId::decode(&mut author_bytes).ok_or_else(|| return false);
+			let author: AccountId = Default::default();
 			// Initialize entropy source
-			let our_height = System::block_number();
 			// Is it safe to assume that all entropy sources will be initialized this way?
+			let our_height = System::block_number(); // TODO is this off-by-one?
 			<Self as pallet_author_filter::Config>::RandomnessSource::on_initialize(our_height);
 
 			// Call helper
