@@ -33,6 +33,7 @@
 //!
 //! 5. After the parachain candidate got backed and included, all collators start at 1.
 
+use author_filter_api::AuthorFilterAPI;
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_primitives_core::{
 	relay_chain::v1::{Block as PBlock, Hash as PHash, ParachainHost},
@@ -43,10 +44,10 @@ pub use import_queue::import_queue;
 use parking_lot::Mutex;
 use polkadot_service::ClientHandle;
 use sc_client_api::Backend;
-use sp_api::ProvideRuntimeApi;
+use sp_api::{ProvideRuntimeApi, BlockId};
 use sp_consensus::{
-	BlockImport, BlockImportParams, BlockOrigin, Environment, ForkChoiceStrategy, Proposal,
-	Proposer, RecordProof,
+	BlockImport, BlockImportParams, BlockOrigin, EnableProofRecording, Environment,
+	ForkChoiceStrategy, ProofRecording, Proposal, Proposer,
 };
 use sp_inherents::{InherentData, InherentDataProviders};
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT};
@@ -58,7 +59,7 @@ mod import_queue;
 const LOG_TARGET: &str = "cumulus-consensus-relay-chain";
 
 /// The implementation of the relay-chain provided consensus for parachains.
-pub struct RelayChainConsensus<B, PF, BI, RClient, RBackend> {
+pub struct FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient> {
 	para_id: ParaId,
 	_phantom: PhantomData<B>,
 	proposer_factory: Arc<Mutex<PF>>,
@@ -66,9 +67,10 @@ pub struct RelayChainConsensus<B, PF, BI, RClient, RBackend> {
 	block_import: Arc<Mutex<BI>>,
 	relay_chain_client: Arc<RClient>,
 	relay_chain_backend: Arc<RBackend>,
+	parachain_client: Arc<ParaClient>,
 }
 
-impl<B, PF, BI, RClient, RBackend> Clone for RelayChainConsensus<B, PF, BI, RClient, RBackend> {
+impl<B, PF, BI, RClient, RBackend, ParaClient> Clone for FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient> {
 	fn clone(&self) -> Self {
 		Self {
 			para_id: self.para_id,
@@ -78,16 +80,18 @@ impl<B, PF, BI, RClient, RBackend> Clone for RelayChainConsensus<B, PF, BI, RCli
 			block_import: self.block_import.clone(),
 			relay_chain_backend: self.relay_chain_backend.clone(),
 			relay_chain_client: self.relay_chain_client.clone(),
+			parachain_client: self.parachain_client.clone(),
 		}
 	}
 }
 
-impl<B, PF, BI, RClient, RBackend> RelayChainConsensus<B, PF, BI, RClient, RBackend>
+impl<B, PF, BI, RClient, RBackend, ParaClient> FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient>
 where
 	B: BlockT,
 	RClient: ProvideRuntimeApi<PBlock>,
 	RClient::Api: ParachainHost<PBlock>,
 	RBackend: Backend<PBlock>,
+	ParaClient: ProvideRuntimeApi<B>,
 {
 	/// Create a new instance of relay-chain provided consensus.
 	pub fn new(
@@ -97,6 +101,7 @@ where
 		block_import: BI,
 		polkadot_client: Arc<RClient>,
 		polkadot_backend: Arc<RBackend>,
+		parachain_client: Arc<ParaClient>,
 	) -> Self {
 		Self {
 			para_id,
@@ -105,6 +110,7 @@ where
 			block_import: Arc::new(Mutex::new(block_import)),
 			relay_chain_backend: polkadot_backend,
 			relay_chain_client: polkadot_client,
+			parachain_client,
 			_phantom: PhantomData,
 		}
 	}
@@ -154,8 +160,8 @@ where
 }
 
 #[async_trait::async_trait]
-impl<B, PF, BI, RClient, RBackend> ParachainConsensus<B>
-	for RelayChainConsensus<B, PF, BI, RClient, RBackend>
+impl<B, PF, BI, RClient, RBackend, ParaClient> ParachainConsensus<B>
+	for FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient>
 where
 	B: BlockT,
 	RClient: ProvideRuntimeApi<PBlock> + Send + Sync,
@@ -163,7 +169,16 @@ where
 	RBackend: Backend<PBlock>,
 	BI: BlockImport<B> + Send + Sync,
 	PF: Environment<B> + Send + Sync,
-	PF::Proposer: Proposer<B, Transaction = BI::Transaction>,
+	PF::Proposer: Proposer<
+		B,
+		Transaction = BI::Transaction,
+		ProofRecording = EnableProofRecording,
+		Proof = <EnableProofRecording as ProofRecording>::Proof,
+	>,
+	// huh, I didn't need 'static here?
+	ParaClient: Send + Sync,
+	ParaClient: ProvideRuntimeApi<B>,
+	ParaClient::Api: AuthorFilterAPI<B>,
 {
 	async fn produce_candidate(
 		&mut self,
@@ -171,6 +186,13 @@ where
 		relay_parent: PHash,
 		validation_data: &PersistedValidationData,
 	) -> Option<ParachainCandidate<B>> {
+
+		//TODO get real author bytes.
+		let author_bytes = Vec::new();
+		let eligible = self.parachain_client.runtime_api()
+			.can_author(&BlockId::Hash(parent.hash()), author_bytes.clone(), validation_data.relay_parent_number);
+		println!("🔥🔥 {:?} could author {:?}", author_bytes, eligible);
+
 		let proposer_future = self.proposer_factory.lock().init(&parent);
 
 		let proposer = proposer_future
@@ -192,23 +214,10 @@ where
 				Default::default(),
 				//TODO: Fix this.
 				Duration::from_millis(500),
-				RecordProof::Yes,
 			)
 			.await
 			.map_err(|e| error!(target: LOG_TARGET, error = ?e, "Proposing failed."))
 			.ok()?;
-
-		let proof = match proof {
-			Some(proof) => proof,
-			None => {
-				error!(
-					target: LOG_TARGET,
-					"Proposer did not return the requested proof.",
-				);
-
-				return None;
-			}
-		};
 
 		let (header, extrinsics) = block.clone().deconstruct();
 
@@ -238,55 +247,68 @@ where
 }
 
 /// Paramaters of [`build_relay_chain_consensus`].
-pub struct BuildRelayChainConsensusParams<PF, BI, RBackend> {
+///TODO can this be moved into common ans shared with relay chain conensus builder?
+/// I bet my head would explode from thinking about generic types.
+pub struct BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient> {
 	pub para_id: ParaId,
 	pub proposer_factory: PF,
 	pub inherent_data_providers: InherentDataProviders,
 	pub block_import: BI,
 	pub relay_chain_client: polkadot_service::Client,
 	pub relay_chain_backend: Arc<RBackend>,
+	pub parachain_client: Arc<ParaClient>,
 }
 
-/// Build the [`RelayChainConsensus`].
+/// Build the [`FilteringConsensus`].
 ///
 /// Returns a boxed [`ParachainConsensus`].
-pub fn build_relay_chain_consensus<Block, PF, BI, RBackend>(
-	BuildRelayChainConsensusParams {
+pub fn build_filtering_consensus<Block, PF, BI, RBackend, ParaClient>(
+	BuildFilteringConsensusParams {
 		para_id,
 		proposer_factory,
 		inherent_data_providers,
 		block_import,
 		relay_chain_client,
 		relay_chain_backend,
-	}: BuildRelayChainConsensusParams<PF, BI, RBackend>,
+		parachain_client,
+	}: BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient>,
 ) -> Box<dyn ParachainConsensus<Block>>
 where
 	Block: BlockT,
 	PF: Environment<Block> + Send + Sync + 'static,
-	PF::Proposer: Proposer<Block, Transaction = BI::Transaction>,
+	PF::Proposer: Proposer<
+		Block,
+		Transaction = BI::Transaction,
+		ProofRecording = EnableProofRecording,
+		Proof = <EnableProofRecording as ProofRecording>::Proof,
+	>,
 	BI: BlockImport<Block> + Send + Sync + 'static,
 	RBackend: Backend<PBlock> + 'static,
 	// Rust bug: https://github.com/rust-lang/rust/issues/24159
 	sc_client_api::StateBackendFor<RBackend, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
+	ParaClient: Send + Sync + 'static,
+	ParaClient: ProvideRuntimeApi<Block>,
+	ParaClient::Api: AuthorFilterAPI<Block>,
 {
-	RelayChainConsensusBuilder::new(
+	FilteringConsensusBuilder::new(
 		para_id,
 		proposer_factory,
 		block_import,
 		inherent_data_providers,
 		relay_chain_client,
 		relay_chain_backend,
+		parachain_client,
 	)
 	.build()
 }
 
 /// Relay chain consensus builder.
 ///
-/// Builds a [`RelayChainConsensus`] for a parachain. As this requires
+/// Builds a [`FilteringConsensus`] for a parachain. As this requires
 /// a concrete relay chain client instance, the builder takes a [`polkadot_service::Client`]
 /// that wraps this concrete instanace. By using [`polkadot_service::ExecuteWithClient`]
 /// the builder gets access to this concrete instance.
-struct RelayChainConsensusBuilder<Block, PF, BI, RBackend> {
+struct FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient> {
 	para_id: ParaId,
 	_phantom: PhantomData<Block>,
 	proposer_factory: PF,
@@ -294,17 +316,25 @@ struct RelayChainConsensusBuilder<Block, PF, BI, RBackend> {
 	block_import: BI,
 	relay_chain_backend: Arc<RBackend>,
 	relay_chain_client: polkadot_service::Client,
+	parachain_client: Arc<ParaClient>,
 }
 
-impl<Block, PF, BI, RBackend> RelayChainConsensusBuilder<Block, PF, BI, RBackend>
+impl<Block, PF, BI, RBackend, ParaClient> FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient>
 where
 	Block: BlockT,
 	// Rust bug: https://github.com/rust-lang/rust/issues/24159
 	sc_client_api::StateBackendFor<RBackend, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
 	PF: Environment<Block> + Send + Sync + 'static,
-	PF::Proposer: Proposer<Block, Transaction = BI::Transaction>,
+	PF::Proposer: Proposer<
+		Block,
+		Transaction = BI::Transaction,
+		ProofRecording = EnableProofRecording,
+		Proof = <EnableProofRecording as ProofRecording>::Proof,
+	>,
 	BI: BlockImport<Block> + Send + Sync + 'static,
 	RBackend: Backend<PBlock> + 'static,
+	ParaClient: Send + Sync + 'static,
+	ParaClient: ProvideRuntimeApi<Block>,
 {
 	/// Create a new instance of the builder.
 	fn new(
@@ -314,6 +344,7 @@ where
 		inherent_data_providers: InherentDataProviders,
 		relay_chain_client: polkadot_service::Client,
 		relay_chain_backend: Arc<RBackend>,
+		parachain_client: Arc<ParaClient>,
 	) -> Self {
 		Self {
 			para_id,
@@ -323,25 +354,39 @@ where
 			inherent_data_providers,
 			relay_chain_backend,
 			relay_chain_client,
+			parachain_client,
 		}
 	}
 
 	/// Build the relay chain consensus.
-	fn build(self) -> Box<dyn ParachainConsensus<Block>> {
+	fn build(self) -> Box<dyn ParachainConsensus<Block>>
+	where
+		// Thanks for the tip on this one, compiler
+		ParaClient::Api: AuthorFilterAPI<Block>,
+	{
 		self.relay_chain_client.clone().execute_with(self)
 	}
 }
 
-impl<Block, PF, BI, RBackend> polkadot_service::ExecuteWithClient
-	for RelayChainConsensusBuilder<Block, PF, BI, RBackend>
+impl<Block, PF, BI, RBackend, ParaClient> polkadot_service::ExecuteWithClient
+	for FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient>
 where
 	Block: BlockT,
 	// Rust bug: https://github.com/rust-lang/rust/issues/24159
 	sc_client_api::StateBackendFor<RBackend, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
 	PF: Environment<Block> + Send + Sync + 'static,
-	PF::Proposer: Proposer<Block, Transaction = BI::Transaction>,
+	PF::Proposer: Proposer<
+		Block,
+		Transaction = BI::Transaction,
+		ProofRecording = EnableProofRecording,
+		Proof = <EnableProofRecording as ProofRecording>::Proof,
+	>,
 	BI: BlockImport<Block> + Send + Sync + 'static,
 	RBackend: Backend<PBlock> + 'static,
+	// Adding these trait bounds at the compiler's suggestion. I'm not so sure about 'static
+	ParaClient: Send + Sync + 'static,
+	ParaClient: ProvideRuntimeApi<Block>,
+	ParaClient::Api: AuthorFilterAPI<Block>,
 {
 	type Output = Box<dyn ParachainConsensus<Block>>;
 
@@ -352,14 +397,16 @@ where
 		PBackend::State: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
 		Api: polkadot_service::RuntimeApiCollection<StateBackend = PBackend::State>,
 		PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
+		ParaClient::Api: AuthorFilterAPI<Block>,
 	{
-		Box::new(RelayChainConsensus::new(
+		Box::new(FilteringConsensus::new(
 			self.para_id,
 			self.proposer_factory,
 			self.inherent_data_providers,
 			self.block_import,
 			client.clone(),
 			self.relay_chain_backend,
+			self.parachain_client,
 		))
 	}
 }

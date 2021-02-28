@@ -15,7 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use cumulus_client_consensus_filter::{
-	build_relay_chain_consensus, BuildRelayChainConsensusParams,
+	build_filtering_consensus, BuildFilteringConsensusParams,
 };
 use cumulus_client_network::build_block_announce_validator;
 use cumulus_client_service::{
@@ -204,13 +204,14 @@ where
 		);
 		let spawner = task_manager.spawn_handle();
 
-		let parachain_consensus = build_relay_chain_consensus(BuildRelayChainConsensusParams {
+		let parachain_consensus = build_filtering_consensus(BuildFilteringConsensusParams {
 			para_id: id,
 			proposer_factory,
 			inherent_data_providers: params.inherent_data_providers,
 			block_import: client.clone(),
 			relay_chain_client: polkadot_full_node.client.clone(),
 			relay_chain_backend: polkadot_full_node.backend.clone(),
+			parachain_client: client.clone(),
 		});
 
 		let params = StartCollatorParams {

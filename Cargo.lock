@@ -1186,6 +1186,7 @@ name = "cumulus-client-consensus-filter"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "author-filter-api",
  "cumulus-client-consensus-common",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
