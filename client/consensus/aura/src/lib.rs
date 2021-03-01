@@ -205,7 +205,7 @@ where
 			.unwrap();
 
 		let info = SlotInfo {
-			slot: (validation_data.relay_parent_number as u64).into(),
+			slot: ((timestamp.as_millis() / 12000) as u64).into(),
 			duration: 12000,
 			inherent_data: self
 				.inherent_data(parent.hash(), validation_data, relay_parent)
