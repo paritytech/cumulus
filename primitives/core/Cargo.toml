@@ -6,14 +6,14 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bkchr-inherent-something-future" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bkchr-inherent-something-future" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bkchr-inherent-something-future" }
 
 # Other dependencies
 impl-trait-for-tuples = "0.2.1"

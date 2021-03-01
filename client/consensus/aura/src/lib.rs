@@ -40,7 +40,6 @@ use cumulus_primitives_core::{
 	ParaId, PersistedValidationData,
 };
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
-pub use import_queue::import_queue;
 use parking_lot::Mutex;
 use polkadot_service::ClientHandle;
 use sc_client_api::{backend::AuxStore, Backend, BlockOf};
@@ -49,8 +48,8 @@ use sp_api::ProvideRuntimeApi;
 use sp_application_crypto::AppPublic;
 use sp_blockchain::{HeaderBackend, ProvideCache};
 use sp_consensus::{
-	BlockImport, BlockImportParams, BlockOrigin, Environment, ForkChoiceStrategy, Proposal,
-	Proposer, RecordProof, SyncOracle,
+	BlockImport, BlockImportParams, BlockOrigin, EnableProofRecording, Environment,
+	ForkChoiceStrategy, ProofRecording, Proposal, Proposer, SyncOracle,
 };
 use sp_consensus_aura::AuraApi;
 use sp_core::crypto::Pair;
@@ -59,7 +58,7 @@ use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT, Member, NumberFor};
 use std::{convert::TryFrom, hash::Hash, marker::PhantomData, sync::Arc};
 
-mod import_queue;
+pub use sc_consensus_aura::import_queue;
 
 const LOG_TARGET: &str = "aura::cumulus";
 
@@ -68,7 +67,13 @@ pub struct AuraConsensus<B, RClient, RBackend, CIDP> {
 	inherent_data_providers: Arc<CIDP>,
 	relay_chain_client: Arc<RClient>,
 	relay_chain_backend: Arc<RBackend>,
-	aura_worker: Arc<Mutex<dyn sc_consensus_slots::SlotWorker<B> + Send + 'static>>,
+	aura_worker: Arc<
+		Mutex<
+			dyn sc_consensus_slots::SlotWorker<B, <EnableProofRecording as ProofRecording>::Proof>
+				+ Send
+				+ 'static,
+		>,
+	>,
 }
 
 impl<B, RClient, RBackend, CIDP> Clone for AuraConsensus<B, RClient, RBackend, CIDP> {
@@ -117,13 +122,19 @@ where
 		SO: SyncOracle + Send + Sync + Clone + 'static,
 		BS: BackoffAuthoringBlocksStrategy<NumberFor<B>> + Send + 'static,
 		PF: Environment<B, Error = Error> + Send + Sync + 'static,
-		PF::Proposer: Proposer<B, Error = Error, Transaction = sp_api::TransactionFor<Client, B>>,
+		PF::Proposer: Proposer<
+			B,
+			Error = Error,
+			Transaction = sp_api::TransactionFor<Client, B>,
+			ProofRecording = EnableProofRecording,
+			Proof = <EnableProofRecording as ProofRecording>::Proof,
+		>,
 		Error: std::error::Error + Send + From<sp_consensus::Error> + 'static,
 		P: Pair + Send + Sync,
 		P::Public: AppPublic + Hash + Member + Encode + Decode,
 		P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
 	{
-		let worker = sc_consensus_aura::build_aura_worker::<P, _, _, _, _, _, _, _>(
+		let worker = sc_consensus_aura::build_aura_worker::<_, _, _, _, P, _, _, _>(
 			para_client,
 			block_import,
 			proposer_factory,
@@ -209,7 +220,7 @@ where
 
 		Some(ParachainCandidate {
 			block: res.block,
-			proof: res.storage_proof.expect("storage proof"),
+			proof: res.storage_proof,
 		})
 	}
 }
@@ -270,8 +281,13 @@ where
 	SO: SyncOracle + Send + Sync + Clone + 'static,
 	BS: BackoffAuthoringBlocksStrategy<NumberFor<Block>> + Send + 'static,
 	PF: Environment<Block, Error = Error> + Send + Sync + 'static,
-	PF::Proposer:
-		Proposer<Block, Error = Error, Transaction = sp_api::TransactionFor<Client, Block>>,
+	PF::Proposer: Proposer<
+		Block,
+		Error = Error,
+		Transaction = sp_api::TransactionFor<Client, Block>,
+		ProofRecording = EnableProofRecording,
+		Proof = <EnableProofRecording as ProofRecording>::Proof,
+	>,
 	Error: std::error::Error + Send + From<sp_consensus::Error> + 'static,
 	P: Pair + Send + Sync,
 	P::Public: AppPublic + Hash + Member + Encode + Decode,
@@ -339,8 +355,13 @@ where
 	SO: SyncOracle + Send + Sync + Clone + 'static,
 	BS: BackoffAuthoringBlocksStrategy<NumberFor<Block>> + Send + 'static,
 	PF: Environment<Block, Error = Error> + Send + Sync + 'static,
-	PF::Proposer:
-		Proposer<Block, Error = Error, Transaction = sp_api::TransactionFor<Client, Block>>,
+	PF::Proposer: Proposer<
+		Block,
+		Error = Error,
+		Transaction = sp_api::TransactionFor<Client, Block>,
+		ProofRecording = EnableProofRecording,
+		Proof = <EnableProofRecording as ProofRecording>::Proof,
+	>,
 	Error: std::error::Error + Send + From<sp_consensus::Error> + 'static,
 	P: Pair + Send + Sync,
 	P::Public: AppPublic + Hash + Member + Encode + Decode,
@@ -407,8 +428,13 @@ where
 	SO: SyncOracle + Send + Sync + Clone + 'static,
 	BS: BackoffAuthoringBlocksStrategy<NumberFor<Block>> + Send + 'static,
 	PF: Environment<Block, Error = Error> + Send + Sync + 'static,
-	PF::Proposer:
-		Proposer<Block, Error = Error, Transaction = sp_api::TransactionFor<Client, Block>>,
+	PF::Proposer: Proposer<
+		Block,
+		Error = Error,
+		Transaction = sp_api::TransactionFor<Client, Block>,
+		ProofRecording = EnableProofRecording,
+		Proof = <EnableProofRecording as ProofRecording>::Proof,
+	>,
 	Error: std::error::Error + Send + From<sp_consensus::Error> + 'static,
 	P: Pair + Send + Sync,
 	P::Public: AppPublic + Hash + Member + Encode + Decode,
