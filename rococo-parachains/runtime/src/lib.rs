@@ -39,6 +39,7 @@ use sp_version::RuntimeVersion;
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, parameter_types,
+	debug::debug,
 	traits::{Randomness, OnInitialize},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -430,13 +431,17 @@ impl_runtime_apis! {
 	impl author_filter_api::AuthorFilterAPI<Block> for Runtime {
         fn can_author(author_bytes: sp_std::vec::Vec<u8>, relay_parent: u32) -> bool {
 
-			//TODO How to decode?
-			// use codec::Decode;
-			// let author: AccountId = AccountId::decode(&mut author_bytes).ok_or_else(|| return false);
-			let author: AccountId = Default::default();
+			debug!(target: "filter-api", "Entering Filter API Implementation");
+
+			// Hacky conversion from bytes to account id. Even hackier because it hard-codes the 32.
+			use core::convert::{TryInto, TryFrom};
+			let author_array: [u8; 32] = author_bytes.try_into().expect("runtime conversion failed when converting to array");
+			let author = AccountId::try_from(author_array).expect("runtime conversion failed when converting to account-id");
+			debug!(target: "filter-api", "Decoded author is {:?}", &author);
+
 			// Initialize entropy source
 			// Is it safe to assume that all entropy sources will be initialized this way?
-			let our_height = System::block_number(); // TODO is this off-by-one?
+			let our_height = System::block_number();
 			<Self as pallet_author_filter::Config>::RandomnessSource::on_initialize(our_height);
 
 			// Call helper

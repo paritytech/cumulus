@@ -187,8 +187,9 @@ where
 		validation_data: &PersistedValidationData,
 	) -> Option<ParachainCandidate<B>> {
 
-		//TODO get real author bytes.
-		let author_bytes = Vec::new();
+		//TODO get real author bytes, probably from CLI, maybe from keystore?
+		// Alices raw public key according to subkey.
+		let author_bytes = hex::decode("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").expect("decoding alice's hex string failed.");
 		let eligible = self.parachain_client.runtime_api()
 			.can_author(&BlockId::Hash(parent.hash()), author_bytes.clone(), validation_data.relay_parent_number);
 		println!("🔥🔥 {:?} could author {:?}", author_bytes, eligible);
