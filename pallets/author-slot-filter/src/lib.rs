@@ -111,6 +111,8 @@ pub mod pallet {
 			}
 
 			// Print some logs for debugging purposes.
+			// TODO for nicer logging, how can I use
+			// https://crates.parity.io/sp_core/crypto/trait.Ss58Codec.html#method.to_ss58check ?
 			debug!(target: "author-filter", "Eligible Authors: {:?}", eligible);
 			debug!(target: "author-filter", "Ineligible Authors: {:?}", &staked);
 			debug!(target: "author-filter",

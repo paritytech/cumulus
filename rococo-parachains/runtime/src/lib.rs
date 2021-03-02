@@ -430,17 +430,6 @@ impl_runtime_apis! {
 
 	impl author_filter_api::AuthorFilterAPI<Block, AccountId> for Runtime {
         fn can_author(author: AccountId, relay_parent: u32) -> bool {
-
-			debug!(target: "filter-api", "Entering Filter API Implementation");
-
-			// Initialize entropy source
-			// Is it safe to assume that all entropy sources will be initialized this way?
-			let our_height = System::block_number();
-			<Self as pallet_author_filter::Config>::RandomnessSource::on_initialize(our_height);
-
-			// Call helper
-			//TODO for nicer logging, how can I use https://crates.parity.io/sp_core/crypto/trait.Ss58Codec.html#method.to_ss58check ?
-			debug!(target: "filter-api", "Checking eligibility at height {:?} and relay parent {:?} for {:?}", &our_height, &relay_parent, &author);
 			AuthorFilter::can_author_helper(&author, relay_parent)
 		}
     }
