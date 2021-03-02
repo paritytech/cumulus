@@ -34,6 +34,7 @@
 //! 5. After the parachain candidate got backed and included, all collators start at 1.
 
 use author_filter_api::AuthorFilterAPI;
+use codec::Codec;
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_primitives_core::{
 	relay_chain::v1::{Block as PBlock, Hash as PHash, ParachainHost},
@@ -182,8 +183,8 @@ where
 	// huh, I didn't need 'static here?
 	ParaClient: Send + Sync,
 	ParaClient: ProvideRuntimeApi<B>,
-	ParaClient::Api: AuthorFilterAPI<B>,
-	AuthorId: Send + Sync + Clone + std::fmt::Debug,
+	ParaClient::Api: AuthorFilterAPI<B, AuthorId>,
+	AuthorId: Send + Sync + Clone + std::fmt::Debug + Codec,
 {
 	async fn produce_candidate(
 		&mut self,
@@ -194,7 +195,7 @@ where
 
 		//TODO Don't encode the author just to decode it in the runtime.
 		let eligible = self.parachain_client.runtime_api()
-			.can_author(&BlockId::Hash(parent.hash()), self.author.0.to_vec(), validation_data.relay_parent_number);
+			.can_author(&BlockId::Hash(parent.hash()), self.author.clone(), validation_data.relay_parent_number);
 		println!("🔥🔥 {:?} could author {:?}", self.author, eligible);
 
 		let proposer_future = self.proposer_factory.lock().init(&parent);
@@ -294,8 +295,8 @@ where
 	sc_client_api::StateBackendFor<RBackend, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
 	ParaClient: Send + Sync + 'static,
 	ParaClient: ProvideRuntimeApi<Block>,
-	ParaClient::Api: AuthorFilterAPI<Block>,
-	AuthorId: Send + Sync + Clone + std::fmt::Debug + 'static,
+	ParaClient::Api: AuthorFilterAPI<Block, AuthorId>,
+	AuthorId: Send + Sync + Clone + std::fmt::Debug + 'static + Codec,
 {
 	FilteringConsensusBuilder::new(
 		para_id,
@@ -344,7 +345,7 @@ where
 	RBackend: Backend<PBlock> + 'static,
 	ParaClient: Send + Sync + 'static,
 	ParaClient: ProvideRuntimeApi<Block>,
-	AuthorId: Send + Sync + Clone + std::fmt::Debug + 'static,
+	AuthorId: Send + Sync + Clone + std::fmt::Debug + Codec + 'static,
 {
 	/// Create a new instance of the builder.
 	fn new(
@@ -374,7 +375,8 @@ where
 	fn build(self) -> Box<dyn ParachainConsensus<Block>>
 	where
 		// Thanks for the tip on this one, compiler
-		ParaClient::Api: AuthorFilterAPI<Block>,
+		// TODO actually, do I still need this one now that everything is pieced together?
+		ParaClient::Api: AuthorFilterAPI<Block, AuthorId>,
 	{
 		self.relay_chain_client.clone().execute_with(self)
 	}
@@ -398,8 +400,8 @@ where
 	// Adding these trait bounds at the compiler's suggestion. I'm not so sure about 'static
 	ParaClient: Send + Sync + 'static,
 	ParaClient: ProvideRuntimeApi<Block>,
-	ParaClient::Api: AuthorFilterAPI<Block>,
-	AuthorId: Send + Sync + Clone + std::fmt::Debug + 'static,
+	ParaClient::Api: AuthorFilterAPI<Block, AuthorId>,
+	AuthorId: Send + Sync + Clone + std::fmt::Debug + Codec + 'static,
 {
 	type Output = Box<dyn ParachainConsensus<Block>>;
 
@@ -410,7 +412,7 @@ where
 		PBackend::State: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
 		Api: polkadot_service::RuntimeApiCollection<StateBackend = PBackend::State>,
 		PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
-		ParaClient::Api: AuthorFilterAPI<Block>,
+		ParaClient::Api: AuthorFilterAPI<Block, AuthorId>,
 	{
 		Box::new(FilteringConsensus::new(
 			self.para_id,

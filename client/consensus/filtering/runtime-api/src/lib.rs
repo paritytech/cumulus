@@ -8,8 +8,8 @@ use parity_scale_codec::Codec;
 // application crypto. For now it is a vec<u8> to be decoded in the runtime.
 // This helps keep types concrete while I'm trying to fit the pieces together.
 sp_api::decl_runtime_apis! {
-    pub trait AuthorFilterAPI {
-        fn can_author(author: Vec<u8>, relay_parent: u32) -> bool;
+    pub trait AuthorFilterAPI<AuthorId: Codec> {
+        fn can_author(author: AuthorId, relay_parent: u32) -> bool;
     }
 }
 
@@ -19,7 +19,4 @@ enum AuthorCheckError {
     AuthorNotActive,
     /// In the active set, but not eligible at this slot
     NotEligibletThisSlot,
-    /// Thebytes passed in didn't decode properly.
-    /// This won't be necessary after we're using application crypto.
-    DecodingError,
 }

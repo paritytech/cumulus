@@ -428,16 +428,10 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl author_filter_api::AuthorFilterAPI<Block> for Runtime {
-        fn can_author(author_bytes: sp_std::vec::Vec<u8>, relay_parent: u32) -> bool {
+	impl author_filter_api::AuthorFilterAPI<Block, AccountId> for Runtime {
+        fn can_author(author: AccountId, relay_parent: u32) -> bool {
 
 			debug!(target: "filter-api", "Entering Filter API Implementation");
-
-			// Hacky conversion from bytes to account id. Even hackier because it hard-codes the 32.
-			use core::convert::{TryInto, TryFrom};
-			let author_array: [u8; 32] = author_bytes.try_into().expect("runtime conversion failed when converting to array");
-			let author = AccountId::try_from(author_array).expect("runtime conversion failed when converting to account-id");
-			debug!(target: "filter-api", "Decoded author is {:?}", &author);
 
 			// Initialize entropy source
 			// Is it safe to assume that all entropy sources will be initialized this way?
@@ -445,6 +439,7 @@ impl_runtime_apis! {
 			<Self as pallet_author_filter::Config>::RandomnessSource::on_initialize(our_height);
 
 			// Call helper
+			debug!(target: "filter-api", "Checking eligibility for {:?} at parent {:?} and relay parent number {:?}", &author, &our_height, &relay_parent);
 			AuthorFilter::can_author_helper(&author, relay_parent)
 		}
     }
