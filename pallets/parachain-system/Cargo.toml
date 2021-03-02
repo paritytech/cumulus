@@ -63,7 +63,7 @@ std = [
 	"sp-io/std",
 	"sp-std/std",
 	"hash-db/std",
-	"log/std"
+	"log/std",
 	"memory-db/std",
 	"trie-db/std",
 	"sp-state-machine/std",
