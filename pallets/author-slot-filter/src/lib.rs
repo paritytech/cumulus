@@ -18,7 +18,7 @@
 //! slot. The slot is determined by the relay parent block number from the parachain inherent.
 //!
 //! Using a randomness beacon supplied by the `Randomness` trait, this pallet takes the set of
-//! currently staked accounts from pallet stake, and filters them down to a pseudorandom subset.
+//! currently active accounts from pallet stake, and filters them down to a pseudorandom subset.
 //! The current technique gives no preference to any particular author. In the future, we could
 //! disfavor authors who are authoring a disproportionate amount of the time in an attempt to
 //! "even the playing field".
@@ -74,9 +74,9 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Helper method to calculate eligible authors
 		pub fn can_author_helper(account: &T::AccountId, relay_height: u32) -> bool {
-			let mut staked: Vec<T::AccountId> = T::PotentialAuthors::get();
+			let mut active: Vec<T::AccountId> = T::PotentialAuthors::get();
 
-			let num_eligible = EligibleRatio::<T>::get().mul_ceil(staked.len());
+			let num_eligible = EligibleRatio::<T>::get().mul_ceil(active.len());
 			let mut eligible = Vec::with_capacity(num_eligible);
 
 			for i in 0..num_eligible {
@@ -107,14 +107,14 @@ pub mod pallet {
 				// author is selected. For now I'll leave it like this because:
 				// 1. it is easier to understand what our core filtering logic is
 				// 2. we currently show the entire filtered set in the debug event
-				eligible.push(staked.remove(index % staked.len()));
+				eligible.push(active.remove(index % active.len()));
 			}
 
 			// Print some logs for debugging purposes.
 			// TODO for nicer logging, how can I use
 			// https://crates.parity.io/sp_core/crypto/trait.Ss58Codec.html#method.to_ss58check ?
 			debug!(target: "author-filter", "Eligible Authors: {:?}", eligible);
-			debug!(target: "author-filter", "Ineligible Authors: {:?}", &staked);
+			debug!(target: "author-filter", "Ineligible Authors: {:?}", &active);
 			debug!(target: "author-filter",
 				"Current author, {:?}, is eligible: {}",
 				account,
@@ -142,7 +142,7 @@ pub mod pallet {
 		}
 	}
 
-	/// The percentage of active staked authors that will be eligible at each height.
+	/// The percentage of active authors that will be eligible at each height.
 	#[pallet::storage]
 	pub type EligibleRatio<T: Config> = StorageValue<_, Percent, ValueQuery, Half<T>>;
 
@@ -152,7 +152,7 @@ pub mod pallet {
 		Percent::from_percent(50)
 	}
 
-	/// A vector of staked authors. This can be used as a dead simple way to test the pallet.
+	/// A vector of active authors. This can be used as a dead simple way to test the pallet.
 	#[pallet::storage]
 	pub type PotentialAuthors<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
