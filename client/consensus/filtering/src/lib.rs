@@ -181,11 +181,9 @@ where
 		ProofRecording = EnableProofRecording,
 		Proof = <EnableProofRecording as ProofRecording>::Proof,
 	>,
-	// huh, I didn't need 'static here?
-	ParaClient: Send + Sync,
-	ParaClient: ProvideRuntimeApi<B>,
+	ParaClient: ProvideRuntimeApi<B> + Send + Sync,
 	ParaClient::Api: AuthorFilterAPI<B, AuthorId>,
-	AuthorId: Send + Sync + Clone + std::fmt::Display + Codec,
+	AuthorId: Send + Sync + Clone + Codec,
 {
 	async fn produce_candidate(
 		&mut self,
@@ -260,7 +258,7 @@ where
 }
 
 /// Paramaters of [`build_relay_chain_consensus`].
-///TODO can this be moved into common ans shared with relay chain conensus builder?
+/// TODO can this be moved into common and shared with relay chain conensus builder?
 /// I bet my head would explode from thinking about generic types.
 pub struct BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient, AuthorId> {
 	pub para_id: ParaId,
@@ -301,10 +299,9 @@ where
 	RBackend: Backend<PBlock> + 'static,
 	// Rust bug: https://github.com/rust-lang/rust/issues/24159
 	sc_client_api::StateBackendFor<RBackend, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
-	ParaClient: Send + Sync + 'static,
-	ParaClient: ProvideRuntimeApi<Block>,
+	ParaClient: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	ParaClient::Api: AuthorFilterAPI<Block, AuthorId>,
-	AuthorId: Send + Sync + Clone + std::fmt::Display + 'static + Codec,
+	AuthorId: Send + Sync + Clone + 'static + Codec,
 {
 	FilteringConsensusBuilder::new(
 		para_id,
@@ -351,9 +348,8 @@ where
 	>,
 	BI: BlockImport<Block> + Send + Sync + 'static,
 	RBackend: Backend<PBlock> + 'static,
-	ParaClient: Send + Sync + 'static,
-	ParaClient: ProvideRuntimeApi<Block>,
-	AuthorId: Send + Sync + Clone + std::fmt::Display + Codec + 'static,
+	ParaClient: ProvideRuntimeApi<Block> + Send + Sync + 'static,
+	AuthorId: Send + Sync + Clone + Codec + 'static,
 {
 	/// Create a new instance of the builder.
 	fn new(
@@ -382,8 +378,6 @@ where
 	/// Build the relay chain consensus.
 	fn build(self) -> Box<dyn ParachainConsensus<Block>>
 	where
-		// Thanks for the tip on this one, compiler
-		// TODO actually, do I still need this one now that everything is pieced together?
 		ParaClient::Api: AuthorFilterAPI<Block, AuthorId>,
 	{
 		self.relay_chain_client.clone().execute_with(self)
@@ -405,11 +399,9 @@ where
 	>,
 	BI: BlockImport<Block> + Send + Sync + 'static,
 	RBackend: Backend<PBlock> + 'static,
-	// Adding these trait bounds at the compiler's suggestion. I'm not so sure about 'static
-	ParaClient: Send + Sync + 'static,
-	ParaClient: ProvideRuntimeApi<Block>,
+	ParaClient: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	ParaClient::Api: AuthorFilterAPI<Block, AuthorId>,
-	AuthorId: Send + Sync + Clone + std::fmt::Display + Codec + 'static,
+	AuthorId: Send + Sync + Clone + Codec + 'static,
 {
 	type Output = Box<dyn ParachainConsensus<Block>>;
 
