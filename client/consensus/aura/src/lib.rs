@@ -58,7 +58,9 @@ use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT, Member, NumberFor};
 use std::{convert::TryFrom, hash::Hash, marker::PhantomData, sync::Arc};
 
-pub use sc_consensus_aura::import_queue;
+mod import_queue;
+
+pub use import_queue::{ImportQueueParams, import_queue};
 
 const LOG_TARGET: &str = "aura::cumulus";
 

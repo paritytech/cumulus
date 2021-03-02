@@ -14,24 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+use cumulus_client_consensus_aura::{build_aura_consensus, BuildAuraConsensusParams};
 use cumulus_client_network::build_block_announce_validator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
-use cumulus_client_consensus_aura::{build_aura_consensus, BuildAuraConsensusParams};
+use cumulus_primitives_core::ParaId;
 use parachain_runtime::RuntimeApi;
 use polkadot_primitives::v0::CollatorPair;
 use rococo_parachain_primitives::Block;
+use sc_client_api::ExecutorProvider;
 use sc_executor::native_executor_instance;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::TelemetrySpan;
+use sp_consensus_slots::Slot;
 use sp_core::Pair;
 use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
 use std::sync::Arc;
-use cumulus_primitives_core::ParaId;
-use sc_client_api::ExecutorProvider;
-use sp_consensus_slots::Slot;
 
 pub use sc_executor::NativeExecutor;
 
@@ -73,11 +73,18 @@ pub fn new_partial(
 		client.clone(),
 	);
 
-	let import_queue = cumulus_client_consensus_aura::import_queue::<_, _, _, sp_consensus_aura::sr25519::AuthorityPair, _, _, _>(
-		client.clone(),
-		None,
-		client.clone(),
-		|_, _| async move {
+	let import_queue = cumulus_client_consensus_aura::import_queue::<
+		sp_consensus_aura::sr25519::AuthorityPair,
+		_,
+		_,
+		_,
+		_,
+		_,
+		_,
+	>(cumulus_client_consensus_aura::ImportQueueParams {
+		block_import: client.clone(),
+		client: client.clone(),
+		inherent_data_providers: |_, _| async move {
 			let time = sp_timestamp::InherentDataProvider::from_system_time();
 
 			let current_timestamp = time.timestamp();
@@ -91,10 +98,10 @@ pub fn new_partial(
 				(time, slot),
 			))
 		},
-		&task_manager.spawn_essential_handle(),
-		registry.clone(),
-		sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
-	)?;
+		registry: registry.clone(),
+		can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
+		spawner: &task_manager.spawn_essential_handle(),
+	})?;
 
 	let params = PartialComponents {
 		backend,
@@ -208,7 +215,18 @@ where
 
 		let relay_chain_backend = polkadot_full_node.backend.clone();
 		let relay_chain_client = polkadot_full_node.client.clone();
-		let parachain_consensus = build_aura_consensus::<sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _, _, _, _>(BuildAuraConsensusParams {
+		let parachain_consensus = build_aura_consensus::<
+			sp_consensus_aura::sr25519::AuthorityPair,
+			_,
+			_,
+			_,
+			_,
+			_,
+			_,
+			_,
+			_,
+			_,
+		>(BuildAuraConsensusParams {
 			proposer_factory,
 			inherent_data_providers: move |_, (relay_parent, validation_data)| {
 				let parachain_inherent =
