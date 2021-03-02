@@ -42,6 +42,7 @@ use cumulus_primitives_core::{
 };
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use import_queue::import_queue;
+use log::info;
 use parking_lot::Mutex;
 use polkadot_service::ClientHandle;
 use sc_client_api::Backend;
@@ -197,16 +198,13 @@ where
 			.can_author(&BlockId::Hash(parent.hash()), self.author.clone(), validation_data.relay_parent_number)
 			.expect("Author API should not return error");
 
-		use log::debug;
-		debug!(
-			target: "filtering-consensus",
-			"🔮 I predict authoring will {}", if eligible {"succeed (🎁)"} else {"fail (❌️)"}
-		);
-		//TODO once predictions are working correctly, we early return here if we aren't eligible.
-		// if !eligible {
-		// 	return None;
-		// And print a reason about whether you're not staked or just not eligible at this slot.
-		// }
+		if !eligible {
+			info!(
+				target: "filtering-consensus",
+				"🔮 Skipping collation slot because we are not eligible"
+			);
+			return None;
+		}
 
 		let proposer_future = self.proposer_factory.lock().init(&parent);
 
