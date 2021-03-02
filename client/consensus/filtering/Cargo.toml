@@ -31,6 +31,4 @@ codec = { package = "parity-scale-codec", version = "2.0.0", features = [ "deriv
 tracing = "0.1.22"
 async-trait = "0.1.42"
 parking_lot = "0.9"
-
-# TODO I don't need this long term. It is a shortcut to hard-coding Alice's address.
-hex = "0.4"
+log = "0.4"

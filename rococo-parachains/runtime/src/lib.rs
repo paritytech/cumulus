@@ -439,7 +439,8 @@ impl_runtime_apis! {
 			<Self as pallet_author_filter::Config>::RandomnessSource::on_initialize(our_height);
 
 			// Call helper
-			debug!(target: "filter-api", "Checking eligibility for {:?} at parent {:?} and relay parent number {:?}", &author, &our_height, &relay_parent);
+			//TODO for nicer logging, how can I use https://crates.parity.io/sp_core/crypto/trait.Ss58Codec.html#method.to_ss58check ?
+			debug!(target: "filter-api", "Checking eligibility at height {:?} and relay parent {:?} for {:?}", &our_height, &relay_parent, &author);
 			AuthorFilter::can_author_helper(&author, relay_parent)
 		}
     }

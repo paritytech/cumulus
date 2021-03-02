@@ -184,7 +184,7 @@ where
 	ParaClient: Send + Sync,
 	ParaClient: ProvideRuntimeApi<B>,
 	ParaClient::Api: AuthorFilterAPI<B, AuthorId>,
-	AuthorId: Send + Sync + Clone + std::fmt::Debug + Codec,
+	AuthorId: Send + Sync + Clone + std::fmt::Display + Codec,
 {
 	async fn produce_candidate(
 		&mut self,
@@ -193,10 +193,20 @@ where
 		validation_data: &PersistedValidationData,
 	) -> Option<ParachainCandidate<B>> {
 
-		//TODO Don't encode the author just to decode it in the runtime.
 		let eligible = self.parachain_client.runtime_api()
-			.can_author(&BlockId::Hash(parent.hash()), self.author.clone(), validation_data.relay_parent_number);
-		println!("🔥🔥 {:?} could author {:?}", self.author, eligible);
+			.can_author(&BlockId::Hash(parent.hash()), self.author.clone(), validation_data.relay_parent_number)
+			.expect("Author API should not return error");
+
+		use log::debug;
+		debug!(
+			target: "filtering-consensus",
+			"🔮 I predict authoring will {}", if eligible {"succeed (🎁)"} else {"fail (❌️)"}
+		);
+		//TODO once predictions are working correctly, we early return here if we aren't eligible.
+		// if !eligible {
+		// 	return None;
+		// And print a reason about whether you're not staked or just not eligible at this slot.
+		// }
 
 		let proposer_future = self.proposer_factory.lock().init(&parent);
 
@@ -296,7 +306,7 @@ where
 	ParaClient: Send + Sync + 'static,
 	ParaClient: ProvideRuntimeApi<Block>,
 	ParaClient::Api: AuthorFilterAPI<Block, AuthorId>,
-	AuthorId: Send + Sync + Clone + std::fmt::Debug + 'static + Codec,
+	AuthorId: Send + Sync + Clone + std::fmt::Display + 'static + Codec,
 {
 	FilteringConsensusBuilder::new(
 		para_id,
@@ -345,7 +355,7 @@ where
 	RBackend: Backend<PBlock> + 'static,
 	ParaClient: Send + Sync + 'static,
 	ParaClient: ProvideRuntimeApi<Block>,
-	AuthorId: Send + Sync + Clone + std::fmt::Debug + Codec + 'static,
+	AuthorId: Send + Sync + Clone + std::fmt::Display + Codec + 'static,
 {
 	/// Create a new instance of the builder.
 	fn new(
@@ -401,7 +411,7 @@ where
 	ParaClient: Send + Sync + 'static,
 	ParaClient: ProvideRuntimeApi<Block>,
 	ParaClient::Api: AuthorFilterAPI<Block, AuthorId>,
-	AuthorId: Send + Sync + Clone + std::fmt::Debug + Codec + 'static,
+	AuthorId: Send + Sync + Clone + std::fmt::Display + Codec + 'static,
 {
 	type Output = Box<dyn ParachainConsensus<Block>>;
 
