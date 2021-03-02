@@ -97,6 +97,7 @@ pub mod pallet {
 					relay_height as u8,
 				];
 				let randomness: sp_core::H256 = T::RandomnessSource::random(&subject);
+				debug!(target: "author-filter", "🎲Randomness sample {}: {:?}", i, &randomness);
 
 				// Cast to u32 first so we get consistent results on 32- and 64-bit platforms.
 				let index = (randomness.to_fixed_bytes()[0] as u32) as usize;
@@ -110,8 +111,8 @@ pub mod pallet {
 			}
 
 			// Print some logs for debugging purposes.
-			debug!(target: "author-filter", "Eligible Authors are: {:?}", eligible);
-			debug!(target: "author-filter", "NOT Eligible Authors: {:?}", &staked);
+			debug!(target: "author-filter", "Eligible Authors: {:?}", eligible);
+			debug!(target: "author-filter", "Ineligible Authors: {:?}", &staked);
 			debug!(target: "author-filter",
 				"Current author, {:?}, is eligible: {}",
 				account,
