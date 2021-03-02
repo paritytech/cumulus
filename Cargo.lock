@@ -1261,6 +1261,7 @@ dependencies = [
  "hash-db",
  "hex-literal 0.2.1",
  "lazy_static",
+ "log",
  "memory-db",
  "pallet-balances",
  "parity-scale-codec",
