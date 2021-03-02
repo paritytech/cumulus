@@ -13,10 +13,13 @@ sp_api::decl_runtime_apis! {
     }
 }
 
-//TODO maybe return a Result<bool, AuthorCheckError>
-enum AuthorCheckError {
+///TODO maybe use this in the future
+/// The response that the `AuthorFilterAPI` will give
+enum AuthorCheckResult {
     /// Not in the active author set. (eg. not staked)
     AuthorNotActive,
     /// In the active set, but not eligible at this slot
-    NotEligibletThisSlot,
+    NotEligibleThisSlot,
+    /// The author is active and eligible at this slot
+    Eligible,
 }
