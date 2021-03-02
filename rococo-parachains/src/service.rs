@@ -137,7 +137,7 @@ where
 		.inherent_data_providers
 		.register_provider(sp_timestamp::InherentDataProvider)
 		.unwrap();
-	if let Some(author) = author {
+	if let Some(ref author) = author {
 		params
 			.inherent_data_providers
 			.register_provider(author_inherent::InherentDataProvider(author.encode()))
@@ -212,6 +212,8 @@ where
 			relay_chain_client: polkadot_full_node.client.clone(),
 			relay_chain_backend: polkadot_full_node.backend.clone(),
 			parachain_client: client.clone(),
+			//TODO There is also this thing called collator key. Maybe I could use that here?
+			author: author.expect("collating nodes should have an author id."),
 		});
 
 		let params = StartCollatorParams {

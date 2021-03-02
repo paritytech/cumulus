@@ -59,7 +59,7 @@ mod import_queue;
 const LOG_TARGET: &str = "cumulus-consensus-relay-chain";
 
 /// The implementation of the relay-chain provided consensus for parachains.
-pub struct FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient> {
+pub struct FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient, AuthorId> {
 	para_id: ParaId,
 	_phantom: PhantomData<B>,
 	proposer_factory: Arc<Mutex<PF>>,
@@ -68,9 +68,10 @@ pub struct FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient> {
 	relay_chain_client: Arc<RClient>,
 	relay_chain_backend: Arc<RBackend>,
 	parachain_client: Arc<ParaClient>,
+	author: AuthorId,
 }
 
-impl<B, PF, BI, RClient, RBackend, ParaClient> Clone for FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient> {
+impl<B, PF, BI, RClient, RBackend, ParaClient, AuthorId: Clone> Clone for FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient, AuthorId> {
 	fn clone(&self) -> Self {
 		Self {
 			para_id: self.para_id,
@@ -81,11 +82,12 @@ impl<B, PF, BI, RClient, RBackend, ParaClient> Clone for FilteringConsensus<B, P
 			relay_chain_backend: self.relay_chain_backend.clone(),
 			relay_chain_client: self.relay_chain_client.clone(),
 			parachain_client: self.parachain_client.clone(),
+			author: self.author.clone(),
 		}
 	}
 }
 
-impl<B, PF, BI, RClient, RBackend, ParaClient> FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient>
+impl<B, PF, BI, RClient, RBackend, ParaClient, AuthorId> FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient, AuthorId>
 where
 	B: BlockT,
 	RClient: ProvideRuntimeApi<PBlock>,
@@ -102,6 +104,7 @@ where
 		polkadot_client: Arc<RClient>,
 		polkadot_backend: Arc<RBackend>,
 		parachain_client: Arc<ParaClient>,
+		author: AuthorId,
 	) -> Self {
 		Self {
 			para_id,
@@ -111,6 +114,7 @@ where
 			relay_chain_backend: polkadot_backend,
 			relay_chain_client: polkadot_client,
 			parachain_client,
+			author,
 			_phantom: PhantomData,
 		}
 	}
@@ -160,8 +164,8 @@ where
 }
 
 #[async_trait::async_trait]
-impl<B, PF, BI, RClient, RBackend, ParaClient> ParachainConsensus<B>
-	for FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient>
+impl<B, PF, BI, RClient, RBackend, ParaClient, AuthorId> ParachainConsensus<B>
+	for FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient, AuthorId>
 where
 	B: BlockT,
 	RClient: ProvideRuntimeApi<PBlock> + Send + Sync,
@@ -179,6 +183,7 @@ where
 	ParaClient: Send + Sync,
 	ParaClient: ProvideRuntimeApi<B>,
 	ParaClient::Api: AuthorFilterAPI<B>,
+	AuthorId: Send + Sync + Clone + std::fmt::Debug,
 {
 	async fn produce_candidate(
 		&mut self,
@@ -187,12 +192,10 @@ where
 		validation_data: &PersistedValidationData,
 	) -> Option<ParachainCandidate<B>> {
 
-		//TODO get real author bytes, probably from CLI, maybe from keystore?
-		// Alices raw public key according to subkey.
-		let author_bytes = hex::decode("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").expect("decoding alice's hex string failed.");
+		//TODO Don't encode the author just to decode it in the runtime.
 		let eligible = self.parachain_client.runtime_api()
-			.can_author(&BlockId::Hash(parent.hash()), author_bytes.clone(), validation_data.relay_parent_number);
-		println!("🔥🔥 {:?} could author {:?}", author_bytes, eligible);
+			.can_author(&BlockId::Hash(parent.hash()), self.author.0.to_vec(), validation_data.relay_parent_number);
+		println!("🔥🔥 {:?} could author {:?}", self.author, eligible);
 
 		let proposer_future = self.proposer_factory.lock().init(&parent);
 
@@ -250,7 +253,7 @@ where
 /// Paramaters of [`build_relay_chain_consensus`].
 ///TODO can this be moved into common ans shared with relay chain conensus builder?
 /// I bet my head would explode from thinking about generic types.
-pub struct BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient> {
+pub struct BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient, AuthorId> {
 	pub para_id: ParaId,
 	pub proposer_factory: PF,
 	pub inherent_data_providers: InherentDataProviders,
@@ -258,12 +261,13 @@ pub struct BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient> {
 	pub relay_chain_client: polkadot_service::Client,
 	pub relay_chain_backend: Arc<RBackend>,
 	pub parachain_client: Arc<ParaClient>,
+	pub author: AuthorId,
 }
 
 /// Build the [`FilteringConsensus`].
 ///
 /// Returns a boxed [`ParachainConsensus`].
-pub fn build_filtering_consensus<Block, PF, BI, RBackend, ParaClient>(
+pub fn build_filtering_consensus<Block, PF, BI, RBackend, ParaClient, AuthorId>(
 	BuildFilteringConsensusParams {
 		para_id,
 		proposer_factory,
@@ -272,7 +276,8 @@ pub fn build_filtering_consensus<Block, PF, BI, RBackend, ParaClient>(
 		relay_chain_client,
 		relay_chain_backend,
 		parachain_client,
-	}: BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient>,
+		author,
+	}: BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient, AuthorId>,
 ) -> Box<dyn ParachainConsensus<Block>>
 where
 	Block: BlockT,
@@ -290,6 +295,7 @@ where
 	ParaClient: Send + Sync + 'static,
 	ParaClient: ProvideRuntimeApi<Block>,
 	ParaClient::Api: AuthorFilterAPI<Block>,
+	AuthorId: Send + Sync + Clone + std::fmt::Debug + 'static,
 {
 	FilteringConsensusBuilder::new(
 		para_id,
@@ -299,6 +305,7 @@ where
 		relay_chain_client,
 		relay_chain_backend,
 		parachain_client,
+		author,
 	)
 	.build()
 }
@@ -309,7 +316,7 @@ where
 /// a concrete relay chain client instance, the builder takes a [`polkadot_service::Client`]
 /// that wraps this concrete instanace. By using [`polkadot_service::ExecuteWithClient`]
 /// the builder gets access to this concrete instance.
-struct FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient> {
+struct FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient, AuthorId> {
 	para_id: ParaId,
 	_phantom: PhantomData<Block>,
 	proposer_factory: PF,
@@ -318,9 +325,10 @@ struct FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient> {
 	relay_chain_backend: Arc<RBackend>,
 	relay_chain_client: polkadot_service::Client,
 	parachain_client: Arc<ParaClient>,
+	author: AuthorId,
 }
 
-impl<Block, PF, BI, RBackend, ParaClient> FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient>
+impl<Block, PF, BI, RBackend, ParaClient, AuthorId> FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient, AuthorId>
 where
 	Block: BlockT,
 	// Rust bug: https://github.com/rust-lang/rust/issues/24159
@@ -336,6 +344,7 @@ where
 	RBackend: Backend<PBlock> + 'static,
 	ParaClient: Send + Sync + 'static,
 	ParaClient: ProvideRuntimeApi<Block>,
+	AuthorId: Send + Sync + Clone + std::fmt::Debug + 'static,
 {
 	/// Create a new instance of the builder.
 	fn new(
@@ -346,6 +355,7 @@ where
 		relay_chain_client: polkadot_service::Client,
 		relay_chain_backend: Arc<RBackend>,
 		parachain_client: Arc<ParaClient>,
+		author: AuthorId,
 	) -> Self {
 		Self {
 			para_id,
@@ -356,6 +366,7 @@ where
 			relay_chain_backend,
 			relay_chain_client,
 			parachain_client,
+			author,
 		}
 	}
 
@@ -369,8 +380,8 @@ where
 	}
 }
 
-impl<Block, PF, BI, RBackend, ParaClient> polkadot_service::ExecuteWithClient
-	for FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient>
+impl<Block, PF, BI, RBackend, ParaClient, AuthorId> polkadot_service::ExecuteWithClient
+	for FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient, AuthorId>
 where
 	Block: BlockT,
 	// Rust bug: https://github.com/rust-lang/rust/issues/24159
@@ -388,6 +399,7 @@ where
 	ParaClient: Send + Sync + 'static,
 	ParaClient: ProvideRuntimeApi<Block>,
 	ParaClient::Api: AuthorFilterAPI<Block>,
+	AuthorId: Send + Sync + Clone + std::fmt::Debug + 'static,
 {
 	type Output = Box<dyn ParachainConsensus<Block>>;
 
@@ -408,6 +420,7 @@ where
 			client.clone(),
 			self.relay_chain_backend,
 			self.parachain_client,
+			self.author,
 		))
 	}
 }
