@@ -49,7 +49,7 @@ use sp_application_crypto::AppPublic;
 use sp_blockchain::{HeaderBackend, ProvideCache};
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, EnableProofRecording, Environment,
-	ForkChoiceStrategy, ProofRecording, Proposal, Proposer, SyncOracle,
+	ForkChoiceStrategy, ProofRecording, Proposal, Proposer, SlotData, SyncOracle,
 };
 use sp_consensus_aura::AuraApi;
 use sp_core::crypto::Pair;
@@ -60,7 +60,8 @@ use std::{convert::TryFrom, hash::Hash, marker::PhantomData, sync::Arc};
 
 mod import_queue;
 
-pub use import_queue::{ImportQueueParams, import_queue};
+pub use import_queue::{import_queue, ImportQueueParams};
+pub use sc_consensus_aura::{slot_duration, SlotDuration};
 
 const LOG_TARGET: &str = "aura::cumulus";
 
@@ -76,6 +77,7 @@ pub struct AuraConsensus<B, RClient, RBackend, CIDP> {
 				+ 'static,
 		>,
 	>,
+	slot_duration: SlotDuration,
 }
 
 impl<B, RClient, RBackend, CIDP> Clone for AuraConsensus<B, RClient, RBackend, CIDP> {
@@ -85,6 +87,7 @@ impl<B, RClient, RBackend, CIDP> Clone for AuraConsensus<B, RClient, RBackend, C
 			relay_chain_backend: self.relay_chain_backend.clone(),
 			relay_chain_client: self.relay_chain_client.clone(),
 			aura_worker: self.aura_worker.clone(),
+			slot_duration: self.slot_duration,
 		}
 	}
 }
@@ -109,6 +112,7 @@ where
 		inherent_data_providers: CIDP,
 		polkadot_client: Arc<RClient>,
 		polkadot_backend: Arc<RBackend>,
+		slot_duration: SlotDuration,
 	) -> Self
 	where
 		Client: ProvideRuntimeApi<B>
@@ -151,6 +155,7 @@ where
 			relay_chain_backend: polkadot_backend,
 			relay_chain_client: polkadot_client,
 			aura_worker: Arc::new(Mutex::new(worker)),
+			slot_duration,
 		}
 	}
 
@@ -208,7 +213,7 @@ where
 
 		let info = SlotInfo {
 			slot: ((timestamp.as_millis() / 12000) as u64).into(),
-			duration: 12000,
+			duration: self.slot_duration.slot_duration(),
 			inherent_data: self
 				.inherent_data(parent.hash(), validation_data, relay_parent)
 				.await?,
@@ -239,6 +244,7 @@ pub struct BuildAuraConsensusParams<PF, BI, RBackend, CIDP, Client, BS, SO> {
 	pub sync_oracle: SO,
 	pub keystore: SyncCryptoStorePtr,
 	pub force_authoring: bool,
+	pub slot_duration: SlotDuration,
 }
 
 /// Build the [`AuraConsensus`].
@@ -256,6 +262,7 @@ pub fn build_aura_consensus<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Er
 		sync_oracle,
 		keystore,
 		force_authoring,
+		slot_duration,
 	}: BuildAuraConsensusParams<PF, BI, RBackend, CIDP, Client, BS, SO>,
 ) -> Box<dyn ParachainConsensus<Block>>
 where
@@ -306,6 +313,7 @@ where
 		sync_oracle,
 		force_authoring,
 		keystore,
+		slot_duration,
 	)
 	.build()
 }
@@ -328,6 +336,7 @@ struct AuraConsensusBuilder<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Er
 	sync_oracle: SO,
 	force_authoring: bool,
 	keystore: SyncCryptoStorePtr,
+	slot_duration: SlotDuration,
 }
 
 impl<Block, PF, BI, RBackend, CIDP, Client, SO, BS, P, Error>
@@ -381,6 +390,7 @@ where
 		sync_oracle: SO,
 		force_authoring: bool,
 		keystore: SyncCryptoStorePtr,
+		slot_duration: SlotDuration,
 	) -> Self {
 		Self {
 			_phantom: PhantomData,
@@ -394,6 +404,7 @@ where
 			sync_oracle,
 			force_authoring,
 			keystore,
+			slot_duration,
 		}
 	}
 
@@ -463,6 +474,7 @@ where
 			self.inherent_data_providers,
 			client.clone(),
 			self.relay_chain_backend,
+			self.slot_duration,
 		))
 	}
 }

@@ -254,6 +254,7 @@ where
 			sync_oracle: network.clone(),
 			keystore: params.keystore_container.sync_keystore(),
 			force_authoring,
+			slot_duration: cumulus_client_consensus_aura::slot_duration(&*client)?,
 		});
 
 		let params = StartCollatorParams {
