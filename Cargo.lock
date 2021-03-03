@@ -376,21 +376,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "author-inherent"
-version = "0.1.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "sp-authorship",
- "sp-core",
- "sp-inherents",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "autocfg"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1397,13 +1382,14 @@ name = "cumulus-test-parachain-runtime"
 version = "0.1.0"
 dependencies = [
  "author-filter-api",
- "author-inherent",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm-handler",
  "cumulus-primitives-core",
  "frame-executive",
  "frame-support",
  "frame-system",
+ "pallet-account-set",
+ "pallet-author-inherent",
  "pallet-author-slot-filter",
  "pallet-balances",
  "pallet-randomness-collective-flip",
@@ -4356,10 +4342,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-author-height-filter"
+name = "pallet-account-set"
 version = "0.1.0"
 dependencies = [
- "author-inherent",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -4369,13 +4354,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-author-height-filter"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-author-inherent",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-author-inherent"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "sp-authorship",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-author-slot-filter"
 version = "0.1.0"
 dependencies = [
- "author-inherent",
  "cumulus-pallet-parachain-system",
  "frame-support",
  "frame-system",
+ "pallet-author-inherent",
  "parity-scale-codec",
  "serde",
  "sp-core",
@@ -7109,7 +7122,6 @@ name = "rococo-collator"
 version = "0.1.0"
 dependencies = [
  "assert_cmd",
- "author-inherent",
  "cumulus-client-collator",
  "cumulus-client-consensus-filter",
  "cumulus-client-network",

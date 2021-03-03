@@ -11,6 +11,7 @@ members = [
 	"pallets/author-slot-filter",
 	"pallets/parachain-system",
 	"pallets/xcm-handler",
+	"pallets/account-set",
 	"primitives/core",
 	"primitives/parachain-inherent",
 	"rococo-parachains/",

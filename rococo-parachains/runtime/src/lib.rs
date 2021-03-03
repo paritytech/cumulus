@@ -293,7 +293,7 @@ impl cumulus_pallet_xcm_handler::Config for Runtime {
 	type SendXcmOrigin = EnsureRoot<AccountId>;
 }
 
-impl author_inherent::Config for Runtime {
+impl pallet_author_inherent::Config for Runtime {
 	type EventHandler = (); // might need to grab impl from test crate
 	type CanAuthor = AuthorFilter;
 }
@@ -301,8 +301,10 @@ impl author_inherent::Config for Runtime {
 impl pallet_author_filter::Config for Runtime {
 	type Event = Event;
 	type RandomnessSource = RandomnessCollectiveFlip;
-	type PotentialAuthors = AuthorFilter;
+	type PotentialAuthors = PotentialAuthorSet;
 }
+
+impl pallet_account_set::Config for Runtime {}
 
 construct_runtime! {
 	pub enum Runtime where
@@ -319,8 +321,9 @@ construct_runtime! {
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		ParachainInfo: parachain_info::{Module, Storage, Config},
 		XcmHandler: cumulus_pallet_xcm_handler::{Module, Call, Event<T>, Origin},
-		AuthorInherent: author_inherent::{Module, Call, Storage, Inherent},
-		AuthorFilter: pallet_author_filter::{Module, Storage, Event<T>, Config<T>}
+		AuthorInherent: pallet_author_inherent::{Module, Call, Storage, Inherent},
+		AuthorFilter: pallet_author_filter::{Module, Storage, Event<T>, Config<T>},
+		PotentialAuthorSet: pallet_account_set::{Module, Storage, Config<T>},
 	}
 }
 

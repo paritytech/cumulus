@@ -59,7 +59,7 @@ pub mod pallet {
 	// This code will be called by the author-inherent pallet to check whether the reported author
 	// of this block is eligible at this height. We calculate that result on demand and do not
 	// record it instorage (although we do emit a debugging event for now).
-	impl<T: Config> author_inherent::CanAuthor<T::AccountId> for Pallet<T> {
+	impl<T: Config> pallet_author_inherent::CanAuthor<T::AccountId> for Pallet<T> {
 		fn can_author(account: &T::AccountId) -> bool {
 
 			// Grab the relay parent height as a temporary source of relay-based entropy

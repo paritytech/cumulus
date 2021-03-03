@@ -11,8 +11,7 @@ frame-support = { git = "https://github.com/paritytech/substrate", default-featu
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-author-inherent = { path = "../author-inherent", default-features = false }
-#cumulus-pallet-parachain-system = { path = "../parachain-system",  default-features = false}
+pallet-author-inherent = { path = "../author-inherent", default-features = false }
 
 [features]
 default = ["std"]
@@ -21,8 +20,7 @@ std = [
     "parity-scale-codec/std",
     "frame-support/std",
     "frame-system/std",
-    "author-inherent/std",
+    "pallet-author-inherent/std",
     "sp-core/std",
     "sp-runtime/std",
-#    "cumulus-pallet-parachain-system/std",
 ]
