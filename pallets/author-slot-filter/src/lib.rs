@@ -48,7 +48,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config + cumulus_pallet_parachain_system::Config {
 		/// The overarching event type
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 		/// Deterministic on-chain pseudo-randomness used to do the filtering
 		type RandomnessSource: Randomness<H256>;
 		/// A source for the complete set of potential authors.
@@ -152,48 +152,32 @@ pub mod pallet {
 		Percent::from_percent(50)
 	}
 
-	/// A vector of active authors. This can be used as a dead simple way to test the pallet.
-	#[pallet::storage]
-	pub type PotentialAuthors<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
-
-	impl<T: Config> Get<Vec<T::AccountId>> for Pallet<T> {
-		fn get() -> Vec<T::AccountId> {
-			PotentialAuthors::<T>::get()
-		}
-	}
-
 	#[pallet::genesis_config]
-	pub struct GenesisConfig<T: Config> {
-		pub potential_authors: Vec<T::AccountId>,
+	pub struct GenesisConfig {
 		pub eligible_ratio: u8,
 	}
 
 	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
+	impl Default for GenesisConfig {
 		fn default() -> Self {
 			Self {
-				potential_authors: Vec::new(),
 				eligible_ratio: 50,
 			}
 		}
 	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
 			//TODO ensure that the u8 is less than or equal 100 so it can be apercent
 
 			EligibleRatio::<T>::put(Percent::from_percent(self.eligible_ratio));
-
-			for potential_author in &self.potential_authors {
-				PotentialAuthors::<T>::append(potential_author);
-			}
 		}
 	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(fn deposit_event)]
-	pub enum Event<T: Config> {
+	pub enum Event {
 		/// The amount of eligible authors for the filter to select has been changed.
 		EligibleUpdated(Percent),
 	}
