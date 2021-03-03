@@ -58,7 +58,7 @@ use tracing::error;
 
 mod import_queue;
 
-const LOG_TARGET: &str = "cumulus-consensus-relay-chain";
+const LOG_TARGET: &str = "filtering-consensus";
 
 /// The implementation of the relay-chain provided consensus for parachains.
 pub struct FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient, AuthorId> {
@@ -198,7 +198,7 @@ where
 
 		if !eligible {
 			info!(
-				target: "filtering-consensus",
+				target: LOG_TARGET,
 				"🔮 Skipping collation slot because we are not eligible"
 			);
 			return None;
