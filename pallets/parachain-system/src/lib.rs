@@ -28,13 +28,13 @@
 //! Users must ensure that they register this pallet as an inherent provider.
 
 use cumulus_primitives_core::{
-	inherents::{SystemInherentData, SYSTEM_INHERENT_IDENTIFIER},
 	relay_chain,
 	well_known_keys::{self, NEW_VALIDATION_CODE, VALIDATION_DATA},
 	AbridgedHostConfiguration, DownwardMessageHandler, HrmpMessageHandler, HrmpMessageSender,
 	InboundDownwardMessage, InboundHrmpMessage, OnValidationData, OutboundHrmpMessage, ParaId,
 	PersistedValidationData, UpwardMessage, UpwardMessageSender,
 };
+use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage,
 	dispatch::DispatchResult,
@@ -166,11 +166,11 @@ decl_module! {
 		/// As a side effect, this function upgrades the current validation function
 		/// if the appropriate time has come.
 		#[weight = (0, DispatchClass::Mandatory)]
-		fn set_validation_data(origin, data: SystemInherentData) -> DispatchResult {
+		fn set_validation_data(origin, data: ParachainInherentData) -> DispatchResult {
 			ensure_none(origin)?;
 			assert!(!DidUpdateValidationData::exists(), "ValidationData must be updated only once in a block");
 
-			let SystemInherentData {
+			let ParachainInherentData {
 				validation_data: vfp,
 				relay_chain_state,
 				downward_messages,
@@ -798,11 +798,12 @@ impl<T: Config> HrmpMessageSender for Module<T> {
 impl<T: Config> ProvideInherent for Module<T> {
 	type Call = Call<T>;
 	type Error = sp_inherents::MakeFatalError<()>;
-	const INHERENT_IDENTIFIER: InherentIdentifier = SYSTEM_INHERENT_IDENTIFIER;
+	const INHERENT_IDENTIFIER: InherentIdentifier =
+		cumulus_primitives_parachain_inherent::INHERENT_IDENTIFIER;
 
 	fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-		let data: SystemInherentData = data
-			.get_data(&SYSTEM_INHERENT_IDENTIFIER)
+		let data: ParachainInherentData = data
+			.get_data(&Self::INHERENT_IDENTIFIER)
 			.ok()
 			.flatten()
 			.expect("validation function params are always injected into inherent data; qed");
@@ -865,7 +866,7 @@ mod tests {
 	use frame_support::{
 		assert_ok,
 		dispatch::UnfilteredDispatchable,
-		impl_outer_event, impl_outer_origin, parameter_types,
+		parameter_types,
 		traits::{OnFinalize, OnInitialize},
 	};
 	use frame_system::{InitKind, RawOrigin};
@@ -876,26 +877,22 @@ mod tests {
 	use sp_version::RuntimeVersion;
 	use std::cell::RefCell;
 
-	impl_outer_origin! {
-		pub enum Origin for Test where system = frame_system {}
-	}
+	use crate as parachain_system;
 
-	mod parachain_system {
-		pub use crate::Event;
-	}
+	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+	type Block = frame_system::mocking::MockBlock<Test>;
 
-	impl_outer_event! {
-		pub enum TestEvent for Test {
-			frame_system<T>,
-			parachain_system,
+	frame_support::construct_runtime!(
+		pub enum Test where
+			Block = Block,
+			NodeBlock = Block,
+			UncheckedExtrinsic = UncheckedExtrinsic,
+		{
+			System: frame_system::{Module, Call, Config, Storage, Event<T>},
+			ParachainSystem: parachain_system::{Module, Call, Storage, Event},
 		}
-	}
+	);
 
-	// For testing the pallet, we construct most of a mock runtime. This means
-	// first constructing a configuration type (`Test`) which `impl`s each of the
-	// configuration traits of modules we want to use.
-	#[derive(Clone, Eq, PartialEq)]
-	pub struct Test;
 	parameter_types! {
 		pub const BlockHashCount: u64 = 250;
 		pub Version: RuntimeVersion = RuntimeVersion {
@@ -911,7 +908,7 @@ mod tests {
 	}
 	impl frame_system::Config for Test {
 		type Origin = Origin;
-		type Call = ();
+		type Call = Call;
 		type Index = u64;
 		type BlockNumber = u64;
 		type Hash = H256;
@@ -919,12 +916,12 @@ mod tests {
 		type AccountId = u64;
 		type Lookup = IdentityLookup<Self::AccountId>;
 		type Header = Header;
-		type Event = TestEvent;
+		type Event = Event;
 		type BlockHashCount = BlockHashCount;
 		type BlockLength = ();
 		type BlockWeights = ();
 		type Version = Version;
-		type PalletInfo = ();
+		type PalletInfo = PalletInfo;
 		type AccountData = ();
 		type OnNewAccount = ();
 		type OnKilledAccount = ();
@@ -934,15 +931,12 @@ mod tests {
 		type SS58Prefix = ();
 	}
 	impl Config for Test {
-		type Event = TestEvent;
+		type Event = Event;
 		type OnValidationData = ();
 		type SelfParaId = ParachainId;
 		type DownwardMessageHandlers = SaveIntoThreadLocal;
 		type HrmpMessageHandlers = SaveIntoThreadLocal;
 	}
-
-	type ParachainSystem = Module<Test>;
-	type System = frame_system::Module<Test>;
 
 	pub struct SaveIntoThreadLocal;
 
@@ -1029,7 +1023,7 @@ mod tests {
 		persisted_validation_data_hook:
 			Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut PersistedValidationData)>>,
 		inherent_data_hook:
-			Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut SystemInherentData)>>,
+			Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut ParachainInherentData)>>,
 	}
 
 	impl BlockTests {
@@ -1089,7 +1083,7 @@ mod tests {
 
 		fn with_inherent_data<F>(mut self, f: F) -> Self
 		where
-			F: 'static + Fn(&BlockTests, RelayChainBlockNumber, &mut SystemInherentData),
+			F: 'static + Fn(&BlockTests, RelayChainBlockNumber, &mut ParachainInherentData),
 		{
 			self.inherent_data_hook = Some(Box::new(f));
 			self
@@ -1142,7 +1136,7 @@ mod tests {
 					// to storage; they must also be included in the inherent data.
 					let inherent_data = {
 						let mut inherent_data = InherentData::default();
-						let mut system_inherent_data = SystemInherentData {
+						let mut system_inherent_data = ParachainInherentData {
 							validation_data: vfp.clone(),
 							relay_chain_state,
 							downward_messages: Default::default(),
@@ -1152,7 +1146,10 @@ mod tests {
 							hook(self, *n as RelayChainBlockNumber, &mut system_inherent_data);
 						}
 						inherent_data
-							.put_data(SYSTEM_INHERENT_IDENTIFIER, &system_inherent_data)
+							.put_data(
+								cumulus_primitives_parachain_inherent::INHERENT_IDENTIFIER,
+								&system_inherent_data,
+							)
 							.expect("failed to put VFP inherent");
 						inherent_data
 					};
@@ -1237,7 +1234,7 @@ mod tests {
 					let events = System::events();
 					assert_eq!(
 						events[0].event,
-						TestEvent::parachain_system(Event::ValidationFunctionStored(1123))
+						Event::parachain_system(crate::Event::ValidationFunctionStored(1123))
 					);
 				},
 			)
@@ -1248,7 +1245,7 @@ mod tests {
 					let events = System::events();
 					assert_eq!(
 						events[0].event,
-						TestEvent::parachain_system(Event::ValidationFunctionApplied(1234))
+						Event::parachain_system(crate::Event::ValidationFunctionApplied(1234))
 					);
 				},
 			);
