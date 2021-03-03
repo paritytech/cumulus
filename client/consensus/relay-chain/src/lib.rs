@@ -203,8 +203,14 @@ where
 
 		let (header, extrinsics) = block.clone().deconstruct();
 
-		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header);
-		block_import_params.body = Some(extrinsics);
+		// Add a silly test digest, just to get familiar with how it works
+		let test_digest = sp_runtime::generic::DigestItem::Seal(*b"test", Vec::new());
+
+		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header.clone());
+
+		// Add the test digest to the block import params
+		block_import_params.post_digests.push(test_digest.clone());
+		block_import_params.body = Some(extrinsics.clone());
 		// Best block is determined by the relay chain.
 		block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(false));
 		block_import_params.storage_changes = Some(storage_changes);
@@ -224,7 +230,25 @@ where
 			return None;
 		}
 
-		Some(ParachainCandidate { block, proof })
+		// This DOES print, so our own import is working
+		println!("Debug info: we made it here");
+
+
+		// My question is about this part. If I don't include this, my own node imports the block,
+		// but cannot retrieve the state, because it has the wrong block hash.
+		//
+		// But if I leave this in place, then the relay chain cannot validate the candidate.
+		// It fails with:
+		// 2021-03-03 15:58:54  panicked at 'assertion failed: `(left == right)`
+		// left: `2`,
+		// right: `1`: Number of digest items must match that calculated.', /home/joshy/.cargo/git/checkouts/substrate-7e08433d4c370a21/74d5612/frame/executive/src/lib.rs:421:9
+
+		let mut post_header = header.clone();
+		post_header.digest_mut().logs.push(test_digest.clone());
+
+		let post_block = B::new(post_header, extrinsics);
+
+		Some(ParachainCandidate { block: post_block, proof })
 	}
 }
 
