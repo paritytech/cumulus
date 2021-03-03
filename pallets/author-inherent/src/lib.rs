@@ -47,7 +47,7 @@ impl<T> EventHandler<T> for () {
 pub trait CanAuthor<AccountId> {
 	fn can_author(account: &AccountId) -> bool;
 }
-/// Default implementation where anyone can author, see `stake` and `author-filter` pallets for
+/// Default implementation where anyone can author, see and `author-*-filter` pallets for
 /// additional implementations.
 impl<T> CanAuthor<T> for () {
 	fn can_author(_: &T) -> bool {
@@ -59,10 +59,18 @@ pub trait Config: System {
 	/// Other pallets that want to be informed about block authorship
 	type EventHandler: EventHandler<Self::AccountId>;
 
-	/// Checks if account can be set as block author.
+	/// A preliminary means of checking the validity of this author. This check is run before
+	/// block execution begins when data from previous inherent is unavailable. This is meant to
+	/// quickly invalidate blocks from obviously-invalid authors, although it need not rule out all
+	/// invlaid authors. The final check will be made when executing the inherent.
+	type PreliminaryCanAuthor: CanAuthor<Self::AccountId>;
+
+	/// The final word on whether the reported author can author at this height.
+	/// This will be used when executing the inherent. This check is often stricter than the
+	/// Preliminary check, because it can use more data.
 	/// If the pallet that implements this trait depends on an inherent, that inherent **must**
 	/// be included before this one.
-	type CanAuthor: CanAuthor<Self::AccountId>;
+	type FullCanAuthor: CanAuthor<Self::AccountId>;
 }
 
 decl_error! {
@@ -101,7 +109,7 @@ decl_module! {
 			debug!(target: "author-inherent", "Executing Author inherent");
 			ensure!(<Author<T>>::get().is_none(), Error::<T>::AuthorAlreadySet);
 			debug!(target: "author-inherent", "Author was not already set");
-			ensure!(T::CanAuthor::can_author(&author), Error::<T>::CannotBeAuthor);
+			ensure!(T::FullCanAuthor::can_author(&author), Error::<T>::CannotBeAuthor);
 			debug!(target: "author-inherent", "I can be author!");
 
 			// Update storage
@@ -219,10 +227,10 @@ impl<T: Config> ProvideInherent for Module<T> {
 	}
 
 	fn check_inherent(call: &Self::Call, _data: &InherentData) -> Result<(), Self::Error> {
-		// This if let should always be true. This is the only call that the inherent could make.
+		// We only check this pallet's inherent.
 		if let Self::Call::set_author(claimed_author) = call {
 			ensure!(
-				T::CanAuthor::can_author(&claimed_author),
+				T::PreliminaryCanAuthor::can_author(&claimed_author),
 				InherentError::Other(sp_runtime::RuntimeString::Borrowed("Cannot Be Author"))
 			);
 		}
@@ -294,7 +302,8 @@ mod tests {
 	}
 	impl Config for Test {
 		type EventHandler = ();
-		type CanAuthor = ();
+		type PreliminaryCanAuthor = ();
+		type FullCanAuthor = ();
 	}
 	type AuthorInherent = Module<Test>;
 	type Sys = frame_system::Module<Test>;

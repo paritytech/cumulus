@@ -295,7 +295,8 @@ impl cumulus_pallet_xcm_handler::Config for Runtime {
 
 impl pallet_author_inherent::Config for Runtime {
 	type EventHandler = ();
-	type CanAuthor = AuthorFilter;
+	type PreliminaryCanAuthor = PotentialAuthorSet;
+	type FullCanAuthor = AuthorFilter;
 }
 
 impl pallet_author_filter::Config for Runtime {

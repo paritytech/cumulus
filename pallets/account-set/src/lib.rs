@@ -38,6 +38,7 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_support::traits::Vec;
 	use frame_system::pallet_prelude::*;
+	use pallet_author_inherent::CanAuthor;
 
 	/// The Account Set pallet
 	#[pallet::pallet]
@@ -65,6 +66,15 @@ pub mod pallet {
 	impl<T: Config> Get<Vec<T::AccountId>> for Pallet<T> {
 		fn get() -> Vec<T::AccountId> {
 			StoredAccounts::<T>::get()
+		}
+	}
+
+	/// This pallet is compatible with the author filter system. Any account stored in this pallet
+	/// is a valid author. Notice that this implementation does not have an inner filter, so it
+	/// can only be the beginning of the filtering daisy-chain.
+	impl<T: Config> CanAuthor<T::AccountId> for Pallet<T> {
+		fn can_author(author: &T::AccountId) -> bool {
+			StoredAccounts::<T>::get().contains(author)
 		}
 	}
 

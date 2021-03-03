@@ -11,7 +11,8 @@ frame-support = { git = "https://github.com/paritytech/substrate", default-featu
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-
+# Just for the trait. That should be moved to another crate.
+pallet-author-inherent = { path = "../author-inherent", default-features = false }
 [features]
 default = ["std"]
 std = [
@@ -21,4 +22,5 @@ std = [
     "frame-system/std",
     "sp-core/std",
     "sp-runtime/std",
+    "pallet-author-inherent/std",
 ]
