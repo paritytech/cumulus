@@ -4355,6 +4355,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-aura-style-filter"
+version = "0.1.0"
+dependencies = [
+ "cumulus-pallet-parachain-system",
+ "frame-support",
+ "frame-system",
+ "pallet-author-inherent",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
 name = "pallet-author-height-filter"
 version = "0.1.0"
 dependencies = [
