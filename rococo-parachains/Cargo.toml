@@ -57,11 +57,11 @@ jsonrpc-core = "15.1.0"
 
 # Cumulus dependencies
 cumulus-cli = { path = "../cli" }
-cumulus-consensus = { path = "../consensus" }
-cumulus-collator = { path = "../collator" }
-cumulus-network = { path = "../network" }
-cumulus-primitives = { path = "../primitives" }
-cumulus-service = { path = "../service" }
+cumulus-client-consensus = { path = "../client/consensus" }
+cumulus-client-collator = { path = "../client/collator" }
+cumulus-client-service = { path = "../client/service" }
+cumulus-client-network = { path = "../client/network" }
+cumulus-primitives-core = { path = "../primitives/core" }
 
 # Polkadot dependencies
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
