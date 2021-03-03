@@ -240,8 +240,8 @@ where
 		// But if I leave this in place, then the relay chain cannot validate the candidate.
 		// It fails with:
 		// 2021-03-03 15:58:54  panicked at 'assertion failed: `(left == right)`
-		// left: `2`,
-		// right: `1`: Number of digest items must match that calculated.', /home/joshy/.cargo/git/checkouts/substrate-7e08433d4c370a21/74d5612/frame/executive/src/lib.rs:421:9
+		// left: `1`,
+		// right: `0`: Number of digest items must match that calculated.', /home/joshy/.cargo/git/checkouts/substrate-7e08433d4c370a21/74d5612/frame/executive/src/lib.rs:421:9
 
 		let mut post_header = header.clone();
 		post_header.digest_mut().logs.push(test_digest.clone());
