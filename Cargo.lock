@@ -7135,6 +7135,7 @@ dependencies = [
  "jsonrpc-core",
  "log",
  "nix",
+ "pallet-author-inherent",
  "pallet-sudo",
  "parity-scale-codec",
  "parking_lot 0.9.0",

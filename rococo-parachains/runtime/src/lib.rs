@@ -322,7 +322,7 @@ construct_runtime! {
 		ParachainInfo: parachain_info::{Module, Storage, Config},
 		XcmHandler: cumulus_pallet_xcm_handler::{Module, Call, Event<T>, Origin},
 		AuthorInherent: pallet_author_inherent::{Module, Call, Storage, Inherent},
-		AuthorFilter: pallet_author_filter::{Module, Storage, Event<T>, Config<T>},
+		AuthorFilter: pallet_author_filter::{Module, Storage, Event, Config},
 		PotentialAuthorSet: pallet_account_set::{Module, Storage, Config<T>},
 	}
 }

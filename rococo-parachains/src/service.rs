@@ -140,7 +140,7 @@ where
 	if let Some(ref author) = author {
 		params
 			.inherent_data_providers
-			.register_provider(author_inherent::InherentDataProvider(author.encode()))
+			.register_provider(pallet_author_inherent::InherentDataProvider(author.encode()))
 			.unwrap();
 	}
 
