@@ -23,7 +23,9 @@
 use frame_support::{
 	decl_error, decl_module, decl_storage, ensure,
 	traits::FindAuthor,
-	debug::debug,
+	// Commenting this becuase using the debug macros seems to not work anymore
+	// https://github.com/rust-lang/rust/issues/57966
+	// debug::debug,
 	weights::{DispatchClass, Weight},
 };
 use frame_system::{ensure_none, Config as System};
@@ -106,11 +108,11 @@ decl_module! {
 		fn set_author(origin, author: T::AccountId) {
 
 			ensure_none(origin)?;
-			debug!(target: "author-inherent", "Executing Author inherent");
+			// debug!(target: "author-inherent", "Executing Author inherent");
 			ensure!(<Author<T>>::get().is_none(), Error::<T>::AuthorAlreadySet);
-			debug!(target: "author-inherent", "Author was not already set");
+			// debug!(target: "author-inherent", "Author was not already set");
 			ensure!(T::FullCanAuthor::can_author(&author), Error::<T>::CannotBeAuthor);
-			debug!(target: "author-inherent", "I can be author!");
+			// debug!(target: "author-inherent", "I can be author!");
 
 			// Update storage
 			Author::<T>::put(&author);

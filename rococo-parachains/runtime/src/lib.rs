@@ -39,7 +39,9 @@ use sp_version::RuntimeVersion;
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, parameter_types,
-	debug::debug,
+	// Commenting this becuase using the debug macros seems to not work anymore
+	// https://github.com/rust-lang/rust/issues/57966
+	// debug::debug,
 	traits::{Randomness, OnInitialize},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -440,3 +442,4 @@ impl_runtime_apis! {
 }
 
 cumulus_pallet_parachain_system::register_validate_block!(Runtime, Executive);
+// cumulus_pallet_parachain_system::register_validate_block!(Runtime, filtering_executor::BlockExecutor<Runtime, Executive>);

@@ -34,7 +34,9 @@ pub use pallet::*;
 #[pallet]
 pub mod pallet {
 
-	use frame_support::debug::warn;
+	// Commenting this becuase using the debug macros seems to not work anymore
+	// https://github.com/rust-lang/rust/issues/57966
+	// use frame_support::debug::warn;
 	use frame_support::pallet_prelude::*;
 	use frame_support::traits::Vec;
 	use frame_system::pallet_prelude::*;
@@ -101,7 +103,7 @@ pub mod pallet {
 		fn build(&self) {
 
 			if self.stored_accounts.is_empty() {
-				warn!(target: "account-set", "No accounts stored at genesis. If this is used for authorship, your chain will have no valid authors.");
+				// warn!(target: "account-set", "No accounts stored at genesis. If this is used for authorship, your chain will have no valid authors.");
 			}
 			StoredAccounts::<T>::put(&self.stored_accounts);
 		}

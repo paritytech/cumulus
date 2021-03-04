@@ -1,4 +1,4 @@
-// Copyright 2019 Parity Technologies (UK) Ltd.
+// Copyright 2019-2021 Parity Technologies (UK) Ltd.
 // This file is part of Polkadot.
 
 // Polkadot is free software: you can redistribute it and/or modify
@@ -149,7 +149,7 @@ impl BlockAnnounceData {
 				return Err(BlockAnnounceError(format!("{:?}", e)));
 			}
 		};
-		let signer = match authorities.get(validator_index as usize) {
+		let signer = match authorities.get(validator_index.0 as usize) {
 			Some(r) => r,
 			None => {
 				tracing::debug!(

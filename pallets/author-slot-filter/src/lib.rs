@@ -32,7 +32,9 @@ pub use pallet::*;
 #[pallet]
 pub mod pallet {
 
-	use frame_support::debug::debug;
+	// Commenting this becuase using the debug macros seems to not work anymore
+	// https://github.com/rust-lang/rust/issues/57966
+	// use frame_support::debug::debug;
 	use frame_support::pallet_prelude::*;
 	use frame_support::traits::Randomness;
 	use frame_support::traits::Vec;
@@ -97,7 +99,7 @@ pub mod pallet {
 					relay_height as u8,
 				];
 				let randomness: sp_core::H256 = T::RandomnessSource::random(&subject);
-				debug!(target: "author-filter", "🎲Randomness sample {}: {:?}", i, &randomness);
+				// debug!(target: "author-filter", "🎲Randomness sample {}: {:?}", i, &randomness);
 
 				// Cast to u32 first so we get consistent results on 32- and 64-bit platforms.
 				let index = (randomness.to_fixed_bytes()[0] as u32) as usize;
@@ -113,13 +115,13 @@ pub mod pallet {
 			// Print some logs for debugging purposes.
 			// TODO for nicer logging, how can I use
 			// https://crates.parity.io/sp_core/crypto/trait.Ss58Codec.html#method.to_ss58check ?
-			debug!(target: "author-filter", "Eligible Authors: {:?}", eligible);
-			debug!(target: "author-filter", "Ineligible Authors: {:?}", &active);
-			debug!(target: "author-filter",
-				"Current author, {:?}, is eligible: {}",
-				account,
-				eligible.contains(account)
-			);
+			// debug!(target: "author-filter", "Eligible Authors: {:?}", eligible);
+			// debug!(target: "author-filter", "Ineligible Authors: {:?}", &active);
+			// debug!(target: "author-filter",
+			// 	"Current author, {:?}, is eligible: {}",
+			// 	account,
+			// 	eligible.contains(account)
+			// );
 
 			eligible.contains(account)
 		}
