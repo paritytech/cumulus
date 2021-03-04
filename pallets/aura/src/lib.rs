@@ -64,6 +64,24 @@ pub mod pallet {
 	/// be updated to the latest AuRa authorities in `on_finalize`.
 	#[pallet::storage]
 	pub(crate) type Authorities<T: Config> = StorageValue<_, Vec<T::AuthorityId>, ValueQuery>;
+
+	#[pallet::genesis_config]
+	#[derive(Default)]
+	pub struct GenesisConfig;
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			let authorities = Aura::<T>::authorities();
+
+			assert!(
+				!authorities.is_empty(),
+				"AuRa authorities empty, maybe wrong order in `construct_runtime!`?",
+			);
+
+			Authorities::<T>::put(authorities);
+		}
+	}
 }
 
 pub struct BlockExecutor<T, I>(sp_std::marker::PhantomData<(T, I)>);
@@ -109,7 +127,9 @@ where
 
 		if !authorities
 			.get(author as usize)
-			.expect("Invalid AuRa author index")
+			.unwrap_or_else(||
+				panic!("Invalid AuRa author index {} {:?}", author, authorities)
+			)
 			.verify(&pre_hash, &seal)
 		{
 			panic!("Invalid AuRa seal");

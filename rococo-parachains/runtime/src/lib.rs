@@ -317,7 +317,7 @@ construct_runtime! {
 		ParachainInfo: parachain_info::{Module, Storage, Config},
 		XcmHandler: cumulus_pallet_xcm_handler::{Module, Call, Event<T>, Origin},
 		Aura: pallet_aura::{Module, Config<T>},
-		AuraExt: cumulus_pallet_aura::{Module},
+		AuraExt: cumulus_pallet_aura::{Module, Config},
 	}
 }
 
