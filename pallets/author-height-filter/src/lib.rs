@@ -32,9 +32,7 @@ pub use pallet::*;
 #[pallet]
 pub mod pallet {
 
-	// Commenting this becuase using the debug macros seems to not work anymore
-	// https://github.com/rust-lang/rust/issues/57966
-	// use frame_support::debug::debug;
+	use log::debug;
 	use frame_support::pallet_prelude::*;
 	use frame_support::traits::Randomness;
 	use frame_support::traits::Vec;
@@ -103,13 +101,13 @@ pub mod pallet {
 			}
 
 			// Print some logs for debugging purposes.
-			// debug!(target: "author-filter", "Eligible Authors are: {:?}", eligible);
-			// debug!(target: "author-filter", "NOT Eligible Authors: {:?}", &active);
-			// debug!(target: "author-filter",
-			// 	"Current author, {:?}, is eligible: {}",
-			// 	account,
-			// 	eligible.contains(account)
-			// );
+			debug!(target: "author-filter", "Eligible Authors are: {:?}", eligible);
+			debug!(target: "author-filter", "NOT Eligible Authors: {:?}", &active);
+			debug!(target: "author-filter",
+				"Current author, {:?}, is eligible: {}",
+				account,
+				eligible.contains(account)
+			);
 
 			eligible.contains(account)
 		}

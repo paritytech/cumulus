@@ -4404,6 +4404,7 @@ version = "0.1.0"
 dependencies = [
  "frame-support",
  "frame-system",
+ "log",
  "pallet-author-inherent",
  "parity-scale-codec",
  "serde",
@@ -4417,6 +4418,7 @@ version = "0.1.0"
 dependencies = [
  "frame-support",
  "frame-system",
+ "log",
  "parity-scale-codec",
  "sp-authorship",
  "sp-core",
@@ -4433,6 +4435,7 @@ dependencies = [
  "cumulus-pallet-parachain-system",
  "frame-support",
  "frame-system",
+ "log",
  "pallet-author-inherent",
  "parity-scale-codec",
  "serde",

@@ -7,6 +7,7 @@ edition = "2018"
 license = 'GPL-3.0-only'
 
 [dependencies]
+log = { version = "0.4", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 parity-scale-codec = { version = "2.0.0", default-features = false, features = ["derive"] }
@@ -22,6 +23,7 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = "master", 
 [features]
 default = ["std"]
 std = [
+	"log/std",
 	"frame-support/std",
 	"frame-system/std",
 	"parity-scale-codec/std",

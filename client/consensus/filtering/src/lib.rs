@@ -199,7 +199,7 @@ where
 		if !eligible {
 			info!(
 				target: LOG_TARGET,
-				"🔮 Skipping collation slot because we are not eligible"
+				"🔮 Skipping candidate production because we are not eligible"
 			);
 			return None;
 		}
