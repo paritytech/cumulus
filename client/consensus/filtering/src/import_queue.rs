@@ -30,8 +30,12 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT},
 	Justification,
 };
+use log::debug;
 
-/// A verifier that just checks the inherents.
+/// A verifier that checks the inherents and
+/// TODO compares two digests. The first comes from the runtime which contains the author inherent data
+/// the second will, in the future be a signature, but for now is just inserted at seal time by
+// the consensus engine to mock this stuff out.
 struct Verifier<Client, Block> {
 	client: Arc<Client>,
 	inherent_data_providers: InherentDataProviders,
@@ -47,7 +51,7 @@ where
 	fn verify(
 		&mut self,
 		origin: BlockOrigin,
-		header: Block::Header,
+		mut header: Block::Header,
 		justification: Option<Justification>,
 		mut body: Option<Vec<Block::Extrinsic>>,
 	) -> Result<
@@ -57,6 +61,27 @@ where
 		),
 		String,
 	> {
+
+		debug!(target: crate::LOG_TARGET, "🪲 Header hash before popping digest {:?}", header.hash());
+		// Grab the digest from the seal
+		// Even though we do literally nothing with it, we can go ahead and pop it off already
+		let seal = match header.digest_mut().pop() {
+			Some(x) => x,
+			None => return Err("HeaderUnsealed".into()),
+		};
+
+		debug!(target: crate::LOG_TARGET, "🪲 Header hash after popping digest {:?}", header.hash());
+		//let signing_author = seal...
+
+		//Grab the digest from the runtime
+		//let claimed_author = header.digest.logs.find(...)
+
+		// if signing_author != claimed_author {
+		// 	// TODO actually verify the signature
+		// 	reutrn Err("Invalid signature")
+		// }
+
+		// This part copied from Basti. I guess this is the inherent checking.
 		if let Some(inner_body) = body.take() {
 			let inherent_data = self
 				.inherent_data_providers
@@ -85,8 +110,8 @@ where
 			body = Some(inner_body);
 		}
 
-		let post_hash = Some(header.hash());
 		let mut block_import_params = BlockImportParams::new(origin, header);
+		block_import_params.post_digests.push(seal);
 		block_import_params.body = body;
 		block_import_params.justification = justification;
 
@@ -95,7 +120,8 @@ where
 		block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(
 			origin == BlockOrigin::NetworkInitialSync,
 		));
-		block_import_params.post_hash = post_hash;
+
+		debug!(target: crate::LOG_TARGET, "🪲 Just finished verifier. posthash from params is {:?}", &block_import_params.post_hash());
 
 		Ok((block_import_params, None))
 	}
