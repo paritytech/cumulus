@@ -322,7 +322,7 @@ where
 			target: LOG_TARGET,
 			pov_hash = ?pov_hash,
 			?block_hash,
-			"Produced proof-of-validity candidate.",
+			"🈴 Produced proof-of-validity candidate.",
 		);
 
 		Some(CollationResult {
