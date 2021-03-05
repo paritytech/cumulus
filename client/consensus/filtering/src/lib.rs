@@ -232,11 +232,27 @@ where
 
 		let (header, extrinsics) = block.clone().deconstruct();
 
-		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header);
-		block_import_params.body = Some(extrinsics);
+		let pre_hash = header.hash();
+
+		// Add a silly test digest, just to get familiar with how it works
+		let test_digest = sp_runtime::generic::DigestItem::Seal(*b"test", Vec::new());
+
+		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header.clone());
+		// Add the test digest to the block import params
+		block_import_params.post_digests.push(test_digest.clone());
+		block_import_params.body = Some(extrinsics.clone());
 		// Best block is determined by the relay chain.
 		block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(false));
 		block_import_params.storage_changes = Some(storage_changes);
+
+		// Print the same log line as slots (aura and babe) to see if this is working the same way
+		// It seems to be working the same way now.
+		info!(
+			"🔖 Sealed block for proposal at {}. Hash now {:?}, previously {:?}.",
+			*header.number(),
+			block_import_params.post_hash(),
+			pre_hash,
+		);
 
 		if let Err(err) = self
 			.block_import
@@ -247,13 +263,19 @@ where
 				target: LOG_TARGET,
 				at = ?parent.hash(),
 				error = ?err,
-				"Error importing build block.",
+				"Error importing built block.",
 			);
 
 			return None;
 		}
 
-		Some(ParachainCandidate { block, proof })
+		// Compute info about the block after the digest is added
+		let mut post_header = header.clone();
+		post_header.digest_mut().logs.push(test_digest.clone());
+		let post_block = B::new(post_header, extrinsics);
+
+		// Returning the block WITH the seal for distribution around the network.
+		Some(ParachainCandidate { block: post_block, proof })
 	}
 }
 
