@@ -5,13 +5,13 @@ Nimbus is a set of tools for building and testing parachain consensus systems on
 Given the regular six-second pulse-like nature of the relay chain, it is natural to think about slot-
 based consensus algorithms for parachains. The parachain network is responsible for liveness and
 decetralization and the relay chain is responsible for finality. There is a rich design space for such
-algorithms, yet some tasks are common to all (or most) or them. These common tasks include:
+algorithms, yet some tasks are common to all (or most) of them. These common tasks include:
 
-Signing and signature checking blocks
-Injecting authorship information into the parachain
-Block authorship and import accounting
-Filtering a large (potentially unbounded) set of potential authors to a smaller (but still potentially unbounded) set.
-Detecting when it is your turn to author an skipping other slots
+* Signing and signature checking blocks
+* Injecting authorship information into the parachain
+* Block authorship and import accounting
+* Filtering a large (potentially unbounded) set of potential authors to a smaller (but still potentially unbounded) set.
+* Detecting when it is your turn to author an skipping other slots
 
 Nimbus aims to provide standard implementations for the logistical parts of such consensus engines,
 along with helpful traits for implementing the parts that researchers and developers want to customize.
@@ -19,10 +19,10 @@ along with helpful traits for implementing the parts that researchers and develo
 ## Try the Demo
 
 While Nimbus is primarily a developer toolkit meant to be included in other projects, it is useful
-to see a basic node in action. A example node is included in the `rococo-parachains` directory. You
+to see a basic node in action. An example node is included in the `rococo-parachains` directory. You
 can build it with `cargo build --release` and launch it like any other cumulus parachian.
 
-Rather than re-iterate how to start a relay-para network here, I'll simply recommend you use the
+Rather than reiterate how to start a relay-para network here, I'll simply recommend you use the
 excellent [Polkadot Launch](https://github.com/paritytech/polkadot-launch) tool.
 
 TODO, provide a config file in this repo.
