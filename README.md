@@ -111,7 +111,7 @@ the filters you use. The consensus engine performs these tasks:
 * Authorship - It calls into a standard Substrate proposer to construct a block (probably including the author inherent).
 * Self import - it imports the block that the proposer created (called the pre-block) into the node's local database.
 * Sealing - It adds a seal digest to the block - This is what is used by other nodes to verify the authorship information.
-**Warning, the seal does not yet conatain a cryptographic signature; it is just mocked. That is one of the next tasks.**
+**Warning, the seal does not yet contain a cryptographic signature; it is just mocked. That is one of the next tasks.**
 
 ### Verifier and Import Queue
 
