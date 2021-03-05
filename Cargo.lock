@@ -1415,6 +1415,7 @@ dependencies = [
  "frame-executive",
  "frame-support",
  "frame-system",
+ "log",
  "pallet-account-set",
  "pallet-author-inherent",
  "pallet-author-slot-filter",
