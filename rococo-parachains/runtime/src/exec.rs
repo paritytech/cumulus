@@ -43,6 +43,8 @@ where
 		info!("In hacked Executive. digests after stripping {:?}", header.digest());
 		info!("The seal we got {:?}", seal);
 
+		// TODO actually verify the seal data here. How to get access to the data itself though..
+
 		I::execute_block(Block::new(header, extrinsics));
 
 		// TODO The verifier does additional work here. I wonder if it's important that we get the
