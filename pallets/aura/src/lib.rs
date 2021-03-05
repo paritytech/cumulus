@@ -128,7 +128,7 @@ where
 		if !authorities
 			.get(author as usize)
 			.unwrap_or_else(||
-				panic!("Invalid AuRa author index {} {:?}", author, authorities)
+				panic!("Invalid AuRa author index {} for authorities: {:?}", author, authorities)
 			)
 			.verify(&pre_hash, &seal)
 		{
