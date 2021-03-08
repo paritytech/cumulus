@@ -13,13 +13,19 @@ sp_api::decl_runtime_apis! {
     }
 }
 
-///TODO maybe use this in the future
-/// The response that the `AuthorFilterAPI` will give
+/// Idea shelved.
+/// it is possible to make the runtime API give more details about why an author is ineligible.
+/// Specifically it could distinguish between failing the prechecks and the full checks. But in the
+/// who cares (except maybe for debugging). The author can't author, and there's no reason to call
+/// both checks.
+/// One possible reason is if the full check is considerably more expensive. Anyway, it's shelved
+/// for now.
+#[allow(dead_code)]
 enum AuthorCheckResult {
-    /// Not in the active author set. (eg. not staked)
-    AuthorNotActive,
-    /// In the active set, but not eligible at this slot
-    NotEligibleThisSlot,
-    /// The author is active and eligible at this slot
+    /// Author does not even pass the preliminaty checks.
+    FailsPreliminaryChecks,
+    /// Author passes preliminary checks, but not full checks.
+    FailsFullChekcs,
+    /// Author is eligible at this slot.
     Eligible,
 }
