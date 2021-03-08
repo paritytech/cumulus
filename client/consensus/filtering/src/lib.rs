@@ -207,7 +207,12 @@ where
 			&*self.keystore,
 			&vec![(self.author.encode(), KeyTypeId(*b"nmbs"))]
 		);
-		println!("Did we have the key: {:?}", have_key);
+
+		// This is working. Tested by inserting keys into running nodes via polkadot js.
+		// It says true when the right key is inserted. Says false (Correctly) when:
+		// * Key is not present
+		// * Key is present under incorect type
+		println!("Does the keystore have to key associated with the account-id flag: {:?}", have_key);
 
 		let eligible = self.parachain_client.runtime_api()
 			.can_author(&BlockId::Hash(parent.hash()), self.author.clone(), validation_data.relay_parent_number)
