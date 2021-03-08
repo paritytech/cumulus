@@ -3,8 +3,7 @@
 //! Block executive to be used by relay chain validators when validating parachain blocks built
 //! with the nimubs consensus family.
 
-// This trait will probably move to frame-support soon.
-use frame_executive::ExecuteBlock;
+use frame_support::traits::ExecuteBlock;
 use sp_api::{BlockT, HeaderT};
 use log::info;
 use sp_runtime::generic::DigestItem;
