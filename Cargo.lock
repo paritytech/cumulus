@@ -378,6 +378,7 @@ dependencies = [
  "frame-system",
  "parity-scale-codec",
  "sp-api",
+ "sp-application-crypto",
  "sp-std",
 ]
 
@@ -4378,6 +4379,7 @@ version = "0.1.0"
 dependencies = [
  "frame-support",
  "frame-system",
+ "log",
  "pallet-author-inherent",
  "parity-scale-codec",
  "serde",

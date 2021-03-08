@@ -1,15 +1,40 @@
 //TODO license
+
+//! Nimbus Consensus Primitives
+//!
+//! TODO rename the crate. It was originally just the runtime api
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use sp_std::vec::Vec;
-use parity_scale_codec::Codec;
+// use parity_scale_codec::Codec;
+use sp_application_crypto::KeyTypeId;
 
-//TODO this should be generic over an AuthorId type once we start using
-// application crypto. For now it is a vec<u8> to be decoded in the runtime.
-// This helps keep types concrete while I'm trying to fit the pieces together.
+//TODO Maybe move our key type into sp_core if this gets well adopted (to avoid collision)
+pub const NIMBUS_KEY_ID: KeyTypeId = KeyTypeId(*b"nmbs");
+
+mod app {
+	use sp_application_crypto::{
+		app_crypto,
+		sr25519,
+	};
+	app_crypto!(sr25519, crate::NIMBUS_KEY_ID);
+}
+
+sp_application_crypto::with_pair! {
+	/// A nimbus author keypair.
+	pub type NimbusPair = app::Pair;
+}
+
+/// A nimbus author identifier.
+pub type NimbusId = app::Public;
+
+/// A nimbus author signature.
+pub type NimbusSignature = app::Signature;
+
 sp_api::decl_runtime_apis! {
-    pub trait AuthorFilterAPI<AuthorId: Codec> {
-        fn can_author(author: AuthorId, relay_parent: u32) -> bool;
+    pub trait AuthorFilterAPI {
+        fn can_author(author: NimbusId, relay_parent: u32) -> bool;
     }
 }
 

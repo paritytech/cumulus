@@ -34,9 +34,7 @@ pub use pallet::*;
 #[pallet]
 pub mod pallet {
 
-	// Commenting this becuase using the debug macros seems to not work anymore
-	// https://github.com/rust-lang/rust/issues/57966
-	// use frame_support::debug::warn;
+	use log::warn;
 	use frame_support::pallet_prelude::*;
 	use frame_support::traits::Vec;
 	use frame_system::pallet_prelude::*;
@@ -48,7 +46,11 @@ pub mod pallet {
 
 	/// Configuration trait of this pallet.
 	#[pallet::config]
-	pub trait Config: frame_system::Config  {}
+	pub trait Config: frame_system::Config  {
+		/// The identifier type for an author.
+		/// I'm still using "author" language here mostly to not collide with frame_system::Config::AccountId
+		type AuthorId: Member + Parameter + MaybeSerializeDeserialize;
+	}
 
 	// No hooks
 	#[pallet::hooks]
@@ -63,10 +65,10 @@ pub mod pallet {
 	/// I'm thinking about it, I can see some usecases for having dupes (higher probability of
 	/// being selected in some filters), so I'm not going to enforce anything.
 	#[pallet::storage]
-	pub type StoredAccounts<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+	pub type StoredAccounts<T: Config> = StorageValue<_, Vec<T::AuthorId>, ValueQuery>;
 
-	impl<T: Config> Get<Vec<T::AccountId>> for Pallet<T> {
-		fn get() -> Vec<T::AccountId> {
+	impl<T: Config> Get<Vec<T::AuthorId>> for Pallet<T> {
+		fn get() -> Vec<T::AuthorId> {
 			StoredAccounts::<T>::get()
 		}
 	}
@@ -74,15 +76,15 @@ pub mod pallet {
 	/// This pallet is compatible with the author filter system. Any account stored in this pallet
 	/// is a valid author. Notice that this implementation does not have an inner filter, so it
 	/// can only be the beginning of the filtering daisy-chain.
-	impl<T: Config> CanAuthor<T::AccountId> for Pallet<T> {
-		fn can_author(author: &T::AccountId) -> bool {
+	impl<T: Config> CanAuthor<T::AuthorId> for Pallet<T> {
+		fn can_author(author: &T::AuthorId) -> bool {
 			StoredAccounts::<T>::get().contains(author)
 		}
 	}
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
-		pub stored_accounts: Vec<T::AccountId>,
+		pub stored_accounts: Vec<T::AuthorId>,
 	}
 
 	//TODO can I derive default?
@@ -103,7 +105,7 @@ pub mod pallet {
 		fn build(&self) {
 
 			if self.stored_accounts.is_empty() {
-				// warn!(target: "account-set", "No accounts stored at genesis. If this is used for authorship, your chain will have no valid authors.");
+				warn!(target: "account-set", "No accounts stored at genesis. If this is used for authorship, your chain will have no valid authors.");
 			}
 			StoredAccounts::<T>::put(&self.stored_accounts);
 		}

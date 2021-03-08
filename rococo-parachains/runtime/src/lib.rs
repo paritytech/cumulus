@@ -56,6 +56,9 @@ pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
+//TODO woof the crate naming is terrible.
+use author_filter_api::NimbusId;
+
 // XCM imports
 use polkadot_parachain::primitives::Sibling;
 use xcm::v0::{Junction, MultiLocation, NetworkId};
@@ -72,7 +75,9 @@ use xcm_executor::{
 pub type SessionHandlers = ();
 
 impl_opaque_keys! {
-	pub struct SessionKeys {}
+	pub struct SessionKeys {
+		pub author_inherent: AuthorInherent,
+	}
 }
 
 /// This runtime version.
@@ -296,18 +301,22 @@ impl cumulus_pallet_xcm_handler::Config for Runtime {
 }
 
 impl pallet_author_inherent::Config for Runtime {
+	type AuthorId = NimbusId;
 	type EventHandler = ();
 	type PreliminaryCanAuthor = PotentialAuthorSet;
 	type FullCanAuthor = AuthorFilter;
 }
 
 impl pallet_author_filter::Config for Runtime {
+	type AuthorId = NimbusId;
 	type Event = Event;
 	type RandomnessSource = RandomnessCollectiveFlip;
 	type PotentialAuthors = PotentialAuthorSet;
 }
 
-impl pallet_account_set::Config for Runtime {}
+impl pallet_account_set::Config for Runtime {
+	type AuthorId = NimbusId;
+}
 
 construct_runtime! {
 	pub enum Runtime where
@@ -434,8 +443,11 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl author_filter_api::AuthorFilterAPI<Block, AccountId> for Runtime {
-        fn can_author(author: AccountId, relay_parent: u32) -> bool {
+	impl author_filter_api::AuthorFilterAPI<Block> for Runtime {
+        fn can_author(author: NimbusId, relay_parent: u32) -> bool {
+			// Rather than referring to the author filter directly here,
+			// refer to it via the author inherent config. This avoid the possibility
+			// of accidentally using different filters in different places.
 			AuthorFilter::can_author_helper(&author, relay_parent)
 		}
     }

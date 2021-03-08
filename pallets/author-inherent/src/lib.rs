@@ -24,13 +24,17 @@ use frame_support::{
 	decl_error, decl_module, decl_storage, ensure,
 	traits::FindAuthor,
 	weights::{DispatchClass, Weight},
+	Parameter,
 };
-use frame_system::{ensure_none, Config as System};
+use frame_system::ensure_none;
 use parity_scale_codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use sp_inherents::ProvideInherentData;
 use sp_inherents::{InherentData, InherentIdentifier, IsFatalError, ProvideInherent};
-use sp_runtime::{ConsensusEngineId, DigestItem, RuntimeString};
+use sp_runtime::{
+	ConsensusEngineId, DigestItem, RuntimeString, RuntimeAppPublic,
+	traits::Member,
+};
 use sp_std::vec::Vec;
 use log::debug;
 
@@ -44,33 +48,48 @@ impl<T> EventHandler<T> for () {
 }
 
 /// Permissions for what block author can be set in this pallet
-pub trait CanAuthor<AccountId> {
-	fn can_author(account: &AccountId) -> bool;
+pub trait CanAuthor<AuthorId> {
+	fn can_author(author: &AuthorId) -> bool;
 }
 /// Default implementation where anyone can author, see and `author-*-filter` pallets for
 /// additional implementations.
+/// TODO Promote this is "implementing relay chain consensus in the nimbus framework."
 impl<T> CanAuthor<T> for () {
 	fn can_author(_: &T) -> bool {
 		true
 	}
 }
 
-pub trait Config: System {
+pub trait Config: frame_system::Config {
+	// This is copied from Aura. I wonder if I really need all those trait bounds. For now I'll leave them.
+	/// The identifier type for an authority.
+	type AuthorId: Member + Parameter + RuntimeAppPublic;
+
+	//TODO do we have any use for this converter?
+	// It has to happen eventually to pay rewards to accountids and let account ids stake.
+	// But is there any reason it needs to be included here? For now I won't use it as I'm
+	// not staking or rewarding in this poc.
+	// A type to convert between AuthorId and AccountId
+
 	/// Other pallets that want to be informed about block authorship
-	type EventHandler: EventHandler<Self::AccountId>;
+	type EventHandler: EventHandler<Self::AuthorId>;
 
 	/// A preliminary means of checking the validity of this author. This check is run before
 	/// block execution begins when data from previous inherent is unavailable. This is meant to
 	/// quickly invalidate blocks from obviously-invalid authors, although it need not rule out all
 	/// invlaid authors. The final check will be made when executing the inherent.
-	type PreliminaryCanAuthor: CanAuthor<Self::AccountId>;
+	type PreliminaryCanAuthor: CanAuthor<Self::AuthorId>;
 
 	/// The final word on whether the reported author can author at this height.
 	/// This will be used when executing the inherent. This check is often stricter than the
 	/// Preliminary check, because it can use more data.
 	/// If the pallet that implements this trait depends on an inherent, that inherent **must**
 	/// be included before this one.
-	type FullCanAuthor: CanAuthor<Self::AccountId>;
+	type FullCanAuthor: CanAuthor<Self::AuthorId>;
+}
+
+impl<T: Config> sp_runtime::BoundToRuntimeAppPublic for Module<T> {
+	type Public = T::AuthorId;
 }
 
 decl_error! {
@@ -85,7 +104,7 @@ decl_error! {
 decl_storage! {
 	trait Store for Module<T: Config> as Author {
 		/// Author of current block.
-		Author: Option<T::AccountId>;
+		Author: Option<T::AuthorId>;
 	}
 }
 
@@ -103,7 +122,7 @@ decl_module! {
 			0,
 			DispatchClass::Mandatory
 		)]
-		fn set_author(origin, author: T::AccountId) {
+		fn set_author(origin, author: T::AuthorId) {
 
 			ensure_none(origin)?;
 			debug!(target: "author-inherent", "Executing Author inherent");
@@ -129,8 +148,8 @@ decl_module! {
 	}
 }
 
-impl<T: Config> FindAuthor<T::AccountId> for Module<T> {
-	fn find_author<'a, I>(_digests: I) -> Option<T::AccountId>
+impl<T: Config> FindAuthor<T::AuthorId> for Module<T> {
+	fn find_author<'a, I>(_digests: I) -> Option<T::AuthorId>
 	where
 		I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
 	{
@@ -221,7 +240,7 @@ impl<T: Config> ProvideInherent for Module<T> {
 
 		// Decode the Vec<u8> into an account Id
 		let author =
-			T::AccountId::decode(&mut &author_raw[..]).expect("Decodes author raw inherent data");
+			T::AuthorId::decode(&mut &author_raw[..]).expect("Decodes author raw inherent data");
 
 		Some(Call::set_author(author))
 	}

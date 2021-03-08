@@ -47,20 +47,24 @@ pub mod pallet {
 	/// Configuration trait of this pallet.
 	#[pallet::config]
 	pub trait Config: frame_system::Config + cumulus_pallet_parachain_system::Config {
+		/// The identifier type for an author.
+		// TODO All the trait bounds? I already removed RuntimeAppPublic.
+		type AuthorId: Member;
+
 		/// The overarching event type
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 		/// Deterministic on-chain pseudo-randomness used to do the filtering
 		type RandomnessSource: Randomness<H256>;
 		/// A source for the complete set of potential authors.
 		/// The starting point of the filtering.
-		type PotentialAuthors: Get<Vec<Self::AccountId>>;
+		type PotentialAuthors: Get<Vec<Self::AuthorId>>;
 	}
 
 	// This code will be called by the author-inherent pallet to check whether the reported author
 	// of this block is eligible at this height. We calculate that result on demand and do not
 	// record it instorage (although we do emit a debugging event for now).
-	impl<T: Config> pallet_author_inherent::CanAuthor<T::AccountId> for Pallet<T> {
-		fn can_author(account: &T::AccountId) -> bool {
+	impl<T: Config> pallet_author_inherent::CanAuthor<T::AuthorId> for Pallet<T> {
+		fn can_author(account: &T::AuthorId) -> bool {
 
 			// Grab the relay parent height as a temporary source of relay-based entropy
 			let validation_data = cumulus_pallet_parachain_system::Module::<T>::validation_data()
@@ -73,8 +77,8 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T> {
 		/// Helper method to calculate eligible authors
-		pub fn can_author_helper(account: &T::AccountId, relay_height: u32) -> bool {
-			let mut active: Vec<T::AccountId> = T::PotentialAuthors::get();
+		pub fn can_author_helper(author: &T::AuthorId, relay_height: u32) -> bool {
+			let mut active: Vec<T::AuthorId> = T::PotentialAuthors::get();
 
 			let num_eligible = EligibleRatio::<T>::get().mul_ceil(active.len());
 			let mut eligible = Vec::with_capacity(num_eligible);
@@ -115,11 +119,11 @@ pub mod pallet {
 			debug!(target: "author-filter", "Ineligible Authors: {:?}", &active);
 			debug!(target: "author-filter",
 				"Current author, {:?}, is eligible: {}",
-				account,
-				eligible.contains(account)
+				author,
+				eligible.contains(author)
 			);
 
-			eligible.contains(account)
+			eligible.contains(author)
 		}
 	}
 
