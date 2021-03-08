@@ -1212,6 +1212,7 @@ dependencies = [
  "sp-consensus",
  "sp-core",
  "sp-inherents",
+ "sp-keystore",
  "sp-runtime",
  "substrate-prometheus-endpoint",
  "tracing",

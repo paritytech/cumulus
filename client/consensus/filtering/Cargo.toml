@@ -15,6 +15,7 @@ sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot dependencies
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master", features = [ "real-overseer" ] }

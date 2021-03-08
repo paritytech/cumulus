@@ -213,7 +213,10 @@ where
 			relay_chain_backend: polkadot_full_node.backend.clone(),
 			parachain_client: client.clone(),
 			//TODO There is also this thing called collator key. Maybe I could use that here?
+			//TODO Should we keep the author field after we get the keystore working?
+			// What if there are multiple authoring keys in the keystore at once?
 			author: author.expect("collating nodes should have an author id."),
+			keystore: params.keystore_container.sync_keystore(),
 		});
 
 		let params = StartCollatorParams {

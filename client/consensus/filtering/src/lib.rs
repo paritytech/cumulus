@@ -53,8 +53,10 @@ use sp_consensus::{
 };
 use sp_inherents::{InherentData, InherentDataProviders};
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT};
+use sp_runtime::KeyTypeId;
 use std::{marker::PhantomData, sync::Arc, time::Duration};
 use tracing::error;
+use sp_keystore::{SyncCryptoStorePtr, SyncCryptoStore};
 
 mod import_queue;
 
@@ -71,6 +73,7 @@ pub struct FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient, AuthorId
 	relay_chain_backend: Arc<RBackend>,
 	parachain_client: Arc<ParaClient>,
 	author: AuthorId,
+	keystore: SyncCryptoStorePtr,
 }
 
 impl<B, PF, BI, RClient, RBackend, ParaClient, AuthorId: Clone> Clone for FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient, AuthorId> {
@@ -85,6 +88,7 @@ impl<B, PF, BI, RClient, RBackend, ParaClient, AuthorId: Clone> Clone for Filter
 			relay_chain_client: self.relay_chain_client.clone(),
 			parachain_client: self.parachain_client.clone(),
 			author: self.author.clone(),
+			keystore: self.keystore.clone(),
 		}
 	}
 }
@@ -107,6 +111,7 @@ where
 		polkadot_backend: Arc<RBackend>,
 		parachain_client: Arc<ParaClient>,
 		author: AuthorId,
+		keystore: SyncCryptoStorePtr,
 	) -> Self {
 		Self {
 			para_id,
@@ -117,6 +122,7 @@ where
 			relay_chain_client: polkadot_client,
 			parachain_client,
 			author,
+			keystore,
 			_phantom: PhantomData,
 		}
 	}
@@ -191,6 +197,17 @@ where
 		relay_parent: PHash,
 		validation_data: &PersistedValidationData,
 	) -> Option<ParachainCandidate<B>> {
+
+		// As a first exercise, let's see whether the keystore has the private key associated with
+		// our author key.
+		// Static method style copied from Aura. I wonder if it is necessary?
+		let have_key: bool = SyncCryptoStore::has_keys(
+			//TODO do I need to clone the keystore first? I don't think so. Aura does because of
+			// some fancy higher order thing.
+			&*self.keystore,
+			&vec![(self.author.encode(), KeyTypeId(*b"nmbs"))]
+		);
+		println!("Did we have the key: {:?}", have_key);
 
 		let eligible = self.parachain_client.runtime_api()
 			.can_author(&BlockId::Hash(parent.hash()), self.author.clone(), validation_data.relay_parent_number)
@@ -282,6 +299,10 @@ where
 /// Paramaters of [`build_relay_chain_consensus`].
 /// TODO can this be moved into common and shared with relay chain conensus builder?
 /// I bet my head would explode from thinking about generic types.
+///
+/// I'm going to start trying to add the keystore here. I briefly tried the async approach, but
+/// decided t ogo sync so I can copy code from Aura. Maybe after it is working, Jeremy can help me
+/// go async.
 pub struct BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient, AuthorId> {
 	pub para_id: ParaId,
 	pub proposer_factory: PF,
@@ -291,6 +312,8 @@ pub struct BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient, AuthorId>
 	pub relay_chain_backend: Arc<RBackend>,
 	pub parachain_client: Arc<ParaClient>,
 	pub author: AuthorId,
+	pub keystore: SyncCryptoStorePtr,
+
 }
 
 /// Build the [`FilteringConsensus`].
@@ -306,6 +329,7 @@ pub fn build_filtering_consensus<Block, PF, BI, RBackend, ParaClient, AuthorId>(
 		relay_chain_backend,
 		parachain_client,
 		author,
+		keystore,
 	}: BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient, AuthorId>,
 ) -> Box<dyn ParachainConsensus<Block>>
 where
@@ -334,6 +358,7 @@ where
 		relay_chain_backend,
 		parachain_client,
 		author,
+		keystore,
 	)
 	.build()
 }
@@ -354,6 +379,7 @@ struct FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient, AuthorId> 
 	relay_chain_client: polkadot_service::Client,
 	parachain_client: Arc<ParaClient>,
 	author: AuthorId,
+	keystore: SyncCryptoStorePtr,
 }
 
 impl<Block, PF, BI, RBackend, ParaClient, AuthorId> FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient, AuthorId>
@@ -383,6 +409,7 @@ where
 		relay_chain_backend: Arc<RBackend>,
 		parachain_client: Arc<ParaClient>,
 		author: AuthorId,
+		keystore: SyncCryptoStorePtr,
 	) -> Self {
 		Self {
 			para_id,
@@ -394,6 +421,7 @@ where
 			relay_chain_client,
 			parachain_client,
 			author,
+			keystore,
 		}
 	}
 
@@ -445,6 +473,7 @@ where
 			self.relay_chain_backend,
 			self.parachain_client,
 			self.author,
+			self.keystore,
 		))
 	}
 }
