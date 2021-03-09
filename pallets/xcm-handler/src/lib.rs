@@ -108,6 +108,7 @@ decl_module! {
 }
 
 impl<T: Config> Module<T> {
+	/// Execute an XCM message locally. Returns `DispatchError` if failed.
 	pub fn execute_xcm(origin: T::AccountId, xcm: Xcm) -> DispatchResult {
 		let xcm_origin = T::AccountIdConverter::try_into_location(origin)
 			.map_err(|_| Error::<T>::BadXcmOrigin)?;
