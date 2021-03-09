@@ -44,7 +44,7 @@ use codec::{Decode, Encode};
 use futures::{
 	channel::oneshot,
 	future::{ready, FutureExt},
-	pin_mut, select, Future,
+	Future,
 };
 
 use std::{convert::TryFrom, fmt, marker::PhantomData, pin::Pin, sync::Arc};
