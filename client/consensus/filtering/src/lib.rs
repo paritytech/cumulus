@@ -197,6 +197,15 @@ where
 		relay_parent: PHash,
 		validation_data: &PersistedValidationData,
 	) -> Option<ParachainCandidate<B>> {
+		// Design decision: We will check the keystore for any available keys. Then we will iterate
+		// those keys until we find one that is eligible. If none are eligible, we skip this slot.
+		// If multiple are eligible, we only author with the first one.
+		// The accountId that comes in from the service will no longer be used, and will ultimately
+		// be stripped out.
+		// We will insert the inherent manually here as Basti does for the parachain inherent. That
+		// may improve when/if his bkchr-inherent-something-future branch is merged, but it
+		// honestly doesn't feel that bad to me the way it is.
+		// Whew, I think that's al lthe stuff I was stuck on yesterday.
 
 		// As a first exercise, let's see whether the keystore has the private key associated with
 		// our author key.
