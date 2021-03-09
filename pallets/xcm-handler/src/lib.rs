@@ -1,4 +1,4 @@
-// Copyright 2020 Parity Technologies (UK) Ltd.
+// Copyright 2020-2021 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Substrate is free software: you can redistribute it and/or modify
@@ -27,8 +27,7 @@ use cumulus_primitives_core::{
 	DownwardMessageHandler, HrmpMessageHandler, HrmpMessageSender, InboundDownwardMessage,
 	InboundHrmpMessage, OutboundHrmpMessage, ParaId, UpwardMessageSender,
 };
-use frame_support::{decl_error, decl_event, decl_module, sp_runtime::traits::Hash};
-use frame_system::ensure_root;
+use frame_support::{decl_error, decl_event, decl_module, sp_runtime::traits::Hash, traits::EnsureOrigin};
 use sp_std::convert::{TryFrom, TryInto};
 use xcm::{
 	v0::{Error as XcmError, ExecuteXcm, Junction, MultiLocation, SendXcm, Xcm},
@@ -43,6 +42,9 @@ pub trait Config: frame_system::Config {
 	type UpwardMessageSender: UpwardMessageSender;
 	/// Something to send an HRMP message.
 	type HrmpMessageSender: HrmpMessageSender;
+	/// Required origin for sending XCM messages. Typically Root or parachain
+	/// council majority.
+	type SendXcmOrigin: EnsureOrigin<Self::Origin>;
 }
 
 decl_event! {
@@ -57,7 +59,7 @@ decl_event! {
 		BadFormat(Hash),
 		/// An upward message was sent to the relay chain.
 		UpwardMessageSent(Hash),
-		/// An HRMP message was sent to a sibling parachainchain.
+		/// An HRMP message was sent to a sibling parachain.
 		HrmpMessageSent(Hash),
 	}
 }
@@ -74,21 +76,21 @@ decl_module! {
 		fn deposit_event() = default;
 
 		#[weight = 1_000]
-		fn sudo_send_xcm(origin, dest: MultiLocation, message: Xcm) {
-			ensure_root(origin)?;
-			Self::send_xcm(dest, message).map_err(|_| Error::<T>::FailedToSend)?;
+		fn send_xcm(origin, dest: MultiLocation, message: Xcm) {
+			T::SendXcmOrigin::ensure_origin(origin)?;
+			<Self as SendXcm>::send_xcm(dest, message).map_err(|_| Error::<T>::FailedToSend)?;
 		}
 
 		#[weight = 1_000]
-		fn sudo_send_upward_xcm(origin, message: VersionedXcm) {
-			ensure_root(origin)?;
+		fn send_upward_xcm(origin, message: VersionedXcm) {
+			T::SendXcmOrigin::ensure_origin(origin)?;
 			let data = message.encode();
 			T::UpwardMessageSender::send_upward_message(data).map_err(|_| Error::<T>::FailedToSend)?;
 		}
 
 		#[weight = 1_000]
-		fn sudo_send_hrmp_xcm(origin, recipient: ParaId, message: VersionedXcm) {
-			ensure_root(origin)?;
+		fn send_hrmp_xcm(origin, recipient: ParaId, message: VersionedXcm) {
+			T::SendXcmOrigin::ensure_origin(origin)?;
 			let data = message.encode();
 			let outbound_message = OutboundHrmpMessage {
 				recipient,
@@ -102,25 +104,26 @@ decl_module! {
 impl<T: Config> DownwardMessageHandler for Module<T> {
 	fn handle_downward_message(msg: InboundDownwardMessage) {
 		let hash = msg.using_encoded(T::Hashing::hash);
-		frame_support::debug::print!("Processing Downward XCM: {:?}", &hash);
-		match VersionedXcm::decode(&mut &msg.msg[..]).map(Xcm::try_from) {
+		log::debug!("Processing Downward XCM: {:?}", &hash);
+		let event = match VersionedXcm::decode(&mut &msg.msg[..]).map(Xcm::try_from) {
 			Ok(Ok(xcm)) => {
 				match T::XcmExecutor::execute_xcm(Junction::Parent.into(), xcm) {
 					Ok(..) => RawEvent::Success(hash),
 					Err(e) => RawEvent::Fail(hash, e),
-				};
+				}
 			}
-			Ok(Err(..)) => Self::deposit_event(RawEvent::BadVersion(hash)),
-			Err(..) => Self::deposit_event(RawEvent::BadFormat(hash)),
-		}
+			Ok(Err(..)) => RawEvent::BadVersion(hash),
+			Err(..) => RawEvent::BadFormat(hash),
+		};
+		Self::deposit_event(event);
 	}
 }
 
 impl<T: Config> HrmpMessageHandler for Module<T> {
 	fn handle_hrmp_message(sender: ParaId, msg: InboundHrmpMessage) {
 		let hash = msg.using_encoded(T::Hashing::hash);
-		frame_support::debug::print!("Processing HRMP XCM: {:?}", &hash);
-		match VersionedXcm::decode(&mut &msg.data[..]).map(Xcm::try_from) {
+		log::debug!("Processing HRMP XCM: {:?}", &hash);
+		let event = match VersionedXcm::decode(&mut &msg.data[..]).map(Xcm::try_from) {
 			Ok(Ok(xcm)) => {
 				let location = (
 					Junction::Parent,
@@ -129,11 +132,12 @@ impl<T: Config> HrmpMessageHandler for Module<T> {
 				match T::XcmExecutor::execute_xcm(location.into(), xcm) {
 					Ok(..) => RawEvent::Success(hash),
 					Err(e) => RawEvent::Fail(hash, e),
-				};
+				}
 			}
-			Ok(Err(..)) => Self::deposit_event(RawEvent::BadVersion(hash)),
-			Err(..) => Self::deposit_event(RawEvent::BadFormat(hash)),
-		}
+			Ok(Err(..)) => RawEvent::BadVersion(hash),
+			Err(..) => RawEvent::BadFormat(hash),
+		};
+		Self::deposit_event(event);
 	}
 }
 
@@ -153,28 +157,23 @@ impl<T: Config> SendXcm for Module<T> {
 				let hash = T::Hashing::hash(&data);
 
 				T::UpwardMessageSender::send_upward_message(data)
-					.map_err(|_| XcmError::Undefined)?;
+					.map_err(|_| XcmError::CannotReachDestination)?;
 				Self::deposit_event(RawEvent::UpwardMessageSent(hash));
 
 				Ok(())
 			}
 			// An HRMP message for a sibling parachain.
-			Some(Junction::Parent) if dest.len() == 2 => {
-				if let Some(Junction::Parachain { id }) = dest.at(1) {
-					let data = msg.encode();
-					let hash = T::Hashing::hash(&data);
-					let message = OutboundHrmpMessage {
-						recipient: (*id).into(),
-						data,
-					};
-					// TODO: Better error here
-					T::HrmpMessageSender::send_hrmp_message(message)
-						.map_err(|_| XcmError::Undefined)?;
-					Self::deposit_event(RawEvent::HrmpMessageSent(hash));
-					Ok(())
-				} else {
-					Err(XcmError::UnhandledXcmMessage)
-				}
+			Some(Junction::Parachain { id }) => {
+				let data = msg.encode();
+				let hash = T::Hashing::hash(&data);
+				let message = OutboundHrmpMessage {
+					recipient: (*id).into(),
+					data,
+				};
+				T::HrmpMessageSender::send_hrmp_message(message)
+					.map_err(|_| XcmError::CannotReachDestination)?;
+				Self::deposit_event(RawEvent::HrmpMessageSent(hash));
+				Ok(())
 			}
 			_ => {
 				/* TODO: Handle other cases, like downward message */
