@@ -137,6 +137,10 @@ where
 		.inherent_data_providers
 		.register_provider(sp_timestamp::InherentDataProvider)
 		.unwrap();
+	// This was originally installed before authoring with any key present in the keystore was supported.
+	// I guess it is harmless as long as the author param isn't passed. Here, there is no risk of that
+	// But in moonbeam there is a flag. So we should either remove the flag and use fo this provider
+	// or leave the flag and give the filtering consensus an option to use only that one id.
 	if let Some(ref author) = author {
 		params
 			.inherent_data_providers
