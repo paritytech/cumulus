@@ -37,6 +37,7 @@ use sp_runtime::{
 };
 use sp_std::vec::Vec;
 use log::debug;
+// use sp_application_crypto::AppKey;
 
 /// The given account ID is the author of the current block.
 pub trait EventHandler<Author> {
@@ -192,16 +193,16 @@ impl InherentError {
 
 /// The type of data that the inherent will contain.
 /// Just a byte array. It will be decoded to an actual account id later.
-pub type InherentType = Vec<u8>;
+pub type InherentType<T: Config> = T::AuthorId;
 
 /// A thing that an outer node could use to inject the inherent data.
 /// This should be used in simple uses of the author inherent (eg permissionless authoring)
 /// When using the full nimbus system, we are manually inserting the  inherent.
 #[cfg(feature = "std")]
-pub struct InherentDataProvider(pub InherentType);
+pub struct InherentDataProvider<T: Config>(pub InherentType<T>);
 
 #[cfg(feature = "std")]
-impl ProvideInherentData for InherentDataProvider {
+impl<T: Config> ProvideInherentData for InherentDataProvider<T> {
 	fn inherent_identifier(&self) -> &'static InherentIdentifier {
 		&INHERENT_IDENTIFIER
 	}
@@ -234,15 +235,20 @@ impl<T: Config> ProvideInherent for Module<T> {
 	fn create_inherent(data: &InherentData) -> Option<Self::Call> {
 		// Grab the Vec<u8> labelled with "author__" from the map of all inherent data
 		let author_raw = data
-			.get_data::<InherentType>(&INHERENT_IDENTIFIER)
+			.get_data::<InherentType<T>>(&INHERENT_IDENTIFIER);
+
+		debug!("In create_inherent (runtime side). data is");
+		debug!("{:?}", author_raw);
+
+		let author = author_raw
 			.expect("Gets and decodes authorship inherent data")?;
 
 		//TODO we need to make the author _prove_ their identity, not just claim it.
 		// we should have them sign something here. Best idea so far: parent block hash.
 
 		// Decode the Vec<u8> into an account Id
-		let author =
-			T::AuthorId::decode(&mut &author_raw[..]).expect("Decodes author raw inherent data");
+		// let author =
+		// 	T::AuthorId::decode(&mut &author_raw[..]).expect("Decodes author raw inherent data");
 
 		Some(Call::set_author(author))
 	}

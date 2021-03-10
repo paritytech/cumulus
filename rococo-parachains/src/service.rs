@@ -141,12 +141,12 @@ where
 	// I guess it is harmless as long as the author param isn't passed. Here, there is no risk of that
 	// But in moonbeam there is a flag. So we should either remove the flag and use fo this provider
 	// or leave the flag and give the filtering consensus an option to use only that one id.
-	if let Some(ref author) = author {
-		params
-			.inherent_data_providers
-			.register_provider(pallet_author_inherent::InherentDataProvider(author.encode()))
-			.unwrap();
-	}
+	// if let Some(ref author) = author {
+	// 	params
+	// 		.inherent_data_providers
+	// 		.register_provider(pallet_author_inherent::InherentDataProvider::<parachain_runtime::Runtime>(author.encode()))
+	// 		.unwrap();
+	// }
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -208,6 +208,7 @@ where
 		);
 		let spawner = task_manager.spawn_handle();
 
+		use sp_core::crypto::Ss58Codec;
 		let parachain_consensus = build_filtering_consensus(BuildFilteringConsensusParams {
 			para_id: id,
 			proposer_factory,
@@ -216,10 +217,9 @@ where
 			relay_chain_client: polkadot_full_node.client.clone(),
 			relay_chain_backend: polkadot_full_node.backend.clone(),
 			parachain_client: client.clone(),
-			//TODO There is also this thing called collator key. Maybe I could use that here?
-			//TODO Should we keep the author field after we get the keystore working?
+			//TODO Should we keep the author field as optional to indicate which of multiple keys to use?
 			// What if there are multiple authoring keys in the keystore at once?
-			author: author.expect("collating nodes should have an author id."),
+			author: AccountId32::from_ss58check("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").expect("I'll just use alice to satisfy the compiler."),
 			keystore: params.keystore_container.sync_keystore(),
 		});
 
