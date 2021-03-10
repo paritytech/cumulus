@@ -22,6 +22,7 @@ use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
+use author_filter_api::NimbusId;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<parachain_runtime::GenesisConfig, Extensions>;
@@ -147,8 +148,8 @@ fn testnet_genesis(
 		}),
 		pallet_account_set: Some(parachain_runtime::PotentialAuthorSetConfig {
 			stored_accounts: vec![
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				get_account_id_from_seed::<sr25519::Public>("Bob"),
+				get_from_seed::<NimbusId>("Alice"),
+				get_from_seed::<NimbusId>("Bob"),
 			]
 		})
 	}

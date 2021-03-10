@@ -42,7 +42,7 @@ use cumulus_primitives_core::{
 };
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use import_queue::import_queue;
-use log::info;
+use log::{info, warn};
 use parking_lot::Mutex;
 use polkadot_service::ClientHandle;
 use sc_client_api::Backend;
@@ -57,6 +57,12 @@ use sp_runtime::KeyTypeId;
 use std::{marker::PhantomData, sync::Arc, time::Duration};
 use tracing::error;
 use sp_keystore::{SyncCryptoStorePtr, SyncCryptoStore};
+// woof the naming
+use author_filter_api::{NIMBUS_KEY_ID, NimbusId};
+use sp_application_crypto::{AppKey, AppPublic, Pair, TryFrom, Public};
+use sp_runtime::traits::{Member, Hash};
+use codec::{Encode, Decode};
+use core::fmt::Debug;
 
 mod import_queue;
 
@@ -132,7 +138,9 @@ where
 		&self,
 		validation_data: &PersistedValidationData,
 		relay_parent: PHash,
+		author_id: &NimbusId,
 	) -> Option<InherentData> {
+		// Build the inherents that use normal inherent data providers.
 		let mut inherent_data = self
 			.inherent_data_providers
 			.create_inherent_data()
@@ -145,6 +153,8 @@ where
 			})
 			.ok()?;
 
+		// Now manually build and attach the parachain one.
+		// This is the same as in RelayChainConsensus.
 		let parachain_inherent_data = ParachainInherentData::create_at(
 			relay_parent,
 			&*self.relay_chain_client,
@@ -163,6 +173,19 @@ where
 					target: LOG_TARGET,
 					error = ?e,
 					"Failed to put the system inherent into inherent data.",
+				)
+			})
+			.ok()?;
+
+		// Now manually attach the author one.
+		inherent_data
+			//TODO import the inherent id from somewhere. Currently it is defined in the pallet.
+			.put_data(*b"author__", author_id)
+			.map_err(|e| {
+				error!(
+					target: LOG_TARGET,
+					error = ?e,
+					"Failed to put the author inherent into inherent data.",
 				)
 			})
 			.ok()?;
@@ -188,7 +211,7 @@ where
 		Proof = <EnableProofRecording as ProofRecording>::Proof,
 	>,
 	ParaClient: ProvideRuntimeApi<B> + Send + Sync,
-	ParaClient::Api: AuthorFilterAPI<B, AuthorId>,
+	ParaClient::Api: AuthorFilterAPI<B>,
 	AuthorId: Send + Sync + Clone + Codec,
 {
 	async fn produce_candidate(
@@ -207,33 +230,71 @@ where
 		// honestly doesn't feel that bad to me the way it is.
 		// Whew, I think that's al lthe stuff I was stuck on yesterday.
 
-		// As a first exercise, let's see whether the keystore has the private key associated with
-		// our author key.
-		// Static method style copied from Aura. I wonder if it is necessary?
-		let have_key: bool = SyncCryptoStore::has_keys(
-			//TODO do I need to clone the keystore first? I don't think so. Aura does because of
-			// some fancy higher order thing.
-			&*self.keystore,
-			&vec![(self.author.encode(), KeyTypeId(*b"nmbs"))]
-		);
+		// We're using the Trait names when calling keystore methods because of this.
+		// Hopefully switching to the async keystore will make the code sexier:
+		// error[E0034]: multiple applicable items in scope
+		//    --> client/consensus/filtering/src/lib.rs:213:38
+		//     |
+		// 213 |         let have_key: bool = self.keystore.has_keys(
+		//     |                                            ^^^^^^^^ multiple `has_keys` found
+		//     |
+		// note: candidate #1 is defined in the trait `SyncCryptoStore`
+		//    --> /home/joshy/.cargo/git/checkouts/substrate-7e08433d4c370a21/a8c2bc6/primitives/keystore/src/lib.rs:278:2
+		//     |
+		// 278 |     fn has_keys(&self, public_keys: &[(Vec<u8>, KeyTypeId)]) -> bool;
+		//     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+		// note: candidate #2 is defined in the trait `CryptoStore`
+		//    --> /home/joshy/.cargo/git/checkouts/substrate-7e08433d4c370a21/a8c2bc6/primitives/keystore/src/lib.rs:118:2
+		//     |
+		// 118 |     async fn has_keys(&self, public_keys: &[(Vec<u8>, KeyTypeId)]) -> bool;
+		//     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+		// help: disambiguate the associated function for candidate #1
+		//     |
+		// 213 |         let have_key: bool = SyncCryptoStore::has_keys(self.keystore, &vec![(self.author.encode(), KeyTypeId(*b"nmbs"))]);
+		//     |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+		// help: disambiguate the associated function for candidate #2
+		//     |
+		// 213 |         let have_key: bool = CryptoStore::has_keys(self.keystore, &vec![(self.author.encode(), KeyTypeId(*b"nmbs"))]);
+		//     |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-		// This is working. Tested by inserting keys into running nodes via polkadot js.
-		// It says true when the right key is inserted. Says false (Correctly) when:
-		// * Key is not present
-		// * Key is present under incorect type
-		println!("Does the keystore have to key associated with the account-id flag: {:?}", have_key);
 
-		let eligible = self.parachain_client.runtime_api()
-			.can_author(&BlockId::Hash(parent.hash()), self.author.clone(), validation_data.relay_parent_number)
-			.expect("Author API should not return error");
+		// Get allthe available keys
+		// I don't know why I had to call the crypto-specific method as opposed to just "keys",
+		// but this is the one that returns the `Public` type I (think I ) need.
+		// Ughhh, it still doesn't return NimbusId. I hope this will work somehow.
+		// note: expected struct `Vec<author_filter_api::app::Public>`
+    	//          found struct `Vec<sp_core::sr25519::Public>`
+		let available_keys/*: Vec<NimbusId>*/ =
+			SyncCryptoStore::sr25519_public_keys(&*self.keystore, NIMBUS_KEY_ID);
 
-		if !eligible {
-			info!(
-				target: LOG_TARGET,
-				"🔮 Skipping candidate production because we are not eligible"
-			);
-			return None;
+		// Print a more helpful message than "not eligible" when there are no keys at all.
+		if available_keys.is_empty() {
+			warn!(target: LOG_TARGET, "No Nimbus keys available. We will not be able to author.");
 		}
+
+		// Iterate keys until we find an eligible one, or run out of candidates.
+		let maybe_key = available_keys.into_iter().find(|k| {
+			self.parachain_client.runtime_api()
+				.can_author(
+					&BlockId::Hash(parent.hash()),
+					//Holy shit I think that worked!
+					From::from(*k),
+					validation_data.relay_parent_number
+				)
+				.expect("Author API should not return error")
+		});
+
+		// If there are no eligible keys, print the log, and exit early.
+		let author_id: NimbusId = match maybe_key {
+			Some(key) => From::from(key),
+			None => {
+				info!(
+					target: LOG_TARGET,
+					"🔮 Skipping candidate production because we are not eligible"
+				);
+				return None;
+			}
+		};
 
 		let proposer_future = self.proposer_factory.lock().init(&parent);
 
@@ -244,7 +305,7 @@ where
 			)
 			.ok()?;
 
-		let inherent_data = self.inherent_data(&validation_data, relay_parent)?;
+		let inherent_data = self.inherent_data(&validation_data, relay_parent, &author_id)?;
 
 		let Proposal {
 			block,
@@ -265,7 +326,36 @@ where
 
 		let pre_hash = header.hash();
 
+		// To sign I need the "CryptoTypePublicPair" I can't make it because I don't know wft the crypto type is
+		// I can't just grab it to begin with, because I can't convert the unsized [u8] it goves me to a NimbusId
+		// I wish the jeystore interface amde a little more sense. Maybe I should be passing opaque data
+		// into the runtime api afterall?
+		// Observation: Aura has a type paramaeter P that is set (explicitly) to `AuraPair` when called
+		// From the service. Maybe I need to do that here as well. P has several trait bounds that may help.
+		//
+		// let type_public_pair =
+		// 	SyncCryptoStore::keys(&*self.keystore, NIMBUS_KEY_ID)
+		// 	.expect("fetching the keys succeeded")
+		// 	.iter()
+		// 	.find(|p| {
+		// 		&p.1 == author_id.0
+		// 	})
+		// 	.expect("The key should be there, because we already found it earlier.");
+		//
+		// let sig = SyncCryptoStore::sign_with(
+		// 	&*self.keystore,
+		// 	NIMBUS_KEY_ID,
+		// 	type_public_pair,
+		// 	pre_hash,
+		// ).ok_or_else(|| {
+		// 	println!("Signing failed!!");
+		// 	return None;
+		// });
+		//
+		// println!("The signature is \n{:?}", sig);
+
 		// Add a silly test digest, just to get familiar with how it works
+		// TODO better identifier and stuff.
 		let test_digest = sp_runtime::generic::DigestItem::Seal(*b"test", Vec::new());
 
 		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header.clone());
@@ -360,7 +450,7 @@ where
 	// Rust bug: https://github.com/rust-lang/rust/issues/24159
 	sc_client_api::StateBackendFor<RBackend, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
 	ParaClient: ProvideRuntimeApi<Block> + Send + Sync + 'static,
-	ParaClient::Api: AuthorFilterAPI<Block, AuthorId>,
+	ParaClient::Api: AuthorFilterAPI<Block>,
 	AuthorId: Send + Sync + Clone + 'static + Codec,
 {
 	FilteringConsensusBuilder::new(
@@ -442,7 +532,7 @@ where
 	/// Build the relay chain consensus.
 	fn build(self) -> Box<dyn ParachainConsensus<Block>>
 	where
-		ParaClient::Api: AuthorFilterAPI<Block, AuthorId>,
+		ParaClient::Api: AuthorFilterAPI<Block>,
 	{
 		self.relay_chain_client.clone().execute_with(self)
 	}
@@ -464,7 +554,7 @@ where
 	BI: BlockImport<Block> + Send + Sync + 'static,
 	RBackend: Backend<PBlock> + 'static,
 	ParaClient: ProvideRuntimeApi<Block> + Send + Sync + 'static,
-	ParaClient::Api: AuthorFilterAPI<Block, AuthorId>,
+	ParaClient::Api: AuthorFilterAPI<Block>,
 	AuthorId: Send + Sync + Clone + Codec + 'static,
 {
 	type Output = Box<dyn ParachainConsensus<Block>>;
@@ -476,7 +566,7 @@ where
 		PBackend::State: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
 		Api: polkadot_service::RuntimeApiCollection<StateBackend = PBackend::State>,
 		PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
-		ParaClient::Api: AuthorFilterAPI<Block, AuthorId>,
+		ParaClient::Api: AuthorFilterAPI<Block>,
 	{
 		Box::new(FilteringConsensus::new(
 			self.para_id,

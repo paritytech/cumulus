@@ -64,6 +64,7 @@ cumulus-client-service = { path = "../client/service" }
 cumulus-client-network = { path = "../client/network" }
 cumulus-primitives-core = { path = "../primitives/core" }
 pallet-author-inherent = { path = "../pallets/author-inherent" }
+author-filter-api = { path = "../client/consensus/filtering/runtime-api"}
 
 # Polkadot dependencies
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }

@@ -194,7 +194,9 @@ impl InherentError {
 /// Just a byte array. It will be decoded to an actual account id later.
 pub type InherentType = Vec<u8>;
 
-/// The thing that the outer node will use to actually inject the inherent data
+/// A thing that an outer node could use to inject the inherent data.
+/// This should be used in simple uses of the author inherent (eg permissionless authoring)
+/// When using the full nimbus system, we are manually inserting the  inherent.
 #[cfg(feature = "std")]
 pub struct InherentDataProvider(pub InherentType);
 

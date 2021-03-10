@@ -1208,6 +1208,7 @@ dependencies = [
  "polkadot-service",
  "sc-client-api",
  "sp-api",
+ "sp-application-crypto",
  "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
@@ -7218,6 +7219,7 @@ name = "rococo-collator"
 version = "0.1.0"
 dependencies = [
  "assert_cmd",
+ "author-filter-api",
  "cumulus-cli",
  "cumulus-client-collator",
  "cumulus-client-consensus-filter",

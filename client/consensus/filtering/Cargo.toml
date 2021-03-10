@@ -17,6 +17,10 @@ sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "mas
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
+# This is prep work for wiring a generic type P through like Aura does.
+# I think that will be necessary to get the NimbusId I need to check eligibility and the Pair I need to sign.
+sp-application-crypto = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
 # Polkadot dependencies
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master", features = [ "real-overseer" ] }
 
