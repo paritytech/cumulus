@@ -21,10 +21,6 @@
 mod chain_spec;
 mod genesis;
 
-pub use chain_spec::*;
-pub use cumulus_test_runtime as runtime;
-pub use genesis::*;
-
 use core::future::Future;
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
@@ -52,6 +48,11 @@ use sp_state_machine::BasicExternalities;
 use sp_trie::PrefixedMemoryDB;
 use std::sync::Arc;
 use substrate_test_client::BlockchainEventsExt;
+
+pub use chain_spec::*;
+pub use cumulus_test_runtime as runtime;
+pub use genesis::*;
+pub use sp_keyring::Sr25519Keyring as Keyring;
 
 // Native executor instance.
 native_executor_instance!(
@@ -215,7 +216,7 @@ where
 
 	let announce_block = {
 		let network = network.clone();
-		Arc::new(move |hash, data| network.announce_block(hash, Some(data)))
+		Arc::new(move |hash, data| network.announce_block(hash, data))
 	};
 
 	if let Some(collator_key) = collator_key {
