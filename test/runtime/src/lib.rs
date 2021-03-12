@@ -380,3 +380,11 @@ impl_runtime_apis! {
 }
 
 cumulus_pallet_parachain_system::register_validate_block!(Runtime, Executive);
+
+pub struct VersionUpgradeOnRuntimeUpgrade;
+impl frame_support::traits::OnRuntimeUpgrade for VersionUpgradeOnRuntimeUpgrade {
+	fn on_runtime_upgrade() -> u64 {
+		VersionUpgrade::set(&true);
+		0
+	}
+}
