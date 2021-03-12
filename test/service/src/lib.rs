@@ -238,7 +238,7 @@ where
 			collator_key,
 			polkadot_full_node,
 			polkadot_backend,
-			parachain_logs_prefix: Some(format!("{} (parachain)", node_name)),
+			parachain_logs_prefix: Some(node_name.to_string()),
 		};
 
 		start_collator(params).await?;
