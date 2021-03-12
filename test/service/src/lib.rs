@@ -45,13 +45,21 @@ use sc_service::{
 	BasePath, ChainSpec, Configuration, Error as ServiceError, PartialComponents, Role,
 	RpcHandlers, TFullBackend, TFullClient, TaskExecutor, TaskManager,
 };
+use sp_arithmetic::traits::SaturatedConversion;
+use sp_blockchain::HeaderBackend;
 use sp_core::{Pair, H256};
 use sp_keyring::Sr25519Keyring;
-use sp_runtime::traits::BlakeTwo256;
+use sp_runtime::{
+	codec::Encode,
+	generic,
+	traits::BlakeTwo256
+};
 use sp_state_machine::BasicExternalities;
 use sp_trie::PrefixedMemoryDB;
 use std::sync::Arc;
-use substrate_test_client::BlockchainEventsExt;
+use substrate_test_client::{
+	BlockchainEventsExt, RpcHandlersExt, RpcTransactionError, RpcTransactionOutput,
+};
 
 // Native executor instance.
 native_executor_instance!(
@@ -59,6 +67,9 @@ native_executor_instance!(
 	cumulus_test_runtime::api::dispatch,
 	cumulus_test_runtime::native_version,
 );
+
+/// The client type being used by the test service.
+pub type Client = TFullClient<runtime::NodeBlock, runtime::RuntimeApi, RuntimeExecutor>;
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
@@ -68,11 +79,11 @@ pub fn new_partial(
 	config: &mut Configuration,
 ) -> Result<
 	PartialComponents<
-		TFullClient<Block, RuntimeApi, RuntimeExecutor>,
+		Client,
 		TFullBackend<Block>,
 		(),
 		sp_consensus::import_queue::BasicQueue<Block, PrefixedMemoryDB<BlakeTwo256>>,
-		sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, RuntimeExecutor>>,
+		sc_transaction_pool::FullPool<Block, Client>,
 		(),
 	>,
 	sc_service::Error,
@@ -273,7 +284,7 @@ pub struct CumulusTestNode {
 	/// TaskManager's instance.
 	pub task_manager: TaskManager,
 	/// Client's instance.
-	pub client: Arc<TFullClient<Block, RuntimeApi, RuntimeExecutor>>,
+	pub client: Arc<Client>,
 	/// Node's network.
 	pub network: Arc<NetworkService<Block, H256>>,
 	/// The `MultiaddrWithPeerId` to this node. This is useful if you want to pass it as "boot node"
@@ -452,4 +463,70 @@ impl CumulusTestNode {
 	pub fn wait_for_blocks(&self, count: usize) -> impl Future<Output = ()> {
 		self.client.wait_for_blocks(count)
 	}
+
+	/// Send an extrinsic to this node.
+	pub async fn send_extrinsic(
+		&self,
+		function: impl Into<runtime::Call>,
+		caller: Sr25519Keyring,
+	) -> Result<RpcTransactionOutput, RpcTransactionError> {
+		let extrinsic = construct_extrinsic(&*self.client, function, caller);
+
+		self.rpc_handlers.send_transaction(extrinsic.into()).await
+	}
+
+	/// Register a parachain at this relay chain.
+	pub async fn schedule_upgrade(&self) -> Result<(), RpcTransactionError> {
+		let call = runtime::ParachainSystem::schedule_upgrade(
+			None.into(),
+			vec![],
+		);
+
+		self.send_extrinsic(runtime::SudoCall::sudo(Box::new(call.into())), Sr25519Keyring::Alice).await.map(drop)
+	}
+}
+
+/// Construct an extrinsic that can be applied to the test runtime.
+pub fn construct_extrinsic(
+	client: &Client,
+	function: impl Into<runtime::Call>,
+	caller: Sr25519Keyring,
+) -> runtime::UncheckedExtrinsic {
+	let function = function.into();
+	let current_block_hash = client.info().best_hash;
+	let current_block = client.info().best_number.saturated_into();
+	let genesis_block = client.hash(0).unwrap().unwrap();
+	let nonce = 0;
+	let period = runtime::BlockHashCount::get()
+		.checked_next_power_of_two()
+		.map(|c| c / 2)
+		.unwrap_or(2) as u64;
+	let tip = 0;
+	let extra: runtime::SignedExtra = (
+		frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
+		frame_system::CheckGenesis::<runtime::Runtime>::new(),
+		frame_system::CheckEra::<runtime::Runtime>::from(generic::Era::mortal(period, current_block)),
+		frame_system::CheckNonce::<runtime::Runtime>::from(nonce),
+		frame_system::CheckWeight::<runtime::Runtime>::new(),
+		pallet_transaction_payment::ChargeTransactionPayment::<runtime::Runtime>::from(tip),
+	);
+	let raw_payload = runtime::SignedPayload::from_raw(
+		function.clone(),
+		extra.clone(),
+		(
+			runtime::VERSION.spec_version,
+			genesis_block,
+			current_block_hash,
+			(),
+			(),
+			(),
+		),
+	);
+	let signature = raw_payload.using_encoded(|e| caller.sign(e));
+	runtime::UncheckedExtrinsic::new_signed(
+		function.clone(),
+		caller.public().into(),
+		runtime::Signature::Sr25519(signature.clone()),
+		extra.clone(),
+	)
 }
