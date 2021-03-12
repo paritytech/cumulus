@@ -1050,6 +1050,7 @@ dependencies = [
  "polkadot-test-client",
  "sc-cli",
  "sc-client-api",
+ "sc-tracing",
  "sp-api",
  "sp-blockchain",
  "sp-consensus",

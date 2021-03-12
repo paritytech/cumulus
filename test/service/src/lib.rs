@@ -143,6 +143,7 @@ where
 		return Err("Light client not supported!".into());
 	}
 
+	let node_name = parachain_config.network.node_name.clone();
 	let mut parachain_config = prepare_node_config(parachain_config);
 
 	let params = new_partial(&mut parachain_config)?;
@@ -237,6 +238,7 @@ where
 			collator_key,
 			polkadot_full_node,
 			polkadot_backend,
+			parachain_logs_prefix: Some(format!("{} (parachain)", node_name)),
 		};
 
 		start_collator(params).await?;

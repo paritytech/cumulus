@@ -618,6 +618,7 @@ pub struct StartCollatorParams<Block: BlockT, PF, BI, Backend, BS, Spawner, PCli
 	pub key: CollatorPair,
 	pub polkadot_client: Arc<PClient>,
 	pub polkadot_backend: Arc<PBackend>,
+	pub parachain_logs_prefix: Option<String>,
 }
 
 pub async fn start_collator<
@@ -645,6 +646,7 @@ pub async fn start_collator<
 		key,
 		polkadot_client,
 		polkadot_backend,
+		parachain_logs_prefix,
 	}: StartCollatorParams<Block, PF, BI, Backend, BS, Spawner, PClient, PBackend2>,
 ) -> Result<(), String>
 where
@@ -681,6 +683,13 @@ where
 		key,
 		para_id,
 		collator: Box::new(move |relay_parent, validation_data| {
+			let span = parachain_logs_prefix
+				.as_ref()
+				.map(|name| sc_tracing::tracing::info_span!(
+					sc_tracing::logging::PREFIX_LOG_SPAN,
+					name = name.as_str(),
+				));
+			let _enter = span.as_ref().map(|x| x.enter());
 			let collator = collator.clone();
 			collator
 				.produce_candidate(relay_parent, validation_data.clone())
