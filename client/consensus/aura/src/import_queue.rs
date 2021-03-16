@@ -31,6 +31,7 @@ use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::traits::{Block as BlockT, DigestItemFor};
 use std::{fmt::Debug, hash::Hash, sync::Arc};
 use substrate_prometheus_endpoint::Registry;
+use sc_telemetry::TelemetryHandle;
 
 /// Parameters of [`import_queue`].
 pub struct ImportQueueParams<'a, I, C, IDP, S, CAW> {
@@ -46,6 +47,8 @@ pub struct ImportQueueParams<'a, I, C, IDP, S, CAW> {
 	pub registry: Option<&'a Registry>,
 	/// Can we author with the current node?
 	pub can_author_with: CAW,
+	/// The telemetry handle.
+	pub telemetry: Option<TelemetryHandle>,
 }
 
 /// Start an import queue for the Aura consensus algorithm.
@@ -57,6 +60,7 @@ pub fn import_queue<'a, P, Block, I, C, S, CAW, IDP>(
 		spawner,
 		registry,
 		can_author_with,
+		telemetry,
 	}: ImportQueueParams<'a, I, C, IDP, S, CAW>,
 ) -> Result<DefaultImportQueue<Block, C>, sp_consensus::Error>
 where
@@ -92,5 +96,6 @@ where
 		registry,
 		can_author_with,
 		check_for_equivocation: sc_consensus_aura::CheckForEquivocation::No,
+		telemetry,
 	})
 }

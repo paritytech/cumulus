@@ -37,31 +37,37 @@ use codec::{Decode, Encode};
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_primitives_core::{
 	relay_chain::v1::{Block as PBlock, Hash as PHash, ParachainHost},
-	ParaId, PersistedValidationData,
+	PersistedValidationData,
 };
-use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use parking_lot::Mutex;
 use polkadot_service::ClientHandle;
 use sc_client_api::{backend::AuxStore, Backend, BlockOf};
 use sc_consensus_slots::{BackoffAuthoringBlocksStrategy, SlotInfo};
+use sc_telemetry::TelemetryHandle;
 use sp_api::ProvideRuntimeApi;
 use sp_application_crypto::AppPublic;
 use sp_blockchain::{HeaderBackend, ProvideCache};
 use sp_consensus::{
-	BlockImport, BlockImportParams, BlockOrigin, EnableProofRecording, Environment,
-	ForkChoiceStrategy, ProofRecording, Proposal, Proposer, SlotData, SyncOracle,
+	BlockImport, EnableProofRecording, Environment, ProofRecording, Proposer, SlotData, SyncOracle,
 };
 use sp_consensus_aura::AuraApi;
 use sp_core::crypto::Pair;
 use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvider};
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT, Member, NumberFor};
-use std::{convert::TryFrom, hash::Hash, marker::PhantomData, sync::Arc};
+use std::{
+	convert::TryFrom,
+	hash::Hash,
+	marker::PhantomData,
+	sync::Arc,
+	time::Duration,
+};
 
 mod import_queue;
 
 pub use import_queue::{import_queue, ImportQueueParams};
-pub use sc_consensus_aura::{slot_duration, SlotDuration};
+pub use sc_consensus_aura::{slot_duration, SlotDuration, SlotProportion};
+pub use sc_consensus_slots::InherentDataProviderExt;
 
 const LOG_TARGET: &str = "aura::cumulus";
 
@@ -99,6 +105,7 @@ where
 	RClient::Api: ParachainHost<PBlock>,
 	RBackend: Backend<PBlock>,
 	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)>,
+	CIDP::InherentDataProviders: InherentDataProviderExt,
 {
 	/// Create a new instance of AURA consensus.
 	pub fn new<P, Client, BI, SO, PF, BS, Error>(
@@ -113,6 +120,8 @@ where
 		polkadot_client: Arc<RClient>,
 		polkadot_backend: Arc<RBackend>,
 		slot_duration: SlotDuration,
+		telemetry: Option<TelemetryHandle>,
+		block_proposal_slot_portion: SlotProportion,
 	) -> Self
 	where
 		Client: ProvideRuntimeApi<B>
@@ -148,6 +157,8 @@ where
 			force_authoring,
 			backoff_authoring_blocks,
 			keystore,
+			telemetry,
+			block_proposal_slot_portion,
 		);
 
 		Self {
@@ -159,13 +170,15 @@ where
 		}
 	}
 
-	/// Get the inherent data with validation function parameters injected
+	/// Create the inherent data.
+	///
+	/// Returns the created inherent data and the inherent data providers used.
 	async fn inherent_data(
 		&self,
 		parent: B::Hash,
 		validation_data: &PersistedValidationData,
 		relay_parent: PHash,
-	) -> Option<InherentData> {
+	) -> Option<(InherentData, CIDP::InherentDataProviders)> {
 		let inherent_data_providers = self
 			.inherent_data_providers
 			.create_inherent_data_providers(parent, (relay_parent, validation_data.clone()))
@@ -189,6 +202,7 @@ where
 				)
 			})
 			.ok()
+			.map(|d| (d, inherent_data_providers))
 	}
 }
 
@@ -200,6 +214,7 @@ where
 	RClient::Api: ParachainHost<PBlock>,
 	RBackend: Backend<PBlock>,
 	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)> + Send + Sync,
+	CIDP::InherentDataProviders: InherentDataProviderExt + Send,
 {
 	async fn produce_candidate(
 		&mut self,
@@ -207,20 +222,17 @@ where
 		relay_parent: PHash,
 		validation_data: &PersistedValidationData,
 	) -> Option<ParachainCandidate<B>> {
-		let timestamp = std::time::SystemTime::now()
-			.duration_since(std::time::SystemTime::UNIX_EPOCH)
-			.unwrap();
+		let (inherent_data, inherent_data_providers) = self
+			.inherent_data(parent.hash(), validation_data, relay_parent)
+			.await?;
 
-		let info = SlotInfo {
-			slot: ((timestamp.as_millis() / 12000) as u64).into(),
-			duration: self.slot_duration.slot_duration(),
-			inherent_data: self
-				.inherent_data(parent.hash(), validation_data, relay_parent)
-				.await?,
-			chain_head: parent.clone(),
-			timestamp,
-			ends_at: std::time::Instant::now() + std::time::Duration::from_millis(500),
-		};
+		let info = SlotInfo::new(
+			inherent_data_providers.slot(),
+			inherent_data_providers.timestamp().as_duration(),
+			inherent_data,
+			Duration::from_millis(self.slot_duration.slot_duration()),
+			parent.clone(),
+		);
 
 		let future = self.aura_worker.lock().on_slot(info);
 		let res = future.await?;
@@ -245,6 +257,8 @@ pub struct BuildAuraConsensusParams<PF, BI, RBackend, CIDP, Client, BS, SO> {
 	pub keystore: SyncCryptoStorePtr,
 	pub force_authoring: bool,
 	pub slot_duration: SlotDuration,
+	pub telemetry: Option<TelemetryHandle>,
+	pub block_proposal_slot_portion: SlotProportion,
 }
 
 /// Build the [`AuraConsensus`].
@@ -263,6 +277,8 @@ pub fn build_aura_consensus<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Er
 		keystore,
 		force_authoring,
 		slot_duration,
+		telemetry,
+		block_proposal_slot_portion,
 	}: BuildAuraConsensusParams<PF, BI, RBackend, CIDP, Client, BS, SO>,
 ) -> Box<dyn ParachainConsensus<Block>>
 where
@@ -274,6 +290,7 @@ where
 		+ Send
 		+ Sync
 		+ 'static,
+	CIDP::InherentDataProviders: InherentDataProviderExt + Send,
 	Client: ProvideRuntimeApi<Block>
 		+ BlockOf
 		+ ProvideCache<Block>
@@ -314,6 +331,8 @@ where
 		force_authoring,
 		keystore,
 		slot_duration,
+		telemetry,
+		block_proposal_slot_portion,
 	)
 	.build()
 }
@@ -337,6 +356,8 @@ struct AuraConsensusBuilder<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Er
 	force_authoring: bool,
 	keystore: SyncCryptoStorePtr,
 	slot_duration: SlotDuration,
+	telemetry: Option<TelemetryHandle>,
+	block_proposal_slot_portion: SlotProportion,
 }
 
 impl<Block, PF, BI, RBackend, CIDP, Client, SO, BS, P, Error>
@@ -350,6 +371,7 @@ where
 		+ Send
 		+ Sync
 		+ 'static,
+	CIDP::InherentDataProviders: InherentDataProviderExt + Send,
 	Client: ProvideRuntimeApi<Block>
 		+ BlockOf
 		+ ProvideCache<Block>
@@ -391,6 +413,8 @@ where
 		force_authoring: bool,
 		keystore: SyncCryptoStorePtr,
 		slot_duration: SlotDuration,
+		telemetry: Option<TelemetryHandle>,
+		block_proposal_slot_portion: SlotProportion,
 	) -> Self {
 		Self {
 			_phantom: PhantomData,
@@ -405,6 +429,8 @@ where
 			force_authoring,
 			keystore,
 			slot_duration,
+			telemetry,
+			block_proposal_slot_portion,
 		}
 	}
 
@@ -425,6 +451,7 @@ where
 		+ Send
 		+ Sync
 		+ 'static,
+	CIDP::InherentDataProviders: InherentDataProviderExt + Send,
 	Client: ProvideRuntimeApi<Block>
 		+ BlockOf
 		+ ProvideCache<Block>
@@ -475,6 +502,8 @@ where
 			client.clone(),
 			self.relay_chain_backend,
 			self.slot_duration,
+			self.telemetry,
+			self.block_proposal_slot_portion,
 		))
 	}
 }

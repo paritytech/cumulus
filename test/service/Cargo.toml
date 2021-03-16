@@ -57,7 +57,6 @@ jsonrpc-core = "15.1.0"
 futures = { version = "0.3.5" }
 tokio = { version = "0.2.21", features = ["macros"] }
 
-<<<<<<< HEAD
 # Polkadot dependencies
 polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
 polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
@@ -67,8 +66,3 @@ pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "bkchr
 substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
 substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-=======
-# Substrate dependencies
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
->>>>>>> origin/master

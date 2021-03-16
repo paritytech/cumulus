@@ -146,7 +146,7 @@ fn testnet_genesis(
 				.cloned()
 				.map(|k| (k, 1 << 60))
 				.collect(),
-		}),
+		},
 		pallet_sudo: parachain_runtime::SudoConfig { key: root_key },
 		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },
 		pallet_aura: parachain_runtime::AuraConfig {

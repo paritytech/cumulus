@@ -1,11 +1,7 @@
 [workspace]
 members = [
-<<<<<<< HEAD
-	"cli",
-	"client/consensus/aura",
-=======
 	"client/cli",
->>>>>>> origin/master
+	"client/consensus/aura",
 	"client/consensus/common",
 	"client/consensus/relay-chain",
 	"client/network",

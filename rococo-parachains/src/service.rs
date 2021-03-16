@@ -14,7 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use cumulus_client_consensus_aura::{build_aura_consensus, BuildAuraConsensusParams};
+use cumulus_client_consensus_aura::{
+	build_aura_consensus, BuildAuraConsensusParams, SlotProportion,
+};
 use cumulus_client_network::build_block_announce_validator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
@@ -26,12 +28,7 @@ use rococo_parachain_primitives::Block;
 use sc_client_api::ExecutorProvider;
 use sc_executor::native_executor_instance;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
-<<<<<<< HEAD
-use sc_telemetry::TelemetrySpan;
-use sp_consensus_slots::Slot;
-=======
 use sc_telemetry::{Telemetry, TelemetryWorker, TelemetryWorkerHandle};
->>>>>>> origin/master
 use sp_core::Pair;
 use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
@@ -63,11 +60,9 @@ pub fn new_partial(
 	>,
 	sc_service::Error,
 > {
-<<<<<<< HEAD
-=======
-	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
-
-	let telemetry = config.telemetry_endpoints.clone()
+	let telemetry = config
+		.telemetry_endpoints
+		.clone()
 		.filter(|x| !x.is_empty())
 		.map(|endpoints| -> Result<_, sc_telemetry::Error> {
 			let worker = TelemetryWorker::new(16)?;
@@ -76,7 +71,6 @@ pub fn new_partial(
 		})
 		.transpose()?;
 
->>>>>>> origin/master
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, Executor>(
 			&config,
@@ -84,15 +78,12 @@ pub fn new_partial(
 		)?;
 	let client = Arc::new(client);
 
-	let telemetry_worker_handle = telemetry
-		.as_ref()
-		.map(|(worker, _)| worker.handle());
+	let telemetry_worker_handle = telemetry.as_ref().map(|(worker, _)| worker.handle());
 
-	let telemetry = telemetry
-		.map(|(worker, telemetry)| {
-			task_manager.spawn_handle().spawn("telemetry", worker.run());
-			telemetry
-		});
+	let telemetry = telemetry.map(|(worker, telemetry)| {
+		task_manager.spawn_handle().spawn("telemetry", worker.run());
+		telemetry
+	});
 
 	let registry = config.prometheus_registry();
 
@@ -103,6 +94,8 @@ pub fn new_partial(
 		task_manager.spawn_handle(),
 		client.clone(),
 	);
+
+	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
 
 	let import_queue = cumulus_client_consensus_aura::import_queue::<
 		sp_consensus_aura::sr25519::AuthorityPair,
@@ -115,23 +108,21 @@ pub fn new_partial(
 	>(cumulus_client_consensus_aura::ImportQueueParams {
 		block_import: client.clone(),
 		client: client.clone(),
-		inherent_data_providers: |_, _| async move {
+		inherent_data_providers: move |_, _| async move {
 			let time = sp_timestamp::InherentDataProvider::from_system_time();
 
-			let current_timestamp = time.timestamp();
-			let current_slot = Slot::from((current_timestamp.as_millis() / 12_000) as u64);
+			let slot =
+				sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+					time.as_duration(),
+					*slot_duration,
+				);
 
-			let slot = sp_consensus_aura::inherents::InherentDataProvider::new(current_slot);
-
-			Ok(sc_consensus_slots::SlotsInherentDataProviders::new(
-				current_timestamp,
-				current_slot,
-				(time, slot),
-			))
+			Ok((time, slot))
 		},
 		registry: registry.clone(),
 		can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
 		spawner: &task_manager.spawn_essential_handle(),
+		telemetry: telemetry.as_ref().map(|x| x.handle()),
 	})?;
 
 	let params = PartialComponents {
@@ -174,25 +165,18 @@ where
 	let parachain_config = prepare_node_config(parachain_config);
 
 	let params = new_partial(&parachain_config)?;
-<<<<<<< HEAD
-=======
-	params
-		.inherent_data_providers
-		.register_provider(sp_timestamp::InherentDataProvider)
-		.unwrap();
+
 	let (mut telemetry, telemetry_worker_handle) = params.other;
 
-	let polkadot_full_node =
-		cumulus_client_service::build_polkadot_full_node(
-			polkadot_config,
-			collator_key.public(),
-			telemetry_worker_handle,
-		)
-		.map_err(|e| match e {
-			polkadot_service::Error::Sub(x) => x,
-			s => format!("{}", s).into(),
-		})?;
->>>>>>> origin/master
+	let polkadot_full_node = cumulus_client_service::build_polkadot_full_node(
+		polkadot_config,
+		collator_key.public(),
+		telemetry_worker_handle,
+	)
+	.map_err(|e| match e {
+		polkadot_service::Error::Sub(x) => x,
+		s => format!("{}", s).into(),
+	})?;
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -245,6 +229,8 @@ where
 	};
 
 	if validator {
+		let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
+
 		let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
 			task_manager.spawn_handle(),
 			client.clone(),
@@ -281,10 +267,16 @@ where
 				async move {
 					let time = sp_timestamp::InherentDataProvider::from_system_time();
 
+					let slot =
+						sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+							time.as_duration(),
+							*slot_duration,
+						);
+
 					let parachain_inherent = parachain_inherent.ok_or_else(|| {
 						Box::<dyn std::error::Error + Send + Sync>::from(String::from("error"))
 					})?;
-					Ok((time, parachain_inherent))
+					Ok((time, slot, parachain_inherent))
 				}
 			},
 			block_import: client.clone(),
@@ -295,7 +287,10 @@ where
 			sync_oracle: network.clone(),
 			keystore: params.keystore_container.sync_keystore(),
 			force_authoring,
-			slot_duration: cumulus_client_consensus_aura::slot_duration(&*client)?,
+			slot_duration,
+			// We got around 500ms for proposing
+			block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
+			telemetry: telemetry.as_ref().map(|x| x.handle()),
 		});
 
 		let params = StartCollatorParams {
