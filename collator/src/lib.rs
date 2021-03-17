@@ -858,17 +858,3 @@ mod tests {
 		assert_eq!(1, *block.header().number());
 	}
 }
-/// Add a prefix to every log that occurs inside the future provided.
-///
-/// See [`prefix_logs_with`] for more details.
-pub fn prefix_future_logs_with<T>(
-	prefix: &str,
-	f: impl Future<Output = T>,
-) -> impl Future<Output = T> {
-	let span = tracing::info_span!(
-		sc_tracing::logging::PREFIX_LOG_SPAN,
-		name = prefix,
-	);
-	f.instrument(span)
-}
-
