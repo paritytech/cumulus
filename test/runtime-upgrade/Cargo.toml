@@ -10,49 +10,49 @@ edition = '2018'
 [dependencies.encointer-scheduler]
 default-features = false
 git = "https://github.com/encointer/pallets"
-branch = "rococo"
+branch = "rococo-v1.4"
 package = "pallet-encointer-scheduler"
 
 [dependencies.encointer-ceremonies]
 default-features = false
 git = "https://github.com/encointer/pallets"
-branch = "rococo"
+branch = "rococo-v1.4"
 package = "pallet-encointer-ceremonies"
 
 [dependencies.encointer-communities]
 default-features = false
 git = "https://github.com/encointer/pallets"
-branch = "rococo"
+branch = "rococo-v1.4"
 package = "pallet-encointer-communities"
 
 [dependencies.encointer-balances]
 default-features = false
 git = "https://github.com/encointer/pallets"
-branch = "rococo"
+branch = "rococo-v1.4"
 package = "pallet-encointer-balances"
 
 [dependencies.encointer-bazaar]
 default-features = false
 git = "https://github.com/encointer/pallets"
-branch = "rococo"
+branch = "rococo-v1.4"
 package = "pallet-encointer-bazaar"
 
 [dependencies.encointer-primitives]
 default-features = false
 git = "https://github.com/encointer/pallets"
-branch = "rococo"
+branch = "rococo-v1.4"
 package = "encointer-primitives"
 
 [dependencies.encointer-personhood-oracle]
 default-features = false
 git = "https://github.com/encointer/pallets"
-branch = "rococo"
+branch = "rococo-v1.4"
 package = "pallet-encointer-personhood-oracle"
 
 [dependencies.encointer-sybil-gate]
 default-features = false
 git = "https://github.com/encointer/pallets"
-branch = "rococo"
+branch = "rococo-v1.4"
 package = "pallet-encointer-sybil-gate-template"
 
 [dependencies.fixed]

@@ -32,15 +32,15 @@ panic = "unwind"
 
 #only while debugging/developping
 #[patch."https://github.com/encointer/pallets"]
-#pallet-encointer-ceremonies = { path = "../pallets/ceremonies" }
-#pallet-encointer-communities = { path = "../pallets/communities" }
-#pallet-encointer-balances = { path = "../pallets/balances" }
-#pallet-encointer-scheduler = { path = "../pallets/scheduler" }
-#pallet-encointer-bazaar = { path = "../pallets/bazaar" }
-#encointer-primitives = { path = "../pallets/primitives" }
-#pallet-encointer-sybil-gate-template = { path = "../pallets/sybil-gate-template" }
-#pallet-encointer-personhood-oracle = { path = "../pallets/personhood-oracle" }
-#
+#pallet-encointer-ceremonies = { path = "../encointer-pallets/ceremonies" }
+#pallet-encointer-communities = { path = "../encointer-pallets/communities" }
+#pallet-encointer-balances = { path = "../encointer-pallets/balances" }
+#pallet-encointer-scheduler = { path = "../encointer-pallets/scheduler" }
+#pallet-encointer-bazaar = { path = "../encointer-pallets/bazaar" }
+#encointer-primitives = { path = "../encointer-pallets/primitives" }
+#pallet-encointer-sybil-gate-template = { path = "../encointer-pallets/sybil-gate-template" }
+#pallet-encointer-personhood-oracle = { path = "../encointer-pallets/personhood-oracle" }
+
 ## This was used, as I added some debug logs to de xcm-executor. The rest is just second level deps.
 #[patch."https://github.com/paritytech/polkadot"]
 #xcm = { path = "../polkadot/xcm"}
