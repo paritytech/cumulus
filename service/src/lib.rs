@@ -63,7 +63,6 @@ pub struct StartCollatorParams<
 	pub polkadot_full_node: PFullNode<PClient>,
 	pub task_manager: &'a mut TaskManager,
 	pub polkadot_backend: Arc<PBackend>,
-	pub parachain_logs_prefix: Option<String>,
 }
 
 /// Start a collator node for a parachain.
@@ -86,7 +85,6 @@ pub async fn start_collator<'a, Block, PF, BI, BS, Client, Backend, Spawner, PCl
 		polkadot_full_node,
 		task_manager,
 		polkadot_backend,
-		parachain_logs_prefix,
 	}: StartCollatorParams<'a, Block, PF, BI, BS, Client, Backend, Spawner, PClient, PBackend>,
 ) -> sc_service::error::Result<()>
 where
@@ -139,7 +137,6 @@ where
 			block_import,
 			block_status,
 			polkadot_backend,
-			parachain_logs_prefix,
 		})
 		.await?;
 
@@ -160,7 +157,6 @@ struct StartCollator<Block: BlockT, Backend, PF, BI, BS, Spawner, PBackend> {
 	para_id: ParaId,
 	collator_key: CollatorPair,
 	polkadot_backend: Arc<PBackend>,
-	parachain_logs_prefix: Option<String>,
 }
 
 impl<Block, Backend, PF, BI, BS, Spawner, PBackend2> polkadot_service::ExecuteWithClient
@@ -205,7 +201,6 @@ where
 				key: self.collator_key,
 				polkadot_client: client,
 				polkadot_backend: self.polkadot_backend,
-				parachain_logs_prefix: self.parachain_logs_prefix,
 			})
 			.await
 			.map_err(Into::into)

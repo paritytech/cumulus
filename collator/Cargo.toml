@@ -35,6 +35,7 @@ log = "0.4.8"
 codec = { package = "parity-scale-codec", version = "2.0.0", features = [ "derive" ] }
 futures = { version = "0.3.1", features = ["compat"] }
 parking_lot = "0.9"
+tracing = "0.1.25"
 
 [dev-dependencies]
 # Cumulus dependencies

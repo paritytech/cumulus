@@ -47,14 +47,11 @@ use polkadot_primitives::v1::{
 use polkadot_service::RuntimeApiCollection;
 
 use codec::{Decode, Encode};
-
 use log::{debug, error, info, trace};
-
 use futures::prelude::*;
-
 use std::{collections::BTreeMap, marker::PhantomData, sync::Arc, time::Duration};
-
 use parking_lot::Mutex;
+use tracing::Instrument;
 
 type TransactionFor<E, Block> =
 	<<E as Environment<Block>>::Proposer as Proposer<Block>>::Transaction;
@@ -74,7 +71,6 @@ pub struct Collator<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient, PBack
 	backend: Arc<Backend>,
 	polkadot_client: Arc<PClient>,
 	polkadot_backend: Arc<PBackend2>,
-	parachain_logs_prefix: Option<String>,
 }
 
 impl<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient, PBackend2> Clone
@@ -92,7 +88,6 @@ impl<Block: BlockT, PF, BI, BS, Backend, PBackend, PClient, PBackend2> Clone
 			backend: self.backend.clone(),
 			polkadot_client: self.polkadot_client.clone(),
 			polkadot_backend: self.polkadot_backend.clone(),
-			parachain_logs_prefix: self.parachain_logs_prefix.clone(),
 		}
 	}
 }
@@ -132,7 +127,6 @@ where
 		backend: Arc<Backend>,
 		polkadot_client: Arc<PClient>,
 		polkadot_backend: Arc<PBackend2>,
-		parachain_logs_prefix: Option<String>,
 	) -> Self {
 		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(
 			spawner,
@@ -151,7 +145,6 @@ where
 			backend,
 			polkadot_client,
 			polkadot_backend,
-			parachain_logs_prefix,
 		}
 	}
 
@@ -482,14 +475,6 @@ where
 		relay_parent: PHash,
 		validation_data: PersistedValidationData,
 	) -> Option<Collation> {
-		let name = self.parachain_logs_prefix.as_ref().unwrap().clone();
-		let span = sc_tracing::tracing::info_span!(
-			sc_tracing::logging::PREFIX_LOG_SPAN,
-			name = name.as_str(),
-		);
-		let _enter = span.enter();
-		error!(target: LOG_TARGET, "############# {}", name);
-
 		trace!(target: LOG_TARGET, "Producing candidate");
 
 		let last_head =
@@ -527,7 +512,6 @@ where
 			.ok()?;
 
 		let inherent_data = self.inherent_data(&validation_data, relay_parent)?;
-		error!(target: LOG_TARGET, "############# {} 1", self.parachain_logs_prefix.as_ref().unwrap().as_str());
 
 		let Proposal {
 			block,
@@ -550,12 +534,6 @@ where
 				)
 			})
 			.ok()?;
-		let span = sc_tracing::tracing::info_span!(
-			sc_tracing::logging::PREFIX_LOG_SPAN,
-			name = name.as_str(),
-		);
-		let _enter = span.enter();
-		error!(target: LOG_TARGET, "############# {} 2", self.parachain_logs_prefix.as_ref().unwrap().as_str());
 
 		let proof = match proof {
 			Some(proof) => proof,
@@ -568,23 +546,18 @@ where
 				return None;
 			}
 		};
-		error!(target: LOG_TARGET, "############# {} 3", self.parachain_logs_prefix.as_ref().unwrap().as_str());
 
 		let (header, extrinsics) = block.deconstruct();
 		let block_hash = header.hash();
-		error!(target: LOG_TARGET, "############# {} 4", self.parachain_logs_prefix.as_ref().unwrap().as_str());
 
 		// Create the parachain block data for the validators.
 		let b = ParachainBlockData::<Block>::new(header.clone(), extrinsics, proof);
-		error!(target: LOG_TARGET, "############# {} 5", self.parachain_logs_prefix.as_ref().unwrap().as_str());
 
 		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header);
-		error!(target: LOG_TARGET, "############# {} 6", self.parachain_logs_prefix.as_ref().unwrap().as_str());
 		block_import_params.body = Some(b.extrinsics().to_vec());
 		// Best block is determined by the relay chain.
 		block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(false));
 		block_import_params.storage_changes = Some(storage_changes);
-		error!(target: LOG_TARGET, "############# {}", self.parachain_logs_prefix.as_ref().unwrap().as_str());
 
 		if let Err(err) = self
 			.block_import
@@ -613,7 +586,6 @@ where
 			self.build_collation(b, block_hash, validation_data.block_number)?;
 		let pov_hash = collation.proof_of_validity.hash();
 
-		error!(target: LOG_TARGET, "############# {}", self.parachain_logs_prefix.as_ref().unwrap().as_str());
 		self.wait_to_announce
 			.lock()
 			.wait_to_announce(block_hash, pov_hash);
@@ -643,7 +615,6 @@ pub struct StartCollatorParams<Block: BlockT, PF, BI, Backend, BS, Spawner, PCli
 	pub key: CollatorPair,
 	pub polkadot_client: Arc<PClient>,
 	pub polkadot_backend: Arc<PBackend>,
-	pub parachain_logs_prefix: Option<String>,
 }
 
 pub async fn start_collator<
@@ -671,7 +642,6 @@ pub async fn start_collator<
 		key,
 		polkadot_client,
 		polkadot_backend,
-		parachain_logs_prefix,
 	}: StartCollatorParams<Block, PF, BI, Backend, BS, Spawner, PClient, PBackend2>,
 ) -> Result<(), String>
 where
@@ -702,25 +672,17 @@ where
 		backend,
 		polkadot_client,
 		polkadot_backend,
-		parachain_logs_prefix,
 	);
 
+	let span = tracing::Span::current();
 	let config = CollationGenerationConfig {
 		key,
 		para_id,
 		collator: Box::new(move |relay_parent, validation_data| {
-			/*
-			let span = parachain_logs_prefix
-				.as_ref()
-				.map(|name| sc_tracing::tracing::info_span!(
-					sc_tracing::logging::PREFIX_LOG_SPAN,
-					name = name.as_str(),
-				));
-			let _enter = span.as_ref().map(|x| x.enter());
-			*/
 			let collator = collator.clone();
 			collator
 				.produce_candidate(relay_parent, validation_data.clone())
+				.instrument(span.clone())
 				.boxed()
 		}),
 	};
@@ -896,3 +858,17 @@ mod tests {
 		assert_eq!(1, *block.header().number());
 	}
 }
+/// Add a prefix to every log that occurs inside the future provided.
+///
+/// See [`prefix_logs_with`] for more details.
+pub fn prefix_future_logs_with<T>(
+	prefix: &str,
+	f: impl Future<Output = T>,
+) -> impl Future<Output = T> {
+	let span = tracing::info_span!(
+		sc_tracing::logging::PREFIX_LOG_SPAN,
+		name = prefix,
+	);
+	f.instrument(span)
+}
+
