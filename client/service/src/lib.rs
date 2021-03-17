@@ -1,4 +1,4 @@
-// Copyright 2020 Parity Technologies (UK) Ltd.
+// Copyright 2020-2021 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Substrate is free software: you can redistribute it and/or modify
@@ -27,6 +27,7 @@ use sc_client_api::{
 	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, UsageProvider,
 };
 use sc_service::{error::Result as ServiceResult, Configuration, Role, TaskManager};
+use sc_telemetry::TelemetryWorkerHandle;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::BlockImport;
 use sp_core::traits::SpawnNamed;
@@ -43,7 +44,7 @@ pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, Backend, Spawner, 
 	pub backend: Arc<Backend>,
 	pub block_status: Arc<BS>,
 	pub client: Arc<Client>,
-	pub announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
+	pub announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 	pub spawner: Spawner,
 	pub para_id: ParaId,
 	pub collator_key: CollatorPair,
@@ -120,7 +121,7 @@ pub struct StartFullNodeParams<'a, Block: BlockT, Client, PClient> {
 	pub client: Arc<Client>,
 	pub polkadot_full_node: RFullNode<PClient>,
 	pub task_manager: &'a mut TaskManager,
-	pub announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
+	pub announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 }
 
 /// Start a full node for a parachain.
@@ -164,7 +165,7 @@ where
 
 struct StartConsensus<'a, Block: BlockT, Client, Backend> {
 	para_id: ParaId,
-	announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
+	announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 	client: Arc<Client>,
 	task_manager: &'a mut TaskManager,
 	_phantom: PhantomData<Backend>,
@@ -233,6 +234,7 @@ pub fn prepare_node_config(mut parachain_config: Configuration) -> Configuration
 pub fn build_polkadot_full_node(
 	config: Configuration,
 	collator_id: CollatorId,
+	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 ) -> Result<RFullNode<PClient>, polkadot_service::Error> {
 	let is_light = matches!(config.role, Role::Light);
 	if is_light {
@@ -245,6 +247,7 @@ pub fn build_polkadot_full_node(
 			polkadot_service::IsCollator::Yes(collator_id),
 			None,
 			None,
+			telemetry_worker_handle,
 		)
 	}
 }

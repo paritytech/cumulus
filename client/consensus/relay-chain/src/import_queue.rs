@@ -1,4 +1,4 @@
-// Copyright 2019 Parity Technologies (UK) Ltd.
+// Copyright 2019-2021 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -106,7 +106,7 @@ pub fn import_queue<Client, Block: BlockT, I>(
 	client: Arc<Client>,
 	block_import: I,
 	inherent_data_providers: InherentDataProviders,
-	spawner: &impl sp_core::traits::SpawnNamed,
+	spawner: &impl sp_core::traits::SpawnEssentialNamed,
 	registry: Option<&substrate_prometheus_endpoint::Registry>,
 ) -> ClientResult<BasicQueue<Block, I::Transaction>>
 where

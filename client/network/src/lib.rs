@@ -1,4 +1,4 @@
-// Copyright 2019 Parity Technologies (UK) Ltd.
+// Copyright 2019-2021 Parity Technologies (UK) Ltd.
 // This file is part of Polkadot.
 
 // Polkadot is free software: you can redistribute it and/or modify
@@ -44,7 +44,7 @@ use codec::{Decode, Encode};
 use futures::{
 	channel::oneshot,
 	future::{ready, FutureExt},
-	pin_mut, select, Future,
+	Future,
 };
 
 use std::{convert::TryFrom, fmt, marker::PhantomData, pin::Pin, sync::Arc};
@@ -84,7 +84,7 @@ impl BlockAnnounceData {
 	///
 	/// This will not check the signature, for this you should use [`BlockAnnounceData::check_signature`].
 	fn validate(&self, encoded_header: Vec<u8>) -> Result<(), Validation> {
-		let candidate_hash = if let CompactStatement::Candidate(h) = self.statement.payload() {
+		let candidate_hash = if let CompactStatement::Seconded(h) = self.statement.payload() {
 			h
 		} else {
 			tracing::debug!(
@@ -149,7 +149,7 @@ impl BlockAnnounceData {
 				return Err(BlockAnnounceError(format!("{:?}", e)));
 			}
 		};
-		let signer = match authorities.get(validator_index as usize) {
+		let signer = match authorities.get(validator_index.0 as usize) {
 			Some(r) => r,
 			None => {
 				tracing::debug!(
@@ -473,22 +473,18 @@ where
 /// the previous task running.
 pub struct WaitToAnnounce<Block: BlockT> {
 	spawner: Arc<dyn SpawnNamed + Send + Sync>,
-	announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
-	current_trigger: oneshot::Sender<()>,
+	announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 }
 
 impl<Block: BlockT> WaitToAnnounce<Block> {
 	/// Create the `WaitToAnnounce` object
 	pub fn new(
 		spawner: Arc<dyn SpawnNamed + Send + Sync>,
-		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
+		announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 	) -> WaitToAnnounce<Block> {
-		let (tx, _rx) = oneshot::channel();
-
 		WaitToAnnounce {
 			spawner,
 			announce_block,
-			current_trigger: tx,
 		}
 	}
 
@@ -500,44 +496,23 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 		pov_hash: PHash,
 		signed_stmt_recv: oneshot::Receiver<SignedFullStatement>,
 	) {
-		let (tx, rx) = oneshot::channel();
 		let announce_block = self.announce_block.clone();
-
-		self.current_trigger = tx;
 
 		self.spawner.spawn(
 			"cumulus-wait-to-announce",
 			async move {
-				let t1 = wait_to_announce::<Block>(
-					block_hash,
-					pov_hash,
-					announce_block,
-					signed_stmt_recv,
-				)
-				.fuse();
-				let t2 = rx.fuse();
-
-				pin_mut!(t1, t2);
-
 				tracing::trace!(
 					target: "cumulus-network",
 					"waiting for announce block in a background task...",
 				);
 
-				select! {
-					_ = t1 => {
-						tracing::trace!(
-							target: "cumulus-network",
-							"block announcement finished",
-						);
-					},
-					_ = t2 => {
-						tracing::trace!(
-							target: "cumulus-network",
-							"previous task that waits for announce block has been canceled",
-						);
-					}
-				}
+				wait_to_announce::<Block>(block_hash, pov_hash, announce_block, signed_stmt_recv)
+					.await;
+
+				tracing::trace!(
+					target: "cumulus-network",
+					"block announcement finished",
+				);
 			}
 			.boxed(),
 		);
@@ -547,7 +522,7 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 async fn wait_to_announce<Block: BlockT>(
 	block_hash: <Block as BlockT>::Hash,
 	pov_hash: PHash,
-	announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
+	announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 	signed_stmt_recv: oneshot::Receiver<SignedFullStatement>,
 ) {
 	let statement = match signed_stmt_recv.await {
@@ -566,7 +541,7 @@ async fn wait_to_announce<Block: BlockT>(
 	match statement.payload() {
 		Statement::Seconded(c) if &c.descriptor.pov_hash == &pov_hash => {
 			if let Ok(data) = BlockAnnounceData::try_from(statement) {
-				announce_block(block_hash, data.encode());
+				announce_block(block_hash, Some(data.encode()));
 			}
 		}
 		_ => tracing::debug!(

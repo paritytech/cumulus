@@ -23,7 +23,6 @@ sp-std = { git = "https://github.com/paritytech/substrate", default-features = f
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-externalities = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -32,8 +31,10 @@ sp-externalities = { git = "https://github.com/paritytech/substrate", default-fe
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"]}
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 hash-db = { version = "0.15.2", default-features = false }
+log = { version = "0.4.14", default-features = false }
 memory-db = { version = "0.26.0", default-features = false }
 trie-db = { version = "0.22.0", default-features = false }
+environmental = { version = "1.1.2", default-features = false }
 
 [dev-dependencies]
 substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -61,13 +62,14 @@ std = [
 	"sp-io/std",
 	"sp-std/std",
 	"hash-db/std",
+	"log/std",
 	"memory-db/std",
 	"trie-db/std",
 	"sp-state-machine/std",
 	"sp-trie/std",
 	"sp-externalities/std",
 	"frame-system/std",
-	"frame-executive/std",
 	"cumulus-primitives-core/std",
 	"cumulus-primitives-parachain-inherent/std",
+	"environmental/std",
 ]

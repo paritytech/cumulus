@@ -1,4 +1,4 @@
-// Copyright 2019 Parity Technologies (UK) Ltd.
+// Copyright 2019-2021 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -143,7 +143,7 @@ pub async fn run_parachain_consensus<P, R, Block, B>(
 	para_id: ParaId,
 	parachain: Arc<P>,
 	relay_chain: R,
-	announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
+	announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 ) -> ClientResult<()>
 where
 	Block: BlockT,
@@ -175,7 +175,7 @@ async fn follow_new_best<P, R, Block, B>(
 	para_id: ParaId,
 	parachain: Arc<P>,
 	relay_chain: R,
-	announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
+	announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 ) -> ClientResult<()>
 where
 	Block: BlockT,
@@ -203,7 +203,6 @@ where
 					Some(h) => handle_new_best_parachain_head(
 						h,
 						&*parachain,
-						&*announce_block,
 						&mut unset_best_header,
 					),
 					None => {
@@ -241,12 +240,19 @@ fn handle_new_block_imported<Block, P>(
 	notification: BlockImportNotification<Block>,
 	unset_best_header_opt: &mut Option<Block::Header>,
 	parachain: &P,
-	announce_block: &dyn Fn(Block::Hash, Vec<u8>),
+	announce_block: &dyn Fn(Block::Hash, Option<Vec<u8>>),
 ) where
 	Block: BlockT,
 	P: UsageProvider<Block> + Send + Sync + BlockBackend<Block>,
 	for<'a> &'a P: BlockImport<Block>,
 {
+	// HACK
+	//
+	// Remove after https://github.com/paritytech/substrate/pull/8052 or similar is merged
+	if notification.origin != BlockOrigin::Own {
+		announce_block(notification.hash, None);
+	}
+
 	let unset_best_header = match (notification.is_new_best, &unset_best_header_opt) {
 		// If this is the new best block or we don't have any unset block, we can end it here.
 		(true, _) | (_, None) => return,
@@ -274,12 +280,12 @@ fn handle_new_block_imported<Block, P>(
 				.take()
 				.expect("We checked above that the value is set; qed");
 
-			import_block_as_new_best(unset_hash, unset_best_header, parachain, announce_block);
+			import_block_as_new_best(unset_hash, unset_best_header, parachain);
 		}
 		state => tracing::debug!(
 			target: "cumulus-consensus",
-			unset_best_header = ?unset_best_header,
-			imported_header = ?notification.header,
+			?unset_best_header,
+			?notification.header,
 			?state,
 			"Unexpected state for unset best header.",
 		),
@@ -290,7 +296,6 @@ fn handle_new_block_imported<Block, P>(
 fn handle_new_best_parachain_head<Block, P>(
 	head: Vec<u8>,
 	parachain: &P,
-	announce_block: &dyn Fn(Block::Hash, Vec<u8>),
 	unset_best_header: &mut Option<Block::Header>,
 ) where
 	Block: BlockT,
@@ -323,7 +328,7 @@ fn handle_new_best_parachain_head<Block, P>(
 			Ok(BlockStatus::InChainWithState) => {
 				unset_best_header.take();
 
-				import_block_as_new_best(hash, parachain_head, parachain, announce_block);
+				import_block_as_new_best(hash, parachain_head, parachain);
 			}
 			Ok(BlockStatus::InChainPruned) => {
 				tracing::error!(
@@ -358,7 +363,6 @@ fn import_block_as_new_best<Block, P>(
 	hash: Block::Hash,
 	header: Block::Header,
 	parachain: &P,
-	announce_block: &dyn Fn(Block::Hash, Vec<u8>),
 ) where
 	Block: BlockT,
 	P: UsageProvider<Block> + Send + Sync + BlockBackend<Block>,
@@ -376,15 +380,13 @@ fn import_block_as_new_best<Block, P>(
 			error = ?err,
 			"Failed to set new best block.",
 		);
-	} else {
-		(*announce_block)(hash, Vec::new());
 	}
 }
 
 impl<T> RelaychainClient for Arc<T>
 where
 	T: sc_client_api::BlockchainEvents<PBlock> + ProvideRuntimeApi<PBlock> + 'static + Send + Sync,
-	<T as ProvideRuntimeApi<PBlock>>::Api: ParachainHost<PBlock, Error = ClientError>,
+	<T as ProvideRuntimeApi<PBlock>>::Api: ParachainHost<PBlock>,
 {
 	type Error = ClientError;
 
@@ -430,6 +432,7 @@ where
 		self.runtime_api()
 			.persisted_validation_data(at, para_id, OccupiedCoreAssumption::TimedOut)
 			.map(|s| s.map(|s| s.parent_head.0))
+			.map_err(Into::into)
 	}
 }
 
@@ -512,7 +515,7 @@ where
 
 /// The result of [`ParachainConsensus::produce_candidate`].
 pub struct ParachainCandidate<B> {
-	/// The block that was build for this candidate.
+	/// The block that was built for this candidate.
 	pub block: B,
 	/// The proof that was recorded while building the block.
 	pub proof: sp_trie::StorageProof,
@@ -522,11 +525,11 @@ pub struct ParachainCandidate<B> {
 ///
 /// The collator will call [`Self::produce_candidate`] every time there is a free core for the parachain
 /// this collator is collating for. It is the job of the consensus implementation to decide if this
-/// specific collator should build candidate for the given relay chain block. The consensus
-/// implementation could for example check if this specific collator is part of the validator.
+/// specific collator should build a candidate for the given relay chain block. The consensus
+/// implementation could, for example, check whether this specific collator is part of a staked set.
 #[async_trait::async_trait]
 pub trait ParachainConsensus<B: BlockT>: Send + Sync + dyn_clone::DynClone {
-	/// Produce a new candidate at the given parent block.
+	/// Produce a new candidate at the given parent block and relay-parent blocks.
 	///
 	/// Should return `None` if the consensus implementation decided that it shouldn't build a
 	/// candidate or if there occurred any error.
