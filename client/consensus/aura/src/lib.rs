@@ -55,18 +55,12 @@ use sp_core::crypto::Pair;
 use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvider};
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT, Member, NumberFor};
-use std::{
-	convert::TryFrom,
-	hash::Hash,
-	marker::PhantomData,
-	sync::Arc,
-	time::Duration,
-};
+use std::{convert::TryFrom, hash::Hash, marker::PhantomData, sync::Arc};
 
 mod import_queue;
 
 pub use import_queue::{import_queue, ImportQueueParams};
-pub use sc_consensus_aura::{slot_duration, SlotDuration, SlotProportion};
+pub use sc_consensus_aura::{slot_duration, BuildAuraWorkerParams, SlotDuration, SlotProportion};
 pub use sc_consensus_slots::InherentDataProviderExt;
 
 const LOG_TARGET: &str = "aura::cumulus";
@@ -149,16 +143,18 @@ where
 		P::Public: AppPublic + Hash + Member + Encode + Decode,
 		P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
 	{
-		let worker = sc_consensus_aura::build_aura_worker::<_, _, _, _, P, _, _, _>(
-			para_client,
-			block_import,
-			proposer_factory,
-			sync_oracle,
-			force_authoring,
-			backoff_authoring_blocks,
-			keystore,
-			telemetry,
-			block_proposal_slot_portion,
+		let worker = sc_consensus_aura::build_aura_worker::<P, _, _, _, _, _, _, _>(
+			BuildAuraWorkerParams {
+				client: para_client,
+				block_import,
+				proposer_factory,
+				sync_oracle,
+				force_authoring,
+				backoff_authoring_blocks,
+				keystore,
+				telemetry,
+				block_proposal_slot_portion,
+			},
 		);
 
 		Self {
@@ -228,9 +224,9 @@ where
 
 		let info = SlotInfo::new(
 			inherent_data_providers.slot(),
-			inherent_data_providers.timestamp().as_duration(),
+			inherent_data_providers.timestamp(),
 			inherent_data,
-			Duration::from_millis(self.slot_duration.slot_duration()),
+			self.slot_duration.slot_duration(),
 			parent.clone(),
 		);
 

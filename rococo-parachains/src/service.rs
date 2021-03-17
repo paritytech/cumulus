@@ -33,6 +33,7 @@ use sp_core::Pair;
 use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
 use std::sync::Arc;
+use sp_consensus::SlotData;
 
 pub use sc_executor::NativeExecutor;
 
@@ -113,8 +114,8 @@ pub fn new_partial(
 
 			let slot =
 				sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
-					time.as_duration(),
-					*slot_duration,
+					*time,
+					slot_duration.slot_duration(),
 				);
 
 			Ok((time, slot))
@@ -269,8 +270,8 @@ where
 
 					let slot =
 						sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
-							time.as_duration(),
-							*slot_duration,
+							*time,
+							slot_duration.slot_duration(),
 						);
 
 					let parachain_inherent = parachain_inherent.ok_or_else(|| {
