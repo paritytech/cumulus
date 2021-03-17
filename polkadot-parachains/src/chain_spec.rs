@@ -249,23 +249,23 @@ fn testnet_genesis(
 			authorities: initial_authorities,
 		},
 		cumulus_pallet_aura_ext: Default::default(),
-	},
-	encointer_scheduler: EncointerSchedulerConfig {
-		current_phase: CeremonyPhaseType::REGISTERING,
-		current_ceremony_index: 1,
-		ceremony_master: root_key.clone(),
-		phase_durations: vec![
-			(CeremonyPhaseType::REGISTERING, 600_000),
-			(CeremonyPhaseType::ASSIGNING, 600_000),
-			(CeremonyPhaseType::ATTESTING, 600_000),
-		],
-	},
-	encointer_ceremonies: EncointerCeremoniesConfig {
-		ceremony_reward: BalanceType::from_num(1),
-		time_tolerance: 600_000,   // +-10min
-		location_tolerance: 1_000, // [m]
-	},
-	encointer_communities: EncointerCommunitiesConfig {
-		community_master: root_key,
-	},
+		encointer_scheduler: parachain_runtime::EncointerSchedulerConfig {
+			current_phase: CeremonyPhaseType::REGISTERING,
+			current_ceremony_index: 1,
+			ceremony_master: root_key.clone(),
+			phase_durations: vec![
+				(CeremonyPhaseType::REGISTERING, 600_000),
+				(CeremonyPhaseType::ASSIGNING, 600_000),
+				(CeremonyPhaseType::ATTESTING, 600_000),
+			],
+		},
+		encointer_ceremonies: parachain_runtime::EncointerCeremoniesConfig {
+			ceremony_reward: BalanceType::from_num(1),
+			time_tolerance: 600_000,   // +-10min
+			location_tolerance: 1_000, // [m]
+		},
+		encointer_communities: parachain_runtime::EncointerCommunitiesConfig {
+			community_master: root_key,
+		},
+	}
 }
