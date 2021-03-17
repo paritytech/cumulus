@@ -88,7 +88,7 @@ where
 	IDP::InherentDataProviders: InherentDataProviderExt + Send + Sync,
 {
 	sc_consensus_aura::import_queue::<P, _, _, _, _, _, _>(sc_consensus_aura::ImportQueueParams {
-		block_import,
+		block_import: crate::ParachainBlockImport(block_import),
 		justification_import: None,
 		client,
 		inherent_data_providers,
