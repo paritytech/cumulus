@@ -218,7 +218,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 
 parameter_types! {
 	pub storage ParachainId: cumulus_primitives_core::ParaId = 100.into();
-	pub storage VersionUpgrade: bool = false;
+	pub storage VersionDowngrade: bool = false;
 }
 
 construct_runtime! {
@@ -297,13 +297,13 @@ decl_runtime_apis! {
 impl_runtime_apis! {
 	impl sp_api::Core<Block> for Runtime {
 		fn version() -> RuntimeVersion {
-			if VersionUpgrade::get() {
+			if VersionDowngrade::get() {
+				VERSION
+			} else {
 				RuntimeVersion {
 					spec_version: VERSION.spec_version + 1,
 					..VERSION
 				}
-			} else {
-				VERSION
 			}
 		}
 
@@ -382,10 +382,10 @@ impl_runtime_apis! {
 
 cumulus_pallet_parachain_system::register_validate_block!(Runtime, Executive);
 
-pub struct VersionUpgradeOnRuntimeUpgrade;
-impl frame_support::traits::OnRuntimeUpgrade for VersionUpgradeOnRuntimeUpgrade {
+pub struct VersionDowngradeOnRuntimeUpgrade;
+impl frame_support::traits::OnRuntimeUpgrade for VersionDowngradeOnRuntimeUpgrade {
 	fn on_runtime_upgrade() -> u64 {
-		VersionUpgrade::set(&true);
+		VersionDowngrade::set(&false);
 		0
 	}
 }

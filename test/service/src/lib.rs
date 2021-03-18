@@ -309,6 +309,8 @@ pub struct TestNodeBuilder {
 	parachain_nodes: Vec<MultiaddrWithPeerId>,
 	parachain_nodes_exclusive: bool,
 	relay_chain_nodes: Vec<MultiaddrWithPeerId>,
+	storage_update_func_parachain: Option<Box<dyn Fn()>>,
+	storage_update_func_relay_chain: Option<Box<dyn Fn()>>,
 }
 
 impl TestNodeBuilder {
@@ -326,6 +328,8 @@ impl TestNodeBuilder {
 			parachain_nodes: Vec::new(),
 			parachain_nodes_exclusive: false,
 			relay_chain_nodes: Vec::new(),
+			storage_update_func_parachain: None,
+			storage_update_func_relay_chain: None,
 		}
 	}
 
@@ -390,10 +394,26 @@ impl TestNodeBuilder {
 		self
 	}
 
+	pub fn update_storage_parachain(
+		mut self,
+		updater: impl Fn() + 'static,
+	) -> Self {
+		self.storage_update_func_parachain = Some(Box::new(updater));
+		self
+	}
+
+	pub fn update_storage_relay_chain(
+		mut self,
+		updater: impl Fn() + 'static,
+	) -> Self {
+		self.storage_update_func_relay_chain = Some(Box::new(updater));
+		self
+	}
+
 	/// Build the [`TestNode`].
 	pub async fn build(self) -> TestNode {
 		let parachain_config = node_config(
-			|| (),
+			self.storage_update_func_parachain.unwrap_or_else(|| Box::new(|| ())),
 			self.task_executor.clone(),
 			self.key.clone(),
 			self.parachain_nodes,
@@ -403,7 +423,7 @@ impl TestNodeBuilder {
 		)
 		.expect("could not generate Configuration");
 		let mut relay_chain_config = polkadot_test_service::node_config(
-			|| (),
+			self.storage_update_func_relay_chain.unwrap_or_else(|| Box::new(|| ())),
 			self.task_executor,
 			self.key,
 			self.relay_chain_nodes,
@@ -575,7 +595,8 @@ impl TestNode {
 			vec![],
 		);
 
-		self.send_extrinsic(runtime::SudoCall::sudo(Box::new(call.into())), Sr25519Keyring::Alice).await.map(drop)
+		todo!()
+		//self.send_extrinsic(runtime::SudoCall::sudo(Box::new(call.into())), Sr25519Keyring::Alice).await.map(drop)
 	}
 }
 
