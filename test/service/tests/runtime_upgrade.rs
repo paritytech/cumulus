@@ -15,7 +15,7 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
 use cumulus_primitives_core::ParaId;
-use cumulus_test_runtime::VersionUpgrade;
+use cumulus_test_runtime::VersionDowngrade;
 use cumulus_test_service::{initial_head_data, Keyring::*};
 use futures::join;
 use sc_service::TaskExecutor;
@@ -58,7 +58,7 @@ async fn test_runtime_upgrade(task_executor: TaskExecutor) {
 			.enable_collator()
 			.connect_to_relay_chain_nodes(vec![&alice, &bob])
 			.update_storage_parachain(|| {
-				VersionUpgrade::set(&true);
+				VersionDowngrade::set(&true);
 			})
 			.build()
 			.await;
@@ -69,7 +69,7 @@ async fn test_runtime_upgrade(task_executor: TaskExecutor) {
 		.connect_to_parachain_node(&charlie)
 		.connect_to_relay_chain_nodes(vec![&alice, &bob])
 		.update_storage_parachain(|| {
-			VersionUpgrade::set(&true);
+			VersionDowngrade::set(&true);
 		})
 		.build()
 		.await;
