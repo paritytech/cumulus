@@ -76,6 +76,7 @@ async fn test_runtime_upgrade(task_executor: TaskExecutor) {
 	dave.wait_for_blocks(7).await;
 
 	// schedule runtime upgrade
+	todo!();
 	charlie.schedule_upgrade().await;
 
 	join!(
