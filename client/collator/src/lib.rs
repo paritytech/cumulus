@@ -40,12 +40,10 @@ use polkadot_primitives::v1::{
 };
 
 use codec::{Decode, Encode};
-
 use futures::{channel::oneshot, FutureExt};
-
 use std::sync::Arc;
-
 use parking_lot::Mutex;
+use tracing::Instrument;
 
 /// The logging target.
 const LOG_TARGET: &str = "cumulus-collator";
@@ -79,7 +77,7 @@ where
 	fn new(
 		block_status: Arc<BS>,
 		spawner: Arc<dyn SpawnNamed + Send + Sync>,
-		announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
+		announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 		backend: Arc<Backend>,
 		parachain_consensus: Box<dyn ParachainConsensus<Block>>,
 	) -> Self {
@@ -337,7 +335,7 @@ pub struct StartCollatorParams<Block: BlockT, Backend, BS, Spawner> {
 	pub para_id: ParaId,
 	pub backend: Arc<Backend>,
 	pub block_status: Arc<BS>,
-	pub announce_block: Arc<dyn Fn(Block::Hash, Vec<u8>) + Send + Sync>,
+	pub announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 	pub overseer_handler: OverseerHandler,
 	pub spawner: Spawner,
 	pub key: CollatorPair,
@@ -370,6 +368,7 @@ pub async fn start_collator<Block, Backend, BS, Spawner>(
 		parachain_consensus,
 	);
 
+	let span = tracing::Span::current();
 	let config = CollationGenerationConfig {
 		key,
 		para_id,
@@ -377,6 +376,7 @@ pub async fn start_collator<Block, Backend, BS, Spawner>(
 			let collator = collator.clone();
 			collator
 				.produce_candidate(relay_parent, validation_data.clone())
+				.instrument(span.clone())
 				.boxed()
 		}),
 	};
