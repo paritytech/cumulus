@@ -39,10 +39,10 @@ cumulus-primitives-core = { path = "../../primitives/core", default-features = f
 cumulus-pallet-xcm-handler = { path = "../../pallets/xcm-handler", default-features = false }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "ricardo-assets-xcm"}
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "ricardo-assets-xcm"}
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "ricardo-assets-xcm"}
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "ricardo-assets-xcm"}
 
 [build-dependencies]
 substrate-wasm-builder = "3.0.0"

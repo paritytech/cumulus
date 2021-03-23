@@ -64,11 +64,11 @@ cumulus-client-network = { path = "../client/network" }
 cumulus-primitives-core = { path = "../primitives/core" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "ricardo-assets-xcm" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "ricardo-assets-xcm" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "ricardo-assets-xcm" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "ricardo-assets-xcm" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "ricardo-assets-xcm" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -81,10 +81,10 @@ tempfile = "3.2.0"
 tokio = { version = "0.2.13", features = ["macros"] }
 
 # Polkadot dependencies
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "ricardo-assets-xcm" }
+polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "ricardo-assets-xcm" }
+polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "ricardo-assets-xcm" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "ricardo-assets-xcm" }
 
 # Substrate dependencies
 pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "master" }

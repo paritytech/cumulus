@@ -30,7 +30,7 @@ cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent" }
 
 # Polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "ricardo-assets-xcm" }
 
 # Other deps
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = [ "derive" ] }

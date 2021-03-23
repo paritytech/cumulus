@@ -14,10 +14,10 @@ sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "ricardo-assets-xcm" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "ricardo-assets-xcm" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "ricardo-assets-xcm" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "ricardo-assets-xcm" }
 
 # Cumulus dependencies
 cumulus-client-network = { path = "../network" }
@@ -32,7 +32,7 @@ tracing = "0.1.25"
 
 [dev-dependencies]
 # Polkadot dependencies
-polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "ricardo-assets-xcm" }
 
 # Cumulus dependencies
 cumulus-test-runtime = { path = "../../test/runtime" }
