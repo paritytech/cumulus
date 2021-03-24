@@ -95,6 +95,7 @@ where
 	///
 	/// Returns `true` if the block could be found and is good to be build on.
 	fn check_block_status(&self, hash: Block::Hash, header: &Block::Header) -> bool {
+		tracing::error!(target: LOG_TARGET, "############ {:?}", hash);
 		match self.block_status.block_status(&BlockId::Hash(hash)) {
 			Ok(BlockStatus::Queued) => {
 				tracing::debug!(

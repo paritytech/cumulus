@@ -15,7 +15,7 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
 use cumulus_primitives_core::ParaId;
-use cumulus_test_runtime::VersionDowngrade;
+//use cumulus_test_runtime::VersionDowngrade;
 use cumulus_test_service::{initial_head_data, Keyring::*};
 use futures::join;
 use sc_service::TaskExecutor;
@@ -58,22 +58,22 @@ async fn test_runtime_upgrade(task_executor: TaskExecutor) {
 			.enable_collator()
 			.connect_to_relay_chain_nodes(vec![&alice, &bob])
 			.update_storage_parachain(|| {
-				VersionDowngrade::set(&true);
+				//VersionDowngrade::set(&true);
 			})
 			.build()
 			.await;
-	charlie.wait_for_blocks(5).await;
+	charlie.wait_for_blocks(2).await;
 
 	// run cumulus dave (a parachain full node) and wait for it to sync some blocks
 	let dave = cumulus_test_service::TestNodeBuilder::new(para_id, task_executor.clone(), Dave)
 		.connect_to_parachain_node(&charlie)
 		.connect_to_relay_chain_nodes(vec![&alice, &bob])
 		.update_storage_parachain(|| {
-			VersionDowngrade::set(&true);
+			//VersionDowngrade::set(&true);
 		})
 		.build()
 		.await;
-	dave.wait_for_blocks(7).await;
+	dave.wait_for_blocks(2).await;
 
 	// schedule runtime upgrade
 	todo!();
