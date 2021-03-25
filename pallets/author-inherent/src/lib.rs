@@ -138,7 +138,7 @@ decl_module! {
 			// Add a digest item so Apps can detect the block author
 			// For now we use the Consensus digest item.
 			// Maybe this will change later.
-			frame_system::Module::<T>::deposit_log(DigestItem::<T::Hash>::Consensus(
+			frame_system::Pallet::<T>::deposit_log(DigestItem::<T::Hash>::Consensus(
 				ENGINE_ID,
 				author.encode(),
 			));
@@ -193,7 +193,7 @@ impl InherentError {
 
 /// The type of data that the inherent will contain.
 /// Just a byte array. It will be decoded to an actual account id later.
-pub type InherentType<T: Config> = T::AuthorId;
+pub type InherentType<T> = <T as Config>::AuthorId;
 
 /// A thing that an outer node could use to inject the inherent data.
 /// This should be used in simple uses of the author inherent (eg permissionless authoring)

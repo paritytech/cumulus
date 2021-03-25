@@ -7,40 +7,40 @@ edition = "2018"
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.0.0" }
 rand = "0.7.3"
-serde = { version = "1.0.101", features = ["derive"] }
+serde = { version = "1.0.119", features = ["derive"] }
 
 # Substrate
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-session = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sc-network = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-session = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-trie = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 
 # Cumulus
 cumulus-client-consensus-relay-chain = { path = "../../client/consensus/relay-chain" }
@@ -56,12 +56,6 @@ jsonrpc-core = "15.1.0"
 futures = { version = "0.3.5" }
 tokio = { version = "0.2.21", features = ["macros"] }
 
-# Polkadot dependencies
-polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-
 # Substrate dependencies
-pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }

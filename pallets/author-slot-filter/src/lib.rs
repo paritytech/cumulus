@@ -54,7 +54,7 @@ pub mod pallet {
 		/// The overarching event type
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 		/// Deterministic on-chain pseudo-randomness used to do the filtering
-		type RandomnessSource: Randomness<H256>;
+		type RandomnessSource: Randomness<H256, Self::BlockNumber>;
 		/// A source for the complete set of potential authors.
 		/// The starting point of the filtering.
 		type PotentialAuthors: Get<Vec<Self::AuthorId>>;
@@ -100,7 +100,7 @@ pub mod pallet {
 					i as u8,
 					relay_height as u8,
 				];
-				let randomness: sp_core::H256 = T::RandomnessSource::random(&subject);
+				let (randomness, _) = T::RandomnessSource::random(&subject);
 				debug!(target: "author-filter", "🎲Randomness sample {}: {:?}", i, &randomness);
 
 				// Cast to u32 first so we get consistent results on 32- and 64-bit platforms.

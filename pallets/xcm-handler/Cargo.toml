@@ -10,12 +10,13 @@ codec = { package = "parity-scale-codec", version = "2.0.0", features = [ "deriv
 log = { version = "0.4.14", default-features = false }
 
 # Substrate Dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
 
 # Polkadot Dependencies
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
 
 # Cumulus Dependencies
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
@@ -29,5 +30,6 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"cumulus-primitives-core/std",
-	"xcm/std"
+	"xcm/std",
+	"xcm-executor/std",
 ]

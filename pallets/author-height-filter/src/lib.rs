@@ -50,7 +50,7 @@ pub mod pallet {
 		/// The overarching event type
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 		/// Deterministic on-chain pseudo-randomness used to do the filtering
-		type RandomnessSource: Randomness<H256>;
+		type RandomnessSource: Randomness<H256, Self::BlockNumber>;
 		/// A source for the complete set of potential authors.
 		/// The starting point of the filtering.
 		type PotentialAuthors: Get<Vec<Self::AccountId>>;
@@ -84,7 +84,7 @@ pub mod pallet {
 				// For a more robust solution that adds entropy from the parachain inherent, see
 				// ../author-slot-filter
 				let subject: [u8; 7] = [b'f', b'i', b'l', b't', b'e', b'r', i as u8];
-				let randomness: sp_core::H256 = T::RandomnessSource::random(&subject);
+				let (randomness, _) = T::RandomnessSource::random(&subject);
 
 				// TODO why could we not use the same method as in moonbeam?
 				// Why does to_low_u64_be not exist on H256?

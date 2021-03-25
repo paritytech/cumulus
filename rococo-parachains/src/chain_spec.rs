@@ -128,29 +128,29 @@ fn testnet_genesis(
 	id: ParaId,
 ) -> parachain_runtime::GenesisConfig {
 	parachain_runtime::GenesisConfig {
-		frame_system: Some(parachain_runtime::SystemConfig {
+		frame_system: parachain_runtime::SystemConfig {
 			code: parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 			changes_trie_config: Default::default(),
-		}),
-		pallet_balances: Some(parachain_runtime::BalancesConfig {
+		},
+		pallet_balances: parachain_runtime::BalancesConfig {
 			balances: endowed_accounts
 				.iter()
 				.cloned()
 				.map(|k| (k, 1 << 60))
 				.collect(),
-		}),
-		pallet_sudo: Some(parachain_runtime::SudoConfig { key: root_key }),
-		parachain_info: Some(parachain_runtime::ParachainInfoConfig { parachain_id: id }),
-		pallet_author_filter: Some(parachain_runtime::AuthorFilterConfig {
+		},
+		pallet_sudo: parachain_runtime::SudoConfig { key: root_key },
+		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },
+		pallet_author_filter: parachain_runtime::AuthorFilterConfig {
 			eligible_ratio: 50,
-		}),
-		pallet_account_set: Some(parachain_runtime::PotentialAuthorSetConfig {
+		},
+		pallet_account_set: parachain_runtime::PotentialAuthorSetConfig {
 			stored_accounts: vec![
 				get_from_seed::<NimbusId>("Alice"),
 				get_from_seed::<NimbusId>("Bob"),
 			]
-		})
+		},
 	}
 }
