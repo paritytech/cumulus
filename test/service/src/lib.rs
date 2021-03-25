@@ -591,10 +591,13 @@ impl TestNode {
 	/// Register a parachain at this relay chain.
 	pub async fn schedule_upgrade(&self) -> Result<(), RpcTransactionError> {
 		let call = runtime::ParachainSystemCall::schedule_upgrade_without_checks(
-			vec![],
+			cumulus_test_runtime::WASM_BINARY.unwrap().to_vec(),
 		);
 
-		self.send_extrinsic(runtime::SudoCall::sudo(Box::new(call.into())), Sr25519Keyring::Alice).await.map(drop)
+		self.send_extrinsic(
+			runtime::SudoCall::sudo(Box::new(call.into())),
+			Sr25519Keyring::Alice,
+		).await.map(drop)
 	}
 }
 
