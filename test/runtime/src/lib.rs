@@ -298,16 +298,7 @@ decl_runtime_apis! {
 impl_runtime_apis! {
 	impl sp_api::Core<Block> for Runtime {
 		fn version() -> RuntimeVersion {
-			//if VersionDowngrade::get() {
-				VERSION
-			/*
-			} else {
-				RuntimeVersion {
-					spec_version: VERSION.spec_version + 1,
-					..VERSION
-				}
-			}
-			*/
+			VERSION
 		}
 
 		fn execute_block(block: Block) {
@@ -383,9 +374,9 @@ impl_runtime_apis! {
 	}
 }
 
-/*
 cumulus_pallet_parachain_system::register_validate_block!(Runtime, Executive);
 
+/*
 pub struct VersionDowngradeOnRuntimeUpgrade;
 impl frame_support::traits::OnRuntimeUpgrade for VersionDowngradeOnRuntimeUpgrade {
 	fn on_runtime_upgrade() -> u64 {
