@@ -15,10 +15,14 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
 use cumulus_primitives_core::ParaId;
-//use cumulus_test_runtime::VersionDowngrade;
 use cumulus_test_service::{initial_head_data, Keyring::*};
 use futures::join;
 use sc_service::TaskExecutor;
+use sc_client_api::client::BlockchainEvents;
+use futures::StreamExt;
+use sp_api::ProvideRuntimeApi;
+use cumulus_test_runtime::GetUpgradeDetection;
+use sp_runtime::generic::BlockId;
 
 #[substrate_test_utils::test]
 async fn test_runtime_upgrade(task_executor: TaskExecutor) {
@@ -57,27 +61,45 @@ async fn test_runtime_upgrade(task_executor: TaskExecutor) {
 		cumulus_test_service::TestNodeBuilder::new(para_id, task_executor.clone(), Charlie)
 			.enable_collator()
 			.connect_to_relay_chain_nodes(vec![&alice, &bob])
-			.update_storage_parachain(|| {
-				//VersionDowngrade::set(&true);
-			})
 			.build()
 			.await;
-	charlie.wait_for_blocks(2).await;
+	charlie.wait_for_blocks(1).await;
 
 	// run cumulus dave (a parachain full node) and wait for it to sync some blocks
 	let dave = cumulus_test_service::TestNodeBuilder::new(para_id, task_executor.clone(), Dave)
 		.connect_to_parachain_node(&charlie)
 		.connect_to_relay_chain_nodes(vec![&alice, &bob])
-		.update_storage_parachain(|| {
-			//VersionDowngrade::set(&true);
-		})
 		.build()
 		.await;
-	dave.wait_for_blocks(2).await;
+	dave.wait_for_blocks(1).await;
+
+	let mut import_notification_stream = charlie.client.import_notification_stream();
+
+	while let Some(notification) = import_notification_stream.next().await {
+		if notification.is_new_best {
+			let res = charlie.client.runtime_api()
+				.has_upgraded(&BlockId::Hash(notification.hash));
+			if matches!(res, Ok(false)) {
+				break;
+			}
+		}
+	}
 
 	// schedule runtime upgrade
-	todo!();
-	charlie.schedule_upgrade().await;
+	println!("####################### 1");
+	charlie.schedule_upgrade().await.unwrap();
+	println!("####################### 2");
+
+	while let Some(notification) = import_notification_stream.next().await {
+		if notification.is_new_best {
+			let res = charlie.client.runtime_api()
+				.has_upgraded(&BlockId::Hash(notification.hash));
+			if matches!(res, Ok(true)) {
+				break;
+			}
+			println!("####################### {:?}", res);
+		}
+	}
 
 	join!(
 		alice.task_manager.clean_shutdown(),

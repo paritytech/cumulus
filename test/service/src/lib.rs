@@ -590,7 +590,7 @@ impl TestNode {
 
 	/// Register a parachain at this relay chain.
 	pub async fn schedule_upgrade(&self) -> Result<(), RpcTransactionError> {
-		let call = runtime::ParachainSystemCall::schedule_upgrade(
+		let call = runtime::ParachainSystemCall::schedule_upgrade_without_checks(
 			vec![],
 		);
 
