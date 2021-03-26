@@ -142,5 +142,6 @@ fn testnet_genesis(
 		},
 		pallet_sudo: parachain_runtime::SudoConfig { key: root_key },
 		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },
+		cumulus_pallet_parachain_system: parachain_runtime::ParachainSystemConfig {},
 	}
 }
