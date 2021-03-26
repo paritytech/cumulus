@@ -37,10 +37,10 @@ sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "gui-ease-parachain-candidate-code-fetching" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "gui-ease-parachain-candidate-code-fetching" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "gui-ease-parachain-candidate-code-fetching" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "gui-ease-parachain-candidate-code-fetching" }
 
 # Cumulus
 cumulus-client-consensus-relay-chain = { path = "../../client/consensus/relay-chain" }

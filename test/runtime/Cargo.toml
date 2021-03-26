@@ -34,7 +34,7 @@ cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", def
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "gui-ease-parachain-candidate-code-fetching" }
 
 [build-dependencies]
 substrate-wasm-builder = "3.0.0"
