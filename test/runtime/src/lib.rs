@@ -53,6 +53,7 @@ pub use cumulus_pallet_parachain_system::Call as ParachainSystemCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
+use hex_literal::hex;
 
 pub type SessionHandlers = ();
 
@@ -84,6 +85,9 @@ pub const DAYS: BlockNumber = HOURS * 24;
 
 // 1 in 4 blocks (on average, not counting collisions) will be primary babe blocks.
 pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
+
+pub const UPGRADE_DETECTION_KEY: &[u8] =
+	&hex!["06de3d8a54d27e44a9d5ce189618f22db4b49d95320d9021994c850f25b8e386"];
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
@@ -219,13 +223,14 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 
 parameter_types! {
 	pub storage ParachainId: cumulus_primitives_core::ParaId = 100.into();
-	pub storage UpgradeDetection: bool = false;
+	//pub storage UpgradeDetection: bool = false;
 }
 
 pub struct UpgradeDetectionOnRuntimeUpgrade;
 impl frame_support::traits::OnRuntimeUpgrade for UpgradeDetectionOnRuntimeUpgrade {
 	fn on_runtime_upgrade() -> u64 {
-		UpgradeDetection::set(&true);
+		//UpgradeDetection::set(&true);
+		sp_io::storage::set(UPGRADE_DETECTION_KEY, &[0x42]);
 		0
 	}
 }
@@ -388,7 +393,8 @@ impl_runtime_apis! {
 
 	impl crate::GetUpgradeDetection<Block> for Runtime {
 		fn has_upgraded() -> bool {
-			UpgradeDetection::get()
+			//UpgradeDetection::get()
+			sp_io::storage::exists(UPGRADE_DETECTION_KEY)
 		}
 	}
 }

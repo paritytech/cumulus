@@ -1444,6 +1444,7 @@ dependencies = [
  "frame-executive",
  "frame-support",
  "frame-system",
+ "hex-literal 0.3.1",
  "pallet-balances",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
