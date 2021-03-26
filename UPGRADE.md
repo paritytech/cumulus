@@ -1,12 +1,4 @@
-
-## find out the latest commits for polkadot substrate and cumulus `rococo-v1` branches
-
-cumulus: paritytech/cumulus@24b1ee6bd1d96f255889f167e59ef9c9399a6305
-polkadot: paritytech/polkadot@2f7b975015d5c3f50199cda82b9b84e38726d001
-
-substrate: 
-    here you MUST use the last master commet, not the one on the rococo-v1 branch
-    paritytech/substrate@a94749cb5321cbc43403ead66a1c915236720f8d
+# upgrade rococo collator
 
 in this repo:
 ```
@@ -17,6 +9,19 @@ In case of conflicting Cargo.lock, make sure to use:
 ```
 git checkout upstream/rococo-v1 Cargo.lock && git add Cargo.lock
 ```
+then
+```
+cargo update
+```
+
+In case this fails: find out the latest commits for polkadot substrate and cumulus `rococo-v1` branches
+
+cumulus: paritytech/cumulus@24b1ee6bd1d96f255889f167e59ef9c9399a6305
+polkadot: paritytech/polkadot@2f7b975015d5c3f50199cda82b9b84e38726d001
+
+substrate: 
+    here you MUST use the last master commet, not the one on the rococo-v1 branch
+    paritytech/substrate@a94749cb5321cbc43403ead66a1c915236720f8d
 
 after successful rebase, fix dependencies:
 ```

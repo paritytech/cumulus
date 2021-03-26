@@ -348,19 +348,18 @@ construct_runtime! {
 		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event},
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
-		EncointerScheduler: encointer_scheduler::{Module, Call, Storage, Config<T>, Event},
-		EncointerCeremonies: encointer_ceremonies::{Module, Call, Storage, Config<T>, Event<T>},
-		EncointerCommunities: encointer_communities::{Module, Call, Storage, Config<T>, Event<T>},
-		EncointerBalances: encointer_balances::{Module, Call, Storage, Event<T>},
-		EncointerBazaar: encointer_bazaar::{Module, Call, Storage, Event<T>},
-		// Module index = 14/15 is the default. But I want to be explicit here, such that we know
+		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
+		EncointerCeremonies: encointer_ceremonies::{Pallet, Call, Storage, Config<T>, Event<T>},
+		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>},
+		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>},
+		EncointerBazaar: encointer_bazaar::{Pallet, Call, Storage, Event<T>},
+		// Pallet index = 14/15 is the default. But I want to be explicit here, such that we know
 		// for sure, what to enter in the polkadot-ui.
-		EncointerPersonhoodOracle: encointer_personhood_oracle::{Module, Call, Event} = 14,
-		EncointerSybilGate: encointer_sybil_gate::{Module, Call, Storage, Event<T>} = 15,
+		EncointerPersonhoodOracle: encointer_personhood_oracle::{Pallet, Call, Event} = 14,
+		EncointerSybilGate: encointer_sybil_gate::{Pallet, Call, Storage, Event<T>} = 15,
 
-				// DMP handler.
+		// DMP handler.
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin},
-
 	}
 }
 
