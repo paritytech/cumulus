@@ -112,3 +112,37 @@ impl sc_cli::CliConfiguration for PurgeChainCmd {
 		Some(&self.base.database_params)
 	}
 }
+
+/// The `run` command used to run a node.
+#[derive(Debug, StructOpt)]
+pub struct RunCmd {
+	/// Our run command inherents from sc_cli's
+	#[structopt(flatten)]
+	pub base: sc_cli::RunCmd,
+
+	/// Id of the parachain this collator collates for.
+	#[structopt(long)]
+	pub parachain_id: Option<u32>,
+
+	/// Run node as collator.
+	///
+	/// Note that this is the same as running with `--validator`.
+	#[structopt(long, conflicts_with = "validator")]
+	pub collator: bool,
+}
+
+impl sc_cli::CliConfiguration for RunCmd {
+	fn shared_params(&self) -> &sc_cli::SharedParams {
+		&self.base.shared_params
+	}
+
+	fn role(&self, is_dev: bool) -> sc_cli::Result<sc_cli::Role> {
+		let is_authority = self.base.validator || self.collator || is_dev;
+
+		Ok(if is_authority {
+			sc_service::Role::Authority
+		} else {
+			sc_service::Role::Full
+		})
+	}
+}
