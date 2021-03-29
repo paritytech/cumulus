@@ -159,6 +159,57 @@ where
 		let header = block.into_header();
 		let head_data = HeadData(header.encode());
 
+		let parent_state = match self.backend.state_at(BlockId::Hash(*header.parent_hash())) {
+			Ok(state) => state,
+			Err(e) => {
+				tracing::error!(
+					target: LOG_TARGET,
+					error = ?e,
+					"Failed to get parent state of the freshly built block.",
+				);
+				return None;
+			}
+		};
+
+		let code_hash = parent_state.inspect_state(|| {
+			let code_hash = sp_io::storage::get(well_known_keys::CODE_HASH);
+
+			let code_hash = if let Some(code_hash) = code_hash {
+				if code_hash.len() != Hash::len_bytes() {
+					tracing::error!(
+						target: LOG_TARGET,
+						"Invalid code hash in storage: len is {}, expected {}",
+						code_hash.len(),
+						Hash::len_bytes(),
+					);
+					return None;
+				}
+
+				Hash::from_slice(code_hash.as_slice())
+			} else {
+				tracing::info!(
+					target: LOG_TARGET,
+					"Failed to get validation code hash from storage, hash validation code \
+					directly."
+				);
+
+				let code = sp_io::storage::get(sp_core::storage::well_known_keys::CODE);
+				let code = match code {
+					Some(code) => ValidationCode(code),
+					None => {
+						tracing::error!(
+							target: LOG_TARGET,
+							"Failed to get validation code."
+						);
+						return None;
+					}
+				};
+				code.hash()
+			};
+
+			Some(code_hash)
+		})?;
+
 		let state = match self.backend.state_at(BlockId::Hash(block_hash)) {
 			Ok(state) => state,
 			Err(e) => {
@@ -239,40 +290,6 @@ where
 					// watermark up to the relay-block number.
 					relay_block_number
 				}
-			};
-
-			let code_hash = sp_io::storage::get(well_known_keys::CODE_HASH);
-			let code_hash = if let Some(code_hash) = code_hash {
-				if code_hash.len() != Hash::len_bytes() {
-					tracing::error!(
-						target: LOG_TARGET,
-						"Invalid code hash in storage: len is {}, expected {}",
-						code_hash.len(),
-						Hash::len_bytes(),
-					);
-					return None;
-				}
-
-				Hash::from_slice(code_hash.as_slice())
-			} else {
-				tracing::info!(
-					target: LOG_TARGET,
-					"Failed to get validation code hash from storage, hash validation code \
-					directly."
-				);
-
-				let code = sp_io::storage::get(sp_core::storage::well_known_keys::CODE);
-				let code = match code {
-					Some(code) => ValidationCode(code),
-					None => {
-						tracing::error!(
-							target: LOG_TARGET,
-							"Failed to get validation code."
-						);
-						return None;
-					}
-				};
-				code.hash()
 			};
 
 			Some(Collation {
