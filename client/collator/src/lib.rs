@@ -21,7 +21,7 @@ use cumulus_primitives_core::{
 	well_known_keys, OutboundHrmpMessage, ParachainBlockData, PersistedValidationData,
 };
 
-use sc_client_api::BlockBackend;
+use sc_client_api::{BlockBackend, StateBackend};
 use sp_consensus::BlockStatus;
 use sp_core::traits::SpawnNamed;
 use sp_runtime::{
@@ -44,9 +44,13 @@ use futures::{channel::oneshot, FutureExt};
 use std::sync::Arc;
 use parking_lot::Mutex;
 use tracing::Instrument;
+use lru::LruCache;
 
 /// The logging target.
 const LOG_TARGET: &str = "cumulus-collator";
+
+/// The size of lru cache for code hash
+const CODE_HASH_LRU_SIZE: usize = 8;
 
 /// The implementation of the Cumulus `Collator`.
 pub struct Collator<Block: BlockT, BS, Backend> {
@@ -54,6 +58,8 @@ pub struct Collator<Block: BlockT, BS, Backend> {
 	parachain_consensus: Box<dyn ParachainConsensus<Block>>,
 	wait_to_announce: Arc<Mutex<WaitToAnnounce<Block>>>,
 	backend: Arc<Backend>,
+	/// An LRU cache mapping code storage hash to validation code hash.
+	code_hash_lru: Arc<Mutex<LruCache<Block::Hash, Hash>>>,
 }
 
 impl<Block: BlockT, BS, Backend> Clone for Collator<Block, BS, Backend> {
@@ -63,6 +69,7 @@ impl<Block: BlockT, BS, Backend> Clone for Collator<Block, BS, Backend> {
 			wait_to_announce: self.wait_to_announce.clone(),
 			backend: self.backend.clone(),
 			parachain_consensus: self.parachain_consensus.clone(),
+			code_hash_lru: self.code_hash_lru.clone(),
 		}
 	}
 }
@@ -82,12 +89,14 @@ where
 		parachain_consensus: Box<dyn ParachainConsensus<Block>>,
 	) -> Self {
 		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(spawner, announce_block)));
+		let code_hash_lru = Arc::new(Mutex::new(LruCache::new(CODE_HASH_LRU_SIZE)));
 
 		Self {
 			block_status,
 			wait_to_announce,
 			backend,
 			parachain_consensus,
+			code_hash_lru,
 		}
 	}
 
@@ -171,28 +180,33 @@ where
 			}
 		};
 
-		let code_hash = parent_state.inspect_state(|| {
-			let code_hash = sp_io::storage::get(well_known_keys::CODE_HASH);
-
-			let code_hash = if let Some(code_hash) = code_hash {
-				if code_hash.len() != Hash::len_bytes() {
-					tracing::error!(
-						target: LOG_TARGET,
-						"Invalid code hash in storage: len is {}, expected {}",
-						code_hash.len(),
-						Hash::len_bytes(),
-					);
-					return None;
-				}
-
-				Hash::from_slice(code_hash.as_slice())
-			} else {
-				tracing::info!(
+		let code_storage_hash = parent_state.storage_hash(sp_core::storage::well_known_keys::CODE);
+		let code_storage_hash = match code_storage_hash {
+			Ok(Some(code_storage_hash)) => code_storage_hash,
+			Ok(None) => {
+				tracing::error!(
 					target: LOG_TARGET,
-					"Failed to get validation code hash from storage, hash validation code \
-					directly."
+					"Failed to get storage hash for the code, no value found in storage at the \
+					expected key",
 				);
+				return None;
+			},
+			Err(e) => {
+				tracing::error!(
+					target: LOG_TARGET,
+					error = ?e,
+					"Failed to get storage hash for code",
+				);
+				return None;
+			},
+		};
 
+		let maybe_code_hash = self.code_hash_lru.lock().get(&code_storage_hash).cloned();
+
+		let code_hash = if let Some(code_hash) = maybe_code_hash {
+			code_hash
+		} else {
+			parent_state.inspect_state(|| {
 				let code = sp_io::storage::get(sp_core::storage::well_known_keys::CODE);
 				let code = match code {
 					Some(code) => ValidationCode(code),
@@ -204,11 +218,11 @@ where
 						return None;
 					}
 				};
-				code.hash()
-			};
+				Some(code.hash())
+			})?
+		};
 
-			Some(code_hash)
-		})?;
+		self.code_hash_lru.lock().put(code_storage_hash, code_hash);
 
 		let state = match self.backend.state_at(BlockId::Hash(block_hash)) {
 			Ok(state) => state,
