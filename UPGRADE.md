@@ -2,6 +2,7 @@
 
 in this repo:
 ```
+git fetch upstream
 git rebase upstream/rococo-v1
 ```
 
