@@ -44,6 +44,8 @@ sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Other dependencies
 env_logger = "0.7.1"

@@ -485,11 +485,29 @@ mod tests {
 			validation_data: &PersistedValidationData,
 		) -> Option<ParachainCandidate<Block>> {
 			let block_id = BlockId::Hash(parent.hash());
-			let builder = self.client.init_block_builder_at(
+			let mut builder = self.client.init_block_builder_at(
 				&block_id,
 				Some(validation_data.clone()),
 				Default::default(),
 			);
+
+			// we do a set_code to ensure the collation doesn't fetch an invalid code.
+			let extrinsic = cumulus_test_client::generate_extrinsic(
+				&self.client,
+				sp_keyring::AccountKeyring::Alice,
+				cumulus_test_runtime::Call::Sudo(
+					pallet_sudo::Call::sudo_unchecked_weight(
+						Box::new(cumulus_test_runtime::Call::System(
+							frame_system::Call::set_code_without_checks(
+								vec![],
+							)
+						)),
+						0,
+					)
+				)
+			);
+
+			builder.push(extrinsic).expect("extrinsis is correct");
 
 			let (block, _, proof) = builder.build().expect("Creates block").into_inner();
 
@@ -560,5 +578,9 @@ mod tests {
 		let block = Block::decode(&mut &block_data.0[..]).expect("Is a valid block");
 
 		assert_eq!(1, *block.header().number());
+		assert_eq!(
+			collation.validation_code_hash,
+			ValidationCode(cumulus_test_runtime::WASM_BINARY.unwrap().to_vec()).hash(),
+		);
 	}
 }
