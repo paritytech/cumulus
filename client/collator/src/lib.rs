@@ -206,20 +206,27 @@ where
 		let code_hash = if let Some(code_hash) = maybe_code_hash {
 			code_hash
 		} else {
-			parent_state.inspect_state(|| {
-				let code = sp_io::storage::get(sp_core::storage::well_known_keys::CODE);
-				let code = match code {
-					Some(code) => ValidationCode(code),
-					None => {
-						tracing::error!(
-							target: LOG_TARGET,
-							"Failed to get validation code."
-						);
-						return None;
-					}
-				};
-				Some(code.hash())
-			})?
+			let code = match parent_state.storage_hash(sp_core::storage::well_known_keys::CODE) {
+				Ok(Some(code)) => code,
+				Ok(None) => {
+					tracing::error!(
+						target: LOG_TARGET,
+						"Failed to get storage hash for the code, no value found in storage at the \
+						expected key",
+					);
+					return None;
+				},
+				Err(e) => {
+					tracing::error!(
+						target: LOG_TARGET,
+						error = ?e,
+						"Failed to get storage hash for code",
+					);
+					return None;
+				},
+			};
+			let code = ValidationCode(code);
+			code.hash()
 		};
 
 		self.code_hash_lru.lock().put(code_storage_hash, code_hash);
