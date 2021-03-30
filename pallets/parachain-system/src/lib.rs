@@ -161,10 +161,10 @@ decl_module! {
 		/// chain and this parachain. Synchronizing the block for the upgrade is sensitive, and this
 		/// bypasses all checks and and normal protocols. Very easy to brick your chain if done wrong.
 		#[weight = (0, DispatchClass::Operational)]
-		pub fn set_upgrade_block(origin, relay_chain_block: T::BlockNumber) {
+		pub fn set_upgrade_block(origin, relay_chain_block: RelayChainBlockNumber) {
 			ensure_root(origin)?;
 			if let Some((_, validation_function)) = PendingValidationFunction::get() {
-				PendingValidationFunction::set((relay_chain_block, validation_function));
+				PendingValidationFunction::put((relay_chain_block, validation_function));
 			}
 		}
 
