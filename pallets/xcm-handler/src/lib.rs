@@ -27,7 +27,10 @@ use cumulus_primitives_core::{
 	DownwardMessageHandler, HrmpMessageHandler, HrmpMessageSender, InboundDownwardMessage,
 	InboundHrmpMessage, OutboundHrmpMessage, ParaId, UpwardMessageSender,
 };
-use frame_support::{decl_error, decl_event, decl_module, dispatch::DispatchResult, sp_runtime::traits::Hash, traits::EnsureOrigin};
+use frame_support::{
+	decl_error, decl_event, decl_module, dispatch::DispatchResult, sp_runtime::traits::Hash,
+	traits::EnsureOrigin, error::BadOrigin,
+};
 use sp_std::convert::{TryFrom, TryInto};
 use xcm::{
 	v0::{Error as XcmError, ExecuteXcm, Junction, MultiLocation, SendXcm, Xcm},
@@ -226,5 +229,27 @@ impl From<ParaId> for Origin {
 impl From<u32> for Origin {
 	fn from(id: u32) -> Origin {
 		Origin::SiblingParachain(id.into())
+	}
+}
+
+/// Ensure that the origin `o` represents a sibling parachain.
+/// Returns `Ok` with the parachain ID of the sibling or an `Err` otherwise.
+pub fn ensure_sibling_para<OuterOrigin>(o: OuterOrigin) -> Result<ParaId, BadOrigin>
+	where OuterOrigin: Into<Result<Origin, OuterOrigin>>
+{
+	match o.into() {
+		Ok(Origin::SiblingParachain(id)) => Ok(id),
+		_ => Err(BadOrigin),
+	}
+}
+
+/// Ensure that the origin `o` represents is the relay chain.
+/// Returns `Ok` if it does or an `Err` otherwise.
+pub fn ensure_relay<OuterOrigin>(o: OuterOrigin) -> Result<(), BadOrigin>
+	where OuterOrigin: Into<Result<Origin, OuterOrigin>>
+{
+	match o.into() {
+		Ok(Origin::Relay) => Ok(()),
+		_ => Err(BadOrigin),
 	}
 }

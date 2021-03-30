@@ -42,7 +42,7 @@ pub use frame_support::{
 	traits::Randomness,
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-		DispatchClass, IdentityFee, Weight,
+		DispatchClass, IdentityFee, Weight, Filter,
 	},
 	StorageValue,
 };
@@ -77,8 +77,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("cumulus-test-parachain"),
 	impl_name: create_runtime_str!("cumulus-test-parachain"),
 	authoring_version: 1,
-	spec_version: 3,
-	impl_version: 1,
+	spec_version: 7,
+	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
 };
@@ -147,6 +147,18 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 42;
 }
 
+pub struct NoSetCode;
+impl Filter<Call> for NoSetCode {
+	fn filter(c: &Call) -> bool {
+		match *c {
+			// Remark is used as a no-op call in the benchmarking
+			Call::System(SystemCall::set_code(..))
+				| Call::System(SystemCall::set_code_without_checks(..)) => false,
+			_ => true,
+		}
+	}
+}
+
 impl frame_system::Config for Runtime {
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
@@ -178,7 +190,7 @@ impl frame_system::Config for Runtime {
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type DbWeight = ();
-	type BaseCallFilter = ();
+	type BaseCallFilter = NoSetCode;
 	type SystemWeightInfo = ();
 	type BlockWeights = RuntimeBlockWeights;
 	type BlockLength = RuntimeBlockLength;
@@ -293,6 +305,13 @@ impl cumulus_pallet_xcm_handler::Config for Runtime {
 	type AccountIdConverter = LocationConverter;
 }
 
+impl cumulus_spambot::Config for Runtime {
+	type Event = Event;
+	type Origin = Origin;
+	type Call = Call;
+	type XcmSender = XcmHandler;
+}
+
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
@@ -308,6 +327,8 @@ construct_runtime! {
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
 		XcmHandler: cumulus_pallet_xcm_handler::{Pallet, Call, Event<T>, Origin},
+
+		Spambot: cumulus_spambot::{Pallet, Call, Storage, Event<T>} = 99,
 	}
 }
 
