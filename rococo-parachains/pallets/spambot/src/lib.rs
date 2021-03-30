@@ -123,6 +123,36 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(0)]
+		fn start(origin: OriginFor<T>, para: ParaId) -> DispatchResult {
+			ensure_root(origin)?;
+			Targets::<T>::mutate(|t| t.push(para));
+			Ok(())
+		}
+
+		#[pallet::weight(0)]
+		fn start_many(origin: OriginFor<T>, para: ParaId, count: u32) -> DispatchResult {
+			ensure_root(origin)?;
+			for _ in 0..count {
+				Targets::<T>::mutate(|t| t.push(para));
+			}
+			Ok(())
+		}
+
+		#[pallet::weight(0)]
+		fn stop(origin: OriginFor<T>, para: ParaId) -> DispatchResult {
+			ensure_root(origin)?;
+			Targets::<T>::mutate(|t| if let Some(p) = t.iter().position(|p| p == &para) { t.swap_remove(p); });
+			Ok(())
+		}
+
+		#[pallet::weight(0)]
+		fn stop_all(origin: OriginFor<T>, maybe_para: Option<ParaId>) -> DispatchResult {
+			ensure_root(origin)?;
+			Targets::<T>::mutate(|t| t.retain(|&x| maybe_para.map_or(false, |para| x != para)));
+			Ok(())
+		}
+
+		#[pallet::weight(0)]
 		fn ping(origin: OriginFor<T>, seq: u32) -> DispatchResult {
 			// Only accept pings from other chains.
 			let para = ensure_sibling_para(<T as Config>::Origin::from(origin))?;
