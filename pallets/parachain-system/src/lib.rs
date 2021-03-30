@@ -975,6 +975,7 @@ mod tests {
 		type BaseCallFilter = ();
 		type SystemWeightInfo = ();
 		type SS58Prefix = ();
+		type OnSetCode = ();
 	}
 	impl Config for Test {
 		type Event = Event;
