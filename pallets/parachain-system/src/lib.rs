@@ -145,6 +145,7 @@ decl_module! {
 		fn deposit_event() = default;
 
 		// TODO: figure out a better weight than this
+		// TODO: Bring back the correct validation checks: #374
 		#[weight = (0, DispatchClass::Operational)]
 		pub fn schedule_upgrade(origin, validation_function: Vec<u8>) {
 			ensure_root(origin)?;
