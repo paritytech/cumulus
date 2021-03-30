@@ -129,14 +129,6 @@ decl_storage! {
 		/// announcing the weight of `on_initialize` and `on_finialize`.
 		AnnouncedHrmpMessagesPerCandidate: u32;
 	}
-	add_extra_genesis {
-		build(|_| {
-			let code = storage::unhashed::get_raw(sp_core::storage::well_known_keys::CODE)
-				.expect("Genesis build failed: code not found in storage");
-			let code_hash = BlakeTwo256::hash(&code[..]);
-			storage::unhashed::put_raw(well_known_keys::CODE_HASH, code_hash.as_bytes());
-		});
-	}
 }
 
 // The pallet's dispatchable functions.
@@ -398,7 +390,7 @@ decl_module! {
 			);
 		}
 
-		fn on_initialize(_n: T::BlockNumber) -> Weight {
+		fn on_initialize(n: T::BlockNumber) -> Weight {
 			// To prevent removing `NEW_VALIDATION_CODE` that was set by another `on_initialize` like
 			// for example from scheduler, we only kill the storage entry if it was not yet updated
 			// in the current block.
@@ -446,28 +438,6 @@ decl_module! {
 			);
 
 			weight
-		}
-
-		fn on_runtime_upgrade() -> Weight {
-			// Migration to add the blake2 256 code hash in storage at key expected by cumulus.
-			if storage::unhashed::get_raw(well_known_keys::CODE_HASH).is_none() {
-				if let Some(code) = storage::unhashed::get_raw(
-					sp_core::storage::well_known_keys::CODE
-				) {
-					let code_hash = BlakeTwo256::hash(&code[..]);
-					storage::unhashed::put_raw(well_known_keys::CODE_HASH, code_hash.as_bytes());
-
-					T::BlockWeights::get().max_block
-				} else {
-					log::error!(
-						"Code hash migration failed: Code not found in storage at its expected key"
-					);
-
-					T::DbWeight::get().reads(2)
-				}
-			} else {
-				T::DbWeight::get().reads(1)
-			}
 		}
 	}
 }
@@ -630,8 +600,6 @@ impl<T: Config> Module<T> {
 	/// parachain will execute it on subsequent blocks.
 	fn put_parachain_code(code: &[u8]) {
 		storage::unhashed::put_raw(sp_core::storage::well_known_keys::CODE, code);
-		let code_hash = BlakeTwo256::hash(code);
-		storage::unhashed::put_raw(well_known_keys::CODE_HASH, code_hash.as_bytes());
 	}
 
 	/// The maximum code size permitted, in bytes.
@@ -919,13 +887,13 @@ mod tests {
 		assert_ok,
 		dispatch::UnfilteredDispatchable,
 		parameter_types,
-		traits::{OnFinalize, OnInitialize, OnRuntimeUpgrade},
+		traits::{OnFinalize, OnInitialize},
 	};
 	use frame_system::{InitKind, RawOrigin};
 	use hex_literal::hex;
 	use relay_chain::v1::HrmpChannelId;
 	use sp_core::H256;
-	use sp_runtime::{testing::Header, traits::IdentityLookup, BuildStorage};
+	use sp_runtime::{testing::Header, traits::IdentityLookup};
 	use sp_version::RuntimeVersion;
 	use std::cell::RefCell;
 
@@ -941,7 +909,7 @@ mod tests {
 			UncheckedExtrinsic = UncheckedExtrinsic,
 		{
 			System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-			ParachainSystem: parachain_system::{Pallet, Call, Storage, Event, Config},
+			ParachainSystem: parachain_system::{Pallet, Call, Storage, Event},
 		}
 	);
 
@@ -1019,8 +987,8 @@ mod tests {
 		HANDLED_DOWNWARD_MESSAGES.with(|m| m.borrow_mut().clear());
 		HANDLED_HRMP_MESSAGES.with(|m| m.borrow_mut().clear());
 
-		GenesisConfig::default()
-			.build_storage()
+		frame_system::GenesisConfig::default()
+			.build_storage::<Test>()
 			.unwrap()
 			.into()
 	}
@@ -1240,20 +1208,6 @@ mod tests {
 		}
 	}
 
-	/// Check code hash in storage has correct value
-	fn check_code_hash() {
-		let code = storage::unhashed::get_raw(sp_core::storage::well_known_keys::CODE)
-			.expect("code must always be in storage");
-		let expected_code_hash = BlakeTwo256::hash(code.as_slice());
-		let code_hash = storage::unhashed::get_raw(well_known_keys::CODE_HASH)
-			.expect("code hash must always be in storage");
-		assert_eq!(
-			code_hash.as_slice(),
-			expected_code_hash.as_bytes(),
-			"code hash and code are inconsistent",
-		);
-	}
-
 	#[test]
 	#[should_panic]
 	fn block_tests_run_on_drop() {
@@ -1302,7 +1256,6 @@ mod tests {
 						events[0].event,
 						Event::parachain_system(crate::Event::ValidationFunctionStored(1123))
 					);
-					check_code_hash();
 				},
 			)
 			.add_with_post_test(
@@ -1314,7 +1267,6 @@ mod tests {
 						events[0].event,
 						Event::parachain_system(crate::Event::ValidationFunctionApplied(1234))
 					);
-					check_code_hash();
 				},
 			);
 	}
@@ -1885,27 +1837,5 @@ mod tests {
 					m.clear();
 				});
 			});
-	}
-
-	#[test]
-	fn code_hash_is_correctly_set_at_genesis() {
-		let storage = GenesisConfig::default()
-			.build_storage()
-			.unwrap();
-
-		sp_io::TestExternalities::new(storage).execute_with(|| {
-			check_code_hash();
-		})
-	}
-
-	#[test]
-	fn migration_set_correct_code_hash() {
-		sp_io::TestExternalities::new_empty().execute_with(|| {
-			storage::unhashed::put_raw(sp_core::storage::well_known_keys::CODE, &[1, 2, 3][..]);
-			ParachainSystem::on_runtime_upgrade();
-			check_code_hash();
-			ParachainSystem::on_runtime_upgrade();
-			check_code_hash();
-		})
 	}
 }

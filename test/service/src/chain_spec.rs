@@ -119,6 +119,5 @@ fn testnet_genesis(
 				.collect(),
 		},
 		pallet_sudo: cumulus_test_runtime::SudoConfig { key: root_key },
-		cumulus_pallet_parachain_system: cumulus_test_runtime::ParachainSystemConfig {},
 	}
 }

@@ -65,9 +65,6 @@ pub mod well_known_keys {
 	///
 	/// The value is stored as SCALE encoded `u32`.
 	pub const PROCESSED_DOWNWARD_MESSAGES: &'static [u8] = b":cumulus_processed_downward_messages:";
-
-	/// The storage key with the blake2 256 hash of the code.
-	pub const CODE_HASH: &'static [u8] = b":cumulus_code_hash:";
 }
 
 /// Something that should be called when a downward message is received.
