@@ -79,12 +79,12 @@ decl_storage! {
 	trait Store for Module<T: Config> as ParachainSystem {
 		/// We need to store the new validation function for the span between
 		/// setting it and applying it. If `PendingRelayChainBlockNumber` has a
-		/// value, then `PendingValidationFunction` must have a value too, and
-		/// together will coordinate what block number the upgrade will happen.
+		/// value, then `PendingValidationFunction` must have a real value, and
+		/// together will coordinate what block number where the upgrade will happen.
 		PendingRelayChainBlockNumber: Option<RelayChainBlockNumber>;
 
 		/// The new validation function we will upgrade to when the relay chain
-		/// reaches `RelayChainBlockNumber`. A real validation function will
+		/// reaches `PendingRelayChainBlockNumber`. A real validation function must
 		/// exist here as long as `PendingRelayChainBlockNumber` is set.
 		PendingValidationFunction get(fn new_validation_function): Vec<u8>;
 
