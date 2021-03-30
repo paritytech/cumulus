@@ -155,6 +155,19 @@ decl_module! {
 			Self::schedule_upgrade_impl(validation_function)?;
 		}
 
+		/// Force an already scheduled validation function upgrade to happen on a particular block.
+		///
+		/// Note that coordinating this block for the upgrade has to happen independently on the relay
+		/// chain and this parachain. Synchronizing the block for the upgrade is sensitive, and this
+		/// bypasses all checks and and normal protocols. Very easy to brick your chain if done wrong.
+		#[weight = (0, DispatchClass::Operational)]
+		pub fn set_upgrade_block(origin, relay_chain_block: T::BlockNumber) {
+			ensure_root(origin)?;
+			if let Some((_, validation_function)) = PendingValidationFunction::get() {
+				PendingValidationFunction::set((relay_chain_block, validation_function));
+			}
+		}
+
 		/// Set the current validation data.
 		///
 		/// This should be invoked exactly once per block. It will panic at the finalization
