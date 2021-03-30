@@ -206,12 +206,12 @@ where
 		let code_hash = if let Some(code_hash) = maybe_code_hash {
 			code_hash
 		} else {
-			let code = match parent_state.storage_hash(sp_core::storage::well_known_keys::CODE) {
+			let code = match parent_state.storage(sp_core::storage::well_known_keys::CODE) {
 				Ok(Some(code)) => code,
 				Ok(None) => {
 					tracing::error!(
 						target: LOG_TARGET,
-						"Failed to get storage hash for the code, no value found in storage at the \
+						"Failed to get code from storage, no value found in storage at the \
 						expected key",
 					);
 					return None;
@@ -220,7 +220,7 @@ where
 					tracing::error!(
 						target: LOG_TARGET,
 						error = ?e,
-						"Failed to get storage hash for code",
+						"Failed to get code from storage",
 					);
 					return None;
 				},
