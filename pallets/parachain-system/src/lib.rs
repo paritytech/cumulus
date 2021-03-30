@@ -77,10 +77,16 @@ pub trait Config: frame_system::Config {
 // This pallet's storage items.
 decl_storage! {
 	trait Store for Module<T: Config> as ParachainSystem {
-		// we need to store the new validation function for the span between
-		// setting it and applying it.
-		PendingValidationFunction get(fn new_validation_function):
-			Option<(RelayChainBlockNumber, Vec<u8>)>;
+		/// We need to store the new validation function for the span between
+		/// setting it and applying it. If `PendingRelayChainBlockNumber` has a
+		/// value, then `PendingValidationFunction` must have a value too, and
+		/// together will coordinate what block number the upgrade will happen.
+		PendingRelayChainBlockNumber: Option<RelayChainBlockNumber>;
+
+		/// The new validation function we will upgrade to when the relay chain
+		/// reaches `RelayChainBlockNumber`. A real validation function will
+		/// exist here as long as `PendingRelayChainBlockNumber` is set.
+		PendingValidationFunction get(fn new_validation_function): Vec<u8>;
 
 		/// The [`PersistedValidationData`] set for this block.
 		ValidationData get(fn validation_data): Option<PersistedValidationData>;
@@ -163,8 +169,10 @@ decl_module! {
 		#[weight = (0, DispatchClass::Operational)]
 		pub fn set_upgrade_block(origin, relay_chain_block: RelayChainBlockNumber) {
 			ensure_root(origin)?;
-			if let Some((_, validation_function)) = PendingValidationFunction::get() {
-				PendingValidationFunction::put((relay_chain_block, validation_function));
+			if let Some(_old_block) = PendingRelayChainBlockNumber::get() {
+				PendingRelayChainBlockNumber::put(relay_chain_block);
+			} else {
+				return Err(Error::<T>::NotScheduled.into())
 			}
 		}
 
@@ -197,9 +205,10 @@ decl_module! {
 			// initialization logic: we know that this runs exactly once every block,
 			// which means we can put the initialization logic here to remove the
 			// sequencing problem.
-			if let Some((apply_block, validation_function)) = PendingValidationFunction::get() {
+			if let Some(apply_block) = PendingRelayChainBlockNumber::get() {
 				if vfp.relay_parent_number >= apply_block {
-					PendingValidationFunction::kill();
+					PendingRelayChainBlockNumber::kill();
+					let validation_function = PendingValidationFunction::take();
 					LastUpgrade::put(&apply_block);
 					Self::put_parachain_code(&validation_function);
 					Self::deposit_event(Event::ValidationFunctionApplied(vfp.relay_parent_number));
@@ -628,7 +637,7 @@ impl<T: Config> Module<T> {
 		vfp: &PersistedValidationData,
 		cfg: &AbridgedHostConfiguration,
 	) -> Option<relay_chain::BlockNumber> {
-		if PendingValidationFunction::get().is_some() {
+		if PendingRelayChainBlockNumber::get().is_some() {
 			// There is already upgrade scheduled. Upgrade is not allowed.
 			return None;
 		}
@@ -667,7 +676,8 @@ impl<T: Config> Module<T> {
 		// storage keeps track locally for the parachain upgrade, which will
 		// be applied later.
 		Self::notify_polkadot_of_pending_upgrade(&validation_function);
-		PendingValidationFunction::put((apply_block, validation_function));
+		PendingRelayChainBlockNumber::put(apply_block);
+		PendingValidationFunction::put(validation_function);
 		Self::deposit_event(Event::ValidationFunctionStored(apply_block));
 
 		Ok(())
@@ -883,6 +893,8 @@ decl_error! {
 		/// That means that one or more channels had at least some of the submitted messages altered,
 		/// omitted or added illegaly.
 		HrmpMqcMismatch,
+		/// No validation function upgrade is currently scheduled.
+		NotScheduled,
 	}
 }
 
