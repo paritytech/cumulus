@@ -18,7 +18,10 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_runtime::traits::Block as BlockT;
+use sp_std::prelude::*;
+use codec::{Encode, Decode};
+use sp_runtime::{RuntimeDebug, traits::Block as BlockT};
+use xcm::VersionedXcm;
 
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use polkadot_parachain::primitives::{Id as ParaId, UpwardMessage, ValidationParams};
@@ -38,6 +41,18 @@ pub type InboundHrmpMessage = polkadot_primitives::v1::InboundHrmpMessage<relay_
 
 /// And outbound HRMP message
 pub type OutboundHrmpMessage = polkadot_primitives::v1::OutboundHrmpMessage<ParaId>;
+
+/// Error description of a message send failure.
+pub enum MessageSendError {
+	/// The dispatch queue is full.
+	QueueFull,
+	/// There does not exist a channel for sending the message.
+	NoChannel,
+	/// The message is too big to ever fit in a channel.
+	TooBig,
+	/// Some other error.
+	Other(&'static str),
+}
 
 /// Well known keys for values in the storage.
 pub mod well_known_keys {
@@ -74,23 +89,59 @@ pub trait DownwardMessageHandler {
 	fn handle_downward_message(msg: InboundDownwardMessage);
 }
 
-/// Something that should be called when an HRMP message is received.
+// TODO: Rename Hrmp -> Xcmp
+/// Something that should be called for each fragment message received over XCMP.
 #[impl_trait_for_tuples::impl_for_tuples(30)]
 pub trait HrmpMessageHandler {
-	/// Handle the given HRMP message.
-	fn handle_hrmp_message(sender: ParaId, msg: InboundHrmpMessage);
+	/// Handle the given blob XCMP message.
+	fn handle_blob_message(sender: ParaId, sent_at: relay_chain::BlockNumber, msg: Vec<u8>);
+
+	/// Handle the given Xcm message that has been received over XCMP.
+	fn handle_xcm_message(sender: ParaId, sent_at: relay_chain::BlockNumber, xcm: VersionedXcm);
 }
 
 /// Something that should be called when sending an upward message.
 pub trait UpwardMessageSender {
-	/// Send the given upward message.
-	fn send_upward_message(msg: UpwardMessage) -> Result<(), ()>;
+	/// Send the given UMP message; return the expected number of blocks before the message will
+	/// be dispatched or an error if the message cannot be sent.
+	fn send_upward_message(msg: UpwardMessage) -> Result<u32, MessageSendError>;
 }
 
-/// Something that should be called when sending an HRMP message.
+/// The "quality of service" considerations for message sending.
+#[derive(Eq, PartialEq, Clone, Copy, Encode, Decode, RuntimeDebug)]
+pub enum ServiceQuality {
+	/// Ensure that this message is dispatched in the same relative order as any other messages that
+	/// were also sent with `Ordered`. This only guarantees message ordering on the dispatch side,
+	/// and not necessarily on the execution side.
+	Ordered,
+	/// Ensure that the message is dispatched as soon as possible, which could result in it being
+	/// dispatched before other messages which are larger and/or rely on relative ordering.
+	Fast,
+}
+
+// TODO: Rename Hrmp -> Xcmp
+/// Something that should be called in order to send a message over XCMP.
 pub trait HrmpMessageSender {
-	/// Send the given HRMP message.
-	fn send_hrmp_message(msg: OutboundHrmpMessage) -> Result<(), ()>;
+	/// Send the given abstract HRMP message; return the expected number of blocks before the
+	/// message will be dispatched or an error if the message cannot be sent.
+	///
+	/// NOTE: The number of blocks is a guideline only and may take more or less depending on
+	/// various factors. However, it should generally return at least one non-zero successful
+	/// result before returning a `QueueFull` error.
+	///
+	/// NOTE: Using this when `send_xcm_message` has already been used may result in additional
+	/// aggregate messages being sent.
+	fn send_blob_message(dest: ParaId, msg: Vec<u8>, qos: ServiceQuality)
+		-> Result<u32, MessageSendError>;
+
+	/// Send the given XCM message through HMP; return the expected number of blocks before the
+	/// message will be dispatched or an error if the message cannot be sent.
+	///
+	/// NOTE: The number of blocks is a guideline only and may take more or less depending on
+	/// various factors. However, it should generally return at least one non-zero successful
+	/// result before returning a `QueueFull` error.
+	fn send_xcm_message(dest: ParaId, msg: VersionedXcm, qos: ServiceQuality)
+		-> Result<u32, MessageSendError>;
 }
 
 /// A trait which is called when the validation data is set.
