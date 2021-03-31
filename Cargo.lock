@@ -1310,6 +1310,7 @@ dependencies = [
  "sp-version",
  "substrate-test-runtime-client",
  "trie-db",
+ "xcm",
 ]
 
 [[package]]
@@ -1338,6 +1339,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-trie",
+ "xcm",
 ]
 
 [[package]]

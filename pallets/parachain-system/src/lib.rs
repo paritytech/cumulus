@@ -32,7 +32,7 @@ use cumulus_primitives_core::{
 	well_known_keys::{self, NEW_VALIDATION_CODE},
 	AbridgedHostConfiguration, DownwardMessageHandler, HrmpMessageHandler, HrmpMessageSender,
 	InboundDownwardMessage, InboundHrmpMessage, OnValidationData, OutboundHrmpMessage, ParaId,
-	PersistedValidationData, UpwardMessage, UpwardMessageSender,
+	PersistedValidationData, UpwardMessage, UpwardMessageSender, MessageSendError, ServiceQuality,
 };
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use frame_support::{
@@ -48,10 +48,21 @@ use relay_state_snapshot::MessagingStateSnapshot;
 use sp_inherents::{InherentData, InherentIdentifier, ProvideInherent};
 use sp_runtime::traits::{BlakeTwo256, Hash};
 use sp_std::{cmp, collections::btree_map::BTreeMap, vec::Vec};
+use codec::{Encode, Decode};
+use xcm::VersionedXcm;
 
 mod relay_state_snapshot;
 #[macro_use]
 pub mod validate_block;
+
+/// The aggregate HMP message format.
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode)]
+pub enum AggregateFormat {
+	/// Encoded `VersionedXcm` messages, all concatenated.
+	ConcatenatedVersionedXcm,
+	/// Encoded `VersionedXcm` messages, encoded again, and then concatenated.
+	ConcatenatedEncodedBlob,
+}
 
 /// The pallet's configuration trait.
 pub trait Config: frame_system::Config {
@@ -126,7 +137,7 @@ decl_storage! {
 		/// present in this vector then `OutboundHrmpMessages` for it should be not empty.
 		NonEmptyHrmpChannels: Vec<ParaId>;
 		/// The number of HRMP messages we observed in `on_initialize` and thus used that number for
-		/// announcing the weight of `on_initialize` and `on_finialize`.
+		/// announcing the weight of `on_initialize` and `on_finalize`.
 		AnnouncedHrmpMessagesPerCandidate: u32;
 	}
 }
@@ -229,18 +240,34 @@ decl_module! {
 		}
 
 		#[weight = (1_000, DispatchClass::Operational)]
-		fn sudo_send_hrmp_message(origin, message: OutboundHrmpMessage) {
+		fn sudo_send_hmp_xcm(origin, recipient: ParaId, xcm: VersionedXcm, qos: ServiceQuality) {
 			ensure_root(origin)?;
-			let _ = Self::send_hrmp_message(message);
+			let _ = Self::send_xcm_message(recipient, xcm, qos);
+		}
+
+		#[weight = (1_000, DispatchClass::Operational)]
+		fn sudo_send_hmp_blob(origin, recipient: ParaId, blob: Vec<u8>, qos: ServiceQuality) {
+			ensure_root(origin)?;
+			let _ = Self::send_blob_message(recipient, blob, qos);
 		}
 
 		fn on_finalize() {
-			DidSetValidationCode::take();
+			DidSetValidationCode::kill();
 
-			let host_config = Self::host_configuration()
-				.expect("host configuration is promised to set until `on_finalize`; qed");
-			let relevant_messaging_state = Self::relevant_messaging_state()
-				.expect("relevant messaging state is promised to be set until `on_finalize`; qed");
+			let host_config = match Self::host_configuration() {
+				Some(ok) => ok,
+				None => {
+					debug_assert!(false, "host configuration is promised to set until `on_finalize`; qed");
+					return
+				}
+			};
+			let relevant_messaging_state = match Self::relevant_messaging_state() {
+				Some(ok) => ok,
+				None => {
+					debug_assert!(false, "relevant messaging state is promised to be set until `on_finalize`; qed");
+					return
+				}
+			};
 
 			<Self as Store>::PendingUpwardMessages::mutate(|up| {
 				let (count, size) = relevant_messaging_state.relay_dispatch_queue_size;
@@ -314,8 +341,8 @@ decl_module! {
 				{
 					Ok(m) => m,
 					Err(_) => {
-						// TODO: #274 This means that there is no such channel anymore. Means that we should
-						// return back the messages from this channel.
+						// TODO: #274 This means that there is no such channel anymore. Means that
+						// we should return back the messages from this channel.
 						//
 						// Until then pretend it became empty
 						prune_empty.push(recipient);
@@ -365,7 +392,7 @@ decl_module! {
 				});
 			}
 
-			// Sort the outbound messages by asceding recipient para id to satisfy the acceptance
+			// Sort the outbound messages by ascending recipient para id to satisfy the acceptance
 			// criteria requirement.
 			outbound_hrmp_messages.sort_by_key(|m| m.recipient);
 
@@ -376,7 +403,7 @@ decl_module! {
 			// This leads to "starvation" of the channels near to the end.
 			//
 			// To mitigate this we shift all processed elements towards the end of the vector using
-			// `rotate_left`. To get intution how it works see the examples in its rustdoc.
+			// `rotate_left`. To get intuition how it works see the examples in its rustdoc.
 			non_empty_hrmp_channels.retain(|x| !prune_empty.contains(x));
 			// `prune_empty.len()` is greater or equal to `outbound_hrmp_num` because the loop above
 			// can only do `outbound_hrmp_num` iterations and `prune_empty` is appended to only inside
@@ -558,7 +585,32 @@ impl<T: Config> Module<T> {
 				.or_insert_with(|| last_mqc_heads.get(&sender).cloned().unwrap_or_default())
 				.extend_hrmp(&horizontal_message);
 
-			T::HrmpMessageHandlers::handle_hrmp_message(sender, horizontal_message);
+			// horizontal_message is actually an AGGREGATE message composed of many FRAGMENTs all
+			// encoded and concatenated together. We must first decode each before dispatching.
+			let sent_at = horizontal_message.sent_at;
+			let mut remaining_fragments = &horizontal_message.data[..];
+			match AggregateFormat::decode(&mut remaining_fragments) {
+				Ok(AggregateFormat::ConcatenatedVersionedXcm) => {
+					while !remaining_fragments.is_empty() {
+						if let Ok(xcm) = VersionedXcm::decode(&mut remaining_fragments) {
+							T::HrmpMessageHandlers::handle_xcm_message(sender, sent_at, xcm);
+						} else {
+							break;
+						}
+					}
+				}
+				Ok(AggregateFormat::ConcatenatedEncodedBlob) => {
+					while !remaining_fragments.is_empty() {
+						if let Ok(blob) = <Vec<u8>>::decode(&mut remaining_fragments) {
+							T::HrmpMessageHandlers::handle_blob_message(sender, sent_at, blob);
+						} else {
+							break;
+						}
+					}
+				}
+				// Can't do much with this aggregate message if we don't know its format.
+				Err(_) => debug_assert!(false, "unknown aggregate format"),
+			}
 		}
 
 		// Check that the MQC heads for each channel provided by the relay chain match the MQC heads
@@ -698,24 +750,8 @@ impl MessageQueueChain {
 	}
 }
 
-/// An error that can be raised upon sending an upward message.
-#[derive(Debug, PartialEq)]
-pub enum SendUpErr {
-	/// The message sent is too big.
-	TooBig,
-}
-
-/// An error that can be raised upon sending a horizontal message.
-#[derive(Debug, PartialEq)]
-pub enum SendHorizontalErr {
-	/// The message sent is too big.
-	TooBig,
-	/// There is no channel to the specified destination.
-	NoChannel,
-}
-
 impl<T: Config> Module<T> {
-	pub fn send_upward_message(message: UpwardMessage) -> Result<(), SendUpErr> {
+	pub fn send_upward_message(message: UpwardMessage) -> Result<u32, MessageSendError> {
 		// Check if the message fits into the relay-chain constraints.
 		//
 		// Note, that we are using `host_configuration` here which may be from the previous
@@ -731,7 +767,7 @@ impl<T: Config> Module<T> {
 		match Self::host_configuration() {
 			Some(cfg) => {
 				if message.len() > cfg.max_upward_message_size as usize {
-					return Err(SendUpErr::TooBig);
+					return Err(MessageSendError::TooBig);
 				}
 			}
 			None => {
@@ -747,11 +783,36 @@ impl<T: Config> Module<T> {
 			}
 		};
 		<Self as Store>::PendingUpwardMessages::append(message);
-		Ok(())
+		Ok(0)
 	}
 
-	pub fn send_hrmp_message(message: OutboundHrmpMessage) -> Result<(), SendHorizontalErr> {
-		let OutboundHrmpMessage { recipient, data } = message;
+	/// Place a message `fragment` on the outgoing XCMP queue for `recipient`.
+	///
+	/// Format is the type of aggregate message that the `fragment` may be safely encoded and
+	/// appended onto. Whether earlier unused space is used for the fragment at the risk of sending
+	/// it out of order is determined with `qos`. NOTE: For any two messages to be guaranteed to be
+	/// dispatched in order, then both must be sent with `ServiceQuality::Ordered`.
+	///
+	/// ## Background
+	///
+	/// For our purposes, one HRMP "message" is actually an aggregated block of XCM "messages".
+	///
+	/// For the sake of clarity, we distinguish between them as message AGGREGATEs versus
+	/// message FRAGMENTs.
+	///
+	/// So each AGGREGATE is comprised af one or more concatenated SCALE-encoded `Vec<u8>`
+	/// FRAGMENTs. Though each fragment is already probably a SCALE-encoded Xcm, we can't be
+	/// certain, so we SCALE encode each `Vec<u8>` fragment in order to ensure we have the
+	/// length prefixed and can thus decode each fragment from the aggregate stream. With this,
+	/// we can concatenate them into a single aggregate blob without needing to be concerned
+	/// about encoding fragment boundaries.
+	fn append_fragment<Fragment: Encode>(
+		recipient: ParaId,
+		format: AggregateFormat,
+		fragment: Fragment,
+		qos: ServiceQuality,
+	) -> Result<u32, MessageSendError> {
+		let data = fragment.encode();
 
 		// First, check if the message is addressed into an opened channel.
 		//
@@ -777,7 +838,7 @@ impl<T: Config> Module<T> {
 				// opened at all so early. At least, relying on this assumption seems to be a better
 				// tradeoff, compared to introducing an error variant that the clients should be
 				// prepared to handle.
-				return Err(SendHorizontalErr::NoChannel);
+				return Err(MessageSendError::NoChannel);
 			}
 		};
 		let channel_meta = match relevant_messaging_state
@@ -785,33 +846,66 @@ impl<T: Config> Module<T> {
 			.binary_search_by_key(&recipient, |(recipient, _)| *recipient)
 		{
 			Ok(idx) => &relevant_messaging_state.egress_channels[idx].1,
-			Err(_) => return Err(SendHorizontalErr::NoChannel),
+			Err(_) => return Err(MessageSendError::NoChannel),
 		};
 		if data.len() as u32 > channel_meta.max_message_size {
-			return Err(SendHorizontalErr::TooBig);
+			return Err(MessageSendError::TooBig);
 		}
 
-		// And then at last update the storage.
-		<Self as Store>::OutboundHrmpMessages::append(&recipient, data);
 		<Self as Store>::NonEmptyHrmpChannels::mutate(|v| {
 			if !v.contains(&recipient) {
 				v.push(recipient);
 			}
 		});
 
-		Ok(())
+		let max_aggregate_size = channel_meta.max_message_size as usize;
+
+		// And then at last update the storage.
+		let preceding = OutboundHrmpMessages::mutate(&recipient, |queue| {
+			if let Some(last_index) = queue.len().checked_sub(1) {
+				let start_index = if let ServiceQuality::Ordered = qos { last_index } else { 0 };
+				for i in start_index ..= last_index {
+					match AggregateFormat::decode(&mut &queue[i][..]) {
+						Ok(f) if f == format => {},
+						_ => continue,
+					}
+					if queue[i].len() + data.len() <= max_aggregate_size {
+						queue[i].extend_from_slice(&data[..]);
+						return i
+					}
+				}
+			}
+			let mut new = format.encode();
+			new.extend_from_slice(&data[..]);
+			queue.push(new);
+			queue.len() - 1
+		});
+
+		Ok(preceding as u32)
 	}
 }
 
 impl<T: Config> UpwardMessageSender for Module<T> {
-	fn send_upward_message(message: UpwardMessage) -> Result<(), ()> {
-		Self::send_upward_message(message).map_err(|_| ())
+	fn send_upward_message(message: UpwardMessage) -> Result<u32, MessageSendError> {
+		Self::send_upward_message(message)
 	}
 }
 
 impl<T: Config> HrmpMessageSender for Module<T> {
-	fn send_hrmp_message(message: OutboundHrmpMessage) -> Result<(), ()> {
-		Self::send_hrmp_message(message).map_err(|_| ())
+	fn send_blob_message(
+		recipient: ParaId,
+		blob: Vec<u8>,
+		qos: ServiceQuality,
+	) -> Result<u32, MessageSendError> {
+		Self::append_fragment(recipient, AggregateFormat::ConcatenatedEncodedBlob, blob, qos)
+	}
+
+	fn send_xcm_message(
+		recipient: ParaId,
+		xcm: VersionedXcm,
+		qos: ServiceQuality,
+	) -> Result<u32, MessageSendError> {
+		Self::append_fragment(recipient, AggregateFormat::ConcatenatedVersionedXcm, xcm, qos)
 	}
 }
 

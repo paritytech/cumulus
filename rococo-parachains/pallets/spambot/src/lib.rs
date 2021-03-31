@@ -22,7 +22,7 @@ use sp_std::prelude::*;
 use frame_system::Config as SystemConfig;
 use cumulus_primitives_core::ParaId;
 use cumulus_pallet_xcm_handler::{Origin as CumulusOrigin, ensure_sibling_para};
-use xcm::v0::{Xcm, SendXcm, OriginKind, MultiLocation, Junction};
+use xcm::v0::{Xcm, Error as XcmError, SendXcm, OriginKind, MultiLocation, Junction};
 
 pub use pallet::*;
 
@@ -54,7 +54,7 @@ pub mod pallet {
 	/// Details of an asset.
 	pub(super) type Targets<T: Config> = StorageValue<
 		_,
-		Vec<ParaId>,
+		Vec<(ParaId, Vec<u8>)>,
 		ValueQuery,
 	>;
 
@@ -80,13 +80,13 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	#[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance", AssetIdOf<T> = "AssetId")]
 	pub enum Event<T: Config> {
-		PingSent(ParaId, u32),
-		Pinged(ParaId, u32),
-		PongSent(ParaId, u32),
-		Ponged(ParaId, u32, T::BlockNumber),
-		ErrorSendingPing(ParaId, u32),
-		ErrorSendingPong(ParaId, u32),
-		UnknownPong(ParaId, u32),
+		PingSent(ParaId, u32, Vec<u8>),
+		Pinged(ParaId, u32, Vec<u8>),
+		PongSent(ParaId, u32, Vec<u8>),
+		Ponged(ParaId, u32, Vec<u8>, T::BlockNumber),
+		ErrorSendingPing(XcmError, ParaId, u32, Vec<u8>),
+		ErrorSendingPong(XcmError, ParaId, u32, Vec<u8>),
+		UnknownPong(ParaId, u32, Vec<u8>),
 	}
 
 	#[pallet::error]
@@ -98,21 +98,21 @@ pub mod pallet {
 			n: T::BlockNumber,
 			remaining_weight: Weight,
 		) -> Weight {
-			for para in Targets::<T>::get().into_iter() {
+			for (para, payload) in Targets::<T>::get().into_iter() {
 				let seq = PingCount::<T>::mutate(|seq| { *seq += 1; *seq });
 				match T::XcmSender::send_xcm(
 					MultiLocation::X2(Junction::Parent, Junction::Parachain { id: para.into() }),
 					Xcm::Transact {
 						origin_type: OriginKind::Native,
-						call: <T as Config>::Call::from(Call::<T>::ping(seq)).encode(),
+						call: <T as Config>::Call::from(Call::<T>::ping(seq, payload.clone())).encode(),
 					},
 				) {
 					Ok(()) => {
 						Pings::<T>::insert(seq, n);
-						Self::deposit_event(Event::PingSent(para, seq));
+						Self::deposit_event(Event::PingSent(para, seq, payload));
 					},
-					Err(_) => {
-						Self::deposit_event(Event::ErrorSendingPing(para, seq));
+					Err(e) => {
+						Self::deposit_event(Event::ErrorSendingPing(e, para, seq, payload));
 					}
 				}
 			}
@@ -123,17 +123,17 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(0)]
-		fn start(origin: OriginFor<T>, para: ParaId) -> DispatchResult {
+		fn start(origin: OriginFor<T>, para: ParaId, payload: Vec<u8>) -> DispatchResult {
 			ensure_root(origin)?;
-			Targets::<T>::mutate(|t| t.push(para));
+			Targets::<T>::mutate(|t| t.push((para, payload)));
 			Ok(())
 		}
 
 		#[pallet::weight(0)]
-		fn start_many(origin: OriginFor<T>, para: ParaId, count: u32) -> DispatchResult {
+		fn start_many(origin: OriginFor<T>, para: ParaId, count: u32, payload: Vec<u8>) -> DispatchResult {
 			ensure_root(origin)?;
 			for _ in 0..count {
-				Targets::<T>::mutate(|t| t.push(para));
+				Targets::<T>::mutate(|t| t.push((para, payload.clone())));
 			}
 			Ok(())
 		}
@@ -141,50 +141,50 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		fn stop(origin: OriginFor<T>, para: ParaId) -> DispatchResult {
 			ensure_root(origin)?;
-			Targets::<T>::mutate(|t| if let Some(p) = t.iter().position(|p| p == &para) { t.swap_remove(p); });
+			Targets::<T>::mutate(|t| if let Some(p) = t.iter().position(|(p, _)| p == &para) { t.swap_remove(p); });
 			Ok(())
 		}
 
 		#[pallet::weight(0)]
 		fn stop_all(origin: OriginFor<T>, maybe_para: Option<ParaId>) -> DispatchResult {
 			ensure_root(origin)?;
-			Targets::<T>::mutate(|t| t.retain(|&x| maybe_para.map_or(false, |para| x != para)));
-			Ok(())
-		}
-
-		#[pallet::weight(0)]
-		fn ping(origin: OriginFor<T>, seq: u32) -> DispatchResult {
-			// Only accept pings from other chains.
-			let para = ensure_sibling_para(<T as Config>::Origin::from(origin))?;
-
-			Self::deposit_event(Event::Pinged(para, seq));
-			match T::XcmSender::send_xcm(
-				MultiLocation::X2(Junction::Parent, Junction::Parachain { id: para.into() }),
-				Xcm::Transact {
-					origin_type: OriginKind::Native,
-					call: <T as Config>::Call::from(Call::<T>::pong(seq)).encode(),
-				},
-			) {
-				Ok(()) => {
-					Self::deposit_event(Event::PongSent(para, seq));
-				},
-				Err(_) => {
-					Self::deposit_event(Event::ErrorSendingPong(para, seq));
-				}
+			if let Some(para) = maybe_para {
+				Targets::<T>::mutate(|t| t.retain(|&(x, _)| x != para));
+			} else {
+				Targets::<T>::kill();
 			}
 			Ok(())
 		}
 
 		#[pallet::weight(0)]
-		fn pong(origin: OriginFor<T>, seq: u32) -> DispatchResult {
+		fn ping(origin: OriginFor<T>, seq: u32, payload: Vec<u8>) -> DispatchResult {
+			// Only accept pings from other chains.
+			let para = ensure_sibling_para(<T as Config>::Origin::from(origin))?;
+
+			Self::deposit_event(Event::Pinged(para, seq, payload.clone()));
+			match T::XcmSender::send_xcm(
+				MultiLocation::X2(Junction::Parent, Junction::Parachain { id: para.into() }),
+				Xcm::Transact {
+					origin_type: OriginKind::Native,
+					call: <T as Config>::Call::from(Call::<T>::pong(seq, payload.clone())).encode(),
+				},
+			) {
+				Ok(()) => Self::deposit_event(Event::PongSent(para, seq, payload)),
+				Err(e) => Self::deposit_event(Event::ErrorSendingPong(e, para, seq, payload)),
+			}
+			Ok(())
+		}
+
+		#[pallet::weight(0)]
+		fn pong(origin: OriginFor<T>, seq: u32, payload: Vec<u8>) -> DispatchResult {
 			// Only accept pings from other chains.
 			let para = ensure_sibling_para(<T as Config>::Origin::from(origin))?;
 
 			if let Some(sent_at) = Pings::<T>::take(seq) {
-				Self::deposit_event(Event::Ponged(para, seq, frame_system::Pallet::<T>::block_number() - sent_at));
+				Self::deposit_event(Event::Ponged(para, seq, payload, frame_system::Pallet::<T>::block_number() - sent_at));
 			} else {
 				// Pong received for a ping we apparently didn't send?!
-				Self::deposit_event(Event::UnknownPong(para, seq));
+				Self::deposit_event(Event::UnknownPong(para, seq, payload));
 			}
 			Ok(())
 		}
