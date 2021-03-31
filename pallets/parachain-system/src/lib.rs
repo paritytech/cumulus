@@ -80,7 +80,7 @@ decl_storage! {
 		/// We need to store the new validation function for the span between
 		/// setting it and applying it. If it has a
 		/// value, then [`PendingValidationFunction`] must have a real value, and
-		/// together will coordinate what block number where the upgrade will happen.
+		/// together will coordinate the block number where the upgrade will happen.
 		PendingRelayChainBlockNumber: Option<RelayChainBlockNumber>;
 
 		/// The new validation function we will upgrade to when the relay chain
