@@ -43,6 +43,7 @@ pub type InboundHrmpMessage = polkadot_primitives::v1::InboundHrmpMessage<relay_
 pub type OutboundHrmpMessage = polkadot_primitives::v1::OutboundHrmpMessage<ParaId>;
 
 /// Error description of a message send failure.
+#[derive(Eq, PartialEq, Copy, Clone, RuntimeDebug, Encode, Decode)]
 pub enum MessageSendError {
 	/// The dispatch queue is full.
 	QueueFull,
@@ -51,7 +52,7 @@ pub enum MessageSendError {
 	/// The message is too big to ever fit in a channel.
 	TooBig,
 	/// Some other error.
-	Other(&'static str),
+	Other,
 }
 
 /// Well known keys for values in the storage.

@@ -909,6 +909,13 @@ impl<T: Config> Module<T> {
 	}
 }
 
+impl<T: Config> frame_system::SetCode for Module<T> {
+	fn set_code(code: Vec<u8>) {
+		let r = Self::schedule_upgrade_impl(code);
+		debug_assert!(r.is_ok(), "Cannot handle schedule_upgrade_impl failure");
+	}
+}
+
 impl<T: Config> UpwardMessageSender for Module<T> {
 	fn send_upward_message(message: UpwardMessage) -> Result<u32, MessageSendError> {
 		Self::send_upward_message(message)
@@ -1080,10 +1087,15 @@ mod tests {
 	}
 
 	pub struct SaveIntoThreadLocal;
+	#[derive(Eq, PartialEq, Clone, Debug)]
+	pub enum HmpMessage {
+		Blob(Vec<u8>),
+		Xcm(xcm::VersionedXcm),
+	}
 
 	std::thread_local! {
 		static HANDLED_DOWNWARD_MESSAGES: RefCell<Vec<InboundDownwardMessage>> = RefCell::new(Vec::new());
-		static HANDLED_HRMP_MESSAGES: RefCell<Vec<(ParaId, InboundHrmpMessage)>> = RefCell::new(Vec::new());
+		static HANDLED_HMP_MESSAGES: RefCell<Vec<(ParaId, relay_chain::BlockNumber, HmpMessage)>> = RefCell::new(Vec::new());
 	}
 
 	impl DownwardMessageHandler for SaveIntoThreadLocal {
@@ -1095,9 +1107,14 @@ mod tests {
 	}
 
 	impl HrmpMessageHandler for SaveIntoThreadLocal {
-		fn handle_hrmp_message(sender: ParaId, msg: InboundHrmpMessage) {
-			HANDLED_HRMP_MESSAGES.with(|m| {
-				m.borrow_mut().push((sender, msg));
+		fn handle_blob_message(sender: ParaId, sent_at: relay_chain::BlockNumber, blob: Vec<u8>) {
+			HANDLED_HMP_MESSAGES.with(|m| {
+				m.borrow_mut().push((sender, sent_at, HmpMessage::Blob(blob)));
+			})
+		}
+		fn handle_xcm_message(sender: ParaId, sent_at: relay_chain::BlockNumber, xcm: VersionedXcm) {
+			HANDLED_HMP_MESSAGES.with(|m| {
+				m.borrow_mut().push((sender, sent_at, HmpMessage::Xcm(xcm)));
 			})
 		}
 	}
@@ -1106,7 +1123,7 @@ mod tests {
 	// our desired mockup.
 	fn new_test_ext() -> sp_io::TestExternalities {
 		HANDLED_DOWNWARD_MESSAGES.with(|m| m.borrow_mut().clear());
-		HANDLED_HRMP_MESSAGES.with(|m| m.borrow_mut().clear());
+		HANDLED_HMP_MESSAGES.with(|m| m.borrow_mut().clear());
 
 		frame_system::GenesisConfig::default()
 			.build_storage::<Test>()
@@ -1532,11 +1549,11 @@ mod tests {
 			})
 			.add(1, || {})
 			.add(2, || {
-				assert!(ParachainSystem::send_hrmp_message(OutboundHrmpMessage {
-					recipient: ParaId::from(300),
-					data: b"derp".to_vec(),
-				})
-				.is_err());
+				assert!(ParachainSystem::send_blob_message(
+					ParaId::from(300),
+					b"derp".to_vec(),
+					ServiceQuality::Ordered,
+				).is_err());
 			});
 	}
 
@@ -1564,11 +1581,12 @@ mod tests {
 			.add_with_post_test(
 				1,
 				|| {
-					ParachainSystem::send_hrmp_message(OutboundHrmpMessage {
-						recipient: ParaId::from(300),
-						data: b"derp".to_vec(),
-					})
-					.unwrap()
+					ParachainSystem::send_blob_message(
+						ParaId::from(300),
+						b"derp".to_vec(),
+						ServiceQuality::Ordered,
+					)
+					.unwrap();
 				},
 				|| {
 					// there are no outbound messages since the special logic for handling the
@@ -1667,16 +1685,16 @@ mod tests {
 			.add_with_post_test(
 				1,
 				|| {
-					ParachainSystem::send_hrmp_message(OutboundHrmpMessage {
-						recipient: ParaId::from(300),
-						data: b"1".to_vec(),
-					})
-					.unwrap();
-					ParachainSystem::send_hrmp_message(OutboundHrmpMessage {
-						recipient: ParaId::from(400),
-						data: b"2".to_vec(),
-					})
-					.unwrap()
+					ParachainSystem::send_blob_message(
+						ParaId::from(300),
+						b"1".to_vec(),
+						ServiceQuality::Ordered,
+					).unwrap();
+					ParachainSystem::send_blob_message(
+						ParaId::from(400),
+						b"2".to_vec(),
+						ServiceQuality::Ordered,
+					).unwrap();
 				},
 				|| {},
 			)
@@ -1776,6 +1794,12 @@ mod tests {
 			});
 	}
 
+	fn to_tuple(id: u32, msg: &InboundHrmpMessage)
+		-> (ParaId, relay_chain::BlockNumber, HmpMessage)
+	{
+		(ParaId::from(id), msg.sent_at, HmpMessage::Blob(msg.data.clone()))
+	}
+
 	#[test]
 	fn receive_hrmp() {
 		lazy_static::lazy_static! {
@@ -1852,21 +1876,21 @@ mod tests {
 				_ => unreachable!(),
 			})
 			.add(1, || {
-				HANDLED_HRMP_MESSAGES.with(|m| {
+				HANDLED_HMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
-					assert_eq!(&*m, &[(ParaId::from(300), MSG_1.clone())]);
+					assert_eq!(&*m, &[to_tuple(300, &MSG_1)]);
 					m.clear();
 				});
 			})
 			.add(2, || {
-				HANDLED_HRMP_MESSAGES.with(|m| {
+				HANDLED_HMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
 					assert_eq!(
 						&*m,
 						&[
-							(ParaId::from(300), MSG_2.clone()),
-							(ParaId::from(200), MSG_4.clone()),
-							(ParaId::from(300), MSG_3.clone()),
+							to_tuple(300, &MSG_2),
+							to_tuple(200, &MSG_4),
+							to_tuple(300, &MSG_3),
 						]
 					);
 					m.clear();
@@ -1944,17 +1968,17 @@ mod tests {
 				_ => unreachable!(),
 			})
 			.add(1, || {
-				HANDLED_HRMP_MESSAGES.with(|m| {
+				HANDLED_HMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
-					assert_eq!(&*m, &[(ALICE, MSG_1.clone())]);
+					assert_eq!(&*m, &[to_tuple(ALICE.into(), &MSG_1)]);
 					m.clear();
 				});
 			})
 			.add(2, || {})
 			.add(3, || {
-				HANDLED_HRMP_MESSAGES.with(|m| {
+				HANDLED_HMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
-					assert_eq!(&*m, &[(ALICE, MSG_2.clone())]);
+					assert_eq!(&*m, &[to_tuple(ALICE.into(), &MSG_2)]);
 					m.clear();
 				});
 			});
