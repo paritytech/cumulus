@@ -90,10 +90,9 @@ pub trait DownwardMessageHandler {
 	fn handle_downward_message(msg: InboundDownwardMessage);
 }
 
-// TODO: Rename Hrmp -> Xcmp
 /// Something that should be called for each fragment message received over XCMP.
 #[impl_trait_for_tuples::impl_for_tuples(30)]
-pub trait HrmpMessageHandler {
+pub trait XcmpMessageHandler {
 	/// Handle the given blob XCMP message.
 	fn handle_blob_message(sender: ParaId, sent_at: relay_chain::BlockNumber, msg: Vec<u8>);
 
@@ -120,9 +119,8 @@ pub enum ServiceQuality {
 	Fast,
 }
 
-// TODO: Rename Hrmp -> Xcmp
 /// Something that should be called in order to send a message over XCMP.
-pub trait HrmpMessageSender {
+pub trait XcmpMessageSender {
 	/// Send the given abstract HRMP message; return the expected number of blocks before the
 	/// message will be dispatched or an error if the message cannot be sent.
 	///

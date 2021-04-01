@@ -213,7 +213,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
 	type OnValidationData = ();
 	type DownwardMessageHandlers = ();
-	type HrmpMessageHandlers = ();
+	type XcmpMessageHandlers = ();
 }
 
 parameter_types! {
