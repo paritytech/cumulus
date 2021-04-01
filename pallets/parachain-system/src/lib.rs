@@ -55,7 +55,7 @@ mod relay_state_snapshot;
 #[macro_use]
 pub mod validate_block;
 
-/// The aggregate HMP message format.
+/// The aggregate XCMP message format.
 #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode)]
 pub enum AggregateFormat {
 	/// Encoded `VersionedXcm` messages, all concatenated.
@@ -1088,14 +1088,14 @@ mod tests {
 
 	pub struct SaveIntoThreadLocal;
 	#[derive(Eq, PartialEq, Clone, Debug)]
-	pub enum HmpMessage {
+	pub enum XcmpMessage {
 		Blob(Vec<u8>),
 		Xcm(xcm::VersionedXcm),
 	}
 
 	std::thread_local! {
 		static HANDLED_DOWNWARD_MESSAGES: RefCell<Vec<InboundDownwardMessage>> = RefCell::new(Vec::new());
-		static HANDLED_HMP_MESSAGES: RefCell<Vec<(ParaId, relay_chain::BlockNumber, HmpMessage)>> = RefCell::new(Vec::new());
+		static HANDLED_XCMP_MESSAGES: RefCell<Vec<(ParaId, relay_chain::BlockNumber, XcmpMessage)>> = RefCell::new(Vec::new());
 	}
 
 	impl DownwardMessageHandler for SaveIntoThreadLocal {
@@ -1108,13 +1108,13 @@ mod tests {
 
 	impl XcmpMessageHandler for SaveIntoThreadLocal {
 		fn handle_blob_message(sender: ParaId, sent_at: relay_chain::BlockNumber, blob: Vec<u8>) {
-			HANDLED_HMP_MESSAGES.with(|m| {
-				m.borrow_mut().push((sender, sent_at, HmpMessage::Blob(blob)));
+			HANDLED_XCMP_MESSAGES.with(|m| {
+				m.borrow_mut().push((sender, sent_at, XcmpMessage::Blob(blob)));
 			})
 		}
 		fn handle_xcm_message(sender: ParaId, sent_at: relay_chain::BlockNumber, xcm: VersionedXcm) {
-			HANDLED_HMP_MESSAGES.with(|m| {
-				m.borrow_mut().push((sender, sent_at, HmpMessage::Xcm(xcm)));
+			HANDLED_XCMP_MESSAGES.with(|m| {
+				m.borrow_mut().push((sender, sent_at, XcmpMessage::Xcm(xcm)));
 			})
 		}
 	}
@@ -1123,7 +1123,7 @@ mod tests {
 	// our desired mockup.
 	fn new_test_ext() -> sp_io::TestExternalities {
 		HANDLED_DOWNWARD_MESSAGES.with(|m| m.borrow_mut().clear());
-		HANDLED_HMP_MESSAGES.with(|m| m.borrow_mut().clear());
+		HANDLED_XCMP_MESSAGES.with(|m| m.borrow_mut().clear());
 
 		frame_system::GenesisConfig::default()
 			.build_storage::<Test>()
@@ -1559,6 +1559,7 @@ mod tests {
 
 	#[test]
 	fn send_hrmp_message_simple() {
+		let msg = xcm::v0::Xcm::Balances(0, vec![]);
 		BlockTests::new()
 			.with_relay_sproof_builder(|_, _, sproof| {
 				sproof.para_id = ParaId::from(200);
@@ -1581,9 +1582,9 @@ mod tests {
 			.add_with_post_test(
 				1,
 				|| {
-					ParachainSystem::send_blob_message(
+					ParachainSystem::send_xcm_message(
 						ParaId::from(300),
-						b"derp".to_vec(),
+						msg.clone(),
 						ServiceQuality::Ordered,
 					)
 					.unwrap();
@@ -1606,7 +1607,7 @@ mod tests {
 						v,
 						Some(vec![OutboundHrmpMessage {
 							recipient: ParaId::from(300),
-							data: (AggregateFormat::ConcatenatedEncodedBlob, &b"derp"[..]).encode(),
+							data: (AggregateFormat::ConcatenatedEncodedVersionedXcm, msg.clone()).encode(),
 						}])
 					);
 				},
@@ -1870,21 +1871,21 @@ mod tests {
 				_ => unreachable!(),
 			})
 			.add(1, || {
-				HANDLED_HMP_MESSAGES.with(|m| {
+				HANDLED_XCMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
-					assert_eq!(&*m, &[(ParaId::from(300), 1, HmpMessage::Blob(b"1".to_vec()))]);
+					assert_eq!(&*m, &[(ParaId::from(300), 1, XcmpMessage::Blob(b"1".to_vec()))]);
 					m.clear();
 				});
 			})
 			.add(2, || {
-				HANDLED_HMP_MESSAGES.with(|m| {
+				HANDLED_XCMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
 					assert_eq!(
 						&*m,
 						&[
-							(ParaId::from(300), 1, HmpMessage::Blob(b"2".to_vec())),
-							(ParaId::from(200), 2, HmpMessage::Blob(b"4".to_vec())),
-							(ParaId::from(300), 2, HmpMessage::Blob(b"3".to_vec())),
+							(ParaId::from(300), 1, XcmpMessage::Blob(b"2".to_vec())),
+							(ParaId::from(200), 2, XcmpMessage::Blob(b"4".to_vec())),
+							(ParaId::from(300), 2, XcmpMessage::Blob(b"3".to_vec())),
 						]
 					);
 					m.clear();
@@ -1962,17 +1963,17 @@ mod tests {
 				_ => unreachable!(),
 			})
 			.add(1, || {
-				HANDLED_HMP_MESSAGES.with(|m| {
+				HANDLED_XCMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
-					assert_eq!(&*m, &[(ALICE, 1, HmpMessage::Blob(b"mikhailinvanovich".to_vec()))]);
+					assert_eq!(&*m, &[(ALICE, 1, XcmpMessage::Blob(b"mikhailinvanovich".to_vec()))]);
 					m.clear();
 				});
 			})
 			.add(2, || {})
 			.add(3, || {
-				HANDLED_HMP_MESSAGES.with(|m| {
+				HANDLED_XCMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
-					assert_eq!(&*m, &[(ALICE, 3, HmpMessage::Blob(b"1000000000".to_vec()))]);
+					assert_eq!(&*m, &[(ALICE, 3, XcmpMessage::Blob(b"1000000000".to_vec()))]);
 					m.clear();
 				});
 			});
