@@ -30,7 +30,7 @@
 use cumulus_primitives_core::{
 	relay_chain,
 	well_known_keys::{self, NEW_VALIDATION_CODE},
-	AbridgedHostConfiguration, DownwardMessageHandler, HrmpMessageHandler, HrmpMessageSender,
+	AbridgedHostConfiguration, DownwardMessageHandler, XcmpMessageHandler, XcmpMessageSender,
 	InboundDownwardMessage, InboundHrmpMessage, OnValidationData, OutboundHrmpMessage, ParaId,
 	PersistedValidationData, UpwardMessage, UpwardMessageSender, MessageSendError, ServiceQuality,
 };
@@ -82,7 +82,7 @@ pub trait Config: frame_system::Config {
 	///
 	/// The messages are dispatched in the order they were relayed by the relay chain. If multiple
 	/// messages were relayed at one block, these will be dispatched in ascending order of the sender's para ID.
-	type HrmpMessageHandlers: HrmpMessageHandler;
+	type XcmpMessageHandlers: XcmpMessageHandler;
 }
 
 // This pallet's storage items.
@@ -593,7 +593,7 @@ impl<T: Config> Module<T> {
 				Ok(AggregateFormat::ConcatenatedVersionedXcm) => {
 					while !remaining_fragments.is_empty() {
 						if let Ok(xcm) = VersionedXcm::decode(&mut remaining_fragments) {
-							T::HrmpMessageHandlers::handle_xcm_message(sender, sent_at, xcm);
+							T::XcmpMessageHandlers::handle_xcm_message(sender, sent_at, xcm);
 						} else {
 							break;
 						}
@@ -602,7 +602,7 @@ impl<T: Config> Module<T> {
 				Ok(AggregateFormat::ConcatenatedEncodedBlob) => {
 					while !remaining_fragments.is_empty() {
 						if let Ok(blob) = <Vec<u8>>::decode(&mut remaining_fragments) {
-							T::HrmpMessageHandlers::handle_blob_message(sender, sent_at, blob);
+							T::XcmpMessageHandlers::handle_blob_message(sender, sent_at, blob);
 						} else {
 							break;
 						}
@@ -898,7 +898,7 @@ impl<T: Config> UpwardMessageSender for Module<T> {
 	}
 }
 
-impl<T: Config> HrmpMessageSender for Module<T> {
+impl<T: Config> XcmpMessageSender for Module<T> {
 	fn send_blob_message(
 		recipient: ParaId,
 		blob: Vec<u8>,
@@ -1057,7 +1057,7 @@ mod tests {
 		type OnValidationData = ();
 		type SelfParaId = ParachainId;
 		type DownwardMessageHandlers = SaveIntoThreadLocal;
-		type HrmpMessageHandlers = SaveIntoThreadLocal;
+		type XcmpMessageHandlers = SaveIntoThreadLocal;
 	}
 
 	pub struct SaveIntoThreadLocal;
@@ -1080,7 +1080,7 @@ mod tests {
 		}
 	}
 
-	impl HrmpMessageHandler for SaveIntoThreadLocal {
+	impl XcmpMessageHandler for SaveIntoThreadLocal {
 		fn handle_blob_message(sender: ParaId, sent_at: relay_chain::BlockNumber, blob: Vec<u8>) {
 			HANDLED_HMP_MESSAGES.with(|m| {
 				m.borrow_mut().push((sender, sent_at, HmpMessage::Blob(blob)));

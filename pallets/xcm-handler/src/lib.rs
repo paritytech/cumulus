@@ -16,7 +16,7 @@
 
 //! A pallet which implements the message handling APIs for handling incoming XCM:
 //! * `DownwardMessageHandler`
-//! * `HrmpMessageHandler`
+//! * `XcmpMessageHandler`
 //!
 //! Also provides an implementation of `SendXcm` to handle outgoing XCM.
 
@@ -25,7 +25,7 @@
 use sp_std::prelude::*;
 use codec::{Decode, Encode};
 use cumulus_primitives_core::{
-	DownwardMessageHandler, HrmpMessageHandler, HrmpMessageSender, InboundDownwardMessage,
+	DownwardMessageHandler, XcmpMessageHandler, XcmpMessageSender, InboundDownwardMessage,
 	ParaId, UpwardMessageSender, ServiceQuality, relay_chain,
 };
 use frame_support::{
@@ -47,7 +47,7 @@ pub trait Config: frame_system::Config {
 	/// Something to send an upward message.
 	type UpwardMessageSender: UpwardMessageSender;
 	/// Something to send an HRMP message.
-	type HrmpMessageSender: HrmpMessageSender;
+	type XcmpMessageSender: XcmpMessageSender;
 
 	/// Required origin for sending XCM messages. Typically Root or parachain
 	/// council majority.
@@ -103,7 +103,7 @@ decl_module! {
 		#[weight = 1_000]
 		fn send_hrmp_xcm(origin, recipient: ParaId, message: VersionedXcm, qos: ServiceQuality) {
 			T::SendXcmOrigin::ensure_origin(origin)?;
-			T::HrmpMessageSender::send_xcm_message(recipient, message, qos)
+			T::XcmpMessageSender::send_xcm_message(recipient, message, qos)
 				.map_err(|_| Error::<T>::FailedToSend)?;
 		}
 	}
@@ -142,7 +142,7 @@ impl<T: Config> DownwardMessageHandler for Module<T> {
 	}
 }
 
-impl<T: Config> HrmpMessageHandler for Module<T> {
+impl<T: Config> XcmpMessageHandler for Module<T> {
 	fn handle_xcm_message(sender: ParaId, _sent_at: relay_chain::BlockNumber, xcm: VersionedXcm) {
 		let hash = xcm.using_encoded(T::Hashing::hash);
 		log::debug!("Processing HRMP XCM: {:?}", &hash);
@@ -191,7 +191,7 @@ impl<T: Config> SendXcm for Module<T> {
 			Some(Junction::Parent) if dest.len() == 2 => {
 				if let Some(Junction::Parachain { id }) = dest.at(1) {
 					let hash = T::Hashing::hash_of(&msg);
-					T::HrmpMessageSender::send_xcm_message((*id).into(), msg, ServiceQuality::Ordered)
+					T::XcmpMessageSender::send_xcm_message((*id).into(), msg, ServiceQuality::Ordered)
 						.map_err(|_| XcmError::CannotReachDestination)?;
 					Self::deposit_event(RawEvent::HrmpMessageSent(hash));
 					Ok(())
