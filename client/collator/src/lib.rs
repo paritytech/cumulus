@@ -31,12 +31,14 @@ use sp_runtime::{
 use sp_state_machine::InspectState;
 
 use cumulus_client_consensus_common::ParachainConsensus;
-use polkadot_node_primitives::{Collation, CollationGenerationConfig, CollationResult};
+use polkadot_node_primitives::{
+	Collation, CollationGenerationConfig, CollationResult, PoV, BlockData,
+};
 use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
 use polkadot_overseer::OverseerHandler;
 use polkadot_primitives::v1::{
-	BlockData, BlockNumber as PBlockNumber, CollatorPair, Hash as PHash, HeadData, Id as ParaId,
-	PoV, UpwardMessage,
+	BlockNumber as PBlockNumber, CollatorPair, Hash as PHash, HeadData, Id as ParaId,
+	UpwardMessage,
 };
 
 use codec::{Decode, Encode};
