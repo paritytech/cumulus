@@ -394,6 +394,7 @@ impl TestNodeBuilder {
 		self
 	}
 
+	/// Allows accessing the parachain storage before the test node is built.
 	pub fn update_storage_parachain(
 		mut self,
 		updater: impl Fn() + 'static,
@@ -402,6 +403,7 @@ impl TestNodeBuilder {
 		self
 	}
 
+	/// Allows accessing the relay chain storage before the test node is built.
 	pub fn update_storage_relay_chain(
 		mut self,
 		updater: impl Fn() + 'static,
