@@ -1580,7 +1580,7 @@ mod tests {
 						v,
 						Some(vec![OutboundHrmpMessage {
 							recipient: ParaId::from(300),
-							data: b"derp".to_vec(),
+							data: (AggregateFormat::ConcatenatedEncodedBlob, &b"derp"[..]).encode(),
 						}])
 					);
 				},
@@ -1692,7 +1692,7 @@ mod tests {
 						v,
 						Some(vec![OutboundHrmpMessage {
 							recipient: ParaId::from(300),
-							data: b"1".to_vec(),
+							data: (AggregateFormat::ConcatenatedEncodedBlob, &b"1"[..]).encode(),
 						}])
 					);
 				},
@@ -1768,33 +1768,27 @@ mod tests {
 			});
 	}
 
-	fn to_tuple(id: u32, msg: &InboundHrmpMessage)
-		-> (ParaId, relay_chain::BlockNumber, HmpMessage)
-	{
-		(ParaId::from(id), msg.sent_at, HmpMessage::Blob(msg.data.clone()))
-	}
-
 	#[test]
 	fn receive_hrmp() {
 		lazy_static::lazy_static! {
 			static ref MSG_1: InboundHrmpMessage = InboundHrmpMessage {
 				sent_at: 1,
-				data: b"aquadisco".to_vec(),
+				data: (AggregateFormat::ConcatenatedEncodedBlob, &b"1"[..]).encode(),
 			};
 
 			static ref MSG_2: InboundHrmpMessage = InboundHrmpMessage {
 				sent_at: 1,
-				data: b"mudroom".to_vec(),
+				data: (AggregateFormat::ConcatenatedEncodedBlob, &b"2"[..]).encode(),
 			};
 
 			static ref MSG_3: InboundHrmpMessage = InboundHrmpMessage {
 				sent_at: 2,
-				data: b"eggpeeling".to_vec(),
+				data: (AggregateFormat::ConcatenatedEncodedBlob, &b"3"[..]).encode(),
 			};
 
 			static ref MSG_4: InboundHrmpMessage = InboundHrmpMessage {
 				sent_at: 2,
-				data: b"casino".to_vec(),
+				data: (AggregateFormat::ConcatenatedEncodedBlob, &b"4"[..]).encode(),
 			};
 		}
 
@@ -1852,7 +1846,7 @@ mod tests {
 			.add(1, || {
 				HANDLED_HMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
-					assert_eq!(&*m, &[to_tuple(300, &MSG_1)]);
+					assert_eq!(&*m, &[(ParaId::from(300), 1, HmpMessage::Blob(b"1".to_vec()))]);
 					m.clear();
 				});
 			})
@@ -1862,9 +1856,9 @@ mod tests {
 					assert_eq!(
 						&*m,
 						&[
-							to_tuple(300, &MSG_2),
-							to_tuple(200, &MSG_4),
-							to_tuple(300, &MSG_3),
+							(ParaId::from(300), 1, HmpMessage::Blob(b"2".to_vec())),
+							(ParaId::from(200), 2, HmpMessage::Blob(b"4".to_vec())),
+							(ParaId::from(300), 2, HmpMessage::Blob(b"3".to_vec())),
 						]
 					);
 					m.clear();
@@ -1896,12 +1890,12 @@ mod tests {
 		lazy_static::lazy_static! {
 			static ref MSG_1: InboundHrmpMessage = InboundHrmpMessage {
 				sent_at: 1,
-				data: b"mikhailinvanovich".to_vec(),
+				data: (AggregateFormat::ConcatenatedEncodedBlob, &b"mikhailinvanovich"[..]).encode(),
 			};
 
 			static ref MSG_2: InboundHrmpMessage = InboundHrmpMessage {
 				sent_at: 3,
-				data: b"1000000000".to_vec(),
+				data: (AggregateFormat::ConcatenatedEncodedBlob, &b"1000000000"[..]).encode(),
 			};
 		}
 
@@ -1944,7 +1938,7 @@ mod tests {
 			.add(1, || {
 				HANDLED_HMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
-					assert_eq!(&*m, &[to_tuple(ALICE.into(), &MSG_1)]);
+					assert_eq!(&*m, &[(ALICE, 1, HmpMessage::Blob(b"mikhailinvanovich".to_vec()))]);
 					m.clear();
 				});
 			})
@@ -1952,7 +1946,7 @@ mod tests {
 			.add(3, || {
 				HANDLED_HMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
-					assert_eq!(&*m, &[to_tuple(ALICE.into(), &MSG_2)]);
+					assert_eq!(&*m, &[(ALICE, 3, HmpMessage::Blob(b"1000000000".to_vec()))]);
 					m.clear();
 				});
 			});
