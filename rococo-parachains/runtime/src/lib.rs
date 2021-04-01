@@ -65,8 +65,6 @@ use xcm_executor::{
 	traits::{IsConcrete, NativeAsset},
 	Config, XcmExecutor,
 };
-use frame_support::traits::Filter;
-use frame_system::Call as SystemCall;
 
 pub type SessionHandlers = ();
 
@@ -79,7 +77,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("cumulus-test-parachain"),
 	impl_name: create_runtime_str!("cumulus-test-parachain"),
 	authoring_version: 1,
-	spec_version: 14,
+	spec_version: 16,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -149,18 +147,6 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 42;
 }
 
-pub struct NoSetCode;
-impl Filter<Call> for NoSetCode {
-	fn filter(c: &Call) -> bool {
-		match *c {
-			// Remark is used as a no-op call in the benchmarking
-			Call::System(SystemCall::set_code(..))
-				| Call::System(SystemCall::set_code_without_checks(..)) => false,
-			_ => true,
-		}
-	}
-}
-
 impl frame_system::Config for Runtime {
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
@@ -192,11 +178,12 @@ impl frame_system::Config for Runtime {
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type DbWeight = ();
-	type BaseCallFilter = NoSetCode;
+	type BaseCallFilter = ();
 	type SystemWeightInfo = ();
 	type BlockWeights = RuntimeBlockWeights;
 	type BlockLength = RuntimeBlockLength;
 	type SS58Prefix = SS58Prefix;
+	type OnSetCode = ParachainSystem;
 }
 
 parameter_types! {
