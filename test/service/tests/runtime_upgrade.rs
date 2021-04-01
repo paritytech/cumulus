@@ -26,7 +26,7 @@ use sp_runtime::generic::BlockId;
 
 #[substrate_test_utils::test]
 async fn test_runtime_upgrade(task_executor: TaskExecutor) {
-	let mut builder = sc_cli::LoggerBuilder::new("");
+	let mut builder = sc_cli::LoggerBuilder::new("runtime=debug");
 	builder.with_colors(false);
 	let _ = builder.init();
 
@@ -86,9 +86,7 @@ async fn test_runtime_upgrade(task_executor: TaskExecutor) {
 	}
 
 	// schedule runtime upgrade
-	println!("####################### 1");
 	charlie.schedule_upgrade().await.unwrap();
-	println!("####################### 2");
 
 	while let Some(notification) = import_notification_stream.next().await {
 		if notification.is_new_best {
@@ -97,7 +95,6 @@ async fn test_runtime_upgrade(task_executor: TaskExecutor) {
 			if matches!(res, Ok(true)) {
 				break;
 			}
-			println!("####################### {:?}", res);
 		}
 	}
 

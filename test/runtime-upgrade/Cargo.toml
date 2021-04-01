@@ -1,0 +1,67 @@
+[package]
+name = "cumulus-test-runtime-upgrade"
+version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2018"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+serde = { version = "1.0.101", optional = true, features = ["derive"] }
+
+# Substrate dependencies
+frame-executive = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "master" }
+frame-support = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "master" }
+frame-system = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "master" }
+pallet-balances = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "master" }
+pallet-randomness-collective-flip = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "master" }
+pallet-sudo = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "master" }
+pallet-timestamp = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "master" }
+pallet-transaction-payment = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "master" }
+sp-api = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "master" }
+sp-block-builder = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "master" }
+sp-core = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "master" }
+sp-inherents = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "master" }
+sp-offchain = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "master" }
+sp-runtime = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "master" }
+sp-session = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "master" }
+sp-std = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "master" }
+sp-transaction-pool = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "master" }
+sp-version = { git = "file:///home/cecile/repos/substrate", default-features = false, branch = "master" }
+
+# Cumulus dependencies
+cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false }
+cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
+
+# Polkadot dependencies
+polkadot-parachain = { git = "file:///home/cecile/repos/polkadot", default-features = false, branch = "master" }
+
+[build-dependencies]
+substrate-wasm-builder = "3.0.0"
+
+[features]
+default = [ "std", "upgrade" ]
+std = [
+	"codec/std",
+	"cumulus-pallet-parachain-system/std",
+	"cumulus-primitives-core/std",
+	"frame-executive/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-balances/std",
+	"pallet-randomness-collective-flip/std",
+	"pallet-sudo/std",
+	"pallet-timestamp/std",
+	"pallet-transaction-payment/std",
+	"serde",
+	"sp-api/std",
+	"sp-block-builder/std",
+	"sp-core/std",
+	"sp-inherents/std",
+	"sp-offchain/std",
+	"sp-runtime/std",
+	"sp-session/std",
+	"sp-std/std",
+	"sp-transaction-pool/std",
+	"sp-version/std",
+]
+upgrade = []

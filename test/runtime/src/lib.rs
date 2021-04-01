@@ -53,7 +53,6 @@ pub use cumulus_pallet_parachain_system::Call as ParachainSystemCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
-use hex_literal::hex;
 
 pub type SessionHandlers = ();
 
@@ -61,12 +60,17 @@ impl_opaque_keys! {
 	pub struct SessionKeys {}
 }
 
+const SPEC_VERSION: u32 = 3;
+
 /// This runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("cumulus-test-parachain"),
 	impl_name: create_runtime_str!("cumulus-test-parachain"),
 	authoring_version: 1,
-	spec_version: 3,
+	#[cfg(feature = "upgrade")]
+	spec_version: SPEC_VERSION + 1,
+	#[cfg(not(feature = "upgrade"))]
+	spec_version: SPEC_VERSION,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -85,9 +89,6 @@ pub const DAYS: BlockNumber = HOURS * 24;
 
 // 1 in 4 blocks (on average, not counting collisions) will be primary babe blocks.
 pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
-
-pub const UPGRADE_DETECTION_KEY: &[u8] =
-	&hex!["06de3d8a54d27e44a9d5ce189618f22db4b49d95320d9021994c850f25b8e386"];
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
@@ -223,14 +224,13 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 
 parameter_types! {
 	pub storage ParachainId: cumulus_primitives_core::ParaId = 100.into();
-	//pub storage UpgradeDetection: bool = false;
+	pub storage UpgradeDetection: bool = false;
 }
 
 pub struct UpgradeDetectionOnRuntimeUpgrade;
 impl frame_support::traits::OnRuntimeUpgrade for UpgradeDetectionOnRuntimeUpgrade {
 	fn on_runtime_upgrade() -> u64 {
-		//UpgradeDetection::set(&true);
-		sp_io::storage::set(UPGRADE_DETECTION_KEY, &[0x42]);
+		UpgradeDetection::set(&true);
 		0
 	}
 }
@@ -393,8 +393,7 @@ impl_runtime_apis! {
 
 	impl crate::GetUpgradeDetection<Block> for Runtime {
 		fn has_upgraded() -> bool {
-			//UpgradeDetection::get()
-			sp_io::storage::exists(UPGRADE_DETECTION_KEY)
+			UpgradeDetection::get()
 		}
 	}
 }
