@@ -15,7 +15,6 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
 use cumulus_primitives_core::ParaId;
-//use cumulus_test_runtime::VersionDowngrade;
 use cumulus_test_service::{initial_head_data, Keyring::*};
 use futures::join;
 use sc_service::TaskExecutor;
@@ -57,9 +56,6 @@ async fn test_collating_and_non_collator_mode_catching_up(task_executor: TaskExe
 		cumulus_test_service::TestNodeBuilder::new(para_id, task_executor.clone(), Charlie)
 			.enable_collator()
 			.connect_to_relay_chain_nodes(vec![&alice, &bob])
-			.update_storage_parachain(|| {
-				//VersionDowngrade::set(&true);
-			})
 			.build()
 			.await;
 	charlie.wait_for_blocks(5).await;
@@ -68,9 +64,6 @@ async fn test_collating_and_non_collator_mode_catching_up(task_executor: TaskExe
 	let dave = cumulus_test_service::TestNodeBuilder::new(para_id, task_executor.clone(), Dave)
 		.connect_to_parachain_node(&charlie)
 		.connect_to_relay_chain_nodes(vec![&alice, &bob])
-		.update_storage_parachain(|| {
-			//VersionDowngrade::set(&true);
-		})
 		.build()
 		.await;
 	dave.wait_for_blocks(7).await;
