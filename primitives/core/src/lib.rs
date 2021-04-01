@@ -121,7 +121,7 @@ pub enum ServiceQuality {
 
 /// Something that should be called in order to send a message over XCMP.
 pub trait XcmpMessageSender {
-	/// Send the given abstract HRMP message; return the expected number of blocks before the
+	/// Send the given data blob over XCMP; return the expected number of blocks before the
 	/// message will be dispatched or an error if the message cannot be sent.
 	///
 	/// NOTE: The number of blocks is a guideline only and may take more or less depending on
@@ -133,7 +133,7 @@ pub trait XcmpMessageSender {
 	fn send_blob_message(dest: ParaId, msg: Vec<u8>, qos: ServiceQuality)
 		-> Result<u32, MessageSendError>;
 
-	/// Send the given XCM message through HMP; return the expected number of blocks before the
+	/// Send the given XCM message through XCMP; return the expected number of blocks before the
 	/// message will be dispatched or an error if the message cannot be sent.
 	///
 	/// NOTE: The number of blocks is a guideline only and may take more or less depending on
