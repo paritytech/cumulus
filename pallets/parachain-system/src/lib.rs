@@ -54,7 +54,7 @@ mod relay_state_snapshot;
 pub mod validate_block;
 
 /// The pallet's configuration trait.
-pub trait Config: frame_system::Config {
+pub trait Config: frame_system::Config<OnSetCode = ParachainSetCode<Self>> {
 	/// The overarching event type.
 	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
 
