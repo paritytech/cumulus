@@ -11,7 +11,7 @@ members = [
 	"primitives/parachain-inherent",
 	"rococo-parachains/",
 	"rococo-parachains/pallets/parachain-info",
-	"rococo-parachains/pallets/spambot",
+	"rococo-parachains/pallets/ping",
 	"rococo-parachains/primitives",
 	"rococo-parachains/runtime",
 	"test/runtime",

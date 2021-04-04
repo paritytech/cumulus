@@ -294,7 +294,7 @@ impl cumulus_pallet_xcm_handler::Config for Runtime {
 	type AccountIdConverter = LocationConverter;
 }
 
-impl cumulus_spambot::Config for Runtime {
+impl cumulus_ping::Config for Runtime {
 	type Event = Event;
 	type Origin = Origin;
 	type Call = Call;
@@ -317,7 +317,7 @@ construct_runtime! {
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
 		XcmHandler: cumulus_pallet_xcm_handler::{Pallet, Call, Event<T>, Origin},
 
-		Spambot: cumulus_spambot::{Pallet, Call, Storage, Event<T>} = 99,
+		Spambot: cumulus_ping::{Pallet, Call, Storage, Event<T>} = 99,
 	}
 }
 
