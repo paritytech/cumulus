@@ -65,7 +65,7 @@ pub enum AggregateFormat {
 }
 
 /// The pallet's configuration trait.
-pub trait Config: frame_system::Config {
+pub trait Config: frame_system::Config<OnSetCode = ParachainSetCode<Self>> {
 	/// The overarching event type.
 	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
 
@@ -154,24 +154,6 @@ decl_module! {
 		// Initializing events
 		// this is needed only if you are using events in your pallet
 		fn deposit_event() = default;
-
-		// TODO: figure out a better weight than this
-		// TODO: Bring back the correct validation checks: #374
-		#[weight = (0, DispatchClass::Operational)]
-		pub fn schedule_upgrade(origin, validation_function: Vec<u8>) {
-			ensure_root(origin)?;
-			Self::schedule_upgrade_impl(validation_function)?;
-		}
-
-		/// Schedule a validation function upgrade without further checks.
-		///
-		/// Same as [`Module::schedule_upgrade`], but without checking that the new `validation_function`
-		/// is correct. This makes it more flexible, but also opens the door to easily brick the chain.
-		#[weight = (0, DispatchClass::Operational)]
-		pub fn schedule_upgrade_without_checks(origin, validation_function: Vec<u8>) {
-			ensure_root(origin)?;
-			Self::schedule_upgrade_impl(validation_function)?;
-		}
 
 		/// Force an already scheduled validation function upgrade to happen on a particular block.
 		///
@@ -706,8 +688,8 @@ impl<T: Config> Module<T> {
 		Some(vfp.relay_parent_number + cfg.validation_upgrade_delay)
 	}
 
-	/// The implementation of the runtime upgrade scheduling.
-	fn schedule_upgrade_impl(validation_function: Vec<u8>) -> DispatchResult {
+	/// The implementation of the runtime upgrade functionality for parachains.
+	fn set_code_impl(validation_function: Vec<u8>) -> DispatchResult {
 		ensure!(
 			!PendingValidationFunction::exists(),
 			Error::<T>::OverlappingUpgrades
@@ -734,6 +716,14 @@ impl<T: Config> Module<T> {
 		Self::deposit_event(Event::ValidationFunctionStored(apply_block));
 
 		Ok(())
+	}
+}
+
+pub struct ParachainSetCode<T>(sp_std::marker::PhantomData<T>);
+
+impl<T: Config> frame_system::SetCode for ParachainSetCode<T> {
+	fn set_code(code: Vec<u8>) -> DispatchResult {
+		Module::<T>::set_code_impl(code)
 	}
 }
 
@@ -1076,7 +1066,7 @@ mod tests {
 		type BaseCallFilter = ();
 		type SystemWeightInfo = ();
 		type SS58Prefix = ();
-		type OnSetCode = ();
+		type OnSetCode = ParachainSetCode<Self>;
 	}
 	impl Config for Test {
 		type Event = Event;
@@ -1355,26 +1345,6 @@ mod tests {
 	}
 
 	#[test]
-	fn requires_root() {
-		BlockTests::new().add(123, || {
-			assert_eq!(
-				ParachainSystem::schedule_upgrade(Origin::signed(1), Default::default()),
-				Err(sp_runtime::DispatchError::BadOrigin),
-			);
-		});
-	}
-
-	#[test]
-	fn requires_root_2() {
-		BlockTests::new().add(123, || {
-			assert_ok!(ParachainSystem::schedule_upgrade(
-				RawOrigin::Root.into(),
-				Default::default()
-			));
-		});
-	}
-
-	#[test]
 	fn events() {
 		BlockTests::new()
 			.with_relay_sproof_builder(|_, _, builder| {
@@ -1383,7 +1353,7 @@ mod tests {
 			.add_with_post_test(
 				123,
 				|| {
-					assert_ok!(ParachainSystem::schedule_upgrade(
+					assert_ok!(System::set_code(
 						RawOrigin::Root.into(),
 						Default::default()
 					));
@@ -1416,14 +1386,14 @@ mod tests {
 				builder.host_config.validation_upgrade_delay = 1000;
 			})
 			.add(123, || {
-				assert_ok!(ParachainSystem::schedule_upgrade(
+				assert_ok!(System::set_code(
 					RawOrigin::Root.into(),
 					Default::default()
 				));
 			})
 			.add(234, || {
 				assert_eq!(
-					ParachainSystem::schedule_upgrade(RawOrigin::Root.into(), Default::default()),
+					System::set_code(RawOrigin::Root.into(), Default::default()),
 					Err(Error::<Test>::OverlappingUpgrades.into()),
 				)
 			});
@@ -1437,7 +1407,7 @@ mod tests {
 					!PendingValidationFunction::exists(),
 					"validation function must not exist yet"
 				);
-				assert_ok!(ParachainSystem::schedule_upgrade(
+				assert_ok!(System::set_code(
 					RawOrigin::Root.into(),
 					Default::default()
 				));
@@ -1466,7 +1436,7 @@ mod tests {
 			})
 			.add(123, || {
 				assert_eq!(
-					ParachainSystem::schedule_upgrade(RawOrigin::Root.into(), vec![0; 64]),
+					System::set_code(RawOrigin::Root.into(), vec![0; 64]),
 					Err(Error::<Test>::TooBig.into()),
 				);
 			});
