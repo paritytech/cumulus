@@ -1394,6 +1394,7 @@ dependencies = [
  "sp-version",
  "substrate-test-runtime-client",
  "trie-db",
+ "xcm",
 ]
 
 [[package]]
@@ -1411,6 +1412,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-ping"
+version = "0.1.0"
+dependencies = [
+ "cumulus-pallet-xcm-handler",
+ "cumulus-primitives-core",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+]
+
+[[package]]
 name = "cumulus-primitives-core"
 version = "0.1.0"
 dependencies = [
@@ -1422,6 +1438,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-trie",
+ "xcm",
 ]
 
 [[package]]
@@ -1476,6 +1493,7 @@ version = "0.1.0"
 dependencies = [
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm-handler",
+ "cumulus-ping",
  "cumulus-primitives-core",
  "frame-executive",
  "frame-support",
