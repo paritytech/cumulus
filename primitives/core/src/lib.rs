@@ -21,6 +21,7 @@
 use sp_std::prelude::*;
 use codec::{Encode, Decode};
 use sp_runtime::{RuntimeDebug, traits::Block as BlockT};
+use frame_support::weights::Weight;
 use xcm::VersionedXcm;
 
 pub use polkadot_core_primitives::InboundDownwardMessage;
@@ -53,6 +54,27 @@ pub enum MessageSendError {
 	TooBig,
 	/// Some other error.
 	Other,
+}
+
+/// Information about an XCMP channel.
+pub struct ChannelInfo {
+	/// The maximum number of messages that can be pending in the channel at once.
+	pub max_capacity: u32,
+	/// The maximum total size of the messages that can be pending in the channel at once.
+	pub max_total_size: u32,
+	/// The maximum message size that could be put into the channel.
+	pub max_message_size: u32,
+	/// The current number of messages pending in the channel.
+	/// Invariant: should be less or equal to `max_capacity`.s`.
+	pub msg_count: u32,
+	/// The total size in bytes of all message payloads in the channel.
+	/// Invariant: should be less or equal to `max_total_size`.
+	pub total_size: u32,
+}
+
+pub trait GetChannelInfo {
+	fn get_channel_status(id: ParaId) -> ChannelStatus;
+	fn get_channel_max(id: ParaId) -> Option<usize>;
 }
 
 /// Well known keys for values in the storage.
@@ -90,14 +112,17 @@ pub trait DownwardMessageHandler {
 	fn handle_downward_message(msg: InboundDownwardMessage);
 }
 
-/// Something that should be called for each fragment message received over XCMP.
+/// Something that should be called for each batch of messages received over XCMP.
 #[impl_trait_for_tuples::impl_for_tuples(30)]
 pub trait XcmpMessageHandler {
-	/// Handle the given blob XCMP message.
-	fn handle_blob_message(sender: ParaId, sent_at: relay_chain::BlockNumber, msg: Vec<u8>);
-
-	/// Handle the given Xcm message that has been received over XCMP.
-	fn handle_xcm_message(sender: ParaId, sent_at: relay_chain::BlockNumber, xcm: VersionedXcm);
+	/// Handle some incoming XCMP messages (note these are the big one-per-block aggregate
+	/// messages).
+	///
+	/// Also, process messages up to some `max_weight`.
+	fn handle_xcmp_messages(
+		iter: impl Iterator<Item=(ParaId, relay_chain::BlockNumber, Vec<u8>)>,
+		max_weight: Weight,
+	) -> Weight;
 }
 
 /// Something that should be called when sending an upward message.
@@ -105,6 +130,33 @@ pub trait UpwardMessageSender {
 	/// Send the given UMP message; return the expected number of blocks before the message will
 	/// be dispatched or an error if the message cannot be sent.
 	fn send_upward_message(msg: UpwardMessage) -> Result<u32, MessageSendError>;
+}
+
+/// The status of a channel.
+pub enum ChannelStatus {
+	/// Channel doesn't exist/has been closed.
+	Closed,
+	/// Channel is completely full right now.
+	Full,
+	/// Channel is ready for sending; the two parameters are the maximum size a valid message may
+	/// have right now, and the maximum size a message may ever have (this will generally have been
+	/// available during message construction, but it's possible the channel parameters changed in
+	/// the meantime).
+	Ready(usize, usize),
+}
+
+/// A means of figuring out what outbound XCMP messages should be being sent.
+pub trait XcmpMessageSource {
+	/// Take a single XCMP message from the queue for the given `dest`, if one exists.
+	fn take_outbound_messages(
+		maximum_channels: usize,
+	) -> Vec<(ParaId, Vec<u8>)>;
+}
+
+impl XcmpMessageSource for () {
+	fn take_outbound_messages(
+		_maximum_channels: usize,
+	) -> Vec<(ParaId, Vec<u8>)> { vec![] }
 }
 
 /// The "quality of service" considerations for message sending.
