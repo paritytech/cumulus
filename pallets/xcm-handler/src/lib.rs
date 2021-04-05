@@ -144,7 +144,11 @@ decl_module! {
 	pub struct Module<T: Config> for enum Call where origin: T::Origin {
 		fn deposit_event() = default;
 
-		// TODO: on_idle which processes additional messages with any remaining block weight.
+
+		fn on_idle(_now: T::BlockNumber, max_weight: Weight) -> Weight {
+			// on_idle processes additional messages with any remaining block weight.
+			Self::service_xcmp_queue(max_weight)
+		}
 
 		#[weight = 1_000]
 		fn send_xcm(origin, dest: MultiLocation, message: Xcm) {
