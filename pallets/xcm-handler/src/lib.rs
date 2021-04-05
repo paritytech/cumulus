@@ -31,10 +31,12 @@ use cumulus_primitives_core::{
 	relay_chain::BlockNumber as RelayBlockNumber, OutboundHrmpMessage, MessageSendError,
 	GetChannelInfo,
 };
-use sp_runtime::traits::{Hash, Get, Saturating};
+use sp_runtime::traits::{Hash, Saturating};
 use frame_support::{
-	decl_error, decl_event, decl_module, dispatch::{DispatchResult, Weight},
-	traits::EnsureOrigin, error::BadOrigin,
+	decl_error, decl_event, decl_module,
+	dispatch::{DispatchResult, DispatchError, Weight, DispatchResultWithPostInfo},
+	weights::PostDispatchInfo,
+	traits::{EnsureOrigin, Get}, error::BadOrigin,
 };
 use sp_std::convert::{TryFrom, TryInto};
 use xcm::{
@@ -61,9 +63,11 @@ pub trait Config: frame_system::Config {
 	/// Utility for converting from the signed origin (of type `Self::AccountId`) into a sensible
 	/// `MultiLocation` ready for passing to the XCM interpreter.
 	type AccountIdConverter: LocationConversion<Self::AccountId>;
-}
 
-// TODO: consideration of latency when dropping inbound messages
+	/// The maximum amount of weight we will give to the execution of a downward message.
+	// TODO: ditch this and queue up downward messages just like XCMP messages.
+	type MaxDownwardMessageWeight: Get<Weight>;
+}
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
 pub struct XcmParameters {
@@ -137,13 +141,14 @@ decl_error! {
 		FailedToSend,
 		/// Bad XCM origin.
 		BadXcmOrigin,
+		/// Bad XCM data.
+		BadXcm,
 	}
 }
 
 decl_module! {
 	pub struct Module<T: Config> for enum Call where origin: T::Origin {
 		fn deposit_event() = default;
-
 
 		fn on_idle(_now: T::BlockNumber, max_weight: Weight) -> Weight {
 			// on_idle processes additional messages with any remaining block weight.
@@ -192,16 +197,19 @@ pub enum XcmpMessageFormat {
 
 impl<T: Config> Module<T> {
 	/// Execute an XCM message locally. Returns `DispatchError` if failed.
-	pub fn execute_xcm(origin: T::AccountId, xcm: Xcm) -> DispatchResult {
+	pub fn execute_xcm(origin: T::AccountId, xcm: Xcm, max_weight: Weight)
+		-> Result<Weight, DispatchError>
+	{
 		let xcm_origin = T::AccountIdConverter::try_into_location(origin)
 			.map_err(|_| Error::<T>::BadXcmOrigin)?;
 		let hash = T::Hashing::hash(&xcm.encode());
-		let event = match T::XcmExecutor::execute_xcm(xcm_origin, xcm) {
-			Ok(_) => Event::<T>::Success(hash),
-			Err(e) => Event::<T>::Fail(hash, e),
+		let (event, weight) = match T::XcmExecutor::execute_xcm(xcm_origin, xcm) {
+			Outcome::Complete(weight) => (Event::<T>::Success(hash), weight),
+			Outcome::Incomplete(weight, error) => (Event::<T>::Fail(hash, error), weight),
+			Outcome::Error(error) => Err(Error::<T>::BadXcm)?,
 		};
 		Self::deposit_event(event);
-		Ok(())
+		Ok(weight)
 	}
 
 	/// Place a message `fragment` on the outgoing XCMP queue for `recipient`.
@@ -329,7 +337,7 @@ impl<T: Config> Module<T> {
 					max_weight,
 				) {
 					Outcome::Error(e) => (Err(e), RawEvent::Fail(hash, e)),
-					Outcome::Complete(e) => (Ok(w), RawEvent::Success(hash)),
+					Outcome::Complete(w) => (Ok(w), RawEvent::Success(hash)),
 					// As far as the caller is concerned, this was dispatched without error, so
 					// we just report the weight used.
 					Outcome::Incomplete(w, e) => (Ok(w), RawEvent::Fail(hash, e)),
@@ -676,20 +684,25 @@ impl<T: Config> XcmpMessageSource for Module<T> {
 }
 
 impl<T: Config> DownwardMessageHandler for Module<T> {
-	fn handle_downward_message(msg: InboundDownwardMessage) {
+	fn handle_downward_message(msg: InboundDownwardMessage) -> Weight {
 		let hash = msg.using_encoded(T::Hashing::hash);
 		log::debug!("Processing Downward XCM: {:?}", &hash);
-		let event = match VersionedXcm::decode(&mut &msg.msg[..]).map(Xcm::try_from) {
+		let msg = VersionedXcmGeneric::<T::Call>::decode(&mut &msg.msg[..])
+			.map(Xcm::try_from);
+		let (event, weight_used) = match msg {
 			Ok(Ok(xcm)) => {
-				match T::XcmExecutor::execute_xcm(Junction::Parent.into(), xcm) {
-					Ok(..) => RawEvent::Success(hash),
-					Err(e) => RawEvent::Fail(hash, e),
+				let weight_limit = T::MaxDownwardMessageWeight::get();
+				match T::XcmExecutor::execute_xcm(Junction::Parent.into(), xcm, weight_limit) {
+					Outcome::Complete(w) => (RawEvent::Success(hash), w),
+					Outcome::Incomplete(w, e) => (RawEvent::Fail(hash, e), w),
+					Outcome::Error(e) => (RawEvent::Fail(hash, e), 0),
 				}
 			}
 			Ok(Err(..)) => RawEvent::BadVersion(hash),
 			Err(..) => RawEvent::BadFormat(hash),
 		};
 		Self::deposit_event(event);
+		weight_used
 	}
 }
 

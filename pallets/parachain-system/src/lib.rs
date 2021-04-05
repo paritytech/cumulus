@@ -38,10 +38,10 @@ use cumulus_primitives_core::{
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage,
-	dispatch::DispatchResult,
+	dispatch::{DispatchResult, DispatchError, DispatchResultWithPostInfo},
 	ensure, storage,
 	traits::Get,
-	weights::{DispatchClass, Weight},
+	weights::{DispatchClass, Weight, PostDispatchInfo},
 };
 use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
@@ -80,6 +80,9 @@ pub trait Config: frame_system::Config<OnSetCode = ParachainSetCode<Self>> {
 	/// messages were relayed at one block, these will be dispatched in ascending order of the
 	/// sender's para ID.
 	type XcmpMessageHandler: XcmpMessageHandler;
+
+	/// The weight we reserve at the beginning of the block for processing XCMP messages.
+	type ReservedXcmpWeight: Get<Weight>;
 }
 
 // This pallet's storage items.
@@ -137,6 +140,10 @@ decl_storage! {
 		/// The number of HRMP messages we observed in `on_initialize` and thus used that number for
 		/// announcing the weight of `on_initialize` and `on_finalize`.
 		AnnouncedHrmpMessagesPerCandidate: u32;
+
+		/// The weight we reserve at the beginning of the block for processing XCMP messages. This
+		/// overrides the amount set in the Config trait.
+		ReservedXcmpWeightOverride: Option<Weight>;
 	}
 }
 
@@ -172,7 +179,8 @@ decl_module! {
 		/// As a side effect, this function upgrades the current validation function
 		/// if the appropriate time has come.
 		#[weight = (0, DispatchClass::Mandatory)]
-		fn set_validation_data(origin, data: ParachainInherentData) -> DispatchResult {
+		// TODO: This weight should be corrected.
+		fn set_validation_data(origin, data: ParachainInherentData) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 			assert!(
 				!ValidationData::exists(),
@@ -218,16 +226,18 @@ decl_module! {
 
 			<T::OnValidationData as OnValidationData>::on_validation_data(&vfp);
 
-			Self::process_inbound_downward_messages(
+			// TODO: This is more than zero, but will need benchmarking to figure out what.
+			let mut total_weight = 0;
+			total_weight += Self::process_inbound_downward_messages(
 				relevant_messaging_state.dmq_mqc_head,
 				downward_messages,
-			)?;
-			Self::process_inbound_horizontal_messages(
+			)?.weight;
+			total_weight += Self::process_inbound_horizontal_messages(
 				&relevant_messaging_state.ingress_channels,
 				horizontal_messages,
-			)?;
+			)?.weight;
 
-			Ok(())
+			Ok(PostDispatchInfo { actual_weight: Some(total_weight), pays_fee: false })
 		}
 
 		#[weight = (1_000, DispatchClass::Operational)]
@@ -451,13 +461,15 @@ impl<T: Config> Module<T> {
 	fn process_inbound_downward_messages(
 		expected_dmq_mqc_head: relay_chain::Hash,
 		downward_messages: Vec<InboundDownwardMessage>,
-	) -> DispatchResult {
+	) -> Result<Weight, DispatchError> {
 		let dm_count = downward_messages.len() as u32;
+
+		let mut weight_used = 0;
 
 		let result_mqc_head = LastDmqMqcHead::mutate(move |mqc| {
 			for downward_message in downward_messages {
 				mqc.extend_downward(&downward_message);
-				T::DownwardMessageHandlers::handle_downward_message(downward_message);
+				weight_used += T::DownwardMessageHandlers::handle_downward_message(downward_message);
 			}
 			mqc.0
 		});
@@ -473,7 +485,7 @@ impl<T: Config> Module<T> {
 		// PVF's `validate_block` wrapper and collation pipeline.
 		storage::unhashed::put(well_known_keys::PROCESSED_DOWNWARD_MESSAGES, &dm_count);
 
-		Ok(())
+		Ok(weight_used)
 	}
 
 	/// Process all inbound horizontal messages relayed by the collator.
@@ -483,7 +495,7 @@ impl<T: Config> Module<T> {
 	fn process_inbound_horizontal_messages(
 		ingress_channels: &[(ParaId, cumulus_primitives_core::AbridgedHrmpChannel)],
 		horizontal_messages: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
-	) -> DispatchResult {
+	) -> Result<Weight, DispatchError> {
 		// First, check that all submitted messages are sent from channels that exist. The channel
 		// exists if its MQC head is present in `vfp.hrmp_mqc_heads`.
 		for sender in horizontal_messages.keys() {
@@ -537,7 +549,9 @@ impl<T: Config> Module<T> {
 		}
 		let message_iter = horizontal_messages.into_iter()
 			.map(|(sender, message)| (sender, message.sent_at, message.data));
-		T::XcmpMessageHandler::handle_xcmp_messages(message_iter);
+
+		let max_weight = ReservedXcmpWeightOverride::get().unwrap_or_else(T::ReservedXcmpWeight::get);
+		let weight_used = T::XcmpMessageHandler::handle_xcmp_messages(message_iter, max_weight);
 
 		// Check that the MQC heads for each channel provided by the relay chain match the MQC heads
 		// we have after processing all incoming messages.
@@ -563,7 +577,7 @@ impl<T: Config> Module<T> {
 			storage::unhashed::put(well_known_keys::HRMP_WATERMARK, &hrmp_watermark);
 		}
 
-		Ok(())
+		Ok(weight_used)
 	}
 
 	/// Put a new validation function into a particular location where polkadot
@@ -912,7 +926,7 @@ mod tests {
 	}
 
 	impl DownwardMessageHandler for SaveIntoThreadLocal {
-		fn handle_downward_message(msg: InboundDownwardMessage) {
+		fn handle_downward_message(msg: InboundDownwardMessage) -> Weight {
 			HANDLED_DOWNWARD_MESSAGES.with(|m| {
 				m.borrow_mut().push(msg);
 			});
