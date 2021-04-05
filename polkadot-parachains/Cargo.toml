@@ -1,6 +1,6 @@
 [package]
 name = 'encointer-collator'
-version = '0.5.0'
+version = '0.5.1'
 authors = ["Parity Technologies <admin@parity.io>"]
 build = "build.rs"
 edition = "2018"
