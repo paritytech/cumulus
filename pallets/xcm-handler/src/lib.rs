@@ -260,7 +260,7 @@ impl<T: Config> Module<T> {
 		let s = OutboundXcmpStatus::get();
 		let index = s.iter().position(|item| item.0 == recipient)
 			.unwrap_or_else(|| {
-				s.push((recipient, OutboundStatus::Ok, false, 1, 1));
+				s.push((recipient, OutboundStatus::Ok, false, 0, 0));
 				s.len() - 1
 			});
 		let have_active = s[index].4 > s[index].3;
@@ -289,7 +289,7 @@ impl<T: Config> Module<T> {
 		if let Some(index) = s.iter().position(|item| item.0 == dest) {
 			s[index].2 = true;
 		} else {
-			s.push((dest, OutboundStatus::Ok, true, 1, 1));
+			s.push((dest, OutboundStatus::Ok, true, 0, 0));
 		}
 		SignalMessages::mutate(dest, |page| if page.is_empty() {
 			*page = (XcmpMessageFormat::Signals, signal).encode();
@@ -318,9 +318,9 @@ impl<T: Config> Module<T> {
 		shuffled
 	}
 
-	fn handle_blob_message(_sender: ParaId, _sent_at: RelayBlockNumber, _blob: Vec<u8>, _weight_limit: Weight) -> Weight {
+	fn handle_blob_message(_sender: ParaId, _sent_at: RelayBlockNumber, _blob: Vec<u8>, _weight_limit: Weight) -> Result<Weight, bool> {
 		debug_assert!(false, "Blob messages not handled.");
-		0
+		Err(false)
 	}
 
 	fn handle_xcm_message(
@@ -342,14 +342,14 @@ impl<T: Config> Module<T> {
 					xcm,
 					max_weight,
 				) {
-					Outcome::Error(e) => (Err(e), RawEvent::Fail(hash, e)),
-					Outcome::Complete(w) => (Ok(w), RawEvent::Success(hash)),
+					Outcome::Error(e) => (Err(e), RawEvent::Fail(Some(hash), e)),
+					Outcome::Complete(w) => (Ok(w), RawEvent::Success(Some(hash))),
 					// As far as the caller is concerned, this was dispatched without error, so
 					// we just report the weight used.
-					Outcome::Incomplete(w, e) => (Ok(w), RawEvent::Fail(hash, e)),
+					Outcome::Incomplete(w, e) => (Ok(w), RawEvent::Fail(Some(hash), e)),
 				}
 			}
-			e @ Err(..) => (RawEvent::BadVersion(hash), e),
+			Err(()) => (Err(XcmError::UnhandledXcmVersion), RawEvent::BadVersion(Some(hash))),
 		};
 		Self::deposit_event(event);
 		result
@@ -397,13 +397,13 @@ impl<T: Config> Module<T> {
 						let weight = max_weight - weight_used;
 						match Self::handle_blob_message(sender, sent_at, blob, weight) {
 							Ok(used) => weight_used = weight_used.saturating_add(used),
-							Err(XcmError::TooMuchWeightRequired) => {
+							Err(true) => {
 								// That message didn't get processed this time because of being
 								// too heavy. We leave it around for next time and bail.
 								remaining_fragments = last_remaining_fragments;
 								break;
 							}
-							Err(_) => {
+							Err(false) => {
 								// Message invalid; don't attempt to retry
 							}
 						}
@@ -524,7 +524,7 @@ impl<T: Config> Module<T> {
 				debug_assert!(ok, "WARNING: Attempt to suspend channel that was not Ok.");
 				s[index].1 = OutboundStatus::Suspended;
 			} else {
-				s.push((target, OutboundStatus::Suspended, 1, 1));
+				s.push((target, OutboundStatus::Suspended, false, 0, 0));
 			}
 		});
 	}
@@ -534,7 +534,7 @@ impl<T: Config> Module<T> {
 			if let Some(index) = s.iter().position(|item| item.0 == target) {
 				let suspended = s[index].1 == OutboundStatus::Suspended;
 				debug_assert!(suspended, "WARNING: Attempt to resume channel that was not suspended.");
-				if s[index].2 == s[index].3 {
+				if s[index].3 == s[index].4 {
 					s.remove(index);
 				} else {
 					s[index].1 = OutboundStatus::Ok;
