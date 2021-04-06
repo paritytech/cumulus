@@ -61,10 +61,7 @@ use xcm_builder::{
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SovereignSignedViaLocation,
 };
-use xcm_executor::{
-	traits::{IsConcrete, NativeAsset},
-	Config, XcmExecutor,
-};
+use xcm_executor::{traits::{IsConcrete, NativeAsset}, Config, XcmExecutor};
 
 pub type SessionHandlers = ();
 
@@ -230,12 +227,18 @@ impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 }
 
+parameter_types! {
+	pub static ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
+}
+
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
 	type OnValidationData = ();
 	type SelfParaId = parachain_info::Module<Runtime>;
 	type DownwardMessageHandlers = XcmHandler;
-	type XcmpMessageHandlers = XcmHandler;
+	type OutboundXcmpMessageSource = XcmHandler;
+	type XcmpMessageHandler = XcmHandler;
+	type ReservedXcmpWeight = ReservedXcmpWeight;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -273,6 +276,34 @@ type LocalOriginConverter = (
 	SignedAccountId32AsNative<RococoNetwork, Origin>,
 );
 
+parameter_types! {
+	pub UnitWeightCost: Weight = 1_000;
+}
+
+pub struct All<T>(sp_std::marker::PhantomData<T>);
+impl<T: Ord> frame_support::traits::Contains<T> for All<T> {
+	fn contains(_: &T) -> bool { true }
+	fn sorted_members() -> Vec<T> { vec![] }
+}
+
+parameter_types! {
+	// 1_000_000_000_000 => 1 unit of asset for 1 unit of Weight.
+	// TODO: Should take the actual weight price. This is just 1_000 ROC per second of weight.
+	pub WeightPrice: (MultiLocation, u128) = (MultiLocation::X1(Junction::Parent), 1_000);
+}
+
+pub type Barrier = (
+	TakeWeightCredit,
+	AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
+	// TODO: Unpaid from the Parent/Root origin...
+	// AllowUnpaidExecutionFrom<IsInVec<AllowUnpaidFrom>>,
+);
+
+use xcm_executor::{
+	AllowTopLevelPaidExecutionFrom, TakeWeightCredit, FixedWeightBounds,
+	FixedRateOfConcreteFungible,
+};
+
 pub struct XcmConfig;
 impl Config for XcmConfig {
 	type Call = Call;
@@ -283,15 +314,24 @@ impl Config for XcmConfig {
 	type IsReserve = NativeAsset;
 	type IsTeleporter = ();
 	type LocationInverter = LocationInverter<Ancestry>;
+	type Barrier = Barrier;
+	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
+	type Trader = FixedRateOfConcreteFungible<WeightPrice>;
+	type ResponseHandler = ();	// Don't handle responses for now.
+}
+
+parameter_types! {
+	pub const MaxDownwardMessageWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 10;
 }
 
 impl cumulus_pallet_xcm_handler::Config for Runtime {
 	type Event = Event;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type UpwardMessageSender = ParachainSystem;
-	type XcmpMessageSender = ParachainSystem;
 	type SendXcmOrigin = EnsureRoot<AccountId>;
 	type AccountIdConverter = LocationConverter;
+	type ChannelInfo = ParachainSystem;
+	type MaxDownwardMessageWeight = MaxDownwardMessageWeight;
 }
 
 impl cumulus_ping::Config for Runtime {

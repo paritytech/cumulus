@@ -22,7 +22,7 @@ use sp_std::prelude::*;
 use frame_system::Config as SystemConfig;
 use cumulus_primitives_core::ParaId;
 use cumulus_pallet_xcm_handler::{Origin as CumulusOrigin, ensure_sibling_para};
-use xcm::v0::{Xcm, Error as XcmError, SendXcm, OriginKind, MultiLocation, Junction};
+use xcm::v0::{XcmGeneric, Error as XcmError, SendXcm, OriginKind, MultiLocation, Junction};
 
 pub use pallet::*;
 
@@ -94,17 +94,17 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_idle(
+		fn on_finalize(
 			n: T::BlockNumber,
-			remaining_weight: Weight,
-		) -> Weight {
+		) {
 			for (para, payload) in Targets::<T>::get().into_iter() {
 				let seq = PingCount::<T>::mutate(|seq| { *seq += 1; *seq });
 				match T::XcmSender::send_xcm(
 					MultiLocation::X2(Junction::Parent, Junction::Parachain { id: para.into() }),
-					Xcm::Transact {
+					XcmGeneric::Transact {
 						origin_type: OriginKind::Native,
-						call: <T as Config>::Call::from(Call::<T>::ping(seq, payload.clone())).encode(),
+						require_weight_at_most: 1_000,
+						call: <T as Config>::Call::from(Call::<T>::ping(seq, payload.clone())).encode().into(),
 					},
 				) {
 					Ok(()) => {
@@ -116,7 +116,6 @@ pub mod pallet {
 					}
 				}
 			}
-			remaining_weight
 		}
 	}
 
@@ -164,9 +163,10 @@ pub mod pallet {
 			Self::deposit_event(Event::Pinged(para, seq, payload.clone()));
 			match T::XcmSender::send_xcm(
 				MultiLocation::X2(Junction::Parent, Junction::Parachain { id: para.into() }),
-				Xcm::Transact {
+				XcmGeneric::Transact {
 					origin_type: OriginKind::Native,
-					call: <T as Config>::Call::from(Call::<T>::pong(seq, payload.clone())).encode(),
+					require_weight_at_most: 1_000,
+					call: <T as Config>::Call::from(Call::<T>::pong(seq, payload.clone())).encode().into(),
 				},
 			) {
 				Ok(()) => Self::deposit_event(Event::PongSent(para, seq, payload)),

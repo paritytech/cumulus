@@ -27,12 +27,12 @@ use rand_chacha::{rand_core::{RngCore, SeedableRng}, ChaChaRng};
 use codec::{Decode, Encode};
 use sp_runtime::{RuntimeDebug, traits::Hash};
 use frame_support::{
-	decl_error, decl_event, decl_module, decl_storage,
+	decl_error, decl_event, decl_module, decl_storage, weights::DispatchClass,
 	dispatch::{DispatchError, Weight}, traits::{EnsureOrigin, Get}, error::BadOrigin,
 };
 use xcm::{
-	VersionedXcm, VersionedXcmGeneric, v0::{
-		Error as XcmError, ExecuteXcm, Junction, MultiLocation, SendXcm, Xcm, Outcome, XcmGeneric,
+	VersionedXcmGeneric, v0::{
+		Error as XcmError, ExecuteXcm, Junction, MultiLocation, SendXcm, Outcome, XcmGeneric,
 	},
 };
 use cumulus_primitives_core::{
@@ -143,14 +143,14 @@ decl_module! {
 		}
 
 		#[weight = (1_000, DispatchClass::Operational)]
-		fn send_xcm(origin, dest: MultiLocation, message: Xcm) {
+		fn send_xcm(origin, dest: MultiLocation, message: XcmGeneric<()>) {
 			T::SendXcmOrigin::ensure_origin(origin)?;
 			<Self as SendXcm>::send_xcm(dest, message)
 				.map_err(|_| Error::<T>::FailedToSend)?;
 		}
 
 		#[weight = (1_000, DispatchClass::Operational)]
-		fn send_upward_xcm(origin, message: VersionedXcm) {
+		fn send_upward_xcm(origin, message: VersionedXcmGeneric<()>) {
 			T::SendXcmOrigin::ensure_origin(origin)?;
 			let data = message.encode();
 			T::UpwardMessageSender::send_upward_message(data)
@@ -302,18 +302,18 @@ impl<T: Config> Module<T> {
 		Ok(())
 	}
 
-	fn send_blob_message(
+	pub fn send_blob_message(
 		recipient: ParaId,
 		blob: Vec<u8>,
 	) -> Result<u32, MessageSendError> {
-		Self::append_fragment(recipient, AggregateFormat::ConcatenatedEncodedBlob, blob)
+		Self::send_fragment(recipient, XcmpMessageFormat::ConcatenatedEncodedBlob, blob)
 	}
 
-	fn send_xcm_message(
+	pub fn send_xcm_message(
 		recipient: ParaId,
-		xcm: VersionedXcmGeneric<T::Call>,
+		xcm: VersionedXcmGeneric<()>,
 	) -> Result<u32, MessageSendError> {
-		Self::append_fragment(recipient, AggregateFormat::ConcatenatedVersionedXcm, xcm)
+		Self::send_fragment(recipient, XcmpMessageFormat::ConcatenatedVersionedXcm, xcm)
 	}
 
 	fn create_shuffle(len: usize) -> Vec<usize> {
