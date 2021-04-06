@@ -766,7 +766,8 @@ impl<T: Config> SendXcm for Module<T> {
 				}
 			}
 			_ => {
-				/* TODO: Handle other cases, like downward message */
+				// Here is where we handle additional cases such as into parachains, bridges or
+				// contracts
 				Err(XcmError::UnhandledXcmMessage)
 			}
 		}
