@@ -22,28 +22,24 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::prelude::*;
+use sp_std::{prelude::*, convert::TryFrom};
 use rand_chacha::{rand_core::{RngCore, SeedableRng}, ChaChaRng};
 use codec::{Decode, Encode};
-use cumulus_primitives_core::{
-	DownwardMessageHandler, XcmpMessageHandler, XcmpMessageSender, InboundDownwardMessage,
-	ParaId, UpwardMessageSender, ServiceQuality, relay_chain, XcmpMessageSource, ChannelStatus,
-	relay_chain::BlockNumber as RelayBlockNumber, OutboundHrmpMessage, MessageSendError,
-	GetChannelInfo,
-};
-use sp_runtime::{RuntimeDebug, traits::{Hash, Saturating}};
+use sp_runtime::{RuntimeDebug, traits::Hash};
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage,
-	dispatch::{DispatchResult, DispatchError, Weight, DispatchResultWithPostInfo},
-	weights::PostDispatchInfo,
-	traits::{EnsureOrigin, Get}, error::BadOrigin,
+	dispatch::{DispatchError, Weight}, traits::{EnsureOrigin, Get}, error::BadOrigin,
 };
-use sp_std::convert::{TryFrom, TryInto};
 use xcm::{
-	v0::{
+	VersionedXcm, VersionedXcmGeneric, v0::{
 		Error as XcmError, ExecuteXcm, Junction, MultiLocation, SendXcm, Xcm, Outcome, XcmGeneric,
 	},
-	VersionedXcm, VersionedXcmGeneric,
+};
+use cumulus_primitives_core::{
+	DownwardMessageHandler, XcmpMessageHandler, InboundDownwardMessage,
+	ParaId, UpwardMessageSender, XcmpMessageSource, ChannelStatus,
+	relay_chain::BlockNumber as RelayBlockNumber, MessageSendError,
+	GetChannelInfo,
 };
 use xcm_executor::traits::LocationConversion;
 
@@ -307,7 +303,7 @@ impl<T: Config> Module<T> {
 	fn create_shuffle(len: usize) -> Vec<usize> {
 		// Create a shuffled order for use to iterate through.
 		// Not a great random seed, but good enough for our purposes.
-		let seed = frame_system::Module::<T>::parent_hash();
+		let seed = frame_system::Pallet::<T>::parent_hash();
 		let seed = <[u8; 32]>::decode(&mut sp_runtime::traits::TrailingZeroInput::new(seed.as_ref()))
 			.expect("input is padded with zeroes; qed");
 		let mut rng = ChaChaRng::from_seed(seed);
@@ -364,7 +360,7 @@ impl<T: Config> Module<T> {
 		max_weight: Weight,
 	) -> (Weight, bool) {
 		let data = InboundXcmpMessages::get(sender, sent_at);
-		let mut last_remaining_fragments = &data[..];
+		let mut last_remaining_fragments;
 		let mut remaining_fragments = &data[..];
 		let mut weight_used = 0;
 		// TODO: Handle whether it is in order or not in the fragment. For that we'll need a new
@@ -500,7 +496,7 @@ impl<T: Config> Module<T> {
 				// Resume
 				let r = Self::send_signal(sender, ChannelSignal::Resume);
 				debug_assert!(r.is_ok(), "WARNING: Failed sending resume into suspended channel");
-				status[index].1 == InboundStatus::Ok;
+				status[index].1 = InboundStatus::Ok;
 			}
 
 			// If there are more and we're making progress, we process them after we've given the
@@ -591,7 +587,10 @@ impl<T: Config> XcmpMessageHandler for Module<T> {
 						let count = status[i].2.len();
 						if count >= suspend_threshold && status[i].1 == InboundStatus::Ok {
 							status[i].1 = InboundStatus::Suspended;
-							Self::send_signal(sender, ChannelSignal::Suspend);
+							let r = Self::send_signal(sender, ChannelSignal::Suspend);
+							if r.is_err() {
+								log::warn!("Attempt to suspend channel failed. Messages may be dropped.");
+							}
 						}
 						if count < hard_limit {
 							status[i].2.push((sent_at, format));
@@ -748,7 +747,7 @@ impl<T: Config> SendXcm for Module<T> {
 				let hash = T::Hashing::hash(&data);
 
 				T::UpwardMessageSender::send_upward_message(data)
-					.map_err(|e| XcmError::CannotReachDestination(e.into()));
+					.map_err(|e| XcmError::CannotReachDestination(e.into()))?;
 
 				Self::deposit_event(RawEvent::UpwardMessageSent(Some(hash)));
 				Ok(())
