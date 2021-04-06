@@ -31,9 +31,9 @@ use cumulus_primitives_core::{
 	relay_chain::BlockNumber as RelayBlockNumber, OutboundHrmpMessage, MessageSendError,
 	GetChannelInfo,
 };
-use sp_runtime::traits::{Hash, Saturating};
+use sp_runtime::{RuntimeDebug, traits::{Hash, Saturating}};
 use frame_support::{
-	decl_error, decl_event, decl_module,
+	decl_error, decl_event, decl_module, decl_storage,
 	dispatch::{DispatchResult, DispatchError, Weight, DispatchResultWithPostInfo},
 	weights::PostDispatchInfo,
 	traits::{EnsureOrigin, Get}, error::BadOrigin,
@@ -69,12 +69,6 @@ pub trait Config: frame_system::Config {
 	type MaxDownwardMessageWeight: Get<Weight>;
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
-pub struct XcmParameters {
-	pub dmp_weight_reserve: Weight,
-	pub xcmp_weight_reserve: Weight,
-}
-
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
 pub enum InboundStatus {
 	Ok,
@@ -89,9 +83,6 @@ pub enum OutboundStatus {
 
 decl_storage! {
 	trait Store for Module<T: Config> as XcmHandler {
-		/// The current block processing parameters.
-		Parameters: XcmParameters;
-
 		/// Status of the inbound XCMP channels.
 		InboundXcmpStatus: Vec<(ParaId, InboundStatus, Vec<(RelayBlockNumber, XcmpMessageFormat)>)>;
 
@@ -121,17 +112,17 @@ decl_storage! {
 decl_event! {
 	pub enum Event<T> where Hash = <T as frame_system::Config>::Hash {
 		/// Some XCM was executed ok.
-		Success(Hash),
+		Success(Option<Hash>),
 		/// Some XCM failed.
-		Fail(Hash, XcmError),
+		Fail(Option<Hash>, XcmError),
 		/// Bad XCM version used.
-		BadVersion(Hash),
+		BadVersion(Option<Hash>),
 		/// Bad XCM format used.
-		BadFormat(Hash),
+		BadFormat(Option<Hash>),
 		/// An upward message was sent to the relay chain.
-		UpwardMessageSent(Hash),
+		UpwardMessageSent(Option<Hash>),
 		/// An HRMP message was sent to a sibling parachain.
-		HrmpMessageSent(Hash),
+		XcmpMessageSent(Option<Hash>),
 	}
 }
 
@@ -169,9 +160,9 @@ decl_module! {
 		}
 
 		#[weight = 1_000]
-		fn send_hrmp_xcm(origin, recipient: ParaId, message: VersionedXcm, qos: ServiceQuality) {
+		fn send_xcmp_xcm(origin, recipient: ParaId, message: VersionedXcmGeneric<()>) {
 			T::SendXcmOrigin::ensure_origin(origin)?;
-			T::XcmpMessageSender::send_xcm_message(recipient, message, qos)
+			Self::send_fragment(recipient, XcmpMessageFormat::ConcatenatedVersionedXcm, message)
 				.map_err(|_| Error::<T>::FailedToSend)?;
 		}
 	}
@@ -196,17 +187,35 @@ pub enum XcmpMessageFormat {
 }
 
 impl<T: Config> Module<T> {
-	/// Execute an XCM message locally. Returns `DispatchError` if failed.
-	pub fn execute_xcm(origin: T::AccountId, xcm: Xcm, max_weight: Weight)
+	/// Execute an XCM message from a local, signed, origin.
+	///
+	/// Returns `DispatchError` if execution was not possible. Otherwise returns the amount of
+	/// weight that was used in its attempted execution.
+	///
+	/// An event is deposited indicating whether `msg` could be executed completely or only
+	/// partially.
+	///
+	/// No more than `max_weight` will be used in its attempted execution. If this is less than the
+	/// maximum amount of weight that the message could take to be executed, then no execution
+	/// attempt will be made.
+	///
+	/// NOTE: A successful return to this does *not* imply that the `msg` was executed successfully
+	/// to completion; only that *some* of it was executed.
+	pub fn execute_xcm(
+		origin: T::AccountId,
+		id: impl Encode,
+		xcm: XcmGeneric<T::Call>,
+		max_weight: Weight,
+	)
 		-> Result<Weight, DispatchError>
 	{
 		let xcm_origin = T::AccountIdConverter::try_into_location(origin)
 			.map_err(|_| Error::<T>::BadXcmOrigin)?;
-		let hash = T::Hashing::hash(&xcm.encode());
-		let (event, weight) = match T::XcmExecutor::execute_xcm(xcm_origin, xcm) {
-			Outcome::Complete(weight) => (Event::<T>::Success(hash), weight),
-			Outcome::Incomplete(weight, error) => (Event::<T>::Fail(hash, error), weight),
-			Outcome::Error(error) => Err(Error::<T>::BadXcm)?,
+		let maybe_hash = id.using_encoded(|s| if s.is_empty() { None } else { Some(T::Hashing::hash(s)) });
+		let (event, weight) = match T::XcmExecutor::execute_xcm(xcm_origin, xcm, max_weight) {
+			Outcome::Complete(weight) => (Event::<T>::Success(maybe_hash), weight),
+			Outcome::Incomplete(weight, error) => (Event::<T>::Fail(maybe_hash, error), weight),
+			Outcome::Error(_error) => Err(Error::<T>::BadXcm)?,
 		};
 		Self::deposit_event(event);
 		Ok(weight)
@@ -239,9 +248,6 @@ impl<T: Config> Module<T> {
 	) -> Result<u32, MessageSendError> {
 		let data = fragment.encode();
 
-		// TODO: Store whether it is in order or not in the fragment. For that we'll need a new
-		//  XcmpMessageFormat type.
-
 		// TODO: Cache max_message_size in `OutboundXcmpMessages` once known; that way it's only
 		//  accessed when a new page is needed.
 
@@ -254,11 +260,11 @@ impl<T: Config> Module<T> {
 		let s = OutboundXcmpStatus::get();
 		let index = s.iter().position(|item| item.0 == recipient)
 			.unwrap_or_else(|| {
-				s.push((target, OutboundStatus::Ok, false, 1, 1));
+				s.push((recipient, OutboundStatus::Ok, false, 1, 1));
 				s.len() - 1
 			});
 		let have_active = s[index].4 > s[index].3;
-		let appended = have_active && OutboundXcmpMessages::mutate(dest, s[index].4 - 1, |s| {
+		let appended = have_active && OutboundXcmpMessages::mutate(recipient, s[index].4 - 1, |s| {
 			if XcmpMessageFormat::decode(&mut &s[..]) != Ok(format) { return false }
 			if s.len() + data.len() > max_message_size { return false }
 			s.extend_from_slice(&data[..]);
@@ -270,7 +276,7 @@ impl<T: Config> Module<T> {
 			s[index].4 += 1;
 			let mut new_page = format.encode();
 			new_page.extend_from_slice(&data[..]);
-			OutboundXcmpMessages::insert(dest, page_index, new_page);
+			OutboundXcmpMessages::insert(recipient, page_index, new_page);
 			OutboundXcmpStatus::put(s);
 		}
 		Ok((s[index].4 - s[index].3 - 1) as u32)
@@ -280,10 +286,10 @@ impl<T: Config> Module<T> {
 	/// block.
 	fn send_signal(dest: ParaId, signal: ChannelSignal) -> Result<(), ()> {
 		let s = OutboundXcmpStatus::get();
-		if let Some(index) = s.iter().position(|item| item.0 == target) {
+		if let Some(index) = s.iter().position(|item| item.0 == dest) {
 			s[index].2 = true;
 		} else {
-			s.push((target, OutboundStatus::Ok, true, 1, 1));
+			s.push((dest, OutboundStatus::Ok, true, 1, 1));
 		}
 		SignalMessages::mutate(dest, |page| if page.is_empty() {
 			*page = (XcmpMessageFormat::Signals, signal).encode();
@@ -323,7 +329,7 @@ impl<T: Config> Module<T> {
 		xcm: VersionedXcmGeneric<T::Call>,
 		max_weight: Weight,
 	) -> Result<Weight, XcmError> {
-		let hash = xcm.using_encoded(T::Hashing::hash);
+		let hash = Encode::using_encoded(&xcm, T::Hashing::hash);
 		log::debug!("Processing XCMP-XCM: {:?}", &hash);
 		let (result, event) = match XcmGeneric::<T::Call>::try_from(xcm) {
 			Ok(xcm) => {
@@ -427,6 +433,7 @@ impl<T: Config> Module<T> {
 		let resume_threshold = 1;
 		// The amount of remaining weight under which we stop processing messages.
 		let threshold_weight = 100_000;
+		let weight_restrict_decay = 2;
 
 		// sorted.
 		let mut status = InboundXcmpStatus::get();
@@ -434,8 +441,9 @@ impl<T: Config> Module<T> {
 			return 0
 		}
 
-		let mut shuffled = create_shuffle(status.len());
+		let mut shuffled = Self::create_shuffle(status.len());
 		let mut weight_used = 0;
+		let mut weight_available = 0;
 
 		// We don't want the possibility of a chain sending a series of really heavy messages and
 		// tying up the block's execution time from other chains. Therefore we execute any remaining
@@ -450,12 +458,26 @@ impl<T: Config> Module<T> {
 			let index = shuffled[shuffle_index];
 			let sender = status[index].0;
 
+			if weight_available != max_weight {
+				// Get incrementally closer to freeing up max_weight for message execution over the
+				// first round. For the second round we unlock all weight. If we come close enough
+				// on the first round to unlocking everything, then we do so.
+				if shuffle_index < status.len() {
+					weight_available += (max_weight - weight_available) / weight_restrict_decay;
+					if weight_available + threshold_weight > max_weight {
+						weight_available = max_weight;
+					}
+				} else {
+					weight_available = max_weight;
+				}
+			}
+
 			let weight_processed = if status[index].2.is_empty() {
 				debug_assert!(false, "channel exists in status; there must be messages; qed");
 				0
 			} else {
 				// Process up to one block's worth for now.
-				let weight_remaining = max_weight - wight_used;
+				let weight_remaining = weight_available.saturating_sub(weight_used);
 				let (weight_processed, is_empty) = Self::process_xcmp_message(
 					sender,
 					status[index].2[0],
@@ -476,8 +498,9 @@ impl<T: Config> Module<T> {
 			}
 
 			// If there are more and we're making progress, we process them after we've given the
-			// other channels a look in.
-			if !status[index].2.is_empty() && weight_processed > 0 {
+			// other channels a look in. If we've still not unlocked all weight, then we set them
+			// up for processing a second time anyway.
+			if !status[index].2.is_empty() && weight_processed > 0 || weight_available != max_weight {
 				if shuffle_index + 1 == shuffled.len() {
 					// Only this queue left. Just run around this loop once more.
 					continue
@@ -590,7 +613,7 @@ impl<T: Config> XcmpMessageSource for Module<T> {
 		let max_message_count = statuses.len().min(maximum_channels);
 		let mut result = Vec::with_capacity(max_message_count);
 
-		for status in status.iter_mut() {
+		for status in statuses.iter_mut() {
 			let (para_id, status, mut signalling, mut begin, mut end) = *status;
 
 			if result.len() == max_message_count {
@@ -601,7 +624,7 @@ impl<T: Config> XcmpMessageSource for Module<T> {
 			if status == OutboundStatus::Suspended {
 				continue
 			}
-			let (max_size_now, max_size_ever) = match T::ChannelInfo::channel_status(*recipient) {
+			let (max_size_now, max_size_ever) = match T::ChannelInfo::channel_status(*para_id) {
 				ChannelStatus::Closed => {
 					// This means that there is no such channel anymore. Nothing to be done but
 					// swallow the messages and discard the status.
@@ -706,22 +729,19 @@ impl<T: Config> DownwardMessageHandler for Module<T> {
 	}
 }
 
-impl<T: Config> SendXcm<T::Call> for Module<T> {
-	fn send_xcm(dest: MultiLocation, msg: XcmGeneric<T::Call>, max_weight: Weight) -> Outcome {
+impl<T: Config> SendXcm for Module<T> {
+	fn send_xcm(dest: MultiLocation, msg: XcmGeneric<()>) -> Result<(), XcmError> {
 		match dest.first() {
-			// A message for us. Execute directly.
-			None => {
-				T::XcmExecutor::execute_xcm(MultiLocation::Null, msg, max_weight)
-			}
+			// A message for us. We can't send it anywhere.
+			None => Outcome::Error(XcmError::DestinationIsLocal),
 			// An upward message for the relay chain.
 			Some(Junction::Parent) if dest.len() == 1 => {
 				let data = VersionedXcmGeneric::<T::Call>::from(msg).encode();
 				let hash = T::Hashing::hash(&data);
 
-				match T::UpwardMessageSender::send_upward_message(data) {
-					Ok(()) => {}
-					Err(_) => return Outcome::Error(XcmError::CannotReachDestination),
-				}
+				T::UpwardMessageSender::send_upward_message(data)
+					.map_err(|e| Outcome::Error(XcmError::CannotReachDestination(e.into())))?;
+
 				Self::deposit_event(RawEvent::UpwardMessageSent(hash));
 				Outcome::Complete(0)
 			}
@@ -734,7 +754,7 @@ impl<T: Config> SendXcm<T::Call> for Module<T> {
 						Ok(()) => {}
 						Err(_) => return Outcome::Error(XcmError::CannotReachDestination),
 					}
-					Self::deposit_event(RawEvent::HrmpMessageSent(hash));
+					Self::deposit_event(RawEvent::XcmpMessageSent(hash));
 					Outcome::Complete(0)
 				} else {
 					Outcome::Error(XcmError::UnhandledXcmMessage)

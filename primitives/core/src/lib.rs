@@ -56,6 +56,18 @@ pub enum MessageSendError {
 	Other,
 }
 
+impl From<MessageSendError> for &'static str {
+	fn from(e: MessageSendError) -> Self {
+		use MessageSendError::*;
+		match e {
+			QueueFull => "QueueFull",
+			NoChannel => "NoChannel",
+			TooBig => "TooBig",
+			Other => "Other",
+		}
+	}
+}
+
 /// Information about an XCMP channel.
 pub struct ChannelInfo {
 	/// The maximum number of messages that can be pending in the channel at once.
@@ -106,14 +118,12 @@ pub mod well_known_keys {
 }
 
 /// Something that should be called when a downward message is received.
-#[impl_trait_for_tuples::impl_for_tuples(30)]
 pub trait DownwardMessageHandler {
 	/// Handle the given downward message.
 	fn handle_downward_message(msg: InboundDownwardMessage) -> Weight;
 }
 
 /// Something that should be called for each batch of messages received over XCMP.
-#[impl_trait_for_tuples::impl_for_tuples(30)]
 pub trait XcmpMessageHandler {
 	/// Handle some incoming XCMP messages (note these are the big one-per-block aggregate
 	/// messages).

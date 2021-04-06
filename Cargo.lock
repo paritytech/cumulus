@@ -1406,6 +1406,8 @@ dependencies = [
  "frame-system",
  "log",
  "parity-scale-codec",
+ "rand 0.8.3",
+ "rand_chacha 0.3.0",
  "sp-runtime",
  "sp-std",
  "xcm",
@@ -1431,6 +1433,7 @@ dependencies = [
 name = "cumulus-primitives-core"
 version = "0.1.0"
 dependencies = [
+ "frame-support",
  "impl-trait-for-tuples",
  "parity-scale-codec",
  "polkadot-core-primitives",
@@ -11604,15 +11607,15 @@ dependencies = [
 name = "xcm-queue"
 version = "0.1.0"
 dependencies = [
+ "cumulus-pallet-xcm-handler",
  "cumulus-primitives-core",
  "frame-support",
  "frame-system",
- "log",
  "parity-scale-codec",
+ "serde",
  "sp-runtime",
  "sp-std",
  "xcm",
- "xcm-executor",
 ]
 
 [[package]]
