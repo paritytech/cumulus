@@ -22,7 +22,6 @@ use sp_std::prelude::*;
 use codec::{Encode, Decode};
 use sp_runtime::{RuntimeDebug, traits::Block as BlockT};
 use frame_support::weights::Weight;
-use xcm::VersionedXcm;
 
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use polkadot_parachain::primitives::{Id as ParaId, UpwardMessage, ValidationParams};
@@ -36,6 +35,7 @@ pub mod relay_chain {
 	pub use polkadot_primitives::v1;
 	pub use polkadot_primitives::v1::well_known_keys;
 }
+use relay_chain::BlockNumber as RelayBlockNumber;
 
 /// An inbound HRMP message.
 pub type InboundHrmpMessage = polkadot_primitives::v1::InboundHrmpMessage<relay_chain::BlockNumber>;
@@ -129,8 +129,8 @@ pub trait XcmpMessageHandler {
 	/// messages).
 	///
 	/// Also, process messages up to some `max_weight`.
-	fn handle_xcmp_messages(
-		iter: impl Iterator<Item=(ParaId, relay_chain::BlockNumber, Vec<u8>)>,
+	fn handle_xcmp_messages<'a, I: Iterator<Item=(ParaId, RelayBlockNumber, &'a [u8])>>(
+		iter: I,
 		max_weight: Weight,
 	) -> Weight;
 }
@@ -179,30 +179,6 @@ pub enum ServiceQuality {
 	/// Ensure that the message is dispatched as soon as possible, which could result in it being
 	/// dispatched before other messages which are larger and/or rely on relative ordering.
 	Fast,
-}
-
-/// Something that should be called in order to send a message over XCMP.
-pub trait XcmpMessageSender {
-	/// Send the given data blob over XCMP; return the expected number of blocks before the
-	/// message will be dispatched or an error if the message cannot be sent.
-	///
-	/// NOTE: The number of blocks is a guideline only and may take more or less depending on
-	/// various factors. However, it should generally return at least one non-zero successful
-	/// result before returning a `QueueFull` error.
-	///
-	/// NOTE: Using this when `send_xcm_message` has already been used may result in additional
-	/// aggregate messages being sent.
-	fn send_blob_message(dest: ParaId, msg: Vec<u8>, qos: ServiceQuality)
-		-> Result<u32, MessageSendError>;
-
-	/// Send the given XCM message through XCMP; return the expected number of blocks before the
-	/// message will be dispatched or an error if the message cannot be sent.
-	///
-	/// NOTE: The number of blocks is a guideline only and may take more or less depending on
-	/// various factors. However, it should generally return at least one non-zero successful
-	/// result before returning a `QueueFull` error.
-	fn send_xcm_message(dest: ParaId, msg: VersionedXcm, qos: ServiceQuality)
-		-> Result<u32, MessageSendError>;
 }
 
 /// A trait which is called when the validation data is set.

@@ -142,23 +142,25 @@ decl_module! {
 			Self::service_xcmp_queue(max_weight)
 		}
 
-		#[weight = 1_000]
+		#[weight = (1_000, DispatchClass::Operational)]
 		fn send_xcm(origin, dest: MultiLocation, message: Xcm) {
 			T::SendXcmOrigin::ensure_origin(origin)?;
-			<Self as SendXcm>::send_xcm(dest, message).map_err(|_| Error::<T>::FailedToSend)?;
+			<Self as SendXcm>::send_xcm(dest, message)
+				.map_err(|_| Error::<T>::FailedToSend)?;
 		}
 
-		#[weight = 1_000]
+		#[weight = (1_000, DispatchClass::Operational)]
 		fn send_upward_xcm(origin, message: VersionedXcm) {
 			T::SendXcmOrigin::ensure_origin(origin)?;
 			let data = message.encode();
-			T::UpwardMessageSender::send_upward_message(data).map_err(|_| Error::<T>::FailedToSend)?;
+			T::UpwardMessageSender::send_upward_message(data)
+				.map_err(|_| Error::<T>::FailedToSend)?;
 		}
 
-		#[weight = 1_000]
+		#[weight = (1_000, DispatchClass::Operational)]
 		fn send_xcmp_xcm(origin, recipient: ParaId, message: VersionedXcmGeneric<()>) {
 			T::SendXcmOrigin::ensure_origin(origin)?;
-			Self::send_fragment(recipient, XcmpMessageFormat::ConcatenatedVersionedXcm, message)
+			Self::send_xcm_message(recipient, message)
 				.map_err(|_| Error::<T>::FailedToSend)?;
 		}
 	}
@@ -298,6 +300,20 @@ impl<T: Config> Module<T> {
 		OutboundXcmpStatus::put(s);
 
 		Ok(())
+	}
+
+	fn send_blob_message(
+		recipient: ParaId,
+		blob: Vec<u8>,
+	) -> Result<u32, MessageSendError> {
+		Self::append_fragment(recipient, AggregateFormat::ConcatenatedEncodedBlob, blob)
+	}
+
+	fn send_xcm_message(
+		recipient: ParaId,
+		xcm: VersionedXcmGeneric<T::Call>,
+	) -> Result<u32, MessageSendError> {
+		Self::append_fragment(recipient, AggregateFormat::ConcatenatedVersionedXcm, xcm)
 	}
 
 	fn create_shuffle(len: usize) -> Vec<usize> {
@@ -549,8 +565,8 @@ impl<T: Config> Module<T> {
 }
 
 impl<T: Config> XcmpMessageHandler for Module<T> {
-	fn handle_xcmp_messages(
-		iter: impl Iterator<Item=(ParaId, RelayBlockNumber, Vec<u8>)>,
+	fn handle_xcmp_messages<'a, I: Iterator<Item=(ParaId, RelayBlockNumber, &'a [u8])>>(
+		iter: I,
 		max_weight: Weight,
 	) -> Weight {
 		let mut status = InboundXcmpStatus::get();
@@ -563,7 +579,7 @@ impl<T: Config> XcmpMessageHandler for Module<T> {
 		for (sender, sent_at, data) in iter {
 
 			// Figure out the message format.
-			let mut data_ref = &data[..];
+			let mut data_ref = data;
 			let format = match XcmpMessageFormat::decode(&mut data_ref) {
 				Ok(f) => f,
 				Err(_) => {

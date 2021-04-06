@@ -30,10 +30,10 @@
 use cumulus_primitives_core::{
 	relay_chain,
 	well_known_keys::{self, NEW_VALIDATION_CODE},
-	AbridgedHostConfiguration, DownwardMessageHandler, XcmpMessageHandler, XcmpMessageSender,
+	AbridgedHostConfiguration, DownwardMessageHandler, XcmpMessageHandler,
 	InboundDownwardMessage, InboundHrmpMessage, OnValidationData, OutboundHrmpMessage, ParaId,
-	PersistedValidationData, UpwardMessage, UpwardMessageSender, MessageSendError, ServiceQuality,
-	XcmpMessageSource, ChannelStatus, AbridgedHrmpChannel, GetChannelInfo,
+	PersistedValidationData, UpwardMessage, UpwardMessageSender, MessageSendError,
+	XcmpMessageSource, ChannelStatus, GetChannelInfo,
 };
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use frame_support::{
@@ -41,7 +41,7 @@ use frame_support::{
 	dispatch::{DispatchResult, DispatchError, DispatchResultWithPostInfo},
 	ensure, storage,
 	traits::Get,
-	weights::{DispatchClass, Weight, PostDispatchInfo},
+	weights::{DispatchClass, Weight, PostDispatchInfo, Pays},
 };
 use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
@@ -49,9 +49,6 @@ use relay_state_snapshot::MessagingStateSnapshot;
 use sp_inherents::{InherentData, InherentIdentifier, ProvideInherent};
 use sp_runtime::traits::{BlakeTwo256, Hash};
 use sp_std::{cmp, collections::btree_map::BTreeMap, vec::Vec};
-use codec::{Encode, Decode};
-use xcm::VersionedXcm;
-use crate::validate_block::polkadot_parachain::primitives::Id;
 
 mod relay_state_snapshot;
 #[macro_use]
@@ -231,31 +228,19 @@ decl_module! {
 			total_weight += Self::process_inbound_downward_messages(
 				relevant_messaging_state.dmq_mqc_head,
 				downward_messages,
-			)?.weight;
+			)?;
 			total_weight += Self::process_inbound_horizontal_messages(
 				&relevant_messaging_state.ingress_channels,
 				horizontal_messages,
-			)?.weight;
+			)?;
 
-			Ok(PostDispatchInfo { actual_weight: Some(total_weight), pays_fee: false })
+			Ok(PostDispatchInfo { actual_weight: Some(total_weight), pays_fee: Pays::No })
 		}
 
 		#[weight = (1_000, DispatchClass::Operational)]
 		fn sudo_send_upward_message(origin, message: UpwardMessage) {
 			ensure_root(origin)?;
 			let _ = Self::send_upward_message(message);
-		}
-
-		#[weight = (1_000, DispatchClass::Operational)]
-		fn sudo_send_hmp_xcm(origin, recipient: ParaId, xcm: VersionedXcm, qos: ServiceQuality) {
-			ensure_root(origin)?;
-			let _ = Self::send_xcm_message(recipient, xcm, qos);
-		}
-
-		#[weight = (1_000, DispatchClass::Operational)]
-		fn sudo_send_hmp_blob(origin, recipient: ParaId, blob: Vec<u8>, qos: ServiceQuality) {
-			ensure_root(origin)?;
-			let _ = Self::send_blob_message(recipient, blob, qos);
 		}
 
 		fn on_finalize() {
@@ -396,12 +381,18 @@ impl<T: Config> GetChannelInfo for Module<T> {
 		// This is because sending implies that a message is buffered until there is space to send
 		// a message in the candidate. After a while waiting in a buffer, it may be discovered that
 		// the channel to which a message were addressed is now closed. Another possibility, is that
-		// the maximum message size was decreased so that a message in the bufer doesn't fit. Should
+		// the maximum message size was decreased so that a message in the buffer doesn't fit. Should
 		// any of that happen the sender should be notified about the message was discarded.
 		//
 		// Here it a similar case, with the difference that the realization that the channel is closed
 		// came the same block.
-		let channels = Self::relevant_messaging_state()?.egress_channels;
+		let channels = match Self::relevant_messaging_state() {
+			None => {
+				log::warn!("calling `get_channel_status` with no RelevantMessagingState?!");
+				return ChannelStatus::Closed
+			},
+			Some(d) => d.egress_channels,
+		};
 		// ^^^ NOTE: This storage field should carry over from the previous block. So if it's None
 		// then it must be that this is an edge-case where a message is attempted to be
 		// sent at the first block. It should be safe to assume that there are no channels
@@ -412,7 +403,7 @@ impl<T: Config> GetChannelInfo for Module<T> {
 			Err(_) => return ChannelStatus::Closed,
 			Ok(i) => i,
 		};
-		let meta = channels[index].1;
+		let meta = &channels[index].1;
 		if meta.msg_count + 1 > meta.max_capacity {
 			// The channel is at its capacity. Skip it for now.
 			return ChannelStatus::Full;
@@ -424,7 +415,7 @@ impl<T: Config> GetChannelInfo for Module<T> {
 
 	fn get_channel_max(id: ParaId) -> Option<usize> {
 		let channels = Self::relevant_messaging_state()?.egress_channels;
-		let index = channels.binary_search_by_key(&id, |item| item.0)?;
+		let index = channels.binary_search_by_key(&id, |item| item.0).ok()?;
 		Some(channels[index].1.max_message_size as usize)
 	}
 }
@@ -466,10 +457,12 @@ impl<T: Config> Module<T> {
 
 		let mut weight_used = 0;
 
+		// Reference fu to avoid the `move` capture.
+		let weight_used_mut_ref = &mut weight_used;
 		let result_mqc_head = LastDmqMqcHead::mutate(move |mqc| {
 			for downward_message in downward_messages {
 				mqc.extend_downward(&downward_message);
-				weight_used += T::DownwardMessageHandlers::handle_downward_message(downward_message);
+				*weight_used_mut_ref += T::DownwardMessageHandlers::handle_downward_message(downward_message);
 			}
 			mqc.0
 		});
@@ -534,21 +527,23 @@ impl<T: Config> Module<T> {
 		let mut running_mqc_heads = BTreeMap::new();
 		let mut hrmp_watermark = None;
 
-		for (sender, ref horizontal_message) in &horizontal_messages {
-			if hrmp_watermark
-				.map(|w| w < horizontal_message.sent_at)
-				.unwrap_or(true)
-			{
-				hrmp_watermark = Some(horizontal_message.sent_at);
-			}
+		{
+			for (sender, ref horizontal_message) in &horizontal_messages {
+				if hrmp_watermark
+					.map(|w| w < horizontal_message.sent_at)
+					.unwrap_or(true)
+				{
+					hrmp_watermark = Some(horizontal_message.sent_at);
+				}
 
-			running_mqc_heads
-				.entry(sender)
-				.or_insert_with(|| last_mqc_heads.get(&sender).cloned().unwrap_or_default())
-				.extend_hrmp(horizontal_message);
+				running_mqc_heads
+					.entry(sender)
+					.or_insert_with(|| last_mqc_heads.get(&sender).cloned().unwrap_or_default())
+					.extend_hrmp(horizontal_message);
+			}
 		}
-		let message_iter = horizontal_messages.into_iter()
-			.map(|(sender, message)| (sender, message.sent_at, message.data));
+		let message_iter = horizontal_messages.iter()
+			.map(|&(sender, ref message)| (sender, message.sent_at, &message.data[..]));
 
 		let max_weight = ReservedXcmpWeightOverride::get().unwrap_or_else(T::ReservedXcmpWeight::get);
 		let weight_used = T::XcmpMessageHandler::handle_xcmp_messages(message_iter, max_weight);
@@ -562,7 +557,7 @@ impl<T: Config> Module<T> {
 		// would corrupt the message queue chain.
 		for &(ref sender, ref channel) in ingress_channels {
 			let cur_head = running_mqc_heads
-				.entry(*sender)
+				.entry(sender)
 				.or_insert_with(|| last_mqc_heads.get(&sender).cloned().unwrap_or_default())
 				.head();
 			let target_head = channel.mqc_head.unwrap_or_default();
@@ -736,34 +731,9 @@ impl<T: Config> Module<T> {
 	}
 }
 
-impl<T: Config> frame_system::SetCode for Module<T> {
-	fn set_code(code: Vec<u8>) {
-		let r = Self::schedule_upgrade_impl(code);
-		debug_assert!(r.is_ok(), "Cannot handle schedule_upgrade_impl failure");
-	}
-}
-
 impl<T: Config> UpwardMessageSender for Module<T> {
 	fn send_upward_message(message: UpwardMessage) -> Result<u32, MessageSendError> {
 		Self::send_upward_message(message)
-	}
-}
-
-impl<T: Config> XcmpMessageSender for Module<T> {
-	fn send_blob_message(
-		recipient: ParaId,
-		blob: Vec<u8>,
-		qos: ServiceQuality,
-	) -> Result<u32, MessageSendError> {
-		Self::append_fragment(recipient, AggregateFormat::ConcatenatedEncodedBlob, blob, qos)
-	}
-
-	fn send_xcm_message(
-		recipient: ParaId,
-		xcm: VersionedXcm,
-		qos: ServiceQuality,
-	) -> Result<u32, MessageSendError> {
-		Self::append_fragment(recipient, AggregateFormat::ConcatenatedVersionedXcm, xcm, qos)
 	}
 }
 
