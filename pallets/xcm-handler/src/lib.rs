@@ -41,7 +41,7 @@ use cumulus_primitives_core::{
 	relay_chain::BlockNumber as RelayBlockNumber, MessageSendError,
 	GetChannelInfo,
 };
-use xcm_executor::traits::LocationConversion;
+use xcm_executor::traits::Convert;
 
 pub trait Config: frame_system::Config {
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
@@ -58,7 +58,7 @@ pub trait Config: frame_system::Config {
 	type SendXcmOrigin: EnsureOrigin<Self::Origin>;
 	/// Utility for converting from the signed origin (of type `Self::AccountId`) into a sensible
 	/// `MultiLocation` ready for passing to the XCM interpreter.
-	type AccountIdConverter: LocationConversion<Self::AccountId>;
+	type AccountIdConverter: Convert<MultiLocation, Self::AccountId>;
 
 	/// The maximum amount of weight we will give to the execution of a downward message.
 	// TODO: ditch this and queue up downward messages just like XCMP messages.
@@ -207,8 +207,8 @@ impl<T: Config> Module<T> {
 	)
 		-> Result<Weight, DispatchError>
 	{
-		let xcm_origin = T::AccountIdConverter::try_into_location(origin)
-			.map_err(|_| Error::<T>::BadXcmOrigin)?;
+		let xcm_origin = T::AccountIdConverter::reverse(origin)
+			.map_err(|_origin| Error::<T>::BadXcmOrigin)?;
 		let maybe_hash = id.using_encoded(|s| if s.is_empty() { None } else { Some(T::Hashing::hash(s)) });
 		let (event, weight) = match T::XcmExecutor::execute_xcm(xcm_origin, xcm, max_weight) {
 			Outcome::Complete(weight) => (Event::<T>::Success(maybe_hash), weight),
