@@ -228,7 +228,7 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
-	pub static ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
+	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {

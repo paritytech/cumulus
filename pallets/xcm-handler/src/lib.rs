@@ -31,8 +31,8 @@ use frame_support::{
 	dispatch::{DispatchError, Weight}, traits::{EnsureOrigin, Get}, error::BadOrigin,
 };
 use xcm::{
-	VersionedXcmGeneric, v0::{
-		Error as XcmError, ExecuteXcm, Junction, MultiLocation, SendXcm, Outcome, XcmGeneric,
+	VersionedXcm, v0::{
+		Error as XcmError, ExecuteXcm, Junction, MultiLocation, SendXcm, Outcome, Xcm,
 	},
 };
 use cumulus_primitives_core::{
@@ -143,14 +143,14 @@ decl_module! {
 		}
 
 		#[weight = (1_000, DispatchClass::Operational)]
-		fn send_xcm(origin, dest: MultiLocation, message: XcmGeneric<()>) {
+		fn send_xcm(origin, dest: MultiLocation, message: Xcm<()>) {
 			T::SendXcmOrigin::ensure_origin(origin)?;
 			<Self as SendXcm>::send_xcm(dest, message)
 				.map_err(|_| Error::<T>::FailedToSend)?;
 		}
 
 		#[weight = (1_000, DispatchClass::Operational)]
-		fn send_upward_xcm(origin, message: VersionedXcmGeneric<()>) {
+		fn send_upward_xcm(origin, message: VersionedXcm<()>) {
 			T::SendXcmOrigin::ensure_origin(origin)?;
 			let data = message.encode();
 			T::UpwardMessageSender::send_upward_message(data)
@@ -158,7 +158,7 @@ decl_module! {
 		}
 
 		#[weight = (1_000, DispatchClass::Operational)]
-		fn send_xcmp_xcm(origin, recipient: ParaId, message: VersionedXcmGeneric<()>) {
+		fn send_xcmp_xcm(origin, recipient: ParaId, message: VersionedXcm<()>) {
 			T::SendXcmOrigin::ensure_origin(origin)?;
 			Self::send_xcm_message(recipient, message)
 				.map_err(|_| Error::<T>::FailedToSend)?;
@@ -202,7 +202,7 @@ impl<T: Config> Module<T> {
 	pub fn execute_xcm(
 		origin: T::AccountId,
 		id: impl Encode,
-		xcm: XcmGeneric<T::Call>,
+		xcm: Xcm<T::Call>,
 		max_weight: Weight,
 	)
 		-> Result<Weight, DispatchError>
@@ -311,7 +311,7 @@ impl<T: Config> Module<T> {
 
 	pub fn send_xcm_message(
 		recipient: ParaId,
-		xcm: VersionedXcmGeneric<()>,
+		xcm: VersionedXcm<()>,
 	) -> Result<u32, MessageSendError> {
 		Self::send_fragment(recipient, XcmpMessageFormat::ConcatenatedVersionedXcm, xcm)
 	}
@@ -341,12 +341,12 @@ impl<T: Config> Module<T> {
 	fn handle_xcm_message(
 		sender: ParaId,
 		_sent_at: RelayBlockNumber,
-		xcm: VersionedXcmGeneric<T::Call>,
+		xcm: VersionedXcm<T::Call>,
 		max_weight: Weight,
 	) -> Result<Weight, XcmError> {
 		let hash = Encode::using_encoded(&xcm, T::Hashing::hash);
 		log::debug!("Processing XCMP-XCM: {:?}", &hash);
-		let (result, event) = match XcmGeneric::<T::Call>::try_from(xcm) {
+		let (result, event) = match Xcm::<T::Call>::try_from(xcm) {
 			Ok(xcm) => {
 				let location = (
 					Junction::Parent,
@@ -385,7 +385,7 @@ impl<T: Config> Module<T> {
 			XcmpMessageFormat::ConcatenatedVersionedXcm => {
 				while !remaining_fragments.is_empty() {
 					last_remaining_fragments = remaining_fragments;
-					if let Ok(xcm) = VersionedXcmGeneric::<T::Call>::decode(&mut remaining_fragments) {
+					if let Ok(xcm) = VersionedXcm::<T::Call>::decode(&mut remaining_fragments) {
 						let weight = max_weight - weight_used;
 						match Self::handle_xcm_message(sender, sent_at, xcm, weight) {
 							Ok(used) => weight_used = weight_used.saturating_add(used),
@@ -733,8 +733,8 @@ impl<T: Config> DownwardMessageHandler for Module<T> {
 	fn handle_downward_message(msg: InboundDownwardMessage) -> Weight {
 		let hash = msg.using_encoded(T::Hashing::hash);
 		log::debug!("Processing Downward XCM: {:?}", &hash);
-		let msg = VersionedXcmGeneric::<T::Call>::decode(&mut &msg.msg[..])
-			.map(XcmGeneric::<T::Call>::try_from);
+		let msg = VersionedXcm::<T::Call>::decode(&mut &msg.msg[..])
+			.map(Xcm::<T::Call>::try_from);
 		let (event, weight_used) = match msg {
 			Ok(Ok(xcm)) => {
 				let weight_limit = T::MaxDownwardMessageWeight::get();
@@ -753,13 +753,13 @@ impl<T: Config> DownwardMessageHandler for Module<T> {
 }
 
 impl<T: Config> SendXcm for Module<T> {
-	fn send_xcm(dest: MultiLocation, msg: XcmGeneric<()>) -> Result<(), XcmError> {
+	fn send_xcm(dest: MultiLocation, msg: Xcm<()>) -> Result<(), XcmError> {
 		match dest.first() {
 			// A message for us. We can't send it anywhere.
 			None => Err(XcmError::DestinationIsLocal),
 			// An upward message for the relay chain.
 			Some(Junction::Parent) if dest.len() == 1 => {
-				let data = VersionedXcmGeneric::<()>::from(msg).encode();
+				let data = VersionedXcm::<()>::from(msg).encode();
 				let hash = T::Hashing::hash(&data);
 
 				T::UpwardMessageSender::send_upward_message(data)
@@ -770,7 +770,7 @@ impl<T: Config> SendXcm for Module<T> {
 			}
 			// An HRMP message for a sibling parachain.
 			Some(Junction::Parent) if dest.len() == 2 => {
-				let msg = VersionedXcmGeneric::<()>::from(msg);
+				let msg = VersionedXcm::<()>::from(msg);
 				if let Some(Junction::Parachain { id }) = dest.at(1) {
 					let hash = T::Hashing::hash_of(&msg);
 					Self::send_fragment((*id).into(), XcmpMessageFormat::ConcatenatedVersionedXcm, msg)

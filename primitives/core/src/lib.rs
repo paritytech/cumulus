@@ -122,6 +122,9 @@ pub trait DownwardMessageHandler {
 	/// Handle the given downward message.
 	fn handle_downward_message(msg: InboundDownwardMessage) -> Weight;
 }
+impl DownwardMessageHandler for () {
+	fn handle_downward_message(_msg: InboundDownwardMessage) -> Weight { 0 }
+}
 
 /// Something that should be called for each batch of messages received over XCMP.
 pub trait XcmpMessageHandler {
@@ -134,12 +137,23 @@ pub trait XcmpMessageHandler {
 		max_weight: Weight,
 	) -> Weight;
 }
+impl XcmpMessageHandler for () {
+	fn handle_xcmp_messages<'a, I: Iterator<Item=(ParaId, RelayBlockNumber, &'a [u8])>>(
+		iter: I,
+		_max_weight: Weight,
+	) -> Weight { for _ in iter {} 0 }
+}
 
 /// Something that should be called when sending an upward message.
 pub trait UpwardMessageSender {
 	/// Send the given UMP message; return the expected number of blocks before the message will
 	/// be dispatched or an error if the message cannot be sent.
 	fn send_upward_message(msg: UpwardMessage) -> Result<u32, MessageSendError>;
+}
+impl UpwardMessageSender for () {
+	fn send_upward_message(_msg: UpwardMessage) -> Result<u32, MessageSendError> {
+		Err(MessageSendError::NoChannel)
+	}
 }
 
 /// The status of a channel.

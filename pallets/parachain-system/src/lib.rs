@@ -27,15 +27,9 @@
 //!
 //! Users must ensure that they register this pallet as an inherent provider.
 
-use cumulus_primitives_core::{
-	relay_chain,
-	well_known_keys::{self, NEW_VALIDATION_CODE},
-	AbridgedHostConfiguration, DownwardMessageHandler, XcmpMessageHandler,
-	InboundDownwardMessage, InboundHrmpMessage, OnValidationData, OutboundHrmpMessage, ParaId,
-	PersistedValidationData, UpwardMessage, UpwardMessageSender, MessageSendError,
-	XcmpMessageSource, ChannelStatus, GetChannelInfo,
-};
-use cumulus_primitives_parachain_inherent::ParachainInherentData;
+use sp_std::{prelude::*, cmp, collections::btree_map::BTreeMap};
+use sp_runtime::traits::{BlakeTwo256, Hash};
+use sp_inherents::{InherentData, InherentIdentifier, ProvideInherent};
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage,
 	dispatch::{DispatchResult, DispatchError, DispatchResultWithPostInfo},
@@ -45,10 +39,16 @@ use frame_support::{
 };
 use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
+use cumulus_primitives_core::{
+	relay_chain,
+	well_known_keys::{self, NEW_VALIDATION_CODE},
+	AbridgedHostConfiguration, DownwardMessageHandler, XcmpMessageHandler,
+	InboundDownwardMessage, InboundHrmpMessage, OnValidationData, OutboundHrmpMessage, ParaId,
+	PersistedValidationData, UpwardMessage, UpwardMessageSender, MessageSendError,
+	XcmpMessageSource, ChannelStatus, GetChannelInfo,
+};
+use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use relay_state_snapshot::MessagingStateSnapshot;
-use sp_inherents::{InherentData, InherentIdentifier, ProvideInherent};
-use sp_runtime::traits::{BlakeTwo256, Hash};
-use sp_std::{cmp, collections::btree_map::BTreeMap, vec::Vec};
 
 mod relay_state_snapshot;
 #[macro_use]
