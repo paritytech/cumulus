@@ -61,7 +61,11 @@ use xcm_builder::{
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SovereignSignedViaLocation,
 };
-use xcm_executor::{traits::{IsConcrete, NativeAsset}, Config, XcmExecutor};
+use xcm_executor::{Config, XcmExecutor};
+use xcm_builder::{
+	AllowTopLevelPaidExecutionFrom, TakeWeightCredit, FixedWeightBounds, IsConcrete, NativeAsset,
+	FixedRateOfConcreteFungible,
+};
 
 pub type SessionHandlers = ();
 
@@ -298,11 +302,6 @@ pub type Barrier = (
 	// TODO: Unpaid from the Parent/Root origin...
 	// AllowUnpaidExecutionFrom<IsInVec<AllowUnpaidFrom>>,
 );
-
-use xcm_executor::{
-	AllowTopLevelPaidExecutionFrom, TakeWeightCredit, FixedWeightBounds,
-	FixedRateOfConcreteFungible,
-};
 
 pub struct XcmConfig;
 impl Config for XcmConfig {
