@@ -54,7 +54,7 @@ mod relay_state_snapshot;
 pub mod validate_block;
 
 /// The pallet's configuration trait.
-pub trait Config: frame_system::Config {
+pub trait Config: frame_system::Config<OnSetCode = ParachainSetCode<Self>> {
 	/// The overarching event type.
 	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
 
@@ -77,10 +77,16 @@ pub trait Config: frame_system::Config {
 // This pallet's storage items.
 decl_storage! {
 	trait Store for Module<T: Config> as ParachainSystem {
-		// we need to store the new validation function for the span between
-		// setting it and applying it.
-		PendingValidationFunction get(fn new_validation_function):
-			Option<(RelayChainBlockNumber, Vec<u8>)>;
+		/// We need to store the new validation function for the span between
+		/// setting it and applying it. If it has a
+		/// value, then [`PendingValidationFunction`] must have a real value, and
+		/// together will coordinate the block number where the upgrade will happen.
+		PendingRelayChainBlockNumber: Option<RelayChainBlockNumber>;
+
+		/// The new validation function we will upgrade to when the relay chain
+		/// reaches [`PendingRelayChainBlockNumber`]. A real validation function must
+		/// exist here as long as [`PendingRelayChainBlockNumber`] is set.
+		PendingValidationFunction get(fn new_validation_function): Vec<u8>;
 
 		/// The [`PersistedValidationData`] set for this block.
 		ValidationData get(fn validation_data): Option<PersistedValidationData>;
@@ -134,25 +140,25 @@ decl_storage! {
 // The pallet's dispatchable functions.
 decl_module! {
 	pub struct Module<T: Config> for enum Call where origin: T::Origin {
+		type Error = Error<T>;
+
 		// Initializing events
 		// this is needed only if you are using events in your pallet
 		fn deposit_event() = default;
 
-		// TODO: figure out a better weight than this
-		#[weight = (0, DispatchClass::Operational)]
-		pub fn schedule_upgrade(origin, validation_function: Vec<u8>) {
-			ensure_root(origin)?;
-			Self::schedule_upgrade_impl(validation_function)?;
-		}
-
-		/// Schedule a validation function upgrade without further checks.
+		/// Force an already scheduled validation function upgrade to happen on a particular block.
 		///
-		/// Same as [`Module::schedule_upgrade`], but without checking that the new `validation_function`
-		/// is correct. This makes it more flexible, but also opens the door to easily brick the chain.
+		/// Note that coordinating this block for the upgrade has to happen independently on the relay
+		/// chain and this parachain. Synchronizing the block for the upgrade is sensitive, and this
+		/// bypasses all checks and and normal protocols. Very easy to brick your chain if done wrong.
 		#[weight = (0, DispatchClass::Operational)]
-		pub fn schedule_upgrade_without_checks(origin, validation_function: Vec<u8>) {
+		pub fn set_upgrade_block(origin, relay_chain_block: RelayChainBlockNumber) {
 			ensure_root(origin)?;
-			Self::schedule_upgrade_impl(validation_function)?;
+			if let Some(_old_block) = PendingRelayChainBlockNumber::get() {
+				PendingRelayChainBlockNumber::put(relay_chain_block);
+			} else {
+				return Err(Error::<T>::NotScheduled.into())
+			}
 		}
 
 		/// Set the current validation data.
@@ -184,9 +190,10 @@ decl_module! {
 			// initialization logic: we know that this runs exactly once every block,
 			// which means we can put the initialization logic here to remove the
 			// sequencing problem.
-			if let Some((apply_block, validation_function)) = PendingValidationFunction::get() {
+			if let Some(apply_block) = PendingRelayChainBlockNumber::get() {
 				if vfp.relay_parent_number >= apply_block {
-					PendingValidationFunction::kill();
+					PendingRelayChainBlockNumber::kill();
+					let validation_function = PendingValidationFunction::take();
 					LastUpgrade::put(&apply_block);
 					Self::put_parachain_code(&validation_function);
 					Self::deposit_event(Event::ValidationFunctionApplied(vfp.relay_parent_number));
@@ -615,7 +622,7 @@ impl<T: Config> Module<T> {
 		vfp: &PersistedValidationData,
 		cfg: &AbridgedHostConfiguration,
 	) -> Option<relay_chain::BlockNumber> {
-		if PendingValidationFunction::get().is_some() {
+		if PendingRelayChainBlockNumber::get().is_some() {
 			// There is already upgrade scheduled. Upgrade is not allowed.
 			return None;
 		}
@@ -631,8 +638,8 @@ impl<T: Config> Module<T> {
 		Some(vfp.relay_parent_number + cfg.validation_upgrade_delay)
 	}
 
-	/// The implementation of the runtime upgrade scheduling.
-	fn schedule_upgrade_impl(validation_function: Vec<u8>) -> DispatchResult {
+	/// The implementation of the runtime upgrade functionality for parachains.
+	fn set_code_impl(validation_function: Vec<u8>) -> DispatchResult {
 		ensure!(
 			!PendingValidationFunction::exists(),
 			Error::<T>::OverlappingUpgrades
@@ -654,10 +661,19 @@ impl<T: Config> Module<T> {
 		// storage keeps track locally for the parachain upgrade, which will
 		// be applied later.
 		Self::notify_polkadot_of_pending_upgrade(&validation_function);
-		PendingValidationFunction::put((apply_block, validation_function));
+		PendingRelayChainBlockNumber::put(apply_block);
+		PendingValidationFunction::put(validation_function);
 		Self::deposit_event(Event::ValidationFunctionStored(apply_block));
 
 		Ok(())
+	}
+}
+
+pub struct ParachainSetCode<T>(sp_std::marker::PhantomData<T>);
+
+impl<T: Config> frame_system::SetCode for ParachainSetCode<T> {
+	fn set_code(code: Vec<u8>) -> DispatchResult {
+		Module::<T>::set_code_impl(code)
 	}
 }
 
@@ -870,6 +886,8 @@ decl_error! {
 		/// That means that one or more channels had at least some of the submitted messages altered,
 		/// omitted or added illegaly.
 		HrmpMqcMismatch,
+		/// No validation function upgrade is currently scheduled.
+		NotScheduled,
 	}
 }
 
@@ -949,6 +967,7 @@ mod tests {
 		type BaseCallFilter = ();
 		type SystemWeightInfo = ();
 		type SS58Prefix = ();
+		type OnSetCode = ParachainSetCode<Self>;
 	}
 	impl Config for Test {
 		type Event = Event;
@@ -1217,26 +1236,6 @@ mod tests {
 	}
 
 	#[test]
-	fn requires_root() {
-		BlockTests::new().add(123, || {
-			assert_eq!(
-				ParachainSystem::schedule_upgrade(Origin::signed(1), Default::default()),
-				Err(sp_runtime::DispatchError::BadOrigin),
-			);
-		});
-	}
-
-	#[test]
-	fn requires_root_2() {
-		BlockTests::new().add(123, || {
-			assert_ok!(ParachainSystem::schedule_upgrade(
-				RawOrigin::Root.into(),
-				Default::default()
-			));
-		});
-	}
-
-	#[test]
 	fn events() {
 		BlockTests::new()
 			.with_relay_sproof_builder(|_, _, builder| {
@@ -1245,7 +1244,7 @@ mod tests {
 			.add_with_post_test(
 				123,
 				|| {
-					assert_ok!(ParachainSystem::schedule_upgrade(
+					assert_ok!(System::set_code(
 						RawOrigin::Root.into(),
 						Default::default()
 					));
@@ -1278,14 +1277,14 @@ mod tests {
 				builder.host_config.validation_upgrade_delay = 1000;
 			})
 			.add(123, || {
-				assert_ok!(ParachainSystem::schedule_upgrade(
+				assert_ok!(System::set_code(
 					RawOrigin::Root.into(),
 					Default::default()
 				));
 			})
 			.add(234, || {
 				assert_eq!(
-					ParachainSystem::schedule_upgrade(RawOrigin::Root.into(), Default::default()),
+					System::set_code(RawOrigin::Root.into(), Default::default()),
 					Err(Error::<Test>::OverlappingUpgrades.into()),
 				)
 			});
@@ -1299,7 +1298,7 @@ mod tests {
 					!PendingValidationFunction::exists(),
 					"validation function must not exist yet"
 				);
-				assert_ok!(ParachainSystem::schedule_upgrade(
+				assert_ok!(System::set_code(
 					RawOrigin::Root.into(),
 					Default::default()
 				));
@@ -1328,7 +1327,7 @@ mod tests {
 			})
 			.add(123, || {
 				assert_eq!(
-					ParachainSystem::schedule_upgrade(RawOrigin::Root.into(), vec![0; 64]),
+					System::set_code(RawOrigin::Root.into(), vec![0; 64]),
 					Err(Error::<Test>::TooBig.into()),
 				);
 			});
