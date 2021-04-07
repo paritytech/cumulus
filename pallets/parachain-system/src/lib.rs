@@ -56,7 +56,7 @@ pub mod validate_block;
 /// The pallet's configuration trait.
 pub trait Config: frame_system::Config<OnSetCode = ParachainSetCode<Self>> {
 	/// The overarching event type.
-	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
+	type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
 
 	/// Something which can be notified when the validation data is set.
 	type OnValidationData: OnValidationData;
@@ -134,6 +134,9 @@ decl_storage! {
 		/// The number of HRMP messages we observed in `on_initialize` and thus used that number for
 		/// announcing the weight of `on_initialize` and `on_finialize`.
 		AnnouncedHrmpMessagesPerCandidate: u32;
+
+		/// The next authorized upgrade, if there is one.
+		AuthorizedUpgrade: Option<T::Hash>;
 	}
 }
 
@@ -196,7 +199,7 @@ decl_module! {
 					let validation_function = PendingValidationFunction::take();
 					LastUpgrade::put(&apply_block);
 					Self::put_parachain_code(&validation_function);
-					Self::deposit_event(Event::ValidationFunctionApplied(vfp.relay_parent_number));
+					Self::deposit_event(RawEvent::ValidationFunctionApplied(vfp.relay_parent_number));
 				}
 			}
 
@@ -235,10 +238,24 @@ decl_module! {
 			let _ = Self::send_upward_message(message);
 		}
 
-		#[weight = (1_000, DispatchClass::Operational)]
-		fn sudo_send_hrmp_message(origin, message: OutboundHrmpMessage) {
+		#[weight = (1_000_000, DispatchClass::Operational)]
+		fn authorize_upgrade(origin, code_hash: T::Hash) {
 			ensure_root(origin)?;
-			let _ = Self::send_hrmp_message(message);
+
+			AuthorizedUpgrade::<T>::put(&code_hash);
+
+			Self::deposit_event(RawEvent::UpgradeAuthorized(code_hash));
+		}
+
+		#[weight = 1_000_000]
+		fn enact_authorized_upgrade(origin, code: Vec<u8>) {
+			// No ensure origin on purpose. We validate by checking the code vs hash in storage.
+			let required_hash = AuthorizedUpgrade::<T>::get()
+				.ok_or(Error::<T>::NothingAuthorized)?;
+			let actual_hash = T::Hashing::hash(&code[..]);
+			ensure!(actual_hash == required_hash, Error::<T>::Unauthorized);
+			Self::set_code_impl(code)?;
+			AuthorizedUpgrade::<T>::kill();
 		}
 
 		fn on_finalize() {
@@ -663,7 +680,7 @@ impl<T: Config> Module<T> {
 		Self::notify_polkadot_of_pending_upgrade(&validation_function);
 		PendingRelayChainBlockNumber::put(apply_block);
 		PendingValidationFunction::put(validation_function);
-		Self::deposit_event(Event::ValidationFunctionStored(apply_block));
+		Self::deposit_event(RawEvent::ValidationFunctionStored(apply_block));
 
 		Ok(())
 	}
@@ -849,11 +866,13 @@ impl<T: Config> ProvideInherent for Module<T> {
 }
 
 decl_event! {
-	pub enum Event {
+	pub enum Event<T> where Hash = <T as frame_system::Config>::Hash {
 		// The validation function has been scheduled to apply as of the contained relay chain block number.
 		ValidationFunctionStored(RelayChainBlockNumber),
 		// The validation function was applied as of the contained relay chain block number.
 		ValidationFunctionApplied(RelayChainBlockNumber),
+		// An upgrade has been authorized.
+		UpgradeAuthorized(Hash),
 	}
 }
 
@@ -888,6 +907,10 @@ decl_error! {
 		HrmpMqcMismatch,
 		/// No validation function upgrade is currently scheduled.
 		NotScheduled,
+		/// No code upgrade has been authorized.
+		NothingAuthorized,
+		/// The given code upgrade has not been authorized.
+		Unauthorized,
 	}
 }
 
