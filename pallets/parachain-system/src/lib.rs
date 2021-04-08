@@ -950,7 +950,7 @@ mod tests {
 			UncheckedExtrinsic = UncheckedExtrinsic,
 		{
 			System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-			ParachainSystem: parachain_system::{Pallet, Call, Storage, Event},
+			ParachainSystem: parachain_system::{Pallet, Call, Storage, Event<T>},
 		}
 	);
 
