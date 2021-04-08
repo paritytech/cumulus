@@ -1200,7 +1200,7 @@ mod tests {
 					let events = System::events();
 					assert_eq!(
 						events[0].event,
-						Event::parachain_system(crate::Event::ValidationFunctionStored(1123))
+						Event::parachain_system(crate::RawEvent::ValidationFunctionStored(1123).into())
 					);
 				},
 			)
@@ -1211,7 +1211,7 @@ mod tests {
 					let events = System::events();
 					assert_eq!(
 						events[0].event,
-						Event::parachain_system(crate::Event::ValidationFunctionApplied(1234))
+						Event::parachain_system(crate::RawEvent::ValidationFunctionApplied(1234).into())
 					);
 				},
 			);
