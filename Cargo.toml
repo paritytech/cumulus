@@ -21,10 +21,6 @@ members = [
 [profile.release]
 panic = 'unwind'
 
-[patch.crates-io]
-trie-db = { git = 'https://github.com/cheme/trie', branch = 'skip_compact_values_alt' }
-hash-db = { git = 'https://github.com/cheme/trie', branch = 'skip_compact_values_alt' }
-
 [patch.'https://github.com/paritytech/substrate']
 sp-core = { git="https://github.com/cheme/substrate", branch="validation_io" }
 sc-client-api = { git="https://github.com/cheme/substrate", branch="validation_io" }
@@ -132,36 +128,3 @@ substrate-test-runtime = { git="https://github.com/cheme/substrate", branch="val
 substrate-test-runtime-client = { git="https://github.com/cheme/substrate", branch="validation_io" }
 substrate-test-utils = { git="https://github.com/cheme/substrate", branch="validation_io" }
 substrate-wasm-builder = { git="https://github.com/cheme/substrate", branch="validation_io" }
-
-[patch.'https://github.com/paritytech/polkadot']
-kusama-runtime = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-westend-runtime = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-rococo-runtime = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-cli = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-rpc = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-parachain = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-collator-protocol = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-primitives = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-core-primitives = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-node-primitives = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-node-subsystem = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-node-jaeger = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-node-collation-generation = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-statement-table = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-availability-distribution = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-availability-bitfield-distribution = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-overseer = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-service = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-runtime = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-runtime-common = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-runtime-parachains = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-erasure-coding = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-network-bridge = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-test-runtime = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-test-client = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-test-service = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-node-subsystem-test-helpers = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-polkadot-node-subsystem-util = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-xcm = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-xcm-builder = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
-xcm-executor = { git="https://github.com/cheme/polkadot-1", branch="ext_wasm_old" }
