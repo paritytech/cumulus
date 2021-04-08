@@ -14,13 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! A pallet which implements the message handling APIs for handling incoming XCMP and managing
-//! outgoing XCMP:
+//! A pallet which uses the XCMP transport layer to handle both incoming and outgoing XCM message
+//! sending and dispatch, queuing, signalling and backpressure. To do so, it implements:
 //! * `XcmpMessageHandler`
 //! * `XcmpMessageSource`
 //!
-//! Also provides an implementation of `SendXcm` which can be placed in a router tuple for sending
-//! XCM over XCMP if the destination is `Parent/Parachain`.
+//! Also provides an implementation of `SendXcm` which can be placed in a router tuple for relaying
+//! XCM over XCMP if the destination is `Parent/Parachain`. It requires an implementation of
+//! `XcmExecutor` for dispatching incoming XCM messages.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -28,22 +29,16 @@ use sp_std::{prelude::*, convert::TryFrom};
 use rand_chacha::{rand_core::{RngCore, SeedableRng}, ChaChaRng};
 use codec::{Decode, Encode};
 use sp_runtime::{RuntimeDebug, traits::Hash};
-use frame_support::{
-	decl_error, decl_event, decl_module, decl_storage, weights::DispatchClass,
-	dispatch::{DispatchError, Weight}, traits::{EnsureOrigin, Get}, error::BadOrigin,
-};
+use frame_support::{decl_error, decl_event, decl_module, decl_storage, dispatch::Weight};
 use xcm::{
 	VersionedXcm, v0::{
 		Error as XcmError, ExecuteXcm, Junction, MultiLocation, SendXcm, Outcome, Xcm,
 	},
 };
 use cumulus_primitives_core::{
-	DownwardMessageHandler, XcmpMessageHandler, InboundDownwardMessage,
-	ParaId, XcmpMessageSource, ChannelStatus,
-	relay_chain::BlockNumber as RelayBlockNumber, MessageSendError,
-	GetChannelInfo,
+	XcmpMessageHandler, ParaId, XcmpMessageSource, ChannelStatus, MessageSendError, GetChannelInfo,
+	relay_chain::BlockNumber as RelayBlockNumber,
 };
-use xcm_executor::traits::Convert;
 
 pub trait Config: frame_system::Config {
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
@@ -65,6 +60,36 @@ pub enum InboundStatus {
 pub enum OutboundStatus {
 	Ok,
 	Suspended,
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+pub struct QueueConfigData {
+	/// The number of pages of messages which must be in the queue for the other side to be told to
+	/// suspend their sending.
+	suspend_threshold: u32,
+	/// The number of pages of messages which must be in the queue after which we drop any further
+	/// messages from the channel.
+	drop_threshold: u32,
+	/// The number of pages of messages which the queue must be reduced to before it signals that
+	/// message sending may recommence after it has been suspended.
+	resume_threshold: u32,
+	// The amount of remaining weight under which we stop processing messages.
+	threshold_weight: Weight,
+	/// The speed to which the available weight approaches the maximum weight. A lower number
+	/// results in a faster progression. A value of 1 makes the entire weight available initially.
+	weight_restrict_decay: Weight,
+}
+
+impl Default for QueueConfigData {
+	fn default() -> Self {
+		Self {
+			suspend_threshold: 2,
+			drop_threshold: 5,
+			resume_threshold: 1,
+			threshold_weight: 100_000,
+			weight_restrict_decay: 2,
+		}
+	}
 }
 
 decl_storage! {
@@ -92,6 +117,9 @@ decl_storage! {
 
 		/// Any signal messages waiting to be sent.
 		SignalMessages: map hasher(blake2_128_concat) ParaId => Vec<u8>;
+
+		/// The configuration which controls the dynamics of the outbound queue.
+		QueueConfig: QueueConfigData;
 	}
 }
 
@@ -182,8 +210,8 @@ impl<T: Config> Module<T> {
 	) -> Result<u32, MessageSendError> {
 		let data = fragment.encode();
 
-		// TODO: Cache max_message_size in `OutboundXcmpMessages` once known; that way it's only
-		//  accessed when a new page is needed.
+		// Optimization note: `max_message_size` could potentially be stored in
+		// `OutboundXcmpMessages` once known; that way it's only accessed when a new page is needed.
 
 		let max_message_size = T::ChannelInfo::get_channel_max(recipient)
 			.ok_or(MessageSendError::NoChannel)?;
@@ -315,8 +343,6 @@ impl<T: Config> Module<T> {
 		let mut last_remaining_fragments;
 		let mut remaining_fragments = &data[..];
 		let mut weight_used = 0;
-		// TODO: Handle whether it is in order or not in the fragment. For that we'll need a new
-		//  XcmpMessageFormat type.
 		match format {
 			XcmpMessageFormat::ConcatenatedVersionedXcm => {
 				while !remaining_fragments.is_empty() {
@@ -381,19 +407,17 @@ impl<T: Config> Module<T> {
 	/// Service the incoming XCMP message queue attempting to execute up to `max_weight` execution
 	/// weight of messages.
 	fn service_xcmp_queue(max_weight: Weight) -> Weight {
-		// TODO: Move to Config trait.
-		let resume_threshold = 1;
-		// The amount of remaining weight under which we stop processing messages.
-		// TODO: Move to Config trait.
-		let threshold_weight = 100_000;
-		// TODO: Move to Config trait.
-		let weight_restrict_decay = 2;
-
-		// sorted.
-		let mut status = InboundXcmpStatus::get();
+		let mut status = InboundXcmpStatus::get(); // <- sorted.
 		if status.len() == 0 {
 			return 0
 		}
+
+		let QueueConfigData {
+			resume_threshold,
+			threshold_weight,
+			weight_restrict_decay,
+			..
+		} = QueueConfig::get();
 
 		let mut shuffled = Self::create_shuffle(status.len());
 		let mut weight_used = 0;
@@ -444,7 +468,7 @@ impl<T: Config> Module<T> {
 			};
 			weight_used += weight_processed;
 
-			if status[index].2.len() <= resume_threshold && status[index].1 == InboundStatus::Suspended {
+			if status[index].2.len() as u32 <= resume_threshold && status[index].1 == InboundStatus::Suspended {
 				// Resume
 				let r = Self::send_signal(sender, ChannelSignal::Resume);
 				debug_assert!(r.is_ok(), "WARNING: Failed sending resume into suspended channel");
@@ -507,10 +531,7 @@ impl<T: Config> XcmpMessageHandler for Module<T> {
 	) -> Weight {
 		let mut status = InboundXcmpStatus::get();
 
-		// TODO: Move to Config trait.
-		let suspend_threshold = 2;
-		// TODO: Move to Config trait.
-		let hard_limit = 5;
+		let QueueConfigData { suspend_threshold, drop_threshold, .. } = QueueConfig::get();
 
 		for (sender, sent_at, data) in iter {
 
@@ -537,14 +558,14 @@ impl<T: Config> XcmpMessageHandler for Module<T> {
 				match status.binary_search_by_key(&sender, |item| item.0) {
 					Ok(i) => {
 						let count = status[i].2.len();
-						if count >= suspend_threshold && status[i].1 == InboundStatus::Ok {
+						if count as u32 >= suspend_threshold && status[i].1 == InboundStatus::Ok {
 							status[i].1 = InboundStatus::Suspended;
 							let r = Self::send_signal(sender, ChannelSignal::Suspend);
 							if r.is_err() {
 								log::warn!("Attempt to suspend channel failed. Messages may be dropped.");
 							}
 						}
-						if count < hard_limit {
+						if (count as u32) < drop_threshold {
 							status[i].2.push((sent_at, format));
 						} else {
 							debug_assert!(false, "XCMP channel queue full. Silently dropping message");
@@ -556,7 +577,8 @@ impl<T: Config> XcmpMessageHandler for Module<T> {
 				InboundXcmpMessages::insert(sender, sent_at, data_ref);
 			}
 
-			// TODO: Execute messages immediately if `status.is_empty()`.
+			// Optimization note; it would make sense to execute messages immediately if
+			// `status.is_empty()` here.
 		}
 		status.sort();
 		InboundXcmpStatus::put(status);
@@ -661,7 +683,6 @@ impl<T: Config> XcmpMessageSource for Module<T> {
 		OutboundXcmpStatus::put(statuses);
 
 		result
-		// END
 	}
 }
 

@@ -20,7 +20,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use polkadot_parachain::primitives::Id as ParaId;
+use cumulus_primitives_core::ParaId;
+use codec::{Encode, Decode};
+use sp_runtime::traits::BadOrigin;
 pub use pallet::*;
 
 #[frame_support::pallet]

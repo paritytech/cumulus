@@ -19,9 +19,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::{prelude::*, marker::PhantomData};
-use codec::{Encode, Decode};
-use sp_runtime::{RuntimeDebug, traits::Block as BlockT};
+use sp_std::{marker::PhantomData};
+use codec::Encode;
 use cumulus_primitives_core::UpwardMessageSender;
 use xcm::{VersionedXcm, v0::{Xcm, MultiLocation, Junction, SendXcm, Error as XcmError}};
 
@@ -29,7 +28,7 @@ use xcm::{VersionedXcm, v0::{Xcm, MultiLocation, Junction, SendXcm, Error as Xcm
 /// the given UMP `UpwardMessageSender` implementation. Thus this essentially adapts an
 /// `UpwardMessageSender` trait impl into a `SendXcm` trait impl.
 ///
-/// NOTE: This is a pretty dumb "just send it" router; we will probably want to introduce queying
+/// NOTE: This is a pretty dumb "just send it" router; we will probably want to introduce queuing
 /// to UMP eventually and when we do, the pallet which implements the queuing will be responsible
 /// for the `SendXcm` implementation.
 pub struct ParentAsUmp<T>(PhantomData<T>);
@@ -39,7 +38,6 @@ impl<T: UpwardMessageSender> SendXcm for ParentAsUmp<T> {
 			// An upward message for the relay chain.
 			MultiLocation::X1(Junction::Parent) => {
 				let data = VersionedXcm::<()>::from(msg).encode();
-				let hash = T::Hashing::hash(&data);
 
 				T::send_upward_message(data)
 					.map_err(|e| XcmError::SendFailed(e.into()))?;
