@@ -1,4 +1,4 @@
-// Copyright 2020 Parity Technologies (UK) Ltd.
+// Copyright 2020-2021 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@
 
 use frame_support::{decl_module, decl_storage, traits::Get};
 
-use cumulus_primitives::ParaId;
+use cumulus_primitives_core::ParaId;
 
 /// Configuration trait of this pallet.
 pub trait Config: frame_system::Config {}
@@ -32,7 +32,7 @@ impl<T: Config> Get<ParaId> for Module<T> {
 }
 
 decl_storage! {
-	trait Store for Module<T: Config> as ParachainUpgrade {
+	trait Store for Module<T: Config> as ParachainInfo {
 		ParachainId get(fn parachain_id) config(): ParaId = 100.into();
 	}
 }

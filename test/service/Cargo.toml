@@ -1,24 +1,25 @@
 [package]
 name = "cumulus-test-service"
-version = '0.1.0'
+version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = '2018'
+edition = "2018"
 
 [dependencies]
-codec = { package = 'parity-scale-codec', version = '1.0.0' }
+codec = { package = "parity-scale-codec", version = "2.0.0" }
 rand = "0.7.3"
 serde = { version = "1.0.101", features = ["derive"] }
 
 # Substrate
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate", version = "0.8.0-rc5", branch = "master" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -40,13 +41,12 @@ polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch =
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus
-cumulus-consensus = { path = "../../consensus" }
-cumulus-network = { path = "../../network" }
-cumulus-primitives = { path = "../../primitives" }
-cumulus-service = { path = "../../service" }
+cumulus-client-consensus-relay-chain = { path = "../../client/consensus/relay-chain" }
+cumulus-client-network = { path = "../../client/network" }
+cumulus-client-service = { path = "../../client/service" }
+cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-test-runtime = { path = "../runtime" }
 
 # RPC related dependencies
@@ -56,12 +56,6 @@ jsonrpc-core = "15.1.0"
 futures = { version = "0.3.5" }
 tokio = { version = "0.2.21", features = ["macros"] }
 
-# Polkadot dependencies
-polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-
 # Substrate dependencies
-pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }

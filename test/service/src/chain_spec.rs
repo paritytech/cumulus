@@ -1,4 +1,4 @@
-// Copyright 2020 Parity Technologies (UK) Ltd.
+// Copyright 2020-2021 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
 
 #![allow(missing_docs)]
 
-use cumulus_primitives::ParaId;
+use cumulus_primitives_core::ParaId;
 use cumulus_test_runtime::{AccountId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
@@ -105,19 +105,19 @@ fn testnet_genesis(
 	endowed_accounts: Vec<AccountId>,
 ) -> cumulus_test_runtime::GenesisConfig {
 	cumulus_test_runtime::GenesisConfig {
-		frame_system: Some(cumulus_test_runtime::SystemConfig {
+		frame_system: cumulus_test_runtime::SystemConfig {
 			code: cumulus_test_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 			..Default::default()
-		}),
-		pallet_balances: Some(cumulus_test_runtime::BalancesConfig {
+		},
+		pallet_balances: cumulus_test_runtime::BalancesConfig {
 			balances: endowed_accounts
 				.iter()
 				.cloned()
 				.map(|k| (k, 1 << 60))
 				.collect(),
-		}),
-		pallet_sudo: Some(cumulus_test_runtime::SudoConfig { key: root_key }),
+		},
+		pallet_sudo: cumulus_test_runtime::SudoConfig { key: root_key },
 	}
 }

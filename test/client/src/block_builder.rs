@@ -1,4 +1,4 @@
-// Copyright 2020 Parity Technologies (UK) Ltd.
+// Copyright 2020-2021 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -15,13 +15,11 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{Backend, Client};
-use cumulus_primitives::{
-	inherents::{ValidationDataType, VALIDATION_DATA_IDENTIFIER},
-	ValidationData,
-};
-use cumulus_test_runtime::{Block, GetLastTimestamp};
+use cumulus_primitives_core::PersistedValidationData;
+use cumulus_primitives_parachain_inherent::{ParachainInherentData, INHERENT_IDENTIFIER};
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
-use polkadot_primitives::v1::BlockNumber as PBlockNumber;
+use cumulus_test_runtime::{Block, GetLastTimestamp};
+use polkadot_primitives::v1::{BlockNumber as PBlockNumber, Hash as PHash};
 use sc_block_builder::{BlockBuilder, BlockBuilderProvider};
 use sp_api::ProvideRuntimeApi;
 use sp_runtime::generic::BlockId;
@@ -37,7 +35,7 @@ pub trait InitBlockBuilder {
 	/// just use a default one.
 	fn init_block_builder(
 		&self,
-		validation_data: Option<ValidationData<PBlockNumber>>,
+		validation_data: Option<PersistedValidationData<PHash, PBlockNumber>>,
 		relay_sproof_builder: RelayStateSproofBuilder,
 	) -> sc_block_builder::BlockBuilder<Block, Client, Backend>;
 
@@ -48,7 +46,7 @@ pub trait InitBlockBuilder {
 	fn init_block_builder_at(
 		&self,
 		at: &BlockId<Block>,
-		validation_data: Option<ValidationData<PBlockNumber>>,
+		validation_data: Option<PersistedValidationData<PHash, PBlockNumber>>,
 		relay_sproof_builder: RelayStateSproofBuilder,
 	) -> sc_block_builder::BlockBuilder<Block, Client, Backend>;
 }
@@ -56,7 +54,7 @@ pub trait InitBlockBuilder {
 impl InitBlockBuilder for Client {
 	fn init_block_builder(
 		&self,
-		validation_data: Option<ValidationData<PBlockNumber>>,
+		validation_data: Option<PersistedValidationData<PHash, PBlockNumber>>,
 		relay_sproof_builder: RelayStateSproofBuilder,
 	) -> BlockBuilder<Block, Client, Backend> {
 		let chain_info = self.chain_info();
@@ -70,7 +68,7 @@ impl InitBlockBuilder for Client {
 	fn init_block_builder_at(
 		&self,
 		at: &BlockId<Block>,
-		validation_data: Option<ValidationData<PBlockNumber>>,
+		validation_data: Option<PersistedValidationData<PHash, PBlockNumber>>,
 		relay_sproof_builder: RelayStateSproofBuilder,
 	) -> BlockBuilder<Block, Client, Backend> {
 		let mut block_builder = self
@@ -89,23 +87,25 @@ impl InitBlockBuilder for Client {
 			.put_data(sp_timestamp::INHERENT_IDENTIFIER, &timestamp)
 			.expect("Put timestamp failed");
 
-		let (relay_storage_root, relay_chain_state) =
+		let (relay_parent_storage_root, relay_chain_state) =
 			relay_sproof_builder.into_state_root_and_proof();
 
 		let mut validation_data = validation_data.unwrap_or_default();
 		assert_eq!(
-			validation_data.persisted.relay_storage_root,
+			validation_data.relay_parent_storage_root,
 			Default::default(),
 			"Overriding the relay storage root is not implemented",
 		);
-		validation_data.persisted.relay_storage_root = relay_storage_root;
+		validation_data.relay_parent_storage_root = relay_parent_storage_root;
 
 		inherent_data
 			.put_data(
-				VALIDATION_DATA_IDENTIFIER,
-				&ValidationDataType {
+				INHERENT_IDENTIFIER,
+				&ParachainInherentData {
 					validation_data,
 					relay_chain_state,
+					downward_messages: Default::default(),
+					horizontal_messages: Default::default(),
 				},
 			)
 			.expect("Put validation function params failed");

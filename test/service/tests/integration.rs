@@ -1,4 +1,4 @@
-// Copyright 2020 Parity Technologies (UK) Ltd.
+// Copyright 2020-2021 Parity Technologies (UK) Ltd.
 // This file is part of Substrate.
 
 // Substrate is free software: you can redistribute it and/or modify
@@ -14,15 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
-use cumulus_primitives::ParaId;
-use cumulus_test_service::initial_head_data;
+use cumulus_primitives_core::ParaId;
+use cumulus_test_service::{initial_head_data, Keyring::*};
 use futures::join;
 use sc_service::TaskExecutor;
-use substrate_test_runtime_client::AccountKeyring::*;
 
 #[substrate_test_utils::test]
 async fn test_collating_and_non_collator_mode_catching_up(task_executor: TaskExecutor) {
-	sc_cli::init_logger(Default::default()).expect("Sets up logger");
+	let mut builder = sc_cli::LoggerBuilder::new("");
+	builder.with_colors(false);
+	let _ = builder.init();
 
 	let para_id = ParaId::from(100);
 
@@ -51,31 +52,21 @@ async fn test_collating_and_non_collator_mode_catching_up(task_executor: TaskExe
 		.unwrap();
 
 	// run cumulus charlie (a parachain collator)
-	let charlie = cumulus_test_service::run_test_node(
-		task_executor.clone(),
-		Charlie,
-		|| {},
-		|| {},
-		vec![],
-		vec![alice.addr.clone(), bob.addr.clone()],
-		para_id,
-		true,
-	)
-	.await;
+	let charlie =
+		cumulus_test_service::TestNodeBuilder::new(para_id, task_executor.clone(), Charlie)
+			.enable_collator()
+			.connect_to_relay_chain_nodes(vec![&alice, &bob])
+			.build()
+			.await;
 	charlie.wait_for_blocks(5).await;
 
 	// run cumulus dave (a parachain full node) and wait for it to sync some blocks
-	let dave = cumulus_test_service::run_test_node(
-		task_executor.clone(),
-		Dave,
-		|| {},
-		|| {},
-		vec![charlie.addr.clone()],
-		vec![alice.addr.clone(), bob.addr.clone()],
-		para_id,
-		false,
-	)
-	.await;
+	let dave = cumulus_test_service::TestNodeBuilder::new(para_id, task_executor.clone(), Dave)
+		.connect_to_parachain_node(&charlie)
+		.connect_to_relay_chain_nodes(vec![&alice, &bob])
+		.build()
+		.await;
+
 	dave.wait_for_blocks(7).await;
 
 	join!(

@@ -1,28 +1,30 @@
 [workspace]
 members = [
-	"consensus",
-	"message-broker",
-	"network",
-	"parachain-upgrade",
-	"primitives",
+	"client/cli",
+	"client/consensus/common",
+	"client/consensus/relay-chain",
+	"client/network",
+	"client/service",
+	"pallets/parachain-system",
+	"pallets/xcm-handler",
+	"primitives/core",
+	"primitives/parachain-inherent",
 	"rococo-parachains/",
 	"rococo-parachains/pallets/parachain-info",
 	"rococo-parachains/primitives",
 	"rococo-parachains/runtime",
-	"runtime",
-	"service",
 	"test/runtime",
 	"test/client",
 	"test/service",
 	"test/relay-sproof-builder",
-	"xcm-handler",
 ]
 
 [profile.release]
-panic = 'unwind'
+panic = "unwind"
 
 [patch.'https://github.com/paritytech/substrate']
 sp-core = { git="https://github.com/cheme/substrate", branch="validation_io" }
+sp-maybe-compressed-blob = { git="https://github.com/cheme/substrate", branch="validation_io" }
 sc-client-api = { git="https://github.com/cheme/substrate", branch="validation_io" }
 pallet-treasury = { git="https://github.com/cheme/substrate", branch="validation_io" }
 pallet-randomness-collective-flip = { git="https://github.com/cheme/substrate", branch="validation_io" }
@@ -128,3 +130,16 @@ substrate-test-runtime = { git="https://github.com/cheme/substrate", branch="val
 substrate-test-runtime-client = { git="https://github.com/cheme/substrate", branch="validation_io" }
 substrate-test-utils = { git="https://github.com/cheme/substrate", branch="validation_io" }
 substrate-wasm-builder = { git="https://github.com/cheme/substrate", branch="validation_io" }
+frame-election-provider-support = { git="https://github.com/cheme/substrate", branch="validation_io" }
+frame-try-runtime = { git="https://github.com/cheme/substrate", branch="validation_io" }
+pallet-election-provider-multi-phase = { git="https://github.com/cheme/substrate", branch="validation_io" }
+pallet-mmr = { git="https://github.com/cheme/substrate", branch="validation_io" }
+pallet-mmr-primitives = { git="https://github.com/cheme/substrate", branch="validation_io" }
+pallet-mmr-rpc = { git="https://github.com/cheme/substrate", branch="validation_io" }
+remote-externalities = { git="https://github.com/cheme/substrate", branch="validation_io" }
+sc-finality-grandpa-warp-sync = { git="https://github.com/cheme/substrate", branch="validation_io" }
+sp-consensus-slots = { git="https://github.com/cheme/substrate", branch="validation_io" }
+sp-npos-elections = { git="https://github.com/cheme/substrate", branch="validation_io" }
+sp-npos-elections-compact = { git="https://github.com/cheme/substrate", branch="validation_io" }
+sp-utils = { git="https://github.com/cheme/substrate", branch="validation_io" }
+try-runtime-cli = { git="https://github.com/cheme/substrate", branch="validation_io" }
