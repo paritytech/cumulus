@@ -16,7 +16,6 @@ frame-system = { git = "https://github.com/paritytech/substrate", default-featur
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 cumulus-primitives-core = { path = "../../../primitives/core", default-features = false }
-cumulus-pallet-xcm-handler = { path = "../../../pallets/xcm-handler", default-features = false }
 
 [features]
 default = ["std"]
@@ -24,7 +23,6 @@ std = [
 	"codec/std",
 	"serde",
 	"cumulus-primitives-core/std",
-	"cumulus-pallet-xcm-handler/std",
 	"sp-std/std",
 	"sp-runtime/std",
 	"frame-support/std",

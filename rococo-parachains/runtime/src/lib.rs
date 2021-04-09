@@ -239,7 +239,11 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
 	type OnValidationData = ();
 	type SelfParaId = parachain_info::Module<Runtime>;
-	type DownwardMessageHandlers = XcmHandler;
+	type DownwardMessageHandlers = UnqueuedDmpAsParent<
+		MaxDownwardMessageWeight,
+		XcmExecutor<XcmConfig>,
+		Call,
+	>;
 	type OutboundXcmpMessageSource = XcmHandler;
 	type XcmpMessageHandler = XcmHandler;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
@@ -325,15 +329,63 @@ parameter_types! {
 
 pub type LocalOriginToLocation = ();
 
+/// The means for routing XCM messages which are not for local execution into the right message
+/// queues.
+pub type XcmRouter = (
+	// Two routers - use UMP to communicate with the relay chain:
+	cumulus_primitives_utility::ParentAsUmp<ParachainSystem>,
+	// ..and XCMP to communicate with the sibling chains.
+	XcmHandler,
+);
+
+impl pallet_xcm::Config for Runtime {
+	type Event = Event;
+	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
+	type XcmRouter = XcmRouter;
+}
+
+// TODO: This pallet should just become the **XCM over XCMP** queue.
 impl cumulus_pallet_xcm_handler::Config for Runtime {
 	type Event = Event;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
-	type UpwardMessageSender = ParachainSystem;
-	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-	type AccountIdConverter = LocationConverter;
 	type ChannelInfo = ParachainSystem;
-	type MaxDownwardMessageWeight = MaxDownwardMessageWeight;
 }
+
+/// For an incoming downward message, this just adapts an XCM executor and executes DMP messages
+/// immediately up until some `MaxWeight` at which point it errors. Their origin is asserted to be
+/// the Parent location.
+// TODO: Repot.
+pub struct UnqueuedDmpAsParent<MaxWeight, XcmExecutor, Call>(
+	PhantomData<(MaxWeight, XcmExecutor, Call)>
+);
+impl<
+	MaxWeight: Get<Weight>,
+	XcmExecutor: ExecuteXcm<Call>,
+	Call,
+> DownwardMessageHandler for Module<T> {
+	fn handle_downward_message(msg: InboundDownwardMessage) -> Weight {
+		let hash = msg.using_encoded(T::Hashing::hash);
+		log::debug!("Processing Downward XCM: {:?}", &hash);
+		let msg = VersionedXcm::<Call>::decode(&mut &msg.msg[..])
+			.map(Xcm::<Call>::try_from);
+		let /*(event, */weight_used/*)*/ = match msg {
+			Ok(Ok(xcm)) => {
+				let weight_limit = MaxWeight::get();
+				/*match*/ T::XcmExecutor::execute_xcm(Junction::Parent.into(), xcm, weight_limit).weight_used()/* {
+					Outcome::Complete(w) => (RawEvent::Success(Some(hash)), w),
+					Outcome::Incomplete(w, e) => (RawEvent::Fail(Some(hash), e), w),
+					Outcome::Error(e) => (RawEvent::Fail(Some(hash), e), 0),
+				}*/
+
+			}
+			Ok(Err(..)) => 0,//(RawEvent::BadVersion(Some(hash)), 0),
+			Err(..) => 0,//(RawEvent::BadFormat(Some(hash)), 0),
+		};
+		//Self::deposit_event(event);
+		weight_used
+	}
+}
+
 
 impl cumulus_ping::Config for Runtime {
 	type Event = Event;
@@ -357,6 +409,7 @@ construct_runtime! {
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
 		XcmHandler: cumulus_pallet_xcm_handler::{Pallet, Call, Event<T>, Origin},
+		PalletXcm: pallet_xcm::{Pallet, Call, Event<T>},
 
 		Spambot: cumulus_ping::{Pallet, Call, Storage, Event<T>} = 99,
 	}

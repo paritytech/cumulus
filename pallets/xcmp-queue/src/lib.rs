@@ -14,11 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! A pallet which implements the message handling APIs for handling incoming XCM:
-//! * `DownwardMessageHandler`
+//! A pallet which implements the message handling APIs for handling incoming XCMP and managing
+//! outgoing XCMP:
 //! * `XcmpMessageHandler`
+//! * `XcmpMessageSource`
 //!
-//! Also provides an implementation of `SendXcm` to handle outgoing XCM.
+//! Also provides an implementation of `SendXcm` which can be placed in a router tuple for sending
+//! XCM over XCMP if the destination is `Parent/Parachain`.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -37,7 +39,7 @@ use xcm::{
 };
 use cumulus_primitives_core::{
 	DownwardMessageHandler, XcmpMessageHandler, InboundDownwardMessage,
-	ParaId, UpwardMessageSender, XcmpMessageSource, ChannelStatus,
+	ParaId, XcmpMessageSource, ChannelStatus,
 	relay_chain::BlockNumber as RelayBlockNumber, MessageSendError,
 	GetChannelInfo,
 };
@@ -46,24 +48,11 @@ use xcm_executor::traits::Convert;
 pub trait Config: frame_system::Config {
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
 
-	/// Something to execute an XCM message.
+	/// Something to execute an XCM message. We need this to service the XCMoXCMP queue.
 	type XcmExecutor: ExecuteXcm<Self::Call>;
-	/// Something to send an upward message.
-	type UpwardMessageSender: UpwardMessageSender;
-	/// Something to send an HRMP message.
+
+	/// Information on the avaialble XCMP channels.
 	type ChannelInfo: GetChannelInfo;
-
-	/// Required origin for sending XCM messages. If successful, the it resolves to `MultiLocation`
-	/// which exists as an interior location within this chain's XCM context.
-	type SendXcmOrigin: EnsureOrigin<Self::Origin, Success=MultiLocation>;
-
-	/// Utility for converting from the signed origin (of type `Self::AccountId`) into a sensible
-	/// `MultiLocation` ready for passing to the XCM interpreter.
-	type AccountIdConverter: Convert<MultiLocation, Self::AccountId>;
-
-	/// The maximum amount of weight we will give to the execution of a downward message.
-	// TODO: ditch this and queue up downward messages just like XCMP messages.
-	type MaxDownwardMessageWeight: Get<Weight>;
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug)]
@@ -144,13 +133,6 @@ decl_module! {
 			// on_idle processes additional messages with any remaining block weight.
 			Self::service_xcmp_queue(max_weight)
 		}
-
-		#[weight = (1_000, DispatchClass::Operational)]
-		fn send(origin, dest: MultiLocation, message: Xcm<()>) {
-			let origin_location = T::SendXcmOrigin::ensure_origin(origin)?;
-			Self::relay_xcm(origin_location, dest, message)
-				.map_err(|_| Error::<T>::FailedToSend)?;
-		}
 	}
 }
 
@@ -173,50 +155,6 @@ pub enum XcmpMessageFormat {
 }
 
 impl<T: Config> Module<T> {
-	/// Execute an XCM message from a local, signed, origin.
-	///
-	/// Returns `DispatchError` if execution was not possible. Otherwise returns the amount of
-	/// weight that was used in its attempted execution.
-	///
-	/// An event is deposited indicating whether `msg` could be executed completely or only
-	/// partially.
-	///
-	/// No more than `max_weight` will be used in its attempted execution. If this is less than the
-	/// maximum amount of weight that the message could take to be executed, then no execution
-	/// attempt will be made.
-	///
-	/// NOTE: A successful return to this does *not* imply that the `msg` was executed successfully
-	/// to completion; only that *some* of it was executed.
-	pub fn execute_xcm(
-		origin: T::AccountId,
-		id: impl Encode,
-		xcm: Xcm<T::Call>,
-		max_weight: Weight,
-	)
-		-> Result<Weight, DispatchError>
-	{
-		let xcm_origin = T::AccountIdConverter::reverse(origin)
-			.map_err(|_origin| Error::<T>::BadXcmOrigin)?;
-		let maybe_hash = id.using_encoded(|s| if s.is_empty() { None } else { Some(T::Hashing::hash(s)) });
-		let (event, weight) = match T::XcmExecutor::execute_xcm(xcm_origin, xcm, max_weight) {
-			Outcome::Complete(weight) => (Event::<T>::Success(maybe_hash), weight),
-			Outcome::Incomplete(weight, error) => (Event::<T>::Fail(maybe_hash, error), weight),
-			Outcome::Error(_error) => Err(Error::<T>::BadXcm)?,
-		};
-		Self::deposit_event(event);
-		Ok(weight)
-	}
-
-	/// Relay an XCM `message` from a given `interior` location in this context to a given `dest`
-	/// location. A null `dest` is not handled.
-	pub fn relay_xcm(interior: MultiLocation, dest: MultiLocation, message: Xcm<()>) -> Result<(), XcmError> {
-		let message = match interior {
-			MultiLocation::Null => message,
-			who => Xcm::<()>::RelayedFrom { who, message: sp_std::boxed::Box::new(message) },
-		};
-		Self::send_xcm(dest, message)
-	}
-
 	/// Place a message `fragment` on the outgoing XCMP queue for `recipient`.
 	///
 	/// Format is the type of aggregate message that the `fragment` may be safely encoded and
@@ -727,43 +665,10 @@ impl<T: Config> XcmpMessageSource for Module<T> {
 	}
 }
 
-impl<T: Config> DownwardMessageHandler for Module<T> {
-	fn handle_downward_message(msg: InboundDownwardMessage) -> Weight {
-		let hash = msg.using_encoded(T::Hashing::hash);
-		log::debug!("Processing Downward XCM: {:?}", &hash);
-		let msg = VersionedXcm::<T::Call>::decode(&mut &msg.msg[..])
-			.map(Xcm::<T::Call>::try_from);
-		let (event, weight_used) = match msg {
-			Ok(Ok(xcm)) => {
-				let weight_limit = T::MaxDownwardMessageWeight::get();
-				match T::XcmExecutor::execute_xcm(Junction::Parent.into(), xcm, weight_limit) {
-					Outcome::Complete(w) => (RawEvent::Success(Some(hash)), w),
-					Outcome::Incomplete(w, e) => (RawEvent::Fail(Some(hash), e), w),
-					Outcome::Error(e) => (RawEvent::Fail(Some(hash), e), 0),
-				}
-			}
-			Ok(Err(..)) => (RawEvent::BadVersion(Some(hash)), 0),
-			Err(..) => (RawEvent::BadFormat(Some(hash)), 0),
-		};
-		Self::deposit_event(event);
-		weight_used
-	}
-}
-
+/// Xcm sender for sending to a sibling parachain.
 impl<T: Config> SendXcm for Module<T> {
 	fn send_xcm(dest: MultiLocation, msg: Xcm<()>) -> Result<(), XcmError> {
 		match &dest {
-			// An upward message for the relay chain.
-			MultiLocation::X1(Junction::Parent) => {
-				let data = VersionedXcm::<()>::from(msg).encode();
-				let hash = T::Hashing::hash(&data);
-
-				T::UpwardMessageSender::send_upward_message(data)
-					.map_err(|e| XcmError::SendFailed(e.into()))?;
-
-				Self::deposit_event(RawEvent::UpwardMessageSent(Some(hash)));
-				Ok(())
-			}
 			// An HRMP message for a sibling parachain.
 			MultiLocation::X2(Junction::Parent, Junction::Parachain { id }) => {
 				let msg = VersionedXcm::<()>::from(msg);
@@ -776,48 +681,5 @@ impl<T: Config> SendXcm for Module<T> {
 			// Anything else is unhandled. This includes a message this is meant for us.
 			_ => Err(XcmError::CannotReachDestination(dest, msg)),
 		}
-	}
-}
-
-/// Origin for the parachains module.
-#[derive(PartialEq, Eq, Clone, Encode, Decode)]
-#[cfg_attr(feature = "std", derive(Debug))]
-pub enum Origin {
-	/// It comes from the (parent) relay chain.
-	Relay,
-	/// It comes from a (sibling) parachain.
-	SiblingParachain(ParaId),
-}
-
-impl From<ParaId> for Origin {
-	fn from(id: ParaId) -> Origin {
-		Origin::SiblingParachain(id)
-	}
-}
-impl From<u32> for Origin {
-	fn from(id: u32) -> Origin {
-		Origin::SiblingParachain(id.into())
-	}
-}
-
-/// Ensure that the origin `o` represents a sibling parachain.
-/// Returns `Ok` with the parachain ID of the sibling or an `Err` otherwise.
-pub fn ensure_sibling_para<OuterOrigin>(o: OuterOrigin) -> Result<ParaId, BadOrigin>
-	where OuterOrigin: Into<Result<Origin, OuterOrigin>>
-{
-	match o.into() {
-		Ok(Origin::SiblingParachain(id)) => Ok(id),
-		_ => Err(BadOrigin),
-	}
-}
-
-/// Ensure that the origin `o` represents is the relay chain.
-/// Returns `Ok` if it does or an `Err` otherwise.
-pub fn ensure_relay<OuterOrigin>(o: OuterOrigin) -> Result<(), BadOrigin>
-	where OuterOrigin: Into<Result<Origin, OuterOrigin>>
-{
-	match o.into() {
-		Ok(Origin::Relay) => Ok(()),
-		_ => Err(BadOrigin),
 	}
 }
