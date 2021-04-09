@@ -6,14 +6,14 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-integration-test-runtime-upgrade" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-integration-test-runtime-upgrade" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-integration-test-runtime-upgrade" }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "cecton-integration-test-runtime-upgrade" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "cecton-integration-test-runtime-upgrade" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "cecton-integration-test-runtime-upgrade" }
 
 # Other dependencies
 impl-trait-for-tuples = "0.2.1"

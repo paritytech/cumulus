@@ -6,14 +6,14 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-integration-test-runtime-upgrade" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-integration-test-runtime-upgrade" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade", optional = true }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade", optional = true }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-integration-test-runtime-upgrade" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade", optional = true }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-integration-test-runtime-upgrade" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade", optional = true }
 
 # Cumulus dependencies
 cumulus-primitives-core = { path = "../core", default-features = false }
