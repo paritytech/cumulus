@@ -309,14 +309,16 @@ where
 
 
 		// Create the parachain block data for the validators.
-		let b = ParachainBlockData::<Block>::new(header, extrinsics, compact_proof);
+		let b = ParachainBlockData::<Block>::new(header, extrinsics, candidate.proof);
 
-		tracing::debug!(
+		tracing::info!(
 			target: LOG_TARGET,
-			"PoV size {{ header: {}kb, extrinsics: {}kb, storage_proof: {}kb }}",
+			"PoV size {{ header: {}kb, extrinsics: {}kb, storage_proof: {}kb,
+			\\ compact_stoarge_proof: {}kb }}",
 			b.header().encode().len() as f64 / 1024f64,
 			b.extrinsics().encode().len() as f64 / 1024f64,
 			b.storage_proof().encode().len() as f64 / 1024f64,
+			compact_proof().encode().len() as f64 / 1024f64,
 		);
 
 		let block_hash = b.header().hash();

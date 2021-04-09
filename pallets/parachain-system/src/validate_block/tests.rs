@@ -120,18 +120,6 @@ fn build_block_with_witness(
 	}
 }
 
-fn encode_witness(
-	witness: sp_trie::StorageProof,
-	root: &Hash,
-) -> sp_trie::CompactProof {
-	type Layout = sp_trie::Layout<<Header as HeaderT>::Hashing>;
-	sp_trie::encode_compact::<Layout, _>(
-		witness,
-		root.clone(),
-		std::iter::once(sp_core::storage::well_known_keys::CODE),
-	).unwrap()
-}
-
 #[test]
 fn validate_block_no_extra_extrinsics() {
 	let _ = env_logger::try_init();
@@ -143,7 +131,6 @@ fn validate_block_no_extra_extrinsics() {
 		witness,
 		validation_data,
 	} = build_block_with_witness(&client, vec![], parent_head.clone());
-	let witness = encode_witness(witness, parent_head.state_root());
 	let (header, extrinsics) = block.deconstruct();
 
 	let block_data = ParachainBlockData::new(header.clone(), extrinsics, witness);
@@ -174,7 +161,6 @@ fn validate_block_with_extra_extrinsics() {
 		witness,
 		validation_data,
 	} = build_block_with_witness(&client, extra_extrinsics, parent_head.clone());
-	let witness = encode_witness(witness, parent_head.state_root());
 	let (header, extrinsics) = block.deconstruct();
 
 	let block_data = ParachainBlockData::new(header.clone(), extrinsics, witness);
@@ -200,7 +186,6 @@ fn validate_block_invalid_parent_hash() {
 		witness,
 		validation_data,
 	} = build_block_with_witness(&client, vec![], parent_head.clone());
-	let witness = encode_witness(witness, parent_head.state_root());
 	let (mut header, extrinsics) = block.deconstruct();
 	header.set_parent_hash(Hash::from_low_u64_be(1));
 
