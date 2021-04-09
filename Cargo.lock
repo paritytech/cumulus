@@ -1451,6 +1451,7 @@ dependencies = [
 name = "cumulus-ping"
 version = "0.1.0"
 dependencies = [
+ "cumulus-pallet-xcm",
  "cumulus-primitives-core",
  "frame-support",
  "frame-system",
@@ -1553,6 +1554,7 @@ dependencies = [
  "frame-executive",
  "frame-support",
  "frame-system",
+ "log",
  "pallet-balances",
  "pallet-randomness-collective-flip",
  "pallet-sudo",

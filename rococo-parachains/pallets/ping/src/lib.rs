@@ -21,7 +21,7 @@
 use sp_std::prelude::*;
 use frame_system::Config as SystemConfig;
 use cumulus_primitives_core::ParaId;
-use cumulus_pallet_xcm_handler::{Origin as CumulusOrigin, ensure_sibling_para};
+use cumulus_pallet_xcm::{Origin as CumulusOrigin, ensure_sibling_para};
 use xcm::v0::{Xcm, Error as XcmError, SendXcm, OriginKind, MultiLocation, Junction};
 
 pub use pallet::*;

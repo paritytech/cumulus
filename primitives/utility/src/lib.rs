@@ -19,10 +19,11 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::{marker::PhantomData};
-use codec::Encode;
-use cumulus_primitives_core::UpwardMessageSender;
-use xcm::{VersionedXcm, v0::{Xcm, MultiLocation, Junction, SendXcm, Error as XcmError}};
+use sp_std::{marker::PhantomData, convert::TryFrom};
+use codec::{Encode, Decode};
+use cumulus_primitives_core::{UpwardMessageSender, DownwardMessageHandler, InboundDownwardMessage};
+use xcm::{VersionedXcm, v0::{Xcm, MultiLocation, Junction, SendXcm, Error as XcmError, ExecuteXcm}};
+use frame_support::{traits::Get, dispatch::Weight};
 
 /// Xcm router which recognises the `Parent` destination and handles it by sending the message into
 /// the given UMP `UpwardMessageSender` implementation. Thus this essentially adapts an
@@ -47,5 +48,31 @@ impl<T: UpwardMessageSender> SendXcm for ParentAsUmp<T> {
 			// Anything else is unhandled. This includes a message this is meant for us.
 			_ => Err(XcmError::CannotReachDestination(dest, msg)),
 		}
+	}
+}
+
+/// For an incoming downward message, this just adapts an XCM executor and executes DMP messages
+/// immediately up until some `MaxWeight` at which point it errors. Their origin is asserted to be
+/// the Parent location.
+pub struct UnqueuedDmpAsParent<MaxWeight, XcmExecutor, Call>(
+	PhantomData<(MaxWeight, XcmExecutor, Call)>
+);
+impl<
+	MaxWeight: Get<Weight>,
+	XcmExecutor: ExecuteXcm<Call>,
+	Call,
+> DownwardMessageHandler for UnqueuedDmpAsParent<MaxWeight, XcmExecutor, Call> {
+	fn handle_downward_message(msg: InboundDownwardMessage) -> Weight {
+		let msg = VersionedXcm::<Call>::decode(&mut &msg.msg[..])
+			.map(Xcm::<Call>::try_from);
+		let weight_used = match msg {
+			Ok(Ok(x)) => {
+				let weight_limit = MaxWeight::get();
+				XcmExecutor::execute_xcm(Junction::Parent.into(), x, weight_limit).weight_used()
+			}
+			Ok(Err(..)) => 0,
+			Err(..) => 0,
+		};
+		weight_used
 	}
 }
