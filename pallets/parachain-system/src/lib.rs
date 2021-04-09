@@ -397,7 +397,7 @@ decl_module! {
 			);
 		}
 
-		fn on_initialize(n: T::BlockNumber) -> Weight {
+		fn on_initialize(_n: T::BlockNumber) -> Weight {
 			// To prevent removing `NEW_VALIDATION_CODE` that was set by another `on_initialize` like
 			// for example from scheduler, we only kill the storage entry if it was not yet updated
 			// in the current block.

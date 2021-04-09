@@ -20,9 +20,7 @@ use frame_support::traits::ExecuteBlock;
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT, NumberFor};
 
 use sp_io::KillChildStorageResult;
-use sp_std::{boxed::Box, vec::Vec};
-
-use hash_db::{HashDB, EMPTY_PREFIX};
+use sp_std::vec::Vec;
 
 use polkadot_parachain::primitives::{
 	HeadData, ValidationCode, ValidationParams, ValidationResult,
@@ -35,13 +33,12 @@ use cumulus_primitives_core::{
 		HRMP_OUTBOUND_MESSAGES, HRMP_WATERMARK, NEW_VALIDATION_CODE, PROCESSED_DOWNWARD_MESSAGES,
 		UPWARD_MESSAGES,
 	},
-	OutboundHrmpMessage, PersistedValidationData, UpwardMessage,
+	OutboundHrmpMessage, UpwardMessage,
 };
-use sp_core::storage::{ChildInfo, TrackedStorageKey};
+use sp_core::storage::ChildInfo;
 use sp_externalities::{
-	set_and_run_with_externalities, Error, Extension, ExtensionStore, Externalities,
+	set_and_run_with_externalities, Externalities,
 };
-use sp_std::any::{Any, TypeId};
 use sp_trie::MemoryDB;
 
 type Ext<'a, B> = sp_state_machine::Ext<
@@ -83,7 +80,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>, PSC: crate::Config>(
 	let mut db = MemoryDB::default();
 	let root = match sp_trie::decode_compact::<sp_trie::Layout<HashFor<B>>, _, _>(
 		&mut db,
-		block_data.storage_proof().iter_compact_encoded_nodes(),
+		storage_proof.iter_compact_encoded_nodes(),
 		Some(parent_head.state_root()),
 	) {
 		Ok(root) => root,
