@@ -597,7 +597,7 @@ impl TestNode {
 		);
 
 		self.send_extrinsic(
-			runtime::SudoCall::sudo(Box::new(call.into())),
+			runtime::SudoCall::sudo_unchecked_weight(Box::new(call.into()), 1_000),
 			Sr25519Keyring::Alice,
 		).await.map(drop)
 	}
