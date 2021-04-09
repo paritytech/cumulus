@@ -10,41 +10,41 @@ rand = "0.7.3"
 serde = { version = "1.0.101", features = ["derive"] }
 
 # Substrate
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sc-network = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cecton-integration-test-runtime-upgrade" }
-sp-session = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-session = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-integration-test-runtime-upgrade" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-integration-test-runtime-upgrade" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-integration-test-runtime-upgrade" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "cecton-integration-test-runtime-upgrade" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus
 cumulus-client-consensus-relay-chain = { path = "../../client/consensus/relay-chain" }
@@ -62,5 +62,5 @@ futures = { version = "0.3.5" }
 tokio = { version = "0.2.21", features = ["macros"] }
 
 # Substrate dependencies
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
+substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }

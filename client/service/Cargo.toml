@@ -11,20 +11,20 @@ cumulus-client-collator = { path = "../collator" }
 cumulus-primitives-core = { path = "../../primitives/core" }
 
 # Substrate dependencies
-sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cecton-integration-test-runtime-upgrade" }
+sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "cecton-integration-test-runtime-upgrade" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "cecton-integration-test-runtime-upgrade" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Other deps
 futures = "0.3.6"
