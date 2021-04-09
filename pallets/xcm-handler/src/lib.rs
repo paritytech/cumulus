@@ -53,9 +53,10 @@ pub trait Config: frame_system::Config {
 	/// Something to send an HRMP message.
 	type ChannelInfo: GetChannelInfo;
 
-	/// Required origin for sending XCM messages. Typically Root or parachain
-	/// council majority.
-	type SendXcmOrigin: EnsureOrigin<Self::Origin>;
+	/// Required origin for sending XCM messages. If successful, the it resolves to `MultiLocation`
+	/// which exists as an interior location within this chain's XCM context.
+	type SendXcmOrigin: EnsureOrigin<Self::Origin, Success=MultiLocation>;
+
 	/// Utility for converting from the signed origin (of type `Self::AccountId`) into a sensible
 	/// `MultiLocation` ready for passing to the XCM interpreter.
 	type AccountIdConverter: Convert<MultiLocation, Self::AccountId>;
@@ -145,24 +146,9 @@ decl_module! {
 		}
 
 		#[weight = (1_000, DispatchClass::Operational)]
-		fn send_xcm(origin, dest: MultiLocation, message: Xcm<()>) {
-			T::SendXcmOrigin::ensure_origin(origin)?;
-			<Self as SendXcm>::send_xcm(dest, message)
-				.map_err(|_| Error::<T>::FailedToSend)?;
-		}
-
-		#[weight = (1_000, DispatchClass::Operational)]
-		fn send_upward_xcm(origin, message: VersionedXcm<()>) {
-			T::SendXcmOrigin::ensure_origin(origin)?;
-			let data = message.encode();
-			T::UpwardMessageSender::send_upward_message(data)
-				.map_err(|_| Error::<T>::FailedToSend)?;
-		}
-
-		#[weight = (1_000, DispatchClass::Operational)]
-		fn send_xcmp_xcm(origin, recipient: ParaId, message: VersionedXcm<()>) {
-			T::SendXcmOrigin::ensure_origin(origin)?;
-			Self::send_xcm_message(recipient, message)
+		fn send(origin, dest: MultiLocation, message: Xcm<()>) {
+			let origin_location = T::SendXcmOrigin::ensure_origin(origin)?;
+			Self::relay_xcm(origin_location, dest, message)
 				.map_err(|_| Error::<T>::FailedToSend)?;
 		}
 	}
@@ -219,6 +205,16 @@ impl<T: Config> Module<T> {
 		};
 		Self::deposit_event(event);
 		Ok(weight)
+	}
+
+	/// Relay an XCM `message` from a given `interior` location in this context to a given `dest`
+	/// location. A null `dest` is not handled.
+	pub fn relay_xcm(interior: MultiLocation, dest: MultiLocation, message: Xcm<()>) -> Result<(), XcmError> {
+		let message = match interior {
+			MultiLocation::Null => message,
+			who => Xcm::<()>::RelayedFrom { who, message: sp_std::boxed::Box::new(message) },
+		};
+		Self::send_xcm(dest, message)
 	}
 
 	/// Place a message `fragment` on the outgoing XCMP queue for `recipient`.
@@ -359,7 +355,7 @@ impl<T: Config> Module<T> {
 					xcm,
 					max_weight,
 				) {
-					Outcome::Error(e) => (Err(e), RawEvent::Fail(Some(hash), e)),
+					Outcome::Error(e) => (Err(e.clone()), RawEvent::Fail(Some(hash), e)),
 					Outcome::Complete(w) => (Ok(w), RawEvent::Success(Some(hash))),
 					// As far as the caller is concerned, this was dispatched without error, so
 					// we just report the weight used.
@@ -756,38 +752,29 @@ impl<T: Config> DownwardMessageHandler for Module<T> {
 
 impl<T: Config> SendXcm for Module<T> {
 	fn send_xcm(dest: MultiLocation, msg: Xcm<()>) -> Result<(), XcmError> {
-		match dest.first() {
-			// A message for us. We can't send it anywhere.
-			None => Err(XcmError::DestinationIsLocal),
+		match &dest {
 			// An upward message for the relay chain.
-			Some(Junction::Parent) if dest.len() == 1 => {
+			MultiLocation::X1(Junction::Parent) => {
 				let data = VersionedXcm::<()>::from(msg).encode();
 				let hash = T::Hashing::hash(&data);
 
 				T::UpwardMessageSender::send_upward_message(data)
-					.map_err(|e| XcmError::CannotReachDestination(e.into()))?;
+					.map_err(|e| XcmError::SendFailed(e.into()))?;
 
 				Self::deposit_event(RawEvent::UpwardMessageSent(Some(hash)));
 				Ok(())
 			}
 			// An HRMP message for a sibling parachain.
-			Some(Junction::Parent) if dest.len() == 2 => {
+			MultiLocation::X2(Junction::Parent, Junction::Parachain { id }) => {
 				let msg = VersionedXcm::<()>::from(msg);
-				if let Some(Junction::Parachain { id }) = dest.at(1) {
-					let hash = T::Hashing::hash_of(&msg);
-					Self::send_fragment((*id).into(), XcmpMessageFormat::ConcatenatedVersionedXcm, msg)
-						.map_err(|e| XcmError::CannotReachDestination(<&'static str>::from(e)))?;
-					Self::deposit_event(RawEvent::XcmpMessageSent(Some(hash)));
-					Ok(())
-				} else {
-					Err(XcmError::UnhandledXcmMessage)
-				}
+				let hash = T::Hashing::hash_of(&msg);
+				Self::send_fragment((*id).into(), XcmpMessageFormat::ConcatenatedVersionedXcm, msg)
+					.map_err(|e| XcmError::SendFailed(<&'static str>::from(e)))?;
+				Self::deposit_event(RawEvent::XcmpMessageSent(Some(hash)));
+				Ok(())
 			}
-			_ => {
-				// Here is where we handle additional cases such as into parachains, bridges or
-				// contracts
-				Err(XcmError::UnhandledXcmMessage)
-			}
+			// Anything else is unhandled. This includes a message this is meant for us.
+			_ => Err(XcmError::CannotReachDestination(dest, msg)),
 		}
 	}
 }
