@@ -63,7 +63,6 @@ async fn test_runtime_upgrade(task_executor: TaskExecutor) {
 			.connect_to_relay_chain_nodes(vec![&alice, &bob])
 			.build()
 			.await;
-	charlie.wait_for_blocks(1).await;
 
 	// run cumulus dave (a parachain full node) and wait for it to sync some blocks
 	let dave = cumulus_test_service::TestNodeBuilder::new(para_id, task_executor.clone(), Dave)
@@ -71,7 +70,6 @@ async fn test_runtime_upgrade(task_executor: TaskExecutor) {
 		.connect_to_relay_chain_nodes(vec![&alice, &bob])
 		.build()
 		.await;
-	dave.wait_for_blocks(1).await;
 
 	let mut import_notification_stream = charlie.client.import_notification_stream();
 
