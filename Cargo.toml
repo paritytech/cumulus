@@ -16,6 +16,7 @@ members = [
 	"rococo-parachains/pallets/ping",
 	"rococo-parachains/primitives",
 	"rococo-parachains/runtime",
+	"rococo-parachains/shell-runtime",
 	"test/runtime",
 	"test/client",
 	"test/service",
