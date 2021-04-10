@@ -531,7 +531,7 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 		self.spawner.spawn(
 			"cumulus-wait-to-announce",
 			async move {
-				tracing::trace!(
+				tracing::debug!(
 					target: "cumulus-network",
 					"waiting for announce block in a background task...",
 				);
@@ -539,7 +539,7 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 				wait_to_announce::<Block>(block_hash, pov_hash, announce_block, signed_stmt_recv)
 					.await;
 
-				tracing::trace!(
+				tracing::debug!(
 					target: "cumulus-network",
 					"block announcement finished",
 				);
