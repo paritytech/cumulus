@@ -331,6 +331,24 @@ fn relay_parent_not_imported_when_block_announce_is_processed() {
 	});
 }
 
+/// Ensures that when we receive a block announcement without a statement included, while the block
+/// is not yet included by the node checking the announcement, but the node is already backed.
+#[test]
+fn block_announced_without_statement_and_block_only_backed() {
+	block_on(async move {
+		let mut validator = make_validator_and_api().0;
+
+		let header = default_header();
+
+		let validation = validator.validate(&header, &[]);
+
+		assert!(matches!(
+			validation.await,
+			Ok(Validation::Success { is_new_best: true })
+		));
+	});
+}
+
 #[derive(Default)]
 struct ApiData {
 	validators: Vec<ValidatorId>,
@@ -407,7 +425,13 @@ sp_api::mock_impl_runtime_apis! {
 		}
 
 		fn candidate_pending_availability(&self, _: ParaId) -> Option<CommittedCandidateReceipt<PHash>> {
-			None
+			Some(CommittedCandidateReceipt {
+				descriptor: CandidateDescriptor {
+					para_head: polkadot_parachain::primitives::HeadData(default_header().encode()).hash(),
+					..Default::default()
+				},
+				..Default::default()
+			})
 		}
 
 		fn candidate_events(&self) -> Vec<CandidateEvent<PHash>> {
