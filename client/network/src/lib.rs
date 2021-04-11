@@ -323,7 +323,14 @@ where
 			let backed_block =
 				Self::backed_block_hash(&*relay_chain_client, &runtime_api_block_id, para_id)?;
 
-			if Some(HeadData(header.encode()).hash()) == backed_block {
+			if best_head == header {
+				tracing::debug!(
+					target: LOG_TARGET,
+					"Announced block matches best block.",
+				);
+
+				Ok(Validation::Success { is_new_best: true })
+			} else if Some(HeadData(header.encode()).hash()) == backed_block {
 				tracing::debug!(
 					target: LOG_TARGET,
 					"Announced block matches latest backed block.",
