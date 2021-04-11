@@ -15,7 +15,7 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use cumulus_test_service::runtime::{Block, Header};
+use cumulus_test_service::runtime::{Block, Header, Hash};
 use futures::{executor::block_on, poll, task::Poll};
 use polkadot_node_primitives::{SignedFullStatement, Statement};
 use polkadot_primitives::v1::{
@@ -173,6 +173,7 @@ fn invalid_if_no_data_exceeds_best_known_number() {
 	let mut validator = make_validator_and_api().0;
 	let header = Header {
 		number: 1,
+		state_root: Hash::random(),
 		..default_header()
 	};
 	let res = block_on(validator.validate(&header, &[]));
@@ -181,6 +182,18 @@ fn invalid_if_no_data_exceeds_best_known_number() {
 		res.unwrap(),
 		Validation::Failure { disconnect: false },
 		"validation fails if no justification and block number >= best known number",
+	);
+}
+
+#[test]
+fn valid_if_no_data_and_block_matches_best_known_block() {
+	let mut validator = make_validator_and_api().0;
+	let res = block_on(validator.validate(&default_header(), &[]));
+
+	assert_eq!(
+		res.unwrap(),
+		Validation::Success { is_new_best: true },
+		"validation is successful when the block hash matches the best known block",
 	);
 }
 
