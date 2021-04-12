@@ -36,7 +36,7 @@ use sp_runtime::{
 use polkadot_node_primitives::{SignedFullStatement, Statement};
 use polkadot_parachain::primitives::HeadData;
 use polkadot_primitives::v1::{
-	Block as PBlock, CandidateReceipt, CompactStatement, Id as ParaId,
+	Block as PBlock, Hash as PHash, CandidateReceipt, CompactStatement, Id as ParaId,
 	OccupiedCoreAssumption, ParachainHost, SignedStatement, SigningContext,
 };
 use polkadot_service::ClientHandle;
