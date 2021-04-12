@@ -1253,15 +1253,21 @@ name = "cumulus-client-consensus-common"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "cumulus-primitives-core",
  "cumulus-test-client",
  "cumulus-test-runtime",
+ "cumulus-test-service",
  "dyn-clone",
  "futures 0.3.13",
  "futures-timer 3.0.2",
  "parity-scale-codec",
  "polkadot-primitives",
  "polkadot-runtime",
+ "polkadot-test-client",
+ "polkadot-test-service",
+ "sc-cli",
  "sc-client-api",
+ "sc-service",
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",
@@ -1272,7 +1278,8 @@ dependencies = [
  "sp-tracing",
  "sp-trie",
  "substrate-prometheus-endpoint",
- "tokio 0.1.22",
+ "substrate-test-utils",
+ "tokio 0.2.24",
  "tracing",
 ]
 

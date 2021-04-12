@@ -27,7 +27,7 @@ use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
-use cumulus_test_runtime::{NodeBlock as Block, RuntimeApi};
+use cumulus_test_runtime::{NodeBlock as Block, RuntimeApi, Hash};
 use polkadot_primitives::v1::CollatorPair;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_executor::native_executor_instance;
@@ -53,6 +53,9 @@ pub use chain_spec::*;
 pub use cumulus_test_runtime as runtime;
 pub use genesis::*;
 pub use sp_keyring::Sr25519Keyring as Keyring;
+
+/// The signature of the announce block fn.
+pub type AnnounceBlockFn = Arc<dyn Fn(Hash, Option<Vec<u8>>) + Send + Sync>;
 
 // Native executor instance.
 native_executor_instance!(
@@ -126,6 +129,7 @@ async fn start_node_impl<RB>(
 	collator_key: Option<CollatorPair>,
 	relay_chain_config: Configuration,
 	para_id: ParaId,
+	wrap_announce_block: Option<Box<dyn FnOnce(AnnounceBlockFn) -> AnnounceBlockFn>>,
 	rpc_ext_builder: RB,
 ) -> sc_service::error::Result<(
 	TaskManager,
@@ -219,6 +223,8 @@ where
 		Arc::new(move |hash, data| network.announce_block(hash, data))
 	};
 
+	let announce_block = wrap_announce_block.map(|w| (w)(announce_block.clone())).unwrap_or_else(|| announce_block);
+
 	if let Some(collator_key) = collator_key {
 		let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
 			task_manager.spawn_handle(),
@@ -288,7 +294,6 @@ pub struct TestNode {
 	pub rpc_handlers: RpcHandlers,
 }
 
-
 /// A builder to create a [`TestNode`].
 pub struct TestNodeBuilder {
 	para_id: ParaId,
@@ -298,6 +303,7 @@ pub struct TestNodeBuilder {
 	parachain_nodes: Vec<MultiaddrWithPeerId>,
 	parachain_nodes_exclusive: bool,
 	relay_chain_nodes: Vec<MultiaddrWithPeerId>,
+	wrap_announce_block: Option<Box<dyn FnOnce(AnnounceBlockFn) -> AnnounceBlockFn>>,
 }
 
 impl TestNodeBuilder {
@@ -315,6 +321,7 @@ impl TestNodeBuilder {
 			parachain_nodes: Vec::new(),
 			parachain_nodes_exclusive: false,
 			relay_chain_nodes: Vec::new(),
+			wrap_announce_block: None,
 		}
 	}
 
@@ -379,6 +386,15 @@ impl TestNodeBuilder {
 		self
 	}
 
+	/// Wrap the announce block function of this node.
+	pub fn wrap_announce_block(
+		mut self,
+		wrap: impl FnOnce(AnnounceBlockFn) -> AnnounceBlockFn + 'static,
+	) -> Self {
+		self.wrap_announce_block = Some(Box::new(wrap));
+		self
+	}
+
 	/// Build the [`TestNode`].
 	pub async fn build(self) -> TestNode {
 		let parachain_config = node_config(
@@ -408,6 +424,7 @@ impl TestNodeBuilder {
 			self.collator_key,
 			relay_chain_config,
 			self.para_id,
+			self.wrap_announce_block,
 			|_| Default::default(),
 		)
 		.await
