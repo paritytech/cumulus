@@ -172,7 +172,7 @@ impl frame_system::Config for Runtime {
 	type BlockHashCount = BlockHashCount;
 	/// Runtime version.
 	type Version = Version;
-	/// Converts a module to an index of this module in the runtime.
+	/// Converts a pallet to an index of this pallet in the runtime.
 	type PalletInfo = PalletInfo;
 	type AccountData = pallet_balances::AccountData<Balance>;
 	type OnNewAccount = ();
@@ -233,7 +233,7 @@ impl pallet_sudo::Config for Runtime {
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
 	type OnValidationData = ();
-	type SelfParaId = parachain_info::Module<Runtime>;
+	type SelfParaId = parachain_info::Pallet<Runtime>;
 	type DownwardMessageHandlers = XcmHandler;
 	type HrmpMessageHandlers = XcmHandler;
 }
@@ -335,7 +335,7 @@ pub type SignedExtra = (
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
-/// Executive: handles dispatch to the various modules.
+/// Executive: handles dispatch to the various pallets.
 pub type Executive = frame_executive::Executive<
 	Runtime,
 	Block,

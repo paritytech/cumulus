@@ -275,7 +275,7 @@ pub type SignedExtra = (
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
-/// Executive: handles dispatch to the various modules.
+/// Executive: handles dispatch to the various pallets.
 pub type Executive = frame_executive::Executive<
 	Runtime,
 	Block,

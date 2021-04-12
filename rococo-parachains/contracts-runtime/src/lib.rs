@@ -245,7 +245,7 @@ impl cumulus_pallet_contracts::Config for Runtime {
 	type SurchargeReward = SurchargeReward;
 	type MaxDepth = cumulus_pallet_contracts::DefaultMaxDepth;
 	type MaxValueSize = cumulus_pallet_contracts::DefaultMaxValueSize;
-	type WeightPrice = pallet_transaction_payment::Module<Self>;
+	type WeightPrice = pallet_transaction_payment::Pallet<Self>;
 }
 
 construct_runtime! {
