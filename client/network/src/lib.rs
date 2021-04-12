@@ -320,8 +320,8 @@ where
 			let best_head =
 				Self::included_block(&*relay_chain_client, &runtime_api_block_id, para_id)?;
 			let known_best_number = best_head.number();
-			let backed_block =
-				Self::backed_block_hash(&*relay_chain_client, &runtime_api_block_id, para_id)?;
+			let backed_block = ||
+				Self::backed_block_hash(&*relay_chain_client, &runtime_api_block_id, para_id);
 
 			if best_head == header {
 				tracing::debug!(
@@ -330,7 +330,7 @@ where
 				);
 
 				Ok(Validation::Success { is_new_best: true })
-			} else if Some(HeadData(header.encode()).hash()) == backed_block {
+			} else if Some(HeadData(header.encode()).hash()) == backed_block()? {
 				tracing::debug!(
 					target: LOG_TARGET,
 					"Announced block matches latest backed block.",
