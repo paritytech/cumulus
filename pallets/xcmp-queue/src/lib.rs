@@ -197,7 +197,7 @@ impl<T: Config> Module<T> {
 	/// For the sake of clarity, we distinguish between them as message AGGREGATEs versus
 	/// message FRAGMENTs.
 	///
-	/// So each AGGREGATE is comprised af one or more concatenated SCALE-encoded `Vec<u8>`
+	/// So each AGGREGATE is comprised of one or more concatenated SCALE-encoded `Vec<u8>`
 	/// FRAGMENTs. Though each fragment is already probably a SCALE-encoded Xcm, we can't be
 	/// certain, so we SCALE encode each `Vec<u8>` fragment in order to ensure we have the
 	/// length prefixed and can thus decode each fragment from the aggregate stream. With this,
