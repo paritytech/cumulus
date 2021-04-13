@@ -36,8 +36,8 @@ pub mod pallet {
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
-	#[pallet::config]
 	/// The module configuration trait.
+	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -50,24 +50,24 @@ pub mod pallet {
 		type XcmSender: SendXcm;
 	}
 
+	/// The target parachains to ping.
 	#[pallet::storage]
-	/// Details of an asset.
 	pub(super) type Targets<T: Config> = StorageValue<
 		_,
 		Vec<(ParaId, Vec<u8>)>,
 		ValueQuery,
 	>;
 
+	/// The total number of pings sent.
 	#[pallet::storage]
-	/// Details of an asset.
 	pub(super) type PingCount<T: Config> = StorageValue<
 		_,
 		u32,
 		ValueQuery,
 	>;
 
+	/// The sent pings.
 	#[pallet::storage]
-	/// Details of an asset.
 	pub(super) type Pings<T: Config> = StorageMap<
 		_,
 		Blake2_128Concat,
@@ -78,7 +78,7 @@ pub mod pallet {
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	#[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance", AssetIdOf<T> = "AssetId")]
+	#[pallet::metadata(T::BlockNumber = "BlockNumber")]
 	pub enum Event<T: Config> {
 		PingSent(ParaId, u32, Vec<u8>),
 		Pinged(ParaId, u32, Vec<u8>),
@@ -181,7 +181,7 @@ pub mod pallet {
 			let para = ensure_sibling_para(<T as Config>::Origin::from(origin))?;
 
 			if let Some(sent_at) = Pings::<T>::take(seq) {
-				Self::deposit_event(Event::Ponged(para, seq, payload, frame_system::Pallet::<T>::block_number() - sent_at));
+				Self::deposit_event(Event::Ponged(para, seq, payload, frame_system::Pallet::<T>::block_number().saturating_sub(sent_at)));
 			} else {
 				// Pong received for a ping we apparently didn't send?!
 				Self::deposit_event(Event::UnknownPong(para, seq, payload));
