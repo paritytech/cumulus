@@ -55,11 +55,9 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
-	#[pallet::disable_frame_system_supertrait_check]
 	/// The pallet's configuration trait.
 	pub trait Config: frame_system::Config<OnSetCode = ParachainSetCode<Self>> {
 		/// The overarching event type.
@@ -91,7 +89,7 @@ pub mod pallet {
 			let relevant_messaging_state = Self::relevant_messaging_state()
 				.expect("relevant messaging state is promised to be set until `on_finalize`; qed");
 
-			<Self as Store>::PendingUpwardMessages::mutate(|up| {
+			<PendingUpwardMessages<T>>::mutate(|up| {
 				let (count, size) = relevant_messaging_state.relay_dispatch_queue_size;
 
 				let available_capacity = cmp::min(
@@ -178,7 +176,7 @@ pub mod pallet {
 					continue;
 				}
 
-				let mut pending = <Self as Store>::OutboundHrmpMessages::get(&recipient);
+				let mut pending = <OutboundHrmpMessages<T>>::get(&recipient);
 
 				// This panics if `v` is empty. However, we are iterating only once over non-empty
 				// channels, therefore it cannot panic.
@@ -234,7 +232,7 @@ pub mod pallet {
 			// the loop body.
 			non_empty_hrmp_channels.rotate_left(outbound_hrmp_num - prune_empty.len());
 
-			<Self as Store>::NonEmptyHrmpChannels::put(non_empty_hrmp_channels);
+			<NonEmptyHrmpChannels<T>>::put(non_empty_hrmp_channels);
 			storage::unhashed::put(
 				well_known_keys::HRMP_OUTBOUND_MESSAGES,
 				&outbound_hrmp_messages,
@@ -302,11 +300,11 @@ pub mod pallet {
 		pub fn set_upgrade_block(
 			origin: OriginFor<T>,
 			relay_chain_block: RelayChainBlockNumber,
-		) -> DispatchResultWithPostInfo {
+		) -> DispatchResult {
 			ensure_root(origin)?;
-			if let Some(_old_block) = <PendingRelayChainBlockNumber<T>>::get() {
+			if <PendingRelayChainBlockNumber<T>>::get().is_some() {
 				<PendingRelayChainBlockNumber<T>>::put(relay_chain_block);
-				Ok(().into())
+				Ok(())
 			} else {
 				Err(Error::<T>::NotScheduled.into())
 			}
@@ -386,20 +384,20 @@ pub mod pallet {
 		fn sudo_send_upward_message(
 			origin: OriginFor<T>,
 			message: UpwardMessage,
-		) -> DispatchResultWithPostInfo {
+		) -> DispatchResult {
 			ensure_root(origin)?;
 			let _ = Self::send_upward_message(message);
-			Ok(().into())
+			Ok(())
 		}
 
 		#[pallet::weight((1_000, DispatchClass::Operational))]
 		fn sudo_send_hrmp_message(
 			origin: OriginFor<T>,
 			message: OutboundHrmpMessage,
-		) -> DispatchResultWithPostInfo {
+		) -> DispatchResult {
 			ensure_root(origin)?;
 			let _ = Self::send_hrmp_message(message);
-			Ok(().into())
+			Ok(())
 		}
 	}
 
@@ -445,36 +443,34 @@ pub mod pallet {
 		NotScheduled,
 	}
 
-	#[pallet::storage]
 	/// We need to store the new validation function for the span between
 	/// setting it and applying it. If it has a
 	/// value, then [`PendingValidationFunction`] must have a real value, and
 	/// together will coordinate the block number where the upgrade will happen.
+	#[pallet::storage]
 	pub(super) type PendingRelayChainBlockNumber<T: Config> =
 		StorageValue<_, RelayChainBlockNumber>;
 
-	#[pallet::storage]
-	#[pallet::getter(fn new_validation_function)]
 	/// The new validation function we will upgrade to when the relay chain
 	/// reaches [`PendingRelayChainBlockNumber`]. A real validation function must
 	/// exist here as long as [`PendingRelayChainBlockNumber`] is set.
+	#[pallet::storage]
+	#[pallet::getter(fn new_validation_function)]
 	pub(super) type PendingValidationFunction<T: Config> = StorageValue<_, Vec<u8>, ValueQuery>;
 
+	/// The [`PersistedValidationData`] set for this block.
 	#[pallet::storage]
 	#[pallet::getter(fn validation_data)]
-	/// The [`PersistedValidationData`] set for this block.
 	pub(super) type ValidationData<T: Config> = StorageValue<_, PersistedValidationData>;
 
-	#[pallet::storage]
 	/// Were the validation data set to notify the relay chain?
+	#[pallet::storage]
 	pub(super) type DidSetValidationCode<T: Config> = StorageValue<_, bool, ValueQuery>;
 
-	#[pallet::storage]
 	/// The last relay parent block number at which we signalled the code upgrade.
+	#[pallet::storage]
 	pub(super) type LastUpgrade<T: Config> = StorageValue<_, relay_chain::BlockNumber, ValueQuery>;
 
-	#[pallet::storage]
-	#[pallet::getter(fn relevant_messaging_state)]
 	/// The snapshot of some state related to messaging relevant to the current parachain as per
 	/// the relay parent.
 	///
@@ -482,30 +478,32 @@ pub mod pallet {
 	/// before processing of the inherent, e.g. in `on_initialize` this data may be stale.
 	///
 	/// This data is also absent from the genesis.
+	#[pallet::storage]
+	#[pallet::getter(fn relevant_messaging_state)]
 	pub(super) type RelevantMessagingState<T: Config> = StorageValue<_, MessagingStateSnapshot>;
 
-	#[pallet::storage]
-	#[pallet::getter(fn host_configuration)]
 	/// The parachain host configuration that was obtained from the relay parent.
 	///
 	/// This field is meant to be updated each block with the validation data inherent. Therefore,
 	/// before processing of the inherent, e.g. in `on_initialize` this data may be stale.
 	///
 	/// This data is also absent from the genesis.
+	#[pallet::storage]
+	#[pallet::getter(fn host_configuration)]
 	pub(super) type HostConfiguration<T: Config> = StorageValue<_, AbridgedHostConfiguration>;
 
-	#[pallet::storage]
 	/// The last downward message queue chain head we have observed.
 	///
 	/// This value is loaded before and saved after processing inbound downward messages carried
 	/// by the system inherent.
+	#[pallet::storage]
 	pub(super) type LastDmqMqcHead<T: Config> = StorageValue<_, MessageQueueChain, ValueQuery>;
 
-	#[pallet::storage]
 	/// The message queue chain heads we have observed per each channel incoming channel.
 	///
 	/// This value is loaded before and saved after processing inbound downward messages carried
 	/// by the system inherent.
+	#[pallet::storage]
 	pub(super) type LastHrmpMqcHeads<T: Config> =
 		StorageValue<_, BTreeMap<ParaId, MessageQueueChain>, ValueQuery>;
 
@@ -513,19 +511,19 @@ pub mod pallet {
 	pub(super) type PendingUpwardMessages<T: Config> =
 		StorageValue<_, Vec<UpwardMessage>, ValueQuery>;
 
-	#[pallet::storage]
 	/// Essentially `OutboundHrmpMessage`s grouped by the recipients.
+	#[pallet::storage]
 	pub(super) type OutboundHrmpMessages<T: Config> =
 		StorageMap<_, Twox64Concat, ParaId, Vec<Vec<u8>>, ValueQuery>;
 
-	#[pallet::storage]
 	/// HRMP channels with the given recipients are awaiting to be processed. If a `ParaId` is
 	/// present in this vector then `OutboundHrmpMessages` for it should be not empty.
+	#[pallet::storage]
 	pub(super) type NonEmptyHrmpChannels<T: Config> = StorageValue<_, Vec<ParaId>, ValueQuery>;
 
-	#[pallet::storage]
 	/// The number of HRMP messages we observed in `on_initialize` and thus used that number for
 	/// announcing the weight of `on_initialize` and `on_finialize`.
+	#[pallet::storage]
 	pub(super) type AnnouncedHrmpMessagesPerCandidate<T: Config> = StorageValue<_, u32, ValueQuery>;
 
 	#[pallet::inherent]
@@ -865,7 +863,7 @@ pub mod pallet {
 					// Thus fall through here.
 				}
 			};
-			<Self as Store>::PendingUpwardMessages::append(message);
+			<PendingUpwardMessages<T>>::append(message);
 			Ok(())
 		}
 
@@ -911,8 +909,8 @@ pub mod pallet {
 			}
 
 			// And then at last update the storage.
-			<Self as Store>::OutboundHrmpMessages::append(&recipient, data);
-			<Self as Store>::NonEmptyHrmpChannels::mutate(|v| {
+			<OutboundHrmpMessages<T>>::append(&recipient, data);
+			<NonEmptyHrmpChannels<T>>::mutate(|v| {
 				if !v.contains(&recipient) {
 					v.push(recipient);
 				}
