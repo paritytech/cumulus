@@ -1,67 +1,96 @@
 # Cumulus Overview
 
-This document provides high-level documentation for Cumulus. A Glossary of terms is included.
+This document provides high-level documentation for Cumulus. It includes a [Glossary](#Glossary) of domain-specific terms.
 
 ### What is Cumulus?
-Cumulus is a [Parachain development kit (PDK)](https://wiki.polkadot.network/docs/en/build-pdk) that provides a set of tools to create Polkadot compatible [Parachains](https://substrate.dev/docs/en/knowledgebase/getting-started/glossary#parachain) using the [Substrate development framework](http://substrate.dev/).
+Cumulus is a [Parachain development kit (PDK)](https://wiki.polkadot.network/docs/en/build-pdk). It is a set of tools used to create Polkadot compatible [Parachains](https://substrate.dev/docs/en/knowledgebase/getting-started/glossary#parachain) using the [Substrate development framework](http://substrate.dev/).
 
 ### Why would I use Cumulus?
-Cumulus allows runtimes created using Substrate [FRAME](https://substrate.dev/docs/en/knowledgebase/runtime/frame) to interface with Parachain valditors and join a network secured by a [Relay Chain](https://substrate.dev/docs/en/knowledgebase/getting-started/glossary#relay-chain). 
+Cumulus allows runtimes built using Substrate [FRAME](https://substrate.dev/docs/en/knowledgebase/runtime/frame) to interface with Parachain validators and to join a network secured by a [Relay Chain](https://substrate.dev/docs/en/knowledgebase/getting-started/glossary#relay-chain). 
 
-This distinction is important as runtimes created with purely Substrate FRAME are not Parachains and cannot join a Polkadot network. Parachains can be an implementation of Substrate FRAME, but FRAME is a more flexible set of tools for building modular, efficient, and upgradeable blockchains. Cumulus is a wrapper around Substrate nodes that extends an interface to Parachain Validators, opening a direct channel to network secured by Relay Chains. 
+This distinction is essential as runtimes created with purely Substrate FRAME are not Parachains and cannot join a Polkadot network. Parachains can implement substrate FRAME, but FRAME is a more flexible set of tools for custom and upgradeable blockchains. Cumulus is a wrapper around a Substrate node that extends an interface to Parachain Validators, opening a direct channel to a network secured by its Relay Chain. 
 
 Cumulus lets developers make Parachains using Substrate. Use cases could include:
 - Make a Polkadot-compatible Parachain from genesis.
-- Create a sandbox blockchain with Substrate and connect to the Polkadot network when ready for release.
+- Create a sandbox blockchain with Substrate and connect to the Polkadot network when ready.
 - Join the Polkadot network at a future point in time.
 
 ### How does Cumulus Work?
-Cumulus At a high level, Cumulus operates in two stages
+Cumulus At a high level, Cumulus makes it possible for Substrate nodes to **build** blocks for, and maintain **conesus** with, a Relay Chain.
 
-1. **Consensus** - Cumulus keeps Substrate Nodes in sync with a Relay Chain by importing finalized blocks from Parachain Validators and executing them, thereby extending Parachains to be canonical with a Network. This triggers the next step.
-2. **Block Building** - Once a Parachain is canonical with a newly finalized block, Cumulus triggers Parachain Collators to generate a new unsigned block for Validators to take.
+1. **Consensus** - Cumulus keeps Substrate Nodes in sync with a Relay Chain by importing finalized blocks from Parachain Validators and executing them, thereby extending Parachains canonical with a Network.
+2. **Block Building** - Once a Parachain is canonical with a newly finalized block, Cumulus triggers Parachain Collators to build a new unsigned block for Validators to take.
 
 ## Registration
-The Polkadot protocol requires that Parachains to register their state transition functions with Validators in the form of WASM binary. This executable contains a custom Parachain runtime. To make a Substrate runtime into a Parachain runtime, additional functionality must be added. Cumulus makes that easy by adding one line of code to the Substrate runtime:
+The Polkadot protocol requires that Parachains register their state transition functions with Validators as a WASM binary. This executable compiles a Parachain's custom runtime. Cumulus adds the required logic to convert a Substrate runtime into a Parachain runtime with the following code:
 
 ```rust
 cumulus_pallet_parachain_system::register_validate_block!(Block, Executive);
 ```
-Now, when compiled into a WASM binary and registered with a set of Validator Nodes, the substrate node can join as a Parachain. It does so primarily through a `validate_block` function implemeneted as a Cumulus pallet, which takes the `Block` and `Executive` type through this single macro call. `Executive` is a declared type that dispatches incoming calls to the correct module at runtime; it is an orchestration component.
+
+When compiled into a WASM binary and registered with a set of Validator Nodes, the substrate node can join as a Parachain. It does so primarily through a `validate_block` macro call implemented as a Cumulus pallet, which takes the `Block` and `Executive` type. `Executive` is a declared type that dispatches incoming calls to the correct module at runtime; it is an orchestration component—more on `Block` below.
 
 ## Consensus
-Transactions from a Parachain filter up through the relay chain. At first, Collators author new blocks, some of which Parachain Validtors will select. Of these validated blocks, one is signed and added to the Relay Chain. To maintain consensus, Parachain nodes must know which of the many blocks authored by collators was finalized and then execute it on their local storage.
+Transactions filter up from Parachains to the Relay Chain. At the very lowest level, Collators author new blocks, some of which are picked up by Parachain Validators. Of the validated set, one is added to the Relay Chain. Parachain nodes must know which of the many blocks authored by Collators was finalized to maintain consensus and then execute the block on their local storage.
 
-By the time a Parachain block filters up to the Relay Chain, it has gone through multiple compressions. The first compression happens when a Collator authors a Proof of Validity block (PoVBlock) by bundling:
+By the time a Parachain block filters up to the Relay Chain, it has gone through two compressions. The first compression happens when a Collator authors a Proof of Validity block (PoVBlock) by bundling:
 
 - List of state transitions
-- Values in the parachain’s database that the block modifies
+- Values in the Parachain’s database that the block modifies
 - Hashes of the unaffected points in the Merkle tree
 
-Together, a PoVBlock contains the necessary ingredients for Validators to apply their registered state transition function (recall the WASM binary) and verify the outcome of a block's state transitions. Similarly, when Validators author blocks for the Relay Chain, they further compress their data into Candidate Receipts.
+Together, a PoVBlock contains witness data for Validators to apply their registered state transition function (recall the WASM binary) and verify the outcome of a block's state transitions. Similarly, when Validators author blocks for the Relay Chain, they further compress their data into Candidate Receipts.
 
-**[Figure 1: Collator to Validator to Relay Chain]**
 
-Parachains maintain consensus with the Relay Chain by executing the finalized blocks secured on the Relay Chain. But to do this, Parachains must decipher and reconstruct blocks from their compressed versions. Once a block has been added, the Relay Chain signals the finalized Candidate Receipt to Parachain Validators. Validators then apply the registered state transition function to reverse engineer the PoVBlock that was originally compressed as part of the Candidate Receipt. This reconstructed PoVBlock is passed back to Parachain nodes via the Cumulus macro call (recall the `Block` type referenced in [Registration](#Registration)). 
+![Figure 1](/cumulus/docs/images/cumulus-figure-1.png)
+**Figure 1:** Flow from Collator block to PoVBlock to Candidate Receipt
 
-Using the `validate_block` function, implemented as a pallet, Cumulus constructs a partial trie from the PoVBlock witness data. All storage related host functions are then redirected to use the partial trie that shows where state transitions occured. The `validate_block` function runs through a series of checks to validate whether state transitions included in the PoVBlock generate the same state that Cumulus received from Validators. If so, Cumulus will execute the block and stay canonical with the Relay Chain.
 
-**[Figure 2: Relay Chain to Validator to Parachain Node]**
+Parachains maintain consensus with the Relay Chain by executing the finalized blocks secured on the Relay Chain. But to do this, Parachains must decipher and reconstruct blocks from their compressed versions and change state values. Once a block is added, the Relay Chain signals the finalized Candidate Receipt back to Parachain Validators. Validators then apply the registered state transition function and reverse engineer the PoVBlock that Collators initially compressed. This reconstructed PoVBlock is passed back to Parachain nodes via the Cumulus macro call (recall the `Block` type referenced in [Registration](#Registration)). 
 
-When Validators call the `validate_block` function, they pass through the PoVBlock, but they also pass the parent header of the Parachain block stored on the Relay Chain. Passing the parent header of the latest blocks ensures that Parachains do not execute blocks that do not share the same parent block and thereby creating illegitimate branches. If a Parachain node receives a PoVBlock with a parent header it does not recognize, it will not execute the block. Instead, it will wait for other nodes to gossip the canonical state and execute blocks then.
+Using the `validate_block` function, implemented as a pallet, Cumulus constructs a partial trie from the PoVBlock witness data and runs through the same series of checks Parachain Validators do in Figure 1. Once state transitions have been validated, Cumulus executes the block by redirecting all host-related storage functions to use values from the partial trie. 
+
+
+![Figure 2](/cumulus/docs/images/figure 2.png)
+**Figure 2:** Finalized Relay block to PoVBlock to Parachain block
+
+
+When Validators call the `validate_block` function, they pass through the PoVBlock, but they also pass a hash of its on-chain parent header.  If a Parachain node receives a PoVBlock with a parent header it does not recognize, it will not execute the block. Instead, it will wait for other nodes to gossip the canonical state and execute blocks then. Including the parent header of the latest block deters illegitimate branches.
 
 To recap:
 1. Collators author blocks for Validators that contain a Proof of Validity of all state transitions within the block.
-2. Validators apply their registered state transition function to verify the same outcome as the Proof.
+2. Validators apply their registered state transition function to verify the same result as the Proof.
 3. Validators compress the PoVBlock into a Candidate Receipt for the Relay Chain.
 4. Once executed, the Relay Chain passes the finalized Candidate Receipt back to Parachain Validators
-5. Parachain Validators reconstruct the PoVBlock from the Candidate Receipt and use it to call a node's `validate_block` function.
-6. Parachains execute the `validate_block` function and execute the block, changing their state to match what is recognized on the Relay Chain
+5. Parachain Validators reconstruct the PoVBlock from the Candidate Receipt and pass it through the `valudate_block` function from Cumulus.
+6. Parachains execute the `validate_block` function and execute the block, changing their state to match what is recognized on the Relay Chain.
 
 ### Where does Cumulus Come In?
-Cumulus lets Substrate-based nodes maintain consensus with a Relay Chain. First and foremost, Cumulus exposes an interface to Parachain Validators that lets it interpret and produce blocks that follow the fixed-formatting expected by the Polkadot Network. Furthermore, Cumulus uses these blocks as inputs to execute an important Parachain node function: Knowing which block to execute next.
+Cumulus lets Substrate-based nodes maintain consensus with a Relay Chain. Importantly, Cumulus exposes an interface to Parachain Validators that lets it interpret and produce blocks that follow the fixed-formatting expected by the Polkadot Network. Furthermore, Cumulus uses these blocks as inputs to execute a crucial Parachain node function: Knowing which block to execute next.
 
 ## Block Building
-Once a Parachain node is synchronous with its Relay Chain, it can begin to bundle and broadcast new blocks to be validated. These blocks are the same as the PoVBlocks, containing state transitions, Merkle hashes, and state data, except these messages are being sent _to_ Validators, not _from_ them. However, only a small set of "Collators" are able to produce PoVBlocks. Light-clients and full-nodes created using Cumulus can only maintain consensus, they cannot proffer new blocks to Validators.
+Once a Parachain node is synchronous with its Relay Chain, it can begin the cycle again. Collators will start to bundle and broadcast new blocks to Parachain Validators. These blocks are the same as the PoVBlocks, containing state transitions, Merkle hashes, and state data. Only Collators can proffer new blocks. Light clients and other full nodes finish their process at a consensus.
 
-Cumulus provides a client Collator library to convert Substrate FRAME nodes into Parachain Collators and the additional logic needed to produce new blocks as per protocol instructions (See under [_II. Block Perparation_](https://polkadot.network/the-path-of-a-parachain-block/)). Production logic is triggered when Collators import PoVBlocks and validate a finalized state change, as described in [Consensus](#Consensus). Once again, data is compressed further and further until one block is finalized on the Relay Chain, and the cycle repeats.
+Cumulus provides a client Collator library to convert Substrate FRAME nodes into Parachain Collators and the additional logic needed to produce new blocks. Production logic is triggered when Collators import PoVBlocks and validate a finalized state change, as described in [Consensus](#Consensus). Data is compressed further and further until one block is finalized on the Relay Chain, and the cycle continues.
+
+## Runtime Upgrades
+A core feature of Substrate is upgradeability. Substrate FRAME lets developers make forkless runtime upgrades. In other words, change a state transition function without requiring a coordinated client-side update. But Substrate runtime upgrades are enacted directly. Parachains have to provide notice to their Relay Chain about an upcoming runtime upgrade. 
+
+Parachains have to wait for an arbitrary period of `X` blocks (as defined by the Relay Chain) before applying any runtime updates. The Relay Chain rejects blocks that fall short of this waiting period. Furthermore, after changing a runtime, Parachains must wait for another `Y` blocks before the next runtime upgrade. Cumulus provides all the logic to communicate runtime upgrades to the Relay Chain and follow configured waiting periods.
+
+Recall that Parachain runtimes must register with Parachain Validators in the form of a compiled WASM binary. Updating that runtime upgrades mean compiling a new binary. For Cumulus Parachains, that includes the macro call in [Registration](#Registration). In other words, Cumulus Parachains have to re-register their runtime with Validators.
+
+## Glossary 
+**Substrate:** A flexible framework for building modular, efficient, and upgradeable blockchains. Substrate is written in the Rust programming language and maintained by Parity Technologies.
+
+**Framework for Runtime Aggregation of Modularized Entities (FRAME):** A set of modules (called pallets) and support libraries that simplify runtime development.
+
+**Validators:** Secure the Relay Chain by staking $DOT, validating proofs from Collators and participating in consensus with other Validators.
+
+**Collators**: Special nodes that maintain parachains by aggregating parachain transactions into parachain block candidates and producing state transition proofs for validators based on those blocks.
+
+**Relay Chain:** The central chain of Polkadot. All validators of Polkadot are staked on the Relay Chain in DOT and validate for the Relay Chain.
+
+**Cumulus:** A set of tools used to create Polkadot compatible Parachains using the Substrate development framework.
+
+**Candidate Receipt:** Parachain Validators construct a Candidate Receipt from a PoVBlock that gets added to the Relay Chain.
