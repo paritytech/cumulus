@@ -454,7 +454,7 @@ mod tests {
 
 		let all_subsystems =
 			AllSubsystems::<()>::dummy().replace_collation_generation(ForwardSubsystem(sub_tx));
-		let (overseer, handler) = Overseer::new(Vec::new(), all_subsystems, None, spawner.clone())
+		let (overseer, handler) = Overseer::new(Vec::new(), all_subsystems, None, spawner.clone(), None)
 			.expect("Creates overseer");
 
 		spawner.spawn("overseer", overseer.run().then(|_| async { () }).boxed());
