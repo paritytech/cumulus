@@ -1336,7 +1336,6 @@ dependencies = [
  "polkadot-service",
  "polkadot-statement-table",
  "polkadot-test-client",
- "polkadot-test-service",
  "sc-cli",
  "sc-client-api",
  "sc-service",
@@ -1637,6 +1636,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-test-relay-validation-worker-provider"
+version = "0.1.0"
+dependencies = [
+ "polkadot-node-core-pvf",
+]
+
+[[package]]
 name = "cumulus-test-runtime"
 version = "0.1.0"
 dependencies = [
@@ -1675,6 +1681,7 @@ dependencies = [
  "cumulus-client-network",
  "cumulus-client-service",
  "cumulus-primitives-core",
+ "cumulus-test-relay-validation-worker-provider",
  "cumulus-test-runtime",
  "futures 0.3.14",
  "jsonrpc-core",

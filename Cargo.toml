@@ -21,6 +21,7 @@ members = [
 	"test/client",
 	"test/service",
 	"test/relay-sproof-builder",
+	"test/relay-validation-worker-provider",
 ]
 
 [profile.release]

@@ -547,3 +547,22 @@ impl TestNode {
 		self.client.wait_for_blocks(count)
 	}
 }
+
+/// Run a relay-chain validator node.
+///
+/// This is essentially a wrapper around
+/// [`run_validator_node`](polkadot_test_service::run_validator_node).
+pub fn run_relay_chain_validator_node(
+	task_executor: TaskExecutor,
+	key: Sr25519Keyring,
+	storage_update_func: impl Fn(),
+	boot_nodes: Vec<MultiaddrWithPeerId>,
+) -> polkadot_test_service::PolkadotTestNode {
+	polkadot_test_service::run_validator_node(
+		task_executor,
+		key,
+		storage_update_func,
+		boot_nodes,
+		Some(cumulus_test_relay_validation_worker_provider::VALIDATION_WORKER.into()),
+	)
+}
