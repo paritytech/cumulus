@@ -777,6 +777,10 @@ impl<T: Config> ProvideInherent for Module<T> {
 
 		Some(Call::set_validation_data(data))
 	}
+
+	fn is_inherent(call: &Self::Call) -> bool {
+		matches!(call, Call::set_validation_data(_))
+	}
 }
 
 decl_event! {
