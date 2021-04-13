@@ -42,7 +42,6 @@ pub mod pallet {
 	}
 
 	#[pallet::event]
-	#[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance", AssetIdOf<T> = "AssetId")]
 	pub enum Event<T: Config> {}
 
 	#[pallet::error]
