@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Helper datatypes for cumulus. This includes the `ParentAsUmp` routing type which will route
-//! messages into an `UpwardMessageSender` if the destination is `Parent`.
+//! Helper datatypes for cumulus. This includes the [`ParentAsUmp`] routing type which will route
+//! messages into an [`UpwardMessageSender`] if the destination is `Parent`.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -65,14 +65,13 @@ impl<
 	fn handle_downward_message(msg: InboundDownwardMessage) -> Weight {
 		let msg = VersionedXcm::<Call>::decode(&mut &msg.msg[..])
 			.map(Xcm::<Call>::try_from);
-		let weight_used = match msg {
+		match msg {
 			Ok(Ok(x)) => {
 				let weight_limit = MaxWeight::get();
 				XcmExecutor::execute_xcm(Junction::Parent.into(), x, weight_limit).weight_used()
 			}
 			Ok(Err(..)) => 0,
 			Err(..) => 0,
-		};
-		weight_used
+		}
 	}
 }
