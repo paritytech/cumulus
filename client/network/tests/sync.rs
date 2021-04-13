@@ -29,7 +29,13 @@ async fn sync_blocks_from_tip_without_being_connected_to_a_collator(task_executo
 
 	// start alice
 	let alice =
-		polkadot_test_service::run_validator_node(task_executor.clone(), Alice, || {}, vec![]);
+		polkadot_test_service::run_validator_node(
+			task_executor.clone(),
+			Alice,
+			|| {},
+			vec![],
+			None,
+		);
 
 	// start bob
 	let bob = polkadot_test_service::run_validator_node(
@@ -37,6 +43,7 @@ async fn sync_blocks_from_tip_without_being_connected_to_a_collator(task_executo
 		Bob,
 		|| {},
 		vec![alice.addr.clone()],
+		None,
 	);
 
 	// register parachain

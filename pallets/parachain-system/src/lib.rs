@@ -840,6 +840,7 @@ mod tests {
 	use codec::Encode;
 	use cumulus_primitives_core::{
 		AbridgedHrmpChannel, InboundDownwardMessage, InboundHrmpMessage, PersistedValidationData,
+		relay_chain::BlockNumber as RelayBlockNumber,
 	};
 	use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 	use frame_support::{
@@ -884,6 +885,7 @@ mod tests {
 			transaction_version: 1,
 		};
 		pub const ParachainId: ParaId = ParaId::new(200);
+		pub const ReservedXcmpWeight: Weight = 0;
 	}
 	impl frame_system::Config for Test {
 		type Origin = Origin;
@@ -915,19 +917,48 @@ mod tests {
 		type OnValidationData = ();
 		type SelfParaId = ParachainId;
 		type DownwardMessageHandlers = SaveIntoThreadLocal;
-		type XcmpMessageHandlers = SaveIntoThreadLocal;
+		type XcmpMessageHandler = SaveIntoThreadLocal;
+		type OutboundXcmpMessageSource = FromThreadLocal;
+		type ReservedXcmpWeight = ReservedXcmpWeight;
 	}
 
+	pub struct FromThreadLocal;
 	pub struct SaveIntoThreadLocal;
-	#[derive(Eq, PartialEq, Clone, Debug)]
-	pub enum XcmpMessage {
-		Blob(Vec<u8>),
-		Xcm(xcm::VersionedXcm),
-	}
 
 	std::thread_local! {
 		static HANDLED_DOWNWARD_MESSAGES: RefCell<Vec<InboundDownwardMessage>> = RefCell::new(Vec::new());
-		static HANDLED_XCMP_MESSAGES: RefCell<Vec<(ParaId, relay_chain::BlockNumber, XcmpMessage)>> = RefCell::new(Vec::new());
+		static HANDLED_XCMP_MESSAGES: RefCell<Vec<(ParaId, relay_chain::BlockNumber, Vec<u8>)>> = RefCell::new(Vec::new());
+		static SENT_MESSAGES: RefCell<Vec<(ParaId, Vec<u8>)>> = RefCell::new(Vec::new());
+	}
+
+	fn send_message(
+		dest: ParaId,
+		message: Vec<u8>,
+	) {
+		SENT_MESSAGES.with(|m| m.borrow_mut().push((dest, message)));
+	}
+
+	impl XcmpMessageSource for FromThreadLocal {
+		fn take_outbound_messages(maximum_channels: usize) -> Vec<(ParaId, Vec<u8>)> {
+			let mut ids = std::collections::BTreeSet::<ParaId>::new();
+			let mut taken = 0;
+			let mut result = Vec::new();
+			SENT_MESSAGES.with(|ms| ms.borrow_mut()
+				.retain(|m| {
+					let status = <Module::<Test> as GetChannelInfo>::get_channel_status(m.0);
+					let ready = matches!(status, ChannelStatus::Ready(..));
+					if ready && !ids.contains(&m.0) && taken < maximum_channels {
+						ids.insert(m.0);
+						taken += 1;
+						result.push(m.clone());
+						false
+					} else {
+						true
+					}
+				})
+			);
+			result
+		}
 	}
 
 	impl DownwardMessageHandler for SaveIntoThreadLocal {
@@ -935,18 +966,20 @@ mod tests {
 			HANDLED_DOWNWARD_MESSAGES.with(|m| {
 				m.borrow_mut().push(msg);
 			});
+			0
 		}
 	}
 
 	impl XcmpMessageHandler for SaveIntoThreadLocal {
-		fn handle_blob_message(sender: ParaId, sent_at: relay_chain::BlockNumber, blob: Vec<u8>) {
+		fn handle_xcmp_messages<'a, I: Iterator<Item=(ParaId, RelayBlockNumber, &'a [u8])>>(
+			iter: I,
+			_max_weight: Weight,
+		) -> Weight {
 			HANDLED_XCMP_MESSAGES.with(|m| {
-				m.borrow_mut().push((sender, sent_at, XcmpMessage::Blob(blob)));
-			})
-		}
-		fn handle_xcm_message(sender: ParaId, sent_at: relay_chain::BlockNumber, xcm: VersionedXcm) {
-			HANDLED_XCMP_MESSAGES.with(|m| {
-				m.borrow_mut().push((sender, sent_at, XcmpMessage::Xcm(xcm)));
+				for (sender, sent_at, message) in iter {
+					m.borrow_mut().push((sender, sent_at, message.to_vec()));
+				}
+				0
 			})
 		}
 	}
@@ -1351,82 +1384,6 @@ mod tests {
 	}
 
 	#[test]
-	fn send_hrmp_preliminary_no_channel() {
-		BlockTests::new()
-			.with_relay_sproof_builder(|_, _, sproof| {
-				sproof.para_id = ParaId::from(200);
-
-				// no channels established
-				sproof.hrmp_egress_channel_index = Some(vec![]);
-			})
-			.add(1, || {})
-			.add(2, || {
-				assert!(ParachainSystem::send_blob_message(
-					ParaId::from(300),
-					b"derp".to_vec(),
-					ServiceQuality::Ordered,
-				).is_err());
-			});
-	}
-
-	#[test]
-	fn send_hrmp_message_simple() {
-		let msg = xcm::v0::Xcm::Balances(0, vec![]);
-		BlockTests::new()
-			.with_relay_sproof_builder(|_, _, sproof| {
-				sproof.para_id = ParaId::from(200);
-				sproof.hrmp_egress_channel_index = Some(vec![ParaId::from(300)]);
-				sproof.hrmp_channels.insert(
-					HrmpChannelId {
-						sender: ParaId::from(200),
-						recipient: ParaId::from(300),
-					},
-					AbridgedHrmpChannel {
-						max_capacity: 1,
-						max_total_size: 1024,
-						max_message_size: 8,
-						msg_count: 0,
-						total_size: 0,
-						mqc_head: Default::default(),
-					},
-				);
-			})
-			.add_with_post_test(
-				1,
-				|| {
-					ParachainSystem::send_xcm_message(
-						ParaId::from(300),
-						msg.clone(),
-						ServiceQuality::Ordered,
-					)
-					.unwrap();
-				},
-				|| {
-					// there are no outbound messages since the special logic for handling the
-					// first block kicks in.
-					let v: Option<Vec<OutboundHrmpMessage>> =
-						storage::unhashed::get(well_known_keys::HRMP_OUTBOUND_MESSAGES);
-					assert_eq!(v, Some(vec![]));
-				},
-			)
-			.add_with_post_test(
-				2,
-				|| {},
-				|| {
-					let v: Option<Vec<OutboundHrmpMessage>> =
-						storage::unhashed::get(well_known_keys::HRMP_OUTBOUND_MESSAGES);
-					assert_eq!(
-						v,
-						Some(vec![OutboundHrmpMessage {
-							recipient: ParaId::from(300),
-							data: (AggregateFormat::ConcatenatedEncodedVersionedXcm, msg.clone()).encode(),
-						}])
-					);
-				},
-			);
-	}
-
-	#[test]
 	fn send_hrmp_message_buffer_channel_close() {
 		BlockTests::new()
 			.with_relay_sproof_builder(|_, relay_block_num, sproof| {
@@ -1465,7 +1422,7 @@ mod tests {
 				);
 
 				//
-				// Adjustement according to block
+				// Adjustment according to block
 				//
 				match relay_block_num {
 					1 => {}
@@ -1498,16 +1455,14 @@ mod tests {
 			.add_with_post_test(
 				1,
 				|| {
-					ParachainSystem::send_blob_message(
+					send_message(
 						ParaId::from(300),
 						b"1".to_vec(),
-						ServiceQuality::Ordered,
-					).unwrap();
-					ParachainSystem::send_blob_message(
+					);
+					send_message(
 						ParaId::from(400),
 						b"2".to_vec(),
-						ServiceQuality::Ordered,
-					).unwrap();
+					);
 				},
 				|| {},
 			)
@@ -1531,7 +1486,7 @@ mod tests {
 						v,
 						Some(vec![OutboundHrmpMessage {
 							recipient: ParaId::from(300),
-							data: (AggregateFormat::ConcatenatedEncodedBlob, &b"1"[..]).encode(),
+							data: b"1".to_vec(),
 						}])
 					);
 				},
@@ -1612,22 +1567,22 @@ mod tests {
 		lazy_static::lazy_static! {
 			static ref MSG_1: InboundHrmpMessage = InboundHrmpMessage {
 				sent_at: 1,
-				data: (AggregateFormat::ConcatenatedEncodedBlob, &b"1"[..]).encode(),
+				data: b"1".to_vec(),
 			};
 
 			static ref MSG_2: InboundHrmpMessage = InboundHrmpMessage {
 				sent_at: 1,
-				data: (AggregateFormat::ConcatenatedEncodedBlob, &b"2"[..]).encode(),
+				data: b"2".to_vec(),
 			};
 
 			static ref MSG_3: InboundHrmpMessage = InboundHrmpMessage {
 				sent_at: 2,
-				data: (AggregateFormat::ConcatenatedEncodedBlob, &b"3"[..]).encode(),
+				data: b"3".to_vec(),
 			};
 
 			static ref MSG_4: InboundHrmpMessage = InboundHrmpMessage {
 				sent_at: 2,
-				data: (AggregateFormat::ConcatenatedEncodedBlob, &b"4"[..]).encode(),
+				data: b"4".to_vec(),
 			};
 		}
 
@@ -1685,7 +1640,7 @@ mod tests {
 			.add(1, || {
 				HANDLED_XCMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
-					assert_eq!(&*m, &[(ParaId::from(300), 1, XcmpMessage::Blob(b"1".to_vec()))]);
+					assert_eq!(&*m, &[(ParaId::from(300), 1, b"1".to_vec())]);
 					m.clear();
 				});
 			})
@@ -1695,9 +1650,9 @@ mod tests {
 					assert_eq!(
 						&*m,
 						&[
-							(ParaId::from(300), 1, XcmpMessage::Blob(b"2".to_vec())),
-							(ParaId::from(200), 2, XcmpMessage::Blob(b"4".to_vec())),
-							(ParaId::from(300), 2, XcmpMessage::Blob(b"3".to_vec())),
+							(ParaId::from(300), 1, b"2".to_vec()),
+							(ParaId::from(200), 2, b"4".to_vec()),
+							(ParaId::from(300), 2, b"3".to_vec()),
 						]
 					);
 					m.clear();
@@ -1729,12 +1684,12 @@ mod tests {
 		lazy_static::lazy_static! {
 			static ref MSG_1: InboundHrmpMessage = InboundHrmpMessage {
 				sent_at: 1,
-				data: (AggregateFormat::ConcatenatedEncodedBlob, &b"mikhailinvanovich"[..]).encode(),
+				data: b"mikhailinvanovich".to_vec(),
 			};
 
 			static ref MSG_2: InboundHrmpMessage = InboundHrmpMessage {
 				sent_at: 3,
-				data: (AggregateFormat::ConcatenatedEncodedBlob, &b"1000000000"[..]).encode(),
+				data: b"1000000000".to_vec(),
 			};
 		}
 
@@ -1777,7 +1732,7 @@ mod tests {
 			.add(1, || {
 				HANDLED_XCMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
-					assert_eq!(&*m, &[(ALICE, 1, XcmpMessage::Blob(b"mikhailinvanovich".to_vec()))]);
+					assert_eq!(&*m, &[(ALICE, 1, b"mikhailinvanovich".to_vec())]);
 					m.clear();
 				});
 			})
@@ -1785,7 +1740,7 @@ mod tests {
 			.add(3, || {
 				HANDLED_XCMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
-					assert_eq!(&*m, &[(ALICE, 3, XcmpMessage::Blob(b"1000000000".to_vec()))]);
+					assert_eq!(&*m, &[(ALICE, 3, b"1000000000".to_vec())]);
 					m.clear();
 				});
 			});
