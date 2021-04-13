@@ -38,7 +38,7 @@ pub mod pallet {
 		v0::{Error as XcmError, ExecuteXcm, Junction, MultiLocation, SendXcm, Xcm},
 		VersionedXcm,
 	};
-	use xcm_executor::traits::LocationConversion;
+	use xcm_executor::traits::Convert;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -58,7 +58,7 @@ pub mod pallet {
 		type SendXcmOrigin: EnsureOrigin<Self::Origin>;
 		/// Utility for converting from the signed origin (of type `Self::AccountId`) into a sensible
 		/// `MultiLocation` ready for passing to the XCM interpreter.
-		type AccountIdConverter: LocationConversion<Self::AccountId>;
+		type AccountIdConverter: Convert<MultiLocation, Self::AccountId>;
 	}
 
 	#[pallet::hooks]
@@ -133,7 +133,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Execute an XCM message locally. Returns `DispatchError` if failed.
 		pub fn execute_xcm(origin: T::AccountId, xcm: Xcm) -> DispatchResult {
-			let xcm_origin = T::AccountIdConverter::try_into_location(origin)
+			let xcm_origin = T::AccountIdConverter::reverse(origin)
 				.map_err(|_| Error::<T>::BadXcmOrigin)?;
 			let hash = T::Hashing::hash(&xcm.encode());
 			let event = match T::XcmExecutor::execute_xcm(xcm_origin, xcm) {
