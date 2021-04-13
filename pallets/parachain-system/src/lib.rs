@@ -182,7 +182,7 @@ decl_module! {
 		/// if the appropriate time has come.
 		#[weight = (0, DispatchClass::Mandatory)]
 		// TODO: This weight should be corrected.
-		fn set_validation_data(origin, data: ParachainInherentData) -> DispatchResultWithPostInfo {
+		pub fn set_validation_data(origin, data: ParachainInherentData) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 			assert!(
 				!ValidationData::exists(),
