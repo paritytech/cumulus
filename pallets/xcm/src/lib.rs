@@ -36,13 +36,7 @@ pub mod pallet {
 
 	/// The module configuration trait.
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
-		/// The overarching event type.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-	}
-
-	#[pallet::event]
-	pub enum Event<T: Config> {}
+	pub trait Config: frame_system::Config {}
 
 	#[pallet::error]
 	pub enum Error<T> {}
