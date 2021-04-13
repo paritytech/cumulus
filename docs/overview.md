@@ -42,7 +42,8 @@ By the time a Parachain block filters up to the Relay Chain, it has gone through
 Together, a PoVBlock contains witness data for Validators to apply their registered state transition function (recall the WASM binary) and verify the outcome of a block's state transitions. Similarly, when Validators author blocks for the Relay Chain, they further compress their data into Candidate Receipts.
 
 
-<img src="/docs/images/cumulus-figure-1.png" alt="figure1">
+<img src="/docs/figure 1.png" alt="figure1">
+
 **Figure 1:** Flow from Collator block to PoVBlock to Candidate Receipt
 
 
@@ -51,7 +52,8 @@ Parachains maintain consensus with the Relay Chain by executing the finalized bl
 Using the `validate_block` function, implemented as a pallet, Cumulus constructs a partial trie from the PoVBlock witness data and runs through the same series of checks Parachain Validators do in Figure 1. Once state transitions have been validated, Cumulus executes the block by redirecting all host-related storage functions to use values from the partial trie. 
 
 
-<img src="/docs/images/figure 2.png" alt="figure2">
+<img src="/docs/figure 2.png" alt="figure2">
+
 **Figure 2:** Finalized Relay block to PoVBlock to Parachain block
 
 
