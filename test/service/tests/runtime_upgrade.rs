@@ -33,8 +33,13 @@ async fn test_runtime_upgrade(task_executor: TaskExecutor) {
 	let para_id = ParaId::from(100);
 
 	// start alice
-	let alice =
-		polkadot_test_service::run_validator_node(task_executor.clone(), Alice, || {}, vec![]);
+	let alice = polkadot_test_service::run_validator_node(
+		task_executor.clone(),
+		Alice,
+		|| {},
+		vec![],
+		None,
+	);
 
 	// start bob
 	let bob = polkadot_test_service::run_validator_node(
@@ -42,6 +47,7 @@ async fn test_runtime_upgrade(task_executor: TaskExecutor) {
 		Bob,
 		|| {},
 		vec![alice.addr.clone()],
+		None,
 	);
 
 	// register parachain
