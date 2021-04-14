@@ -82,14 +82,6 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	transaction_version: 1,
 };
 
-#[test]
-fn authorize_brick() {
-	let h = <BlakeTwo256 as sp_core::Hasher>::hash(&[0][..]);
-	let c = Call::ParachainSystem(cumulus_pallet_parachain_system::Call::authorize_upgrade(h));
-	let e = codec::Encode::encode(&c);
-	panic!("{}", hex::encode(&e[..]));
-}
-
 pub const MILLISECS_PER_BLOCK: u64 = 6000;
 
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
