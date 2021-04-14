@@ -84,7 +84,9 @@ async fn test_runtime_upgrade(task_executor: TaskExecutor) {
 	}
 
 	// schedule runtime upgrade
-	charlie.schedule_upgrade().await.unwrap();
+	charlie.schedule_upgrade(cumulus_test_runtime_upgrade::WASM_BINARY.unwrap().to_vec())
+		.await
+		.unwrap();
 
 	while let Some(notification) = import_notification_stream.next().await {
 		if notification.is_new_best {
