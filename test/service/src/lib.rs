@@ -173,6 +173,7 @@ where
 		} else {
 			polkadot_service::IsCollator::No
 		},
+		None,
 	)
 	.map_err(|e| match e {
 		polkadot_service::Error::Sub(x) => x,
@@ -643,5 +644,24 @@ pub fn construct_extrinsic(
 		caller.public().into(),
 		runtime::Signature::Sr25519(signature.clone()),
 		extra.clone(),
+	)
+}
+
+/// Run a relay-chain validator node.
+///
+/// This is essentially a wrapper around
+/// [`run_validator_node`](polkadot_test_service::run_validator_node).
+pub fn run_relay_chain_validator_node(
+	task_executor: TaskExecutor,
+	key: Sr25519Keyring,
+	storage_update_func: impl Fn(),
+	boot_nodes: Vec<MultiaddrWithPeerId>,
+) -> polkadot_test_service::PolkadotTestNode {
+	polkadot_test_service::run_validator_node(
+		task_executor,
+		key,
+		storage_update_func,
+		boot_nodes,
+		Some(cumulus_test_relay_validation_worker_provider::VALIDATION_WORKER.into()),
 	)
 }
