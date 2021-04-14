@@ -32,7 +32,7 @@ use sp_runtime::traits::{BlakeTwo256, Hash};
 use sp_inherents::{InherentData, InherentIdentifier, ProvideInherent};
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage,
-	dispatch::{DispatchResult, DispatchError, DispatchResultWithPostInfo},
+	dispatch::{DispatchResult, DispatchError, DispatchResultWithPostInfo, PaysFee},
 	ensure, storage,
 	traits::Get,
 	weights::{DispatchClass, Weight, PostDispatchInfo, Pays},
@@ -258,7 +258,7 @@ decl_module! {
 		}
 
 		#[weight = 1_000_000]
-		fn enact_authorized_upgrade(origin, code: Vec<u8>) {
+		fn enact_authorized_upgrade(origin, code: Vec<u8>) -> DispatchResultWithPostInfo {
 			// No ensure origin on purpose. We validate by checking the code vs hash in storage.
 			let required_hash = AuthorizedUpgrade::<T>::get()
 				.ok_or(Error::<T>::NothingAuthorized)?;
@@ -266,6 +266,7 @@ decl_module! {
 			ensure!(actual_hash == required_hash, Error::<T>::Unauthorized);
 			Self::set_code_impl(code)?;
 			AuthorizedUpgrade::<T>::kill();
+			Ok(Pays::No.into())
 		}
 
 		fn on_finalize() {
