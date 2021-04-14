@@ -258,7 +258,7 @@ decl_module! {
 		}
 
 		#[weight = 1_000_000]
-		fn enact_authorized_upgrade(origin, code: Vec<u8>) -> DispatchResultWithPostInfo {
+		fn enact_authorized_upgrade(_origin, code: Vec<u8>) -> DispatchResultWithPostInfo {
 			// No ensure origin on purpose. We validate by checking the code vs hash in storage.
 			let required_hash = AuthorizedUpgrade::<T>::get()
 				.ok_or(Error::<T>::NothingAuthorized)?;
