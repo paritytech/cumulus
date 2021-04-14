@@ -37,6 +37,7 @@ use sp_keyring::Sr25519Keyring;
 use sp_keystore::{testing::KeyStore, SyncCryptoStore, SyncCryptoStorePtr};
 use sp_runtime::RuntimeAppPublic;
 use std::collections::BTreeMap;
+use parking_lot::Mutex;
 
 fn check_error(error: crate::BoxedError, check_error: impl Fn(&BlockAnnounceError) -> bool) {
 	let error = *error
@@ -218,7 +219,7 @@ fn check_signer_is_legit_validator() {
 	let (mut validator, api) = make_validator_and_api();
 
 	let (signed_statement, header) = block_on(make_gossip_message_and_header_using_genesis(api, 1));
-	let data = BlockAnnounceData::try_from(signed_statement)
+	let data = BlockAnnounceData::try_from(&signed_statement)
 		.unwrap()
 		.encode();
 
@@ -232,7 +233,7 @@ fn check_statement_is_correctly_signed() {
 
 	let (signed_statement, header) = block_on(make_gossip_message_and_header_using_genesis(api, 0));
 
-	let mut data = BlockAnnounceData::try_from(signed_statement)
+	let mut data = BlockAnnounceData::try_from(&signed_statement)
 		.unwrap()
 		.encode();
 
@@ -295,7 +296,7 @@ fn check_header_match_candidate_receipt_header() {
 
 	let (signed_statement, mut header) =
 		block_on(make_gossip_message_and_header_using_genesis(api, 0));
-	let data = BlockAnnounceData::try_from(signed_statement)
+	let data = BlockAnnounceData::try_from(&signed_statement)
 		.unwrap()
 		.encode();
 	header.number = 300;
@@ -322,7 +323,7 @@ fn relay_parent_not_imported_when_block_announce_is_processed() {
 
 		let (signed_statement, header) = make_gossip_message_and_header(api, block.hash(), 0).await;
 
-		let data = BlockAnnounceData::try_from(signed_statement)
+		let data = BlockAnnounceData::try_from(&signed_statement)
 			.unwrap()
 			.encode();
 
@@ -349,7 +350,8 @@ fn relay_parent_not_imported_when_block_announce_is_processed() {
 #[test]
 fn block_announced_without_statement_and_block_only_backed() {
 	block_on(async move {
-		let mut validator = make_validator_and_api().0;
+		let (mut validator, api) = make_validator_and_api();
+		api.data.lock().has_pending_availability = true;
 
 		let header = default_header();
 
@@ -365,10 +367,11 @@ fn block_announced_without_statement_and_block_only_backed() {
 #[derive(Default)]
 struct ApiData {
 	validators: Vec<ValidatorId>,
+	has_pending_availability: bool,
 }
 
 struct TestApi {
-	data: Arc<ApiData>,
+	data: Arc<Mutex<ApiData>>,
 	relay_client: Arc<PClient>,
 	relay_backend: Arc<PBackend>,
 }
@@ -379,9 +382,10 @@ impl TestApi {
 		let relay_backend = builder.backend();
 
 		Self {
-			data: Arc::new(ApiData {
+			data: Arc::new(Mutex::new(ApiData {
 				validators: vec![Sr25519Keyring::Alice.public().into()],
-			}),
+				has_pending_availability: false,
+			})),
 			relay_client: Arc::new(builder.build()),
 			relay_backend,
 		}
@@ -390,7 +394,7 @@ impl TestApi {
 
 #[derive(Default)]
 struct RuntimeApi {
-	data: Arc<ApiData>,
+	data: Arc<Mutex<ApiData>>,
 }
 
 impl ProvideRuntimeApi<PBlock> for TestApi {
@@ -407,7 +411,7 @@ impl ProvideRuntimeApi<PBlock> for TestApi {
 sp_api::mock_impl_runtime_apis! {
 	impl ParachainHost<PBlock> for RuntimeApi {
 		fn validators(&self) -> Vec<ValidatorId> {
-			self.data.validators.clone()
+			self.data.lock().validators.clone()
 		}
 
 		fn validator_groups(&self) -> (Vec<Vec<ValidatorIndex>>, GroupRotationInfo<BlockNumber>) {
@@ -438,13 +442,19 @@ sp_api::mock_impl_runtime_apis! {
 		}
 
 		fn candidate_pending_availability(&self, _: ParaId) -> Option<CommittedCandidateReceipt<PHash>> {
-			Some(CommittedCandidateReceipt {
-				descriptor: CandidateDescriptor {
-					para_head: polkadot_parachain::primitives::HeadData(default_header().encode()).hash(),
+			if self.data.lock().has_pending_availability {
+				Some(CommittedCandidateReceipt {
+					descriptor: CandidateDescriptor {
+						para_head: polkadot_parachain::primitives::HeadData(
+							default_header().encode(),
+						).hash(),
+						..Default::default()
+					},
 					..Default::default()
-				},
-				..Default::default()
-			})
+				})
+			} else {
+				None
+			}
 		}
 
 		fn candidate_events(&self) -> Vec<CandidateEvent<PHash>> {
