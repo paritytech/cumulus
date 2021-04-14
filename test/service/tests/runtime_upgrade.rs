@@ -90,7 +90,7 @@ async fn test_runtime_upgrade(task_executor: TaskExecutor) {
 		if notification.is_new_best {
 			let res = charlie.client.runtime_api()
 				.has_upgraded(&BlockId::Hash(notification.hash));
-			if matches!(res, Ok(true)) {
+			if res.unwrap_or(false) {
 				break;
 			}
 		}
