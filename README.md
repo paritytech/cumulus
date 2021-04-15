@@ -1,6 +1,6 @@
 # Cumulus :cloud:
 
-Cumulus is a [Parachain development kit (PDK)](https://wiki.polkadot.network/docs/en/build-pdk). It is a set of tools used to create Polkadot compatible [Parachains](https://substrate.dev/docs/en/knowledgebase/getting-started/glossary#parachain) using the [Substrate development framework](http://substrate.dev/).
+Cumulus is a [Parachain development kit (PDK)](https://wiki.polkadot.network/docs/en/build-pdk). It is a set of tools used to create Polkadot compatible [Parachains](https://substrate.dev/docs/en/knowledgebase/getting-started/glossary#parachain) using the [Substrate development framework](https://substrate.dev/docs/en/knowledgebase/getting-started/glossary#frame).
 
 You can learn more about Cumulus by reading the [Overview](docs/overview.md)
 
@@ -14,7 +14,7 @@ This tutorial will guide you through the steps needed to launch and connect a Pa
 Use Polkadot to launch a Relay Chain node. This tutorial uses [Rococo](https://polkadot.network/introducing-rococo-polkadots-parachain-testnet/), a public testnet specifically for Parachains. 
 
 ```bash
-# launch a relay chain Node
+# launch a relay chain node
 git clone https://github.com/paritytech/polkadot.git
 cd polkadot
 git fetch
