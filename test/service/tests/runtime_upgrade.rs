@@ -15,7 +15,7 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
 use cumulus_primitives_core::ParaId;
-use cumulus_test_service::{initial_head_data, Keyring::*};
+use cumulus_test_service::{initial_head_data, run_relay_chain_validator_node, Keyring::*};
 use futures::join;
 use sc_service::TaskExecutor;
 use sc_client_api::client::BlockchainEvents;
@@ -33,22 +33,11 @@ async fn test_runtime_upgrade(task_executor: TaskExecutor) {
 	let para_id = ParaId::from(100);
 
 	// start alice
-	let alice = polkadot_test_service::run_validator_node(
-		task_executor.clone(),
-		Alice,
-		|| {},
-		vec![],
-		None,
-	);
+	let alice = run_relay_chain_validator_node(task_executor.clone(), Alice, || {}, vec![]);
 
 	// start bob
-	let bob = polkadot_test_service::run_validator_node(
-		task_executor.clone(),
-		Bob,
-		|| {},
-		vec![alice.addr.clone()],
-		None,
-	);
+	let bob =
+		run_relay_chain_validator_node(task_executor.clone(), Bob, || {}, vec![alice.addr.clone()]);
 
 	// register parachain
 	alice
