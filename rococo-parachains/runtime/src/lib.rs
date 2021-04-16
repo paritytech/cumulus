@@ -64,6 +64,7 @@ use xcm_builder::{
 	AllowUnpaidExecutionFrom, ParentAsSuperuser,
 };
 use xcm_executor::{Config, XcmExecutor};
+use pallet_xcm::XcmPassthough;
 
 pub type SessionHandlers = ();
 
@@ -302,6 +303,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	// Native signed account converter; this just converts an `AccountId32` origin into a normal
 	// `Origin::Signed` origin of the same 32-byte value.
 	SignedAccountId32AsNative<RococoNetwork, Origin>,
+	// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
+	XcmPassthough<Origin>,
 );
 
 parameter_types! {
