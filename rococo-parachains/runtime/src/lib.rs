@@ -388,13 +388,15 @@ parameter_types! {
 	pub const UnitBody: BodyId = BodyId::Unit;
 }
 
+/// A majority of the Unit body from Rococo over XCM is our required administration origin.
+pub type AdminOrigin = EnsureXcm<IsMajorityOfBody<RococoLocation, UnitBody>>;
+
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
 	type Balance = u64;
 	type AssetId = u32;
 	type Currency = Balances;
-	/// A majority of the Unit body from Rococo over XCM is our required administration origin.
-	type ForceOrigin = EnsureXcm<IsMajorityOfBody<RococoLocation, UnitBody>>;
+	type ForceOrigin = AdminOrigin;
 	type AssetDeposit = AssetDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
