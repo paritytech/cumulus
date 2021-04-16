@@ -32,7 +32,7 @@ use sp_runtime::traits::{BlakeTwo256, Hash};
 use sp_inherents::{InherentData, InherentIdentifier, ProvideInherent};
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage,
-	dispatch::{DispatchResult, DispatchError, DispatchResultWithPostInfo, PaysFee},
+	dispatch::{DispatchResult, DispatchError, DispatchResultWithPostInfo},
 	ensure, storage,
 	traits::Get,
 	weights::{DispatchClass, Weight, PostDispatchInfo, Pays},
