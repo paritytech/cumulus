@@ -1,0 +1,24 @@
+version: '3.7'
+services:
+  tick:
+    image: cumulus:latest
+    command: >
+      --chain tick
+      --validator
+
+  trick:
+    image: cumulus:latest
+    command: >
+      --chain trick
+      --validator
+
+  track:
+    image: cumulus:latest
+    command: >
+      --chain track
+      --validator
+
+volumes:
+  collator-tick: {}
+  collator-trick: {}
+  collator-track: {}

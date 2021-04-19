@@ -45,6 +45,9 @@ xcm = { git = "https://github.com/paritytech/polkadot", default-features = false
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
 
+# Local dependencies
+pallet-assets = { default-features = false, path = '../pallets/assets', version = '3.0.0' }
+
 [build-dependencies]
 substrate-wasm-builder = "3.0.0"
 
@@ -81,4 +84,7 @@ std = [
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
+
+	# Local dependencies
+	"pallet-assets/std"
 ]

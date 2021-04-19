@@ -1,0 +1,39 @@
+[package]
+authors = ['willesxm']
+description = 'FRAME pallet template for defining custom runtime logic.'
+edition = '2018'
+homepage = 'https://github.com/willeslau/substrate-study'
+license = 'Unlicense'
+name = 'pallet-assets'
+readme = 'README.md'
+repository = 'https://github.com/willeslau/substrate-study'
+version = '3.0.0'
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[dependencies]
+serde = { version = "1.0.119", optional = true, features = ["derive"]  }
+codec = { default-features = false, features = ['derive'], package = 'parity-scale-codec', version = '2.0.0' }
+frame-system = { default-features = false, git = 'https://github.com/paritytech/substrate.git', branch = 'rococo-v1', version = '3.0.0' }
+frame-support = { default-features = false, git = 'https://github.com/paritytech/substrate.git', branch = 'rococo-v1', version = '3.0.0' }
+frame-benchmarking = { default-features = false, git = 'https://github.com/paritytech/substrate.git', branch = 'rococo-v1', optional = true, version = '3.0.0' }
+
+traits = { path = '../traits', default-features = false, version = '3.0.0'}
+
+[dev-dependencies]
+sp-core = { default-features = false, git = 'https://github.com/paritytech/substrate.git', branch = 'rococo-v1', version = '3.0.0' }
+sp-io = { default-features = false, git = 'https://github.com/paritytech/substrate.git', branch = 'rococo-v1', version = '3.0.0' }
+sp-runtime = { default-features = false, git = 'https://github.com/paritytech/substrate.git', branch = 'rococo-v1', version = '3.0.0' }
+
+[features]
+default = ['std']
+std = [
+	'codec/std',
+	'frame-support/std',
+	'frame-system/std',
+	'frame-benchmarking/std',
+	'serde/std'
+]
+runtime-benchmarks = ['frame-benchmarking']
+

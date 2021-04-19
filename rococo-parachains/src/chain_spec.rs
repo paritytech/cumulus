@@ -142,5 +142,15 @@ fn testnet_genesis(
 		},
 		pallet_sudo: parachain_runtime::SudoConfig { key: root_key },
 		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },
+		pallet_assets: parachain_runtime::AssetsConfig {
+			assets: vec![
+				(get_account_id_from_seed::<sr25519::Public>("Alice"), 1000_000_000_000_000_000, 100),
+				(get_account_id_from_seed::<sr25519::Public>("Alice"), 1000000000000000000, 60),
+				(get_account_id_from_seed::<sr25519::Public>("Alice"), 1000000000000000000, 5),
+				(get_account_id_from_seed::<sr25519::Public>("Alice"), 1000000000000000000, 600),
+				(get_account_id_from_seed::<sr25519::Public>("Alice"), 1000000000000000000, 20000),
+			],
+		},
+
 	}
 }

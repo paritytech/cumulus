@@ -66,6 +66,9 @@ use xcm_executor::{
 	Config, XcmExecutor,
 };
 
+// Local imports
+pub use pallet_assets;
+
 pub type SessionHandlers = ();
 
 impl_opaque_keys! {
@@ -301,6 +304,12 @@ impl cumulus_spambot::Config for Runtime {
 	type XcmSender = XcmHandler;
 }
 
+impl pallet_assets::Config for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type AssetId = AssetId;
+}
+
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
@@ -318,6 +327,9 @@ construct_runtime! {
 		XcmHandler: cumulus_pallet_xcm_handler::{Pallet, Call, Event<T>, Origin},
 
 		Spambot: cumulus_spambot::{Pallet, Call, Storage, Event<T>} = 99,
+
+		// Local dependencies
+		Assets: pallet_assets::{Pallet, Call, Storage, Config<T>, Event<T>},
 	}
 }
 

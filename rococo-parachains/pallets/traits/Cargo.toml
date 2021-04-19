@@ -1,0 +1,20 @@
+[package]
+authors = ['Konomi Dev']
+description = 'traits in runtime'
+edition = '2018'
+license = 'Unlicense'
+name = 'traits'
+version = '3.0.0'
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[dependencies]
+sp-std = { default-features = false, git = 'https://github.com/paritytech/substrate.git', branch = 'rococo-v1', version = '3.0.0' }
+frame-support = { default-features = false, git = 'https://github.com/paritytech/substrate.git', branch = 'rococo-v1',  version = '3.0.0' }
+
+[features]
+default = ['std']
+std = [
+    'sp-std/std',
+]

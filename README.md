@@ -58,6 +58,13 @@ Once the executable is built, launch collators for each parachain (repeat once e
 
 ```
 ./target/release/rococo-collator --chain $CHAIN --validator
+./target/release/rococo-collator --chain tick --validator
+./target/release/rococo-collator --chain trick --validator
+./target/release/rococo-collator --chain track --validator
+
+docker run -it --rm cumulus:latest --chain tick --validator --name konomi-tick
+docker run -it --rm cumulus:latest --chain trick --validator --name konomi-trick
+docker run -it --rm cumulus:latest --chain track --validator --name konomi-track
 ```
 
 ## Parachains
