@@ -64,7 +64,7 @@ use xcm_builder::{
 	UsingComponents,
 };
 use xcm_executor::{Config, XcmExecutor};
-use pallet_xcm::{XcmPassthough, EnsureXcm, IsMajorityOfBody};
+use pallet_xcm::{XcmPassthrough, EnsureXcm, IsMajorityOfBody};
 
 pub type SessionHandlers = ();
 
@@ -304,7 +304,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	// `Origin::Signed` origin of the same 32-byte value.
 	SignedAccountId32AsNative<RococoNetwork, Origin>,
 	// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
-	XcmPassthough<Origin>,
+	XcmPassthrough<Origin>,
 );
 
 parameter_types! {
