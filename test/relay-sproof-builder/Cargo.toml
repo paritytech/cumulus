@@ -9,12 +9,12 @@ edition = '2018'
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = [ "derive" ] }
 
 # Substrate dependencies
-sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "apopiak-xcm-origin" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "apopiak-xcm-origin" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "apopiak-xcm-origin" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "apopiak-xcm-origin" }
 
 # Cumulus dependencies
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }

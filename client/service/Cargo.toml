@@ -11,20 +11,20 @@ cumulus-client-collator = { path = "../collator" }
 cumulus-primitives-core = { path = "../../primitives/core" }
 
 # Substrate dependencies
-sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "apopiak-xcm-origin" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "apopiak-xcm-origin" }
 
 # Other deps
 futures = "0.3.6"

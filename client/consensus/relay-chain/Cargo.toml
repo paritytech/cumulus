@@ -7,18 +7,18 @@ edition = "2018"
 
 [dependencies]
 # Substrate deps
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
 
 # Polkadot dependencies
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "apopiak-xcm-origin" }
 
 # Cumulus dependencies
 cumulus-client-consensus-common = { path = "../common" }

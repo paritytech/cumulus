@@ -12,14 +12,14 @@ rand = { version = "0.8.3", default-features = false }
 rand_chacha = { version = "0.3.0", default-features = false }
 
 # Substrate Dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "apopiak-xcm-origin" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "apopiak-xcm-origin" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "apopiak-xcm-origin" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "apopiak-xcm-origin" }
 
 # Polkadot Dependencies
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "apopiak-xcm-origin" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "apopiak-xcm-origin" }
 
 # Cumulus Dependencies
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }

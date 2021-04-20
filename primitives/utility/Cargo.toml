@@ -6,16 +6,16 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "apopiak-xcm-origin" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "apopiak-xcm-origin" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "apopiak-xcm-origin" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "apopiak-xcm-origin" }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "apopiak-xcm-origin" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "apopiak-xcm-origin" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "apopiak-xcm-origin" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "apopiak-xcm-origin" }
 
 cumulus-primitives-core = { path = "../core", default-features = false }
 

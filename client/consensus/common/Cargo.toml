@@ -7,20 +7,20 @@ edition = "2018"
 
 [dependencies]
 # Substrate deps
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-trie = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
 
 # Polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "apopiak-xcm-origin" }
+polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "apopiak-xcm-origin" }
 
 # Other deps
 futures = { version = "0.3.8", features = ["compat"] }
@@ -32,7 +32,7 @@ dyn-clone = "1.0.4"
 
 [dev-dependencies]
 # Substrate deps
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
 
 # Cumulus dependencies
 cumulus-test-runtime = { path = "../../../test/runtime" }

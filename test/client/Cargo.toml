@@ -5,22 +5,22 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 
 [dependencies]
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-test-primitives = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-test-primitives = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "apopiak-xcm-origin" }
 
 # Cumulus deps
 cumulus-test-runtime = { path = "../runtime" }
@@ -30,7 +30,7 @@ cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent" }
 
 # Polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "apopiak-xcm-origin" }
 
 # Other deps
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = [ "derive" ] }
