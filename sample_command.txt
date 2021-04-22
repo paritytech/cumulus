@@ -1,0 +1,61 @@
+
+
+
+docker run --rm -p 30333:30333 -p 9933:9933 -p 9944:9944 -v `pwd`/rococo-local-cfde.json:/konomi/rococo-local-cfde.json relay:latest --chain /konomi/rococo-local-cfde.json --ws-external --rpc-external --alice --rpc-cors all --name "KonomiTest-0" -d cumulus_relay0
+
+docker run --rm -p 30334:30333 -p 9934:9933 -p 9945:9944 -v `pwd`/rococo-local-cfde.json:/konomi/rococo-local-cfde.json relay:latest --chain /konomi/rococo-local-cfde.json --ws-external --rpc-external --bob --rpc-cors all --name "KonomiTest-1" -d cumulus_relay1
+
+
+docker run --rm -p 30335:30333 -p 9935:9933 -p 9946:9944 -v `pwd`/rococo-local-cfde.json:/konomi/rococo-local-cfde.json rococo-collator:latest \
+	--collator \
+	--tmp \
+	--ws-external \
+	--rpc-external \
+	--parachain-id 403 \
+	--alice \
+	-- \
+	--execution wasm \
+	--chain /konomi/rococo-local-cfde.json \
+	--ws-external \
+	--rpc-external
+
+docker run --rm -p 30336:30333 -p 9936:9933 -p 9947:9944 -v `pwd`/rococo-local-cfde.json:/konomi/rococo-local-cfde.json rococo-collator:latest \
+	--collator \
+	--tmp \
+	--ws-external \
+	--rpc-external \
+	--parachain-id 403 \
+	--bob \
+	-- \
+	--execution wasm \
+	--chain /konomi/rococo-local-cfde.json \
+	--ws-external \
+	--rpc-external
+
+
+docker run --rm -p 30337:30333 -p 9937:9933 -p 9948:9944 -v `pwd`/rococo-local-cfde.json:/konomi/rococo-local-cfde.json rococo-collator:latest \
+	--tmp \
+	--ws-external \
+	--rpc-external \
+	--parachain-id 403 \
+	-- \
+	--execution wasm \
+	--chain /konomi/rococo-local-cfde.json \
+	--ws-external \
+	--rpc-external
+
+
+./target/release/rococo-collator export-genesis-state --parachain-id 403 > genesis-403-state
+./target/release/rococo-collator export-genesis-wasm > genesis-403-wasm
+
+
+docker run --rm --entrypoint bash -v `pwd`/rococo-local-cfde.json:/konomi/rococo-local-cfde.json parachain-collator:latest
+
+
+./target/release/rococo-collator --collator --tmp --parachain-id 200 --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30335
+
+# Collator2
+./target/release/rococo-collator --collator --tmp --parachain-id 200 --port 40336 --ws-port 9947 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30336
+
+# Parachain Full Node 1
+./target/release/rococo-collator --tmp --parachain-id 200 --port 40337 --ws-port 9948 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337

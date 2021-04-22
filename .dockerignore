@@ -1,5 +1,6 @@
 .git
 **/target/
+!target/release/rococo-collator
 **/*.txt
 **/*.md
 /docker/
