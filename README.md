@@ -117,7 +117,7 @@ cargo build --release
 ./target/release/rococo-collator --collator --tmp --parachain-id 403 --port 40336 --ws-port 9947 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30336
 
 # Parachain Full Node 1
-./target/release/rococo-collator --tmp --parachain-id <parachain_id_u32_type_range> --port 40337 --ws-port 9948 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337
+./target/release/rococo-collator --tmp --parachain-id 403 --port 40337 --ws-port 9948 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337
 ```
 ### Register the parachain
 ![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
