@@ -21,8 +21,8 @@ pub mod pallet {
 	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
 	use frame_support::codec::{Encode, Decode};
-	use frame_system::pallet;
-	use frame_support::sp_runtime::traits::{MaybeDisplay, One, AtLeast32BitUnsigned, Zero};
+	use frame_system::{pallet, Origin};
+	use frame_support::sp_runtime::traits::{MaybeDisplay, One, AtLeast32BitUnsigned, Zero, Bounded};
 	use frame_support::sp_runtime::sp_std::fmt::Debug;
 	use frame_support::sp_runtime::print;
 	use frame_support::sp_runtime::{FixedU128, FixedPointNumber, FixedPointOperand};
@@ -33,10 +33,9 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-		// /// The units in which we record balances.
 		type Balance: Member + Parameter + FixedPointOperand + AtLeast32BitUnsigned + Default + Copy + MaybeSerializeDeserialize;
-		// /// The arithmetic type of asset identifier.
 		type AssetId: Parameter + AtLeast32BitUnsigned + Default + Copy + MaybeSerializeDeserialize;
+
 	}
 
 	#[pallet::pallet]
@@ -49,6 +48,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T:Config> where {
 		/// Some assets were issued. \[asset_id, owner, total_supply\]
+		AssetIssued(T::AssetId),
 		Issued(T::AssetId, T::AccountId, T::Balance),
 		/// Some assets were transferred. \[asset_id, from, to, amount\]
 		Transferred(T::AssetId, T::AccountId, T::AccountId, T::Balance),
@@ -81,37 +81,6 @@ pub mod pallet {
 	#[pallet::getter(fn owner)]
 	pub(super) type Owner<T: Config> = StorageValue<_, T::AccountId, ValueQuery>;
 
-	#[pallet::genesis_config]
-	pub struct GenesisConfig<T: Config> {
-		pub assets: Vec<(T::AccountId, T::Balance, u64)>,
-	}
-
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
-		fn default() -> Self {
-			Self {
-				assets: Default::default(),
-			}
-		}
-	}
-
-	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-		fn build(&self) {
-			// debug::info!("in asset genesis config");
-			for asset in self.assets.iter() {
-				// debug::info!("processing tuple: {:?}", asset);
-				let (account, amount, price) = asset;
-				<Pallet<T>>::_issue(account.clone(), amount.clone());
-				let to_account = <Owner<T>>::get();
-				let asset_id = <NextAssetId<T>>::get() - 1u32.into();
-				<Pallet<T>>::transfer(account.clone(), asset_id, to_account, 500000u32.into());
-				<Pallet<T>>::_set_price(asset_id.clone(), FixedU128::saturating_from_integer(*price));
-			}
-		}
-	}
-
-
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
@@ -129,7 +98,25 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T:Config> Pallet<T> {
 		#[pallet::weight(1)]
-		pub fn issue(origin: OriginFor<T>, total: T::Balance) -> DispatchResultWithPostInfo {
+		pub fn issue_new_asset(origin: OriginFor<T>, price: FixedU128, #[pallet::compact] amount: T::Balance) -> DispatchResultWithPostInfo {
+			let origin = ensure_signed(origin)?;
+
+			let id = <NextAssetId<T>>::get();
+			// debug::info!("next asset id is {:?}", id);
+			<NextAssetId<T>>::mutate(|id| *id += One::one());
+			<Pallet<T>>::_set_price(id, price);
+
+			// TODO: remove this with the actual code, this is for testing only
+			<Balances<T>>::insert((id, origin.clone()), amount);
+
+			// debug::info!("amount {:?} issued to user {:?}", amount, origin);
+			Self::deposit_event(Event::AssetIssued(id));
+
+			Ok(().into())
+		}
+
+		#[pallet::weight(1)]
+		pub fn issue(origin: OriginFor<T>, #[pallet::compact] total: T::Balance) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 
 			let id = <NextAssetId<T>>::get();
@@ -138,17 +125,6 @@ pub mod pallet {
 
 			<Balances<T>>::insert((id, origin.clone()), total);
 			<TotalSupply<T>>::insert(id, total);
-
-			// debug
-			print("----> asset id, total balance");
-			let idn = TryInto::<u64>::try_into(id)
-				.ok()
-				.expect("id is u64");
-			print(idn);
-			let b = TryInto::<u128>::try_into(<Balances<T>>::get((id, origin.clone())))
-				.ok()
-				.expect("Balance is u128");
-			print(b as u64);
 
 			Self::deposit_event(Event::Issued(id, origin, total));
 
@@ -181,7 +157,7 @@ pub mod pallet {
 		pub fn transfer_asset(origin: OriginFor<T>,
 							  asset_id: T::AssetId,
 							  to_account: T::AccountId,
-							  amount: T::Balance
+							  #[pallet::compact] amount: T::Balance
 		) -> DispatchResultWithPostInfo {
 			let from_account = ensure_signed(origin)?;
 			return Self::transfer(from_account, asset_id, to_account, amount);
@@ -221,17 +197,6 @@ pub mod pallet {
 
 			<Balances<T>>::insert((id, account.clone()), total);
 			<TotalSupply<T>>::insert(id, total);
-
-			// debug
-			print("----> asset id, total balance");
-			let idn = TryInto::<u64>::try_into(id)
-				.ok()
-				.expect("id is u64");
-			print(idn);
-			let b = TryInto::<u128>::try_into(<Balances<T>>::get((id, account.clone())))
-				.ok()
-				.expect("Balance is u128");
-			print(b as u64);
 
 			Self::deposit_event(Event::Issued(id, account, total));
 

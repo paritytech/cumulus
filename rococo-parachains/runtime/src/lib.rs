@@ -329,7 +329,7 @@ construct_runtime! {
 		Spambot: cumulus_spambot::{Pallet, Call, Storage, Event<T>} = 99,
 
 		// Local dependencies
-		Assets: pallet_assets::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 	}
 }
 

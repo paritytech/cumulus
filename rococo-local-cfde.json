@@ -1,6 +1,6 @@
 {
-  "name": "Rococo Local Testnet",
-  "id": "rococo_local_testnet",
+  "name": "Rococo Konomi Testnet",
+  "id": "rococo_konomi_testnet",
   "chainType": "Local",
   "bootNodes": [],
   "telemetryEndpoints": null,
