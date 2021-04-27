@@ -305,19 +305,19 @@ parameter_types! {
 	pub const WeightPrice: (MultiLocation, u128) = (X1(Parent), 1_000);
 }
 
-macro_rules! contains_match_type {
-	( pub struct $n:ident: $t:ty = { $( $m:tt )* } ; ) => {
+macro_rules! match_type {
+	( pub type $n:ident: impl Contains<$t:ty> = { $phead:pat $( | $ptail:pat )* } ; ) => {
 		pub struct $n;
 		impl frame_support::traits::Contains<$t> for $n {
 			fn contains(l: &$t) -> bool {
-				matches!(l, $( $m )*)
+				matches!(l, $phead $( | $ptail )* )
 			}
 		}
 	}
 }
 
-contains_match_type! {
-	pub struct ParentOrParentsUnitPlurality: MultiLocation = {
+match_type! {
+	pub type ParentOrParentsUnitPlurality: impl Contains<MultiLocation> = {
 		X1(Parent) | X2(Parent, Plurality { id: BodyId::Unit, .. })
 	};
 }
@@ -414,19 +414,6 @@ impl pallet_assets::Config for Runtime {
 	type Freezer = ();
 	type Extra = ();
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
-}
-
-#[test]
-fn encode_call() {
-//	let alice: AccountId = hex_literal::hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").into();//alice
-	let bob: AccountId = hex_literal::hex!("8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48").into();//alice
-	use sp_runtime::traits::StaticLookup;
-	let addr = AccountIdLookup::<AccountId, ()>::unlookup(bob);
-	let c = Call::Assets(pallet_assets::Call::force_create(1u32, addr, true, 10));
-	println!("{}", hex::encode(codec::Encode::encode(&c)));
-	panic!();
-	//1f01030df001c000d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d0128
-	//1f0104008eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a480128
 }
 
 construct_runtime! {

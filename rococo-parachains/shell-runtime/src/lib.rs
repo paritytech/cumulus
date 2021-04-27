@@ -356,14 +356,6 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ChannelInfo = ParachainSystem;
 }
 
-#[test]
-fn encode_call() {
-	let h = hex_literal::hex!("fc7e3747d884321a9105791af1499c055c98b7b9461a7397250bba2168e4e93c").into();
-	let c = Call::ParachainSystem(cumulus_pallet_parachain_system::Call::authorize_upgrade(h));
-	println!("{}", hex::encode(codec::Encode::encode(&c)));
-	panic!();
-}
-
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
