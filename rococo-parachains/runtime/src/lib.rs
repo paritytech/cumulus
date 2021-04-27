@@ -333,7 +333,7 @@ impl Config for XcmConfig {
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
-	type Trader = FixedRateOfConcreteFungible<WeightPrice>;
+	type Trader = FixedRateOfConcreteFungible<WeightPrice, ()>;
 	type ResponseHandler = ();	// Don't handle responses for now.
 }
 
