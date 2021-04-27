@@ -248,7 +248,7 @@ parameter_types! {
 	pub const RocLocation: MultiLocation = X1(Parent);
 	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
-	pub Ancestry: MultiLocation = X1(Parachain { id: ParachainInfo::parachain_id().into() });
+	pub Ancestry: MultiLocation = X1(Parachain(ParachainInfo::parachain_id().into()));
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
