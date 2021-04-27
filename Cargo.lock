@@ -4789,6 +4789,7 @@ name = "pallet-assets"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#282d57c0745b530fe7a9ebaffcd6ac36c09d0554"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
