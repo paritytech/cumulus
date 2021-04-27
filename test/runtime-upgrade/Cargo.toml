@@ -1,5 +1,5 @@
 [package]
-name = "cumulus-test-runtime"
+name = "cumulus-test-runtime-upgrade"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
@@ -34,13 +34,13 @@ cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", def
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "rococo-v1" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
 
 [build-dependencies]
 substrate-wasm-builder = "3.0.0"
 
 [features]
-default = [ "std" ]
+default = [ "std", "upgrade" ]
 std = [
 	"codec/std",
 	"cumulus-pallet-parachain-system/std",

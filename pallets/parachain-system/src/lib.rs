@@ -258,7 +258,7 @@ decl_module! {
 		}
 
 		#[weight = 1_000_000]
-		fn enact_authorized_upgrade(origin, code: Vec<u8>) {
+		fn enact_authorized_upgrade(_origin, code: Vec<u8>) -> DispatchResultWithPostInfo {
 			// No ensure origin on purpose. We validate by checking the code vs hash in storage.
 			let required_hash = AuthorizedUpgrade::<T>::get()
 				.ok_or(Error::<T>::NothingAuthorized)?;
@@ -266,6 +266,7 @@ decl_module! {
 			ensure!(actual_hash == required_hash, Error::<T>::Unauthorized);
 			Self::set_code_impl(code)?;
 			AuthorizedUpgrade::<T>::kill();
+			Ok(Pays::No.into())
 		}
 
 		fn on_finalize() {
@@ -336,9 +337,14 @@ decl_module! {
 				maximum_channels,
 			);
 
-			// Note conversion to the OutboundHrmpMessage isn't needed since the data that
+			// Note conversion to the `OutboundHrmpMessage` isn't needed since the data that
 			// `take_outbound_messages` returns encodes equivalently.
-			// If the following code breaks, then we'll need to revisit that assumption.
+			//
+			// The following code is a smoke test to check that the `OutboundHrmpMessage` type
+			// doesn't accidentally change (e.g. by having a field added to it). If the following
+			// line breaks, then we'll need to revisit the assumption that the result of
+			// `take_outbound_messages` can be placed into `HRMP_OUTBOUND_MESSAGES` directly without
+			// a decode/encode round-trip.
 			let _ = OutboundHrmpMessage { recipient: ParaId::from(0), data: vec![] };
 
 			storage::unhashed::put(well_known_keys::HRMP_OUTBOUND_MESSAGES, &outbound_messages);
@@ -776,6 +782,10 @@ impl<T: Config> ProvideInherent for Module<T> {
 			.expect("validation function params are always injected into inherent data; qed");
 
 		Some(Call::set_validation_data(data))
+	}
+
+	fn is_inherent(call: &Self::Call) -> bool {
+		matches!(call, Call::set_validation_data(_))
 	}
 }
 
