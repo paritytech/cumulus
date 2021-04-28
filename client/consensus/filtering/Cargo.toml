@@ -22,7 +22,7 @@ sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "rococ
 sp-application-crypto = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 
 # Polkadot dependencies
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1", features = [ "real-overseer" ] }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 
 # Cumulus dependencies
 author-filter-api = { path = "./runtime-api" }

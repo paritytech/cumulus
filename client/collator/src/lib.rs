@@ -31,18 +31,19 @@ use sp_runtime::{
 use sp_state_machine::InspectState;
 
 use cumulus_client_consensus_common::ParachainConsensus;
-use polkadot_node_primitives::{Collation, CollationGenerationConfig, CollationResult};
+use polkadot_node_primitives::{
+	BlockData, Collation, CollationGenerationConfig, CollationResult, PoV,
+};
 use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
 use polkadot_overseer::OverseerHandler;
 use polkadot_primitives::v1::{
-	BlockData, BlockNumber as PBlockNumber, CollatorPair, Hash as PHash, HeadData, Id as ParaId,
-	PoV, UpwardMessage,
+	BlockNumber as PBlockNumber, CollatorPair, Hash as PHash, HeadData, Id as ParaId, UpwardMessage,
 };
 
 use codec::{Decode, Encode};
 use futures::{channel::oneshot, FutureExt};
-use std::sync::Arc;
 use parking_lot::Mutex;
+use std::sync::Arc;
 use tracing::Instrument;
 
 /// The logging target.
@@ -308,17 +309,15 @@ where
 
 		let block_hash = b.header().hash();
 		let collation = self.build_collation(b, block_hash, validation_data.relay_parent_number)?;
-		let pov_hash = collation.proof_of_validity.hash();
 
 		let (result_sender, signed_stmt_recv) = oneshot::channel();
 
 		self.wait_to_announce
 			.lock()
-			.wait_to_announce(block_hash, pov_hash, signed_stmt_recv);
+			.wait_to_announce(block_hash, signed_stmt_recv);
 
 		tracing::info!(
 			target: LOG_TARGET,
-			pov_hash = ?pov_hash,
 			?block_hash,
 			"🈴 Produced proof-of-validity candidate.",
 		);
@@ -401,9 +400,14 @@ mod tests {
 	use cumulus_test_runtime::{Block, Header};
 	use futures::{channel::mpsc, executor::block_on, StreamExt};
 	use polkadot_node_subsystem_test_helpers::ForwardSubsystem;
-	use polkadot_overseer::{AllSubsystems, Overseer};
+	use polkadot_overseer::{AllSubsystems, Overseer, HeadSupportsParachains};
 	use sp_consensus::BlockOrigin;
 	use sp_core::{testing::TaskExecutor, Pair};
+
+	struct AlwaysSupportsParachains;
+	impl HeadSupportsParachains for AlwaysSupportsParachains {
+		fn head_supports_parachains(&self, _head: &PHash) -> bool { true }
+	}
 
 	#[derive(Clone)]
 	struct DummyParachainConsensus {
@@ -429,6 +433,7 @@ mod tests {
 
 			self.client
 				.import(BlockOrigin::Own, block.clone())
+				.await
 				.expect("Imports the block");
 
 			Some(ParachainCandidate {
@@ -454,8 +459,13 @@ mod tests {
 
 		let all_subsystems =
 			AllSubsystems::<()>::dummy().replace_collation_generation(ForwardSubsystem(sub_tx));
-		let (overseer, handler) = Overseer::new(Vec::new(), all_subsystems, None, spawner.clone())
-			.expect("Creates overseer");
+		let (overseer, handler) = Overseer::new(
+			Vec::new(),
+			all_subsystems,
+			None,
+			AlwaysSupportsParachains,
+			spawner.clone(),
+		).expect("Creates overseer");
 
 		spawner.spawn("overseer", overseer.run().then(|_| async { () }).boxed());
 
