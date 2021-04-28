@@ -1301,34 +1301,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-client-consensus-filter"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "author-filter-api",
- "cumulus-client-consensus-common",
- "cumulus-primitives-core",
- "cumulus-primitives-parachain-inherent",
- "futures 0.3.14",
- "log",
- "parity-scale-codec",
- "parking_lot 0.9.0",
- "polkadot-service",
- "sc-client-api",
- "sp-api",
- "sp-application-crypto",
- "sp-block-builder",
- "sp-blockchain",
- "sp-consensus",
- "sp-core",
- "sp-inherents",
- "sp-keystore",
- "sp-runtime",
- "substrate-prometheus-endpoint",
- "tracing",
-]
-
-[[package]]
 name = "cumulus-client-consensus-relay-chain"
 version = "0.1.0"
 dependencies = [
@@ -4665,6 +4637,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "nimbus-consensus"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "author-filter-api",
+ "cumulus-client-consensus-common",
+ "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
+ "futures 0.3.14",
+ "log",
+ "parity-scale-codec",
+ "parking_lot 0.9.0",
+ "polkadot-service",
+ "sc-client-api",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-block-builder",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-core",
+ "sp-inherents",
+ "sp-keystore",
+ "sp-runtime",
+ "substrate-prometheus-endpoint",
+ "tracing",
+]
+
+[[package]]
 name = "nix"
 version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7757,7 +7757,6 @@ dependencies = [
  "author-filter-api",
  "cumulus-client-cli",
  "cumulus-client-collator",
- "cumulus-client-consensus-filter",
  "cumulus-client-network",
  "cumulus-client-service",
  "cumulus-primitives-core",
@@ -7769,6 +7768,7 @@ dependencies = [
  "hex-literal 0.2.1",
  "jsonrpc-core",
  "log",
+ "nimbus-consensus",
  "nix",
  "pallet-author-inherent",
  "pallet-sudo",

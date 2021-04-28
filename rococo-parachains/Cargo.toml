@@ -58,13 +58,13 @@ jsonrpc-core = "15.1.0"
 
 # Cumulus dependencies
 cumulus-client-cli = { path = "../client/cli" }
-cumulus-client-consensus-filter = { path = "../client/consensus/filtering" }
+nimbus-consensus = { path = "../client/consensus/nimbus" }
 cumulus-client-collator = { path = "../client/collator" }
 cumulus-client-service = { path = "../client/service" }
 cumulus-client-network = { path = "../client/network" }
 cumulus-primitives-core = { path = "../primitives/core" }
 pallet-author-inherent = { path = "../pallets/author-inherent" }
-author-filter-api = { path = "../client/consensus/filtering/runtime-api"}
+author-filter-api = { path = "../client/consensus/nimbus/runtime-api"}
 
 # Polkadot dependencies
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }

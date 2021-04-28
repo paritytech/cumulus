@@ -1,6 +1,6 @@
 [package]
-name = "cumulus-client-consensus-filter"
-description = "A family of slot-based consensus algorithms for cumulus parachains"
+name = "nimbus-consensus"
+description = "Client-side worker for the Nimbus family of slot-based consensus algorithms"
 version = "0.1.0"
 edition = "2018"
 
