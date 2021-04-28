@@ -500,12 +500,12 @@ impl<T: Config> Module<T> {
 			let max_weight = ReservedDmpWeightOverride::get().unwrap_or_else(T::ReservedDmpWeight::get);
 
 			let message_iter = downward_messages.into_iter()
-				.inspect(|m| dmq_head.extend_downward(m))
+				.inspect(|m| { dmq_head.extend_downward(m); })
 				.map(|m| (m.sent_at, m.msg));
 			weight_used += T::DmpMessageHandler::handle_dmp_messages(message_iter, max_weight);
-			LastDmqMqcHead::put(dmq_head);
+			LastDmqMqcHead::put(&dmq_head);
 
-			Self::deposit_event(RawEvent::DownwardMessagesProcessed(weight_used, mqc_head.0));
+			Self::deposit_event(RawEvent::DownwardMessagesProcessed(weight_used, dmq_head.0));
 		};
 
 		// After hashing each message in the message queue chain submitted by the collator, we should

@@ -26,7 +26,7 @@ use cumulus_primitives_core::relay_chain::BlockNumber as RelayBlockNumber;
 use codec::{Encode, Decode};
 use sp_runtime::traits::BadOrigin;
 use xcm::{VersionedXcm, v0::{Xcm, Junction, Outcome, ExecuteXcm}};
-use frame_support::{traits::Get, dispatch::Weight};
+use frame_support::dispatch::Weight;
 pub use pallet::*;
 
 #[frame_support::pallet]
@@ -84,21 +84,21 @@ pub mod pallet {
 pub struct UnlimitedDmpExecution<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 	fn handle_dmp_messages(
-		limit: Weight,
 		iter: impl Iterator<Item=(RelayBlockNumber, Vec<u8>)>,
+		limit: Weight,
 	) -> Weight {
 		let mut used = 0;
 		for (_sent_at, data) in iter {
-			let id = sp_io::hashing::twox_64(data);
+			let id = sp_io::hashing::twox_64(&data[..]);
 			let msg = VersionedXcm::<T::Call>::decode(&mut &data[..])
 				.map(Xcm::<T::Call>::try_from);
 			match msg {
-				Err(_) => Self::deposit_event(Event::InvalidFormat(id)),
-				Ok(Err(())) => Self::deposit_event(Event::UnsupportedVersion(id)),
+				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
+				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
 					let outcome = T::XcmExecutor::execute_xcm(Junction::Parent.into(), x, limit);
 					used += outcome.weight_used();
-					Self::deposit_event(Event::ExecutedDownward(id, outcome));
+					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
 				}
 			}
 		}
@@ -114,22 +114,22 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 pub struct LimitAndDropDmpExecution<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 	fn handle_dmp_messages(
-		limit: Weight,
 		iter: impl Iterator<Item=(RelayBlockNumber, Vec<u8>)>,
+		limit: Weight,
 	) -> Weight {
 		let mut used = 0;
 		for (_sent_at, data) in iter {
-			let id = sp_io::hashing::twox_64(data);
+			let id = sp_io::hashing::twox_64(&data[..]);
 			let msg = VersionedXcm::<T::Call>::decode(&mut &data[..])
 				.map(Xcm::<T::Call>::try_from);
 			match msg {
-				Err(_) => Self::deposit_event(Event::InvalidFormat(id)),
-				Ok(Err(())) => Self::deposit_event(Event::UnsupportedVersion(id)),
+				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
+				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
 					let weight_limit = limit.saturating_sub(used);
 					let outcome = T::XcmExecutor::execute_xcm(Junction::Parent.into(), x, weight_limit);
 					used += outcome.weight_used();
-					Self::deposit_event(Event::ExecutedDownward(id, outcome));
+					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
 				}
 			}
 		}
