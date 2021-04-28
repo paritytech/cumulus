@@ -83,9 +83,9 @@ pub mod pallet {
 /// uses. Use DmpQueue pallet for a more robust design.
 pub struct UnlimitedDmpExecution<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
-	fn handle_dmp_message_refs<'a, I: Iterator<Item=(RelayBlockNumber, &'a [u8])>>(
+	fn handle_dmp_messages(
 		limit: Weight,
-		iter: I,
+		iter: impl Iterator<Item=(RelayBlockNumber, Vec<u8>)>,
 	) -> Weight {
 		let mut used = 0;
 		for (_sent_at, data) in iter {
@@ -113,9 +113,9 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 /// probably isn't good for most production uses. Use DmpQueue pallet for a more robust design.
 pub struct LimitAndDropDmpExecution<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
-	fn handle_dmp_message_refs<'a, I: Iterator<Item=(RelayBlockNumber, &'a [u8])>>(
+	fn handle_dmp_messages(
 		limit: Weight,
-		iter: I,
+		iter: impl Iterator<Item=(RelayBlockNumber, Vec<u8>)>,
 	) -> Weight {
 		let mut used = 0;
 		for (_sent_at, data) in iter {

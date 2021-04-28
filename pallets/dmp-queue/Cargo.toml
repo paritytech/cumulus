@@ -13,6 +13,7 @@ rand_chacha = { version = "0.3.0", default-features = false }
 
 # Substrate Dependencies
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -30,6 +31,7 @@ std = [
 	"codec/std",
 	"log/std",
 	"sp-std/std",
+	"sp-io/std",
 	"sp-runtime/std",
 	"frame-support/std",
 	"frame-system/std",

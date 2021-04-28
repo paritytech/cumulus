@@ -21,11 +21,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use sp_std::convert::TryFrom;
-use cumulus_primitives_core::{ParaId, DmpMessageHandler, InboundDownwardMessage};
+use cumulus_primitives_core::relay_chain::BlockNumber as RelayBlockNumber;
+use cumulus_primitives_core::DmpMessageHandler;
 use codec::{Encode, Decode};
-use sp_runtime::traits::BadOrigin;
+use sp_runtime::RuntimeDebug;
 use xcm::{VersionedXcm, v0::{Xcm, Junction, Outcome, ExecuteXcm, Error as XcmError}};
-use frame_support::{traits::{Get, EnsureOrigin}, dispatch::Weight};
+use frame_support::{traits::EnsureOrigin, dispatch::Weight, weights::PostDispatchInfo};
 pub use pallet::*;
 
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
@@ -89,25 +90,25 @@ pub mod pallet {
 
 	/// The configuration.
 	#[pallet::storage]
-	pub(super) type Configuration<T: Config> = StorageValue<_, ConfigData, ValueQuery>;
+	pub(super) type Configuration<T> = StorageValue<_, ConfigData, ValueQuery>;
 
 	/// The page index.
 	#[pallet::storage]
-	pub(super) type PageIndex<T: Config> = StorageValue<_, PageIndexData, ValueQuery>;
+	pub(super) type PageIndex<T> = StorageValue<_, PageIndexData, ValueQuery>;
 
 	/// The queue pages.
 	#[pallet::storage]
-	pub(super) type Pages<T: Config> = StorageMap<
+	pub(super) type Pages<T> = StorageMap<
 		_,
 		Blake2_128Concat,
 		PageCounter,
 		Vec<(RelayBlockNumber, Vec<u8>)>,
-		OptionQuery,
+		ValueQuery,
 	>;
 
 	/// The overweight messages.
 	#[pallet::storage]
-	pub(super) type Overweight<T: Config> = StorageMap<
+	pub(super) type Overweight<T> = StorageMap<
 		_,
 		Blake2_128Concat,
 		OverweightIndex,
@@ -119,6 +120,8 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// The message index given is unknown.
 		Unknown,
+		/// The amount of weight given is possibly not enough for executing the message.
+		OverLimit,
 	}
 
 	#[pallet::hooks]
@@ -143,7 +146,7 @@ pub mod pallet {
 		///
 		/// Events:
 		/// - `OverweightServiced`: On success.
-		#[pallet::weight = 1_000_000 + weight_limit]
+		#[pallet::weight(1_000_000 + weight_limit)]
 		fn service_overweight(
 			origin: OriginFor<T>,
 			index: OverweightIndex,
@@ -151,10 +154,10 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::ExecuteOverweightOrigin::ensure_origin(origin)?;
 
-			let (sent_at, data) = Overweight::get(index).ok_or(Error::<T>::Unknown);
-			let used = Self::service_message(weight_limit, sent_at, &data[..])
+			let (sent_at, data) = Overweight::<T>::get(index).ok_or(Error::<T>::Unknown)?;
+			let used = Self::try_service_message(weight_limit, sent_at, &data[..])
 				.map_err(|_| Error::<T>::OverLimit)?;
-			Overweight::remove(index);
+			Overweight::<T>::remove(index);
 			Self::deposit_event(Event::OverweightServiced(index, used));
 			Ok(PostDispatchInfo { actual_weight: Some(1_000_000 + used), pays_fee: Pays::Yes })
 		}
@@ -186,21 +189,21 @@ pub mod pallet {
 		///
 		/// Returns the weight consumed by executing messages in the queue.
 		fn service_queue(limit: Weight) -> Weight {
-			PagesIndex::mutate(|page_index| Self::do_service_queue(limit, page_index))
+			PageIndex::<T>::mutate(|page_index| Self::do_service_queue(limit, page_index))
 		}
 
 		/// Exactly equivalent to `service_queue` but expects a mutable `page_index` to be passed
 		/// in and any changes stored.
-		fn do_service_queue(limit: Weight, page_index: &mut PagesIndexData) -> Weight {
+		fn do_service_queue(limit: Weight, page_index: &mut PageIndexData) -> Weight {
 			let mut used = 0;
 			while page_index.begin_used < page_index.end_used {
-				let page = Pages::remove(page_index.begin_used);
+				let page = Pages::<T>::take(page_index.begin_used);
 				for (i, &(sent_at, ref data)) in page.iter().enumerate() {
 					match Self::try_service_message(limit - used, sent_at, &data[..]) {
 						Ok(w) => used += w,
 						Err(..) => {
 							// Too much weight needed - put the remaining messages back and bail
-							Pages::insert(page_index.begin_used, &page[i..]);
+							Pages::<T>::insert(page_index.begin_used, &page[i..]);
 							return used;
 						}
 					}
@@ -209,7 +212,8 @@ pub mod pallet {
 			}
 			if page_index.begin_used == page_index.end_used {
 				// Reste if there's no pages left.
-				page_index.begin_used = page_index.end_used = 0;
+				page_index.begin_used = 0;
+				page_index.end_used = 0;
 			}
 			used
 		}
@@ -219,7 +223,11 @@ pub mod pallet {
 		///
 		/// NOTE: This will return `Ok` in the case of an error decoding, weighing or executing
 		/// the message. This is why it's called message "servicing" rather than "execution".
-		fn try_service_message(limit: Weight, sent_at: RelayBlockNumber, data: &[u8]) -> Result<Weight, Weight> {
+		fn try_service_message(
+			limit: Weight,
+			_sent_at: RelayBlockNumber,
+			data: &[u8],
+		) -> Result<Weight, (MessageId, Weight)> {
 			let id = sp_io::hashing::blake2_256(&data[..]);
 			let maybe_msg = VersionedXcm::<T::Call>::decode(&mut &data[..])
 				.map(Xcm::<T::Call>::try_from);
@@ -233,13 +241,14 @@ pub mod pallet {
 					Ok(0)
 				},
 				Ok(Ok(x)) => {
-					let remaining = limit.saturating_sub(used);
-					let outcome = T::XcmExecutor::execute_xcm(Junction::Parent.into(), x, remaining);
-					if let Outcome::Error(XcmError::WeightLimitReached(required)) = outcome {
-						Err(required)
-					} else {
-						Self::deposit_event(Event::ExecutedDownward(id, outcome));
-						Ok(outcome.weight_used())
+					let outcome = T::XcmExecutor::execute_xcm(Junction::Parent.into(), x, limit);
+					match outcome {
+						Outcome::Error(XcmError::WeightLimitReached(required)) => Err((id, required)),
+						outcome => {
+							let weight_used = outcome.weight_used();
+							Self::deposit_event(Event::ExecutedDownward(id, outcome));
+							Ok(weight_used)
+						}
 					}
 				}
 			}
@@ -254,15 +263,15 @@ pub mod pallet {
 			iter: impl Iterator<Item=(RelayBlockNumber, Vec<u8>)>,
 			limit: Weight,
 		) -> Weight {
-			let mut page_index = PageIndex::get();
-			let config = Configuration::get();
+			let mut page_index = PageIndex::<T>::get();
+			let config = Configuration::<T>::get();
 
 			// First try to use `max_weight` to service the current queue.
-			let mut used = Self::service_queue(max_weight, &mut page_index);
+			let mut used = Self::do_service_queue(limit, &mut page_index);
 
 			// Then if the queue is empty, use the weight remaining to service the incoming messages
 			// and once we run out of weight, place them in the queue.
-			let mut item_count = iter.size_hint();
+			let item_count = iter.size_hint().0;
 			let mut maybe_enqueue_page = if page_index.end_used > page_index.begin_used {
 				// queue is already non-empty - start a fresh page.
 				Some(Vec::with_capacity(item_count))
@@ -276,15 +285,18 @@ pub mod pallet {
 					let remaining = limit.saturating_sub(used);
 					match Self::try_service_message(remaining, sent_at, &data[..]) {
 						Ok(consumed) => used += consumed,
-						Err(required) =>
+						Err((id, required)) =>
 							// Too much weight required right now.
 							if required > config.max_individual {
 								// overweight - add to overweight queue and continue with
 								// message execution.
 								let index = page_index.overweight_count;
-								Overweight::insert(index, (sent_at, data));
+								Overweight::<T>::insert(index, (sent_at, data));
 								Self::deposit_event(Event::OverweightEnqueued(id, index, required));
 								page_index.overweight_count += 1;
+								// Not needed for control flow, but only to ensure that the compiler
+								// understands that we won't attempt to re-use `data` later.
+								continue;
 							} else {
 								// not overweight. stop executing inline and enqueue normally
 								// from here on.
@@ -302,10 +314,12 @@ pub mod pallet {
 
 			// Deposit the enqueued page if any and save the index.
 			if let Some(enqueue_page) = maybe_enqueue_page {
-				Pages::insert(page_index.used_end, enqueue_page);
-				page_index.used_end += 1;
+				Pages::<T>::insert(page_index.end_used, enqueue_page);
+				page_index.end_used += 1;
 			}
-			PageIndex::put(page_index);
+			PageIndex::<T>::put(page_index);
+
+			used
 		}
 	}
 }
