@@ -158,7 +158,7 @@ pub mod pallet {
         fn fetch_price() -> Result<Vec<u32>, http::Error> {
             let deadline = sp_io::offchain::timestamp().add(Duration::from_millis(2_000));
             let request = http::Request::get(
-                "http://localhost:8080/assets/prices"
+                "http://node-helper:8080/assets/prices"
             );
             let pending = request
                 .deadline(deadline)

@@ -1,0 +1,25 @@
+version: '3'
+
+volumes:
+  konomi-dev: {}
+
+services:
+  nginx:
+    image: nginx:1.15-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx.conf.multi:/etc/nginx/conf.d/default.conf
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+
+  konomi-dev:
+    image: asia.gcr.io/dev-env-312104/konomi-node:v0.0.1
+    volumes:
+      - ./scripts:/polkadot/scripts
+      - konomi-dev:/tmp/konomi-dev
+    command: "--base-path /tmp/konomi-dev --dev --ws-external --rpc-cors all"
+
+  node-helper:
+    image: asia.gcr.io/dev-env-312104/node-helper:v0.0.1
