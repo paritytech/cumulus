@@ -23,11 +23,29 @@ to see a basic node in action. An example node is included in the `rococo-parach
 can build it with `cargo build --release` and launch it like any other cumulus parachian.
 
 Rather than reiterate how to start a relay-para network here, I'll simply recommend you use the
-excellent [Polkadot Launch](https://github.com/paritytech/polkadot-launch) tool.
+excellent [Polkadot Launch](https://github.com/paritytech/polkadot-launch) tool. This repo was tested with version 1.4.1.
+A [lauch config file](./nimbus-launch-config.json) is provided.
 
-TODO, provide a config file in this repo.
+```bash
+# Install polkadot launch (I used v1.4.1)
+npm i -g polkadot-launch
 
-To learn more about launching relay-para networks, check out the [cumulus workshop](https://substrate.dev/cumulus-workshop)
+# Build polkadot (I used 127eb17a; check Cargo.lock to be sure)
+cd polkadot
+git checkout rococo-v1
+cargo build --release
+cd ..
+
+# Build Nimbus example node (written against 2d13f4ad)
+cd cumulus
+git checkout nimbus
+cargo build --release
+
+# Launch the multi-chain
+polkdot-launch ./nimbus-launch-config.json
+```
+
+To learn more about launching relay-para networks, check out the [cumulus workshop](https://substrate.dev/cumulus-workshop).
 
 ## Design Overview
 
@@ -100,7 +118,6 @@ nodes to call into the runtime, and make the minimal calculation necessary to de
 be eligible. If they aren't they skip the slot saving energy and keeping the logs free of confusing errors.
 
 ### Nimbus Consensus
-(currently called filtering consensus in the code. TODO change that)
 
 Nimbus consensus is the primary client-side consensus worker. It implements the shiny new `ParachainConsensus`
 trait introduced to cumulus in https://github.com/paritytech/cumulus/pull/329 It is not likely that
