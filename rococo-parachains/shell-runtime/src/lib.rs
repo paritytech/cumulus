@@ -64,8 +64,6 @@ use xcm_builder::{
 	AllowUnpaidExecutionFrom, ParentAsSuperuser,
 };
 use xcm_executor::{Config, XcmExecutor};
-use xcm::opaque::v0::Xcm;
-use frame_support::traits::Contains;
 
 impl_opaque_keys! {
 	pub struct SessionKeys {}

@@ -65,8 +65,6 @@ use xcm_builder::{
 };
 use xcm_executor::{Config, XcmExecutor};
 use pallet_xcm::{XcmPassthrough, EnsureXcm, IsMajorityOfBody};
-use xcm::opaque::v0::Xcm;
-use frame_support::traits::Contains;
 
 pub type SessionHandlers = ();
 
