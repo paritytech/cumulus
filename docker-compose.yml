@@ -1,7 +1,7 @@
 version: '3'
 
 volumes:
-  konomi-dev: {}
+  konomi-rococo: {}
 
 services:
   nginx:
@@ -14,12 +14,11 @@ services:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
 
-  konomi-dev:
-    image: asia.gcr.io/dev-env-312104/konomi-node:v0.0.1
+  konomi-rococo:
+    image: asia.gcr.io/dev-env-312104/konomi-rococo:v0.0.1
     volumes:
-      - ./scripts:/polkadot/scripts
-      - konomi-dev:/tmp/konomi-dev
-    command: "--base-path /tmp/konomi-dev --dev --ws-external --rpc-cors all"
+      - konomi-rococo:/tmp/konomi-rococo
+    command: "--base-path /tmp/konomi-rococo --tmp --parachain-id 18403 --port 40337 --ws-port 9948 --rpc-port 9929 -- --execution wasm --chain rococo --port 30337"
 
   node-helper:
     image: asia.gcr.io/dev-env-312104/node-helper:v0.0.1
