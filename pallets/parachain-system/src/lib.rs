@@ -42,7 +42,7 @@ use polkadot_parachain::primitives::RelayChainBlockNumber;
 use cumulus_primitives_core::{
 	relay_chain,
 	well_known_keys::{self, NEW_VALIDATION_CODE},
-	AbridgedHostConfiguration, DownwardMessageHandler, XcmpMessageHandler,
+	AbridgedHostConfiguration, DmpMessageHandler, XcmpMessageHandler,
 	InboundDownwardMessage, InboundHrmpMessage, OnValidationData, OutboundHrmpMessage, ParaId,
 	PersistedValidationData, UpwardMessage, UpwardMessageSender, MessageSendError,
 	XcmpMessageSource, ChannelStatus, GetChannelInfo,
@@ -65,13 +65,16 @@ pub trait Config: frame_system::Config<OnSetCode = ParachainSetCode<Self>> {
 	/// Returns the parachain ID we are running with.
 	type SelfParaId: Get<ParaId>;
 
-	/// The downward message handlers that will be informed when a message is received.
-	type DownwardMessageHandlers: DownwardMessageHandler;
-
 	/// The place where outbound XCMP messages come from. This is queried in `finalize_block`.
 	type OutboundXcmpMessageSource: XcmpMessageSource;
 
-	/// The HRMP message handlers that will be informed when a message is received.
+	/// The message handler that will be invoked when messages are received via DMP.
+	type DmpMessageHandler: DmpMessageHandler;
+
+	/// The weight we reserve at the beginning of the block for processing DMP messages.
+	type ReservedDmpWeight: Get<Weight>;
+
+	/// The message handler that will be invoked when messages are received via XCMP.
 	///
 	/// The messages are dispatched in the order they were relayed by the relay chain. If multiple
 	/// messages were relayed at one block, these will be dispatched in ascending order of the
@@ -141,6 +144,10 @@ decl_storage! {
 		/// The weight we reserve at the beginning of the block for processing XCMP messages. This
 		/// overrides the amount set in the Config trait.
 		ReservedXcmpWeightOverride: Option<Weight>;
+
+		/// The weight we reserve at the beginning of the block for processing DMP messages. This
+		/// overrides the amount set in the Config trait.
+		ReservedDmpWeightOverride: Option<Weight>;
 
 		/// The next authorized upgrade, if there is one.
 		AuthorizedUpgrade: Option<T::Hash>;
@@ -485,38 +492,25 @@ impl<T: Config> Module<T> {
 		downward_messages: Vec<InboundDownwardMessage>,
 	) -> Result<Weight, DispatchError> {
 		let dm_count = downward_messages.len() as u32;
+		let mut dmq_head = LastDmqMqcHead::get();
+
 		let mut weight_used = 0;
-
 		if dm_count != 0 {
-			let mut processed_count = 0;
-
 			Self::deposit_event(RawEvent::DownwardMessagesReceived(dm_count));
+			let max_weight = ReservedDmpWeightOverride::get().unwrap_or_else(T::ReservedDmpWeight::get);
 
-			// Reference fu to avoid the `move` capture.
-			let weight_used_ref = &mut weight_used;
-			let processed_count_ref = &mut processed_count;
-			let result_mqc_head = LastDmqMqcHead::mutate(move |mqc| {
-				for downward_message in downward_messages {
-					mqc.extend_downward(&downward_message);
-					*weight_used_ref += T::DownwardMessageHandlers::handle_downward_message(downward_message);
-					*processed_count_ref += 1;
-				}
-				mqc.0
-			});
+			let message_iter = downward_messages.into_iter()
+				.inspect(|m| dmq_head.extend_downward(m))
+				.map(|m| (m.sent_at, m.msg));
+			weight_used += T::DmpMessageHandler::handle_dmp_messages(message_iter, max_weight);
+			LastDmqMqcHead::put(dmq_head);
 
-			Self::deposit_event(RawEvent::DownwardMessagesProcessed(
-				processed_count,
-				weight_used,
-				result_mqc_head.clone(),
-				expected_dmq_mqc_head.clone(),
-			));
+			Self::deposit_event(RawEvent::DownwardMessagesProcessed(weight_used, mqc_head.0));
+		};
 
-			// After hashing each message in the message queue chain submitted by the collator, we should
-			// arrive to the MQC head provided by the relay chain.
-			assert_eq!(result_mqc_head, expected_dmq_mqc_head);
-		} else {
-			assert_eq!(LastDmqMqcHead::get().0, expected_dmq_mqc_head);
-		}
+		// After hashing each message in the message queue chain submitted by the collator, we should
+		// arrive to the MQC head provided by the relay chain.
+		assert_eq!(dmq_head.0, expected_dmq_mqc_head);
 
 		// Store the processed_downward_messages here so that it will be accessible from
 		// PVF's `validate_block` wrapper and collation pipeline.
@@ -810,12 +804,12 @@ decl_event! {
 		ValidationFunctionApplied(RelayChainBlockNumber),
 		/// An upgrade has been authorized.
 		UpgradeAuthorized(Hash),
-		/// Downward messages were processed using the given weight.
-		/// \[ count, weight_used, result_mqc_head, expected_mqc_head \]
-		DownwardMessagesProcessed(u32, Weight, relay_chain::Hash, relay_chain::Hash),
 		/// Some downward messages have been received and will be processed.
 		/// \[ count \]
 		DownwardMessagesReceived(u32),
+		/// Downward messages were processed using the given weight.
+		/// \[ weight_used, result_mqc_head \]
+		DownwardMessagesProcessed(Weight, relay_chain::Hash),
 	}
 }
 
@@ -911,6 +905,7 @@ mod tests {
 		};
 		pub const ParachainId: ParaId = ParaId::new(200);
 		pub const ReservedXcmpWeight: Weight = 0;
+		pub const ReservedDmpWeight: Weight = 0;
 	}
 	impl frame_system::Config for Test {
 		type Origin = Origin;
@@ -941,9 +936,10 @@ mod tests {
 		type Event = Event;
 		type OnValidationData = ();
 		type SelfParaId = ParachainId;
-		type DownwardMessageHandlers = SaveIntoThreadLocal;
-		type XcmpMessageHandler = SaveIntoThreadLocal;
 		type OutboundXcmpMessageSource = FromThreadLocal;
+		type DmpMessageHandler = SaveIntoThreadLocal;
+		type ReservedDmpWeight = ReservedDmpWeight;
+		type XcmpMessageHandler = SaveIntoThreadLocal;
 		type ReservedXcmpWeight = ReservedXcmpWeight;
 	}
 
@@ -951,7 +947,7 @@ mod tests {
 	pub struct SaveIntoThreadLocal;
 
 	std::thread_local! {
-		static HANDLED_DOWNWARD_MESSAGES: RefCell<Vec<InboundDownwardMessage>> = RefCell::new(Vec::new());
+		static HANDLED_DMP_MESSAGES: RefCell<Vec<(relay_chain::BlockNumber, Vec<u8>)>> = RefCell::new(Vec::new());
 		static HANDLED_XCMP_MESSAGES: RefCell<Vec<(ParaId, relay_chain::BlockNumber, Vec<u8>)>> = RefCell::new(Vec::new());
 		static SENT_MESSAGES: RefCell<Vec<(ParaId, Vec<u8>)>> = RefCell::new(Vec::new());
 	}
@@ -986,12 +982,17 @@ mod tests {
 		}
 	}
 
-	impl DownwardMessageHandler for SaveIntoThreadLocal {
-		fn handle_downward_message(msg: InboundDownwardMessage) -> Weight {
-			HANDLED_DOWNWARD_MESSAGES.with(|m| {
-				m.borrow_mut().push(msg);
-			});
-			0
+	impl DmpMessageHandler for SaveIntoThreadLocal {
+		fn handle_dmp_messages(
+			iter: impl Iterator<Item=(RelayBlockNumber, Vec<u8>)>,
+			_max_weight: Weight,
+		) -> Weight {
+			HANDLED_DMP_MESSAGES.with(|m| {
+				for i in iter {
+					m.borrow_mut().push(i);
+				}
+				0
+			})
 		}
 	}
 
@@ -1012,7 +1013,7 @@ mod tests {
 	// This function basically just builds a genesis storage key/value store according to
 	// our desired mockup.
 	fn new_test_ext() -> sp_io::TestExternalities {
-		HANDLED_DOWNWARD_MESSAGES.with(|m| m.borrow_mut().clear());
+		HANDLED_DMP_MESSAGES.with(|m| m.borrow_mut().clear());
 		HANDLED_XCMP_MESSAGES.with(|m| m.borrow_mut().clear());
 
 		frame_system::GenesisConfig::default()
@@ -1579,7 +1580,7 @@ mod tests {
 				_ => unreachable!(),
 			})
 			.add(1, || {
-				HANDLED_DOWNWARD_MESSAGES.with(|m| {
+				HANDLED_DMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
 					assert_eq!(&*m, &[MSG.clone()]);
 					m.clear();

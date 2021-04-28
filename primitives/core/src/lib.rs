@@ -118,13 +118,29 @@ pub mod well_known_keys {
 }
 
 /// Something that should be called when a downward message is received.
-pub trait DownwardMessageHandler {
-	/// Handle the given downward message.
-	fn handle_downward_message(msg: InboundDownwardMessage) -> Weight;
+pub trait DmpMessageHandler {
+	/// Handle some incoming DMP messages (note these are individual XCM messages).
+	///
+	/// Also, process messages up to some `max_weight`.
+	fn handle_dmp_message_refs<'a, I: Iterator<Item=(RelayBlockNumber, &'a [u8])>>(
+		iter: I,
+		_max_weight: Weight,
+	) -> Weight { for _ in iter {} 0 }
+
+	/// Handle some incoming DMP messages (note these are individual XCM messages).
+	///
+	/// Also, process messages up to some `max_weight`.
+	fn handle_dmp_messages(
+		iter: impl Iterator<Item=(RelayBlockNumber, Vec<u8>)>,
+		max_weight: Weight,
+	) -> Weight {
+		Self::handle_dmp_message_refs(iter.map(|i| (i.0, &i.1[..])), max_weight)
+	}
+
+	#[deprecated = "Use handle_dmp_messages instead"]
+	fn handle_downward_message(_msg: InboundDownwardMessage) -> Weight { panic!() }
 }
-impl DownwardMessageHandler for () {
-	fn handle_downward_message(_msg: InboundDownwardMessage) -> Weight { 0 }
-}
+impl DmpMessageHandler for () {}
 
 /// Something that should be called for each batch of messages received over XCMP.
 pub trait XcmpMessageHandler {

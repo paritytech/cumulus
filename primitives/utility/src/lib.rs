@@ -21,7 +21,7 @@
 
 use sp_std::{marker::PhantomData, convert::TryFrom};
 use codec::{Encode, Decode};
-use cumulus_primitives_core::{UpwardMessageSender, DownwardMessageHandler, InboundDownwardMessage};
+use cumulus_primitives_core::{UpwardMessageSender, DmpMessageHandler, InboundDownwardMessage};
 use xcm::{VersionedXcm, v0::{Xcm, MultiLocation, Junction, SendXcm, Error as XcmError, ExecuteXcm}};
 use frame_support::{traits::Get, dispatch::Weight};
 
@@ -61,7 +61,7 @@ impl<
 	MaxWeight: Get<Weight>,
 	XcmExecutor: ExecuteXcm<Call>,
 	Call,
-> DownwardMessageHandler for UnqueuedDmpAsParent<MaxWeight, XcmExecutor, Call> {
+> DmpMessageHandler for UnqueuedDmpAsParent<MaxWeight, XcmExecutor, Call> {
 	fn handle_downward_message(msg: InboundDownwardMessage) -> Weight {
 		let msg = VersionedXcm::<Call>::decode(&mut &msg.msg[..])
 			.map(Xcm::<Call>::try_from);

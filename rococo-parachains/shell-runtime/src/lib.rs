@@ -217,17 +217,19 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
+	// We do anything the parent chain tells us in this runtime.
+	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT;
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
 	type OnValidationData = ();
 	type SelfParaId = parachain_info::Module<Runtime>;
-	type DownwardMessageHandlers = CumulusXcm;
 	type OutboundXcmpMessageSource = XcmpQueue;
-	type XcmpMessageHandler = XcmpQueue;
-	type ReservedXcmpWeight = ReservedXcmpWeight;
+	type DmpMessageHandler = cumulus_pallet_xcm::UnlimitedDmpExecution<Runtime>;
+	type ReservedDmpWeight = ReservedDmpWeight;
+	type XcmpMessageHandler = ();
+	type ReservedXcmpWeight = ();
 }
 
 impl parachain_info::Config for Runtime {}
@@ -332,8 +334,6 @@ pub type LocalOriginToLocation = ();
 pub type XcmRouter = (
 	// Two routers - use UMP to communicate with the relay chain:
 	cumulus_primitives_utility::ParentAsUmp<ParachainSystem>,
-	// ..and XCMP to communicate with the sibling chains.
-	XcmpQueue,
 );
 
 impl pallet_xcm::Config for Runtime {
@@ -347,13 +347,6 @@ impl pallet_xcm::Config for Runtime {
 impl cumulus_pallet_xcm::Config for Runtime {
 	type Event = Event;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
-	type MaxWeight = MaxDownwardMessageWeight;
-}
-
-impl cumulus_pallet_xcmp_queue::Config for Runtime {
-	type Event = Event;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
-	type ChannelInfo = ParachainSystem;
 }
 
 construct_runtime! {
@@ -371,7 +364,6 @@ construct_runtime! {
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
 
 		// XCM helpers.
-		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>},
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin},
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin},
 	}

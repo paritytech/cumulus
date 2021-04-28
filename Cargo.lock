@@ -1403,6 +1403,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-pallet-dmp-queue"
+version = "0.1.0"
+dependencies = [
+ "cumulus-primitives-core",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "rand 0.8.3",
+ "rand_chacha 0.3.0",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-executor",
+]
+
+[[package]]
 name = "cumulus-pallet-parachain-system"
 version = "0.1.0"
 dependencies = [
@@ -1543,6 +1560,7 @@ dependencies = [
 name = "cumulus-shell-runtime"
 version = "0.1.0"
 dependencies = [
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
@@ -1614,6 +1632,7 @@ dependencies = [
 name = "cumulus-test-parachain-runtime"
 version = "0.1.0"
 dependencies = [
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
