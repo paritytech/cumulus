@@ -128,7 +128,6 @@ pub fn new_partial(
 async fn start_node_impl<RB>(
 	parachain_config: Configuration,
 	collator_key: CollatorPair,
-	author: Option<AccountId32>,
 	polkadot_config: Configuration,
 	id: ParaId,
 	validator: bool,
@@ -244,7 +243,7 @@ where
 			relay_chain_client: polkadot_full_node.client.clone(),
 			relay_chain_backend: polkadot_full_node.backend.clone(),
 			parachain_client: client.clone(),
-			//TODO Should we keep the author field as optional to indicate which of multiple keys to use?
+			//TODO We should get rid of this parameter entirely.
 			// What if there are multiple authoring keys in the keystore at once?
 			author: AccountId32::from_ss58check("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").expect("I'll just use alice to satisfy the compiler."),
 			keystore: params.keystore_container.sync_keystore(),
@@ -285,7 +284,6 @@ where
 pub async fn start_node(
 	parachain_config: Configuration,
 	collator_key: CollatorPair,
-	author: Option<AccountId32>,
 	polkadot_config: Configuration,
 	id: ParaId,
 	validator: bool,
@@ -293,7 +291,6 @@ pub async fn start_node(
 	start_node_impl(
 		parachain_config,
 		collator_key,
-		author,
 		polkadot_config,
 		id,
 		validator,
