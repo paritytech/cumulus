@@ -243,9 +243,6 @@ where
 			relay_chain_client: polkadot_full_node.client.clone(),
 			relay_chain_backend: polkadot_full_node.backend.clone(),
 			parachain_client: client.clone(),
-			//TODO We should get rid of this parameter entirely.
-			// What if there are multiple authoring keys in the keystore at once?
-			author: AccountId32::from_ss58check("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").expect("I'll just use alice to satisfy the compiler."),
 			keystore: params.keystore_container.sync_keystore(),
 		});
 

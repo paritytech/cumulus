@@ -63,7 +63,7 @@ mod import_queue;
 const LOG_TARGET: &str = "filtering-consensus";
 
 /// The implementation of the relay-chain provided consensus for parachains.
-pub struct FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient, AuthorId> {
+pub struct FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient> {
 	para_id: ParaId,
 	_phantom: PhantomData<B>,
 	proposer_factory: Arc<Mutex<PF>>,
@@ -72,11 +72,10 @@ pub struct FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient, AuthorId
 	relay_chain_client: Arc<RClient>,
 	relay_chain_backend: Arc<RBackend>,
 	parachain_client: Arc<ParaClient>,
-	author: AuthorId,
 	keystore: SyncCryptoStorePtr,
 }
 
-impl<B, PF, BI, RClient, RBackend, ParaClient, AuthorId: Clone> Clone for FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient, AuthorId> {
+impl<B, PF, BI, RClient, RBackend, ParaClient> Clone for FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient> {
 	fn clone(&self) -> Self {
 		Self {
 			para_id: self.para_id,
@@ -87,13 +86,12 @@ impl<B, PF, BI, RClient, RBackend, ParaClient, AuthorId: Clone> Clone for Filter
 			relay_chain_backend: self.relay_chain_backend.clone(),
 			relay_chain_client: self.relay_chain_client.clone(),
 			parachain_client: self.parachain_client.clone(),
-			author: self.author.clone(),
 			keystore: self.keystore.clone(),
 		}
 	}
 }
 
-impl<B, PF, BI, RClient, RBackend, ParaClient, AuthorId> FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient, AuthorId>
+impl<B, PF, BI, RClient, RBackend, ParaClient> FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient>
 where
 	B: BlockT,
 	RClient: ProvideRuntimeApi<PBlock>,
@@ -110,7 +108,6 @@ where
 		polkadot_client: Arc<RClient>,
 		polkadot_backend: Arc<RBackend>,
 		parachain_client: Arc<ParaClient>,
-		author: AuthorId,
 		keystore: SyncCryptoStorePtr,
 	) -> Self {
 		Self {
@@ -121,7 +118,6 @@ where
 			relay_chain_backend: polkadot_backend,
 			relay_chain_client: polkadot_client,
 			parachain_client,
-			author,
 			keystore,
 			_phantom: PhantomData,
 		}
@@ -193,8 +189,8 @@ where
 }
 
 #[async_trait::async_trait]
-impl<B, PF, BI, RClient, RBackend, ParaClient, AuthorId> ParachainConsensus<B>
-	for FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient, AuthorId>
+impl<B, PF, BI, RClient, RBackend, ParaClient> ParachainConsensus<B>
+	for FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient>
 where
 	B: BlockT,
 	RClient: ProvideRuntimeApi<PBlock> + Send + Sync,
@@ -210,7 +206,6 @@ where
 	>,
 	ParaClient: ProvideRuntimeApi<B> + Send + Sync,
 	ParaClient::Api: AuthorFilterAPI<B>,
-	AuthorId: Send + Sync + Clone + Codec,
 {
 	async fn produce_candidate(
 		&mut self,
@@ -221,8 +216,6 @@ where
 		// Design decision: We will check the keystore for any available keys. Then we will iterate
 		// those keys until we find one that is eligible. If none are eligible, we skip this slot.
 		// If multiple are eligible, we only author with the first one.
-		// The accountId that comes in from the service will no longer be used, and will ultimately
-		// be stripped out.
 		// We will insert the inherent manually here as Basti does for the parachain inherent. That
 		// may improve when/if his bkchr-inherent-something-future branch is merged, but it
 		// honestly doesn't feel that bad to me the way it is.
@@ -409,10 +402,9 @@ where
 /// TODO can this be moved into common and shared with relay chain conensus builder?
 /// I bet my head would explode from thinking about generic types.
 ///
-/// I'm going to start trying to add the keystore here. I briefly tried the async approach, but
-/// decided t ogo sync so I can copy code from Aura. Maybe after it is working, Jeremy can help me
-/// go async.
-pub struct BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient, AuthorId> {
+/// I briefly tried the async keystore approach, but decided to go sync so I can copy
+/// code from Aura. Maybe after it is working, Jeremy can help me go async.
+pub struct BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient> {
 	pub para_id: ParaId,
 	pub proposer_factory: PF,
 	pub inherent_data_providers: InherentDataProviders,
@@ -420,7 +412,6 @@ pub struct BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient, AuthorId>
 	pub relay_chain_client: polkadot_service::Client,
 	pub relay_chain_backend: Arc<RBackend>,
 	pub parachain_client: Arc<ParaClient>,
-	pub author: AuthorId,
 	pub keystore: SyncCryptoStorePtr,
 
 }
@@ -428,7 +419,7 @@ pub struct BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient, AuthorId>
 /// Build the [`FilteringConsensus`].
 ///
 /// Returns a boxed [`ParachainConsensus`].
-pub fn build_filtering_consensus<Block, PF, BI, RBackend, ParaClient, AuthorId>(
+pub fn build_filtering_consensus<Block, PF, BI, RBackend, ParaClient>(
 	BuildFilteringConsensusParams {
 		para_id,
 		proposer_factory,
@@ -437,9 +428,8 @@ pub fn build_filtering_consensus<Block, PF, BI, RBackend, ParaClient, AuthorId>(
 		relay_chain_client,
 		relay_chain_backend,
 		parachain_client,
-		author,
 		keystore,
-	}: BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient, AuthorId>,
+	}: BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient>,
 ) -> Box<dyn ParachainConsensus<Block>>
 where
 	Block: BlockT,
@@ -456,7 +446,6 @@ where
 	sc_client_api::StateBackendFor<RBackend, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
 	ParaClient: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	ParaClient::Api: AuthorFilterAPI<Block>,
-	AuthorId: Send + Sync + Clone + 'static + Codec,
 {
 	FilteringConsensusBuilder::new(
 		para_id,
@@ -466,7 +455,6 @@ where
 		relay_chain_client,
 		relay_chain_backend,
 		parachain_client,
-		author,
 		keystore,
 	)
 	.build()
@@ -478,7 +466,7 @@ where
 /// a concrete relay chain client instance, the builder takes a [`polkadot_service::Client`]
 /// that wraps this concrete instanace. By using [`polkadot_service::ExecuteWithClient`]
 /// the builder gets access to this concrete instance.
-struct FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient, AuthorId> {
+struct FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient> {
 	para_id: ParaId,
 	_phantom: PhantomData<Block>,
 	proposer_factory: PF,
@@ -487,11 +475,10 @@ struct FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient, AuthorId> 
 	relay_chain_backend: Arc<RBackend>,
 	relay_chain_client: polkadot_service::Client,
 	parachain_client: Arc<ParaClient>,
-	author: AuthorId,
 	keystore: SyncCryptoStorePtr,
 }
 
-impl<Block, PF, BI, RBackend, ParaClient, AuthorId> FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient, AuthorId>
+impl<Block, PF, BI, RBackend, ParaClient> FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient>
 where
 	Block: BlockT,
 	// Rust bug: https://github.com/rust-lang/rust/issues/24159
@@ -506,7 +493,6 @@ where
 	BI: BlockImport<Block> + Send + Sync + 'static,
 	RBackend: Backend<PBlock> + 'static,
 	ParaClient: ProvideRuntimeApi<Block> + Send + Sync + 'static,
-	AuthorId: Send + Sync + Clone + Codec + 'static,
 {
 	/// Create a new instance of the builder.
 	fn new(
@@ -517,7 +503,6 @@ where
 		relay_chain_client: polkadot_service::Client,
 		relay_chain_backend: Arc<RBackend>,
 		parachain_client: Arc<ParaClient>,
-		author: AuthorId,
 		keystore: SyncCryptoStorePtr,
 	) -> Self {
 		Self {
@@ -529,7 +514,6 @@ where
 			relay_chain_backend,
 			relay_chain_client,
 			parachain_client,
-			author,
 			keystore,
 		}
 	}
@@ -543,8 +527,8 @@ where
 	}
 }
 
-impl<Block, PF, BI, RBackend, ParaClient, AuthorId> polkadot_service::ExecuteWithClient
-	for FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient, AuthorId>
+impl<Block, PF, BI, RBackend, ParaClient> polkadot_service::ExecuteWithClient
+	for FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient>
 where
 	Block: BlockT,
 	// Rust bug: https://github.com/rust-lang/rust/issues/24159
@@ -560,7 +544,6 @@ where
 	RBackend: Backend<PBlock> + 'static,
 	ParaClient: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	ParaClient::Api: AuthorFilterAPI<Block>,
-	AuthorId: Send + Sync + Clone + Codec + 'static,
 {
 	type Output = Box<dyn ParachainConsensus<Block>>;
 
@@ -581,7 +564,6 @@ where
 			client.clone(),
 			self.relay_chain_backend,
 			self.parachain_client,
-			self.author,
 			self.keystore,
 		))
 	}
