@@ -18,7 +18,7 @@ services:
     image: asia.gcr.io/dev-env-312104/konomi-rococo:v0.0.1
     volumes:
       - konomi-rococo:/tmp/konomi-rococo
-    command: "--base-path /tmp/konomi-rococo --parachain-id 18403 --port 40337 --ws-port 9948 --rpc-port 9929 -- --execution wasm --chain rococo --port 30337"
+    command: "--base-path /tmp/konomi-rococo --parachain-id 18403 --port 40337 --ws-port 9944 --ws-external --rpc-cors all --rpc-port 9929 -- --execution wasm --chain rococo --port 30337"
 
   node-helper:
     image: asia.gcr.io/dev-env-312104/node-helper:v0.0.1
