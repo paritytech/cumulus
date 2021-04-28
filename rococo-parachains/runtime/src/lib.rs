@@ -25,12 +25,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use rococo_parachain_primitives::*;
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
-use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys,
-	traits::{BlakeTwo256, Block as BlockT, IdentityLookup},
-	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult,
-};
+use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{BlakeTwo256, Block as BlockT, IdentityLookup}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, traits};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -51,7 +46,8 @@ pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-pub use sp_runtime::{Perbill, Permill};
+pub use sp_runtime::{FixedU128, Perbill, Permill};
+use sp_runtime::traits::{Verify, IdentifyAccount};
 
 // XCM imports
 use polkadot_parachain::primitives::Sibling;
@@ -68,8 +64,15 @@ use xcm_executor::{
 
 // Local imports
 pub use pallet_assets;
-
+use pallet_lending_rpc_runtime_api::{UserBalanceInfo, BalanceInfo};
+use pallet_lending;
+pub use pallet_offchain_worker;
+use frame_support::{ debug };
 pub type SessionHandlers = ();
+
+// pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
+// pub type Balance = u128;
+// pub type AssetId = u64;
 
 impl_opaque_keys! {
 	pub struct SessionKeys {}
@@ -310,6 +313,39 @@ impl pallet_assets::Config for Runtime {
 	type AssetId = AssetId;
 }
 
+impl pallet_lending::Config for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type AssetId = AssetId;
+	type Oracle = Assets;
+	type MultiAsset = Assets;
+}
+
+// off-chain workers and unsigned transaction
+parameter_types! {
+	pub const UnsignedInterval: BlockNumber = 4;
+	pub const UnsignedPriority: u32 = 5;
+}
+
+impl pallet_offchain_worker::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type UnsignedInterval = UnsignedInterval;
+	type UnsignedPriority = UnsignedPriority;
+}
+
+impl frame_system::offchain::SigningTypes for Runtime {
+	type Public = <Signature as traits::Verify>::Signer;
+	type Signature = Signature;
+}
+
+impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime where
+	Call: From<C>,
+{
+	type Extrinsic = UncheckedExtrinsic;
+	type OverarchingCall = Call;
+}
+
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
@@ -330,6 +366,8 @@ construct_runtime! {
 
 		// Local dependencies
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
+		Lending: pallet_lending::{Pallet, Call, Storage, Event<T>},
+		OffchainWorker: pallet_offchain_worker::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
 	}
 }
 
@@ -436,6 +474,32 @@ impl_runtime_apis! {
 			SessionKeys::generate(seed)
 		}
 	}
+
+	impl pallet_lending_rpc_runtime_api::LendingApi<Block, AssetId, FixedU128, AccountId, Balance> for Runtime {
+        fn supply_rate(id: AssetId) -> FixedU128 {
+            Lending::supply_rate(id)
+		}
+
+		fn debt_rate(id: AssetId) -> FixedU128 {
+            Lending::debt_rate(id)
+		}
+
+		fn get_user_info(user: AccountId) -> UserBalanceInfo<Balance> {
+			let (a, b, c) = Lending::get_user_info(user);
+			UserBalanceInfo{total_supply: a, borrow_limit: b, total_borrow: c}
+		}
+
+		fn get_user_debt_with_interest(asset_id: AssetId, user: AccountId) -> BalanceInfo<Balance> {
+			let amount = Lending::get_user_debt_with_interest(asset_id, user);
+			BalanceInfo{amount}
+		}
+
+		fn get_user_supply_with_interest(asset_id: AssetId, user: AccountId) -> BalanceInfo<Balance> {
+			let amount = Lending::get_user_supply_with_interest(asset_id, user);
+			BalanceInfo{amount}
+		}
+
+    }
 }
 
 cumulus_pallet_parachain_system::register_validate_block!(Runtime, Executive);

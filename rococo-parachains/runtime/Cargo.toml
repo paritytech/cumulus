@@ -47,6 +47,9 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", default-feature
 
 # Local dependencies
 pallet-assets = { default-features = false, path = '../pallets/assets', version = '3.0.0' }
+pallet-lending = { default-features = false, path = '../pallets/lending', version = '3.0.0' }
+pallet-lending-rpc-runtime-api = { default-features = false, path = '../pallets/lending/rpc/runtime-api', version = '3.0.0' }
+pallet-offchain-worker = { path = '../pallets/offchain-worker', default-features = false, version = '3.0.0' }
 
 [build-dependencies]
 substrate-wasm-builder = "3.0.0"

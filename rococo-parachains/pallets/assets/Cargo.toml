@@ -18,6 +18,7 @@ codec = { default-features = false, features = ['derive'], package = 'parity-sca
 frame-system = { default-features = false, git = 'https://github.com/paritytech/substrate.git', branch = 'rococo-v1', version = '3.0.0' }
 frame-support = { default-features = false, git = 'https://github.com/paritytech/substrate.git', branch = 'rococo-v1', version = '3.0.0' }
 frame-benchmarking = { default-features = false, git = 'https://github.com/paritytech/substrate.git', branch = 'rococo-v1', optional = true, version = '3.0.0' }
+log = { version = "0.4.14", default-features = false }
 
 traits = { path = '../traits', default-features = false, version = '3.0.0'}
 

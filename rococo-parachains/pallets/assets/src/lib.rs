@@ -15,6 +15,8 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
+
 // QUESTIONS: Where does the `T` come from?
 #[frame_support::pallet]
 pub mod pallet {
@@ -101,8 +103,12 @@ pub mod pallet {
 		pub fn issue_new_asset(origin: OriginFor<T>, price: FixedU128, #[pallet::compact] amount: T::Balance) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 
+			// debug
+			// frame_support::debug::RuntimeLogger::init();
+			// frame_support::debug::debug!("called by {:?}", origin);
+
 			let id = <NextAssetId<T>>::get();
-			// debug::info!("next asset id is {:?}", id);
+
 			<NextAssetId<T>>::mutate(|id| *id += One::one());
 			<Pallet<T>>::_set_price(id, price);
 
@@ -221,6 +227,18 @@ pub mod pallet {
 			let origin_account = (asset_id, from_account.clone());
 			let origin_balance = <Balances<T>>::get(&origin_account);
 			let target = to_account;
+
+			log::info!("amount is {:?} to account {:?}", amount, target.clone());
+			log::info!("owns {:?}", origin_balance);
+
+			if amount.is_zero() {
+				print("transfer amount should be non-zero");
+			}
+
+			if origin_balance >= amount {
+				log::info!("original balance: {:?}", origin_balance);
+			}
+
 			ensure!(!amount.is_zero(), "transfer amount should be non-zero");
 			ensure!(origin_balance >= amount,"origin account balance must be greater than or equal to the transfer amount");
 
@@ -231,19 +249,17 @@ pub mod pallet {
 				amount,
 			));
 
-			print("before transfer target balance ----> ");
 			let b = TryInto::<u128>::try_into(Self::get_asset_balance(&(asset_id.clone(), target.clone())))
 				.ok()
 				.expect("Balance is u128");
-			print(b as u64);
+
 			<Balances<T>>::insert(origin_account, origin_balance - amount);
 			<Balances<T>>::mutate((asset_id, target.clone()), |balance| *balance += amount);
-			print("after transfer target balance----> ");
 
 			let b = TryInto::<u128>::try_into(Self::get_asset_balance(&(asset_id.clone(), target)))
 				.ok()
 				.expect("Balance is u128");
-			print(b as u64);
+
 			Ok(().into())
 		}
 

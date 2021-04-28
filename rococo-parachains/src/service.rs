@@ -185,8 +185,29 @@ where
 			block_announce_validator_builder: Some(Box::new(|_| block_announce_validator)),
 		})?;
 
+	let rpc_extensions_builder = {
+		let client = client.clone();
+		let pool = transaction_pool.clone();
+
+		Box::new(move |deny_unsafe, _| {
+			let deps = crate::rpc::FullDeps {
+				client: client.clone(),
+				pool: pool.clone(),
+				deny_unsafe,
+			};
+
+			crate::rpc::create_full(deps)
+		})
+	};
+	// let rpc_extensions_builder = Box::new(move |_, _| rpc_ext_builder(rpc_client.clone()));
+
 	let rpc_client = client.clone();
-	let rpc_extensions_builder = Box::new(move |_, _| rpc_ext_builder(rpc_client.clone()));
+
+	if parachain_config.offchain_worker.enabled {
+		sc_service::build_offchain_workers(
+			&parachain_config, task_manager.spawn_handle(), client.clone(), network.clone(),
+		);
+	}
 
 	sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 		on_demand: None,

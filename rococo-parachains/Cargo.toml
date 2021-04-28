@@ -51,7 +51,9 @@ sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "roc
 sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
-
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+substrate-frame-rpc-system = { version = '3.0.0', git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 # RPC related dependencies
 jsonrpc-core = "15.1.0"
 
@@ -69,6 +71,9 @@ polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "r
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+
+# Local dependencies
+pallet-lending-rpc = { path = './pallets/lending/rpc', version = '3.0.0' }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }

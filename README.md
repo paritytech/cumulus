@@ -58,9 +58,9 @@ Once the executable is built, launch collators for each parachain (repeat once e
 
 ```
 ./target/release/rococo-collator --chain $CHAIN --validator
-./target/release/rococo-collator --chain tick --validator
-./target/release/rococo-collator --chain trick --validator
-./target/release/rococo-collator --chain track --validator
+./target/release/rococo-collator --chain tick --validator --tmp
+./target/release/rococo-collator --chain trick --validator --tmp
+./target/release/rococo-collator --chain track --validator --tmp
 
 docker run -it --rm cumulus:latest --chain tick --validator --name konomi-tick
 docker run -it --rm cumulus:latest --chain trick --validator --name konomi-trick
@@ -113,9 +113,9 @@ cargo build --release
 # Export genesis state
 # --parachain-id 200 as an example that can be chosen freely. Make sure to everywhere use the same parachain id
 ./target/release/rococo-collator export-genesis-state --parachain-id 403 > genesis-state
-
-# Export genesis wasm
-./target/release/rococo-collator export-genesis-wasm > genesis-wasm
+./target/release/rococo-collator export-genesis-state --parachain-id 18403 > genesis-state-18403
+./target/release/rococo-collator export-genesis-state --parachain-id 18402 --chain rococo > genesis-state-18402
+./target/release/rococo-collator export-genesis-wasm > genesis-wasm-18403
 
 # Collator1
 ./target/release/rococo-collator --collator --tmp --parachain-id 403 --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30335
@@ -124,7 +124,8 @@ cargo build --release
 ./target/release/rococo-collator --collator --tmp --parachain-id 403 --port 40336 --ws-port 9947 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30336
 
 # Parachain Full Node 1
-./target/release/rococo-collator --tmp --parachain-id 403 --port 40337 --ws-port 9948 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337
+./target/release/rococo-collator --tmp --parachain-id 403 --port 40337 --ws-port 9948 --rpc-port 9929 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337
+./target/release/rococo-collator --tmp --rpc-port 9933 --parachain-id 403 --port 40337 --ws-port 9948 --rpc-methods Unsafe --ws-external --rpc-cors all -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337 --rpc-cors all
 ```
 ### Register the parachain
 ![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
