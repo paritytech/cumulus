@@ -42,13 +42,14 @@ struct Verifier<Client, Block> {
 	_marker: PhantomData<Block>,
 }
 
+#[async_trait::async_trait]
 impl<Client, Block> VerifierT<Block> for Verifier<Client, Block>
 where
 	Block: BlockT,
 	Client: ProvideRuntimeApi<Block> + Send + Sync,
 	<Client as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block>,
 {
-	fn verify(
+	async fn verify(
 		&mut self,
 		origin: BlockOrigin,
 		mut header: Block::Header,

@@ -12,6 +12,8 @@ frame-support = { git = "https://github.com/paritytech/substrate", default-featu
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+
 # Just for the trait. That should be moved to another crate.
 pallet-author-inherent = { path = "../author-inherent", default-features = false }
 [features]
@@ -24,5 +26,6 @@ std = [
     "sp-core/std",
     "sp-runtime/std",
     "pallet-author-inherent/std",
+    "sp-std/std",
     "log/std",
 ]

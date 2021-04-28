@@ -35,7 +35,6 @@ use sp_runtime::{
 	ConsensusEngineId, DigestItem, RuntimeString, RuntimeAppPublic,
 	traits::Member,
 };
-use sp_std::vec::Vec;
 use log::debug;
 // use sp_application_crypto::AppKey;
 
@@ -263,6 +262,10 @@ impl<T: Config> ProvideInherent for Module<T> {
 		}
 
 		Ok(())
+	}
+
+	fn is_inherent(call: &Self::Call) -> bool {
+		matches!(call, Call::set_author(_))
 	}
 }
 

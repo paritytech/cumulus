@@ -13,6 +13,7 @@ frame-system = { git = "https://github.com/paritytech/substrate", default-featur
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
 pallet-author-inherent = { path = "../author-inherent", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false }
 
 [features]
 default = ["std"]
@@ -25,4 +26,5 @@ std = [
     "pallet-author-inherent/std",
     "sp-core/std",
     "sp-runtime/std",
+    "sp-std/std",
 ]
