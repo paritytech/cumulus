@@ -329,22 +329,11 @@ mod tests {
 	use super::*;
 
 	use codec::Encode;
-	use cumulus_primitives_core::{
-		AbridgedHrmpChannel, InboundDownwardMessage, InboundHrmpMessage, PersistedValidationData,
-		relay_chain::BlockNumber as RelayBlockNumber, ParaId,
-	};
-	use frame_support::{
-		assert_ok,
-		dispatch::UnfilteredDispatchable,
-		parameter_types,
-		traits::{OnFinalize, OnInitialize},
-	};
-	use frame_system::{InitKind, RawOrigin};
-	use cumulus_primitives_core::relay_chain::v1::HrmpChannelId;
+	use cumulus_primitives_core::ParaId;
+	use frame_support::parameter_types;
 	use sp_core::H256;
 	use sp_runtime::{testing::Header, traits::{IdentityLookup, BlakeTwo256}};
 	use sp_version::RuntimeVersion;
-	use std::cell::RefCell;
 	use xcm::opaque::v0::MultiLocation;
 
 	use crate as dmp_queue;
