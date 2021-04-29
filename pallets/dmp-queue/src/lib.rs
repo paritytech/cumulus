@@ -421,7 +421,7 @@ mod tests {
 	}
 
 	#[test]
-	fn try_service_message() {
+	fn try_service_message_works() {
 		new_test_ext().execute_with(|| {
 			let limit = 1_000;
 			let sent_at = 0;
