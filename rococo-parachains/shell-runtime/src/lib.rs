@@ -223,6 +223,10 @@ impl Config for XcmConfig {
 	type ResponseHandler = ();	// Don't handle responses for now.
 }
 
+parameter_types! {
+	pub const MaxDownwardMessageWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 2;
+}
+
 impl cumulus_pallet_xcm::Config for Runtime {
 	type Event = Event;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
