@@ -974,7 +974,7 @@ mod tests {
 	pub struct SaveIntoThreadLocal;
 
 	std::thread_local! {
-		static HANDLED_DMP_MESSAGES: RefCell<Vec<InboundDownwardMessage>> = RefCell::new(Vec::new());
+		static HANDLED_DMP_MESSAGES: RefCell<Vec<(relay_chain::BlockNumber, Vec<u8>)>> = RefCell::new(Vec::new());
 		static HANDLED_XCMP_MESSAGES: RefCell<Vec<(ParaId, relay_chain::BlockNumber, Vec<u8>)>> = RefCell::new(Vec::new());
 		static SENT_MESSAGES: RefCell<Vec<(ParaId, Vec<u8>)>> = RefCell::new(Vec::new());
 	}
@@ -1015,8 +1015,8 @@ mod tests {
 			_max_weight: Weight,
 		) -> Weight {
 			HANDLED_DMP_MESSAGES.with(|m| {
-				for (sent_at, msg) in iter {
-					m.borrow_mut().push(InboundDownwardMessage { sent_at, msg });
+				for i in iter {
+					m.borrow_mut().push(i);
 				}
 				0
 			})
