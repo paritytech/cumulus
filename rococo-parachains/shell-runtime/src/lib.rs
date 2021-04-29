@@ -225,7 +225,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
 	type OnValidationData = ();
 	type SelfParaId = parachain_info::Module<Runtime>;
-	type OutboundXcmpMessageSource = XcmpQueue;
+	type OutboundXcmpMessageSource = ();
 	type DmpMessageHandler = cumulus_pallet_xcm::UnlimitedDmpExecution<Runtime>;
 	type ReservedDmpWeight = ReservedDmpWeight;
 	type XcmpMessageHandler = ();
@@ -322,10 +322,6 @@ impl Config for XcmConfig {
 	type ResponseHandler = ();	// Don't handle responses for now.
 }
 
-parameter_types! {
-	pub const MaxDownwardMessageWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 10;
-}
-
 /// No local origins on this chain are allowed to dispatch XCM sends/executions.
 pub type LocalOriginToLocation = ();
 
@@ -341,6 +337,7 @@ impl pallet_xcm::Config for Runtime {
 	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
 	type XcmRouter = XcmRouter;
 	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
+	type XcmExecuteFilter = All<(MultiLocation, xcm::v0::Xcm<Call>)>;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
