@@ -26,7 +26,7 @@ use cumulus_primitives_core::DmpMessageHandler;
 use codec::{Encode, Decode};
 use sp_runtime::RuntimeDebug;
 use xcm::{VersionedXcm, v0::{Xcm, Junction, Outcome, ExecuteXcm, Error as XcmError}};
-use frame_support::{traits::EnsureOrigin, dispatch::Weight, weights::PostDispatchInfo};
+use frame_support::{traits::EnsureOrigin, dispatch::Weight, weights::{PostDispatchInfo, constants::WEIGHT_PER_MILLIS}};
 pub use pallet::*;
 
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
@@ -40,7 +40,7 @@ pub struct ConfigData {
 impl Default for ConfigData {
 	fn default() -> Self {
 		Self {
-			max_individual: 10_000_000_000,	// 10 ms of execution time maximum by default
+			max_individual: 10 * WEIGHT_PER_MILLIS,	// 10 ms of execution time maximum by default
 		}
 	}
 }
@@ -56,7 +56,7 @@ pub struct PageIndexData {
 	overweight_count: OverweightIndex,
 }
 
-/// Simple type used to identity messages for the purpose of reporting events. Secure if and only
+/// Simple type used to identify messages for the purpose of reporting events. Secure if and only
 /// if the message content is unique.
 pub type MessageId = [u8; 32];
 
@@ -211,7 +211,7 @@ pub mod pallet {
 				page_index.begin_used += 1;
 			}
 			if page_index.begin_used == page_index.end_used {
-				// Reste if there's no pages left.
+				// Reset if there's no pages left.
 				page_index.begin_used = 0;
 				page_index.end_used = 0;
 			}
@@ -257,7 +257,7 @@ pub mod pallet {
 
 	/// For an incoming downward message, this just adapts an XCM executor and executes DMP messages
 	/// immediately up until some `MaxWeight` at which point it errors. Their origin is asserted to be
-	/// the Parent location.
+	/// the `Parent` location.
 	impl<T: Config> DmpMessageHandler for Pallet<T> {
 		fn handle_dmp_messages(
 			iter: impl Iterator<Item=(RelayBlockNumber, Vec<u8>)>,
