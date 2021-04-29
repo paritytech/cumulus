@@ -20,7 +20,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::convert::TryFrom;
+use sp_std::{prelude::*, convert::TryFrom};
 use cumulus_primitives_core::{ParaId, DmpMessageHandler};
 use cumulus_primitives_core::relay_chain::BlockNumber as RelayBlockNumber;
 use codec::{Encode, Decode};
