@@ -360,13 +360,11 @@ impl_runtime_apis! {
 	}
 
 	impl sp_session::SessionKeys<Block> for Runtime {
-		fn decode_session_keys(
-			encoded: Vec<u8>,
-		) -> Option<Vec<(Vec<u8>, sp_core::crypto::KeyTypeId)>> {
+		fn decode_session_keys(_: Vec<u8>) -> Option<Vec<(Vec<u8>, sp_core::crypto::KeyTypeId)>> {
 			Some(Vec::new())
 		}
 
-		fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
+		fn generate_session_keys(_: Option<Vec<u8>>) -> Vec<u8> {
 			Vec::new()
 		}
 	}
