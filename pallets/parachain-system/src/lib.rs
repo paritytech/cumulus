@@ -1578,7 +1578,7 @@ mod tests {
 			.add(1, || {
 				HANDLED_DMP_MESSAGES.with(|m| {
 					let mut m = m.borrow_mut();
-					assert_eq!(&*m, &[MSG.clone()]);
+					assert_eq!(&*m, &[(MSG.sent_at, MSG.msg.clone())]);
 					m.clear();
 				});
 			});
