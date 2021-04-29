@@ -223,7 +223,7 @@ pub mod pallet {
 		///
 		/// NOTE: This will return `Ok` in the case of an error decoding, weighing or executing
 		/// the message. This is why it's called message "servicing" rather than "execution".
-		fn try_service_message(
+		pub(crate) fn try_service_message(
 			limit: Weight,
 			_sent_at: RelayBlockNumber,
 			data: &[u8],
@@ -321,5 +321,152 @@ pub mod pallet {
 
 			used
 		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	use codec::Encode;
+	use cumulus_primitives_core::{
+		AbridgedHrmpChannel, InboundDownwardMessage, InboundHrmpMessage, PersistedValidationData,
+		relay_chain::BlockNumber as RelayBlockNumber, ParaId,
+	};
+	use frame_support::{
+		assert_ok,
+		dispatch::UnfilteredDispatchable,
+		parameter_types,
+		traits::{OnFinalize, OnInitialize},
+	};
+	use frame_system::{InitKind, RawOrigin};
+	use cumulus_primitives_core::relay_chain::v1::HrmpChannelId;
+	use sp_core::H256;
+	use sp_runtime::{testing::Header, traits::{IdentityLookup, BlakeTwo256}};
+	use sp_version::RuntimeVersion;
+	use std::cell::RefCell;
+	use xcm::opaque::v0::MultiLocation;
+
+	use crate as dmp_queue;
+
+	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+	type Block = frame_system::mocking::MockBlock<Test>;
+
+	frame_support::construct_runtime!(
+		pub enum Test where
+			Block = Block,
+			NodeBlock = Block,
+			UncheckedExtrinsic = UncheckedExtrinsic,
+		{
+			System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+			DMPQueue: dmp_queue::{Pallet, Call, Storage, Event<T>},
+		}
+	);
+
+	parameter_types! {
+		pub const BlockHashCount: u64 = 250;
+		pub Version: RuntimeVersion = RuntimeVersion {
+			spec_name: sp_version::create_runtime_str!("test"),
+			impl_name: sp_version::create_runtime_str!("system-test"),
+			authoring_version: 1,
+			spec_version: 1,
+			impl_version: 1,
+			apis: sp_version::create_apis_vec!([]),
+			transaction_version: 1,
+		};
+		pub const ParachainId: ParaId = ParaId::new(200);
+		pub const ReservedXcmpWeight: Weight = 0;
+		pub const ReservedDmpWeight: Weight = 0;
+	}
+
+	type AccountId = u64;
+
+	impl frame_system::Config for Test {
+		type Origin = Origin;
+		type Call = Call;
+		type Index = u64;
+		type BlockNumber = u64;
+		type Hash = H256;
+		type Hashing = BlakeTwo256;
+		type AccountId = AccountId;
+		type Lookup = IdentityLookup<Self::AccountId>;
+		type Header = Header;
+		type Event = Event;
+		type BlockHashCount = BlockHashCount;
+		type BlockLength = ();
+		type BlockWeights = ();
+		type Version = Version;
+		type PalletInfo = PalletInfo;
+		type AccountData = ();
+		type OnNewAccount = ();
+		type OnKilledAccount = ();
+		type DbWeight = ();
+		type BaseCallFilter = ();
+		type SystemWeightInfo = ();
+		type SS58Prefix = ();
+		type OnSetCode = ();
+	}
+
+	pub struct MockExec;
+	impl ExecuteXcm<Call> for MockExec {
+		type Call = Call;
+		fn execute_xcm(_origin: MultiLocation, _message: Xcm<Call>, weight_limit: Weight) -> Outcome {
+			if weight_limit < 100 {
+				Outcome::Error(XcmError::WeightLimitReached(101))
+			} else if weight_limit < 200 {
+				Outcome::Incomplete(weight_limit / 2, XcmError::Barrier)
+			} else {
+				Outcome::Complete(weight_limit / 2)
+			}
+		}
+	}
+
+	impl Config for Test {
+		type Event = Event;
+		type XcmExecutor = MockExec;
+		type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
+	}
+
+	pub(crate) fn new_test_ext() -> sp_io::TestExternalities {
+		frame_system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
+	}
+
+	#[test]
+	fn try_service_message() {
+		new_test_ext().execute_with(|| {
+			let limit = 1_000;
+			let sent_at = 0;
+			let data = VersionedXcm::<Call>::V0(Xcm::<Call>::WithdrawAsset { assets: Vec::new(), effects: Vec::new() });
+			let mut garbage = vec![5; 4];
+			garbage.append(&mut data.encode());
+			// incorrectly encoded messages
+			assert_eq!(DMPQueue::try_service_message(
+				limit,
+				sent_at,
+				&garbage,
+			), Ok(0));
+
+			let encoded = data.encode();
+			assert_eq!(DMPQueue::try_service_message(
+				limit,
+				sent_at,
+				&encoded,
+			), Ok(limit / 2));
+
+			let low_limit = 50;
+			let id = sp_io::hashing::blake2_256(&encoded[..]);
+			assert_eq!(DMPQueue::try_service_message(
+				low_limit,
+				sent_at,
+				&encoded,
+			), Err((id, 101)));
+
+			let medium_limit = 160;
+			assert_eq!(DMPQueue::try_service_message(
+				medium_limit,
+				sent_at,
+				&encoded,
+			), Ok(medium_limit / 2));
+		});
 	}
 }
