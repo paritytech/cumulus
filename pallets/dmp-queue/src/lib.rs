@@ -176,6 +176,7 @@ pub mod pallet {
 		/// Downward message executed with the given outcome.
 		/// \[ id, outcome \]
 		ExecutedDownward(MessageId, Outcome),
+		/// The weight limit for handling downward messages was reached.
 		/// \[ id, remaining, required \]
 		WeightExhausted(MessageId, Weight, Weight),
 		/// \[ id, index, required \]
