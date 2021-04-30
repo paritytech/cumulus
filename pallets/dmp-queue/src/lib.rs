@@ -14,9 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Pallet for stuff specific to parachains' usage of XCM. Right now that's just the origin
-//! used by parachains when receiving `Transact` messages from other parachains or the Relay chain
-//! which must be natively represented.
+//! Pallet implementing a message queue for downward messages from the relay-chain.
+//! Executes downward messages if there is enough weight available and schedules the rest for later
+//! execution (by `on_idle` or another `handle_dmp_messages` call). Individual overweight messages
+//! are scheduled into a separate queue that is only serviced by explicit extrinsic calls.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
