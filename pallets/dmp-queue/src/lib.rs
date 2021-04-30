@@ -327,19 +327,20 @@ pub mod pallet {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use crate as dmp_queue;
 
+	use std::cell::RefCell;
 	use codec::Encode;
 	use cumulus_primitives_core::ParaId;
 	use frame_support::parameter_types;
 	use sp_core::H256;
 	use sp_runtime::{testing::Header, traits::{IdentityLookup, BlakeTwo256}};
 	use sp_version::RuntimeVersion;
-	use xcm::opaque::v0::MultiLocation;
-
-	use crate as dmp_queue;
+	use xcm::v0::{MultiLocation, OriginKind};
 
 	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 	type Block = frame_system::mocking::MockBlock<Test>;
+	type Xcm = xcm::v0::Xcm<Call>;
 
 	frame_support::construct_runtime!(
 		pub enum Test where
@@ -348,7 +349,7 @@ mod tests {
 			UncheckedExtrinsic = UncheckedExtrinsic,
 		{
 			System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-			DMPQueue: dmp_queue::{Pallet, Call, Storage, Event<T>},
+			DmpQueue: dmp_queue::{Pallet, Call, Storage, Event<T>},
 		}
 	);
 
@@ -396,17 +397,30 @@ mod tests {
 		type OnSetCode = ();
 	}
 
+	thread_local! {
+		pub static TRACE: RefCell<Vec<(Xcm, Outcome)>> = RefCell::new(Vec::new());
+	}
+	pub fn traced() -> Vec<(Xcm, Outcome)> {
+		TRACE.with(|q| (*q.borrow()).clone())
+	}
+
 	pub struct MockExec;
 	impl ExecuteXcm<Call> for MockExec {
 		type Call = Call;
-		fn execute_xcm(_origin: MultiLocation, _message: Xcm<Call>, weight_limit: Weight) -> Outcome {
-			if weight_limit < 100 {
-				Outcome::Error(XcmError::WeightLimitReached(101))
-			} else if weight_limit < 200 {
-				Outcome::Incomplete(weight_limit / 2, XcmError::Barrier)
-			} else {
-				Outcome::Complete(weight_limit / 2)
-			}
+		fn execute_xcm(_origin: MultiLocation, message: Xcm, weight_limit: Weight) -> Outcome {
+			let o = match &message {
+				Xcm::Transact { require_weight_at_most, .. } => {
+					if *require_weight_at_most <= weight_limit {
+						Outcome::Complete(*require_weight_at_most)
+					} else {
+						Outcome::Error(XcmError::WeightLimitReached(*require_weight_at_most))
+					}
+				},
+				// use 1000 to decide that it's not supported.
+				_ => Outcome::Incomplete(1000.min(weight_limit), XcmError::Unimplemented),
+			};
+			TRACE.with(|q| q.borrow_mut().push((message, o.clone())));
+			o
 		}
 	}
 
@@ -420,42 +434,70 @@ mod tests {
 		frame_system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
 	}
 
+	fn enqueue(enqueued: &[Xcm]) {
+		if !enqueued.is_empty() {
+			let mut index = PageIndex::<Test>::get();
+			Pages::<Test>::insert(index.end_used, enqueued.iter()
+				.map(|m| (0, VersionedXcm::<Call>::from(m.clone()).encode()))
+				.collect::<Vec<_>>()
+			);
+			index.end_used += 1;
+			PageIndex::<Test>::put(index);
+		}
+	}
+
+	fn handle_messages(incoming: &[Xcm], limit: Weight) -> Weight {
+		let iter = incoming.iter().map(|m| (0, VersionedXcm::<Call>::from(m.clone()).encode()));
+		DmpQueue::handle_dmp_messages(iter, limit)
+	}
+
+	fn msg(weight: Weight) -> Xcm {
+		Xcm::Transact {
+			origin_type: OriginKind::Native,
+			require_weight_at_most: weight,
+			call: vec![].into(),
+		}
+	}
+
+	fn msg_complete(weight: Weight) -> (Xcm, Outcome) {
+		(msg(weight), Outcome::Complete(weight))
+	}
+
+	fn msg_limit_reached(weight: Weight) -> (Xcm, Outcome) {
+		(msg(weight), Outcome::Error(XcmError::WeightLimitReached(weight)))
+	}
+
 	#[test]
-	fn try_service_message_works() {
+	fn basic_setup_works() {
 		new_test_ext().execute_with(|| {
-			let limit = 1_000;
-			let sent_at = 0;
-			let data = VersionedXcm::<Call>::V0(Xcm::<Call>::WithdrawAsset { assets: Vec::new(), effects: Vec::new() });
-			let mut garbage = vec![5; 4];
-			garbage.append(&mut data.encode());
-			// incorrectly encoded messages
-			assert_eq!(DMPQueue::try_service_message(
-				limit,
-				sent_at,
-				&garbage,
-			), Ok(0));
+			let weight_used = handle_messages(&[], 1000);
+			assert_eq!(weight_used, 0);
+			assert_eq!(traced(), vec![]);
+		});
+	}
 
-			let encoded = data.encode();
-			assert_eq!(DMPQueue::try_service_message(
-				limit,
-				sent_at,
-				&encoded,
-			), Ok(limit / 2));
+	#[test]
+	fn service_incoming_complete_works() {
+		new_test_ext().execute_with(|| {
+			let incoming = vec![ msg(1000), msg(1000) ];
+			let weight_used = handle_messages(&incoming, 2500);
+			assert_eq!(weight_used, 2000);
+			assert_eq!(traced(), vec![msg_complete(1000), msg_complete(1000)]);
+		});
+	}
 
-			let low_limit = 50;
-			let id = sp_io::hashing::blake2_256(&encoded[..]);
-			assert_eq!(DMPQueue::try_service_message(
-				low_limit,
-				sent_at,
-				&encoded,
-			), Err((id, 101)));
-
-			let medium_limit = 160;
-			assert_eq!(DMPQueue::try_service_message(
-				medium_limit,
-				sent_at,
-				&encoded,
-			), Ok(medium_limit / 2));
+	#[test]
+	fn service_enqueued_works() {
+		new_test_ext().execute_with(|| {
+			let enqueued = vec![ msg(1000), msg(1000), msg(1000) ];
+			enqueue(&enqueued);
+			let weight_used = handle_messages(&[], 2500);
+			assert_eq!(weight_used, 2000);
+			assert_eq!(traced(), vec![
+				msg_complete(1000),
+				msg_complete(1000),
+				msg_limit_reached(1000),
+			]);
 		});
 	}
 }
