@@ -159,7 +159,7 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::OverLimit)?;
 			Overweight::<T>::remove(index);
 			Self::deposit_event(Event::OverweightServiced(index, used));
-			Ok(PostDispatchInfo { actual_weight: Some(1_000_000 + used), pays_fee: Pays::Yes })
+			Ok(Some(1_000_000 + used).into())
 		}
 	}
 
