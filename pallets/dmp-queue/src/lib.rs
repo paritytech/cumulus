@@ -400,8 +400,13 @@ mod tests {
 	thread_local! {
 		pub static TRACE: RefCell<Vec<(Xcm, Outcome)>> = RefCell::new(Vec::new());
 	}
-	pub fn traced() -> Vec<(Xcm, Outcome)> {
-		TRACE.with(|q| (*q.borrow()).clone())
+	pub fn take_trace() -> Vec<(Xcm, Outcome)> {
+		TRACE.with(|q| {
+			let q = &mut *q.borrow_mut();
+			let r = q.clone();
+			q.clear();
+			r
+		})
 	}
 
 	pub struct MockExec;
@@ -467,37 +472,234 @@ mod tests {
 		(msg(weight), Outcome::Error(XcmError::WeightLimitReached(weight)))
 	}
 
+	fn pages_queued() -> u32 {
+		PageIndex::<Test>::get().end_used - PageIndex::<Test>::get().begin_used
+	}
+
+	fn queue_is_empty() -> bool {
+		pages_queued() == 0
+	}
+
 	#[test]
 	fn basic_setup_works() {
 		new_test_ext().execute_with(|| {
 			let weight_used = handle_messages(&[], 1000);
 			assert_eq!(weight_used, 0);
-			assert_eq!(traced(), vec![]);
+			assert_eq!(take_trace(), vec![]);
+			assert!(queue_is_empty());
 		});
 	}
 
 	#[test]
-	fn service_incoming_complete_works() {
+	fn service_inline_complete_works() {
 		new_test_ext().execute_with(|| {
-			let incoming = vec![ msg(1000), msg(1000) ];
+			let incoming = vec![ msg(1000), msg(1001) ];
 			let weight_used = handle_messages(&incoming, 2500);
-			assert_eq!(weight_used, 2000);
-			assert_eq!(traced(), vec![msg_complete(1000), msg_complete(1000)]);
+			assert_eq!(weight_used, 2001);
+			assert_eq!(take_trace(), vec![msg_complete(1000), msg_complete(1001)]);
+			assert!(queue_is_empty());
 		});
 	}
 
 	#[test]
 	fn service_enqueued_works() {
 		new_test_ext().execute_with(|| {
-			let enqueued = vec![ msg(1000), msg(1000), msg(1000) ];
+			let enqueued = vec![ msg(1000), msg(1001), msg(1002) ];
 			enqueue(&enqueued);
 			let weight_used = handle_messages(&[], 2500);
-			assert_eq!(weight_used, 2000);
-			assert_eq!(traced(), vec![
+			assert_eq!(weight_used, 2001);
+			assert_eq!(take_trace(), vec![
 				msg_complete(1000),
-				msg_complete(1000),
-				msg_limit_reached(1000),
+				msg_complete(1001),
+				msg_limit_reached(1002),
 			]);
+		});
+	}
+
+	#[test]
+	fn enqueue_works() {
+		new_test_ext().execute_with(|| {
+			let incoming = vec![ msg(1000), msg(1001), msg(1002) ];
+			let weight_used = handle_messages(&incoming, 999);
+			assert_eq!(weight_used, 0);
+			assert_eq!(PageIndex::<Test>::get(), PageIndexData { begin_used: 0, end_used: 1, overweight_count: 0});
+			assert_eq!(Pages::<Test>::get(0).len(), 3);
+			assert_eq!(take_trace(), vec![ msg_limit_reached(1000) ]);
+
+			let weight_used = handle_messages(&[], 2500);
+			assert_eq!(weight_used, 2001);
+			assert_eq!(take_trace(), vec![
+				msg_complete(1000),
+				msg_complete(1001),
+				msg_limit_reached(1002),
+			]);
+
+			let weight_used = handle_messages(&[], 2500);
+			assert_eq!(weight_used, 1002);
+			assert_eq!(take_trace(), vec![
+				msg_complete(1002),
+			]);
+			assert!(queue_is_empty());
+		});
+	}
+
+	#[test]
+	fn service_inline_then_enqueue_works() {
+		new_test_ext().execute_with(|| {
+			let incoming = vec![ msg(1000), msg(1001), msg(1002) ];
+			let weight_used = handle_messages(&incoming, 1500);
+			assert_eq!(weight_used, 1000);
+			assert_eq!(pages_queued(), 1);
+			assert_eq!(Pages::<Test>::get(0).len(), 2);
+			assert_eq!(take_trace(), vec![
+				msg_complete(1000),
+				msg_limit_reached(1001),
+			]);
+
+			let weight_used = handle_messages(&[], 2500);
+			assert_eq!(weight_used, 2003);
+			assert_eq!(take_trace(), vec![
+				msg_complete(1001),
+				msg_complete(1002),
+			]);
+			assert!(queue_is_empty());
+		});
+	}
+
+	#[test]
+	fn service_enqueued_and_inline_works() {
+		new_test_ext().execute_with(|| {
+			let enqueued = vec![ msg(1000), msg(1001) ];
+			let incoming = vec![ msg(1002), msg(1003) ];
+			enqueue(&enqueued);
+			let weight_used = handle_messages(&incoming, 5000);
+			assert_eq!(weight_used, 4006);
+			assert_eq!(take_trace(), vec![
+				msg_complete(1000),
+				msg_complete(1001),
+				msg_complete(1002),
+				msg_complete(1003),
+			]);
+			assert!(queue_is_empty());
+		});
+	}
+
+	#[test]
+	fn service_enqueued_partially_and_then_enqueue_works() {
+		new_test_ext().execute_with(|| {
+			let enqueued = vec![ msg(1000), msg(10001) ];
+			let incoming = vec![ msg(1002), msg(1003) ];
+			enqueue(&enqueued);
+			let weight_used = handle_messages(&incoming, 5000);
+			assert_eq!(weight_used, 1000);
+			assert_eq!(take_trace(), vec![
+				msg_complete(1000),
+				msg_limit_reached(10001),
+			]);
+			assert_eq!(pages_queued(), 2);
+
+			// 5000 is not enough to process the 10001 blocker, so nothing happens.
+			let weight_used = handle_messages(&[], 5000);
+			assert_eq!(weight_used, 0);
+			assert_eq!(take_trace(), vec![
+				msg_limit_reached(10001),
+			]);
+
+			// 20000 is now enough to process everything.
+			let weight_used = handle_messages(&[], 20000);
+			assert_eq!(weight_used, 12006);
+			assert_eq!(take_trace(), vec![
+				msg_complete(10001),
+				msg_complete(1002),
+				msg_complete(1003),
+			]);
+			assert!(queue_is_empty());
+		});
+	}
+
+	#[test]
+	fn service_enqueued_completely_and_then_enqueue_works() {
+		new_test_ext().execute_with(|| {
+			let enqueued = vec![ msg(1000), msg(1001) ];
+			let incoming = vec![ msg(10002), msg(1003) ];
+			enqueue(&enqueued);
+			let weight_used = handle_messages(&incoming, 5000);
+			assert_eq!(weight_used, 2001);
+			assert_eq!(take_trace(), vec![
+				msg_complete(1000),
+				msg_complete(1001),
+				msg_limit_reached(10002),
+			]);
+			assert_eq!(pages_queued(), 1);
+
+			// 20000 is now enough to process everything.
+			let weight_used = handle_messages(&[], 20000);
+			assert_eq!(weight_used, 11005);
+			assert_eq!(take_trace(), vec![
+				msg_complete(10002),
+				msg_complete(1003),
+			]);
+			assert!(queue_is_empty());
+		});
+	}
+
+	#[test]
+	fn service_enqueued_then_inline_then_enqueue_works() {
+		new_test_ext().execute_with(|| {
+			let enqueued = vec![ msg(1000), msg(1001) ];
+			let incoming = vec![ msg(1002), msg(10003) ];
+			enqueue(&enqueued);
+			let weight_used = handle_messages(&incoming, 5000);
+			assert_eq!(weight_used, 3003);
+			assert_eq!(take_trace(), vec![
+				msg_complete(1000),
+				msg_complete(1001),
+				msg_complete(1002),
+				msg_limit_reached(10003),
+			]);
+			assert_eq!(pages_queued(), 1);
+
+			// 20000 is now enough to process everything.
+			let weight_used = handle_messages(&[], 20000);
+			assert_eq!(weight_used, 10003);
+			assert_eq!(take_trace(), vec![
+				msg_complete(10003),
+			]);
+			assert!(queue_is_empty());
+		});
+	}
+
+	#[test]
+	fn page_crawling_works() {
+		new_test_ext().execute_with(|| {
+			let enqueued = vec![ msg(1000), msg(1001) ];
+			enqueue(&enqueued);
+			let weight_used = handle_messages(&vec![ msg(1002) ], 1500);
+			assert_eq!(weight_used, 1000);
+			assert_eq!(take_trace(), vec![
+				msg_complete(1000),
+				msg_limit_reached(1001),
+			]);
+			assert_eq!(pages_queued(), 2);
+			assert_eq!(PageIndex::<Test>::get().begin_used, 0);
+
+			let weight_used = handle_messages(&vec![ msg(1003) ], 1500);
+			assert_eq!(weight_used, 1001);
+			assert_eq!(take_trace(), vec![
+				msg_complete(1001),
+				msg_limit_reached(1002),
+			]);
+			assert_eq!(pages_queued(), 2);
+			assert_eq!(PageIndex::<Test>::get().begin_used, 1);
+
+			let weight_used = handle_messages(&vec![ msg(1004) ], 1500);
+			assert_eq!(weight_used, 1002);
+			assert_eq!(take_trace(), vec![
+				msg_complete(1002),
+				msg_limit_reached(1003),
+			]);
+			assert_eq!(pages_queued(), 2);
+			assert_eq!(PageIndex::<Test>::get().begin_used, 2);
 		});
 	}
 }
