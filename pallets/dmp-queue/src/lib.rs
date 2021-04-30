@@ -147,7 +147,7 @@ pub mod pallet {
 		/// Events:
 		/// - `OverweightServiced`: On success.
 		#[pallet::weight(1_000_000 + weight_limit)]
-		fn service_overweight(
+		pub fn service_overweight(
 			origin: OriginFor<T>,
 			index: OverweightIndex,
 			weight_limit: Weight,
@@ -332,9 +332,10 @@ mod tests {
 	use std::cell::RefCell;
 	use codec::Encode;
 	use cumulus_primitives_core::ParaId;
-	use frame_support::parameter_types;
+	use frame_support::{parameter_types, assert_noop, traits::OnIdle};
 	use sp_core::H256;
 	use sp_runtime::{testing::Header, traits::{IdentityLookup, BlakeTwo256}};
+	use sp_runtime::DispatchError::BadOrigin;
 	use sp_version::RuntimeVersion;
 	use xcm::v0::{MultiLocation, OriginKind};
 
@@ -472,12 +473,18 @@ mod tests {
 		(msg(weight), Outcome::Error(XcmError::WeightLimitReached(weight)))
 	}
 
-	fn pages_queued() -> u32 {
+	fn pages_queued() -> PageCounter {
 		PageIndex::<Test>::get().end_used - PageIndex::<Test>::get().begin_used
 	}
 
 	fn queue_is_empty() -> bool {
 		pages_queued() == 0
+	}
+
+	fn overweights() -> Vec<OverweightIndex> {
+		(0..PageIndex::<Test>::get().overweight_count)
+			.filter(|i| Overweight::<Test>::contains_key(i))
+			.collect::<Vec<_>>()
 	}
 
 	#[test]
@@ -700,6 +707,76 @@ mod tests {
 			]);
 			assert_eq!(pages_queued(), 2);
 			assert_eq!(PageIndex::<Test>::get().begin_used, 2);
+		});
+	}
+
+	#[test]
+	fn overweight_should_not_block_queue() {
+		new_test_ext().execute_with(|| {
+			// Set the overweight threshold to 9999.
+			Configuration::<Test>::put(ConfigData { max_individual: 9999 });
+
+			let incoming = vec![ msg(1000), msg(10001), msg(1002) ];
+			let weight_used = handle_messages(&incoming, 2500);
+			assert_eq!(weight_used, 2002);
+			assert!(queue_is_empty());
+			assert_eq!(take_trace(), vec![
+				msg_complete(1000),
+				msg_limit_reached(10001),
+				msg_complete(1002),
+			]);
+
+			assert_eq!(overweights(), vec![0]);
+		});
+	}
+
+	#[test]
+	fn overweights_should_be_manually_executable() {
+		new_test_ext().execute_with(|| {
+			// Set the overweight threshold to 9999.
+			Configuration::<Test>::put(ConfigData { max_individual: 9999 });
+
+			let incoming = vec![ msg(10000) ];
+			let weight_used = handle_messages(&incoming, 2500);
+			assert_eq!(weight_used, 0);
+			assert_eq!(take_trace(), vec![ msg_limit_reached(10000) ]);
+			assert_eq!(overweights(), vec![0]);
+
+			assert_noop!(DmpQueue::service_overweight(Origin::signed(1), 0, 20000), BadOrigin);
+			assert_noop!(DmpQueue::service_overweight(Origin::root(), 1, 20000), Error::<Test>::Unknown);
+			assert_noop!(DmpQueue::service_overweight(Origin::root(), 0, 9999), Error::<Test>::OverLimit);
+			assert_eq!(take_trace(), vec![ msg_limit_reached(10000) ]);
+
+			let base_weight = super::Call::<Test>::service_overweight(0, 0).get_dispatch_info().weight;
+			use frame_support::weights::GetDispatchInfo;
+			let info = DmpQueue::service_overweight(Origin::root(), 0, 20000).unwrap();
+			let actual_weight = info.actual_weight.unwrap();
+			assert_eq!(actual_weight, base_weight + 10000);
+			assert_eq!(take_trace(), vec![ msg_complete(10000) ]);
+			assert!(overweights().is_empty());
+
+			assert_noop!(DmpQueue::service_overweight(Origin::root(), 0, 20000), Error::<Test>::Unknown);
+		});
+	}
+
+	#[test]
+	fn on_idle_should_service_queue() {
+		new_test_ext().execute_with(|| {
+			enqueue(&vec![ msg(1000), msg(1001) ]);
+			enqueue(&vec![ msg(1002), msg(1003) ]);
+			enqueue(&vec![ msg(1004), msg(1005) ]);
+
+			let weight_used = DmpQueue::on_idle(1, 6000);
+			assert_eq!(weight_used, 5010);
+			assert_eq!(take_trace(), vec![
+				msg_complete(1000),
+				msg_complete(1001),
+				msg_complete(1002),
+				msg_complete(1003),
+				msg_complete(1004),
+				msg_limit_reached(1005),
+			]);
+			assert_eq!(pages_queued(), 1);
 		});
 	}
 }
