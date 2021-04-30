@@ -182,6 +182,7 @@ pub mod pallet {
 		/// Downward message is overweight and was placed in the overweight queue.
 		/// \[ id, index, required \]
 		OverweightEnqueued(MessageId, OverweightIndex, Weight),
+		/// Downward message from the overweight queue was executed.
 		/// \[ index, used \]
 		OverweightServiced(OverweightIndex, Weight),
 	}
