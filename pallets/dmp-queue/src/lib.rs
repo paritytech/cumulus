@@ -142,7 +142,7 @@ pub mod pallet {
 		///
 		/// Errors:
 		/// - `Unknown`: Message of `index` is unknown.
-		/// - `OverLimit`: Message execution may used greater than `weight_limit`.
+		/// - `OverLimit`: Message execution may use greater than `weight_limit`.
 		///
 		/// Events:
 		/// - `OverweightServiced`: On success.
