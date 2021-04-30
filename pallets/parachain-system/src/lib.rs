@@ -437,6 +437,9 @@ impl<T: Config> sp_runtime::traits::ValidateUnsigned for Module<T> {
 				})
 			}
 		}
+		if let Call::set_validation_data(..) = call {
+			return Ok(Default::default())
+		}
 		Err(InvalidTransaction::Call.into())
 	}
 }

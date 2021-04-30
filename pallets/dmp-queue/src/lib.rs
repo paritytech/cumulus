@@ -26,7 +26,7 @@ use cumulus_primitives_core::DmpMessageHandler;
 use codec::{Encode, Decode};
 use sp_runtime::RuntimeDebug;
 use xcm::{VersionedXcm, v0::{Xcm, Junction, Outcome, ExecuteXcm, Error as XcmError}};
-use frame_support::{traits::EnsureOrigin, dispatch::Weight, weights::{PostDispatchInfo, constants::WEIGHT_PER_MILLIS}};
+use frame_support::{traits::EnsureOrigin, dispatch::Weight, weights::constants::WEIGHT_PER_MILLIS};
 pub use pallet::*;
 
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
@@ -159,7 +159,7 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::OverLimit)?;
 			Overweight::<T>::remove(index);
 			Self::deposit_event(Event::OverweightServiced(index, used));
-			Ok(PostDispatchInfo { actual_weight: Some(1_000_000 + used), pays_fee: Pays::Yes })
+			Ok(Some(1_000_000 + used).into())
 		}
 	}
 
