@@ -179,6 +179,7 @@ pub mod pallet {
 		/// The weight limit for handling downward messages was reached.
 		/// \[ id, remaining, required \]
 		WeightExhausted(MessageId, Weight, Weight),
+		/// Downward message is overweight and was placed in the overweight queue.
 		/// \[ id, index, required \]
 		OverweightEnqueued(MessageId, OverweightIndex, Weight),
 		/// \[ index, used \]
