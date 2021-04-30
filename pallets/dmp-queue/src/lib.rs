@@ -14,9 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Pallet for stuff specific to parachains' usage of XCM. Right now that's just the origin
-//! used by parachains when receiving `Transact` messages from other parachains or the Relay chain
-//! which must be natively represented.
+//! Pallet implementing a message queue for downward messages from the relay-chain.
+//! Executes downward messages if there is enough weight available and schedules the rest for later
+//! execution (by `on_idle` or another `handle_dmp_messages` call). Individual overweight messages
+//! are scheduled into a separate queue that is only serviced by explicit extrinsic calls.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -142,7 +143,7 @@ pub mod pallet {
 		///
 		/// Errors:
 		/// - `Unknown`: Message of `index` is unknown.
-		/// - `OverLimit`: Message execution may used greater than `weight_limit`.
+		/// - `OverLimit`: Message execution may use greater than `weight_limit`.
 		///
 		/// Events:
 		/// - `OverweightServiced`: On success.
@@ -176,10 +177,13 @@ pub mod pallet {
 		/// Downward message executed with the given outcome.
 		/// \[ id, outcome \]
 		ExecutedDownward(MessageId, Outcome),
+		/// The weight limit for handling downward messages was reached.
 		/// \[ id, remaining, required \]
 		WeightExhausted(MessageId, Weight, Weight),
+		/// Downward message is overweight and was placed in the overweight queue.
 		/// \[ id, index, required \]
 		OverweightEnqueued(MessageId, OverweightIndex, Weight),
+		/// Downward message from the overweight queue was executed.
 		/// \[ index, used \]
 		OverweightServiced(OverweightIndex, Weight),
 	}
@@ -199,7 +203,7 @@ pub mod pallet {
 			while page_index.begin_used < page_index.end_used {
 				let page = Pages::<T>::take(page_index.begin_used);
 				for (i, &(sent_at, ref data)) in page.iter().enumerate() {
-					match Self::try_service_message(limit - used, sent_at, &data[..]) {
+					match Self::try_service_message(limit.saturating_sub(used), sent_at, &data[..]) {
 						Ok(w) => used += w,
 						Err(..) => {
 							// Too much weight needed - put the remaining messages back and bail
