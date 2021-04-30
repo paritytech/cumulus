@@ -203,7 +203,7 @@ pub mod pallet {
 			while page_index.begin_used < page_index.end_used {
 				let page = Pages::<T>::take(page_index.begin_used);
 				for (i, &(sent_at, ref data)) in page.iter().enumerate() {
-					match Self::try_service_message(limit - used, sent_at, &data[..]) {
+					match Self::try_service_message(limit.saturating_sub(used), sent_at, &data[..]) {
 						Ok(w) => used += w,
 						Err(..) => {
 							// Too much weight needed - put the remaining messages back and bail
