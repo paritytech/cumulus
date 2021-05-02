@@ -160,7 +160,7 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::OverLimit)?;
 			Overweight::<T>::remove(index);
 			Self::deposit_event(Event::OverweightServiced(index, used));
-			Ok(Some(1_000_000 + used).into())
+			Ok(Some(1_000_000.saturating_add(used)).into())
 		}
 	}
 
