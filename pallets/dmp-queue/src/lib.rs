@@ -147,7 +147,7 @@ pub mod pallet {
 		///
 		/// Events:
 		/// - `OverweightServiced`: On success.
-		#[pallet::weight(1_000_000.saturating_add(weight_limit))]
+		#[pallet::weight(weight_limit.saturating_add(1_000_000))]
 		pub fn service_overweight(
 			origin: OriginFor<T>,
 			index: OverweightIndex,
@@ -160,7 +160,7 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::OverLimit)?;
 			Overweight::<T>::remove(index);
 			Self::deposit_event(Event::OverweightServiced(index, used));
-			Ok(Some(1_000_000.saturating_add(used)).into())
+			Ok(Some(used.saturating_add(1_000_000)).into())
 		}
 	}
 
