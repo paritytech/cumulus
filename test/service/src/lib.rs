@@ -106,7 +106,7 @@ pub fn new_partial(
 	let import_queue = cumulus_client_consensus_relay_chain::import_queue(
 		client.clone(),
 		client.clone(),
-		|_, _| async { Ok(()) },
+		|_, _| async { Ok(sp_timestamp::InherentDataProvider::from_system_time()) },
 		&task_manager.spawn_essential_handle(),
 		registry.clone(),
 	)?;
