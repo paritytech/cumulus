@@ -29,7 +29,7 @@ use std::{
 	io::{self, Write},
 };
 use structopt::StructOpt;
-use std::net::{Ipv4Addr, IpAddr, SocketAddr};
+use std::net::SocketAddr;
 
 /// The `purge-chain` command used to remove the whole chain: the parachain and the relaychain.
 #[derive(Debug, StructOpt)]
@@ -122,7 +122,7 @@ impl sc_cli::CliConfiguration for PurgeChainCmd {
 /// The `run` command used to run a node.
 #[derive(Debug, StructOpt)]
 pub struct RunCmd {
-	/// Our run command inherents from sc_cli's
+	/// The cumulus RunCmd inherents from sc_cli's
 	#[structopt(flatten)]
 	pub base: sc_cli::RunCmd,
 
@@ -137,7 +137,58 @@ pub struct RunCmd {
 	pub collator: bool,
 }
 
-impl sc_cli::CliConfiguration for RunCmd {
+/// A non-redundant version of the `RunCmd` that sets the `validator` field when the
+/// original `RunCmd` had the `colaltor` field.
+///Basically this is how we make `--collator` imply `--validator`.
+pub struct NormalizedRunCmd {
+	/// The cumulus RunCmd inherents from sc_cli's
+	pub base: sc_cli::RunCmd,
+	/// Id of the parachain this collator collates for.
+	pub parachain_id: Option<u32>,
+}
+
+
+// In this approach I do not consume the original RunCmd. I'm stuck here because I don't know how to make
+// a copy of the original sc_cli
+impl RunCmd {
+	/// Transform this RunCmd into a NormalizedRunCmd which does not have a redundant `collator` field.
+	pub fn normalize(&self) -> NormalizedRunCmd {
+		let mut new_base = self.base.clone();
+
+		 new_base.validator = self.base.validator || self.collator;
+
+		 NormalizedRunCmd { 
+			 base: new_base,
+			 parachain_id: self.parachain_id,
+		}
+	}
+}
+
+// In this approach I do consume the original RunCmd. I'm stuck here because I don't know how to create the runner
+// error[E0505]: cannot move out of `cli.run` because it is borrowed
+//    --> rococo-parachains/src/command.rs:265:36
+//     |
+// 265 |             let runner = cli.create_runner(&cli.run.normalize())?;
+//     |                          --- -------------  ^^^^^^^ move out of `cli.run` occurs here
+//     |                          |   |
+//     |                          |   borrow later used by call
+//     |                          borrow of `cli` occurs here
+
+// error[E0382]: use of partially moved value: `cli`
+impl RunCmd {
+	/// Find better name ;P
+	fn normalize(mut self) -> NormalizedRunCmd {
+
+		 self.base.validator = self.base.validator || self.collator;
+
+		 NormalizedRunCmd { 
+			 base: self.base,
+			 parachain_id: self.parachain_id,
+		}
+	}
+}
+
+impl sc_cli::CliConfiguration for NormalizedRunCmd {
 	fn shared_params(&self) -> &sc_cli::SharedParams {
 		self.base.shared_params()
 	}
@@ -174,13 +225,7 @@ impl sc_cli::CliConfiguration for RunCmd {
 	}
 
 	fn role(&self, is_dev: bool) -> sc_cli::Result<sc_cli::Role> {
-		let is_authority = self.base.validator || self.collator || is_dev;
-
-		Ok(if is_authority {
-			sc_service::Role::Authority
-		} else {
-			sc_service::Role::Full
-		})
+		self.base.role(is_dev)
 	}
 
 	fn force_authoring(&self) -> sc_cli::Result<bool> {
@@ -204,14 +249,7 @@ impl sc_cli::CliConfiguration for RunCmd {
 	}
 
 	fn rpc_http(&self, default_listen_port: u16) -> sc_cli::Result<Option<SocketAddr>> {
-		let interface = rpc_interface(
-			self.base.rpc_external,
-			self.base.unsafe_rpc_external,
-			self.base.rpc_methods,
-			self.base.validator || self.collator,
-		)?;
-
-		Ok(Some(SocketAddr::new(interface, self.base.rpc_port.unwrap_or(default_listen_port))))
+		self.base.rpc_http(default_listen_port)
 	}
 
 	fn rpc_ipc(&self) -> sc_cli::Result<Option<String>> {
@@ -219,14 +257,7 @@ impl sc_cli::CliConfiguration for RunCmd {
 	}
 
 	fn rpc_ws(&self, default_listen_port: u16) -> sc_cli::Result<Option<SocketAddr>> {
-		let interface = rpc_interface(
-			self.base.rpc_external,
-			self.base.unsafe_rpc_external,
-			self.base.rpc_methods,
-			self.base.validator || self.collator,
-		)?;
-
-		Ok(Some(SocketAddr::new(interface, self.base.ws_port.unwrap_or(default_listen_port))))
+		self.base.rpc_ws(default_listen_port)
 	}
 
 	fn rpc_methods(&self) -> sc_cli::Result<sc_service::config::RpcMethods> {
@@ -243,36 +274,5 @@ impl sc_cli::CliConfiguration for RunCmd {
 
 	fn base_path(&self) -> sc_cli::Result<Option<BasePath>> {
 		self.base.base_path()
-	}
-}
-
-// This is copied from sc_cli. Maybe it should be made public there?
-fn rpc_interface(
-	is_external: bool,
-	is_unsafe_external: bool,
-	rpc_methods: sc_cli::RpcMethods,
-	is_validator: bool,
-) -> sc_cli::Result<IpAddr> {
-	if is_external && is_validator && rpc_methods != sc_cli::RpcMethods::Unsafe {
-		return Err(sc_cli::Error::Input(
-			"--rpc-external and --ws-external options shouldn't be \
-		used if the node is running as a validator. Use `--unsafe-rpc-external` \
-		or `--rpc-methods=unsafe` if you understand the risks. See the options \
-		description for more information."
-				.to_owned(),
-		));
-	}
-
-	if is_external || is_unsafe_external {
-		// if rpc_methods == RpcMethods::Unsafe {
-		// 	log::warn!(
-		// 		"It isn't safe to expose RPC publicly without a proxy server that filters \
-		// 	available set of RPC methods."
-		// 	);
-		// }
-
-		Ok(Ipv4Addr::UNSPECIFIED.into())
-	} else {
-		Ok(Ipv4Addr::LOCALHOST.into())
 	}
 }
