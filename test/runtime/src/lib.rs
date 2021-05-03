@@ -47,6 +47,7 @@ pub use frame_support::{
 };
 use frame_system::limits::{BlockLength, BlockWeights};
 pub use pallet_balances::Call as BalancesCall;
+pub use pallet_sudo::Call as SudoCall;
 pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -58,12 +59,17 @@ impl_opaque_keys! {
 	pub struct SessionKeys {}
 }
 
+const SPEC_VERSION: u32 = 3;
+
 /// This runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("cumulus-test-parachain"),
 	impl_name: create_runtime_str!("cumulus-test-parachain"),
 	authoring_version: 1,
-	spec_version: 3,
+	#[cfg(feature = "upgrade")]
+	spec_version: SPEC_VERSION + 1,
+	#[cfg(not(feature = "upgrade"))]
+	spec_version: SPEC_VERSION,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -162,6 +168,7 @@ impl frame_system::Config for Runtime {
 	type BlockWeights = RuntimeBlockWeights;
 	type BlockLength = RuntimeBlockLength;
 	type SS58Prefix = SS58Prefix;
+	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
 }
 
 parameter_types! {
@@ -211,12 +218,24 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type SelfParaId = ParachainId;
 	type Event = Event;
 	type OnValidationData = ();
-	type DownwardMessageHandlers = ();
-	type HrmpMessageHandlers = ();
+	type OutboundXcmpMessageSource = ();
+	type DmpMessageHandler = ();
+	type ReservedDmpWeight = ();
+	type XcmpMessageHandler = ();
+	type ReservedXcmpWeight = ();
 }
 
 parameter_types! {
 	pub storage ParachainId: cumulus_primitives_core::ParaId = 100.into();
+	pub storage UpgradeDetection: bool = false;
+}
+
+pub struct UpgradeDetectionOnRuntimeUpgrade;
+impl frame_support::traits::OnRuntimeUpgrade for UpgradeDetectionOnRuntimeUpgrade {
+	fn on_runtime_upgrade() -> u64 {
+		UpgradeDetection::set(&true);
+		0
+	}
 }
 
 construct_runtime! {
@@ -230,7 +249,7 @@ construct_runtime! {
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>},
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Call, Storage},
-		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event},
+		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 	}
 }
@@ -281,6 +300,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPallets,
+	UpgradeDetectionOnRuntimeUpgrade,
 >;
 /// The payload being signed in transactions.
 pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
@@ -289,6 +309,10 @@ decl_runtime_apis! {
 	pub trait GetLastTimestamp {
 		/// Returns the last timestamp of a runtime.
 		fn get_last_timestamp() -> u64;
+	}
+	pub trait GetUpgradeDetection {
+		/// Returns `true` if the runtime has been upgraded at least once.
+		fn has_upgraded() -> bool;
 	}
 }
 
@@ -367,6 +391,12 @@ impl_runtime_apis! {
 	impl crate::GetLastTimestamp<Block> for Runtime {
 		fn get_last_timestamp() -> u64 {
 			Timestamp::now()
+		}
+	}
+
+	impl crate::GetUpgradeDetection<Block> for Runtime {
+		fn has_upgraded() -> bool {
+			UpgradeDetection::get()
 		}
 	}
 }
