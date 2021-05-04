@@ -23,34 +23,36 @@ hex-literal = "0.2.1"
 
 # Parachain dependencies
 parachain-runtime = { package = "cumulus-test-parachain-runtime", path = "runtime" }
+shell-runtime = { package = "cumulus-shell-runtime", path = "shell-runtime" }
 rococo-parachain-primitives = { path = "primitives" }
 
 # Substrate dependencies
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-session = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sc-network = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-session = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
 
 # RPC related dependencies
@@ -66,11 +68,10 @@ cumulus-primitives-core = { path = "../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../primitives/parachain-inherent" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }

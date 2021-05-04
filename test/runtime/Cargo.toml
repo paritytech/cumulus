@@ -37,7 +37,7 @@ cumulus-primitives-core = { path = "../../primitives/core", default-features = f
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "bkchr-inherent-something-future" }
 
 [build-dependencies]
-substrate-wasm-builder = "3.0.0"
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [features]
 default = [ "std" ]
@@ -66,3 +66,4 @@ std = [
 	"sp-transaction-pool/std",
 	"sp-version/std",
 ]
+upgrade = []
