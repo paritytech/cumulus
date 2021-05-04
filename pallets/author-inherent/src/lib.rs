@@ -367,6 +367,16 @@ mod tests {
 	}
 
 	#[test]
+	fn must_be_inherent() {
+		new_test_ext().execute_with(|| {
+			assert_noop!(
+				AuthorInherent::set_author(Origin::signed(1), 1),
+				sp_runtime::DispatchError::BadOrigin
+			);
+		});
+	}
+
+	#[test]
 	fn double_author_fails() {
 		new_test_ext().execute_with(|| {
 			assert_ok!(AuthorInherent::set_author(Origin::none(), 1));
