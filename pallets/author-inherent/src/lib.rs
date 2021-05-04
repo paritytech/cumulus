@@ -63,7 +63,7 @@ impl<T> CanAuthor<T> for () {
 pub trait Config: frame_system::Config {
 	// This is copied from Aura. I wonder if I really need all those trait bounds. For now I'll leave them.
 	/// The identifier type for an authority.
-	type AuthorId: Member + Parameter + RuntimeAppPublic;
+	type AuthorId: Member + Parameter;
 
 	//TODO do we have any use for this converter?
 	// It has to happen eventually to pay rewards to accountids and let account ids stake.
@@ -88,7 +88,12 @@ pub trait Config: frame_system::Config {
 	type FullCanAuthor: CanAuthor<Self::AuthorId>;
 }
 
-impl<T: Config> sp_runtime::BoundToRuntimeAppPublic for Module<T> {
+// If the AccountId type supports it, then this pallet can be BoundToRuntimeAppPublic
+impl<T> sp_runtime::BoundToRuntimeAppPublic for Module<T>
+where
+	T: Config,
+	T::AuthorId: RuntimeAppPublic,
+{
 	type Public = T::AuthorId;
 }
 
