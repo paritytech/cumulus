@@ -244,6 +244,7 @@ impl ParachainInherentData {
 	}
 }
 
+#[async_trait::async_trait]
 impl sp_inherents::InherentDataProvider for ParachainInherentData {
 	fn provide_inherent_data(
 		&self,
@@ -252,11 +253,11 @@ impl sp_inherents::InherentDataProvider for ParachainInherentData {
 		inherent_data.put_data(crate::INHERENT_IDENTIFIER, &self)
 	}
 
-	fn try_handle_error(
+	async fn try_handle_error(
 		&self,
 		_: &sp_inherents::InherentIdentifier,
 		_: &[u8],
-	) -> sp_inherents::TryHandleErrorResult {
+	) -> Option<Result<(), Box<dyn std::error::Error + Send + Sync>>> {
 		None
 	}
 }

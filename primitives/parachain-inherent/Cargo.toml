@@ -6,17 +6,17 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", optional = true , branch = "bkchr-inherent-something-future" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", optional = true , branch = "bkchr-inherent-something-future" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", optional = true , branch = "bkchr-inherent-something-future" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
-sp-api = { git = "https://github.com/paritytech/substrate", optional = true , branch = "bkchr-inherent-something-future" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", optional = true , branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", optional = true , branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", optional = true , branch = "master" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", optional = true , branch = "master" }
 
 # Polkadot dependencies
-polkadot-service = { git = "https://github.com/paritytech/polkadot", optional = true , branch = "bkchr-inherent-something-future" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", optional = true , branch = "master" }
 
 # Cumulus dependencies
 cumulus-primitives-core = { path = "../core", default-features = false }
@@ -24,10 +24,12 @@ cumulus-primitives-core = { path = "../core", default-features = false }
 # Other dependencies
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = [ "derive" ] }
 tracing = { version = "0.1.22", optional = true }
+async-trait = { version = "0.1.42", optional = true }
 
 [features]
 default = [ "std" ]
 std = [
+	"async-trait",
 	"codec/std",
 	"cumulus-primitives-core/std",
 	"sp-inherents/std",

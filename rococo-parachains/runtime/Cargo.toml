@@ -12,18 +12,18 @@ parachain-info = { path = "../pallets/parachain-info", default-features = false 
 rococo-parachain-primitives = { path = "../primitives", default-features = false }
 
 # Substrate dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
-sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
-sp-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
-sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -34,7 +34,7 @@ pallet-randomness-collective-flip = { git = "https://github.com/paritytech/subst
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-inherent-something-future" }
+pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Cumulus dependencies
 cumulus-pallet-aura = { path = "../../pallets/aura", default-features = false }

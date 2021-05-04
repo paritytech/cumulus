@@ -53,7 +53,7 @@ sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # RPC related dependencies
 jsonrpc-core = "15.1.0"
@@ -74,7 +74,7 @@ polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "maste
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [dev-dependencies]
 assert_cmd = "0.12"
@@ -84,12 +84,12 @@ tempfile = "3.2.0"
 tokio = { version = "0.2.13", features = ["macros"] }
 
 # Polkadot dependencies
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
-polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
-polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Substrate dependencies
-pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "master" }

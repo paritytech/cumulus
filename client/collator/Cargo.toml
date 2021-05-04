@@ -6,18 +6,18 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
-polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus dependencies
 cumulus-client-network = { path = "../network" }
@@ -32,17 +32,17 @@ tracing = "0.1.25"
 
 [dev-dependencies]
 # Polkadot dependencies
-polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
+polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus dependencies
 cumulus-test-runtime = { path = "../../test/runtime" }
 cumulus-test-client = { path = "../../test/client" }
 
 # Substrate dependencies
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Other dependencies
 env_logger = "0.7.1"

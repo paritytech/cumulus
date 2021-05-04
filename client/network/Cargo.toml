@@ -7,19 +7,19 @@ edition = "2018"
 
 [dependencies]
 # Substrate deps
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
-polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # other deps
 codec = { package = "parity-scale-codec", version = "2.0.0", features = [ "derive" ] }
@@ -40,11 +40,11 @@ cumulus-primitives-core = { path = "../../primitives/core" }
 polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # substrate deps
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "bkchr-inherent-something-future" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }

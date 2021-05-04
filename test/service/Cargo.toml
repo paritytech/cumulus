@@ -40,10 +40,10 @@ sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus
 cumulus-client-consensus-relay-chain = { path = "../../client/consensus/relay-chain" }
@@ -62,8 +62,8 @@ futures = { version = "0.3.5" }
 tokio = { version = "0.2.21", features = ["macros"] }
 
 # Polkadot dependencies
-polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-inherent-something-future" }
+polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Substrate dependencies
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
