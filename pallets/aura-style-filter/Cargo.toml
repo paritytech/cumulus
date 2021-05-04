@@ -11,9 +11,9 @@ frame-support = { git = "https://github.com/paritytech/substrate", default-featu
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
 pallet-author-inherent = { path = "../author-inherent", default-features = false }
 cumulus-pallet-parachain-system = { path = "../parachain-system",  default-features = false}
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false }
 
 [features]
 default = ["std"]
