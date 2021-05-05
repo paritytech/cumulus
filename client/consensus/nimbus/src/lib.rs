@@ -205,7 +205,7 @@ where
 		Proof = <EnableProofRecording as ProofRecording>::Proof,
 	>,
 	ParaClient: ProvideRuntimeApi<B> + Send + Sync,
-	ParaClient::Api: AuthorFilterAPI<B>,
+	ParaClient::Api: AuthorFilterAPI<B, NimbusId>,
 {
 	async fn produce_candidate(
 		&mut self,
@@ -445,7 +445,7 @@ where
 	// Rust bug: https://github.com/rust-lang/rust/issues/24159
 	sc_client_api::StateBackendFor<RBackend, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
 	ParaClient: ProvideRuntimeApi<Block> + Send + Sync + 'static,
-	ParaClient::Api: AuthorFilterAPI<Block>,
+	ParaClient::Api: AuthorFilterAPI<Block, NimbusId>,
 {
 	FilteringConsensusBuilder::new(
 		para_id,
@@ -521,7 +521,7 @@ where
 	/// Build the relay chain consensus.
 	fn build(self) -> Box<dyn ParachainConsensus<Block>>
 	where
-		ParaClient::Api: AuthorFilterAPI<Block>,
+		ParaClient::Api: AuthorFilterAPI<Block, NimbusId>,
 	{
 		self.relay_chain_client.clone().execute_with(self)
 	}
@@ -543,7 +543,7 @@ where
 	BI: BlockImport<Block> + Send + Sync + 'static,
 	RBackend: Backend<PBlock> + 'static,
 	ParaClient: ProvideRuntimeApi<Block> + Send + Sync + 'static,
-	ParaClient::Api: AuthorFilterAPI<Block>,
+	ParaClient::Api: AuthorFilterAPI<Block, NimbusId>,
 {
 	type Output = Box<dyn ParachainConsensus<Block>>;
 
@@ -554,7 +554,7 @@ where
 		PBackend::State: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
 		Api: polkadot_service::RuntimeApiCollection<StateBackend = PBackend::State>,
 		PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
-		ParaClient::Api: AuthorFilterAPI<Block>,
+		ParaClient::Api: AuthorFilterAPI<Block, NimbusId>,
 	{
 		Box::new(FilteringConsensus::new(
 			self.para_id,

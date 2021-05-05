@@ -7,7 +7,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use sp_std::vec::Vec;
-// use parity_scale_codec::Codec;
+use parity_scale_codec::Codec;
 use sp_application_crypto::KeyTypeId;
 
 //TODO Maybe move our key type into sp_core if this gets well adopted (to avoid collision)
@@ -32,9 +32,11 @@ pub type NimbusId = app::Public;
 /// A nimbus author signature.
 pub type NimbusSignature = app::Signature;
 
+//TODO this actually does need to be generic over the author id type if you want to use it
+// so that the author id is just an account id.
 sp_api::decl_runtime_apis! {
-    pub trait AuthorFilterAPI {
-        fn can_author(author: NimbusId, relay_parent: u32) -> bool;
+    pub trait AuthorFilterAPI<AuthorId: Codec> {
+        fn can_author(author: AuthorId, relay_parent: u32) -> bool;
     }
 }
 
