@@ -533,13 +533,13 @@ impl_runtime_apis! {
 	}
 
 	impl author_filter_api::AuthorFilterAPI<Block> for Runtime {
-        fn can_author(author: NimbusId, relay_parent: u32) -> bool {
+		fn can_author(author: NimbusId, relay_parent: u32) -> bool {
 			// Rather than referring to the author filter directly here,
 			// refer to it via the author inherent config. This avoid the possibility
 			// of accidentally using different filters in different places.
 			AuthorFilter::can_author_helper(&author, relay_parent)
 		}
-    }
+	}
 }
 
 // Notice we use the wrapper executor for execution by the relay chain validators.
