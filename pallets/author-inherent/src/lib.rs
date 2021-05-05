@@ -196,17 +196,16 @@ impl InherentError {
 }
 
 /// The type of data that the inherent will contain.
-/// Just a byte array. It will be decoded to an actual account id later.
 pub type InherentType<T> = <T as Config>::AuthorId;
 
 /// A thing that an outer node could use to inject the inherent data.
 /// This should be used in simple uses of the author inherent (eg permissionless authoring)
 /// When using the full nimbus system, we are manually inserting the  inherent.
 #[cfg(feature = "std")]
-pub struct InherentDataProvider<T: Config>(pub InherentType<T>);
+pub struct InherentDataProvider<AuthorId>(pub AuthorId);
 
 #[cfg(feature = "std")]
-impl<T: Config> ProvideInherentData for InherentDataProvider<T> {
+impl<AuthorId: Encode> ProvideInherentData for InherentDataProvider<AuthorId> {
 	fn inherent_identifier(&self) -> &'static InherentIdentifier {
 		&INHERENT_IDENTIFIER
 	}
