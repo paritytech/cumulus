@@ -14,21 +14,32 @@
 // You should have received a copy of the GNU General Public License
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Small pallet responsible determining which accounts are eligible to author at the current
-//! slot. The slot is determined by the relay parent block number from the parachain inherent.
+//! A Nimbus filter for the AuRa consensus algorithm. This filter does not use any entropy, it
+//! simply rotates authors in order. A single author is eligible at each slot.
 //!
-//! This pallet does not use any entropy, it simply rotates authors in order. A single author is
-//! eligible at each slot.
+//! In the Substrate ecosystem, this algorithm is typically known as AuRa (authority round).
+//! There is a well known implementation in the main Substrate repository and published at
+//! https://crates.io/crates/sc-consensus-aura. There are two primary differences between
+//! the approaches:
 //!
-//! In the Substrate ecosystem, this algorithm is typically known as AuRa (authority Round). There
-//! is a well known implementatino in the main substrate repo. However that implementation does all
-//! of the author checking offchain, which is not suitable for parachain use. This pallet
-//! implements the same author selection algorithm in the Author Filter framework.
+//! 1. This filter leverages all the heavy lifting of the Nimbus framework and consequently is
+//!    capable of expressing Aura in < 100 lines of code.
+//!
+//!    Whereas sc-consensus-aura includes the entire consensus stack including block signing, digest
+//!    formats, and slot prediction. This is a lot of overhead for a sipmle round robin
+//!    consensus that basically boils down to this function
+//!    https://github.com/paritytech/substrate/blob/0f849efc/client/consensus/aura/src/lib.rs#L91-L106
+//!
+//! 2. The Nimbus framework places the author checking logic in the runtime which makes it relatively
+//!    easy for relay chain validators to confirm the author is valid.
+//!
+//!    Whereas sc-consensus-aura places the author checking offchain. The offchain approach is fine
+//!    for standalone layer 1 blockchains, but net well suited for verification on the relay chain
+//!    where validators only run a wasm blob.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::pallet;
-
 pub use pallet::*;
 
 #[pallet]
@@ -56,72 +67,30 @@ pub mod pallet {
 	impl<T: Config> pallet_author_inherent::CanAuthor<T::AccountId> for Pallet<T> {
 		fn can_author(account: &T::AccountId) -> bool {
 
-			// Grab the relay parent height as a temporary source of relay-based entropy
-			let validation_data = cumulus_pallet_parachain_system::Module::<T>::validation_data()
-				.expect("validation data was set in parachain system inherent");
-			let relay_height = validation_data.relay_parent_number;
+			// Grab the relay parent height to use as the slot number
+			let slot = cumulus_pallet_parachain_system::Module::<T>::validation_data()
+				.expect("validation data was set in parachain system inherent")
+				.relay_parent_number;
 
-			Self::can_author_helper(account, relay_height)
+			Self::can_author_helper(account, slot)
 		}
 	}
 
 	impl<T: Config> Pallet<T> {
 		/// Helper method to calculate eligible authors
-		pub fn can_author_helper(account: &T::AccountId, relay_height: u32) -> bool {
+		pub fn can_author_helper(account: &T::AccountId, slot: u32) -> bool {
 			let active: Vec<T::AccountId> = T::PotentialAuthors::get();
 
 			// This is the core Aura logic right here.
-			let active_author = &active[relay_height as usize % active.len()];
+			let active_author = &active[slot as usize % active.len()];
 
 			account == active_author
 		}
 	}
 
-	// No hooks
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
-	// TODO do I need this?
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {}
-
-	// /// The percentage of active authors that will be eligible at each height.
-	// #[pallet::storage]
-	// pub type EligibleRatio<T: Config> = StorageValue<_, Percent, ValueQuery, Half<T>>;
-	//
-	// // Default value for the `EligibleRatio` is one half.
-	// #[pallet::type_value]
-	// pub fn Half<T: Config>() -> Percent {
-	// 	Percent::from_percent(50)
-	// }
-	//
-	// #[pallet::genesis_config]
-	// pub struct GenesisConfig {
-	// 	pub eligible_ratio: u8,
-	// }
-	//
-	// #[cfg(feature = "std")]
-	// impl Default for GenesisConfig {
-	// 	fn default() -> Self {
-	// 		Self {
-	// 			eligible_ratio: 50,
-	// 		}
-	// 	}
-	// }
-	//
-	// #[pallet::genesis_build]
-	// impl<T: Config> GenesisBuild<T> for GenesisConfig {
-	// 	fn build(&self) {
-	// 		//TODO ensure that the u8 is less than or equal 100 so it can be apercent
-	//
-	// 		EligibleRatio::<T>::put(Percent::from_percent(self.eligible_ratio));
-	// 	}
-	// }
-	//
-	// #[pallet::event]
-	// #[pallet::generate_deposit(fn deposit_event)]
-	// pub enum Event {
-	// 	/// The amount of eligible authors for the filter to select has been changed.
-	// 	EligibleUpdated(Percent),
-	// }
 }

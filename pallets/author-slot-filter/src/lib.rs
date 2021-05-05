@@ -55,6 +55,7 @@ pub mod pallet {
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 		/// Deterministic on-chain pseudo-randomness used to do the filtering
 		type RandomnessSource: Randomness<H256, Self::BlockNumber>;
+		//TODO introduce a new trait for exhaustive sets and use it here.
 		/// A source for the complete set of potential authors.
 		/// The starting point of the filtering.
 		type PotentialAuthors: Get<Vec<Self::AuthorId>>;
