@@ -27,7 +27,6 @@
 //! Idea: I wonder if we could simplify this by having a separate worker that just had a stream called
 //! like `slot-beacon` or something. We could use the relay chain or a simple timer.
 
-use codec::Codec;
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_primitives_core::{
 	relay_chain::v1::{Block as PBlock, Hash as PHash, ParachainHost},
@@ -46,16 +45,10 @@ use sp_consensus::{
 };
 use sp_inherents::{InherentData, InherentDataProviders};
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT};
-use sp_runtime::KeyTypeId;
 use std::{marker::PhantomData, sync::Arc, time::Duration};
 use tracing::error;
 use sp_keystore::{SyncCryptoStorePtr, SyncCryptoStore};
 use nimbus_primitives::{AuthorFilterAPI, NIMBUS_KEY_ID, NimbusId};
-use sp_application_crypto::{AppKey, AppPublic, Pair, TryFrom, Public};
-use sp_runtime::traits::{Member, Hash};
-use codec::{Encode, Decode};
-use core::fmt::Debug;
-
 mod import_queue;
 
 const LOG_TARGET: &str = "filtering-consensus";

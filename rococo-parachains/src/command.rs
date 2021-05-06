@@ -33,7 +33,6 @@ use sc_service::{
 	PartialComponents,
 };
 use sp_core::hexdisplay::HexDisplay;
-use sp_core::crypto::{AccountId32, Ss58Codec};
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 

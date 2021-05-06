@@ -29,12 +29,9 @@ use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker, TelemetryWorkerHandle};
-use sp_core::Pair;
-use sp_core::crypto::AccountId32;
 use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
 use std::sync::Arc;
-use codec::Encode;
 
 // Native executor instance.
 native_executor_instance!(
@@ -234,7 +231,6 @@ where
 		);
 		let spawner = task_manager.spawn_handle();
 
-		use sp_core::crypto::Ss58Codec;
 		let parachain_consensus = build_filtering_consensus(BuildFilteringConsensusParams {
 			para_id: id,
 			proposer_factory,
