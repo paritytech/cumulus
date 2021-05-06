@@ -7840,7 +7840,6 @@ dependencies = [
  "sp-session",
  "sp-timestamp",
  "sp-transaction-pool",
- "sp-trie",
  "structopt",
  "substrate-build-script-utils",
  "substrate-prometheus-endpoint",

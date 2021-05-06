@@ -39,6 +39,7 @@ use cumulus_primitives_core::{
 	relay_chain::v1::{Block as PBlock, Hash as PHash, ParachainHost},
 	PersistedValidationData,
 };
+use futures::lock::Mutex;
 use polkadot_service::ClientHandle;
 use sc_client_api::{backend::AuxStore, Backend, BlockOf};
 use sc_consensus_slots::{BackoffAuthoringBlocksStrategy, SlotInfo};
@@ -55,19 +56,20 @@ use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvid
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT, Member, NumberFor};
 use std::{convert::TryFrom, hash::Hash, marker::PhantomData, sync::Arc};
-use futures::lock::Mutex;
 
 mod import_queue;
 
 pub use import_queue::{import_queue, ImportQueueParams};
-pub use sc_consensus_aura::{slot_duration, BuildAuraWorkerParams, SlotDuration, SlotProportion};
+pub use sc_consensus_aura::{
+	slot_duration, AuraBlockImport, BuildAuraWorkerParams, SlotDuration, SlotProportion,
+};
 pub use sc_consensus_slots::InherentDataProviderExt;
 
 const LOG_TARGET: &str = "aura::cumulus";
 
 /// The implementation of the AURA consensus for parachains.
 pub struct AuraConsensus<B, RClient, RBackend, CIDP> {
-	inherent_data_providers: Arc<CIDP>,
+	create_inherent_data_providers: Arc<CIDP>,
 	relay_chain_client: Arc<RClient>,
 	relay_chain_backend: Arc<RBackend>,
 	aura_worker: Arc<
@@ -83,7 +85,7 @@ pub struct AuraConsensus<B, RClient, RBackend, CIDP> {
 impl<B, RClient, RBackend, CIDP> Clone for AuraConsensus<B, RClient, RBackend, CIDP> {
 	fn clone(&self) -> Self {
 		Self {
-			inherent_data_providers: self.inherent_data_providers.clone(),
+			create_inherent_data_providers: self.create_inherent_data_providers.clone(),
 			relay_chain_backend: self.relay_chain_backend.clone(),
 			relay_chain_client: self.relay_chain_client.clone(),
 			aura_worker: self.aura_worker.clone(),
@@ -110,7 +112,7 @@ where
 		force_authoring: bool,
 		backoff_authoring_blocks: Option<BS>,
 		keystore: SyncCryptoStorePtr,
-		inherent_data_providers: CIDP,
+		create_inherent_data_providers: CIDP,
 		polkadot_client: Arc<RClient>,
 		polkadot_backend: Arc<RBackend>,
 		slot_duration: SlotDuration,
@@ -157,7 +159,7 @@ where
 			});
 
 		Self {
-			inherent_data_providers: Arc::new(inherent_data_providers),
+			create_inherent_data_providers: Arc::new(create_inherent_data_providers),
 			relay_chain_backend: polkadot_backend,
 			relay_chain_client: polkadot_client,
 			aura_worker: Arc::new(Mutex::new(worker)),
@@ -175,7 +177,7 @@ where
 		relay_parent: PHash,
 	) -> Option<(InherentData, CIDP::InherentDataProviders)> {
 		let inherent_data_providers = self
-			.inherent_data_providers
+			.create_inherent_data_providers
 			.create_inherent_data_providers(parent, (relay_parent, validation_data.clone()))
 			.await
 			.map_err(|e| {
@@ -283,7 +285,7 @@ where
 /// Paramaters of [`build_aura_consensus`].
 pub struct BuildAuraConsensusParams<PF, BI, RBackend, CIDP, Client, BS, SO> {
 	pub proposer_factory: PF,
-	pub inherent_data_providers: CIDP,
+	pub create_inherent_data_providers: CIDP,
 	pub block_import: BI,
 	pub relay_chain_client: polkadot_service::Client,
 	pub relay_chain_backend: Arc<RBackend>,
@@ -303,7 +305,7 @@ pub struct BuildAuraConsensusParams<PF, BI, RBackend, CIDP, Client, BS, SO> {
 pub fn build_aura_consensus<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Error>(
 	BuildAuraConsensusParams {
 		proposer_factory,
-		inherent_data_providers,
+		create_inherent_data_providers,
 		block_import,
 		relay_chain_client,
 		relay_chain_backend,
@@ -358,7 +360,7 @@ where
 	AuraConsensusBuilder::<P, _, _, _, _, _, _, _, _, _>::new(
 		proposer_factory,
 		block_import,
-		inherent_data_providers,
+		create_inherent_data_providers,
 		relay_chain_client,
 		relay_chain_backend,
 		para_client,
@@ -382,7 +384,7 @@ where
 struct AuraConsensusBuilder<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Error> {
 	_phantom: PhantomData<(Block, Error, P)>,
 	proposer_factory: PF,
-	inherent_data_providers: CIDP,
+	create_inherent_data_providers: CIDP,
 	block_import: BI,
 	relay_chain_backend: Arc<RBackend>,
 	relay_chain_client: polkadot_service::Client,
@@ -440,7 +442,7 @@ where
 	fn new(
 		proposer_factory: PF,
 		block_import: BI,
-		inherent_data_providers: CIDP,
+		create_inherent_data_providers: CIDP,
 		relay_chain_client: polkadot_service::Client,
 		relay_chain_backend: Arc<RBackend>,
 		para_client: Arc<Client>,
@@ -456,7 +458,7 @@ where
 			_phantom: PhantomData,
 			proposer_factory,
 			block_import,
-			inherent_data_providers,
+			create_inherent_data_providers,
 			relay_chain_backend,
 			relay_chain_client,
 			para_client,
@@ -534,7 +536,7 @@ where
 			self.force_authoring,
 			self.backoff_authoring_blocks,
 			self.keystore,
-			self.inherent_data_providers,
+			self.create_inherent_data_providers,
 			client.clone(),
 			self.relay_chain_backend,
 			self.slot_duration,

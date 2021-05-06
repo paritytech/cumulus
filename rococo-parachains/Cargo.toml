@@ -46,7 +46,6 @@ sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch 
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "master" }
