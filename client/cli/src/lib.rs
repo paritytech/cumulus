@@ -139,7 +139,7 @@ pub struct RunCmd {
 
 /// A non-redundant version of the `RunCmd` that sets the `validator` field when the
 /// original `RunCmd` had the `colaltor` field.
-///Basically this is how we make `--collator` imply `--validator`.
+/// This is how we make `--collator` imply `--validator`.
 pub struct NormalizedRunCmd {
 	/// The cumulus RunCmd inherents from sc_cli's
 	pub base: sc_cli::RunCmd,
@@ -148,7 +148,7 @@ pub struct NormalizedRunCmd {
 }
 
 impl RunCmd {
-	/// Transform this RunCmd into a NormalizedRunCmd which does not have a redundant `collator` field.
+	/// Create a NormalizedRunCmd which does not have a redundant `collator` field.
 	pub fn normalize(&self) -> NormalizedRunCmd {
 		let mut new_base = self.base.clone();
 
