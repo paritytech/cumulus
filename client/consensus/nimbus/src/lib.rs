@@ -217,35 +217,6 @@ where
 		// We will insert the inherent manually here as Basti does for the parachain inherent. That
 		// may improve when/if his bkchr-inherent-something-future branch is merged, but it
 		// honestly doesn't feel that bad to me the way it is.
-		// Whew, I think that's al lthe stuff I was stuck on yesterday.
-
-		// We're using the Trait names when calling keystore methods because of this.
-		// Hopefully switching to the async keystore will make the code sexier:
-		// error[E0034]: multiple applicable items in scope
-		//    --> client/consensus/filtering/src/lib.rs:213:38
-		//     |
-		// 213 |         let have_key: bool = self.keystore.has_keys(
-		//     |                                            ^^^^^^^^ multiple `has_keys` found
-		//     |
-		// note: candidate #1 is defined in the trait `SyncCryptoStore`
-		//    --> /home/joshy/.cargo/git/checkouts/substrate-7e08433d4c370a21/a8c2bc6/primitives/keystore/src/lib.rs:278:2
-		//     |
-		// 278 |     fn has_keys(&self, public_keys: &[(Vec<u8>, KeyTypeId)]) -> bool;
-		//     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-		// note: candidate #2 is defined in the trait `CryptoStore`
-		//    --> /home/joshy/.cargo/git/checkouts/substrate-7e08433d4c370a21/a8c2bc6/primitives/keystore/src/lib.rs:118:2
-		//     |
-		// 118 |     async fn has_keys(&self, public_keys: &[(Vec<u8>, KeyTypeId)]) -> bool;
-		//     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-		// help: disambiguate the associated function for candidate #1
-		//     |
-		// 213 |         let have_key: bool = SyncCryptoStore::has_keys(self.keystore, &vec![(self.author.encode(), KeyTypeId(*b"nmbs"))]);
-		//     |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-		// help: disambiguate the associated function for candidate #2
-		//     |
-		// 213 |         let have_key: bool = CryptoStore::has_keys(self.keystore, &vec![(self.author.encode(), KeyTypeId(*b"nmbs"))]);
-		//     |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 
 		// Get allthe available keys
 		// I don't know why I had to call the crypto-specific method as opposed to just "keys",
@@ -253,7 +224,7 @@ where
 		// Ughhh, it still doesn't return NimbusId. I hope this will work somehow.
 		// note: expected struct `Vec<author_filter_api::app::Public>`
     	//          found struct `Vec<sp_core::sr25519::Public>`
-		let available_keys/*: Vec<NimbusId>*/ =
+		let available_keys =
 			SyncCryptoStore::sr25519_public_keys(&*self.keystore, NIMBUS_KEY_ID);
 
 		// Print a more helpful message than "not eligible" when there are no keys at all.
@@ -266,7 +237,6 @@ where
 			self.parachain_client.runtime_api()
 				.can_author(
 					&BlockId::Hash(parent.hash()),
-					//Holy shit I think that worked!
 					From::from(*k),
 					validation_data.relay_parent_number
 				)
@@ -349,7 +319,7 @@ where
 		// println!("The signature is \n{:?}", sig);
 
 		// Add a silly test digest, just to get familiar with how it works
-		// TODO better identifier and stuff.
+		// TODO better identifier and stuff - add a type to nimbus primitives?
 		let test_digest = sp_runtime::generic::DigestItem::Seal(*b"test", Vec::new());
 
 		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header.clone());
