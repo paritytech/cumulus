@@ -20,6 +20,7 @@ use sp_runtime::generic::DigestItem;
 /// TODO Degisn improvement:
 /// Can we share code with the verifier?
 /// Can this struct take a verifier as an associated type?
+/// Or maybe this will just get simpler ingeneral when https://github.com/paritytech/polkadot/issues/2888 lands
 pub struct BlockExecutor<T, I>(sp_std::marker::PhantomData<(T, I)>);
 
 impl<Block, T, I> ExecuteBlock<Block> for BlockExecutor<T, I>
