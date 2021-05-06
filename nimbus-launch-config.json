@@ -35,7 +35,7 @@
 	},
 	"parachains": [
 		{
-			"bin": "./rococo-collator-stock",
+			"bin": "./target/release/rococo-collator",
 			"id": "200",
 			"balance": "1000000000000000000000",
 			"nodes": [
