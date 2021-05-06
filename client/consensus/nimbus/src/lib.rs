@@ -178,10 +178,6 @@ where
 			})
 			.ok()?;
 
-		println!("On client side. Inherent data is");
-		// Grrr debug isn't implemented
-		// println!("{:?}", inherent_data);
-
 		Some(inherent_data)
 	}
 }
