@@ -1,8 +1,9 @@
 [package]
 authors = ["PureStake"]
 edition = "2018"
-name = "author-filter-api"
+name = "nimbus-primitives"
 version = "0.1.0"
+description = "Primitive types and traites used in the nimbus consensus framework"
 
 [dependencies]
 #TODO unused dependencies

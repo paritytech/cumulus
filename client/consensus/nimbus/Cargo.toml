@@ -25,7 +25,7 @@ sp-application-crypto = { git = "https://github.com/paritytech/substrate", branc
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 
 # Cumulus dependencies
-author-filter-api = { path = "./runtime-api" }
+nimbus-primitives = { path = "../../../primitives/nimbus" }
 cumulus-client-consensus-common = { path = "../common" }
 cumulus-primitives-core = { path = "../../../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../../../primitives/parachain-inherent" }

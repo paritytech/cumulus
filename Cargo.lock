@@ -395,18 +395,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "author-filter-api"
-version = "0.1.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "sp-api",
- "sp-application-crypto",
- "sp-std",
-]
-
-[[package]]
 name = "autocfg"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1590,7 +1578,6 @@ dependencies = [
 name = "cumulus-test-parachain-runtime"
 version = "0.1.0"
 dependencies = [
- "author-filter-api",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
@@ -1601,6 +1588,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
+ "nimbus-primitives",
  "pallet-account-set",
  "pallet-author-inherent",
  "pallet-author-slot-filter",
@@ -4641,12 +4629,12 @@ name = "nimbus-consensus"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "author-filter-api",
  "cumulus-client-consensus-common",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
  "futures 0.3.14",
  "log",
+ "nimbus-primitives",
  "parity-scale-codec",
  "parking_lot 0.9.0",
  "polkadot-service",
@@ -4662,6 +4650,18 @@ dependencies = [
  "sp-runtime",
  "substrate-prometheus-endpoint",
  "tracing",
+]
+
+[[package]]
+name = "nimbus-primitives"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-std",
 ]
 
 [[package]]
@@ -7754,7 +7754,6 @@ name = "rococo-collator"
 version = "0.1.0"
 dependencies = [
  "assert_cmd",
- "author-filter-api",
  "cumulus-client-cli",
  "cumulus-client-collator",
  "cumulus-client-network",
@@ -7769,6 +7768,7 @@ dependencies = [
  "jsonrpc-core",
  "log",
  "nimbus-consensus",
+ "nimbus-primitives",
  "nix",
  "pallet-author-inherent",
  "pallet-sudo",

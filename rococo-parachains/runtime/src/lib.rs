@@ -53,8 +53,7 @@ pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
-//TODO woof the crate naming is terrible.
-use author_filter_api::NimbusId;
+use nimbus_primitives::NimbusId;
 
 // XCM imports
 use polkadot_parachain::primitives::Sibling;
@@ -533,8 +532,8 @@ impl_runtime_apis! {
 	}
 
 
-	impl author_filter_api::AuthorFilterAPI<Block, author_filter_api::NimbusId> for Runtime {
-		fn can_author(author: author_filter_api::NimbusId, relay_parent: u32) -> bool {
+	impl nimbus_primitives::AuthorFilterAPI<Block, nimbus_primitives::NimbusId> for Runtime {
+		fn can_author(author: nimbus_primitives::NimbusId, relay_parent: u32) -> bool {
 			// Rather than referring to the author filter directly here,
 			// refer to it via the author inherent config. This avoid the possibility
 			// of accidentally using different filters in different places.
