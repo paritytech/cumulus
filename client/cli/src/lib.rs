@@ -147,42 +147,16 @@ pub struct NormalizedRunCmd {
 	pub parachain_id: Option<u32>,
 }
 
-
-// In this approach I do not consume the original RunCmd. I'm stuck here because I don't know how to make
-// a copy of the original sc_cli
 impl RunCmd {
 	/// Transform this RunCmd into a NormalizedRunCmd which does not have a redundant `collator` field.
 	pub fn normalize(&self) -> NormalizedRunCmd {
+		// TODO This clone issue should be fixed by https://github.com/paritytech/substrate/pull/8731 right?
 		let mut new_base = self.base.clone();
 
 		 new_base.validator = self.base.validator || self.collator;
 
 		 NormalizedRunCmd { 
 			 base: new_base,
-			 parachain_id: self.parachain_id,
-		}
-	}
-}
-
-// In this approach I do consume the original RunCmd. I'm stuck here because I don't know how to create the runner
-// error[E0505]: cannot move out of `cli.run` because it is borrowed
-//    --> rococo-parachains/src/command.rs:265:36
-//     |
-// 265 |             let runner = cli.create_runner(&cli.run.normalize())?;
-//     |                          --- -------------  ^^^^^^^ move out of `cli.run` occurs here
-//     |                          |   |
-//     |                          |   borrow later used by call
-//     |                          borrow of `cli` occurs here
-
-// error[E0382]: use of partially moved value: `cli`
-impl RunCmd {
-	/// Find better name ;P
-	fn normalize(mut self) -> NormalizedRunCmd {
-
-		 self.base.validator = self.base.validator || self.collator;
-
-		 NormalizedRunCmd { 
-			 base: self.base,
 			 parachain_id: self.parachain_id,
 		}
 	}
