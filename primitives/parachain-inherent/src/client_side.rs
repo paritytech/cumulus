@@ -257,7 +257,7 @@ impl sp_inherents::InherentDataProvider for ParachainInherentData {
 		&self,
 		_: &sp_inherents::InherentIdentifier,
 		_: &[u8],
-	) -> Option<Result<(), Box<dyn std::error::Error + Send + Sync>>> {
+	) -> Option<Result<(), sp_inherents::Error>> {
 		None
 	}
 }

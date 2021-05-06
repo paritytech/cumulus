@@ -40,7 +40,7 @@ pub struct ImportQueueParams<'a, I, C, IDP, S, CAW> {
 	/// The client to interact with the chain.
 	pub client: Arc<C>,
 	/// The inherent data providers, to create the inherent data.
-	pub inherent_data_providers: IDP,
+	pub create_inherent_data_providers: IDP,
 	/// The spawner to spawn background tasks.
 	pub spawner: &'a S,
 	/// The prometheus registry.
@@ -56,7 +56,7 @@ pub fn import_queue<'a, P, Block, I, C, S, CAW, IDP>(
 	ImportQueueParams {
 		block_import,
 		client,
-		inherent_data_providers,
+		create_inherent_data_providers,
 		spawner,
 		registry,
 		can_author_with,
@@ -91,7 +91,7 @@ where
 		block_import: crate::ParachainBlockImport(block_import),
 		justification_import: None,
 		client,
-		inherent_data_providers,
+		create_inherent_data_providers,
 		spawner,
 		registry,
 		can_author_with,

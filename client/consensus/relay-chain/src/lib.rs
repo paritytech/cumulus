@@ -38,7 +38,6 @@ use cumulus_primitives_core::{
 	relay_chain::v1::{Block as PBlock, Hash as PHash, ParachainHost},
 	ParaId, PersistedValidationData,
 };
-use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use parking_lot::Mutex;
 use polkadot_service::ClientHandle;
 use sc_client_api::Backend;

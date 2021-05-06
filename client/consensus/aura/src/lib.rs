@@ -39,7 +39,6 @@ use cumulus_primitives_core::{
 	relay_chain::v1::{Block as PBlock, Hash as PHash, ParachainHost},
 	PersistedValidationData,
 };
-use parking_lot::Mutex;
 use polkadot_service::ClientHandle;
 use sc_client_api::{backend::AuxStore, Backend, BlockOf};
 use sc_consensus_slots::{BackoffAuthoringBlocksStrategy, SlotInfo};
@@ -56,6 +55,7 @@ use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvid
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT, Member, NumberFor};
 use std::{convert::TryFrom, hash::Hash, marker::PhantomData, sync::Arc};
+use futures::lock::Mutex;
 
 mod import_queue;
 
@@ -143,8 +143,8 @@ where
 		P::Public: AppPublic + Hash + Member + Encode + Decode,
 		P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
 	{
-		let worker = sc_consensus_aura::build_aura_worker::<P, _, _, _, _, _, _, _>(
-			BuildAuraWorkerParams {
+		let worker =
+			sc_consensus_aura::build_aura_worker::<P, _, _, _, _, _, _, _>(BuildAuraWorkerParams {
 				client: para_client,
 				block_import: ParachainBlockImport(block_import),
 				proposer_factory,
@@ -154,8 +154,7 @@ where
 				keystore,
 				telemetry,
 				block_proposal_slot_portion,
-			},
-		);
+			});
 
 		Self {
 			inherent_data_providers: Arc::new(inherent_data_providers),
@@ -228,10 +227,14 @@ where
 			inherent_data,
 			self.slot_duration.slot_duration(),
 			parent.clone(),
+			// Set the block limit to 50% of the maximum PoV size.
+			//
+			// TODO: If we got benchmarking that includes that encapsulates the proof size,
+			// we should be able to use the maximum pov size.
+			Some((validation_data.max_pov_size / 2) as usize),
 		);
 
-		let future = self.aura_worker.lock().on_slot(info);
-		let res = future.await?;
+		let res = self.aura_worker.lock().await.on_slot(info).await?;
 
 		Some(ParachainCandidate {
 			block: res.block,
@@ -247,18 +250,23 @@ where
 /// we will update the best block, as it is included by the relay-chain.
 struct ParachainBlockImport<I>(I);
 
-impl<Block, I> BlockImport<Block> for ParachainBlockImport<I> where Block: BlockT, I: BlockImport<Block> {
+#[async_trait::async_trait]
+impl<Block, I> BlockImport<Block> for ParachainBlockImport<I>
+where
+	Block: BlockT,
+	I: BlockImport<Block> + Send,
+{
 	type Error = I::Error;
 	type Transaction = I::Transaction;
 
-	fn check_block(
+	async fn check_block(
 		&mut self,
 		block: sp_consensus::BlockCheckParams<Block>,
 	) -> Result<sp_consensus::ImportResult, Self::Error> {
-		self.0.check_block(block)
+		self.0.check_block(block).await
 	}
 
-	fn import_block(
+	async fn import_block(
 		&mut self,
 		mut block_import_params: sp_consensus::BlockImportParams<Block, Self::Transaction>,
 		cache: std::collections::HashMap<sp_consensus::import_queue::CacheKeyId, Vec<u8>>,
@@ -268,7 +276,7 @@ impl<Block, I> BlockImport<Block> for ParachainBlockImport<I> where Block: Block
 		block_import_params.fork_choice = Some(sp_consensus::ForkChoiceStrategy::Custom(
 			block_import_params.origin == sp_consensus::BlockOrigin::NetworkInitialSync,
 		));
-		self.0.import_block(block_import_params, cache)
+		self.0.import_block(block_import_params, cache).await
 	}
 }
 

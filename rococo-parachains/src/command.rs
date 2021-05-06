@@ -156,18 +156,20 @@ macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
 		if use_shell_runtime(&runner.config().chain_spec) {
-			runner.async_run(|$config| {
-				let $components = new_partial::<shell_runtime::RuntimeApi, ShellRuntimeExecutor>(&$config)?;
-				let task_manager = $components.task_manager;
-				{ $( $code )* }.map(|v| (v, task_manager))
-			})
+			// runner.async_run(|$config| {
+			// 	let $components = new_partial::<shell_runtime::RuntimeApi, ShellRuntimeExecutor>(&$config)?;
+			// 	let task_manager = $components.task_manager;
+			// 	{ $( $code )* }.map(|v| (v, task_manager))
+			// })
 		} else {
-			runner.async_run(|$config| {
-				let $components = new_partial::<parachain_runtime::RuntimeApi, RuntimeExecutor>(&$config)?;
-				let task_manager = $components.task_manager;
-				{ $( $code )* }.map(|v| (v, task_manager))
-			})
+			// runner.async_run(|$config| {
+			// 	let $components = new_partial::<parachain_runtime::RuntimeApi, RuntimeExecutor>(&$config)?;
+			// 	let task_manager = $components.task_manager;
+			// 	{ $( $code )* }.map(|v| (v, task_manager))
+			// })
 		}
+
+		Ok(())
 	}}
 }
 
