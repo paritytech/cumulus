@@ -150,7 +150,6 @@ pub struct NormalizedRunCmd {
 impl RunCmd {
 	/// Transform this RunCmd into a NormalizedRunCmd which does not have a redundant `collator` field.
 	pub fn normalize(&self) -> NormalizedRunCmd {
-		// TODO This clone issue should be fixed by https://github.com/paritytech/substrate/pull/8731 right?
 		let mut new_base = self.base.clone();
 
 		 new_base.validator = self.base.validator || self.collator;
