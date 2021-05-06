@@ -1,6 +1,6 @@
 # Cumulo -- Nimbus ⛈️
 
-Nimbus is a set of tools for building and testing parachain consensus systems on [cumulus](https://github.com/paritytech/cumulus)-based parachains.
+Nimbus is a framework for building slot-based parachain consensus systems on [cumulus](https://github.com/paritytech/cumulus)-based parachains.
 
 Given the regular six-second pulse-like nature of the relay chain, it is natural to think about slot-
 based consensus algorithms for parachains. The parachain network is responsible for liveness and
@@ -18,8 +18,8 @@ along with helpful traits for implementing the parts that researchers and develo
 
 ## Try the Demo
 
-While Nimbus is primarily a developer toolkit meant to be included in other projects, it is useful
-to see a basic node in action. An example node is included in the `rococo-parachains` directory. You
+While Nimbus is primarily a development framework meant to be included in other projects, it is useful
+to see a basic network in action. An example node is included in the `rococo-parachains` directory. You
 can build it with `cargo build --release` and launch it like any other cumulus parachian.
 
 Rather than reiterate how to start a relay-para network here, I'll simply recommend you use the
@@ -54,14 +54,14 @@ using Nimbus in your project, it is worth reading this.
 
 ### Author Inherent
 
-The Author inherent pallet provides an inherent in which block authors can insert their identity into
+The Author inherent pallet allows block authors to insert their identity into
 the runtime. It also includes an inherent data provider for the client-side node to create the appropriate
 inherents. This feature alone is useful in many blockchains and can be used for things like block rewards.
 This piece can be used alone without any other parts of nimbus if all you desire is authoring information
 in the runtime.
 
-The author inherent provides two hooks called `PreliminaryCanAuthor` and `FullCanAuthor`. The
-preliminary check will be run by non-authoring nodes before importing a block to quickly rule out some
+The author inherent provides two validation hooks called `PreliminaryCanAuthor` and `FullCanAuthor`. The
+preliminary check will be run before importing a block to quickly rule out some
 invalid authors. This check should be cheap and should not depend on other runtime state. The full
 check will be called during the inherent execution and is the final say for whether an author is eligible.
 The preliminary check may rule out authors, but does not guarantee eligibility. Said another way, it
@@ -83,15 +83,19 @@ someone else's identity via the author inherent. In some cases (famously bitcoin
 desired. When used in this mode it is more common to use the term "beneficiary" than "author". If you
 want your authorship information to be proven, you will need to use more parts of Nimbus; read on.
 
+**Feedback Requested** I've occasionally heard and wondered myself whether this would work better as a
+pre-runtime digest than an inherent. I'm open to that change. I build it as an inherent because I don't
+clearly understand the distinction between the two, and I'm more familiar with inherents.
+
 ### Author Filters
 
-Many consensus engines will want to restrict which authors can author. Some may have a static set, others
+A primary job of a consensus engine is deciding who can author each block. Some may have a static set, others
 may rotate the set each era, others may elect an always-changing subset of all potential authors. There
 is much space for creativity, research, and design, and Nimbus strives to provide a flexible interface
 for this creative work. In the majority of cases, you can express all the interesting parts of your
 consensus engine simply by implementing the correct filters. The rest of Nimubs will #JustWork for you.
 
-The repository comes with a few example filters already. The examples are:
+The repository comes with a few example filters already, and additional examples are welcome. The examples are:
 * Height filter - This filter takes a finite set (eg a staked set) and filters it down to a pseudo-random
 subset at each height. The eligible ratio is configurable in the pallet. This is a good learning example
 but not secure, because the authors only rotate at each parachain block. Therefore a small colluding
@@ -101,26 +105,26 @@ but in the future the relay randomness beacon) to change the elected subset each
 authors a block even if the parachain doesn't author. This avoids the stall mentioned previously.
 * Aura - The authority round consensus engine is popular in the Substrate ecosystem because it was one
 of the first (and simplest!) engines implemented in Substrate. Aura can be expressed in the Nimbus
-filter framework and is included as an example filter.
+filter framework and is included as an example filter. If you are considering using aura, that crate
+has good documentation on how it differs from `sc-consensus-aura`.
 
 ### Author Filter Runtime API
 
-Nimbus makes the design choice to include the final author checking logic in the runtime. This makes
-it relatively straight forward (but still not entirely straight forward; read on) for relay chain validators
-to check the authorship information. This is in contrast to the existing implementation of Aura and Babe
-where the authorship checks are offchain. Because the checks happen in the runtime, authoring nodes would
-need to author complete blocks to learn whether they are eligible. This is inefficient, and leads to
-confusing logs for users.
+Nimbus makes the design choice to include the author checking logic in the runtime. This makes
+it relatively straight forward (but still not entirely straight forward; at least until 
+https://github.com/paritytech/polkadot/issues/2888 is resolved) for relay chain validators
+to check the authorship information. This is in contrast to the existing implementations of Aura
+and Babe where the authorship checks are offchain.
 
-Authoring nodes (collators) should be smart enough to predict whether they will be eligible, and not
-author at all if they are ineligible. To achieve this, we provide a runtime API that will allow collator
-nodes to call into the runtime, and make the minimal calculation necessary to determine whether they will
-be eligible. If they aren't they skip the slot saving energy and keeping the logs free of confusing errors.
+While moving the check in-runtime simplifies interfacing with validators, it makes in impossible
+for authoring nodes to predict whether they will be eligible without calling into the runtime.
+To achieve this, we provide a runtime API that makes the minimal calculation necessary to determine
+ whether a specified author  will be eligible at the specified slot.
 
-### Nimbus Consensus
+### Nimbus Consensus Worker
 
 Nimbus consensus is the primary client-side consensus worker. It implements the shiny new `ParachainConsensus`
-trait introduced to cumulus in https://github.com/paritytech/cumulus/pull/329 It is not likely that
+trait introduced to cumulus in https://github.com/paritytech/cumulus/pull/329. It is not likely that
 you will need to change this code directly to implement your engine as it is entirely abstracted over
 the filters you use. The consensus engine performs these tasks:
 
@@ -128,12 +132,13 @@ the filters you use. The consensus engine performs these tasks:
 * Authorship - It calls into a standard Substrate proposer to construct a block (probably including the author inherent).
 * Self import - it imports the block that the proposer created (called the pre-block) into the node's local database.
 * Sealing - It adds a seal digest to the block - This is what is used by other nodes to verify the authorship information.
+
 **Warning, the seal does not yet contain a cryptographic signature; it is just mocked. That is one of the next tasks.**
 
 ### Verifier and Import Queue
 
 For a parachain node to import a sealed block authored by one of its peers, it needs to remove the post-
-runtime seal digest and check it (same in a standalone blockchain). This is the job of the verifier. It
+runtime seal digest and check its signature (same in a standalone blockchain). This is the job of the verifier. It
 will remove the nimbus seal and compare it to the nimbus consensus digest from the runtime. If that process fails,
 the block is immediately thrown away before the expensive execution even begins. If it succeeds, then
 the pre-block (the part that's left after the seal is stripped) is passed into the
@@ -189,26 +194,18 @@ The gist: One node authors the block, then it is processed in three different wa
 
 ## Roadmap
 
-The Nimbus tools are intended to be standalone and loosely coupled with Cumulus. That goal is realistic
-in the medium term (~ a month or two) but during the initial development, it is easier to work as a fork
-of the upstream cumulus repository.
-
-Once the core features are complete, and the line is more clear between what belongs in cumulus vs
-nimbus, the repos can be separated.
+The Nimbus framework is intended to be loosely coupled with Cumulus. It remains to be
+seen whether it should live with Cumulus or in its own repository.
 
 ### Core Features Needed
-* Author info in seal, and basic seal checking
-* Keystore integration
-* Cryptographic block signatures
-* Filter pallet refactor -- What is common and what needs re-implemented by each author.
+* Cryptographic block signatures and checking
+* Update the CanAuthor trait to take a slot number, and make a seperate trait for a slot beacon
 
 ### Additional features for maybe someday
 * Share code between verifier and wrapper executive
-* Maybe moonbeam's dev service should live with nimbus??
-* Aurand as an example of composing filters?
-* Two different filter traits?
-  * Current one: Propositional logic style (good for unbounded sets)
-  * New one: Returns concrete author sets (good for index-based stuff like aura)
+* Client-side worker for standalone (non para) blockchain
+* Aurand as an example of composing filters
+* Second filter trait for exhaustive sets (As opposed to current propositional approach)
 
 ## Contributions Welcome
 
