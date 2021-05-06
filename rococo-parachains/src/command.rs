@@ -262,7 +262,7 @@ pub fn run() -> Result<()> {
 			Ok(())
 		}
 		None => {
-			let runner = cli.create_runner(&cli.run)?;
+			let runner = cli.create_runner(&cli.run.normalize())?;
 			let use_shell = use_shell_runtime(&runner.config().chain_spec);
 
 			runner.run_node_until_exit(|config| async move {
