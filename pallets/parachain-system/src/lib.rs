@@ -41,8 +41,10 @@ use frame_support::{
 	dispatch::{DispatchError, DispatchResult},
 	storage,
 	traits::Get,
-	weights::{PostDispatchInfo, Weight},
+	weights::{PostDispatchInfo, Weight, Pays},
+	inherent::{InherentData, InherentIdentifier, ProvideInherent},
 };
+use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
 use relay_state_snapshot::MessagingStateSnapshot;
 use sp_runtime::{
@@ -527,8 +529,7 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	fn validate_authorized_upgrade(code: &[u8]) -> Result<T::Hash, DispatchError> {
-		let required_hash = AuthorizedUpgrade::<T>::get()
-			.ok_or(Error::<T>::NothingAuthorized)?;
+		let required_hash = AuthorizedUpgrade::<T>::get().ok_or(Error::<T>::NothingAuthorized)?;
 		let actual_hash = T::Hashing::hash(&code[..]);
 		ensure!(actual_hash == required_hash, Error::<T>::Unauthorized);
 		Ok(actual_hash)
@@ -547,11 +548,11 @@ impl<T: Config> sp_runtime::traits::ValidateUnsigned for Pallet<T> {
 					provides: vec![hash.as_ref().to_vec()],
 					longevity: TransactionLongevity::max_value(),
 					propagate: true,
-				})
+				});
 			}
 		}
 		if let Call::set_validation_data(..) = call {
-			return Ok(Default::default())
+			return Ok(Default::default());
 		}
 		Err(InvalidTransaction::Call.into())
 	}
@@ -653,8 +654,11 @@ impl<T: Config> Pallet<T> {
 			let max_weight = <ReservedDmpWeightOverride<T>>::get()
 				.unwrap_or_else(T::ReservedDmpWeight::get);
 
-			let message_iter = downward_messages.into_iter()
-				.inspect(|m| { dmq_head.extend_downward(m); })
+			let message_iter = downward_messages
+				.into_iter()
+				.inspect(|m| {
+					dmq_head.extend_downward(m);
+				})
 				.map(|m| (m.sent_at, m.msg));
 			weight_used += T::DmpMessageHandler::handle_dmp_messages(message_iter, max_weight);
 			<LastDmqMqcHead<T>>::put(&dmq_head);

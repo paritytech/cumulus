@@ -28,9 +28,9 @@ use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker, TelemetryWorkerHandle};
+use sp_api::ConstructRuntimeApi;
 use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
-use sp_api::ConstructRuntimeApi;
 use std::sync::Arc;
 
 // Native executor instance.
@@ -63,7 +63,8 @@ pub fn new_partial<RuntimeApi, Executor>(
 		(Option<Telemetry>, Option<TelemetryWorkerHandle>),
 	>,
 	sc_service::Error,
-> where
+>
+where
 	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, Executor>>
 		+ Send
 		+ Sync
@@ -79,9 +80,9 @@ pub fn new_partial<RuntimeApi, Executor>(
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
-	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
-
-	let telemetry = config.telemetry_endpoints.clone()
+	let telemetry = config
+		.telemetry_endpoints
+		.clone()
 		.filter(|x| !x.is_empty())
 		.map(|endpoints| -> Result<_, sc_telemetry::Error> {
 			let worker = TelemetryWorker::new(16)?;
@@ -97,15 +98,12 @@ pub fn new_partial<RuntimeApi, Executor>(
 		)?;
 	let client = Arc::new(client);
 
-	let telemetry_worker_handle = telemetry
-		.as_ref()
-		.map(|(worker, _)| worker.handle());
+	let telemetry_worker_handle = telemetry.as_ref().map(|(worker, _)| worker.handle());
 
-	let telemetry = telemetry
-		.map(|(worker, telemetry)| {
-			task_manager.spawn_handle().spawn("telemetry", worker.run());
-			telemetry
-		});
+	let telemetry = telemetry.map(|(worker, telemetry)| {
+		task_manager.spawn_handle().spawn("telemetry", worker.run());
+		telemetry
+	});
 
 	let registry = config.prometheus_registry();
 
@@ -120,7 +118,7 @@ pub fn new_partial<RuntimeApi, Executor>(
 	let import_queue = cumulus_client_consensus_relay_chain::import_queue(
 		client.clone(),
 		client.clone(),
-		inherent_data_providers.clone(),
+		|_, _| async { Ok(sp_timestamp::InherentDataProvider::from_system_time()) },
 		&task_manager.spawn_essential_handle(),
 		registry.clone(),
 	)?;
@@ -132,7 +130,6 @@ pub fn new_partial<RuntimeApi, Executor>(
 		keystore_container,
 		task_manager,
 		transaction_pool,
-		inherent_data_providers,
 		select_chain: (),
 		other: (telemetry, telemetry_worker_handle),
 	};
@@ -149,7 +146,6 @@ async fn start_node_impl<RuntimeApi, Executor, RB>(
 	collator_key: CollatorPair,
 	polkadot_config: Configuration,
 	id: ParaId,
-	validator: bool,
 	rpc_ext_builder: RB,
 ) -> sc_service::error::Result<(TaskManager, Arc<TFullClient<Block, RuntimeApi, Executor>>)>
 where
@@ -180,22 +176,17 @@ where
 	let parachain_config = prepare_node_config(parachain_config);
 
 	let params = new_partial::<RuntimeApi, Executor>(&parachain_config)?;
-	params
-		.inherent_data_providers
-		.register_provider(sp_timestamp::InherentDataProvider)
-		.unwrap();
 	let (mut telemetry, telemetry_worker_handle) = params.other;
 
-	let polkadot_full_node =
-		cumulus_client_service::build_polkadot_full_node(
-			polkadot_config,
-			collator_key.clone(),
-			telemetry_worker_handle,
-		)
-		.map_err(|e| match e {
-			polkadot_service::Error::Sub(x) => x,
-			s => format!("{}", s).into(),
-		})?;
+	let polkadot_full_node = cumulus_client_service::build_polkadot_full_node(
+		polkadot_config,
+		collator_key.clone(),
+		telemetry_worker_handle,
+	)
+	.map_err(|e| match e {
+		polkadot_service::Error::Sub(x) => x,
+		s => format!("{}", s).into(),
+	})?;
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -206,6 +197,7 @@ where
 		polkadot_full_node.backend.clone(),
 	);
 
+	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let transaction_pool = params.transaction_pool.clone();
 	let mut task_manager = params.task_manager;
@@ -258,7 +250,9 @@ where
 		let parachain_consensus = build_relay_chain_consensus(BuildRelayChainConsensusParams {
 			para_id: id,
 			proposer_factory,
-			inherent_data_providers: params.inherent_data_providers,
+			create_inherent_data_providers: |_, _| async {
+				Ok(sp_timestamp::InherentDataProvider::from_system_time())
+			},
 			block_import: client.clone(),
 			relay_chain_client: polkadot_full_node.client.clone(),
 			relay_chain_backend: polkadot_full_node.backend.clone(),
@@ -301,7 +295,6 @@ pub async fn start_node(
 	collator_key: CollatorPair,
 	polkadot_config: Configuration,
 	id: ParaId,
-	validator: bool,
 ) -> sc_service::error::Result<
 	(TaskManager, Arc<TFullClient<Block, parachain_runtime::RuntimeApi, RuntimeExecutor>>)
 > {
@@ -310,9 +303,9 @@ pub async fn start_node(
 		collator_key,
 		polkadot_config,
 		id,
-		validator,
 		|_| Default::default(),
-	).await
+	)
+	.await
 }
 
 /// Start a rococo-shell parachain node.
@@ -321,7 +314,6 @@ pub async fn start_shell_node(
 	collator_key: CollatorPair,
 	polkadot_config: Configuration,
 	id: ParaId,
-	validator: bool,
 ) -> sc_service::error::Result<
 	(TaskManager, Arc<TFullClient<Block, shell_runtime::RuntimeApi, ShellRuntimeExecutor>>)
 > {
@@ -330,7 +322,7 @@ pub async fn start_shell_node(
 		collator_key,
 		polkadot_config,
 		id,
-		validator,
 		|_| Default::default(),
-	).await
+	)
+	.await
 }
