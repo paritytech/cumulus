@@ -29,12 +29,12 @@ use frame_support::{
 	storage,
 	traits::{OnFinalize, OnInitialize},
 	weights::Weight,
+	inherent::{InherentData, ProvideInherent},
 };
 use frame_system::{InitKind, RawOrigin};
 use hex_literal::hex;
 use relay_chain::v1::HrmpChannelId;
 use sp_core::H256;
-use sp_inherents::{InherentData, ProvideInherent};
 use sp_runtime::{testing::Header, traits::IdentityLookup};
 use sp_version::RuntimeVersion;
 use std::cell::RefCell;
