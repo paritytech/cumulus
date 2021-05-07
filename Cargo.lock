@@ -4876,6 +4876,7 @@ dependencies = [
  "frame-system",
  "log",
  "parity-scale-codec",
+ "sp-api",
  "sp-authorship",
  "sp-core",
  "sp-inherents",

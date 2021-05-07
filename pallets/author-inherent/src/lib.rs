@@ -38,6 +38,9 @@ use sp_runtime::{
 use log::debug;
 // use sp_application_crypto::AppKey;
 
+mod exec;
+pub use exec::BlockExecutor;
+
 /// The given account ID is the author of the current block.
 pub trait EventHandler<Author> {
 	fn note_author(author: Author);

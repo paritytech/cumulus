@@ -543,6 +543,4 @@ impl_runtime_apis! {
 }
 
 // Notice we use the wrapper executor for execution by the relay chain validators.
-//TODO why couldn't I grab this from its own crate?
-mod exec;
-cumulus_pallet_parachain_system::register_validate_block!(Runtime, exec::BlockExecutor<Runtime, Executive>);
+cumulus_pallet_parachain_system::register_validate_block!(Runtime, pallet_author_inherent::BlockExecutor<Runtime, Executive>);
