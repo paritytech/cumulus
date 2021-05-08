@@ -572,5 +572,5 @@ impl_runtime_apis! {
 
 cumulus_pallet_parachain_system::register_validate_block!(
 	Runtime,
-	cumulus_pallet_aura::BlockExecutor::<Runtime, Executive>,
+	cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
 );
