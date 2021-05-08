@@ -36,8 +36,8 @@ use sp_runtime::{
 use polkadot_node_primitives::{SignedFullStatement, Statement};
 use polkadot_parachain::primitives::HeadData;
 use polkadot_primitives::v1::{
-	Block as PBlock, CandidateReceipt, CompactStatement, Hash as PHash, Id as ParaId,
-	OccupiedCoreAssumption, ParachainHost, SignedStatement, SigningContext,
+	Block as PBlock, Hash as PHash, CandidateReceipt, CompactStatement, Id as ParaId,
+	OccupiedCoreAssumption, ParachainHost, UncheckedSigned, SigningContext,
 };
 use polkadot_service::ClientHandle;
 
@@ -77,7 +77,7 @@ impl fmt::Display for BlockAnnounceError {
 #[derive(Encode, Decode, Debug)]
 pub struct BlockAnnounceData {
 	receipt: CandidateReceipt,
-	statement: SignedStatement,
+	statement: UncheckedSigned<CompactStatement>,
 }
 
 impl BlockAnnounceData {
@@ -85,7 +85,7 @@ impl BlockAnnounceData {
 	///
 	/// This will not check the signature, for this you should use [`BlockAnnounceData::check_signature`].
 	fn validate(&self, encoded_header: Vec<u8>) -> Result<(), Validation> {
-		let candidate_hash = if let CompactStatement::Seconded(h) = self.statement.payload() {
+		let candidate_hash = if let CompactStatement::Seconded(h) = self.statement.unchecked_payload() {
 			h
 		} else {
 			tracing::debug!(
@@ -118,7 +118,7 @@ impl BlockAnnounceData {
 	///
 	/// Returns an `Err(_)` if it failed.
 	fn check_signature<P>(
-		&self,
+		self,
 		relay_chain_client: &Arc<P>,
 	) -> Result<Validation, BlockAnnounceError>
 	where
@@ -126,7 +126,7 @@ impl BlockAnnounceData {
 		P::Api: ParachainHost<PBlock>,
 	{
 		let runtime_api = relay_chain_client.runtime_api();
-		let validator_index = self.statement.validator_index();
+		let validator_index = self.statement.unchecked_validator_index();
 
 		let runtime_api_block_id = BlockId::Hash(self.receipt.descriptor.relay_parent);
 		let session_index = match runtime_api.session_index_for_child(&runtime_api_block_id) {
@@ -163,7 +163,7 @@ impl BlockAnnounceData {
 		// Check statement is correctly signed.
 		if self
 			.statement
-			.check_signature(&signing_context, &signer)
+			.try_into_checked(&signing_context, &signer)
 			.is_err()
 		{
 			tracing::debug!(
@@ -178,10 +178,10 @@ impl BlockAnnounceData {
 	}
 }
 
-impl TryFrom<SignedFullStatement> for BlockAnnounceData {
+impl TryFrom<&'_ SignedFullStatement> for BlockAnnounceData {
 	type Error = ();
 
-	fn try_from(stmt: SignedFullStatement) -> Result<BlockAnnounceData, ()> {
+	fn try_from(stmt: &SignedFullStatement) -> Result<BlockAnnounceData, ()> {
 		let receipt = if let Statement::Seconded(receipt) = stmt.payload() {
 			receipt.to_plain()
 		} else {
@@ -190,7 +190,7 @@ impl TryFrom<SignedFullStatement> for BlockAnnounceData {
 
 		Ok(BlockAnnounceData {
 			receipt,
-			statement: stmt.convert_payload(),
+			statement: stmt.convert_payload().into(),
 		})
 	}
 }
@@ -530,7 +530,6 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 	pub fn wait_to_announce(
 		&mut self,
 		block_hash: <Block as BlockT>::Hash,
-		pov_hash: PHash,
 		signed_stmt_recv: oneshot::Receiver<SignedFullStatement>,
 	) {
 		let announce_block = self.announce_block.clone();
@@ -543,8 +542,7 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 					"waiting for announce block in a background task...",
 				);
 
-				wait_to_announce::<Block>(block_hash, pov_hash, announce_block, signed_stmt_recv)
-					.await;
+				wait_to_announce::<Block>(block_hash, announce_block, signed_stmt_recv).await;
 
 				tracing::debug!(
 					target: "cumulus-network",
@@ -558,7 +556,6 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 
 async fn wait_to_announce<Block: BlockT>(
 	block_hash: <Block as BlockT>::Hash,
-	pov_hash: PHash,
 	announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 	signed_stmt_recv: oneshot::Receiver<SignedFullStatement>,
 ) {
@@ -567,7 +564,6 @@ async fn wait_to_announce<Block: BlockT>(
 		Err(_) => {
 			tracing::debug!(
 				target: "cumulus-network",
-				pov_hash = ?pov_hash,
 				block = ?block_hash,
 				"Wait to announce stopped, because sender was dropped.",
 			);
@@ -575,18 +571,14 @@ async fn wait_to_announce<Block: BlockT>(
 		}
 	};
 
-	match statement.payload() {
-		Statement::Seconded(c) if &c.descriptor.pov_hash == &pov_hash => {
-			if let Ok(data) = BlockAnnounceData::try_from(statement) {
-				announce_block(block_hash, Some(data.encode()));
-			}
-		}
-		_ => tracing::debug!(
+	if let Ok(data) = BlockAnnounceData::try_from(&statement) {
+		announce_block(block_hash, Some(data.encode()));
+	} else {
+		tracing::debug!(
 			target: "cumulus-network",
 			statement = ?statement,
 			block = ?block_hash,
-			expected_pov_hash = ?pov_hash,
 			"Received invalid statement while waiting to announce block.",
-		),
+		);
 	}
 }
