@@ -1431,9 +1431,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-pallet-aura"
+name = "cumulus-pallet-aura-ext"
 version = "0.1.0"
 dependencies = [
+ "cumulus-pallet-parachain-system",
  "frame-executive",
  "frame-support",
  "frame-system",
@@ -1675,7 +1676,7 @@ dependencies = [
 name = "cumulus-test-parachain-runtime"
 version = "0.1.0"
 dependencies = [
- "cumulus-pallet-aura",
+ "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",

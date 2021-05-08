@@ -1,4 +1,4 @@
-// Copyright 2020 Parity Technologies (UK) Ltd.
+// Copyright 2021 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -13,6 +13,23 @@
 
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
+
+//! Cumulus extension pallet for AuRa
+//!
+//! This pallets extends the Substrate AuRa pallet to make it compatible with parachains. It
+//! provides the [`Pallet`], the [`Config`] and the [`GenesisConfig`].
+//!
+//! It is also required that the parachain runtime uses the provided [`BlockExecutor`] to properly
+//! check the constructed block on the relay chain.
+//!
+//! ```
+//!# struct Runtime;
+//!# struct Executive;
+//! cumulus_pallet_parachain_system::register_validate_block!(
+//!     Runtime,
+//!     cumulus_pallet_aura::BlockExecutor::<Runtime, Executive>,
+//! );
+//! ```
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -84,6 +101,10 @@ pub mod pallet {
 	}
 }
 
+/// The block executor used when validating a PoV at the relay chain.
+///
+/// When executing the block it will verify the block seal to ensure that the correct author created
+/// the block.
 pub struct BlockExecutor<T, I>(sp_std::marker::PhantomData<(T, I)>);
 
 impl<Block, T, I> ExecuteBlock<Block> for BlockExecutor<T, I>
