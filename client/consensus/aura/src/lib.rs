@@ -14,24 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! The relay-chain provided consensus algoritm for parachains.
+//! The AuRa consensus algoritm for parachains.
 //!
-//! This is the simplest consensus algorithm you can use when developing a parachain. It is a
-//! permission-less consensus algorithm that doesn't require any staking or similar to join as a
-//! collator. In this algorithm the consensus is provided by the relay-chain. This works in the
-//! following way.
+//! This extends the Substrate provided AuRa consensus implementation to make it compatible for
+//! parachains. The main entry points for of this consensus algorithm are [`build_aura_consensus`]
+//! and [`import_queue`].
 //!
-//! 1. Each node that sees itself as a collator is free to build a parachain candidate.
-//!
-//! 2. This parachain candidate is send to the parachain validators that are part of the relay chain.
-//!
-//! 3. The parachain validators validate at most X different parachain candidates, where X is the
-//! total number of parachain validators.
-//!
-//! 4. The parachain candidate that is backed by the most validators is choosen by the relay-chain
-//! block producer to be added as backed candidate on chain.
-//!
-//! 5. After the parachain candidate got backed and included, all collators start at 1.
+//! For more information about AuRa, the Substrate crate should be checked.
 
 use codec::{Decode, Encode};
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
