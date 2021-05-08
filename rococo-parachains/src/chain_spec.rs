@@ -177,7 +177,7 @@ fn testnet_genesis(
 		pallet_aura: parachain_runtime::AuraConfig {
 			authorities: initial_authorities,
 		},
-		cumulus_pallet_aura: Default::default(),
+		cumulus_pallet_aura_ext: Default::default(),
 	}
 }
 
