@@ -11,7 +11,7 @@ sp-core = { git = "https://github.com/paritytech/substrate", default-features = 
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", optional = true , branch = "master" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", optional = true , branch = "master" }
 
