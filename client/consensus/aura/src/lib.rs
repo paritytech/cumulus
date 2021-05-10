@@ -368,7 +368,7 @@ where
 ///
 /// Builds a [`AuraConsensus`] for a parachain. As this requires
 /// a concrete relay chain client instance, the builder takes a [`polkadot_service::Client`]
-/// that wraps this concrete instanace. By using [`polkadot_service::ExecuteWithClient`]
+/// that wraps this concrete instance. By using [`polkadot_service::ExecuteWithClient`]
 /// the builder gets access to this concrete instance.
 struct AuraConsensusBuilder<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Error> {
 	_phantom: PhantomData<(Block, Error, P)>,
