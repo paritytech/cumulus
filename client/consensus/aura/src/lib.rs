@@ -220,7 +220,7 @@ where
 			parent.clone(),
 			// Set the block limit to 50% of the maximum PoV size.
 			//
-			// TODO: If we got benchmarking that includes that encapsulates the proof size,
+			// TODO: If we got benchmarking that includes the proof size,
 			// we should be able to use the maximum pov size.
 			Some((validation_data.max_pov_size / 2) as usize),
 		);
