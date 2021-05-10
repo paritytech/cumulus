@@ -19,22 +19,26 @@ use sc_client_api::{
 };
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Error as ClientError, Result as ClientResult};
-use sp_consensus::{
-	BlockImport, BlockImportParams, BlockOrigin, BlockStatus, ForkChoiceStrategy
-};
+use sp_consensus::{BlockImport, BlockImportParams, BlockOrigin, BlockStatus, ForkChoiceStrategy};
 use sp_runtime::{
 	generic::BlockId,
-	traits::{Block as BlockT, Header as HeaderT},
+	traits::{Block as BlockT, Header as HeaderT, NumberFor},
 };
 
 use polkadot_primitives::v1::{
-	Block as PBlock, Id as ParaId, OccupiedCoreAssumption, ParachainHost,
+	Block as PBlock, CandidateReceipt, CommittedCandidateReceipt, Id as ParaId,
+	OccupiedCoreAssumption, ParachainHost, SessionIndex,
 };
+use polkadot_overseer::OverseerHandler;
+use polkadot_node_subsystem::messages::AvailabilityRecoveryMessage;
+use polkadot_node_primitives::AvailableData;
 
 use codec::Decode;
-use futures::{future, select, FutureExt, Stream, StreamExt};
+use futures::{future, select, stream::FuturesUnordered, FutureExt, Stream, StreamExt, channel::oneshot};
+use futures_timer::Delay;
+use rand::{thread_rng, Rng};
 
-use std::sync::Arc;
+use std::{pin::Pin, sync::Arc, time::Duration};
 
 /// Helper for the relay chain client. This is expected to be a lightweight handle like an `Arc`.
 pub trait RelaychainClient: Clone + 'static {
@@ -44,11 +48,14 @@ pub trait RelaychainClient: Clone + 'static {
 	/// A stream that yields head-data for a parachain.
 	type HeadStream: Stream<Item = Vec<u8>> + Send + Unpin;
 
+	/// A stream that yields pending candidates for a parachain.
+	type PendingCandidateStream: Stream<Item = (CommittedCandidateReceipt, SessionIndex)> + Send + Unpin;
+
 	/// Get a stream of new best heads for the given parachain.
-	fn new_best_heads(&self, para_id: ParaId) -> ClientResult<Self::HeadStream>;
+	fn new_best_heads(&self, para_id: ParaId) -> Self::HeadStream;
 
 	/// Get a stream of finalized heads for the given parachain.
-	fn finalized_heads(&self, para_id: ParaId) -> ClientResult<Self::HeadStream>;
+	fn finalized_heads(&self, para_id: ParaId) -> Self::HeadStream;
 
 	/// Returns the parachain head for the given `para_id` at the given block id.
 	fn parachain_head_at(
@@ -56,6 +63,103 @@ pub trait RelaychainClient: Clone + 'static {
 		at: &BlockId<PBlock>,
 		para_id: ParaId,
 	) -> ClientResult<Option<Vec<u8>>>;
+
+	/// Returns a stream of pending candidates for the given `para_id`.
+	fn pending_candidates(&self, para_id: ParaId) -> Self::PendingCandidateStream;
+}
+
+struct PendingCandidate<Block: BlockT> {
+	receipt: CandidateReceipt,
+	session_index: SessionIndex,
+	block_number: NumberFor<Block>,
+}
+
+struct CandidateRecovery<Block: BlockT> {
+	pending_candidates: HashMap<Block::Hash, PendingCandidate<Block>>,
+	next_candidate_to_recover: FuturesUnordered<Box<dyn Future<Item = Block::Hash> + Send + Sync>>,
+	active_candidate_recovery: FuturesUnordered<Box<dyn Future<Item = AvailableData> + Send + Sync>>,
+	recovering_candidates: HashSet<Block::Hash>,
+	relay_chain_slot_duration: Duration,
+	overseer_handler: OverseerHandler,
+}
+
+impl<Block: BlockT> CandidateRecovery<Block> {
+	fn insert_pending_candidate(
+		&mut self,
+		hash: Block::Hash,
+		block_number: NumberFor<Block>,
+		receipt: CandidateReceipt,
+		session_index: SessionIndex,
+	) {
+		if self
+			.pending_candidates
+			.insert(
+				hash,
+				PendingCandidate {
+					block_number,
+					receipt,
+					session_index,
+				},
+			)
+			.is_some()
+		{
+			return;
+		}
+
+		// Wait some random time, with the maximum being the slot duration of the relay chain
+		// before we start to recover the candidate.
+		let delay = Delay::new(self.relay_chain_slot_duration.mul_f64(thread_rng().gen()));
+		self.next_candidate_to_recover.push(
+			async move {
+				delay.await;
+				hash
+			}
+			.boxed(),
+		);
+	}
+
+	/// Inform about an imported block.
+	fn block_imported(&mut self, hash: &Block::Hash) {
+		self.pending_candidates.remove(&hash);
+	}
+
+	// Inform about a finalized block with the given `block_number`.
+	fn block_finalized(&mut self, block_number: NumberFor<Block>) {
+		self.pending_candidates
+			.retain(|pc| pc.block_number > block_number);
+	}
+
+	async fn wait_for_recovery(&mut self) {
+		loop {
+		select! {
+			recover = self.next_candidate_to_recover.next() => {
+				let pending_candidate = match self.pending_candidates.remove(&recover) {
+					Some(pending_candidate) => pending_candidate,
+					None => continue,
+				};
+
+				let (tx, rx) = oneshot::channel();
+
+				if let Err(e) = self.overseer_handler.send_message(AvailabilityRecoveryMessage::RecoverAvailableData(
+					pending_candidate.receipt,
+					pending_candidate.session_index,
+					None,
+					tx,
+				)).await {
+					tracing::warn!(
+						target: "cumulus-consensus",
+						error = ?e,
+						"Failed to start availability recovery",
+					);
+					continue
+				}
+
+
+			},
+
+		}
+		}
+	}
 }
 
 /// Follow the finalized head of the given parachain.
@@ -165,8 +269,7 @@ async fn follow_new_best<P, R, Block, B>(
 	parachain: Arc<P>,
 	relay_chain: R,
 	announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
-) -> ClientResult<()>
-where
+) where
 	Block: BlockT,
 	P: Finalizer<Block, B>
 		+ UsageProvider<Block>
@@ -178,8 +281,9 @@ where
 	R: RelaychainClient,
 	B: Backend<Block>,
 {
-	let mut new_best_heads = relay_chain.new_best_heads(para_id)?.fuse();
+	let mut new_best_heads = relay_chain.new_best_heads(para_id).fuse();
 	let mut imported_blocks = parachain.import_notification_stream().fuse();
+	let mut pending_candidates = relay_chain.pending_candidates(para_id).fuse();
 	// The unset best header of the parachain. Will be `Some(_)` when we have imported a relay chain
 	// block before the parachain block it included. In this case we need to wait for this block to
 	// be imported to set it as new best.
@@ -199,7 +303,7 @@ where
 							target: "cumulus-consensus",
 							"Stopping following new best.",
 						);
-						return Ok(())
+						return
 					}
 				}
 			},
@@ -216,10 +320,58 @@ where
 							target: "cumulus-consensus",
 							"Stopping following imported blocks.",
 						);
-						return Ok(())
+						return
 					}
 				}
-			}
+			},
+			c = pending_candidates.next() => {
+				match c {
+					Some((pending_candidate, session_index)) => handle_pending_candidate(pending_candidate, session_index, &*parachain).await,
+					None => {
+						tracing::debug!(
+							target: "cumulus-consensus",
+							"Stopping following pending candidates.",
+						);
+						return
+					}
+				}
+			},
+		}
+	}
+}
+
+/// Handle a new pending candidate of our parachain.
+async fn handle_pending_candidate<Block, P>(
+	pending_candidate: CommittedCandidateReceipt,
+	session_index: SessionIndex,
+	parachain: &P,
+) where
+	Block: BlockT,
+	P: UsageProvider<Block> + Send + Sync + BlockBackend<Block>,
+{
+	let header = match Block::Header::decode(&mut pending_candidate.commitments.head_data[..]) {
+		Ok(header) => header,
+		Err(e) => {
+			tracing::warn!(
+				target: "cumulus-consensus",
+				error = ?e,
+				"Failed to decode parachain header from pending candidate",
+			)
+		}
+	};
+
+	let hash = header.hash();
+	match parachain.block_status(&BlockId::Hash(hash)) {
+		Ok(BlockStatus::Unknown) => (),
+		Ok(_) => return,
+		Err(e) => {
+			tracing::debug!(
+				target: "cumulus-consensus",
+				error = ?e,
+				block_hash = ?hash,
+				"Failed to get block status",
+			);
+			return;
 		}
 	}
 }
@@ -379,38 +531,40 @@ where
 {
 	type Error = ClientError;
 
-	type HeadStream = Box<dyn Stream<Item = Vec<u8>> + Send + Unpin>;
+	type HeadStream = Pin<Box<dyn Stream<Item = Vec<u8>> + Send>>;
 
-	fn new_best_heads(&self, para_id: ParaId) -> ClientResult<Self::HeadStream> {
-		let polkadot = self.clone();
+	type PendingCandidateStream = Pin<Box<dyn Stream<Item = (CommittedCandidateReceipt, SessionIndex)> + Send>>;
 
-		let s = self.import_notification_stream().filter_map(move |n| {
-			future::ready(if n.is_new_best {
-				polkadot
-					.parachain_head_at(&BlockId::hash(n.hash), para_id)
-					.ok()
-					.and_then(|h| h)
-			} else {
-				None
+	fn new_best_heads(&self, para_id: ParaId) -> Self::HeadStream {
+		let relay_chain = self.clone();
+
+		self.import_notification_stream()
+			.filter_map(move |n| {
+				future::ready(if n.is_new_best {
+					relay_chain
+						.parachain_head_at(&BlockId::hash(n.hash), para_id)
+						.ok()
+						.flatten()
+				} else {
+					None
+				})
 			})
-		});
-
-		Ok(Box::new(s))
+			.boxed()
 	}
 
-	fn finalized_heads(&self, para_id: ParaId) -> ClientResult<Self::HeadStream> {
-		let polkadot = self.clone();
+	fn finalized_heads(&self, para_id: ParaId) -> Self::HeadStream {
+		let relay_chain = self.clone();
 
-		let s = self.finality_notification_stream().filter_map(move |n| {
-			future::ready(
-				polkadot
-					.parachain_head_at(&BlockId::hash(n.hash), para_id)
-					.ok()
-					.and_then(|h| h),
-			)
-		});
-
-		Ok(Box::new(s))
+		self.finality_notification_stream()
+			.filter_map(move |n| {
+				future::ready(
+					relay_chain
+						.parachain_head_at(&BlockId::hash(n.hash), para_id)
+						.ok()
+						.flatten(),
+				)
+			})
+			.boxed()
 	}
 
 	fn parachain_head_at(
@@ -422,5 +576,26 @@ where
 			.persisted_validation_data(at, para_id, OccupiedCoreAssumption::TimedOut)
 			.map(|s| s.map(|s| s.parent_head.0))
 			.map_err(Into::into)
+	}
+
+	fn pending_candidates(&self, para_id: ParaId) -> Self::PendingCandidateStream {
+		let relay_chain = self.clone();
+
+		self.import_notification_stream()
+			.filter_map(move |n| {
+				let runtime_api = relay_chain
+					.runtime_api();
+				future::ready(
+					runtime_api
+						.candidate_pending_availability(&BlockId::hash(n.hash))
+						.and_then(|pa| runtime_api.session_index(&BlockId::hash(n.hash)).map(|v| (pa, v)))
+						.map_err(
+							|e| tracing::error!(target: "cumulus-consensus", error = ?e, "Failed fetch pending candidates."),
+						)
+						.ok()
+						.flatten(),
+				)
+			})
+			.boxed()
 	}
 }
