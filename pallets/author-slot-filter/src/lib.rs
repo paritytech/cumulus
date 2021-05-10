@@ -39,6 +39,7 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 	use sp_core::H256;
 	use sp_runtime::Percent;
+	use nimbus_primitives::CanAuthor;
 
 	/// The Author Filter pallet
 	#[pallet::pallet]
@@ -61,24 +62,18 @@ pub mod pallet {
 		type PotentialAuthors: Get<Vec<Self::AuthorId>>;
 	}
 
+	//TODO this needs to be moved to a new pallet (or maybe into the author inherent pallet? as an implementation of the new SlotBeacon trait)
+	// Grab the relay parent height as a temporary source of relay-based entropy
+	// let validation_data = cumulus_pallet_parachain_system::Module::<T>::validation_data()
+	// 	.expect("validation data was set in parachain system inherent");
+	// let slot = validation_data.relay_parent_number;
+
+
 	// This code will be called by the author-inherent pallet to check whether the reported author
-	// of this block is eligible at this height. We calculate that result on demand and do not
-	// record it instorage (although we do emit a debugging event for now).
-	impl<T: Config> pallet_author_inherent::CanAuthor<T::AuthorId> for Pallet<T> {
-		fn can_author(account: &T::AuthorId) -> bool {
-
-			// Grab the relay parent height as a temporary source of relay-based entropy
-			let validation_data = cumulus_pallet_parachain_system::Module::<T>::validation_data()
-				.expect("validation data was set in parachain system inherent");
-			let relay_height = validation_data.relay_parent_number;
-
-			Self::can_author_helper(account, relay_height)
-		}
-	}
-
-	impl<T: Config> Pallet<T> {
-		/// Helper method to calculate eligible authors
-		pub fn can_author_helper(author: &T::AuthorId, relay_height: u32) -> bool {
+	// of this block is eligible in this slot. We calculate that result on demand and do not
+	// record it in storage (although we do emit a debugging event for now).
+	impl<T: Config> CanAuthor<T::AuthorId> for Pallet<T> {
+		fn can_author(author: &T::AuthorId, slot: &u32) -> bool {
 			let mut active: Vec<T::AuthorId> = T::PotentialAuthors::get();
 
 			let num_eligible = EligibleRatio::<T>::get().mul_ceil(active.len());
@@ -99,7 +94,7 @@ pub mod pallet {
 					b'e',
 					b'r',
 					i as u8,
-					relay_height as u8,
+					*slot as u8,
 				];
 				let (randomness, _) = T::RandomnessSource::random(&subject);
 				debug!(target: "author-filter", "🎲Randomness sample {}: {:?}", i, &randomness);

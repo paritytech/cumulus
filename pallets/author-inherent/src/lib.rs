@@ -36,31 +36,21 @@ use sp_runtime::{
 	traits::Member,
 };
 use log::debug;
+use nimbus_primitives::{CanAuthor, SlotBeacon};
 // use sp_application_crypto::AppKey;
 
 mod exec;
 pub use exec::BlockExecutor;
 
+//TODO move this to primitives?
 /// The given account ID is the author of the current block.
 pub trait EventHandler<Author> {
+	//TODO should we be tking ownership here?
 	fn note_author(author: Author);
 }
 
 impl<T> EventHandler<T> for () {
 	fn note_author(_author: T) {}
-}
-
-/// Permissions for what block author can be set in this pallet
-pub trait CanAuthor<AuthorId> {
-	fn can_author(author: &AuthorId) -> bool;
-}
-/// Default implementation where anyone can author, see and `author-*-filter` pallets for
-/// additional implementations.
-/// TODO Promote this is "implementing relay chain consensus in the nimbus framework."
-impl<T> CanAuthor<T> for () {
-	fn can_author(_: &T) -> bool {
-		true
-	}
 }
 
 pub trait Config: frame_system::Config {
@@ -89,6 +79,9 @@ pub trait Config: frame_system::Config {
 	/// If the pallet that implements this trait depends on an inherent, that inherent **must**
 	/// be included before this one.
 	type FullCanAuthor: CanAuthor<Self::AuthorId>;
+
+	/// Some way of determining the current slot for purposes of verifying the author's eligibility
+	type SlotBeacon: SlotBeacon;
 }
 
 // If the AccountId type supports it, then this pallet can be BoundToRuntimeAppPublic
@@ -134,9 +127,14 @@ decl_module! {
 
 			ensure_none(origin)?;
 			debug!(target: "author-inherent", "Executing Author inherent");
+
 			ensure!(<Author<T>>::get().is_none(), Error::<T>::AuthorAlreadySet);
 			debug!(target: "author-inherent", "Author was not already set");
-			ensure!(T::FullCanAuthor::can_author(&author), Error::<T>::CannotBeAuthor);
+
+			let slot = T::SlotBeacon::slot();
+			debug!(target: "author-inherent", "Slot is {:?}", slot);
+
+			ensure!(T::FullCanAuthor::can_author(&author, &slot), Error::<T>::CannotBeAuthor);
 			debug!(target: "author-inherent", "I can be author!");
 
 			// Update storage
@@ -201,6 +199,7 @@ impl InherentError {
 /// The type of data that the inherent will contain.
 pub type InherentType<T> = <T as Config>::AuthorId;
 
+// TODO move inherent data provider, inherent type, inherent identifier to primitives crate.
 /// A thing that an outer node could use to inject the inherent data.
 /// This should be used in simple uses of the author inherent (eg permissionless authoring)
 /// When using the full nimbus system, we are manually inserting the  inherent.
@@ -259,11 +258,14 @@ impl<T: Config> ProvideInherent for Module<T> {
 		Some(Call::set_author(author))
 	}
 
+	// This check is called from the verifier (before block execution begins) to quickly rule out
+	// block with invalid inherents. I'm not sure it even makes sense to check this one.
 	fn check_inherent(call: &Self::Call, _data: &InherentData) -> Result<(), Self::Error> {
 		// We only check this pallet's inherent.
 		if let Self::Call::set_author(claimed_author) = call {
+			let slot = T::SlotBeacon::slot();
 			ensure!(
-				T::PreliminaryCanAuthor::can_author(&claimed_author),
+				T::PreliminaryCanAuthor::can_author(&claimed_author, &slot),
 				InherentError::Other(sp_runtime::RuntimeString::Borrowed("Cannot Be Author"))
 			);
 		}

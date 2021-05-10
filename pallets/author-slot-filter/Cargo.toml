@@ -15,6 +15,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", default-features
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
 pallet-author-inherent = { path = "../author-inherent", default-features = false }
 cumulus-pallet-parachain-system = { path = "../parachain-system",  default-features = false}
+nimbus-primitives = { path = "../../primitives/nimbus", default-features = false }
 
 [features]
 default = ["std"]
@@ -29,4 +30,5 @@ std = [
   "sp-runtime/std",
   "cumulus-pallet-parachain-system/std",
   "sp-std/std",
+  "nimbus-primitives/std",
 ]
