@@ -32,17 +32,17 @@ use cumulus_primitives_core::{
 	well_known_keys::{self, NEW_VALIDATION_CODE},
 	AbridgedHostConfiguration, ChannelStatus, DmpMessageHandler, GetChannelInfo,
 	InboundDownwardMessage, InboundHrmpMessage, MessageSendError, OnValidationData,
-	OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage, UpwardMessageSender,
+	OutboundHrmpMessage, ParaId, PersistedValidationData, Slot, UpwardMessage, UpwardMessageSender,
 	XcmpMessageHandler, XcmpMessageSource,
 };
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use frame_support::{
-	ensure,
 	dispatch::{DispatchError, DispatchResult},
+	ensure,
+	inherent::{InherentData, InherentIdentifier, ProvideInherent},
 	storage,
 	traits::Get,
-	weights::{PostDispatchInfo, Weight, Pays},
-	inherent::{InherentData, InherentIdentifier, ProvideInherent},
+	weights::{Pays, PostDispatchInfo, Weight},
 };
 use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
@@ -313,7 +313,7 @@ pub mod pallet {
 				}
 			}
 
-			let (host_config, relevant_messaging_state) =
+			let (current_slot, host_config, relevant_messaging_state) =
 				match relay_state_snapshot::extract_from_proof(
 					T::SelfParaId::get(),
 					vfp.relay_parent_storage_root,
@@ -327,6 +327,7 @@ pub mod pallet {
 
 			<ValidationData<T>>::put(&vfp);
 			<RelevantMessagingState<T>>::put(relevant_messaging_state.clone());
+			<RelaySlot<T>>::put(current_slot);
 			<HostConfiguration<T>>::put(host_config);
 
 			<T::OnValidationData as OnValidationData>::on_validation_data(&vfp);
@@ -465,6 +466,16 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn host_configuration)]
 	pub(super) type HostConfiguration<T: Config> = StorageValue<_, AbridgedHostConfiguration>;
+
+	/// The relay chain current slot number that was obtained from the relay parent.
+	///
+	/// This field is meant to be updated each block with the validation data inherent. Therefore,
+	/// before processing of the inherent, e.g. in `on_initialize` this data may be stale.
+	///
+	/// This data is also absent from the genesis.
+	#[pallet::storage]
+	#[pallet::getter(fn relay_slot)]
+	pub(super) type RelaySlot<T: Config> = StorageValue<_, Slot>;
 
 	/// The last downward message queue chain head we have observed.
 	///

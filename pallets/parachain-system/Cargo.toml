@@ -17,6 +17,7 @@ xcm = { git = "https://github.com/paritytech/polkadot", default-features = false
 # Substrate dependencies
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -59,6 +60,7 @@ std = [
 	"codec/std",
 	"frame-support/std",
 	"pallet-balances/std",
+	"pallet-timestamp/std",
 	"sp-core/std",
 	"sp-runtime/std",
 	"sp-io/std",

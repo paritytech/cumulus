@@ -18,22 +18,21 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::prelude::*;
-use codec::{Encode, Decode};
-use sp_runtime::{RuntimeDebug, traits::Block as BlockT};
+use codec::{Decode, Encode};
 use frame_support::weights::Weight;
+use sp_runtime::{traits::Block as BlockT, RuntimeDebug};
+use sp_std::prelude::*;
 
 pub use polkadot_core_primitives::InboundDownwardMessage;
 pub use polkadot_parachain::primitives::{Id as ParaId, UpwardMessage, ValidationParams};
 pub use polkadot_primitives::v1::{
-	PersistedValidationData, AbridgedHostConfiguration, AbridgedHrmpChannel,
+	AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData, Slot,
 };
 
 /// A module that re-exports relevant relay chain definitions.
 pub mod relay_chain {
 	pub use polkadot_core_primitives::*;
-	pub use polkadot_primitives::v1;
-	pub use polkadot_primitives::v1::well_known_keys;
+	pub use polkadot_primitives::{v1, v1::well_known_keys};
 }
 use relay_chain::BlockNumber as RelayBlockNumber;
 

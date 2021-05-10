@@ -1485,6 +1485,7 @@ dependencies = [
  "log",
  "memory-db",
  "pallet-balances",
+ "pallet-timestamp",
  "parity-scale-codec",
  "polkadot-parachain",
  "sc-client-api",

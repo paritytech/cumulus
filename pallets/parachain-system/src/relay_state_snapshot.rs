@@ -14,13 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use codec::{Encode, Decode};
-use cumulus_primitives_core::{relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId};
+use codec::{Decode, Encode};
+use cumulus_primitives_core::{
+	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId, Slot,
+};
 use hash_db::{HashDB, EMPTY_PREFIX};
 use sp_runtime::traits::HashFor;
 use sp_state_machine::{Backend, TrieBackend};
-use sp_trie::StorageProof;
 use sp_std::vec::Vec;
+use sp_trie::StorageProof;
 
 /// A snapshot of some messaging related state of relay chain pertaining to the current parachain.
 ///
@@ -61,6 +63,8 @@ pub struct MessagingStateSnapshot {
 pub enum Error {
 	/// The provided proof was created against unexpected storage root.
 	RootMismatch,
+	/// The crreunt slot cannot be extracted.
+	Slot(ReadEntryErr),
 	/// The host configuration cannot be extracted.
 	Config(ReadEntryErr),
 	/// The DMQ MQC head cannot be extracted.
@@ -111,19 +115,19 @@ pub fn extract_from_proof(
 	para_id: ParaId,
 	relay_parent_storage_root: relay_chain::v1::Hash,
 	proof: StorageProof,
-) -> Result<(AbridgedHostConfiguration, MessagingStateSnapshot), Error> {
+) -> Result<(Slot, AbridgedHostConfiguration, MessagingStateSnapshot), Error> {
 	let db = proof.into_memory_db::<HashFor<relay_chain::Block>>();
 	if !db.contains(&relay_parent_storage_root, EMPTY_PREFIX) {
 		return Err(Error::RootMismatch);
 	}
 	let backend = TrieBackend::new(db, relay_parent_storage_root);
 
-	let host_config: AbridgedHostConfiguration = read_entry(
-		&backend,
-		relay_chain::well_known_keys::ACTIVE_CONFIG,
-		None,
-	)
-	.map_err(Error::Config)?;
+	let current_slot: Slot = read_entry(&backend, relay_chain::well_known_keys::CURRENT_SLOT, None)
+		.map_err(Error::Slot)?;
+
+	let host_config: AbridgedHostConfiguration =
+		read_entry(&backend, relay_chain::well_known_keys::ACTIVE_CONFIG, None)
+			.map_err(Error::Config)?;
 
 	let dmq_mqc_head: relay_chain::Hash = read_entry(
 		&backend,
@@ -187,6 +191,7 @@ pub fn extract_from_proof(
 	// by relying on the fact that `ingress_channel_index` and `egress_channel_index` are themselves sorted.
 
 	Ok((
+		current_slot,
 		host_config,
 		MessagingStateSnapshot {
 			dmq_mqc_head,

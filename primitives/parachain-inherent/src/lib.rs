@@ -50,7 +50,8 @@ pub struct ParachainInherentData {
 	///
 	/// Specifically this witness contains the data for:
 	///
-	/// - active host configuration as per the relay parent,
+	/// - the current slot number at the given relay parent
+	/// - active host configuration as per the relay parent
 	/// - the relay dispatch queue sizes
 	/// - the list of egress HRMP channels (in the list of recipients form)
 	/// - the metadata for the egress HRMP channels
