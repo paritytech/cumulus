@@ -38,7 +38,6 @@ cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", def
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 pallet-author-inherent = { path = "../../pallets/author-inherent", default-features = false }
 nimbus-primitives = { path = "../../primitives/nimbus", default-features = false }
-# pallet-author-filter = {package = "pallet-author-height-filter", path = "../../pallets/author-height-filter", default-features = false }
 pallet-author-filter = {package = "pallet-author-slot-filter", path = "../../pallets/author-slot-filter", default-features = false }
 pallet-account-set = { path = "../../pallets/account-set", default-features = false }
 cumulus-primitives-utility = { path = "../../primitives/utility", default-features = false }

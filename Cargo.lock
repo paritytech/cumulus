@@ -4855,21 +4855,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-author-height-filter"
-version = "0.1.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "log",
- "pallet-author-inherent",
- "parity-scale-codec",
- "serde",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-author-inherent"
 version = "0.1.0"
 dependencies = [

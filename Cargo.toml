@@ -7,7 +7,6 @@ members = [
 	"client/network",
 	"client/service",
 	"pallets/author-inherent",
-	"pallets/author-height-filter",
 	"pallets/author-slot-filter",
 	"pallets/aura-style-filter",
 	"pallets/parachain-system",
