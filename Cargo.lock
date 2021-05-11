@@ -4830,6 +4830,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
+ "nimbus-primitives",
  "pallet-author-inherent",
  "parity-scale-codec",
  "serde",

@@ -38,7 +38,7 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use sp_std::vec::Vec;
 	use frame_system::pallet_prelude::*;
-	use pallet_author_inherent::CanAuthor;
+	use nimbus_primitives::CanAuthor;
 
 	/// The Account Set pallet
 	#[pallet::pallet]
@@ -48,7 +48,8 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config  {
 		/// The identifier type for an author.
-		/// I'm still using "author" language here mostly to not collide with frame_system::Config::AccountId
+		/// We are generic over this type to allowing using the runtime's AccountId type
+		/// or the consensus layer's identification type.
 		type AuthorId: Member + Parameter + MaybeSerializeDeserialize;
 	}
 
@@ -57,7 +58,6 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
 	// No calls
-	//TODO can I remove this entirely? I suspect not because of the hooks thing above.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {}
 
@@ -73,11 +73,11 @@ pub mod pallet {
 		}
 	}
 
-	/// This pallet is compatible with the author filter system. Any account stored in this pallet
+	/// This pallet is compatible with nimbus's author filtering system. Any account stored in this pallet
 	/// is a valid author. Notice that this implementation does not have an inner filter, so it
-	/// can only be the beginning of the filtering daisy-chain.
+	/// can only be the beginning of the nimbus filter pipeline.
 	impl<T: Config> CanAuthor<T::AuthorId> for Pallet<T> {
-		fn can_author(author: &T::AuthorId) -> bool {
+		fn can_author(author: &T::AuthorId, _slot: &u32) -> bool {
 			StoredAccounts::<T>::get().contains(author)
 		}
 	}
@@ -87,14 +87,10 @@ pub mod pallet {
 		pub stored_accounts: Vec<T::AuthorId>,
 	}
 
-	//TODO can I derive default?
 	#[cfg(feature = "std")]
 	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
 			Self {
-				//TODO It would nice to somehow put alice and bob here, but that requires knowledge
-				// of the concrete AccountId type. Maybe I could take it in the config trait and
-				// let the runtime author supply it, but for now, I'm gonna do it in chain_spec.rs
 				stored_accounts: Vec::new(),
 			}
 		}

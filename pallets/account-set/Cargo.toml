@@ -13,6 +13,7 @@ frame-system = { git = "https://github.com/paritytech/substrate", default-featur
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+nimbus-primitives = { path = "../../primitives/nimbus", default-features = false }
 
 # Just for the trait. That should be moved to another crate.
 pallet-author-inherent = { path = "../author-inherent", default-features = false }
@@ -28,4 +29,5 @@ std = [
     "pallet-author-inherent/std",
     "sp-std/std",
     "log/std",
+    "nimbus-primitives/std",
 ]
