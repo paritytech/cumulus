@@ -32,6 +32,7 @@ use sp_runtime::{
 	ApplyExtrinsicResult,
 };
 use sp_std::prelude::*;
+use sp_std::marker::PhantomData;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -53,7 +54,7 @@ pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
-use nimbus_primitives::NimbusId;
+use nimbus_primitives::{SlotBeacon, NimbusId};
 
 // XCM imports
 use polkadot_parachain::primitives::Sibling;
@@ -380,8 +381,23 @@ impl cumulus_ping::Config for Runtime {
 	type XcmSender = XcmRouter;
 }
 
+/// A SlotBeacon that starts a new slot based on the relay chain's block height.
+/// This can only be used when sumulus's parachain system pallet is present.
+///TODO decide where this implementation lives
+pub struct RelayChainBeacon<R>(PhantomData<R>);
+
+impl<R: cumulus_pallet_parachain_system::Config> SlotBeacon for RelayChainBeacon<R> {
+	fn slot() -> u32 {
+		cumulus_pallet_parachain_system::Module::<R>::validation_data()
+			.expect("validation data was set in parachain system inherent")
+			.relay_parent_number
+	}
+}
+
 impl pallet_author_inherent::Config for Runtime {
 	type AuthorId = NimbusId;
+	// We start a new slot each time we see a new relay block.
+	type SlotBeacon = RelayChainBeacon<Self>;
 	type EventHandler = ();
 	type PreliminaryCanAuthor = PotentialAuthorSet;
 	type FullCanAuthor = AuthorFilter;
@@ -533,11 +549,8 @@ impl_runtime_apis! {
 
 
 	impl nimbus_primitives::AuthorFilterAPI<Block, nimbus_primitives::NimbusId> for Runtime {
-		fn can_author(author: nimbus_primitives::NimbusId, relay_parent: u32) -> bool {
-			// Rather than referring to the author filter directly here,
-			// refer to it via the author inherent config. This avoid the possibility
-			// of accidentally using different filters in different places.
-			AuthorFilter::can_author_helper(&author, relay_parent)
+		fn can_author(author: nimbus_primitives::NimbusId, slot: u32) -> bool {
+			<AuthorFilter as nimbus_primitives::CanAuthor<nimbus_primitives::NimbusId>>::can_author(&author, &slot)
 		}
 	}
 }
