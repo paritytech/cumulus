@@ -550,7 +550,7 @@ impl_runtime_apis! {
 
 	impl nimbus_primitives::AuthorFilterAPI<Block, nimbus_primitives::NimbusId> for Runtime {
 		fn can_author(author: nimbus_primitives::NimbusId, slot: u32) -> bool {
-			<AuthorFilter as nimbus_primitives::CanAuthor<nimbus_primitives::NimbusId>>::can_author(&author, &slot)
+			<<Runtime as pallet_author_inherent::Config>::FullCanAuthor as nimbus_primitives::CanAuthor<nimbus_primitives::NimbusId>>::can_author(&author, &slot)
 		}
 	}
 }
