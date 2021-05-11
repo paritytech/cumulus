@@ -41,6 +41,7 @@ use nimbus_primitives::{CanAuthor, SlotBeacon};
 
 mod exec;
 pub use exec::BlockExecutor;
+use sp_std::marker::PhantomData;
 
 //TODO move this to primitives?
 /// The given account ID is the author of the current block.
@@ -52,6 +53,35 @@ pub trait EventHandler<Author> {
 impl<T> EventHandler<T> for () {
 	fn note_author(_author: T) {}
 }
+
+/// A SlotBeacon that starts a new slot based on this chain's block height.
+///TODO there is also (aparently) a BlockNumberPRovider trait. Maybe make this a blanket implementation for that?
+/// I wonder when that trait is used though. I'm not going to over-engineer this yet.=
+pub struct HeightBeacon<R>(PhantomData<R>);
+
+impl<R: frame_system::Config> SlotBeacon for HeightBeacon<R> {
+	fn slot() -> u32 {
+		use core::convert::TryInto;
+		frame_system::Pallet::<R>::block_number().try_into().map_err(|_|()).expect("block number should fit into u32 or else nimbus won't work.")
+	}
+}
+
+/// A SlotBeacon that starts a new slot based on the relay chain's block height.
+/// This can only be used when cumulus's parachain system pallet is present.
+pub struct RelayChainBeacon<R>(PhantomData<R>);
+
+// TODO this is the only place we depend on parachain system. This impl should live in a different crate.
+impl<R: cumulus_pallet_parachain_system::Config> SlotBeacon for RelayChainBeacon<R> {
+	fn slot() -> u32 {
+		cumulus_pallet_parachain_system::Module::<R>::validation_data()
+			.expect("validation data was set in parachain system inherent")
+			.relay_parent_number
+	}
+}
+
+///TODO
+/// A SlotBeacon that starts a new slot based on the timestamp. Like the one used in sc-consensus-aura et al.
+pub struct IntervalBeacon;
 
 pub trait Config: frame_system::Config {
 	// This is copied from Aura. I wonder if I really need all those trait bounds. For now I'll leave them.

@@ -4843,10 +4843,9 @@ dependencies = [
 name = "pallet-aura-style-filter"
 version = "0.1.0"
 dependencies = [
- "cumulus-pallet-parachain-system",
  "frame-support",
  "frame-system",
- "pallet-author-inherent",
+ "nimbus-primitives",
  "parity-scale-codec",
  "serde",
  "sp-core",
@@ -4858,6 +4857,7 @@ dependencies = [
 name = "pallet-author-inherent"
 version = "0.1.0"
 dependencies = [
+ "cumulus-pallet-parachain-system",
  "frame-support",
  "frame-system",
  "log",

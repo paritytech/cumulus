@@ -12,8 +12,7 @@ frame-system = { git = "https://github.com/paritytech/substrate", default-featur
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
-pallet-author-inherent = { path = "../author-inherent", default-features = false }
-cumulus-pallet-parachain-system = { path = "../parachain-system",  default-features = false}
+nimbus-primitives = { path = "../../primitives/nimbus", default-features = false }
 
 [features]
 default = ["std"]
@@ -22,9 +21,8 @@ std = [
     "parity-scale-codec/std",
     "frame-support/std",
     "frame-system/std",
-    "pallet-author-inherent/std",
+    "nimbus-primitives/std",
     "sp-core/std",
     "sp-runtime/std",
-    "cumulus-pallet-parachain-system/std",
     "sp-std/std",
 ]

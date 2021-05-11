@@ -49,13 +49,15 @@ pub mod pallet {
 	use sp_std::vec::Vec;
 	use frame_system::pallet_prelude::*;
 
+	//TODO Now that the CanAuthor trait takes a slot number, I don't think this even needs to be a pallet.
+	// I think it could eb jsut a simple type.
 	/// The Author Filter pallet
 	#[pallet::pallet]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	/// Configuration trait of this pallet.
 	#[pallet::config]
-	pub trait Config: frame_system::Config + cumulus_pallet_parachain_system::Config {
+	pub trait Config: frame_system::Config {
 		/// A source for the complete set of potential authors.
 		/// The starting point of the filtering.
 		type PotentialAuthors: Get<Vec<Self::AccountId>>;
@@ -64,25 +66,12 @@ pub mod pallet {
 	// This code will be called by the author-inherent pallet to check whether the reported author
 	// of this block is eligible at this slot. We calculate that result on demand and do not
 	// record it instorage.
-	impl<T: Config> pallet_author_inherent::CanAuthor<T::AccountId> for Pallet<T> {
-		fn can_author(account: &T::AccountId) -> bool {
-
-			// Grab the relay parent height to use as the slot number
-			let slot = cumulus_pallet_parachain_system::Module::<T>::validation_data()
-				.expect("validation data was set in parachain system inherent")
-				.relay_parent_number;
-
-			Self::can_author_helper(account, slot)
-		}
-	}
-
-	impl<T: Config> Pallet<T> {
-		/// Helper method to calculate eligible authors
-		pub fn can_author_helper(account: &T::AccountId, slot: u32) -> bool {
+	impl<T: Config> nimbus_primitives::CanAuthor<T::AccountId> for Pallet<T> {
+		fn can_author(account: &T::AccountId, slot: &u32) -> bool {
 			let active: Vec<T::AccountId> = T::PotentialAuthors::get();
 
 			// This is the core Aura logic right here.
-			let active_author = &active[slot as usize % active.len()];
+			let active_author = &active[*slot as usize % active.len()];
 
 			account == active_author
 		}

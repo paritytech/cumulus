@@ -32,7 +32,6 @@ use sp_runtime::{
 	ApplyExtrinsicResult,
 };
 use sp_std::prelude::*;
-use sp_std::marker::PhantomData;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -54,7 +53,7 @@ pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
-use nimbus_primitives::{SlotBeacon, NimbusId};
+use nimbus_primitives::NimbusId;
 
 // XCM imports
 use polkadot_parachain::primitives::Sibling;
@@ -381,36 +380,10 @@ impl cumulus_ping::Config for Runtime {
 	type XcmSender = XcmRouter;
 }
 
-/// A SlotBeacon that starts a new slot based on this chain's block height.
-///TODO there is also (aparently) a BlockNumberPRovider trait. Maybe make this a blanket implementation for that?
-/// I wonder when that trait is used though. I'm not going to over-engineer this yet.
-///TODO decide where this implementation lives
-pub struct HeightBeacon<R>(PhantomData<R>);
-
-impl<R: frame_system::Config> SlotBeacon for HeightBeacon<R> {
-	fn slot() -> u32 {
-		use core::convert::TryInto;
-		frame_system::Pallet::<R>::block_number().try_into().map_err(|_|()).expect("block number should fit into u32 or else nimbus won't work.")
-	}
-}
-
-/// A SlotBeacon that starts a new slot based on the relay chain's block height.
-/// This can only be used when cumulus's parachain system pallet is present.
-///TODO decide where this implementation lives
-pub struct RelayChainBeacon<R>(PhantomData<R>);
-
-impl<R: cumulus_pallet_parachain_system::Config> SlotBeacon for RelayChainBeacon<R> {
-	fn slot() -> u32 {
-		cumulus_pallet_parachain_system::Module::<R>::validation_data()
-			.expect("validation data was set in parachain system inherent")
-			.relay_parent_number
-	}
-}
-
 impl pallet_author_inherent::Config for Runtime {
 	type AuthorId = NimbusId;
 	// We start a new slot each time we see a new relay block.
-	type SlotBeacon = RelayChainBeacon<Self>;
+	type SlotBeacon = pallet_author_inherent::RelayChainBeacon<Self>;
 	type EventHandler = ();
 	type PreliminaryCanAuthor = PotentialAuthorSet;
 	type FullCanAuthor = AuthorFilter;
