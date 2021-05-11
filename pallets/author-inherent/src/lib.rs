@@ -248,9 +248,6 @@ impl<T: Config> ProvideInherent for Module<T> {
 		let author = author_raw
 			.expect("Gets and decodes authorship inherent data")?;
 
-		//TODO we need to make the author _prove_ their identity, not just claim it.
-		// we should have them sign something here. Best idea so far: parent block hash.
-
 		// Decode the Vec<u8> into an account Id
 		// let author =
 		// 	T::AuthorId::decode(&mut &author_raw[..]).expect("Decodes author raw inherent data");
