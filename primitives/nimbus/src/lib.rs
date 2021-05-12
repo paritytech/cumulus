@@ -2,16 +2,14 @@
 
 //! Nimbus Consensus Primitives
 //!
-//! TODO rename the crate. It was originally just the runtime api
+//! Primitive types and traits for working with the Nimbus consensus framework.
+//! This code can be built to no_std for use in the runtime
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use sp_std::vec::Vec;
 use parity_scale_codec::Codec;
 use sp_application_crypto::KeyTypeId;
-
-//TODO Maybe move our key type into sp_core if this gets well adopted (to avoid collision)
-pub const NIMBUS_KEY_ID: KeyTypeId = KeyTypeId(*b"nmbs");
 
 /// The given account ID is the author of the current block.
 pub trait EventHandler<Author> {
@@ -49,8 +47,12 @@ impl<T> CanAuthor<T> for () {
 	}
 }
 
-//TODO revisit all of this app crypto stuff and make it nice and clean
-mod app {
+/// The KeyTypeId used in the Nimbus consensus framework regardles of wat filters are in place.
+/// If this gets well adopted, we could move this definition to sp_core to avoid conflicts.
+pub const NIMBUS_KEY_ID: KeyTypeId = KeyTypeId(*b"nmbs");
+
+// The strongly-typed crypto wrappers to be used by Nimbus in the keystore
+mod nimbus_crypto {
 	use sp_application_crypto::{
 		app_crypto,
 		sr25519,
@@ -58,16 +60,17 @@ mod app {
 	app_crypto!(sr25519, crate::NIMBUS_KEY_ID);
 }
 
-sp_application_crypto::with_pair! {
-	/// A nimbus author keypair.
-	pub type NimbusPair = app::Pair;
-}
+//TODO, do I need this? I didn't use it in the keystore-learning example
+// sp_application_crypto::with_pair! {
+// 	/// A nimbus author keypair.
+// 	pub type NimbusPair = nimbus_crypto::Pair;
+// }
 
 /// A nimbus author identifier.
-pub type NimbusId = app::Public;
+pub type NimbusId = nimbus_crypto::Public;
 
 /// A nimbus author signature.
-pub type NimbusSignature = app::Signature;
+pub type NimbusSignature = nimbus_crypto::Signature;
 
 
 sp_api::decl_runtime_apis! {
