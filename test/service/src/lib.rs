@@ -273,7 +273,7 @@ where
 			announce_block,
 			task_manager: &mut task_manager,
 			para_id,
-			polkadot_full_node: relay_chain_full_node,
+			relay_chain_full_node,
 		};
 
 		start_full_node(params)?;

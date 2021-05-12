@@ -35,10 +35,10 @@ async fn pov_recovery(task_executor: TaskExecutor) {
 
 	// Start alice
 	let alice =
-		polkadot_test_service::run_validator_node(task_executor.clone(), Alice, || {}, vec![]);
+		cumulus_test_service::run_relay_chain_validator_node(task_executor.clone(), Alice, || {}, vec![]);
 
 	// Start bob
-	let bob = polkadot_test_service::run_validator_node(
+	let bob = cumulus_test_service::run_relay_chain_validator_node(
 		task_executor.clone(),
 		Bob,
 		|| {},
@@ -69,10 +69,13 @@ async fn pov_recovery(task_executor: TaskExecutor) {
 			.build()
 			.await;
 
+	charlie.wait_for_blocks(1).await;
+
 	// Run dave as parachain full node
 	//
 	// It will need to recover the pov blocks through availability recovery.
-	let dave = cumulus_test_service::TestNodeBuilder::new(para_id, task_executor.clone(), Dave)
+	let dave = cumulus_test_service::TestNodeBuilder::new(para_id, task_executor, Dave)
+		.enable_collator()
 		.connect_to_parachain_node(&charlie)
 		.connect_to_relay_chain_nodes(vec![&alice, &bob])
 		.build()

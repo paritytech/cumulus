@@ -21,20 +21,44 @@ use cumulus_test_client::{
 	runtime::{Block, Header},
 	Client, InitBlockBuilder, TestClientBuilder, TestClientBuilderExt,
 };
-use futures::{channel::mpsc, executor::block_on};
+use futures::{channel::mpsc, executor::block_on, select, FutureExt, Stream, StreamExt};
 use futures_timer::Delay;
+use polkadot_overseer::{AllSubsystems, HeadSupportsParachains, Overseer, OverseerHandler};
 use polkadot_primitives::v1::{
-	Block as PBlock, Id as ParaId
+	Block as PBlock, CommittedCandidateReceipt, Id as ParaId, SessionIndex,
 };
+use sc_client_api::UsageProvider;
 use sp_blockchain::{Error as ClientError, Result as ClientResult};
-use sp_consensus::{BlockImportParams, ForkChoiceStrategy, BlockOrigin, BlockImport};
+use sp_consensus::{BlockImport, BlockImportParams, BlockOrigin, ForkChoiceStrategy};
+use sp_core::testing::TaskExecutor;
 use sp_runtime::generic::BlockId;
 use std::{
 	sync::{Arc, Mutex},
 	time::Duration,
 };
-use futures::{select, Stream, FutureExt, StreamExt};
-use sc_client_api::UsageProvider;
+
+struct AlwaysSupportsParachains;
+impl HeadSupportsParachains for AlwaysSupportsParachains {
+	fn head_supports_parachains(&self, _head: &PHash) -> bool {
+		true
+	}
+}
+
+fn create_overseer() -> (
+	Overseer<TaskExecutor, AlwaysSupportsParachains>,
+	OverseerHandler,
+) {
+	let spawner = TaskExecutor::new();
+	let all_subsystems = AllSubsystems::<()>::dummy();
+	Overseer::new(
+		vec![],
+		all_subsystems,
+		None,
+		AlwaysSupportsParachains,
+		spawner,
+	)
+	.unwrap()
+}
 
 struct RelaychainInner {
 	new_best_heads: Option<mpsc::UnboundedReceiver<Header>>,
@@ -74,7 +98,11 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 	type Error = ClientError;
 
 	type HeadStream = Box<dyn Stream<Item = Vec<u8>> + Send + Unpin>;
-	fn new_best_heads(&self, _: ParaId) -> ClientResult<Self::HeadStream> {
+
+	type PendingCandidateStream =
+		Box<dyn Stream<Item = (CommittedCandidateReceipt, SessionIndex)> + Send + Unpin>;
+
+	fn new_best_heads(&self, _: ParaId) -> Self::HeadStream {
 		let stream = self
 			.inner
 			.lock()
@@ -83,10 +111,10 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 			.take()
 			.expect("Should only be called once");
 
-		Ok(Box::new(stream.map(|v| v.encode())))
+		Box::new(stream.map(|v| v.encode()))
 	}
 
-	fn finalized_heads(&self, _: ParaId) -> ClientResult<Self::HeadStream> {
+	fn finalized_heads(&self, _: ParaId) -> Self::HeadStream {
 		let stream = self
 			.inner
 			.lock()
@@ -95,11 +123,15 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 			.take()
 			.expect("Should only be called once");
 
-		Ok(Box::new(stream.map(|v| v.encode())))
+		Box::new(stream.map(|v| v.encode()))
 	}
 
 	fn parachain_head_at(&self, _: &BlockId<PBlock>, _: ParaId) -> ClientResult<Option<Vec<u8>>> {
 		unimplemented!("Not required for tests")
+	}
+
+	fn pending_candidates(&self, _: ParaId) -> Self::PendingCandidateStream {
+		Box::new(futures::stream::pending())
 	}
 }
 
@@ -123,6 +155,7 @@ fn build_and_import_block(mut client: Arc<Client>) -> Block {
 fn follow_new_best_works() {
 	sp_tracing::try_init_simple();
 
+	let (_overseer, overseer_handler) = create_overseer();
 	let client = Arc::new(TestClientBuilder::default().build());
 
 	let block = build_and_import_block(client.clone());
@@ -134,8 +167,13 @@ fn follow_new_best_works() {
 		.new_best_heads_sender
 		.clone();
 
-	let consensus =
-		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}));
+	let consensus = run_parachain_consensus(
+		100.into(),
+		client.clone(),
+		relay_chain,
+		Arc::new(|_, _| {}),
+		None,
+	);
 
 	let work = async move {
 		new_best_heads_sender
@@ -164,6 +202,7 @@ fn follow_new_best_works() {
 fn follow_finalized_works() {
 	sp_tracing::try_init_simple();
 
+	let (_overseer, overseer_handler) = create_overseer();
 	let client = Arc::new(TestClientBuilder::default().build());
 
 	let block = build_and_import_block(client.clone());
@@ -175,8 +214,13 @@ fn follow_finalized_works() {
 		.finalized_heads_sender
 		.clone();
 
-	let consensus =
-		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}));
+	let consensus = run_parachain_consensus(
+		100.into(),
+		client.clone(),
+		relay_chain,
+		Arc::new(|_, _| {}),
+		None,
+	);
 
 	let work = async move {
 		finalized_sender
@@ -205,6 +249,7 @@ fn follow_finalized_works() {
 fn follow_finalized_does_not_stop_on_unknown_block() {
 	sp_tracing::try_init_simple();
 
+	let (_overseer, overseer_handler) = create_overseer();
 	let client = Arc::new(TestClientBuilder::default().build());
 
 	let block = build_and_import_block(client.clone());
@@ -223,8 +268,13 @@ fn follow_finalized_does_not_stop_on_unknown_block() {
 		.finalized_heads_sender
 		.clone();
 
-	let consensus =
-		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}));
+	let consensus = run_parachain_consensus(
+		100.into(),
+		client.clone(),
+		relay_chain,
+		Arc::new(|_, _| {}),
+		None,
+	);
 
 	let work = async move {
 		for _ in 0..3usize {
@@ -264,6 +314,7 @@ fn follow_finalized_does_not_stop_on_unknown_block() {
 fn follow_new_best_sets_best_after_it_is_imported() {
 	sp_tracing::try_init_simple();
 
+	let (_overseer, overseer_handler) = create_overseer();
 	let mut client = Arc::new(TestClientBuilder::default().build());
 
 	let block = build_and_import_block(client.clone());
@@ -282,8 +333,13 @@ fn follow_new_best_sets_best_after_it_is_imported() {
 		.new_best_heads_sender
 		.clone();
 
-	let consensus =
-		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}));
+	let consensus = run_parachain_consensus(
+		100.into(),
+		client.clone(),
+		relay_chain,
+		Arc::new(|_, _| {}),
+		None,
+	);
 
 	let work = async move {
 		new_best_heads_sender

@@ -21,6 +21,7 @@
 use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_primitives_core::ParaId;
 use futures::FutureExt;
+use polkadot_overseer::OverseerHandler;
 use polkadot_primitives::v1::{Block as PBlock, CollatorPair};
 use polkadot_service::{AbstractClient, Client as PClient, ClientHandle, RuntimeApiCollection};
 use sc_client_api::{
@@ -93,6 +94,12 @@ where
 		announce_block: announce_block.clone(),
 		client: client.clone(),
 		task_manager,
+		overseer_handler: Some(
+			relay_chain_full_node
+				.overseer_handler
+				.clone()
+				.ok_or_else(|| "Polkadot full node did not provided an `OverseerHandler`!")?,
+		),
 		_phantom: PhantomData,
 	})?;
 
@@ -119,7 +126,7 @@ where
 pub struct StartFullNodeParams<'a, Block: BlockT, Client, PClient> {
 	pub para_id: ParaId,
 	pub client: Arc<Client>,
-	pub polkadot_full_node: RFullNode<PClient>,
+	pub relay_chain_full_node: RFullNode<PClient>,
 	pub task_manager: &'a mut TaskManager,
 	pub announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 }
@@ -133,7 +140,7 @@ pub fn start_full_node<Block, Client, Backend, PClient>(
 		client,
 		announce_block,
 		task_manager,
-		polkadot_full_node,
+		relay_chain_full_node,
 		para_id,
 	}: StartFullNodeParams<Block, Client, PClient>,
 ) -> sc_service::error::Result<()>
@@ -150,15 +157,16 @@ where
 	Backend: BackendT<Block> + 'static,
 	PClient: ClientHandle,
 {
-	polkadot_full_node.client.execute_with(StartConsensus {
+	relay_chain_full_node.client.execute_with(StartConsensus {
 		announce_block,
 		para_id,
 		client,
 		task_manager,
+		overseer_handler: None,
 		_phantom: PhantomData,
 	})?;
 
-	task_manager.add_child(polkadot_full_node.task_manager);
+	task_manager.add_child(relay_chain_full_node.task_manager);
 
 	Ok(())
 }
@@ -168,6 +176,7 @@ struct StartConsensus<'a, Block: BlockT, Client, Backend> {
 	announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 	client: Arc<Client>,
 	task_manager: &'a mut TaskManager,
+	overseer_handler: Option<OverseerHandler>,
 	_phantom: PhantomData<Backend>,
 }
 
@@ -200,20 +209,12 @@ where
 			self.client,
 			client,
 			self.announce_block,
+			self.overseer_handler,
 		);
 
-		self.task_manager.spawn_essential_handle().spawn(
-			"cumulus-consensus",
-			consensus.then(|r| async move {
-				if let Err(e) = r {
-					tracing::error!(
-						target: "cumulus-service",
-						error = %e,
-						"Parachain consensus failed.",
-					)
-				}
-			}),
-		);
+		self.task_manager
+			.spawn_essential_handle()
+			.spawn("cumulus-consensus", consensus);
 
 		Ok(())
 	}

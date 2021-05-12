@@ -17,6 +17,7 @@ sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "mas
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot deps
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -25,8 +26,12 @@ polkadot-runtime = { git = "https://github.com/paritytech/polkadot", branch = "m
 polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
+# Cumulus dependencies
+cumulus-primitives-core = { path = "../../../primitives/core" }
+
 # Other deps
 futures = { version = "0.3.8", features = ["compat"] }
+futures-timer = "3.0.2"
 codec = { package = "parity-scale-codec", version = "2.0.0", features = [ "derive" ] }
 tracing = "0.1.25"
 async-trait = "0.1.42"
@@ -44,12 +49,9 @@ sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
 cumulus-test-runtime = { path = "../../../test/runtime" }
 cumulus-test-client = { path = "../../../test/client" }
 cumulus-test-service = { path = "../../../test/service" }
-cumulus-primitives-core = { path = "../../../primitives/core" }
 
 # Polkadot deps
 polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Other deps
-futures-timer = "3.0.2"
 tokio = { version = "0.2.21", features = ["macros"] }
