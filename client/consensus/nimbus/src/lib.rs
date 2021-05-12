@@ -220,7 +220,8 @@ where
 
 		// Print a more helpful message than "not eligible" when there are no keys at all.
 		if available_keys.is_empty() {
-			warn!(target: LOG_TARGET, "No Nimbus keys available. We will not be able to author.");
+			warn!(target: LOG_TARGET, "🔏 No Nimbus keys available. We will not be able to author.");
+			return None;
 		}
 
 		// Iterate keys until we find an eligible one, or run out of candidates.
