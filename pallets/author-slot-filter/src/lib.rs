@@ -62,13 +62,6 @@ pub mod pallet {
 		type PotentialAuthors: Get<Vec<Self::AuthorId>>;
 	}
 
-	//TODO this needs to be moved to a new pallet (or maybe into the author inherent pallet? as an implementation of the new SlotBeacon trait)
-	// Grab the relay parent height as a temporary source of relay-based entropy
-	// let validation_data = cumulus_pallet_parachain_system::Module::<T>::validation_data()
-	// 	.expect("validation data was set in parachain system inherent");
-	// let slot = validation_data.relay_parent_number;
-
-
 	// This code will be called by the author-inherent pallet to check whether the reported author
 	// of this block is eligible in this slot. We calculate that result on demand and do not
 	// record it in storage (although we do emit a debugging event for now).
