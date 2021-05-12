@@ -1489,6 +1489,7 @@ dependencies = [
  "polkadot-parachain",
  "sc-client-api",
  "sc-executor",
+ "sc-executor-common",
  "serde",
  "sp-blockchain",
  "sp-consensus",
