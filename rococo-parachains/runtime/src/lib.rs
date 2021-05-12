@@ -53,7 +53,7 @@ pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
-use nimbus_primitives::NimbusId;
+use nimbus_primitives::{CanAuthor, NimbusId};
 
 // XCM imports
 use polkadot_parachain::primitives::Sibling;
@@ -536,7 +536,7 @@ impl_runtime_apis! {
 
 	impl nimbus_primitives::AuthorFilterAPI<Block, nimbus_primitives::NimbusId> for Runtime {
 		fn can_author(author: nimbus_primitives::NimbusId, slot: u32) -> bool {
-			<<Runtime as pallet_author_inherent::Config>::FullCanAuthor as nimbus_primitives::CanAuthor<nimbus_primitives::NimbusId>>::can_author(&author, &slot)
+			<Runtime as pallet_author_inherent::Config>::FullCanAuthor::can_author(&author, &slot)
 		}
 	}
 }
