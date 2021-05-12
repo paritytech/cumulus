@@ -48,6 +48,7 @@ use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT};
 use std::{marker::PhantomData, sync::Arc, time::Duration};
 use tracing::error;
 use sp_keystore::{SyncCryptoStorePtr, SyncCryptoStore};
+use sp_core::crypto::Public;
 use nimbus_primitives::{AuthorFilterAPI, NIMBUS_KEY_ID, NimbusId};
 mod import_queue;
 
@@ -216,7 +217,8 @@ where
 		// note: expected struct `Vec<author_filter_api::app::Public>`
     	//          found struct `Vec<sp_core::sr25519::Public>`
 		let available_keys =
-			SyncCryptoStore::sr25519_public_keys(&*self.keystore, NIMBUS_KEY_ID);
+			SyncCryptoStore::keys(&*self.keystore, NIMBUS_KEY_ID)
+			.expect("keystore should return the keys it has");
 
 		// Print a more helpful message than "not eligible" when there are no keys at all.
 		if available_keys.is_empty() {
@@ -225,19 +227,21 @@ where
 		}
 
 		// Iterate keys until we find an eligible one, or run out of candidates.
-		let maybe_key = available_keys.into_iter().find(|k| {
+		let maybe_key = available_keys.into_iter().find(|type_public_pair| {
 			self.parachain_client.runtime_api()
 				.can_author(
 					&BlockId::Hash(parent.hash()),
-					From::from(*k),
+					// Have to convert to a typed NimbusId to pass to the runtime API. Maybe this is a clue
+					// That I should be passing Vec<u8> across the wasm boundary?
+					NimbusId::from_slice(&type_public_pair.1),
 					validation_data.relay_parent_number
 				)
 				.expect("Author API should not return error")
 		});
 
 		// If there are no eligible keys, print the log, and exit early.
-		let author_id: NimbusId = match maybe_key {
-			Some(key) => From::from(key),
+		let type_public_pair = match maybe_key {
+			Some(p) => p,
 			None => {
 				info!(
 					target: LOG_TARGET,
@@ -256,7 +260,7 @@ where
 			)
 			.ok()?;
 
-		let inherent_data = self.inherent_data(&validation_data, relay_parent, &author_id)?;
+		let inherent_data = self.inherent_data(&validation_data, relay_parent, &NimbusId::from_slice(&type_public_pair.1))?;
 
 		let Proposal {
 			block,
@@ -280,35 +284,21 @@ where
 
 		let (header, extrinsics) = block.clone().deconstruct();
 
-		let pre_hash = header.hash();
+		let pre_hash/*: <<B as BlockT>::Header as HeaderT>::Hash */= header.hash();
 
-		// To sign I need the "CryptoTypePublicPair" I can't make it because I don't know wft the crypto type is
-		// I can't just grab it to begin with, because I can't convert the unsized [u8] it goves me to a NimbusId
-		// I wish the jeystore interface amde a little more sense. Maybe I should be passing opaque data
-		// into the runtime api afterall?
-		// Observation: Aura has a type paramaeter P that is set (explicitly) to `AuraPair` when called
-		// From the service. Maybe I need to do that here as well. P has several trait bounds that may help.
-		//
-		// let type_public_pair =
-		// 	SyncCryptoStore::keys(&*self.keystore, NIMBUS_KEY_ID)
-		// 	.expect("fetching the keys succeeded")
-		// 	.iter()
-		// 	.find(|p| {
-		// 		&p.1 == author_id.0
-		// 	})
-		// 	.expect("The key should be there, because we already found it earlier.");
-		//
-		// let sig = SyncCryptoStore::sign_with(
-		// 	&*self.keystore,
-		// 	NIMBUS_KEY_ID,
-		// 	type_public_pair,
-		// 	pre_hash,
-		// ).ok_or_else(|| {
-		// 	println!("Signing failed!!");
-		// 	return None;
-		// });
-		//
-		// println!("The signature is \n{:?}", sig);
+		let sig = SyncCryptoStore::sign_with(
+			&*self.keystore,
+			NIMBUS_KEY_ID,
+			&type_public_pair,
+			pre_hash.as_ref(),
+		)
+		.expect("Keystore should be able to sign")
+		.expect("We already checked that the key was present");
+		
+		info!(
+			target: LOG_TARGET,
+			"The signature is \n{:?}", sig
+		);
 
 		// Add a silly test digest, just to get familiar with how it works
 		// TODO better identifier and stuff - add a type to nimbus primitives?
