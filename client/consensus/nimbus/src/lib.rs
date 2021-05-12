@@ -158,6 +158,8 @@ where
 			})
 			.ok()?;
 
+		//TODO this situation will improve when I update Substrate. I can copy the work that's
+		// already on cumulus master, and here is the original PR for reference https://github.com/paritytech/substrate/pull/8526
 		// Now manually attach the author one.
 		inherent_data
 			//TODO import the inherent id from somewhere. Currently it is defined in the pallet.
