@@ -274,21 +274,6 @@ impl<T: Config> ProvideInherent for Module<T> {
 		Some(Call::set_author(author))
 	}
 
-	// This check is called from the verifier (before block execution begins) to quickly rule out
-	// block with invalid inherents. I'm not sure it even makes sense to check this one.
-	fn check_inherent(call: &Self::Call, _data: &InherentData) -> Result<(), Self::Error> {
-		// We only check this pallet's inherent.
-		if let Self::Call::set_author(claimed_author) = call {
-			let slot = T::SlotBeacon::slot();
-			ensure!(
-				T::PreliminaryCanAuthor::can_author(&claimed_author, &slot),
-				InherentError::Other(sp_runtime::RuntimeString::Borrowed("Cannot Be Author"))
-			);
-		}
-
-		Ok(())
-	}
-
 	fn is_inherent(call: &Self::Call) -> bool {
 		matches!(call, Call::set_author(_))
 	}
