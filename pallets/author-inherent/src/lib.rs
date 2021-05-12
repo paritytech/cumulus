@@ -36,23 +36,12 @@ use sp_runtime::{
 	traits::Member,
 };
 use log::debug;
-use nimbus_primitives::{CanAuthor, SlotBeacon};
+use nimbus_primitives::{CanAuthor, SlotBeacon, EventHandler};
 // use sp_application_crypto::AppKey;
 
 mod exec;
 pub use exec::BlockExecutor;
 use sp_std::marker::PhantomData;
-
-//TODO move this to primitives?
-/// The given account ID is the author of the current block.
-pub trait EventHandler<Author> {
-	//TODO should we be tking ownership here?
-	fn note_author(author: Author);
-}
-
-impl<T> EventHandler<T> for () {
-	fn note_author(_author: T) {}
-}
 
 /// A SlotBeacon that starts a new slot based on this chain's block height.
 ///TODO there is also (aparently) a BlockNumberPRovider trait. Maybe make this a blanket implementation for that?

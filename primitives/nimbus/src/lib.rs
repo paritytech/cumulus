@@ -13,6 +13,16 @@ use sp_application_crypto::KeyTypeId;
 //TODO Maybe move our key type into sp_core if this gets well adopted (to avoid collision)
 pub const NIMBUS_KEY_ID: KeyTypeId = KeyTypeId(*b"nmbs");
 
+/// The given account ID is the author of the current block.
+pub trait EventHandler<Author> {
+	//TODO should we be tking ownership here?
+	fn note_author(author: Author);
+}
+
+impl<T> EventHandler<T> for () {
+	fn note_author(_author: T) {}
+}
+
 /// A mechanism for determining the current slot.
 /// For now we use u32 as the slot type everywhere. Let's see how long we can get away with that.
 pub trait SlotBeacon {
