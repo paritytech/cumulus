@@ -73,7 +73,7 @@ pub type NimbusId = nimbus_crypto::Public;
 pub type NimbusSignature = nimbus_crypto::Signature;
 
 /// A nimbus key pair
-#[cfg(feature = "std")]
+// #[cfg(feature = "std")]
 pub type NimbusPair = nimbus_crypto::Pair;
 
 

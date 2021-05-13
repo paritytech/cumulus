@@ -4864,6 +4864,7 @@ dependencies = [
  "nimbus-primitives",
  "parity-scale-codec",
  "sp-api",
+ "sp-application-crypto",
  "sp-authorship",
  "sp-core",
  "sp-inherents",

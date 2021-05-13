@@ -11,6 +11,7 @@ log = { version = "0.4", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
 parity-scale-codec = { version = "2.0.0", default-features = false, features = ["derive"] }
+sp-application-crypto = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
 sp-authorship = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
@@ -31,6 +32,7 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"parity-scale-codec/std",
+	"sp-application-crypto/std",
 	"sp-authorship/std",
 	"sp-inherents/std",
 	"sp-runtime/std",
