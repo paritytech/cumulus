@@ -33,9 +33,7 @@ use sp_runtime::{
 };
 use nimbus_primitives::{NimbusId, NimbusSignature, NimbusPair};
 use sp_application_crypto::{TryFrom, Pair as _, Public as _};
-
-//TODO don't leave it this way. This is just so I can get better diagnosit logging without messing with cli flags.
-use log::info as debug;
+use log::debug;
 
 /// A verifier that checks the inherents and
 /// TODO compares two digests. The first comes from the runtime which contains the author inherent data
@@ -68,8 +66,7 @@ where
 		String,
 	> {
 
-		let pre_header = header.hash();
-		debug!(target: crate::LOG_TARGET, "🪲 Header hash before popping digest {:?}", pre_header);
+		debug!(target: crate::LOG_TARGET, "🪲 Header hash before popping digest {:?}", header.hash());
 		// Grab the digest from the seal
 		// Even though we do literally nothing with it, we can go ahead and pop it off already
 		//TODO use CompatibleDigest trait here once I write it. For now assume the seal is last.
@@ -108,15 +105,15 @@ where
 		// Verify the signature
 		let valid_signature = NimbusPair::verify(
 			&NimbusSignature::try_from(sig).expect("Bytes should convert to signature correctly"),
-			pre_header,
+			header.hash(),
 			&NimbusId::from_slice(&claimed_author),
 		);
 
 		debug!(target: crate::LOG_TARGET, "🪲 Valid signature? {:?}", valid_signature);
 
-		//TODO
-		//ensure!(valid_signature, "Signature was not valid".into());
-
+		if !valid_signature{
+			return Err("Block signature invalid".into());
+		}
 
 		// This part copied from Basti. I guess this is the inherent checking.
 		if let Some(inner_body) = body.take() {
