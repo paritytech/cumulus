@@ -72,9 +72,11 @@ where
 			};
 
 			if let Some(timestamp_slot) = p.timestamp_slot {
-				assert_eq!(
-					timestamp_slot, relay_chain_slot,
-					"Timestamp slot must match `CurrentSlot`"
+				assert!(
+					valid_slot(relay_chain_slot, timestamp_slot),
+					"Timestamp slot must be consistent with relay chain slot: relay: {:?}, local: {:?}",
+					relay_chain_slot,
+					timestamp_slot,
 				);
 			} else {
 				p.relay_chain_slot = Some(relay_chain_slot);
@@ -97,13 +99,19 @@ where
 			let timestamp_slot = Slot::from(timestamp_slot.saturated_into::<u64>());
 
 			if let Some(relay_chain_slot) = p.relay_chain_slot {
-				assert_eq!(
-					timestamp_slot, relay_chain_slot,
-					"Timestamp slot must match `CurrentSlot`"
+				assert!(
+					valid_slot(relay_chain_slot, timestamp_slot),
+					"Timestamp slot must be consistent with relay chain slot: relay: {:?}, local: {:?}",
+					relay_chain_slot,
+					timestamp_slot,
 				);
 			} else {
 				p.timestamp_slot = Some(timestamp_slot);
 			}
 		});
 	}
+}
+
+fn valid_slot(relay_slot: Slot, local_slot: Slot) -> bool {
+	relay_slot == local_slot || relay_slot + 1 == local_slot
 }
