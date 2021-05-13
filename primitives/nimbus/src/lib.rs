@@ -72,9 +72,10 @@ pub type NimbusId = nimbus_crypto::Public;
 /// A nimbus signature.
 pub type NimbusSignature = nimbus_crypto::Signature;
 
-/// A nimbus key pair
-// #[cfg(feature = "std")]
-pub type NimbusPair = nimbus_crypto::Pair;
+sp_application_crypto::with_pair! {
+	/// A nimbus keypair
+	pub type NimbusPair = nimbus_crypto::Pair;
+}
 
 
 sp_api::decl_runtime_apis! {
