@@ -184,8 +184,8 @@ impl<T: Config> FindAuthor<T::AuthorId> for Module<T> {
 	}
 }
 
-// Can I express this as `*b"auth"` like we do for the inherent id?
-pub const ENGINE_ID: ConsensusEngineId = [b'a', b'u', b't', b'h'];
+//TODO move this to primitives
+pub const ENGINE_ID: ConsensusEngineId = *b"nmbs";
 
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"author__";
 

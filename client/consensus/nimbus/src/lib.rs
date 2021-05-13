@@ -300,20 +300,18 @@ where
 			"The signature is \n{:?}", sig
 		);
 
-		// Add a silly test digest, just to get familiar with how it works
-		// TODO better identifier and stuff - add a type to nimbus primitives?
-		let test_digest = sp_runtime::generic::DigestItem::Seal(*b"test", Vec::new());
+		// TODO Make a proper CompatibleDigest trait https://github.com/paritytech/substrate/blob/master/primitives/consensus/aura/src/digests.rs#L45
+		let sig_digest = sp_runtime::generic::DigestItem::Seal(*b"nmbs", sig);
 
 		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header.clone());
 		// Add the test digest to the block import params
-		block_import_params.post_digests.push(test_digest.clone());
+		block_import_params.post_digests.push(sig_digest.clone());
 		block_import_params.body = Some(extrinsics.clone());
 		// Best block is determined by the relay chain.
 		block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(false));
 		block_import_params.storage_changes = Some(storage_changes);
 
-		// Print the same log line as slots (aura and babe) to see if this is working the same way
-		// It seems to be working the same way now.
+		// Print the same log line as slots (aura and babe)
 		info!(
 			"🔖 Sealed block for proposal at {}. Hash now {:?}, previously {:?}.",
 			*header.number(),
@@ -340,7 +338,7 @@ where
 
 		// Compute info about the block after the digest is added
 		let mut post_header = header.clone();
-		post_header.digest_mut().logs.push(test_digest.clone());
+		post_header.digest_mut().logs.push(sig_digest.clone());
 		let post_block = B::new(post_header, extrinsics);
 
 		// Returning the block WITH the seal for distribution around the network.

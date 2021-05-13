@@ -29,8 +29,13 @@ use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, Header as HeaderT},
 	Justifications,
+	DigestItem,
 };
-use log::debug;
+use nimbus_primitives::{NimbusId, NimbusSignature, NimbusPair};
+use sp_application_crypto::{TryFrom, Pair as _, Public as _};
+
+//TODO don't leave it this way. This is just so I can get better diagnosit logging without messing with cli flags.
+use log::info as debug;
 
 /// A verifier that checks the inherents and
 /// TODO compares two digests. The first comes from the runtime which contains the author inherent data
@@ -63,24 +68,55 @@ where
 		String,
 	> {
 
-		debug!(target: crate::LOG_TARGET, "🪲 Header hash before popping digest {:?}", header.hash());
+		let pre_header = header.hash();
+		debug!(target: crate::LOG_TARGET, "🪲 Header hash before popping digest {:?}", pre_header);
 		// Grab the digest from the seal
 		// Even though we do literally nothing with it, we can go ahead and pop it off already
-		let seal = match header.digest_mut().pop() {
-			Some(x) => x,
-			None => return Err("HeaderUnsealed".into()),
+		//TODO use CompatibleDigest trait here once I write it. For now assume the seal is last.
+		let seal = header.digest_mut().pop().expect("Block should have at least one digest on it");
+
+		let sig = match seal {
+			DigestItem::Seal(id, ref sig) if id == *b"nmbs" => sig.clone(),
+			_ => return Err("HeaderUnsealed".into()),
 		};
 
 		debug!(target: crate::LOG_TARGET, "🪲 Header hash after popping digest {:?}", header.hash());
-		//let signing_author = seal...
 
-		//Grab the digest from the runtime
-		//let claimed_author = header.digest.logs.find(...)
+		debug!(target: crate::LOG_TARGET, "🪲 Signature according to verifier is {:?}", sig);
 
-		// if signing_author != claimed_author {
-		// 	// TODO actually verify the signature
-		// 	reutrn Err("Invalid signature")
-		// }
+		// Grab the digest from the runtime
+		//TODO use the trait. Maybe this code should move to the trait.
+		let consensus_digest = header
+			.digest()
+			.logs
+			.iter()
+			.find(|digest| {
+				match *digest {
+					DigestItem::Consensus(id, _) if id == b"nmbs" => true,
+					_ => false,
+				}
+			})
+			.expect("A single consensus digest should be added by the runtime when executing the author inherent.");
+		
+		let claimed_author = match *consensus_digest {
+			DigestItem::Consensus(id, ref author_id) if id == *b"nmbs" => author_id.clone(),
+			_ => panic!("Expected consensus digest to contains author id bytes"),
+		};
+
+		debug!(target: crate::LOG_TARGET, "🪲 Claimed Author according to verifier is {:?}", claimed_author);
+
+		// Verify the signature
+		let valid_signature = NimbusPair::verify(
+			&NimbusSignature::try_from(sig).expect("Bytes should convert to signature correctly"),
+			pre_header,
+			&NimbusId::from_slice(&claimed_author),
+		);
+
+		debug!(target: crate::LOG_TARGET, "🪲 Valid signature? {:?}", valid_signature);
+
+		//TODO
+		//ensure!(valid_signature, "Signature was not valid".into());
+
 
 		// This part copied from Basti. I guess this is the inherent checking.
 		if let Some(inner_body) = body.take() {

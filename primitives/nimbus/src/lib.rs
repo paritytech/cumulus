@@ -66,11 +66,15 @@ mod nimbus_crypto {
 // 	pub type NimbusPair = nimbus_crypto::Pair;
 // }
 
-/// A nimbus author identifier.
+/// A nimbus author identifier (A public key).
 pub type NimbusId = nimbus_crypto::Public;
 
-/// A nimbus author signature.
+/// A nimbus signature.
 pub type NimbusSignature = nimbus_crypto::Signature;
+
+/// A nimbus key pair
+#[cfg(feature = "std")]
+pub type NimbusPair = nimbus_crypto::Pair;
 
 
 sp_api::decl_runtime_apis! {
