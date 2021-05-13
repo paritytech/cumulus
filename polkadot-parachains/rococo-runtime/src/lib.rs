@@ -189,12 +189,16 @@ impl frame_system::Config for Runtime {
 
 parameter_types! {
 	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
+	pub const RelaySlotDuration: u64 = SLOT_DURATION / 2;
 }
 
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = u64;
-	type OnTimestampSet = ();
+	type OnTimestampSet = cumulus_pallet_parachain_system::ValidateTimestampAgainstRelayChainSlot<
+		Runtime,
+		RelaySlotDuration,
+	>;
 	type MinimumPeriod = MinimumPeriod;
 	type WeightInfo = ();
 }
@@ -238,7 +242,10 @@ parameter_types! {
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
-	type OnValidationData = ();
+	type OnValidationData = cumulus_pallet_parachain_system::ValidateTimestampAgainstRelayChainSlot<
+		Runtime,
+		RelaySlotDuration,
+	>;
 	type SelfParaId = parachain_info::Pallet<Runtime>;
 	type OutboundXcmpMessageSource = XcmpQueue;
 	type DmpMessageHandler = DmpQueue;
