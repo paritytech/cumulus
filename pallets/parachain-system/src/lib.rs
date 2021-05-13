@@ -63,6 +63,7 @@ pub mod validate_block;
 mod tests;
 
 pub use pallet::*;
+pub use validate_block::ValidateTimestampAgainstRelayChainSlot;
 
 #[frame_support::pallet]
 pub mod pallet {

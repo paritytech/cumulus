@@ -128,7 +128,9 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>, PSC: crate::Config>(
 
 	let validation_data = set_and_run_with_externalities(&mut ext, || {
 		super::set_and_run_with_validation_params(params, || {
-			E::execute_block(block);
+			super::timestamp::run_with_timestamp_validation_params(|| {
+				E::execute_block(block);
+			});
 
 			ParachainSystem::<PSC>::validation_data()
 				.expect("`PersistedValidationData` should be set in every block!")

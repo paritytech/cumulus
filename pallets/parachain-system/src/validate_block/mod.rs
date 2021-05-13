@@ -21,6 +21,7 @@ use polkadot_parachain::primitives::ValidationParams;
 #[cfg(not(feature = "std"))]
 #[doc(hidden)]
 pub mod implementation;
+mod timestamp;
 #[cfg(test)]
 mod tests;
 
@@ -30,6 +31,8 @@ pub use polkadot_parachain;
 #[cfg(not(feature = "std"))]
 #[doc(hidden)]
 pub use sp_runtime::traits::GetRuntimeBlockType;
+
+pub use timestamp::ValidateTimestampAgainstRelayChainSlot;
 
 // Stores the [`ValidationParams`] that are being passed to `validate_block`.
 //
