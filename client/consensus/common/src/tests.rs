@@ -44,22 +44,6 @@ impl HeadSupportsParachains for AlwaysSupportsParachains {
 	}
 }
 
-fn create_overseer() -> (
-	Overseer<TaskExecutor, AlwaysSupportsParachains>,
-	OverseerHandler,
-) {
-	let spawner = TaskExecutor::new();
-	let all_subsystems = AllSubsystems::<()>::dummy();
-	Overseer::new(
-		vec![],
-		all_subsystems,
-		None,
-		AlwaysSupportsParachains,
-		spawner,
-	)
-	.unwrap()
-}
-
 struct RelaychainInner {
 	new_best_heads: Option<mpsc::UnboundedReceiver<Header>>,
 	finalized_heads: Option<mpsc::UnboundedReceiver<Header>>,
@@ -155,7 +139,6 @@ fn build_and_import_block(mut client: Arc<Client>) -> Block {
 fn follow_new_best_works() {
 	sp_tracing::try_init_simple();
 
-	let (_overseer, overseer_handler) = create_overseer();
 	let client = Arc::new(TestClientBuilder::default().build());
 
 	let block = build_and_import_block(client.clone());
@@ -202,7 +185,6 @@ fn follow_new_best_works() {
 fn follow_finalized_works() {
 	sp_tracing::try_init_simple();
 
-	let (_overseer, overseer_handler) = create_overseer();
 	let client = Arc::new(TestClientBuilder::default().build());
 
 	let block = build_and_import_block(client.clone());
@@ -249,7 +231,6 @@ fn follow_finalized_works() {
 fn follow_finalized_does_not_stop_on_unknown_block() {
 	sp_tracing::try_init_simple();
 
-	let (_overseer, overseer_handler) = create_overseer();
 	let client = Arc::new(TestClientBuilder::default().build());
 
 	let block = build_and_import_block(client.clone());
@@ -314,7 +295,6 @@ fn follow_finalized_does_not_stop_on_unknown_block() {
 fn follow_new_best_sets_best_after_it_is_imported() {
 	sp_tracing::try_init_simple();
 
-	let (_overseer, overseer_handler) = create_overseer();
 	let mut client = Arc::new(TestClientBuilder::default().build());
 
 	let block = build_and_import_block(client.clone());

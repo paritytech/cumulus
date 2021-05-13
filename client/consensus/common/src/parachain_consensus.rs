@@ -340,7 +340,7 @@ where
 				&& self.active_candidate_recovery.is_empty()
 			{
 				futures::pending!();
-				continue
+				continue;
 			}
 
 			select! {
@@ -541,13 +541,12 @@ async fn follow_new_best<P, R, Block, B>(
 			},
 			i = imported_blocks.next() => {
 				match i {
-					Some(i) => {
-						handle_new_block_imported(
+					Some(i) => handle_new_block_imported(
 						i,
 						&mut unset_best_header,
 						&*parachain,
 						&*announce_block,
-					).await},
+					).await,
 					None => {
 						tracing::debug!(
 							target: "cumulus-consensus",
