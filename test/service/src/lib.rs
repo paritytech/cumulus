@@ -27,8 +27,8 @@ use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
-use cumulus_test_runtime::{NodeBlock as Block, RuntimeApi, Hash};
-use polkadot_primitives::v1::CollatorPair;
+use cumulus_test_runtime::{Hash, NodeBlock as Block, RuntimeApi, Header};
+use polkadot_primitives::v1::{CollatorPair, Hash as PHash, PersistedValidationData};
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
@@ -45,22 +45,35 @@ use sp_arithmetic::traits::SaturatedConversion;
 use sp_blockchain::HeaderBackend;
 use sp_core::{Pair, H256};
 use sp_keyring::Sr25519Keyring;
-use sp_runtime::{
-	codec::Encode,
-	generic,
-	traits::BlakeTwo256
-};
+use sp_runtime::{codec::Encode, generic, traits::BlakeTwo256};
 use sp_state_machine::BasicExternalities;
 use sp_trie::PrefixedMemoryDB;
 use std::sync::Arc;
 use substrate_test_client::{
 	BlockchainEventsExt, RpcHandlersExt, RpcTransactionError, RpcTransactionOutput,
 };
+use cumulus_client_consensus_common::{ParachainConsensus, ParachainCandidate};
 
 pub use chain_spec::*;
 pub use cumulus_test_runtime as runtime;
 pub use genesis::*;
 pub use sp_keyring::Sr25519Keyring as Keyring;
+
+/// A consensus that will never produce any block.
+#[derive(Clone)]
+struct NullConsensus;
+
+#[async_trait::async_trait]
+impl ParachainConsensus<Block> for NullConsensus {
+	async fn produce_candidate(
+		&mut self,
+		_: &Header,
+		_: PHash,
+		_: &PersistedValidationData,
+	) -> Option<ParachainCandidate<Block>> {
+		None
+	}
+}
 
 /// The signature of the announce block fn.
 pub type AnnounceBlockFn = Arc<dyn Fn(Hash, Option<Vec<u8>>) + Send + Sync>;
@@ -139,6 +152,7 @@ async fn start_node_impl<RB>(
 	para_id: ParaId,
 	wrap_announce_block: Option<Box<dyn FnOnce(AnnounceBlockFn) -> AnnounceBlockFn>>,
 	rpc_ext_builder: RB,
+	consensus: Consensus,
 ) -> sc_service::error::Result<(
 	TaskManager,
 	Arc<TFullClient<Block, RuntimeApi, RuntimeExecutor>>,
@@ -228,24 +242,33 @@ where
 		Arc::new(move |hash, data| network.announce_block(hash, data))
 	};
 
-	let announce_block = wrap_announce_block.map(|w| (w)(announce_block.clone())).unwrap_or_else(|| announce_block);
+	let announce_block = wrap_announce_block
+		.map(|w| (w)(announce_block.clone()))
+		.unwrap_or_else(|| announce_block);
 
 	if let Some(collator_key) = collator_key {
-		let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
-			task_manager.spawn_handle(),
-			client.clone(),
-			transaction_pool,
-			prometheus_registry.as_ref(),
-			None,
-		);
-		let parachain_consensus = cumulus_client_consensus_relay_chain::RelayChainConsensus::new(
-			para_id,
-			proposer_factory,
-			|_, _| async { Ok(sp_timestamp::InherentDataProvider::from_system_time()) },
-			client.clone(),
-			relay_chain_full_node.client.clone(),
-			relay_chain_full_node.backend.clone(),
-		);
+		let parachain_consensus: Box<dyn ParachainConsensus<Block>> = match consensus {
+			Consensus::RelayChain => {
+				let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
+					task_manager.spawn_handle(),
+					client.clone(),
+					transaction_pool,
+					prometheus_registry.as_ref(),
+					None,
+				);
+				Box::new(cumulus_client_consensus_relay_chain::RelayChainConsensus::new(
+					para_id,
+					proposer_factory,
+					|_, _| async { Ok(sp_timestamp::InherentDataProvider::from_system_time()) },
+					client.clone(),
+					relay_chain_full_node.client.clone(),
+					relay_chain_full_node.backend.clone(),
+				))
+			}
+			Consensus::Null => {
+				Box::new(NullConsensus)
+			},
+		};
 
 		let relay_chain_full_node =
 			relay_chain_full_node.with_client(polkadot_test_service::TestClient);
@@ -259,7 +282,7 @@ where
 			task_manager: &mut task_manager,
 			para_id,
 			collator_key,
-			parachain_consensus: Box::new(parachain_consensus),
+			parachain_consensus,
 			relay_chain_full_node,
 		};
 
@@ -299,6 +322,13 @@ pub struct TestNode {
 	pub rpc_handlers: RpcHandlers,
 }
 
+enum Consensus {
+	/// Use the relay-chain provided consensus.
+	RelayChain,
+	/// Use the null consensus that will never produce any block.
+	Null,
+}
+
 /// A builder to create a [`TestNode`].
 pub struct TestNodeBuilder {
 	para_id: ParaId,
@@ -311,6 +341,7 @@ pub struct TestNodeBuilder {
 	wrap_announce_block: Option<Box<dyn FnOnce(AnnounceBlockFn) -> AnnounceBlockFn>>,
 	storage_update_func_parachain: Option<Box<dyn Fn()>>,
 	storage_update_func_relay_chain: Option<Box<dyn Fn()>>,
+	consensus: Consensus,
 }
 
 impl TestNodeBuilder {
@@ -331,6 +362,7 @@ impl TestNodeBuilder {
 			wrap_announce_block: None,
 			storage_update_func_parachain: None,
 			storage_update_func_relay_chain: None,
+			consensus: Consensus::RelayChain,
 		}
 	}
 
@@ -391,7 +423,8 @@ impl TestNodeBuilder {
 		mut self,
 		nodes: impl IntoIterator<Item = &'a polkadot_test_service::PolkadotTestNode>,
 	) -> Self {
-		self.relay_chain_nodes.extend(nodes.into_iter().map(|n| n.addr.clone()));
+		self.relay_chain_nodes
+			.extend(nodes.into_iter().map(|n| n.addr.clone()));
 		self
 	}
 
@@ -405,27 +438,28 @@ impl TestNodeBuilder {
 	}
 
 	/// Allows accessing the parachain storage before the test node is built.
-	pub fn update_storage_parachain(
-		mut self,
-		updater: impl Fn() + 'static,
-	) -> Self {
+	pub fn update_storage_parachain(mut self, updater: impl Fn() + 'static) -> Self {
 		self.storage_update_func_parachain = Some(Box::new(updater));
 		self
 	}
 
 	/// Allows accessing the relay chain storage before the test node is built.
-	pub fn update_storage_relay_chain(
-		mut self,
-		updater: impl Fn() + 'static,
-	) -> Self {
+	pub fn update_storage_relay_chain(mut self, updater: impl Fn() + 'static) -> Self {
 		self.storage_update_func_relay_chain = Some(Box::new(updater));
+		self
+	}
+
+	/// Use the null consensus that will never author any block.
+	pub fn use_null_consensus(mut self) -> Self {
+		self.consensus = Consensus::Null;
 		self
 	}
 
 	/// Build the [`TestNode`].
 	pub async fn build(self) -> TestNode {
 		let parachain_config = node_config(
-			self.storage_update_func_parachain.unwrap_or_else(|| Box::new(|| ())),
+			self.storage_update_func_parachain
+				.unwrap_or_else(|| Box::new(|| ())),
 			self.task_executor.clone(),
 			self.key.clone(),
 			self.parachain_nodes,
@@ -435,7 +469,8 @@ impl TestNodeBuilder {
 		)
 		.expect("could not generate Configuration");
 		let mut relay_chain_config = polkadot_test_service::node_config(
-			self.storage_update_func_relay_chain.unwrap_or_else(|| Box::new(|| ())),
+			self.storage_update_func_relay_chain
+				.unwrap_or_else(|| Box::new(|| ())),
 			self.task_executor,
 			self.key,
 			self.relay_chain_nodes,
@@ -453,6 +488,7 @@ impl TestNodeBuilder {
 			self.para_id,
 			self.wrap_announce_block,
 			|_| Default::default(),
+			self.consensus,
 		)
 		.await
 		.expect("could not create Cumulus test service");
@@ -608,7 +644,9 @@ impl TestNode {
 		self.send_extrinsic(
 			runtime::SudoCall::sudo_unchecked_weight(Box::new(call.into()), 1_000),
 			Sr25519Keyring::Alice,
-		).await.map(drop)
+		)
+		.await
+		.map(drop)
 	}
 }
 
@@ -631,7 +669,10 @@ pub fn construct_extrinsic(
 	let extra: runtime::SignedExtra = (
 		frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
 		frame_system::CheckGenesis::<runtime::Runtime>::new(),
-		frame_system::CheckEra::<runtime::Runtime>::from(generic::Era::mortal(period, current_block)),
+		frame_system::CheckEra::<runtime::Runtime>::from(generic::Era::mortal(
+			period,
+			current_block,
+		)),
 		frame_system::CheckNonce::<runtime::Runtime>::from(nonce),
 		frame_system::CheckWeight::<runtime::Runtime>::new(),
 		pallet_transaction_payment::ChargeTransactionPayment::<runtime::Runtime>::from(tip),

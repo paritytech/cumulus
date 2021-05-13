@@ -69,13 +69,12 @@ async fn pov_recovery(task_executor: TaskExecutor) {
 			.build()
 			.await;
 
-	charlie.wait_for_blocks(1).await;
-
 	// Run dave as parachain full node
 	//
 	// It will need to recover the pov blocks through availability recovery.
 	let dave = cumulus_test_service::TestNodeBuilder::new(para_id, task_executor, Dave)
 		.enable_collator()
+		.use_null_consensus()
 		.connect_to_parachain_node(&charlie)
 		.connect_to_relay_chain_nodes(vec![&alice, &bob])
 		.build()

@@ -1768,6 +1768,8 @@ dependencies = [
 name = "cumulus-test-service"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
+ "cumulus-client-consensus-common",
  "cumulus-client-consensus-relay-chain",
  "cumulus-client-network",
  "cumulus-client-service",
