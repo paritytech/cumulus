@@ -6,7 +6,6 @@ version = "0.1.0"
 description = "Primitive types and traites used in the nimbus consensus framework"
 
 [dependencies]
-#TODO unused dependencies
 parity-scale-codec = { version = "2.0.0", default-features = false, features = ["derive"] }
 
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }

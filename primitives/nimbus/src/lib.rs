@@ -12,6 +12,8 @@ use parity_scale_codec::Codec;
 use sp_application_crypto::KeyTypeId;
 use sp_runtime::ConsensusEngineId;
 
+mod digests;
+
 /// The given account ID is the author of the current block.
 pub trait EventHandler<Author> {
 	//TODO should we be tking ownership here?
@@ -51,7 +53,7 @@ impl<T> CanAuthor<T> for () {
 
 /// The ConsensusEngineId for nimbus consensus
 /// this same identifier will be used regardless of the filters installed
-pub const ENGINE_ID: ConsensusEngineId = *b"nmbs";
+pub const NIMBUS_ENGINE_ID: ConsensusEngineId = *b"nmbs";
 
 /// The KeyTypeId used in the Nimbus consensus framework regardles of wat filters are in place.
 /// If this gets well adopted, we could move this definition to sp_core to avoid conflicts.

@@ -36,7 +36,7 @@ use sp_runtime::{
 	traits::{MaybeSerializeDeserialize, Member},
 };
 use log::debug;
-use nimbus_primitives::{CanAuthor, ENGINE_ID, SlotBeacon, EventHandler};
+use nimbus_primitives::{CanAuthor, NIMBUS_ENGINE_ID, SlotBeacon, EventHandler};
 // use sp_application_crypto::AppKey;
 
 mod exec;
@@ -163,7 +163,7 @@ decl_module! {
 			// For now we use the Consensus digest item.
 			// Maybe this will change later.
 			frame_system::Pallet::<T>::deposit_log(DigestItem::<T::Hash>::Consensus(
-				ENGINE_ID,
+				NIMBUS_ENGINE_ID,
 				author.encode(),
 			));
 
