@@ -5,10 +5,11 @@
 
 use frame_support::traits::ExecuteBlock;
 use sp_api::{BlockT, HeaderT};
-use log::{debug, info};
-use sp_runtime::generic::DigestItem;
-use nimbus_primitives::{NimbusId, NimbusSignature, NimbusPair};
-use sp_application_crypto::{TryFrom, Pair as _, Public as _};
+//TODO don't leave it this way
+use log::info as debug;
+use sp_runtime::{RuntimeAppPublic, generic::DigestItem};
+use nimbus_primitives::{NimbusId, NimbusSignature};
+use sp_application_crypto::{TryFrom, Public as _};
 
 /// Block executive to be used by relay chain validators when validating parachain blocks built
 /// with the nimubs consensus family.
@@ -22,7 +23,7 @@ use sp_application_crypto::{TryFrom, Pair as _, Public as _};
 /// TODO Degisn improvement:
 /// Can we share code with the verifier?
 /// Can this struct take a verifier as an associated type?
-/// Or maybe this will just get simpler ingeneral when https://github.com/paritytech/polkadot/issues/2888 lands
+/// Or maybe this will just get simpler in general when https://github.com/paritytech/polkadot/issues/2888 lands
 pub struct BlockExecutor<T, I>(sp_std::marker::PhantomData<(T, I)>);
 
 impl<Block, T, I> ExecuteBlock<Block> for BlockExecutor<T, I>
@@ -33,17 +34,17 @@ where
 	fn execute_block(block: Block) {
 		let (mut header, extrinsics) = block.deconstruct();
 
-		info!("In hacked Executive. Initial digests are {:?}", header.digest());
+		debug!(target: "executive", "In hacked Executive. Initial digests are {:?}", header.digest());
 
-		// Set the seal aside for checking. Currently there is nothing to check.
+		// Set the seal aside for checking.
 		let seal = header
 			.digest_mut()
-			.logs //hmmm how does the compiler know that my digest type has a logs field?
+			.logs
 			.pop()
 			.expect("Seal digest is present and is last item");
 
-		info!("In hacked Executive. digests after stripping {:?}", header.digest());
-		info!("The seal we got {:?}", seal);
+		debug!(target: "executive", "In hacked Executive. digests after stripping {:?}", header.digest());
+		debug!(target: "executive", "The seal we got {:?}", seal);
 
 		let sig = match seal {
 			DigestItem::Seal(id, ref sig) if id == *b"nmbs" => sig.clone(),
@@ -56,7 +57,7 @@ where
 		debug!(target: "executive", "🪲 Signature according to executive is {:?}", sig);
 
 		// Grab the digest from the runtime
-		//TODO use the trait. Maybe this code should move to the trait.
+		//TODO use the CompatibleDigest trait. Maybe this code should move to the trait.
 		let consensus_digest = header
 			.digest()
 			.logs
@@ -76,12 +77,20 @@ where
 
 		debug!(target: "executive", "🪲 Claimed Author according to executive is {:?}", claimed_author);
 
-		//TODO is this gonna work? I'm not sure I have access to the NimbusPair here.
 		// Verify the signature
-		let valid_signature = NimbusPair::verify(
+
+		// Is this gonna work? I'm not sure I have access to the NimbusPair in wasm.
+		// This is copied from  my keystore learning. It may have to work differently in wasm. Basti used RuntimeAppPublic (I think)
+		// to do this check in aura.
+		// let valid_signature = NimbusPair::verify(
+		// 	&NimbusSignature::try_from(sig).expect("Bytes should convert to signature correctly"),
+		// 	header.hash(),
+		// 	&NimbusId::from_slice(&claimed_author),
+		// );
+
+		let valid_signature = NimbusId::from_slice(&claimed_author).verify(
+			&header.hash(),
 			&NimbusSignature::try_from(sig).expect("Bytes should convert to signature correctly"),
-			header.hash(),
-			&NimbusId::from_slice(&claimed_author),
 		);
 
 		debug!(target: "executive", "🪲 Valid signature? {:?}", valid_signature);

@@ -33,7 +33,7 @@ use sp_inherents::ProvideInherentData;
 use sp_inherents::{InherentData, InherentIdentifier, IsFatalError, ProvideInherent};
 use sp_runtime::{
 	ConsensusEngineId, DigestItem, RuntimeString, RuntimeAppPublic,
-	traits::Member,
+	traits::{MaybeSerializeDeserialize, Member},
 };
 use log::debug;
 use nimbus_primitives::{CanAuthor, SlotBeacon, EventHandler};
@@ -75,7 +75,7 @@ pub struct IntervalBeacon;
 pub trait Config: frame_system::Config {
 	// This is copied from Aura. I wonder if I really need all those trait bounds. For now I'll leave them.
 	/// The identifier type for an authority.
-	type AuthorId: Member + Parameter;
+	type AuthorId: Member + Parameter + RuntimeAppPublic + Default + MaybeSerializeDeserialize;
 
 	//TODO do we have any use for this converter?
 	// It has to happen eventually to pay rewards to accountids and let account ids stake.

@@ -72,6 +72,7 @@ pub type NimbusId = nimbus_crypto::Public;
 /// A nimbus signature.
 pub type NimbusSignature = nimbus_crypto::Signature;
 
+//TODO duplicated above too. Do I need either one?
 sp_application_crypto::with_pair! {
 	/// A nimbus keypair
 	pub type NimbusPair = nimbus_crypto::Pair;
