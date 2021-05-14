@@ -49,7 +49,7 @@ use std::{marker::PhantomData, sync::Arc, time::Duration};
 use tracing::error;
 use sp_keystore::{SyncCryptoStorePtr, SyncCryptoStore};
 use sp_core::crypto::Public;
-use nimbus_primitives::{AuthorFilterAPI, NIMBUS_KEY_ID, NimbusId};
+use nimbus_primitives::{AuthorFilterAPI, ENGINE_ID, NIMBUS_KEY_ID, NimbusId};
 mod import_queue;
 
 const LOG_TARGET: &str = "filtering-consensus";
@@ -296,7 +296,7 @@ where
 		);
 
 		// TODO Make a proper CompatibleDigest trait https://github.com/paritytech/substrate/blob/master/primitives/consensus/aura/src/digests.rs#L45
-		let sig_digest = sp_runtime::generic::DigestItem::Seal(*b"nmbs", sig);
+		let sig_digest = sp_runtime::generic::DigestItem::Seal(ENGINE_ID, sig);
 
 		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header.clone());
 		// Add the test digest to the block import params

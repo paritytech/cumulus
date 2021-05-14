@@ -10,6 +10,7 @@
 use sp_std::vec::Vec;
 use parity_scale_codec::Codec;
 use sp_application_crypto::KeyTypeId;
+use sp_runtime::ConsensusEngineId;
 
 /// The given account ID is the author of the current block.
 pub trait EventHandler<Author> {
@@ -40,12 +41,17 @@ pub trait CanAuthor<AuthorId> {
 	fn can_author(author: &AuthorId, slot: &u32) -> bool;
 }
 /// Default implementation where anyone can author.
-// TODO Promote this is "implementing relay chain consensus in the nimbus framework."
+///
+/// This is identical to Cumulus's RelayChainConsensus
 impl<T> CanAuthor<T> for () {
 	fn can_author(_: &T, _: &u32) -> bool {
 		true
 	}
 }
+
+/// The ConsensusEngineId for nimbus consensus
+/// this same identifier will be used regardless of the filters installed
+pub const ENGINE_ID: ConsensusEngineId = *b"nmbs";
 
 /// The KeyTypeId used in the Nimbus consensus framework regardles of wat filters are in place.
 /// If this gets well adopted, we could move this definition to sp_core to avoid conflicts.
@@ -60,19 +66,13 @@ mod nimbus_crypto {
 	app_crypto!(sr25519, crate::NIMBUS_KEY_ID);
 }
 
-//TODO, do I need this? I didn't use it in the keystore-learning example
-// sp_application_crypto::with_pair! {
-// 	/// A nimbus author keypair.
-// 	pub type NimbusPair = nimbus_crypto::Pair;
-// }
-
 /// A nimbus author identifier (A public key).
 pub type NimbusId = nimbus_crypto::Public;
 
 /// A nimbus signature.
 pub type NimbusSignature = nimbus_crypto::Signature;
 
-//TODO duplicated above too. Do I need either one?
+//TODO do I need this?
 sp_application_crypto::with_pair! {
 	/// A nimbus keypair
 	pub type NimbusPair = nimbus_crypto::Pair;
@@ -80,7 +80,7 @@ sp_application_crypto::with_pair! {
 
 
 sp_api::decl_runtime_apis! {
-    /// the runtime api used to predict whether an author will be eligible in the given slot
+    /// The runtime api used to predict whether an author will be eligible in the given slot
     pub trait AuthorFilterAPI<AuthorId: Codec> {
         fn can_author(author: AuthorId, relay_parent: u32) -> bool;
     }

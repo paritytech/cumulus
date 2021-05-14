@@ -36,7 +36,7 @@ use sp_runtime::{
 	traits::{MaybeSerializeDeserialize, Member},
 };
 use log::debug;
-use nimbus_primitives::{CanAuthor, SlotBeacon, EventHandler};
+use nimbus_primitives::{CanAuthor, ENGINE_ID, SlotBeacon, EventHandler};
 // use sp_application_crypto::AppKey;
 
 mod exec;
@@ -184,9 +184,7 @@ impl<T: Config> FindAuthor<T::AuthorId> for Module<T> {
 	}
 }
 
-//TODO move this to primitives
-pub const ENGINE_ID: ConsensusEngineId = *b"nmbs";
-
+/// The InherentIdentifier for nimbus's author inherent
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"author__";
 
 #[derive(Encode)]

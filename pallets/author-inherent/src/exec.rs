@@ -8,7 +8,7 @@ use sp_api::{BlockT, HeaderT};
 // For some reason I can't get these logs to actually print
 use log::debug;
 use sp_runtime::{RuntimeAppPublic, generic::DigestItem};
-use nimbus_primitives::{NimbusId, NimbusSignature};
+use nimbus_primitives::{ENGINE_ID, NimbusId, NimbusSignature};
 use sp_application_crypto::{TryFrom, Public as _};
 
 /// Block executive to be used by relay chain validators when validating parachain blocks built
@@ -45,7 +45,7 @@ where
 		debug!(target: "executive", "The seal we got {:?}", seal);
 
 		let sig = match seal {
-			DigestItem::Seal(id, ref sig) if id == *b"nmbs" => sig.clone(),
+			DigestItem::Seal(id, ref sig) if id == ENGINE_ID => sig.clone(),
 			_ => panic!("HeaderUnsealed"),
 		};
 
@@ -61,14 +61,14 @@ where
 			.iter()
 			.find(|digest| {
 				match *digest {
-					DigestItem::Consensus(id, _) if id == b"nmbs" => true,
+					DigestItem::Consensus(id, _) if id == &ENGINE_ID => true,
 					_ => false,
 				}
 			})
 			.expect("A single consensus digest should be added by the runtime when executing the author inherent.");
 		
 		let claimed_author = match *consensus_digest {
-			DigestItem::Consensus(id, ref author_id) if id == *b"nmbs" => author_id.clone(),
+			DigestItem::Consensus(id, ref author_id) if id == ENGINE_ID => author_id.clone(),
 			_ => panic!("Expected consensus digest to contains author id bytes"),
 		};
 
