@@ -1,7 +1,11 @@
-//! Aura (Authority-Round) digests
-//!
-//! This implements the digests for AuRa, to allow the private
-//! `CompatibleDigestItem` trait to appear in public interfaces.
+//! A convenient interface over the digests used in nimbus.
+//! 
+//! Currently Nimbus has two digests;
+//! 1. A consensus digest that contains the block author identity
+//!    This information is copied from the author inehrent.
+//!    This may be replaced with a pre-runtime digest in the future.
+//! 2. A seal digest that contains a signature over the rest of the
+//!    block including the first digest.
 
 use crate::{NIMBUS_ENGINE_ID, NimbusSignature, NimbusId};
 use sp_runtime::generic::DigestItem;
