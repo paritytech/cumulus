@@ -211,11 +211,6 @@ where
 		// honestly doesn't feel that bad to me the way it is.
 
 		// Get allthe available keys
-		// I don't know why I had to call the crypto-specific method as opposed to just "keys",
-		// but this is the one that returns the `Public` type I (think I ) need.
-		// Ughhh, it still doesn't return NimbusId. I hope this will work somehow.
-		// note: expected struct `Vec<author_filter_api::app::Public>`
-    	//          found struct `Vec<sp_core::sr25519::Public>`
 		let available_keys =
 			SyncCryptoStore::keys(&*self.keystore, NIMBUS_KEY_ID)
 			.expect("keystore should return the keys it has");
