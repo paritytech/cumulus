@@ -5,8 +5,8 @@
 
 use frame_support::traits::ExecuteBlock;
 use sp_api::{BlockT, HeaderT};
-//TODO don't leave it this way
-use log::info as debug;
+// For some reason I can't get these logs to actually print
+use log::debug;
 use sp_runtime::{RuntimeAppPublic, generic::DigestItem};
 use nimbus_primitives::{NimbusId, NimbusSignature};
 use sp_application_crypto::{TryFrom, Public as _};
@@ -14,12 +14,10 @@ use sp_application_crypto::{TryFrom, Public as _};
 /// Block executive to be used by relay chain validators when validating parachain blocks built
 /// with the nimubs consensus family.
 ///
-/// This will strip the seal digest, and confirm that only a single such digest exists.
-/// It then passes the pre-block to the inner executive which will likely be the normal FRAME
-/// executive as it is run on the parachain itself.
-/// (Aspitational) Finally it puts the original digest back on and confirms the blocks match
+/// This will strip the seal digest, and confirm that it contains a valid signature
+/// By the block author reported in the author inherent.
 ///
-/// Essentially this contains the logic of the verifier and the normal executive.
+/// Essentially this contains the logic of the verifier plus the inner executive.
 /// TODO Degisn improvement:
 /// Can we share code with the verifier?
 /// Can this struct take a verifier as an associated type?
@@ -48,7 +46,6 @@ where
 
 		let sig = match seal {
 			DigestItem::Seal(id, ref sig) if id == *b"nmbs" => sig.clone(),
-			// Seems I can't return an error here, so I guess I have to panic
 			_ => panic!("HeaderUnsealed"),
 		};
 
@@ -78,16 +75,6 @@ where
 		debug!(target: "executive", "🪲 Claimed Author according to executive is {:?}", claimed_author);
 
 		// Verify the signature
-
-		// Is this gonna work? I'm not sure I have access to the NimbusPair in wasm.
-		// This is copied from  my keystore learning. It may have to work differently in wasm. Basti used RuntimeAppPublic (I think)
-		// to do this check in aura.
-		// let valid_signature = NimbusPair::verify(
-		// 	&NimbusSignature::try_from(sig).expect("Bytes should convert to signature correctly"),
-		// 	header.hash(),
-		// 	&NimbusId::from_slice(&claimed_author),
-		// );
-
 		let valid_signature = NimbusId::from_slice(&claimed_author).verify(
 			&header.hash(),
 			&NimbusSignature::try_from(sig).expect("Bytes should convert to signature correctly"),
