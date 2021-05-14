@@ -21,6 +21,7 @@ use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
+use sp_runtime::Percent;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use nimbus_primitives::NimbusId;
 
@@ -144,7 +145,7 @@ fn testnet_genesis(
 		pallet_sudo: parachain_runtime::SudoConfig { key: root_key },
 		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },
 		pallet_author_filter: parachain_runtime::AuthorFilterConfig {
-			eligible_ratio: 50,
+			eligible_ratio: Percent::from_percent(50),
 		},
 		pallet_account_set: parachain_runtime::PotentialAuthorSetConfig {
 			stored_accounts: vec![

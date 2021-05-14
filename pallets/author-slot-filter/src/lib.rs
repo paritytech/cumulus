@@ -145,14 +145,14 @@ pub mod pallet {
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig {
-		pub eligible_ratio: u8,
+		pub eligible_ratio: Percent,
 	}
 
 	#[cfg(feature = "std")]
 	impl Default for GenesisConfig {
 		fn default() -> Self {
 			Self {
-				eligible_ratio: 50,
+				eligible_ratio: Percent::from_percent(50),
 			}
 		}
 	}
@@ -160,9 +160,7 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
-			//TODO ensure that the u8 is less than or equal 100 so it can be apercent
-
-			EligibleRatio::<T>::put(Percent::from_percent(self.eligible_ratio));
+			EligibleRatio::<T>::put(self.eligible_ratio);
 		}
 	}
 
