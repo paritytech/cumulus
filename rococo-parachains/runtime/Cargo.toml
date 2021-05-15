@@ -51,6 +51,8 @@ pallet-lending = { default-features = false, path = '../pallets/lending', versio
 pallet-lending-rpc-runtime-api = { default-features = false, path = '../pallets/lending/rpc/runtime-api', version = '3.0.0' }
 pallet-offchain-worker = { path = '../pallets/offchain-worker', default-features = false, version = '3.0.0' }
 
+pallet-xcm-token-support = { path = '../pallets/xcm-token-support', default-features = false, version = '3.0.0' }
+
 [build-dependencies]
 substrate-wasm-builder = "3.0.0"
 
