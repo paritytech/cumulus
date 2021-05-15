@@ -94,11 +94,8 @@ cargo build --release
 # Generate a raw chain spec
 ./target/release/polkadot build-spec --chain rococo-local --disable-default-bootnode --raw > rococo-local-cfde.json
 
-# Alice
-./target/release/polkadot --chain rococo-local-cfde.json --alice --tmp
-
-# Bob (In a separate terminal)
-./target/release/polkadot --chain rococo-local-cfde.json --bob --tmp --port 30334
+./target/release/polkadot --chain ../polkadot/rococo-local-cfde.json --alice --tmp
+./target/release/polkadot --chain ../polkadot/rococo-local-cfde.json --bob --tmp --port 30334
 ```
 
 ### Launch the Parachain
@@ -112,20 +109,23 @@ cargo build --release
 
 # Export genesis state
 # --parachain-id 200 as an example that can be chosen freely. Make sure to everywhere use the same parachain id
-./target/release/rococo-collator export-genesis-state --parachain-id 403 > genesis-state
+./target/release/rococo-collator export-genesis-state --parachain-id 18402 > genesis-state-18402
+./target/release/rococo-collator export-genesis-wasm > genesis-wasm-18402
 ./target/release/rococo-collator export-genesis-state --parachain-id 18403 > genesis-state-18403
-./target/release/rococo-collator export-genesis-state --parachain-id 18402 --chain rococo > genesis-state-18402
 ./target/release/rococo-collator export-genesis-wasm > genesis-wasm-18403
 
 # Collator1
-./target/release/rococo-collator --collator --tmp --parachain-id 403 --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30335
+./target/release/rococo-collator --collator --tmp --parachain-id 18403 --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337
+./target/release/rococo-collator --collator --tmp --parachain-id 18402 --port 40325 --ws-port 9926 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30327
 
 # Collator2
-./target/release/rococo-collator --collator --tmp --parachain-id 403 --port 40336 --ws-port 9947 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30336
+./target/release/rococo-collator --collator --tmp --parachain-id 18403 --port 40336 --ws-port 9947 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30338
+./target/release/rococo-collator --collator --tmp --parachain-id 18402 --port 40326 --ws-port 9927 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30328
 
 # Parachain Full Node 1
-./target/release/rococo-collator --tmp --parachain-id 403 --port 40337 --ws-port 9948 --rpc-port 9929 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337
-./target/release/rococo-collator --tmp --rpc-port 9933 --parachain-id 403 --port 40337 --ws-port 9948 --rpc-methods Unsafe --ws-external --rpc-cors all -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337 --rpc-cors all
+./target/release/rococo-collator --tmp --rpc-port 9933 --parachain-id 18403 --port 40337 --ws-port 9948 --rpc-methods Unsafe --ws-external --rpc-cors all -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30339 --rpc-cors all
+./target/release/rococo-collator --tmp --rpc-port 9923 --parachain-id 18402 --port 40327 --ws-port 9928 --rpc-methods Unsafe --ws-external --rpc-cors all -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30329 --rpc-cors all
 ```
+
 ### Register the parachain
 ![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
