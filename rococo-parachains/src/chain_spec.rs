@@ -22,7 +22,6 @@ use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use sc_telemetry::TelemetryEndpoints;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<parachain_runtime::GenesisConfig, Extensions>;
@@ -68,8 +67,9 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 		ChainType::Local,
 		move || {
 			testnet_genesis(
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				hex!["e2b2d3e7c3931a4562feaa27c22e858dea0bf2828bbab28c0b799f61eb0b9462"].into(),
 				vec![
+					hex!["e2b2d3e7c3931a4562feaa27c22e858dea0bf2828bbab28c0b799f61eb0b9462"].into(),
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
 					get_account_id_from_seed::<sr25519::Public>("Charlie"),
@@ -91,7 +91,7 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 		None,
 		None,
 		Extensions {
-			relay_chain: "westend-dev".into(),
+			relay_chain: "rococo_local_testnet".into(),
 			para_id: id.into(),
 		},
 	)
@@ -116,7 +116,7 @@ pub fn staging_test_net(id: ParaId) -> ChainSpec {
 		None,
 		None,
 		Extensions {
-			relay_chain: "westend-dev".into(),
+			relay_chain: "rococo_local_testnet".into(),
 			para_id: id.into(),
 		},
 	)
@@ -141,7 +141,16 @@ fn testnet_genesis(
 				.map(|k| (k, 1 << 60))
 				.collect(),
 		},
-		pallet_sudo: parachain_runtime::SudoConfig { key: root_key },
+		pallet_sudo: parachain_runtime::SudoConfig { key: root_key.clone() },
 		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },
+		pallet_native_tokens: parachain_runtime::NativeTokensConfig {
+			endowed_accounts: vec![
+				(root_key.clone(), 0, 1_000_000_000_000_000_000_000),
+				(root_key.clone(), 1, 1_000_000_000_000_000_000_000),
+				(root_key.clone(), 2, 1_000_000_000_000_000_000_000),
+				(root_key.clone(), 3, 1_000_000_000_000_000_000_000),
+				(root_key.clone(), 4, 1_000_000_000_000_000_000_000),
+			]
+		},
 	}
 }

@@ -23,7 +23,8 @@ hex-literal = "0.2.1"
 
 # Parachain dependencies
 parachain-runtime = { package = "cumulus-test-parachain-runtime", path = "runtime" }
-rococo-parachain-primitives = { path = "primitives" }
+shell-runtime = { package = "cumulus-shell-runtime", path = "shell-runtime" }
+rococo-parachain-primitives = { path = "primitives", default-features = false }
 
 # Substrate dependencies
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
@@ -69,11 +70,10 @@ cumulus-primitives-core = { path = "../primitives/core" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 
 # Local dependencies
-pallet-lending-rpc = { path = './pallets/lending/rpc', version = '3.0.0' }
+pallet-floating-rate-lend-rpc = { path = './pallets/floating-rate-lend/rpc', version = '3.0.0' }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }

@@ -1,0 +1,89 @@
+[package]
+name = 'cumulus-shell-runtime'
+version = '0.1.0'
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = '2018'
+
+[dependencies]
+serde = { version = "1.0.101", optional = true, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+log = { version = "0.4.14", default-features = false }
+parachain-info = { path = "../pallets/parachain-info", default-features = false }
+rococo-parachain-primitives = { path = "../primitives", default-features = false }
+
+# Substrate dependencies
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+
+# Cumulus dependencies
+cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false }
+cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
+cumulus-primitives-utility = { path = "../../primitives/utility", default-features = false }
+cumulus-pallet-xcmp-queue = { path = "../../pallets/xcmp-queue", default-features = false }
+cumulus-pallet-xcm = { path = "../../pallets/xcm", default-features = false }
+
+# Polkadot dependencies
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
+
+[dev-dependencies]
+hex = "0.4.3"
+
+[build-dependencies]
+substrate-wasm-builder = "3.0.0"
+
+[features]
+default = [ "std" ]
+std = [
+	"codec/std",
+	"serde",
+	"log/std",
+	"sp-api/std",
+	"sp-std/std",
+	"sp-io/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"sp-version/std",
+	"sp-offchain/std",
+	"sp-session/std",
+	"sp-block-builder/std",
+	"sp-transaction-pool/std",
+	"sp-inherents/std",
+	"frame-support/std",
+	"frame-executive/std",
+	"frame-system/std",
+	"pallet-balances/std",
+	"pallet-randomness-collective-flip/std",
+	"pallet-timestamp/std",
+	"pallet-transaction-payment/std",
+	"parachain-info/std",
+	"rococo-parachain-primitives/std",
+	"cumulus-pallet-parachain-system/std",
+	"cumulus-pallet-xcmp-queue/std",
+	"cumulus-pallet-xcm/std",
+	"cumulus-primitives-core/std",
+	"cumulus-primitives-utility/std",
+	"xcm/std",
+	"xcm-builder/std",
+	"xcm-executor/std",
+]

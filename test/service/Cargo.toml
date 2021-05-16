@@ -10,6 +10,8 @@ rand = "0.7.3"
 serde = { version = "1.0.119", features = ["derive"] }
 
 # Substrate
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
@@ -22,7 +24,9 @@ sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "roco
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
@@ -48,6 +52,7 @@ cumulus-client-network = { path = "../../client/network" }
 cumulus-client-service = { path = "../../client/service" }
 cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-test-runtime = { path = "../runtime" }
+cumulus-test-relay-validation-worker-provider = { path = "../relay-validation-worker-provider" }
 
 # RPC related dependencies
 jsonrpc-core = "15.1.0"
@@ -57,5 +62,8 @@ futures = { version = "0.3.5" }
 tokio = { version = "0.2.21", features = ["macros"] }
 
 # Substrate dependencies
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+
+# Cumulus
+cumulus-test-runtime-upgrade = { path = "../runtime-upgrade" }

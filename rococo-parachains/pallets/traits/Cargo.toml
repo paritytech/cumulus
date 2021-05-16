@@ -3,15 +3,18 @@ authors = ['Konomi Dev']
 description = 'traits in runtime'
 edition = '2018'
 license = 'Unlicense'
-name = 'traits'
+name = 'pallet-traits'
 version = '3.0.0'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
-sp-std = { default-features = false, git = 'https://github.com/paritytech/substrate.git', branch = 'rococo-v1', version = '3.0.0' }
-frame-support = { default-features = false, git = 'https://github.com/paritytech/substrate.git', branch = 'rococo-v1',  version = '3.0.0' }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+
+rococo-parachain-primitives = { default-features = false, path = '../../primitives', version = '0.1.0'}
 
 [features]
 default = ['std']

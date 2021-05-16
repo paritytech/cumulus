@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use rococo_parachain_primitives::{Block, AccountId, Balance, Index, AssetId};
+use rococo_parachain_primitives::{Block, AccountId, Balance, PoolId};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sp_block_builder::BlockBuilder;
@@ -33,11 +33,11 @@ pub fn create_full<C, P>(
 	C: ProvideRuntimeApi<Block>,
 	C: HeaderBackend<Block> + HeaderMetadata<Block, Error=BlockChainError> + 'static,
 	C: Send + Sync + 'static,
-	C::Api: pallet_lending_rpc::LendingRuntimeApi<Block, AssetId, FixedU128, AccountId, Balance>,
+	C::Api: pallet_floating_rate_lend_rpc::LendingRuntimeApi<Block, PoolId, FixedU128, AccountId, Balance>,
 	C::Api: BlockBuilder<Block>,
 	P: TransactionPool + 'static,
 {
-	use pallet_lending_rpc::{Lending, LendingApi};
+	use pallet_floating_rate_lend_rpc::{Lending as FloatingRateLending, LendingApi as FloatingRateLendingApi};
 
 	let mut io = jsonrpc_core::IoHandler::default();
 	let FullDeps {
@@ -47,9 +47,8 @@ pub fn create_full<C, P>(
 	} = deps;
 
 	io.extend_with(
-		LendingApi::to_delegate(Lending::new(client.clone()))
+		FloatingRateLendingApi::to_delegate(FloatingRateLending::new(client.clone()))
 	);
-
 
 	// Extend this RPC with a custom API by using the following syntax.
 	// `YourRpcStruct` should have a reference to a client, which is needed

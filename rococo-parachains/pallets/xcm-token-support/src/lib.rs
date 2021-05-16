@@ -34,22 +34,23 @@ use xcm::v0::{
     Junction::*,
     MultiAsset, MultiLocation, Order,
     Order::*,
-    Xcm::{self, *},
+    Xcm,
 };
-
-use orml_traits::location::{Parse, Reserve};
-use orml_xcm_support::XcmHandler;
 
 mod mock;
 mod tests;
 mod util;
+mod location;
+mod convert;
 
 pub use module::*;
 
 #[frame_support::pallet]
 pub mod module {
     use super::*;
-    use crate::util::XcmHandler;
+    use xcm::v0::{Xcm::WithdrawAsset, ExecuteXcm};
+    use crate::location::{Reserve, Parse};
+    use rococo_parachain_primitives::CurrencyId;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -64,11 +65,8 @@ pub mod module {
         + MaybeSerializeDeserialize
         + Into<u128>;
 
-        /// Currency Id.
-        type CurrencyId: Parameter + Member + Clone;
-
         /// Convert `T::CurrencyIn` to `MultiLocation`.
-        type CurrencyIdConvert: Convert<Self::CurrencyId, Option<MultiLocation>>;
+        type CurrencyIdConvert: Convert<CurrencyId, Option<MultiLocation>>;
 
         /// Convert `Self::Account` to `AccountId32`
         type AccountId32Convert: Convert<Self::AccountId, [u8; 32]>;
@@ -78,15 +76,14 @@ pub mod module {
         type SelfLocation: Get<MultiLocation>;
 
         /// Xcm handler to execute XCM.
-        type XcmHandler: XcmHandler<Self::AccountId>;
+        type XcmHandler: ExecuteXcm<Self::Call>;
     }
 
     #[pallet::event]
     #[pallet::generate_deposit(fn deposit_event)]
-    #[pallet::metadata(T::AccountId = "AccountId", T::CurrencyId = "CurrencyId", T::Balance = "Balance")]
     pub enum Event<T: Config> {
         /// Transferred. \[sender, currency_id, amount, dest\]
-        Transferred(T::AccountId, T::CurrencyId, T::Balance, MultiLocation),
+        Transferred(T::AccountId, CurrencyId, T::Balance, MultiLocation),
         /// Transferred `MultiAsset`. \[sender, asset, dest\]
         TransferredMultiAsset(T::AccountId, MultiAsset, MultiLocation),
     }
@@ -111,32 +108,6 @@ pub mod module {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Transfer native currencies.
-        #[transactional]
-        #[pallet::weight(1000)]
-        pub fn transfer(
-            origin: OriginFor<T>,
-            currency_id: T::CurrencyId,
-            amount: T::Balance,
-            dest: MultiLocation,
-        ) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-
-            if amount == Zero::zero() {
-                return Ok(().into());
-            }
-
-            let id: MultiLocation = T::CurrencyIdConvert::convert(currency_id.clone())
-                .ok_or(Error::<T>::NotCrossChainTransferableCurrency)?;
-            let asset = MultiAsset::ConcreteFungible {
-                id,
-                amount: amount.into(),
-            };
-            Self::do_transfer_multiasset(who.clone(), asset, dest.clone())?;
-            Self::deposit_event(Event::<T>::Transferred(who, currency_id, amount, dest));
-            Ok(().into())
-        }
-
         /// Transfer `MultiAsset`.
         #[transactional]
         #[pallet::weight(1000)]
@@ -158,6 +129,7 @@ pub mod module {
     }
 
     impl<T: Config> Pallet<T> {
+
         /// Transfer `MultiAsset` without depositing event.
         fn do_transfer_multiasset(
             who: T::AccountId,
@@ -178,12 +150,13 @@ pub mod module {
                 Self::transfer_to_non_reserve(asset, reserve, dest, recipient)
             };
 
-            T::XcmHandler::execute_xcm(who, xcm)?;
+            // TODO: check weight_limit
+            T::XcmHandler::execute_xcm(self_location, xcm, 10);
 
             Ok(().into())
         }
 
-        fn transfer_self_reserve_asset(asset: MultiAsset, dest: MultiLocation, recipient: MultiLocation) -> Xcm {
+        fn transfer_self_reserve_asset(asset: MultiAsset, dest: MultiLocation, recipient: MultiLocation) -> Xcm<T::Call> {
             WithdrawAsset {
                 assets: vec![asset],
                 effects: vec![DepositReserveAsset {
@@ -194,7 +167,7 @@ pub mod module {
             }
         }
 
-        fn transfer_to_reserve(asset: MultiAsset, reserve: MultiLocation, recipient: MultiLocation) -> Xcm {
+        fn transfer_to_reserve(asset: MultiAsset, reserve: MultiLocation, recipient: MultiLocation) -> Xcm<T::Call> {
             WithdrawAsset {
                 assets: vec![asset],
                 effects: vec![InitiateReserveWithdraw {
@@ -210,7 +183,7 @@ pub mod module {
             reserve: MultiLocation,
             dest: MultiLocation,
             recipient: MultiLocation,
-        ) -> Xcm {
+        ) -> Xcm<T::Call> {
             let mut reanchored_dest = dest.clone();
             if reserve == Parent.into() {
                 if let MultiLocation::X2(Parent, Parachain { id }) = dest {
@@ -232,7 +205,7 @@ pub mod module {
             }
         }
 
-        fn deposit_asset(recipient: MultiLocation) -> Vec<Order> {
+        fn deposit_asset(recipient: MultiLocation) -> Vec<Order<()>> {
             vec![DepositAsset {
                 assets: vec![MultiAsset::All],
                 dest: recipient,

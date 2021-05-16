@@ -7,7 +7,7 @@ edition = '2018'
 [dependencies]
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-
+log = { version = "0.4.14", default-features = false }
 parachain-info = { path = "../pallets/parachain-info", default-features = false }
 rococo-parachain-primitives = { path = "../primitives", default-features = false }
 
@@ -36,21 +36,25 @@ pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", 
 # Cumulus dependencies
 cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false }
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
-cumulus-pallet-xcm-handler = { path = "../../pallets/xcm-handler", default-features = false }
-cumulus-spambot = { path = "../../rococo-parachains/pallets/spambot", default-features = false }
+cumulus-primitives-utility = { path = "../../primitives/utility", default-features = false }
+cumulus-pallet-xcmp-queue = { path = "../../pallets/xcmp-queue", default-features = false }
+cumulus-pallet-xcm = { path = "../../pallets/xcm", default-features = false }
+cumulus-ping = { path = "../../rococo-parachains/pallets/ping", default-features = false }
 
 # Polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
 
 # Local dependencies
-pallet-assets = { default-features = false, path = '../pallets/assets', version = '3.0.0' }
-pallet-lending = { default-features = false, path = '../pallets/lending', version = '3.0.0' }
-pallet-lending-rpc-runtime-api = { default-features = false, path = '../pallets/lending/rpc/runtime-api', version = '3.0.0' }
-pallet-offchain-worker = { path = '../pallets/offchain-worker', default-features = false, version = '3.0.0' }
-
+pallet-floating-rate-lend = { default-features = false, path = '../pallets/floating-rate-lend', version = '3.0.0' }
+pallet-floating-rate-lend-rpc-runtime-api = { default-features = false, path = '../pallets/floating-rate-lend/rpc/runtime-api', version = '3.0.0' }
+pallet-native-tokens = { default-features = false, path = '../pallets/native-tokens', version = '3.0.0' }
+pallet-currencies = { default-features = false, path = '../pallets/currencies', version = '3.0.0' }
+pallet-traits = { default-features = false, path = '../pallets/traits', version = '3.0.0' }
+pallet-oracle = { path = '../pallets/oracle', default-features = false, version = '3.0.0' }
 pallet-xcm-token-support = { path = '../pallets/xcm-token-support', default-features = false, version = '3.0.0' }
 
 [build-dependencies]
@@ -61,6 +65,7 @@ default = [ "std" ]
 std = [
 	"codec/std",
 	"serde",
+	"log/std",
 	"sp-api/std",
 	"sp-std/std",
 	"sp-io/std",
@@ -83,13 +88,15 @@ std = [
 	"parachain-info/std",
 	"rococo-parachain-primitives/std",
 	"cumulus-pallet-parachain-system/std",
-	"cumulus-pallet-xcm-handler/std",
+	"cumulus-pallet-xcmp-queue/std",
+	"cumulus-pallet-xcm/std",
 	"cumulus-primitives-core/std",
-	"cumulus-spambot/std",
+	"cumulus-primitives-utility/std",
+	"cumulus-ping/std",
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
 
 	# Local dependencies
-	"pallet-assets/std"
+	"pallet-currencies/std"
 ]
