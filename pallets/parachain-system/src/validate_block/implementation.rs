@@ -118,23 +118,23 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>, PSC: crate::Config>(
 	set_and_run_with_externalities(&mut ext, || {
 		super::set_and_run_with_validation_params(params, || {
 			E::execute_block(block);
+
+			let new_validation_code = crate::NewValidationCode::<PSC>::get();
+			let upward_messages = crate::UpwardMessages::<PSC>::get();
+			let processed_downward_messages = crate::ProcessedDownwardMessages::<PSC>::get();
+			let horizontal_messages = crate::HrmpOutboundMessages::<PSC>::get();
+			let hrmp_watermark = crate::HrmpWatermark::<PSC>::get();
+
+			ValidationResult {
+				head_data,
+				new_validation_code: new_validation_code.map(Into::into),
+				upward_messages,
+				processed_downward_messages,
+				horizontal_messages,
+				hrmp_watermark,
+			}
 		})
-	});
-
-	let new_validation_code = crate::NewValidationCode::<PSC>::get();
-	let upward_messages = crate::UpwardMessages::<PSC>::get();
-	let processed_downward_messages = crate::ProcessedDownwardMessages::<PSC>::get();
-	let horizontal_messages = crate::HrmpOutboundMessages::<PSC>::get();
-	let hrmp_watermark = crate::HrmpWatermark::<PSC>::get();
-
-	ValidationResult {
-		head_data,
-		new_validation_code: new_validation_code.map(Into::into),
-		upward_messages,
-		processed_downward_messages,
-		horizontal_messages,
-		hrmp_watermark,
-	}
+	})
 }
 
 fn host_storage_read(key: &[u8], value_out: &mut [u8], value_offset: u32) -> Option<u32> {
