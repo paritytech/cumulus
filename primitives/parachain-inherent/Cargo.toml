@@ -6,14 +6,17 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", optional = true , branch = "rococo-v1" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", optional = true , branch = "rococo-v1" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", optional = true , branch = "rococo-v1" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
-sp-api = { git = "https://github.com/paritytech/substrate", optional = true , branch = "rococo-v1" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.1" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.1" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", optional = true , branch = "polkadot-v0.9.1" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", optional = true , branch = "polkadot-v0.9.1" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.1" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", optional = true , branch = "polkadot-v0.9.1" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.1" }
+sp-api = { git = "https://github.com/paritytech/substrate", optional = true , branch = "polkadot-v0.9.1" }
+
+# Polkadot dependencies
+polkadot-service = { git = "https://github.com/paritytech/polkadot", optional = true, branch = "release-v0.9.1" }
 
 # Cumulus dependencies
 cumulus-primitives-core = { path = "../core", default-features = false }
@@ -21,10 +24,12 @@ cumulus-primitives-core = { path = "../core", default-features = false }
 # Other dependencies
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = [ "derive" ] }
 tracing = { version = "0.1.22", optional = true }
+async-trait = { version = "0.1.42", optional = true }
 
 [features]
 default = [ "std" ]
 std = [
+	"async-trait",
 	"codec/std",
 	"cumulus-primitives-core/std",
 	"sp-inherents/std",
@@ -36,4 +41,5 @@ std = [
 	"sp-runtime",
 	"sc-client-api",
 	"sp-api",
+	"polkadot-service",
 ]

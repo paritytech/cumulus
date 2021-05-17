@@ -218,8 +218,9 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type SelfParaId = ParachainId;
 	type Event = Event;
 	type OnValidationData = ();
-	type DownwardMessageHandlers = ();
 	type OutboundXcmpMessageSource = ();
+	type DmpMessageHandler = ();
+	type ReservedDmpWeight = ();
 	type XcmpMessageHandler = ();
 	type ReservedXcmpWeight = ();
 }
@@ -354,10 +355,6 @@ impl_runtime_apis! {
 		fn check_inherents(block: Block, data: sp_inherents::InherentData) -> sp_inherents::CheckInherentsResult {
 			data.check_extrinsics(&block)
 		}
-
-		fn random_seed() -> <Block as BlockT>::Hash {
-			RandomnessCollectiveFlip::random_seed().0
-		}
 	}
 
 	impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
@@ -396,6 +393,12 @@ impl_runtime_apis! {
 	impl crate::GetUpgradeDetection<Block> for Runtime {
 		fn has_upgraded() -> bool {
 			UpgradeDetection::get()
+		}
+	}
+
+	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
+		fn collect_collation_info() -> cumulus_primitives_core::CollationInfo {
+			ParachainSystem::collect_collation_info()
 		}
 	}
 }

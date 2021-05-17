@@ -41,6 +41,7 @@ cd cumulus
 git checkout nimbus
 cargo build --release
 
+<<<<<<< HEAD
 # Launch the multi-chain
 polkdot-launch ./nimbus-launch-config.json
 ```
@@ -156,6 +157,17 @@ is the job of the `register_validate_block!` macro from Cumulus.
 Typically a cumulus runtime invokes that macro like this:
 ```rust
 cumulus_pallet_parachain_system::register_validate_block!(Runtime, Executive);
+=======
+```
+cargo build --release -p polkadot-collator
+```
+
+Once the executable is built, launch collators for each parachain (repeat once each for chain
+`tick`, `trick`, `track`):
+
+```
+./target/release/polkadot-collator --chain $CHAIN --validator
+>>>>>>> polkadot-v0.9.1
 ```
 
 You can see that the validators use the exact same executive that the parachain nodes do. Now that
@@ -201,6 +213,7 @@ seen whether it should live with Cumulus or in its own repository.
 * Cryptographic block signatures and checking
 * Update the CanAuthor trait to take a slot number, and make a seperate trait for a slot beacon
 
+<<<<<<< HEAD
 ### Additional features for maybe someday
 * Share code between verifier and wrapper executive
 * Client-side worker for standalone (non para) blockchain
@@ -213,3 +226,23 @@ Try it out, open issues, submit PRs, review code. Whether you like to tinker wit
 analyze security from an academic perspective, your contributions are welcome.
 
 I would be happy to support users who want to use nimbus, or want feedback on their consensus engines.
+=======
+# Export genesis state
+# --parachain-id 200 as an example that can be chosen freely. Make sure to everywhere use the same parachain id
+./target/release/polkadot-collator export-genesis-state --parachain-id 200 > genesis-state
+
+# Export genesis wasm
+./target/release/polkadot-collator export-genesis-wasm > genesis-wasm
+
+# Collator1
+./target/release/polkadot-collator --collator --tmp --parachain-id <parachain_id_u32_type_range> --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30335
+
+# Collator2
+./target/release/polkadot-collator --collator --tmp --parachain-id <parachain_id_u32_type_range> --port 40336 --ws-port 9947 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30336
+
+# Parachain Full Node 1
+./target/release/polkadot-collator --tmp --parachain-id <parachain_id_u32_type_range> --port 40337 --ws-port 9948 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337
+```
+### Register the parachain
+![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
+>>>>>>> polkadot-v0.9.1
