@@ -485,7 +485,8 @@ pub mod pallet {
 
 	/// New validation code that was set in a block.
 	///
-	/// This will be cleared in `on_initialize` of each new block.
+	/// This will be cleared in `on_initialize` of each new block if no other pallet already set
+	/// the value.
 	#[pallet::storage]
 	pub(super) type NewValidationCode<T: Config> = StorageValue<_, Vec<u8>, OptionQuery>;
 
