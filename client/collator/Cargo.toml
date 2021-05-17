@@ -32,11 +32,7 @@ tracing = "0.1.25"
 
 [dev-dependencies]
 # Polkadot dependencies
-<<<<<<< HEAD
-polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
-=======
 polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.1" }
->>>>>>> polkadot-v0.9.1
 
 # Cumulus dependencies
 cumulus-test-runtime = { path = "../../test/runtime" }
