@@ -496,14 +496,14 @@ pub mod pallet {
 	pub(super) type HrmpWatermark<T: Config> =
 		StorageValue<_, relay_chain::v1::BlockNumber, ValueQuery>;
 
-	/// HRMP messages that were send in a block.
+	/// HRMP messages that were sent in a block.
 	///
 	/// This will be cleared in `on_initialize` of each new block.
 	#[pallet::storage]
 	pub(super) type HrmpOutboundMessages<T: Config> =
 		StorageValue<_, Vec<OutboundHrmpMessage>, ValueQuery>;
 
-	/// Upward messages that were send in a block.
+	/// Upward messages that were sent in a block.
 	///
 	/// This will be cleared in `on_initialize` of each new block.
 	#[pallet::storage]
@@ -888,7 +888,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Returns the [`CollationInfo`] of the current active block.
 	///
-	/// This should be used by the
+	/// This is expected to be used by the
 	/// [`CollectCollationInfo`](cumulus_primitives_core::CollectCollationInfo) runtime api.
 	pub fn collect_collation_info() -> CollationInfo {
 		CollationInfo {
