@@ -1390,6 +1390,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-client-pov-recovery"
+version = "0.1.0"
+dependencies = [
+ "cumulus-primitives-core",
+ "cumulus-test-service",
+ "derive_more 0.99.11",
+ "futures 0.3.14",
+ "futures-timer 3.0.2",
+ "parity-scale-codec",
+ "parking_lot 0.10.2",
+ "polkadot-node-primitives",
+ "polkadot-parachain",
+ "polkadot-primitives",
+ "polkadot-service",
+ "polkadot-statement-table",
+ "polkadot-test-client",
+ "sc-cli",
+ "sc-client-api",
+ "sc-service",
+ "sp-api",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-core",
+ "sp-keyring",
+ "sp-keystore",
+ "sp-runtime",
+ "substrate-test-utils",
+ "tokio 0.2.24",
+ "tracing",
+]
+
+[[package]]
 name = "cumulus-client-service"
 version = "0.1.0"
 dependencies = [
