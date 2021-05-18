@@ -7,11 +7,11 @@ edition = "2018"
 
 [dependencies]
 # Substrate deps
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot deps
@@ -20,6 +20,11 @@ polkadot-statement-table = { git = "https://github.com/paritytech/polkadot", bra
 polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+
+# Cumulus deps
+cumulus-primitives-core = { path = "../../primitives/core" }
 
 # other deps
 codec = { package = "parity-scale-codec", version = "2.0.0", features = [ "derive" ] }
@@ -33,7 +38,6 @@ tokio = { version = "0.2.21", features = ["macros"] }
 
 # Cumulus deps
 cumulus-test-service = { path = "../../test/service" }
-cumulus-primitives-core = { path = "../../primitives/core" }
 
 # Polkadot deps
 polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
