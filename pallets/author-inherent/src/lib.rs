@@ -21,31 +21,23 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
-	decl_error, decl_module, decl_storage, ensure,
 	traits::FindAuthor,
-	weights::{DispatchClass, Weight},
-	Parameter,
 };
-use frame_system::ensure_none;
 use parity_scale_codec::{Decode, Encode};
-#[cfg(feature = "std")]
-use sp_inherents::ProvideInherentData;
-use sp_inherents::{InherentData, InherentIdentifier, IsFatalError, ProvideInherent};
+use sp_inherents::{InherentIdentifier, IsFatalError};
 use sp_runtime::{
 	ConsensusEngineId, DigestItem, RuntimeString, RuntimeAppPublic,
-	traits::{MaybeSerializeDeserialize, Member},
 };
 use log::debug;
-use nimbus_primitives::{CanAuthor, NIMBUS_ENGINE_ID, SlotBeacon, EventHandler};
-// use sp_application_crypto::AppKey;
+use nimbus_primitives::{CanAuthor, NIMBUS_ENGINE_ID, SlotBeacon, EventHandler, INHERENT_IDENTIFIER};
 
 mod exec;
 pub use exec::BlockExecutor;
 use sp_std::marker::PhantomData;
 
 /// A SlotBeacon that starts a new slot based on this chain's block height.
-///TODO there is also (aparently) a BlockNumberPRovider trait. Maybe make this a blanket implementation for that?
-/// I wonder when that trait is used though. I'm not going to over-engineer this yet.=
+///TODO there is also (aparently) a BlockNumberProvider trait. Maybe make this a blanket implementation for that?
+/// I wonder when that trait is used though. I'm not going to over-engineer this yet.
 pub struct HeightBeacon<R>(PhantomData<R>);
 
 impl<R: frame_system::Config> SlotBeacon for HeightBeacon<R> {
@@ -62,7 +54,7 @@ pub struct RelayChainBeacon<R>(PhantomData<R>);
 // TODO this is the only place we depend on parachain system. This impl should live in a different crate.
 impl<R: cumulus_pallet_parachain_system::Config> SlotBeacon for RelayChainBeacon<R> {
 	fn slot() -> u32 {
-		cumulus_pallet_parachain_system::Module::<R>::validation_data()
+		cumulus_pallet_parachain_system::Pallet::<R>::validation_data()
 			.expect("validation data was set in parachain system inherent")
 			.relay_parent_number
 	}
@@ -72,77 +64,84 @@ impl<R: cumulus_pallet_parachain_system::Config> SlotBeacon for RelayChainBeacon
 /// A SlotBeacon that starts a new slot based on the timestamp. Like the one used in sc-consensus-aura et al.
 pub struct IntervalBeacon;
 
-pub trait Config: frame_system::Config {
-	// This is copied from Aura. I wonder if I really need all those trait bounds. For now I'll leave them.
-	/// The identifier type for an authority.
-	type AuthorId: Member + Parameter + RuntimeAppPublic + Default + MaybeSerializeDeserialize;
+pub use pallet::*;
 
-	//TODO do we have any use for this converter?
-	// It has to happen eventually to pay rewards to accountids and let account ids stake.
-	// But is there any reason it needs to be included here? For now I won't use it as I'm
-	// not staking or rewarding in this poc.
-	// A type to convert between AuthorId and AccountId
+#[frame_support::pallet]
+pub mod pallet {
+	use frame_support::pallet_prelude::*;
+	use frame_system::pallet_prelude::*;
+	use super::*;
 
-	/// Other pallets that want to be informed about block authorship
-	type EventHandler: EventHandler<Self::AuthorId>;
+	/// The Author Inherent pallet. The core of the nimbus consensus framework's runtime presence.
+	#[pallet::pallet]
+	pub struct Pallet<T>(PhantomData<T>);
 
-	/// A preliminary means of checking the validity of this author. This check is run before
-	/// block execution begins when data from previous inherent is unavailable. This is meant to
-	/// quickly invalidate blocks from obviously-invalid authors, although it need not rule out all
-	/// invlaid authors. The final check will be made when executing the inherent.
-	type PreliminaryCanAuthor: CanAuthor<Self::AuthorId>;
+	#[pallet::config]
+	pub trait Config: frame_system::Config {
+		// This is copied from Aura. I wonder if I really need all those trait bounds. For now I'll leave them.
+		/// The identifier type for an authority.
+		type AuthorId: Member + Parameter + RuntimeAppPublic + Default + MaybeSerializeDeserialize;
 
-	/// The final word on whether the reported author can author at this height.
-	/// This will be used when executing the inherent. This check is often stricter than the
-	/// Preliminary check, because it can use more data.
-	/// If the pallet that implements this trait depends on an inherent, that inherent **must**
-	/// be included before this one.
-	type FullCanAuthor: CanAuthor<Self::AuthorId>;
+		//TODO do we have any use for this converter?
+		// It has to happen eventually to pay rewards to accountids and let account ids stake.
+		// But is there any reason it needs to be included here? For now I won't use it as I'm
+		// not staking or rewarding in this poc.
+		// A type to convert between AuthorId and AccountId
 
-	/// Some way of determining the current slot for purposes of verifying the author's eligibility
-	type SlotBeacon: SlotBeacon;
-}
+		/// Other pallets that want to be informed about block authorship
+		type EventHandler: EventHandler<Self::AuthorId>;
 
-// If the AccountId type supports it, then this pallet can be BoundToRuntimeAppPublic
-impl<T> sp_runtime::BoundToRuntimeAppPublic for Module<T>
-where
-	T: Config,
-	T::AuthorId: RuntimeAppPublic,
-{
-	type Public = T::AuthorId;
-}
+		/// A preliminary means of checking the validity of this author. This check is run before
+		/// block execution begins when data from previous inherent is unavailable. This is meant to
+		/// quickly invalidate blocks from obviously-invalid authors, although it need not rule out all
+		/// invlaid authors. The final check will be made when executing the inherent.
+		type PreliminaryCanAuthor: CanAuthor<Self::AuthorId>;
 
-decl_error! {
-	pub enum Error for Module<T: Config> {
+		/// The final word on whether the reported author can author at this height.
+		/// This will be used when executing the inherent. This check is often stricter than the
+		/// Preliminary check, because it can use more data.
+		/// If the pallet that implements this trait depends on an inherent, that inherent **must**
+		/// be included before this one.
+		type FullCanAuthor: CanAuthor<Self::AuthorId>;
+
+		/// Some way of determining the current slot for purposes of verifying the author's eligibility
+		type SlotBeacon: SlotBeacon;
+	}
+
+	// If the AccountId type supports it, then this pallet can be BoundToRuntimeAppPublic
+	impl<T> sp_runtime::BoundToRuntimeAppPublic for Pallet<T>
+	where
+		T: Config,
+		T::AuthorId: RuntimeAppPublic,
+	{
+		type Public = T::AuthorId;
+	}
+	#[pallet::error]
+	pub enum Error<T> {
 		/// Author already set in block.
 		AuthorAlreadySet,
 		/// The author in the inherent is not an eligible author.
 		CannotBeAuthor,
 	}
-}
 
-decl_storage! {
-	trait Store for Module<T: Config> as Author {
-		/// Author of current block.
-		Author: Option<T::AuthorId>;
-	}
-}
 
-decl_module! {
-	pub struct Module<T: Config> for enum Call where origin: T::Origin {
-		type Error = Error<T>;
+	/// Author of current block.
+	#[pallet::storage]
+	pub type Author<T: Config> = StorageValue<_, T::AuthorId, OptionQuery>;
 
-		fn on_initialize() -> Weight {
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_initialize(_: T::BlockNumber) -> Weight {
 			<Author<T>>::kill();
 			0
 		}
+	}
 
+	#[pallet::call]
+	impl<T: Config> Pallet<T> {
 		/// Inherent to set the author of a block
-		#[weight = (
-			0,
-			DispatchClass::Mandatory
-		)]
-		fn set_author(origin, author: T::AuthorId) {
+		#[pallet::weight((0, DispatchClass::Mandatory))]
+		fn set_author(origin: OriginFor<T>, author: T::AuthorId) -> DispatchResult {
 
 			ensure_none(origin)?;
 			debug!(target: "author-inherent", "Executing Author inherent");
@@ -169,23 +168,59 @@ decl_module! {
 
 			// Notify any other pallets that are listening (eg rewards) about the author
 			T::EventHandler::note_author(author);
+
+			Ok(())
+		}
+	}
+
+	#[pallet::inherent]
+	impl<T:Config> ProvideInherent for Pallet<T> {
+		type Call = Call<T>;
+		type Error = InherentError;
+		const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
+
+		fn is_inherent_required(_: &InherentData) -> Result<Option<Self::Error>, Self::Error> {
+			// Return Ok(Some(_)) unconditionally because this inherent is required in every block
+			// If it is not found, throw an AuthorInherentRequired error.
+			Ok(Some(InherentError::Other(
+				sp_runtime::RuntimeString::Borrowed("AuthorInherentRequired"),
+			)))
+		}
+
+		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
+			// Grab the Vec<u8> labelled with "author__" from the map of all inherent data
+			let author_raw = data
+				.get_data::<T::AuthorId>(&INHERENT_IDENTIFIER);
+
+			debug!("In create_inherent (runtime side). data is");
+			debug!("{:?}", author_raw);
+
+			let author = author_raw
+				.expect("Gets and decodes authorship inherent data")?;
+
+			// Decode the Vec<u8> into an account Id
+			// let author =
+			// 	T::AuthorId::decode(&mut &author_raw[..]).expect("Decodes author raw inherent data");
+
+			Some(Call::set_author(author))
+		}
+
+		fn is_inherent(call: &Self::Call) -> bool {
+			matches!(call, Call::set_author(_))
+		}
+	}
+
+	impl<T: Config> FindAuthor<T::AuthorId> for Pallet<T> {
+		fn find_author<'a, I>(_digests: I) -> Option<T::AuthorId>
+		where
+			I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
+		{
+			// We don't use the digests at all.
+			// This will only return the correct author _after_ the authorship inherent is processed.
+			<Author<T>>::get()
 		}
 	}
 }
-
-impl<T: Config> FindAuthor<T::AuthorId> for Module<T> {
-	fn find_author<'a, I>(_digests: I) -> Option<T::AuthorId>
-	where
-		I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
-	{
-		// We don't use the digests at all.
-		// This will only return the correct author _after_ the authorship inherent is processed.
-		<Author<T>>::get()
-	}
-}
-
-/// The InherentIdentifier for nimbus's author inherent
-pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"author__";
 
 #[derive(Encode)]
 #[cfg_attr(feature = "std", derive(Debug, Decode))]
@@ -213,69 +248,6 @@ impl InherentError {
 	}
 }
 
-/// The type of data that the inherent will contain.
-pub type InherentType<T> = <T as Config>::AuthorId;
-
-// TODO move inherent data provider, inherent type, inherent identifier to primitives crate.
-/// A thing that an outer node could use to inject the inherent data.
-/// This should be used in simple uses of the author inherent (eg permissionless authoring)
-/// When using the full nimbus system, we are manually inserting the  inherent.
-#[cfg(feature = "std")]
-pub struct InherentDataProvider<AuthorId>(pub AuthorId);
-
-#[cfg(feature = "std")]
-impl<AuthorId: Encode> ProvideInherentData for InherentDataProvider<AuthorId> {
-	fn inherent_identifier(&self) -> &'static InherentIdentifier {
-		&INHERENT_IDENTIFIER
-	}
-
-	fn provide_inherent_data(
-		&self,
-		inherent_data: &mut InherentData,
-	) -> Result<(), sp_inherents::Error> {
-		inherent_data.put_data(INHERENT_IDENTIFIER, &self.0)
-	}
-
-	fn error_to_string(&self, error: &[u8]) -> Option<String> {
-		InherentError::try_from(&INHERENT_IDENTIFIER, error).map(|e| format!("{:?}", e))
-	}
-}
-
-impl<T: Config> ProvideInherent for Module<T> {
-	type Call = Call<T>;
-	type Error = InherentError;
-	const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
-
-	fn is_inherent_required(_: &InherentData) -> Result<Option<Self::Error>, Self::Error> {
-		// Return Ok(Some(_)) unconditionally because this inherent is required in every block
-		// If it is not found, throw an AuthorInherentRequired error.
-		Ok(Some(InherentError::Other(
-			sp_runtime::RuntimeString::Borrowed("AuthorInherentRequired"),
-		)))
-	}
-
-	fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-		// Grab the Vec<u8> labelled with "author__" from the map of all inherent data
-		let author_raw = data
-			.get_data::<InherentType<T>>(&INHERENT_IDENTIFIER);
-
-		debug!("In create_inherent (runtime side). data is");
-		debug!("{:?}", author_raw);
-
-		let author = author_raw
-			.expect("Gets and decodes authorship inherent data")?;
-
-		// Decode the Vec<u8> into an account Id
-		// let author =
-		// 	T::AuthorId::decode(&mut &author_raw[..]).expect("Decodes author raw inherent data");
-
-		Some(Call::set_author(author))
-	}
-
-	fn is_inherent(call: &Self::Call) -> bool {
-		matches!(call, Call::set_author(_))
-	}
-}
 
 #[cfg(test)]
 mod tests {

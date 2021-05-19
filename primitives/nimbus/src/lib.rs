@@ -13,6 +13,9 @@ use sp_application_crypto::KeyTypeId;
 use sp_runtime::ConsensusEngineId;
 
 mod digests;
+mod inherents;
+
+pub use inherents::INHERENT_IDENTIFIER;
 
 /// The given account ID is the author of the current block.
 pub trait EventHandler<Author> {
