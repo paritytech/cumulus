@@ -46,12 +46,11 @@ pub use frame_support::{
 	StorageValue,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
-pub use pallet_balances::Call as BalancesCall;
-pub use pallet_timestamp::Call as TimestampCall;
+// pub use pallet_balances::Call as BalancesCall;
+// pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
-pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 
 use nimbus_primitives::{CanAuthor, NimbusId};
 
@@ -250,8 +249,6 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 }
 
 impl parachain_info::Config for Runtime {}
-
-impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 parameter_types! {
 	pub const RocLocation: MultiLocation = X1(Parent);
@@ -461,9 +458,6 @@ construct_runtime! {
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 30,
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 31,
 
-		Aura: pallet_aura::{Pallet, Config<T>},
-		AuraExt: cumulus_pallet_aura_ext::{Pallet, Config},
-
 		// XCM helpers.
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 50,
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin} = 51,
@@ -596,6 +590,8 @@ impl_runtime_apis! {
 	impl nimbus_primitives::AuthorFilterAPI<Block, nimbus_primitives::NimbusId> for Runtime {
 		fn can_author(author: nimbus_primitives::NimbusId, slot: u32) -> bool {
 			<Runtime as pallet_author_inherent::Config>::FullCanAuthor::can_author(&author, &slot)
+		}
+	}
 
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
 		fn collect_collation_info() -> cumulus_primitives_core::CollationInfo {
