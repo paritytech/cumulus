@@ -8,6 +8,7 @@ edition = "2018"
 # Cumulus dependencies
 cumulus-client-consensus-common = { path = "../consensus/common" }
 cumulus-client-collator = { path = "../collator" }
+cumulus-client-pov-recovery = { path = "../pov-recovery" }
 cumulus-primitives-core = { path = "../../primitives/core" }
 
 # Substrate dependencies
@@ -28,6 +29,5 @@ polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "m
 polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Other deps
-futures = "0.3.6"
 tracing = "0.1.22"
 codec = { package = "parity-scale-codec", version = "2.0.0" }

@@ -62,7 +62,7 @@ struct PendingCandidate<Block: BlockT> {
 }
 
 /// Encapsulates the logic of the pov recovery.
-struct PoVRecovery<Block: BlockT, PC, BI, RC> {
+pub struct PoVRecovery<Block: BlockT, PC, BI, RC> {
 	/// All the pending candidates that we are waiting for to be imported or that need to be
 	/// recovered when `next_candidate_to_recover` tells us to do so.
 	pending_candidates: HashMap<Block::Hash, PendingCandidate<Block>>,
@@ -90,7 +90,7 @@ where
 	RC: ProvideRuntimeApi<PBlock> + BlockchainEvents<PBlock>,
 	RC::Api: ParachainHost<PBlock>,
 {
-	fn new(
+	pub fn new(
 		overseer_handler: OverseerHandler,
 		relay_chain_slot_duration: Duration,
 		parachain_client: Arc<PC>,
@@ -195,7 +195,7 @@ where
 		};
 
 		self.active_candidate_recovery
-			.recover_candidate(block_hash, pending_candidate);
+			.recover_candidate(block_hash, pending_candidate).await;
 	}
 
 	/// Clear `waiting_for_parent` from the given `hash` and do this recursively for all child
@@ -335,7 +335,7 @@ where
 		}
 	}
 
-	async fn run(mut self) {
+	pub async fn run(mut self) {
 		let mut imported_blocks = self.parachain_client.import_notification_stream().fuse();
 		let mut finalized_blocks = self.parachain_client.finality_notification_stream().fuse();
 		let pending_candidates =

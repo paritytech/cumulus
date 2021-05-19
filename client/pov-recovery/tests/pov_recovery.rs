@@ -15,7 +15,7 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
 use cumulus_primitives_core::ParaId;
-use cumulus_test_service::{initial_head_data, Keyring::*, runtime::Hash};
+use cumulus_test_service::{initial_head_data, Keyring::*};
 use futures::join;
 use sc_service::TaskExecutor;
 use std::sync::Arc;
@@ -34,8 +34,12 @@ async fn pov_recovery(task_executor: TaskExecutor) {
 	let para_id = ParaId::from(100);
 
 	// Start alice
-	let alice =
-		cumulus_test_service::run_relay_chain_validator_node(task_executor.clone(), Alice, || {}, vec![]);
+	let alice = cumulus_test_service::run_relay_chain_validator_node(
+		task_executor.clone(),
+		Alice,
+		|| {},
+		vec![],
+	);
 
 	// Start bob
 	let bob = cumulus_test_service::run_relay_chain_validator_node(

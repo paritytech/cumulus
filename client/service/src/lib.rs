@@ -20,20 +20,19 @@
 
 use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_primitives_core::ParaId;
-use futures::FutureExt;
 use polkadot_overseer::OverseerHandler;
 use polkadot_primitives::v1::{Block as PBlock, CollatorPair};
 use polkadot_service::{AbstractClient, Client as PClient, ClientHandle, RuntimeApiCollection};
 use sc_client_api::{
 	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, UsageProvider,
 };
-use sc_service::{error::Result as ServiceResult, Configuration, Role, TaskManager};
+use sc_service::{Configuration, Role, TaskManager};
 use sc_telemetry::TelemetryWorkerHandle;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::BlockImport;
 use sp_core::traits::SpawnNamed;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
-use std::{marker::PhantomData, sync::Arc};
+use std::{marker::PhantomData, sync::Arc, time::Duration};
 
 pub mod genesis;
 
@@ -94,14 +93,19 @@ where
 		announce_block: announce_block.clone(),
 		client: client.clone(),
 		task_manager,
-		overseer_handler: Some(
-			relay_chain_full_node
-				.overseer_handler
-				.clone()
-				.ok_or_else(|| "Polkadot full node did not provided an `OverseerHandler`!")?,
-		),
 		_phantom: PhantomData,
-	})?;
+	});
+
+	relay_chain_full_node.client.execute_with(StartPoVRecovery {
+		para_id,
+		client: client.clone(),
+		task_manager,
+		overseer_handler: relay_chain_full_node
+			.overseer_handler
+			.clone()
+			.ok_or_else(|| "Polkadot full node did not provided an `OverseerHandler`!")?,
+		_phantom: PhantomData,
+	});
 
 	cumulus_client_collator::start_collator(cumulus_client_collator::StartCollatorParams {
 		backend,
@@ -162,9 +166,8 @@ where
 		para_id,
 		client,
 		task_manager,
-		overseer_handler: None,
 		_phantom: PhantomData,
-	})?;
+	});
 
 	task_manager.add_child(relay_chain_full_node.task_manager);
 
@@ -176,7 +179,6 @@ struct StartConsensus<'a, Block: BlockT, Client, Backend> {
 	announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 	client: Arc<Client>,
 	task_manager: &'a mut TaskManager,
-	overseer_handler: Option<OverseerHandler>,
 	_phantom: PhantomData<Backend>,
 }
 
@@ -194,7 +196,7 @@ where
 	for<'b> &'b Client: BlockImport<Block>,
 	Backend: BackendT<Block> + 'static,
 {
-	type Output = ServiceResult<()>;
+	type Output = ();
 
 	fn execute_with_client<PClient, Api, PBackend>(self, client: Arc<PClient>) -> Self::Output
 	where
@@ -206,17 +208,58 @@ where
 	{
 		let consensus = cumulus_client_consensus_common::run_parachain_consensus(
 			self.para_id,
-			self.client,
-			client,
+			self.client.clone(),
+			client.clone(),
 			self.announce_block,
-			self.overseer_handler,
 		);
 
 		self.task_manager
 			.spawn_essential_handle()
 			.spawn("cumulus-consensus", consensus);
+	}
+}
 
-		Ok(())
+struct StartPoVRecovery<'a, Block: BlockT, Client> {
+	para_id: ParaId,
+	client: Arc<Client>,
+	task_manager: &'a mut TaskManager,
+	overseer_handler: OverseerHandler,
+	_phantom: PhantomData<Block>,
+}
+
+impl<'a, Block, Client> polkadot_service::ExecuteWithClient for StartPoVRecovery<'a, Block, Client>
+where
+	Block: BlockT,
+	Client: UsageProvider<Block>
+		+ Send
+		+ Sync
+		+ BlockBackend<Block>
+		+ BlockchainEvents<Block>
+		+ 'static,
+	for<'b> &'b Client: BlockImport<Block>,
+{
+	type Output = ();
+
+	fn execute_with_client<PClient, Api, PBackend>(self, client: Arc<PClient>) -> Self::Output
+	where
+		<Api as sp_api::ApiExt<PBlock>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
+		PBackend: sc_client_api::Backend<PBlock>,
+		PBackend::State: sp_api::StateBackend<BlakeTwo256>,
+		Api: RuntimeApiCollection<StateBackend = PBackend::State>,
+		PClient: AbstractClient<PBlock, PBackend, Api = Api> + 'static,
+	{
+		let pov_recovery = cumulus_client_pov_recovery::PoVRecovery::new(
+			self.overseer_handler,
+			Duration::from_secs(6),
+			self.client.clone(),
+			self.client.clone(),
+			client,
+			self.para_id,
+		);
+
+		self.task_manager
+			.spawn_essential_handle()
+			.spawn("cumulus-pov-recovery", pov_recovery.run());
 	}
 }
 

@@ -1422,8 +1422,8 @@ version = "0.1.0"
 dependencies = [
  "cumulus-client-collator",
  "cumulus-client-consensus-common",
+ "cumulus-client-pov-recovery",
  "cumulus-primitives-core",
- "futures 0.3.14",
  "parity-scale-codec",
  "polkadot-overseer",
  "polkadot-primitives",

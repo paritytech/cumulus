@@ -27,7 +27,7 @@ use std::{collections::HashSet, pin::Pin};
 /// The active candidate recovery.
 ///
 /// This handles the candidate recovery and tracks the activate recoveries.
-pub struct ActiveCandidateRecovery<Block: BlockT> {
+pub(crate) struct ActiveCandidateRecovery<Block: BlockT> {
 	/// The recoveries that are currently being executed.
 	recoveries: FuturesUnordered<
 		Pin<Box<dyn Future<Output = (Block::Hash, Option<AvailableData>)> + Send>>,
