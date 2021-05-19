@@ -90,6 +90,7 @@ where
 	RC: ProvideRuntimeApi<PBlock> + BlockchainEvents<PBlock>,
 	RC::Api: ParachainHost<PBlock>,
 {
+	/// Create a new instance.
 	pub fn new(
 		overseer_handler: OverseerHandler,
 		relay_chain_slot_duration: Duration,
@@ -304,8 +305,10 @@ where
 		self.import_block(block).await;
 	}
 
+	/// Import the given `block`.
+	///
+	/// This will also recursivley drain `waiting_for_parent` and import them as well.
 	async fn import_block(&mut self, block: Block) {
-		tracing::error!("IMPORTING: {:?}", block);
 		let mut blocks = VecDeque::new();
 		blocks.push_back(block);
 
@@ -335,6 +338,7 @@ where
 		}
 	}
 
+	/// Run the pov-recovery.
 	pub async fn run(mut self) {
 		let mut imported_blocks = self.parachain_client.import_notification_stream().fuse();
 		let mut finalized_blocks = self.parachain_client.finality_notification_stream().fuse();
@@ -347,16 +351,34 @@ where
 				pending_candidate = pending_candidates.next() => {
 					if let Some((receipt, session_index)) = pending_candidate {
 						self.handle_pending_candidate(receipt, session_index);
+					} else {
+						tracing::debug!(
+							target: LOG_TARGET,
+							"Pending candidates stream ended",
+						);
+						return;
 					}
 				},
 				imported = imported_blocks.next() => {
 					if let Some(imported) = imported {
 						self.handle_block_imported(&imported.hash);
+					} else {
+						tracing::debug!(
+							target: LOG_TARGET,
+							"Imported blocks stream ended",
+						);
+						return;
 					}
 				},
 				finalized = finalized_blocks.next() => {
 					if let Some(finalized) = finalized {
 						self.handle_block_finalized(*finalized.header.number());
+					} else {
+						tracing::debug!(
+							target: LOG_TARGET,
+							"Finalized blocks stream ended",
+						);
+						return;
 					}
 				},
 				next_to_recover = self.next_candidate_to_recover.next() => {
