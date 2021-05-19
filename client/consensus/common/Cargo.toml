@@ -47,3 +47,4 @@ polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch 
 
 # Other deps
 tokio = { version = "0.2.21", features = ["macros"] }
+futures-timer = "3.0.2"

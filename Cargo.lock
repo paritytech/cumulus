@@ -1335,6 +1335,7 @@ dependencies = [
  "cumulus-test-service",
  "dyn-clone",
  "futures 0.3.14",
+ "futures-timer 3.0.2",
  "parity-scale-codec",
  "polkadot-primitives",
  "polkadot-runtime",

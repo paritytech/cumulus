@@ -23,26 +23,15 @@ use cumulus_test_client::{
 };
 use futures::{channel::mpsc, executor::block_on, select, FutureExt, Stream, StreamExt};
 use futures_timer::Delay;
-use polkadot_overseer::{AllSubsystems, HeadSupportsParachains, Overseer, OverseerHandler};
-use polkadot_primitives::v1::{
-	Block as PBlock, CommittedCandidateReceipt, Id as ParaId, SessionIndex,
-};
+use polkadot_primitives::v1::{Block as PBlock, Id as ParaId};
 use sc_client_api::UsageProvider;
 use sp_blockchain::{Error as ClientError, Result as ClientResult};
 use sp_consensus::{BlockImport, BlockImportParams, BlockOrigin, ForkChoiceStrategy};
-use sp_core::testing::TaskExecutor;
 use sp_runtime::generic::BlockId;
 use std::{
 	sync::{Arc, Mutex},
 	time::Duration,
 };
-
-struct AlwaysSupportsParachains;
-impl HeadSupportsParachains for AlwaysSupportsParachains {
-	fn head_supports_parachains(&self, _head: &PHash) -> bool {
-		true
-	}
-}
 
 struct RelaychainInner {
 	new_best_heads: Option<mpsc::UnboundedReceiver<Header>>,
@@ -83,9 +72,6 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 
 	type HeadStream = Box<dyn Stream<Item = Vec<u8>> + Send + Unpin>;
 
-	type PendingCandidateStream =
-		Box<dyn Stream<Item = (CommittedCandidateReceipt, SessionIndex)> + Send + Unpin>;
-
 	fn new_best_heads(&self, _: ParaId) -> Self::HeadStream {
 		let stream = self
 			.inner
@@ -112,10 +98,6 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 
 	fn parachain_head_at(&self, _: &BlockId<PBlock>, _: ParaId) -> ClientResult<Option<Vec<u8>>> {
 		unimplemented!("Not required for tests")
-	}
-
-	fn pending_candidates(&self, _: ParaId) -> Self::PendingCandidateStream {
-		Box::new(futures::stream::pending())
 	}
 }
 
@@ -150,13 +132,8 @@ fn follow_new_best_works() {
 		.new_best_heads_sender
 		.clone();
 
-	let consensus = run_parachain_consensus(
-		100.into(),
-		client.clone(),
-		relay_chain,
-		Arc::new(|_, _| {}),
-		None,
-	);
+	let consensus =
+		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}));
 
 	let work = async move {
 		new_best_heads_sender
@@ -196,13 +173,8 @@ fn follow_finalized_works() {
 		.finalized_heads_sender
 		.clone();
 
-	let consensus = run_parachain_consensus(
-		100.into(),
-		client.clone(),
-		relay_chain,
-		Arc::new(|_, _| {}),
-		None,
-	);
+	let consensus =
+		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}));
 
 	let work = async move {
 		finalized_sender
@@ -249,13 +221,8 @@ fn follow_finalized_does_not_stop_on_unknown_block() {
 		.finalized_heads_sender
 		.clone();
 
-	let consensus = run_parachain_consensus(
-		100.into(),
-		client.clone(),
-		relay_chain,
-		Arc::new(|_, _| {}),
-		None,
-	);
+	let consensus =
+		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}));
 
 	let work = async move {
 		for _ in 0..3usize {
@@ -313,13 +280,8 @@ fn follow_new_best_sets_best_after_it_is_imported() {
 		.new_best_heads_sender
 		.clone();
 
-	let consensus = run_parachain_consensus(
-		100.into(),
-		client.clone(),
-		relay_chain,
-		Arc::new(|_, _| {}),
-		None,
-	);
+	let consensus =
+		run_parachain_consensus(100.into(), client.clone(), relay_chain, Arc::new(|_, _| {}));
 
 	let work = async move {
 		new_best_heads_sender
