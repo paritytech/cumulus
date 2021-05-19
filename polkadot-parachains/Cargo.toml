@@ -13,12 +13,12 @@ path = "src/main.rs"
 derive_more = "0.15.0"
 exit-future = "0.1.4"
 futures = { version = "0.3.1", features = ["compat"] }
-log = "0.4.13"
+log = "0.4.8"
 parking_lot = "0.9.0"
 trie-root = "0.15.2"
 codec = { package = "parity-scale-codec", version = "2.0.0" }
 structopt = "0.3.3"
-serde = { version = "1.0.119", features = ["derive"] }
+serde = { version = "1.0.101", features = ["derive"] }
 hex-literal = "0.2.1"
 
 # Parachain runtimes
@@ -46,14 +46,12 @@ sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polk
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
 sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
 sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
 sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
 sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
 
 # RPC related dependencies
@@ -61,25 +59,26 @@ jsonrpc-core = "15.1.0"
 
 # Cumulus dependencies
 cumulus-client-cli = { path = "../client/cli" }
-nimbus-consensus = { path = "../client/consensus/nimbus" }
+cumulus-client-consensus-aura = { path = "../client/consensus/aura" }
 cumulus-client-consensus-relay-chain = { path = "../client/consensus/relay-chain" }
 cumulus-client-consensus-common = { path = "../client/consensus/common" }
 cumulus-client-collator = { path = "../client/collator" }
 cumulus-client-service = { path = "../client/service" }
 cumulus-client-network = { path = "../client/network" }
 cumulus-primitives-core = { path = "../primitives/core" }
-pallet-author-inherent = { path = "../pallets/author-inherent" }
-nimbus-primitives = { path = "../primitives/nimbus"}
-
-[build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
 cumulus-primitives-parachain-inherent = { path = "../primitives/parachain-inherent" }
+nimbus-primitives = { path = "../primitives/nimbus"}
+nimbus-consensus = { path = "../client/consensus/nimbus"}
+pallet-author-inherent = { path = "../pallets/author-inherent"}
 
 # Polkadot dependencies
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.1" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.1" }
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.1" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.1" }
+
+[build-dependencies]
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
 
 [dev-dependencies]
 assert_cmd = "0.12"

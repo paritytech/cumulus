@@ -16,7 +16,7 @@
 
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use rococo_parachain_runtime::{AccountId, AuraId, Signature};
+use rococo_parachain_runtime::{AccountId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
@@ -73,10 +73,10 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 		move || {
 			testnet_genesis(
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				vec![
-					get_from_seed::<AuraId>("Alice"),
-					get_from_seed::<AuraId>("Bob"),
-				],
+				// vec![
+				// 	get_from_seed::<AuraId>("Alice"),
+				// 	get_from_seed::<AuraId>("Bob"),
+				// ],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -157,7 +157,7 @@ pub fn staging_test_net(id: ParaId) -> ChainSpec {
 
 fn testnet_genesis(
 	root_key: AccountId,
-	initial_authorities: Vec<AuraId>,
+	// initial_authorities: Vec<AuraId>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> rococo_parachain_runtime::GenesisConfig {
@@ -175,12 +175,12 @@ fn testnet_genesis(
 				.map(|k| (k, 1 << 60))
 				.collect(),
 		},
-		pallet_sudo: parachain_runtime::SudoConfig { key: root_key },
-		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },
-		pallet_author_filter: parachain_runtime::AuthorFilterConfig {
+		pallet_sudo: rococo_parachain_runtime::SudoConfig { key: root_key },
+		parachain_info: rococo_parachain_runtime::ParachainInfoConfig { parachain_id: id },
+		pallet_author_filter: rococo_parachain_runtime::AuthorFilterConfig {
 			eligible_ratio: Percent::from_percent(50),
 		},
-		pallet_account_set: parachain_runtime::PotentialAuthorSetConfig {
+		pallet_account_set: rococo_parachain_runtime::PotentialAuthorSetConfig {
 			stored_accounts: vec![
 				get_from_seed::<NimbusId>("Alice"),
 				get_from_seed::<NimbusId>("Bob"),
@@ -188,7 +188,6 @@ fn testnet_genesis(
 		},
 	}
 }
->>>>>>> polkadot-v0.9.1:polkadot-parachains/src/chain_spec.rs
 
 fn shell_testnet_genesis(parachain_id: ParaId) -> shell_runtime::GenesisConfig {
 	shell_runtime::GenesisConfig {
