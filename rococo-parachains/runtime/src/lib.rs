@@ -18,6 +18,8 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
+mod weights;
+
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
@@ -48,6 +50,11 @@ pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{FixedU128, Perbill, Permill};
 use sp_runtime::traits::{Zero, AccountIdConversion};
+
+// Chainlink
+use pallet_chainlink_feed;
+pub use pallet_chainlink_feed::RoundId;
+use weights::WeightInfo as ChainlinkWeightInfo;
 
 // XCM imports
 use polkadot_parachain::primitives::Sibling;
@@ -493,6 +500,34 @@ impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime where
 	type OverarchingCall = Call;
 }
 
+
+pub type FeedId = u32;
+pub type Value = u128;
+
+parameter_types! {
+	pub const FeedPalletId: PalletId = PalletId(*b"linkfeed");
+	pub const MinimumReserve: Balance = ExistentialDeposit::get() * 1000;
+	pub const StringLimit: u32 = 30;
+	pub const OracleCountLimit: u32 = 25;
+	pub const FeedLimit: FeedId = 100;
+	pub const PruningWindow: RoundId = 15;
+}
+
+impl pallet_chainlink_feed::Config for Runtime {
+	type Event = Event;
+	type FeedId = FeedId;
+	type Value = Value;
+	type Currency = Balances;
+	type PalletId = FeedPalletId;
+	type MinimumReserve = MinimumReserve;
+	type StringLimit = StringLimit;
+	type OnAnswerHandler = ();
+	type OracleCountLimit = OracleCountLimit;
+	type FeedLimit = FeedLimit;
+	type PruningWindow = PruningWindow;
+	type WeightInfo = ChainlinkWeightInfo;
+}
+
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
@@ -507,15 +542,16 @@ construct_runtime! {
 		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
+		NativeTokens: pallet_native_tokens::{Pallet, Call, Storage, Config<T>, Event<T>},
+		ChainlinkFeed: pallet_chainlink_feed::{Pallet, Call, Storage, Config<T>, Event<T>},
 
 		Spambot: cumulus_ping::{Pallet, Call, Storage, Event<T>} = 99,
 
 		// Local dependencies
 		Currencies: pallet_currencies::{Pallet, Call, Storage, Event<T>},
 		Oracle: pallet_oracle::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
-		NativeTokens: pallet_native_tokens::{Pallet, Call, Storage, Config<T>, Event<T>},
-		FloatingRateLend: pallet_floating_rate_lend::{Pallet, Call, Storage, Event<T>} = 15,
 
+		FloatingRateLend: pallet_floating_rate_lend::{Pallet, Call, Storage, Event<T>} = 15,
 		// XCM helpers.
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>},
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},

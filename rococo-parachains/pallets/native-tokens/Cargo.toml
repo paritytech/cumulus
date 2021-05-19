@@ -16,8 +16,8 @@ sp-io = { git = "https://github.com/paritytech/substrate", default-features = fa
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
 
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1", version = '3.0.0' }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1", version = '3.0.0' }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
 
 log = "0.4.13"

@@ -51,6 +51,7 @@ pub mod module {
     use xcm::v0::{Xcm::WithdrawAsset, ExecuteXcm};
     use crate::location::{Reserve, Parse};
     use rococo_parachain_primitives::CurrencyId;
+    use sp_std::vec;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {

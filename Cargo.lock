@@ -1635,6 +1635,7 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-balances",
+ "pallet-chainlink-feed",
  "pallet-currencies",
  "pallet-floating-rate-lend",
  "pallet-floating-rate-lend-rpc-runtime-api",
@@ -4951,6 +4952,22 @@ dependencies = [
  "frame-system",
  "pallet-treasury",
  "parity-scale-codec",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-chainlink-feed"
+version = "0.1.0"
+source = "git+https://github.com/smartcontractkit/chainlink-polkadot#2eec7dfbad98a708a972f8c1c20a168698bd7186"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
  "sp-runtime",
  "sp-std",
 ]

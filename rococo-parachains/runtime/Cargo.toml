@@ -48,6 +48,9 @@ xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
 
+# Chainlink
+pallet-chainlink-feed = { git = 'https://github.com/smartcontractkit/chainlink-polkadot', default-features = false }
+
 # Local dependencies
 pallet-floating-rate-lend = { default-features = false, path = '../pallets/floating-rate-lend', version = '3.0.0' }
 pallet-floating-rate-lend-rpc-runtime-api = { default-features = false, path = '../pallets/floating-rate-lend/rpc/runtime-api', version = '3.0.0' }
@@ -97,6 +100,9 @@ std = [
 	"xcm-builder/std",
 	"xcm-executor/std",
 
+	'pallet-chainlink-feed/std',
+
 	# Local dependencies
-	"pallet-currencies/std"
+	"pallet-currencies/std",
+	"pallet-native-tokens/std",
 ]

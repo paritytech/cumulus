@@ -152,5 +152,9 @@ fn testnet_genesis(
 				(root_key.clone(), 4, 1_000_000_000_000_000_000_000),
 			]
 		},
+		pallet_chainlink_feed: parachain_runtime::ChainlinkFeedConfig {
+			pallet_admin: Some(root_key.clone()),
+			feed_creators: endowed_accounts.clone(),
+		}
 	}
 }
