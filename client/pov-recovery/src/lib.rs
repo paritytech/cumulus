@@ -22,7 +22,10 @@
 
 use sc_client_api::{BlockBackend, BlockchainEvents, UsageProvider};
 use sp_api::ProvideRuntimeApi;
-use sp_consensus::{BlockImport, BlockImportParams, BlockOrigin, BlockStatus, ForkChoiceStrategy};
+use sp_consensus::{
+	import_queue::{ImportQueue, IncomingBlock},
+	BlockOrigin, BlockStatus,
+};
 use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, Header as HeaderT, NumberFor},
@@ -62,7 +65,7 @@ struct PendingCandidate<Block: BlockT> {
 }
 
 /// Encapsulates the logic of the pov recovery.
-pub struct PoVRecovery<Block: BlockT, PC, BI, RC> {
+pub struct PoVRecovery<Block: BlockT, PC, IQ, RC> {
 	/// All the pending candidates that we are waiting for to be imported or that need to be
 	/// recovered when `next_candidate_to_recover` tells us to do so.
 	pending_candidates: HashMap<Block::Hash, PendingCandidate<Block>>,
@@ -78,24 +81,24 @@ pub struct PoVRecovery<Block: BlockT, PC, BI, RC> {
 	waiting_for_parent: HashMap<Block::Hash, Vec<Block>>,
 	relay_chain_slot_duration: Duration,
 	parachain_client: Arc<PC>,
-	parachain_block_import: Arc<BI>,
+	parachain_import_queue: IQ,
 	relay_chain_client: Arc<RC>,
 	para_id: ParaId,
 }
 
-impl<Block: BlockT, PC, BI, RC> PoVRecovery<Block, PC, BI, RC>
+impl<Block: BlockT, PC, IQ, RC> PoVRecovery<Block, PC, IQ, RC>
 where
 	PC: BlockBackend<Block> + BlockchainEvents<Block> + UsageProvider<Block>,
-	for<'a> &'a BI: BlockImport<Block>,
 	RC: ProvideRuntimeApi<PBlock> + BlockchainEvents<PBlock>,
 	RC::Api: ParachainHost<PBlock>,
+	IQ: ImportQueue<Block>,
 {
 	/// Create a new instance.
 	pub fn new(
 		overseer_handler: OverseerHandler,
 		relay_chain_slot_duration: Duration,
 		parachain_client: Arc<PC>,
-		parachain_block_import: Arc<BI>,
+		parachain_import_queue: IQ,
 		relay_chain_client: Arc<RC>,
 		para_id: ParaId,
 	) -> Self {
@@ -106,7 +109,7 @@ where
 			relay_chain_slot_duration,
 			waiting_for_parent: HashMap::new(),
 			parachain_client,
-			parachain_block_import,
+			parachain_import_queue,
 			relay_chain_client,
 			para_id,
 		}
@@ -196,7 +199,8 @@ where
 		};
 
 		self.active_candidate_recovery
-			.recover_candidate(block_hash, pending_candidate).await;
+			.recover_candidate(block_hash, pending_candidate)
+			.await;
 	}
 
 	/// Clear `waiting_for_parent` from the given `hash` and do this recursively for all child
@@ -312,30 +316,29 @@ where
 		let mut blocks = VecDeque::new();
 		blocks.push_back(block);
 
+		let mut incoming_blocks = Vec::new();
+
 		while let Some(block) = blocks.pop_front() {
 			let block_hash = block.hash();
 			let (header, body) = block.deconstruct();
-			let mut block_import_params =
-				BlockImportParams::new(BlockOrigin::ConsensusBroadcast, header);
-			block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(false));
-			block_import_params.body = Some(body);
 
-			if let Err(err) = (&*self.parachain_block_import)
-				.import_block(block_import_params, Default::default())
-				.await
-			{
-				tracing::debug!(
-					target: "cumulus-consensus",
-					?block_hash,
-					error = ?err,
-					"Failed to import block",
-				);
-			}
+			incoming_blocks.push(IncomingBlock {
+				hash: block_hash,
+				header: Some(header),
+				body: Some(body),
+				import_existing: false,
+				allow_missing_state: false,
+				justifications: None,
+				origin: None,
+			});
 
 			if let Some(waiting) = self.waiting_for_parent.remove(&block_hash) {
 				blocks.extend(waiting);
 			}
 		}
+
+		self.parachain_import_queue
+			.import_blocks(BlockOrigin::ConsensusBroadcast, incoming_blocks);
 	}
 
 	/// Run the pov-recovery.

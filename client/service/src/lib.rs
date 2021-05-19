@@ -19,8 +19,8 @@
 //! Provides functions for starting a collator node or a normal full node.
 
 use cumulus_client_consensus_common::ParachainConsensus;
-use polkadot_overseer::OverseerHandler;
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
+use polkadot_overseer::OverseerHandler;
 use polkadot_primitives::v1::{Block as PBlock, CollatorPair};
 use polkadot_service::{AbstractClient, Client as PClient, ClientHandle, RuntimeApiCollection};
 use sc_client_api::{
@@ -30,9 +30,15 @@ use sc_service::{Configuration, Role, TaskManager};
 use sc_telemetry::TelemetryWorkerHandle;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_consensus::BlockImport;
+use sp_consensus::{
+	import_queue::{ImportQueue, IncomingBlock, Link, Origin},
+	BlockImport, BlockOrigin,
+};
 use sp_core::traits::SpawnNamed;
-use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
+use sp_runtime::{
+	traits::{BlakeTwo256, Block as BlockT, NumberFor},
+	Justifications,
+};
 use std::{marker::PhantomData, sync::Arc, time::Duration};
 
 pub mod genesis;
@@ -41,7 +47,7 @@ pub mod genesis;
 type RFullNode<C> = polkadot_service::NewFull<C>;
 
 /// Parameters given to [`start_collator`].
-pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, Spawner, RClient> {
+pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, Spawner, RClient, IQ> {
 	pub block_status: Arc<BS>,
 	pub client: Arc<Client>,
 	pub announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
@@ -51,6 +57,7 @@ pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, Spawner, RClient> 
 	pub relay_chain_full_node: RFullNode<RClient>,
 	pub task_manager: &'a mut TaskManager,
 	pub parachain_consensus: Box<dyn ParachainConsensus<Block>>,
+	pub import_queue: IQ,
 }
 
 /// Start a collator node for a parachain.
@@ -58,7 +65,7 @@ pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, Spawner, RClient> 
 /// A collator is similar to a validator in a normal blockchain.
 /// It is responsible for producing blocks and sending the blocks to a
 /// parachain validator for validation and inclusion into the relay chain.
-pub async fn start_collator<'a, Block, BS, Client, Backend, Spawner, RClient>(
+pub async fn start_collator<'a, Block, BS, Client, Backend, Spawner, RClient, IQ>(
 	StartCollatorParams {
 		block_status,
 		client,
@@ -69,7 +76,8 @@ pub async fn start_collator<'a, Block, BS, Client, Backend, Spawner, RClient>(
 		task_manager,
 		relay_chain_full_node,
 		parachain_consensus,
-	}: StartCollatorParams<'a, Block, BS, Client, Spawner, RClient>,
+		import_queue,
+	}: StartCollatorParams<'a, Block, BS, Client, Spawner, RClient, IQ>,
 ) -> sc_service::error::Result<()>
 where
 	Block: BlockT,
@@ -88,6 +96,7 @@ where
 	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
 	RClient: ClientHandle,
 	Backend: BackendT<Block> + 'static,
+	IQ: ImportQueue<Block> + 'static,
 {
 	relay_chain_full_node.client.execute_with(StartConsensus {
 		para_id,
@@ -100,6 +109,7 @@ where
 	relay_chain_full_node.client.execute_with(StartPoVRecovery {
 		para_id,
 		client: client.clone(),
+		import_queue,
 		task_manager,
 		overseer_handler: relay_chain_full_node
 			.overseer_handler
@@ -220,15 +230,16 @@ where
 	}
 }
 
-struct StartPoVRecovery<'a, Block: BlockT, Client> {
+struct StartPoVRecovery<'a, Block: BlockT, Client, IQ> {
 	para_id: ParaId,
 	client: Arc<Client>,
 	task_manager: &'a mut TaskManager,
 	overseer_handler: OverseerHandler,
+	import_queue: IQ,
 	_phantom: PhantomData<Block>,
 }
 
-impl<'a, Block, Client> polkadot_service::ExecuteWithClient for StartPoVRecovery<'a, Block, Client>
+impl<'a, Block, Client, IQ> polkadot_service::ExecuteWithClient for StartPoVRecovery<'a, Block, Client, IQ>
 where
 	Block: BlockT,
 	Client: UsageProvider<Block>
@@ -237,7 +248,7 @@ where
 		+ BlockBackend<Block>
 		+ BlockchainEvents<Block>
 		+ 'static,
-	for<'b> &'b Client: BlockImport<Block>,
+	IQ: ImportQueue<Block> + 'static,
 {
 	type Output = ();
 
@@ -252,8 +263,8 @@ where
 		let pov_recovery = cumulus_client_pov_recovery::PoVRecovery::new(
 			self.overseer_handler,
 			Duration::from_secs(6),
-			self.client.clone(),
-			self.client.clone(),
+			self.client,
+			self.import_queue,
 			client,
 			self.para_id,
 		);
@@ -295,5 +306,40 @@ pub fn build_polkadot_full_node(
 			None,
 			telemetry_worker_handle,
 		)
+	}
+}
+
+/// A shared import queue
+///
+/// This is basically a hack until the Substrate side is implemented properly.
+#[derive(Clone)]
+pub struct SharedImportQueue<Block: BlockT>(Arc<parking_lot::Mutex<dyn ImportQueue<Block>>>);
+
+impl<Block: BlockT> SharedImportQueue<Block> {
+	/// Create a new instance of the shared import queue.
+	pub fn new<IQ: ImportQueue<Block> + 'static>(import_queue: IQ) -> Self {
+		Self(Arc::new(parking_lot::Mutex::new(import_queue)))
+	}
+}
+
+impl<Block: BlockT> ImportQueue<Block> for SharedImportQueue<Block> {
+	fn import_blocks(&mut self, origin: BlockOrigin, blocks: Vec<IncomingBlock<Block>>) {
+		self.0.lock().import_blocks(origin, blocks)
+	}
+
+	fn import_justifications(
+		&mut self,
+		who: Origin,
+		hash: Block::Hash,
+		number: NumberFor<Block>,
+		justifications: Justifications,
+	) {
+		self.0
+			.lock()
+			.import_justifications(who, hash, number, justifications)
+	}
+
+	fn poll_actions(&mut self, cx: &mut std::task::Context, link: &mut dyn Link<Block>) {
+		self.0.lock().poll_actions(cx, link)
 	}
 }

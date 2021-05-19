@@ -31,3 +31,4 @@ polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "
 # Other deps
 tracing = "0.1.22"
 codec = { package = "parity-scale-codec", version = "2.0.0" }
+parking_lot = "0.10.2"
