@@ -32,7 +32,6 @@ use cumulus_primitives_core::{
 	relay_chain::v1::{Block as PBlock, Hash as PHash, ParachainHost},
 	ParaId, PersistedValidationData,
 };
-use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use import_queue::import_queue;
 use log::{info, warn};
 use parking_lot::Mutex;
@@ -43,7 +42,7 @@ use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, EnableProofRecording, Environment,
 	ForkChoiceStrategy, ProofRecording, Proposal, Proposer,
 };
-use sp_inherents::{InherentData, InherentDataProviders};
+use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvider};
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT};
 use std::{marker::PhantomData, sync::Arc, time::Duration};
 use tracing::error;
@@ -55,11 +54,11 @@ mod import_queue;
 const LOG_TARGET: &str = "filtering-consensus";
 
 /// The implementation of the relay-chain provided consensus for parachains.
-pub struct FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient> {
+pub struct NimbusConsensus<B, PF, BI, RClient, RBackend, ParaClient, CIDP> {
 	para_id: ParaId,
 	_phantom: PhantomData<B>,
 	proposer_factory: Arc<Mutex<PF>>,
-	inherent_data_providers: InherentDataProviders,
+	create_inherent_data_providers: Arc<CIDP>,
 	block_import: Arc<futures::lock::Mutex<BI>>,
 	relay_chain_client: Arc<RClient>,
 	relay_chain_backend: Arc<RBackend>,
@@ -67,13 +66,13 @@ pub struct FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient> {
 	keystore: SyncCryptoStorePtr,
 }
 
-impl<B, PF, BI, RClient, RBackend, ParaClient> Clone for FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient> {
+impl<B, PF, BI, RClient, RBackend, ParaClient, CIDP> Clone for NimbusConsensus<B, PF, BI, RClient, RBackend, ParaClient, CIDP> {
 	fn clone(&self) -> Self {
 		Self {
 			para_id: self.para_id,
 			_phantom: PhantomData,
 			proposer_factory: self.proposer_factory.clone(),
-			inherent_data_providers: self.inherent_data_providers.clone(),
+			create_inherent_data_providers: self.create_inherent_data_providers.clone(),
 			block_import: self.block_import.clone(),
 			relay_chain_backend: self.relay_chain_backend.clone(),
 			relay_chain_client: self.relay_chain_client.clone(),
@@ -83,19 +82,20 @@ impl<B, PF, BI, RClient, RBackend, ParaClient> Clone for FilteringConsensus<B, P
 	}
 }
 
-impl<B, PF, BI, RClient, RBackend, ParaClient> FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient>
+impl<B, PF, BI, RClient, RBackend, ParaClient, CIDP> NimbusConsensus<B, PF, BI, RClient, RBackend, ParaClient, CIDP>
 where
 	B: BlockT,
 	RClient: ProvideRuntimeApi<PBlock>,
 	RClient::Api: ParachainHost<PBlock>,
 	RBackend: Backend<PBlock>,
 	ParaClient: ProvideRuntimeApi<B>,
+	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)>,
 {
-	/// Create a new instance of relay-chain provided consensus.
+	/// Create a new instance of nimbus consensus.
 	pub fn new(
 		para_id: ParaId,
 		proposer_factory: PF,
-		inherent_data_providers: InherentDataProviders,
+		create_inherent_data_providers: CIDP,
 		block_import: BI,
 		polkadot_client: Arc<RClient>,
 		polkadot_backend: Arc<RBackend>,
@@ -105,7 +105,7 @@ where
 		Self {
 			para_id,
 			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
-			inherent_data_providers,
+			create_inherent_data_providers: Arc::new(create_inherent_data_providers),
 			block_import: Arc::new(futures::lock::Mutex::new(block_import)),
 			relay_chain_backend: polkadot_backend,
 			relay_chain_client: polkadot_client,
@@ -115,72 +115,43 @@ where
 		}
 	}
 
-	/// Get the inherent data with validation function parameters injected
-	fn inherent_data(
+	//TODO Can this function be removed from the trait entirely now that we have this async inherent stuff?
+	/// Create the data.
+	async fn inherent_data(
 		&self,
+		parent: B::Hash,
 		validation_data: &PersistedValidationData,
 		relay_parent: PHash,
-		author_id: &NimbusId,
 	) -> Option<InherentData> {
-		// Build the inherents that use normal inherent data providers.
-		let mut inherent_data = self
-			.inherent_data_providers
+		let inherent_data_providers = self
+			.create_inherent_data_providers
+			.create_inherent_data_providers(parent, (relay_parent, validation_data.clone()))
+			.await
+			.map_err(|e| {
+				tracing::error!(
+					target: LOG_TARGET,
+					error = ?e,
+					"Failed to create inherent data providers.",
+				)
+			})
+			.ok()?;
+		
+		inherent_data_providers
 			.create_inherent_data()
 			.map_err(|e| {
-				error!(
+				tracing::error!(
 					target: LOG_TARGET,
 					error = ?e,
 					"Failed to create inherent data.",
 				)
 			})
-			.ok()?;
-
-		// Now manually build and attach the parachain one.
-		// This is the same as in RelayChainConsensus.
-		let parachain_inherent_data = ParachainInherentData::create_at(
-			relay_parent,
-			&*self.relay_chain_client,
-			&*self.relay_chain_backend,
-			validation_data,
-			self.para_id,
-		)?;
-
-		inherent_data
-			.put_data(
-				cumulus_primitives_parachain_inherent::INHERENT_IDENTIFIER,
-				&parachain_inherent_data,
-			)
-			.map_err(|e| {
-				error!(
-					target: LOG_TARGET,
-					error = ?e,
-					"Failed to put the system inherent into inherent data.",
-				)
-			})
-			.ok()?;
-
-		//TODO this situation will improve when I update Substrate. I can copy the work that's
-		// already on cumulus master, and here is the original PR for reference https://github.com/paritytech/substrate/pull/8526
-		// Now manually attach the author one.
-		inherent_data
-			//TODO import the inherent id from somewhere. Currently it is defined in the pallet.
-			.put_data(*b"author__", author_id)
-			.map_err(|e| {
-				error!(
-					target: LOG_TARGET,
-					error = ?e,
-					"Failed to put the author inherent into inherent data.",
-				)
-			})
-			.ok()?;
-
-		Some(inherent_data)
+			.ok()
 	}
 }
 
 #[async_trait::async_trait]
-impl<B, PF, BI, RClient, RBackend, ParaClient> ParachainConsensus<B>
-	for FilteringConsensus<B, PF, BI, RClient, RBackend, ParaClient>
+impl<B, PF, BI, RClient, RBackend, ParaClient, CIDP> ParachainConsensus<B>
+	for NimbusConsensus<B, PF, BI, RClient, RBackend, ParaClient, CIDP>
 where
 	B: BlockT,
 	RClient: ProvideRuntimeApi<PBlock> + Send + Sync,
@@ -196,6 +167,7 @@ where
 	>,
 	ParaClient: ProvideRuntimeApi<B> + Send + Sync,
 	ParaClient::Api: AuthorFilterAPI<B, NimbusId>,
+	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)>,
 {
 	async fn produce_candidate(
 		&mut self,
@@ -255,7 +227,7 @@ where
 			)
 			.ok()?;
 
-		let inherent_data = self.inherent_data(&validation_data, relay_parent, &NimbusId::from_slice(&type_public_pair.1))?;
+		let inherent_data = self.inherent_data(parent.hash(),&validation_data, relay_parent).await?;
 
 		let Proposal {
 			block,
@@ -347,10 +319,10 @@ where
 ///
 /// I briefly tried the async keystore approach, but decided to go sync so I can copy
 /// code from Aura. Maybe after it is working, Jeremy can help me go async.
-pub struct BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient> {
+pub struct BuildNimbusConsensusParams<PF, BI, RBackend, ParaClient, CIDP> {
 	pub para_id: ParaId,
 	pub proposer_factory: PF,
-	pub inherent_data_providers: InherentDataProviders,
+	pub create_inherent_data_providers: CIDP,
 	pub block_import: BI,
 	pub relay_chain_client: polkadot_service::Client,
 	pub relay_chain_backend: Arc<RBackend>,
@@ -359,20 +331,20 @@ pub struct BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient> {
 
 }
 
-/// Build the [`FilteringConsensus`].
+/// Build the [`NimbusConsensus`].
 ///
 /// Returns a boxed [`ParachainConsensus`].
-pub fn build_filtering_consensus<Block, PF, BI, RBackend, ParaClient>(
-	BuildFilteringConsensusParams {
+pub fn build_filtering_consensus<Block, PF, BI, RBackend, ParaClient, CIDP>(
+	BuildNimbusConsensusParams {
 		para_id,
 		proposer_factory,
-		inherent_data_providers,
+		create_inherent_data_providers,
 		block_import,
 		relay_chain_client,
 		relay_chain_backend,
 		parachain_client,
 		keystore,
-	}: BuildFilteringConsensusParams<PF, BI, RBackend, ParaClient>,
+	}: BuildNimbusConsensusParams<PF, BI, RBackend, ParaClient, CIDP>,
 ) -> Box<dyn ParachainConsensus<Block>>
 where
 	Block: BlockT,
@@ -389,12 +361,13 @@ where
 	sc_client_api::StateBackendFor<RBackend, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
 	ParaClient: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	ParaClient::Api: AuthorFilterAPI<Block, NimbusId>,
+	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)> + 'static,
 {
-	FilteringConsensusBuilder::new(
+	NimbusConsensusBuilder::new(
 		para_id,
 		proposer_factory,
 		block_import,
-		inherent_data_providers,
+		create_inherent_data_providers,
 		relay_chain_client,
 		relay_chain_backend,
 		parachain_client,
@@ -403,17 +376,17 @@ where
 	.build()
 }
 
-/// Relay chain consensus builder.
+/// Nimbus consensus builder.
 ///
-/// Builds a [`FilteringConsensus`] for a parachain. As this requires
+/// Builds a [`NimbusConsensus`] for a parachain. As this requires
 /// a concrete relay chain client instance, the builder takes a [`polkadot_service::Client`]
 /// that wraps this concrete instanace. By using [`polkadot_service::ExecuteWithClient`]
 /// the builder gets access to this concrete instance.
-struct FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient> {
+struct NimbusConsensusBuilder<Block, PF, BI, RBackend, ParaClient,CIDP> {
 	para_id: ParaId,
 	_phantom: PhantomData<Block>,
 	proposer_factory: PF,
-	inherent_data_providers: InherentDataProviders,
+	create_inherent_data_providers: CIDP,
 	block_import: BI,
 	relay_chain_backend: Arc<RBackend>,
 	relay_chain_client: polkadot_service::Client,
@@ -421,7 +394,7 @@ struct FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient> {
 	keystore: SyncCryptoStorePtr,
 }
 
-impl<Block, PF, BI, RBackend, ParaClient> FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient>
+impl<Block, PF, BI, RBackend, ParaClient, CIDP> NimbusConsensusBuilder<Block, PF, BI, RBackend, ParaClient, CIDP>
 where
 	Block: BlockT,
 	// Rust bug: https://github.com/rust-lang/rust/issues/24159
@@ -436,13 +409,14 @@ where
 	BI: BlockImport<Block> + Send + Sync + 'static,
 	RBackend: Backend<PBlock> + 'static,
 	ParaClient: ProvideRuntimeApi<Block> + Send + Sync + 'static,
+	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)> + 'static,
 {
 	/// Create a new instance of the builder.
 	fn new(
 		para_id: ParaId,
 		proposer_factory: PF,
 		block_import: BI,
-		inherent_data_providers: InherentDataProviders,
+		create_inherent_data_providers: CIDP,
 		relay_chain_client: polkadot_service::Client,
 		relay_chain_backend: Arc<RBackend>,
 		parachain_client: Arc<ParaClient>,
@@ -453,7 +427,7 @@ where
 			_phantom: PhantomData,
 			proposer_factory,
 			block_import,
-			inherent_data_providers,
+			create_inherent_data_providers,
 			relay_chain_backend,
 			relay_chain_client,
 			parachain_client,
@@ -461,7 +435,7 @@ where
 		}
 	}
 
-	/// Build the relay chain consensus.
+	/// Build the nimbus consensus.
 	fn build(self) -> Box<dyn ParachainConsensus<Block>>
 	where
 		ParaClient::Api: AuthorFilterAPI<Block, NimbusId>,
@@ -470,8 +444,8 @@ where
 	}
 }
 
-impl<Block, PF, BI, RBackend, ParaClient> polkadot_service::ExecuteWithClient
-	for FilteringConsensusBuilder<Block, PF, BI, RBackend, ParaClient>
+impl<Block, PF, BI, RBackend, ParaClient, CIDP> polkadot_service::ExecuteWithClient
+	for NimbusConsensusBuilder<Block, PF, BI, RBackend, ParaClient, CIDP>
 where
 	Block: BlockT,
 	// Rust bug: https://github.com/rust-lang/rust/issues/24159
@@ -487,6 +461,7 @@ where
 	RBackend: Backend<PBlock> + 'static,
 	ParaClient: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	ParaClient::Api: AuthorFilterAPI<Block, NimbusId>,
+	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)> + 'static,
 {
 	type Output = Box<dyn ParachainConsensus<Block>>;
 
@@ -499,10 +474,10 @@ where
 		PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
 		ParaClient::Api: AuthorFilterAPI<Block, NimbusId>,
 	{
-		Box::new(FilteringConsensus::new(
+		Box::new(NimbusConsensus::new(
 			self.para_id,
 			self.proposer_factory,
-			self.inherent_data_providers,
+			self.create_inherent_data_providers,
 			self.block_import,
 			client.clone(),
 			self.relay_chain_backend,
