@@ -22,12 +22,13 @@ mod chain_spec;
 mod genesis;
 
 use core::future::Future;
+use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
-use cumulus_test_runtime::{Hash, NodeBlock as Block, RuntimeApi, Header};
+use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 use polkadot_primitives::v1::{CollatorPair, Hash as PHash, PersistedValidationData};
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_executor::native_executor_instance;
@@ -52,7 +53,6 @@ use std::sync::Arc;
 use substrate_test_client::{
 	BlockchainEventsExt, RpcHandlersExt, RpcTransactionError, RpcTransactionOutput,
 };
-use cumulus_client_consensus_common::{ParachainConsensus, ParachainCandidate};
 
 pub use chain_spec::*;
 pub use cumulus_test_runtime as runtime;
@@ -256,25 +256,48 @@ where
 					prometheus_registry.as_ref(),
 					None,
 				);
-				Box::new(cumulus_client_consensus_relay_chain::RelayChainConsensus::new(
-					para_id,
-					proposer_factory,
-					|_, _| async { Ok(sp_timestamp::InherentDataProvider::from_system_time()) },
-					client.clone(),
-					relay_chain_full_node.client.clone(),
-					relay_chain_full_node.backend.clone(),
-				))
+
+				let relay_chain_client = relay_chain_full_node.client.clone();
+				let relay_chain_backend = relay_chain_full_node.backend.clone();
+
+				Box::new(
+					cumulus_client_consensus_relay_chain::RelayChainConsensus::new(
+						para_id,
+						proposer_factory,
+						move |_, (relay_parent, validation_data)| {
+							let parachain_inherent =
+								cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
+									relay_parent,
+									&*relay_chain_client,
+									&*relay_chain_backend,
+									&validation_data,
+									para_id,
+								);
+
+							async move {
+								let time = sp_timestamp::InherentDataProvider::from_system_time();
+
+								let parachain_inherent = parachain_inherent.ok_or_else(|| {
+									Box::<dyn std::error::Error + Send + Sync>::from(String::from(
+										"error",
+									))
+								})?;
+								Ok((time, parachain_inherent))
+							}
+						},
+						client.clone(),
+						relay_chain_full_node.client.clone(),
+						relay_chain_full_node.backend.clone(),
+					),
+				)
 			}
-			Consensus::Null => {
-				Box::new(NullConsensus)
-			},
+			Consensus::Null => Box::new(NullConsensus),
 		};
 
 		let relay_chain_full_node =
 			relay_chain_full_node.with_client(polkadot_test_service::TestClient);
 
 		let params = StartCollatorParams {
-			backend: params.backend,
 			block_status: client.clone(),
 			announce_block,
 			client: client.clone(),

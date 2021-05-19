@@ -1,12 +1,12 @@
 [package]
-name = "rococo-collator"
+name = "polkadot-collator"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 build = "build.rs"
 edition = "2018"
 
 [[bin]]
-name = "rococo-collator"
+name = "polkadot-collator"
 path = "src/main.rs"
 
 [dependencies]
@@ -21,10 +21,9 @@ structopt = "0.3.3"
 serde = { version = "1.0.101", features = ["derive"] }
 hex-literal = "0.2.1"
 
-# Parachain dependencies
-parachain-runtime = { package = "cumulus-test-parachain-runtime", path = "runtime" }
+# Parachain runtimes
+rococo-parachain-runtime = { package = "cumulus-rococo-parachain-runtime", path = "rococo-runtime" }
 shell-runtime = { package = "cumulus-shell-runtime", path = "shell-runtime" }
-rococo-parachain-primitives = { path = "primitives" }
 
 # Substrate dependencies
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -46,24 +45,29 @@ sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch 
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # RPC related dependencies
 jsonrpc-core = "15.1.0"
 
 # Cumulus dependencies
 cumulus-client-cli = { path = "../client/cli" }
+cumulus-client-consensus-aura = { path = "../client/consensus/aura" }
 cumulus-client-consensus-relay-chain = { path = "../client/consensus/relay-chain" }
+cumulus-client-consensus-common = { path = "../client/consensus/common" }
 cumulus-client-collator = { path = "../client/collator" }
 cumulus-client-service = { path = "../client/service" }
 cumulus-client-network = { path = "../client/network" }
 cumulus-primitives-core = { path = "../primitives/core" }
+cumulus-primitives-parachain-inherent = { path = "../primitives/parachain-inherent" }
 
 # Polkadot dependencies
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }

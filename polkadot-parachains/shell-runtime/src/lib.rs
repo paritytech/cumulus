@@ -22,7 +22,6 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use rococo_parachain_primitives::*;
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
@@ -161,7 +160,7 @@ parameter_types! {
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
 	type OnValidationData = ();
-	type SelfParaId = parachain_info::Module<Runtime>;
+	type SelfParaId = parachain_info::Pallet<Runtime>;
 	type OutboundXcmpMessageSource = ();
 	type DmpMessageHandler = cumulus_pallet_xcm::UnlimitedDmpExecution<Runtime>;
 	type ReservedDmpWeight = ReservedDmpWeight;
@@ -209,8 +208,8 @@ impl Config for XcmConfig {
 	type IsTeleporter = ();	// balances not supported
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = AllowUnpaidExecutionFrom<JustTheParent>;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;		// balances not supported
-	type Trader = ();		// balances not supported
+	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;	// balances not supported
+	type Trader = ();	// balances not supported
 	type ResponseHandler = ();	// Don't handle responses for now.
 }
 
@@ -219,20 +218,10 @@ impl cumulus_pallet_xcm::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
-#[test]
-fn encode_call() {
-	let hash = hex_literal::hex!["0af9fef6f950ca3ac8ac4766200454b1039ffb7b2d0827fffd5e47bd43761437"].into();
-	let call = Call::ParachainSystem(cumulus_pallet_parachain_system::Call::authorize_upgrade(hash));
-	assert_eq!(
-		hex::encode(codec::Encode::encode(&call)),
-		"01030af9fef6f950ca3ac8ac4766200454b1039ffb7b2d0827fffd5e47bd43761437",
-	);
-}
-
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
-		NodeBlock = rococo_parachain_primitives::Block,
+		NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
@@ -270,6 +259,17 @@ impl sp_runtime::traits::SignedExtension for DisallowSigned {
 	}
 }
 
+/// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
+pub type Signature = sp_runtime::MultiSignature;
+/// Some way of identifying an account on the chain. We intentionally make it equivalent
+/// to the public key of our transaction signing scheme.
+pub type AccountId = <<Signature as sp_runtime::traits::Verify>::Signer as sp_runtime::traits::IdentifyAccount>::AccountId;
+/// Index of a transaction in the chain.
+pub type Index = u32;
+/// A hash of some data used by the chain.
+pub type Hash = sp_core::H256;
+/// An index to a block.
+pub type BlockNumber = u32;
 /// The address format for describing accounts.
 pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
 /// Block header type as expected by this runtime.
@@ -358,6 +358,12 @@ impl_runtime_apis! {
 
 		fn generate_session_keys(_: Option<Vec<u8>>) -> Vec<u8> {
 			Vec::new()
+		}
+	}
+
+	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
+		fn collect_collation_info() -> cumulus_primitives_core::CollationInfo {
+			ParachainSystem::collect_collation_info()
 		}
 	}
 }
