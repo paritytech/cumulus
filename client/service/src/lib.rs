@@ -39,7 +39,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, NumberFor},
 	Justifications,
 };
-use std::{marker::PhantomData, sync::Arc, time::Duration};
+use std::{marker::PhantomData, sync::Arc};
 
 pub mod genesis;
 
@@ -116,7 +116,7 @@ where
 			.clone()
 			.ok_or_else(|| "Polkadot full node did not provided an `OverseerHandler`!")?,
 		_phantom: PhantomData,
-	});
+	})?;
 
 	cumulus_client_collator::start_collator(cumulus_client_collator::StartCollatorParams {
 		runtime_api: client.clone(),
@@ -250,7 +250,7 @@ where
 		+ 'static,
 	IQ: ImportQueue<Block> + 'static,
 {
-	type Output = ();
+	type Output = sc_service::error::Result<()>;
 
 	fn execute_with_client<PClient, Api, PBackend>(self, client: Arc<PClient>) -> Self::Output
 	where
@@ -262,7 +262,7 @@ where
 	{
 		let pov_recovery = cumulus_client_pov_recovery::PoVRecovery::new(
 			self.overseer_handler,
-			Duration::from_secs(6),
+			sc_consensus_babe::Config::get_or_compute(&*client)?.slot_duration(),
 			self.client,
 			self.import_queue,
 			client,
@@ -272,6 +272,8 @@ where
 		self.task_manager
 			.spawn_essential_handle()
 			.spawn("cumulus-pov-recovery", pov_recovery.run());
+
+		Ok(())
 	}
 }
 
