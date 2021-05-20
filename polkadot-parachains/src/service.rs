@@ -17,6 +17,10 @@
 use cumulus_client_consensus_aura::{
 	build_aura_consensus, BuildAuraConsensusParams, SlotProportion,
 };
+use nimbus_consensus::{
+	//TODO still called filtering
+	build_filtering_consensus, BuildNimbusConsensusParams,
+};
 use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_client_network::build_block_announce_validator;
 use cumulus_client_service::{
@@ -56,6 +60,12 @@ native_executor_instance!(
 	pub ShellRuntimeExecutor,
 	shell_runtime::api::dispatch,
 	shell_runtime::native_version,
+);
+
+native_executor_instance!(
+	pub NimbusRuntimeExecutor,
+	nimbus_runtime::api::dispatch,
+	nimbus_runtime::native_version,
 );
 
 /// Starts a `ServiceBuilder` for a full service.
@@ -563,4 +573,105 @@ pub async fn start_shell_node(
 		},
 	)
 	.await
+}
+
+/// Build the import queue for the nimbus runtime.
+pub fn nimbus_build_import_queue(
+	client: Arc<TFullClient<Block, nimbus_runtime::RuntimeApi, NimbusRuntimeExecutor>>,
+	config: &Configuration,
+	_: Option<TelemetryHandle>,
+	task_manager: &TaskManager,
+) -> Result<
+	sp_consensus::DefaultImportQueue<
+		Block,
+		TFullClient<Block, nimbus_runtime::RuntimeApi, NimbusRuntimeExecutor>,
+	>,
+	sc_service::Error,
+> {
+	nimbus_consensus::import_queue(
+		client.clone(),
+		client, //Huh, I wonder if we need a nimbus_block_import. What would it do?
+		move |_, _| async move {
+			let time = sp_timestamp::InherentDataProvider::from_system_time();
+
+			Ok((time,))
+		},
+		&task_manager.spawn_essential_handle(),
+		config.prometheus_registry().clone(),
+	)
+	.map_err(Into::into)
+}
+
+//Copied from shell. Remember to compare to aura one also.
+/// Start a nimbus node.
+pub async fn start_nimbus_node(
+	parachain_config: Configuration,
+	collator_key: CollatorPair,
+	polkadot_config: Configuration,
+	id: ParaId,
+) -> sc_service::error::Result<
+	(TaskManager, Arc<TFullClient<Block, shell_runtime::RuntimeApi, ShellRuntimeExecutor>>)
+> {
+	todo!()
+// 	start_node_impl::<shell_runtime::RuntimeApi, ShellRuntimeExecutor, _, _, _>(
+// 		parachain_config,
+// 		collator_key,
+// 		polkadot_config,
+// 		id,
+// 		|_| Default::default(),
+// 		shell_build_import_queue,
+// 		|client,
+// 		 prometheus_registry,
+// 		 telemetry,
+// 		 task_manager,
+// 		 relay_chain_node,
+// 		 transaction_pool,
+// 		 _,
+// 		 _,
+// 		 _| {
+// 			let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
+// 				task_manager.spawn_handle(),
+// 				client.clone(),
+// 				transaction_pool,
+// 				prometheus_registry.clone(),
+// 				telemetry.clone(),
+// 			);
+
+// 			let relay_chain_backend = relay_chain_node.backend.clone();
+// 			let relay_chain_client = relay_chain_node.client.clone();
+
+// 			Ok(
+// 				cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
+// 					cumulus_client_consensus_relay_chain::BuildRelayChainConsensusParams {
+// 						para_id: id,
+// 						proposer_factory,
+// 						block_import: client.clone(),
+// 						relay_chain_client: relay_chain_node.client.clone(),
+// 						relay_chain_backend: relay_chain_node.backend.clone(),
+// 						create_inherent_data_providers:
+// 							move |_, (relay_parent, validation_data)| {
+// 								let parachain_inherent =
+// 					cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
+// 						relay_parent,
+// 						&relay_chain_client,
+// 						&*relay_chain_backend,
+// 							&validation_data,
+// 							id,
+// 					);
+// 								async move {
+// 									let parachain_inherent =
+// 										parachain_inherent.ok_or_else(|| {
+// 											Box::<dyn std::error::Error + Send + Sync>::from(
+// 												"Failed to create parachain inherent",
+// 											)
+// 										})?;
+// 									Ok(parachain_inherent)
+// 								}
+// 							},
+// 					},
+// 				),
+// 			)
+// 		},
+// 	)
+// 	.await
 }
