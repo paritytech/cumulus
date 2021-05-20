@@ -33,7 +33,7 @@ use cumulus_primitives_core::{
 	ParaId, PersistedValidationData,
 };
 pub use import_queue::import_queue;
-use log::{info, warn};
+use log::{info, warn, debug};
 use parking_lot::Mutex;
 use polkadot_service::ClientHandle;
 use sc_client_api::Backend;
@@ -263,7 +263,7 @@ where
 		.expect("Keystore should be able to sign")
 		.expect("We already checked that the key was present");
 		
-		info!(
+		debug!(
 			target: LOG_TARGET,
 			"The signature is \n{:?}", sig
 		);
