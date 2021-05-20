@@ -6,17 +6,17 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-aura-build-verifier" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-aura-build-verifier" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", optional = true , branch = "bkchr-aura-build-verifier" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", optional = true , branch = "bkchr-aura-build-verifier" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-aura-build-verifier" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", optional = true , branch = "bkchr-aura-build-verifier" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-aura-build-verifier" }
+sp-api = { git = "https://github.com/paritytech/substrate", optional = true , branch = "bkchr-aura-build-verifier" }
 
 # Polkadot dependencies
-polkadot-service = { git = "https://github.com/paritytech/polkadot", optional = true, branch = "master" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", optional = true, branch = "bkchr-aura-build-verifier" }
 
 # Cumulus dependencies
 cumulus-primitives-core = { path = "../core", default-features = false }
