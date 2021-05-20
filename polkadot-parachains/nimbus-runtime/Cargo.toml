@@ -1,9 +1,9 @@
 [package]
-name = 'cumulus-rococo-parachain-runtime'
+name = 'nimbus-runtime'
 version = '0.1.0'
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = '2018'
-description = "Simple runtime used by the rococo parachain(s)"
+description = "Simple runtime to demonstrate nimbus consensus"
 
 [dependencies]
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
