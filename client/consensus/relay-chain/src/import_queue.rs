@@ -32,10 +32,21 @@ use sp_runtime::{
 };
 
 /// A verifier that just checks the inherents.
-struct Verifier<Client, Block, CIDP> {
+pub struct Verifier<Client, Block, CIDP> {
 	client: Arc<Client>,
 	create_inherent_data_providers: CIDP,
 	_marker: PhantomData<Block>,
+}
+
+impl<Client, Block, CIDP> Verifier<Client, Block, CIDP> {
+	/// Create a new instance.
+	pub fn new(client: Arc<Client>, create_inherent_data_providers: CIDP) -> Self {
+		Self {
+			client,
+			create_inherent_data_providers,
+			_marker: PhantomData,
+		}
+	}
 }
 
 #[async_trait::async_trait]
@@ -129,11 +140,7 @@ where
 	<Client as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block>,
 	CIDP: CreateInherentDataProviders<Block, ()> + 'static,
 {
-	let verifier = Verifier {
-		client,
-		create_inherent_data_providers,
-		_marker: PhantomData,
-	};
+	let verifier = Verifier::new(client, create_inherent_data_providers);
 
 	Ok(BasicQueue::new(
 		verifier,

@@ -48,9 +48,10 @@ use std::{convert::TryFrom, hash::Hash, marker::PhantomData, sync::Arc};
 
 mod import_queue;
 
-pub use import_queue::{import_queue, ImportQueueParams};
+pub use import_queue::{build_verifier, import_queue, BuildVerifierParams, ImportQueueParams};
 pub use sc_consensus_aura::{
-	slot_duration, AuraBlockImport, BuildAuraWorkerParams, SlotDuration, SlotProportion,
+	slot_duration, AuraBlockImport, AuraVerifier, BuildAuraWorkerParams, SlotDuration,
+	SlotProportion,
 };
 pub use sc_consensus_slots::InherentDataProviderExt;
 
