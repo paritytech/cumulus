@@ -109,7 +109,7 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 	)
 }
 
-pub fn get_nimbus_spec(id: ParaId) -> NimbusChainSpec {
+pub fn get_nimbus_chain_spec(id: ParaId) -> NimbusChainSpec {
 	NimbusChainSpec::from_genesis(
 		"Local Testnet",
 		"local_testnet",

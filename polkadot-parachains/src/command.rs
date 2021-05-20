@@ -48,14 +48,16 @@ fn load_spec(
 			&include_bytes!("../res/track.json")[..],
 		)?)),
 		"shell" => Ok(Box::new(chain_spec::get_shell_chain_spec(para_id))),
+		"nimbus" => Ok(Box::new(chain_spec::get_nimbus_chain_spec(para_id))),
 		"" => Ok(Box::new(chain_spec::get_chain_spec(para_id))),
 		path => Ok({
 			let chain_spec = chain_spec::ChainSpec::from_json_file(
 			path.into(),
 		)?;
 
-			if use_shell_runtime(&chain_spec) {
-				Box::new(chain_spec::ShellChainSpec::from_json_file(path.into())?)
+			//TODO proper suppoort for nimbus-based specs here. For now there is just the plain one above.
+			if use_nimbus_runtime(&chain_spec) {
+				Box::new(chain_spec::NimbusChainSpec::from_json_file(path.into())?)
 			} else {
 				Box::new(chain_spec)
 			}
@@ -101,7 +103,11 @@ impl SubstrateCli for Cli {
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
 		if use_shell_runtime(&**chain_spec) {
 			&shell_runtime::VERSION
-		} else {
+		} 
+		else if use_nimbus_runtime(&**chain_spec){
+			&shell_runtime::VERSION
+		}
+		else {
 			&rococo_parachain_runtime::VERSION
 		}
 	}
@@ -161,7 +167,12 @@ fn use_shell_runtime(chain_spec: &dyn ChainSpec) -> bool {
 	chain_spec.id().starts_with("shell")
 }
 
-use crate::service::{new_partial, RococoParachainRuntimeExecutor, ShellRuntimeExecutor};
+fn use_nimbus_runtime(chain_spec: &dyn ChainSpec) -> bool {
+	chain_spec.id().starts_with("nimbus")
+}
+
+//TODO add one for nimbus when doing the service
+use crate::service::{new_partial, RococoParachainRuntimeExecutor, ShellRuntimeExecutor, NimbusRuntimeExecutor};
 
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
@@ -175,7 +186,23 @@ macro_rules! construct_async_run {
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
 			})
-		} else {
+		}
+		// Wow, my first macro. This little update is touching a lot of stuff. Let's go for it.
+		else if use_nimbus_runtime(&*runner.config().chain_spec) {
+			runner.async_run(|$config| {
+				let $components = new_partial::<
+					nimbus_runtime::RuntimeApi,
+					NimbusRuntimeExecutor,
+					_
+				>(
+					&$config,
+					crate::service::nimbus_build_import_queue,
+				)?;
+				let task_manager = $components.task_manager;
+				{ $( $code )* }.map(|v| (v, task_manager))
+			})
+		}
+		else {
 			runner.async_run(|$config| {
 				let $components = new_partial::<
 					rococo_parachain_runtime::RuntimeApi,
@@ -292,7 +319,9 @@ pub fn run() -> Result<()> {
 		}
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
+			// And then there were three. Maybe it's time to make an enum
 			let use_shell = use_shell_runtime(&*runner.config().chain_spec);
+			let use_nimbus = use_nimbus_runtime(&*runner.config().chain_spec);
 
 			runner.run_node_until_exit(|config| async move {
 				// TODO
@@ -339,7 +368,14 @@ pub fn run() -> Result<()> {
 						.await
 						.map(|r| r.0)
 						.map_err(Into::into)
-				} else {
+				}
+				else if use_nimbus {
+					crate::service::start_nimbus_node(config, key, polkadot_config, id)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
+				}
+				else {
 					crate::service::start_rococo_parachain_node(config, key, polkadot_config, id)
 						.await
 						.map(|r| r.0)
