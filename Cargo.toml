@@ -21,6 +21,7 @@ members = [
 	"polkadot-parachains/",
 	"polkadot-parachains/pallets/parachain-info",
 	"polkadot-parachains/pallets/ping",
+	"polkadot-parachains/nimbus-runtime",
 	"polkadot-parachains/rococo-runtime",
 	"polkadot-parachains/shell-runtime",
 	"test/runtime",
