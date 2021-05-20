@@ -24,6 +24,7 @@ hex-literal = "0.2.1"
 # Parachain runtimes
 rococo-parachain-runtime = { package = "cumulus-rococo-parachain-runtime", path = "rococo-runtime" }
 shell-runtime = { package = "cumulus-shell-runtime", path = "shell-runtime" }
+nimbus-runtime = { path = "nimbus-runtime" }
 
 # Substrate dependencies
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.1" }
@@ -53,6 +54,7 @@ sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkad
 sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
 
 # RPC related dependencies
 jsonrpc-core = "15.1.0"
