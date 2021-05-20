@@ -101,11 +101,11 @@ impl<Block: BlockT> ActiveCandidateRecovery<Block> {
 	/// If the returned [`AvailableData`] is `None`, it means that the recovery failed.
 	pub async fn wait_for_recovery(&mut self) -> (Block::Hash, Option<AvailableData>) {
 		loop {
-			if self.recoveries.is_empty() {
-				futures::pending!()
-			} else if let Some(res) = self.recoveries.next().await {
+			if let Some(res) = self.recoveries.next().await {
 				self.candidates.remove(&res.0);
 				return res;
+			} else {
+				futures::pending!()
 			}
 		}
 	}
