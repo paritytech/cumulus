@@ -23,14 +23,10 @@ impl<AuthorId: Encode + Send + Sync> sp_inherents::InherentDataProvider for Inhe
 		inherent_data.put_data(INHERENT_IDENTIFIER, &self.0)
 	}
 
-	// fn error_to_string(&self, error: &[u8]) -> Option<String> {
-	// 	InherentError::try_from(&INHERENT_IDENTIFIER, error).map(|e| format!("{:?}", e))
-	// }
-
 	async fn try_handle_error(
 		&self,
 		identifier: &InherentIdentifier,
-		error: &[u8],
+		_error: &[u8],
 	) -> Option<Result<(), sp_inherents::Error>> {
 		// Dont' process modules from other inherents
 		if *identifier != INHERENT_IDENTIFIER {

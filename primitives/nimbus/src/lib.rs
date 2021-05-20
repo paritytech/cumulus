@@ -15,7 +15,7 @@ use sp_runtime::ConsensusEngineId;
 mod digests;
 mod inherents;
 
-pub use inherents::INHERENT_IDENTIFIER;
+pub use inherents::{INHERENT_IDENTIFIER, InherentDataProvider};
 
 /// The given account ID is the author of the current block.
 pub trait EventHandler<Author> {

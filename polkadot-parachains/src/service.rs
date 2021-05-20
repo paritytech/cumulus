@@ -21,6 +21,7 @@ use nimbus_consensus::{
 	//TODO still called filtering
 	build_filtering_consensus, BuildNimbusConsensusParams,
 };
+use nimbus_primitives::NimbusId;
 use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_client_network::build_block_announce_validator;
 use cumulus_client_service::{
@@ -610,68 +611,73 @@ pub async fn start_nimbus_node(
 	polkadot_config: Configuration,
 	id: ParaId,
 ) -> sc_service::error::Result<
-	(TaskManager, Arc<TFullClient<Block, shell_runtime::RuntimeApi, ShellRuntimeExecutor>>)
+	(TaskManager, Arc<TFullClient<Block, nimbus_runtime::RuntimeApi, NimbusRuntimeExecutor>>)
 > {
-	todo!()
-// 	start_node_impl::<shell_runtime::RuntimeApi, ShellRuntimeExecutor, _, _, _>(
-// 		parachain_config,
-// 		collator_key,
-// 		polkadot_config,
-// 		id,
-// 		|_| Default::default(),
-// 		shell_build_import_queue,
-// 		|client,
-// 		 prometheus_registry,
-// 		 telemetry,
-// 		 task_manager,
-// 		 relay_chain_node,
-// 		 transaction_pool,
-// 		 _,
-// 		 _,
-// 		 _| {
-// 			let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
-// 				task_manager.spawn_handle(),
-// 				client.clone(),
-// 				transaction_pool,
-// 				prometheus_registry.clone(),
-// 				telemetry.clone(),
-// 			);
+	start_node_impl::<nimbus_runtime::RuntimeApi, NimbusRuntimeExecutor, _, _, _>(
+		parachain_config,
+		collator_key,
+		polkadot_config,
+		id,
+		|_| Default::default(),
+		nimbus_build_import_queue,
+		|client,
+		 prometheus_registry,
+		 telemetry,
+		 task_manager,
+		 relay_chain_node,
+		 transaction_pool,
+		 _,
+		 keystore,
+		 _| {
+			let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
+				task_manager.spawn_handle(),
+				client.clone(),
+				transaction_pool,
+				prometheus_registry.clone(),
+				telemetry.clone(),
+			);
 
-// 			let relay_chain_backend = relay_chain_node.backend.clone();
-// 			let relay_chain_client = relay_chain_node.client.clone();
+			let relay_chain_backend = relay_chain_node.backend.clone();
+			let relay_chain_client = relay_chain_node.client.clone();
 
-// 			Ok(
-// 				cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
-// 					cumulus_client_consensus_relay_chain::BuildRelayChainConsensusParams {
-// 						para_id: id,
-// 						proposer_factory,
-// 						block_import: client.clone(),
-// 						relay_chain_client: relay_chain_node.client.clone(),
-// 						relay_chain_backend: relay_chain_node.backend.clone(),
-// 						create_inherent_data_providers:
-// 							move |_, (relay_parent, validation_data)| {
-// 								let parachain_inherent =
-// 					cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
-// 						relay_parent,
-// 						&relay_chain_client,
-// 						&*relay_chain_backend,
-// 							&validation_data,
-// 							id,
-// 					);
-// 								async move {
-// 									let parachain_inherent =
-// 										parachain_inherent.ok_or_else(|| {
-// 											Box::<dyn std::error::Error + Send + Sync>::from(
-// 												"Failed to create parachain inherent",
-// 											)
-// 										})?;
-// 									Ok(parachain_inherent)
-// 								}
-// 							},
-// 					},
-// 				),
-// 			)
-// 		},
-// 	)
-// 	.await
+			Ok(
+				build_filtering_consensus(
+					BuildNimbusConsensusParams {
+						para_id: id,
+						proposer_factory,
+						block_import: client.clone(),
+						relay_chain_client: relay_chain_node.client.clone(),
+						relay_chain_backend: relay_chain_node.backend.clone(),
+						parachain_client: client.clone(),
+						keystore,
+						create_inherent_data_providers:
+							move |_, (relay_parent, validation_data, author_id)| {
+								let parachain_inherent =
+								cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
+									relay_parent,
+									&relay_chain_client,
+									&*relay_chain_backend,
+									&validation_data,
+									id,
+								);
+								async move {
+									let time = sp_timestamp::InherentDataProvider::from_system_time();
+
+									let parachain_inherent = parachain_inherent.ok_or_else(|| {
+										Box::<dyn std::error::Error + Send + Sync>::from(
+											"Failed to create parachain inherent",
+										)
+									})?;
+
+									let author = nimbus_primitives::InherentDataProvider::<NimbusId>(author_id);
+
+									Ok((time, parachain_inherent, author))
+								}
+							},
+					},
+				),
+			)
+		},
+	)
+	.await
 }
