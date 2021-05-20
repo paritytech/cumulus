@@ -111,8 +111,8 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 
 pub fn get_nimbus_chain_spec(id: ParaId) -> NimbusChainSpec {
 	NimbusChainSpec::from_genesis(
-		"Local Testnet",
-		"local_testnet",
+		"Nimbus Local Testnet",
+		"nimbus_local_testnet",
 		ChainType::Local,
 		move || {
 			nimbus_testnet_genesis(
