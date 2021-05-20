@@ -35,8 +35,9 @@
 	},
 	"parachains": [
 		{
-			"bin": "./target/release/rococo-collator",
+			"bin": "./target/release/polkadot-collator",
 			"id": "200",
+			"chain": "nimbus",
 			"balance": "1000000000000000000000",
 			"nodes": [
 				{
