@@ -109,6 +109,47 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 	)
 }
 
+pub fn get_nimbus_spec(id: ParaId) -> NimbusChainSpec {
+	NimbusChainSpec::from_genesis(
+		"Local Testnet",
+		"local_testnet",
+		ChainType::Local,
+		move || {
+			nimbus_testnet_genesis(
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				//These are hardcoded in the nimbus_testnet_genesis function below. They could be moved here too.
+				// vec![
+				// 	get_from_seed::<NimbusId>("Alice"),
+				// 	get_from_seed::<NimubusId>("Bob"),
+				// ],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+				],
+				id,
+			)
+		},
+		vec![],
+		None,
+		None,
+		None,
+		Extensions {
+			relay_chain: "westend-dev".into(),
+			para_id: id.into(),
+		},
+	)
+}
+
 pub fn get_shell_chain_spec(id: ParaId) -> ShellChainSpec {
 	ShellChainSpec::from_genesis(
 		"Shell Local Testnet",
