@@ -1,4 +1,5 @@
-use sp_inherents::InherentIdentifier;
+use sp_inherents::{InherentData, InherentIdentifier};
+use parity_scale_codec::Encode;
 
 //TODO Reconstruct this?
 // type InherentType = ...
@@ -12,20 +13,31 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"author__";
 // #[cfg(feature = "std")]
 pub struct InherentDataProvider<AuthorId>(pub AuthorId);
 
-// #[cfg(feature = "std")]
-// impl<AuthorId: Encode> sp_inherents::InherentDataProvider for InherentDataProvider<AuthorId> {
-// 	fn inherent_identifier(&self) -> &'static InherentIdentifier {
-// 		&INHERENT_IDENTIFIER
-// 	}
+#[cfg(feature = "std")]
+#[async_trait::async_trait]
+impl<AuthorId: Encode + Send + Sync> sp_inherents::InherentDataProvider for InherentDataProvider<AuthorId> {
+	fn provide_inherent_data(
+		&self,
+		inherent_data: &mut InherentData,
+	) -> Result<(), sp_inherents::Error> {
+		inherent_data.put_data(INHERENT_IDENTIFIER, &self.0)
+	}
 
-// 	fn provide_inherent_data(
-// 		&self,
-// 		inherent_data: &mut InherentData,
-// 	) -> Result<(), sp_inherents::Error> {
-// 		inherent_data.put_data(INHERENT_IDENTIFIER, &self.0)
-// 	}
+	// fn error_to_string(&self, error: &[u8]) -> Option<String> {
+	// 	InherentError::try_from(&INHERENT_IDENTIFIER, error).map(|e| format!("{:?}", e))
+	// }
 
-// 	fn error_to_string(&self, error: &[u8]) -> Option<String> {
-// 		InherentError::try_from(&INHERENT_IDENTIFIER, error).map(|e| format!("{:?}", e))
-// 	}
-// }
+	async fn try_handle_error(
+		&self,
+		identifier: &InherentIdentifier,
+		error: &[u8],
+	) -> Option<Result<(), sp_inherents::Error>> {
+		// Dont' process modules from other inherents
+		if *identifier != INHERENT_IDENTIFIER {
+			return None
+		}
+
+		// All errors with the author inehrent are fatal
+		Some(Err(sp_inherents::Error::Application(Box::from(String::from("Error processing author inherent")))))
+	}
+}

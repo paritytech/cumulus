@@ -7,6 +7,7 @@ description = "Primitive types and traites used in the nimbus consensus framewor
 
 [dependencies]
 parity-scale-codec = { version = "2.0.0", default-features = false, features = ["derive"] }
+async-trait = { version = "0.1", optional = true }
 
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.1" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.1" }
@@ -27,4 +28,5 @@ std = [
     "sp-application-crypto/std",
     "sp-runtime/std",
     "sp-inherents/std",
+    "async-trait",
 ]
