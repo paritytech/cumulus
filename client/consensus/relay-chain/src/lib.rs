@@ -51,7 +51,7 @@ use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT};
 use std::{marker::PhantomData, sync::Arc, time::Duration};
 
 mod import_queue;
-pub use import_queue::import_queue;
+pub use import_queue::{import_queue, Verifier};
 
 const LOG_TARGET: &str = "cumulus-consensus-relay-chain";
 
