@@ -55,9 +55,11 @@ fn load_spec(
 			path.into(),
 		)?;
 
-			//TODO proper suppoort for nimbus-based specs here. For now there is just the plain one above.
 			if use_nimbus_runtime(&chain_spec) {
 				Box::new(chain_spec::NimbusChainSpec::from_json_file(path.into())?)
+			}
+			else if use_shell_runtime(&chain_spec) {
+				Box::new(chain_spec::ShellChainSpec::from_json_file(path.into())?)
 			} else {
 				Box::new(chain_spec)
 			}
@@ -103,7 +105,7 @@ impl SubstrateCli for Cli {
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
 		if use_shell_runtime(&**chain_spec) {
 			&shell_runtime::VERSION
-		} 
+		}
 		else if use_nimbus_runtime(&**chain_spec){
 			&shell_runtime::VERSION
 		}
@@ -322,6 +324,7 @@ pub fn run() -> Result<()> {
 			// And then there were three. Maybe it's time to make an enum
 			let use_shell = use_shell_runtime(&*runner.config().chain_spec);
 			let use_nimbus = use_nimbus_runtime(&*runner.config().chain_spec);
+			let use_shell = use_shell_runtime(&*runner.config().chain_spec);
 
 			runner.run_node_until_exit(|config| async move {
 				// TODO
