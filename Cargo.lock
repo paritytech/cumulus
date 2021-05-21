@@ -2521,7 +2521,7 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 [[package]]
 name = "fork-tree"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#6bef4f48e7a951b8efa70b7bf491414e896cdc4f"
+source = "git+https://github.com/paritytech/substrate?branch=master#d908ef803a0368236c8f5891cbe4df11d6e85ec6"
 dependencies = [
  "parity-scale-codec",
 ]
@@ -2539,7 +2539,7 @@ dependencies = [
 [[package]]
 name = "frame-benchmarking"
 version = "3.1.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#6bef4f48e7a951b8efa70b7bf491414e896cdc4f"
+source = "git+https://github.com/paritytech/substrate?branch=master#d908ef803a0368236c8f5891cbe4df11d6e85ec6"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -2558,7 +2558,7 @@ dependencies = [
 [[package]]
 name = "frame-benchmarking-cli"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#6bef4f48e7a951b8efa70b7bf491414e896cdc4f"
+source = "git+https://github.com/paritytech/substrate?branch=master#d908ef803a0368236c8f5891cbe4df11d6e85ec6"
 dependencies = [
  "Inflector",
  "chrono",
@@ -11389,7 +11389,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.7.3",
+ "rand 0.6.5",
  "static_assertions",
 ]
 
