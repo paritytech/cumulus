@@ -1636,6 +1636,7 @@ dependencies = [
  "log",
  "pallet-balances",
  "pallet-chainlink-feed",
+ "pallet-chainlink-oracle",
  "pallet-currencies",
  "pallet-floating-rate-lend",
  "pallet-floating-rate-lend-rpc-runtime-api",
@@ -4970,6 +4971,25 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-chainlink-oracle"
+version = "3.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "pallet-chainlink-feed",
+ "pallet-traits",
+ "parity-scale-codec",
+ "rococo-parachain-primitives",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
 ]
 
 [[package]]

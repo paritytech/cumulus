@@ -156,7 +156,7 @@ pub mod pallet {
 
     impl<T: Config> PriceProvider<T> for Pallet<T> {
         fn price(currency_id: CurrencyId) -> Price<T> {
-            <PriceStorage::<T>>::get(currency_id).unwrap_or(Price::<T>::unready_price())
+            <PriceStorage::<T>>::get(currency_id).unwrap_or(Price::<T>::invalid_price())
         }
     }
 

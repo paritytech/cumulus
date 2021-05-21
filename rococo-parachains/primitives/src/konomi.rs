@@ -27,7 +27,7 @@ impl <T> Price<T> where T: Config {
         }
     }
 
-    pub fn unready_price() -> Self {
+    pub fn invalid_price() -> Self {
         Price {
             price: PriceValue::zero(),
             updated_at: <T as Config>::BlockNumber::zero(),

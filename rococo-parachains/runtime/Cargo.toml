@@ -58,6 +58,7 @@ pallet-native-tokens = { default-features = false, path = '../pallets/native-tok
 pallet-currencies = { default-features = false, path = '../pallets/currencies', version = '3.0.0' }
 pallet-traits = { default-features = false, path = '../pallets/traits', version = '3.0.0' }
 pallet-oracle = { path = '../pallets/oracle', default-features = false, version = '3.0.0' }
+pallet-chainlink-oracle = { path = '../pallets/chainlink-oracle', default-features = false, version = '3.0.0' }
 pallet-xcm-token-support = { path = '../pallets/xcm-token-support', default-features = false, version = '3.0.0' }
 
 [build-dependencies]

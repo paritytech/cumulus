@@ -49,7 +49,7 @@ pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{FixedU128, Perbill, Permill};
-use sp_runtime::traits::{Zero, AccountIdConversion};
+use sp_runtime::traits::{Zero, AccountIdConversion, Convert};
 
 // Chainlink
 use pallet_chainlink_feed;
@@ -80,6 +80,7 @@ use pallet_floating_rate_lend_rpc_runtime_api::{
 	BalanceInfo as FloatingRateBalanceInfo,
 };
 use pallet_currencies::BasicCurrencyAdapter;
+use pallet_chainlink_oracle;
 
 pub type SessionHandlers = ();
 
@@ -479,13 +480,30 @@ parameter_types! {
 	pub const UnsignedPriority: u32 = 5;
 }
 
-/// Configure the template pallet in pallets/template.
 impl pallet_oracle::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
 	type PriceSetter = Currencies;
 	type UnsignedInterval = UnsignedInterval;
 	type UnsignedPriority = UnsignedPriority;
+}
+
+pub struct CurrencyToFeedIdConverter;
+impl Convert<CurrencyId, Option<FeedId>> for CurrencyToFeedIdConverter {
+	fn convert(a: CurrencyId) -> Option<FeedId> {
+		match a {
+			0 => Some(FeedId::from(0 as u8)),
+			1 => Some(FeedId::from(1 as u8)),
+			2 => Some(FeedId::from(2 as u8)),
+			_ => None
+		}
+	}
+}
+
+impl pallet_chainlink_oracle::Config for Runtime {
+	type Event = Event;
+	type Oracle = ChainlinkFeed;
+	type CurrencyFeedConvertor = CurrencyToFeedIdConverter;
 }
 
 impl frame_system::offchain::SigningTypes for Runtime {
@@ -544,7 +562,7 @@ construct_runtime! {
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
 		NativeTokens: pallet_native_tokens::{Pallet, Call, Storage, Config<T>, Event<T>},
 		ChainlinkFeed: pallet_chainlink_feed::{Pallet, Call, Storage, Config<T>, Event<T>},
-
+		ChainlinkOracle: pallet_chainlink_oracle::{Pallet, Call, Storage, Event<T>},
 		Spambot: cumulus_ping::{Pallet, Call, Storage, Event<T>} = 99,
 
 		// Local dependencies

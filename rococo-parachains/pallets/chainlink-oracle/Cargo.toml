@@ -1,6 +1,6 @@
 [package]
-name = "chain-link-adaptor"
-version = "0.1.0"
+name = "pallet-chainlink-oracle"
+version = "3.0.0"
 authors = ["willesxm <willeslau@gmail.com>"]
 edition = "2018"
 
@@ -15,7 +15,9 @@ codec = { default-features = false, features = ['derive'], package = 'parity-sca
 frame-system = { default-features = false,  git = 'https://github.com/paritytech/substrate.git', branch = 'rococo-v1', version = '3.0.0' }
 frame-support = { default-features = false, git = 'https://github.com/paritytech/substrate.git', branch = 'rococo-v1', version = '3.0.0'}
 frame-benchmarking = { default-features = false, git = 'https://github.com/paritytech/substrate.git', branch = 'rococo-v1', version = "3.0.0", optional = true }
-primitives = { default-features = false, path = '../../primitives', version = '3.0.0'}
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rococo-v1" }
+rococo-parachain-primitives = { default-features = false, path = '../../primitives', version = '0.1.0'}
+pallet-traits = { path = '../traits', default-features = false, version = '3.0.0'}
 log = "0.4.13"
 
 [dev-dependencies]

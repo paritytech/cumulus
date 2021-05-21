@@ -129,3 +129,6 @@ cargo build --release
 
 ### Register the parachain
 ![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
+
+### Some Util Tools
+1. Convert string to bytes: https://onlinestringtools.com/convert-string-to-bytes
