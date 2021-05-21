@@ -17,7 +17,7 @@
 //! Parachain specific wrapper for the AuRa import queue.
 
 use codec::Codec;
-use sc_client_api::{backend::AuxStore, BlockOf};
+use sc_client_api::{backend::AuxStore, BlockOf, UsageProvider};
 use sc_consensus_aura::AuraVerifier;
 use sc_consensus_slots::InherentDataProviderExt;
 use sc_telemetry::TelemetryHandle;
@@ -74,6 +74,7 @@ where
 		+ Send
 		+ Sync
 		+ AuxStore
+		+ UsageProvider<Block>
 		+ HeaderBackend<Block>,
 	I: BlockImport<Block, Error = ConsensusError, Transaction = sp_api::TransactionFor<C, Block>>
 		+ Send
