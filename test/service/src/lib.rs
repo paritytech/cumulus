@@ -89,8 +89,6 @@ pub fn new_partial(
 	>,
 	sc_service::Error,
 > {
-	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
-
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, RuntimeExecutor>(&config, None)?;
 	let client = Arc::new(client);
@@ -108,7 +106,7 @@ pub fn new_partial(
 	let import_queue = cumulus_client_consensus_relay_chain::import_queue(
 		client.clone(),
 		client.clone(),
-		inherent_data_providers.clone(),
+		|_, _| async { Ok(sp_timestamp::InherentDataProvider::from_system_time()) },
 		&task_manager.spawn_essential_handle(),
 		registry.clone(),
 	)?;
@@ -120,7 +118,6 @@ pub fn new_partial(
 		keystore_container,
 		task_manager,
 		transaction_pool,
-		inherent_data_providers,
 		select_chain: (),
 		other: (),
 	};
@@ -158,10 +155,6 @@ where
 	let mut parachain_config = prepare_node_config(parachain_config);
 
 	let params = new_partial(&mut parachain_config)?;
-	params
-		.inherent_data_providers
-		.register_provider(sp_timestamp::InherentDataProvider)
-		.expect("Registers timestamp inherent data provider.");
 
 	let transaction_pool = params.transaction_pool.clone();
 	let mut task_manager = params.task_manager;
@@ -239,10 +232,31 @@ where
 			prometheus_registry.as_ref(),
 			None,
 		);
+
+		let relay_chain_client = relay_chain_full_node.client.clone();
+		let relay_chain_backend = relay_chain_full_node.backend.clone();
+
 		let parachain_consensus = cumulus_client_consensus_relay_chain::RelayChainConsensus::new(
 			para_id,
 			proposer_factory,
-			params.inherent_data_providers,
+			move |_, (relay_parent, validation_data)| {
+				let parachain_inherent =
+					cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
+						relay_parent,
+						&*relay_chain_client,
+						&*relay_chain_backend,
+						&validation_data,
+						para_id,
+					);
+				async move {
+					let time = sp_timestamp::InherentDataProvider::from_system_time();
+
+					let parachain_inherent = parachain_inherent.ok_or_else(|| {
+						Box::<dyn std::error::Error + Send + Sync>::from(String::from("error"))
+					})?;
+					Ok((time, parachain_inherent))
+				}
+			},
 			client.clone(),
 			relay_chain_full_node.client.clone(),
 			relay_chain_full_node.backend.clone(),
@@ -252,7 +266,6 @@ where
 			relay_chain_full_node.with_client(polkadot_test_service::TestClient);
 
 		let params = StartCollatorParams {
-			backend: params.backend,
 			block_status: client.clone(),
 			announce_block,
 			client: client.clone(),

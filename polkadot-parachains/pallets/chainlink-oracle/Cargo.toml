@@ -1,0 +1,38 @@
+[package]
+name = "pallet-chainlink-oracle"
+version = "3.0.0"
+authors = ["willesxm <willeslau@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[dependencies]
+serde = { version = "1.0.125", optional = true, features = ["derive"] }
+pallet-chainlink-feed = { path = "../../../chainlink-polkadot/pallet-chainlink-feed", default-features = false }
+codec = { default-features = false, features = ['derive'], package = 'parity-scale-codec', version = '2.0.0' }
+frame-system = { default-features = false,  git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.1' }
+frame-support = { default-features = false, git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.1' }
+frame-benchmarking = { default-features = false, git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.1', optional = true }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.1" }
+polkadot-parachain-primitives = { default-features = false, path = '../../primitives', version = '0.1.0'}
+pallet-traits = { path = '../traits', default-features = false, version = '3.0.0'}
+log = "0.4.13"
+
+[dev-dependencies]
+sp-core = {  git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.1' }
+sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.1' }
+sp-runtime = {  git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.1' }
+pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.1' }
+
+[features]
+default = ['std']
+std = [
+    'serde',
+    'codec/std',
+    'frame-support/std',
+    'frame-system/std',
+    'frame-benchmarking/std',
+    'pallet-chainlink-feed/std'
+]

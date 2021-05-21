@@ -89,41 +89,24 @@ pub trait GetChannelInfo {
 	fn get_channel_max(id: ParaId) -> Option<usize>;
 }
 
-/// Well known keys for values in the storage.
-pub mod well_known_keys {
-	/// The storage key for the upward messages.
-	///
-	/// The upward messages are stored as SCALE encoded `Vec<UpwardMessage>`.
-	pub const UPWARD_MESSAGES: &'static [u8] = b":cumulus_upward_messages:";
-
-	/// Code upgarde (set as appropriate by a pallet).
-	pub const NEW_VALIDATION_CODE: &'static [u8] = b":cumulus_new_validation_code:";
-
-	/// The storage key with which the runtime passes outbound HRMP messages it wants to send to the
-	/// PVF.
-	///
-	/// The value is stored as SCALE encoded `Vec<OutboundHrmpMessage>`
-	pub const HRMP_OUTBOUND_MESSAGES: &'static [u8] = b":cumulus_hrmp_outbound_messages:";
-
-	/// The storage key for communicating the HRMP watermark from the runtime to the PVF. Cleared by
-	/// the runtime each block and set after message inclusion, but only if there were messages.
-	///
-	/// The value is stored as SCALE encoded relay-chain's `BlockNumber`.
-	pub const HRMP_WATERMARK: &'static [u8] = b":cumulus_hrmp_watermark:";
-
-	/// The storage key for the processed downward messages.
-	///
-	/// The value is stored as SCALE encoded `u32`.
-	pub const PROCESSED_DOWNWARD_MESSAGES: &'static [u8] = b":cumulus_processed_downward_messages:";
-}
-
 /// Something that should be called when a downward message is received.
-pub trait DownwardMessageHandler {
-	/// Handle the given downward message.
-	fn handle_downward_message(msg: InboundDownwardMessage) -> Weight;
+pub trait DmpMessageHandler {
+	/// Handle some incoming DMP messages (note these are individual XCM messages).
+	///
+	/// Also, process messages up to some `max_weight`.
+	fn handle_dmp_messages(
+		iter: impl Iterator<Item=(RelayBlockNumber, Vec<u8>)>,
+		max_weight: Weight,
+	) -> Weight;
 }
-impl DownwardMessageHandler for () {
-	fn handle_downward_message(_msg: InboundDownwardMessage) -> Weight { 0 }
+impl DmpMessageHandler for () {
+	fn handle_dmp_messages(
+		iter: impl Iterator<Item=(RelayBlockNumber, Vec<u8>)>,
+		_max_weight: Weight,
+	) -> Weight {
+		iter.for_each(drop);
+		0
+	}
 }
 
 /// Something that should be called for each batch of messages received over XCMP.
@@ -141,7 +124,10 @@ impl XcmpMessageHandler for () {
 	fn handle_xcmp_messages<'a, I: Iterator<Item=(ParaId, RelayBlockNumber, &'a [u8])>>(
 		iter: I,
 		_max_weight: Weight,
-	) -> Weight { for _ in iter {} 0 }
+	) -> Weight {
+		for _ in iter {}
+		0
+	}
 }
 
 /// Something that should be called when sending an upward message.
@@ -252,5 +238,29 @@ impl<B: BlockT> ParachainBlockData<B> {
 	/// Deconstruct into the inner parts.
 	pub fn deconstruct(self) -> (B::Header, sp_std::vec::Vec<B::Extrinsic>, sp_trie::StorageProof) {
 		(self.header, self.extrinsics, self.storage_proof)
+	}
+}
+
+/// Information about a collation.
+#[derive(Clone, Debug, codec::Decode, codec::Encode, PartialEq)]
+pub struct CollationInfo {
+	/// Messages destined to be interpreted by the Relay chain itself.
+	pub upward_messages: Vec<UpwardMessage>,
+	/// The horizontal messages sent by the parachain.
+	pub horizontal_messages: Vec<OutboundHrmpMessage>,
+	/// New validation code.
+	pub new_validation_code: Option<relay_chain::v1::ValidationCode>,
+	/// The number of messages processed from the DMQ.
+	pub processed_downward_messages: u32,
+	/// The mark which specifies the block number up to which all inbound HRMP messages are processed.
+	pub hrmp_watermark: relay_chain::v1::BlockNumber,
+}
+
+sp_api::decl_runtime_apis! {
+	/// Runtime api to collect information about a collation.
+	pub trait CollectCollationInfo {
+		/// Collect information about a collation.
+		#[skip_initialize_block]
+		fn collect_collation_info() -> CollationInfo;
 	}
 }

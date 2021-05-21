@@ -20,13 +20,18 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use cumulus_primitives_core::ParaId;
+use sp_std::{prelude::*, convert::TryFrom};
+use cumulus_primitives_core::{ParaId, DmpMessageHandler};
+use cumulus_primitives_core::relay_chain::BlockNumber as RelayBlockNumber;
 use codec::{Encode, Decode};
 use sp_runtime::traits::BadOrigin;
+use xcm::{VersionedXcm, v0::{Xcm, Junction, Outcome, ExecuteXcm}};
+use frame_support::dispatch::Weight;
 pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
+	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -36,16 +41,100 @@ pub mod pallet {
 
 	/// The module configuration trait.
 	#[pallet::config]
-	pub trait Config: frame_system::Config {}
+	pub trait Config: frame_system::Config {
+		/// The overarching event type.
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+		type XcmExecutor: ExecuteXcm<Self::Call>;
+	}
 
 	#[pallet::error]
-	pub enum Error<T> {}
+	pub enum Error<T> {
+	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {}
+
+	#[pallet::event]
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	#[pallet::metadata(T::BlockNumber = "BlockNumber")]
+	pub enum Event<T: Config> {
+		/// Downward message is invalid XCM.
+		/// \[ id \]
+		InvalidFormat([u8; 8]),
+		/// Downward message is unsupported version of XCM.
+		/// \[ id \]
+		UnsupportedVersion([u8; 8]),
+		/// Downward message executed with the given outcome.
+		/// \[ id, outcome \]
+		ExecutedDownward([u8; 8], Outcome),
+	}
+}
+
+/// For an incoming downward message, this just adapts an XCM executor and executes DMP messages
+/// immediately. Their origin is asserted to be the Parent location.
+///
+/// The weight `limit` is only respected as the maximum for an individual message.
+///
+/// Because this largely ignores the given weight limit, it probably isn't good for most production
+/// uses. Use DmpQueue pallet for a more robust design.
+pub struct UnlimitedDmpExecution<T>(sp_std::marker::PhantomData<T>);
+impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
+	fn handle_dmp_messages(
+		iter: impl Iterator<Item=(RelayBlockNumber, Vec<u8>)>,
+		limit: Weight,
+	) -> Weight {
+		let mut used = 0;
+		for (_sent_at, data) in iter {
+			let id = sp_io::hashing::twox_64(&data[..]);
+			let msg = VersionedXcm::<T::Call>::decode(&mut &data[..])
+				.map(Xcm::<T::Call>::try_from);
+			match msg {
+				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
+				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
+				Ok(Ok(x)) => {
+					let outcome = T::XcmExecutor::execute_xcm(Junction::Parent.into(), x, limit);
+					used += outcome.weight_used();
+					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
+				}
+			}
+		}
+		used
+	}
+}
+
+/// For an incoming downward message, this just adapts an XCM executor and executes DMP messages
+/// immediately. Their origin is asserted to be the Parent location.
+///
+/// This respects the given weight limit and silently drops messages if they would break it. It
+/// probably isn't good for most production uses. Use DmpQueue pallet for a more robust design.
+pub struct LimitAndDropDmpExecution<T>(sp_std::marker::PhantomData<T>);
+impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
+	fn handle_dmp_messages(
+		iter: impl Iterator<Item=(RelayBlockNumber, Vec<u8>)>,
+		limit: Weight,
+	) -> Weight {
+		let mut used = 0;
+		for (_sent_at, data) in iter {
+			let id = sp_io::hashing::twox_64(&data[..]);
+			let msg = VersionedXcm::<T::Call>::decode(&mut &data[..])
+				.map(Xcm::<T::Call>::try_from);
+			match msg {
+				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
+				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
+				Ok(Ok(x)) => {
+					let weight_limit = limit.saturating_sub(used);
+					let outcome = T::XcmExecutor::execute_xcm(Junction::Parent.into(), x, weight_limit);
+					used += outcome.weight_used();
+					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
+				}
+			}
+		}
+		used
+	}
 }
 
 /// Origin for the parachains module.

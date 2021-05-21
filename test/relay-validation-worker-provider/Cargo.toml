@@ -6,4 +6,4 @@ edition = "2018"
 build = "build.rs"
 
 [dependencies]
-polkadot-node-core-pvf = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+polkadot-node-core-pvf = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.1" }

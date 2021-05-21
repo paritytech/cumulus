@@ -1,0 +1,3 @@
+[submodule "chainlink-polkadot"]
+	path = chainlink-polkadot
+	url = https://github.com/smartcontractkit/chainlink-polkadot.git
