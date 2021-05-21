@@ -114,11 +114,6 @@ where
 		block_import_params.body = body;
 		block_import_params.justifications = justifications;
 
-		// Best block is determined by the relay chain, or if we are doing the intial sync
-		// we import all blocks as new best.
-		block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(
-			origin == BlockOrigin::NetworkInitialSync,
-		));
 		block_import_params.post_hash = post_hash;
 
 		Ok((block_import_params, None))
@@ -144,7 +139,7 @@ where
 
 	Ok(BasicQueue::new(
 		verifier,
-		Box::new(block_import),
+		Box::new(cumulus_client_consensus_common::ParachainBlockImport::new(block_import)),
 		None,
 		spawner,
 		registry,

@@ -90,7 +90,7 @@ where
 	CIDP::InherentDataProviders: InherentDataProviderExt + Send + Sync,
 {
 	sc_consensus_aura::import_queue::<P, _, _, _, _, _, _>(sc_consensus_aura::ImportQueueParams {
-		block_import: crate::ParachainBlockImport(block_import),
+		block_import: cumulus_client_consensus_common::ParachainBlockImport::new(block_import),
 		justification_import: None,
 		client,
 		create_inherent_data_providers,
