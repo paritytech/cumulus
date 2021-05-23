@@ -26,7 +26,12 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
-use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{BlakeTwo256, Block as BlockT, AccountIdLookup}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult};
+use sp_runtime::{
+	create_runtime_str, generic, impl_opaque_keys,
+	traits::{BlakeTwo256, Block as BlockT, AccountIdLookup},
+	transaction_validity::{TransactionSource, TransactionValidity},
+	ApplyExtrinsicResult,
+};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -72,12 +77,16 @@ pub use pallet_native_tokens;
 pub use pallet_oracle;
 use pallet_traits::GetByKey;
 use pallet_currencies::BasicCurrencyAdapter;
+use pallet_floating_rate_lend_rpc_runtime_api::{
+	UserBalanceInfo as FloatingRateUserBalanceInfo,
+	BalanceInfo as FloatingRateBalanceInfo,
+};
 
 use pallet_chainlink_oracle;
 pub use pallet_chainlink_feed::RoundId;
 use weights::WeightInfo as ChainlinkWeightInfo;
 
-use sp_runtime::traits::{Convert, AccountIdConversion, Zero};
+use sp_runtime::{FixedU128, traits::{Convert, AccountIdConversion, Zero}};
 use frame_support::{PalletId};
 // End of Konomi imports
 
@@ -94,6 +103,7 @@ impl_opaque_keys! {
 }
 
 /// This runtime version.
+#[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("test-parachain"),
 	impl_name: create_runtime_str!("test-parachain"),
@@ -427,6 +437,7 @@ impl pallet_xcm::Config for Runtime {
 	type XcmExecuteFilter = All<(MultiLocation, Xcm<Call>)>;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = All<(MultiLocation, Vec<MultiAsset>)>;
+	type XcmReserveTransferFilter = ();
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
 }
 
@@ -735,6 +746,42 @@ impl_runtime_apis! {
 			ParachainSystem::collect_collation_info()
 		}
 	}
+
+	impl pallet_floating_rate_lend_rpc_runtime_api::LendingApi<Block, PoolId, FixedU128, AccountId, Balance> for Runtime {
+        fn supply_rate(id: PoolId) -> FixedU128 {
+            FloatingRateLend::supply_rate(id)
+		}
+
+		fn debt_rate(id: PoolId) -> FixedU128 {
+            FloatingRateLend::debt_rate(id)
+		}
+
+		fn user_balances(user: AccountId) -> FloatingRateUserBalanceInfo<Balance> {
+			match FloatingRateLend::user_balances(user) {
+				Ok(user_balances) => FloatingRateUserBalanceInfo{
+					total_supply: user_balances.supply_balance,
+					borrow_limit: user_balances.collateral_balance,
+					total_borrow: user_balances.debt_balance,
+				},
+				Err(_) => FloatingRateUserBalanceInfo{
+					total_supply: Balance::zero(),
+					borrow_limit: Balance::zero(),
+					total_borrow: Balance::zero(),
+				},
+			}
+		}
+
+		fn user_debt_balance(pool_id: PoolId, user: AccountId) -> FloatingRateBalanceInfo<Balance> {
+			let amount = FloatingRateLend::user_debt_balance(pool_id, user).unwrap_or_else(|_| Balance::zero());
+			FloatingRateBalanceInfo{amount}
+		}
+
+		fn user_supply_balance(pool_id: PoolId, user: AccountId) -> FloatingRateBalanceInfo<Balance> {
+			let amount = FloatingRateLend::user_supply_balance(pool_id, user).unwrap_or_else(|_| Balance::zero());
+			FloatingRateBalanceInfo{amount}
+		}
+
+    }
 }
 
 cumulus_pallet_parachain_system::register_validate_block!(

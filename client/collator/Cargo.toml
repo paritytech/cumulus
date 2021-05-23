@@ -6,18 +6,18 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.1" }
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.1" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.1" }
-polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.1" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.2" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.2" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.2" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.2" }
 
 # Cumulus dependencies
 cumulus-client-network = { path = "../network" }
@@ -32,17 +32,17 @@ tracing = "0.1.25"
 
 [dev-dependencies]
 # Polkadot dependencies
-polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.1" }
+polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.2" }
 
 # Cumulus dependencies
 cumulus-test-runtime = { path = "../../test/runtime" }
 cumulus-test-client = { path = "../../test/client" }
 
 # Substrate dependencies
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
 
 # Other dependencies
 env_logger = "0.7.1"

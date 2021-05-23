@@ -122,3 +122,7 @@ cargo build --release
 
 ### Some Util Tools
 1. Convert string to bytes: https://onlinestringtools.com/convert-string-to-bytes
+
+### Errors encounters:
+1. Steps when updating RPC: 
+i. 

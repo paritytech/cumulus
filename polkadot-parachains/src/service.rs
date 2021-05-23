@@ -255,6 +255,16 @@ where
 			block_announce_validator_builder: Some(Box::new(|_| block_announce_validator)),
 		})?;
 
+	// let rpc_extensions_builder = {
+	// 	let client = client.clone();
+	// 	Box::new(move |deny_unsafe, _| {
+	// 		let deps = crate::rpc::FullDeps {
+	// 			client: client.clone(),
+	// 		};
+	//
+	// 		crate::rpc::create_full(deps)
+	// 	})
+	// };
 	let rpc_client = client.clone();
 	let rpc_extensions_builder = Box::new(move |_, _| rpc_ext_builder(rpc_client.clone()));
 
