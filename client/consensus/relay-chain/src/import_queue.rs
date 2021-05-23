@@ -22,7 +22,7 @@ use sp_blockchain::Result as ClientResult;
 use sp_consensus::{
 	error::Error as ConsensusError,
 	import_queue::{BasicQueue, CacheKeyId, Verifier as VerifierT},
-	BlockImport, BlockImportParams, BlockOrigin, ForkChoiceStrategy,
+	BlockImport, BlockImportParams, BlockOrigin,
 };
 use sp_inherents::{CreateInherentDataProviders, InherentDataProvider};
 use sp_runtime::{
@@ -139,7 +139,9 @@ where
 
 	Ok(BasicQueue::new(
 		verifier,
-		Box::new(cumulus_client_consensus_common::ParachainBlockImport::new(block_import)),
+		Box::new(cumulus_client_consensus_common::ParachainBlockImport::new(
+			block_import,
+		)),
 		None,
 		spawner,
 		registry,

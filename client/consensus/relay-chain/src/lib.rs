@@ -45,8 +45,8 @@ use polkadot_service::ClientHandle;
 use sc_client_api::Backend;
 use sp_api::ProvideRuntimeApi;
 use sp_consensus::{
-	BlockImport, BlockImportParams, BlockOrigin, EnableProofRecording, Environment,
-	ForkChoiceStrategy, ProofRecording, Proposal, Proposer,
+	BlockImport, BlockImportParams, BlockOrigin, EnableProofRecording, Environment, ProofRecording,
+	Proposal, Proposer,
 };
 use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvider};
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT};
