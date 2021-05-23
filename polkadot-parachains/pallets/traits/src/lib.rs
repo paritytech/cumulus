@@ -74,7 +74,7 @@ pub trait MultiCurrency<AccountId> {
 	type CurrencyId: FullCodec + Eq + PartialEq + Copy + MaybeSerializeDeserialize + Debug;
 
 	/// The balance of an account.
-	type Balance: AtLeast32BitUnsigned + Default + Copy + MaybeSerializeDeserialize + Debug;
+	type Balance: AtLeast32BitUnsigned + FullCodec + Copy + MaybeSerializeDeserialize + Debug + Default;
 
 	// Public immutables
 
