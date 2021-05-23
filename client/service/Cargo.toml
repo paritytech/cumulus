@@ -11,20 +11,20 @@ cumulus-client-collator = { path = "../collator" }
 cumulus-primitives-core = { path = "../../primitives/core" }
 
 # Substrate dependencies
-sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "bkchr-aura-build-verifier" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-aura-build-verifier" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "bkchr-aura-build-verifier" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "bkchr-aura-build-verifier" }
-sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "bkchr-aura-build-verifier" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "bkchr-aura-build-verifier" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "bkchr-aura-build-verifier" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-aura-build-verifier" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "bkchr-aura-build-verifier" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "bkchr-aura-build-verifier" }
+sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-aura-build-verifier" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-aura-build-verifier" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Other deps
 futures = "0.3.6"
