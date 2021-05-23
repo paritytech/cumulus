@@ -68,7 +68,7 @@ pub mod pallet {
     }
 
     impl<T: Config> PriceProvider<T> for Pallet<T> {
-        fn price(currency_id: u64) -> Price<T> {
+        fn price(currency_id: CurrencyId) -> Price<T> {
             if let Some(feed_id) = T::CurrencyFeedConvertor::convert(currency_id) {
                 return match T::Oracle::feed(feed_id) {
                     Some(feed) => {

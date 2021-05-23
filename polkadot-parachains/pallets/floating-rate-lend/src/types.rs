@@ -14,7 +14,7 @@ use sp_runtime::sp_std::convert::TryInto;
 #[derive(Encode, Decode, Eq, PartialEq, Clone, RuntimeDebug)]
 pub struct Pool<T, Balance> where
     T: frame_system::Config,
-    Balance: Member + Parameter + FixedPointOperand + AtLeast32BitUnsigned + Default + Copy + MaybeSerializeDeserialize,
+    Balance: AtLeast32BitUnsigned + Default + Copy + MaybeSerializeDeserialize,
 {
     pub id: u64,
     pub name: Vec<u8>,
@@ -58,7 +58,7 @@ pub struct Pool<T, Balance> where
 
 impl <T, Balance> Pool<T, Balance> where
     T: frame_system::Config,
-    Balance: Member + Parameter + FixedPointOperand + AtLeast32BitUnsigned + Default + Copy + MaybeSerializeDeserialize,
+    Balance: AtLeast32BitUnsigned + Default + Copy + MaybeSerializeDeserialize,
 {
     /// Creates a new floating-rate-pool from the input parameters
     pub fn new(id: PoolId,
@@ -119,10 +119,10 @@ impl <T, Balance> Pool<T, Balance> where
         let supply_multiplier = FixedU128::one() + s_rate * FixedU128::saturating_from_integer(elapsed_time_u32);
         let debt_multiplier = FixedU128::one() + d_rate * FixedU128::saturating_from_integer(elapsed_time_u32);
 
-        self.supply = supply_multiplier.saturating_mul_int(self.supply.clone());
+        self.supply = supply_multiplier * self.supply;
         self.total_supply_index = self.total_supply_index * supply_multiplier;
 
-        self.debt = debt_multiplier.saturating_mul_int(self.debt.clone());
+        self.debt = debt_multiplier * self.debt;
         self.total_debt_index = self.total_debt_index * debt_multiplier;
 
         self.last_updated = block_number;
@@ -144,17 +144,17 @@ impl <T, Balance> Pool<T, Balance> where
 
     /// The amount that can be close given the input
     /// TODO: handle dust values
-    pub fn closable_amount(&self, amount: Balance) -> Balance { self.close_factor.saturating_mul_int(amount) }
+    pub fn closable_amount(&self, amount: Balance) -> Balance { self.close_factor * amount }
 
     /// The discounted price of the pool given the current price of the currency
-    pub fn discounted_price(&self, price: PriceValue) -> PriceValue { self.discount_factor.saturating_mul(price) }
+    pub fn discounted_price(&self, price: PriceValue) -> PriceValue { self.discount_factor * price }
 
     pub fn supply_interest_rate(&self) -> Result<FixedU128, Overflown> {
         if self.supply == Balance::zero() {
             return Ok(FixedU128::zero());
         }
 
-        let utilization_ratio = FixedU128::saturating_from_rational(self.debt.clone(), self.supply.clone());
+        let utilization_ratio = FixedU128::saturating_from_rational(self.debt, self.supply);
         self.debt_interest_rate()?.checked_mul(&utilization_ratio).ok_or(Overflown{})
     }
 
@@ -180,6 +180,6 @@ pub struct UserBalanceStats<Balance>{
 
 impl <Balance> UserBalanceStats<Balance> where Balance: Clone + FixedPointOperand {
     pub fn is_liquidated(&self, liquidation_threshold: FixedU128) -> bool {
-        self.collateral_balance < liquidation_threshold.saturating_mul_int(self.debt_balance.clone())
+        self.collateral_balance < liquidation_threshold * self.debt_balance
     }
 }

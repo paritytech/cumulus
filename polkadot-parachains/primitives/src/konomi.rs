@@ -51,46 +51,72 @@ impl <T> Price<T> where T: Config {
 pub type PoolId = u64;
 
 /* ---------- Currency Related ------------ */
-pub type CurrencyId = u64;
-
-/// The representation of a currency in a multi-currency system
-#[derive(Encode, Decode, Eq, PartialEq, Clone, RuntimeDebug, PartialOrd, Ord)]
+#[derive(Encode, Decode, Eq, PartialEq, Copy, Clone, RuntimeDebug, PartialOrd, Ord)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub enum Currency {
-    /// Basic
-    Basic    {name: Vec<u8>, id: u64, address: Vec<u8>},
-    /// Native DOT currency
-    Polkadot {name: Vec<u8>, id: u64, address: Vec<u8>},
-    /// ETH
-    Erc20    {name: Vec<u8>, id: u64, address: Vec<u8>},
+pub struct Basic {
+    pub id: u8,
 }
 
-impl Currency {
-    pub fn new(num: u64, id: u64, name: Vec<u8>, address: Vec<u8>) -> Currency {
+#[derive(Encode, Decode, Eq, PartialEq, Copy, Clone, RuntimeDebug, PartialOrd, Ord)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct Native {
+    pub id: u8,
+}
+
+#[derive(Encode, Decode, Eq, PartialEq, Copy, Clone, RuntimeDebug, PartialOrd, Ord)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct Cross {
+    pub id: u8,
+}
+
+#[derive(Encode, Decode, Eq, PartialEq, Copy, Clone, RuntimeDebug, PartialOrd, Ord)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct Erc20 {
+    pub id: u8,
+}
+
+/// The representation of a currency in a multi-currency system
+#[derive(Encode, Decode, Eq, PartialEq, Clone, Copy, RuntimeDebug, PartialOrd, Ord)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum CurrencyId {
+    /// Basic
+    Basic(Basic),
+    /// Native on chain multi-currency
+    Native(Native),
+    /// Currency on other chain
+    Cross(Cross),
+    /// ERC20 tokens
+    Erc20(Erc20),
+}
+
+impl CurrencyId {
+    pub fn new(num: u64, id: u8, _name: Vec<u8>, _address: Vec<u8>) -> CurrencyId {
         match num {
-            1 => Currency::Polkadot{name, id, address},
-            2 => Currency::Erc20{name, id, address},
-            _ => Currency::Basic{name, id, address},
+            1 => CurrencyId::Native { 0: Native {id}, },
+            _ => CurrencyId::Basic{ 0: Basic {id} },
         }
     }
-    pub fn is_polkadot_currency(&self) -> bool {
+    pub fn is_native_currency(&self) -> bool {
         match self {
-            Currency::Polkadot {..} => true,
+            CurrencyId::Native {..} => true,
             _ => false
         }
     }
 
     pub fn is_erc20_currency(&self) -> bool {
         match self {
-            Currency::Erc20 {..} => true,
+            CurrencyId::Erc20 {..} => true,
             _ => false
         }
     }
 
     pub fn is_basic_currency(&self) -> bool {
         match self {
-            Currency::Basic {..} => true,
+            CurrencyId::Basic {..} => true,
             _ => false
         }
     }
 }
+
+pub const KONO: CurrencyId = CurrencyId::Basic(Basic { id: 0});
+pub const DOT: CurrencyId = CurrencyId::Native(Native { id: 0});

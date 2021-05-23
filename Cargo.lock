@@ -1771,6 +1771,8 @@ dependencies = [
  "hex",
  "hex-literal 0.3.1",
  "log",
+ "orml-tokens",
+ "orml-traits",
  "pallet-assets",
  "pallet-aura",
  "pallet-balances",
@@ -1779,8 +1781,6 @@ dependencies = [
  "pallet-currencies",
  "pallet-floating-rate-lend",
  "pallet-floating-rate-lend-rpc-runtime-api",
- "pallet-native-tokens",
- "pallet-oracle",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
  "pallet-timestamp",
@@ -5066,6 +5066,49 @@ dependencies = [
 ]
 
 [[package]]
+name = "orml-tokens"
+version = "0.4.1-dev"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library#5463f5af8877bc829faa1f9ee73b59604dfb9b3e"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "orml-traits",
+ "parity-scale-codec",
+ "serde",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "orml-traits"
+version = "0.4.1-dev"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library#5463f5af8877bc829faa1f9ee73b59604dfb9b3e"
+dependencies = [
+ "frame-support",
+ "impl-trait-for-tuples",
+ "num-traits",
+ "orml-utilities",
+ "parity-scale-codec",
+ "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "orml-utilities"
+version = "0.4.1-dev"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library#5463f5af8877bc829faa1f9ee73b59604dfb9b3e"
+dependencies = [
+ "frame-support",
+ "parity-scale-codec",
+ "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "owning_ref"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5276,6 +5319,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
+ "orml-traits",
  "pallet-sudo",
  "pallet-traits",
  "parity-scale-codec",
@@ -5344,6 +5388,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
+ "orml-traits",
  "pallet-currencies",
  "pallet-sudo",
  "pallet-traits",
@@ -5354,6 +5399,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "substrate-fixed",
 ]
 
 [[package]]
@@ -5552,24 +5598,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-native-tokens"
-version = "3.0.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "log",
- "pallet-sudo",
- "pallet-traits",
- "parity-scale-codec",
- "polkadot-parachain-primitives",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-nicks"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.2#1d7f6e12c651d776fc0dc1adefd007bb60f60b63"
@@ -5595,24 +5623,6 @@ dependencies = [
  "serde",
  "sp-runtime",
  "sp-staking",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-oracle"
-version = "3.0.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "log",
- "pallet-currencies",
- "pallet-traits",
- "parity-scale-codec",
- "polkadot-parachain-primitives",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
  "sp-std",
 ]
 
@@ -5796,6 +5806,7 @@ version = "3.0.0"
 dependencies = [
  "frame-support",
  "frame-system",
+ "parity-scale-codec",
  "polkadot-parachain-primitives",
  "sp-std",
 ]
@@ -10672,6 +10683,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "substrate-fixed"
+version = "0.5.6"
+source = "git+https://github.com/encointer/substrate-fixed.git?branch=master#b33d186888c60f38adafcfc0ec3a21aab263aef1"
+dependencies = [
+ "parity-scale-codec",
+ "typenum",
+]
+
+[[package]]
 name = "substrate-frame-rpc-system"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.2#1d7f6e12c651d776fc0dc1adefd007bb60f60b63"
@@ -11542,7 +11562,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.7.3",
+ "rand 0.3.23",
  "static_assertions",
 ]
 

@@ -1,60 +1,11 @@
-use codec::{FullCodec};
 use frame_support::traits::{ Currency as PalletCurrency, ExistenceRequirement, WithdrawReasons};
 use frame_support::dispatch::DispatchResult;
-use frame_support::sp_runtime::traits::AtLeast32BitUnsigned;
-use frame_support::pallet_prelude::MaybeSerializeDeserialize;
-use sp_core::sp_std::fmt::Debug;
 use sp_std::{
     marker,
 };
 use sp_runtime::traits::CheckedSub;
 use polkadot_parachain_primitives::InvalidParameters;
-
-/// Abstraction over a fungible (single) currency system.
-pub trait BasicCurrency<AccountId> {
-    /// The balance of an account.
-    type Balance: AtLeast32BitUnsigned + FullCodec + Copy + MaybeSerializeDeserialize + Debug + Default;
-
-    // Public immutables
-
-    /// Existential deposit.
-    fn minimum_balance() -> Self::Balance;
-
-    /// The total amount of issuance.
-    fn total_issuance() -> Self::Balance;
-
-    /// The combined balance of `who`.
-    fn total_balance(who: &AccountId) -> Self::Balance;
-
-    /// The free balance of `who`.
-    fn free_balance(who: &AccountId) -> Self::Balance;
-
-    /// A dry-run of `withdraw`. Returns `Ok` iff the account is able to make a
-    /// withdrawal of the given amount.
-    fn ensure_can_withdraw(who: &AccountId, amount: Self::Balance) -> DispatchResult;
-
-    // Public mutables
-
-    /// Transfer some amount from one account to another.
-    fn transfer(from: &AccountId, to: &AccountId, amount: Self::Balance) -> DispatchResult;
-
-    /// Add `amount` to the balance of `who` and increase total issuance.
-    fn deposit(who: &AccountId, amount: Self::Balance) -> DispatchResult;
-
-    /// Remove `amount` from the balance of `who` and reduce total issuance.
-    fn withdraw(who: &AccountId, amount: Self::Balance) -> DispatchResult;
-
-    /// Same result as `slash(who, value)` (but without the side-effects)
-    /// assuming there are no balance changes in the meantime and only the
-    /// reserved balance is not taken into account.
-    fn can_slash(who: &AccountId, value: Self::Balance) -> bool;
-
-    /// Deduct the balance of `who` by up to `amount`.
-    ///
-    /// As much funds up to `amount` will be deducted as possible. If this is
-    /// less than `amount`,then a non-zero value will be returned.
-    fn slash(who: &AccountId, amount: Self::Balance) -> Self::Balance;
-}
+use pallet_traits::BasicCurrency;
 
 
 /// Adapt other currency traits implementation to `BasicCurrency`.

@@ -54,15 +54,17 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", default-feature
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.2" }
 
 # -------------- Konomi ------------- #
+# orml
+orml-traits = { git = 'https://github.com/open-web3-stack/open-runtime-module-library', default-features = false, version = '0.4.1-dev' }
+orml-tokens = { git = 'https://github.com/open-web3-stack/open-runtime-module-library', default-features = false, version = '0.4.1-dev' }
+
 # Chainlink
 pallet-chainlink-feed = { path = "../../chainlink-polkadot/pallet-chainlink-feed", default-features = false }
 # Local dependencies
 pallet-floating-rate-lend = { default-features = false, path = '../pallets/floating-rate-lend', version = '3.0.0' }
 pallet-floating-rate-lend-rpc-runtime-api = { default-features = false, path = '../pallets/floating-rate-lend/rpc/runtime-api', version = '3.0.0' }
-pallet-native-tokens = { default-features = false, path = '../pallets/native-tokens', version = '3.0.0' }
 pallet-currencies = { default-features = false, path = '../pallets/currencies', version = '3.0.0' }
 pallet-traits = { default-features = false, path = '../pallets/traits', version = '3.0.0' }
-pallet-oracle = { path = '../pallets/oracle', default-features = false, version = '3.0.0' }
 pallet-chainlink-oracle = { path = '../pallets/chainlink-oracle', default-features = false, version = '3.0.0' }
 polkadot-parachain-primitives = { path = "../primitives", default-features = false }
 # -------------- Konomi --------------- #
@@ -116,11 +118,11 @@ std = [
 	"sp-consensus-aura/std",
 
 	# -------- Konomi -------- #
+	"orml-tokens/std",
 	# Chainlink
 	'pallet-chainlink-feed/std',
 
 	# Local dependencies
 	"pallet-currencies/std",
-	"pallet-native-tokens/std",
 	# -------- Konomi -------- #
 ]

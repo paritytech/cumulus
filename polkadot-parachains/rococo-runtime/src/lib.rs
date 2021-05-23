@@ -73,21 +73,21 @@ use xcm::v0::Xcm;
 use polkadot_parachain_primitives::*;
 pub use pallet_currencies;
 pub use pallet_floating_rate_lend;
-pub use pallet_native_tokens;
-pub use pallet_oracle;
 use pallet_traits::GetByKey;
-use pallet_currencies::BasicCurrencyAdapter;
+use pallet_currencies::{BasicCurrencyAdapter, MultiCurrencyAdapter};
 use pallet_floating_rate_lend_rpc_runtime_api::{
 	UserBalanceInfo as FloatingRateUserBalanceInfo,
 	BalanceInfo as FloatingRateBalanceInfo,
 };
 
+pub use orml_tokens;
 use pallet_chainlink_oracle;
 pub use pallet_chainlink_feed::RoundId;
-use weights::WeightInfo as ChainlinkWeightInfo;
+use weights::chainlink::WeightInfo as ChainlinkWeightInfo;
 
 use sp_runtime::{FixedU128, traits::{Convert, AccountIdConversion, Zero}};
 use frame_support::{PalletId};
+use frame_support::pallet_prelude::{Get};
 // End of Konomi imports
 
 pub type SessionHandlers = ();
@@ -499,10 +499,15 @@ impl pallet_aura::Config for Runtime {
 
 // Konomi impls
 // Local Dependencies
+parameter_types! {
+	pub const GetBasicCurrencyId: CurrencyId = KONO;
+}
+
 impl pallet_currencies::Config for Runtime {
 	type Event = Event;
+	type GetBasicCurrencyId = GetBasicCurrencyId;
 	type BasicCurrency = BasicCurrencyAdapter<Balances>;
-	type MultiCurrency = NativeTokens;
+	type MultiCurrency = MultiCurrencyAdapter<Tokens>;
 }
 
 pub struct ExistentialDeposits {}
@@ -520,17 +525,24 @@ parameter_types! {
 	pub KonomiTreasuryAccount: AccountId = KonomiTreasuryPalletId::get().into_account();
 }
 
-impl pallet_native_tokens::Config for Runtime {
+/// Signed version of Balance
+pub type Amount = i128;
+// orml
+impl orml_tokens::Config for Runtime {
 	type Event = Event;
 	type Balance = Balance;
+	type Amount = Amount;
+	type CurrencyId = CurrencyId;
+	type WeightInfo = weights::orml_tokens::WeightInfo<Runtime>;
 	type ExistentialDeposits = ExistentialDeposits;
-	type OnDust = pallet_native_tokens::TransferDust<Runtime, KonomiTreasuryAccount>;
+	type OnDust = orml_tokens::TransferDust<Runtime, KonomiTreasuryAccount>;
+	type MaxLocks = MaxLocks;
 }
 
 impl pallet_floating_rate_lend::Config for Runtime {
 	type Event = Event;
-	type MultiCurrency = NativeTokens;
-	type PriceProvider = Currencies;
+	type MultiCurrency = Tokens;
+	type PriceProvider = Oracle;
 }
 
 pub type FeedId = u32;
@@ -568,9 +580,7 @@ pub struct CurrencyToFeedIdConverter;
 impl Convert<CurrencyId, Option<FeedId>> for CurrencyToFeedIdConverter {
 	fn convert(a: CurrencyId) -> Option<FeedId> {
 		match a {
-			0 => Some(FeedId::from(0 as u8)),
-			1 => Some(FeedId::from(1 as u8)),
-			2 => Some(FeedId::from(2 as u8)),
+			CurrencyId::Native(native) => Some(FeedId::from(native.id)),
 			_ => None
 		}
 	}
@@ -603,8 +613,9 @@ construct_runtime! {
 		Aura: pallet_aura::{Pallet, Config<T>},
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Config},
 
+		Tokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>} = 11,
 		Currencies: pallet_currencies::{Pallet, Call, Storage, Event<T>},
-		NativeTokens: pallet_native_tokens::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Oracle: pallet_chainlink_oracle::{Pallet, Call, Storage},
 		ChainlinkFeed: pallet_chainlink_feed::{Pallet, Call, Storage, Config<T>, Event<T>},
 		FloatingRateLend: pallet_floating_rate_lend::{Pallet, Call, Storage, Event<T>} = 15,
 
