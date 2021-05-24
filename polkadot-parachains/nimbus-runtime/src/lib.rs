@@ -400,8 +400,7 @@ impl pallet_author_inherent::Config for Runtime {
 	type SlotBeacon = pallet_author_inherent::RelayChainBeacon<Self>;
 	type AccountLookup = PotentialAuthorSet;
 	type EventHandler = ();
-	type PreliminaryCanAuthor = ();
-	type FullCanAuthor = AuthorFilter;
+	type CanAuthor = AuthorFilter;
 }
 
 impl pallet_author_filter::Config for Runtime {

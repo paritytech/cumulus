@@ -91,19 +91,12 @@ pub mod pallet {
 		/// Other pallets that want to be informed about block authorship
 		type EventHandler: EventHandler<Self::AccountId>;
 
-		//TODO We don't even use this anymore now that we don't `check_inherent`s.
-		/// A preliminary means of checking the validity of this author. This check is run before
-		/// block execution begins when data from previous inherent is unavailable. This is meant to
-		/// quickly invalidate blocks from obviously-invalid authors, although it need not rule out all
-		/// invlaid authors. The final check will be made when executing the inherent.
-		type PreliminaryCanAuthor: CanAuthor<Self::AccountId>;
-
 		/// The final word on whether the reported author can author at this height.
 		/// This will be used when executing the inherent. This check is often stricter than the
 		/// Preliminary check, because it can use more data.
 		/// If the pallet that implements this trait depends on an inherent, that inherent **must**
 		/// be included before this one.
-		type FullCanAuthor: CanAuthor<Self::AccountId>;
+		type CanAuthor: CanAuthor<Self::AccountId>;
 
 		/// Some way of determining the current slot for purposes of verifying the author's eligibility
 		type SlotBeacon: SlotBeacon;
@@ -158,7 +151,7 @@ pub mod pallet {
 				Error::<T>::NoAccountId
 			)?;
 
-			ensure!(T::FullCanAuthor::can_author(&account, &slot), Error::<T>::CannotBeAuthor);
+			ensure!(T::CanAuthor::can_author(&account, &slot), Error::<T>::CannotBeAuthor);
 
 			// Update storage
 			Author::<T>::put(&account);
@@ -193,7 +186,6 @@ pub mod pallet {
 		}
 
 		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-			// Grab the Vec<u8> labelled with "author__" from the map of all inherent data
 			let author_raw = data
 				.get_data::<T::AuthorId>(&INHERENT_IDENTIFIER);
 
@@ -202,10 +194,6 @@ pub mod pallet {
 
 			let author = author_raw
 				.expect("Gets and decodes authorship inherent data")?;
-
-			// Decode the Vec<u8> into an account Id
-			// let author =
-			// 	T::AuthorId::decode(&mut &author_raw[..]).expect("Decodes author raw inherent data");
 
 			Some(Call::set_author(author))
 		}
@@ -238,7 +226,7 @@ pub mod pallet {
 				},
 			};
 
-			T::FullCanAuthor::can_author(&account, slot)
+			T::CanAuthor::can_author(&account, slot)
 		}
 	}
 }
@@ -339,8 +327,7 @@ mod tests {
 	impl Config for Test {
 		type AuthorId = u64;
 		type EventHandler = ();
-		type PreliminaryCanAuthor = ();
-		type FullCanAuthor = ();
+		type CanAuthor = ();
 	}
 
 	pub fn roll_to(n: u64) {
