@@ -38,7 +38,7 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use sp_std::vec::Vec;
 	use frame_system::pallet_prelude::*;
-	use nimbus_primitives::CanAuthor;
+	use nimbus_primitives::{AccountLookup, CanAuthor};
 
 	/// The Account Set pallet
 	#[pallet::pallet]
@@ -48,8 +48,6 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config  {
 		/// The identifier type for an author.
-		/// We are generic over this type to allowing using the runtime's AccountId type
-		/// or the consensus layer's identification type.
 		type AuthorId: Member + Parameter + MaybeSerializeDeserialize;
 	}
 
@@ -61,49 +59,61 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {}
 
-	/// A vector of accounts. I hadn't origianlly intended for duplicates to exist, and now that
-	/// I'm thinking about it, I can see some usecases for having dupes (higher probability of
-	/// being selected in some filters), so I'm not going to enforce anything.
+	/// The set of accounts that is stored in this pallet.
 	#[pallet::storage]
-	pub type StoredAccounts<T: Config> = StorageValue<_, Vec<T::AuthorId>, ValueQuery>;
+	pub type StoredAccounts<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
-	impl<T: Config> Get<Vec<T::AuthorId>> for Pallet<T> {
-		fn get() -> Vec<T::AuthorId> {
+	impl<T: Config> Get<Vec<T::AccountId>> for Pallet<T> {
+		fn get() -> Vec<T::AccountId> {
 			StoredAccounts::<T>::get()
 		}
 	}
 
-	/// This pallet is compatible with nimbus's author filtering system. Any account stored in this pallet
-	/// is a valid author. Notice that this implementation does not have an inner filter, so it
-	/// can only be the beginning of the nimbus filter pipeline.
-	impl<T: Config> CanAuthor<T::AuthorId> for Pallet<T> {
-		fn can_author(author: &T::AuthorId, _slot: &u32) -> bool {
-			StoredAccounts::<T>::get().contains(author)
-		}
-	}
+	#[pallet::storage]
+	#[pallet::getter(fn account_id_of)]
+	/// A mapping from the AuthorIds used in the consensus layer
+	/// to the AccountIds runtime.
+	type Mapping<T: Config> = StorageMap<_, Twox64Concat, T::AuthorId, T::AccountId, OptionQuery>;
 
 	#[pallet::genesis_config]
+	/// Genesis config for author mapping pallet
 	pub struct GenesisConfig<T: Config> {
-		pub stored_accounts: Vec<T::AuthorId>,
+		/// The associations that should exist at chain genesis
+		pub mapping: Vec<(T::AuthorId, T::AccountId)>,
 	}
 
 	#[cfg(feature = "std")]
 	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
-			Self {
-				stored_accounts: Vec::new(),
-			}
+			Self { mapping: vec![] }
 		}
 	}
 
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
-
-			if self.stored_accounts.is_empty() {
-				warn!(target: "account-set", "No accounts stored at genesis. If this is used for authorship, your chain will have no valid authors.");
+			if self.mapping.is_empty() {
+				warn!(target: "account-set", "No mappings at genesis. Your chain will have no valid authors.");
 			}
-			StoredAccounts::<T>::put(&self.stored_accounts);
+			for (author_id, account_id) in &self.mapping {
+				Mapping::<T>::insert(author_id, account_id);
+				StoredAccounts::<T>::append(account_id);
+			}
+		}
+	}
+
+	/// This pallet is compatible with nimbus's author filtering system. Any account stored in this pallet
+	/// is a valid author. Notice that this implementation does not have an inner filter, so it
+	/// can only be the beginning of the nimbus filter pipeline.
+	impl<T: Config> CanAuthor<T::AccountId> for Pallet<T> {
+		fn can_author(author: &T::AccountId, _slot: &u32) -> bool {
+			StoredAccounts::<T>::get().contains(author)
+		}
+	}
+
+	impl<T: Config> AccountLookup<T::AuthorId, T::AccountId> for Pallet<T> {
+		fn lookup_account(author: &T::AuthorId) -> Option<T::AccountId> {
+			Mapping::<T>::get(&author)
 		}
 	}
 }

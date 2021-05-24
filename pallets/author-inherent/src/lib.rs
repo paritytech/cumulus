@@ -29,7 +29,7 @@ use sp_runtime::{
 	ConsensusEngineId, DigestItem, RuntimeString, RuntimeAppPublic,
 };
 use log::debug;
-use nimbus_primitives::{CanAuthor, NIMBUS_ENGINE_ID, SlotBeacon, EventHandler, INHERENT_IDENTIFIER};
+use nimbus_primitives::{AccountLookup, CanAuthor, NIMBUS_ENGINE_ID, SlotBeacon, EventHandler, INHERENT_IDENTIFIER};
 
 mod exec;
 pub use exec::BlockExecutor;
@@ -79,30 +79,31 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		// This is copied from Aura. I wonder if I really need all those trait bounds. For now I'll leave them.
+		// TODO could I remove this type entirely and just always use NimbusId? Why didn't Aura do that?
 		/// The identifier type for an authority.
 		type AuthorId: Member + Parameter + RuntimeAppPublic + Default + MaybeSerializeDeserialize;
 
-		//TODO do we have any use for this converter?
-		// It has to happen eventually to pay rewards to accountids and let account ids stake.
-		// But is there any reason it needs to be included here? For now I won't use it as I'm
-		// not staking or rewarding in this poc.
-		// A type to convert between AuthorId and AccountId
+		/// A type to convert between AuthorId and AccountId. This is useful when you want to associate
+		/// Block authoring behavior with an AccoutId for rewards or slashing. If you do not need to
+		/// hold an AccountID responsible for authoring use `()` which acts as an identity mapping.
+		type AccountLookup: AccountLookup<Self::AuthorId, Self::AccountId>;
 
 		/// Other pallets that want to be informed about block authorship
-		type EventHandler: EventHandler<Self::AuthorId>;
+		type EventHandler: EventHandler<Self::AccountId>;
 
+		//TODO We don't even use this anymore now that we don't `check_inherent`s.
 		/// A preliminary means of checking the validity of this author. This check is run before
 		/// block execution begins when data from previous inherent is unavailable. This is meant to
 		/// quickly invalidate blocks from obviously-invalid authors, although it need not rule out all
 		/// invlaid authors. The final check will be made when executing the inherent.
-		type PreliminaryCanAuthor: CanAuthor<Self::AuthorId>;
+		type PreliminaryCanAuthor: CanAuthor<Self::AccountId>;
 
 		/// The final word on whether the reported author can author at this height.
 		/// This will be used when executing the inherent. This check is often stricter than the
 		/// Preliminary check, because it can use more data.
 		/// If the pallet that implements this trait depends on an inherent, that inherent **must**
 		/// be included before this one.
-		type FullCanAuthor: CanAuthor<Self::AuthorId>;
+		type FullCanAuthor: CanAuthor<Self::AccountId>;
 
 		/// Some way of determining the current slot for purposes of verifying the author's eligibility
 		type SlotBeacon: SlotBeacon;
@@ -120,6 +121,8 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Author already set in block.
 		AuthorAlreadySet,
+		/// No AccountId was found to be associated with this author
+		NoAccountId,
 		/// The author in the inherent is not an eligible author.
 		CannotBeAuthor,
 	}
@@ -127,7 +130,7 @@ pub mod pallet {
 
 	/// Author of current block.
 	#[pallet::storage]
-	pub type Author<T: Config> = StorageValue<_, T::AuthorId, OptionQuery>;
+	pub type Author<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
@@ -144,7 +147,6 @@ pub mod pallet {
 		fn set_author(origin: OriginFor<T>, author: T::AuthorId) -> DispatchResult {
 
 			ensure_none(origin)?;
-			debug!(target: "author-inherent", "Executing Author inherent");
 
 			ensure!(<Author<T>>::get().is_none(), Error::<T>::AuthorAlreadySet);
 			debug!(target: "author-inherent", "Author was not already set");
@@ -152,22 +154,25 @@ pub mod pallet {
 			let slot = T::SlotBeacon::slot();
 			debug!(target: "author-inherent", "Slot is {:?}", slot);
 
-			ensure!(T::FullCanAuthor::can_author(&author, &slot), Error::<T>::CannotBeAuthor);
-			debug!(target: "author-inherent", "I can be author!");
+			let account = T::AccountLookup::lookup_account(&author).ok_or(
+				Error::<T>::NoAccountId
+			)?;
+
+			ensure!(T::FullCanAuthor::can_author(&account, &slot), Error::<T>::CannotBeAuthor);
 
 			// Update storage
-			Author::<T>::put(&author);
+			Author::<T>::put(&account);
 
-			// Add a digest item so Apps can detect the block author
-			// For now we use the Consensus digest item.
-			// Maybe this will change later.
+			// Add a consensus digest so the client-side worker can verify the block is signed by the right person.
 			frame_system::Pallet::<T>::deposit_log(DigestItem::<T::Hash>::Consensus(
 				NIMBUS_ENGINE_ID,
 				author.encode(),
 			));
 
+			//TODO maybe add a second digest with type `auth` so Apps still works for Moonbeam until Antoinne can fix it properly.
+
 			// Notify any other pallets that are listening (eg rewards) about the author
-			T::EventHandler::note_author(author);
+			T::EventHandler::note_author(account);
 
 			Ok(())
 		}
@@ -210,14 +215,30 @@ pub mod pallet {
 		}
 	}
 
-	impl<T: Config> FindAuthor<T::AuthorId> for Pallet<T> {
-		fn find_author<'a, I>(_digests: I) -> Option<T::AuthorId>
+	impl<T: Config> FindAuthor<T::AccountId> for Pallet<T> {
+		fn find_author<'a, I>(_digests: I) -> Option<T::AccountId>
 		where
 			I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
 		{
 			// We don't use the digests at all.
 			// This will only return the correct author _after_ the authorship inherent is processed.
 			<Author<T>>::get()
+		}
+	}
+
+	/// To learn whether a given AuthorId can author, you call the author-inherent directly.
+	/// It will do the mapping lookup.
+	impl<T: Config> CanAuthor<T::AuthorId> for Pallet<T> {
+		fn can_author(author: &T::AuthorId, slot: &u32) -> bool {
+			let account = match T::AccountLookup::lookup_account(&author) {
+				Some(account) => account,
+				// Authors whose account lookups fail will not be eligible
+				None => {
+					return false;
+				},
+			};
+
+			T::FullCanAuthor::can_author(&account, slot)
 		}
 	}
 }

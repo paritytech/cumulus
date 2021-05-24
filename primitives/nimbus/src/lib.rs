@@ -54,6 +54,15 @@ impl<T> CanAuthor<T> for () {
 	}
 }
 
+/// A Trait to lookup runtime AccountIds from AuthorIds (probably NimbusIds)
+/// The trait is generic over the AccountId, becuase different runtimes use
+/// different notions of AccoutId. It is also generic over the AuthorId to
+/// support the usecase where the author inherent is used for beneficiary info
+/// and contains an AccountId directly.
+pub trait AccountLookup<AuthorId, AccountId> {
+	fn lookup_account(author: &AuthorId) -> Option<AccountId>;
+}
+
 /// The ConsensusEngineId for nimbus consensus
 /// this same identifier will be used regardless of the filters installed
 pub const NIMBUS_ENGINE_ID: ConsensusEngineId = *b"nmbs";

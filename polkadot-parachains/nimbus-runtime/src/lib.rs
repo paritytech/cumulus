@@ -398,13 +398,13 @@ impl pallet_author_inherent::Config for Runtime {
 	type AuthorId = NimbusId;
 	// We start a new slot each time we see a new relay block.
 	type SlotBeacon = pallet_author_inherent::RelayChainBeacon<Self>;
+	type AccountLookup = PotentialAuthorSet;
 	type EventHandler = ();
-	type PreliminaryCanAuthor = PotentialAuthorSet;
+	type PreliminaryCanAuthor = ();
 	type FullCanAuthor = AuthorFilter;
 }
 
 impl pallet_author_filter::Config for Runtime {
-	type AuthorId = NimbusId;
 	type Event = Event;
 	type RandomnessSource = RandomnessCollectiveFlip;
 	type PotentialAuthors = PotentialAuthorSet;
@@ -591,7 +591,7 @@ impl_runtime_apis! {
 
 	impl nimbus_primitives::AuthorFilterAPI<Block, nimbus_primitives::NimbusId> for Runtime {
 		fn can_author(author: nimbus_primitives::NimbusId, slot: u32) -> bool {
-			<Runtime as pallet_author_inherent::Config>::FullCanAuthor::can_author(&author, &slot)
+			AuthorInherent::can_author(&author, &slot)
 		}
 	}
 

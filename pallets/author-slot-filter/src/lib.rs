@@ -15,10 +15,10 @@
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Small pallet responsible determining which accounts are eligible to author at the current
-//! slot. The slot is determined by the relay parent block number from the parachain inherent.
+//! slot.
 //!
 //! Using a randomness beacon supplied by the `Randomness` trait, this pallet takes the set of
-//! currently active accounts from pallet stake, and filters them down to a pseudorandom subset.
+//! currently active accounts from an upstream source, and filters them down to a pseudorandom subset.
 //! The current technique gives no preference to any particular author. In the future, we could
 //! disfavor authors who are authoring a disproportionate amount of the time in an attempt to
 //! "even the playing field".
@@ -48,26 +48,25 @@ pub mod pallet {
 	/// Configuration trait of this pallet.
 	#[pallet::config]
 	pub trait Config: frame_system::Config + cumulus_pallet_parachain_system::Config {
-		/// The identifier type for an author.
-		// TODO All the trait bounds? I already removed RuntimeAppPublic.
-		type AuthorId: Member;
-
 		/// The overarching event type
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 		/// Deterministic on-chain pseudo-randomness used to do the filtering
 		type RandomnessSource: Randomness<H256, Self::BlockNumber>;
 		//TODO introduce a new trait for exhaustive sets and use it here.
+		// Oh actually, we can use the same trait. First we call the inner one
+		// to determine whether this particular author is eligible there. then we
+		// use the author as part of the subject when querying eligibility. I like this better.
 		/// A source for the complete set of potential authors.
 		/// The starting point of the filtering.
-		type PotentialAuthors: Get<Vec<Self::AuthorId>>;
+		type PotentialAuthors: Get<Vec<Self::AccountId>>;
 	}
 
 	// This code will be called by the author-inherent pallet to check whether the reported author
 	// of this block is eligible in this slot. We calculate that result on demand and do not
 	// record it in storage (although we do emit a debugging event for now).
-	impl<T: Config> CanAuthor<T::AuthorId> for Pallet<T> {
-		fn can_author(author: &T::AuthorId, slot: &u32) -> bool {
-			let mut active: Vec<T::AuthorId> = T::PotentialAuthors::get();
+	impl<T: Config> CanAuthor<T::AccountId> for Pallet<T> {
+		fn can_author(author: &T::AccountId, slot: &u32) -> bool {
+			let mut active: Vec<T::AccountId> = T::PotentialAuthors::get();
 
 			let num_eligible = EligibleRatio::<T>::get().mul_ceil(active.len());
 			let mut eligible = Vec::with_capacity(num_eligible);
