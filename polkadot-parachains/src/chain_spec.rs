@@ -255,9 +255,9 @@ fn nimbus_testnet_genesis(
 			eligible_ratio: Percent::from_percent(50),
 		},
 		pallet_account_set: nimbus_runtime::PotentialAuthorSetConfig {
-			stored_accounts: vec![
-				get_from_seed::<NimbusId>("Alice"),
-				get_from_seed::<NimbusId>("Bob"),
+			mapping: vec![
+				(get_from_seed::<NimbusId>("Alice"), get_account_id_from_seed::<sr25519::Public>("Alice")),
+				(get_from_seed::<NimbusId>("Bob"), get_account_id_from_seed::<sr25519::Public>("Bob")),
 			]
 		},
 	}
