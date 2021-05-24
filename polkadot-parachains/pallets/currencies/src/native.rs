@@ -23,38 +23,38 @@ impl<AccountId, Currency> MultiCurrency<AccountId> for MultiCurrencyAdapter<Curr
     }
 
     fn total_issuance(currency_id: Self::CurrencyId) -> Self::Balance {
-        unimplemented!()
+        Currency::total_issuance(currency_id)
     }
 
     fn total_balance(currency_id: Self::CurrencyId, who: &AccountId) -> Self::Balance {
-        unimplemented!()
+        Currency::total_balance(currency_id, who)
     }
 
     fn free_balance(currency_id: Self::CurrencyId, who: &AccountId) -> Self::Balance {
-        unimplemented!()
+        Currency::free_balance(currency_id, who)
     }
 
     fn ensure_can_withdraw(currency_id: Self::CurrencyId, who: &AccountId, amount: Self::Balance) -> DispatchResult {
-        unimplemented!()
+        Currency::ensure_can_withdraw(currency_id, who, amount)
     }
 
     fn transfer(currency_id: Self::CurrencyId, from: &AccountId, to: &AccountId, amount: Self::Balance) -> DispatchResult {
-        unimplemented!()
+        Currency::transfer(currency_id, from, to, amount)
     }
 
     fn deposit(currency_id: Self::CurrencyId, who: &AccountId, amount: Self::Balance) -> DispatchResult {
-        unimplemented!()
+        Currency::deposit(currency_id, who, amount)
     }
 
     fn withdraw(currency_id: Self::CurrencyId, who: &AccountId, amount: Self::Balance) -> DispatchResult {
-        unimplemented!()
+        Currency::withdraw(currency_id, who, amount)
     }
 
     fn can_slash(currency_id: Self::CurrencyId, who: &AccountId, value: Self::Balance) -> bool {
-        unimplemented!()
+        Currency::can_slash(currency_id, who, value)
     }
 
     fn slash(currency_id: Self::CurrencyId, who: &AccountId, amount: Self::Balance) -> Self::Balance {
-        unimplemented!()
+        Currency::slash(currency_id, who, amount)
     }
 }

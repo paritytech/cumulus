@@ -120,3 +120,5 @@ impl CurrencyId {
 
 pub const KONO: CurrencyId = CurrencyId::Basic(Basic { id: 0});
 pub const DOT: CurrencyId = CurrencyId::Native(Native { id: 0});
+pub const ETH: CurrencyId = CurrencyId::Native(Native { id: 1});
+pub const BTC: CurrencyId = CurrencyId::Native(Native { id: 2});

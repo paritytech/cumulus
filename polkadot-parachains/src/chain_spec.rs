@@ -22,6 +22,7 @@ use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
+use polkadot_parachain_primitives::{DOT, BTC, ETH};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<rococo_parachain_runtime::GenesisConfig, Extensions>;
@@ -180,13 +181,11 @@ fn testnet_genesis(
 			authorities: initial_authorities,
 		},
 		cumulus_pallet_aura_ext: Default::default(),
-		pallet_native_tokens: rococo_parachain_runtime::NativeTokensConfig {
+		orml_tokens: rococo_parachain_runtime::TokensConfig {
 			endowed_accounts: vec![
-				(root_key.clone(), 0, 1_000_000_000_000_000_000_000),
-				(root_key.clone(), 1, 1_000_000_000_000_000_000_000),
-				(root_key.clone(), 2, 1_000_000_000_000_000_000_000),
-				(root_key.clone(), 3, 1_000_000_000_000_000_000_000),
-				(root_key.clone(), 4, 1_000_000_000_000_000_000_000),
+				(hex!["e2b2d3e7c3931a4562feaa27c22e858dea0bf2828bbab28c0b799f61eb0b9462"].into(), DOT, 1_000_000_000_000_000_000_000),
+				(hex!["e2b2d3e7c3931a4562feaa27c22e858dea0bf2828bbab28c0b799f61eb0b9462"].into(), BTC, 1_000_000_000_000_000_000_000),
+				(hex!["e2b2d3e7c3931a4562feaa27c22e858dea0bf2828bbab28c0b799f61eb0b9462"].into(), ETH, 1_000_000_000_000_000_000_000),
 			]
 		},
 		pallet_chainlink_feed: rococo_parachain_runtime::ChainlinkFeedConfig {

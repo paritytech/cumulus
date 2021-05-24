@@ -2,15 +2,15 @@
 use frame_support::dispatch::{DispatchResultWithPostInfo, DispatchResult};
 use polkadot_parachain_primitives::{PriceValue, Price, CurrencyId};
 use frame_system::Config;
-use frame_support::pallet_prelude::{MaybeSerializeDeserialize, Member};
-use frame_support::Parameter;
+use frame_support::pallet_prelude::{MaybeSerializeDeserialize};
 use frame_support::sp_runtime::traits::AtLeast32BitUnsigned;
 use sp_std::fmt::Debug;
 use codec::{FullCodec};
 
 /// A trait to provide the price for a currency
 pub trait PriceProvider<T> where T: Config {
-	fn price(currency_id: CurrencyId) -> Price<T>;
+	type CurrencyId: FullCodec + Eq + PartialEq + Copy + MaybeSerializeDeserialize + Debug;
+	fn price(currency_id: Self::CurrencyId) -> Price<T>;
 }
 
 /// A trait to set the price for a currency
@@ -122,19 +122,4 @@ pub trait MultiCurrency<AccountId> {
 	/// As much funds up to `amount` will be deducted as possible.  If this is
 	/// less than `amount`,then a non-zero value will be returned.
 	fn slash(currency_id: Self::CurrencyId, who: &AccountId, amount: Self::Balance) -> Self::Balance;
-}
-
-/// A trait for querying a value by a key.
-pub trait GetByKey<Key, Value> {
-	/// Return the value.
-	fn get(k: &Key) -> Value;
-}
-
-/// Handler for account which has dust, need to burn or recycle it
-pub trait OnDust<AccountId, CurrencyId, Balance> {
-	fn on_dust(who: &AccountId, currency_id: CurrencyId, amount: Balance);
-}
-
-impl<AccountId, CurrencyId, Balance> OnDust<AccountId, CurrencyId, Balance> for () {
-	fn on_dust(_: &AccountId, _: CurrencyId, _: Balance) {}
 }

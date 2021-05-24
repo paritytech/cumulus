@@ -1,12 +1,9 @@
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
 use frame_support::{sp_runtime::{FixedU128}};
-use sp_std::{vec::Vec};
-use polkadot_parachain_primitives::{CurrencyId, PoolId, Overflown, PriceValue, FlowError};
-use frame_support::sp_runtime::{FixedPointNumber};
-use sp_runtime::traits::{CheckedMul, CheckedAdd, One, Zero, CheckedDiv};
-use sp_runtime::sp_std::convert::TryInto;
-use sp_std::ops::{Add, Sub, Mul};
+use polkadot_parachain_primitives::{FlowError};
+use sp_runtime::traits::{CheckedMul, One, CheckedDiv};
+use sp_std::ops::{Add, Sub};
 
 pub struct UserBalanceStats{
     /// The total supply balance of the user
@@ -34,18 +31,18 @@ impl UserData {
         self.amount = pool_index
             .checked_div(&self.index)
             .ok_or(FlowError{})?
-            .checked_mul_int(self.amount)
+            .checked_mul(&self.amount)
             .ok_or(FlowError{})?;
         self.index = *pool_index;
         Ok(())
     }
 
     pub fn increment(&mut self, amount: &FixedU128) {
-        self.amount.add(*amount);
+        self.amount = self.amount.add(*amount);
     }
 
     pub fn decrement(&mut self, amount: &FixedU128) {
-        self.amount.sub(*amount);
+        self.amount = self.amount.sub(*amount);
     }
 
     pub fn amount(&self) -> FixedU128 { self.amount }

@@ -41,10 +41,9 @@ pub mod pallet {
 
     /* ------- Local Libs -------- */
     use polkadot_parachain_primitives::{CurrencyId, Price};
-    use pallet_traits::PriceProvider;
+    use pallet_traits::{PriceProvider};
 
     type FeedIdOf<T> = <<T as Config>::Oracle as FeedOracle<T>>::FeedId;
-
     #[pallet::config]
     pub trait Config: frame_system::Config {
         type Oracle: FeedOracle<Self>;
@@ -68,7 +67,9 @@ pub mod pallet {
     }
 
     impl<T: Config> PriceProvider<T> for Pallet<T> {
-        fn price(currency_id: CurrencyId) -> Price<T> {
+        type CurrencyId = CurrencyId;
+
+        fn price(currency_id: Self::CurrencyId) -> Price<T> {
             if let Some(feed_id) = T::CurrencyFeedConvertor::convert(currency_id) {
                 return match T::Oracle::feed(feed_id) {
                     Some(feed) => {

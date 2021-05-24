@@ -73,21 +73,20 @@ use xcm::v0::Xcm;
 use polkadot_parachain_primitives::*;
 pub use pallet_currencies;
 pub use pallet_floating_rate_lend;
-use pallet_traits::GetByKey;
 use pallet_currencies::{BasicCurrencyAdapter, MultiCurrencyAdapter};
-use pallet_floating_rate_lend_rpc_runtime_api::{
-	UserBalanceInfo as FloatingRateUserBalanceInfo,
-	BalanceInfo as FloatingRateBalanceInfo,
-};
+// use pallet_floating_rate_lend_rpc_runtime_api::{
+// 	UserBalanceInfo as FloatingRateUserBalanceInfo,
+// 	BalanceInfo as FloatingRateBalanceInfo,
+// };
 
 pub use orml_tokens;
 use pallet_chainlink_oracle;
 pub use pallet_chainlink_feed::RoundId;
 use weights::chainlink::WeightInfo as ChainlinkWeightInfo;
 
-use sp_runtime::{FixedU128, traits::{Convert, AccountIdConversion, Zero}};
+use sp_runtime::{traits::{Convert, AccountIdConversion, Zero}};
 use frame_support::{PalletId};
-use frame_support::pallet_prelude::{Get};
+use orml_traits::GetByKey;
 // End of Konomi imports
 
 pub type SessionHandlers = ();
@@ -541,7 +540,7 @@ impl orml_tokens::Config for Runtime {
 
 impl pallet_floating_rate_lend::Config for Runtime {
 	type Event = Event;
-	type MultiCurrency = Tokens;
+	type MultiCurrency = MultiCurrencyAdapter<Tokens>;
 	type PriceProvider = Oracle;
 }
 
@@ -758,41 +757,73 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl pallet_floating_rate_lend_rpc_runtime_api::LendingApi<Block, PoolId, FixedU128, AccountId, Balance> for Runtime {
-        fn supply_rate(id: PoolId) -> FixedU128 {
-            FloatingRateLend::supply_rate(id)
-		}
-
-		fn debt_rate(id: PoolId) -> FixedU128 {
-            FloatingRateLend::debt_rate(id)
-		}
-
-		fn user_balances(user: AccountId) -> FloatingRateUserBalanceInfo<Balance> {
-			match FloatingRateLend::user_balances(user) {
-				Ok(user_balances) => FloatingRateUserBalanceInfo{
-					total_supply: user_balances.supply_balance,
-					borrow_limit: user_balances.collateral_balance,
-					total_borrow: user_balances.debt_balance,
-				},
-				Err(_) => FloatingRateUserBalanceInfo{
-					total_supply: Balance::zero(),
-					borrow_limit: Balance::zero(),
-					total_borrow: Balance::zero(),
-				},
-			}
-		}
-
-		fn user_debt_balance(pool_id: PoolId, user: AccountId) -> FloatingRateBalanceInfo<Balance> {
-			let amount = FloatingRateLend::user_debt_balance(pool_id, user).unwrap_or_else(|_| Balance::zero());
-			FloatingRateBalanceInfo{amount}
-		}
-
-		fn user_supply_balance(pool_id: PoolId, user: AccountId) -> FloatingRateBalanceInfo<Balance> {
-			let amount = FloatingRateLend::user_supply_balance(pool_id, user).unwrap_or_else(|_| Balance::zero());
-			FloatingRateBalanceInfo{amount}
-		}
-
-    }
+	// impl pallet_floating_rate_lend_rpc_runtime_api::LendingApi<Block, PoolId, FixedU128, AccountId> for Runtime {
+    //     fn supply_rate(id: PoolId) -> FixedU128 {
+    //         FloatingRateLend::supply_rate(id)
+	// 	}
+	//
+	// 	fn debt_rate(id: PoolId) -> FixedU128 {
+    //         FloatingRateLend::debt_rate(id)
+	// 	}
+	//
+	// 	fn user_balances(user: AccountId) -> FloatingRateUserBalanceInfo<FixedU128> {
+	// 		match FloatingRateLend::user_balances(user) {
+	// 			Ok(user_balances) => FloatingRateUserBalanceInfo{
+	// 				total_supply: user_balances.supply_balance,
+	// 				borrow_limit: user_balances.collateral_balance,
+	// 				total_borrow: user_balances.debt_balance,
+	// 			},
+	// 			Err(_) => FloatingRateUserBalanceInfo{
+	// 				total_supply: FixedU128::zero(),
+	// 				borrow_limit: FixedU128::zero(),
+	// 				total_borrow: FixedU128::zero(),
+	// 			},
+	// 		}
+	// 	}
+	//
+	// 	fn user_debt_balance(pool_id: PoolId, user: AccountId) -> FloatingRateBalanceInfo<FixedU128> {
+	// 		let amount = FloatingRateLend::user_debt_balance(pool_id, user).unwrap_or_else(|_| FixedU128::zero());
+	// 		FloatingRateBalanceInfo{amount}
+	// 	}
+	//
+	// 	fn user_supply_balance(pool_id: PoolId, user: AccountId) -> FloatingRateBalanceInfo<FixedU128> {
+	// 		let amount = FloatingRateLend::user_supply_balance(pool_id, user).unwrap_or_else(|_| FixedU128::zero());
+	// 		FloatingRateBalanceInfo{amount}
+	// 	}
+    // }	// impl pallet_floating_rate_lend_rpc_runtime_api::LendingApi<Block, PoolId, FixedU128, AccountId> for Runtime {
+    //     fn supply_rate(id: PoolId) -> FixedU128 {
+    //         FloatingRateLend::supply_rate(id)
+	// 	}
+	//
+	// 	fn debt_rate(id: PoolId) -> FixedU128 {
+    //         FloatingRateLend::debt_rate(id)
+	// 	}
+	//
+	// 	fn user_balances(user: AccountId) -> FloatingRateUserBalanceInfo<FixedU128> {
+	// 		match FloatingRateLend::user_balances(user) {
+	// 			Ok(user_balances) => FloatingRateUserBalanceInfo{
+	// 				total_supply: user_balances.supply_balance,
+	// 				borrow_limit: user_balances.collateral_balance,
+	// 				total_borrow: user_balances.debt_balance,
+	// 			},
+	// 			Err(_) => FloatingRateUserBalanceInfo{
+	// 				total_supply: FixedU128::zero(),
+	// 				borrow_limit: FixedU128::zero(),
+	// 				total_borrow: FixedU128::zero(),
+	// 			},
+	// 		}
+	// 	}
+	//
+	// 	fn user_debt_balance(pool_id: PoolId, user: AccountId) -> FloatingRateBalanceInfo<FixedU128> {
+	// 		let amount = FloatingRateLend::user_debt_balance(pool_id, user).unwrap_or_else(|_| FixedU128::zero());
+	// 		FloatingRateBalanceInfo{amount}
+	// 	}
+	//
+	// 	fn user_supply_balance(pool_id: PoolId, user: AccountId) -> FloatingRateBalanceInfo<FixedU128> {
+	// 		let amount = FloatingRateLend::user_supply_balance(pool_id, user).unwrap_or_else(|_| FixedU128::zero());
+	// 		FloatingRateBalanceInfo{amount}
+	// 	}
+    // }
 }
 
 cumulus_pallet_parachain_system::register_validate_block!(

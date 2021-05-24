@@ -52,7 +52,6 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         type GetBasicCurrencyId: Get<CurrencyIdOf<Self>>;
         type BasicCurrency: BasicCurrency<Self::AccountId, Balance = BalanceOf<Self>>;
-        // type MultiCurrency: MultiCurrency<Self::AccountId, CurrencyId = CurrencyIdOf<Self>, Balance = BalanceOf<Self>>;
         type MultiCurrency: MultiCurrency<Self::AccountId>;
     }
 
@@ -61,19 +60,16 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// The currency has already been listed, cannot list again.
-        CurrencyAlreadyListed,
         /// The currency does not exist.
         CurrencyDoesNotExist,
-        /// Cannot set the price of the currency.
-        CannotSetPrice,
-        /// Not authorized to perform the action
-        NotAuthorized,
     }
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
-    pub enum Event<T: Config> {}
+    pub enum Event<T: Config> {
+        /// Token transfer success. \[currency_id, from, to, amount\]
+        Transferred(CurrencyIdOf<T>, T::AccountId, T::AccountId, BalanceOf<T>),
+    }
 
     /* ------- Storage Related ------- */
     #[pallet::pallet]
@@ -90,6 +86,8 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let from = ensure_signed(origin)?;
             <Self as MultiCurrency<T::AccountId>>::transfer(currency_id, &from, &dest, amount)?;
+            Self::deposit_event(Event::Transferred(currency_id, from, dest, amount));
+
             Ok(().into())
         }
     }
