@@ -12,8 +12,8 @@ else
     split-window -v \; \
     select-layout even-vertical \; \
     send-keys -t polkadot_logger:0.0 'tail -f ./alice.log' C-m \; \
-    send-keys -t polkadot_logger:0.1 'tail -f ./1862.log' C-m \; \
-    send-keys -t polkadot_logger:0.2 'tail -f ./1863.log' C-m
+    send-keys -t polkadot_logger:0.1 'tail -f ./9944.log' C-m \; \
+    send-keys -t polkadot_logger:0.2 'tail -f ./9955.log' C-m
 
     # Attention: Depending on your tmux conf, indexes may start at 1
 

@@ -18,38 +18,56 @@
 				"wsPort": 9977,
 				"port": 30666
 			}
-		]
+		],
+		"runtime_genesis_config": {
+			"parachainsConfiguration": {
+				"config": {
+					"validation_upgrade_frequency": 1,
+					"validation_upgrade_delay": 1
+				}
+			}
+		}
 	},
 	"parachains": [
 		{
 			"bin": "./target/release/encointer-collator",
 			"chain": "encointer-local",
 			"id": "1862",
-			"wsPort": 9944,
-			"port": 31200,
-			"flags": ["-lencointer=debug", "--", "--execution=wasm"]
+			"balance": "1000000000000000000000",
+			"nodes": [
+				{
+					"wsPort": 9944,
+					"port": 31200,
+					"flags": ["-lencointer=debug", "--", "--execution=wasm"]
+				}
+			]
 		},
 		{
 			"bin": "./target/release/encointer-collator",
 			"chain": "sybil-dummy",
 			"id": "1863",
-			"wsPort": 9955,
-			"port": 31300,
-			"flags": ["-lencointer=debug", "--", "--execution=wasm"]
+			"balance": "1000000000000000000000",
+			"nodes": [
+				{
+					"wsPort": 9955,
+					"port": 31300,
+					"flags": ["-lencointer=debug", "--", "--execution=wasm"]
+				}
+			]
 		}
 	],
 	"simpleParachains": [
 	],
 	"hrmpChannels": [
 		{
-			"sender": "1862",
-			"recipient": "1863",
+			"sender": 1862,
+			"recipient": 1863,
 			"maxCapacity": 8,
 			"maxMessageSize": 512
 		},
 		{
-			"sender": "1863",
-			"recipient": "1862",
+			"sender": 1863,
+			"recipient": 1862,
 			"maxCapacity": 8,
 			"maxMessageSize": 512
 		}
@@ -129,5 +147,6 @@
 			"attested": "u8",
 			"last_n_ceremonies": "u8"
 		}
-	}
+	},
+	"finalization": false
 }
