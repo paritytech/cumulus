@@ -2214,7 +2214,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-parachain-runtime"
-version = "0.5.8"
+version = "0.5.9"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
