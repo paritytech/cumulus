@@ -7,7 +7,7 @@ This is the repository to run encointer as a parachain in the rococo-v1 testnet.
 ### Launch the Relay Chain (Local Rococo Testnet)
 
 ```bash
-# Compile Polkadot with the real overseer feature
+# Compile Polkadot
 git clone https://github.com/paritytech/polkadot
 git fetch
 git checkout 70afaae2cfa279c9cd80e897c76eb5c2386ee017
@@ -103,7 +103,7 @@ encointer-collator \
 ```bash
 # We need to build it from source. The one from the yarn registry does not work with our code.
 git clone https://github.com/paritytech/polkadot-launch
-cd plolkadot-launch
+cd polkadot-launch
 yarn install
 yarn build
 
