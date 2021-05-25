@@ -1,7 +1,7 @@
 // Copyright 2021 Parity Technologies (UK) Ltd.
-// This file is part of Polkadot.
+// This file is part of Cumulus.
 
-// Polkadot is free software: you can redistribute it and/or modify
+// Cumulus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
@@ -12,13 +12,35 @@
 // GNU General Public License for more details.
 
 // You should have received a copy of the GNU General Public License
-// along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
+// along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Parachain specific networking
+//! Parachain PoV recovery
 //!
-//! Provides a custom block announcement implementation for parachains
-//! that use the relay chain provided consensus. See [`BlockAnnounceValidator`]
-//! and [`WaitToAnnounce`] for more information about this implementation.
+//! A parachain needs to build PoVs that are send to the relay chain to progress. These PoVs are
+//! erasure encoded and one piece of it is stored by each relay chain validator. As the relay chain
+//! decides on which PoV per parachain to include and thus, to progess the parachain it can happen
+//! that the block corresponding to this PoV isn't propagated in the parachain network. This can have
+//! several reasons, either a malicious collator that managed to include its own PoV and doesn't want
+//! to share it with the rest of the network or maybe a collator went down before it could distribute
+//! the block in the network. When something like this happens we can use the PoV recovery algorithm
+//! implemented in this crate to recover a PoV and to propagate it with the rest of the network. This
+//! protocol is only executed by the collators, to not overwhelm the relay chain validators.
+//!
+//! It works in the following way:
+//!
+//! 1. For every included relay chain block we note the backed candidate of our parachain. If the
+//!    block belonging to the PoV is already known, we do nothing. Otherwise we start
+//!    a timer that waits a random time between 0..relay_chain_slot_length before starting to recover
+//!    the PoV.
+//!
+//! 2. If between starting and firing the timer the block is imported, we skip the recovery of the
+//!    PoV.
+//!
+//! 3. If the timer fired we recover the PoV using the relay chain PoV recovery protocol. After it
+//!    is recovered, we restore the block and import it.
+//!
+//! If we need to recover multiple PoV blocks (which should hopefully not happen in real life), we
+//! make sure that the blocks are imported in the correct order.
 
 use sc_client_api::{BlockBackend, BlockchainEvents, UsageProvider};
 use sp_api::ProvideRuntimeApi;
