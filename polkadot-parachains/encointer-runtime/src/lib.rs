@@ -1,18 +1,18 @@
-// Copyright 2019-2021 Parity Technologies (UK) Ltd.
-// This file is part of Cumulus.
-
-// Cumulus is free software: you can redistribute it and/or modify
+// Copyright (c) 2019 Alain Brenzikofer
+// This file is part of Encointer
+//
+// Encointer is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-
-// Cumulus is distributed in the hope that it will be useful,
+//
+// Encointer is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-
+//
 // You should have received a copy of the GNU General Public License
-// along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
+// along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
@@ -26,9 +26,9 @@ use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{BlakeTwo256, Block as BlockT, AccountIdLookup},
+	traits::{BlakeTwo256, Block as BlockT, AccountIdLookup, Verify},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult,
+	ApplyExtrinsicResult, MultiSignature,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -46,12 +46,25 @@ pub use frame_support::{
 	StorageValue,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
-pub use pallet_balances::Call as BalancesCall;
-pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+
+pub use pallet_balances::Call as BalancesCall;
+pub use pallet_timestamp::Call as TimestampCall;
+
+// A few exports that help ease life for downstream crates.
+pub use encointer_balances::Call as EncointerBalancesCall;
+pub use encointer_bazaar::Call as EncointerBazaarCall;
+pub use encointer_ceremonies::Call as EncointerCeremoniesCall;
+pub use encointer_communities::Call as EncointerCommunitiesCall;
+pub use encointer_personhood_oracle::Call as EncointerPersonhoodOracleCall;
+pub use encointer_scheduler::Call as EncointerSchedulerCall;
+pub use encointer_sybil_gate::Call as EncointerSybilGateCall;
+
+pub use encointer_primitives::balances::{BalanceEntry, BalanceType, Demurrage};
+pub use encointer_primitives::scheduler::CeremonyPhaseType;
 
 // XCM imports
 use polkadot_parachain::primitives::Sibling;
@@ -78,14 +91,18 @@ impl_opaque_keys! {
 /// This runtime version.
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("test-parachain"),
-	impl_name: create_runtime_str!("test-parachain"),
+	spec_name: create_runtime_str!("encointer-parachain"),
+	impl_name: create_runtime_str!("encointer-parachain"),
 	authoring_version: 1,
-	spec_version: 14,
-	impl_version: 0,
+	spec_version: 9,
+	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
 };
+
+/// A type to hold UTC unix epoch [ms]
+pub type Moment = u64;
+pub const ONE_DAY: Moment = 86_400_000;
 
 pub const MILLISECS_PER_BLOCK: u64 = 12000;
 
@@ -195,7 +212,7 @@ parameter_types! {
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = u64;
-	type OnTimestampSet = ();
+	type OnTimestampSet = EncointerScheduler;
 	type MinimumPeriod = MinimumPeriod;
 	type WeightInfo = ();
 }
@@ -427,6 +444,47 @@ impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 }
 
+parameter_types! {
+	pub const MomentsPerDay: Moment = 86_400_000; // [ms/d]
+}
+impl encointer_scheduler::Config for Runtime {
+	type Event = Event;
+	type OnCeremonyPhaseChange = encointer_ceremonies::Module<Runtime>;
+	type MomentsPerDay = MomentsPerDay;
+}
+
+impl encointer_ceremonies::Config for Runtime {
+	type Event = Event;
+	type Public = <MultiSignature as Verify>::Signer;
+	type Signature = MultiSignature;
+	type RandomnessSource = pallet_randomness_collective_flip::Module<Runtime>;
+}
+
+impl encointer_communities::Config for Runtime {
+	type Event = Event;
+}
+
+impl encointer_balances::Config for Runtime {
+	type Event = Event;
+}
+
+impl encointer_bazaar::Config for Runtime {
+	type Event = Event;
+}
+
+impl encointer_personhood_oracle::Config for Runtime {
+	type Event = Event;
+	type XcmSender = XcmRouter;
+}
+
+impl encointer_sybil_gate::Config for Runtime {
+	type Event = Event;
+	type XcmSender = XcmRouter;
+	type Currency = Balances;
+	type Public = <MultiSignature as Verify>::Signer;
+	type Signature = MultiSignature;
+}
+
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
@@ -453,6 +511,16 @@ construct_runtime! {
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin} = 51,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 52,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 53,
+
+		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
+		EncointerCeremonies: encointer_ceremonies::{Pallet, Call, Storage, Config<T>, Event<T>},
+		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>},
+		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Config, Event<T>},
+		EncointerBazaar: encointer_bazaar::{Pallet, Call, Storage, Event<T>},
+		// Pallet index = 14/15 is the default. But I want to be explicit here, such that we know
+		// for sure, what to enter in the polkadot-ui.
+		EncointerPersonhoodOracle: encointer_personhood_oracle::{Pallet, Call, Event} = 14,
+		EncointerSybilGate: encointer_sybil_gate::{Pallet, Call, Storage, Event<T>} = 15,
 
 		Spambot: cumulus_ping::{Pallet, Call, Storage, Event<T>} = 99,
 	}

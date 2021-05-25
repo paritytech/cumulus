@@ -103,9 +103,9 @@ impl SubstrateCli for Cli {
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
 		if use_shell_runtime(&**chain_spec) {
-			&shell_runtime::VERSION
+			&cumulus_shell_runtime::VERSION
 		} else {
-			&rococo_parachain_runtime::VERSION
+			&parachain_runtime::VERSION
 		}
 	}
 }
@@ -171,7 +171,7 @@ macro_rules! construct_async_run {
 		let runner = $cli.create_runner($cmd)?;
 		if use_shell_runtime(&*runner.config().chain_spec) {
 			runner.async_run(|$config| {
-				let $components = new_partial::<shell_runtime::RuntimeApi, ShellRuntimeExecutor, _>(
+				let $components = new_partial::<cumulus_shell_runtime::RuntimeApi, ShellRuntimeExecutor, _>(
 					&$config,
 					crate::service::shell_build_import_queue,
 				)?;
@@ -181,7 +181,7 @@ macro_rules! construct_async_run {
 		} else {
 			runner.async_run(|$config| {
 				let $components = new_partial::<
-					rococo_parachain_runtime::RuntimeApi,
+					parachain_runtime::RuntimeApi,
 					RococoParachainRuntimeExecutor,
 					_
 				>(

@@ -1,3 +1,8 @@
+# Note:	This entire crate except for the .toml is composed os symbolic links from the `./runtime` crate in
+# 		the original Cumulus repo. However, Clion and Visual Studio Code (or any windows program) can't
+#		interpret wsl symbolic links due to current wsl limitations. Hence the `src` and `build.rs` were
+#		copied to facilitate smooth dev-experience.
+
 [package]
 name = "cumulus-test-runtime-upgrade"
 version = "0.1.0"

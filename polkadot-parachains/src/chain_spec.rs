@@ -17,10 +17,8 @@
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
 use parachain_runtime::{
-	BalanceType, CeremonyPhaseType, EncointerCeremoniesConfig, EncointerCommunitiesConfig,
-	EncointerSchedulerConfig,
+	AccountId, AuraId, BalanceType, Demurrage, CeremonyPhaseType, Signature,
 };
-use rococo_parachain_primitives::{AccountId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
@@ -29,6 +27,9 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<parachain_runtime::GenesisConfig, Extensions>;
+
+/// Specialized `ChainSpec` for the shell parachain runtime.
+pub type ShellChainSpec = sc_service::GenericChainSpec<cumulus_shell_runtime::GenesisConfig, Extensions>;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -58,8 +59,8 @@ type AccountPublic = <Signature as Verify>::Signer;
 
 /// Helper function to generate an account ID from seed
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
-where
-	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
+	where
+		AccountPublic: From<<TPublic::Pair as Pair>::Public>,
 {
 	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
@@ -93,6 +94,23 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 				id,
 			)
 		},
+		vec![],
+		None,
+		None,
+		None,
+		Extensions {
+			relay_chain: "westend-dev".into(),
+			para_id: id.into(),
+		},
+	)
+}
+
+pub fn get_shell_chain_spec(id: ParaId) -> ShellChainSpec {
+	ShellChainSpec::from_genesis(
+		"Shell Local Testnet",
+		"shell_local_testnet",
+		ChainType::Local,
+		move || shell_testnet_genesis(id),
 		vec![],
 		None,
 		None,
@@ -158,7 +176,12 @@ pub fn encointer_spec(id: ParaId, use_well_known_keys: bool) -> ChainSpec {
 		"Encointer PC1",
 		"encointer-rococo-v1",
 		chain_type,
-		move || testnet_genesis(root_account.clone(), endowed_accounts.clone(), id),
+		move || testnet_genesis(root_account.clone(),
+								vec![
+									get_from_seed::<AuraId>("Alice"),
+									get_from_seed::<AuraId>("Bob"),
+								],
+								endowed_accounts.clone(), id),
 		Vec::new(),
 		// telemetry endpoints
 		None,
@@ -173,7 +196,7 @@ pub fn encointer_spec(id: ParaId, use_well_known_keys: bool) -> ChainSpec {
 			"tokenSymbol": "ERT"
 		  }"#,
 			)
-			.unwrap(),
+				.unwrap(),
 		),
 		Extensions {
 			relay_chain: "rococo".into(),
@@ -185,21 +208,20 @@ pub fn encointer_spec(id: ParaId, use_well_known_keys: bool) -> ChainSpec {
 pub fn sybil_dummy_spec(id: ParaId) -> ChainSpec {
 	let root_account = get_account_id_from_seed::<sr25519::Public>("Alice");
 	let endowed_accounts = vec![
-		(
 			get_account_id_from_seed::<sr25519::Public>("Alice"),
-			(1 << 60),
-		),
-		(
 			get_account_id_from_seed::<sr25519::Public>("Bob"),
-			10u128.pow(12),
-		),
 	];
 
 	ChainSpec::from_genesis(
 		"Sybil Dummy",
 		"sybil-dummy-rococo-v1",
 		ChainType::Local,
-		move || testnet_genesis(root_account.clone(), endowed_accounts.clone(), id),
+		move || testnet_genesis(root_account.clone(),
+								vec![
+									get_from_seed::<AuraId>("Alice"),
+									get_from_seed::<AuraId>("Bob"),
+								],
+								endowed_accounts.clone(), id),
 		Vec::new(),
 		// telemetry endpoints
 		None,
@@ -214,7 +236,7 @@ pub fn sybil_dummy_spec(id: ParaId) -> ChainSpec {
 			"tokenSymbol": "DUM"
 		  }"#,
 			)
-			.unwrap(),
+				.unwrap(),
 		),
 		Extensions {
 			relay_chain: "rococo".into(),
@@ -243,7 +265,7 @@ fn testnet_genesis(
 				.map(|k| (k, 1 << 60))
 				.collect(),
 		},
-		pallet_sudo: parachain_runtime::SudoConfig { key: root_key },
+		pallet_sudo: parachain_runtime::SudoConfig { key: root_key.clone() },
 		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },
 		pallet_aura: parachain_runtime::AuraConfig {
 			authorities: initial_authorities,
@@ -267,5 +289,20 @@ fn testnet_genesis(
 		encointer_communities: parachain_runtime::EncointerCommunitiesConfig {
 			community_master: root_key,
 		},
+		encointer_balances: parachain_runtime::EncointerBalancesConfig {
+			demurrage_per_block_default: Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128),
+		},
+	}
+}
+
+fn shell_testnet_genesis(parachain_id: ParaId) -> cumulus_shell_runtime::GenesisConfig {
+	cumulus_shell_runtime::GenesisConfig {
+		frame_system: cumulus_shell_runtime::SystemConfig {
+			code: cumulus_shell_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!")
+				.to_vec(),
+			changes_trie_config: Default::default(),
+		},
+		parachain_info: cumulus_shell_runtime::ParachainInfoConfig { parachain_id },
 	}
 }

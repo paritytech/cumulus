@@ -47,15 +47,15 @@ type Hash = sp_core::H256;
 // Native executor instance.
 native_executor_instance!(
 	pub RococoParachainRuntimeExecutor,
-	rococo_parachain_runtime::api::dispatch,
-	rococo_parachain_runtime::native_version,
+	parachain_runtime::api::dispatch,
+	parachain_runtime::native_version,
 );
 
 // Native executor instance.
 native_executor_instance!(
 	pub ShellRuntimeExecutor,
-	shell_runtime::api::dispatch,
-	shell_runtime::native_version,
+	cumulus_shell_runtime::api::dispatch,
+	cumulus_shell_runtime::native_version,
 );
 
 /// Starts a `ServiceBuilder` for a full service.
@@ -326,14 +326,14 @@ where
 
 /// Build the import queue for the rococo parachain runtime.
 pub fn rococo_parachain_build_import_queue(
-	client: Arc<TFullClient<Block, rococo_parachain_runtime::RuntimeApi, RococoParachainRuntimeExecutor>>,
+	client: Arc<TFullClient<Block, parachain_runtime::RuntimeApi, RococoParachainRuntimeExecutor>>,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
 ) -> Result<
 	sp_consensus::DefaultImportQueue<
 		Block,
-		TFullClient<Block, rococo_parachain_runtime::RuntimeApi, RococoParachainRuntimeExecutor>,
+		TFullClient<Block, parachain_runtime::RuntimeApi, RococoParachainRuntimeExecutor>,
 	>,
 	sc_service::Error,
 > {
@@ -383,9 +383,9 @@ pub async fn start_rococo_parachain_node(
 	polkadot_config: Configuration,
 	id: ParaId,
 ) -> sc_service::error::Result<
-	(TaskManager, Arc<TFullClient<Block, rococo_parachain_runtime::RuntimeApi, RococoParachainRuntimeExecutor>>)
+	(TaskManager, Arc<TFullClient<Block, parachain_runtime::RuntimeApi, RococoParachainRuntimeExecutor>>)
 > {
-	start_node_impl::<rococo_parachain_runtime::RuntimeApi, RococoParachainRuntimeExecutor, _, _, _>(
+	start_node_impl::<parachain_runtime::RuntimeApi, RococoParachainRuntimeExecutor, _, _, _>(
 		parachain_config,
 		collator_key,
 		polkadot_config,
@@ -472,14 +472,14 @@ pub async fn start_rococo_parachain_node(
 
 /// Build the import queue for the shell runtime.
 pub fn shell_build_import_queue(
-	client: Arc<TFullClient<Block, shell_runtime::RuntimeApi, ShellRuntimeExecutor>>,
+	client: Arc<TFullClient<Block, cumulus_shell_runtime::RuntimeApi, ShellRuntimeExecutor>>,
 	config: &Configuration,
 	_: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
 ) -> Result<
 	sp_consensus::DefaultImportQueue<
 		Block,
-		TFullClient<Block, shell_runtime::RuntimeApi, ShellRuntimeExecutor>,
+		TFullClient<Block, cumulus_shell_runtime::RuntimeApi, ShellRuntimeExecutor>,
 	>,
 	sc_service::Error,
 > {
@@ -500,9 +500,9 @@ pub async fn start_shell_node(
 	polkadot_config: Configuration,
 	id: ParaId,
 ) -> sc_service::error::Result<
-	(TaskManager, Arc<TFullClient<Block, shell_runtime::RuntimeApi, ShellRuntimeExecutor>>)
+	(TaskManager, Arc<TFullClient<Block, cumulus_shell_runtime::RuntimeApi, ShellRuntimeExecutor>>)
 > {
-	start_node_impl::<shell_runtime::RuntimeApi, ShellRuntimeExecutor, _, _, _>(
+	start_node_impl::<cumulus_shell_runtime::RuntimeApi, ShellRuntimeExecutor, _, _, _>(
 		parachain_config,
 		collator_key,
 		polkadot_config,
