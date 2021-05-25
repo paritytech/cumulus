@@ -111,7 +111,7 @@ yarn build
 node ../polkadot-launch/dist/index.js polkadot-launch-config.json
 ```
 
-This launches the local testnet and creates 5 log files: `alice.log`, `bob.log`, `charlie.log`, which are the logs of the relay chain nodes and `1862.log`, `1863.log`, which are the logs of the two parachains.
+This launches the local testnet and creates 5 log files: `alice.log`, `bob.log`, `charlie.log`, which are the logs of the relay chain nodes and `9944.log`, `9955.log`, which are the logs of the two parachains.
 
 # Sybil Gate Demo
 Encointer parachain features sybil-defense mechanisms by providing a `personhood-oracle`, which returns a rating of an account's personhood uniqueness. This personhood uniqueness rating is based on the attendance of the regular encointer ceremonies.
