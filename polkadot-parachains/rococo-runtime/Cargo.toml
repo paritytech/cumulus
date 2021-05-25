@@ -1,13 +1,69 @@
 [package]
-name = 'cumulus-rococo-parachain-runtime'
-version = '0.1.0'
-authors = ["Parity Technologies <admin@parity.io>"]
+name = 'encointer-parachain-runtime'
+# minor revision must match collator node
+# patch revision must match runtime spec_version
+version = '0.5.8'
+authors = ["Encointer <info@encointer.org>"]
+license = "GPL-3.0"
 edition = '2018'
-description = "Simple runtime used by the rococo parachain(s)"
+
+[dependencies.encointer-scheduler]
+default-features = false
+git = "https://github.com/encointer/pallets"
+branch = "bump-deps"
+package = "pallet-encointer-scheduler"
+
+[dependencies.encointer-ceremonies]
+default-features = false
+git = "https://github.com/encointer/pallets"
+branch = "bump-deps"
+package = "pallet-encointer-ceremonies"
+
+[dependencies.encointer-communities]
+default-features = false
+git = "https://github.com/encointer/pallets"
+branch = "bump-deps"
+package = "pallet-encointer-communities"
+
+[dependencies.encointer-balances]
+default-features = false
+git = "https://github.com/encointer/pallets"
+branch = "bump-deps"
+package = "pallet-encointer-balances"
+
+[dependencies.encointer-bazaar]
+default-features = false
+git = "https://github.com/encointer/pallets"
+branch = "bump-deps"
+package = "pallet-encointer-bazaar"
+
+[dependencies.encointer-primitives]
+default-features = false
+git = "https://github.com/encointer/pallets"
+branch = "bump-deps"
+package = "encointer-primitives"
+
+[dependencies.encointer-personhood-oracle]
+default-features = false
+git = "https://github.com/encointer/pallets"
+branch = "bump-deps"
+package = "pallet-encointer-personhood-oracle"
+
+[dependencies.encointer-sybil-gate]
+default-features = false
+git = "https://github.com/encointer/pallets"
+branch = "bump-deps"
+package = "pallet-encointer-sybil-gate-template"
+
+[dependencies.fixed]
+default-features = false
+git = "https://github.com/encointer/substrate-fixed"
+tag = "v0.5.6"
+package = "substrate-fixed"
 
 [dependencies]
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "2.1.1", default-features = false, features = ["derive"] }
 log = { version = "0.4.14", default-features = false }
 parachain-info = { path = "../pallets/parachain-info", default-features = false }
 
@@ -100,4 +156,13 @@ std = [
 	"xcm-executor/std",
 	"pallet-aura/std",
 	"sp-consensus-aura/std",
+	"encointer-scheduler/std",
+	"encointer-ceremonies/std",
+	"encointer-balances/std",
+	"encointer-communities/std",
+	"encointer-bazaar/std",
+	"encointer-primitives/std",
+	"encointer-personhood-oracle/std",
+	"encointer-sybil-gate/std",
+	"fixed/std"
 ]

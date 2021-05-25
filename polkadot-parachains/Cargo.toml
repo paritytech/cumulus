@@ -16,13 +16,13 @@ futures = { version = "0.3.1", features = ["compat"] }
 log = "0.4.13"
 parking_lot = "0.9.0"
 trie-root = "0.15.2"
-codec = { package = "parity-scale-codec", version = "2.0.0" }
+codec = { package = "parity-scale-codec", version = "2.1.1" }
 structopt = "0.3.3"
 serde = { version = "1.0.119", features = ["derive"] }
 hex-literal = "0.2.1"
 
 # Parachain dependencies
-parachain-runtime = { package = "encointer-parachain-runtime", path = "runtime" }
+parachain-runtime = { package = "encointer-parachain-runtime", path = "rococo-runtime" }
 
 # Substrate dependencies
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }

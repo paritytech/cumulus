@@ -33,4 +33,4 @@ cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inh
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Other deps
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = [ "derive" ] }
+codec = { package = "parity-scale-codec", version = "2.1.1", default-features = false, features = [ "derive" ] }

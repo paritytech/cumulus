@@ -32,7 +32,7 @@ cumulus-primitives-core = { path = "../../../primitives/core" }
 
 # Other deps
 futures = { version = "0.3.8", features = ["compat"] }
-codec = { package = "parity-scale-codec", version = "2.0.0", features = [ "derive" ] }
+codec = { package = "parity-scale-codec", version = "2.1.1", features = [ "derive" ] }
 tracing = "0.1.22"
 async-trait = "0.1.42"
 parking_lot = "0.9"
