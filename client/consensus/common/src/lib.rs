@@ -14,8 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use sp_runtime::traits::Block as BlockT;
 use polkadot_primitives::v1::{Hash as PHash, PersistedValidationData};
+use sp_consensus::BlockImport;
+use sp_runtime::traits::Block as BlockT;
 
 mod parachain_consensus;
 #[cfg(test)]
