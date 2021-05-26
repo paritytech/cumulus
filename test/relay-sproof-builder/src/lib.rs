@@ -106,7 +106,7 @@ impl RelayStateSproofBuilder {
 
 			let mut insert = |key: Vec<u8>, value: Vec<u8>| {
 				relevant_keys.push(key.clone());
-				backend.insert(vec![(None, vec![(key, Some(value))])]);
+				backend.insert(vec![(None, vec![(key, Some(value))])], false);
 			};
 
 			insert(

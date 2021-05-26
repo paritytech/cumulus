@@ -67,7 +67,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>, PSC: crate::Config>(
 
 	let db = storage_proof.into_memory_db();
 	let root = parent_head.state_root().clone();
-	if !HashDB::<HashFor<B>, _>::contains(&db, &root, EMPTY_PREFIX) {
+	if !HashDB::<HashFor<B>, _, _, _>::contains(&db, &root, EMPTY_PREFIX) {
 		panic!("Witness data does not contain given storage root.");
 	}
 	let backend = sp_state_machine::TrieBackend::new(db, root);
@@ -87,6 +87,8 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>, PSC: crate::Config>(
 		sp_io::storage::host_changes_root.replace_implementation(host_storage_changes_root),
 		sp_io::storage::host_append.replace_implementation(host_storage_append),
 		sp_io::storage::host_next_key.replace_implementation(host_storage_next_key),
+		sp_io::storage::host_flag_hash_value
+			.replace_implementation(host_storage_flag_hash_value),
 		sp_io::storage::host_start_transaction
 			.replace_implementation(host_storage_start_transaction),
 		sp_io::storage::host_rollback_transaction
@@ -168,6 +170,10 @@ fn host_storage_clear(key: &[u8]) {
 
 fn host_storage_root() -> Vec<u8> {
 	with_externalities(|ext| ext.storage_root())
+}
+
+fn host_storage_flag_hash_value() {
+	with_externalities(|ext| ext.flag_hash_value())
 }
 
 fn host_storage_clear_prefix(prefix: &[u8]) {
