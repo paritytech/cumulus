@@ -262,7 +262,7 @@ where
 	{
 		let pov_recovery = cumulus_client_pov_recovery::PoVRecovery::new(
 			self.overseer_handler,
-			sc_consensus_babe::Config::get_or_compute(&*client)?.slot_duration(),
+			std::time::Duration::from_secs(6),
 			self.client,
 			self.import_queue,
 			client,
