@@ -119,7 +119,7 @@ Encointer parachain features sybil-defense mechanisms by providing a `personhood
 The encointer parachain also features a `sybil-gate-template`, which shows how to interact with the `personhood-oracle` from another parachain. This section explains the interaction of the `sybil-gate-template` with the `personhood-oracle` via the polkadot-ui. It is a little bit involved, hence we will provide a docker container soon.
 
 * Launch the network with polkadot-launch as explained in the previous section.
-* Run the `bootscript_demo_community.sh` from the encointer-node repository.
+* Run the `bootstrap_demo_community.py` from the encointer-node repository.
 * After the script has finished, run the following command in the encointer-node repository, which will return a hex-encoded proof of attendance for Alice: `./target/release/encointer-client-notee get-proof-of-attendance --cid 41eSfKJrhrR6CYxPfUbwAN18R77WbxXoViRWQMAF4hJB //Alice -1`
 
 This was the preliminaries. Now we head to the polkadot-ui to perform the xcm. We open three tabs in the browser with the polkadot-ui.

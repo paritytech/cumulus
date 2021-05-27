@@ -2272,7 +2272,7 @@ dependencies = [
 [[package]]
 name = "encointer-primitives"
 version = "0.6.0"
-source = "git+https://github.com/encointer/pallets?branch=bump-deps#5fb0d56626c93634790daf89948ce747cb9f81fc"
+source = "git+https://github.com/encointer/pallets?branch=bump-deps#bcb2e8934765748587b670d48884e0e3cbe1a075"
 dependencies = [
  "parity-scale-codec",
  "serde",
@@ -5326,7 +5326,7 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-balances"
 version = "0.6.0"
-source = "git+https://github.com/encointer/pallets?branch=bump-deps#5fb0d56626c93634790daf89948ce747cb9f81fc"
+source = "git+https://github.com/encointer/pallets?branch=bump-deps#bcb2e8934765748587b670d48884e0e3cbe1a075"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -5347,7 +5347,7 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-bazaar"
 version = "0.6.0"
-source = "git+https://github.com/encointer/pallets?branch=bump-deps#5fb0d56626c93634790daf89948ce747cb9f81fc"
+source = "git+https://github.com/encointer/pallets?branch=bump-deps#bcb2e8934765748587b670d48884e0e3cbe1a075"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -5362,7 +5362,7 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-ceremonies"
 version = "0.6.0"
-source = "git+https://github.com/encointer/pallets?branch=bump-deps#5fb0d56626c93634790daf89948ce747cb9f81fc"
+source = "git+https://github.com/encointer/pallets?branch=bump-deps#bcb2e8934765748587b670d48884e0e3cbe1a075"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -5383,7 +5383,7 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-communities"
 version = "0.6.0"
-source = "git+https://github.com/encointer/pallets?branch=bump-deps#5fb0d56626c93634790daf89948ce747cb9f81fc"
+source = "git+https://github.com/encointer/pallets?branch=bump-deps#bcb2e8934765748587b670d48884e0e3cbe1a075"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -5400,7 +5400,7 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-personhood-oracle"
 version = "0.6.0"
-source = "git+https://github.com/encointer/pallets?branch=bump-deps#5fb0d56626c93634790daf89948ce747cb9f81fc"
+source = "git+https://github.com/encointer/pallets?branch=bump-deps#bcb2e8934765748587b670d48884e0e3cbe1a075"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -5423,7 +5423,7 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-scheduler"
 version = "0.6.0"
-source = "git+https://github.com/encointer/pallets?branch=bump-deps#5fb0d56626c93634790daf89948ce747cb9f81fc"
+source = "git+https://github.com/encointer/pallets?branch=bump-deps#bcb2e8934765748587b670d48884e0e3cbe1a075"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -5441,7 +5441,7 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-sybil-gate-template"
 version = "0.6.0"
-source = "git+https://github.com/encointer/pallets?branch=bump-deps#5fb0d56626c93634790daf89948ce747cb9f81fc"
+source = "git+https://github.com/encointer/pallets?branch=bump-deps#bcb2e8934765748587b670d48884e0e3cbe1a075"
 dependencies = [
  "encointer-primitives",
  "frame-support",

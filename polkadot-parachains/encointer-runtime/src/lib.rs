@@ -30,7 +30,7 @@ use sp_runtime::{
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
-use sp_std::prelude::*;
+use sp_std::{prelude::*, marker::PhantomData};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -38,7 +38,7 @@ use sp_version::RuntimeVersion;
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, parameter_types, match_type,
-	traits::{Randomness, IsInVec, All},
+	traits::{Randomness, IsInVec, All, Contains},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -76,7 +76,7 @@ use xcm_builder::{
 	AllowTopLevelPaidExecutionFrom, TakeWeightCredit, FixedWeightBounds, IsConcrete, NativeAsset,
 	UsingComponents, SignedToAccountId32,
 };
-use xcm_executor::{Config, XcmExecutor};
+use xcm_executor::{Config, XcmExecutor, traits::ShouldExecute};
 use pallet_xcm::{XcmPassthrough, EnsureXcm, IsMajorityOfBody};
 use xcm::v0::Xcm;
 
@@ -339,10 +339,29 @@ match_type! {
 	};
 }
 
+/// Transparent XcmTransact Barrier for sybil demo. Polkadot will probably come up with a
+/// better solution for this. Currently, they have not setup a barrier config for `XcmTransact`
+pub struct AllowXcmTransactFrom<T>(PhantomData<T>);
+impl<T: Contains<MultiLocation>> ShouldExecute for AllowXcmTransactFrom<T> {
+	fn should_execute<Call>(
+		_origin: &MultiLocation,
+		_top_level: bool,
+		message: &Xcm<Call>,
+		_shallow_weight: Weight,
+		_weight_credit: &mut Weight,
+	) -> Result<(), ()> {
+		match message {
+			Xcm::Transact { origin_type: _ , require_weight_at_most: _, call: _ } => Ok(()),
+			_ => Err(())
+		}
+	}
+}
+
 pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
 	AllowUnpaidExecutionFrom<ParentOrParentsUnitPlurality>,
+	AllowXcmTransactFrom<All<MultiLocation>>
 	// ^^^ Parent & its unit plurality gets free execution
 );
 
@@ -479,6 +498,7 @@ impl encointer_personhood_oracle::Config for Runtime {
 
 impl encointer_sybil_gate::Config for Runtime {
 	type Event = Event;
+	type Call = Call;
 	type XcmSender = XcmRouter;
 	type Currency = Balances;
 	type Public = <MultiSignature as Verify>::Signer;
@@ -552,6 +572,7 @@ pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
 	frame_system::CheckSpecVersion<Runtime>,
+	frame_system::CheckTxVersion<Runtime>,
 	frame_system::CheckGenesis<Runtime>,
 	frame_system::CheckEra<Runtime>,
 	frame_system::CheckNonce<Runtime>,
