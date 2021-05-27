@@ -5,7 +5,7 @@
 use super::*;
 use frame_support::{construct_runtime, parameter_types};
 use sp_core::H256;
-use sp_runtime::{testing::Header, traits::{IdentityLookup}, AccountId32, FixedU128, FixedPointNumber, FixedI64};
+use sp_runtime::{testing::Header, traits::{IdentityLookup}, AccountId32, FixedU128, FixedPointNumber};
 
 use crate as pallet_floating_rate_lend;
 use polkadot_parachain_primitives::{Price, BALANCE_ONE};

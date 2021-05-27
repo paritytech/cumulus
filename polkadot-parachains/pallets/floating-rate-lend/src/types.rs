@@ -2,7 +2,7 @@ use codec::{Decode, Encode};
 use sp_runtime::{RuntimeDebug, FixedPointNumber};
 use frame_support::{sp_runtime::{FixedU128}};
 use polkadot_parachain_primitives::{FlowError};
-use sp_runtime::traits::{CheckedMul, One, CheckedDiv};
+use sp_runtime::traits::{CheckedMul, One};
 use sp_std::ops::{Add, Sub, Div};
 
 pub struct UserBalanceStats{
@@ -22,15 +22,16 @@ impl UserBalanceStats {
 
 #[derive(Clone, Eq, PartialEq, RuntimeDebug, Encode, Decode)]
 pub struct UserData {
-    pub amount: FixedU128,
-    pub index: FixedU128,
+    amount: FixedU128,
+    index: FixedU128,
 }
 
 impl UserData {
     pub fn accrue_interest(&mut self, pool_index: &FixedU128) -> Result<(), FlowError> {
+        // TODO: maybe should consider throw an error here
+        if pool_index.le(&self.index) { return Ok(()); }
         self.amount = pool_index
-            .checked_div(&self.index)
-            .ok_or(FlowError{})?
+            .div(self.index)
             .checked_mul(&self.amount)
             .ok_or(FlowError{})?;
         self.index = *pool_index;
@@ -46,6 +47,8 @@ impl UserData {
     }
 
     pub fn amount(&self) -> FixedU128 { self.amount }
+
+    pub fn index(&self) -> FixedU128 { self.index }
 
     pub fn new(amount: FixedU128) -> Self { UserData {amount, index: FixedU128::one()} }
 }

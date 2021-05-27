@@ -1,7 +1,7 @@
 use crate::{Config, CurrencyIdOf};
 use sp_runtime::{FixedU128, FixedPointNumber};
 use polkadot_parachain_primitives::{PoolId, Overflown, PriceValue};
-use sp_runtime::traits::{Zero, One, CheckedMul, CheckedAdd, Saturating};
+use sp_runtime::traits::{Zero, One, CheckedMul, CheckedAdd, Saturating, CheckedDiv};
 use sp_std::convert::TryInto;
 use sp_std::ops::{Add, Sub, Mul};
 use codec::{Decode, Encode};
@@ -10,6 +10,7 @@ use sp_std::{vec::Vec};
 
 /// The floating-rate-pool for different lending transactions.
 /// Each floating-rate-pool needs to be associated with a currency id.
+/// TODO: migrate the pub to getter and selected fields with setter
 #[derive(Encode, Decode, Eq, PartialEq, Clone, RuntimeDebug)]
 pub struct Pool<T: Config> {
     pub id: u64,
@@ -22,10 +23,10 @@ pub struct Pool<T: Config> {
     pub enabled: bool,
 
     /* --- Supply And Debt --- */
-    pub supply: FixedU128,
-    pub total_supply_index: FixedU128,
-    pub debt: FixedU128,
-    pub total_debt_index: FixedU128,
+    supply: FixedU128,
+    total_supply_index: FixedU128,
+    debt: FixedU128,
+    total_debt_index: FixedU128,
     pub interest_updated_at: T::BlockNumber,
 
     /* ----- Parameters ----- */
@@ -80,12 +81,12 @@ impl <T: Config> Pool<T> {
             total_supply_index: FixedU128::one(),
             debt: FixedU128::zero(),
             total_debt_index: FixedU128::one(),
-            interest_updated_at: T::BlockNumber::one(),
+            interest_updated_at: block_number,
             minimal_amount,
             safe_factor,
             close_factor,
             /// 100 usd
-            close_minimal_amount: FixedU128::saturating_from_integer(100),
+            close_minimal_amount: FixedU128::from(100),
             discount_factor,
             utilization_factor,
             initial_interest_rate,
@@ -95,6 +96,15 @@ impl <T: Config> Pool<T> {
             created_at: block_number,
         }
     }
+
+    /* ------- Getters and Setters ------- */
+    pub fn supply(&self) -> FixedU128 { self.supply }
+
+    pub fn debt(&self) -> FixedU128 { self.debt }
+
+    pub fn total_supply_index(&self) -> FixedU128 { self.total_supply_index }
+
+    pub fn total_debt_index(&self) -> FixedU128 { self.total_debt_index }
 
     /// Accrue interest for the floating-rate-pool. The block_number is the block number when the floating-rate-pool is updated
     /// TODO: update and check all the overflow here
@@ -115,6 +125,7 @@ impl <T: Config> Pool<T> {
         let d_rate = self.debt_interest_rate()?;
         let supply_multiplier = FixedU128::one() + s_rate * FixedU128::saturating_from_integer(elapsed_time_u32);
         let debt_multiplier = FixedU128::one() + d_rate * FixedU128::saturating_from_integer(elapsed_time_u32);
+        log::debug!("The multipliers for pool {} is debt: {}, supply {} at block {}", self.id, debt_multiplier, supply_multiplier, block_number);
 
         self.supply = supply_multiplier * self.supply;
         self.total_supply_index = self.total_supply_index * supply_multiplier;
@@ -156,7 +167,7 @@ impl <T: Config> Pool<T> {
             return Ok(FixedU128::zero());
         }
 
-        let utilization_ratio = self.debt / self.supply;
+        let utilization_ratio = self.utilization_ratio()?;
         self.debt_interest_rate()?.checked_mul(&utilization_ratio).ok_or(Overflown{})
     }
 
@@ -165,8 +176,12 @@ impl <T: Config> Pool<T> {
             return Ok(self.initial_interest_rate);
         }
 
-        let utilization_ratio = self.debt / self.supply;
+        let utilization_ratio = self.utilization_ratio()?;
         let rate = self.utilization_factor.checked_mul(&utilization_ratio).ok_or(Overflown{})?;
         self.initial_interest_rate.checked_add(&rate).ok_or(Overflown{})
+    }
+
+    fn utilization_ratio(&self) -> Result<FixedU128, Overflown> {
+        self.debt.checked_div(&self.supply).ok_or(Overflown{})
     }
 }
