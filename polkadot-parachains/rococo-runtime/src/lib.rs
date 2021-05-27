@@ -26,12 +26,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
-use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys,
-	traits::{BlakeTwo256, Block as BlockT, AccountIdLookup},
-	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult,
-};
+use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{BlakeTwo256, Block as BlockT, AccountIdLookup}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, FixedU128, FixedPointNumber, FixedI64};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -87,6 +82,7 @@ use weights::chainlink::WeightInfo as ChainlinkWeightInfo;
 use sp_runtime::{traits::{Convert, AccountIdConversion, Zero}};
 use frame_support::{PalletId};
 use orml_traits::GetByKey;
+use sp_std::convert::TryInto;
 // End of Konomi imports
 
 pub type SessionHandlers = ();
@@ -538,10 +534,27 @@ impl orml_tokens::Config for Runtime {
 	type MaxLocks = MaxLocks;
 }
 
+pub struct Conversion;
+
+impl Convert<Balance, FixedU128> for Conversion {
+	fn convert(a: Balance) -> FixedU128 {
+		let accuracy = FixedU128::accuracy() as u128;
+		FixedU128::from_inner(a as u128 * (accuracy / BALANCE_ONE))
+	}
+}
+
+impl Convert<FixedU128, Balance> for Conversion {
+	fn convert(a: FixedU128) -> Balance {
+		let accuracy = FixedU128::accuracy();
+		(a.into_inner() / (accuracy / BALANCE_ONE)).try_into().unwrap()
+	}
+}
+
 impl pallet_floating_rate_lend::Config for Runtime {
 	type Event = Event;
-	type MultiCurrency = MultiCurrencyAdapter<Tokens>;
+	type MultiCurrency = Currencies;
 	type PriceProvider = Oracle;
+	type Conversion = Conversion;
 }
 
 pub type FeedId = u32;
@@ -612,7 +625,7 @@ construct_runtime! {
 		Aura: pallet_aura::{Pallet, Config<T>},
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Config},
 
-		Tokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>} = 11,
+		Tokens: orml_tokens::{Pallet, Storage, Config<T>, Event<T>} = 11,
 		Currencies: pallet_currencies::{Pallet, Call, Storage, Event<T>},
 		Oracle: pallet_chainlink_oracle::{Pallet, Call, Storage},
 		ChainlinkFeed: pallet_chainlink_feed::{Pallet, Call, Storage, Config<T>, Event<T>},

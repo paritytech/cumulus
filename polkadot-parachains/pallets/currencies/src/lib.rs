@@ -26,6 +26,8 @@ pub use pallet::*;
 
 mod basic;
 mod native;
+mod mock;
+mod tests;
 
 pub use basic::BasicCurrencyAdapter;
 pub use native::MultiCurrencyAdapter;
@@ -48,7 +50,7 @@ pub mod pallet {
     <<T as Config>::MultiCurrency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
 
     #[pallet::config]
-    pub trait Config: frame_system::Config + pallet_sudo::Config {
+    pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         type GetBasicCurrencyId: Get<CurrencyIdOf<Self>>;
         type BasicCurrency: BasicCurrency<Self::AccountId, Balance = BalanceOf<Self>>;
@@ -78,7 +80,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::weight(1)]
-        pub fn transfer(
+        pub fn transfer_amount(
             origin: OriginFor<T>,
             dest: T::AccountId,
             currency_id: CurrencyIdOf<T>,
@@ -92,6 +94,7 @@ pub mod pallet {
         }
     }
 
+    /// Currently we only need `transfer`, we will slowly implement as the use cases are introduced
     impl<T: Config> MultiCurrency<T::AccountId> for Pallet<T> {
         type CurrencyId = CurrencyIdOf<T>;
         type Balance = BalanceOf<T>;
@@ -138,7 +141,7 @@ pub mod pallet {
                 _ => T::MultiCurrency::transfer(currency_id, from, to, amount)?
             }
 
-            Ok(().into())
+            Ok(())
         }
 
         /// Deposit some `amount` into the free balance of account `who`.

@@ -27,6 +27,7 @@ mod mock;
 mod tests;
 mod types;
 mod errors;
+mod pool;
 
 pub use pallet::*;
 
@@ -38,18 +39,18 @@ pub mod pallet {
     use frame_support::{PalletId};
     use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
     use frame_system::pallet_prelude::*;
-    use sp_runtime::{FixedPointNumber, FixedU128, FixedI64};
-    use sp_runtime::traits::{AccountIdConversion, One, Zero, CheckedDiv, CheckedMul, CheckedAdd, Saturating};
+    use sp_runtime::{FixedPointNumber, FixedU128 };
+    use sp_runtime::traits::{AccountIdConversion, One, Zero, CheckedDiv, CheckedMul, Saturating, Convert};
     use sp_std::{vec::Vec};
     use frame_support::error::BadOrigin;
 
     /* --------- Local Libs --------- */
     use pallet_traits::{MultiCurrency, PriceProvider};
     use polkadot_parachain_primitives::{PoolId, FlowError, InvalidParameters, Overflown, PriceValue};
-    use crate::types::{UserBalanceStats, UserData};
+    use crate::types::{UserBalanceStats, UserData, Convertor};
     use crate::errors::{PoolNotEnabled, PoolPriceNotReady};
-    use sp_std::convert::TryInto;
     use sp_std::ops::{Sub, Add, Mul};
+    use crate::pool::Pool;
 
     const PALLET_ID: PalletId = PalletId(*b"Floating");
 
@@ -60,159 +61,6 @@ pub mod pallet {
     pub type CurrencyIdOf<T> =
     <<T as Config>::MultiCurrency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
 
-    /// The floating-rate-pool for different lending transactions.
-    /// Each floating-rate-pool needs to be associated with a currency id.
-    #[derive(Encode, Decode, Eq, PartialEq, Clone, RuntimeDebug)]
-    pub struct Pool<T: Config> {
-        pub id: u64,
-        pub name: Vec<u8>,
-        pub currency_id: CurrencyIdOf<T>,
-
-        /// indicates whether this floating-rate-pool can be used as collateral
-        pub can_be_collateral: bool,
-        /// This flag indicated whether this floating-rate-pool is enabled for transactions
-        pub enabled: bool,
-
-        /* --- Supply And Debt --- */
-        pub supply: FixedU128,
-        pub total_supply_index: FixedU128,
-        pub debt: FixedU128,
-        pub total_debt_index: FixedU128,
-
-        /* ----- Parameters ----- */
-        /// Minimum amount required for each transaction
-        pub minimal_amount: FixedU128,
-        /// When this is used as collateral, the value is multiplied by safe_factor
-        pub safe_factor: FixedU128,
-        /// Only a close_factor of the collateral can be liquidated at a time
-        pub close_factor: FixedU128,
-        /// The discount given to the arbitrageur
-        pub discount_factor: FixedU128,
-        /// The multiplier to the utilization ratio
-        pub utilization_factor: FixedU128,
-        /// The constant for interest rate
-        pub initial_interest_rate: FixedU128,
-
-        /* ----- Metadata Related ----- */
-        /// The block number when this floating-rate-pool is last updated
-        pub last_updated: T::BlockNumber,
-        /// The account that lastly modified this floating-rate-pool
-        pub last_updated_by: T::AccountId,
-        /// The account that created this floating-rate-pool
-        pub created_by: T::AccountId,
-        /// The block number when this floating-rate-pool is created
-        pub created_at: T::BlockNumber,
-    }
-
-    impl <T: Config> Pool<T> {
-        /// Creates a new floating-rate-pool from the input parameters
-        pub fn new(id: PoolId,
-                   name: Vec<u8>,
-                   currency_id: CurrencyIdOf<T>,
-                   can_be_collateral: bool,
-                   safe_factor: FixedU128,
-                   close_factor: FixedU128,
-                   discount_factor: FixedU128,
-                   utilization_factor: FixedU128,
-                   initial_interest_rate: FixedU128,
-                   minimal_amount: FixedU128,
-                   owner: T::AccountId,
-                   block_number: T::BlockNumber,
-        ) -> Pool<T>{
-            Pool{
-                id,
-                name,
-                currency_id,
-                can_be_collateral,
-                enabled: false,
-                supply: FixedU128::zero(),
-                total_supply_index: FixedU128::one(),
-                debt: FixedU128::zero(),
-                total_debt_index: FixedU128::one(),
-                minimal_amount,
-                safe_factor,
-                close_factor,
-                discount_factor,
-                utilization_factor,
-                initial_interest_rate,
-                last_updated: block_number.clone(),
-                last_updated_by: owner.clone(),
-                created_by: owner,
-                created_at: block_number,
-            }
-        }
-
-        /// Accrue interest for the floating-rate-pool. The block_number is the block number when the floating-rate-pool is updated
-        /// TODO: update and check all the overflow here
-        pub fn accrue_interest(&mut self, block_number: T::BlockNumber) -> Result<(), Overflown>{
-            // Not updating if the time is the same or lagging
-            // TODO: maybe should raise exception if last_updated is greater than block_number
-            if self.last_updated >= block_number {
-                return Ok(());
-            }
-
-
-            // get time span
-            let interval_block_number = block_number - self.last_updated;
-            let elapsed_time_u32 = TryInto::<u32>::try_into(interval_block_number)
-                .ok()
-                .expect("blockchain will not exceed 2^32 blocks; qed");
-
-            // get rates and calculate interest
-            let s_rate = self.supply_interest_rate()?;
-            let d_rate = self.debt_interest_rate()?;
-            let supply_multiplier = FixedU128::one() + s_rate * FixedU128::saturating_from_integer(elapsed_time_u32);
-            let debt_multiplier = FixedU128::one() + d_rate * FixedU128::saturating_from_integer(elapsed_time_u32);
-
-            self.supply = supply_multiplier * self.supply;
-            self.total_supply_index = self.total_supply_index * supply_multiplier;
-
-            self.debt = debt_multiplier * self.debt;
-            self.total_debt_index = self.total_debt_index * debt_multiplier;
-
-            self.last_updated = block_number;
-
-            Ok(())
-        }
-
-        /// Increment the supply of the pool
-        pub fn increment_supply(&mut self, amount: &FixedU128) { self.supply = self.supply.add(*amount); }
-
-        /// Decrement the supply of the pool
-        pub fn decrement_supply(&mut self, amount: &FixedU128) { self.supply = self.supply.sub(*amount); }
-
-        /// Increment the debt of the pool
-        pub fn increment_debt(&mut self, amount: &FixedU128) { self.debt = self.debt.add(*amount); }
-
-        /// Decrement the debt of the pool
-        pub fn decrement_debt(&mut self, amount: &FixedU128) { self.debt = self.debt.sub(*amount); }
-
-        /// The amount that can be close given the input
-        /// TODO: handle dust values
-        pub fn closable_amount(&self, amount: &FixedU128) -> FixedU128 { self.close_factor.mul(*amount) }
-
-        /// The discounted price of the pool given the current price of the currency
-        pub fn discounted_price(&self, price: PriceValue) -> PriceValue { self.discount_factor * price }
-
-        pub fn supply_interest_rate(&self) -> Result<FixedU128, Overflown> {
-            if self.supply == FixedU128::zero() {
-                return Ok(FixedU128::zero());
-            }
-
-            let utilization_ratio = self.debt / self.supply;
-            self.debt_interest_rate()?.checked_mul(&utilization_ratio).ok_or(Overflown{})
-        }
-
-        pub fn debt_interest_rate(&self) -> Result<FixedU128, Overflown> {
-            if self.supply == FixedU128::zero() {
-                return Ok(self.initial_interest_rate);
-            }
-
-            let utilization_ratio = self.debt / self.supply;
-            let rate = self.utilization_factor.checked_mul(&utilization_ratio).ok_or(Overflown{})?;
-            self.initial_interest_rate.checked_add(&rate).ok_or(Overflown{})
-        }
-    }
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
@@ -220,6 +68,7 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         type MultiCurrency: MultiCurrency<Self::AccountId>;
         type PriceProvider: PriceProvider<Self, CurrencyId = CurrencyIdOf<Self>>;
+        type Conversion: Convert<BalanceOf<Self>, FixedU128> + Convert<FixedU128, BalanceOf<Self>>;
     }
 
     #[pallet::pallet]
@@ -333,9 +182,6 @@ pub mod pallet {
         PoolAlreadyEnabled,
         /// The price of the pool is not ready
         PoolPriceNotReady,
-        /// Not authorized to perform the action
-        NotAuthorized,
-
         /// Balance is too low.
         BalanceTooLow,
         /// User has not supply in the pool
@@ -346,7 +192,9 @@ pub mod pallet {
         AssetNotCollateral,
         /// User is not under liquidation
         UserNotUnderLiquidation,
+        /// Not enough liquidity in the pool for the transaction
         NotEnoughLiquidity,
+        /// The requirement of not smaller than liquidation threshold is violated
         BelowLiquidationThreshold,
     }
 
@@ -365,31 +213,33 @@ pub mod pallet {
             name: Vec<u8>,
             currency_id: CurrencyIdOf<T>,
             can_be_collateral: bool,
-            safe_factor: u64,
-            close_factor: u64,
-            discount_factor: u64,
-            utilization_factor: u64,
-            initial_interest_rate: u64,
+            safe_factor_percentage: u64,
+            close_factor_percentage: u64,
+            discount_factor_percentage: u64,
+            utilization_factor_percentage_annum: u64,
+            initial_interest_rate_percentage_annum: u64,
         ) -> DispatchResultWithPostInfo {
-            let origin = Self::ensure_signed_and_root(origin.clone())?;
+            let origin = Self::ensure_signed_and_root(origin)?;
 
             // Check to ensure the floating-rate-pool name has not existed before
             if <PoolNameStorage<T>>::contains_key(name.clone()) {
                 return Err(Error::<T>::PoolAlreadyExists.into());
             }
             let id = <NextPoolId<T>>::get();
+
+            // TODO: ensure parameters range from 1 to 100
             let pool = Pool::new(
                 id,
                 name.clone(),
                 currency_id,
                 can_be_collateral,
-                FixedU128::saturating_from_rational(safe_factor, 100),
-                FixedU128::saturating_from_rational(close_factor, 100),
-                FixedU128::saturating_from_rational(discount_factor, 100),
-                FixedU128::saturating_from_rational(utilization_factor, 10000000000u64),
-                FixedU128::saturating_from_rational(initial_interest_rate, 10000000000u64),
+                Convertor::convert_percentage(safe_factor_percentage),
+                Convertor::convert_percentage(close_factor_percentage),
+                Convertor::convert_percentage(discount_factor_percentage),
+                Convertor::convert_percentage_annum_to_per_block(utilization_factor_percentage_annum),
+                Convertor::convert_percentage_annum_to_per_block(initial_interest_rate_percentage_annum),
                 Zero::zero(),
-                origin.clone(),
+                origin,
                 <frame_system::Pallet<T>>::block_number(),
             );
 
@@ -409,7 +259,7 @@ pub mod pallet {
         #[pallet::weight(1)]
         pub fn enable_pool(origin: OriginFor<T>, pool_id: PoolId) -> DispatchResultWithPostInfo {
             log::debug!("received request to enable floating-rate-pool {:?}", pool_id);
-            let origin = Self::ensure_signed_and_root(origin.clone())?;
+            let origin = Self::ensure_signed_and_root(origin)?;
 
             let mut pool = PoolStorage::<T>::get(pool_id).ok_or(Error::<T>::PoolNotExist)?;
             if pool.enabled {
@@ -431,7 +281,7 @@ pub mod pallet {
         #[pallet::weight(1)]
         pub fn disable_pool(origin: OriginFor<T>, pool_id: PoolId) -> DispatchResultWithPostInfo {
             log::debug!("received request to disable floating-rate-pool {:?}", pool_id);
-            let origin = Self::ensure_signed_and_root(origin.clone())?;
+            let origin = Self::ensure_signed_and_root(origin)?;
 
             let mut pool = PoolStorage::<T>::get(pool_id).ok_or(Error::<T>::PoolNotExist)?;
             if !pool.enabled {
@@ -455,22 +305,22 @@ pub mod pallet {
             origin: OriginFor<T>,
             pool_id: PoolId,
             can_be_collateral: bool,
-            safe_factor: FixedU128,
-            close_factor: FixedU128,
-            discount_factor: FixedU128,
-            utilization_factor: FixedU128,
-            initial_interest_rate: FixedU128,
+            safe_factor_percentage: u64,
+            close_factor_percentage: u64,
+            discount_factor_percentage: u64,
+            utilization_factor_percentage_annum: u64,
+            initial_interest_rate_percentage_annum: u64,
         ) -> DispatchResultWithPostInfo {
             log::debug!("received request to update floating-rate-pool {:?}", pool_id);
-            let origin = Self::ensure_signed_and_root(origin.clone())?;
+            let origin = Self::ensure_signed_and_root(origin)?;
 
             let mut pool = PoolStorage::<T>::get(pool_id).ok_or(Error::<T>::PoolNotExist)?;
             pool.can_be_collateral = can_be_collateral;
-            pool.safe_factor = safe_factor;
-            pool.close_factor = close_factor;
-            pool.discount_factor = discount_factor;
-            pool.utilization_factor = utilization_factor;
-            pool.initial_interest_rate = initial_interest_rate;
+            pool.safe_factor = Convertor::convert_percentage(safe_factor_percentage);
+            pool.close_factor = Convertor::convert_percentage(close_factor_percentage);
+            pool.discount_factor = Convertor::convert_percentage(discount_factor_percentage);
+            pool.utilization_factor = Convertor::convert_percentage_annum_to_per_block(utilization_factor_percentage_annum);
+            pool.initial_interest_rate = Convertor::convert_percentage_annum_to_per_block(initial_interest_rate_percentage_annum);
 
             pool.last_updated_by = origin;
             pool.last_updated = <frame_system::Pallet<T>>::block_number();
@@ -508,7 +358,7 @@ pub mod pallet {
             let mut pool: Pool<T> = PoolStorage::<T>::get(pool_id).ok_or(Error::<T>::PoolNotExist)?;
             if !pool.enabled { return Err(PoolNotEnabled{}.into()); }
 
-            let amount_u128 = Self::to_fixed_u128(amount)?;
+            let amount_u128 = T::Conversion::convert(amount);
             if amount_u128 < pool.minimal_amount { return Err(Error::<T>::BalanceTooLow.into()) }
 
             pool.accrue_interest(<frame_system::Pallet<T>>::block_number())?;
@@ -525,7 +375,7 @@ pub mod pallet {
             pool.increment_supply(&amount_u128);
             PoolStorage::<T>::insert(pool_id, pool);
 
-            Self::deposit_event(Event::SupplySuccessful(pool_id, account.clone(), amount_u128));
+            Self::deposit_event(Event::SupplySuccessful(pool_id, account, amount_u128));
 
             Ok(().into())
         }
@@ -540,7 +390,7 @@ pub mod pallet {
             let mut pool: Pool<T> = PoolStorage::<T>::get(pool_id).ok_or(Error::<T>::PoolNotExist)?;
             if !pool.enabled { return Err(Error::<T>::PoolNotEnabled.into()); }
             // This ensures the pool's supply will never be lower than 0
-            let mut amount_fu128 = Self::to_fixed_u128(amount)?;
+            let mut amount_fu128 = T::Conversion::convert(amount);
             let mut transfer_amount = amount;
             if (pool.supply - pool.debt) < amount_fu128 { return Err(Error::<T>::NotEnoughLiquidity.into()); }
 
@@ -554,7 +404,7 @@ pub mod pallet {
 
             if user_supply.amount < amount_fu128 {
                 amount_fu128 = user_supply.amount;
-                transfer_amount = Self::to_balance(user_supply.amount)?;
+                transfer_amount = T::Conversion::convert(user_supply.amount);
             }
 
             Self::check_withdraw_against_liquidation(account.clone(), pool.currency_id, pool.safe_factor, amount_fu128)?;
@@ -563,7 +413,7 @@ pub mod pallet {
             user_supply.decrement(&amount_fu128);
             pool.decrement_supply(&amount_fu128);
 
-            let minimal_amount = pool.minimal_amount.clone();
+            let minimal_amount = pool.minimal_amount;
 
             // Now perform the writes
             T::MultiCurrency::transfer(pool.currency_id, &Self::account_id(), &account, transfer_amount)?;
@@ -590,7 +440,7 @@ pub mod pallet {
             let mut pool: Pool<T> = PoolStorage::<T>::get(pool_id).ok_or(Error::<T>::PoolNotExist)?;
             if !pool.enabled { return Err(Error::<T>::PoolNotEnabled.into()); }
             // This ensures the pool's supply will never be lower than 0
-            let amount_u128 = Self::to_fixed_u128(amount)?;
+            let amount_u128 = T::Conversion::convert(amount);
             if pool.debt + amount_u128 > pool.supply { return Err(Error::<T>::NotEnoughLiquidity.into()); }
 
             Self::check_borrow_against_liquidation(account.clone(), pool.currency_id, pool.safe_factor, amount_u128)?;
@@ -608,7 +458,7 @@ pub mod pallet {
             }
             PoolStorage::<T>::insert(pool_id, pool);
 
-            Self::deposit_event(Event::BorrowSuccessful(pool_id, account.clone(), amount_u128));
+            Self::deposit_event(Event::BorrowSuccessful(pool_id, account, amount_u128));
 
             Ok(().into())
         }
@@ -628,18 +478,18 @@ pub mod pallet {
             pool.accrue_interest(<frame_system::Pallet<T>>::block_number())?;
             user_debt.accrue_interest(&pool.total_debt_index)?;
 
-            let mut amount_fu128 = Self::to_fixed_u128(amount)?;
+            let mut amount_fu128 = T::Conversion::convert(amount);
             let mut transfer_amount = amount;
             if user_debt.amount < amount_fu128 {
                 amount_fu128 = user_debt.amount;
-                transfer_amount = Self::to_balance(amount_fu128)?;
+                transfer_amount = T::Conversion::convert(amount_fu128);
             }
 
             pool.decrement_debt(&amount_fu128);
             user_debt.decrement(&amount_fu128);
 
             // Ready to perform the writes
-            let minimal_amount = pool.minimal_amount.clone();
+            let minimal_amount = pool.minimal_amount;
 
             // Now perform the writes
             T::MultiCurrency::transfer(pool.currency_id, &account, &Self::account_id(), transfer_amount)?;
@@ -677,8 +527,8 @@ pub mod pallet {
             let mut debt_pool: Pool<T> = PoolStorage::<T>::get(debt_pool_id).ok_or(Error::<T>::PoolNotExist)?;
 
             let block_number = <frame_system::Pallet<T>>::block_number();
-            debt_pool.accrue_interest(block_number.clone())?;
-            collateral_pool.accrue_interest(block_number.clone())?;
+            debt_pool.accrue_interest(block_number)?;
+            collateral_pool.accrue_interest(block_number)?;
 
             // Ensure the user has got the collateral and debt
             let mut user_debt = PoolUserDebts::<T>::get(debt_pool_id, account.clone())
@@ -688,7 +538,7 @@ pub mod pallet {
 
             // Ensure the user is liquidated
             let liquidation_threshold = LiquidationThreshold::<T>::get();
-            let user_stats = Self::user_balances(target_user.clone())?;
+            let user_stats = Self::user_balances(target_user)?;
             if !user_stats.is_liquidated(liquidation_threshold) { return Err(Error::<T>::UserNotUnderLiquidation.into()); }
 
             user_debt.accrue_interest(&debt_pool.total_debt_index)?;
@@ -697,10 +547,10 @@ pub mod pallet {
             // Next, we check the prices are ok to use
             let debt_pool_price = Self::pool_price(&debt_pool)?;
             let collateral_pool_price = Self::pool_price(&collateral_pool)?;
-            let discounted_collateral_price = collateral_pool.discounted_price(collateral_pool_price.clone());
+            let discounted_collateral_price = collateral_pool.discounted_price(collateral_pool_price);
 
             // Now, we derive the amount for liquidation
-            let arbitrageur_get_amount = collateral_pool.closable_amount(&user_collateral.amount);
+            let arbitrageur_get_amount = collateral_pool.closable_amount(&user_collateral.amount, &collateral_pool_price);
             let arbitrageur_pay_amount = Self::convert_amount(
                 &arbitrageur_get_amount,
                 &discounted_collateral_price,
@@ -708,7 +558,7 @@ pub mod pallet {
             )?;
 
             // Now we calculate the total amount to transfer to arbitrageur
-            let mut pay_amount = Self::to_fixed_u128(pay_amount)?;
+            let mut pay_amount = T::Conversion::convert(pay_amount);
             if pay_amount > arbitrageur_pay_amount { pay_amount = arbitrageur_pay_amount; }
             if pay_amount > user_debt.amount { pay_amount = user_debt.amount; }
 
@@ -720,16 +570,16 @@ pub mod pallet {
             )?;
 
             // Now we can transfer debt from arbitrageur to pool
-            let pay_amount_transfer = Self::to_balance(pay_amount)?;
+            let pay_amount_transfer = T::Conversion::convert(pay_amount);
             T::MultiCurrency::transfer(debt_pool.currency_id,&account,&Self::account_id(), pay_amount_transfer)?;
             // Then the collateral to arbitrageur
-            let get_amount_transfer = Self::to_balance(get_amount)?;
+            let get_amount_transfer = T::Conversion::convert(get_amount);
             T::MultiCurrency::transfer(collateral_pool.currency_id,&Self::account_id(), &account, get_amount_transfer)?;
 
             user_collateral.decrement(&get_amount);
             user_debt.decrement(&pay_amount);
 
-            let minimal_amount = collateral_pool.minimal_amount.clone();
+            let minimal_amount = collateral_pool.minimal_amount;
 
             // update pools
             PoolStorage::<T>::insert(debt_pool_id, debt_pool);
@@ -745,9 +595,9 @@ pub mod pallet {
 
             if user_debt.amount < minimal_amount {
                 PoolUserDebts::<T>::remove(debt_pool_id, account.clone());
-                Self::remove_user_debt(debt_pool_id, account.clone());
+                Self::remove_user_debt(debt_pool_id, account);
             } else {
-                PoolUserDebts::<T>::insert(debt_pool_id, account.clone(), user_debt);
+                PoolUserDebts::<T>::insert(debt_pool_id, account, user_debt);
             }
 
             Self::deposit_event(Event::LiquidationSuccessful);
@@ -760,14 +610,14 @@ pub mod pallet {
         /* ----- Runtime API ----- */
         pub fn debt_rate(id: PoolId) -> FixedU128{
             match PoolStorage::<T>::get(id) {
-                Some(pool) => pool.debt_interest_rate().unwrap_or(FixedU128::zero()),
+                Some(pool) => pool.debt_interest_rate().unwrap_or_else(|_| FixedU128::zero()),
                 None => FixedU128::zero()
             }
         }
 
         pub fn supply_rate(id: PoolId) -> FixedU128 {
             match PoolStorage::<T>::get(id) {
-                Some(pool) => pool.supply_interest_rate().unwrap_or(FixedU128::zero()),
+                Some(pool) => pool.supply_interest_rate().unwrap_or_else(|_| FixedU128::zero()),
                 None => FixedU128::zero()
             }
         }
@@ -877,7 +727,7 @@ pub mod pallet {
             safe_factor: FixedU128,
             amount: FixedU128,
         ) -> DispatchResultWithPostInfo {
-            let user_balance_stats = Self::user_balances(account.clone())?;
+            let user_balance_stats = Self::user_balances(account)?;
             let price = T::PriceProvider::price(currency_id);
 
             let mut collateral_remain = user_balance_stats.collateral_balance;
@@ -900,7 +750,7 @@ pub mod pallet {
             safe_factor: FixedU128,
             amount: FixedU128,
         ) -> DispatchResultWithPostInfo {
-            let user_balance_stats = Self::user_balances(account.clone())?;
+            let user_balance_stats = Self::user_balances(account)?;
             let price = T::PriceProvider::price(currency_id);
 
             // First calculate the balance of the amount to borrow
@@ -923,9 +773,9 @@ pub mod pallet {
             if let Some(mut user_supply) = PoolUserSupplies::<T>::get(pool.id, account.clone()) {
                 user_supply.accrue_interest(&pool.total_supply_index)?;
                 user_supply.increment(&amount);
-                PoolUserSupplies::<T>::insert(pool.id, account.clone(), user_supply);
+                PoolUserSupplies::<T>::insert(pool.id, account, user_supply);
             } else {
-                Self::add_user_supply(&pool, account.clone(), amount);
+                Self::add_user_supply(&pool, account, amount);
             }
 
             Ok(().into())
@@ -992,17 +842,21 @@ pub mod pallet {
             Err(InvalidParameters{})
         }
 
-        fn to_fixed_u128(amount: BalanceOf<T>) -> Result<FixedU128, FlowError> {
-            // TODO: fix unwrap
-            Ok(FixedU128::from(
-                TryInto::<u128>::try_into(amount).ok().unwrap()
-            ))
-        }
-
-        fn to_balance(amount: FixedU128) -> Result<BalanceOf<T>, FlowError> {
-            let accuracy = FixedU128::accuracy() / FixedI64::accuracy() as u128;
-            // NOTE: unwrap is for testing purposes only. Do not use it in production.
-            (amount.into_inner() / accuracy).try_into().ok().ok_or(FlowError{})
-        }
+        // fn convert_to_fixed_u128(amount: BalanceOf<T>) -> Result<FixedU128, FlowError> {
+        //     // TODO: fix unwrap
+        //     Ok(FixedU128::from(
+        //         TryInto::<u128>::try_into(amount).ok().unwrap()
+        //     ))
+        // }
+        //
+        // fn convert_to_balance(amount: FixedU128) -> Result<BalanceOf<T>, FlowError> {
+        //     let accuracy = FixedU128::accuracy() / FixedI64::accuracy() as u128;
+        //     // NOTE: unwrap is for testing purposes only. Do not use it in production.
+        //     (amount.into_inner() / accuracy).try_into().ok().ok_or(FlowError{})
+        // }
+        //
+        // fn convert_percentage_annum_to_per_block(amount: u64) -> FixedU128 {
+        //     FixedU128::from(amount as u128).div(FixedU128::from(BLOCKS_IN_YEAR))
+        // }
     }
 }

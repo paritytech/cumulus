@@ -97,24 +97,15 @@ impl CurrencyId {
         }
     }
     pub fn is_native_currency(&self) -> bool {
-        match self {
-            CurrencyId::Native {..} => true,
-            _ => false
-        }
+        matches!(self, CurrencyId::Native {..})
     }
 
     pub fn is_erc20_currency(&self) -> bool {
-        match self {
-            CurrencyId::Erc20 {..} => true,
-            _ => false
-        }
+        matches!(self, CurrencyId::Erc20 {..})
     }
 
     pub fn is_basic_currency(&self) -> bool {
-        match self {
-            CurrencyId::Basic {..} => true,
-            _ => false
-        }
+        matches!(self, CurrencyId::Basic {..})
     }
 }
 
@@ -122,3 +113,6 @@ pub const KONO: CurrencyId = CurrencyId::Basic(Basic { id: 0});
 pub const DOT: CurrencyId = CurrencyId::Native(Native { id: 0});
 pub const ETH: CurrencyId = CurrencyId::Native(Native { id: 1});
 pub const BTC: CurrencyId = CurrencyId::Native(Native { id: 2});
+
+// TODO: maybe each currency will have their own decimal
+pub const BALANCE_ONE: u128 = u128::pow(10, 12);

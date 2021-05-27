@@ -21,7 +21,7 @@
 //! This includes getting and setting the prices. The actual price is fetched by the Oracle module.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-
+mod mock;
 pub use pallet::*;
 
 #[frame_support::pallet]
@@ -80,11 +80,11 @@ pub mod pallet {
                         let val = FixedU128::checked_from_rational(
                             raw,
                             u128::pow(10, feed.decimals().into())
-                        ).unwrap_or(FixedU128::zero());
+                        ).unwrap_or_else(FixedU128::zero);
 
                         return Price::new(
                             val,
-                            round_data.updated_at.clone()
+                            round_data.updated_at
                         );
                     },
                     None => Price::invalid_price()

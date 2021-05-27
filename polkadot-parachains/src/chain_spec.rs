@@ -183,9 +183,10 @@ fn testnet_genesis(
 		cumulus_pallet_aura_ext: Default::default(),
 		orml_tokens: rococo_parachain_runtime::TokensConfig {
 			endowed_accounts: vec![
-				(hex!["e2b2d3e7c3931a4562feaa27c22e858dea0bf2828bbab28c0b799f61eb0b9462"].into(), DOT, 1_000_000_000_000_000_000_000),
-				(hex!["e2b2d3e7c3931a4562feaa27c22e858dea0bf2828bbab28c0b799f61eb0b9462"].into(), BTC, 1_000_000_000_000_000_000_000),
-				(hex!["e2b2d3e7c3931a4562feaa27c22e858dea0bf2828bbab28c0b799f61eb0b9462"].into(), ETH, 1_000_000_000_000_000_000_000),
+				// one is 1000_000_000_000
+				(hex!["e2b2d3e7c3931a4562feaa27c22e858dea0bf2828bbab28c0b799f61eb0b9462"].into(), DOT, 1000_000_000_000_000_000_000),
+				(hex!["e2b2d3e7c3931a4562feaa27c22e858dea0bf2828bbab28c0b799f61eb0b9462"].into(), BTC, 1000_000_000_000_000_000),
+				(hex!["e2b2d3e7c3931a4562feaa27c22e858dea0bf2828bbab28c0b799f61eb0b9462"].into(), ETH, 1000_000_000_000_000_000_000_000),
 			]
 		},
 		pallet_chainlink_feed: rococo_parachain_runtime::ChainlinkFeedConfig {

@@ -39,5 +39,6 @@ std = [
     'sp-core/std',
     'sp-runtime/std',
     'pallet-traits/std',
+    'pallet-sudo/std',
     'serde',
 ]

@@ -9,7 +9,7 @@ use codec::{FullCodec};
 
 /// A trait to provide the price for a currency
 pub trait PriceProvider<T> where T: Config {
-	type CurrencyId: FullCodec + Eq + PartialEq + Copy + MaybeSerializeDeserialize + Debug;
+	type CurrencyId;
 	fn price(currency_id: Self::CurrencyId) -> Price<T>;
 }
 

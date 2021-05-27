@@ -11,7 +11,7 @@ pub struct InvalidParameters {}
 impl From<InvalidParameters> for DispatchError {
     fn from(_: InvalidParameters) -> DispatchError {
         DispatchError::Other {
-            0: "Invalid Parameters Passed".into(),
+            0: "Invalid Parameters Passed",
         }
     }
 }
@@ -23,7 +23,7 @@ pub struct Overflown {}
 impl From<Overflown> for DispatchError {
     fn from(_: Overflown) -> DispatchError {
         DispatchError::Other {
-            0: "Overflow".into(),
+            0: "Overflow",
         }
     }
 }
@@ -35,7 +35,7 @@ pub struct Underflow {}
 impl From<Underflow> for DispatchError {
     fn from(_: Underflow) -> DispatchError {
         DispatchError::Other {
-            0: "Underflow".into(),
+            0: "Underflow",
         }
     }
 }
@@ -48,7 +48,7 @@ pub struct FlowError {}
 impl From<FlowError> for DispatchError {
     fn from(_: FlowError) -> DispatchError {
         DispatchError::Other {
-            0: "Underflow/Overflow Error".into(),
+            0: "Underflow/Overflow Error",
         }
     }
 }

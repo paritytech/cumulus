@@ -119,6 +119,7 @@ std = [
 
 	# -------- Konomi -------- #
 	"orml-tokens/std",
+	"orml-traits/std",
 	# Chainlink
 	'pallet-chainlink-feed/std',
 
