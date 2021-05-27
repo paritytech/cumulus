@@ -132,16 +132,31 @@ curl https://getsubstrate.io -sSf | bash -s -- --fast
 ```
 
 ### Build
+To build the parachain, use the command: `cargo build --release`.
 
-Once the development environment is set up, build the node. This command will build the
-[Wasm](https://substrate.dev/docs/en/knowledgebase/advanced/executor#wasm-execution) and
-[native](https://substrate.dev/docs/en/knowledgebase/advanced/executor#native-execution) code:
 
+### Run
+#### Relay Chain
+Start the relay chain as follows:
 ```bash
+# Compile Polkadot with the real overseer feature
+git clone https://github.com/paritytech/polkadot
+git fetch
+git checkout rococo-v1
 cargo build --release
+
+# Generate a raw chain spec
+./target/release/polkadot build-spec --chain rococo-local --disable-default-bootnode --raw > rococo-local-cfde.json
+
+# Alice
+./target/release/polkadot --chain rococo-local-cfde.json --alice --tmp
+
+# Bob (In a separate terminal)
+./target/release/polkadot --chain rococo-local-cfde.json --bob --tmp --port 30334
 ```
 
-## Run
+Start the collators
+```bash
 # Collator1
 ./target/release/polkadot-collator --collator --tmp --alice --force-authoring --parachain-id 18403 --port 40335 --ws-port 9946 --rpc-methods Unsafe --ws-external --rpc-cors all -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30335
 
@@ -153,3 +168,5 @@ cargo build --release
 
 ./target/release/polkadot-collator export-genesis-state --parachain-id 18403 > genesis-state-18403
 ./target/release/polkadot-collator export-genesis-wasm > genesis-wasm-18403
+```
+Then register the parachain on the relay chain.
