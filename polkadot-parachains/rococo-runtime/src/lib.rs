@@ -26,7 +26,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
-use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{BlakeTwo256, Block as BlockT, AccountIdLookup}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, FixedU128, FixedPointNumber, FixedI64};
+use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{BlakeTwo256, Block as BlockT, AccountIdLookup}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, FixedU128, FixedPointNumber};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -565,7 +565,6 @@ parameter_types! {
 	pub const MinimumReserve: Balance = ExistentialDeposit::get() * 1000;
 	pub const OracleCountLimit: u32 = 25;
 	pub const FeedLimit: FeedId = 100;
-	pub const PruningWindow: RoundId = 15;
 }
 
 impl pallet_chainlink_feed::Config for Runtime {
@@ -579,7 +578,6 @@ impl pallet_chainlink_feed::Config for Runtime {
 	type OnAnswerHandler = ();
 	type OracleCountLimit = OracleCountLimit;
 	type FeedLimit = FeedLimit;
-	type PruningWindow = PruningWindow;
 	type WeightInfo = ChainlinkWeightInfo;
 }
 

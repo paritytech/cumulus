@@ -125,7 +125,6 @@ impl <T: Config> Pool<T> {
         let d_rate = self.debt_interest_rate()?;
         let supply_multiplier = FixedU128::one() + s_rate * FixedU128::saturating_from_integer(elapsed_time_u32);
         let debt_multiplier = FixedU128::one() + d_rate * FixedU128::saturating_from_integer(elapsed_time_u32);
-        log::debug!("The multipliers for pool {} is debt: {}, supply {} at block {}", self.id, debt_multiplier, supply_multiplier, block_number);
 
         self.supply = supply_multiplier * self.supply;
         self.total_supply_index = self.total_supply_index * supply_multiplier;

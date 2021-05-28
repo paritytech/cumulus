@@ -176,8 +176,8 @@ fn floating_lend_pool_accrue_interest_multiple_times() {
         .build()
         .execute_with(|| {
             let mut p = default_test_pool();
-            let supply_amount = FixedU128::from(1000);
-            let borrow_amount = FixedU128::from(500);
+            let supply_amount = FixedU128::from(2);
+            let borrow_amount = FixedU128::from(1);
             p.increment_supply(&supply_amount);
             p.increment_debt(&borrow_amount);
 
@@ -199,9 +199,9 @@ fn floating_lend_pool_accrue_interest_multiple_times() {
             assert_eq!(expected_supply, p.supply());
             assert_eq!(expected_borrow, p.debt());
 
-            // p.increment_supply(&supply_amount);
-            // p.accrue_interest(21).unwrap();
-            // assert_eq!(400000036575004778, total.supply);
-            // assert_eq!(200000036575004779, total.debt);
+            p.increment_supply(&supply_amount);
+            p.accrue_interest(21).unwrap();
+            assert_eq!(FixedU128::from_inner(4000000365750047781), p.supply());
+            assert_eq!(FixedU128::from_inner(1000000365750047797), p.debt());
         });
 }

@@ -20,38 +20,40 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub use pallet::*;
+
+mod types;
+mod errors;
+mod pool;
+
 #[cfg(test)]
 mod mock;
 
 #[cfg(test)]
 mod tests;
-mod types;
-mod errors;
-mod pool;
-
-pub use pallet::*;
 
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use frame_support::{PalletId};
     use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
-    use frame_system::pallet_prelude::*;
-    use sp_runtime::{FixedPointNumber, FixedU128 };
-    use sp_runtime::traits::{AccountIdConversion, One, Zero, CheckedDiv, CheckedMul, Saturating, Convert};
-    use sp_std::{vec::Vec};
     use frame_support::error::BadOrigin;
+    use frame_support::PalletId;
+    use frame_system::pallet_prelude::*;
+    use sp_runtime::{FixedPointNumber, FixedU128};
+    use sp_runtime::traits::{AccountIdConversion, CheckedDiv, CheckedMul, Convert, One, Zero};
+    use sp_std::{vec::Vec};
+    use sp_std::ops::{Add, Mul, Sub};
+
+    use pallet_traits::{MultiCurrency, PriceProvider};
+    use polkadot_parachain_primitives::{FlowError, InvalidParameters, Overflown, PoolId, PriceValue};
+
+    use crate::errors::{PoolNotEnabled, PoolPriceNotReady};
+    use crate::pool::Pool;
+    use crate::types::{Convertor, UserAccountUtil, UserBalanceStats, UserData};
 
     /* --------- Local Libs --------- */
-    use pallet_traits::{MultiCurrency, PriceProvider};
-    use polkadot_parachain_primitives::{PoolId, FlowError, InvalidParameters, Overflown, PriceValue};
-    use crate::types::{UserBalanceStats, UserData, Convertor};
-    use crate::errors::{PoolNotEnabled, PoolPriceNotReady};
-    use sp_std::ops::{Sub, Add, Mul};
-    use crate::pool::Pool;
-
     const PALLET_ID: PalletId = PalletId(*b"Floating");
 
     /// User supply struct
@@ -370,7 +372,8 @@ pub mod pallet {
                 amount,
             )?;
 
-            Self::increment_user_supply(&pool, account.clone(), amount_u128)?;
+            // Self::increment_user_supply(&pool, account.clone(), amount_u128)?;
+            UserAccountUtil::<T>::increment_user_supply(&pool, account.clone(), amount_u128)?;
             pool.increment_supply(&amount_u128);
             PoolStorage::<T>::insert(pool_id, pool);
 
@@ -421,7 +424,7 @@ pub mod pallet {
             // TODO: we need to handle dust here! Currently minimal_amount is just zero
             if user_supply.amount() < minimal_amount {
                 PoolUserSupplies::<T>::remove(pool_id, account.clone());
-                Self::remove_user_supply(pool_id, account.clone());
+                UserAccountUtil::<T>::remove_user_supply(pool_id, account.clone());
             } else {
                 PoolUserSupplies::<T>::insert(pool_id, account.clone(), user_supply);
             }
@@ -453,7 +456,7 @@ pub mod pallet {
                 user_debt.accrue_interest(&pool.total_debt_index())?;
                 PoolUserDebts::<T>::insert(pool_id, account.clone(), user_debt);
             } else {
-                Self::add_user_debt(&pool, account.clone(), amount_u128);
+                UserAccountUtil::<T>::add_user_debt(&pool, account.clone(), amount_u128);
             }
             PoolStorage::<T>::insert(pool_id, pool);
 
@@ -497,7 +500,7 @@ pub mod pallet {
             // TODO: we need to handle dust here! Currently minimal_amount is just zero
             if user_debt.amount() < minimal_amount {
                 PoolUserDebts::<T>::remove(pool_id, account.clone());
-                Self::remove_user_debt(pool_id, account.clone());
+                UserAccountUtil::<T>::remove_user_debt(pool_id, account.clone());
             } else {
                 PoolUserDebts::<T>::insert(pool_id, account.clone(), user_debt);
             }
@@ -587,14 +590,14 @@ pub mod pallet {
             // TODO: shift the common code to a single function!
             if user_collateral.amount() < minimal_amount {
                 PoolUserSupplies::<T>::remove(collateral_pool_id, account.clone());
-                Self::remove_user_supply(collateral_pool_id, account.clone());
+                UserAccountUtil::<T>::remove_user_supply(collateral_pool_id, account.clone());
             } else {
                 PoolUserSupplies::<T>::insert(collateral_pool_id, account.clone(), user_collateral);
             }
 
             if user_debt.amount() < minimal_amount {
                 PoolUserDebts::<T>::remove(debt_pool_id, account.clone());
-                Self::remove_user_debt(debt_pool_id, account);
+                UserAccountUtil::<T>::remove_user_debt(debt_pool_id, account);
             } else {
                 PoolUserDebts::<T>::insert(debt_pool_id, account, user_debt);
             }
@@ -623,69 +626,17 @@ pub mod pallet {
 
         /// Get the user supply balance for the user in a pool
         pub fn user_supply_balance(pool_id: PoolId, user: T::AccountId) -> Result<FixedU128, Overflown> {
-            if let Some(user_supply) = PoolUserSupplies::<T>::get(pool_id, user) {
-                if let Some(mut pool) = PoolStorage::<T>::get(pool_id) {
-                    pool.accrue_interest(<frame_system::Pallet<T>>::block_number())?;
-                    return Ok(
-                        pool.total_supply_index()
-                            .mul(user_supply.index())
-                            .mul(user_supply.amount())
-                    );
-                }
-            }
-            Ok(FixedU128::zero())
+            UserAccountUtil::<T>::user_supply_balance(pool_id, user)
         }
 
         /// Get the user debt balance for the user in a pool
         pub fn user_debt_balance(pool_id: PoolId, user: T::AccountId) -> Result<FixedU128, Overflown> {
-            if let Some(user_debt) = PoolUserDebts::<T>::get(pool_id, user) {
-                if let Some(mut pool) = PoolStorage::<T>::get(pool_id) {
-                    pool.accrue_interest(<frame_system::Pallet<T>>::block_number())?;
-                    return Ok(
-                        pool.total_debt_index()
-                            .mul(user_debt.index())
-                            .mul(user_debt.amount())
-                    );
-                }
-            }
-            Ok(FixedU128::zero())
+            UserAccountUtil::<T>::user_debt_balance(pool_id, user)
         }
 
         // total supply balance; total converted supply balance; total debt balance;
         pub fn user_balances(user: T::AccountId) -> Result<UserBalanceStats, Overflown> {
-            let mut supply_balance = FixedU128::zero();
-            let mut collateral_balance = FixedU128::zero();
-
-            for (pool_id, currency_id) in Self::user_supply_set(user.clone()).into_iter() {
-                let pool = PoolStorage::<T>::get(pool_id).unwrap();
-                if !pool.can_be_collateral { continue; }
-                let price = T::PriceProvider::price(currency_id);
-                // TODO: throw error
-                if !price.price_ready() { continue; }
-
-                let amount = Self::user_supply_balance(pool_id, user.clone())?;
-                supply_balance = supply_balance.add(price.value().saturating_mul(amount));
-
-                // TODO: consider using some sort of cache?
-                let delta = (price.value() * pool.safe_factor).saturating_mul(amount);
-                collateral_balance = collateral_balance.add(delta);
-            }
-
-            let mut debt_balance = FixedU128::zero();
-            for (pool_id, currency_id) in Self::user_debt_set(user.clone()).into_iter() {
-                let amount = Self::user_debt_balance(pool_id, user.clone())?;
-                let price = T::PriceProvider::price(currency_id);
-                if !price.price_ready() {
-                    // TODO: throw error
-                    continue
-                }
-                debt_balance = debt_balance.add(price.value().mul(amount));
-            }
-            Ok(UserBalanceStats {
-                supply_balance,
-                collateral_balance,
-                debt_balance,
-            })
+            UserAccountUtil::<T>::user_balances(user)
         }
 
         /* -------- Internal Helper Functions ------------ */
@@ -764,64 +715,6 @@ pub mod pallet {
             }
 
             Ok(().into())
-        }
-
-        /// Increment user supply.
-        /// Ensure the amount is above pool.minimal_amount() before this function is actually called
-        fn increment_user_supply(pool: &Pool<T>, account: T::AccountId, amount: FixedU128) -> DispatchResultWithPostInfo {
-            if let Some(mut user_supply) = PoolUserSupplies::<T>::get(pool.id, account.clone()) {
-                user_supply.accrue_interest(&pool.total_supply_index())?;
-                user_supply.increment(&amount);
-                PoolUserSupplies::<T>::insert(pool.id, account, user_supply);
-            } else {
-                Self::add_user_supply(&pool, account, amount);
-            }
-
-            Ok(().into())
-        }
-
-        /// Add to user supplies.
-        /// This function contains write action, ensure the checks are performed in advance
-        fn add_user_supply(pool: &Pool<T>, account: T::AccountId, amount: FixedU128) {
-            let user_supply = UserData::new(amount);
-            PoolUserSupplies::<T>::insert(pool.id, account.clone(), user_supply);
-
-            // update user's supply asset set
-            let mut pool_currency_tuples = UserSupplySet::<T>::get(account.clone());
-            if !pool_currency_tuples.iter().any(|p| p.0 == pool.id) {
-                pool_currency_tuples.push((pool.id, pool.currency_id));
-                UserSupplySet::<T>::insert(account, pool_currency_tuples);
-            }
-        }
-
-        /// Remove to user supplies.
-        /// This function contains write action, ensure the checks are performed in advance
-        fn remove_user_supply(pool_id: PoolId, account: T::AccountId) {
-            let mut pool_currency_tuples = UserSupplySet::<T>::get(account.clone());
-            pool_currency_tuples.retain(|p| p.0 != pool_id);
-            UserSupplySet::<T>::insert(account, pool_currency_tuples);
-        }
-
-        /// Add to user debts.
-        /// This function contains write action, ensure the checks are performed in advance
-        fn add_user_debt(pool: &Pool<T>, account: T::AccountId, amount: FixedU128) {
-            let user_debt = UserData::new(amount);
-            PoolUserDebts::<T>::insert(pool.id, account.clone(), user_debt);
-
-            // update user's supply asset set
-            let mut pool_currency_tuples = UserDebtSet::<T>::get(account.clone());
-            if !pool_currency_tuples.iter().any(|p| p.0 == pool.id) {
-                pool_currency_tuples.push((pool.id, pool.currency_id));
-                UserDebtSet::<T>::insert(account, pool_currency_tuples);
-            }
-        }
-
-        /// Remove to user debts.
-        /// This function contains write action, ensure the checks are performed in advance
-        fn remove_user_debt(pool_id: PoolId, account: T::AccountId) {
-            let mut pool_currency_tuples = UserDebtSet::<T>::get(account.clone());
-            pool_currency_tuples.retain(|p| p.0 != pool_id);
-            UserDebtSet::<T>::insert(account, pool_currency_tuples);
         }
 
         /// Check the floating-rate-pool's parameters
