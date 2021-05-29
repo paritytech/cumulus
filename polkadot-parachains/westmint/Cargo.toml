@@ -1,0 +1,375 @@
+[build-dependencies.substrate-wasm-builder]
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '4.0.0'
+
+[package]
+authors = ['Anonymous']
+edition = '2018'
+homepage = 'https://substrate.dev'
+license = 'Apache-2.0'
+name = 'westmint-runtime'
+repository = 'https://github.com/paritytech/substrate/'
+version = '2.0.0'
+
+[dependencies]
+smallvec = "1.6.1"
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[dependencies.codec]
+default-features = false
+features = ['derive']
+package = 'parity-scale-codec'
+version = '2.0.0'
+
+[dependencies.frame-benchmarking]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+optional = true
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.frame-executive]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.frame-system]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.frame-system-benchmarking]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+optional = true
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.frame-system-rpc-runtime-api]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.hex-literal]
+optional = true
+version = '0.3.1'
+
+[dependencies.pallet-assets]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+
+[dependencies.pallet-authorship]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+
+[dependencies.pallet-balances]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.pallet-multisig]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.pallet-proxy]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.pallet-randomness-collective-flip]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.pallet-sudo]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.pallet-timestamp]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.pallet-transaction-payment]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.pallet-transaction-payment-rpc-runtime-api]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.pallet-utility]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.serde]
+features = ['derive']
+optional = true
+version = '1.0.119'
+
+[dependencies.node-primitives]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+
+[dependencies.sp-api]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.sp-block-builder]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.sp-core]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.sp-inherents]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.sp-io]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.sp-offchain]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.sp-session]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.sp-transaction-pool]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.sp-version]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+# Cumulus dependencies
+[dependencies.cumulus-pallet-aura-ext]
+default-features = false
+path = "../../pallets/aura-ext"
+
+[dependencies.parachain-info]
+default-features = false
+path = "../pallets/parachain-info"
+version = '0.1.0'
+
+[dependencies.cumulus-pallet-parachain-system]
+path = "../../pallets/parachain-system"
+default-features = false
+
+[dependencies.cumulus-primitives-core]
+path = "../../primitives/core"
+default-features = false
+
+[dependencies.cumulus-primitives-utility]
+path = "../../primitives/utility"
+default-features = false
+
+[dependencies.cumulus-pallet-dmp-queue]
+path = "../../pallets/dmp-queue"
+default-features = false
+
+[dependencies.cumulus-pallet-xcmp-queue]
+path = "../../pallets/xcmp-queue"
+default-features = false
+
+[dependencies.cumulus-pallet-xcm]
+path = "../../pallets/xcm"
+default-features = false
+
+# Polkadot dependencies
+[dependencies.polkadot-primitives]
+git = 'https://github.com/paritytech/polkadot'
+branch = "statemint"
+default-features = false
+
+[dependencies.polkadot-runtime-common]
+git = 'https://github.com/paritytech/polkadot'
+branch = "statemint"
+default-features = false
+
+[dependencies.polkadot-parachain]
+git = 'https://github.com/paritytech/polkadot'
+branch = "statemint"
+default-features = false
+
+[dependencies.xcm]
+git = 'https://github.com/paritytech/polkadot'
+branch = "statemint"
+default-features = false
+
+[dependencies.xcm-builder]
+git = 'https://github.com/paritytech/polkadot'
+branch = "statemint"
+default-features = false
+
+[dependencies.xcm-executor]
+git = 'https://github.com/paritytech/polkadot'
+branch = "statemint"
+default-features = false
+
+[dependencies.pallet-xcm]
+git = 'https://github.com/paritytech/polkadot'
+branch = "statemint"
+default-features = false
+
+[dependencies.pallet-collator-selection]
+default-features = false
+path = '../../pallets/collator-selection'
+
+[dependencies.runtime-common]
+default-features = false
+version = "0.8.30"
+path = '../statemint-common'
+
+[dependencies.pallet-aura]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.pallet-session]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '3.0.0'
+
+[dependencies.sp-consensus-aura]
+default-features = false
+git = 'https://github.com/paritytech/substrate'
+branch = "statemint"
+version = '0.9.0'
+
+
+[features]
+default = ['std']
+runtime-benchmarks = [
+	'hex-literal',
+	'sp-runtime/runtime-benchmarks',
+	'xcm-builder/runtime-benchmarks',
+	'frame-benchmarking',
+	'frame-system-benchmarking',
+	'frame-support/runtime-benchmarks',
+	'frame-system/runtime-benchmarks',
+	'pallet-assets/runtime-benchmarks',
+	'pallet-balances/runtime-benchmarks',
+	'pallet-multisig/runtime-benchmarks',
+	'pallet-proxy/runtime-benchmarks',
+	'pallet-utility/runtime-benchmarks',
+	'pallet-timestamp/runtime-benchmarks',
+	'pallet-xcm/runtime-benchmarks',
+	'pallet-collator-selection/runtime-benchmarks',
+]
+std = [
+	'codec/std',
+	'serde',
+	'sp-consensus-aura/std',
+	'pallet-aura/std',
+	'sp-api/std',
+	'sp-std/std',
+	'sp-io/std',
+	'sp-core/std',
+	'sp-runtime/std',
+	'sp-version/std',
+	'sp-offchain/std',
+	'sp-session/std',
+	'sp-block-builder/std',
+	'sp-transaction-pool/std',
+	'sp-inherents/std',
+	'frame-support/std',
+	'frame-executive/std',
+	'frame-system/std',
+	'frame-system-rpc-runtime-api/std',
+	'pallet-assets/std',
+	'pallet-authorship/std',
+	'pallet-balances/std',
+	'pallet-multisig/std',
+	'pallet-proxy/std',
+	'pallet-utility/std',
+	'pallet-randomness-collective-flip/std',
+	'pallet-transaction-payment-rpc-runtime-api/std',
+	'pallet-timestamp/std',
+	'pallet-sudo/std',
+	'pallet-session/std',
+	'pallet-xcm/std',
+	'pallet-transaction-payment/std',
+	'pallet-collator-selection/std',
+	'node-primitives/std',
+	'parachain-info/std',
+	"cumulus-pallet-aura-ext/std",
+	'cumulus-pallet-parachain-system/std',
+	'cumulus-pallet-dmp-queue/std',
+	"cumulus-pallet-xcmp-queue/std",
+	"cumulus-pallet-xcm/std",
+	"cumulus-primitives-core/std",
+	"cumulus-primitives-utility/std",
+	'xcm/std',
+	'xcm-builder/std',
+	'xcm-executor/std',
+	'polkadot-runtime-common/std',
+	'runtime-common/std',
+	'polkadot-primitives/std',
+]

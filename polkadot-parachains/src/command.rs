@@ -48,13 +48,21 @@ fn load_spec(
 			&include_bytes!("../res/track.json")[..],
 		)?)),
 		"shell" => Ok(Box::new(chain_spec::get_shell_chain_spec(para_id))),
+		"statemint-dev" => Box::new(chain_spec::statemint_development_config(para_id)),
+		"statemint-local" => Box::new(chain_spec::statemint_local_config(para_id)),
+		"statemine-dev" => Box::new(chain_spec::statemine_development_config(para_id)),
+		"statemine-local" => Box::new(chain_spec::statemine_local_config(para_id)),
+		"statemine" => Box::new(chain_spec::statemine_config(para_id)),
+		"westmint-dev" => Box::new(chain_spec::westmint_development_config(para_id)),
+		"westmint-local" => Box::new(chain_spec::westmint_local_config(para_id)),
 		"" => Ok(Box::new(chain_spec::get_chain_spec(para_id))),
 		path => Ok({
-			let chain_spec = chain_spec::ChainSpec::from_json_file(
-			path.into(),
-		)?;
-
-			if use_shell_runtime(&chain_spec) {
+			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
+			if use_statemine_runtime(&chain_spec) {
+				Box::new(chain_spec::StatemineChainSpec::from_json_file(path.into())?)
+			} else if use_westmint_runtime(&chain_spec) {
+				Box::new(chain_spec::WestmintChainSpec::from_json_file(path.into())?)
+			} else if use_shell_runtime(&chain_spec) {
 				Box::new(chain_spec::ShellChainSpec::from_json_file(path.into())?)
 			} else {
 				Box::new(chain_spec)
@@ -159,6 +167,14 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 
 fn use_shell_runtime(chain_spec: &dyn ChainSpec) -> bool {
 	chain_spec.id().starts_with("shell")
+}
+
+fn use_statemine_runtime(chain_spec: &dyn ChainSpec) -> bool {
+	chain_spec.id().starts_with("statemine")
+}
+
+fn use_westmint_runtime(chain_spec: &dyn ChainSpec) -> bool {
+	chain_spec.id().starts_with("westmint")
 }
 
 use crate::service::{new_partial, RococoParachainRuntimeExecutor, ShellRuntimeExecutor};
