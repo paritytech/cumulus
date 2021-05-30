@@ -141,7 +141,7 @@ impl <T: Config> UserAccountUtil<T> {
     }
 
     pub fn get_debt_pools(account: T::AccountId) -> Vec<PoolId> {
-        UserSupplySet::<T>::get(account)
+        UserDebtSet::<T>::get(account)
             .into_iter()
             .map(|p| p.0)
             .collect::<Vec<PoolId>>()
@@ -178,13 +178,13 @@ impl <T: Config> UserAccountUtil<T> {
     }
 
     /// Increment user debt
-    pub fn increment_debt(pool: &PoolProxy<T>, account: T::AccountId, amount: FixedU128) -> DispatchResultWithPostInfo {
+    pub fn accrue_interest_and_increment_debt(pool: &PoolProxy<T>, account: T::AccountId, amount: &FixedU128) -> DispatchResultWithPostInfo {
         if let Some(mut user_debt) = PoolUserDebts::<T>::get(pool.id(), account.clone()) {
             user_debt.accrue_interest(&pool.total_debt_index())?;
             user_debt.increment(&amount);
             PoolUserDebts::<T>::insert(pool.id(), account.clone(), user_debt);
         } else {
-            Self::new_debt(&pool, account.clone(), amount);
+            Self::new_debt(&pool, account.clone(), &amount);
         }
         Ok(().into())
     }
@@ -215,16 +215,14 @@ impl <T: Config> UserAccountUtil<T> {
 
     /// Calculate the user balances
     pub fn user_balances(
-        pools: &UserPools,
         user_supply_debt: &UserSupplyDebtData,
         pool_map: &BTreeMap<PoolId, PoolProxy<T>>,
     ) -> Result<UserBalanceStats, CustomError> {
         // calculate supply related
         let mut supply_balance = FixedU128::zero();
         let mut collateral_balance = FixedU128::zero();
-        for pool_id in &pools.supply {
+        for pool_id in user_supply_debt.supply.keys() {
             let pool = pool_map.get(pool_id).ok_or(CustomError::InconsistentState)?;
-            if !pool.can_be_collateral() { continue; }
             if !pool.price_ready() { return Err(CustomError::PriceNotReady); }
 
             let amount = user_supply_debt.supply
@@ -235,13 +233,15 @@ impl <T: Config> UserAccountUtil<T> {
             let mut balance = pool.price().saturating_mul(amount);
             supply_balance = supply_balance.add(balance);
 
-            balance = balance.mul(pool.safe_factor());
-            collateral_balance = collateral_balance.add(balance);
+            if pool.can_be_collateral() {
+                balance = balance.mul(pool.safe_factor());
+                collateral_balance = collateral_balance.add(balance);
+            }
         }
 
         // calculate debt
         let mut debt_balance = FixedU128::zero();
-        for pool_id in &pools.debt {
+        for pool_id in user_supply_debt.debt.keys() {
             let pool = pool_map.get(pool_id).ok_or(CustomError::InconsistentState)?;
             if !pool.price_ready() { return Err(CustomError::PriceNotReady); }
             let amount = user_supply_debt.debt
@@ -259,14 +259,14 @@ impl <T: Config> UserAccountUtil<T> {
         })
     }
 
-    pub fn check_withdraw_against_liquidation(
+    /// Checks if the withdraw will not trigger liquidation
+    pub fn is_withdraw_trigger_liquidation(
         to_withdraw: (PoolId, FixedU128),
-        user_pools: UserPools,
         user_supply_debt: UserSupplyDebtData,
         pool_map: BTreeMap<PoolId, PoolProxy<T>>,
         liquidation_threshold: FixedU128,
-    ) -> DispatchResultWithPostInfo {
-        let mut user_balance_stats = Self::user_balances(&user_pools, &user_supply_debt, &pool_map)?;
+    ) -> Result<bool, CustomError> {
+        let mut user_balance_stats = Self::user_balances(&user_supply_debt, &pool_map)?;
         let (pool_id, amount) = to_withdraw;
 
         let pool = pool_map.get(&pool_id).ok_or(CustomError::InconsistentState)?;
@@ -274,21 +274,16 @@ impl <T: Config> UserAccountUtil<T> {
         let price = pool.price();
 
         user_balance_stats.decrement_collateral((price * pool.safe_factor()).mul(amount));
-        if user_balance_stats.is_liquidated(liquidation_threshold) {
-            return Err(Error::<T>::BelowLiquidationThreshold.into());
-        }
-
-        Ok(().into())
+        Ok(user_balance_stats.is_liquidated(liquidation_threshold))
     }
 
-    pub fn check_borrow_against_liquidation(
+    pub fn is_borrow_trigger_liquidation(
         to_borrow: (PoolId, FixedU128),
-        user_pools: UserPools,
         user_supply_debt: UserSupplyDebtData,
         pool_map: BTreeMap<PoolId, PoolProxy<T>>,
         liquidation_threshold: FixedU128,
-    ) -> DispatchResultWithPostInfo {
-        let mut user_balance_stats = Self::user_balances(&user_pools, &user_supply_debt, &pool_map)?;
+    ) -> Result<bool, CustomError> {
+        let mut user_balance_stats = Self::user_balances(&user_supply_debt, &pool_map)?;
         let (pool_id, amount) = to_borrow;
 
         let pool = pool_map.get(&pool_id).ok_or(CustomError::InconsistentState)?;
@@ -296,11 +291,7 @@ impl <T: Config> UserAccountUtil<T> {
         let price = pool.price();
 
         user_balance_stats.increment_debt(amount.mul(price));
-        if user_balance_stats.is_liquidated(liquidation_threshold) {
-            return Err(Error::<T>::BelowLiquidationThreshold.into());
-        }
-
-        Ok(().into())
+        Ok(user_balance_stats.is_liquidated(liquidation_threshold))
     }
 
     /* -------- Internal helper methods --------- */
@@ -338,8 +329,8 @@ impl <T: Config> UserAccountUtil<T> {
 
     /// Add to user debts.
     /// This function contains write action, ensure the checks are performed in advance
-    fn new_debt(pool: &PoolProxy<T>, account: T::AccountId, amount: FixedU128) {
-        let user_debt = UserData::new(amount);
+    fn new_debt(pool: &PoolProxy<T>, account: T::AccountId, amount: &FixedU128) {
+        let user_debt = UserData::new(*amount);
         PoolUserDebts::<T>::insert(pool.id(), account.clone(), user_debt);
 
         // update user's supply asset set
@@ -362,17 +353,6 @@ impl <T: Config> UserAccountUtil<T> {
             PoolUserDebts::<T>::insert(pool.id(), account, user_debt);
         }
         Ok(().into())
-    }
-}
-
-pub struct UserPools {
-    pub supply: Vec<PoolId>,
-    pub debt: Vec<PoolId>,
-}
-
-impl UserPools {
-    pub(crate) fn new(supply: Vec<PoolId>, debt: Vec<PoolId>) -> Self {
-        UserPools{supply, debt}
     }
 }
 

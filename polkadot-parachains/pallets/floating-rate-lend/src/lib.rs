@@ -50,7 +50,7 @@ pub mod pallet {
     use polkadot_parachain_primitives::{InvalidParameters, PoolId, PriceValue, CustomError};
 
     use crate::pool::{Pool, PoolProxy, PoolRepository};
-    use crate::types::{Convertor, UserAccountUtil, UserBalanceStats, UserData, UserPools, UserSupplyDebtData};
+    use crate::types::{Convertor, UserAccountUtil, UserBalanceStats, UserData, UserSupplyDebtData};
 
     /* --------- Local Libs --------- */
     const PALLET_ID: PalletId = PalletId(*b"Floating");
@@ -400,14 +400,14 @@ pub mod pallet {
 
             // Check if this pool is collateral
             if pool.can_be_collateral() {
-                let (user_pools, pool_map, user_supply_debt) = Self::prefetch_for_liquidation_check(account.clone())?;
-                UserAccountUtil::<T>::check_withdraw_against_liquidation(
+                let (pool_map, user_supply_debt) = Self::prefetch_for_liquidation_check(account.clone())?;
+                let r = UserAccountUtil::<T>::is_withdraw_trigger_liquidation(
                     (pool_id, amount_fu128),
-                    user_pools,
                     user_supply_debt,
                     pool_map,
                     LiquidationThreshold::<T>::get(),
                 )?;
+                if r { return Err(Error::<T>::BelowLiquidationThreshold.into()); }
             }
 
             // Now the checks are done, we can prepare to transfer
@@ -435,20 +435,20 @@ pub mod pallet {
             pool.accrue_interest()?;
             if !pool.allow_amount_deduction(&amount_u128) { return Err(Error::<T>::NotEnoughLiquidity.into()); }
 
-            let (user_pools, mut pool_map, user_supply_debt) = Self::prefetch_for_liquidation_check(account.clone())?;
+            let (mut pool_map, user_supply_debt) = Self::prefetch_for_liquidation_check(account.clone())?;
             if !pool_map.contains_key(&pool_id) { pool_map.insert(pool_id, pool.clone()); }
-            UserAccountUtil::<T>::check_borrow_against_liquidation(
+            let r = UserAccountUtil::<T>::is_borrow_trigger_liquidation(
                 (pool_id,amount_u128),
-                user_pools,
                 user_supply_debt,
                 pool_map,
                 LiquidationThreshold::<T>::get(),
             )?;
+            if r { return Err(Error::<T>::BelowLiquidationThreshold.into()); }
 
             // Ready to perform the writes
             // TODO: add check can transfer
             T::Currency::transfer(pool.currency_id(), &Self::account_id(), &account, amount)?;
-            UserAccountUtil::<T>::increment_debt(&pool, account.clone(), amount_u128)?;
+            UserAccountUtil::<T>::accrue_interest_and_increment_debt(&pool, account.clone(), &amount_u128)?;
 
             pool.increment_debt(&amount_u128);
             PoolRepository::<T>::save(pool);
@@ -515,9 +515,9 @@ pub mod pallet {
                 .ok_or(Error::<T>::UserNoSupplyInPool)?;
 
             // Ensure the user is liquidated
-            let (user_pools, pool_map, user_supply_debt) = Self::prefetch_for_liquidation_check(target_user.clone())?;
+            let (pool_map, user_supply_debt) = Self::prefetch_for_liquidation_check(target_user.clone())?;
 
-            let balances = UserAccountUtil::<T>::user_balances(&user_pools, &user_supply_debt, &pool_map)?;
+            let balances = UserAccountUtil::<T>::user_balances(&user_supply_debt, &pool_map)?;
             let liquidation_threshold = LiquidationThreshold::<T>::get();
             if !balances.is_liquidated(liquidation_threshold) { return Err(Error::<T>::UserNotUnderLiquidation.into()); }
 
@@ -600,8 +600,8 @@ pub mod pallet {
 
         // total supply balance; total converted supply balance; total debt balance;
         pub fn user_balances(user: T::AccountId) -> Result<UserBalanceStats, CustomError> {
-            let (user_pools, pool_map, user_supply_debt) = Self::prefetch_for_liquidation_check(user.clone())?;
-            UserAccountUtil::<T>::user_balances(&user_pools, &user_supply_debt, &pool_map)
+            let (pool_map, user_supply_debt) = Self::prefetch_for_liquidation_check(user.clone())?;
+            UserAccountUtil::<T>::user_balances(&user_supply_debt, &pool_map)
         }
 
         /* -------- Internal Helper Functions ------------ */
@@ -647,7 +647,7 @@ pub mod pallet {
             Err(InvalidParameters{})
         }
 
-        fn prefetch_for_liquidation_check(account: T::AccountId) -> Result<(UserPools, BTreeMap<PoolId, PoolProxy<T>>, UserSupplyDebtData), CustomError> {
+        fn prefetch_for_liquidation_check(account: T::AccountId) -> Result<(BTreeMap<PoolId, PoolProxy<T>>, UserSupplyDebtData), CustomError> {
             // Prefetch all the needed data
             let user_debts = UserAccountUtil::<T>::get_debt_pools(account.clone());
             let user_supplies = UserAccountUtil::<T>::get_supply_pools(account.clone());
@@ -660,7 +660,7 @@ pub mod pallet {
             }
             let supply_debt_map = UserAccountUtil::<T>::accrue_interest_for_user(account.clone(), &pools)?;
 
-            Ok((UserPools::new(user_supplies, user_debts), pools, supply_debt_map))
+            Ok((pools, supply_debt_map))
         }
     }
 }

@@ -268,6 +268,7 @@ impl <T: Config> PoolRepository<T> {
         Ok(PoolProxy::new_pool(pool, Price::invalid_price()))
     }
 
+    // TODO: see if there are batch read operations
     pub fn find_pools(supplies: &Vec<PoolId>, debts: &Vec<PoolId>) -> Result<BTreeMap<PoolId, PoolProxy<T>>, CustomError> {
         let mut map: BTreeMap<PoolId, PoolProxy<T>> = BTreeMap::new();
 

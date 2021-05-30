@@ -12,7 +12,7 @@ use sp_runtime::traits::{Convert, Zero};
 use sp_std::convert::TryInto;
 
 use pallet_traits::{MultiCurrency, PriceProvider};
-use polkadot_parachain_primitives::{BALANCE_ONE, Price};
+use polkadot_parachain_primitives::{BALANCE_ONE, Price, PoolId};
 
 use crate as pallet_floating_rate_lend;
 use crate::pool::{Pool, PoolProxy};
@@ -192,7 +192,7 @@ const DEFAULT_CLOSE_FACTOR: f64 = 0.9;
 const DEFAULT_SAFE_FACTOR: f64 = 0.9;
 const DEFAULT_DISCOUNT_FACTOR: f64 = 0.9;
 
-pub(crate) fn default_test_pool() -> Pool<Runtime> {
+pub fn default_test_pool() -> Pool<Runtime> {
     let utilization_factor = FixedU128::saturating_from_rational(385, 10000000000u64);
     let initial_interest_rate = FixedU128::saturating_from_rational(385, 100000000000u64);
     Pool::<Runtime>::new(
@@ -211,7 +211,31 @@ pub(crate) fn default_test_pool() -> Pool<Runtime> {
     )
 }
 
-pub(crate) fn default_pool_proxy() -> PoolProxy<Runtime> {
+pub fn test_pool(id: PoolId, can_be_collateral: bool) -> Pool<Runtime> {
+    let utilization_factor = FixedU128::saturating_from_rational(385, 10000000000u64);
+    let initial_interest_rate = FixedU128::saturating_from_rational(385, 100000000000u64);
+    Pool::<Runtime>::new(
+        id,
+        vec![],
+        0,
+        can_be_collateral,
+        FixedU128::from_float(DEFAULT_SAFE_FACTOR),
+        FixedU128::from_float(DEFAULT_CLOSE_FACTOR),
+        FixedU128::from_float(DEFAULT_DISCOUNT_FACTOR),
+        utilization_factor,
+        initial_interest_rate,
+        Zero::zero(),
+        ROOT,
+        1
+    )
+}
+
+pub fn default_pool_proxy() -> PoolProxy<Runtime> {
     let pool = default_test_pool();
+    PoolProxy::new_pool(pool, Price::new(FixedU128::one(), 1))
+}
+
+pub fn pool_proxy(id: PoolId, can_be_collateral: bool) -> PoolProxy<Runtime> {
+    let pool = test_pool(id, can_be_collateral);
     PoolProxy::new_pool(pool, Price::new(FixedU128::one(), 1))
 }

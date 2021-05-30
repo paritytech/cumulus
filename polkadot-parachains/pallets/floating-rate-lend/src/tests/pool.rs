@@ -123,7 +123,7 @@ fn floating_lend_pool_discounted_price() {
         .build()
         .execute_with(|| {
             let p = default_test_pool();
-            assert_eq!(p.discounted_price(FixedU128::one()), FixedU128::from_float(0.9));
+            assert_eq!(p.discounted_price(&FixedU128::one()), FixedU128::from_float(0.9));
         });
 }
 
