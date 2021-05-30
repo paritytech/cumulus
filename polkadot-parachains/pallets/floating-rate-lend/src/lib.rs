@@ -23,7 +23,6 @@
 pub use pallet::*;
 
 mod types;
-mod errors;
 mod pool;
 
 #[cfg(test)]
