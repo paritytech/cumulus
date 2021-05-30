@@ -109,7 +109,7 @@ impl PriceProvider<Runtime> for MockPriceProvider {
     type CurrencyId = CurrencyId;
 
     fn price(_currency_id: Self::CurrencyId) -> Price<Runtime> {
-        let default_price = FixedU128::from_float(1.2);
+        let default_price = FixedU128::from(1);
         Price::new(default_price, 1)
     }
 }
@@ -128,9 +128,6 @@ impl Convert<FixedU128, Balance> for Conversion {
         (a.into_inner() / (accuracy / BALANCE_ONE)).try_into().unwrap()
     }
 }
-
-pub const CURRENCY_A: CurrencyId = 1;
-pub const CURRENCY_B: CurrencyId = 2;
 
 impl Config for Runtime {
     type Event = Event;
@@ -204,7 +201,7 @@ pub fn default_test_pool() -> Pool<Runtime> {
         FixedU128::from_float(DEFAULT_DISCOUNT_FACTOR),
         utilization_factor,
         initial_interest_rate,
-        Zero::zero(),
+        FixedU128::from(2),
         ROOT,
         1
     )

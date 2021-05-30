@@ -299,7 +299,7 @@ pub mod pallet {
         }
 
         #[pallet::weight(1)]
-        fn update_pool(
+        pub fn update_pool(
             origin: OriginFor<T>,
             pool_id: PoolId,
             can_be_collateral: bool,
@@ -336,7 +336,7 @@ pub mod pallet {
         /// Update liquidation threshold, express in percentage
         /// E.g. if the threshold is 1.2, which equals 120%, then val should be 120
         #[pallet::weight(1)]
-        fn update_liquidation_threshold(origin: OriginFor<T>, val: u64) -> DispatchResultWithPostInfo {
+        pub fn update_liquidation_threshold(origin: OriginFor<T>, val: u64) -> DispatchResultWithPostInfo {
             Self::ensure_signed_and_root(origin)?;
             LiquidationThreshold::<T>::put(FixedU128::saturating_from_rational(val, 100));
             Ok(().into())
@@ -348,7 +348,7 @@ pub mod pallet {
 
         /// Supply certain amount to the floating-rate-pool
         #[pallet::weight(1)]
-        fn supply(origin: OriginFor<T>, pool_id: PoolId, amount: BalanceOf<T>) -> DispatchResultWithPostInfo {
+        pub fn supply(origin: OriginFor<T>, pool_id: PoolId, amount: BalanceOf<T>) -> DispatchResultWithPostInfo {
             let account = ensure_signed(origin)?;
             if amount.is_zero() { return Err(Error::<T>::BalanceTooLow.into()); }
 
@@ -373,7 +373,7 @@ pub mod pallet {
         }
 
         #[pallet::weight(1)]
-        fn withdraw(origin: OriginFor<T>, pool_id: PoolId, amount: BalanceOf<T>) -> DispatchResultWithPostInfo {
+        pub fn withdraw(origin: OriginFor<T>, pool_id: PoolId, amount: BalanceOf<T>) -> DispatchResultWithPostInfo {
             let account = ensure_signed(origin)?;
 
             if amount.is_zero() { return Err(Error::<T>::BalanceTooLow.into()); }
@@ -420,8 +420,9 @@ pub mod pallet {
         }
 
         #[pallet::weight(1)]
-        fn borrow(origin: OriginFor<T>, pool_id: PoolId, amount: BalanceOf<T>) -> DispatchResultWithPostInfo {
+        pub fn borrow(origin: OriginFor<T>, pool_id: PoolId, amount: BalanceOf<T>) -> DispatchResultWithPostInfo {
             let account = ensure_signed(origin)?;
+            if amount.is_zero() { return Err(Error::<T>::BalanceTooLow.into()); }
 
             // Check pool can borrow
             let mut pool: PoolProxy<T> = PoolRepository::<T>::find_without_price(pool_id)?;
@@ -455,8 +456,9 @@ pub mod pallet {
         }
 
         #[pallet::weight(1)]
-        fn repay(origin: OriginFor<T>, pool_id: PoolId, amount: BalanceOf<T>) -> DispatchResultWithPostInfo {
+        pub fn repay(origin: OriginFor<T>, pool_id: PoolId, amount: BalanceOf<T>) -> DispatchResultWithPostInfo {
             let account = ensure_signed(origin)?;
+            if amount.is_zero() { return Err(Error::<T>::BalanceTooLow.into()); }
 
             // Check pool can borrow
             let mut pool = PoolRepository::<T>::find_without_price(pool_id)?;
@@ -490,7 +492,7 @@ pub mod pallet {
 
         // arbitrager related
         #[pallet::weight(1)]
-        fn liquidate(
+        pub fn liquidate(
             origin: OriginFor<T>,
             target_user: T::AccountId,
             debt_pool_id: PoolId,
