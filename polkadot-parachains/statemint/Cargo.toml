@@ -1,6 +1,6 @@
 [build-dependencies.substrate-wasm-builder]
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '4.0.0'
 
 [package]
@@ -28,38 +28,38 @@ version = '2.0.0'
 default-features = false
 git = 'https://github.com/paritytech/substrate'
 optional = true
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.frame-executive]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.frame-system]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.frame-system-benchmarking]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
 optional = true
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.frame-system-rpc-runtime-api]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.hex-literal]
@@ -69,59 +69,59 @@ version = '0.3.1'
 [dependencies.pallet-assets]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 
 [dependencies.pallet-authorship]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 
 [dependencies.pallet-balances]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.pallet-multisig]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.pallet-proxy]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.pallet-randomness-collective-flip]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.pallet-timestamp]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.pallet-transaction-payment]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.pallet-transaction-payment-rpc-runtime-api]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.pallet-utility]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.serde]
@@ -132,72 +132,72 @@ version = '1.0.119'
 [dependencies.node-primitives]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 
 [dependencies.sp-api]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.sp-block-builder]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.sp-core]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.sp-inherents]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.sp-io]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.sp-offchain]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.sp-session]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.sp-transaction-pool]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.sp-version]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 # Cumulus dependencies
@@ -237,37 +237,37 @@ default-features = false
 # Polkadot dependencies
 [dependencies.polkadot-primitives]
 git = 'https://github.com/paritytech/polkadot'
-branch = "statemint"
+branch = "master"
 default-features = false
 
 [dependencies.polkadot-runtime-common]
 git = 'https://github.com/paritytech/polkadot'
-branch = "statemint"
+branch = "master"
 default-features = false
 
 [dependencies.polkadot-parachain]
 git = 'https://github.com/paritytech/polkadot'
-branch = "statemint"
+branch = "master"
 default-features = false
 
 [dependencies.xcm]
 git = 'https://github.com/paritytech/polkadot'
-branch = "statemint"
+branch = "master"
 default-features = false
 
 [dependencies.xcm-builder]
 git = 'https://github.com/paritytech/polkadot'
-branch = "statemint"
+branch = "master"
 default-features = false
 
 [dependencies.xcm-executor]
 git = 'https://github.com/paritytech/polkadot'
-branch = "statemint"
+branch = "master"
 default-features = false
 
 [dependencies.pallet-xcm]
 git = 'https://github.com/paritytech/polkadot'
-branch = "statemint"
+branch = "master"
 default-features = false
 
 [dependencies.pallet-collator-selection]
@@ -282,19 +282,19 @@ path = '../statemint-common'
 [dependencies.pallet-aura]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.pallet-session]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '3.0.0'
 
 [dependencies.sp-consensus-aura]
 default-features = false
 git = 'https://github.com/paritytech/substrate'
-branch = "statemint"
+branch = "master"
 version = '0.9.0'
 
 
