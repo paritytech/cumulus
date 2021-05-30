@@ -552,7 +552,7 @@ impl Convert<FixedU128, Balance> for Conversion {
 
 impl pallet_floating_rate_lend::Config for Runtime {
 	type Event = Event;
-	type MultiCurrency = Currencies;
+	type Currency = Currencies;
 	type PriceProvider = Oracle;
 	type Conversion = Conversion;
 }

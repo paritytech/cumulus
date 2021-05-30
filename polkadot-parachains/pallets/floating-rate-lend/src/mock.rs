@@ -2,19 +2,22 @@
 
 #![cfg(test)]
 
-use super::*;
 use frame_support::{construct_runtime, parameter_types};
+use frame_support::dispatch::DispatchResult;
+use frame_support::sp_runtime::traits::One;
+use frame_support::traits::GenesisBuild;
 use sp_core::H256;
-use sp_runtime::{testing::Header, traits::{IdentityLookup}, AccountId32, FixedU128, FixedPointNumber};
+use sp_runtime::{AccountId32, FixedPointNumber, FixedU128, testing::Header, traits::IdentityLookup};
+use sp_runtime::traits::{Convert, Zero};
+use sp_std::convert::TryInto;
+
+use pallet_traits::{MultiCurrency, PriceProvider};
+use polkadot_parachain_primitives::{BALANCE_ONE, Price};
 
 use crate as pallet_floating_rate_lend;
-use polkadot_parachain_primitives::{Price, BALANCE_ONE};
-use pallet_traits::{MultiCurrency, PriceProvider};
-use frame_support::sp_runtime::traits::{One};
-use frame_support::dispatch::DispatchResult;
-use sp_runtime::traits::{Zero, Convert};
-use frame_support::traits::GenesisBuild;
-use sp_std::convert::TryInto;
+use crate::pool::{Pool, PoolProxy};
+
+use super::*;
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
@@ -132,7 +135,7 @@ pub const CURRENCY_B: CurrencyId = 2;
 
 impl Config for Runtime {
     type Event = Event;
-    type MultiCurrency = MockMultiCurrency;
+    type Currency = MockMultiCurrency;
     type PriceProvider = MockPriceProvider;
     type Conversion = Conversion;
 }
@@ -154,6 +157,8 @@ construct_runtime!(
 );
 
 pub const ROOT: AccountId = AccountId32::new([1u8; 32]);
+pub const ACCOUNT_1: AccountId = AccountId32::new([2u8; 32]);
+pub const ACCOUNT_2: AccountId = AccountId32::new([3u8; 32]);
 
 pub struct ExtBuilder {
     key: AccountId,
@@ -180,4 +185,33 @@ impl ExtBuilder {
             .unwrap();
         t.into()
     }
+}
+
+/// Default test pool
+const DEFAULT_CLOSE_FACTOR: f64 = 0.9;
+const DEFAULT_SAFE_FACTOR: f64 = 0.9;
+const DEFAULT_DISCOUNT_FACTOR: f64 = 0.9;
+
+pub(crate) fn default_test_pool() -> Pool<Runtime> {
+    let utilization_factor = FixedU128::saturating_from_rational(385, 10000000000u64);
+    let initial_interest_rate = FixedU128::saturating_from_rational(385, 100000000000u64);
+    Pool::<Runtime>::new(
+        0,
+        vec![],
+        0,
+        false,
+        FixedU128::from_float(DEFAULT_SAFE_FACTOR),
+        FixedU128::from_float(DEFAULT_CLOSE_FACTOR),
+        FixedU128::from_float(DEFAULT_DISCOUNT_FACTOR),
+        utilization_factor,
+        initial_interest_rate,
+        Zero::zero(),
+        ROOT,
+        1
+    )
+}
+
+pub(crate) fn default_pool_proxy() -> PoolProxy<Runtime> {
+    let pool = default_test_pool();
+    PoolProxy::new_pool(pool, Price::new(FixedU128::one(), 1))
 }

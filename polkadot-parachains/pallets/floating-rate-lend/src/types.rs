@@ -4,15 +4,16 @@ use frame_support::dispatch::DispatchResultWithPostInfo;
 use sp_runtime::{FixedPointNumber, RuntimeDebug};
 use sp_runtime::traits::{CheckedMul, One};
 use sp_runtime::traits::{Saturating, Zero};
+use sp_std::{vec::Vec};
+use sp_std::collections::btree_map::BTreeMap;
 use sp_std::marker;
 use sp_std::ops::{Add, Div, Mul, Sub};
 
-use pallet_traits::PriceProvider;
-use polkadot_parachain_primitives::FlowError;
-use polkadot_parachain_primitives::{Overflown, PoolId};
+use polkadot_parachain_primitives::CustomError;
+use polkadot_parachain_primitives::PoolId;
 
-use crate::{Config, PoolStorage, PoolUserDebts, PoolUserSupplies, UserDebtSet, UserSupplySet};
-use crate::pool::Pool;
+use crate::{Config, Error, PoolStorage, PoolUserDebts, PoolUserSupplies, UserDebtSet, UserSupplySet};
+use crate::pool::{PoolProxy};
 
 pub struct UserBalanceStats{
     /// The total supply balance of the user
@@ -27,6 +28,14 @@ impl UserBalanceStats {
     pub fn is_liquidated(&self, liquidation_threshold: FixedU128) -> bool {
         self.collateral_balance < liquidation_threshold * self.debt_balance
     }
+
+    pub fn increment_debt(&mut self, amount: FixedU128) {
+        self.debt_balance = self.debt_balance.add(amount);
+    }
+
+    pub fn decrement_collateral(&mut self, amount: FixedU128) {
+        self.collateral_balance = self.collateral_balance.sub(amount);
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, RuntimeDebug, Encode, Decode)]
@@ -36,13 +45,13 @@ pub struct UserData {
 }
 
 impl UserData {
-    pub fn accrue_interest(&mut self, pool_index: &FixedU128) -> Result<(), FlowError> {
+    pub fn accrue_interest(&mut self, pool_index: &FixedU128) -> Result<(), CustomError> {
         // TODO: maybe should consider throw an error here
         if pool_index.le(&self.index) { return Ok(()); }
         self.amount = pool_index
             .div(self.index)
             .checked_mul(&self.amount)
-            .ok_or(FlowError{})?;
+            .ok_or(CustomError::FlownError)?;
         self.index = *pool_index;
         Ok(())
     }
@@ -54,6 +63,9 @@ impl UserData {
     pub fn decrement(&mut self, amount: &FixedU128) {
         self.amount = self.amount.sub(*amount);
     }
+
+    /// Checks if the amount below zero
+    pub fn below_zero(&self) -> bool { self.amount.lt(&FixedU128::zero()) }
 
     pub fn amount(&self) -> FixedU128 { self.amount }
 
@@ -80,129 +92,291 @@ impl Convertor {
 pub struct UserAccountUtil<T>(marker::PhantomData<T>);
 
 impl <T: Config> UserAccountUtil<T> {
+    /// Accrue interest for the user, including all the pools the user has participated in.
+    /// Ensure the pool_map contains all the pools the user participated in
+    pub fn accrue_interest_for_user(
+        account: T::AccountId,
+        pool_map: &BTreeMap<PoolId, PoolProxy<T>>,
+    ) -> Result<UserSupplyDebtData, CustomError> {
+        let mut supply_map = BTreeMap::new();
+        for id in Self::get_supply_pools(account.clone()) {
+            if let Some(pool) = pool_map.get(&id) {
+                if let Some(mut supply) = PoolUserSupplies::<T>::get(pool.id(), account.clone()) {
+                    supply.accrue_interest(&pool.total_supply_index())?;
+                    PoolUserSupplies::<T>::insert(pool.id(), account.clone(), supply.clone());
+                    supply_map.insert(pool.id(), supply);
+                    continue;
+                }
+            }
+
+            // TODO: more context here
+            log::error!("Inconsistent state, check!");
+            return Err(CustomError::InconsistentState);
+        }
+
+        let mut debt_map = BTreeMap::new();
+        for id in Self::get_debt_pools(account.clone()) {
+            if let Some(pool) = pool_map.get(&id) {
+                if let Some(mut debt) = PoolUserDebts::<T>::get(pool.id(), account.clone()) {
+                    debt.accrue_interest(&pool.total_debt_index())?;
+                    PoolUserDebts::<T>::insert(pool.id(), account.clone(), debt.clone());
+                    debt_map.insert(pool.id(), debt);
+                    continue;
+                }
+            }
+
+            // TODO: more context here
+            log::error!("Inconsistent state, check!");
+            return Err(CustomError::InconsistentState);
+        }
+
+        Ok(UserSupplyDebtData{ supply: supply_map, debt: debt_map })
+    }
+
+    pub fn get_supply_pools(account: T::AccountId) -> Vec<PoolId> {
+        UserSupplySet::<T>::get(account)
+            .into_iter()
+            .map(|p| p.0)
+            .collect::<Vec<PoolId>>()
+    }
+
+    pub fn get_debt_pools(account: T::AccountId) -> Vec<PoolId> {
+        UserSupplySet::<T>::get(account)
+            .into_iter()
+            .map(|p| p.0)
+            .collect::<Vec<PoolId>>()
+    }
+
     /// Increment user supply.
     /// Ensure the amount is above pool.minimal_amount() before this function is actually called
-    pub fn increment_user_supply(pool: &Pool<T>, account: T::AccountId, amount: FixedU128) -> DispatchResultWithPostInfo {
-        if let Some(mut user_supply) = PoolUserSupplies::<T>::get(pool.id, account.clone()) {
+    pub fn accrue_interest_and_increment_supply(pool: &PoolProxy<T>, account: T::AccountId, amount: &FixedU128) -> DispatchResultWithPostInfo {
+        if let Some(mut user_supply) = PoolUserSupplies::<T>::get(pool.id(), account.clone()) {
             user_supply.accrue_interest(&pool.total_supply_index())?;
             user_supply.increment(&amount);
-            PoolUserSupplies::<T>::insert(pool.id, account, user_supply);
+            PoolUserSupplies::<T>::insert(pool.id(), account, user_supply);
         } else {
             Self::add_user_supply(&pool, account, amount);
         }
-
         Ok(().into())
     }
 
-    /// Add to user supplies.
-    /// This function contains write action, ensure the checks are performed in advance
-    fn add_user_supply(pool: &Pool<T>, account: T::AccountId, amount: FixedU128) {
-        let user_supply = UserData::new(amount);
-        PoolUserSupplies::<T>::insert(pool.id, account.clone(), user_supply);
+    /// Decrement user supply.
+    /// Ensure the amount is never zero before this function is actually called
+    pub fn decrement_supply(pool: &PoolProxy<T>, account: T::AccountId, amount: &FixedU128, mut user_supply: UserData) -> DispatchResultWithPostInfo {
+        // this should not have happened, caller should always ensure zero is never reached
+        if user_supply.amount() < *amount { return Err(Error::<T>::UserSupplyTooLow.into()); }
 
-        // update user's supply asset set
-        let mut pool_currency_tuples = UserSupplySet::<T>::get(account.clone());
-        if !pool_currency_tuples.iter().any(|p| p.0 == pool.id) {
-            pool_currency_tuples.push((pool.id, pool.currency_id));
-            UserSupplySet::<T>::insert(account, pool_currency_tuples);
+        user_supply.decrement(amount);
+        // TODO: we need to handle dust here! Currently minimal_amount is just zero
+        if user_supply.amount() <= pool.minimal_amount() {
+            PoolUserSupplies::<T>::remove(pool.id(), account.clone());
+            Self::remove_user_supply(pool.id(), account);
+        } else {
+            PoolUserSupplies::<T>::insert(pool.id(), account, user_supply);
         }
+        Ok(().into())
     }
 
-
-    /// Remove to user supplies.
-    /// This function contains write action, ensure the checks are performed in advance
-    pub fn remove_user_supply(pool_id: PoolId, account: T::AccountId) {
-        let mut pool_currency_tuples = UserSupplySet::<T>::get(account.clone());
-        pool_currency_tuples.retain(|p| p.0 != pool_id);
-        UserSupplySet::<T>::insert(account, pool_currency_tuples);
-    }
-
-    /// Add to user debts.
-    /// This function contains write action, ensure the checks are performed in advance
-    pub fn add_user_debt(pool: &Pool<T>, account: T::AccountId, amount: FixedU128) {
-        let user_debt = UserData::new(amount);
-        PoolUserDebts::<T>::insert(pool.id, account.clone(), user_debt);
-
-        // update user's supply asset set
-        let mut pool_currency_tuples = UserDebtSet::<T>::get(account.clone());
-        if !pool_currency_tuples.iter().any(|p| p.0 == pool.id) {
-            pool_currency_tuples.push((pool.id, pool.currency_id));
-            UserDebtSet::<T>::insert(account, pool_currency_tuples);
+    /// Increment user debt
+    pub fn increment_debt(pool: &PoolProxy<T>, account: T::AccountId, amount: FixedU128) -> DispatchResultWithPostInfo {
+        if let Some(mut user_debt) = PoolUserDebts::<T>::get(pool.id(), account.clone()) {
+            user_debt.accrue_interest(&pool.total_debt_index())?;
+            user_debt.increment(&amount);
+            PoolUserDebts::<T>::insert(pool.id(), account.clone(), user_debt);
+        } else {
+            Self::new_debt(&pool, account.clone(), amount);
         }
-    }
-
-    /// Remove to user debts.
-    /// This function contains write action, ensure the checks are performed in advance
-    pub fn remove_user_debt(pool_id: PoolId, account: T::AccountId) {
-        let mut pool_currency_tuples = UserDebtSet::<T>::get(account.clone());
-        pool_currency_tuples.retain(|p| p.0 != pool_id);
-        UserDebtSet::<T>::insert(account, pool_currency_tuples);
+        Ok(().into())
     }
 
     /// Get the user supply balance for the user in a pool
-    pub fn user_supply_balance(pool_id: PoolId, user: T::AccountId) -> Result<FixedU128, Overflown> {
-        if let Some(user_supply) = PoolUserSupplies::<T>::get(pool_id, user) {
+    pub fn supply_balance_with_interest(pool_id: PoolId, user: T::AccountId) -> Result<FixedU128, CustomError> {
+        if let Some(mut user_supply) = PoolUserSupplies::<T>::get(pool_id, user) {
             if let Some(mut pool) = PoolStorage::<T>::get(pool_id) {
                 pool.accrue_interest(<frame_system::Pallet<T>>::block_number())?;
-                return Ok(
-                    pool.total_supply_index()
-                        .mul(user_supply.index())
-                        .mul(user_supply.amount())
-                );
+                user_supply.accrue_interest(&pool.total_supply_index())?;
+                return Ok(user_supply.amount());
             }
         }
         Ok(FixedU128::zero())
     }
 
     /// Get the user debt balance for the user in a pool
-    pub fn user_debt_balance(pool_id: PoolId, user: T::AccountId) -> Result<FixedU128, Overflown> {
-        if let Some(user_debt) = PoolUserDebts::<T>::get(pool_id, user) {
+    pub fn debt_balance_with_interest(pool_id: PoolId, user: T::AccountId) -> Result<FixedU128, CustomError> {
+        if let Some(mut user_debt) = PoolUserDebts::<T>::get(pool_id, user) {
             if let Some(mut pool) = PoolStorage::<T>::get(pool_id) {
                 pool.accrue_interest(<frame_system::Pallet<T>>::block_number())?;
-                return Ok(
-                    pool.total_debt_index()
-                        .mul(user_debt.index())
-                        .mul(user_debt.amount())
-                );
+                user_debt.accrue_interest(&pool.total_debt_index())?;
+                return Ok(user_debt.amount());
             }
         }
         Ok(FixedU128::zero())
     }
 
-    // total supply balance; total converted supply balance; total debt balance;
-    pub fn user_balances(user: T::AccountId) -> Result<UserBalanceStats, Overflown> {
+    /// Calculate the user balances
+    pub fn user_balances(
+        pools: &UserPools,
+        user_supply_debt: &UserSupplyDebtData,
+        pool_map: &BTreeMap<PoolId, PoolProxy<T>>,
+    ) -> Result<UserBalanceStats, CustomError> {
+        // calculate supply related
         let mut supply_balance = FixedU128::zero();
         let mut collateral_balance = FixedU128::zero();
+        for pool_id in &pools.supply {
+            let pool = pool_map.get(pool_id).ok_or(CustomError::InconsistentState)?;
+            if !pool.can_be_collateral() { continue; }
+            if !pool.price_ready() { return Err(CustomError::PriceNotReady); }
 
-        for (pool_id, currency_id) in UserSupplySet::<T>::get(user.clone()).into_iter() {
-            let pool = PoolStorage::<T>::get(pool_id).unwrap();
-            if !pool.can_be_collateral { continue; }
-            let price = T::PriceProvider::price(currency_id);
-            // TODO: throw error
-            if !price.price_ready() { continue; }
+            let amount = user_supply_debt.supply
+                .get(pool_id)
+                .ok_or(CustomError::InconsistentState)?
+                .amount();
 
-            let amount = Self::user_supply_balance(pool_id, user.clone())?;
-            supply_balance = supply_balance.add(price.value().saturating_mul(amount));
+            let mut balance = pool.price().saturating_mul(amount);
+            supply_balance = supply_balance.add(balance);
 
-            // TODO: consider using some sort of cache?
-            let delta = (price.value() * pool.safe_factor).saturating_mul(amount);
-            collateral_balance = collateral_balance.add(delta);
+            balance = balance.mul(pool.safe_factor());
+            collateral_balance = collateral_balance.add(balance);
         }
 
+        // calculate debt
         let mut debt_balance = FixedU128::zero();
-        for (pool_id, currency_id) in UserDebtSet::<T>::get(user.clone()).into_iter() {
-            let amount = Self::user_debt_balance(pool_id, user.clone())?;
-            let price = T::PriceProvider::price(currency_id);
-            if !price.price_ready() {
-                // TODO: throw error
-                continue
-            }
-            debt_balance = debt_balance.add(price.value().mul(amount));
+        for pool_id in &pools.debt {
+            let pool = pool_map.get(pool_id).ok_or(CustomError::InconsistentState)?;
+            if !pool.price_ready() { return Err(CustomError::PriceNotReady); }
+            let amount = user_supply_debt.debt
+                .get(pool_id)
+                .ok_or(CustomError::InconsistentState)?
+                .amount();
+            let balance = pool.price().saturating_mul(amount);
+            debt_balance = debt_balance.add(balance);
         }
+
         Ok(UserBalanceStats {
             supply_balance,
             collateral_balance,
             debt_balance,
         })
     }
+
+    pub fn check_withdraw_against_liquidation(
+        to_withdraw: (PoolId, FixedU128),
+        user_pools: UserPools,
+        user_supply_debt: UserSupplyDebtData,
+        pool_map: BTreeMap<PoolId, PoolProxy<T>>,
+        liquidation_threshold: FixedU128,
+    ) -> DispatchResultWithPostInfo {
+        let mut user_balance_stats = Self::user_balances(&user_pools, &user_supply_debt, &pool_map)?;
+        let (pool_id, amount) = to_withdraw;
+
+        let pool = pool_map.get(&pool_id).ok_or(CustomError::InconsistentState)?;
+        if !pool.price_ready() { return Err(CustomError::PriceNotReady.into()); }
+        let price = pool.price();
+
+        user_balance_stats.decrement_collateral((price * pool.safe_factor()).mul(amount));
+        if user_balance_stats.is_liquidated(liquidation_threshold) {
+            return Err(Error::<T>::BelowLiquidationThreshold.into());
+        }
+
+        Ok(().into())
+    }
+
+    pub fn check_borrow_against_liquidation(
+        to_borrow: (PoolId, FixedU128),
+        user_pools: UserPools,
+        user_supply_debt: UserSupplyDebtData,
+        pool_map: BTreeMap<PoolId, PoolProxy<T>>,
+        liquidation_threshold: FixedU128,
+    ) -> DispatchResultWithPostInfo {
+        let mut user_balance_stats = Self::user_balances(&user_pools, &user_supply_debt, &pool_map)?;
+        let (pool_id, amount) = to_borrow;
+
+        let pool = pool_map.get(&pool_id).ok_or(CustomError::InconsistentState)?;
+        if !pool.price_ready() { return Err(CustomError::PriceNotReady.into()); }
+        let price = pool.price();
+
+        user_balance_stats.increment_debt(amount.mul(price));
+        if user_balance_stats.is_liquidated(liquidation_threshold) {
+            return Err(Error::<T>::BelowLiquidationThreshold.into());
+        }
+
+        Ok(().into())
+    }
+
+    /* -------- Internal helper methods --------- */
+
+    /// Add to user supplies.
+    /// This function contains write action, ensure the checks are performed in advance
+    fn add_user_supply(pool: &PoolProxy<T>, account: T::AccountId, amount: &FixedU128) {
+        let user_supply = UserData::new(*amount);
+        PoolUserSupplies::<T>::insert(pool.id(), account.clone(), user_supply);
+
+        // update user's supply asset set
+        let mut pool_currency_tuples = UserSupplySet::<T>::get(account.clone());
+        if !pool_currency_tuples.iter().any(|p| p.0 == pool.id()) {
+            pool_currency_tuples.push((pool.id(), pool.currency_id()));
+            UserSupplySet::<T>::insert(account, pool_currency_tuples);
+        }
+    }
+
+    /// Remove to user supplies.
+    /// This function contains write action, ensure the checks are performed in advance
+    fn remove_user_supply(pool_id: PoolId, account: T::AccountId) {
+        let mut pool_currency_tuples = UserSupplySet::<T>::get(account.clone());
+        pool_currency_tuples.retain(|p| p.0 != pool_id);
+        UserSupplySet::<T>::insert(account, pool_currency_tuples);
+    }
+
+    /// Remove to user debts.
+    /// This function contains write action, ensure the checks are performed in advance
+    fn remove_user_debt(pool_id: PoolId, account: T::AccountId) {
+        let mut pool_currency_tuples = UserDebtSet::<T>::get(account.clone());
+        pool_currency_tuples.retain(|p| p.0 != pool_id);
+        UserDebtSet::<T>::insert(account, pool_currency_tuples);
+    }
+
+
+    /// Add to user debts.
+    /// This function contains write action, ensure the checks are performed in advance
+    fn new_debt(pool: &PoolProxy<T>, account: T::AccountId, amount: FixedU128) {
+        let user_debt = UserData::new(amount);
+        PoolUserDebts::<T>::insert(pool.id(), account.clone(), user_debt);
+
+        // update user's supply asset set
+        let mut pool_currency_tuples = UserDebtSet::<T>::get(account.clone());
+        if !pool_currency_tuples.iter().any(|p| p.0 == pool.id()) {
+            pool_currency_tuples.push((pool.id(), pool.currency_id()));
+            UserDebtSet::<T>::insert(account, pool_currency_tuples);
+        }
+    }
+
+    /// Decrement user debt.
+    /// Ensure the amount is above pool.minimal_amount() before this function is actually called
+    pub fn decrement_debt(pool: &PoolProxy<T>, account: T::AccountId, amount: &FixedU128, mut user_debt: UserData) -> DispatchResultWithPostInfo {
+        user_debt.decrement(amount);
+        // TODO: we need to handle dust here! Currently minimal_amount is just zero
+        if user_debt.amount() <= pool.minimal_amount() {
+            PoolUserDebts::<T>::remove(pool.id(), account.clone());
+            UserAccountUtil::<T>::remove_user_debt(pool.id(), account);
+        } else {
+            PoolUserDebts::<T>::insert(pool.id(), account, user_debt);
+        }
+        Ok(().into())
+    }
+}
+
+pub struct UserPools {
+    pub supply: Vec<PoolId>,
+    pub debt: Vec<PoolId>,
+}
+
+impl UserPools {
+    pub(crate) fn new(supply: Vec<PoolId>, debt: Vec<PoolId>) -> Self {
+        UserPools{supply, debt}
+    }
+}
+
+pub struct UserSupplyDebtData {
+    pub supply: BTreeMap<PoolId, UserData>,
+    pub debt: BTreeMap<PoolId, UserData>,
 }

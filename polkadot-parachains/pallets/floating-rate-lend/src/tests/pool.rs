@@ -7,31 +7,7 @@ use sp_runtime::traits::{Zero, One};
 use crate::pool::Pool;
 use crate::types::Convertor;
 use crate::mock::{*};
-use polkadot_parachain_primitives::BALANCE_ONE;
-use sp_std::ops::{Mul, Add};
-
-const DEFAULT_CLOSE_FACTOR: f64 = 0.9;
-const DEFAULT_SAFE_FACTOR: f64 = 0.9;
-const DEFAULT_DISCOUNT_FACTOR: f64 = 0.9;
-
-fn default_test_pool() -> Pool<Runtime> {
-    let utilization_factor = FixedU128::saturating_from_rational(385, 10000000000u64);
-    let initial_interest_rate = FixedU128::saturating_from_rational(385, 100000000000u64);
-    Pool::<Runtime>::new(
-        0,
-        vec![],
-        0,
-        false,
-        FixedU128::from_float(DEFAULT_SAFE_FACTOR),
-        FixedU128::from_float(DEFAULT_CLOSE_FACTOR),
-        FixedU128::from_float(DEFAULT_DISCOUNT_FACTOR),
-        utilization_factor,
-        initial_interest_rate,
-        Zero::zero(),
-        ROOT,
-        1
-    )
-}
+use sp_std::ops::{Mul};
 
 
 /// This tests the initialization and the decrement/increment operations on the pool
@@ -188,12 +164,12 @@ fn floating_lend_pool_accrue_interest_multiple_times() {
             // debt_interest_rate: 2.31e-8
             // supply_interest_rate: 1.155e-8
             // These two values are derived from the protocol before hand.
-            let mut debt_multiplier = FixedU128::saturating_from_rational(1000000231 as u128, 1000000000 as u128);
-            let mut supply_multiplier = FixedU128::saturating_from_rational(10000001155 as u128, 10000000000 as u128);
+            let debt_multiplier = FixedU128::saturating_from_rational(1000000231 as u128, 1000000000 as u128);
+            let supply_multiplier = FixedU128::saturating_from_rational(10000001155 as u128, 10000000000 as u128);
 
             // an extra `supply_amount` is added due to previous supply at block 11
-            let mut expected_supply = supply_multiplier.mul(supply_amount);
-            let mut expected_borrow = debt_multiplier.mul(borrow_amount);
+            let expected_supply = supply_multiplier.mul(supply_amount);
+            let expected_borrow = debt_multiplier.mul(borrow_amount);
 
             p.accrue_interest(11).unwrap();
             assert_eq!(expected_supply, p.supply());

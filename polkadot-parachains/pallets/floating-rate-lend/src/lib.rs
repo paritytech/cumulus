@@ -44,30 +44,29 @@ pub mod pallet {
     use sp_runtime::{FixedPointNumber, FixedU128};
     use sp_runtime::traits::{AccountIdConversion, CheckedDiv, CheckedMul, Convert, One, Zero};
     use sp_std::{vec::Vec};
-    use sp_std::ops::{Add, Mul, Sub};
+    use sp_std::collections::btree_map::BTreeMap;
 
     use pallet_traits::{MultiCurrency, PriceProvider};
-    use polkadot_parachain_primitives::{FlowError, InvalidParameters, Overflown, PoolId, PriceValue};
+    use polkadot_parachain_primitives::{InvalidParameters, PoolId, PriceValue, CustomError};
 
-    use crate::errors::{PoolNotEnabled, PoolPriceNotReady};
-    use crate::pool::Pool;
-    use crate::types::{Convertor, UserAccountUtil, UserBalanceStats, UserData};
+    use crate::pool::{Pool, PoolProxy, PoolRepository};
+    use crate::types::{Convertor, UserAccountUtil, UserBalanceStats, UserData, UserPools, UserSupplyDebtData};
 
     /* --------- Local Libs --------- */
     const PALLET_ID: PalletId = PalletId(*b"Floating");
 
     /// User supply struct
     pub(crate) type BalanceOf<T> =
-    <<T as Config>::MultiCurrency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
+    <<T as Config>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
 
     pub type CurrencyIdOf<T> =
-    <<T as Config>::MultiCurrency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
+    <<T as Config>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_sudo::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-        type MultiCurrency: MultiCurrency<Self::AccountId>;
+        type Currency: MultiCurrency<Self::AccountId>;
         type PriceProvider: PriceProvider<Self, CurrencyId = CurrencyIdOf<Self>>;
         type Conversion: Convert<BalanceOf<Self>, FixedU128> + Convert<FixedU128, BalanceOf<Self>>;
     }
@@ -185,6 +184,8 @@ pub mod pallet {
         PoolPriceNotReady,
         /// Balance is too low.
         BalanceTooLow,
+        /// User supply is too low.
+        UserSupplyTooLow,
         /// User has not supply in the pool
         UserNoSupplyInPool,
         /// User has not debt in the pool
@@ -356,26 +357,19 @@ pub mod pallet {
             if amount.is_zero() { return Err(Error::<T>::BalanceTooLow.into()); }
 
             // check floating-rate-pool exists and get floating-rate-pool instance
-            let mut pool: Pool<T> = PoolStorage::<T>::get(pool_id).ok_or(Error::<T>::PoolNotExist)?;
-            if !pool.enabled { return Err(PoolNotEnabled{}.into()); }
+            let mut pool: PoolProxy<T> = PoolRepository::<T>::find_without_price(pool_id)?;
+            if !pool.enabled() { return Err(Error::<T>::PoolNotEnabled.into()); }
 
             let amount_u128 = T::Conversion::convert(amount);
-            if amount_u128 < pool.minimal_amount { return Err(Error::<T>::BalanceTooLow.into()) }
-
-            pool.accrue_interest(<frame_system::Pallet<T>>::block_number())?;
+            if amount_u128 < pool.minimal_amount() { return Err(Error::<T>::BalanceTooLow.into()) }
 
             // transfer asset
-            <T as Config>::MultiCurrency::transfer(
-                pool.currency_id,
-                &account,
-                &Self::account_id(),
-                amount,
-            )?;
+            T::Currency::transfer(pool.currency_id(), &account, &Self::account_id(), amount)?;
 
-            // Self::increment_user_supply(&pool, account.clone(), amount_u128)?;
-            UserAccountUtil::<T>::increment_user_supply(&pool, account.clone(), amount_u128)?;
+            pool.accrue_interest()?;
             pool.increment_supply(&amount_u128);
-            PoolStorage::<T>::insert(pool_id, pool);
+            PoolRepository::<T>::save(pool.clone());
+            UserAccountUtil::<T>::accrue_interest_and_increment_supply(&pool, account.clone(), &amount_u128)?;
 
             Self::deposit_event(Event::SupplySuccessful(pool_id, account, amount_u128));
 
@@ -389,45 +383,40 @@ pub mod pallet {
             if amount.is_zero() { return Err(Error::<T>::BalanceTooLow.into()); }
 
             // Check pool can withdraw
-            let mut pool: Pool<T> = PoolStorage::<T>::get(pool_id).ok_or(Error::<T>::PoolNotExist)?;
-            if !pool.enabled { return Err(Error::<T>::PoolNotEnabled.into()); }
+            let mut pool: PoolProxy<T> = PoolProxy::find(pool_id)?;
+            if !pool.enabled() { return Err(Error::<T>::PoolNotEnabled.into()); }
             // This ensures the pool's supply will never be lower than 0
             let mut amount_fu128 = T::Conversion::convert(amount);
-            let mut transfer_amount = amount;
-            if (pool.supply() - pool.debt()) < amount_fu128 { return Err(Error::<T>::NotEnoughLiquidity.into()); }
+            if !pool.allow_amount_deduction(&amount_fu128) { return Err(Error::<T>::NotEnoughLiquidity.into()); }
 
             // Check user supply can withdraw
-            let mut user_supply = PoolUserSupplies::<T>::get(pool.id, account.clone())
+            let user_supply = PoolUserSupplies::<T>::get(pool.id(), account.clone())
                 .ok_or(Error::<T>::UserNoSupplyInPool)?;
-
-            // Update interest
-            user_supply.accrue_interest(&pool.total_supply_index())?;
-            pool.accrue_interest(<frame_system::Pallet<T>>::block_number())?;
-
+            let mut transfer_amount = amount;
             if user_supply.amount() < amount_fu128 {
                 amount_fu128 = user_supply.amount();
                 transfer_amount = T::Conversion::convert(user_supply.amount());
             }
 
-            Self::check_withdraw_against_liquidation(account.clone(), pool.currency_id, pool.safe_factor, amount_fu128)?;
+            // Check if this pool is collateral
+            if pool.can_be_collateral() {
+                let (user_pools, pool_map, user_supply_debt) = Self::prefetch_for_liquidation_check(account.clone())?;
+                UserAccountUtil::<T>::check_withdraw_against_liquidation(
+                    (pool_id, amount_fu128),
+                    user_pools,
+                    user_supply_debt,
+                    pool_map,
+                    LiquidationThreshold::<T>::get(),
+                )?;
+            }
 
             // Now the checks are done, we can prepare to transfer
-            user_supply.decrement(&amount_fu128);
+            UserAccountUtil::<T>::decrement_supply(&pool, account.clone(), &amount_fu128, user_supply)?;
             pool.decrement_supply(&amount_fu128);
-
-            let minimal_amount = pool.minimal_amount;
+            PoolRepository::<T>::save(pool.clone());
 
             // Now perform the writes
-            T::MultiCurrency::transfer(pool.currency_id, &Self::account_id(), &account, transfer_amount)?;
-            PoolStorage::<T>::insert(pool_id, pool);
-
-            // TODO: we need to handle dust here! Currently minimal_amount is just zero
-            if user_supply.amount() < minimal_amount {
-                PoolUserSupplies::<T>::remove(pool_id, account.clone());
-                UserAccountUtil::<T>::remove_user_supply(pool_id, account.clone());
-            } else {
-                PoolUserSupplies::<T>::insert(pool_id, account.clone(), user_supply);
-            }
+            T::Currency::transfer(pool.currency_id(), &Self::account_id(), &account, transfer_amount)?;
 
             Self::deposit_event(Event::WithdrawSuccessful(pool_id, account, amount_fu128));
 
@@ -439,26 +428,30 @@ pub mod pallet {
             let account = ensure_signed(origin)?;
 
             // Check pool can borrow
-            let mut pool: Pool<T> = PoolStorage::<T>::get(pool_id).ok_or(Error::<T>::PoolNotExist)?;
-            if !pool.enabled { return Err(Error::<T>::PoolNotEnabled.into()); }
-            // This ensures the pool's supply will never be lower than 0
+            let mut pool: PoolProxy<T> = PoolRepository::<T>::find_without_price(pool_id)?;
+            if !pool.enabled() { return Err(Error::<T>::PoolNotEnabled.into()); }
+            // Check sufficient liquidity
             let amount_u128 = T::Conversion::convert(amount);
-            if pool.debt() + amount_u128 > pool.supply() { return Err(Error::<T>::NotEnoughLiquidity.into()); }
+            pool.accrue_interest()?;
+            if !pool.allow_amount_deduction(&amount_u128) { return Err(Error::<T>::NotEnoughLiquidity.into()); }
 
-            Self::check_borrow_against_liquidation(account.clone(), pool.currency_id, pool.safe_factor, amount_u128)?;
+            let (user_pools, mut pool_map, user_supply_debt) = Self::prefetch_for_liquidation_check(account.clone())?;
+            if !pool_map.contains_key(&pool_id) { pool_map.insert(pool_id, pool.clone()); }
+            UserAccountUtil::<T>::check_borrow_against_liquidation(
+                (pool_id,amount_u128),
+                user_pools,
+                user_supply_debt,
+                pool_map,
+                LiquidationThreshold::<T>::get(),
+            )?;
 
             // Ready to perform the writes
-            pool.accrue_interest(<frame_system::Pallet<T>>::block_number())?;
+            // TODO: add check can transfer
+            T::Currency::transfer(pool.currency_id(), &Self::account_id(), &account, amount)?;
+            UserAccountUtil::<T>::increment_debt(&pool, account.clone(), amount_u128)?;
 
-            T::MultiCurrency::transfer(pool.currency_id, &Self::account_id(), &account, amount)?;
-
-            if let Some(mut user_debt) = PoolUserDebts::<T>::get(pool_id, account.clone()) {
-                user_debt.accrue_interest(&pool.total_debt_index())?;
-                PoolUserDebts::<T>::insert(pool_id, account.clone(), user_debt);
-            } else {
-                UserAccountUtil::<T>::add_user_debt(&pool, account.clone(), amount_u128);
-            }
-            PoolStorage::<T>::insert(pool_id, pool);
+            pool.increment_debt(&amount_u128);
+            PoolRepository::<T>::save(pool);
 
             Self::deposit_event(Event::BorrowSuccessful(pool_id, account, amount_u128));
 
@@ -470,15 +463,12 @@ pub mod pallet {
             let account = ensure_signed(origin)?;
 
             // Check pool can borrow
-            let mut pool: Pool<T> = PoolStorage::<T>::get(pool_id).ok_or(Error::<T>::PoolNotExist)?;
-            if !pool.enabled { return Err(Error::<T>::PoolNotEnabled.into()); }
+            let mut pool = PoolRepository::<T>::find_without_price(pool_id)?;
+            if !pool.enabled() { return Err(Error::<T>::PoolNotEnabled.into()); }
 
             // Check user supply can withdraw
-            let mut user_debt = PoolUserDebts::<T>::get(pool.id, account.clone())
+            let mut user_debt = PoolUserDebts::<T>::get(pool.id(), account.clone())
                 .ok_or(Error::<T>::UserNoDebtInPool)?;
-
-            pool.accrue_interest(<frame_system::Pallet<T>>::block_number())?;
-            user_debt.accrue_interest(&pool.total_debt_index())?;
 
             let mut amount_fu128 = T::Conversion::convert(amount);
             let mut transfer_amount = amount;
@@ -487,23 +477,15 @@ pub mod pallet {
                 transfer_amount = T::Conversion::convert(amount_fu128);
             }
 
+            pool.accrue_interest()?;
             pool.decrement_debt(&amount_fu128);
-            user_debt.decrement(&amount_fu128);
+            PoolRepository::<T>::save(pool.clone());
 
-            // Ready to perform the writes
-            let minimal_amount = pool.minimal_amount;
+            user_debt.accrue_interest(&pool.total_debt_index())?;
+            UserAccountUtil::<T>::decrement_debt(&pool, account.clone(), &amount_fu128, user_debt)?;
 
-            // Now perform the writes
-            T::MultiCurrency::transfer(pool.currency_id, &account, &Self::account_id(), transfer_amount)?;
-            PoolStorage::<T>::insert(pool_id, pool);
-
-            // TODO: we need to handle dust here! Currently minimal_amount is just zero
-            if user_debt.amount() < minimal_amount {
-                PoolUserDebts::<T>::remove(pool_id, account.clone());
-                UserAccountUtil::<T>::remove_user_debt(pool_id, account.clone());
-            } else {
-                PoolUserDebts::<T>::insert(pool_id, account.clone(), user_debt);
-            }
+            // Transfer currency
+            T::Currency::transfer(pool.currency_id(), &account, &Self::account_id(), transfer_amount)?;
 
             Self::deposit_event(Event::ReplaySuccessful(pool_id, account, amount_fu128));
 
@@ -523,14 +505,8 @@ pub mod pallet {
 
             // check floating-rate-pool exists and get floating-rate-pool instances
             // check if get_asset_id is enabled as collateral
-            let mut collateral_pool: Pool<T> = PoolStorage::<T>::get(collateral_pool_id).ok_or(Error::<T>::PoolNotExist)?;
-            if !collateral_pool.can_be_collateral { return Err(Error::<T>::AssetNotCollateral.into()); }
-
-            let mut debt_pool: Pool<T> = PoolStorage::<T>::get(debt_pool_id).ok_or(Error::<T>::PoolNotExist)?;
-
-            let block_number = <frame_system::Pallet<T>>::block_number();
-            debt_pool.accrue_interest(block_number)?;
-            collateral_pool.accrue_interest(block_number)?;
+            let collateral_pool: PoolProxy<T> = PoolRepository::<T>::find(collateral_pool_id)?;
+            if !collateral_pool.can_be_collateral() { return Err(Error::<T>::AssetNotCollateral.into()); }
 
             // Ensure the user has got the collateral and debt
             let mut user_debt = PoolUserDebts::<T>::get(debt_pool_id, account.clone())
@@ -539,68 +515,56 @@ pub mod pallet {
                 .ok_or(Error::<T>::UserNoSupplyInPool)?;
 
             // Ensure the user is liquidated
-            let liquidation_threshold = LiquidationThreshold::<T>::get();
-            let user_stats = Self::user_balances(target_user)?;
-            if !user_stats.is_liquidated(liquidation_threshold) { return Err(Error::<T>::UserNotUnderLiquidation.into()); }
+            let (user_pools, pool_map, user_supply_debt) = Self::prefetch_for_liquidation_check(target_user.clone())?;
 
+            let balances = UserAccountUtil::<T>::user_balances(&user_pools, &user_supply_debt, &pool_map)?;
+            let liquidation_threshold = LiquidationThreshold::<T>::get();
+            if !balances.is_liquidated(liquidation_threshold) { return Err(Error::<T>::UserNotUnderLiquidation.into()); }
+
+            let debt_pool = pool_map.get(&debt_pool_id).ok_or(CustomError::InconsistentState)?;
+            let collateral_pool = pool_map.get(&collateral_pool_id).ok_or(CustomError::InconsistentState)?;
             user_debt.accrue_interest(&debt_pool.total_debt_index())?;
             user_collateral.accrue_interest(&collateral_pool.total_debt_index())?;
 
-            // Next, we check the prices are ok to use
-            let debt_pool_price = Self::pool_price(&debt_pool)?;
-            let collateral_pool_price = Self::pool_price(&collateral_pool)?;
-            let discounted_collateral_price = collateral_pool.discounted_price(collateral_pool_price);
+            // price should have been checked in liquidation checks
+            let discounted_collateral_price = collateral_pool.discounted_price(&collateral_pool.price());
 
             // Now, we derive the amount for liquidation
-            let arbitrageur_get_amount = collateral_pool.closable_amount(&user_collateral.amount(), &collateral_pool_price);
-            let arbitrageur_pay_amount = Self::convert_amount(
-                &arbitrageur_get_amount,
+            let arbitrageur_get_limit = collateral_pool.closable_amount(&user_collateral.amount(), &collateral_pool.price());
+            let arbitrageur_pay_limit = Self::convert_amount(
+                &arbitrageur_get_limit,
                 &discounted_collateral_price,
-                &debt_pool_price,
+                &debt_pool.price(),
             )?;
 
             // Now we calculate the total amount to transfer to arbitrageur
             let mut pay_amount = T::Conversion::convert(pay_amount);
-            if pay_amount > arbitrageur_pay_amount { pay_amount = arbitrageur_pay_amount; }
+            if pay_amount > arbitrageur_pay_limit { pay_amount = arbitrageur_pay_limit; }
             if pay_amount > user_debt.amount() { pay_amount = user_debt.amount(); }
 
             // TODO: check rounding errors due to discount_factor
             let get_amount = Self::convert_amount(
                 &pay_amount,
-                &debt_pool_price,
+                &debt_pool.price(),
                 &discounted_collateral_price,
             )?;
 
-            // Now we can transfer debt from arbitrageur to pool
-            let pay_amount_transfer = T::Conversion::convert(pay_amount);
-            T::MultiCurrency::transfer(debt_pool.currency_id,&account,&Self::account_id(), pay_amount_transfer)?;
-            // Then the collateral to arbitrageur
-            let get_amount_transfer = T::Conversion::convert(get_amount);
-            T::MultiCurrency::transfer(collateral_pool.currency_id,&Self::account_id(), &account, get_amount_transfer)?;
-
-            user_collateral.decrement(&get_amount);
-            user_debt.decrement(&pay_amount);
-
-            let minimal_amount = collateral_pool.minimal_amount;
+            let debt_currency_id = debt_pool.currency_id();
+            let collateral_currency_id = collateral_pool.currency_id();
+            // Update user accounts
+            UserAccountUtil::<T>::decrement_supply(&collateral_pool, account.clone(), &get_amount, user_collateral)?;
+            UserAccountUtil::<T>::decrement_debt(&debt_pool, account.clone(), &pay_amount, user_debt)?;
 
             // update pools
-            PoolStorage::<T>::insert(debt_pool_id, debt_pool);
-            PoolStorage::<T>::insert(collateral_pool_id, collateral_pool);
+            PoolRepository::<T>::save(debt_pool.clone());
+            PoolRepository::<T>::save(collateral_pool.clone());
 
-            // TODO: shift the common code to a single function!
-            if user_collateral.amount() < minimal_amount {
-                PoolUserSupplies::<T>::remove(collateral_pool_id, account.clone());
-                UserAccountUtil::<T>::remove_user_supply(collateral_pool_id, account.clone());
-            } else {
-                PoolUserSupplies::<T>::insert(collateral_pool_id, account.clone(), user_collateral);
-            }
-
-            if user_debt.amount() < minimal_amount {
-                PoolUserDebts::<T>::remove(debt_pool_id, account.clone());
-                UserAccountUtil::<T>::remove_user_debt(debt_pool_id, account);
-            } else {
-                PoolUserDebts::<T>::insert(debt_pool_id, account, user_debt);
-            }
+            // Now we can transfer debt from arbitrageur to pool
+            let pay_amount_transfer = T::Conversion::convert(pay_amount);
+            T::Currency::transfer(debt_currency_id, &account, &Self::account_id(), pay_amount_transfer)?;
+            // Then the collateral to arbitrageur
+            let get_amount_transfer = T::Conversion::convert(get_amount);
+            T::Currency::transfer(collateral_currency_id, &Self::account_id(), &account, get_amount_transfer)?;
 
             Self::deposit_event(Event::LiquidationSuccessful);
 
@@ -625,18 +589,19 @@ pub mod pallet {
         }
 
         /// Get the user supply balance for the user in a pool
-        pub fn user_supply_balance(pool_id: PoolId, user: T::AccountId) -> Result<FixedU128, Overflown> {
-            UserAccountUtil::<T>::user_supply_balance(pool_id, user)
+        pub fn user_supply_balance(pool_id: PoolId, user: T::AccountId) -> Result<FixedU128, CustomError> {
+            UserAccountUtil::<T>::supply_balance_with_interest(pool_id, user)
         }
 
         /// Get the user debt balance for the user in a pool
-        pub fn user_debt_balance(pool_id: PoolId, user: T::AccountId) -> Result<FixedU128, Overflown> {
-            UserAccountUtil::<T>::user_debt_balance(pool_id, user)
+        pub fn user_debt_balance(pool_id: PoolId, user: T::AccountId) -> Result<FixedU128, CustomError> {
+            UserAccountUtil::<T>::debt_balance_with_interest(pool_id, user)
         }
 
         // total supply balance; total converted supply balance; total debt balance;
-        pub fn user_balances(user: T::AccountId) -> Result<UserBalanceStats, Overflown> {
-            UserAccountUtil::<T>::user_balances(user)
+        pub fn user_balances(user: T::AccountId) -> Result<UserBalanceStats, CustomError> {
+            let (user_pools, pool_map, user_supply_debt) = Self::prefetch_for_liquidation_check(user.clone())?;
+            UserAccountUtil::<T>::user_balances(&user_pools, &user_supply_debt, &pool_map)
         }
 
         /* -------- Internal Helper Functions ------------ */
@@ -653,68 +618,16 @@ pub mod pallet {
             Ok(origin)
         }
 
-        fn pool_price(pool: &Pool<T>) -> Result<PriceValue, PoolPriceNotReady> {
-            let price = T::PriceProvider::price(pool.currency_id);
-            if !price.price_ready() { return Err(PoolPriceNotReady{}); }
-            Ok(price.value())
-        }
-
         fn convert_amount(
             amount_of_source: &FixedU128,
             price_of_source: &PriceValue,
             price_of_target: &PriceValue
-        ) -> Result<FixedU128, FlowError> {
+        ) -> Result<FixedU128, CustomError> {
             Ok(price_of_source
                 .checked_div(price_of_target)
-                .ok_or(FlowError{})?
+                .ok_or(CustomError::FlownError)?
                 .checked_mul(amount_of_source)
-                .ok_or(FlowError{})?)
-        }
-
-        fn check_withdraw_against_liquidation(
-            account: T::AccountId,
-            currency_id: CurrencyIdOf<T>,
-            safe_factor: FixedU128,
-            amount: FixedU128,
-        ) -> DispatchResultWithPostInfo {
-            let user_balance_stats = Self::user_balances(account)?;
-            let price = T::PriceProvider::price(currency_id);
-
-            let mut collateral_remain = user_balance_stats.collateral_balance;
-            let delta = (price.value() * safe_factor).mul(amount);
-            collateral_remain = collateral_remain.sub(delta);
-
-            let required_collateral = LiquidationThreshold::<T>::get()
-                .mul(user_balance_stats.debt_balance);
-
-            if collateral_remain < required_collateral {
-                return Err(Error::<T>::BelowLiquidationThreshold.into());
-            }
-
-            Ok(().into())
-        }
-
-        fn check_borrow_against_liquidation(
-            account: T::AccountId,
-            currency_id: CurrencyIdOf<T>,
-            safe_factor: FixedU128,
-            amount: FixedU128,
-        ) -> DispatchResultWithPostInfo {
-            let user_balance_stats = Self::user_balances(account)?;
-            let price = T::PriceProvider::price(currency_id);
-
-            // First calculate the balance of the amount to borrow
-            let mut required_collateral = (price.value() * safe_factor).mul(amount);
-            // Then add to the existing debt balance
-            required_collateral = required_collateral.add(user_balance_stats.debt_balance);
-            // Finally multiply with the liquidation threshold
-            required_collateral = LiquidationThreshold::<T>::get().mul(required_collateral);
-
-            if user_balance_stats.collateral_balance < required_collateral {
-                return Err(Error::<T>::BelowLiquidationThreshold.into());
-            }
-
-            Ok(().into())
+                .ok_or(CustomError::FlownError)?)
         }
 
         /// Check the floating-rate-pool's parameters
@@ -732,6 +645,22 @@ pub mod pallet {
                 return Ok(());
             }
             Err(InvalidParameters{})
+        }
+
+        fn prefetch_for_liquidation_check(account: T::AccountId) -> Result<(UserPools, BTreeMap<PoolId, PoolProxy<T>>, UserSupplyDebtData), CustomError> {
+            // Prefetch all the needed data
+            let user_debts = UserAccountUtil::<T>::get_debt_pools(account.clone());
+            let user_supplies = UserAccountUtil::<T>::get_supply_pools(account.clone());
+            let pools = PoolRepository::<T>::find_pools(&user_supplies, &user_debts)?;
+
+            // Accrue interest for all
+            for mut p in pools.values().cloned() {
+                p.accrue_interest()?;
+                PoolRepository::<T>::save(p);
+            }
+            let supply_debt_map = UserAccountUtil::<T>::accrue_interest_for_user(account.clone(), &pools)?;
+
+            Ok((UserPools::new(user_supplies, user_debts), pools, supply_debt_map))
         }
     }
 }
