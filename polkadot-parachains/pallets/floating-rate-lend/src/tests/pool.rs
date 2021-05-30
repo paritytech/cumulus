@@ -6,7 +6,7 @@ use sp_runtime::{FixedU128, FixedPointNumber};
 use sp_runtime::traits::{Zero, One};
 use crate::pool::Pool;
 use crate::types::Convertor;
-use crate::mock::{*};
+use crate::tests::mock::{*};
 use sp_std::ops::{Mul};
 
 

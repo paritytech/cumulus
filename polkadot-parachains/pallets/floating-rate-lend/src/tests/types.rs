@@ -6,7 +6,7 @@ use sp_runtime::{FixedU128, FixedPointNumber};
 use sp_runtime::traits::{One, Convert};
 use crate::types::{Convertor, UserData, UserAccountUtil};
 use polkadot_parachain_primitives::{BALANCE_ONE, PoolId};
-use crate::mock::{*};
+use crate::tests::mock::{*};
 use sp_std::ops::{Add, Mul};
 use crate::{PoolUserSupplies, Error, UserSupplySet, PoolUserDebts};
 use sp_std::collections::btree_map::BTreeMap;
@@ -537,6 +537,6 @@ fn floating_lend_get_check_borrow_against_liquidation_trigger() {
                         pools,
                         FixedU128::one(),
                 ).unwrap();
-                assert_eq!(is_trigger, false);
+                assert_eq!(is_trigger, true);
         })
 }

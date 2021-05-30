@@ -16,8 +16,7 @@ use polkadot_parachain_primitives::{BALANCE_ONE, Price, PoolId};
 
 use crate as pallet_floating_rate_lend;
 use crate::pool::{Pool, PoolProxy};
-
-use super::*;
+use crate::Config;
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;

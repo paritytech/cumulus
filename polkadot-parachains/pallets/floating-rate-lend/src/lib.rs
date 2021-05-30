@@ -26,9 +26,6 @@ mod types;
 mod pool;
 
 #[cfg(test)]
-mod mock;
-
-#[cfg(test)]
 mod tests;
 
 // #[cfg(feature = "runtime-benchmarks")]
@@ -46,7 +43,7 @@ pub mod pallet {
     use sp_std::collections::btree_map::BTreeMap;
 
     use pallet_traits::{MultiCurrency, PriceProvider};
-    use polkadot_parachain_primitives::{InvalidParameters, PoolId, PriceValue, CustomError};
+    use polkadot_parachain_primitives::{CustomError, InvalidParameters, PoolId, PriceValue};
 
     use crate::pool::{Pool, PoolProxy, PoolRepository};
     use crate::types::{Convertor, UserAccountUtil, UserBalanceStats, UserData, UserSupplyDebtData};
