@@ -2726,20 +2726,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "frame-system-benchmarking"
-version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#be1b8ef0eefd6e8fbc7abb3d33262d139277da13"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "frame-system-rpc-runtime-api"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#be1b8ef0eefd6e8fbc7abb3d33262d139277da13"
@@ -5507,7 +5493,6 @@ name = "pallet-multisig"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#be1b8ef0eefd6e8fbc7abb3d33262d139277da13"
 dependencies = [
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -5551,7 +5536,6 @@ name = "pallet-proxy"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#be1b8ef0eefd6e8fbc7abb3d33262d139277da13"
 dependencies = [
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "max-encoded-len",
@@ -5703,7 +5687,6 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "sp-inherents",
- "sp-io",
  "sp-runtime",
  "sp-std",
  "sp-timestamp",
@@ -5787,7 +5770,6 @@ name = "pallet-utility"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#be1b8ef0eefd6e8fbc7abb3d33262d139277da13"
 dependencies = [
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -10510,22 +10492,24 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "statemine-runtime"
-version = "2.0.0"
+version = "0.1.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
+ "cumulus-ping",
  "cumulus-primitives-core",
  "cumulus-primitives-utility",
- "frame-benchmarking",
  "frame-executive",
  "frame-support",
  "frame-system",
- "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
+ "hex",
  "hex-literal 0.3.1",
+ "log",
+ "max-encoded-len",
  "node-primitives",
  "pallet-assets",
  "pallet-aura",
@@ -10536,6 +10520,7 @@ dependencies = [
  "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-session",
+ "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
@@ -10544,7 +10529,6 @@ dependencies = [
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
- "polkadot-primitives",
  "polkadot-runtime-common",
  "runtime-common",
  "serde",
@@ -10569,22 +10553,24 @@ dependencies = [
 
 [[package]]
 name = "statemint-runtime"
-version = "2.0.0"
+version = "0.1.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
+ "cumulus-ping",
  "cumulus-primitives-core",
  "cumulus-primitives-utility",
- "frame-benchmarking",
  "frame-executive",
  "frame-support",
  "frame-system",
- "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
+ "hex",
  "hex-literal 0.3.1",
+ "log",
+ "max-encoded-len",
  "node-primitives",
  "pallet-assets",
  "pallet-aura",
@@ -10595,6 +10581,7 @@ dependencies = [
  "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-session",
+ "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
@@ -10603,7 +10590,6 @@ dependencies = [
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
- "polkadot-primitives",
  "polkadot-runtime-common",
  "runtime-common",
  "serde",
@@ -12355,22 +12341,24 @@ dependencies = [
 
 [[package]]
 name = "westmint-runtime"
-version = "2.0.0"
+version = "0.1.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
+ "cumulus-ping",
  "cumulus-primitives-core",
  "cumulus-primitives-utility",
- "frame-benchmarking",
  "frame-executive",
  "frame-support",
  "frame-system",
- "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
+ "hex",
  "hex-literal 0.3.1",
+ "log",
+ "max-encoded-len",
  "node-primitives",
  "pallet-assets",
  "pallet-aura",
@@ -12390,7 +12378,6 @@ dependencies = [
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
- "polkadot-primitives",
  "polkadot-runtime-common",
  "runtime-common",
  "serde",
