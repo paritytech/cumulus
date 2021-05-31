@@ -30,6 +30,8 @@ westmint-runtime = { path = "westmint" }
 statemint-common = { path = "statemint-common" }
 
 # Substrate dependencies
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = "master" }
+frame-benchmarking-cli = { git = 'https://github.com/paritytech/substrate', branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -79,6 +81,8 @@ polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "m
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
+
+
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
@@ -99,3 +103,12 @@ polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch
 pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
+[features]
+default = []
+runtime-benchmarks = [
+	'polkadot-service/runtime-benchmarks',
+	'statemint-runtime/runtime-benchmarks',
+	'statemine-runtime/runtime-benchmarks',
+	'westmint-runtime/runtime-benchmarks',
+]

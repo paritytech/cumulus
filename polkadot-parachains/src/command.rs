@@ -17,6 +17,7 @@
 use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
+	service::{StatemineRuntimeExecutor, StatemintRuntimeExecutor, WestmintRuntimeExecutor},
 };
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
@@ -29,8 +30,11 @@ use sc_cli::{
 };
 use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::traits::Block as BlockT;
+use sp_runtime::{traits::Block as BlockT, generic, OpaqueExtrinsic};
 use std::{io::Write, net::SocketAddr};
+use statemint_common::Header;
+
+pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 
 fn load_spec(
 	id: &str,
@@ -306,6 +310,21 @@ pub fn run() -> Result<()> {
 
 			Ok(())
 		}
+		Some(Subcommand::Benchmark(cmd)) => {
+			if cfg!(feature = "runtime-benchmarks") {
+				let runner = cli.create_runner(cmd)?;
+				if use_statemine_runtime(&*runner.config().chain_spec) {
+					runner.sync_run(|config| cmd.run::<Block, StatemineRuntimeExecutor>(config))
+				} else if use_westmint_runtime(&*runner.config().chain_spec) {
+					runner.sync_run(|config| cmd.run::<Block, WestmintRuntimeExecutor>(config))
+				} else {
+					runner.sync_run(|config| cmd.run::<Block, StatemintRuntimeExecutor>(config))
+				}
+			} else {
+				Err("Benchmarking wasn't enabled when building the node. \
+				You can enable it with `--features runtime-benchmarks`.".into())
+			}
+		},
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 			let use_shell = use_shell_runtime(&*runner.config().chain_spec);
