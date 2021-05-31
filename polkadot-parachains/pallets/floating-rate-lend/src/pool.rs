@@ -203,7 +203,7 @@ impl <T: Config> PoolProxy<T> {
     }
 
     pub fn find(id: PoolId) -> Result<Self, CustomError>  {
-        let pool = PoolStorage::<T>::get(id).ok_or(CustomError::PoolNotExist)?;
+        let pool = PoolStorage::<T>::get(id).ok_or(CustomError::PoolNotExist(id))?;
         let price = T::PriceProvider::price(pool.currency_id);
         Ok(Self::new_pool(pool, price))
     }
@@ -258,13 +258,13 @@ impl <T: Config> PoolProxy<T> {
 pub struct PoolRepository<T>(marker::PhantomData<T>);
 impl <T: Config> PoolRepository<T> {
     pub fn find(id: PoolId) -> Result<PoolProxy<T>, CustomError> {
-        let pool = PoolStorage::<T>::get(id).ok_or(CustomError::PoolNotExist)?;
+        let pool = PoolStorage::<T>::get(id).ok_or(CustomError::PoolNotExist(id))?;
         let price = T::PriceProvider::price(pool.currency_id);
         Ok(PoolProxy::new_pool(pool, price))
     }
 
     pub fn find_without_price(id: PoolId) -> Result<PoolProxy<T>, CustomError> {
-        let pool = PoolStorage::<T>::get(id).ok_or(CustomError::PoolNotExist)?;
+        let pool = PoolStorage::<T>::get(id).ok_or(CustomError::PoolNotExist(id))?;
         Ok(PoolProxy::new_pool(pool, Price::invalid_price()))
     }
 

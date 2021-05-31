@@ -38,6 +38,7 @@ impl UserBalanceStats {
     }
 }
 
+// TODO: urgent! Added a proxy layer and ensure the account is in the proxy
 #[derive(Clone, Eq, PartialEq, RuntimeDebug, Encode, Decode)]
 pub struct UserData {
     amount: FixedU128,

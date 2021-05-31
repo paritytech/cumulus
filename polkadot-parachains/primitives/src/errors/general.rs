@@ -3,6 +3,7 @@
 use frame_support::dispatch::DispatchError;
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
+use crate::PoolId;
 
 /// An error type that indicates that the some or one of the parameters are/is invalid.
 #[derive(Encode, Decode, RuntimeDebug)]
@@ -23,7 +24,7 @@ pub enum CustomError {
     /// Price not ready error
     PriceNotReady,
     /// Pool does not exist
-    PoolNotExist,
+    PoolNotExist(PoolId),
     /// Some or one of the parameters are/is invalid.
     InvalidParameters,
     /// Inconsistent state error
@@ -37,7 +38,7 @@ impl From<CustomError> for DispatchError {
             CustomError::PriceNotReady => DispatchError::Other { 0: "Price is not ready" },
             CustomError::InvalidParameters => DispatchError::Other { 0: "Invalid Parameters Passed" },
             CustomError::InconsistentState => DispatchError::Other { 0: "Inconsistent state" },
-            CustomError::PoolNotExist => DispatchError::Other { 0: "Pool does not exist" },
+            CustomError::PoolNotExist(_) => DispatchError::Other { 0: "Pool does not exist" },
         }
     }
 }

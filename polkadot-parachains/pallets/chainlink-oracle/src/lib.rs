@@ -16,12 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! Currencies module.
-//! This pallet handles the lifecycle of the currency.
-//! This includes getting and setting the prices. The actual price is fetched by the Oracle module.
+//! Chainlink oracle adaptor module.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 mod mock;
+mod tests;
+
 pub use pallet::*;
 
 #[frame_support::pallet]

@@ -67,7 +67,7 @@ fn floating_lend_pool_closable_amount_above_min() {
             let price = FixedU128::from(2);
 
             let closable_amount = p.closable_amount(&amount, &price);
-            assert_eq!(FixedU128::from(90), closable_amount);
+            assert_eq!(FixedU128::from(50), closable_amount);
         });
 }
 

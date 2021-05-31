@@ -12,7 +12,7 @@ use sp_runtime::traits::{Convert, Zero};
 use sp_std::convert::TryInto;
 
 use pallet_traits::{MultiCurrency, PriceProvider};
-use polkadot_parachain_primitives::{BALANCE_ONE, Price, PoolId};
+use polkadot_parachain_primitives::{BALANCE_ONE, Price, PoolId, PriceValue};
 
 use crate as pallet_floating_rate_lend;
 use crate::pool::{Pool, PoolProxy};
@@ -108,9 +108,13 @@ pub struct MockPriceProvider;
 impl PriceProvider<Runtime> for MockPriceProvider {
     type CurrencyId = CurrencyId;
 
-    fn price(_currency_id: Self::CurrencyId) -> Price<Runtime> {
-        let default_price = FixedU128::from(1);
-        Price::new(default_price, 1)
+    fn price(currency_id: Self::CurrencyId) -> Price<Runtime> {
+        let price = match currency_id {
+            10 => FixedU128::from(2),
+            11 => FixedU128::saturating_from_rational(5, 10),
+            _ => FixedU128::from(1)
+        };
+        Price::new(price, 1)
     }
 }
 
@@ -184,7 +188,6 @@ impl ExtBuilder {
 }
 
 /// Default test pool
-const DEFAULT_CLOSE_FACTOR: f64 = 0.9;
 const DEFAULT_SAFE_FACTOR: f64 = 0.9;
 const DEFAULT_DISCOUNT_FACTOR: f64 = 0.9;
 
@@ -197,7 +200,7 @@ pub fn default_test_pool() -> Pool<Runtime> {
         0,
         false,
         FixedU128::from_float(DEFAULT_SAFE_FACTOR),
-        FixedU128::from_float(DEFAULT_CLOSE_FACTOR),
+        FixedU128::saturating_from_rational(5, 10),
         FixedU128::from_float(DEFAULT_DISCOUNT_FACTOR),
         utilization_factor,
         initial_interest_rate,
@@ -213,14 +216,14 @@ pub fn test_pool(id: PoolId, can_be_collateral: bool) -> Pool<Runtime> {
     Pool::<Runtime>::new(
         id,
         vec![],
-        0,
+        id as u32,
         can_be_collateral,
         FixedU128::from_float(DEFAULT_SAFE_FACTOR),
-        FixedU128::from_float(DEFAULT_CLOSE_FACTOR),
+        FixedU128::saturating_from_rational(5, 10),
         FixedU128::from_float(DEFAULT_DISCOUNT_FACTOR),
         utilization_factor,
         initial_interest_rate,
-        Zero::zero(),
+        FixedU128::saturating_from_rational(1, 1000000),
         ROOT,
         1
     )
@@ -234,4 +237,9 @@ pub fn default_pool_proxy() -> PoolProxy<Runtime> {
 pub fn pool_proxy(id: PoolId, can_be_collateral: bool) -> PoolProxy<Runtime> {
     let pool = test_pool(id, can_be_collateral);
     PoolProxy::new_pool(pool, Price::new(FixedU128::one(), 1))
+}
+
+pub fn pool_proxy_with_price(id: PoolId, can_be_collateral: bool, price: PriceValue) -> PoolProxy<Runtime> {
+    let pool = test_pool(id, can_be_collateral);
+    PoolProxy::new_pool(pool, Price::new(price, 1))
 }

@@ -496,20 +496,25 @@ pub mod pallet {
             origin: OriginFor<T>,
             target_user: T::AccountId,
             debt_pool_id: PoolId,
+            pay_amount: BalanceOf<T>,
             collateral_pool_id: PoolId,
-            pay_amount: BalanceOf<T>
         ) -> DispatchResultWithPostInfo {
             let account = ensure_signed(origin)?;
+
+            if pay_amount.is_zero() { return Err(Error::<T>::BalanceTooLow.into()); }
 
             // check floating-rate-pool exists and get floating-rate-pool instances
             // check if get_asset_id is enabled as collateral
             let collateral_pool: PoolProxy<T> = PoolRepository::<T>::find(collateral_pool_id)?;
+            if !collateral_pool.enabled() { return Err(Error::<T>::PoolNotEnabled.into()); }
             if !collateral_pool.can_be_collateral() { return Err(Error::<T>::AssetNotCollateral.into()); }
+            let debt_pool: PoolProxy<T> = PoolRepository::<T>::find(debt_pool_id)?;
+            if !debt_pool.enabled() { return Err(Error::<T>::PoolNotEnabled.into()); }
 
             // Ensure the user has got the collateral and debt
-            let mut user_debt = PoolUserDebts::<T>::get(debt_pool_id, account.clone())
+            let mut user_debt = PoolUserDebts::<T>::get(debt_pool_id, target_user.clone())
                 .ok_or(Error::<T>::UserNoDebtInPool)?;
-            let mut user_collateral = PoolUserSupplies::<T>::get(collateral_pool_id, account.clone())
+            let mut user_collateral = PoolUserSupplies::<T>::get(collateral_pool_id, target_user.clone())
                 .ok_or(Error::<T>::UserNoSupplyInPool)?;
 
             // Ensure the user is liquidated
@@ -519,8 +524,8 @@ pub mod pallet {
             let liquidation_threshold = LiquidationThreshold::<T>::get();
             if !balances.is_liquidated(liquidation_threshold) { return Err(Error::<T>::UserNotUnderLiquidation.into()); }
 
-            let debt_pool = pool_map.get(&debt_pool_id).ok_or(CustomError::InconsistentState)?;
-            let collateral_pool = pool_map.get(&collateral_pool_id).ok_or(CustomError::InconsistentState)?;
+            let mut debt_pool = pool_map.get(&debt_pool_id).ok_or(CustomError::InconsistentState)?.clone();
+            let mut collateral_pool = pool_map.get(&collateral_pool_id).ok_or(CustomError::InconsistentState)?.clone();
             user_debt.accrue_interest(&debt_pool.total_debt_index())?;
             user_collateral.accrue_interest(&collateral_pool.total_debt_index())?;
 
@@ -549,13 +554,17 @@ pub mod pallet {
 
             let debt_currency_id = debt_pool.currency_id();
             let collateral_currency_id = collateral_pool.currency_id();
+
             // Update user accounts
-            UserAccountUtil::<T>::decrement_supply(&collateral_pool, account.clone(), &get_amount, user_collateral)?;
-            UserAccountUtil::<T>::decrement_debt(&debt_pool, account.clone(), &pay_amount, user_debt)?;
+            UserAccountUtil::<T>::decrement_supply(&collateral_pool, target_user.clone(), &get_amount, user_collateral)?;
+            UserAccountUtil::<T>::decrement_debt(&debt_pool, target_user.clone(), &pay_amount, user_debt)?;
 
             // update pools
-            PoolRepository::<T>::save(debt_pool.clone());
-            PoolRepository::<T>::save(collateral_pool.clone());
+            // TODO: do we need to check if the amounts are deductable here again?
+            debt_pool.decrement_debt(&pay_amount);
+            collateral_pool.decrement_supply(&get_amount);
+            PoolRepository::<T>::save(debt_pool);
+            PoolRepository::<T>::save(collateral_pool);
 
             // Now we can transfer debt from arbitrageur to pool
             let pay_amount_transfer = T::Conversion::convert(pay_amount);
