@@ -42,12 +42,12 @@ use sp_version::RuntimeVersion;
 use frame_system::{
 	EnsureRoot, limits::{BlockLength, BlockWeights},
 };
-use runtime_common::{
+use statemint_common::{
 	BlockNumber, Signature, AccountId, Balance, Index, Hash, AuraId, Header,
 	NORMAL_DISPATCH_RATIO, AVERAGE_ON_INITIALIZE_RATIO, MAXIMUM_BLOCK_WEIGHT, SLOT_DURATION, HOURS,
 };
-pub use runtime_common as common;
-use runtime_common::impls::DealWithFees;
+pub use statemint_common as common;
+use statemint_common::impls::DealWithFees;
 use codec::{Decode, Encode};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{

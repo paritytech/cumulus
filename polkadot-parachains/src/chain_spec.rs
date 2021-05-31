@@ -193,7 +193,7 @@ fn shell_testnet_genesis(parachain_id: ParaId) -> shell_runtime::GenesisConfig {
 	}
 }
 
-use runtime_common::Balance as StatemintBalance;
+use statemint_common::Balance as StatemintBalance;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type StatemintChainSpec = sc_service::GenericChainSpec<statemint_runtime::GenesisConfig, Extensions>;
