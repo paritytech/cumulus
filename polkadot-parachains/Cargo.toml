@@ -27,6 +27,7 @@ shell-runtime = { package = "cumulus-shell-runtime", path = "shell-runtime" }
 statemint-runtime = { path = "statemint" }
 statemine-runtime = { path = "statemine" }
 westmint-runtime = { path = "westmint" }
+statemint-common = { path = "statemint-common" }
 
 # Substrate dependencies
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }

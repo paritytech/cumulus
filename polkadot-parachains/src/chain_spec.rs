@@ -193,16 +193,16 @@ fn shell_testnet_genesis(parachain_id: ParaId) -> shell_runtime::GenesisConfig {
 	}
 }
 
-
+use runtime_common::Balance as StatemintBalance;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type StatemintChainSpec = sc_service::GenericChainSpec<statemint_runtime::GenesisConfig, Extensions>;
 pub type StatemineChainSpec = sc_service::GenericChainSpec<statemine_runtime::GenesisConfig, Extensions>;
 pub type WestmintChainSpec = sc_service::GenericChainSpec<westmint_runtime::GenesisConfig, Extensions>;
 
-const STATEMINT_ED: Balance = statemint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
-const STATEMINE_ED: Balance = statemine_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
-const WESTMINT_ED: Balance = westmint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const STATEMINT_ED: StatemintBalance = statemint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const STATEMINE_ED: StatemintBalance = statemine_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const WESTMINT_ED: StatemintBalance = westmint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {

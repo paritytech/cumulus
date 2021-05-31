@@ -4,7 +4,7 @@ branch = "master"
 version = '4.0.0'
 
 [package]
-name = "runtime-common"
+name = "statemint-common"
 version = "0.8.30"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
