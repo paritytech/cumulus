@@ -6412,6 +6412,8 @@ dependencies = [
  "sp-session",
  "sp-timestamp",
  "sp-transaction-pool",
+ "statemine-runtime",
+ "statemint-runtime",
  "structopt",
  "substrate-build-script-utils",
  "substrate-prometheus-endpoint",
@@ -6420,6 +6422,7 @@ dependencies = [
  "tempfile",
  "tokio 0.2.24",
  "trie-root 0.15.2",
+ "westmint-runtime",
 ]
 
 [[package]]
