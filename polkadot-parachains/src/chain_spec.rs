@@ -239,12 +239,12 @@ pub fn westmint_session_keys(keys: AuraId) -> westmint_runtime::opaque::SessionK
 	westmint_runtime::opaque::SessionKeys { aura: keys }
 }
 
-pub fn statemint_development_config(id: ParaId) -> ChainSpec {
-	let mut properties = Properties::new();
+pub fn statemint_development_config(id: ParaId) -> StatemintChainSpec {
+	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "DOT".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
-	ChainSpec::from_genesis(
+	StatemintChainSpec::from_genesis(
 		// Name
 		"Statemint Development",
 		// ID
@@ -279,12 +279,12 @@ pub fn statemint_development_config(id: ParaId) -> ChainSpec {
 	)
 }
 
-pub fn statemint_local_config(id: ParaId) -> ChainSpec {
-	let mut properties = Properties::new();
+pub fn statemint_local_config(id: ParaId) -> StatemintChainSpec {
+	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "DOT".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
-	ChainSpec::from_genesis(
+	StatemintChainSpec::from_genesis(
 		// Name
 		"Statemint Local",
 		// ID
@@ -370,7 +370,7 @@ fn statemint_genesis(
 }
 
 pub fn statemine_development_config(id: ParaId) -> StatemineChainSpec {
-	let mut properties = Properties::new();
+	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "KSM".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
@@ -410,7 +410,7 @@ pub fn statemine_development_config(id: ParaId) -> StatemineChainSpec {
 }
 
 pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
-	let mut properties = Properties::new();
+	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "KSM".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
@@ -461,7 +461,7 @@ pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
 }
 
 pub fn statemine_config(id: ParaId) -> StatemineChainSpec {
-	let mut properties = Properties::new();
+	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "KSM".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
@@ -544,7 +544,7 @@ fn statemine_genesis(
 }
 
 pub fn westmint_development_config(id: ParaId) -> WestmintChainSpec {
-	let mut properties = Properties::new();
+	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "WND".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
@@ -585,7 +585,7 @@ pub fn westmint_development_config(id: ParaId) -> WestmintChainSpec {
 }
 
 pub fn westmint_local_config(id: ParaId) -> WestmintChainSpec {
-	let mut properties = Properties::new();
+	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "WND".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 

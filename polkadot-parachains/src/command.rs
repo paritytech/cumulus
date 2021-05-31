@@ -36,18 +36,18 @@ fn load_spec(
 	id: &str,
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-	match id {
-		"staging" => Ok(Box::new(chain_spec::staging_test_net(para_id))),
-		"tick" => Ok(Box::new(chain_spec::ChainSpec::from_json_bytes(
+	Ok(match id {
+		"staging" => Box::new(chain_spec::staging_test_net(para_id)),
+		"tick" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../res/tick.json")[..],
-		)?)),
-		"trick" => Ok(Box::new(chain_spec::ChainSpec::from_json_bytes(
+		)?),
+		"trick" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../res/trick.json")[..],
-		)?)),
-		"track" => Ok(Box::new(chain_spec::ChainSpec::from_json_bytes(
+		)?),
+		"track" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../res/track.json")[..],
-		)?)),
-		"shell" => Ok(Box::new(chain_spec::get_shell_chain_spec(para_id))),
+		)?),
+		"shell" => Box::new(chain_spec::get_shell_chain_spec(para_id)),
 		"statemint-dev" => Box::new(chain_spec::statemint_development_config(para_id)),
 		"statemint-local" => Box::new(chain_spec::statemint_local_config(para_id)),
 		"statemine-dev" => Box::new(chain_spec::statemine_development_config(para_id)),
@@ -55,8 +55,8 @@ fn load_spec(
 		"statemine" => Box::new(chain_spec::statemine_config(para_id)),
 		"westmint-dev" => Box::new(chain_spec::westmint_development_config(para_id)),
 		"westmint-local" => Box::new(chain_spec::westmint_local_config(para_id)),
-		"" => Ok(Box::new(chain_spec::get_chain_spec(para_id))),
-		path => Ok({
+		"" => Box::new(chain_spec::get_chain_spec(para_id)),
+		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
 			if use_statemine_runtime(&chain_spec) {
 				Box::new(chain_spec::StatemineChainSpec::from_json_file(path.into())?)
@@ -67,8 +67,8 @@ fn load_spec(
 			} else {
 				Box::new(chain_spec)
 			}
-		}),
-	}
+		}
+	})
 }
 
 impl SubstrateCli for Cli {
