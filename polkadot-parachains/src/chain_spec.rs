@@ -668,6 +668,7 @@ pub fn westmint_config(id: ParaId) -> WestmintChainSpec {
 					 ),
 				],
 				vec![],
+				// re-use the Westend sudo key
 				hex!("6648d7f3382690650c681aba1b993cd11e54deb4df21a3a18c3e2177de9f7342").into(),
 				id,
 			)
