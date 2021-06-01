@@ -24,9 +24,9 @@ hex-literal = "0.2.1"
 # Parachain runtimes
 rococo-parachain-runtime = { package = "cumulus-rococo-parachain-runtime", path = "rococo-runtime" }
 shell-runtime = { package = "cumulus-shell-runtime", path = "shell-runtime" }
-statemint-runtime = { path = "statemint" }
-statemine-runtime = { path = "statemine" }
-westmint-runtime = { path = "westmint" }
+statemint-runtime = { path = "statemint-runtime" }
+statemine-runtime = { path = "statemine-runtime" }
+westmint-runtime = { path = "westmint-runtime" }
 statemint-common = { path = "statemint-common" }
 
 # Substrate dependencies
