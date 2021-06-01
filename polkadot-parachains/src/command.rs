@@ -155,6 +155,8 @@ impl SubstrateCli for Cli {
 			&statemint_runtime::VERSION
 		} else if chain_spec.is_statemine() {
 			&statemine_runtime::VERSION
+		} else if chain_spec.is_westmint() {
+			&westmint_runtime::VERSION
 		} else if chain_spec.is_shell() {
 			&shell_runtime::VERSION
 		} else {
