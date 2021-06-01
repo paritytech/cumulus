@@ -519,7 +519,7 @@ pub fn shell_build_import_queue(
 	.map_err(Into::into)
 }
 
-/// Start a polkadat-shell parachain node.
+/// Start a polkadot-shell parachain node.
 pub async fn start_shell_node(
 	parachain_config: Configuration,
 	collator_key: CollatorPair,
