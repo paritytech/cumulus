@@ -271,11 +271,11 @@ impl pallet_assets::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ClassDeposit: Balance = UNITS; // 1 UNIT deposit to create asset
-	pub const InstanceDeposit: Balance = UNITS / 100; // 1/100 UNIT deposit to create asset
-	pub const KeyLimit: u32 = 32;
-	pub const ValueLimit: u32 = 50;
-	pub const UniquesMetadataDepositBase: Balance = deposit(1, 68);
+	pub const ClassDeposit: Balance = UNITS; // 1 UNIT deposit to create asset class
+	pub const InstanceDeposit: Balance = UNITS / 100; // 1/100 UNIT deposit to create asset instance
+	pub const KeyLimit: u32 = 32;	// Max 32 bytes per key
+	pub const ValueLimit: u32 = 64;	// Max 64 bytes per value
+	pub const UniquesMetadataDepositBase: Balance = deposit(1, 129);
 	pub const AttributeDepositBase: Balance = deposit(1, 0);
 	pub const DepositPerByte: Balance = deposit(0, 1);
 }
