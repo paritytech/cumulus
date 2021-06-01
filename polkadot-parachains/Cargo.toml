@@ -20,6 +20,7 @@ codec = { package = "parity-scale-codec", version = "2.0.0" }
 structopt = "0.3.3"
 serde = { version = "1.0.101", features = ["derive"] }
 hex-literal = "0.2.1"
+async-trait = "0.1.42"
 
 # Parachain runtimes
 rococo-parachain-runtime = { package = "cumulus-rococo-parachain-runtime", path = "rococo-runtime" }

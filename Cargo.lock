@@ -6427,6 +6427,7 @@ name = "polkadot-collator"
 version = "0.1.0"
 dependencies = [
  "assert_cmd",
+ "async-trait",
  "cumulus-client-cli",
  "cumulus-client-collator",
  "cumulus-client-consensus-aura",
