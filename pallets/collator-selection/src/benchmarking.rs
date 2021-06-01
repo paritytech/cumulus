@@ -134,21 +134,21 @@ benchmarks! {
 
 	// worse case is paying a non-existing candidate account.
 	note_author {
-		let c in 1 .. T::MaxCandidates::get();
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
-		<DesiredCandidates<T>>::put(c);
-		register_candidates::<T>(c);
-
 		T::Currency::make_free_balance_be(
 			&<CollatorSelection<T>>::account_id(),
-			T::Currency::minimum_balance() * 2u32.into(),
+			T::Currency::minimum_balance() * 4u32.into(),
 		);
 		let author = account("author", 0, SEED);
+		let new_block: T::BlockNumber = 10u32.into();
+
+		frame_system::Pallet::<T>::set_block_number(new_block);
 		assert!(T::Currency::free_balance(&author) == 0u32.into());
 	}: {
 		<CollatorSelection<T> as EventHandler<_, _>>::note_author(author.clone())
 	} verify {
 		assert!(T::Currency::free_balance(&author) > 0u32.into());
+		assert_eq!(frame_system::Pallet::<T>::block_number(), new_block);
 	}
 
 	// worse case is on new session.
@@ -162,25 +162,28 @@ benchmarks! {
 		frame_system::Pallet::<T>::set_block_number(0u32.into());
 		register_candidates::<T>(c);
 
-		let new_block: T::BlockNumber = 20u32.into();
+		let new_block: T::BlockNumber = 1800u32.into();
+		let zero_block: T::BlockNumber = 0u32.into();
+		let candidates = <Candidates<T>>::get();
 
-		let mut candidates = <Candidates<T>>::get();
-		let non_removals = if c > r { c - r } else { 0 };
+		let non_removals = c.saturating_sub(r);
 
-		for i in 0..non_removals {
-			candidates[i as usize].last_block = new_block;
+		for i in 0..c {
+			<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), zero_block);
 		}
-		<Candidates<T>>::put(candidates.clone());
+		for i in 0..non_removals {
+			<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), new_block);
+		}
 
 		let pre_length = <Candidates<T>>::get().len();
-		frame_system::Pallet::<T>::set_block_number(new_block.clone());
+		frame_system::Pallet::<T>::set_block_number(new_block);
 
 		assert!(<Candidates<T>>::get().len() == c as usize);
 
 	}: {
 		<CollatorSelection<T> as SessionManager<_>>::new_session(0)
 	} verify {
-		assert!(<Candidates<T>>::get().len() <= pre_length);
+		assert!(<Candidates<T>>::get().len() < pre_length);
 	}
 }
 

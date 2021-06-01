@@ -85,7 +85,7 @@ pub mod pallet {
 	use frame_support::{
 		sp_runtime::{
 			RuntimeDebug,
-			traits::{AccountIdConversion, CheckedSub, Zero},
+			traits::{AccountIdConversion, CheckedSub, Zero, Saturating},
 		},
 		weights::DispatchClass,
 	};
@@ -141,13 +141,11 @@ pub mod pallet {
 
 	/// Basic information about a collation candidate.
 	#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
-	pub struct CandidateInfo<AccountId, Balance, BlockNumber> {
+	pub struct CandidateInfo<AccountId, Balance> {
 		/// Account identifier.
 		pub who: AccountId,
 		/// Reserved deposit.
 		pub deposit: Balance,
-		/// Last block at which they authored a block.
-		pub last_block: BlockNumber,
 	}
 
 	#[pallet::pallet]
@@ -164,9 +162,14 @@ pub mod pallet {
 	#[pallet::getter(fn candidates)]
 	pub type Candidates<T: Config> = StorageValue<
 		_,
-		Vec<CandidateInfo<T::AccountId, BalanceOf<T>, T::BlockNumber>>,
+		Vec<CandidateInfo<T::AccountId, BalanceOf<T>>>,
 		ValueQuery,
 	>;
+
+	/// Last block authored by collator.
+	#[pallet::storage]
+	#[pallet::getter(fn last_authored_block)]
+	pub type LastAuthoredBlock<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, T::BlockNumber, ValueQuery>;
 
 	/// Desired number of candidates.
 	///
@@ -298,7 +301,8 @@ pub mod pallet {
 			ensure!(!Self::invulnerables().contains(&who), Error::<T>::AlreadyInvulnerable);
 
 			let deposit = Self::candidacy_bond();
-			let incoming = CandidateInfo { who: who.clone(), deposit, last_block: frame_system::Pallet::<T>::block_number() };
+			// First authored block is current block plus kick threshold to handle session delay
+			let incoming = CandidateInfo { who: who.clone(), deposit };
 
 			let current_count =
 				<Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
@@ -307,6 +311,7 @@ pub mod pallet {
 					} else {
 						T::Currency::reserve(&who, deposit)?;
 						candidates.push(incoming);
+						<LastAuthoredBlock<T>>::insert(who.clone(), frame_system::Pallet::<T>::block_number() + T::KickThreshold::get());
 						Ok(candidates.len())
 					}
 				})?;
@@ -336,6 +341,7 @@ pub mod pallet {
 				let index = candidates.iter().position(|candidate| candidate.who == *who).ok_or(Error::<T>::NotCandidate)?;
 				T::Currency::unreserve(&who, candidates[index].deposit);
 				candidates.remove(index);
+				<LastAuthoredBlock<T>>::remove(who.clone());
 				Ok(candidates.len())
 			});
 			Self::deposit_event(Event::CandidateRemoved(who.clone()));
@@ -353,11 +359,12 @@ pub mod pallet {
 			collators
 		}
 		/// Kicks out and candidates that did not produce a block in the kick threshold.
-		pub fn kick_stale_candidates(candidates: Vec<CandidateInfo<T::AccountId, BalanceOf<T>, T::BlockNumber>>) -> Vec<T::AccountId> {
+		pub fn kick_stale_candidates(candidates: Vec<CandidateInfo<T::AccountId, BalanceOf<T>>>) -> Vec<T::AccountId> {
 			let now = frame_system::Pallet::<T>::block_number();
 			let kick_threshold = T::KickThreshold::get();
 			let new_candidates = candidates.into_iter().filter_map(|c| {
-				let since_last = now - c.last_block;
+				let last_block = <LastAuthoredBlock<T>>::get(c.who.clone());
+				let since_last = now.saturating_sub(last_block);
 				if since_last < kick_threshold {
 					Some(c.who)
 				} else {
@@ -385,14 +392,10 @@ pub mod pallet {
 			// `reward` is half of pot account minus ED, this should never fail.
 			let _success = T::Currency::transfer(&pot, &author, reward, KeepAlive);
 			debug_assert!(_success.is_ok());
-			let candidates_len = <Candidates<T>>::mutate(|candidates| -> usize {
-				if let Some(found) = candidates.iter_mut().find(|candidate| candidate.who == author) {
-					found.last_block = frame_system::Pallet::<T>::block_number();
-				}
-				candidates.len()
-			});
+			<LastAuthoredBlock<T>>::insert(author, frame_system::Pallet::<T>::block_number());
+
 			frame_system::Pallet::<T>::register_extra_weight_unchecked(
-				T::WeightInfo::note_author(candidates_len as u32),
+				T::WeightInfo::note_author(),
 				DispatchClass::Mandatory,
 			);
 		}
