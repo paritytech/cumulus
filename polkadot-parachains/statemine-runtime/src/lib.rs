@@ -150,7 +150,8 @@ pub struct BaseFilter;
 impl Filter<Call> for BaseFilter {
 	fn filter(c: &Call) -> bool {
 		!matches!(c,
-			Call::Assets(pallet_assets::Call::create(..))
+			Call::Assets(pallet_assets::Call::create(..)) |
+			Call::Uniques(pallet_uniques::Call::create(..))
 		)
 	}
 }
@@ -270,6 +271,33 @@ impl pallet_assets::Config for Runtime {
 }
 
 parameter_types! {
+	pub const ClassDeposit: Balance = UNITS; // 1 UNIT deposit to create asset
+	pub const InstanceDeposit: Balance = UNITS / 100; // 1/100 UNIT deposit to create asset
+	pub const KeyLimit: u32 = 32;
+	pub const ValueLimit: u32 = 50;
+	pub const UniquesMetadataDepositBase: Balance = deposit(1, 68);
+	pub const AttributeDepositBase: Balance = deposit(1, 0);
+	pub const DepositPerByte: Balance = deposit(0, 1);
+}
+
+impl pallet_uniques::Config for Runtime {
+	type Event = Event;
+	type ClassId = u32;
+	type InstanceId = u32;
+	type Currency = Balances;
+	type ForceOrigin = AssetsForceOrigin;
+	type ClassDeposit = ClassDeposit;
+	type InstanceDeposit = InstanceDeposit;
+	type MetadataDepositBase = UniquesMetadataDepositBase;
+	type AttributeDepositBase = AttributeDepositBase;
+	type DepositPerByte = DepositPerByte;
+	type StringLimit = StringLimit;
+	type KeyLimit = KeyLimit;
+	type ValueLimit = ValueLimit;
+	type WeightInfo = ();
+}
+
+parameter_types! {
 	// One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
 	pub const DepositBase: Balance = deposit(1, 88);
 	// Additional storage item size of 32 bytes.
@@ -338,7 +366,9 @@ impl InstanceFilter<Call> for ProxyType {
 				Call::Assets(pallet_assets::Call::transfer_keep_alive(..)) |
 				Call::Assets(pallet_assets::Call::force_transfer(..)) |
 				Call::Assets(pallet_assets::Call::approve_transfer(..)) |
-				Call::Assets(pallet_assets::Call::transfer_approved(..))
+				Call::Assets(pallet_assets::Call::transfer_approved(..)) |
+				Call::Uniques(pallet_uniques::Call::transfer(..)) |
+				Call::Uniques(pallet_uniques::Call::transfer_ownership(..))
 			),
 			ProxyType::CancelProxy => matches!(c,
 				Call::Proxy(pallet_proxy::Call::reject_announcement(..)) |
@@ -346,7 +376,7 @@ impl InstanceFilter<Call> for ProxyType {
 				Call::Multisig(..)
 			),
 			ProxyType::Assets => {
-				matches!(c, Call::Assets(..) | Call::Utility(..) | Call::Multisig(..))
+				matches!(c, Call::Assets(..) | Call::Utility(..) | Call::Multisig(..) | Call::Uniques(..))
 			}
 			ProxyType::AssetOwner => matches!(c,
 				Call::Assets(pallet_assets::Call::create(..)) |
@@ -355,6 +385,16 @@ impl InstanceFilter<Call> for ProxyType {
 				Call::Assets(pallet_assets::Call::set_team(..)) |
 				Call::Assets(pallet_assets::Call::set_metadata(..)) |
 				Call::Assets(pallet_assets::Call::clear_metadata(..)) |
+				Call::Uniques(pallet_uniques::Call::create(..)) |
+				Call::Uniques(pallet_uniques::Call::destroy(..)) |
+				Call::Uniques(pallet_uniques::Call::transfer_ownership(..)) |
+				Call::Uniques(pallet_uniques::Call::set_team(..)) |
+				Call::Uniques(pallet_uniques::Call::set_metadata(..)) |
+				Call::Uniques(pallet_uniques::Call::set_attribute(..)) |
+				Call::Uniques(pallet_uniques::Call::set_class_metadata(..)) |
+				Call::Uniques(pallet_uniques::Call::clear_metadata(..)) |
+				Call::Uniques(pallet_uniques::Call::clear_attribute(..)) |
+				Call::Uniques(pallet_uniques::Call::clear_class_metadata(..)) |
 				Call::Utility(..) |
 				Call::Multisig(..)
 			),
@@ -365,6 +405,12 @@ impl InstanceFilter<Call> for ProxyType {
 				Call::Assets(pallet_assets::Call::thaw(..)) |
 				Call::Assets(pallet_assets::Call::freeze_asset(..)) |
 				Call::Assets(pallet_assets::Call::thaw_asset(..)) |
+				Call::Uniques(pallet_uniques::Call::mint(..)) |
+				Call::Uniques(pallet_uniques::Call::burn(..)) |
+				Call::Uniques(pallet_uniques::Call::freeze(..)) |
+				Call::Uniques(pallet_uniques::Call::thaw(..)) |
+				Call::Uniques(pallet_uniques::Call::freeze_class(..)) |
+				Call::Uniques(pallet_uniques::Call::thaw_class(..)) |
 				Call::Utility(..) |
 				Call::Multisig(..)
 			),
@@ -650,6 +696,7 @@ construct_runtime!(
 
 		// The main stage. To include pallet-assets-freezer and pallet-uniques.
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
+		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 	}
 );
 

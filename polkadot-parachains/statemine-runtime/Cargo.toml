@@ -45,6 +45,7 @@ pallet-sudo = { git = "https://github.com/paritytech/substrate", default-feature
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-uniques = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 node-primitives = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
