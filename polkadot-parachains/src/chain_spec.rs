@@ -636,6 +636,53 @@ pub fn westmint_local_config(id: ParaId) -> WestmintChainSpec {
 	)
 }
 
+pub fn westmint_config(id: ParaId) -> WestmintChainSpec {
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("tokenSymbol".into(), "WND".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
+	WestmintChainSpec::from_genesis(
+		// Name
+		"Westmint",
+		// ID
+		"westmint",
+		ChainType::Live,
+		move || {
+			westmint_genesis(
+				// initial collators.
+				vec![(
+						 hex!("9cfd429fa002114f33c1d3e211501d62830c9868228eb3b4b8ae15a83de04325").into(),
+						 hex!("9cfd429fa002114f33c1d3e211501d62830c9868228eb3b4b8ae15a83de04325").unchecked_into()
+					 ),
+					 (
+						 hex!("12a03fb4e7bda6c9a07ec0a11d03c24746943e054ff0bb04938970104c783876").into(),
+						 hex!("12a03fb4e7bda6c9a07ec0a11d03c24746943e054ff0bb04938970104c783876").unchecked_into()
+					 ),
+					 (
+						 hex!("1256436307dfde969324e95b8c62cb9101f520a39435e6af0f7ac07b34e1931f").into(),
+						 hex!("1256436307dfde969324e95b8c62cb9101f520a39435e6af0f7ac07b34e1931f").unchecked_into()
+					 ),
+					 (
+						 hex!("98102b7bca3f070f9aa19f58feed2c0a4e107d203396028ec17a47e1ed80e322").into(),
+						 hex!("98102b7bca3f070f9aa19f58feed2c0a4e107d203396028ec17a47e1ed80e322").unchecked_into()
+					 ),
+				],
+				vec![],
+				hex!("6648d7f3382690650c681aba1b993cd11e54deb4df21a3a18c3e2177de9f7342").into(),
+				id,
+			)
+		},
+		vec![],
+		None,
+		None,
+		Some(properties),
+		Extensions {
+			relay_chain: "westend".into(),
+			para_id: id.into(),
+		},
+	)
+}
+
 fn westmint_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
