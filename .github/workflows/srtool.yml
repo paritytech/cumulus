@@ -51,7 +51,7 @@ jobs:
       - name: Archive Subwasm results
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.chain }}-runtime-${GITHUB_SHA::8}
+          name: ${{ matrix.chain }}-runtime-${{ github.sha }}
           path: |
             ${{ matrix.chain }}-info.json
             ${{ matrix.chain }}-metadata.json
