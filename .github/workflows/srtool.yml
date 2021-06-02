@@ -1,0 +1,20 @@
+name: Srtool build
+
+on: push
+
+jobs:
+  srtool:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chain: ["statemine"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Srtool build
+        id: srtool_build
+        uses: chevdor/srtool-actions@draft
+        with:
+          chain: ${{ matrix.chain }}
+      - name: Summary
+        run: |
+          echo '${{ steps.srtool_build.outputs.json }}' | jq
