@@ -23,6 +23,6 @@ jobs:
       - name: Archive Runtime
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.chain }}-runtime
+          name: ${{ matrix.chain }}-runtime-${{ github.ref }}
           path: |
-            "${{ steps.srtool_build.outputs.wasm }}"
+            ${{ steps.srtool_build.outputs.wasm }}
