@@ -34,6 +34,7 @@ jobs:
         run: |
           echo '${{ steps.srtool_build.outputs.json }}' | jq > ${{ matrix.chain }}-srtool-digest.json
           cat ${{ matrix.chain }}-srtool-digest.json
+          echo '${{ steps.srtool_build.outputs.json }}' | jq
           echo "Runtime location: ${{ steps.srtool_build.outputs.wasm }}"
       - name: Archive Runtime
         uses: actions/upload-artifact@v2
@@ -70,3 +71,4 @@ jobs:
             ${{ matrix.chain }}-info.json
             ${{ matrix.chain }}-metadata.json
             ${{ matrix.chain }}-diff.txt
+            ${{ steps.srtool_build.outputs.wasm }
