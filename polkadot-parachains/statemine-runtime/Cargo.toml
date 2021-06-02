@@ -29,7 +29,6 @@ sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-f
 
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", optional = true, default-features = false, branch = "master" }
 frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", optional = true, default-features = false, branch = "master" }
-
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
