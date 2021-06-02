@@ -369,7 +369,8 @@ impl InstanceFilter<Call> for ProxyType {
 				Call::Assets(pallet_assets::Call::approve_transfer(..)) |
 				Call::Assets(pallet_assets::Call::transfer_approved(..)) |
 				Call::Uniques(pallet_uniques::Call::transfer(..)) |
-				Call::Uniques(pallet_uniques::Call::transfer_ownership(..))
+				Call::Uniques(pallet_uniques::Call::transfer_ownership(..)) |
+				Call::Uniques(pallet_uniques::Call::approve_transfer(..))
 			),
 			ProxyType::CancelProxy => matches!(c,
 				Call::Proxy(pallet_proxy::Call::reject_announcement(..)) |
