@@ -18,7 +18,8 @@ jobs:
           runtime_dir: polkadot-parachains/${{ matrix.chain }}-runtime
       - name: Summary
         run: |
-          echo '${{ steps.srtool_build.outputs.json }}' | jq
+          echo '${{ steps.srtool_build.outputs.json }}' | jq > ${{ matrix.chain }}-srtool-digest.json
+          cat ${{ matrix.chain }}-srtool-digest.json
           echo "Runtime location: ${{ steps.srtool_build.outputs.wasm }}"
       - name: Archive Runtime
         uses: actions/upload-artifact@v2
@@ -26,3 +27,4 @@ jobs:
           name: ${{ matrix.chain }}-runtime-${GITHUB_SHA::8}
           path: |
             ${{ steps.srtool_build.outputs.wasm }}
+            ${{ matrix.chain }}-srtool-digest.json
