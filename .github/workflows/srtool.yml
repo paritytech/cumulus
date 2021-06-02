@@ -24,7 +24,7 @@ jobs:
       - name: Archive Runtime
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.chain }}-runtime-${GITHUB_SHA::8}
+          name: ${{ matrix.chain }}-runtime-${{ github.sha }}
           path: |
             ${{ steps.srtool_build.outputs.wasm }}
             ${{ matrix.chain }}-srtool-digest.json
