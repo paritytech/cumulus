@@ -96,10 +96,20 @@ fn load_spec(
 		"statemint-local" => Box::new(chain_spec::statemint_local_config(para_id)),
 		"statemine-dev" => Box::new(chain_spec::statemine_development_config(para_id)),
 		"statemine-local" => Box::new(chain_spec::statemine_local_config(para_id)),
-		"statemine" => Box::new(chain_spec::statemine_config(para_id)),
+		// the chain spec as used for generating the upgrade genesis values
+		"statemine-genesis" => Box::new(chain_spec::statemine_config(para_id)),
+		// the shell-based chain spec as used for syncing
+		"statemine" => Box::new(chain_spec::ChainSpec::from_json_bytes(
+			&include_bytes!("../res/statemine.json")[..],
+		)?),
 		"westmint-dev" => Box::new(chain_spec::westmint_development_config(para_id)),
 		"westmint-local" => Box::new(chain_spec::westmint_local_config(para_id)),
-		"westmint" => Box::new(chain_spec::westmint_config(para_id)),
+		// the chain spec as used for generating the upgrade genesis values
+		"westmint-genesis" => Box::new(chain_spec::westmint_config(para_id)),
+		// the shell-based chain spec as used for syncing
+		"westmint" => Box::new(chain_spec::ChainSpec::from_json_bytes(
+			&include_bytes!("../res/westmint.json")[..],
+		)?),
 		"" => Box::new(chain_spec::get_chain_spec(para_id)),
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
