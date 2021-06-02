@@ -1,6 +1,6 @@
 {
   "name": "Westmint",
-  "id": "westmint",
+  "id": "shell",
   "chainType": "Live",
   "bootNodes": [
     "/ip4/35.204.21.205/tcp/30334/p2p/12D3KooWLjaXWhNTSiRVFbTJCKLRWt9XXHLGVnAFtxvnExKkVPqn",
