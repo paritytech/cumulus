@@ -100,7 +100,7 @@ fn load_spec(
 		"statemine-genesis" => Box::new(chain_spec::statemine_config(para_id)),
 		// the shell-based chain spec as used for syncing
 		"statemine" => Box::new(chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("../res/statemine.json")[..],
+			&include_bytes!("../res/statemine_genesis.json")[..],
 		)?),
 		"westmint-dev" => Box::new(chain_spec::westmint_development_config(para_id)),
 		"westmint-local" => Box::new(chain_spec::westmint_local_config(para_id)),
