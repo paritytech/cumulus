@@ -15,6 +15,7 @@ jobs:
         uses: chevdor/srtool-actions@draft
         with:
           chain: ${{ matrix.chain }}
+          runtime_dir: polkadot-parachains/${{ matrix.chain }}-runtime
       - name: Summary
         run: |
           echo '${{ steps.srtool_build.outputs.json }}' | jq
