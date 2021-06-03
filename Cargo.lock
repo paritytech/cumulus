@@ -3879,7 +3879,7 @@ dependencies = [
  "pallet-recovery",
  "pallet-scheduler",
  "pallet-session",
- "pallet-session-benchmarking",
+ "pallet-session-benchmarking 3.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "pallet-society",
  "pallet-staking",
  "pallet-staking-reward-fn",
@@ -5673,6 +5673,26 @@ dependencies = [
 [[package]]
 name = "pallet-session-benchmarking"
 version = "3.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-collator-selection",
+ "pallet-session",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-session-benchmarking"
+version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#9f621a936eb5c692ad8efea22a9bb9ecf3bd93d3"
 dependencies = [
  "frame-benchmarking",
@@ -7129,7 +7149,7 @@ dependencies = [
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
  "pallet-session",
- "pallet-session-benchmarking",
+ "pallet-session-benchmarking 3.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "pallet-staking",
  "pallet-staking-reward-curve",
  "pallet-timestamp",
@@ -10616,6 +10636,7 @@ dependencies = [
  "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-session",
+ "pallet-session-benchmarking 3.0.0",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -10703,6 +10724,7 @@ dependencies = [
  "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-session",
+ "pallet-session-benchmarking 3.0.0",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -12428,7 +12450,7 @@ dependencies = [
  "pallet-recovery",
  "pallet-scheduler",
  "pallet-session",
- "pallet-session-benchmarking",
+ "pallet-session-benchmarking 3.0.0 (git+https://github.com/paritytech/substrate?branch=master)",
  "pallet-society",
  "pallet-staking",
  "pallet-staking-reward-curve",
@@ -12503,6 +12525,7 @@ dependencies = [
  "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-session",
+ "pallet-session-benchmarking 3.0.0",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
