@@ -26,7 +26,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
-use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{BlakeTwo256, Block as BlockT, AccountIdLookup}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, FixedU128, FixedPointNumber};
+use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{BlakeTwo256, Block as BlockT, AccountIdLookup}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, FixedU128, FixedPointNumber, SaturatedConversion};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -60,7 +60,7 @@ use xcm_builder::{
 	AllowTopLevelPaidExecutionFrom, TakeWeightCredit, FixedWeightBounds, NativeAsset,
 	UsingComponents, SignedToAccountId32,
 };
-use xcm_executor::{Config, XcmExecutor};
+use xcm_executor::{Config, XcmExecutor, Assets as XcmAssets};
 use pallet_xcm::{XcmPassthrough, EnsureXcm, IsMajorityOfBody};
 use xcm::v0::Xcm;
 
@@ -84,11 +84,15 @@ use sp_runtime::{traits::{Convert, AccountIdConversion, Zero}};
 use frame_support::{PalletId};
 use orml_traits::GetByKey;
 use sp_std::convert::TryInto;
-use xcm_executor::traits::MatchesFungible;
-use sp_runtime::traits::CheckedConversion;
+use sp_runtime::traits::{CheckedConversion, CheckedSub};
 use sp_core::sp_std::convert::TryFrom;
 use frame_support::traits::Get;
-use pallet_xcm_support::XCMCurrencyAdapter;
+use pallet_xcm_support::{XCMBalanceAdapter};
+use xcm_executor::traits::{MatchesFungible, Convert as XCMConvert, TransactAsset, ShouldExecute};
+use sp_std::borrow::Borrow;
+use xcm::v0::prelude::{XcmError, XcmResult};
+use sp_std::marker::PhantomData;
+use pallet_traits::MultiCurrency;
 // End of Konomi imports
 
 pub type SessionHandlers = ();
@@ -303,7 +307,7 @@ pub type LocationToAccountId = (
 /// Means for transacting assets on this chain.
 pub type LocalAssetTransactor = CurrencyAdapter<
 	// Use this currency:
-	Balances,
+	Currencies,
 	// Use this currency when it is a fungible asset matching the given location or name:
 	// IsConcrete<RocLocation>,
 	KonomiIsConcrete,
@@ -352,69 +356,35 @@ match_type! {
 	};
 }
 
+pub struct ShouldExecuteTemp;
+impl ShouldExecute for ShouldExecuteTemp {
+	fn should_execute<Call>(origin: &MultiLocation, top_level: bool, message: &Xcm<Call>, shallow_weight: u64, weight_credit: &mut u64) -> Result<(), ()> {
+		Ok(())
+	}
+}
+// pub type Barrier = (
+// 	TakeWeightCredit,
+// 	AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
+// 	AllowUnpaidExecutionFrom<ParentOrParentsUnitPlurality>,
+// 	// ^^^ Parent & its unit plurality gets free execution
+// );
 pub type Barrier = (
-	TakeWeightCredit,
-	AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
-	AllowUnpaidExecutionFrom<ParentOrParentsUnitPlurality>,
-	// ^^^ Parent & its unit plurality gets free execution
+	ShouldExecuteTemp,
 );
-
-// pub struct CurrencyIdConvert;
-//
-// impl Convert<CurrencyId, Option<MultiLocation>> for CurrencyIdConvert {
-// 	fn convert(id: CurrencyId) -> Option<MultiLocation> {
-// 		match id {
-// 			0 => Some(X1(Parent)),
-// 			// Token(ACA) | Token(AUSD) | Token(LDOT) | Token(RENBTC) => Some(native_currency_location(id)),
-// 			_ => None,
-// 		}
-// 	}
-// }
-//
-// impl Convert<MultiLocation, Option<CurrencyId>> for CurrencyIdConvert {
-// 	fn convert(location: MultiLocation) -> Option<CurrencyId> {
-// 		match location {
-// 			X1(_Parent) => Some(0),
-// 			X3(_Parent, Parachain { id }, GeneralKey(key)) if ParaId::from(id) == ParachainInfo::get() => {
-// 				// decode the general key
-// 				if let Ok(currency_id) = CurrencyId::decode(&mut &key[..]) {
-// 					// check if `currency_id` is cross-chain asset
-// 					match currency_id {
-// 						0 => Some(currency_id),
-// 						_ => None,
-// 					}
-// 				} else {
-// 					None
-// 				}
-// 			}
-// 			_ => None,
-// 		}
-// 	}
-// }
-// impl Convert<MultiAsset, Option<CurrencyId>> for CurrencyIdConvert {
-// 	fn convert(asset: MultiAsset) -> Option<CurrencyId> {
-// 		if let MultiAsset::ConcreteFungible { id, amount: _ } = asset {
-// 			Self::convert(id)
-// 		} else {
-// 			None
-// 		}
-// 	}
-// }
-
 
 pub struct XcmConfig;
 impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// How to withdraw and deposit an asset.
-	type AssetTransactor = XCMAssetTransactor; //LocalAssetTransactor;
+	type AssetTransactor = XCMAssetTransactor; // LocalAssetTransactor;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type IsReserve = NativeAsset;
 	type IsTeleporter = NativeAsset;	// <- should be enough to allow teleportation of ROC
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
-	type Trader = UsingComponents<IdentityFee<Balance>, RocLocation, AccountId, Balances, ()>;
+	type Trader = UsingComponents<IdentityFee<Balance>, RocLocation, AccountId, Currencies, ()>;
 	type ResponseHandler = ();	// Don't handle responses for now.
 }
 
@@ -502,54 +472,159 @@ impl pallet_aura::Config for Runtime {
 
 // Konomi impls
 pub struct AccountIdConvert;
-impl Convert<MultiLocation, Option<AccountId>> for AccountIdConvert {
-	fn convert(a: MultiLocation) -> Option<AccountId> {
-		match a {
+impl XCMConvert<MultiLocation, AccountId> for AccountIdConvert {
+	fn convert_ref(a: impl Borrow<MultiLocation>) -> Result<AccountId, ()> {
+		match a.borrow() {
 			// TODO: should we keep X3?
-			X3(_, Parachain(id), AccountId32{ network: _, id: account}) if ParaId::from(id) == ParachainInfo::get() => {
-				Some(AccountId::from(account))
+			X3(_, Parachain(id), AccountId32{ network: _, id: account}) if ParaId::from(*id) == ParachainInfo::get() => {
+				Ok(AccountId::from(*account))
 			},
 			X1(AccountId32{ network: _, id: account}) => {
-				Some(AccountId::from(account))
+				Ok(AccountId::from(*account))
 			}
-			_ => None
+			_ => Err(())
 		}
 	}
 }
 
-pub type XCMAssetTransactor = XCMCurrencyAdapter<Currencies, KonomiIsConcrete, AccountId, AccountIdConvert, CurrencyId, CurrencyIdConvert>;
+pub type XCMAssetTransactor = XCMCurrencyAdapter<Currencies>;
 
-pub struct CurrencyIdConvert;
-impl Convert<MultiLocation, Option<CurrencyId>> for CurrencyIdConvert {
-	fn convert(a: MultiLocation) -> Option<CurrencyId> {
-		log::info!("reached here");
-		panic!();
-		match a {
-			X1(_) => Some(DOT),
-			X2(Parent, Parachain(id)) if ParaId::from(id) == ParachainInfo::get() => Some(KONO),
-			X3(_, Parachain(id), GeneralIndex { id: key}) if ParaId::from(id) == ParachainInfo::get() => {
+pub struct XCMCurrencyAdapter<Currency>(PhantomData<Currency>);
+
+impl <Currency: MultiCurrency<AccountId, CurrencyId=CurrencyId, Balance=Balance>> TransactAsset for XCMCurrencyAdapter<Currency> {
+	fn can_check_in(origin: &MultiLocation, what: &MultiAsset) -> XcmResult {
+		Currency::ensure_can_withdraw(KONO, &AccountId::from([1 as u8; 32]), 1)
+			.map_err(|_| XcmError::NotWithdrawable)
+	}
+
+	fn check_in(origin: &MultiLocation, what: &MultiAsset) {
+		let ok = Currency::withdraw(KONO, &&AccountId::from([1 as u8; 32]), 1).is_ok();
+		debug_assert!(ok, "`can_check_in` must have returned `true` immediately prior; qed");
+	}
+
+	fn check_out(dest: &MultiLocation, what: &MultiAsset) {
+		Currency::deposit(KONO, &AccountId::from([1 as u8; 32]), 1).unwrap();
+	}
+
+	fn deposit_asset(asset: &MultiAsset, location: &MultiLocation) -> XcmResult {
+		Currency::deposit(KONO, &AccountId::from([1 as u8; 32]), 1).map_err(|e| XcmError::FailedToTransactAsset(e.into()))
+	}
+
+	fn withdraw_asset(asset: &MultiAsset, location: &MultiLocation) -> Result<XcmAssets, XcmError> {
+		Currency::withdraw(KONO, &AccountId::from([1 as u8; 32]), 1).map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
+		Ok(XcmAssets::from(asset.clone()))
+	}
+}
+
+// pub type XCMAssetTransactor = XCMCurrencyAdapter<Currencies>;
+//
+// pub struct XCMCurrencyAdapter<Currency>(PhantomData<Currency>);
+//
+// impl <Currency: MultiCurrency<AccountId, CurrencyId=CurrencyId>> TransactAsset for XCMCurrencyAdapter<Currency> {
+// 	fn can_check_in(origin: &MultiLocation, what: &MultiAsset) -> XcmResult {
+// 		let currency_id = MultiAssetToCurrencyIdConvert::convert_ref(what)
+// 			.map_err(|()| XcmError::FailedToTransactAsset("AccountIdConversionFailed"))?;
+// 		// Check we handle this asset.
+// 		let amount = KonomiIsConcrete::matches_fungible(what)
+// 			.ok_or(XcmError::FailedToTransactAsset("FailedToMatchFungible"))?;
+// 		if let Ok(checked_account) = AccountIdConvert::convert_ref(origin) {
+// 			let new_balance = Currency::free_balance(currency_id, &checked_account)
+// 				.checked_sub(&amount)
+// 				.ok_or(XcmError::NotWithdrawable)?;
+// 			Currency::ensure_can_withdraw(currency_id, &checked_account, new_balance)
+// 				.map_err(|_| XcmError::NotWithdrawable)?;
+// 		}
+// 		Ok(())
+// 	}
+//
+// 	fn check_in(origin: &MultiLocation, what: &MultiAsset) {
+// 		if let Some(amount) = KonomiIsConcrete::matches_fungible(what) {
+// 			if let Ok(who) = AccountIdConvert::convert_ref(origin) {
+// 				if let Ok(currency_id) = MultiAssetToCurrencyIdConvert::convert_ref(what) {
+// 					let ok = Currency::withdraw(currency_id, &who, amount).is_ok();
+// 					debug_assert!(ok, "`can_check_in` must have returned `true` immediately prior; qed");
+// 				}
+// 			}
+// 		}
+// 	}
+//
+// 	fn check_out(dest: &MultiLocation, what: &MultiAsset) {
+// 		if let Some(amount) = KonomiIsConcrete::matches_fungible(what) {
+// 			if let Ok(who) = AccountIdConvert::convert_ref(dest) {
+// 				if let Ok(currency_id) = MultiAssetToCurrencyIdConvert::convert_ref(what) {
+// 					// TODO: check here
+// 					Currency::deposit(currency_id, &who, amount).unwrap();
+// 				}
+// 			}
+// 		}
+// 	}
+//
+// 	fn deposit_asset(asset: &MultiAsset, location: &MultiLocation) -> XcmResult {
+// 		match (
+// 			AccountIdConvert::convert_ref(location),
+// 			MultiAssetToCurrencyIdConvert::convert_ref(asset),
+// 			KonomiIsConcrete::matches_fungible(&asset),
+// 		) {
+// 			// known asset
+// 			(Ok(who), Ok(currency_id), Some(amount)) => {
+// 				Currency::deposit(currency_id, &who, amount).map_err(|e| XcmError::FailedToTransactAsset(e.into()))
+// 			}
+// 			// unknown asset
+// 			_ => Err(XcmError::FailedToTransactAsset("UnknownAsset")),
+// 		}
+// 	}
+//
+// 	fn withdraw_asset(asset: &MultiAsset, location: &MultiLocation) -> Result<XcmAssets, XcmError> {
+// 		let who = AccountIdConvert::convert(location.clone())
+// 			.map_err(|_| XcmError::FailedToTransactAsset("FailedToMatchFungible"))?;
+// 		let currency_id = MultiAssetToCurrencyIdConvert::convert(asset.clone())
+// 			.map_err(|_| XcmError::FailedToTransactAsset("AccountIdConversionFailed"))?;
+// 		let amount = KonomiIsConcrete::matches_fungible(&asset);
+// 		if amount.is_none() { return Err(XcmError::FailedToTransactAsset("CurrencyIdConversionFailed")); }
+// 		Currency::withdraw(currency_id, &who, amount.unwrap()).map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
+// 		Ok(XcmAssets::from(asset.clone()))
+// 	}
+// }
+
+// pub type XCMAssetTransactor = XCMBalanceAdapter<
+// 	Balances,
+// 	KonomiIsConcrete,
+// 	AccountId,
+// 	AccountIdConvert,
+// 	CurrencyId,
+// 	MultiAssetToCurrencyIdConvert
+// >;
+
+pub struct MultiLocationToCurrencyIdConvert;
+impl XCMConvert<MultiLocation, CurrencyId> for MultiLocationToCurrencyIdConvert {
+	fn convert_ref(a: impl Borrow<MultiLocation>) -> Result<CurrencyId, ()> {
+		match a.borrow() {
+			X1(_) => Ok(DOT),
+			X2(Parent, Parachain(id)) if ParaId::from(*id) == ParachainInfo::get() => Ok(KONO),
+			X3(_, Parachain(id), GeneralIndex { id: key}) if ParaId::from(*id) == ParachainInfo::get() => {
 				// decode the general key
-				if let Some(currency_id) = CurrencyId::from_num(key) {
+				if let Some(currency_id) = CurrencyId::from_num(*key) {
 					match currency_id {
-						DOT | KONO | BTC | ETH => Some(currency_id),
-						_ => None
+						DOT | KONO | BTC | ETH => Ok(currency_id),
+						_ => Err(())
 					}
 				} else {
-					None
+					Err(())
 				}
 			}
-			_ => None
+			_ => Err(())
 		}
 	}
 }
 
-impl Convert<MultiAsset, Option<CurrencyId>> for CurrencyIdConvert {
-	fn convert(a: MultiAsset) -> Option<CurrencyId> {
-		match a {
+pub struct MultiAssetToCurrencyIdConvert;
+impl XCMConvert<MultiAsset, CurrencyId> for MultiAssetToCurrencyIdConvert {
+	fn convert_ref(a: impl Borrow<MultiAsset>) -> Result<CurrencyId, ()> {
+		match a.borrow() {
 			MultiAsset::ConcreteFungible { id, amount: _} => {
-				Self::convert(id)
+				MultiLocationToCurrencyIdConvert::convert_ref(id)
 			},
-			_ => None,
+			_ => Err(()),
 		}
 	}
 }
@@ -563,7 +638,7 @@ impl<Amount> MatchesFungible<Amount> for KonomiIsConcrete
 {
 	fn matches_fungible(a: &MultiAsset) -> Option<Amount> {
 		if let MultiAsset::ConcreteFungible { id, amount } = a {
-			if CurrencyIdConvert::convert(id.clone()).is_some() {
+			if MultiLocationToCurrencyIdConvert::convert_ref(id).is_ok() {
 				return CheckedConversion::checked_from(*amount);
 			}
 		}
