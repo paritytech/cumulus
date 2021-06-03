@@ -27,19 +27,22 @@ tracing = { version = "0.1.22", optional = true }
 async-trait = { version = "0.1.42", optional = true }
 
 [features]
-default = [ "std" ]
-std = [
+default = [ "std", "client-side" ]
+client-side = [
+	"std",
 	"async-trait",
-	"codec/std",
-	"cumulus-primitives-core/std",
-	"sp-inherents/std",
-	"sp-core/std",
-	"sp-trie/std",
-	"sp-std/std",
 	"sp-state-machine",
 	"tracing",
 	"sp-runtime",
 	"sc-client-api",
 	"sp-api",
 	"polkadot-service",
+]
+std = [
+	"codec/std",
+	"cumulus-primitives-core/std",
+	"sp-inherents/std",
+	"sp-core/std",
+	"sp-trie/std",
+	"sp-std/std",
 ]
