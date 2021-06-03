@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        chain: ["statemine"]
+        chain: ["statemine", "westmint"]
     steps:
       - uses: actions/checkout@v2
       - name: Srtool build
