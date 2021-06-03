@@ -157,6 +157,8 @@ cargo build --release
 
 Start the collators
 ```bash
+cargo update -p jsonrpsee-utils --precise 0.2.0-alpha.6 && cargo update -p jsonrpsee-types --precise 0.2.0-alpha.6
+
 # Collator1
 ./target/release/polkadot-collator --collator --tmp --alice --force-authoring --parachain-id 18403 --port 40335 --ws-port 9946 --rpc-methods Unsafe --ws-external --rpc-cors all -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30335
 

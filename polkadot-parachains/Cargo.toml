@@ -75,6 +75,11 @@ polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "r
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.3" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.3" }
 
+# -------------- Konomi --------------- #
+polkadot-parachain-primitives = { path = "primitives", default-features = false }
+pallet-floating-rate-lend-rpc = { path = './pallets/floating-rate-lend/rpc', version = '3.0.0' }
+# -------------- Konomi --------------- #
+
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3" }
 

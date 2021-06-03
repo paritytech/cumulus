@@ -57,7 +57,7 @@ use xcm_builder::{
 	AccountId32Aliases, CurrencyAdapter, LocationInverter, ParentIsDefault, RelayChainAsNative,
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SovereignSignedViaLocation, EnsureXcmOrigin, AllowUnpaidExecutionFrom, ParentAsSuperuser,
-	AllowTopLevelPaidExecutionFrom, TakeWeightCredit, FixedWeightBounds, IsConcrete, NativeAsset,
+	AllowTopLevelPaidExecutionFrom, TakeWeightCredit, FixedWeightBounds, NativeAsset,
 	UsingComponents, SignedToAccountId32,
 };
 use xcm_executor::{Config, XcmExecutor};
@@ -65,6 +65,7 @@ use pallet_xcm::{XcmPassthrough, EnsureXcm, IsMajorityOfBody};
 use xcm::v0::Xcm;
 
 // Konomi required imports
+use cumulus_primitives_core::ParaId;
 use polkadot_parachain_primitives::*;
 pub use pallet_currencies;
 pub use pallet_floating_rate_lend;
@@ -83,6 +84,11 @@ use sp_runtime::{traits::{Convert, AccountIdConversion, Zero}};
 use frame_support::{PalletId};
 use orml_traits::GetByKey;
 use sp_std::convert::TryInto;
+use xcm_executor::traits::MatchesFungible;
+use sp_runtime::traits::CheckedConversion;
+use sp_core::sp_std::convert::TryFrom;
+use frame_support::traits::Get;
+use pallet_xcm_support::XCMCurrencyAdapter;
 // End of Konomi imports
 
 pub type SessionHandlers = ();
@@ -293,12 +299,14 @@ pub type LocationToAccountId = (
 	AccountId32Aliases<RococoNetwork, AccountId>,
 );
 
+
 /// Means for transacting assets on this chain.
 pub type LocalAssetTransactor = CurrencyAdapter<
 	// Use this currency:
 	Balances,
 	// Use this currency when it is a fungible asset matching the given location or name:
-	IsConcrete<RocLocation>,
+	// IsConcrete<RocLocation>,
+	KonomiIsConcrete,
 	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -399,7 +407,7 @@ impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// How to withdraw and deposit an asset.
-	type AssetTransactor = LocalAssetTransactor;
+	type AssetTransactor = XCMAssetTransactor; //LocalAssetTransactor;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type IsReserve = NativeAsset;
 	type IsTeleporter = NativeAsset;	// <- should be enough to allow teleportation of ROC
@@ -493,6 +501,76 @@ impl pallet_aura::Config for Runtime {
 }
 
 // Konomi impls
+pub struct AccountIdConvert;
+impl Convert<MultiLocation, Option<AccountId>> for AccountIdConvert {
+	fn convert(a: MultiLocation) -> Option<AccountId> {
+		match a {
+			// TODO: should we keep X3?
+			X3(_, Parachain(id), AccountId32{ network: _, id: account}) if ParaId::from(id) == ParachainInfo::get() => {
+				Some(AccountId::from(account))
+			},
+			X1(AccountId32{ network: _, id: account}) => {
+				Some(AccountId::from(account))
+			}
+			_ => None
+		}
+	}
+}
+
+pub type XCMAssetTransactor = XCMCurrencyAdapter<Currencies, KonomiIsConcrete, AccountId, AccountIdConvert, CurrencyId, CurrencyIdConvert>;
+
+pub struct CurrencyIdConvert;
+impl Convert<MultiLocation, Option<CurrencyId>> for CurrencyIdConvert {
+	fn convert(a: MultiLocation) -> Option<CurrencyId> {
+		log::info!("reached here");
+		panic!();
+		match a {
+			X1(_) => Some(DOT),
+			X2(Parent, Parachain(id)) if ParaId::from(id) == ParachainInfo::get() => Some(KONO),
+			X3(_, Parachain(id), GeneralIndex { id: key}) if ParaId::from(id) == ParachainInfo::get() => {
+				// decode the general key
+				if let Some(currency_id) = CurrencyId::from_num(key) {
+					match currency_id {
+						DOT | KONO | BTC | ETH => Some(currency_id),
+						_ => None
+					}
+				} else {
+					None
+				}
+			}
+			_ => None
+		}
+	}
+}
+
+impl Convert<MultiAsset, Option<CurrencyId>> for CurrencyIdConvert {
+	fn convert(a: MultiAsset) -> Option<CurrencyId> {
+		match a {
+			MultiAsset::ConcreteFungible { id, amount: _} => {
+				Self::convert(id)
+			},
+			_ => None,
+		}
+	}
+}
+
+/// A `MatchesFungible` implementation. It matches concrete fungible assets
+/// whose `id` could be converted into `CurrencyId`.
+pub struct KonomiIsConcrete;
+impl<Amount> MatchesFungible<Amount> for KonomiIsConcrete
+	where
+		Amount: TryFrom<u128>,
+{
+	fn matches_fungible(a: &MultiAsset) -> Option<Amount> {
+		if let MultiAsset::ConcreteFungible { id, amount } = a {
+			if CurrencyIdConvert::convert(id.clone()).is_some() {
+				return CheckedConversion::checked_from(*amount);
+			}
+		}
+		None
+	}
+}
+
 // Local Dependencies
 parameter_types! {
 	pub const GetBasicCurrencyId: CurrencyId = KONO;

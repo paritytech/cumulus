@@ -90,12 +90,6 @@ pub enum CurrencyId {
 }
 
 impl CurrencyId {
-    pub fn new(num: u64, id: u8, _name: Vec<u8>, _address: Vec<u8>) -> CurrencyId {
-        match num {
-            1 => CurrencyId::Native { 0: Native {id}, },
-            _ => CurrencyId::Basic{ 0: Basic {id} },
-        }
-    }
     pub fn is_native_currency(&self) -> bool {
         matches!(self, CurrencyId::Native {..})
     }
@@ -106,6 +100,26 @@ impl CurrencyId {
 
     pub fn is_basic_currency(&self) -> bool {
         matches!(self, CurrencyId::Basic {..})
+    }
+
+    // TODO: refactor this part, this is for testing
+    pub fn decode(bits: Vec<u8>) -> Option<Self> {
+        match bits[0] {
+            48 => Some(CurrencyId::Basic(Basic { id: bits[1]-48})),
+            49 => Some(CurrencyId::Native(Native { id: bits[1]-48})),
+            _ => None
+        }
+    }
+
+    // TODO: refactor this part, this is for testing
+    pub fn from_num(num: u128) -> Option<Self> {
+        match num {
+            0 => Some(CurrencyId::Basic(Basic { id: 0})),
+            1 => Some(CurrencyId::Native(Native { id: 0})),
+            2 => Some(CurrencyId::Native(Native { id: 1})),
+            3 => Some(CurrencyId::Native(Native { id: 2})),
+            _ => None
+        }
     }
 }
 

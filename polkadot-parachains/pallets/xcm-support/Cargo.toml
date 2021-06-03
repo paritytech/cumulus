@@ -1,0 +1,29 @@
+[package]
+authors = ['Konomi Dev']
+description = 'traits in runtime'
+edition = '2018'
+license = 'Unlicense'
+name = 'pallet-xcm-support'
+version = '3.0.0'
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.3" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.3" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.3" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.3" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.3" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.3" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.3" }
+
+polkadot-parachain-primitives = { default-features = false, path = '../../primitives', version = '0.1.0'}
+pallet-traits = { default-features = false, path = '../traits', version = '3.0.0'}
+
+[features]
+default = ['std']
+std = [
+    'sp-std/std',
+]
