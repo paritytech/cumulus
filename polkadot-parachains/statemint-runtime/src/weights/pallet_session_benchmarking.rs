@@ -34,7 +34,7 @@ impl<T: frame_system::Config> pallet_session_benchmarking::WeightInfo for Weight
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
 	fn purge_keys() -> Weight {
-		(26_000_000 as Weight)
+		(27_000_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}

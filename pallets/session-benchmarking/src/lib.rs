@@ -20,8 +20,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-mod mock;
-
 use sp_std::prelude::*;
 use sp_std::vec;
 
