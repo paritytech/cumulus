@@ -21,11 +21,8 @@ jobs:
       matrix:
         chain: ["statemine", "westmint"]
     steps:
-      - name: Get Time
-        id: time
-        uses: nanzm/get-time-action@v1.1
-        with:
-          format: "YYYY_MM_DD-HH_mm_ss"
+      - name: Get Timestamp
+        run: echo "TMSP=$(date '+%Y%m%d_%H%M%S')" >> $GITHUB_ENV
       - uses: actions/checkout@v2
       - name: Srtool build
         id: srtool_build
@@ -43,7 +40,7 @@ jobs:
         env:
           TMSP: "${{ steps.time.outputs.time }}"
         with:
-          name: ${{ matrix.chain }}-runtime-$TIME-${{ github.sha }}
+          name: ${{ matrix.chain }}-runtime-${{ env.TMSP }}-${{ github.sha }}
           path: |
             ${{ steps.srtool_build.outputs.wasm }}
             ${{ matrix.chain }}-srtool-digest.json
@@ -72,7 +69,7 @@ jobs:
         env:
           TMSP: "${{ steps.time.outputs.time }}"
         with:
-          name: ${{ matrix.chain }}-runtime-$TIME-${{ github.sha }}
+          name: ${{ matrix.chain }}-runtime-${{ env.TMSP }}-${{ github.sha }}
           path: |
             ${{ matrix.chain }}-info.json
             ${{ matrix.chain }}-metadata.json
