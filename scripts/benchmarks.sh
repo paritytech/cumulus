@@ -7,7 +7,14 @@ statemintOutput=./polkadot-parachains/statemint-runtime/src/weights
 statemineChain=statemine-dev
 statemintChain=statemint-dev
 pallets=(
+    pallet_assets
+	pallet_balances
+	pallet_collator_selection
+	pallet_multisig
+	pallet_proxy
     pallet_session_benchmarking
+	pallet_timestamp
+	pallet_utility
 )
 
 for p in ${pallets[@]}
