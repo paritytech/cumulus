@@ -1,6 +1,18 @@
 name: Srtool build
 
-on: push
+on:
+  push:
+    tags:
+      - "*"
+
+    paths-ignore:
+      - "docker"
+      - "docs"
+      - "scripts"
+      - "test"
+
+  schedule:
+    - cron: "00 02 * * 1" # 2AM weekly on monday
 
 jobs:
   srtool:
@@ -9,10 +21,15 @@ jobs:
       matrix:
         chain: ["statemine", "westmint"]
     steps:
+      - name: Get Time
+        id: time
+        uses: nanzm/get-time-action@v1.1
+        with:
+          format: "YYYY_MM_DD-HH_mm_ss"
       - uses: actions/checkout@v2
       - name: Srtool build
         id: srtool_build
-        uses: chevdor/srtool-actions@draft
+        uses: chevdor/srtool-actions@v0.1.0
         with:
           chain: ${{ matrix.chain }}
           runtime_dir: polkadot-parachains/${{ matrix.chain }}-runtime
@@ -23,8 +40,10 @@ jobs:
           echo "Runtime location: ${{ steps.srtool_build.outputs.wasm }}"
       - name: Archive Runtime
         uses: actions/upload-artifact@v2
+        env:
+          TMSP: "${{ steps.time.outputs.time }}"
         with:
-          name: ${{ matrix.chain }}-runtime-${{ github.sha }}
+          name: ${{ matrix.chain }}-runtime-$TIME-${{ github.sha }}
           path: |
             ${{ steps.srtool_build.outputs.wasm }}
             ${{ matrix.chain }}-srtool-digest.json
@@ -50,8 +69,10 @@ jobs:
           cat ${{ matrix.chain }}-diff.txt
       - name: Archive Subwasm results
         uses: actions/upload-artifact@v2
+        env:
+          TMSP: "${{ steps.time.outputs.time }}"
         with:
-          name: ${{ matrix.chain }}-runtime-${{ github.sha }}
+          name: ${{ matrix.chain }}-runtime-$TIME-${{ github.sha }}
           path: |
             ${{ matrix.chain }}-info.json
             ${{ matrix.chain }}-metadata.json
