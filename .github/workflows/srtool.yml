@@ -37,8 +37,6 @@ jobs:
           echo "Runtime location: ${{ steps.srtool_build.outputs.wasm }}"
       - name: Archive Runtime
         uses: actions/upload-artifact@v2
-        env:
-          TMSP: "${{ steps.time.outputs.time }}"
         with:
           name: ${{ matrix.chain }}-runtime-${{ env.TMSP }}-${{ github.sha }}
           path: |
@@ -66,8 +64,6 @@ jobs:
           cat ${{ matrix.chain }}-diff.txt
       - name: Archive Subwasm results
         uses: actions/upload-artifact@v2
-        env:
-          TMSP: "${{ steps.time.outputs.time }}"
         with:
           name: ${{ matrix.chain }}-runtime-${{ env.TMSP }}-${{ github.sha }}
           path: |
