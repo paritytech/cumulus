@@ -1,6 +1,4 @@
-// This file is part of Substrate.
-
-// Copyright (C) 2020-2021 Parity Technologies (UK) Ltd.
+// Copyright (C) 2021 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Benchmarks for the Session Pallet.
-// This is separated into its own crate due to cyclic dependency issues.
+//! Benchmarking setup for pallet-session
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
