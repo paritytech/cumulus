@@ -20,7 +20,6 @@ frame-support = { default-features = false, git = 'https://github.com/paritytech
 frame-system = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "master", version = '3.0.0' }
 frame-benchmarking = { default-features = false, optional = true, git = 'https://github.com/paritytech/substrate', branch = "master", version = '3.0.0' }
 pallet-session = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "master", version = '3.0.0' }
-pallet-collator-selection = { path = '../collator-selection', default-features = false, version = '3.0.0' }
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
@@ -44,5 +43,5 @@ std = [
 	"frame-benchmarking/std",
 	"frame-support/std",
 	"pallet-session/std",
-	"pallet-collator-selection/std"
+	"pallet-balances/std"
 ]

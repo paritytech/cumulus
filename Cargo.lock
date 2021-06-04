@@ -5678,7 +5678,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-balances",
- "pallet-collator-selection",
  "pallet-session",
  "pallet-timestamp",
  "parity-scale-codec",

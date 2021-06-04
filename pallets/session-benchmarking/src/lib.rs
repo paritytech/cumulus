@@ -26,34 +26,25 @@ use sp_std::prelude::*;
 use sp_std::vec;
 
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
-use frame_support::{
-	traits::{Currency},
-};
-use frame_system::RawOrigin;
+use frame_system::{RawOrigin};
 use pallet_session::*;
-use pallet_collator_selection;
 pub struct Pallet<T: Config>(pallet_session::Pallet<T>);
-pub trait Config: pallet_session::Config + pallet_collator_selection::Config {}
+pub trait Config: pallet_session::Config {}
 
 
 benchmarks! {
 	set_keys {
-		let caller = whitelisted_caller();
-		T::Currency::make_free_balance_be(&caller, T::Currency::minimum_balance() * 10u32.into());
-		let _r = pallet_collator_selection::Pallet::<T>::set_desired_candidates(RawOrigin::Signed(caller.clone()).into(), 10);
-		let _s = pallet_collator_selection::Pallet::<T>::register_as_candidate(RawOrigin::Signed(caller.clone()).into());
+		let caller: T::AccountId = whitelisted_caller();
+		frame_system::Pallet::<T>::inc_providers(&caller);
 		let keys = T::Keys::default();
 		let proof: Vec<u8> = vec![0,1,2,3];
-
 	}: _(RawOrigin::Signed(caller), keys, proof)
 
 	purge_keys {
-		let caller = whitelisted_caller();
+		let caller: T::AccountId = whitelisted_caller();
+		frame_system::Pallet::<T>::inc_providers(&caller);
 		let keys = T::Keys::default();
 		let proof: Vec<u8> = vec![0,1,2,3];
-		T::Currency::make_free_balance_be(&caller, T::Currency::minimum_balance() * 10u32.into());
-		let _r = pallet_collator_selection::Pallet::<T>::set_desired_candidates(RawOrigin::Signed(caller.clone()).into(), 10);
-		let _s = pallet_collator_selection::Pallet::<T>::register_as_candidate(RawOrigin::Signed(caller.clone()).into());
 		let _t = pallet_session::Pallet::<T>::set_keys(RawOrigin::Signed(caller.clone()).into(), keys, proof);
 	}: _(RawOrigin::Signed(caller))
 
