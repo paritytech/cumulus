@@ -3,19 +3,17 @@
   "id": "westmint",
   "chainType": "Live",
   "bootNodes": [
-             "/ip4/35.204.21.205/tcp/30334/p2p/12D3KooWLjaXWhNTSiRVFbTJCKLRWt9XXHLGVnAFtxvnExKkVPqn",
-             "/ip4/34.141.171.170/tcp/30334/p2p/12D3KooWBNy2Jdrjv2P7sdfb1mzH1AGzwjip5rW4N2Ft1T3Hdq5c",
-             "/ip4/34.141.221.252/tcp/30334/p2p/12D3KooWC9YYdjQLwxTNVda6t4nmjAZG37gaRZLNi4Zuhr9xUveW",
-             "/ip4/34.90.92.174/tcp/30334/p2p/12D3KooWQcXpUyVqwC2zJkwECCC7ttLCUCLTjnbGxTVfhSgmH2sD",
-
-             "/ip4/34.90.125.196/tcp/30334/p2p/12D3KooWSuqqzDmtyTfmZUu1BsMtVdLgVgS2ZAnYFz4N9Raaa3BN",
-             "/ip4/34.90.183.162/tcp/30334/p2p/12D3KooWDPmzizJMgfb1tz4MvPtfAw88gfbttdSv56iofxA1TgdM",
-             "/ip4/35.204.49.222/tcp/30334/p2p/12D3KooWRG7deBzjHA94DqVovULegLq3JYTap27dP1rXJDjmtrCx",
-             "/ip4/35.204.177.184/tcp/30334/p2p/12D3KooWML4JGiNCCo8mzohDhbVZjJLgwVzFFPZBfzwU22HYdupF"
-     ],
-   "telemetryEndpoints": null,
+    "/ip4/35.204.21.205/tcp/30334/p2p/12D3KooWLjaXWhNTSiRVFbTJCKLRWt9XXHLGVnAFtxvnExKkVPqn",
+    "/ip4/34.141.171.170/tcp/30334/p2p/12D3KooWBNy2Jdrjv2P7sdfb1mzH1AGzwjip5rW4N2Ft1T3Hdq5c",
+    "/ip4/34.141.221.252/tcp/30334/p2p/12D3KooWC9YYdjQLwxTNVda6t4nmjAZG37gaRZLNi4Zuhr9xUveW",
+    "/ip4/34.90.92.174/tcp/30334/p2p/12D3KooWQcXpUyVqwC2zJkwECCC7ttLCUCLTjnbGxTVfhSgmH2sD"
+   ],
+  "telemetryEndpoints": null,
   "protocolId": null,
-  "properties": null,
+  "properties": {
+    "tokenDecimals": 12,
+    "tokenSymbol": "WND"
+  },
   "relay_chain": "westend",
   "para_id": 1000,
   "consensusEngine": null,
