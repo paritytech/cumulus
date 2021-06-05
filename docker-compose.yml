@@ -32,18 +32,27 @@ services:
 
   konomi-collator-1:
     image: asia.gcr.io/dev-env-312104/konomi-collator:v0.0.1
+    depends_on:
+      - konomi-relay-1
+      - konomi-relay-2
     volumes:
       - konomi-collator-1:/tmp/konomi-rococo
     command: "--base-path /tmp/konomi-rococo --alice --force-authoring --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain ./rococo-local-cfde.json"
 
   konomi-collator-2:
     image: asia.gcr.io/dev-env-312104/konomi-collator:v0.0.1
+    depends_on:
+      - konomi-relay-1
+      - konomi-relay-2
     volumes:
       - konomi-collator-2:/tmp/konomi-rococo
     command: "--base-path /tmp/konomi-rococo --bob --force-authoring --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain ./rococo-local-cfde.json"
 
   konomi-parachain:
     image: asia.gcr.io/dev-env-312104/konomi-collator:v0.0.1
+    depends_on:
+      - konomi-relay-1
+      - konomi-relay-2
     volumes:
       - konomi-parachain:/tmp/konomi-rococo
     command: "--base-path /tmp/konomi-rococo --parachain-id 18403 -- --execution wasm --chain ./rococo-local-cfde.json"
