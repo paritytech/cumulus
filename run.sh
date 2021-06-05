@@ -1,4 +1,3 @@
 
 echo "in run"
-rococo-collator $@
-
+polkadot-collator $@

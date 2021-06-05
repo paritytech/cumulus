@@ -18,30 +18,32 @@ services:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
 
+  konomi-relay-1:
+    image: asia.gcr.io/dev-env-312104/konomi-relay:v0.0.1
+    volumes:
+      - konomi-relay-1:/tmp/konomi-rococo
+    command: "--base-path /tmp/konomi-rococo --chain rococo-local-cfde.json --alice"
+
+  konomi-relay-2:
+    image: asia.gcr.io/dev-env-312104/konomi-relay:v0.0.1
+    volumes:
+      - konomi-relay-1:/tmp/konomi-rococo
+    command: "--base-path /tmp/konomi-rococo  --chain rococo-local-cfde.json --bob --port 30334"
+
   konomi-collator-1:
     image: asia.gcr.io/dev-env-312104/konomi-collator:v0.0.1
     volumes:
       - konomi-collator-1:/tmp/konomi-rococo
-    command: "--base-path /tmp/konomi-rococo --alice --force-authoring --parachain-id 18403 --port 40337 --ws-port 9944 --ws-external --rpc-cors all --rpc-port 9929 -- --execution wasm --chain ./rococo-custom-4.json --port 30337"
-    networks:
-      - konomi-parachain
+    command: "--base-path /tmp/konomi-rococo --alice --force-authoring --parachain-id 18403 --port 40337 --ws-port 9944 --ws-external --rpc-cors all --rpc-port 9929 -- --execution wasm --chain ./ rococo-local-cfde.json --port 30337"
 
   konomi-collator-2:
     image: asia.gcr.io/dev-env-312104/konomi-collator:v0.0.1
     volumes:
       - konomi-collator-2:/tmp/konomi-rococo
-    command: "--base-path /tmp/konomi-rococo --bob --force-authoring --parachain-id 18403 --port 40337 --ws-port 9944 --ws-external --rpc-cors all --rpc-port 9929 -- --execution wasm --chain ./rococo-custom-4.json --port 30337"
-    networks:
-      - konomi-parachain
+    command: "--base-path /tmp/konomi-rococo --bob --force-authoring --parachain-id 18403 --port 40337 --ws-port 9944 --ws-external --rpc-cors all --rpc-port 9929 -- --execution wasm --chain ./ rococo-local-cfde.json --port 30337"
 
   konomi-parachain:
     image: asia.gcr.io/dev-env-312104/konomi-collator:v0.0.1
     volumes:
       - konomi-parachain:/tmp/konomi-rococo
-    command: "--base-path /tmp/konomi-rococo --parachain-id 18403 --port 40348 --ws-port 9948 --rpc-port 9949 -- --execution wasm --chain ./rococo-custom-4.json --port 30347"
-    networks:
-      - konomi-parachain
-
-networks:
-  konomi-parachain:
-    external: true
+    command: "--base-path /tmp/konomi-rococo --parachain-id 18403 --port 40348 --ws-port 9948 --rpc-port 9949 -- --execution wasm --chain ./ rococo-local-cfde.json --port 30347"
