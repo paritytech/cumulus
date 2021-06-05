@@ -22,13 +22,13 @@ services:
     image: asia.gcr.io/dev-env-312104/konomi-relay:v0.0.1
     volumes:
       - konomi-relay-1:/tmp/konomi-rococo
-    command: "--base-path /tmp/konomi-rococo --ws-external --chain rococo-local-cfde.json --alice"
+    command: "--base-path /tmp/konomi-rococo --ws-external --chain rococo-local-cfde.json --rpc-cors all --alice"
 
   konomi-relay-2:
     image: asia.gcr.io/dev-env-312104/konomi-relay:v0.0.1
     volumes:
       - konomi-relay-2:/tmp/konomi-rococo
-    command: "--base-path /tmp/konomi-rococo --ws-external --chain rococo-local-cfde.json --bob"
+    command: "--base-path /tmp/konomi-rococo --ws-external --chain rococo-local-cfde.json --rpc-cors all --bob"
 
   konomi-collator-1:
     image: asia.gcr.io/dev-env-312104/konomi-collator:v0.0.1
