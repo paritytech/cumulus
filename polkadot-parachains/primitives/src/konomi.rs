@@ -112,12 +112,13 @@ impl CurrencyId {
     }
 
     // TODO: refactor this part, this is for testing
-    pub fn from_num(num: u128) -> Option<Self> {
+    pub fn from_num(num: u8) -> Option<Self> {
         match num {
             0 => Some(CurrencyId::Basic(Basic { id: 0})),
-            1 => Some(CurrencyId::Native(Native { id: 0})),
+            NATIVE_DOT_INDEX => Some(DOT),
             2 => Some(CurrencyId::Native(Native { id: 1})),
             3 => Some(CurrencyId::Native(Native { id: 2})),
+            CROSS_DOT_INDEX => Some(CROSS_DOT),
             _ => None
         }
     }
@@ -125,8 +126,21 @@ impl CurrencyId {
 
 pub const KONO: CurrencyId = CurrencyId::Basic(Basic { id: 0});
 pub const DOT: CurrencyId = CurrencyId::Native(Native { id: 0});
+pub const NATIVE_DOT_INDEX: u8 = 1;
 pub const ETH: CurrencyId = CurrencyId::Native(Native { id: 1});
 pub const BTC: CurrencyId = CurrencyId::Native(Native { id: 2});
 
+pub const CROSS_DOT: CurrencyId = CurrencyId::Cross(Cross { id: 0});
+pub const CROSS_DOT_INDEX: u8 = 4;
+
 // TODO: maybe each currency will have their own decimal
 pub const BALANCE_ONE: u128 = u128::pow(10, 12);
+
+#[derive(Encode, Decode, Eq, PartialEq, Clone, Copy, RuntimeDebug, PartialOrd, Ord)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum ParachainId {
+    /// The statemint chain
+    Statemint,
+    /// The konomi test chain
+    KonomiTestChain
+}

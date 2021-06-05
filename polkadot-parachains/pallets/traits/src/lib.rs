@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 use frame_support::dispatch::{DispatchResultWithPostInfo, DispatchResult};
-use polkadot_parachain_primitives::{PriceValue, Price, CurrencyId};
+use polkadot_parachain_primitives::{PriceValue, Price, CurrencyId, ParachainId};
 use frame_system::Config;
 use frame_support::pallet_prelude::{MaybeSerializeDeserialize};
 use frame_support::sp_runtime::traits::AtLeast32BitUnsigned;
@@ -128,4 +128,20 @@ pub trait MultiCurrency<AccountId> {
 	/// As much funds up to `amount` will be deducted as possible.  If this is
 	/// less than `amount`,then a non-zero value will be returned.
 	fn slash(currency_id: Self::CurrencyId, who: &AccountId, amount: Self::Balance) -> Self::Balance;
+}
+
+pub trait CrossChainTransfer<AccountId> {
+	/// The currency identifier.
+	type CurrencyId: FullCodec + Eq + PartialEq + Copy + MaybeSerializeDeserialize + Debug;
+
+	/// The balance of an account.
+	type Balance: AtLeast32BitUnsigned + FullCodec + Copy + MaybeSerializeDeserialize + Debug + Default;
+
+	fn transfer(
+		chain_id: ParachainId,
+		currency_id: Self::CurrencyId,
+		from: &AccountId,
+		to: &AccountId,
+		amount: Self::Balance
+	) -> DispatchResult;
 }

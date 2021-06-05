@@ -2,23 +2,37 @@
   "Address": "MultiAddress",
   "LookupSource": "MultiAddress",
   "Basic": {
-    "name": "Text",
-    "id": "u64",
-    "address": "Text"
+    "id": "u8"
   },
-  "CurrencyPayload": {
-    "name": "Text",
-    "id": "u64",
-    "address": "Text"
+  "Native": {
+    "id": "u8"
   },
-  "Currency": {
+  "Cross": {
+    "id": "u8"
+  },
+  "Erc20": {
+    "id": "u8"
+  },
+  "CurrencyIdOf": "CurrencyId",
+  "CurrencyId": {
     "_enum": {
-      "Basic": "CurrencyPayload",
-      "Polkadot": "CurrencyPayload",
-      "Erc20": "CurrencyPayload"
+      "Basic": "Basic",
+      "Native": "Native",
+      "Cross": "Cross",
+      "Erc20": "Erc20"
     }
   },
-  "CurrencyId": "u64",
+  "ParachainId": {
+    "_enum": [
+      "Statemint",
+      "KonomiTestChain"
+    ]
+  },
+  "AccountData": {
+    "free": "Balance",
+    "reserved": "Balance",
+    "frozen": "Balance"
+  },
   "PoolId": "u64",
   "PoolOf": {
     "id": "PoolId",

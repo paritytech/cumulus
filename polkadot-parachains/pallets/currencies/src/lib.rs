@@ -42,8 +42,9 @@ pub mod pallet {
 
     /* ------- Local Libs -------- */
     use frame_support::sp_runtime::traits::{Zero, CheckedSub};
-    use pallet_traits::{MultiCurrency, BasicCurrency};
-    use frame_support::traits::{SignedImbalance, ExistenceRequirement, WithdrawReasons};
+    use pallet_traits::{MultiCurrency, BasicCurrency, CrossChainTransfer};
+    use frame_support::traits::{SignedImbalance, ExistenceRequirement, WithdrawReasons, Contains};
+    use polkadot_parachain_primitives::ParachainId;
 
     pub(crate) type BalanceOf<T> =
     <<T as Config>::MultiCurrency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -58,8 +59,10 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         type GetBasicCurrencyId: Get<CurrencyIdOf<Self>>;
+        type IsCrossCurrencyId: Contains<CurrencyIdOf<Self>>;
         type BasicCurrency: BasicCurrency<Self::AccountId, Balance = BalanceOf<Self>>;
         type MultiCurrency: MultiCurrency<Self::AccountId>;
+        type CrossCurrency: CrossChainTransfer<Self::AccountId, CurrencyId = CurrencyIdOf<Self>, Balance = BalanceOf<Self>>;
     }
 
     #[pallet::hooks]
@@ -94,6 +97,21 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let from = ensure_signed(origin)?;
             <Self as MultiCurrency<T::AccountId>>::transfer(currency_id, &from, &dest, amount)?;
+            Self::deposit_event(Event::Transferred(currency_id, from, dest, amount));
+
+            Ok(().into())
+        }
+
+        #[pallet::weight(1000000000)]
+        pub fn cross_chain_transfer(
+            origin: OriginFor<T>,
+            chain_id: ParachainId,
+            dest: T::AccountId,
+            currency_id: CurrencyIdOf<T>,
+            #[pallet::compact] amount: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            let from = ensure_signed(origin)?;
+            T::CrossCurrency::transfer(chain_id, currency_id, &from, &dest, amount)?;
             Self::deposit_event(Event::Transferred(currency_id, from, dest, amount));
 
             Ok(().into())
@@ -222,12 +240,14 @@ pub mod pallet {
             if amount.is_zero() || from == to {
                 return Ok(());
             }
-
             // TODO: check ensure the currency exists
 
             match currency_id {
                 id if id == T::GetBasicCurrencyId::get() => T::BasicCurrency::transfer(from, to, amount, ExistenceRequirement::AllowDeath)?,
-                _ => T::MultiCurrency::transfer(currency_id, from, to, amount)?
+                _ => {
+                    let holding = T::MultiCurrency::free_balance(currency_id, from);
+                    T::MultiCurrency::transfer(currency_id, from, to, amount)?
+                }
             }
 
             Ok(())
@@ -262,10 +282,10 @@ pub mod pallet {
             // TODO: check ensure the currency exists
             match currency_id {
                 id if id == T::GetBasicCurrencyId::get() => {
-                    T::BasicCurrency::withdraw(who, amount, WithdrawReasons::TRANSFER, ExistenceRequirement::AllowDeath).unwrap();
+                    T::BasicCurrency::withdraw(who, amount, WithdrawReasons::TRANSFER, ExistenceRequirement::AllowDeath)?;
                 },
                 _ => {
-                    T::MultiCurrency::withdraw(currency_id, who, amount).unwrap();
+                    T::MultiCurrency::withdraw(currency_id, who, amount)?;
                 }
             }
 

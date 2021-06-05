@@ -1,7 +1,11 @@
 version: '3'
 
 volumes:
-  konomi-rococo: {}
+  konomi-relay-1: {}
+  konomi-relay-2: {}
+  konomi-collator-1: {}
+  konomi-collator-2: {}
+  konomi-parachain: {}
 
 services:
   nginx:
@@ -14,11 +18,30 @@ services:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
 
-  konomi-rococo:
-    image: asia.gcr.io/dev-env-312104/konomi-rococo:v0.0.1
+  konomi-collator-1:
+    image: asia.gcr.io/dev-env-312104/konomi-collator:v0.0.1
     volumes:
-      - konomi-rococo:/tmp/konomi-rococo
-    command: "--base-path /tmp/konomi-rococo --parachain-id 18403 --port 40337 --ws-port 9944 --ws-external --rpc-cors all --rpc-port 9929 -- --execution wasm --chain rococo --port 30337"
+      - konomi-collator-1:/tmp/konomi-rococo
+    command: "--base-path /tmp/konomi-rococo --alice --force-authoring --parachain-id 18403 --port 40337 --ws-port 9944 --ws-external --rpc-cors all --rpc-port 9929 -- --execution wasm --chain ./rococo-custom-4.json --port 30337"
+    networks:
+      - konomi-parachain
 
-  node-helper:
-    image: asia.gcr.io/dev-env-312104/node-helper:v0.0.1
+  konomi-collator-2:
+    image: asia.gcr.io/dev-env-312104/konomi-collator:v0.0.1
+    volumes:
+      - konomi-collator-2:/tmp/konomi-rococo
+    command: "--base-path /tmp/konomi-rococo --bob --force-authoring --parachain-id 18403 --port 40337 --ws-port 9944 --ws-external --rpc-cors all --rpc-port 9929 -- --execution wasm --chain ./rococo-custom-4.json --port 30337"
+    networks:
+      - konomi-parachain
+
+  konomi-parachain:
+    image: asia.gcr.io/dev-env-312104/konomi-collator:v0.0.1
+    volumes:
+      - konomi-parachain:/tmp/konomi-rococo
+    command: "--base-path /tmp/konomi-rococo --parachain-id 18403 --port 40348 --ws-port 9948 --rpc-port 9949 -- --execution wasm --chain ./rococo-custom-4.json --port 30347"
+    networks:
+      - konomi-parachain
+
+networks:
+  konomi-parachain:
+    external: true

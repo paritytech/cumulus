@@ -68,6 +68,7 @@ pallet-currencies = { default-features = false, path = '../pallets/currencies', 
 pallet-traits = { default-features = false, path = '../pallets/traits', version = '3.0.0' }
 pallet-chainlink-oracle = { path = '../pallets/chainlink-oracle', default-features = false, version = '3.0.0' }
 pallet-xcm-support = { path = '../pallets/xcm-support', default-features = false, version = '3.0.0' }
+pallet-xcm-token = { path = '../pallets/xcm-token', default-features = false, version = '3.0.0' }
 polkadot-parachain-primitives = { path = "../primitives", default-features = false }
 # -------------- Konomi --------------- #
 

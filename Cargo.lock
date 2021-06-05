@@ -1829,6 +1829,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-xcm",
  "pallet-xcm-support",
+ "pallet-xcm-token",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
@@ -5959,6 +5960,22 @@ dependencies = [
 
 [[package]]
 name = "pallet-xcm-support"
+version = "3.0.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-traits",
+ "pallet-xcm",
+ "parity-scale-codec",
+ "polkadot-parachain-primitives",
+ "sp-std",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
+]
+
+[[package]]
+name = "pallet-xcm-token"
 version = "3.0.0"
 dependencies = [
  "frame-support",
