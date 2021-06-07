@@ -18,8 +18,7 @@ use cumulus_client_consensus_aura::{
 	build_aura_consensus, BuildAuraConsensusParams, SlotProportion,
 };
 use nimbus_consensus::{
-	//TODO still called filtering
-	build_filtering_consensus, BuildNimbusConsensusParams,
+	build_nimbus_consensus, BuildNimbusConsensusParams,
 };
 use nimbus_primitives::NimbusId;
 use cumulus_client_consensus_common::{
@@ -658,7 +657,7 @@ pub async fn start_nimbus_node(
 			let relay_chain_client = relay_chain_node.client.clone();
 
 			Ok(
-				build_filtering_consensus(
+				build_nimbus_consensus(
 					BuildNimbusConsensusParams {
 						para_id: id,
 						proposer_factory,

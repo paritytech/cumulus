@@ -324,7 +324,7 @@ pub struct BuildNimbusConsensusParams<PF, BI, RBackend, ParaClient, CIDP> {
 /// Build the [`NimbusConsensus`].
 ///
 /// Returns a boxed [`ParachainConsensus`].
-pub fn build_filtering_consensus<Block, PF, BI, RBackend, ParaClient, CIDP>(
+pub fn build_nimbus_consensus<Block, PF, BI, RBackend, ParaClient, CIDP>(
 	BuildNimbusConsensusParams {
 		para_id,
 		proposer_factory,
