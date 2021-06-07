@@ -6,23 +6,23 @@ edition = "2018"
 
 [dependencies]
 # Substrate deps
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
-substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
-sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # This is prep work for wiring a generic type P through like Aura does.
 # I think that will be necessary to get the NimbusId I need to check eligibility and the Pair I need to sign.
-sp-application-crypto = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.2" }
+sp-application-crypto = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot dependencies
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.2" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus dependencies
 nimbus-primitives = { path = "../../../primitives/nimbus" }
