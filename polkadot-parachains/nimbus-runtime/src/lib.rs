@@ -207,6 +207,7 @@ parameter_types! {
 	pub const CreationFee: u128 = 1 * MILLIROC;
 	pub const TransactionByteFee: u128 = 1 * MICROROC;
 	pub const MaxLocks: u32 = 50;
+	pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -219,6 +220,8 @@ impl pallet_balances::Config for Runtime {
 	type AccountStore = System;
 	type WeightInfo = ();
 	type MaxLocks = MaxLocks;
+	type MaxReserves = MaxReserves;
+	type ReserveIdentifier = [u8; 8];
 }
 
 impl pallet_transaction_payment::Config for Runtime {

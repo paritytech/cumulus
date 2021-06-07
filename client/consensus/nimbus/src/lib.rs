@@ -16,18 +16,13 @@
 
 //! The nimbus consensus client-side worker
 //!
-//! This engine is driven by relay-chain based slots. It queries the in-runtime filter to determine
-//! whether any keys stored in its keystore are eligible to author at this slot. If it has an eligible
-//! ley it authors.
-//!
-//! Like the relay chain consensus is manually inserts the parachain inherent.
-//! In addition it manually inserts the author inherent. So be sure not to use this
-//! worker and the simple author inherent data provider together.
-//!
-//! Idea: I wonder if we could simplify this by having a separate worker that just had a stream called
-//! like `slot-beacon` or something. We could use the relay chain or a simple timer.
+//! It queries the in-runtime filter to determine whether any keys
+//! stored in its keystore are eligible to author at this slot. If it has an eligible
+//! key it authors.
 
-use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
+use cumulus_client_consensus_common::{
+	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
+};
 use cumulus_primitives_core::{
 	relay_chain::v1::{Block as PBlock, Hash as PHash, ParachainHost},
 	ParaId, PersistedValidationData,
@@ -40,7 +35,7 @@ use sc_client_api::Backend;
 use sp_api::{ProvideRuntimeApi, BlockId};
 use sp_consensus::{
 	BlockImport, BlockImportParams, BlockOrigin, EnableProofRecording, Environment,
-	ForkChoiceStrategy, ProofRecording, Proposal, Proposer,
+	ProofRecording, Proposal, Proposer,
 };
 use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvider};
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT};
@@ -59,7 +54,7 @@ pub struct NimbusConsensus<B, PF, BI, RClient, RBackend, ParaClient, CIDP> {
 	_phantom: PhantomData<B>,
 	proposer_factory: Arc<Mutex<PF>>,
 	create_inherent_data_providers: Arc<CIDP>,
-	block_import: Arc<futures::lock::Mutex<BI>>,
+	block_import: Arc<futures::lock::Mutex<ParachainBlockImport<BI>>>,
 	relay_chain_client: Arc<RClient>,
 	relay_chain_backend: Arc<RBackend>,
 	parachain_client: Arc<ParaClient>,
@@ -106,7 +101,9 @@ where
 			para_id,
 			proposer_factory: Arc::new(Mutex::new(proposer_factory)),
 			create_inherent_data_providers: Arc::new(create_inherent_data_providers),
-			block_import: Arc::new(futures::lock::Mutex::new(block_import)),
+			block_import: Arc::new(futures::lock::Mutex::new(ParachainBlockImport::new(
+				block_import,
+			))),
 			relay_chain_backend: polkadot_backend,
 			relay_chain_client: polkadot_client,
 			parachain_client,
@@ -115,7 +112,7 @@ where
 		}
 	}
 
-	//TODO Can this function be removed from the trait entirely now that we have this async inherent stuff?
+	//TODO Could this be a provided implementation now that we have this async inherent stuff?
 	/// Create the data.
 	async fn inherent_data(
 		&self,
@@ -179,9 +176,6 @@ where
 		// Design decision: We will check the keystore for any available keys. Then we will iterate
 		// those keys until we find one that is eligible. If none are eligible, we skip this slot.
 		// If multiple are eligible, we only author with the first one.
-		// We will insert the inherent manually here as Basti does for the parachain inherent. That
-		// may improve when/if his bkchr-inherent-something-future branch is merged, but it
-		// honestly doesn't feel that bad to me the way it is.
 
 		// Get allthe available keys
 		let available_keys =
@@ -252,7 +246,7 @@ where
 
 		let (header, extrinsics) = block.clone().deconstruct();
 
-		let pre_hash/*: <<B as BlockT>::Header as HeaderT>::Hash */= header.hash();
+		let pre_hash = header.hash();
 
 		let sig = SyncCryptoStore::sign_with(
 			&*self.keystore,
@@ -272,11 +266,8 @@ where
 		let sig_digest = sp_runtime::generic::DigestItem::Seal(NIMBUS_ENGINE_ID, sig);
 
 		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header.clone());
-		// Add the test digest to the block import params
 		block_import_params.post_digests.push(sig_digest.clone());
 		block_import_params.body = Some(extrinsics.clone());
-		// Best block is determined by the relay chain.
-		block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(false));
 		block_import_params.storage_changes = Some(storage_changes);
 
 		// Print the same log line as slots (aura and babe)
@@ -315,8 +306,6 @@ where
 }
 
 /// Paramaters of [`build_relay_chain_consensus`].
-/// TODO can this be moved into common and shared with relay chain conensus builder?
-/// I bet my head would explode from thinking about generic types.
 ///
 /// I briefly tried the async keystore approach, but decided to go sync so I can copy
 /// code from Aura. Maybe after it is working, Jeremy can help me go async.

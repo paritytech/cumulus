@@ -22,7 +22,7 @@ use sp_blockchain::Result as ClientResult;
 use sp_consensus::{
 	error::Error as ConsensusError,
 	import_queue::{BasicQueue, CacheKeyId, Verifier as VerifierT},
-	BlockImport, BlockImportParams, BlockOrigin, ForkChoiceStrategy,
+	BlockImport, BlockImportParams, BlockOrigin,
 };
 use sp_inherents::{CreateInherentDataProviders, InherentDataProvider};
 use sp_runtime::{
@@ -35,10 +35,11 @@ use nimbus_primitives::{NimbusId, NimbusSignature, NimbusPair};
 use sp_application_crypto::{TryFrom, Pair as _, Public as _};
 use log::debug;
 
-/// A verifier that checks the inherents and
-/// TODO compares two digests. The first comes from the runtime which contains the author inherent data
-/// the second will, in the future be a signature, but for now is just inserted at seal time by
-// the consensus engine to mock this stuff out.
+/// The Nimbus verifier strips the seal digest, and checks that it is a valid signature by
+/// the same key that was injected into the runtime and noted in the Seal digest.
+/// From Nimbu's perspective any block that faithfully reports its authorship to the runtime
+/// is valid. The intention is that the runtime itself may then put further restrictions on
+/// the identity of the author.
 struct Verifier<Client, Block, CIDP> {
 	client: Arc<Client>,
 	create_inherent_data_providers: CIDP,
@@ -69,7 +70,6 @@ where
 
 		debug!(target: crate::LOG_TARGET, "🪲 Header hash before popping digest {:?}", header.hash());
 		// Grab the digest from the seal
-		// Even though we do literally nothing with it, we can go ahead and pop it off already
 		//TODO use CompatibleDigest trait here once I write it. For now assume the seal is last.
 		let seal = header.digest_mut().pop().expect("Block should have at least one digest on it");
 
@@ -161,12 +161,6 @@ where
 		block_import_params.body = body;
 		block_import_params.justifications = justifications;
 
-		// Best block is determined by the relay chain, or if we are doing the intial sync
-		// we import all blocks as new best.
-		block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(
-			origin == BlockOrigin::NetworkInitialSync,
-		));
-
 		debug!(target: crate::LOG_TARGET, "🪲 Just finished verifier. posthash from params is {:?}", &block_import_params.post_hash());
 
 		Ok((block_import_params, None))
@@ -196,7 +190,9 @@ where
 
 	Ok(BasicQueue::new(
 		verifier,
-		Box::new(block_import),
+		Box::new(cumulus_client_consensus_common::ParachainBlockImport::new(
+			block_import,
+		)),
 		None,
 		spawner,
 		registry,
