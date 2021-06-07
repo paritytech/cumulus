@@ -73,7 +73,7 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>, PSC: crate::Config>(
 		Some(parent_head.state_root()),
 	) {
 		Ok(root) => root,
-		Err(e) => panic!("Compact proof decoding failure: {:?}", e),
+		Err(e) => panic!("Compact proof decoding failure.", _e),
 	};
 
 	let backend = sp_state_machine::TrieBackend::new(db, root);
