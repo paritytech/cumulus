@@ -16,7 +16,7 @@
 
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-//Notice we are bringing in these types from the rococo_parachain_runtime. They arenthe same types for the nimbus runtime. I hope these will still work.
+// Notice we are bringing in these types from the rococo_parachain_runtime. They are the same types for the nimbus runtime, so they still work.
 use rococo_parachain_runtime::{AccountId, AuraId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
