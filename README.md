@@ -50,14 +50,14 @@ eventually be included by the relay chain for a parachain.
 To run a Rococo collator you will need to compile the following binary:
 
 ```
-cargo build --release -p rococo-collator
+cargo build --release -p polkadot-collator
 ```
 
 Once the executable is built, launch collators for each parachain (repeat once each for chain
 `tick`, `trick`, `track`):
 
 ```
-./target/release/rococo-collator --chain $CHAIN --validator
+./target/release/polkadot-collator --chain $CHAIN --validator
 ```
 
 ## Parachains
@@ -82,16 +82,16 @@ chain, and from the relay chain to its destination parachain.
 git clone https://github.com/paritytech/polkadot
 git fetch
 git checkout rococo-v1
-cargo build --release --features=real-overseer
+cargo build --release
 
 # Generate a raw chain spec
-./target/release/polkadot build-spec --chain rococo-local --disable-default-bootnode --raw > rococo-local-cfde-real-overseer.json
+./target/release/polkadot build-spec --chain rococo-local --disable-default-bootnode --raw > rococo-local-cfde.json
 
 # Alice
-./target/release/polkadot --chain rococo-local-cfde-real-overseer.json --alice --tmp
+./target/release/polkadot --chain rococo-local-cfde.json --alice --tmp
 
 # Bob (In a separate terminal)
-./target/release/polkadot --chain rococo-local-cfde-real-overseer.json --bob --tmp --port 30334
+./target/release/polkadot --chain rococo-local-cfde.json --bob --tmp --port 30334
 ```
 
 ### Launch the Parachain
@@ -105,19 +105,19 @@ cargo build --release
 
 # Export genesis state
 # --parachain-id 200 as an example that can be chosen freely. Make sure to everywhere use the same parachain id
-./target/release/rococo-collator export-genesis-state --parachain-id 200 > genesis-state
+./target/release/polkadot-collator export-genesis-state --parachain-id 200 > genesis-state
 
 # Export genesis wasm
-./target/release/rococo-collator export-genesis-wasm > genesis-wasm
+./target/release/polkadot-collator export-genesis-wasm > genesis-wasm
 
 # Collator1
-./target/release/rococo-collator --collator --tmp --parachain-id <parachain_id_u32_type_range> --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde-real-overseer.json --port 30335
+./target/release/polkadot-collator --collator --tmp --parachain-id <parachain_id_u32_type_range> --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30335
 
 # Collator2
-./target/release/rococo-collator --collator --tmp --parachain-id <parachain_id_u32_type_range> --port 40336 --ws-port 9947 -- --execution wasm --chain ../polkadot/rococo-local-cfde-real-overseer.json --port 30336
+./target/release/polkadot-collator --collator --tmp --parachain-id <parachain_id_u32_type_range> --port 40336 --ws-port 9947 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30336
 
 # Parachain Full Node 1
-./target/release/rococo-collator --tmp --parachain-id <parachain_id_u32_type_range> --port 40337 --ws-port 9948 -- --execution wasm --chain ../polkadot/rococo-local-cfde-real-overseer.json --port 30337
+./target/release/polkadot-collator --tmp --parachain-id <parachain_id_u32_type_range> --port 40337 --ws-port 9948 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337
 ```
 ### Register the parachain
 ![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)

@@ -27,7 +27,6 @@ use sc_executor::{
 };
 use sp_blockchain::HeaderBackend;
 use sp_consensus::SelectChain;
-use sp_core::traits::CallInWasm;
 use sp_io::TestExternalities;
 use sp_keyring::AccountKeyring::*;
 use sp_runtime::{
@@ -42,6 +41,8 @@ fn call_validate_block(
 	block_data: ParachainBlockData<Block>,
 	relay_parent_storage_root: Hash,
 ) -> Result<Header> {
+	use sc_executor_common::runtime_blob::RuntimeBlob;
+
 	let mut ext = TestExternalities::default();
 	let mut ext_ext = ext.ext();
 	let params = ValidationParams {
@@ -61,13 +62,15 @@ fn call_validate_block(
 	);
 
 	executor
-		.call_in_wasm(
-			&WASM_BINARY.expect("You need to build the WASM binaries to run the tests!"),
-			None,
+		.uncached_call(
+			RuntimeBlob::uncompress_if_needed(
+				&WASM_BINARY.expect("You need to build the WASM binaries to run the tests!"),
+			)
+			.expect("RuntimeBlob uncompress & parse"),
+			&mut ext_ext,
+			false,
 			"validate_block",
 			&params,
-			&mut ext_ext,
-			sp_core::traits::MissingHostFunctions::Disallow,
 		)
 		.map(|v| ValidationResult::decode(&mut &v[..]).expect("Decode `ValidationResult`."))
 		.map(|v| Header::decode(&mut &v.head_data.0[..]).expect("Decode `Header`."))
@@ -124,11 +127,8 @@ fn encode_witness(
 	witness: sp_trie::StorageProof,
 	root: &Hash,
 ) -> sp_trie::CompactProof {
-	type Layout = sp_trie::Layout<<Header as HeaderT>::Hashing>;
-	sp_trie::encode_compact::<Layout, _>(
-		witness,
+	witness.into_compact_proof::<<Header as HeaderT>::Hashing>(
 		root.clone(),
-		std::iter::once(sp_core::storage::well_known_keys::CODE),
 	).unwrap()
 }
 
@@ -227,6 +227,7 @@ fn validate_block_fails_on_invalid_validation_data() {
 	} = build_block_with_witness(&client, vec![], parent_head.clone());
 	let (header, extrinsics) = block.deconstruct();
 
+	let witness = encode_witness(witness, parent_head.state_root());
 	let block_data = ParachainBlockData::new(header, extrinsics, witness);
 	call_validate_block(
 		parent_head,

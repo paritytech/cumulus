@@ -34,9 +34,10 @@ use sp_runtime::{
 };
 
 use polkadot_node_primitives::{SignedFullStatement, Statement};
+use polkadot_parachain::primitives::HeadData;
 use polkadot_primitives::v1::{
-	Block as PBlock, CandidateReceipt, CompactStatement, Hash as PHash, Id as ParaId,
-	OccupiedCoreAssumption, ParachainHost, SignedStatement, SigningContext,
+	Block as PBlock, Hash as PHash, CandidateReceipt, CompactStatement, Id as ParaId,
+	OccupiedCoreAssumption, ParachainHost, UncheckedSigned, SigningContext,
 };
 use polkadot_service::ClientHandle;
 
@@ -55,7 +56,7 @@ use wait_on_relay_chain_block::WaitOnRelayChainBlock;
 mod tests;
 mod wait_on_relay_chain_block;
 
-const LOG_TARGET: &str = "cumulus-network";
+const LOG_TARGET: &str = "sync::cumulus";
 
 type BoxedError = Box<dyn std::error::Error + Send>;
 
@@ -76,7 +77,7 @@ impl fmt::Display for BlockAnnounceError {
 #[derive(Encode, Decode, Debug)]
 pub struct BlockAnnounceData {
 	receipt: CandidateReceipt,
-	statement: SignedStatement,
+	statement: UncheckedSigned<CompactStatement>,
 }
 
 impl BlockAnnounceData {
@@ -84,7 +85,7 @@ impl BlockAnnounceData {
 	///
 	/// This will not check the signature, for this you should use [`BlockAnnounceData::check_signature`].
 	fn validate(&self, encoded_header: Vec<u8>) -> Result<(), Validation> {
-		let candidate_hash = if let CompactStatement::Seconded(h) = self.statement.payload() {
+		let candidate_hash = if let CompactStatement::Seconded(h) = self.statement.unchecked_payload() {
 			h
 		} else {
 			tracing::debug!(
@@ -102,9 +103,7 @@ impl BlockAnnounceData {
 			return Err(Validation::Failure { disconnect: true });
 		}
 
-		if polkadot_parachain::primitives::HeadData(encoded_header).hash()
-			!= self.receipt.descriptor.para_head
-		{
+		if HeadData(encoded_header).hash() != self.receipt.descriptor.para_head {
 			tracing::debug!(
 				target: LOG_TARGET,
 				"Receipt para head hash doesn't match the hash of the header in the block announcement",
@@ -119,7 +118,7 @@ impl BlockAnnounceData {
 	///
 	/// Returns an `Err(_)` if it failed.
 	fn check_signature<P>(
-		&self,
+		self,
 		relay_chain_client: &Arc<P>,
 	) -> Result<Validation, BlockAnnounceError>
 	where
@@ -127,7 +126,7 @@ impl BlockAnnounceData {
 		P::Api: ParachainHost<PBlock>,
 	{
 		let runtime_api = relay_chain_client.runtime_api();
-		let validator_index = self.statement.validator_index();
+		let validator_index = self.statement.unchecked_validator_index();
 
 		let runtime_api_block_id = BlockId::Hash(self.receipt.descriptor.relay_parent);
 		let session_index = match runtime_api.session_index_for_child(&runtime_api_block_id) {
@@ -164,7 +163,7 @@ impl BlockAnnounceData {
 		// Check statement is correctly signed.
 		if self
 			.statement
-			.check_signature(&signing_context, &signer)
+			.try_into_checked(&signing_context, &signer)
 			.is_err()
 		{
 			tracing::debug!(
@@ -179,10 +178,10 @@ impl BlockAnnounceData {
 	}
 }
 
-impl TryFrom<SignedFullStatement> for BlockAnnounceData {
+impl TryFrom<&'_ SignedFullStatement> for BlockAnnounceData {
 	type Error = ();
 
-	fn try_from(stmt: SignedFullStatement) -> Result<BlockAnnounceData, ()> {
+	fn try_from(stmt: &SignedFullStatement) -> Result<BlockAnnounceData, ()> {
 		let receipt = if let Statement::Seconded(receipt) = stmt.payload() {
 			receipt.to_plain()
 		} else {
@@ -191,7 +190,7 @@ impl TryFrom<SignedFullStatement> for BlockAnnounceData {
 
 		Ok(BlockAnnounceData {
 			receipt,
-			statement: stmt.convert_payload(),
+			statement: stmt.convert_payload().into(),
 		})
 	}
 }
@@ -223,19 +222,19 @@ impl TryFrom<SignedFullStatement> for BlockAnnounceData {
 /// chain. If it is at the tip, it is required to provide a justification or otherwise we reject
 /// it. However, if the announcement is for a block below the tip the announcement is accepted
 /// as it probably comes from a node that is currently syncing the chain.
-pub struct BlockAnnounceValidator<Block, P, B, BCE> {
+pub struct BlockAnnounceValidator<Block, R, B, BCE> {
 	phantom: PhantomData<Block>,
-	relay_chain_client: Arc<P>,
+	relay_chain_client: Arc<R>,
 	relay_chain_backend: Arc<B>,
 	para_id: ParaId,
 	relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
 	wait_on_relay_chain_block: WaitOnRelayChainBlock<B, BCE>,
 }
 
-impl<Block, P, B, BCE> BlockAnnounceValidator<Block, P, B, BCE> {
+impl<Block, R, B, BCE> BlockAnnounceValidator<Block, R, B, BCE> {
 	/// Create a new [`BlockAnnounceValidator`].
 	pub fn new(
-		relay_chain_client: Arc<P>,
+		relay_chain_client: Arc<R>,
 		para_id: ParaId,
 		relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
 		relay_chain_backend: Arc<B>,
@@ -255,14 +254,54 @@ impl<Block, P, B, BCE> BlockAnnounceValidator<Block, P, B, BCE> {
 	}
 }
 
-impl<Block: BlockT, P, B, BCE> BlockAnnounceValidator<Block, P, B, BCE>
+impl<Block: BlockT, R, B, BCE> BlockAnnounceValidator<Block, R, B, BCE>
 where
-	P: ProvideRuntimeApi<PBlock> + Send + Sync + 'static,
-	P::Api: ParachainHost<PBlock>,
+	R: ProvideRuntimeApi<PBlock> + Send + Sync + 'static,
+	R::Api: ParachainHost<PBlock>,
 	B: Backend<PBlock> + 'static,
 	// Rust bug: https://github.com/rust-lang/rust/issues/24159
 	sc_client_api::StateBackendFor<B, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
 {
+	/// Get the included block of the given parachain in the relay chain.
+	fn included_block(
+		relay_chain_client: &R,
+		block_id: &BlockId<PBlock>,
+		para_id: ParaId,
+	) -> Result<Block::Header, BoxedError> {
+		let validation_data = relay_chain_client
+			.runtime_api()
+			.persisted_validation_data(block_id, para_id, OccupiedCoreAssumption::TimedOut)
+			.map_err(|e| Box::new(BlockAnnounceError(format!("{:?}", e))) as Box<_>)?
+			.ok_or_else(|| {
+				Box::new(BlockAnnounceError(
+					"Could not find parachain head in relay chain".into(),
+				)) as Box<_>
+			})?;
+		let para_head =
+			Block::Header::decode(&mut &validation_data.parent_head.0[..]).map_err(|e| {
+				Box::new(BlockAnnounceError(format!(
+					"Failed to decode parachain head: {:?}",
+					e
+				))) as Box<_>
+			})?;
+
+		Ok(para_head)
+	}
+
+	/// Get the backed block hash of the given parachain in the relay chain.
+	fn backed_block_hash(
+		relay_chain_client: &R,
+		block_id: &BlockId<PBlock>,
+		para_id: ParaId,
+	) -> Result<Option<PHash>, BoxedError> {
+		let candidate_receipt = relay_chain_client
+			.runtime_api()
+			.candidate_pending_availability(block_id, para_id)
+			.map_err(|e| Box::new(BlockAnnounceError(format!("{:?}", e))) as Box<_>)?;
+
+		Ok(candidate_receipt.map(|cr| cr.descriptor.para_head))
+	}
+
 	/// Handle a block announcement with empty data (no statement) attached to it.
 	fn handle_empty_block_announce_data(
 		&self,
@@ -278,32 +317,30 @@ where
 			let runtime_api_block_id = BlockId::Hash(relay_chain_info.best_hash);
 			let block_number = header.number();
 
-			let local_validation_data = relay_chain_client
-				.runtime_api()
-				.persisted_validation_data(
-					&runtime_api_block_id,
-					para_id,
-					OccupiedCoreAssumption::TimedOut,
-				)
-				.map_err(|e| Box::new(BlockAnnounceError(format!("{:?}", e))) as Box<_>)?
-				.ok_or_else(|| {
-					Box::new(BlockAnnounceError(
-						"Could not find parachain head in relay chain".into(),
-					)) as Box<_>
-				})?;
-			let parent_head = Block::Header::decode(&mut &local_validation_data.parent_head.0[..])
-				.map_err(|e| {
-					Box::new(BlockAnnounceError(format!(
-						"Failed to decode parachain head: {:?}",
-						e
-					))) as Box<_>
-				})?;
-			let known_best_number = parent_head.number();
+			let best_head =
+				Self::included_block(&*relay_chain_client, &runtime_api_block_id, para_id)?;
+			let known_best_number = best_head.number();
+			let backed_block = ||
+				Self::backed_block_hash(&*relay_chain_client, &runtime_api_block_id, para_id);
 
-			if block_number >= known_best_number {
-				tracing::trace!(
-					target: "cumulus-network",
-					"validation failed because a justification is needed if the block at the top of the chain."
+			if best_head == header {
+				tracing::debug!(
+					target: LOG_TARGET,
+					"Announced block matches best block.",
+				);
+
+				Ok(Validation::Success { is_new_best: true })
+			} else if Some(HeadData(header.encode()).hash()) == backed_block()? {
+				tracing::debug!(
+					target: LOG_TARGET,
+					"Announced block matches latest backed block.",
+				);
+
+				Ok(Validation::Success { is_new_best: true })
+			} else if block_number >= known_best_number {
+				tracing::debug!(
+					target: LOG_TARGET,
+					"Validation failed because a justification is needed if the block at the top of the chain."
 				);
 
 				Ok(Validation::Failure { disconnect: false })
@@ -493,7 +530,6 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 	pub fn wait_to_announce(
 		&mut self,
 		block_hash: <Block as BlockT>::Hash,
-		pov_hash: PHash,
 		signed_stmt_recv: oneshot::Receiver<SignedFullStatement>,
 	) {
 		let announce_block = self.announce_block.clone();
@@ -501,15 +537,14 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 		self.spawner.spawn(
 			"cumulus-wait-to-announce",
 			async move {
-				tracing::trace!(
+				tracing::debug!(
 					target: "cumulus-network",
 					"waiting for announce block in a background task...",
 				);
 
-				wait_to_announce::<Block>(block_hash, pov_hash, announce_block, signed_stmt_recv)
-					.await;
+				wait_to_announce::<Block>(block_hash, announce_block, signed_stmt_recv).await;
 
-				tracing::trace!(
+				tracing::debug!(
 					target: "cumulus-network",
 					"block announcement finished",
 				);
@@ -521,7 +556,6 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 
 async fn wait_to_announce<Block: BlockT>(
 	block_hash: <Block as BlockT>::Hash,
-	pov_hash: PHash,
 	announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 	signed_stmt_recv: oneshot::Receiver<SignedFullStatement>,
 ) {
@@ -530,7 +564,6 @@ async fn wait_to_announce<Block: BlockT>(
 		Err(_) => {
 			tracing::debug!(
 				target: "cumulus-network",
-				pov_hash = ?pov_hash,
 				block = ?block_hash,
 				"Wait to announce stopped, because sender was dropped.",
 			);
@@ -538,18 +571,14 @@ async fn wait_to_announce<Block: BlockT>(
 		}
 	};
 
-	match statement.payload() {
-		Statement::Seconded(c) if &c.descriptor.pov_hash == &pov_hash => {
-			if let Ok(data) = BlockAnnounceData::try_from(statement) {
-				announce_block(block_hash, Some(data.encode()));
-			}
-		}
-		_ => tracing::debug!(
+	if let Ok(data) = BlockAnnounceData::try_from(&statement) {
+		announce_block(block_hash, Some(data.encode()));
+	} else {
+		tracing::debug!(
 			target: "cumulus-network",
 			statement = ?statement,
 			block = ?block_hash,
-			expected_pov_hash = ?pov_hash,
 			"Received invalid statement while waiting to announce block.",
-		),
+		);
 	}
 }

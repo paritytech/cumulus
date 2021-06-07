@@ -47,6 +47,7 @@ pub use frame_support::{
 };
 use frame_system::limits::{BlockLength, BlockWeights};
 pub use pallet_balances::Call as BalancesCall;
+pub use pallet_sudo::Call as SudoCall;
 pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -58,11 +59,37 @@ impl_opaque_keys! {
 	pub struct SessionKeys {}
 }
 
-/// This runtime version.
+// The only difference between the two declarations below is the `spec_version`. With the
+// `upgrade` feature enabled `spec_version` should be greater than the one of without the
+// `upgrade` feature.
+//
+// The duplication here is unfortunate necessity.
+//
+// runtime_version macro is dumb. It accepts a const item declaration, passes it through and
+// also emits runtime version custom section. It parses the expressions to extract the version
+// details. Since macro kicks in early, it operates on AST. Thus you cannot use constants.
+// Macros are expanded top to bottom, meaning we also cannot use `cfg` here.
+
+#[cfg(feature = "upgrade")]
+#[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("cumulus-test-parachain"),
 	impl_name: create_runtime_str!("cumulus-test-parachain"),
 	authoring_version: 1,
+	// Read the note above.
+	spec_version: 4,
+	impl_version: 1,
+	apis: RUNTIME_API_VERSIONS,
+	transaction_version: 1,
+};
+
+#[cfg(not(feature = "upgrade"))]
+#[sp_version::runtime_version]
+pub const VERSION: RuntimeVersion = RuntimeVersion {
+	spec_name: create_runtime_str!("cumulus-test-parachain"),
+	impl_name: create_runtime_str!("cumulus-test-parachain"),
+	authoring_version: 1,
+	// Read the note above.
 	spec_version: 3,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
@@ -182,6 +209,7 @@ parameter_types! {
 	pub const TransferFee: u128 = 0;
 	pub const CreationFee: u128 = 0;
 	pub const TransactionByteFee: u128 = 1;
+	pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -194,6 +222,8 @@ impl pallet_balances::Config for Runtime {
 	type AccountStore = System;
 	type WeightInfo = ();
 	type MaxLocks = ();
+	type MaxReserves = MaxReserves;
+	type ReserveIdentifier = [u8; 8];
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -212,12 +242,24 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type SelfParaId = ParachainId;
 	type Event = Event;
 	type OnValidationData = ();
-	type DownwardMessageHandlers = ();
-	type HrmpMessageHandlers = ();
+	type OutboundXcmpMessageSource = ();
+	type DmpMessageHandler = ();
+	type ReservedDmpWeight = ();
+	type XcmpMessageHandler = ();
+	type ReservedXcmpWeight = ();
 }
 
 parameter_types! {
 	pub storage ParachainId: cumulus_primitives_core::ParaId = 100.into();
+	pub storage UpgradeDetection: bool = false;
+}
+
+pub struct UpgradeDetectionOnRuntimeUpgrade;
+impl frame_support::traits::OnRuntimeUpgrade for UpgradeDetectionOnRuntimeUpgrade {
+	fn on_runtime_upgrade() -> u64 {
+		UpgradeDetection::set(&true);
+		0
+	}
 }
 
 construct_runtime! {
@@ -231,7 +273,7 @@ construct_runtime! {
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>},
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Call, Storage},
-		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event},
+		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 	}
 }
@@ -282,6 +324,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPallets,
+	UpgradeDetectionOnRuntimeUpgrade,
 >;
 /// The payload being signed in transactions.
 pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
@@ -290,6 +333,10 @@ decl_runtime_apis! {
 	pub trait GetLastTimestamp {
 		/// Returns the last timestamp of a runtime.
 		fn get_last_timestamp() -> u64;
+	}
+	pub trait GetUpgradeDetection {
+		/// Returns `true` if the runtime has been upgraded at least once.
+		fn has_upgraded() -> bool;
 	}
 }
 
@@ -332,10 +379,6 @@ impl_runtime_apis! {
 		fn check_inherents(block: Block, data: sp_inherents::InherentData) -> sp_inherents::CheckInherentsResult {
 			data.check_extrinsics(&block)
 		}
-
-		fn random_seed() -> <Block as BlockT>::Hash {
-			RandomnessCollectiveFlip::random_seed().0
-		}
 	}
 
 	impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
@@ -368,6 +411,18 @@ impl_runtime_apis! {
 	impl crate::GetLastTimestamp<Block> for Runtime {
 		fn get_last_timestamp() -> u64 {
 			Timestamp::now()
+		}
+	}
+
+	impl crate::GetUpgradeDetection<Block> for Runtime {
+		fn has_upgraded() -> bool {
+			UpgradeDetection::get()
+		}
+	}
+
+	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
+		fn collect_collation_info() -> cumulus_primitives_core::CollationInfo {
+			ParachainSystem::collect_collation_info()
 		}
 	}
 }

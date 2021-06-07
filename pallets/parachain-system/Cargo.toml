@@ -12,6 +12,7 @@ cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inh
 
 # Polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, features = [ "wasm-api" ], branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 # Substrate dependencies
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -46,6 +47,7 @@ sc-client-api = { git = "https://github.com/paritytech/substrate", default-featu
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-executor-common = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 cumulus-test-client = { path = "../../test/client" }
 env_logger = "0.7.1"
@@ -72,4 +74,5 @@ std = [
 	"cumulus-primitives-core/std",
 	"cumulus-primitives-parachain-inherent/std",
 	"environmental/std",
+	"xcm/std"
 ]

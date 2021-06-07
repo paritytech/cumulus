@@ -22,9 +22,9 @@ use sp_blockchain::Result as ClientResult;
 use sp_consensus::{
 	error::Error as ConsensusError,
 	import_queue::{BasicQueue, CacheKeyId, Verifier as VerifierT},
-	BlockImport, BlockImportParams, BlockOrigin, ForkChoiceStrategy,
+	BlockImport, BlockImportParams, BlockOrigin,
 };
-use sp_inherents::InherentDataProviders;
+use sp_inherents::{CreateInherentDataProviders, InherentDataProvider};
 use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, Header as HeaderT},
@@ -32,18 +32,30 @@ use sp_runtime::{
 };
 
 /// A verifier that just checks the inherents.
-struct Verifier<Client, Block> {
+pub struct Verifier<Client, Block, CIDP> {
 	client: Arc<Client>,
-	inherent_data_providers: InherentDataProviders,
+	create_inherent_data_providers: CIDP,
 	_marker: PhantomData<Block>,
 }
 
+impl<Client, Block, CIDP> Verifier<Client, Block, CIDP> {
+	/// Create a new instance.
+	pub fn new(client: Arc<Client>, create_inherent_data_providers: CIDP) -> Self {
+		Self {
+			client,
+			create_inherent_data_providers,
+			_marker: PhantomData,
+		}
+	}
+}
+
 #[async_trait::async_trait]
-impl<Client, Block> VerifierT<Block> for Verifier<Client, Block>
+impl<Client, Block, CIDP> VerifierT<Block> for Verifier<Client, Block, CIDP>
 where
 	Block: BlockT,
 	Client: ProvideRuntimeApi<Block> + Send + Sync,
 	<Client as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block>,
+	CIDP: CreateInherentDataProviders<Block, ()>,
 {
 	async fn verify(
 		&mut self,
@@ -59,10 +71,15 @@ where
 		String,
 	> {
 		if let Some(inner_body) = body.take() {
-			let inherent_data = self
-				.inherent_data_providers
+			let inherent_data_providers = self
+				.create_inherent_data_providers
+				.create_inherent_data_providers(*header.parent_hash(), ())
+				.await
+				.map_err(|e| e.to_string())?;
+
+			let inherent_data = inherent_data_providers
 				.create_inherent_data()
-				.map_err(|e| e.into_string())?;
+				.map_err(|e| format!("{:?}", e))?;
 
 			let block = Block::new(header.clone(), inner_body);
 
@@ -77,9 +94,15 @@ where
 				.map_err(|e| format!("{:?}", e))?;
 
 			if !inherent_res.ok() {
-				inherent_res.into_errors().try_for_each(|(i, e)| {
-					Err(self.inherent_data_providers.error_to_string(&i, &e))
-				})?;
+				for (i, e) in inherent_res.into_errors() {
+					match inherent_data_providers.try_handle_error(&i, &e).await {
+						Some(r) => r.map_err(|e| format!("{:?}", e))?,
+						None => Err(format!(
+							"Unhandled inherent error from `{}`.",
+							String::from_utf8_lossy(&i)
+						))?,
+					}
+				}
 			}
 
 			let (_, inner_body) = block.deconstruct();
@@ -91,11 +114,6 @@ where
 		block_import_params.body = body;
 		block_import_params.justifications = justifications;
 
-		// Best block is determined by the relay chain, or if we are doing the intial sync
-		// we import all blocks as new best.
-		block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(
-			origin == BlockOrigin::NetworkInitialSync,
-		));
 		block_import_params.post_hash = post_hash;
 
 		Ok((block_import_params, None))
@@ -103,10 +121,10 @@ where
 }
 
 /// Start an import queue for a Cumulus collator that does not uses any special authoring logic.
-pub fn import_queue<Client, Block: BlockT, I>(
+pub fn import_queue<Client, Block: BlockT, I, CIDP>(
 	client: Arc<Client>,
 	block_import: I,
-	inherent_data_providers: InherentDataProviders,
+	create_inherent_data_providers: CIDP,
 	spawner: &impl sp_core::traits::SpawnEssentialNamed,
 	registry: Option<&substrate_prometheus_endpoint::Registry>,
 ) -> ClientResult<BasicQueue<Block, I::Transaction>>
@@ -115,16 +133,15 @@ where
 	I::Transaction: Send,
 	Client: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	<Client as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block>,
+	CIDP: CreateInherentDataProviders<Block, ()> + 'static,
 {
-	let verifier = Verifier {
-		client,
-		inherent_data_providers,
-		_marker: PhantomData,
-	};
+	let verifier = Verifier::new(client, create_inherent_data_providers);
 
 	Ok(BasicQueue::new(
 		verifier,
-		Box::new(block_import),
+		Box::new(cumulus_client_consensus_common::ParachainBlockImport::new(
+			block_import,
+		)),
 		None,
 		spawner,
 		registry,
