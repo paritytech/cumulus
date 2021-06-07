@@ -19,7 +19,7 @@ use crate::{
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{
 		StatemineRuntimeExecutor, StatemintRuntimeExecutor, WestmintRuntimeExecutor, new_partial,
-		RococoParachainRuntimeExecutor, ShellRuntimeExecutor, Block,
+		RococoParachainRuntimeExecutor, ShellRuntimeExecutor, NimbusRuntimeExecutor, Block,
 	},
 };
 use codec::Encode;
@@ -51,7 +51,7 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 	fn is_shell(&self) -> bool {
 		self.id().starts_with("shell")
 	}
-	fn is_nimbus(&shell) -> bool {
+	fn is_nimbus(&self) -> bool {
 		self.id().starts_with("nimbus")
 	}
 	fn is_statemint(&self) -> bool {
@@ -70,7 +70,7 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 		<dyn sc_service::ChainSpec>::is_shell(self)
 	}
 	fn is_nimbus(&self) -> bool {
-		<dyn sc_service::ChainSpec::is_nimbus(self)
+		<dyn sc_service::ChainSpec>::is_nimbus(self)
 	}
 	fn is_statemint(&self) -> bool {
 		<dyn sc_service::ChainSpec>::is_statemint(self)
@@ -99,7 +99,7 @@ fn load_spec(
 			&include_bytes!("../res/track.json")[..],
 		)?),
 		"shell" => Box::new(chain_spec::get_shell_chain_spec(para_id)),
-		"nimbus" => Ok(Box::new(chain_spec::get_nimbus_chain_spec(para_id))),
+		"nimbus" => Box::new(chain_spec::get_nimbus_chain_spec(para_id)),
 		"statemint-dev" => Box::new(chain_spec::statemint_development_config(para_id)),
 		"statemint-local" => Box::new(chain_spec::statemint_local_config(para_id)),
 		"statemine-dev" => Box::new(chain_spec::statemine_development_config(para_id)),
@@ -182,11 +182,9 @@ impl SubstrateCli for Cli {
 			&westmint_runtime::VERSION
 		} else if chain_spec.is_shell() {
 			&shell_runtime::VERSION
-		}
-		else if use_nimbus_runtime(&**chain_spec){
-			&shell_runtime::VERSION
-		}
-		else {
+		} else if chain_spec.is_nimbus(){
+			&nimbus_runtime::VERSION
+		} else {
 			&rococo_parachain_runtime::VERSION
 		}
 	}

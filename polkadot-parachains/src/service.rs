@@ -77,7 +77,7 @@ native_executor_instance!(
 	nimbus_runtime::api::dispatch,
 	nimbus_runtime::native_version,
 	//TODO benchmark nimbus
-)
+);
 
 // Native Statemint executor instance.
 native_executor_instance!(
