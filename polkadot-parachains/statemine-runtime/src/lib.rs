@@ -148,12 +148,7 @@ parameter_types! {
 // Don't allow permission-less asset creation.
 pub struct BaseFilter;
 impl Filter<Call> for BaseFilter {
-	fn filter(c: &Call) -> bool {
-		!matches!(c,
-			Call::Assets(pallet_assets::Call::create(..)) |
-			Call::Uniques(pallet_uniques::Call::create(..))
-		)
-	}
+	fn filter(_c: &Call) -> bool { true }
 }
 
 // Configure FRAME pallets to include in runtime.
