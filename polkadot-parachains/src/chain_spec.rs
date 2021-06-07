@@ -77,8 +77,8 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 			testnet_genesis(
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				vec![
-					get_from_seed::<rococo_parachain_runtime::AuraId>("Alice"),
-					get_from_seed::<rococo_parachain_runtime::AuraId>("Bob"),
+					get_from_seed::<AuraId>("Alice"),
+					get_from_seed::<AuraId>("Bob"),
 				],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -201,7 +201,7 @@ pub fn staging_test_net(id: ParaId) -> ChainSpec {
 
 fn testnet_genesis(
 	root_key: rococo_parachain_runtime::AccountId,
-	initial_authorities: Vec<rococo_parachain_runtime::AuraId>,
+	initial_authorities: Vec<AuraId>,
 	endowed_accounts: Vec<rococo_parachain_runtime::AccountId>,
 	id: ParaId,
 ) -> rococo_parachain_runtime::GenesisConfig {
