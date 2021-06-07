@@ -162,8 +162,6 @@ pub mod pallet {
 				author.encode(),
 			));
 
-			//TODO maybe add a second digest with type `auth` so Apps still works for Moonbeam until Antoinne can fix it properly.
-
 			// Notify any other pallets that are listening (eg rewards) about the author
 			T::EventHandler::note_author(account);
 
