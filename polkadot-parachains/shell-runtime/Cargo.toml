@@ -26,10 +26,6 @@ sp-inherents = { git = "https://github.com/paritytech/substrate", default-featur
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Cumulus dependencies
 cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false }
@@ -43,7 +39,6 @@ polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-f
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 [dev-dependencies]
 hex = "0.4.3"
