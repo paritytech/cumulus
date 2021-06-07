@@ -1,16 +1,12 @@
 use sp_inherents::{InherentData, InherentIdentifier};
 use parity_scale_codec::Encode;
 
-//TODO Reconstruct this?
-// type InherentType = ...
-
 /// The InherentIdentifier for nimbus's author inherent
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"author__";
 
 /// A thing that an outer node could use to inject the inherent data.
 /// This should be used in simple uses of the author inherent (eg permissionless authoring)
-/// When using the full nimbus system, we are manually inserting the  inherent.
-// #[cfg(feature = "std")]
+/// When using the full nimbus system, we are manually inserting the inherent.
 pub struct InherentDataProvider<AuthorId>(pub AuthorId);
 
 #[cfg(feature = "std")]
