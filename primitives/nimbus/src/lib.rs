@@ -44,7 +44,7 @@ impl<T> EventHandler<T> for () {
 /// A mechanism for determining the current slot.
 /// For now we use u32 as the slot type everywhere. Let's see how long we can get away with that.
 pub trait SlotBeacon {
-    fn slot() -> u32;
+	fn slot() -> u32;
 }
 
 /// Trait to determine whether this author is eligible to author in this slot.
@@ -100,7 +100,6 @@ pub type NimbusId = nimbus_crypto::Public;
 /// A nimbus signature.
 pub type NimbusSignature = nimbus_crypto::Signature;
 
-//TODO do I need this?
 sp_application_crypto::with_pair! {
 	/// A nimbus keypair
 	pub type NimbusPair = nimbus_crypto::Pair;
@@ -108,25 +107,8 @@ sp_application_crypto::with_pair! {
 
 
 sp_api::decl_runtime_apis! {
-    /// The runtime api used to predict whether an author will be eligible in the given slot
-    pub trait AuthorFilterAPI<AuthorId: Codec> {
-        fn can_author(author: AuthorId, relay_parent: u32) -> bool;
-    }
-}
-
-/// Idea shelved.
-/// it is possible to make the runtime API give more details about why an author is ineligible.
-/// Specifically it could distinguish between failing the prechecks and the full checks. But in the
-/// who cares (except maybe for debugging). The author can't author, and there's no reason to call
-/// both checks.
-/// One possible reason is if the full check is considerably more expensive. Anyway, it's shelved
-/// for now.
-#[allow(dead_code)]
-enum AuthorCheckResult {
-    /// Author does not even pass the preliminaty checks.
-    FailsPreliminaryChecks,
-    /// Author passes preliminary checks, but not full checks.
-    FailsFullChekcs,
-    /// Author is eligible at this slot.
-    Eligible,
+	/// The runtime api used to predict whether an author will be eligible in the given slot
+	pub trait AuthorFilterAPI<AuthorId: Codec> {
+		fn can_author(author: AuthorId, relay_parent: u32) -> bool;
+	}
 }
