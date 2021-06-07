@@ -76,7 +76,11 @@
     "reporting_round": "RoundId",
     "latest_round": "RoundId",
     "first_valid_round": "Option<RoundId>",
-    "oracle_count": "u32"
+    "oracle_count": "u32",
+    "pruning_window": "RoundId",
+    "next_round_to_prune": "RoundId",
+    "debt": "Balance",
+    "max_debt": "Option<Balance>"
   },
   "FeedConfigOf": "FeedConfig",
   "Round": {
