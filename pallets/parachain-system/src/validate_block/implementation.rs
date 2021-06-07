@@ -16,8 +16,8 @@
 
 //! The actual implementation of the validate block functionality.
 
-use frame_support::traits::ExecuteBlock;
-use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT, NumberFor};
+use frame_support::traits::{misc::ExtrinsicCall, ExecuteBlock};
+use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT, NumberFor, Extrinsic};
 
 use sp_io::KillChildStorageResult;
 use sp_std::prelude::*;
@@ -47,7 +47,11 @@ fn with_externalities<F: FnOnce(&mut dyn Externalities) -> R, R>(f: F) -> R {
 #[doc(hidden)]
 pub fn validate_block<B: BlockT, E: ExecuteBlock<B>, PSC: crate::Config>(
 	params: ValidationParams,
-) -> ValidationResult {
+) -> ValidationResult
+where
+	B::Exrinsic: ExtrinsicCall,
+	<B::Extrinisc as Extrinsic>::Call: IsSubType<crate::Call>,
+{
 	let block_data =
 		cumulus_primitives_core::ParachainBlockData::<B>::decode(&mut &params.block_data.0[..])
 			.expect("Invalid parachain block data");
@@ -71,9 +75,6 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>, PSC: crate::Config>(
 		panic!("Witness data does not contain given storage root.");
 	}
 	let backend = sp_state_machine::TrieBackend::new(db, root);
-	let mut overlay = sp_state_machine::OverlayedChanges::default();
-	let mut cache = Default::default();
-	let mut ext = Ext::<B>::new(&mut overlay, &mut cache, &backend);
 
 	let _guard = (
 		// Replace storage calls with our own implementations
@@ -114,6 +115,18 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>, PSC: crate::Config>(
 		sp_io::offchain_index::host_set.replace_implementation(host_offchain_index_set),
 		sp_io::offchain_index::host_clear.replace_implementation(host_offchain_index_clear),
 	);
+
+	let validation_data = block
+		.extrinsics()
+		.filter_map(|e| e.is_sub_type())
+		.find_map(|c| match c.call() {
+			crate::Call::set_validation_data(validation_data) => Some(validation_data.clone()),
+			_ => None,
+		}).expect("Could not find `set_validation_data` inherent");
+
+	let mut overlay = sp_state_machine::OverlayedChanges::default();
+	let mut cache = Default::default();
+	let mut ext = Ext::<B>::new(&mut overlay, &mut cache, &backend);
 
 	set_and_run_with_externalities(&mut ext, || {
 		super::set_and_run_with_validation_params(params, || {
