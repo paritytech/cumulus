@@ -14,9 +14,8 @@
 // limitations under the License.
 
 //! Benchmarking setup for pallet-session
-
 #![cfg_attr(not(feature = "std"), no_std)]
-
+#![cfg(feature = "runtime-benchmarks")]
 use sp_std::prelude::*;
 use sp_std::vec;
 

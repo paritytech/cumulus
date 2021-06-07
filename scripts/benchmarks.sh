@@ -12,7 +12,7 @@ pallets=(
 	pallet_collator_selection
 	pallet_multisig
 	pallet_proxy
-    pallet_session_benchmarking
+    pallet_session
 	pallet_timestamp
 	pallet_utility
 )
