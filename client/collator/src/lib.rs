@@ -226,7 +226,7 @@ where
 		let (header, extrinsics) = candidate.block.deconstruct();
 
 		let compact_proof = match candidate.proof.into_compact_proof::<HashFor<Block>>(
-			header.state_root().clone(),
+			last_head.state_root().clone(),
 		) {
 			Ok(proof) => proof,
 			Err(e) => {
@@ -452,7 +452,7 @@ mod tests {
 
 		// Ensure that we did not include `:code` in the proof.
 		let db = block.storage_proof()
-			.to_storage_proof::<BlakeTwo256>(Some(block.header().state_root()))
+			.to_storage_proof::<BlakeTwo256>(Some(header.state_root()))
 			.unwrap().0
 			.into_memory_db();
 
