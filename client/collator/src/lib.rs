@@ -451,7 +451,10 @@ mod tests {
 		assert_eq!(1, *block.header().number());
 
 		// Ensure that we did not include `:code` in the proof.
-		let db = block.storage_proof().clone().into_memory_db();
+		let db = block.storage_proof()
+			.to_storage_proof::<BlakeTwo256>(Some(block.header().state_root()))
+			.unwrap().0
+			.into_memory_db();
 
 		let backend =
 			sp_state_machine::new_in_mem::<BlakeTwo256>().update_backend(*header.state_root(), db);
