@@ -1,6 +1,7 @@
 [workspace]
 members = [
 	"client/cli",
+	"client/consensus/aura",
 	"client/consensus/common",
 	"client/consensus/relay-chain",
 	"client/consensus/nimbus",
