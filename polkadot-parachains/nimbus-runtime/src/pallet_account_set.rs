@@ -14,15 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Small pallet responsible storing a set of accounts. In principal the uses are endless, but in
-//! practice this is used as a minimal solution where staking would be used in practice.
+//! Small pallet responsible for storing a set of accounts, and their associated session keys.
+//! This is a minimal solution where staking would be used in practice.
 //! The accounts are set and genesis and never change.
 //!
 //! The Substrate ecosystem has a wide variety of real-world solutions and examples of what this
-//! pallet could be replaced with. (IOU Links)
-//! Gautam's POA pallet
-//! Parity's pallet staking
-//! Moonbeam's Pallet Stake
+//! pallet could be replaced with.
+//! Gautam's validator set pallet - https://github.com/paritytech/substrate/tree/master/frame/staking/
+//! Parity's pallet staking - https://github.com/paritytech/substrate/tree/master/frame/staking/
+//! Moonbeam's Parachain Staking - https://github.com/PureStake/moonbeam/tree/master/pallets/parachain-staking
 //! Recipe for AccountSet, VecSet, and MapSet
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -37,7 +37,6 @@ pub mod pallet {
 	use log::warn;
 	use frame_support::pallet_prelude::*;
 	use sp_std::vec::Vec;
-	use frame_system::pallet_prelude::*;
 	use nimbus_primitives::{AccountLookup, CanAuthor};
 
 	/// The Account Set pallet
@@ -50,14 +49,6 @@ pub mod pallet {
 		/// The identifier type for an author.
 		type AuthorId: Member + Parameter + MaybeSerializeDeserialize;
 	}
-
-	// No hooks
-	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
-
-	// No calls
-	#[pallet::call]
-	impl<T: Config> Pallet<T> {}
 
 	/// The set of accounts that is stored in this pallet.
 	#[pallet::storage]

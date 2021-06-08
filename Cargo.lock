@@ -5030,7 +5030,6 @@ dependencies = [
  "hex-literal 0.3.1",
  "log",
  "nimbus-primitives",
- "pallet-account-set",
  "pallet-assets",
  "pallet-author-inherent",
  "pallet-author-slot-filter",
@@ -5230,22 +5229,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ff55baddef9e4ad00f88b6c743a2a8062d4c6ade126c2a528644b8e444d52ce"
 dependencies = [
  "stable_deref_trait",
-]
-
-[[package]]
-name = "pallet-account-set"
-version = "0.1.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "log",
- "nimbus-primitives",
- "pallet-author-inherent",
- "parity-scale-codec",
- "serde",
- "sp-core",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]

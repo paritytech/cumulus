@@ -15,7 +15,6 @@ members = [
 	"pallets/collator-selection",
 	"pallets/dmp-queue",
 	"pallets/parachain-system",
-	"pallets/account-set",
 	"pallets/xcm",
 	"pallets/xcmp-queue",
 	"primitives/core",

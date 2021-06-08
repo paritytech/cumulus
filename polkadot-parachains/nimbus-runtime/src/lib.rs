@@ -68,6 +68,8 @@ use xcm_executor::{Config, XcmExecutor};
 use pallet_xcm::{XcmPassthrough, EnsureXcm, IsMajorityOfBody};
 use xcm::v0::Xcm;
 
+mod pallet_account_set;
+
 pub type SessionHandlers = ();
 
 impl_opaque_keys! {
