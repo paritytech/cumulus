@@ -1,7 +1,11 @@
 version: '3'
 
 volumes:
-  konomi-rococo: {}
+  konomi-relay-1: {}
+  konomi-relay-2: {}
+  konomi-collator-1: {}
+  konomi-collator-2: {}
+  konomi-parachain: {}
 
 services:
   nginx:
@@ -14,11 +18,41 @@ services:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
 
-  konomi-rococo:
-    image: asia.gcr.io/dev-env-312104/konomi-rococo:v0.0.1
+  konomi-relay-1:
+    image: asia.gcr.io/dev-env-312104/konomi-relay:v0.0.1
     volumes:
-      - konomi-rococo:/tmp/konomi-rococo
-    command: "--base-path /tmp/konomi-rococo --parachain-id 18403 --port 40337 --ws-port 9944 --ws-external --rpc-cors all --rpc-port 9929 -- --execution wasm --chain rococo --port 30337"
+      - konomi-relay-1:/tmp/konomi-rococo
+    command: "--base-path /tmp/konomi-rococo --ws-external --chain rococo-local-cfde.json --rpc-cors all --alice"
 
-  node-helper:
-    image: asia.gcr.io/dev-env-312104/node-helper:v0.0.1
+  konomi-relay-2:
+    image: asia.gcr.io/dev-env-312104/konomi-relay:v0.0.1
+    volumes:
+      - konomi-relay-2:/tmp/konomi-rococo
+    command: "--base-path /tmp/konomi-rococo --ws-external --chain rococo-local-cfde.json --rpc-cors all --bob"
+
+  konomi-collator-1:
+    image: asia.gcr.io/dev-env-312104/konomi-collator:v0.0.1
+    depends_on:
+      - konomi-relay-1
+      - konomi-relay-2
+    volumes:
+      - konomi-collator-1:/tmp/konomi-rococo
+    command: "--base-path /tmp/konomi-rococo --alice --force-authoring --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain ./rococo-local-cfde.json"
+
+  konomi-collator-2:
+    image: asia.gcr.io/dev-env-312104/konomi-collator:v0.0.1
+    depends_on:
+      - konomi-relay-1
+      - konomi-relay-2
+    volumes:
+      - konomi-collator-2:/tmp/konomi-rococo
+    command: "--base-path /tmp/konomi-rococo --bob --force-authoring --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain ./rococo-local-cfde.json"
+
+  konomi-parachain:
+    image: asia.gcr.io/dev-env-312104/konomi-collator:v0.0.1
+    depends_on:
+      - konomi-relay-1
+      - konomi-relay-2
+    volumes:
+      - konomi-parachain:/tmp/konomi-rococo
+    command: "--base-path /tmp/konomi-rococo --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain ./rococo-local-cfde.json"

@@ -2,33 +2,30 @@
 
 A substrate based node for DeFi innovation.
 
-Currently there is a preliminary uniswap like AMM with functionalities of swap, add pool, add liquidity and remove liquidity. An auxiliary currency functionality is also provided to enable the AMM.
-
 ## Main Processes
 ### Supply Asset
-When user supplies asset, if this asset is one of the allowed collateral, the user needs to choose if this asset is going to be used as collateral.
+The user can choose to supply the certain currency to the allowed pool.
 
 In Konomi, Internally, the system would update user supply interest, pool supply interest. To calculate the interest, there are many models that one can use. The current model is as follows:
 
-When user supplies certain amount, the interest will only start calculation the next day, i.e. at UTC 00:00:00.  The interest rate is determined at time of deposit with the following equation:
-
+When user supplies certain amount, the interest rate is determined at time of deposit with the following equation:
 ```
-UtilizationRatio = TotalBorrow / TotalSupply+TotalBorrow
+UtilizationRatio = TotalBorrow / TotalSupply
 SupplyingInterestRate = BorrowingInterestRate * UtilizationRatio
 ```
-
-The choice of InitialInterestRate, UtilizationFactor are determined by the protocol.
+You can see that the `SupplyingInterestRate` is derived from `BorrowingInterestRate`. This is because if there are no one paying the interest from borrowing, then there is no interest for supplying. The derivation of `BorrowingInterestRate` is mentioned below.
 
 To ensure the overall safety of the system, if the protocol deemed certain transaction invalid, it would reject the transaction. The system would reject the if the amount is more than the amount owned by the user.
 
 Once all the checks are passed, the protocol would transfer the asset amount from user to the pool.
 
-To calculate the user interest at the current time, we are performing as follows.
-
+To calculate the user interest at the current time, conceptually, we are performing as follows:
 ```json
-# At the current time, the interest would be
-Interest = InterestRate * TotalUserSupply * (CurrentTime - LastSupplyTime) / 360
+# At the current block, the interest would be
+Interest = InterestRate * TotalUserSupply * (CurrentBlockNumber - LastUpdatedBlockNumber)
 ```
+The interest is basically the amount of interest that has been accumulated since the last update time. `InterestRate` is the current interest rate mentioned above. Please note that, the interest rates are converted to per block.
+
 ### Withdraw Assets
 To withdraw assets, the system would perform several checks to ensure the validity of the attempted transaction.
 
@@ -36,9 +33,9 @@ If the asset withdrawn is not one of the account's collateral, the amount withdr
 
 If the asset is one of the account's collateral, the system would ensure liquidation process would not be triggered.
 
-Liquidation would be triggered if the total asset supply in USD is fewer than a certain threshold of the total borrowed in USD. The detailed process is described as followed:
+Liquidation would be triggered if the total collateral valuation in USD is fewer than a certain threshold of the total borrowed in USD. The detailed process is described as followed:
 
-where in the above, `Borrowedi` refers to amount borrowed with interest for each asset, `ExchangeRatei` is the exchange rate of the i-th asset.
+where in the above, `Borrowedi` refers to amount borrowed with interest for each asset, `ExchangeRatei` is the exchange rate of the i-th asset to USD. Equivalently, we can refer to is as the `price` of the asset. Here we use the convention of `ExchangeRate`.
 
 ![equations/withdraw_0](equations/withdraw_0.png)
 
@@ -64,10 +61,13 @@ When user supplies certain amount, the interest will start as of the current day
 UtilizationRatio = TotalBorrow / TotalSupply
 BowrrowingInterestRate = InitialInterestRate + UtilizationRatio * UtilizationFactor
 
-Interest = InterestRate * TotalUserBorrow * (CurrentTime - LastBorrowTime) / 360
+Interest = InterestRate * TotalUserBorrow * (CurrentBlockNumber - LastUpdatedBlockNumber)
 ```
+Here, `InitialInterestRate` is the starting interest rate when there are no borrow from the pool. `BowrrowingInterestRate` referes to the current time borrow interest rate. `UtilizationFactor` is a constant multiplier for the utilization ratio. 
 
-The choice of InitialInterestRate, UtilizationRatio are determined by the protocol. The current values are 2.5%, 20%.
+The choice of `InitialInterestRate`, `UtilizationFactor` are described in section 3 of https://medium.com/konomi/in-depth-analysis-of-konomi-collateral-and-liquidation-model-e81fb885f8bb.
+
+The value of the parameters can be updated during runtime, but only admin is allowed to perform the updates. You can refer to the pallet `FloatingRateLend` for the admin related operations.
 
 To calculate the amount need for collateral is:
 
@@ -157,6 +157,8 @@ cargo build --release
 
 Start the collators
 ```bash
+cargo update -p jsonrpsee-utils --precise 0.2.0-alpha.6 && cargo update -p jsonrpsee-types --precise 0.2.0-alpha.6
+
 # Collator1
 ./target/release/polkadot-collator --collator --tmp --alice --force-authoring --parachain-id 18403 --port 40335 --ws-port 9946 --rpc-methods Unsafe --ws-external --rpc-cors all -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30335
 

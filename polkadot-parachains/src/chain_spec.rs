@@ -191,7 +191,7 @@ fn testnet_genesis(
 		},
 		pallet_chainlink_feed: rococo_parachain_runtime::ChainlinkFeedConfig {
 			pallet_admin: Some(root_key),
-			feed_creators: endowed_accounts,
+			feed_creators: endowed_accounts
 		},
 	}
 }

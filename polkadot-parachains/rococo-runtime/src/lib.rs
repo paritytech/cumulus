@@ -57,7 +57,7 @@ use xcm_builder::{
 	AccountId32Aliases, CurrencyAdapter, LocationInverter, ParentIsDefault, RelayChainAsNative,
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SovereignSignedViaLocation, EnsureXcmOrigin, AllowUnpaidExecutionFrom, ParentAsSuperuser,
-	AllowTopLevelPaidExecutionFrom, TakeWeightCredit, FixedWeightBounds, IsConcrete, NativeAsset,
+	AllowTopLevelPaidExecutionFrom, TakeWeightCredit, FixedWeightBounds,
 	UsingComponents, SignedToAccountId32,
 };
 use xcm_executor::{Config, XcmExecutor};
@@ -65,6 +65,7 @@ use pallet_xcm::{XcmPassthrough, EnsureXcm, IsMajorityOfBody};
 use xcm::v0::Xcm;
 
 // Konomi required imports
+use cumulus_primitives_core::ParaId;
 use polkadot_parachain_primitives::*;
 pub use pallet_currencies;
 pub use pallet_floating_rate_lend;
@@ -83,6 +84,13 @@ use sp_runtime::{traits::{Convert, AccountIdConversion, Zero}};
 use frame_support::{PalletId};
 use orml_traits::GetByKey;
 use sp_std::convert::TryInto;
+use sp_runtime::traits::{CheckedConversion};
+use sp_core::sp_std::convert::TryFrom;
+use frame_support::traits::{Get, Contains};
+use pallet_xcm_support::{XCMCurrencyAdapter};
+use pallet_xcm_token;
+use xcm_executor::traits::{MatchesFungible, Convert as XCMConvert, ShouldExecute, FilterAssetLocation};
+use sp_std::borrow::Borrow;
 // End of Konomi imports
 
 pub type SessionHandlers = ();
@@ -293,12 +301,14 @@ pub type LocationToAccountId = (
 	AccountId32Aliases<RococoNetwork, AccountId>,
 );
 
+
 /// Means for transacting assets on this chain.
 pub type LocalAssetTransactor = CurrencyAdapter<
 	// Use this currency:
-	Balances,
+	Currencies,
 	// Use this currency when it is a fungible asset matching the given location or name:
-	IsConcrete<RocLocation>,
+	// IsConcrete<RocLocation>,
+	KonomiIsConcrete,
 	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -348,50 +358,9 @@ pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
 	AllowUnpaidExecutionFrom<ParentOrParentsUnitPlurality>,
+	KonomiAllowedExecution,
 	// ^^^ Parent & its unit plurality gets free execution
 );
-
-// pub struct CurrencyIdConvert;
-//
-// impl Convert<CurrencyId, Option<MultiLocation>> for CurrencyIdConvert {
-// 	fn convert(id: CurrencyId) -> Option<MultiLocation> {
-// 		match id {
-// 			0 => Some(X1(Parent)),
-// 			// Token(ACA) | Token(AUSD) | Token(LDOT) | Token(RENBTC) => Some(native_currency_location(id)),
-// 			_ => None,
-// 		}
-// 	}
-// }
-//
-// impl Convert<MultiLocation, Option<CurrencyId>> for CurrencyIdConvert {
-// 	fn convert(location: MultiLocation) -> Option<CurrencyId> {
-// 		match location {
-// 			X1(_Parent) => Some(0),
-// 			X3(_Parent, Parachain { id }, GeneralKey(key)) if ParaId::from(id) == ParachainInfo::get() => {
-// 				// decode the general key
-// 				if let Ok(currency_id) = CurrencyId::decode(&mut &key[..]) {
-// 					// check if `currency_id` is cross-chain asset
-// 					match currency_id {
-// 						0 => Some(currency_id),
-// 						_ => None,
-// 					}
-// 				} else {
-// 					None
-// 				}
-// 			}
-// 			_ => None,
-// 		}
-// 	}
-// }
-// impl Convert<MultiAsset, Option<CurrencyId>> for CurrencyIdConvert {
-// 	fn convert(asset: MultiAsset) -> Option<CurrencyId> {
-// 		if let MultiAsset::ConcreteFungible { id, amount: _ } = asset {
-// 			Self::convert(id)
-// 		} else {
-// 			None
-// 		}
-// 	}
-// }
 
 
 pub struct XcmConfig;
@@ -399,14 +368,14 @@ impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// How to withdraw and deposit an asset.
-	type AssetTransactor = LocalAssetTransactor;
+	type AssetTransactor = XCMAssetTransactor; // LocalAssetTransactor;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	type IsReserve = NativeAsset;
-	type IsTeleporter = NativeAsset;	// <- should be enough to allow teleportation of ROC
+	type IsReserve = KonomiNativeAsset;
+	type IsTeleporter = KonomiNativeAsset;	// <- should be enough to allow teleportation of ROC
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
-	type Trader = UsingComponents<IdentityFee<Balance>, RocLocation, AccountId, Balances, ()>;
+	type Trader = UsingComponents<IdentityFee<Balance>, RocLocation, AccountId, Currencies, ()>;
 	type ResponseHandler = ();	// Don't handle responses for now.
 }
 
@@ -493,16 +462,155 @@ impl pallet_aura::Config for Runtime {
 }
 
 // Konomi impls
+pub struct KonomiNativeAsset;
+impl FilterAssetLocation for KonomiNativeAsset {
+	fn filter_asset_location(_asset: &MultiAsset, origin: &MultiLocation) -> bool {
+		match origin {
+			X2(Parent, Parachain(id)) => {
+				match *id {
+					18403 => true,
+					_ => false
+				}
+			},
+			_ => false
+		}
+	}
+}
+
+pub struct KonomiAllowedExecution;
+impl ShouldExecute for KonomiAllowedExecution {
+	fn should_execute<Call>(
+		origin: &MultiLocation,
+		_top_level: bool,
+		_message: &Xcm<Call>,
+		_shallow_weight: Weight,
+		_weight_credit: &mut Weight,
+	) -> Result<(), ()> {
+		match origin {
+			X2(Parent, Parachain(id)) => {
+				match *id {
+					18403 => Ok(()),
+					_ => Err(())
+				}
+			},
+			_ => Err(())
+		}
+	}
+}
+
+pub struct AccountIdConvert;
+impl XCMConvert<MultiLocation, AccountId> for AccountIdConvert {
+	fn convert_ref(a: impl Borrow<MultiLocation>) -> Result<AccountId, ()> {
+		match a.borrow() {
+			// TODO: should we keep X3?
+			X3(_, Parachain(id), AccountId32{ network: _, id: account}) => {
+				// TODO: separate into incoming and outgoing
+				if ParaId::from(*id) != ParachainInfo::get() && *id != 18403 { return Err(()); }
+				Ok(AccountId::from(*account))
+			},
+			X1(AccountId32{ network: _, id: account}) => {
+				Ok(AccountId::from(*account))
+			}
+			_ => Err(())
+		}
+	}
+}
+
+/*pub type XCMAssetTransactor = XCMBalanceAdapter<
+	Balances,
+	KonomiIsConcrete,
+	AccountId,
+	AccountIdConvert,
+	CurrencyId,
+	MultiAssetToCurrencyIdConvert
+>;*/
+
+pub type XCMAssetTransactor = XCMCurrencyAdapter<
+	Currencies,
+	KonomiIsConcrete,
+	AccountId,
+	AccountIdConvert,
+	CurrencyId,
+	MultiAssetToCurrencyIdConvert
+>;
+
+pub struct MultiLocationToCurrencyIdConvert;
+impl XCMConvert<MultiLocation, CurrencyId> for MultiLocationToCurrencyIdConvert {
+	fn convert_ref(a: impl Borrow<MultiLocation>) -> Result<CurrencyId, ()> {
+		match a.borrow() {
+			X1(_) => Ok(DOT),
+			X2(Parent, Parachain(id)) if ParaId::from(*id) == ParachainInfo::get() => Ok(KONO),
+			X3(_, Parachain(id), GeneralIndex { id: key}) => {
+				// TODO: this is for testing only. Separate into outgoing and incoming CurrencyConvertor
+				if ParaId::from(*id) != ParachainInfo::get() && *id == 18401 {
+					return Err(());
+				}
+				// decode the general key
+				if let Some(currency_id) = CurrencyId::from_num(*key as u8) {
+					match currency_id {
+						DOT | KONO | BTC | ETH => Ok(currency_id),
+						_ => Err(())
+					}
+				} else {
+					Err(())
+				}
+			}
+			_ => Err(())
+		}
+	}
+}
+
+pub struct MultiAssetToCurrencyIdConvert;
+impl XCMConvert<MultiAsset, CurrencyId> for MultiAssetToCurrencyIdConvert {
+	fn convert_ref(a: impl Borrow<MultiAsset>) -> Result<CurrencyId, ()> {
+		match a.borrow() {
+			MultiAsset::ConcreteFungible { id, amount: _} => {
+				MultiLocationToCurrencyIdConvert::convert_ref(id)
+			},
+			_ => Err(()),
+		}
+	}
+}
+
+/// A `MatchesFungible` implementation. It matches concrete fungible assets
+/// whose `id` could be converted into `CurrencyId`.
+pub struct KonomiIsConcrete;
+impl<Amount> MatchesFungible<Amount> for KonomiIsConcrete
+	where
+		Amount: TryFrom<u128>,
+{
+	fn matches_fungible(a: &MultiAsset) -> Option<Amount> {
+		if let MultiAsset::ConcreteFungible { id, amount } = a {
+			if MultiLocationToCurrencyIdConvert::convert_ref(id).is_ok() {
+				return CheckedConversion::checked_from(*amount);
+			}
+		}
+		None
+	}
+}
+
 // Local Dependencies
 parameter_types! {
 	pub const GetBasicCurrencyId: CurrencyId = KONO;
 }
 
+pub struct IsCrossCurrencyId;
+impl Contains<CurrencyId> for IsCrossCurrencyId {
+	fn contains(t: &CurrencyId) -> bool {
+		match t {
+			CurrencyId::Cross(_) => true,
+			_ => false
+		}
+	}
+}
+
 impl pallet_currencies::Config for Runtime {
 	type Event = Event;
 	type GetBasicCurrencyId = GetBasicCurrencyId;
+	type IsCrossCurrencyId = IsCrossCurrencyId;
 	type BasicCurrency = BasicCurrencyAdapter<Balances>;
 	type MultiCurrency = MultiCurrencyAdapter<Tokens>;
+	type CrossCurrency = CrossTokens;
 }
 
 pub struct ExistentialDeposits {}
@@ -600,6 +708,56 @@ impl pallet_chainlink_oracle::Config for Runtime {
 	type Oracle = ChainlinkFeed;
 	type CurrencyFeedConvertor = CurrencyToFeedIdConverter;
 }
+
+pub struct XCMAssetConverter;
+impl Convert<(CurrencyId, Balance), Option<MultiAsset>> for XCMAssetConverter {
+	fn convert(a: (CurrencyId, u128)) -> Option<MultiAsset> {
+		let id = match a.0 {
+			DOT => Some(X3(Parent, Parachain(ParachainInfo::get().into()), GeneralIndex { id: NATIVE_DOT_INDEX as u128 })),
+			_ => None
+		};
+		if id.is_none() { return None; }
+		Some(MultiAsset::ConcreteFungible{id: id.unwrap(), amount: a.1})
+	}
+}
+
+pub struct XCMSelfLocConverter;
+impl Convert<AccountId, MultiLocation> for XCMSelfLocConverter {
+	fn convert(a: AccountId) -> MultiLocation {
+		X3(Parent, Parachain(ParachainInfo::get().into()), AccountId32 { network: NetworkId::Polkadot, id: a.into() })
+	}
+}
+
+pub struct XCMAccountConverter;
+impl Convert<(ParachainId, AccountId), Option<MultiLocation>> for XCMAccountConverter {
+	fn convert(a: (ParachainId, AccountId)) -> Option<MultiLocation> {
+		match a.0 {
+			ParachainId::KonomiTestChain => Some(X1(AccountId32 { network: NetworkId::Polkadot, id: a.1.into() })),
+			_ => None
+		}
+	}
+}
+
+pub struct XCMDestinationConverter;
+impl Convert<ParachainId, Option<MultiLocation>> for XCMDestinationConverter {
+	fn convert(a: ParachainId) -> Option<MultiLocation> {
+		match a {
+			// TODO: this is just for testing, here we have the testing statemint chain, 18401
+			ParachainId::KonomiTestChain => Some(X2(Parent, Parachain(18401))),
+			_ => None
+		}
+	}
+}
+
+impl pallet_xcm_token::Config for Runtime {
+	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
+	type XCMAssetConverter = XCMAssetConverter;
+	type XCMSelfLocConverter = XCMSelfLocConverter;
+	type XCMAccountConverter = XCMAccountConverter;
+	type XCMDestinationConverter = XCMDestinationConverter;
+	type MultiCurrency = Currencies;
+}
 // End of konomi impls
 
 construct_runtime! {
@@ -623,10 +781,11 @@ construct_runtime! {
 		Aura: pallet_aura::{Pallet, Config<T>},
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Config},
 
+		CrossTokens: pallet_xcm_token::{Pallet, Storage},
 		Tokens: orml_tokens::{Pallet, Storage, Config<T>, Event<T>} = 11,
 		Currencies: pallet_currencies::{Pallet, Call, Storage, Event<T>},
 		Oracle: pallet_chainlink_oracle::{Pallet, Call, Storage},
-		ChainlinkFeed: pallet_chainlink_feed::{Pallet, Call, Storage, Config<T>, Event<T>},
+		ChainlinkFeed: pallet_chainlink_feed::{Pallet, Call, Storage, Config<T>, Event<T>} = 55,
 		FloatingRateLend: pallet_floating_rate_lend::{Pallet, Call, Storage, Event<T>} = 15,
 
 		// XCM helpers.

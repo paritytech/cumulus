@@ -29,6 +29,8 @@ pub enum CustomError {
     InvalidParameters,
     /// Inconsistent state error
     InconsistentState,
+    /// Account id does not exist
+    AccountIdNotExists
 }
 
 impl From<CustomError> for DispatchError {
@@ -39,6 +41,7 @@ impl From<CustomError> for DispatchError {
             CustomError::InvalidParameters => DispatchError::Other { 0: "Invalid Parameters Passed" },
             CustomError::InconsistentState => DispatchError::Other { 0: "Inconsistent state" },
             CustomError::PoolNotExist(_) => DispatchError::Other { 0: "Pool does not exist" },
+            CustomError::AccountIdNotExists => DispatchError::Other { 0: "Accound id does not exist" },
         }
     }
 }

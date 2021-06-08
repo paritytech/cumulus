@@ -90,12 +90,6 @@ pub enum CurrencyId {
 }
 
 impl CurrencyId {
-    pub fn new(num: u64, id: u8, _name: Vec<u8>, _address: Vec<u8>) -> CurrencyId {
-        match num {
-            1 => CurrencyId::Native { 0: Native {id}, },
-            _ => CurrencyId::Basic{ 0: Basic {id} },
-        }
-    }
     pub fn is_native_currency(&self) -> bool {
         matches!(self, CurrencyId::Native {..})
     }
@@ -107,12 +101,46 @@ impl CurrencyId {
     pub fn is_basic_currency(&self) -> bool {
         matches!(self, CurrencyId::Basic {..})
     }
+
+    // TODO: refactor this part, this is for testing
+    pub fn decode(bits: Vec<u8>) -> Option<Self> {
+        match bits[0] {
+            48 => Some(CurrencyId::Basic(Basic { id: bits[1]-48})),
+            49 => Some(CurrencyId::Native(Native { id: bits[1]-48})),
+            _ => None
+        }
+    }
+
+    // TODO: refactor this part, this is for testing
+    pub fn from_num(num: u8) -> Option<Self> {
+        match num {
+            0 => Some(CurrencyId::Basic(Basic { id: 0})),
+            NATIVE_DOT_INDEX => Some(DOT),
+            2 => Some(CurrencyId::Native(Native { id: 1})),
+            3 => Some(CurrencyId::Native(Native { id: 2})),
+            CROSS_DOT_INDEX => Some(CROSS_DOT),
+            _ => None
+        }
+    }
 }
 
 pub const KONO: CurrencyId = CurrencyId::Basic(Basic { id: 0});
 pub const DOT: CurrencyId = CurrencyId::Native(Native { id: 0});
+pub const NATIVE_DOT_INDEX: u8 = 1;
 pub const ETH: CurrencyId = CurrencyId::Native(Native { id: 1});
 pub const BTC: CurrencyId = CurrencyId::Native(Native { id: 2});
 
+pub const CROSS_DOT: CurrencyId = CurrencyId::Cross(Cross { id: 0});
+pub const CROSS_DOT_INDEX: u8 = 4;
+
 // TODO: maybe each currency will have their own decimal
 pub const BALANCE_ONE: u128 = u128::pow(10, 12);
+
+#[derive(Encode, Decode, Eq, PartialEq, Clone, Copy, RuntimeDebug, PartialOrd, Ord)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum ParachainId {
+    /// The statemint chain
+    Statemint,
+    /// The konomi test chain
+    KonomiTestChain
+}

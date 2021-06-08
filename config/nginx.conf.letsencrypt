@@ -1,6 +1,6 @@
 server {
     listen 80;
-    server_name rococo.konomi.tech;
+    server_name parachain.konomi.tech;
     location / {
         return 301 https://$host$request_uri; 
     }
