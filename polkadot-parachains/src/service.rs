@@ -610,7 +610,7 @@ pub fn nimbus_build_import_queue(
 > {
 	nimbus_consensus::import_queue(
 		client.clone(),
-		client, //Huh, I wonder if we need a nimbus_block_import. What would it do?
+		client,
 		move |_, _| async move {
 			let time = sp_timestamp::InherentDataProvider::from_system_time();
 
