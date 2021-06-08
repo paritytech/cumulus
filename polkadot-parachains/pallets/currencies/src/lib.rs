@@ -245,7 +245,6 @@ pub mod pallet {
             match currency_id {
                 id if id == T::GetBasicCurrencyId::get() => T::BasicCurrency::transfer(from, to, amount, ExistenceRequirement::AllowDeath)?,
                 _ => {
-                    let holding = T::MultiCurrency::free_balance(currency_id, from);
                     T::MultiCurrency::transfer(currency_id, from, to, amount)?
                 }
             }
