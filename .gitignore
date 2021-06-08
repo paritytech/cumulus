@@ -6,5 +6,7 @@
 original
 open-runtime-module-library
 
+docker/env/*
+!docker/env/sample.env
 genesis-*
 sample_command.txt

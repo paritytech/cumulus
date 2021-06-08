@@ -8,51 +8,65 @@ volumes:
   konomi-parachain: {}
 
 services:
-  nginx:
-    image: nginx:1.15-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./config/nginx.conf.multi:/etc/nginx/conf.d/default.conf
-      - ./data/certbot/conf:/etc/letsencrypt
-      - ./data/certbot/www:/var/www/certbot
+#  nginx:
+#    image: nginx:1.15-alpine
+#    ports:
+#      - "80:80"
+#      - "443:443"
+#    volumes:
+#      - ./config/nginx.conf.multi:/etc/nginx/conf.d/default.conf
+#      - ./data/certbot/conf:/etc/letsencrypt
+#      - ./data/certbot/www:/var/www/certbot
 
   konomi-relay-1:
-    image: asia.gcr.io/dev-env-312104/konomi-relay:v0.0.1
+    image: konominetwork/parachain:v0.0.1
     volumes:
       - konomi-relay-1:/tmp/konomi-rococo
-    command: "--base-path /tmp/konomi-rococo --ws-external --chain rococo-local-cfde.json --rpc-cors all --alice"
+    command: "polkadot --base-path /tmp/konomi-rococo --ws-external --chain rococo-single-custom.json --rpc-cors all --alice"
 
   konomi-relay-2:
-    image: asia.gcr.io/dev-env-312104/konomi-relay:v0.0.1
+    image: konominetwork/parachain:v0.0.1
     volumes:
       - konomi-relay-2:/tmp/konomi-rococo
-    command: "--base-path /tmp/konomi-rococo --ws-external --chain rococo-local-cfde.json --rpc-cors all --bob"
+    command: "polkadot --base-path /tmp/konomi-rococo --ws-external --chain rococo-single-custom.json --rpc-cors all --bob"
 
   konomi-collator-1:
-    image: asia.gcr.io/dev-env-312104/konomi-collator:v0.0.1
+    image: konominetwork/parachain:v0.0.1
     depends_on:
       - konomi-relay-1
       - konomi-relay-2
     volumes:
       - konomi-collator-1:/tmp/konomi-rococo
-    command: "--base-path /tmp/konomi-rococo --alice --force-authoring --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain ./rococo-local-cfde.json"
+    command: "polkadot-collator --base-path /tmp/konomi-rococo --alice --force-authoring --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain ./rococo-single-custom.json"
 
   konomi-collator-2:
-    image: asia.gcr.io/dev-env-312104/konomi-collator:v0.0.1
+    image: konominetwork/parachain:v0.0.1
     depends_on:
       - konomi-relay-1
       - konomi-relay-2
     volumes:
       - konomi-collator-2:/tmp/konomi-rococo
-    command: "--base-path /tmp/konomi-rococo --bob --force-authoring --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain ./rococo-local-cfde.json"
+    command: "polkadot-collator --base-path /tmp/konomi-rococo --bob --force-authoring --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain ./rococo-single-custom.json"
 
   konomi-parachain:
-    image: asia.gcr.io/dev-env-312104/konomi-collator:v0.0.1
+    image: konominetwork/parachain:v0.0.1
     depends_on:
       - konomi-relay-1
       - konomi-relay-2
     volumes:
       - konomi-parachain:/tmp/konomi-rococo
-    command: "--base-path /tmp/konomi-rococo --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain ./rococo-local-cfde.json"
+    command: "polkadot-collator --base-path /tmp/konomi-rococo --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain ./rococo-single-custom.json"
+
+  dot-feed:
+    image: konominetwork/oracle-worker:v0.0.1
+    depends_on:
+      - konomi-parachain
+    env_file:
+      - ./docker/env/dot-feed
+
+  eth-feed:
+    image: konominetwork/oracle-worker:v0.0.1
+    depends_on:
+      - konomi-parachain
+    env_file:
+      - ./docker/env/eth-feed
