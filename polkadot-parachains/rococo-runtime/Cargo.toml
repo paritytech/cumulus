@@ -55,8 +55,8 @@ pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features 
 
 # -------------- Konomi ------------- #
 # orml
-orml-traits = { git = 'https://github.com/open-web3-stack/open-runtime-module-library', default-features = false, version = '0.4.1-dev' }
-orml-tokens = { git = 'https://github.com/open-web3-stack/open-runtime-module-library', default-features = false, version = '0.4.1-dev' }
+orml-traits = { path = "../../open-runtime-module-library/traits", default-features = false, version = '0.4.1-dev' }
+orml-tokens = { path = "../../open-runtime-module-library/tokens", default-features = false, version = '0.4.1-dev' }
 
 # Chainlink
 pallet-chainlink-feed = { path = "../../chainlink-polkadot/pallet-chainlink-feed", default-features = false }

@@ -78,6 +78,8 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 				],
 				vec![
 					hex!["e2b2d3e7c3931a4562feaa27c22e858dea0bf2828bbab28c0b799f61eb0b9462"].into(),
+					// This is for the oracle
+					hex!["2463e932d63a263395ac6730abd3a22049100f25a7cf7a3bcce8d5c9e9875a33"].into(),
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
 					get_account_id_from_seed::<sr25519::Public>("Charlie"),
@@ -161,6 +163,9 @@ fn testnet_genesis(
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> rococo_parachain_runtime::GenesisConfig {
+	let eth_oracle_account: AccountId = hex!["2463e932d63a263395ac6730abd3a22049100f25a7cf7a3bcce8d5c9e9875a33"].into();
+	let dot_oracle_account: AccountId = hex!["16ae36476c937cfb1f970e3d374e23bfbff23b67c3224cf9b934105378dc1278"].into();
+	let kono_oracle_account: AccountId = hex!["8ad57abb27cf9d6b067e8f8ec856600a71e20647884a52e10ad9e5af3f00013a"].into();
 	rococo_parachain_runtime::GenesisConfig {
 		frame_system: rococo_parachain_runtime::SystemConfig {
 			code: rococo_parachain_runtime::WASM_BINARY
@@ -184,14 +189,58 @@ fn testnet_genesis(
 		orml_tokens: rococo_parachain_runtime::TokensConfig {
 			endowed_accounts: vec![
 				// one is 1000_000_000_000
-				(hex!["e2b2d3e7c3931a4562feaa27c22e858dea0bf2828bbab28c0b799f61eb0b9462"].into(), DOT, 1000_000_000_000_000_000_000),
-				(hex!["e2b2d3e7c3931a4562feaa27c22e858dea0bf2828bbab28c0b799f61eb0b9462"].into(), BTC, 1000_000_000_000_000_000),
-				(hex!["e2b2d3e7c3931a4562feaa27c22e858dea0bf2828bbab28c0b799f61eb0b9462"].into(), ETH, 1000_000_000_000_000_000_000_000),
+				(root_key.clone(), DOT, 1000_000_000_000_000_000_000),
+				(root_key.clone(), BTC, 1000_000_000_000_000_000),
+				(root_key.clone(), ETH, 1000_000_000_000_000_000_000_000),
 			]
 		},
 		pallet_chainlink_feed: rococo_parachain_runtime::ChainlinkFeedConfig {
-			pallet_admin: Some(root_key),
-			feed_creators: endowed_accounts
+			pallet_admin: Some(root_key.clone()),
+			feed_creators: vec![root_key.clone()],
+			feeds: vec![
+				(
+					root_key.clone(),
+					1000000000 as u128,
+					600,
+					1,
+					8,
+					Vec::from("KONO / USD".as_bytes()),
+					vec![
+						(
+							kono_oracle_account,
+							root_key.clone(),
+						)
+					]
+				),
+				(
+					root_key.clone(),
+					1000000000 as u128,
+					600,
+					1,
+					8,
+					Vec::from("DOT / USD".as_bytes()),
+					vec![
+						(
+							dot_oracle_account,
+							root_key.clone(),
+						)
+					]
+				),
+				(
+					root_key.clone(),
+					1000000000 as u128,
+					600,
+					1,
+					8,
+					Vec::from("ETH / USD".as_bytes()),
+					vec![
+						(
+							eth_oracle_account,
+							root_key.clone(),
+						)
+					]
+				),
+			]
 		},
 	}
 }

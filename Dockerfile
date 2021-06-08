@@ -1,10 +1,10 @@
 FROM ubuntu:latest
 
 COPY target/release/polkadot-collator /usr/local/bin/polkadot-collator
+COPY target/release/polkadot /usr/local/bin/polkadot
 
 WORKDIR /polkadot
 
-COPY run.sh run.sh
-COPY rococo-local-cfde.json rococo-local-cfde.json
+COPY rococo-single-custom.json rococo-single-custom.json
 
-ENTRYPOINT ["bash", "run.sh"]
+ENTRYPOINT ["/bin/sh", "-c"]
