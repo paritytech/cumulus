@@ -1,0 +1,15 @@
+[package]
+name = "cumulus-mock-parachain-inherent"
+version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+description = "A provider that creates mocked parachain inherents for a parachain runtime"
+edition = "2018"
+
+[dependencies]
+async-trait = "0.1.42"
+
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
+cumulus-test-relay-sproof-builder = { path = "../../test/relay-sproof-builder" }
+cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent" }
+cumulus-primitives-core = { path = "../../primitives/core" }
