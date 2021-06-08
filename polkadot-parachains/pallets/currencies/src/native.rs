@@ -1,9 +1,8 @@
-use frame_support::dispatch::DispatchResult;
-use sp_std::{
-    marker,
-};
+use orml_traits::MultiCurrency as ORMLMultiCurrency;
+use sp_runtime::DispatchResult;
+use sp_std::marker;
+
 use pallet_traits::MultiCurrency;
-use orml_traits::{MultiCurrency as ORMLMultiCurrency};
 
 /// Adapt other currency traits implementation to `MultiCurrency`.
 pub struct MultiCurrencyAdapter<Currency>(marker::PhantomData<Currency>);

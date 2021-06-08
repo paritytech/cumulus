@@ -1,0 +1,6 @@
+export SPEC_PATH="../rococo-single-plain.json"
+export PARA_ID=18403
+export HEAD_PATH=../genesis-state-18403
+export WASM_PATH=../genesis-wasm-18403
+export TMP_PATH=./rococo-tmp.json
+export OUT_PATH=../rococo-single-custom.json

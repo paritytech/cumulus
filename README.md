@@ -171,4 +171,7 @@ cargo update -p jsonrpsee-utils --precise 0.2.0-alpha.6 && cargo update -p jsonr
 ./target/release/polkadot-collator export-genesis-state --parachain-id 18403 > genesis-state-18403
 ./target/release/polkadot-collator export-genesis-wasm > genesis-wasm-18403
 ```
-Then register the parachain on the relay chain.
+If you encounter json error in building, try:
+```shell
+cargo update -p jsonrpsee-utils --precise 0.2.0-alpha.6 && cargo update -p jsonrpsee-types --precise 0.2.0-alpha.6
+```
