@@ -208,18 +208,10 @@ fn validate_block_fails_on_invalid_validation_data() {
 
 	let (client, longest_chain) = create_test_client();
 	let parent_head = longest_chain.best_chain().expect("Best block exists");
-	let TestBlockData {
-		block,
-		witness,
-		..
-	} = build_block_with_witness(&client, vec![], parent_head.clone());
+	let TestBlockData { block, witness, .. } =
+		build_block_with_witness(&client, vec![], parent_head.clone());
 	let (header, extrinsics) = block.deconstruct();
 
 	let block_data = ParachainBlockData::new(header, extrinsics, witness);
-	call_validate_block(
-		parent_head,
-		block_data,
-		Hash::random(),
-	)
-	.expect("Calls `validate_block`");
+	call_validate_block(parent_head, block_data, Hash::random()).expect("Calls `validate_block`");
 }

@@ -36,8 +36,8 @@ use sp_runtime::{
 use polkadot_node_primitives::{SignedFullStatement, Statement};
 use polkadot_parachain::primitives::HeadData;
 use polkadot_primitives::v1::{
-	Block as PBlock, Hash as PHash, CandidateReceipt, CompactStatement, Id as ParaId,
-	OccupiedCoreAssumption, ParachainHost, UncheckedSigned, SigningContext,
+	Block as PBlock, CandidateReceipt, CompactStatement, Hash as PHash, Id as ParaId,
+	OccupiedCoreAssumption, ParachainHost, SigningContext, UncheckedSigned,
 };
 use polkadot_service::ClientHandle;
 
@@ -85,15 +85,16 @@ impl BlockAnnounceData {
 	///
 	/// This will not check the signature, for this you should use [`BlockAnnounceData::check_signature`].
 	fn validate(&self, encoded_header: Vec<u8>) -> Result<(), Validation> {
-		let candidate_hash = if let CompactStatement::Seconded(h) = self.statement.unchecked_payload() {
-			h
-		} else {
-			tracing::debug!(
-				target: LOG_TARGET,
-				"`CompactStatement` isn't the candidate variant!",
-			);
-			return Err(Validation::Failure { disconnect: true });
-		};
+		let candidate_hash =
+			if let CompactStatement::Seconded(h) = self.statement.unchecked_payload() {
+				h
+			} else {
+				tracing::debug!(
+					target: LOG_TARGET,
+					"`CompactStatement` isn't the candidate variant!",
+				);
+				return Err(Validation::Failure { disconnect: true });
+			};
 
 		if *candidate_hash != self.receipt.hash() {
 			tracing::debug!(
@@ -320,14 +321,11 @@ where
 			let best_head =
 				Self::included_block(&*relay_chain_client, &runtime_api_block_id, para_id)?;
 			let known_best_number = best_head.number();
-			let backed_block = ||
-				Self::backed_block_hash(&*relay_chain_client, &runtime_api_block_id, para_id);
+			let backed_block =
+				|| Self::backed_block_hash(&*relay_chain_client, &runtime_api_block_id, para_id);
 
 			if best_head == header {
-				tracing::debug!(
-					target: LOG_TARGET,
-					"Announced block matches best block.",
-				);
+				tracing::debug!(target: LOG_TARGET, "Announced block matches best block.",);
 
 				Ok(Validation::Success { is_new_best: true })
 			} else if Some(HeadData(header.encode()).hash()) == backed_block()? {

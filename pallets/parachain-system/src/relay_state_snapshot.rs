@@ -14,13 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use codec::{Encode, Decode};
-use cumulus_primitives_core::{relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId};
+use codec::{Decode, Encode};
+use cumulus_primitives_core::{
+	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId,
+};
 use hash_db::{HashDB, EMPTY_PREFIX};
 use sp_runtime::traits::HashFor;
 use sp_state_machine::{Backend, TrieBackend};
-use sp_trie::StorageProof;
 use sp_std::vec::Vec;
+use sp_trie::StorageProof;
 
 /// A snapshot of some messaging related state of relay chain pertaining to the current parachain.
 ///
@@ -118,12 +120,9 @@ pub fn extract_from_proof(
 	}
 	let backend = TrieBackend::new(db, relay_parent_storage_root);
 
-	let host_config: AbridgedHostConfiguration = read_entry(
-		&backend,
-		relay_chain::well_known_keys::ACTIVE_CONFIG,
-		None,
-	)
-	.map_err(Error::Config)?;
+	let host_config: AbridgedHostConfiguration =
+		read_entry(&backend, relay_chain::well_known_keys::ACTIVE_CONFIG, None)
+			.map_err(Error::Config)?;
 
 	let dmq_mqc_head: relay_chain::Hash = read_entry(
 		&backend,

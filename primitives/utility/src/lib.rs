@@ -19,10 +19,13 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::marker::PhantomData;
 use codec::Encode;
 use cumulus_primitives_core::UpwardMessageSender;
-use xcm::{VersionedXcm, v0::{Xcm, MultiLocation, Junction, SendXcm, Error as XcmError}};
+use sp_std::marker::PhantomData;
+use xcm::{
+	v0::{Error as XcmError, Junction, MultiLocation, SendXcm, Xcm},
+	VersionedXcm,
+};
 
 /// Xcm router which recognises the `Parent` destination and handles it by sending the message into
 /// the given UMP `UpwardMessageSender` implementation. Thus this essentially adapts an
@@ -39,8 +42,7 @@ impl<T: UpwardMessageSender> SendXcm for ParentAsUmp<T> {
 			MultiLocation::X1(Junction::Parent) => {
 				let data = VersionedXcm::<()>::from(msg).encode();
 
-				T::send_upward_message(data)
-					.map_err(|e| XcmError::SendFailed(e.into()))?;
+				T::send_upward_message(data).map_err(|e| XcmError::SendFailed(e.into()))?;
 
 				Ok(())
 			}
@@ -49,4 +51,3 @@ impl<T: UpwardMessageSender> SendXcm for ParentAsUmp<T> {
 		}
 	}
 }
-

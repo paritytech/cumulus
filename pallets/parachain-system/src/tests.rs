@@ -17,17 +17,17 @@ use super::*;
 
 use codec::Encode;
 use cumulus_primitives_core::{
-	AbridgedHrmpChannel, InboundDownwardMessage, InboundHrmpMessage, PersistedValidationData,
-	relay_chain::BlockNumber as RelayBlockNumber,
+	relay_chain::BlockNumber as RelayBlockNumber, AbridgedHrmpChannel, InboundDownwardMessage,
+	InboundHrmpMessage, PersistedValidationData,
 };
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use frame_support::{
 	assert_ok,
 	dispatch::UnfilteredDispatchable,
+	inherent::{InherentData, ProvideInherent},
 	parameter_types,
 	traits::{OnFinalize, OnInitialize},
 	weights::Weight,
-	inherent::{InherentData, ProvideInherent},
 };
 use frame_system::{InitKind, RawOrigin};
 use hex_literal::hex;
@@ -113,10 +113,7 @@ std::thread_local! {
 	static SENT_MESSAGES: RefCell<Vec<(ParaId, Vec<u8>)>> = RefCell::new(Vec::new());
 }
 
-fn send_message(
-	dest: ParaId,
-	message: Vec<u8>,
-) {
+fn send_message(dest: ParaId, message: Vec<u8>) {
 	SENT_MESSAGES.with(|m| m.borrow_mut().push((dest, message)));
 }
 
@@ -125,9 +122,9 @@ impl XcmpMessageSource for FromThreadLocal {
 		let mut ids = std::collections::BTreeSet::<ParaId>::new();
 		let mut taken = 0;
 		let mut result = Vec::new();
-		SENT_MESSAGES.with(|ms| ms.borrow_mut()
-			.retain(|m| {
-				let status = <Pallet::<Test> as GetChannelInfo>::get_channel_status(m.0);
+		SENT_MESSAGES.with(|ms| {
+			ms.borrow_mut().retain(|m| {
+				let status = <Pallet<Test> as GetChannelInfo>::get_channel_status(m.0);
 				let ready = matches!(status, ChannelStatus::Ready(..));
 				if ready && !ids.contains(&m.0) && taken < maximum_channels {
 					ids.insert(m.0);
@@ -138,14 +135,14 @@ impl XcmpMessageSource for FromThreadLocal {
 					true
 				}
 			})
-		);
+		});
 		result
 	}
 }
 
 impl DmpMessageHandler for SaveIntoThreadLocal {
 	fn handle_dmp_messages(
-		iter: impl Iterator<Item=(RelayBlockNumber, Vec<u8>)>,
+		iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
 		_max_weight: Weight,
 	) -> Weight {
 		HANDLED_DMP_MESSAGES.with(|m| {
@@ -158,7 +155,7 @@ impl DmpMessageHandler for SaveIntoThreadLocal {
 }
 
 impl XcmpMessageHandler for SaveIntoThreadLocal {
-	fn handle_xcmp_messages<'a, I: Iterator<Item=(ParaId, RelayBlockNumber, &'a [u8])>>(
+	fn handle_xcmp_messages<'a, I: Iterator<Item = (ParaId, RelayBlockNumber, &'a [u8])>>(
 		iter: I,
 		_max_weight: Weight,
 	) -> Weight {
@@ -313,12 +310,7 @@ impl BlockTests {
 				}
 
 				// begin initialization
-				System::initialize(
-					&n,
-					&Default::default(),
-					&Default::default(),
-					InitKind::Full,
-				);
+				System::initialize(&n, &Default::default(), &Default::default(), InitKind::Full);
 
 				// now mess with the storage the way validate_block does
 				let mut sproof_builder = RelayStateSproofBuilder::default();
@@ -412,10 +404,7 @@ fn events() {
 		.add_with_post_test(
 			123,
 			|| {
-				assert_ok!(System::set_code(
-					RawOrigin::Root.into(),
-					Default::default()
-				));
+				assert_ok!(System::set_code(RawOrigin::Root.into(), Default::default()));
 			},
 			|| {
 				let events = System::events();
@@ -445,10 +434,7 @@ fn non_overlapping() {
 			builder.host_config.validation_upgrade_delay = 1000;
 		})
 		.add(123, || {
-			assert_ok!(System::set_code(
-				RawOrigin::Root.into(),
-				Default::default()
-			));
+			assert_ok!(System::set_code(RawOrigin::Root.into(), Default::default()));
 		})
 		.add(234, || {
 			assert_eq!(
@@ -466,10 +452,7 @@ fn manipulates_storage() {
 				!<PendingValidationCode<Test>>::exists(),
 				"validation function must not exist yet"
 			);
-			assert_ok!(System::set_code(
-				RawOrigin::Root.into(),
-				Default::default()
-			));
+			assert_ok!(System::set_code(RawOrigin::Root.into(), Default::default()));
 			assert!(
 				<PendingValidationCode<Test>>::exists(),
 				"validation function must now exist"
@@ -635,14 +618,8 @@ fn send_hrmp_message_buffer_channel_close() {
 		.add_with_post_test(
 			1,
 			|| {
-				send_message(
-					ParaId::from(300),
-					b"1".to_vec(),
-				);
-				send_message(
-					ParaId::from(400),
-					b"2".to_vec(),
-				);
+				send_message(ParaId::from(300), b"1".to_vec());
+				send_message(ParaId::from(400), b"2".to_vec());
 			},
 			|| {},
 		)

@@ -18,8 +18,8 @@ use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{
-		StatemineRuntimeExecutor, StatemintRuntimeExecutor, WestmintRuntimeExecutor, new_partial,
-		RococoParachainRuntimeExecutor, ShellRuntimeExecutor, Block,
+		new_partial, Block, RococoParachainRuntimeExecutor, ShellRuntimeExecutor,
+		StatemineRuntimeExecutor, StatemintRuntimeExecutor, WestmintRuntimeExecutor,
 	},
 };
 use codec::Encode;
@@ -441,32 +441,29 @@ pub fn run() -> Result<()> {
 				);
 
 				if config.chain_spec.is_statemint() {
-					crate::service::start_statemint_node::<statemint_runtime::RuntimeApi, StatemintRuntimeExecutor>(
-						config,
-						polkadot_config,
-						id,
-					)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
+					crate::service::start_statemint_node::<
+						statemint_runtime::RuntimeApi,
+						StatemintRuntimeExecutor,
+					>(config, polkadot_config, id)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
 				} else if config.chain_spec.is_statemine() {
-					crate::service::start_statemint_node::<statemine_runtime::RuntimeApi, StatemineRuntimeExecutor>(
-						config,
-						polkadot_config,
-						id,
-					)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
+					crate::service::start_statemint_node::<
+						statemine_runtime::RuntimeApi,
+						StatemineRuntimeExecutor,
+					>(config, polkadot_config, id)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
 				} else if config.chain_spec.is_westmint() {
-					crate::service::start_statemint_node::<westmint_runtime::RuntimeApi, WestmintRuntimeExecutor>(
-						config,
-						polkadot_config,
-						id,
-					)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
+					crate::service::start_statemint_node::<
+						westmint_runtime::RuntimeApi,
+						WestmintRuntimeExecutor,
+					>(config, polkadot_config, id)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
 				} else if config.chain_spec.is_shell() {
 					crate::service::start_shell_node(config, polkadot_config, id)
 						.await

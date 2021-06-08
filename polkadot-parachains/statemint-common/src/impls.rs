@@ -18,7 +18,9 @@
 
 use frame_support::traits::{Currency, Imbalance, OnUnbalanced};
 
-pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
+pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
+	<T as frame_system::Config>::AccountId,
+>>::NegativeImbalance;
 
 /// Logic for the author to get a portion of fees.
 pub struct ToStakingPot<R>(sp_std::marker::PhantomData<R>);
@@ -32,10 +34,7 @@ where
 	fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
 		let numeric_amount = amount.peek();
 		let staking_pot = <pallet_collator_selection::Pallet<R>>::account_id();
-		<pallet_balances::Pallet<R>>::resolve_creating(
-			&staking_pot,
-			amount,
-		);
+		<pallet_balances::Pallet<R>>::resolve_creating(&staking_pot, amount);
 		<frame_system::Pallet<R>>::deposit_event(pallet_balances::Event::Deposit(
 			staking_pot,
 			numeric_amount,
@@ -64,8 +63,7 @@ where
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use frame_support::traits::FindAuthor;
-	use frame_support::{parameter_types, weights::DispatchClass, PalletId};
+	use frame_support::{parameter_types, traits::FindAuthor, weights::DispatchClass, PalletId};
 	use frame_system::{limits, EnsureRoot};
 	use polkadot_primitives::v1::AccountId;
 	use sp_core::H256;

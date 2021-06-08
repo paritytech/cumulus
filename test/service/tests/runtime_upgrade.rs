@@ -15,13 +15,12 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
 use cumulus_primitives_core::ParaId;
-use cumulus_test_service::{initial_head_data, run_relay_chain_validator_node, Keyring::*};
-use futures::join;
-use sc_service::TaskExecutor;
-use sc_client_api::client::BlockchainEvents;
-use futures::StreamExt;
-use sp_api::ProvideRuntimeApi;
 use cumulus_test_runtime::GetUpgradeDetection;
+use cumulus_test_service::{initial_head_data, run_relay_chain_validator_node, Keyring::*};
+use futures::{join, StreamExt};
+use sc_client_api::client::BlockchainEvents;
+use sc_service::TaskExecutor;
+use sp_api::ProvideRuntimeApi;
 use sp_runtime::generic::BlockId;
 
 #[substrate_test_utils::test]
@@ -70,7 +69,9 @@ async fn test_runtime_upgrade(task_executor: TaskExecutor) {
 
 	while let Some(notification) = import_notification_stream.next().await {
 		if notification.is_new_best {
-			let res = charlie.client.runtime_api()
+			let res = charlie
+				.client
+				.runtime_api()
 				.has_upgraded(&BlockId::Hash(notification.hash));
 			if matches!(res, Ok(false)) {
 				break;
@@ -79,13 +80,16 @@ async fn test_runtime_upgrade(task_executor: TaskExecutor) {
 	}
 
 	// schedule runtime upgrade
-	charlie.schedule_upgrade(cumulus_test_runtime_upgrade::WASM_BINARY.unwrap().to_vec())
+	charlie
+		.schedule_upgrade(cumulus_test_runtime_upgrade::WASM_BINARY.unwrap().to_vec())
 		.await
 		.unwrap();
 
 	while let Some(notification) = import_notification_stream.next().await {
 		if notification.is_new_best {
-			let res = charlie.client.runtime_api()
+			let res = charlie
+				.client
+				.runtime_api()
 				.has_upgraded(&BlockId::Hash(notification.hash));
 			if res.unwrap_or(false) {
 				break;

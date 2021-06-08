@@ -16,12 +16,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod impls;
-pub use types::*;
 pub use constants::*;
+pub use types::*;
 
 /// Common types of statemint and statemine.
 mod types {
-	use sp_runtime::traits::{Verify, IdentifyAccount, BlakeTwo256};
+	use sp_runtime::traits::{BlakeTwo256, IdentifyAccount, Verify};
 
 	/// An index to a block.
 	pub type BlockNumber = u32;
@@ -51,7 +51,7 @@ mod types {
 
 	/// Digest item type.
 	pub type DigestItem = sp_runtime::generic::DigestItem<Hash>;
-	
+
 	// Aura consensus authority.
 	pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;
 }
@@ -59,8 +59,8 @@ mod types {
 /// Common constants of statemint and statemine
 mod constants {
 	use super::types::BlockNumber;
+	use frame_support::weights::{constants::WEIGHT_PER_SECOND, Weight};
 	use sp_runtime::Perbill;
-	use frame_support::weights::{Weight, constants::WEIGHT_PER_SECOND};
 	/// This determines the average expected block time that we are targeting. Blocks will be
 	/// produced at a minimum duration defined by `SLOT_DURATION`. `SLOT_DURATION` is picked up by
 	/// `pallet_timestamp` which is in turn picked up by `pallet_aura` to implement `fn

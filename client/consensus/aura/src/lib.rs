@@ -52,8 +52,7 @@ mod import_queue;
 
 pub use import_queue::{build_verifier, import_queue, BuildVerifierParams, ImportQueueParams};
 pub use sc_consensus_aura::{
-	slot_duration, AuraVerifier, BuildAuraWorkerParams, SlotDuration,
-	SlotProportion,
+	slot_duration, AuraVerifier, BuildAuraWorkerParams, SlotDuration, SlotProportion,
 };
 pub use sc_consensus_slots::InherentDataProviderExt;
 

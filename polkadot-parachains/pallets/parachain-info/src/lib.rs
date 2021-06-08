@@ -22,9 +22,9 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
+	use cumulus_primitives_core::ParaId;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use cumulus_primitives_core::ParaId;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -48,7 +48,7 @@ pub mod pallet {
 	impl Default for GenesisConfig {
 		fn default() -> Self {
 			Self {
-				parachain_id: 100.into()
+				parachain_id: 100.into(),
 			}
 		}
 	}
@@ -61,11 +61,14 @@ pub mod pallet {
 	}
 
 	#[pallet::type_value]
-	pub(super) fn DefaultForParachainId() -> ParaId { 100.into() }
+	pub(super) fn DefaultForParachainId() -> ParaId {
+		100.into()
+	}
 
 	#[pallet::storage]
 	#[pallet::getter(fn parachain_id)]
-	pub(super) type ParachainId<T: Config> = StorageValue<_, ParaId, ValueQuery, DefaultForParachainId>;
+	pub(super) type ParachainId<T: Config> =
+		StorageValue<_, ParaId, ValueQuery, DefaultForParachainId>;
 
 	impl<T: Config> Get<ParaId> for Pallet<T> {
 		fn get() -> ParaId {

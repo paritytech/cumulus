@@ -13,15 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 use crate as collator_selection;
-use crate::{mock::*, Error, CandidateInfo};
+use crate::{mock::*, CandidateInfo, Error};
 use frame_support::{
 	assert_noop, assert_ok,
-	traits::{OnInitialize, Currency, GenesisBuild},
+	traits::{Currency, GenesisBuild, OnInitialize},
 };
-use sp_runtime::traits::BadOrigin;
 use pallet_balances::Error as BalancesError;
+use sp_runtime::traits::BadOrigin;
 
 #[test]
 fn basic_setup_works() {
@@ -59,11 +58,17 @@ fn set_desired_candidates_works() {
 		assert_eq!(CollatorSelection::desired_candidates(), 2);
 
 		// can set
-		assert_ok!(CollatorSelection::set_desired_candidates(Origin::signed(RootAccount::get()), 7));
+		assert_ok!(CollatorSelection::set_desired_candidates(
+			Origin::signed(RootAccount::get()),
+			7
+		));
 		assert_eq!(CollatorSelection::desired_candidates(), 7);
 
 		// rejects bad origin
-		assert_noop!(CollatorSelection::set_desired_candidates(Origin::signed(1), 8), BadOrigin);
+		assert_noop!(
+			CollatorSelection::set_desired_candidates(Origin::signed(1), 8),
+			BadOrigin
+		);
 	});
 }
 
@@ -74,11 +79,17 @@ fn set_candidacy_bond() {
 		assert_eq!(CollatorSelection::candidacy_bond(), 10);
 
 		// can set
-		assert_ok!(CollatorSelection::set_candidacy_bond(Origin::signed(RootAccount::get()), 7));
+		assert_ok!(CollatorSelection::set_candidacy_bond(
+			Origin::signed(RootAccount::get()),
+			7
+		));
 		assert_eq!(CollatorSelection::candidacy_bond(), 7);
 
 		// rejects bad origin.
-		assert_noop!(CollatorSelection::set_candidacy_bond(Origin::signed(1), 8), BadOrigin);
+		assert_noop!(
+			CollatorSelection::set_candidacy_bond(Origin::signed(1), 8),
+			BadOrigin
+		);
 	});
 }
 
@@ -124,7 +135,10 @@ fn cannot_register_dupe_candidate() {
 	new_test_ext().execute_with(|| {
 		// can add 3 as candidate
 		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
-		let addition = CandidateInfo { who: 3, deposit: 10 };
+		let addition = CandidateInfo {
+			who: 3,
+			deposit: 10,
+		};
 		assert_eq!(CollatorSelection::candidates(), vec![addition]);
 		assert_eq!(CollatorSelection::last_authored_block(3), 10);
 		assert_eq!(Balances::free_balance(3), 90);
@@ -209,7 +223,6 @@ fn authorship_event_handler() {
 		// triggers `note_author`
 		Authorship::on_initialize(1);
 
-
 		let collator = CandidateInfo {
 			who: 4,
 			deposit: 10,
@@ -237,7 +250,6 @@ fn fees_edgecases() {
 		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
 		// triggers `note_author`
 		Authorship::on_initialize(1);
-
 
 		let collator = CandidateInfo {
 			who: 4,
@@ -318,12 +330,13 @@ fn kick_mechanism() {
 	});
 }
 
-
 #[test]
 #[should_panic = "duplicate invulnerables in genesis."]
 fn cannot_set_genesis_value_twice() {
 	sp_tracing::try_init_simple();
-	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let mut t = frame_system::GenesisConfig::default()
+		.build_storage::<Test>()
+		.unwrap();
 	let invulnerables = vec![1, 1];
 
 	let collator_selection = collator_selection::GenesisConfig::<Test> {
@@ -333,5 +346,4 @@ fn cannot_set_genesis_value_twice() {
 	};
 	// collator selection must be initialized before session.
 	collator_selection.assimilate_storage(&mut t).unwrap();
-
 }

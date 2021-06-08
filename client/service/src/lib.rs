@@ -118,18 +118,18 @@ where
 	});
 
 	relay_chain_full_node
-			.client
-			.execute_with(StartPoVRecovery {
-				para_id,
-				client: client.clone(),
-				import_queue,
-				task_manager,
-				overseer_handler: relay_chain_full_node
-					.overseer_handler
+		.client
+		.execute_with(StartPoVRecovery {
+			para_id,
+			client: client.clone(),
+			import_queue,
+			task_manager,
+			overseer_handler: relay_chain_full_node
+				.overseer_handler
 				.clone()
 				.ok_or_else(|| "Polkadot full node did not provided an `OverseerHandler`!")?,
-				_phantom: PhantomData,
-			})?;
+			_phantom: PhantomData,
+		})?;
 
 	cumulus_client_collator::start_collator(cumulus_client_collator::StartCollatorParams {
 		runtime_api: client.clone(),
@@ -248,14 +248,12 @@ struct StartPoVRecovery<'a, Block: BlockT, Client, IQ> {
 	para_id: ParaId,
 	client: Arc<Client>,
 	task_manager: &'a mut TaskManager,
-	
+
 	overseer_handler: OverseerHandler,
 	import_queue: IQ,
-	
-	
+
 	_phantom: PhantomData<Block>,
 }
-	
 
 impl<'a, Block, Client, IQ> polkadot_service::ExecuteWithClient
 	for StartPoVRecovery<'a, Block, Client, IQ>
@@ -333,7 +331,6 @@ pub fn build_polkadot_full_node(
 			relay_chain_full_node,
 			collator_key,
 		})
-		
 	}
 }
 
