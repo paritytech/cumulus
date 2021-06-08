@@ -117,7 +117,7 @@ fn build_block_with_witness(
 	let witness = built_block
 		.proof
 		.expect("We enabled proof recording before.")
-		.into_compact_proof::<<Header as HeaderT>::Hashing>(parent_head.state_root())
+		.into_compact_proof::<<Header as HeaderT>::Hashing>(*parent_head.state_root())
 		.unwrap();
 
 	TestBlockData {
