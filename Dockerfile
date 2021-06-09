@@ -6,5 +6,5 @@ COPY target/release/polkadot /usr/local/bin/polkadot
 WORKDIR /polkadot
 
 COPY rococo-single-custom.json rococo-single-custom.json
-
-ENTRYPOINT ["/bin/sh", "-c"]
+COPY run.sh run.sh
+ENTRYPOINT ["bash", "run.sh"]

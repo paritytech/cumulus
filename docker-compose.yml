@@ -19,16 +19,16 @@ services:
 #      - ./data/certbot/www:/var/www/certbot
 
   konomi-relay-1:
-    image: konominetwork/parachain:v0.0.1
+    image: konominetwork/parachain:v0.1.0
     volumes:
       - konomi-relay-1:/tmp/konomi-rococo
-    command: "polkadot --base-path /tmp/konomi-rococo --ws-external --chain rococo-single-custom.json --rpc-cors all --alice"
+    command: "polkadot --base-path /tmp/konomi-rococo --ws-external --no-beefy --chain /polkadot/rococo-single-custom.json --rpc-cors all --alice"
 
   konomi-relay-2:
-    image: konominetwork/parachain:v0.0.1
+    image: konominetwork/parachain:v0.1.0
     volumes:
       - konomi-relay-2:/tmp/konomi-rococo
-    command: "polkadot --base-path /tmp/konomi-rococo --ws-external --chain rococo-single-custom.json --rpc-cors all --bob"
+    command: "polkadot --base-path /tmp/konomi-rococo --ws-external --no-beefy --chain /polkadot/rococo-single-custom.json --rpc-cors all --bob"
 
   konomi-collator-1:
     image: konominetwork/parachain:v0.0.1
@@ -37,7 +37,7 @@ services:
       - konomi-relay-2
     volumes:
       - konomi-collator-1:/tmp/konomi-rococo
-    command: "polkadot-collator --base-path /tmp/konomi-rococo --alice --force-authoring --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain ./rococo-single-custom.json"
+    command: "polkadot-collator --base-path /tmp/konomi-rococo --alice --force-authoring --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain /polkadot/rococo-single-custom.json"
 
   konomi-collator-2:
     image: konominetwork/parachain:v0.0.1
@@ -46,7 +46,7 @@ services:
       - konomi-relay-2
     volumes:
       - konomi-collator-2:/tmp/konomi-rococo
-    command: "polkadot-collator --base-path /tmp/konomi-rococo --bob --force-authoring --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain ./rococo-single-custom.json"
+    command: "polkadot-collator --base-path /tmp/konomi-rococo --bob --force-authoring --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain /polkadot/rococo-single-custom.json"
 
   konomi-parachain:
     image: konominetwork/parachain:v0.0.1
@@ -55,18 +55,18 @@ services:
       - konomi-relay-2
     volumes:
       - konomi-parachain:/tmp/konomi-rococo
-    command: "polkadot-collator --base-path /tmp/konomi-rococo --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain ./rococo-single-custom.json"
+    command: "polkadot-collator --base-path /tmp/konomi-rococo --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain /polkadot/rococo-single-custom.json"
 
   dot-feed:
     image: konominetwork/oracle-worker:v0.0.1
     depends_on:
       - konomi-parachain
     env_file:
-      - ./docker/env/dot-feed
+      - ./docker/env/local/dot-feed
 
   eth-feed:
     image: konominetwork/oracle-worker:v0.0.1
     depends_on:
       - konomi-parachain
     env_file:
-      - ./docker/env/eth-feed
+      - ./docker/env/local/eth-feed
