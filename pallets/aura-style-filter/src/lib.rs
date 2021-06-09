@@ -47,7 +47,6 @@ pub mod pallet {
 
 	use frame_support::pallet_prelude::*;
 	use sp_std::vec::Vec;
-	use frame_system::pallet_prelude::*;
 
 	//TODO Now that the CanAuthor trait takes a slot number, I don't think this even needs to be a pallet.
 	// I think it could eb jsut a simple type.
@@ -76,10 +75,4 @@ pub mod pallet {
 			account == active_author
 		}
 	}
-
-	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
-
-	#[pallet::call]
-	impl<T: Config> Pallet<T> {}
 }

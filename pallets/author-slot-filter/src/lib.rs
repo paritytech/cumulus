@@ -115,10 +115,6 @@ pub mod pallet {
 		}
 	}
 
-	// No hooks
-	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
-
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Update the eligible ratio. Intended to be called by governance.
