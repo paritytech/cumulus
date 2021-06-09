@@ -58,14 +58,14 @@ services:
     command: "polkadot-collator --base-path /tmp/konomi-rococo --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain /polkadot/rococo-single-custom.json"
 
   dot-feed:
-    image: konominetwork/oracle-worker:v0.0.1
+    image: konominetwork/oracle-worker:v0.1.0
     depends_on:
       - konomi-parachain
     env_file:
       - ./docker/env/local/dot-feed
 
   eth-feed:
-    image: konominetwork/oracle-worker:v0.0.1
+    image: konominetwork/oracle-worker:v0.1.0
     depends_on:
       - konomi-parachain
     env_file:
