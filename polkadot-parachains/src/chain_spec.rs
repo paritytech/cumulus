@@ -96,7 +96,7 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 		None,
 		None,
 		Extensions {
-			relay_chain: "westend-dev".into(),
+			relay_chain: "westend".into(),
 			para_id: id.into(),
 		},
 	)
@@ -113,7 +113,7 @@ pub fn get_shell_chain_spec(id: ParaId) -> ShellChainSpec {
 		None,
 		None,
 		Extensions {
-			relay_chain: "westend-dev".into(),
+			relay_chain: "westend".into(),
 			para_id: id.into(),
 		},
 	)
@@ -146,7 +146,7 @@ pub fn staging_test_net(id: ParaId) -> ChainSpec {
 		None,
 		None,
 		Extensions {
-			relay_chain: "westend-dev".into(),
+			relay_chain: "westend".into(),
 			para_id: id.into(),
 		},
 	)
@@ -582,7 +582,7 @@ pub fn westmint_development_config(id: ParaId) -> WestmintChainSpec {
 		None,
 		Some(properties),
 		Extensions {
-			relay_chain: "westend-dev".into(),
+			relay_chain: "westend".into(),
 			para_id: id.into(),
 		},
 	)
