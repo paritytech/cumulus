@@ -31,7 +31,7 @@ services:
     command: "polkadot --base-path /tmp/konomi-rococo --ws-external --no-beefy --chain /polkadot/rococo-single-custom.json --rpc-cors all --bob"
 
   konomi-collator-1:
-    image: konominetwork/parachain:v0.0.1
+    image: konominetwork/parachain:v0.1.0
     depends_on:
       - konomi-relay-1
       - konomi-relay-2
@@ -40,7 +40,7 @@ services:
     command: "polkadot-collator --base-path /tmp/konomi-rococo --alice --force-authoring --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain /polkadot/rococo-single-custom.json"
 
   konomi-collator-2:
-    image: konominetwork/parachain:v0.0.1
+    image: konominetwork/parachain:v0.1.0
     depends_on:
       - konomi-relay-1
       - konomi-relay-2
@@ -49,7 +49,7 @@ services:
     command: "polkadot-collator --base-path /tmp/konomi-rococo --bob --force-authoring --parachain-id 18403 --ws-external --rpc-cors all -- --execution wasm --chain /polkadot/rococo-single-custom.json"
 
   konomi-parachain:
-    image: konominetwork/parachain:v0.0.1
+    image: konominetwork/parachain:v0.1.0
     depends_on:
       - konomi-relay-1
       - konomi-relay-2
