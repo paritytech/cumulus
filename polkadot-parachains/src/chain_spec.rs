@@ -86,6 +86,8 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 					hex!["16ae36476c937cfb1f970e3d374e23bfbff23b67c3224cf9b934105378dc1278"].into(),
 					// KONO
 					hex!["8ad57abb27cf9d6b067e8f8ec856600a71e20647884a52e10ad9e5af3f00013a"].into(),
+					// BTC
+					hex!["64f0bdf9ca65acf36df6189aab420ee2d6b07ac05f90a01744ede75c88a36721"].into(),
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
 					get_account_id_from_seed::<sr25519::Public>("Charlie"),
