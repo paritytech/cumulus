@@ -5186,6 +5186,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-asset-tx-payment"
+version = "3.0.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-assets",
+ "pallet-authorship",
+ "pallet-balances",
+ "pallet-transaction-payment",
+ "parity-scale-codec",
+ "serde",
+ "serde_json",
+ "smallvec 1.6.1",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-storage",
+]
+
+[[package]]
 name = "pallet-assets"
 version = "3.0.0"
 source = "git+https://github.com/apopiak/substrate.git?branch=apopiak/master-balance-conversion#5b61ed24a847395038c6c12c53104b36cb56c1d5"
