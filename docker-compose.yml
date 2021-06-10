@@ -70,3 +70,10 @@ services:
       - konomi-parachain
     env_file:
       - ./docker/env/local/eth-feed
+
+  btc-feed:
+    image: konominetwork/oracle-worker:v0.1.0
+    depends_on:
+      - konomi-parachain
+    env_file:
+      - ./docker/env/local/btc-feed
