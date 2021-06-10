@@ -306,15 +306,24 @@ fn transaction_payment_in_asset_possible() {
 		.build()
 		.execute_with(||
 	{
+		use pallet_assets::Call as AssetsCall;
+		use sp_runtime::traits::StaticLookup;
+		let force_create = |asset_id, owner, is_sufficient, min_balance| {
+			Call::Assets(AssetsCall::force_create(asset_id, owner, is_sufficient, min_balance))
+				.dispatch(Origin::root())
+		};
+		let mint = |owner, asset_id, beneficiary, amount| {
+			Call::Assets(AssetsCall::mint(asset_id, beneficiary, amount))
+				.dispatch(Origin::signed(owner))
+		};
 		let len = 10;
 		let asset_id = 1;
 		let owner = 42;
 		let min_balance = 2;
 		let caller = 1;
-		assert_ok!(Assets::force_create(Origin::root(), asset_id, owner, true, min_balance));
 		let beneficiary = <Runtime as system::Config>::Lookup::unlookup(caller);
-		assert_ok!(Balances::set_balance(Origin::root(), beneficiary, 12345678, 0));
-		assert_ok!(Assets::mint(Origin::signed(owner), asset_id, beneficiary, 100));
+		assert_ok!(force_create(asset_id, owner, true, min_balance));
+		assert_ok!(mint(owner, asset_id, beneficiary, 100));
 		assert_eq!(Assets::balance(asset_id, caller), 100);
 		let pre = ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
 			.pre_dispatch(&caller, CALL, &info_from_weight(5), len)
@@ -347,7 +356,7 @@ fn transaction_payment_in_asset_possible() {
 // 		ExtBuilder::default()
 // 			.balance_factor(10)
 // 			.base_weight(5)
-// 			.build()
+// 			.build()_
 // 			.execute_with(||
 // 		{
 // 			let len = 10;
