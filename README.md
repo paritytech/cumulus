@@ -174,4 +174,6 @@ cargo update -p jsonrpsee-utils --precise 0.2.0-alpha.6 && cargo update -p jsonr
 If you encounter json error in building, try:
 ```shell
 cargo update -p jsonrpsee-utils --precise 0.2.0-alpha.6 && cargo update -p jsonrpsee-types --precise 0.2.0-alpha.6
+
+docker build -t konominetwork/parachain:v0.1.0 .
 ```
