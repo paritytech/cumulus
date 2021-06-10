@@ -46,7 +46,7 @@ use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
 use relay_state_snapshot::MessagingStateSnapshot;
 use sp_runtime::{
-	traits::{BlakeTwo256, Hash},
+	traits::{BlakeTwo256, Block as BlockT, Hash},
 	transaction_validity::{
 		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidity,
 		ValidTransaction,
@@ -986,4 +986,16 @@ impl<T: Config> UpwardMessageSender for Pallet<T> {
 	fn send_upward_message(message: UpwardMessage) -> Result<u32, MessageSendError> {
 		Self::send_upward_message(message)
 	}
+}
+
+/// Something that can check the inherents of a block.
+pub trait CheckInherents<Block: BlockT> {
+	/// Check all inherents of the block.
+	///
+	/// This function gets passed all the extrinsics of the block, so it is up to the callee to
+	/// identify the inherents. The `validation_data` can be used to access the
+	fn check_inherents(
+		extrinsics: &[Block::Extrinsic],
+		validation_data: &PersistedValidationData,
+	) -> frame_support::inherent::CheckInherentsResult;
 }
