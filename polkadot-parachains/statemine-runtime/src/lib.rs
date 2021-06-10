@@ -145,7 +145,6 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 2;
 }
 
-// Don't allow permission-less asset creation.
 pub struct BaseFilter;
 impl Filter<Call> for BaseFilter {
 	fn filter(_c: &Call) -> bool { true }
