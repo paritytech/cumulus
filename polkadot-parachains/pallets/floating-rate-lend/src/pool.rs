@@ -12,6 +12,7 @@ use polkadot_parachain_primitives::{PoolId, PriceValue, CustomError, Price};
 
 use crate::{Config, CurrencyIdOf, PoolStorage};
 use sp_std::collections::btree_map::BTreeMap;
+use crate::types::Convertor;
 
 /// The floating-rate-pool for different lending transactions.
 /// Each floating-rate-pool needs to be associated with a currency id.
@@ -62,6 +63,30 @@ pub struct Pool<T: Config> {
 }
 
 impl <T: Config> Pool<T> {
+    pub fn default_pool(
+        id: PoolId,
+        can_be_collateral: bool,
+        name: Vec<u8>,
+        currency_id: CurrencyIdOf<T>,
+        owner: T::AccountId,
+        block_number: T::BlockNumber,
+    ) -> Pool<T>{
+        Self::new(
+            id,
+            name,
+            currency_id,
+            can_be_collateral,
+            Convertor::convert_percentage(90),
+            Convertor::convert_percentage(50),
+            Convertor::convert_percentage(95),
+            Convertor::convert_percentage_annum_to_per_block(20),
+            Convertor::convert_percentage_annum_to_per_block(2),
+            FixedU128::from(0),
+            owner,
+            block_number,
+        )
+    }
+
     /// Creates a new floating-rate-pool from the input parameters
     pub fn new(id: PoolId,
                name: Vec<u8>,
@@ -201,13 +226,6 @@ impl <T: Config> PoolProxy<T> {
     pub fn new_pool(pool: Pool<T>, price: Price<T>) -> Self  {
         PoolProxy{ pool, price }
     }
-
-    pub fn find(id: PoolId) -> Result<Self, CustomError>  {
-        let pool = PoolStorage::<T>::get(id).ok_or(CustomError::PoolNotExist(id))?;
-        let price = T::PriceProvider::price(pool.currency_id);
-        Ok(Self::new_pool(pool, price))
-    }
-
     pub fn id(&self) -> PoolId { self.pool.id }
     pub fn enabled(&self) -> bool { self.pool.enabled }
     pub fn can_be_collateral(&self) -> bool { self.pool.can_be_collateral }

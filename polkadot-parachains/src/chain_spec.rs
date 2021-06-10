@@ -22,7 +22,8 @@ use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use polkadot_parachain_primitives::{DOT, BTC, ETH};
+use polkadot_parachain_primitives::{DOT, BTC, ETH, KONO};
+use sp_runtime::FixedU128;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<rococo_parachain_runtime::GenesisConfig, Extensions>;
@@ -78,8 +79,13 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 				],
 				vec![
 					hex!["e2b2d3e7c3931a4562feaa27c22e858dea0bf2828bbab28c0b799f61eb0b9462"].into(),
-					// This is for the oracle
+					// These are for the oracle
+					// ETH
 					hex!["2463e932d63a263395ac6730abd3a22049100f25a7cf7a3bcce8d5c9e9875a33"].into(),
+					// DOT
+					hex!["16ae36476c937cfb1f970e3d374e23bfbff23b67c3224cf9b934105378dc1278"].into(),
+					// KONO
+					hex!["8ad57abb27cf9d6b067e8f8ec856600a71e20647884a52e10ad9e5af3f00013a"].into(),
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
 					get_account_id_from_seed::<sr25519::Public>("Charlie"),
@@ -163,6 +169,7 @@ fn testnet_genesis(
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> rococo_parachain_runtime::GenesisConfig {
+	let btc_oracle_account: AccountId = hex!["64f0bdf9ca65acf36df6189aab420ee2d6b07ac05f90a01744ede75c88a36721"].into();
 	let eth_oracle_account: AccountId = hex!["2463e932d63a263395ac6730abd3a22049100f25a7cf7a3bcce8d5c9e9875a33"].into();
 	let dot_oracle_account: AccountId = hex!["16ae36476c937cfb1f970e3d374e23bfbff23b67c3224cf9b934105378dc1278"].into();
 	let kono_oracle_account: AccountId = hex!["8ad57abb27cf9d6b067e8f8ec856600a71e20647884a52e10ad9e5af3f00013a"].into();
@@ -192,6 +199,15 @@ fn testnet_genesis(
 				(root_key.clone(), DOT, 1000_000_000_000_000_000_000),
 				(root_key.clone(), BTC, 1000_000_000_000_000_000),
 				(root_key.clone(), ETH, 1000_000_000_000_000_000_000_000),
+			]
+		},
+		pallet_floating_rate_lend: rococo_parachain_runtime::FloatingRateLendConfig {
+			liquidation_threshold: FixedU128::from(1),
+			pools: vec![
+				(false, Vec::from("KONO".as_bytes()), KONO, root_key.clone()),
+				(true, Vec::from("DOT".as_bytes()), DOT, root_key.clone()),
+				(true, Vec::from("ETH".as_bytes()), ETH, root_key.clone()),
+				(true, Vec::from("BTC".as_bytes()), BTC, root_key.clone()),
 			]
 		},
 		pallet_chainlink_feed: rococo_parachain_runtime::ChainlinkFeedConfig {
@@ -236,6 +252,19 @@ fn testnet_genesis(
 					vec![
 						(
 							eth_oracle_account,
+							root_key.clone(),
+						)
+					]
+				),				(
+					root_key.clone(),
+					1000000000 as u128,
+					600,
+					1,
+					8,
+					Vec::from("BTC / USD".as_bytes()),
+					vec![
+						(
+							btc_oracle_account,
 							root_key.clone(),
 						)
 					]

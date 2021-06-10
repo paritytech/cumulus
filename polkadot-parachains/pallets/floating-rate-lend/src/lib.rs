@@ -36,6 +36,7 @@ pub mod pallet {
     use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
     use frame_support::error::BadOrigin;
     use frame_support::PalletId;
+    use frame_support::transactional;
     use frame_system::pallet_prelude::*;
     use sp_runtime::{FixedPointNumber, FixedU128};
     use sp_runtime::traits::{AccountIdConversion, CheckedDiv, CheckedMul, Convert, One, Zero};
@@ -119,22 +120,42 @@ pub mod pallet {
     pub(super) type PoolStorage<T: Config> = StorageMap<_, Twox64Concat, PoolId, Pool<T>>;
 
     #[pallet::genesis_config]
-    pub struct GenesisConfig {
+    pub struct GenesisConfig<T: Config> {
+        pub liquidation_threshold: FixedU128,
+        pub pools: Vec<(bool, Vec<u8>, CurrencyIdOf<T>,  T::AccountId)>,
     }
 
     #[cfg(feature = "std")]
-    impl Default for GenesisConfig {
+    impl <T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
+                liquidation_threshold: Default::default(),
+                pools: Default::default(),
             }
         }
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig {
+    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
             log::info!("triggered genesis");
-            LiquidationThreshold::<T>::put(FixedU128::from_float(1.0));
+            LiquidationThreshold::<T>::put(self.liquidation_threshold);
+            for paras in &self.pools {
+                let id = <NextPoolId<T>>::get();
+                let mut pool = Pool::<T>::default_pool(
+                    id,
+                    paras.0,
+                    paras.1.clone(),
+                    paras.2,
+                    paras.3.clone(),
+                    <frame_system::Pallet<T>>::block_number(),
+                );
+                pool.enabled = true;
+                <PoolNameStorage<T>>::insert(pool.name.clone(), id);
+                <PoolStorage<T>>::insert(id, pool);
+
+                <NextPoolId<T>>::mutate(|id| *id += PoolId::one());
+            }
         }
     }
 
@@ -348,7 +369,12 @@ pub mod pallet {
 
         /// Supply certain amount to the floating-rate-pool
         #[pallet::weight(1)]
-        pub fn supply(origin: OriginFor<T>, pool_id: PoolId, amount: BalanceOf<T>) -> DispatchResultWithPostInfo {
+        #[transactional]
+        pub fn supply(
+            origin: OriginFor<T>,
+            pool_id: PoolId,
+            #[pallet::compact] amount: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
             let account = ensure_signed(origin)?;
             if amount.is_zero() { return Err(Error::<T>::BalanceTooLow.into()); }
 
@@ -373,13 +399,18 @@ pub mod pallet {
         }
 
         #[pallet::weight(1)]
-        pub fn withdraw(origin: OriginFor<T>, pool_id: PoolId, amount: BalanceOf<T>) -> DispatchResultWithPostInfo {
+        #[transactional]
+        pub fn withdraw(
+            origin: OriginFor<T>,
+            pool_id: PoolId,
+            #[pallet::compact] amount: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
             let account = ensure_signed(origin)?;
 
             if amount.is_zero() { return Err(Error::<T>::BalanceTooLow.into()); }
 
             // Check pool can withdraw
-            let mut pool: PoolProxy<T> = PoolProxy::find(pool_id)?;
+            let mut pool: PoolProxy<T> = PoolRepository::<T>::find(pool_id)?;
             if !pool.enabled() { return Err(Error::<T>::PoolNotEnabled.into()); }
             // This ensures the pool's supply will never be lower than 0
             let mut amount_fu128 = T::Conversion::convert(amount);
@@ -420,12 +451,17 @@ pub mod pallet {
         }
 
         #[pallet::weight(1)]
-        pub fn borrow(origin: OriginFor<T>, pool_id: PoolId, amount: BalanceOf<T>) -> DispatchResultWithPostInfo {
+        #[transactional]
+        pub fn borrow(
+            origin: OriginFor<T>,
+            pool_id: PoolId,
+            #[pallet::compact] amount: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
             let account = ensure_signed(origin)?;
             if amount.is_zero() { return Err(Error::<T>::BalanceTooLow.into()); }
 
             // Check pool can borrow
-            let mut pool: PoolProxy<T> = PoolRepository::<T>::find_without_price(pool_id)?;
+            let mut pool: PoolProxy<T> = PoolRepository::<T>::find(pool_id)?;
             if !pool.enabled() { return Err(Error::<T>::PoolNotEnabled.into()); }
             // Check sufficient liquidity
             let amount_u128 = T::Conversion::convert(amount);
@@ -456,7 +492,12 @@ pub mod pallet {
         }
 
         #[pallet::weight(1)]
-        pub fn repay(origin: OriginFor<T>, pool_id: PoolId, amount: BalanceOf<T>) -> DispatchResultWithPostInfo {
+        #[transactional]
+        pub fn repay(
+            origin: OriginFor<T>,
+            pool_id: PoolId,
+            #[pallet::compact] amount: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
             let account = ensure_signed(origin)?;
             if amount.is_zero() { return Err(Error::<T>::BalanceTooLow.into()); }
 
@@ -492,11 +533,12 @@ pub mod pallet {
 
         // arbitrager related
         #[pallet::weight(1)]
+        #[transactional]
         pub fn liquidate(
             origin: OriginFor<T>,
             target_user: T::AccountId,
             debt_pool_id: PoolId,
-            pay_amount: BalanceOf<T>,
+            #[pallet::compact] pay_amount: BalanceOf<T>,
             collateral_pool_id: PoolId,
         ) -> DispatchResultWithPostInfo {
             let account = ensure_signed(origin)?;

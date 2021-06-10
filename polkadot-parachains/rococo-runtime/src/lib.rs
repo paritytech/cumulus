@@ -646,8 +646,7 @@ pub struct Conversion;
 
 impl Convert<Balance, FixedU128> for Conversion {
 	fn convert(a: Balance) -> FixedU128 {
-		let accuracy = FixedU128::accuracy() as u128;
-		FixedU128::from_inner(a as u128 * (accuracy / BALANCE_ONE))
+		FixedU128::saturating_from_rational(a, BALANCE_ONE)
 	}
 }
 
@@ -698,6 +697,10 @@ pub struct CurrencyToFeedIdConverter;
 impl Convert<CurrencyId, Option<FeedId>> for CurrencyToFeedIdConverter {
 	fn convert(a: CurrencyId) -> Option<FeedId> {
 		match a {
+			KONO => Some(FeedId::from(0 as u8)),
+			DOT => Some(FeedId::from(1 as u8)),
+			ETH => Some(FeedId::from(2 as u8)),
+			BTC => Some(FeedId::from(3 as u8)),
 			CurrencyId::Native(native) => Some(FeedId::from(native.id)),
 			_ => None
 		}
@@ -786,7 +789,7 @@ construct_runtime! {
 		Currencies: pallet_currencies::{Pallet, Call, Storage, Event<T>},
 		Oracle: pallet_chainlink_oracle::{Pallet, Call, Storage},
 		ChainlinkFeed: pallet_chainlink_feed::{Pallet, Call, Storage, Config<T>, Event<T>} = 55,
-		FloatingRateLend: pallet_floating_rate_lend::{Pallet, Call, Storage, Event<T>} = 15,
+		FloatingRateLend: pallet_floating_rate_lend::{Pallet, Call, Storage, Config<T>, Event<T>} = 15,
 
 		// XCM helpers.
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 50,

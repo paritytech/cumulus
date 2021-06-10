@@ -28,32 +28,37 @@
       "KonomiTestChain"
     ]
   },
-  "AccountData": {
+  "CurrencyAccountData": {
     "free": "Balance",
     "reserved": "Balance",
     "frozen": "Balance"
   },
   "PoolId": "u64",
-  "PoolOf": {
-    "id": "PoolId",
-    "name": "Text",
-    "currency_id": "CurrencyId",
+  "Pool": {
+    "id": "u64",
+    "name": "Vec<u8>",
+    "currency_id": "CurrencyIdOf",
     "can_be_collateral": "bool",
     "enabled": "bool",
-    "supply": "Balance",
+    "supply": "FixedU128",
     "total_supply_index": "FixedU128",
-    "debt": "Balance",
+    "debt": "FixedU128",
     "total_debt_index": "FixedU128",
-    "minimal_amount": "Balance",
+    "interest_updated_at": "BlockNumber",
+    "minimal_amount": "FixedU128",
     "safe_factor": "FixedU128",
     "close_factor": "FixedU128",
+    "close_minimal_amount": "FixedU128",
     "discount_factor": "FixedU128",
     "utilization_factor": "FixedU128",
     "initial_interest_rate": "FixedU128",
-    "owner": "AccountId"
+    "last_updated": "BlockNumber",
+    "last_updated_by": "AccountId",
+    "created_by": "AccountId",
+    "created_at": "BlockNumber"
   },
   "UserData": {
-    "amount": "Balance",
+    "amount": "FixedU128",
     "index": "FixedU128"
   },
   "Price": {
