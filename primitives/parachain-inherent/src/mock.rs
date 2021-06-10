@@ -14,11 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! This crate houses a MOCK inherent data provider for the validataion
-//! data inherent. This mock provider provides stub data that does not represent anything "real"
-//! about the external world, but can pass the runtime's checks. This is useful in testing
-//! for example, running the --dev service without a relay chain backbone.
-
 use cumulus_primitives_core::PersistedValidationData;
 use cumulus_primitives_parachain_inherent::{ParachainInherentData, INHERENT_IDENTIFIER};
 use sp_inherents::{InherentData, InherentDataProvider};
