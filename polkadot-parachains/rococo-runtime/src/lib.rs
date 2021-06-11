@@ -701,7 +701,6 @@ impl Convert<CurrencyId, Option<FeedId>> for CurrencyToFeedIdConverter {
 			DOT => Some(FeedId::from(1 as u8)),
 			ETH => Some(FeedId::from(2 as u8)),
 			BTC => Some(FeedId::from(3 as u8)),
-			CurrencyId::Native(native) => Some(FeedId::from(native.id)),
 			_ => None
 		}
 	}

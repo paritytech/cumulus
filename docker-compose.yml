@@ -77,3 +77,10 @@ services:
       - konomi-parachain
     env_file:
       - ./docker/env/local/btc-feed
+
+  indexer-service:
+    image: konominetwork/indexer-service:v0.1.0
+    depends_on:
+      - konomi-parachain
+    env_file:
+      - ./docker/env/local/indexer
