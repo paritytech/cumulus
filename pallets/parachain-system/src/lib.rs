@@ -30,7 +30,7 @@
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
 	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError, OnValidationData,
-	OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage, UpwardMessageSender,
+	OutboundHrmpMessage, ParaId, UpwardMessage, UpwardMessageSender,
 	XcmpMessageHandler, XcmpMessageSource,
 };
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
@@ -59,6 +59,31 @@ mod relay_state_snapshot;
 pub mod validate_block;
 #[cfg(test)]
 mod tests;
+
+pub use cumulus_primitives_core::PersistedValidationData;
+/// Register the `validate_block` function that is used by parachains to validate blocks on a
+/// validator.
+///
+/// Does *nothing* when `std` feature is enabled.
+///
+/// Expects as parameters the runtime, a block executor and an inherent checker.
+///
+/// # Example
+///
+/// ```
+///     struct BlockExecutor;
+///     struct Runtime;
+///     struct CheckInherents;
+///
+///     cumulus_pallet_parachain_system::register_validate_block! {
+///         Runtime = Runtime,
+///         BlockExecutor = Executive,
+///         CheckInherents = CheckInherents,
+///     }
+///
+/// # fn main() {}
+/// ```
+pub use cumulus_pallet_parachain_system_proc_macro::register_validate_block;
 
 pub use pallet::*;
 

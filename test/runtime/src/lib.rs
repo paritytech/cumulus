@@ -424,4 +424,19 @@ impl_runtime_apis! {
 	}
 }
 
-cumulus_pallet_parachain_system::register_validate_block!(Runtime, Executive);
+pub struct CheckInherents;
+
+impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
+	fn check_inherents(
+		extrinsics: &[UncheckedExtrinsic],
+		validation_data: &cumulus_pallet_parachain_system::PersistedValidationData,
+	) -> sp_inherents::CheckInherentsResult {
+		sp_inherents::CheckInherentsResult::new()
+	}
+}
+
+cumulus_pallet_parachain_system::register_validate_block! {
+	Runtime = Runtime,
+	BlockExecutor = Executive,
+	CheckInherents = CheckInherents,
+}
