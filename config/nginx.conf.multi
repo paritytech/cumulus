@@ -23,7 +23,7 @@ server {
         proxy_set_header Connection "upgrade";
     }
 
-    location /indexer {
+    location /indexer/ {
         proxy_pass http://indexer-service:3000/;
     }
 
