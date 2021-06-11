@@ -12,7 +12,7 @@ use frame_support::{
 		DispatchClass, DispatchInfo, PostDispatchInfo, GetDispatchInfo, Weight,
 		WeightToFeePolynomial, WeightToFeeCoefficients, WeightToFeeCoefficient,
 	},
-	traits::{Currency, FindAuthor},
+	traits::{Currency, FindAuthor, fungibles::Mutate},
 	ConsensusEngineId,
 };
 use pallet_assets::Call as AssetsCall;
@@ -313,10 +313,6 @@ fn transaction_payment_in_asset_possible() {
 			Call::Assets(AssetsCall::force_create(asset_id, owner, is_sufficient, min_balance))
 				.dispatch(Origin::root())
 		};
-		let mint = |owner, asset_id, beneficiary, amount| {
-			Call::Assets(AssetsCall::mint(asset_id, beneficiary, amount))
-				.dispatch(Origin::signed(owner))
-		};
 
 		let len = 10;
 		let asset_id = 1;
@@ -326,9 +322,10 @@ fn transaction_payment_in_asset_possible() {
 		let beneficiary = <Runtime as system::Config>::Lookup::unlookup(caller);
 		assert_ok!(force_create(asset_id, owner, true /* is_sufficient */, min_balance));
 		let balance = 100;
-		assert_ok!(mint(owner, asset_id, beneficiary, balance));
+		assert_ok!(Assets::mint_into(asset_id, &beneficiary, balance));
 		assert_eq!(Assets::balance(asset_id, caller), balance);
 		let weight = 5;
+		// we have a ratio of 1::2 for native vs asset minimum balance
 		let fee = (base_weight + weight + len as u64) * 2;
 		let pre = ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
 			.pre_dispatch(&caller, CALL, &info_from_weight(weight), len)
@@ -351,7 +348,7 @@ fn transaction_payment_in_asset_possible() {
 		let caller = 2;
 		let beneficiary = <Runtime as system::Config>::Lookup::unlookup(caller);
 		let balance = 1000;
-		assert_ok!(mint(owner, asset_id, beneficiary, balance));
+		assert_ok!(Assets::mint_into(asset_id, &beneficiary, balance));
 		assert_eq!(Assets::balance(asset_id, caller), balance);
 		let weight = 100;
 		let tip = 5;
