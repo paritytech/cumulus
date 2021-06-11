@@ -1,6 +1,8 @@
 [package]
-name = 'cumulus-rococo-parachain-runtime'
-version = '0.1.0'
+name = 'integritee-parachain-runtime'
+# minor revision must match node/client
+# patch revision must match runtime spec_version
+version = '0.2.4'
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = '2018'
 description = "Simple runtime used by the rococo parachain(s)"
@@ -60,6 +62,13 @@ hex = "0.4.3"
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.4" }
 
+# TEE
+[dependencies.substratee-registry]
+default-features = false
+git = "https://github.com/scs/pallet-substratee-registry.git"
+branch = "rococo"
+package = 'pallet-substratee-registry'
+
 [features]
 default = [ "std" ]
 std = [
@@ -100,4 +109,6 @@ std = [
 	"xcm-executor/std",
 	"pallet-aura/std",
 	"sp-consensus-aura/std",
+	# TEE
+	"substratee-registry/std"
 ]

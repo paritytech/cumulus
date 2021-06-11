@@ -152,6 +152,53 @@ pub fn staging_test_net(id: ParaId) -> ChainSpec {
 	)
 }
 
+pub fn integritee_spec(id: ParaId, use_well_known_keys: bool) -> ChainSpec {
+	let mut root_account: AccountId =  hex!["7a7ff92b215258d2441e041425693e2f0c73da4a813db166d7c4018db8d16153"].into();
+	let mut endowed_accounts = vec![root_account.clone()];
+	let mut chain_type = ChainType::Live;
+
+	if use_well_known_keys {
+		root_account = get_account_id_from_seed::<sr25519::Public>("Alice");
+		endowed_accounts = vec![
+			get_account_id_from_seed::<sr25519::Public>("Alice"),
+			get_account_id_from_seed::<sr25519::Public>("Bob"),
+			get_account_id_from_seed::<sr25519::Public>("Charlie"),
+		];
+		chain_type = ChainType::Local;
+	}
+
+
+	ChainSpec::from_genesis(
+		"IntegriTEE PC1",
+		"integritee-rococo-v1",
+		chain_type,
+		move || {
+			testnet_genesis(
+				root_account.clone(),
+				endowed_accounts.clone(),
+				id,
+			)
+		},
+		Vec::new(),
+		// telemetry endpoints
+		None,
+		// protocol id
+		Some("integritee-rococo-v1"),
+		// properties
+		Some(serde_json::from_str(
+			r#"{
+			"ss58Format": 42,
+			"tokenDecimals": 12,
+			"tokenSymbol": "ITY"
+			}"#).unwrap()),
+		Extensions {
+			relay_chain: "rococo".into(),
+			para_id: 1983,
+		},
+	)
+}
+
+
 fn testnet_genesis(
 	root_key: AccountId,
 	initial_authorities: Vec<AuraId>,

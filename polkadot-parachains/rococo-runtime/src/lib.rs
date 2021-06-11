@@ -53,6 +53,9 @@ pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 
+// TEE
+pub use substratee_registry::Call as SubstrateeRegistryCall;
+
 // XCM imports
 use polkadot_parachain::primitives::Sibling;
 use xcm::v0::{MultiAsset, MultiLocation, MultiLocation::*, Junction::*, BodyId, NetworkId};
@@ -78,11 +81,11 @@ impl_opaque_keys! {
 /// This runtime version.
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("test-parachain"),
-	impl_name: create_runtime_str!("test-parachain"),
+	spec_name: create_runtime_str!("integritee-parachain"),
+	impl_name: create_runtime_str!("integritee-parachain"),
 	authoring_version: 1,
-	spec_version: 14,
-	impl_version: 0,
+	spec_version: 5,
+	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
 };
@@ -97,6 +100,9 @@ pub const EPOCH_DURATION_IN_BLOCKS: u32 = 10 * MINUTES;
 pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
+
+/// A timestamp: milliseconds since the unix epoch.
+pub type Moment = u64;
 
 pub const ROC: Balance = 1_000_000_000_000;
 pub const MILLIROC: Balance = 1_000_000_000;
@@ -427,6 +433,18 @@ impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 }
 
+// TEE
+parameter_types! {
+	pub const MomentsPerDay: Moment = 86_400_000; // [ms/d]
+}
+impl substratee_registry::Config for Runtime {
+	type Event = Event;
+	type Currency = pallet_balances::Module<Runtime>;
+	type MomentsPerDay = MomentsPerDay;
+}
+
+
+
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
@@ -484,6 +502,7 @@ pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
 	frame_system::CheckSpecVersion<Runtime>,
+	frame_system::CheckTxVersion<Runtime>,
 	frame_system::CheckGenesis<Runtime>,
 	frame_system::CheckEra<Runtime>,
 	frame_system::CheckNonce<Runtime>,

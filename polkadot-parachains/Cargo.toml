@@ -1,12 +1,12 @@
 [package]
-name = "polkadot-collator"
-version = "0.1.0"
+name = "integritee-collator"
+version = "0.2.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 build = "build.rs"
 edition = "2018"
 
 [[bin]]
-name = "polkadot-collator"
+name = "integritee-collator"
 path = "src/main.rs"
 
 [dependencies]
@@ -23,7 +23,7 @@ hex-literal = "0.2.1"
 async-trait = "0.1.42"
 
 # Parachain runtimes
-rococo-parachain-runtime = { package = "cumulus-rococo-parachain-runtime", path = "rococo-runtime" }
+rococo-parachain-runtime = { package = "integritee-parachain-runtime", path = "rococo-runtime" }
 shell-runtime = { package = "cumulus-shell-runtime", path = "shell-runtime" }
 
 # Substrate dependencies

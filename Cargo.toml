@@ -25,3 +25,7 @@ members = [
 
 [profile.release]
 panic = "unwind"
+
+[patch."https://github.com/scs/pallet-substratee-registry"]
+pallet-substratee-registry = { path = "../pallet-substratee-registry", default-features = false }
+ias-verify = { path = "../pallet-substratee-registry/ias-verify", default-features = false }
