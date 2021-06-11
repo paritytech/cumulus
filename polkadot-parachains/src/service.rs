@@ -18,7 +18,7 @@ use cumulus_client_consensus_aura::{
 	build_aura_consensus, BuildAuraConsensusParams, SlotProportion,
 };
 use cumulus_client_consensus_common::{
-	ParachainConsensus, ParachainCandidate, ParachainBlockImport,
+	ParachainConsensus, ParachainCandidate,
 };
 use cumulus_client_network::build_block_announce_validator;
 use cumulus_client_service::{
@@ -36,7 +36,7 @@ use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerH
 use sp_api::{ConstructRuntimeApi, ApiExt};
 use sp_consensus::{
 	BlockImportParams, BlockOrigin, SlotData,
-	import_queue::{BasicQueue, CacheKeyId, Verifier as VerifierT},
+	import_queue::{CacheKeyId, Verifier as VerifierT},
 };
 use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
 use sp_keystore::SyncCryptoStorePtr;
@@ -44,7 +44,6 @@ use sp_runtime::{traits::{BlakeTwo256, Header as HeaderT}, generic::BlockId};
 use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
 use futures::lock::Mutex;
-use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 
 pub use sc_executor::NativeExecutor;
 
@@ -67,29 +66,6 @@ native_executor_instance!(
 	shell_runtime::native_version,
 );
 
-// Native Statemint executor instance.
-native_executor_instance!(
-	pub StatemintRuntimeExecutor,
-	statemint_runtime::api::dispatch,
-	statemint_runtime::native_version,
-	frame_benchmarking::benchmarking::HostFunctions,
-);
-
-// Native Statemine executor instance.
-native_executor_instance!(
-	pub StatemineRuntimeExecutor,
-	statemine_runtime::api::dispatch,
-	statemine_runtime::native_version,
-	frame_benchmarking::benchmarking::HostFunctions,
-);
-
-// Native Westmint executor instance.
-native_executor_instance!(
-	pub WestmintRuntimeExecutor,
-	westmint_runtime::api::dispatch,
-	westmint_runtime::native_version,
-	frame_benchmarking::benchmarking::HostFunctions,
-);
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
@@ -698,262 +674,4 @@ where
 				.await
 		}
 	}
-}
-
-/// Build the import queue for the statemint/statemine/westmine runtime.
-pub fn statemint_build_import_queue<RuntimeApi, Executor>(
-	client: Arc<TFullClient<Block, RuntimeApi, Executor>>,
-	config: &Configuration,
-	telemetry_handle: Option<TelemetryHandle>,
-	task_manager: &TaskManager,
-) -> Result<
-	sp_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
-	sc_service::Error,
->
-where
-	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, Executor>>
-		+ Send
-		+ Sync
-		+ 'static,
-	RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
-		+ sp_api::Metadata<Block>
-		+ sp_session::SessionKeys<Block>
-		+ sp_api::ApiExt<
-			Block,
-			StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
-		> + sp_offchain::OffchainWorkerApi<Block>
-		+ sp_block_builder::BlockBuilder<Block>
-		+ sp_consensus_aura::AuraApi<Block, AuraId>,
-	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
-	Executor: sc_executor::NativeExecutionDispatch + 'static,
-{
-	let client2 = client.clone();
-
-	let aura_verifier = move || {
-		let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
-
-		Box::new(cumulus_client_consensus_aura::build_verifier::<
-			sp_consensus_aura::sr25519::AuthorityPair,
-			_,
-			_,
-			_,
-		>(cumulus_client_consensus_aura::BuildVerifierParams {
-			client: client2.clone(),
-			create_inherent_data_providers: move |_, _| async move {
-				let time = sp_timestamp::InherentDataProvider::from_system_time();
-
-				let slot =
-					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
-						*time,
-						slot_duration.slot_duration(),
-					);
-
-				Ok((time, slot))
-			},
-			can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(
-				client2.executor().clone(),
-			),
-			telemetry: telemetry_handle,
-		})) as Box<_>
-	};
-
-	let relay_chain_verifier = Box::new(RelayChainVerifier::new(client.clone(), |_, _| async {
-		Ok(())
-	})) as Box<_>;
-
-	let verifier = Verifier {
-		client: client.clone(),
-		relay_chain_verifier,
-		aura_verifier: BuildOnAccess::Uninitialized(Some(Box::new(aura_verifier))),
-	};
-
-	let registry = config.prometheus_registry().clone();
-	let spawner = task_manager.spawn_essential_handle();
-
-	Ok(BasicQueue::new(
-		verifier,
-		Box::new(ParachainBlockImport::new(client.clone())),
-		None,
-		&spawner,
-		registry,
-	))
-}
-
-/// Start a statemint/statemine/westmint parachain node.
-pub async fn start_statemint_node<RuntimeApi, Executor>(
-	parachain_config: Configuration,
-	polkadot_config: Configuration,
-	id: ParaId,
-) -> sc_service::error::Result<(
-	TaskManager,
-	Arc<TFullClient<Block, RuntimeApi, Executor>>,
-)>
-where
-	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, Executor>>
-		+ Send
-		+ Sync
-		+ 'static,
-	RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
-		+ sp_api::Metadata<Block>
-		+ sp_session::SessionKeys<Block>
-		+ sp_api::ApiExt<
-			Block,
-			StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
-		> + sp_offchain::OffchainWorkerApi<Block>
-		+ sp_block_builder::BlockBuilder<Block>
-		+ cumulus_primitives_core::CollectCollationInfo<Block>
-		+ sp_consensus_aura::AuraApi<Block, AuraId>,
-	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
-	Executor: sc_executor::NativeExecutionDispatch + 'static,
-{
-	start_node_impl::<RuntimeApi, Executor, _, _, _>(
-		parachain_config,
-		polkadot_config,
-		id,
-		|_| Default::default(),
-		statemint_build_import_queue,
-		|client,
-		 prometheus_registry,
-		 telemetry,
-		 task_manager,
-		 relay_chain_node,
-		 transaction_pool,
-		 sync_oracle,
-		 keystore,
-		 force_authoring| {
-			let client2 = client.clone();
-			let relay_chain_backend = relay_chain_node.backend.clone();
-			let relay_chain_client = relay_chain_node.client.clone();
-			let spawn_handle = task_manager.spawn_handle();
-			let transaction_pool2 = transaction_pool.clone();
-			let telemetry2 = telemetry.clone();
-			let prometheus_registry2 = prometheus_registry.map(|r| (*r).clone());
-
-			let aura_consensus = BuildOnAccess::Uninitialized(Some(
-				Box::new(move || {
-					let slot_duration =
-						cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
-
-					let proposer_factory =
-						sc_basic_authorship::ProposerFactory::with_proof_recording(
-							spawn_handle,
-							client2.clone(),
-							transaction_pool2,
-							prometheus_registry2.as_ref(),
-							telemetry2.clone(),
-						);
-
-					let relay_chain_backend2 = relay_chain_backend.clone();
-					let relay_chain_client2 = relay_chain_client.clone();
-
-					build_aura_consensus::<
-						sp_consensus_aura::sr25519::AuthorityPair,
-						_,
-						_,
-						_,
-						_,
-						_,
-						_,
-						_,
-						_,
-						_,
-					>(BuildAuraConsensusParams {
-						proposer_factory,
-						create_inherent_data_providers:
-							move |_, (relay_parent, validation_data)| {
-								let parachain_inherent =
-								cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
-									relay_parent,
-									&relay_chain_client,
-									&*relay_chain_backend,
-									&validation_data,
-									id,
-								);
-								async move {
-									let time =
-										sp_timestamp::InherentDataProvider::from_system_time();
-
-									let slot =
-									sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
-										*time,
-										slot_duration.slot_duration(),
-									);
-
-									let parachain_inherent =
-										parachain_inherent.ok_or_else(|| {
-											Box::<dyn std::error::Error + Send + Sync>::from(
-												"Failed to create parachain inherent",
-											)
-										})?;
-									Ok((time, slot, parachain_inherent))
-								}
-							},
-						block_import: client2.clone(),
-						relay_chain_client: relay_chain_client2,
-						relay_chain_backend: relay_chain_backend2,
-						para_client: client2.clone(),
-						backoff_authoring_blocks: Option::<()>::None,
-						sync_oracle,
-						keystore,
-						force_authoring,
-						slot_duration,
-						// We got around 500ms for proposing
-						block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
-						telemetry: telemetry2,
-					})
-				}),
-			));
-
-			let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
-				task_manager.spawn_handle(),
-				client.clone(),
-				transaction_pool,
-				prometheus_registry.clone(),
-				telemetry.clone(),
-			);
-
-			let relay_chain_backend = relay_chain_node.backend.clone();
-			let relay_chain_client = relay_chain_node.client.clone();
-
-			let relay_chain_consensus =
-				cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
-					cumulus_client_consensus_relay_chain::BuildRelayChainConsensusParams {
-						para_id: id,
-						proposer_factory,
-						block_import: client.clone(),
-						relay_chain_client: relay_chain_node.client.clone(),
-						relay_chain_backend: relay_chain_node.backend.clone(),
-						create_inherent_data_providers:
-							move |_, (relay_parent, validation_data)| {
-								let parachain_inherent =
-									cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
-										relay_parent,
-										&relay_chain_client,
-										&*relay_chain_backend,
-										&validation_data,
-										id,
-									);
-								async move {
-									let parachain_inherent =
-										parachain_inherent.ok_or_else(|| {
-											Box::<dyn std::error::Error + Send + Sync>::from(
-												"Failed to create parachain inherent",
-											)
-										})?;
-									Ok(parachain_inherent)
-								}
-							},
-					},
-				);
-
-			let parachain_consensus = Box::new(WaitForAuraConsensus {
-				client: client.clone(),
-				aura_consensus: Arc::new(Mutex::new(aura_consensus)),
-				relay_chain_consensus: Arc::new(Mutex::new(relay_chain_consensus)),
-			});
-
-			Ok(parachain_consensus)
-		},
-	)
-	.await
 }

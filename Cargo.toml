@@ -21,10 +21,6 @@ members = [
 	"polkadot-parachains/pallets/ping",
 	"polkadot-parachains/rococo-runtime",
 	"polkadot-parachains/shell-runtime",
-	"polkadot-parachains/statemint-common",
-	"polkadot-parachains/statemint-runtime",
-	"polkadot-parachains/statemine-runtime",
-	"polkadot-parachains/westmint-runtime",
 ]
 
 [profile.release]
