@@ -175,6 +175,11 @@ pub fn integritee_spec(id: ParaId, use_well_known_keys: bool) -> ChainSpec {
 		move || {
 			testnet_genesis(
 				root_account.clone(),
+				// todo: What do I actually need to put here??
+				vec![
+					get_from_seed::<AuraId>("Alice"),
+					get_from_seed::<AuraId>("Bob"),
+				],
 				endowed_accounts.clone(),
 				id,
 			)

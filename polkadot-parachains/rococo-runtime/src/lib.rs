@@ -439,7 +439,7 @@ parameter_types! {
 }
 impl substratee_registry::Config for Runtime {
 	type Event = Event;
-	type Currency = pallet_balances::Module<Runtime>;
+	type Currency = pallet_balances::Pallet<Runtime>;
 	type MomentsPerDay = MomentsPerDay;
 }
 
@@ -473,6 +473,8 @@ construct_runtime! {
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 53,
 
 		Spambot: cumulus_ping::{Pallet, Call, Storage, Event<T>} = 99,
+
+		SubstrateeRegistry: substratee_registry::{Pallet, Call, Storage, Event<T>},
 	}
 }
 
