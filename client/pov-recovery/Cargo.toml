@@ -37,7 +37,7 @@ rand = "0.8.3"
 tokio = { version = "0.2.21", features = ["macros"] }
 
 # Cumulus deps
-cumulus-test-service = { path = "../../test/service" }
+cumulus-test-service = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.4" }
 
 # Polkadot deps
 polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.4" }

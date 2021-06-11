@@ -16,7 +16,7 @@ members = [
 	"primitives/core",
 	"primitives/parachain-inherent",
 	"primitives/utility",
-	"polkadot-parachains/",
+	"polkadot-parachains",
 	"polkadot-parachains/pallets/parachain-info",
 	"polkadot-parachains/pallets/ping",
 	"polkadot-parachains/rococo-runtime",
@@ -25,12 +25,6 @@ members = [
 	"polkadot-parachains/statemint-runtime",
 	"polkadot-parachains/statemine-runtime",
 	"polkadot-parachains/westmint-runtime",
-	"test/runtime",
-	"test/runtime-upgrade",
-	"test/client",
-	"test/service",
-	"test/relay-sproof-builder",
-	"test/relay-validation-worker-provider",
 ]
 
 [profile.release]

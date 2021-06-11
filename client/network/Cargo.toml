@@ -33,7 +33,7 @@ derive_more = "0.99.2"
 tokio = { version = "0.2.21", features = ["macros"] }
 
 # Cumulus deps
-cumulus-test-service = { path = "../../test/service" }
+cumulus-test-service =  { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.4" }
 cumulus-primitives-core = { path = "../../primitives/core" }
 
 # Polkadot deps
