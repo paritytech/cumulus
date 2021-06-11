@@ -27,6 +27,9 @@ frame-support = { git = "https://github.com/paritytech/substrate", default-featu
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.4" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.4" }
 
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.4" }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.4" }
+
 # Cumulus dependencies
 cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false }
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }

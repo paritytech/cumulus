@@ -50,6 +50,8 @@ use frame_system::limits::{BlockLength, BlockWeights};
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
+pub use pallet_balances::Call as BalancesCall;
+
 // XCM imports
 use xcm::v0::{Junction::*, MultiLocation, MultiLocation::*, NetworkId};
 use xcm_builder::{
@@ -141,7 +143,7 @@ impl frame_system::Config for Runtime {
 	type Version = Version;
 	/// Converts a module to an index of this module in the runtime.
 	type PalletInfo = PalletInfo;
-	type AccountData = ();
+	type AccountData = pallet_balances::AccountData<Balance>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type DbWeight = ();
@@ -170,6 +172,35 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 }
 
 impl parachain_info::Config for Runtime {}
+
+impl pallet_sudo::Config for Runtime {
+	type Call = Call;
+	type Event = Event;
+}
+
+pub const ROC: Balance = 1_000_000_000_000;
+pub const MILLIROC: Balance = 1_000_000_000;
+pub const MICROROC: Balance = 1_000_000;
+
+parameter_types! {
+	pub const ExistentialDeposit: u128 = 1 * MILLIROC;
+	pub const TransferFee: u128 = 1 * MILLIROC;
+	pub const CreationFee: u128 = 1 * MILLIROC;
+	pub const TransactionByteFee: u128 = 1 * MICROROC;
+	pub const MaxLocks: u32 = 50;
+}
+
+impl pallet_balances::Config for Runtime {
+	/// The type for recording an account's balance.
+	type Balance = Balance;
+	/// The ubiquitous event type.
+	type Event = Event;
+	type DustRemoval = ();
+	type ExistentialDeposit = ExistentialDeposit;
+	type AccountStore = System;
+	type WeightInfo = ();
+	type MaxLocks = MaxLocks;
+}
 
 parameter_types! {
 	pub const RococoLocation: MultiLocation = X1(Parent);
@@ -229,6 +260,11 @@ construct_runtime! {
 		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned},
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
 
+		// added by integritee
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 30,
+		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>},
+
+
 		// DMP handler.
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin},
 	}
@@ -265,6 +301,8 @@ pub type Signature = sp_runtime::MultiSignature;
 /// Some way of identifying an account on the chain. We intentionally make it equivalent
 /// to the public key of our transaction signing scheme.
 pub type AccountId = <<Signature as sp_runtime::traits::Verify>::Signer as sp_runtime::traits::IdentifyAccount>::AccountId;
+/// Balance of an account.
+pub type Balance = u128;
 /// Index of a transaction in the chain.
 pub type Index = u32;
 /// A hash of some data used by the chain.

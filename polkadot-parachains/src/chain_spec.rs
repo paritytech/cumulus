@@ -183,6 +183,9 @@ fn testnet_genesis(
 }
 
 fn shell_testnet_genesis(parachain_id: ParaId) -> shell_runtime::GenesisConfig {
+	let root_key: AccountId =  hex!["7a7ff92b215258d2441e041425693e2f0c73da4a813db166d7c4018db8d16153"].into();
+	let endowed_accounts = vec![root_key.clone()];
+
 	shell_runtime::GenesisConfig {
 		frame_system: shell_runtime::SystemConfig {
 			code: shell_runtime::WASM_BINARY
@@ -190,6 +193,14 @@ fn shell_testnet_genesis(parachain_id: ParaId) -> shell_runtime::GenesisConfig {
 				.to_vec(),
 			changes_trie_config: Default::default(),
 		},
+		pallet_balances: shell_runtime::BalancesConfig {
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, 1 << 60))
+				.collect(),
+		},
+		pallet_sudo: shell_runtime::SudoConfig { key: root_key },
 		parachain_info: shell_runtime::ParachainInfoConfig { parachain_id },
 		cumulus_pallet_parachain_system: Default::default(),
 	}

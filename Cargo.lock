@@ -1405,6 +1405,30 @@ dependencies = [
 [[package]]
 name = "cumulus-client-collator"
 version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4#08b7bcfe21b2ce2a26dcdaa664bf8c016f7c93ae"
+dependencies = [
+ "cumulus-client-consensus-common 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
+ "cumulus-client-network 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
+ "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
+ "futures 0.3.14",
+ "parity-scale-codec",
+ "parking_lot 0.10.2",
+ "polkadot-node-primitives",
+ "polkadot-node-subsystem",
+ "polkadot-overseer",
+ "polkadot-primitives",
+ "sc-client-api",
+ "sp-api",
+ "sp-consensus",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "tracing",
+]
+
+[[package]]
+name = "cumulus-client-collator"
+version = "0.1.0"
 dependencies = [
  "async-trait",
  "cumulus-client-consensus-common 0.1.0",
@@ -1435,30 +1459,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-client-collator"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4#08b7bcfe21b2ce2a26dcdaa664bf8c016f7c93ae"
-dependencies = [
- "cumulus-client-consensus-common 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
- "cumulus-client-network 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
- "futures 0.3.14",
- "parity-scale-codec",
- "parking_lot 0.10.2",
- "polkadot-node-primitives",
- "polkadot-node-subsystem",
- "polkadot-overseer",
- "polkadot-primitives",
- "sc-client-api",
- "sp-api",
- "sp-consensus",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "tracing",
-]
-
-[[package]]
 name = "cumulus-client-consensus-aura"
 version = "0.1.0"
 dependencies = [
@@ -1483,6 +1483,30 @@ dependencies = [
  "sp-inherents",
  "sp-keystore",
  "sp-runtime",
+ "substrate-prometheus-endpoint",
+ "tracing",
+]
+
+[[package]]
+name = "cumulus-client-consensus-common"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4#08b7bcfe21b2ce2a26dcdaa664bf8c016f7c93ae"
+dependencies = [
+ "async-trait",
+ "dyn-clone",
+ "futures 0.3.14",
+ "parity-scale-codec",
+ "polkadot-primitives",
+ "polkadot-runtime",
+ "sc-client-api",
+ "sp-api",
+ "sp-block-builder",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-trie",
  "substrate-prometheus-endpoint",
  "tracing",
 ]
@@ -1522,53 +1546,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-client-consensus-common"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4#08b7bcfe21b2ce2a26dcdaa664bf8c016f7c93ae"
-dependencies = [
- "async-trait",
- "dyn-clone",
- "futures 0.3.14",
- "parity-scale-codec",
- "polkadot-primitives",
- "polkadot-runtime",
- "sc-client-api",
- "sp-api",
- "sp-block-builder",
- "sp-blockchain",
- "sp-consensus",
- "sp-core",
- "sp-inherents",
- "sp-runtime",
- "sp-trie",
- "substrate-prometheus-endpoint",
- "tracing",
-]
-
-[[package]]
-name = "cumulus-client-consensus-relay-chain"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "cumulus-client-consensus-common 0.1.0",
- "cumulus-primitives-core 0.1.0",
- "futures 0.3.14",
- "parity-scale-codec",
- "parking_lot 0.10.2",
- "polkadot-service",
- "sc-client-api",
- "sp-api",
- "sp-block-builder",
- "sp-blockchain",
- "sp-consensus",
- "sp-core",
- "sp-inherents",
- "sp-runtime",
- "substrate-prometheus-endpoint",
- "tracing",
-]
-
-[[package]]
 name = "cumulus-client-consensus-relay-chain"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4#08b7bcfe21b2ce2a26dcdaa664bf8c016f7c93ae"
@@ -1593,34 +1570,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-client-network"
+name = "cumulus-client-consensus-relay-chain"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
+ "cumulus-client-consensus-common 0.1.0",
  "cumulus-primitives-core 0.1.0",
- "cumulus-test-service",
- "derive_more 0.99.11",
  "futures 0.3.14",
- "futures-timer 3.0.2",
  "parity-scale-codec",
  "parking_lot 0.10.2",
- "polkadot-node-primitives",
- "polkadot-parachain",
- "polkadot-primitives",
  "polkadot-service",
- "polkadot-statement-table",
- "polkadot-test-client",
- "sc-cli",
  "sc-client-api",
- "sc-service",
  "sp-api",
+ "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
  "sp-core",
- "sp-keyring",
- "sp-keystore",
+ "sp-inherents",
  "sp-runtime",
- "substrate-test-utils",
- "tokio 0.2.24",
+ "substrate-prometheus-endpoint",
  "tracing",
 ]
 
@@ -1649,32 +1617,31 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-client-pov-recovery"
+name = "cumulus-client-network"
 version = "0.1.0"
 dependencies = [
  "cumulus-primitives-core 0.1.0",
  "cumulus-test-service",
+ "derive_more 0.99.11",
  "futures 0.3.14",
  "futures-timer 3.0.2",
  "parity-scale-codec",
+ "parking_lot 0.10.2",
  "polkadot-node-primitives",
- "polkadot-node-subsystem",
- "polkadot-overseer",
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-service",
  "polkadot-statement-table",
  "polkadot-test-client",
- "rand 0.8.3",
  "sc-cli",
  "sc-client-api",
  "sc-service",
  "sp-api",
+ "sp-blockchain",
  "sp-consensus",
  "sp-core",
  "sp-keyring",
  "sp-keystore",
- "sp-maybe-compressed-blob",
  "sp-runtime",
  "substrate-test-utils",
  "tokio 0.2.24",
@@ -1708,13 +1675,47 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-client-service"
+name = "cumulus-client-pov-recovery"
 version = "0.1.0"
 dependencies = [
- "cumulus-client-collator 0.1.0",
- "cumulus-client-consensus-common 0.1.0",
- "cumulus-client-pov-recovery 0.1.0",
  "cumulus-primitives-core 0.1.0",
+ "cumulus-test-service",
+ "futures 0.3.14",
+ "futures-timer 3.0.2",
+ "parity-scale-codec",
+ "polkadot-node-primitives",
+ "polkadot-node-subsystem",
+ "polkadot-overseer",
+ "polkadot-parachain",
+ "polkadot-primitives",
+ "polkadot-service",
+ "polkadot-statement-table",
+ "polkadot-test-client",
+ "rand 0.8.3",
+ "sc-cli",
+ "sc-client-api",
+ "sc-service",
+ "sp-api",
+ "sp-consensus",
+ "sp-core",
+ "sp-keyring",
+ "sp-keystore",
+ "sp-maybe-compressed-blob",
+ "sp-runtime",
+ "substrate-test-utils",
+ "tokio 0.2.24",
+ "tracing",
+]
+
+[[package]]
+name = "cumulus-client-service"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4#08b7bcfe21b2ce2a26dcdaa664bf8c016f7c93ae"
+dependencies = [
+ "cumulus-client-collator 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
+ "cumulus-client-consensus-common 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
+ "cumulus-client-pov-recovery 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
+ "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
  "parity-scale-codec",
  "parking_lot 0.10.2",
  "polkadot-overseer",
@@ -1737,12 +1738,11 @@ dependencies = [
 [[package]]
 name = "cumulus-client-service"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4#08b7bcfe21b2ce2a26dcdaa664bf8c016f7c93ae"
 dependencies = [
- "cumulus-client-collator 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
- "cumulus-client-consensus-common 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
- "cumulus-client-pov-recovery 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
+ "cumulus-client-collator 0.1.0",
+ "cumulus-client-consensus-common 0.1.0",
+ "cumulus-client-pov-recovery 0.1.0",
+ "cumulus-primitives-core 0.1.0",
  "parity-scale-codec",
  "parking_lot 0.10.2",
  "polkadot-overseer",
@@ -1802,6 +1802,36 @@ dependencies = [
 [[package]]
 name = "cumulus-pallet-parachain-system"
 version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4#08b7bcfe21b2ce2a26dcdaa664bf8c016f7c93ae"
+dependencies = [
+ "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
+ "cumulus-primitives-parachain-inherent 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
+ "environmental",
+ "frame-support",
+ "frame-system",
+ "hash-db",
+ "log",
+ "memory-db",
+ "pallet-balances",
+ "parity-scale-codec",
+ "polkadot-parachain",
+ "serde",
+ "sp-core",
+ "sp-externalities",
+ "sp-inherents",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
+ "sp-trie",
+ "sp-version",
+ "trie-db",
+ "xcm",
+]
+
+[[package]]
+name = "cumulus-pallet-parachain-system"
+version = "0.1.0"
 dependencies = [
  "cumulus-primitives-core 0.1.0",
  "cumulus-primitives-parachain-inherent 0.1.0",
@@ -1836,36 +1866,6 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "substrate-test-runtime-client",
- "trie-db",
- "xcm",
-]
-
-[[package]]
-name = "cumulus-pallet-parachain-system"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4#08b7bcfe21b2ce2a26dcdaa664bf8c016f7c93ae"
-dependencies = [
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
- "cumulus-primitives-parachain-inherent 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
- "environmental",
- "frame-support",
- "frame-system",
- "hash-db",
- "log",
- "memory-db",
- "pallet-balances",
- "parity-scale-codec",
- "polkadot-parachain",
- "serde",
- "sp-core",
- "sp-externalities",
- "sp-inherents",
- "sp-io",
- "sp-runtime",
- "sp-state-machine",
- "sp-std",
- "sp-trie",
- "sp-version",
  "trie-db",
  "xcm",
 ]
@@ -1920,6 +1920,7 @@ dependencies = [
 [[package]]
 name = "cumulus-primitives-core"
 version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4#08b7bcfe21b2ce2a26dcdaa664bf8c016f7c93ae"
 dependencies = [
  "frame-support",
  "impl-trait-for-tuples",
@@ -1937,7 +1938,6 @@ dependencies = [
 [[package]]
 name = "cumulus-primitives-core"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4#08b7bcfe21b2ce2a26dcdaa664bf8c016f7c93ae"
 dependencies = [
  "frame-support",
  "impl-trait-for-tuples",
@@ -1955,9 +1955,10 @@ dependencies = [
 [[package]]
 name = "cumulus-primitives-parachain-inherent"
 version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4#08b7bcfe21b2ce2a26dcdaa664bf8c016f7c93ae"
 dependencies = [
  "async-trait",
- "cumulus-primitives-core 0.1.0",
+ "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
  "parity-scale-codec",
  "polkadot-service",
  "sc-client-api",
@@ -1974,10 +1975,9 @@ dependencies = [
 [[package]]
 name = "cumulus-primitives-parachain-inherent"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4#08b7bcfe21b2ce2a26dcdaa664bf8c016f7c93ae"
 dependencies = [
  "async-trait",
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
+ "cumulus-primitives-core 0.1.0",
  "parity-scale-codec",
  "polkadot-service",
  "sc-client-api",
@@ -2071,6 +2071,8 @@ dependencies = [
  "hex",
  "hex-literal 0.3.1",
  "log",
+ "pallet-balances",
+ "pallet-sudo",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
