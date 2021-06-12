@@ -144,7 +144,10 @@ pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys) -> ShellChain
 	};
 
 	integritee_genesis(
-		move || shell_testnet_genesis(id, genesis_keys), chain_type, id,
+		"shell-polkadot-v0.9.4",
+		move || shell_testnet_genesis(id, genesis_keys),
+		chain_type,
+		id,
 	)
 }
 
@@ -187,25 +190,28 @@ pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys) -> ChainSpec {
 		GenesisKeys::WellKnown => ChainType::Local
 	};
 
-	integritee_genesis(move || {
-		testnet_genesis(
-			genesis_keys.root(),
-			// todo: What do I actually need to put as initial authorities??
-			genesis_keys.initial_authorities(),
-			genesis_keys.endowed_accounts(),
-			id,
-		)
-	}, chain_type, id)
+	integritee_genesis(
+		"integritee-polkadot-v0.9.4",
+		move || {
+			testnet_genesis(
+				genesis_keys.root(),
+				// todo: What do I actually need to put as initial authorities??
+				genesis_keys.initial_authorities(),
+				genesis_keys.endowed_accounts(),
+				id,
+			)
+		}, chain_type, id)
 }
 
 fn integritee_genesis<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
+	chain_id: &str,
 	testnet_constructor: F,
 	chain_type: ChainType,
 	para_id: ParaId,
 ) -> GenericChainSpec<GenesisConfig, Extensions> {
 	GenericChainSpec::<GenesisConfig, Extensions>::from_genesis(
 		"IntegriTEE PC1",
-		"integritee-polkadot-v0.9.4",
+		chain_id,
 		chain_type,
 		testnet_constructor,
 		Vec::new(),
