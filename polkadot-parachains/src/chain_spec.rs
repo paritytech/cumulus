@@ -129,7 +129,7 @@ impl GenesisKeys {
 		}
 	}
 
-	pub fn initial_authorites(&self) -> Vec<AuraId> {
+	pub fn initial_authorities(&self) -> Vec<AuraId> {
 		vec![
 			get_from_seed::<AuraId>("Alice"),
 			get_from_seed::<AuraId>("Bob"),
@@ -192,7 +192,7 @@ pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys) -> ChainSpec {
 		testnet_genesis(
 			genesis_keys.root(),
 			// todo: What do I actually need to put as initial authorities??
-			genesis_keys.initial_authorites(),
+			genesis_keys.initial_authorities(),
 			genesis_keys.endowed_accounts(),
 			id,
 		)
@@ -277,12 +277,4 @@ fn shell_testnet_genesis(parachain_id: ParaId, genesis_keys: GenesisKeys) -> she
 		parachain_info: shell_runtime::ParachainInfoConfig { parachain_id },
 		cumulus_pallet_parachain_system: Default::default(),
 	}
-}
-
-/// Helper function to generate a crypto pair from seed
-#[allow(unused)] // will probably use that with integritee
-pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
-	TPublic::Pair::from_string(&format!("//{}", seed), None)
-		.expect("static values are valid; qed")
-		.public()
 }
