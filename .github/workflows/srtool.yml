@@ -6,6 +6,7 @@ jobs:
   srtool:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         chain: ["shell", "integritee"]
     steps:
