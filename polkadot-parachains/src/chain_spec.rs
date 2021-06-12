@@ -102,9 +102,49 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 	)
 }
 
-pub fn get_shell_chain_spec(id: ParaId) -> ShellChainSpec {
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+pub enum GenesisKeys {
+	/// Use integriTEE root as key and endow it.
+	IntegriteeRoot,
+	/// Use Keys from the keyring as root and endow them
+	WellKnown
+}
+
+impl GenesisKeys {
+	pub fn root(&self) -> AccountId {
+		match self {
+			GenesisKeys::IntegriteeRoot => hex!["7a7ff92b215258d2441e041425693e2f0c73da4a813db166d7c4018db8d16153"].into(),
+			GenesisKeys::WellKnown => get_account_id_from_seed::<sr25519::Public>("Alice")
+		}
+	}
+
+	pub fn endowed_accounts(&self) -> Vec<AccountId> {
+		match self {
+			GenesisKeys::IntegriteeRoot => vec![hex!["7a7ff92b215258d2441e041425693e2f0c73da4a813db166d7c4018db8d16153"].into()],
+			GenesisKeys::WellKnown => vec![
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				get_account_id_from_seed::<sr25519::Public>("Bob"),
+				get_account_id_from_seed::<sr25519::Public>("Charlie"),
+			]
+		}
+	}
+
+	pub fn initial_authorites(&self) -> Vec<AuraId> {
+		vec![
+			get_from_seed::<AuraId>("Alice"),
+			get_from_seed::<AuraId>("Bob"),
+		]
+	}
+}
+
+pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys) -> ShellChainSpec {
+	let chain_type = match genesis_keys {
+		GenesisKeys::IntegriteeRoot => ChainType::Live,
+		GenesisKeys::WellKnown => ChainType::Local
+	};
+
 	integritee_genesis::<_, ShellChainSpec, _>(
-		move || shell_testnet_genesis(id), ChainType::Live
+		move || shell_testnet_genesis(id, genesis_keys), chain_type
 	)
 }
 
@@ -141,30 +181,19 @@ pub fn staging_test_net(id: ParaId) -> ChainSpec {
 	)
 }
 
-pub fn integritee_spec(id: ParaId, use_well_known_keys: bool) -> ChainSpec {
-	let mut root_account: AccountId =  hex!["7a7ff92b215258d2441e041425693e2f0c73da4a813db166d7c4018db8d16153"].into();
-	let mut endowed_accounts = vec![root_account.clone()];
-	let mut chain_type = ChainType::Live;
+pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys) -> ChainSpec {
 
-	if use_well_known_keys {
-		root_account = get_account_id_from_seed::<sr25519::Public>("Alice");
-		endowed_accounts = vec![
-			get_account_id_from_seed::<sr25519::Public>("Alice"),
-			get_account_id_from_seed::<sr25519::Public>("Bob"),
-			get_account_id_from_seed::<sr25519::Public>("Charlie"),
-		];
-		chain_type = ChainType::Local;
-	}
+	let chain_type = match genesis_keys {
+		GenesisKeys::IntegriteeRoot => ChainType::Live,
+		GenesisKeys::WellKnown => ChainType::Local
+	};
 
 	integritee_genesis::<_, ChainSpec, _>(move || {
 		testnet_genesis(
-			root_account.clone(),
-			// todo: What do I actually need to put here??
-			vec![
-				get_from_seed::<AuraId>("Alice"),
-				get_from_seed::<AuraId>("Bob"),
-			],
-			endowed_accounts.clone(),
+			genesis_keys.root(),
+			// todo: What do I actually need to put as initial authorities??
+			genesis_keys.initial_authorites(),
+			genesis_keys.endowed_accounts(),
 			id,
 		)
 	}, chain_type)
@@ -229,10 +258,7 @@ fn testnet_genesis(
 	}
 }
 
-fn shell_testnet_genesis(parachain_id: ParaId) -> shell_runtime::GenesisConfig {
-	let root_key: AccountId =  hex!["7a7ff92b215258d2441e041425693e2f0c73da4a813db166d7c4018db8d16153"].into();
-	let endowed_accounts = vec![root_key.clone()];
-
+fn shell_testnet_genesis(parachain_id: ParaId, genesis_keys: GenesisKeys) -> shell_runtime::GenesisConfig {
 	shell_runtime::GenesisConfig {
 		frame_system: shell_runtime::SystemConfig {
 			code: shell_runtime::WASM_BINARY
@@ -241,13 +267,13 @@ fn shell_testnet_genesis(parachain_id: ParaId) -> shell_runtime::GenesisConfig {
 			changes_trie_config: Default::default(),
 		},
 		pallet_balances: shell_runtime::BalancesConfig {
-			balances: endowed_accounts
+			balances: genesis_keys.endowed_accounts()
 				.iter()
 				.cloned()
 				.map(|k| (k, 1 << 60))
 				.collect(),
 		},
-		pallet_sudo: shell_runtime::SudoConfig { key: root_key },
+		pallet_sudo: shell_runtime::SudoConfig { key: genesis_keys.root() },
 		parachain_info: shell_runtime::ParachainInfoConfig { parachain_id },
 		cumulus_pallet_parachain_system: Default::default(),
 	}

@@ -35,6 +35,7 @@ use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
+use crate::chain_spec::GenesisKeys;
 
 const DEFAULT_PARA_ID: u32 = 1000;
 
@@ -60,18 +61,10 @@ fn load_spec(
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
 		"staging" => Box::new(chain_spec::staging_test_net(para_id)),
-		"integritee-rococo" => Box::new(chain_spec::integritee_spec(para_id, false)),
-		"integritee-local" => Box::new(chain_spec::integritee_spec(para_id, true)),
-		"tick" => Box::new(chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("../res/tick.json")[..],
-		)?),
-		"trick" => Box::new(chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("../res/trick.json")[..],
-		)?),
-		"track" => Box::new(chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("../res/track.json")[..],
-		)?),
-		"shell" => Box::new(chain_spec::get_shell_chain_spec(para_id)),
+		"integritee-rococo" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::IntegriteeRoot)),
+		"integritee-local" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::WellKnown)),
+		"shell" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::IntegriteeRoot)),
+		"shell-local" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::WellKnown)),
 		"" => Box::new(chain_spec::get_chain_spec(para_id)),
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
