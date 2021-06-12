@@ -71,8 +71,6 @@ Follow these steps to prepare a local Substrate development environment:
 ### Build
 To build the parachain, use the command: `cargo build --release`.
 
-### Run
-#### Relay Chain
 Start the relay chain as follows:
 ```bash
 # Compile Polkadot with the real overseer feature
@@ -89,7 +87,7 @@ cargo build --release
 ./target/release/polkadot --chain <path to rococo-single-custom.json> --bob --tmp --port 30334
 ```
 
-Start the collators
+Start the collators and the node
 ```bash
 # Collator1
 ./target/release/polkadot-collator --collator --tmp --alice --force-authoring --parachain-id 18403 --port 40335 --ws-port 9946 --rpc-methods Unsafe --ws-external --rpc-cors all -- --execution wasm --chain <path to rococo-single-custom.json> --port 30335
