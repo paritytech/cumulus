@@ -99,4 +99,4 @@ Start the collators and the node
 ./target/release/polkadot-collator --tmp --parachain-id 18403 --port 40337 --ws-port 9948 --rpc-port 9929 --rpc-methods Unsafe --ws-external --rpc-cors all -- --execution wasm --chain <path to rococo-single-custom.json> --port 30337
 ```
 
-There is no need to register the parachain on the relay chain as it is already in the chain spec. Alternatively, you can connect to our parachain testnet at: `wss://parachain.konomi.tech/parachain` on polkadot js app.
+There is no need to register the parachain on the relay chain as it is already in the chain spec. Alternatively, you can connect to our parachain testnet at: `wss://parachain.konomi.tech/parachain` on polkadot js app. You can get the types from `types.json`.
