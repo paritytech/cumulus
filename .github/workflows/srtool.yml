@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        chain: ["shell", "integritee-rococo"]
+        chain: ["shell", "integritee"]
     steps:
       - uses: actions/checkout@v2
       - name: Srtool build
