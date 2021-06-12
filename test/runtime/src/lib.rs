@@ -432,9 +432,19 @@ struct CheckInherents;
 impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 	fn check_inherents(
 		_: &[UncheckedExtrinsic],
-		_: &cumulus_pallet_parachain_system::RelayChainStateProof,
+		relay_state_proof: &cumulus_pallet_parachain_system::RelayChainStateProof,
 	) -> sp_inherents::CheckInherentsResult {
-		sp_inherents::CheckInherentsResult::new()
+		if relay_state_proof.read_slot().expect("Reads slot") == 1337u64 {
+			let mut res = sp_inherents::CheckInherentsResult::new();
+			res.put_error(
+				[1u8; 8],
+				&sp_inherents::MakeFatalError::from("You are wrong"),
+			)
+			.expect("Puts error");
+			res
+		} else {
+			sp_inherents::CheckInherentsResult::new()
+		}
 	}
 }
 
