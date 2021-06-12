@@ -143,7 +143,7 @@ pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys) -> ShellChain
 		GenesisKeys::WellKnown => ChainType::Local
 	};
 
-	integritee_genesis::<_, ShellChainSpec, _>(
+	integritee_genesis(
 		move || shell_testnet_genesis(id, genesis_keys), chain_type, id,
 	)
 }
@@ -187,7 +187,7 @@ pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys) -> ChainSpec {
 		GenesisKeys::WellKnown => ChainType::Local
 	};
 
-	integritee_genesis::<_, ChainSpec, _>(move || {
+	integritee_genesis(move || {
 		testnet_genesis(
 			genesis_keys.root(),
 			// todo: What do I actually need to put as initial authorities??
@@ -198,7 +198,7 @@ pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys) -> ChainSpec {
 	}, chain_type, id)
 }
 
-fn integritee_genesis<F: Fn() -> GenesisConfig + 'static + Send + Sync, ChainSpec, GenesisConfig>(
+fn integritee_genesis<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
 	testnet_constructor: F,
 	chain_type: ChainType,
 	para_id: ParaId,
