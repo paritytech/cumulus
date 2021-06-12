@@ -16,13 +16,11 @@
 
 //! The actual implementation of the validate block functionality.
 
-use frame_support::traits::{ExtrinsicCall, ExecuteBlock, IsSubType};
+use frame_support::traits::{ExecuteBlock, ExtrinsicCall, IsSubType, Get};
 use sp_runtime::traits::{Block as BlockT, Extrinsic, HashFor, Header as HeaderT, NumberFor};
 
 use sp_io::KillChildStorageResult;
 use sp_std::prelude::*;
-
-use hash_db::{HashDB, EMPTY_PREFIX};
 
 use polkadot_parachain::primitives::{HeadData, ValidationParams, ValidationResult};
 
@@ -135,7 +133,14 @@ where
 		.expect("Could not find `set_validation_data` inherent");
 
 	run_with_externalities::<B, _, _>(&backend, || {
-		let res = CI::check_inherents(block.extrinsics(), &inherent_data.validation_data);
+		let relay_chain_proof = crate::RelayChainStateProof::new(
+			PSC::SelfParaId::get(),
+			inherent_data.validation_data.relay_parent_storage_root,
+			inherent_data.relay_chain_state.clone(),
+		)
+		.expect("Invalid relay chain state proof");
+
+		let res = CI::check_inherents(block.extrinsics(), &relay_chain_proof);
 
 		if !res.ok() {
 			if log::log_enabled!(log::Level::Error) {

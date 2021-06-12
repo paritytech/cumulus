@@ -427,12 +427,12 @@ impl_runtime_apis! {
 	}
 }
 
-pub struct CheckInherents;
+struct CheckInherents;
 
 impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 	fn check_inherents(
-		extrinsics: &[UncheckedExtrinsic],
-		validation_data: &cumulus_pallet_parachain_system::PersistedValidationData,
+		_: &[UncheckedExtrinsic],
+		_: &cumulus_pallet_parachain_system::RelayChainStateProof,
 	) -> sp_inherents::CheckInherentsResult {
 		sp_inherents::CheckInherentsResult::new()
 	}

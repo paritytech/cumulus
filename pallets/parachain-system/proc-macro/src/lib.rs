@@ -19,7 +19,7 @@ use proc_macro_crate::{crate_name, FoundCrate};
 use syn::{
 	parse::{Parse, ParseStream},
 	spanned::Spanned,
-	token, Error, Ident,
+	token, Error, Ident, Path,
 };
 
 mod keywords {
@@ -29,9 +29,9 @@ mod keywords {
 }
 
 struct Input {
-	runtime: Ident,
-	block_executor: Ident,
-	check_inherents: Ident,
+	runtime: Path,
+	block_executor: Path,
+	check_inherents: Path,
 }
 
 impl Parse for Input {
@@ -42,13 +42,13 @@ impl Parse for Input {
 
 		fn parse_inner<KW: Parse + Spanned>(
 			input: ParseStream,
-			result: &mut Option<Ident>,
+			result: &mut Option<Path>,
 		) -> Result<(), Error> {
 			let kw = input.parse::<KW>()?;
 
 			if result.is_none() {
 				input.parse::<token::Eq>()?;
-				*result = Some(input.parse::<Ident>()?);
+				*result = Some(input.parse::<Path>()?);
 				if input.peek(token::Comma) {
 					input.parse::<token::Comma>()?;
 				}

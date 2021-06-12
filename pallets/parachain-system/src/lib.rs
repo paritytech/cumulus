@@ -30,8 +30,8 @@
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
 	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError, OnValidationData,
-	OutboundHrmpMessage, ParaId, UpwardMessage, UpwardMessageSender,
-	XcmpMessageHandler, XcmpMessageSource,
+	OutboundHrmpMessage, ParaId, UpwardMessage, UpwardMessageSender, XcmpMessageHandler,
+	XcmpMessageSource, PersistedValidationData,
 };
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use frame_support::{
@@ -60,7 +60,6 @@ pub mod validate_block;
 #[cfg(test)]
 mod tests;
 
-pub use cumulus_primitives_core::PersistedValidationData;
 /// Register the `validate_block` function that is used by parachains to validate blocks on a
 /// validator.
 ///
@@ -84,6 +83,7 @@ pub use cumulus_primitives_core::PersistedValidationData;
 /// # fn main() {}
 /// ```
 pub use cumulus_pallet_parachain_system_proc_macro::register_validate_block;
+pub use relay_state_snapshot::RelayChainStateProof;
 
 pub use pallet::*;
 
@@ -334,17 +334,19 @@ pub mod pallet {
 				}
 			}
 
-			let (host_config, relevant_messaging_state) =
-				match relay_state_snapshot::extract_from_proof(
-					T::SelfParaId::get(),
-					vfp.relay_parent_storage_root,
-					relay_chain_state,
-				) {
-					Ok(r) => r,
-					Err(err) => {
-						panic!("invalid relay chain merkle proof: {:?}", err);
-					}
-				};
+			let relay_state_proof = RelayChainStateProof::new(
+				T::SelfParaId::get(),
+				vfp.relay_parent_storage_root,
+				relay_chain_state,
+			)
+			.expect("Invalid relay chain state proof");
+
+			let host_config = relay_state_proof
+				.read_abridged_host_configuration()
+				.expect("Invalid host configuration in relay chain state proof");
+			let relevant_messaging_state = relay_state_proof
+				.read_messaging_state_snapshot()
+				.expect("Invalid messaging state in relay chain state proof");
 
 			<ValidationData<T>>::put(&vfp);
 			<RelevantMessagingState<T>>::put(relevant_messaging_state.clone());
@@ -1033,6 +1035,6 @@ pub trait CheckInherents<Block: BlockT> {
 	/// identify the inherents. The `validation_data` can be used to access the
 	fn check_inherents(
 		extrinsics: &[Block::Extrinsic],
-		validation_data: &PersistedValidationData,
+		validation_data: &RelayChainStateProof,
 	) -> frame_support::inherent::CheckInherentsResult;
 }
