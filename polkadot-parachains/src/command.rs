@@ -305,7 +305,7 @@ pub fn run() -> Result<()> {
 
 			Ok(())
 		}
-		Some(Subcommand::Benchmark(cmd)) => {
+		Some(Subcommand::Benchmark(_cmd)) => {
 			if cfg!(feature = "runtime-benchmarks") {
 				// let runner = cli.create_runner(cmd)?;
 				Err("Chain doesn't support benchmarking".into())
