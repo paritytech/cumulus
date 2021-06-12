@@ -2,7 +2,7 @@
 name = 'integritee-parachain-runtime'
 # minor revision must match node/client
 # patch revision must match runtime spec_version
-version = '0.2.4'
+version = '0.6.9'
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = '2018'
 description = "Simple runtime used by the rococo parachain(s)"
