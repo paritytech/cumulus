@@ -107,7 +107,7 @@ pub enum GenesisKeys {
 	/// Use integriTEE root as key and endow it.
 	IntegriteeRoot,
 	/// Use Keys from the keyring as root and endow them
-	WellKnown
+	WellKnown,
 }
 
 impl GenesisKeys {
@@ -144,7 +144,7 @@ pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys) -> ShellChain
 	};
 
 	integritee_genesis::<_, ShellChainSpec, _>(
-		move || shell_testnet_genesis(id, genesis_keys), chain_type
+		move || shell_testnet_genesis(id, genesis_keys), chain_type, id,
 	)
 }
 
@@ -182,7 +182,6 @@ pub fn staging_test_net(id: ParaId) -> ChainSpec {
 }
 
 pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys) -> ChainSpec {
-
 	let chain_type = match genesis_keys {
 		GenesisKeys::IntegriteeRoot => ChainType::Live,
 		GenesisKeys::WellKnown => ChainType::Local
@@ -196,12 +195,13 @@ pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys) -> ChainSpec {
 			genesis_keys.endowed_accounts(),
 			id,
 		)
-	}, chain_type)
+	}, chain_type, id)
 }
 
 fn integritee_genesis<F: Fn() -> GenesisConfig + 'static + Send + Sync, ChainSpec, GenesisConfig>(
 	testnet_constructor: F,
 	chain_type: ChainType,
+	para_id: ParaId,
 ) -> GenericChainSpec<GenesisConfig, Extensions> {
 	GenericChainSpec::<GenesisConfig, Extensions>::from_genesis(
 		"IntegriTEE PC1",
@@ -222,7 +222,7 @@ fn integritee_genesis<F: Fn() -> GenesisConfig + 'static + Send + Sync, ChainSpe
 				}"#).unwrap()),
 		Extensions {
 			relay_chain: "rococo".into(),
-			para_id: 1983,
+			para_id: para_id.into(),
 		},
 	)
 }
