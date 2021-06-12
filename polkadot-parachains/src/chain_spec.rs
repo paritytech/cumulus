@@ -18,7 +18,7 @@ use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
 use rococo_parachain_runtime::{AccountId, AuraId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
-use sc_service::ChainType;
+use sc_service::{ChainType, GenericChainSpec};
 use serde::{Deserialize, Serialize};
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
@@ -103,19 +103,8 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 }
 
 pub fn get_shell_chain_spec(id: ParaId) -> ShellChainSpec {
-	ShellChainSpec::from_genesis(
-		"Shell Local Testnet",
-		"shell_local_testnet",
-		ChainType::Local,
-		move || shell_testnet_genesis(id),
-		vec![],
-		None,
-		None,
-		None,
-		Extensions {
-			relay_chain: "westend-dev".into(),
-			para_id: id.into(),
-		},
+	integritee_genesis::<_, ShellChainSpec, _>(
+		move || shell_testnet_genesis(id), ChainType::Live
 	)
 }
 
@@ -167,35 +156,41 @@ pub fn integritee_spec(id: ParaId, use_well_known_keys: bool) -> ChainSpec {
 		chain_type = ChainType::Local;
 	}
 
+	integritee_genesis::<_, ChainSpec, _>(move || {
+		testnet_genesis(
+			root_account.clone(),
+			// todo: What do I actually need to put here??
+			vec![
+				get_from_seed::<AuraId>("Alice"),
+				get_from_seed::<AuraId>("Bob"),
+			],
+			endowed_accounts.clone(),
+			id,
+		)
+	}, chain_type)
+}
 
-	ChainSpec::from_genesis(
+fn integritee_genesis<F: Fn() -> GenesisConfig + 'static + Send + Sync, ChainSpec, GenesisConfig>(
+	testnet_constructor: F,
+	chain_type: ChainType,
+) -> GenericChainSpec<GenesisConfig, Extensions> {
+	GenericChainSpec::<GenesisConfig, Extensions>::from_genesis(
 		"IntegriTEE PC1",
-		"integritee-rococo-v1",
+		"integritee-polkadot-v0.9.4",
 		chain_type,
-		move || {
-			testnet_genesis(
-				root_account.clone(),
-				// todo: What do I actually need to put here??
-				vec![
-					get_from_seed::<AuraId>("Alice"),
-					get_from_seed::<AuraId>("Bob"),
-				],
-				endowed_accounts.clone(),
-				id,
-			)
-		},
+		testnet_constructor,
 		Vec::new(),
 		// telemetry endpoints
 		None,
 		// protocol id
-		Some("integritee-rococo-v1"),
+		Some("integritee-polkadot-v0.9.4"),
 		// properties
 		Some(serde_json::from_str(
 			r#"{
-			"ss58Format": 42,
-			"tokenDecimals": 12,
-			"tokenSymbol": "ITY"
-			}"#).unwrap()),
+				"ss58Format": 42,
+				"tokenDecimals": 12,
+				"tokenSymbol": "ITY"
+				}"#).unwrap()),
 		Extensions {
 			relay_chain: "rococo".into(),
 			para_id: 1983,
