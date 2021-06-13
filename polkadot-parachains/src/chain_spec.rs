@@ -144,7 +144,7 @@ pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys) -> ShellChain
 	};
 
 	integritee_genesis(
-		"integritee-polkadot-v0.9.4",
+		"integritee-shell-polkadot-v0.9.4",
 		move || shell_testnet_genesis(id, genesis_keys),
 		chain_type,
 		id,
