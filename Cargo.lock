@@ -9912,6 +9912,7 @@ dependencies = [
  "log",
  "pallet-balances",
  "pallet-sudo",
+ "pallet-timestamp",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
