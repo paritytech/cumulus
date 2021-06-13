@@ -89,17 +89,6 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 					// BTC
 					hex!["64f0bdf9ca65acf36df6189aab420ee2d6b07ac05f90a01744ede75c88a36721"].into(),
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie"),
-					get_account_id_from_seed::<sr25519::Public>("Dave"),
-					get_account_id_from_seed::<sr25519::Public>("Eve"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
 				id,
 			)
@@ -201,6 +190,9 @@ fn testnet_genesis(
 				(root_key.clone(), DOT, 1000_000_000_000_000_000_000),
 				(root_key.clone(), BTC, 1000_000_000_000_000_000),
 				(root_key.clone(), ETH, 1000_000_000_000_000_000_000_000),
+				(get_account_id_from_seed::<sr25519::Public>("Alice"), DOT, 1000_000_000_000_000_000_000),
+				(get_account_id_from_seed::<sr25519::Public>("Alice"), BTC, 1000_000_000_000_000_000),
+				(get_account_id_from_seed::<sr25519::Public>("Alice"), ETH, 1000_000_000_000_000_000_000_000),
 			]
 		},
 		pallet_floating_rate_lend: rococo_parachain_runtime::FloatingRateLendConfig {
