@@ -270,32 +270,6 @@ construct_runtime! {
 	}
 }
 
-/// Simple implementation which fails any transaction which is signed.
-#[derive(Eq, PartialEq, Clone, Default, sp_core::RuntimeDebug, codec::Encode, codec::Decode)]
-pub struct DisallowSigned;
-impl sp_runtime::traits::SignedExtension for DisallowSigned {
-	const IDENTIFIER: &'static str = "DisallowSigned";
-	type AccountId = AccountId;
-	type Call = Call;
-	type AdditionalSigned = ();
-	type Pre = ();
-	fn additional_signed(&self)
-		-> sp_std::result::Result<(), sp_runtime::transaction_validity::TransactionValidityError>
-	{
-		Ok(())
-	}
-	fn validate(
-		&self,
-		_who: &Self::AccountId,
-		_call: &Self::Call,
-		_info: &sp_runtime::traits::DispatchInfoOf<Self::Call>,
-		_len: usize,
-	) -> TransactionValidity {
-		let i = sp_runtime::transaction_validity::InvalidTransaction::BadProof;
-		Err(sp_runtime::transaction_validity::TransactionValidityError::Invalid(i))
-	}
-}
-
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = sp_runtime::MultiSignature;
 /// Some way of identifying an account on the chain. We intentionally make it equivalent
@@ -320,7 +294,16 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 /// BlockId type as expected by this runtime.
 pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
-pub type SignedExtra = DisallowSigned;
+pub type SignedExtra = (
+	frame_system::CheckSpecVersion<Runtime>,
+	frame_system::CheckTxVersion<Runtime>,
+	frame_system::CheckGenesis<Runtime>,
+	frame_system::CheckEra<Runtime>,
+	frame_system::CheckNonce<Runtime>,
+	frame_system::CheckWeight<Runtime>,
+	// Note: We don't include the `pallet_transaction_payment` pallet but this should be fine
+	// because we don't have funds on any account except for the root key.
+);
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
