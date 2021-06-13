@@ -9899,6 +9899,7 @@ dependencies = [
 name = "shell-runtime"
 version = "0.1.0"
 dependencies = [
+ "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system 0.1.0",
  "cumulus-pallet-xcm",
@@ -9910,6 +9911,7 @@ dependencies = [
  "hex",
  "hex-literal 0.3.1",
  "log",
+ "pallet-aura",
  "pallet-balances",
  "pallet-sudo",
  "pallet-timestamp",
@@ -9919,6 +9921,7 @@ dependencies = [
  "serde",
  "sp-api",
  "sp-block-builder",
+ "sp-consensus-aura",
  "sp-core",
  "sp-inherents",
  "sp-io",

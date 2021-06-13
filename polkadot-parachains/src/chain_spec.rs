@@ -144,7 +144,7 @@ pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys) -> ShellChain
 	};
 
 	integritee_genesis(
-		"shell-polkadot-v0.9.4",
+		"integritee-polkadot-v0.9.4",
 		move || shell_testnet_genesis(id, genesis_keys),
 		chain_type,
 		id,
@@ -282,5 +282,9 @@ fn shell_testnet_genesis(parachain_id: ParaId, genesis_keys: GenesisKeys) -> she
 		pallet_sudo: shell_runtime::SudoConfig { key: genesis_keys.root() },
 		parachain_info: shell_runtime::ParachainInfoConfig { parachain_id },
 		cumulus_pallet_parachain_system: Default::default(),
+		pallet_aura: shell_runtime::AuraConfig {
+			authorities: genesis_keys.initial_authorities(),
+		},
+		cumulus_pallet_aura_ext: Default::default(),
 	}
 }
