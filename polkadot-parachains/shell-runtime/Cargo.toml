@@ -29,6 +29,7 @@ frame-system = { git = "https://github.com/paritytech/substrate", default-featur
 
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.4" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.4" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.4" }
 
 # Cumulus dependencies
 cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false }
@@ -79,4 +80,7 @@ std = [
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
+	"pallet-balances/std",
+	"pallet-sudo/std",
+	"pallet-timestamp/std",
 ]

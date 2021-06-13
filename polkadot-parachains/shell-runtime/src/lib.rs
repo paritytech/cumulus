@@ -173,6 +173,21 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 
 impl parachain_info::Config for Runtime {}
 
+pub const MILLISECS_PER_BLOCK: u64 = 12000;
+pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
+
+parameter_types! {
+	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
+}
+
+impl pallet_timestamp::Config for Runtime {
+	/// A timestamp: milliseconds since the unix epoch.
+	type Moment = u64;
+	type OnTimestampSet = ();
+	type MinimumPeriod = MinimumPeriod;
+	type WeightInfo = ();
+}
+
 impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 	type Event = Event;
@@ -257,13 +272,13 @@ construct_runtime! {
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned},
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
 
 		// added by integritee
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 30,
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>},
-
 
 		// DMP handler.
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin},
