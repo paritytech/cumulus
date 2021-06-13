@@ -24,8 +24,8 @@ async-trait = "0.1.42"
 serde_json = "1.0.64"
 
 # Parachain runtimes
-rococo-parachain-runtime = { package = "integritee-parachain-runtime", path = "integritee-runtime" }
-shell-runtime = { package = "cumulus-shell-runtime", path = "shell-runtime" }
+rococo-parachain-runtime = { package = "integritee-runtime", path = "integritee-runtime" }
+shell-runtime = { package = "shell-runtime", path = "shell-runtime" }
 
 # Substrate dependencies
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.4" }

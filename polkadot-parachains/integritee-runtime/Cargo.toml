@@ -1,5 +1,5 @@
 [package]
-name = 'integritee-parachain-runtime'
+name = 'integritee-runtime'
 # minor revision must match node/client
 # patch revision must match runtime spec_version
 version = '0.6.9'

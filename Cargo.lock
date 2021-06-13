@@ -2015,44 +2015,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-shell-runtime"
-version = "0.1.0"
-dependencies = [
- "cumulus-pallet-dmp-queue",
- "cumulus-pallet-parachain-system 0.1.0",
- "cumulus-pallet-xcm",
- "cumulus-primitives-core 0.1.0",
- "cumulus-primitives-utility",
- "frame-executive",
- "frame-support",
- "frame-system",
- "hex",
- "hex-literal 0.3.1",
- "log",
- "pallet-balances",
- "pallet-sudo",
- "parachain-info",
- "parity-scale-codec",
- "polkadot-parachain",
- "serde",
- "sp-api",
- "sp-block-builder",
- "sp-core",
- "sp-inherents",
- "sp-io",
- "sp-offchain",
- "sp-runtime",
- "sp-session",
- "sp-std",
- "sp-transaction-pool",
- "sp-version",
- "substrate-wasm-builder 4.0.0",
- "xcm",
- "xcm-builder",
- "xcm-executor",
-]
-
-[[package]]
 name = "cumulus-test-client"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4#08b7bcfe21b2ce2a26dcdaa664bf8c016f7c93ae"
@@ -3740,14 +3702,13 @@ dependencies = [
  "cumulus-client-service 0.1.0",
  "cumulus-primitives-core 0.1.0",
  "cumulus-primitives-parachain-inherent 0.1.0",
- "cumulus-shell-runtime",
  "derive_more 0.15.0",
  "exit-future 0.1.4",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "futures 0.3.14",
  "hex-literal 0.2.1",
- "integritee-parachain-runtime",
+ "integritee-runtime",
  "jsonrpc-core",
  "log",
  "nix",
@@ -3778,6 +3739,7 @@ dependencies = [
  "sc-transaction-pool",
  "serde",
  "serde_json",
+ "shell-runtime",
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",
@@ -3803,7 +3765,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "integritee-parachain-runtime"
+name = "integritee-runtime"
 version = "0.6.9"
 dependencies = [
  "cumulus-pallet-aura-ext",
@@ -9931,6 +9893,44 @@ checksum = "7b4921be914e16899a80adefb821f8ddb7974e3f1250223575a44ed994882127"
 dependencies = [
  "lazy_static",
  "loom",
+]
+
+[[package]]
+name = "shell-runtime"
+version = "0.1.0"
+dependencies = [
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system 0.1.0",
+ "cumulus-pallet-xcm",
+ "cumulus-primitives-core 0.1.0",
+ "cumulus-primitives-utility",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "hex-literal 0.3.1",
+ "log",
+ "pallet-balances",
+ "pallet-sudo",
+ "parachain-info",
+ "parity-scale-codec",
+ "polkadot-parachain",
+ "serde",
+ "sp-api",
+ "sp-block-builder",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-std",
+ "sp-transaction-pool",
+ "sp-version",
+ "substrate-wasm-builder 4.0.0",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
 ]
 
 [[package]]
