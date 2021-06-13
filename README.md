@@ -46,6 +46,7 @@ User must repay their borrow principal and the interest.
 
 ### Liquidation
 Liquidation will be triggered when the total collateral is lower than the total borrowed, specifically in the following equation:
+
 ![equations/liquidation_0](equations/liquidation_0.png)
 
 In the above equations, `SafeFactor` is a measurement of how safe the currency is. If the currency is stable, then the value would be closer to 1. Otherwise closer to 0. `ExchangeRate` is the exchange rate of the currency to usd, one can regard this as the price. When the following condition is reached, the account would be marked as `Liquidable`. Arbitrageurs would be able liquidate the account.
