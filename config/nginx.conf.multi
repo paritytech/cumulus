@@ -27,6 +27,10 @@ server {
         proxy_pass http://indexer-service:3000/;
     }
 
+    location / {
+        proxy_pass http://ui:80/;
+    }
+
     listen [::]:443 ssl ipv6only=on;
     listen 443 ssl;
 

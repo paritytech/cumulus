@@ -84,3 +84,6 @@ services:
       - konomi-parachain
     env_file:
       - ./docker/env/local/indexer
+
+  ui:
+    image: konominetwork/ui:v0.1.0
