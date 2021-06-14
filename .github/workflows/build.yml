@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [ master, polkadot-v0.9.4 ]
+    branches: [ master, integritee-v0.9.4 ]
   pull_request:
     branches: [ master ]
 
