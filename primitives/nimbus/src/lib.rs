@@ -47,6 +47,11 @@ pub trait SlotBeacon {
 	fn slot() -> u32;
 }
 
+// A dummy impl used in simple tests
+impl SlotBeacon for () {
+	fn slot() -> u32 { 0 }
+}
+
 /// Trait to determine whether this author is eligible to author in this slot.
 /// This is the primary trait your nimbus filter needs to implement.
 ///
@@ -75,6 +80,13 @@ impl<T> CanAuthor<T> for () {
 /// and contains an AccountId directly.
 pub trait AccountLookup<AuthorId, AccountId> {
 	fn lookup_account(author: &AuthorId) -> Option<AccountId>;
+}
+
+// A dummy impl used in simple tests
+impl<AuthorId, AccountId> AccountLookup<AuthorId, AccountId> for () {
+	fn lookup_account(_: &AuthorId) -> Option<AccountId> {
+		None
+	}
 }
 
 /// The ConsensusEngineId for nimbus consensus

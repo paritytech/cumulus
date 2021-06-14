@@ -137,7 +137,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Inherent to set the author of a block
 		#[pallet::weight((0, DispatchClass::Mandatory))]
-		fn set_author(origin: OriginFor<T>, author: T::AuthorId) -> DispatchResult {
+		pub fn set_author(origin: OriginFor<T>, author: T::AuthorId) -> DispatchResult {
 
 			ensure_none(origin)?;
 
@@ -271,6 +271,10 @@ mod tests {
 		testing::Header,
 		traits::{BlakeTwo256, IdentityLookup},
 	};
+	use nimbus_primitives::NimbusId;
+	use sp_core::Public;
+	const TEST_AUTHOR_ID: [u8; 32] = [0u8; 32];
+	const BOGUS_AUTHOR_ID: [u8; 32] = [1u8; 32];
 
 	pub fn new_test_ext() -> TestExternalities {
 		let t = frame_system::GenesisConfig::default()
@@ -323,9 +327,22 @@ mod tests {
 		type OnSetCode = ();
 	}
 	impl Config for Test {
-		type AuthorId = u64;
+		type AuthorId = NimbusId;
 		type EventHandler = ();
 		type CanAuthor = ();
+		type AccountLookup = DummyAccountLookup;
+		type SlotBeacon = ();
+	}
+
+	pub struct DummyAccountLookup;
+	impl AccountLookup<NimbusId, u64> for DummyAccountLookup {
+		fn lookup_account(author: &NimbusId) -> Option<u64> {
+			if author.as_slice() == &TEST_AUTHOR_ID {
+				Some(0)
+			} else {
+				None
+			}
+		}
 	}
 
 	pub fn roll_to(n: u64) {
@@ -340,9 +357,9 @@ mod tests {
 	#[test]
 	fn set_author_works() {
 		new_test_ext().execute_with(|| {
-			assert_ok!(AuthorInherent::set_author(Origin::none(), 1));
+			assert_ok!(AuthorInherent::set_author(Origin::none(), NimbusId::from_slice(&TEST_AUTHOR_ID)));
 			roll_to(1);
-			assert_ok!(AuthorInherent::set_author(Origin::none(), 1));
+			assert_ok!(AuthorInherent::set_author(Origin::none(), NimbusId::from_slice(&TEST_AUTHOR_ID)));
 			roll_to(2);
 		});
 	}
@@ -351,7 +368,7 @@ mod tests {
 	fn must_be_inherent() {
 		new_test_ext().execute_with(|| {
 			assert_noop!(
-				AuthorInherent::set_author(Origin::signed(1), 1),
+				AuthorInherent::set_author(Origin::signed(1), NimbusId::from_slice(&TEST_AUTHOR_ID)),
 				sp_runtime::DispatchError::BadOrigin
 			);
 		});
@@ -360,10 +377,20 @@ mod tests {
 	#[test]
 	fn double_author_fails() {
 		new_test_ext().execute_with(|| {
-			assert_ok!(AuthorInherent::set_author(Origin::none(), 1));
+			assert_ok!(AuthorInherent::set_author(Origin::none(), NimbusId::from_slice(&TEST_AUTHOR_ID)));
 			assert_noop!(
-				AuthorInherent::set_author(Origin::none(), 1),
+				AuthorInherent::set_author(Origin::none(), NimbusId::from_slice(&TEST_AUTHOR_ID)),
 				Error::<Test>::AuthorAlreadySet
+			);
+		});
+	}
+
+	#[test]
+	fn fails_when_account_lookup_fails() {
+		new_test_ext().execute_with(|| {
+			assert_noop!(
+				AuthorInherent::set_author(Origin::none(), NimbusId::from_slice(&BOGUS_AUTHOR_ID)),
+				Error::<Test>::NoAccountId
 			);
 		});
 	}
