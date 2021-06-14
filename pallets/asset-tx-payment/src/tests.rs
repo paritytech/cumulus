@@ -173,9 +173,21 @@ impl pallet_authorship::Config for Runtime {
 	type EventHandler = ();
 }
 
+pub struct CreditToBlockAuthor;
+impl HandleCredit<AccountId, Assets> for CreditToBlockAuthor {
+
+	fn handle_credit(credit: CreditOf<AccountId, Assets>) {
+		let author = pallet_authorship::Module::<Runtime>::author();
+		// TODO: what to do in case paying the author fails (e.g. because `fee < min_balance`)
+		// default: drop the result which will trigger the `OnDrop` of the imbalance.
+		let _res = <Assets as Balanced<AccountId>>::resolve(&author, credit);
+	}
+}
+
 impl Config for Runtime {
-	type BalanceConversion = pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>;
 	type Fungibles = Assets;
+	type OnChargeAssetTransaction = FungiblesAdapter<
+		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>, CreditToBlockAuthor>;
 }
 
 pub struct ExtBuilder {

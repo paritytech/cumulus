@@ -24,16 +24,10 @@
 
 use sp_std::prelude::*;
 use codec::{Encode, Decode, EncodeLike};
-use frame_support::{
-	decl_storage, decl_module,
-	DefaultNoBound,
-	traits::Get,
-	weights::{
+use frame_support::{DefaultNoBound, decl_module, decl_storage, dispatch::DispatchResult, traits::{Get, IsType}, weights::{
 		Weight, DispatchInfo, PostDispatchInfo, GetDispatchInfo, Pays, WeightToFeePolynomial,
 		WeightToFeeCoefficient, DispatchClass,
-	},
-	dispatch::DispatchResult,
-};
+	}};
 use sp_runtime::{
 	FixedU128, FixedPointNumber, FixedPointOperand, Perquintill, RuntimeDebug,
 	transaction_validity::{
@@ -44,7 +38,6 @@ use sp_runtime::{
 		DispatchInfoOf, PostDispatchInfoOf, Zero, One,
 	},
 };
-use pallet_assets::BalanceConversion;
 use pallet_balances::NegativeImbalance;
 use pallet_transaction_payment::OnChargeTransaction;
 use frame_support::traits::tokens::{fungibles::{Balanced, Inspect, CreditOf}, WithdrawConsequence};
@@ -52,10 +45,16 @@ use frame_support::traits::tokens::{fungibles::{Balanced, Inspect, CreditOf}, Wi
 #[cfg(test)]
 mod tests;
 
-type BalanceOf<T> = <<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::Balance;
-type AssetBalanceOf<T> = <<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
-type AssetIdOf<T> = <<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
-type LiquidityInfoOf<T> = <<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::LiquidityInfo;
+mod payment;
+pub use payment::*;
+
+pub(crate) type BalanceOf<T> = <<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::Balance;
+pub(crate) type AssetBalanceOf<T> = <<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
+pub(crate) type ChargeAssetBalanceOf<T> = <<T as pallet::Config>::OnChargeAssetTransaction as OnChargeAssetTransaction<T>>::Balance;
+pub(crate) type AssetIdOf<T> = <<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
+pub(crate) type ChargeAssetIdOf<T> = <<T as pallet::Config>::OnChargeAssetTransaction as OnChargeAssetTransaction<T>>::AssetId;
+pub(crate) type LiquidityInfoOf<T> = <<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::LiquidityInfo;
+pub(crate) type ChargeAssetLiquidityOf<T> = <<T as pallet::Config>::OnChargeAssetTransaction as OnChargeAssetTransaction<T>>::LiquidityInfo;
 
 #[derive(Encode, Decode, DefaultNoBound)]
 pub enum InitialPayment<T: Config> {
@@ -82,9 +81,9 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_transaction_payment::Config + pallet_balances::Config + pallet_authorship::Config + pallet_assets::Config {
-		type BalanceConversion: BalanceConversion<BalanceOf<Self>, AssetIdOf<Self>, AssetBalanceOf<Self>>;
+	pub trait Config: frame_system::Config + pallet_transaction_payment::Config + pallet_balances::Config {
 		type Fungibles: Balanced<Self::AccountId>;
+		type OnChargeAssetTransaction: OnChargeAssetTransaction<Self>;
 	}
 
 	#[pallet::pallet]
@@ -98,13 +97,6 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {}
 }
 
-impl<T: Config> Pallet<T> where
-	BalanceOf<T>: FixedPointOperand + Into<AssetBalanceOf<T>>,
-	AssetBalanceOf<T>: FixedPointOperand,
-{
-
-}
-
 /// Require the transactor pay for themselves and maybe include a tip to gain additional priority
 /// in the queue. Allows paying via both `Currency` as well as `fungibles::Balanced`.
 #[derive(Encode, Decode, Clone, Eq, PartialEq)]
@@ -112,9 +104,11 @@ pub struct ChargeAssetTxPayment<T: Config>(#[codec(compact)] BalanceOf<T>, Optio
 
 impl<T: Config> ChargeAssetTxPayment<T> where
 	T::Call: Dispatchable<Info=DispatchInfo, PostInfo=PostDispatchInfo>,
-	BalanceOf<T>: Send + Sync + FixedPointOperand + Into<AssetBalanceOf<T>>,
-	AssetIdOf<T>: Send + Sync,
+	BalanceOf<T>: Send + Sync + FixedPointOperand + IsType<ChargeAssetBalanceOf<T>>,
+	AssetIdOf<T>: Send + Sync + IsType<ChargeAssetIdOf<T>>,
 	AssetBalanceOf<T>: Send + Sync + FixedPointOperand,
+	CreditOf<T::AccountId, T::Fungibles>: IsType<ChargeAssetLiquidityOf<T>>,
+	ChargeAssetLiquidityOf<T>: IsType<CreditOf<T::AccountId, T::Fungibles>>,
 {
 	/// utility constructor. Used only in client/factory code.
 	pub fn from(fee: BalanceOf<T>, asset_id: Option<AssetIdOf<T>>) -> Self {
@@ -143,15 +137,8 @@ impl<T: Config> ChargeAssetTxPayment<T> where
 
 		let maybe_asset_id  = self.1;
 		if let Some(asset_id) = maybe_asset_id {
-			let converted_fee = T::BalanceConversion::to_asset_balance(fee, asset_id)
-				.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?;
-			let can_withdraw = <T::Fungibles as Inspect<T::AccountId>>::can_withdraw(asset_id, who, converted_fee);
-			if !matches!(can_withdraw, WithdrawConsequence::Success) {
-				return Err(InvalidTransaction::Payment.into());
-			}
-			<T::Fungibles as Balanced<T::AccountId>>::withdraw(asset_id, who, converted_fee)
-				.map(|i| (fee, InitialPayment::Asset(i)))
-				.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
+			T::OnChargeAssetTransaction::withdraw_fee(who, call, info, asset_id.into(), fee.into(), tip.into())
+				.map(|i| (fee, InitialPayment::Asset(i.into())))
 		} else {
 			<<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::withdraw_fee(who, call, info, fee, tip)
 				.map(|i| (fee, InitialPayment::Native(i)))
@@ -176,31 +163,6 @@ impl<T: Config> ChargeAssetTxPayment<T> where
 		let coefficient: BalanceOf<T> = weight_saturation.min(len_saturation).saturated_into::<BalanceOf<T>>();
 		final_fee.saturating_mul(coefficient).saturated_into::<TransactionPriority>()
 	}
-
-	fn correct_and_deposit_fee(
-		who: &T::AccountId,
-		_dispatch_info: &DispatchInfoOf<T::Call>,
-		_post_info: &PostDispatchInfoOf<T::Call>,
-		corrected_fee: BalanceOf<T>,
-		tip: BalanceOf<T>,
-		paid: CreditOf<T::AccountId, T::Fungibles>,
-	) -> Result<(), TransactionValidityError> {
-		let converted_fee = T::BalanceConversion::to_asset_balance(corrected_fee, paid.asset())
-		.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?;
-		// Calculate how much refund we should return
-		let (final_fee, refund) = paid.split(converted_fee);
-		// refund to the the account that paid the fees. If this fails, the
-		// account might have dropped below the existential balance. In
-		// that case we don't refund anything.
-		// TODO: what to do in case this errors?
-		let _res = <T::Fungibles as Balanced<T::AccountId>>::resolve(who, refund);
-
-		let author = pallet_authorship::Module::<T>::author();
-		// TODO: what to do in case paying the author fails (e.g. because `fee < min_balance`)
-		<T::Fungibles as Balanced<T::AccountId>>::resolve(&author, final_fee)
-			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?;
-		Ok(())
-	}
 }
 
 impl<T: Config> sp_std::fmt::Debug for ChargeAssetTxPayment<T>
@@ -216,10 +178,12 @@ impl<T: Config> sp_std::fmt::Debug for ChargeAssetTxPayment<T>
 }
 
 impl<T: Config> SignedExtension for ChargeAssetTxPayment<T> where
-	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand + Into<AssetBalanceOf<T>>,
+	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand + IsType<ChargeAssetBalanceOf<T>>,
 	T::Call: Dispatchable<Info=DispatchInfo, PostInfo=PostDispatchInfo>,
-	AssetIdOf<T>: Send + Sync,
+	AssetIdOf<T>: Send + Sync + IsType<ChargeAssetIdOf<T>>,
 	AssetBalanceOf<T>: Send + Sync + FixedPointOperand,
+	CreditOf<T::AccountId, T::Fungibles>: IsType<ChargeAssetLiquidityOf<T>>,
+	ChargeAssetLiquidityOf<T>: IsType<CreditOf<T::AccountId, T::Fungibles>>,
 {
 	const IDENTIFIER: &'static str = "ChargeAssetTxPayment";
 	type AccountId = T::AccountId;
@@ -275,13 +239,15 @@ impl<T: Config> SignedExtension for ChargeAssetTxPayment<T> where
 			tip,
 		);
 		match initial_payment {
-			InitialPayment::Native(imbalance) => {
-				<<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::correct_and_deposit_fee(&who, info, post_info, actual_fee, tip, imbalance)?;
+			InitialPayment::Native(already_withdrawn) => {
+				<<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::correct_and_deposit_fee(
+					&who, info, post_info, actual_fee, tip, already_withdrawn)?;
 			},
-			InitialPayment::Asset(credit) => {
-				Self::correct_and_deposit_fee(&who, info, post_info, actual_fee, tip, credit)?;
+			InitialPayment::Asset(already_withdrawn) => {
+				T::OnChargeAssetTransaction::correct_and_deposit_fee(
+					&who, info, post_info, actual_fee.into(), tip.into(), already_withdrawn.into())?;
 			},
-			// TODO: just assert that actual_fee is also zero?
+			// TODO: do anything else than just asserting that actual_fee is zero?
 			InitialPayment::Nothing => {
 				debug_assert!(actual_fee.is_zero(), "actual fee should be zero if initial fee was zero.");
 			},
