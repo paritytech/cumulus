@@ -8,7 +8,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        chain: ["shell", "integritee"]
+        chain: ["shell"]
     steps:
       - uses: actions/checkout@v2
       - name: Srtool build
