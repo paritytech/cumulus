@@ -8,7 +8,7 @@ edition = '2018'
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
 log = { version = "0.4.14", default-features = false }
-parachain-info = { path = "../pallets/parachain-info", default-features = false }
+parachain-info = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.4", default-features = false }
 
 # Substrate dependencies
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.4" }
@@ -34,12 +34,12 @@ pallet-aura = { git = "https://github.com/paritytech/substrate", default-feature
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.4" }
 
 # Cumulus dependencies
-cumulus-pallet-aura-ext = { path = "../../pallets/aura-ext", default-features = false }
-cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false }
-cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
-cumulus-primitives-utility = { path = "../../primitives/utility", default-features = false }
-cumulus-pallet-dmp-queue = { path = "../../pallets/dmp-queue", default-features = false }
-cumulus-pallet-xcm = { path = "../../pallets/xcm", default-features = false }
+cumulus-pallet-aura-ext = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.4", default-features = false }
+cumulus-pallet-parachain-system = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.4", default-features = false }
+cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.4", default-features = false }
+cumulus-primitives-utility = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.4", default-features = false }
+cumulus-pallet-dmp-queue = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.4", default-features = false }
+cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.4", default-features = false }
 
 # Polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.4" }
