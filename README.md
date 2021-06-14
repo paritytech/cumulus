@@ -84,6 +84,28 @@ integritee-collator \
 
 ```
 
+### Runtime upgrade
+Two runtimes are contained in this repository. First, the shell-runtime, which has been extended compared to the upstream shell-runtime. It has some additional modules including sudo to facilitate a 
+runtime upgrade with the [sudo upgrade](https://substrate.dev/docs/en/tutorials/forkless-upgrade/sudo-upgrade) method. Second, it runs with the same executor instance as the integritee-runtime, such that an eventual upgrade is simpler to perform, i.e., only the runtime
+needs to be upgraded whereas the client can remain the same. Hence, all modules revolving around aura have been included, which provide data the client needs.
+
+#### Upgrade procedure
+Prepare a local shell network and generate the `integritee-runtime` wasm blob, which contains the upgraded runtime to be executed after the runtime upgrade.
+```shell
+// launch local setup
+node ../polkadot-launch/dist/index.js shell-local-config.json
+
+// generate wasm blob
+ ./target/release/integritee-collator export-genesis-wasm --chain integritee-local > integritee-genesis.wasm
+```
+
+After the parachain starts producing blocks a runtime upgrade can be initiated via the polkadot-js/apps interface.
+
+![image](./docs/sudo-set-code.png)
+
+If successful, a `parachainSystem.validationFunctionStored` event is thrown followed by a `parachainSystem.validationFunctionApplied` event some blocks later. After this procedure, the `substrateeRegistry` module should be available in the
+extrinsics tab in polkadot-js/apps.
+
 ### Caveats
 * Don't forget to enable file upload if you perform drag and drop for the `genesisHead` and `validationCode`. If it is not enabled, Polkadot-js will interpret the path as a string and won't complain but the registration will fail.
 * Don't forget to add the argument `--chain integritee-rococo` for the custom chain config. This argument is omitted in the [Cumulus Workshop](https://substrate.dev/cumulus-workshop/).
