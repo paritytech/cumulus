@@ -16,17 +16,19 @@
 //! Auxillary struct/enums for Statemint runtime.
 //! Taken from polkadot/runtime/common (at a21cd64) and adapted for Statemint.
 
-use frame_support::traits::{Currency, Imbalance, OnUnbalanced};
+use frame_support::traits::{Currency, Imbalance, OnUnbalanced, fungibles::{self, CreditOf}};
+use sp_std::marker::PhantomData;
 
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
 
+pub type AccountIdOf<R> = <R as frame_system::Config>::AccountId;
+
 /// Logic for the author to get a portion of fees.
-pub struct ToStakingPot<R>(sp_std::marker::PhantomData<R>);
+pub struct ToStakingPot<R>(PhantomData<R>);
 impl<R> OnUnbalanced<NegativeImbalance<R>> for ToStakingPot<R>
 where
 	R: pallet_balances::Config + pallet_collator_selection::Config,
-	<R as frame_system::Config>::AccountId: From<polkadot_primitives::v1::AccountId>,
-	<R as frame_system::Config>::AccountId: Into<polkadot_primitives::v1::AccountId>,
+	AccountIdOf<R>: From<polkadot_primitives::v1::AccountId> + Into<polkadot_primitives::v1::AccountId>,
 	<R as frame_system::Config>::Event: From<pallet_balances::Event<R>>,
 {
 	fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
@@ -43,12 +45,11 @@ where
 	}
 }
 
-pub struct DealWithFees<R>(sp_std::marker::PhantomData<R>);
+pub struct DealWithFees<R>(PhantomData<R>);
 impl<R> OnUnbalanced<NegativeImbalance<R>> for DealWithFees<R>
 where
 	R: pallet_balances::Config + pallet_collator_selection::Config,
-	<R as frame_system::Config>::AccountId: From<polkadot_primitives::v1::AccountId>,
-	<R as frame_system::Config>::AccountId: Into<polkadot_primitives::v1::AccountId>,
+	AccountIdOf<R>: From<polkadot_primitives::v1::AccountId> + Into<polkadot_primitives::v1::AccountId>,
 	<R as frame_system::Config>::Event: From<pallet_balances::Event<R>>,
 {
 	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance<R>>) {
@@ -58,6 +59,21 @@ where
 			}
 			<ToStakingPot<R> as OnUnbalanced<_>>::on_unbalanced(fees);
 		}
+	}
+}
+
+pub struct AssetsToBlockAuthor<R>(PhantomData<R>);
+impl<R> pallet_asset_tx_payment::HandleCredit<AccountIdOf<R>, pallet_assets::Pallet<R>> for AssetsToBlockAuthor<R>
+where
+	R: pallet_authorship::Config + pallet_assets::Config,
+	AccountIdOf<R>: From<polkadot_primitives::v1::AccountId> + Into<polkadot_primitives::v1::AccountId>,
+{
+	fn handle_credit(credit: CreditOf<AccountIdOf<R>, pallet_assets::Pallet<R>>) {
+		let author = pallet_authorship::Pallet::<R>::author();
+		// TODO: what to do in case paying the author fails (e.g. because `fee < min_balance`)
+		// default: drop the result which will trigger the `OnDrop` of the imbalance.
+		use fungibles::Balanced;
+		let _res = pallet_assets::Pallet::<R>::resolve(&author, credit);
 	}
 }
 
