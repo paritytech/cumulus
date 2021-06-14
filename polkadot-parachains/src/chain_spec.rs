@@ -224,7 +224,7 @@ fn integritee_genesis<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisC
 			r#"{
 				"ss58Format": 42,
 				"tokenDecimals": 12,
-				"tokenSymbol": "ITY"
+				"tokenSymbol": "TEER"
 				}"#).unwrap()),
 		Extensions {
 			relay_chain: "rococo".into(),
