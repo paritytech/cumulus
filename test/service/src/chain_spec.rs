@@ -38,8 +38,6 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
 #[serde(deny_unknown_fields)]
 pub struct Extensions {
-	/// The relay chain of the Parachain.
-	pub relay_chain: String,
 	/// The id of the Parachain.
 	pub para_id: u32,
 }
@@ -73,7 +71,6 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 		None,
 		None,
 		Extensions {
-			relay_chain: "westend-dev".into(),
 			para_id: id.into(),
 		},
 	)
