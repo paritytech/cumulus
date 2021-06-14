@@ -44,11 +44,12 @@ jobs:
         run: |
           subwasm meta ${{ steps.srtool_build.outputs.wasm }}
           subwasm --json meta ${{ steps.srtool_build.outputs.wasm }} > ${{ matrix.chain }}-metadata.json
-      - name: Check the metadata diff
-        shell: bash
-        run: |
-          subwasm diff ${{ steps.srtool_build.outputs.wasm }} --chain-b ${{ matrix.chain }} > ${{ matrix.chain }}-diff.txt
-          cat ${{ matrix.chain }}-diff.txt
+# This is unsupported it wants to diff the metadata with a running chain. i.e. wss://kusama-<matrix.chain>-rpc.parity.io
+#      - name: Check the metadata diff
+#        shell: bash
+#        run: |
+#          subwasm diff ${{ steps.srtool_build.outputs.wasm }} --chain-b ${{ matrix.chain }} > ${{ matrix.chain }}-diff.txt
+#          cat ${{ matrix.chain }}-diff.txt
       - name: Archive Subwasm results
         uses: actions/upload-artifact@v2
         with:
@@ -56,4 +57,4 @@ jobs:
           path: |
             ${{ matrix.chain }}-info.json
             ${{ matrix.chain }}-metadata.json
-            ${{ matrix.chain }}-diff.txt
+#            ${{ matrix.chain }}-diff.txt
