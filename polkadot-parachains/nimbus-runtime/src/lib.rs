@@ -606,5 +606,21 @@ impl_runtime_apis! {
 	}
 }
 
-// Notice we use the wrapper executor for execution by the relay chain validators.
-cumulus_pallet_parachain_system::register_validate_block!(Runtime, pallet_author_inherent::BlockExecutor<Runtime, Executive>);
+// Check the inherents for this runtime. Currently this is a mocked dummy. It will be fleshed out once the technique for 
+// checking the timestamp and parachain inherents is established in cumulus
+struct CheckInherents;
+
+impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
+	fn check_inherents(
+		_: &[UncheckedExtrinsic],
+		_: &cumulus_pallet_parachain_system::RelayChainStateProof,
+	) -> sp_inherents::CheckInherentsResult {
+		sp_inherents::CheckInherentsResult::new()
+	}
+}
+
+cumulus_pallet_parachain_system::register_validate_block! {
+	Runtime = Runtime,
+	BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
+	CheckInherents = CheckInherents,
+}
