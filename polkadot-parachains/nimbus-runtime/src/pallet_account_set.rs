@@ -34,6 +34,7 @@ pub use pallet::*;
 #[pallet]
 pub mod pallet {
 
+	#[cfg(feature = "std")]
 	use log::warn;
 	use frame_support::pallet_prelude::*;
 	use sp_std::vec::Vec;
