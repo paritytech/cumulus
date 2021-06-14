@@ -1766,6 +1766,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "cumulus-primitives-core",
+ "cumulus-test-relay-sproof-builder",
  "parity-scale-codec",
  "polkadot-client",
  "sc-client-api",
