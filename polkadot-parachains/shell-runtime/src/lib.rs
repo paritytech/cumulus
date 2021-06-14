@@ -74,11 +74,11 @@ impl_opaque_keys! {
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("integritee-parachain"),
 	impl_name: create_runtime_str!("integritee-shell"),
-	authoring_version: 1,
-	spec_version: 8,
-	impl_version: 1,
+	authoring_version: 0,
+	spec_version: 0,
+	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 1,
+	transaction_version: 0,
 };
 
 pub const MILLISECS_PER_BLOCK: u64 = 12000;
