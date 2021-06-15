@@ -24,7 +24,7 @@
 		{
 			"bin": "./target/release/integritee-collator",
 			"chain": "shell-local",
-			"id": "1983",
+			"id": "2015",
 			"balance": "1000000000000000000000",
 			"nodes": [
 				{

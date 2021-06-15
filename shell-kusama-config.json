@@ -23,13 +23,14 @@
 	"parachains": [
 		{
 			"bin": "./target/release/integritee-collator",
-			"chain": "integritee",
+			"chain": "shell",
 			"id": "2015",
+			"balance": "10_000_000__000_000_000_000",
 			"nodes": [
 				{
-					"wsPort": 9944,
-					"port": 31200,
-					"flags": ["--", "--execution=wasm"]
+				"wsPort": 9944,
+				"port": 31200,
+				"flags": ["--", "--execution=wasm"]
 				}
 			]
 		}

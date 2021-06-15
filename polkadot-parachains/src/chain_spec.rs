@@ -251,7 +251,7 @@ fn testnet_genesis(
 			balances: endowed_accounts
 				.iter()
 				.cloned()
-				.map(|k| (k, 1 << 60))
+				.map(|k| (k, 10_000_000__000_000_000_000))
 				.collect(),
 		},
 		pallet_sudo: rococo_parachain_runtime::SudoConfig { key: root_key },
@@ -276,7 +276,7 @@ fn shell_testnet_genesis(parachain_id: ParaId, genesis_keys: GenesisKeys) -> she
 			balances: genesis_keys.endowed_accounts()
 				.iter()
 				.cloned()
-				.map(|k| (k, 1 << 60))
+				.map(|k| (k, 10_000_000__000_000_000_000))
 				.collect(),
 		},
 		pallet_sudo: shell_runtime::SudoConfig { key: genesis_keys.root() },
