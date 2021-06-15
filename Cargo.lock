@@ -9492,6 +9492,7 @@ dependencies = [
  "pallet-balances",
  "pallet-sudo",
  "pallet-timestamp",
+ "pallet-transaction-payment",
  "parachain-info 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
  "parity-scale-codec",
  "polkadot-parachain",
