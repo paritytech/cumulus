@@ -233,6 +233,9 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
+/// We allow root and the Relay Chain council to execute privileged asset operations.
+pub type AssetsForceOrigin =  EnsureRoot<AccountId>;
+
 parameter_types! {
 	pub const AssetDeposit: Balance = 100 * UNITS; // 100 WND deposit to create asset
 	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
@@ -248,7 +251,7 @@ impl pallet_assets::Config for Runtime {
 	type Balance = Balance;
 	type AssetId = u32;
 	type Currency = Balances;
-	type ForceOrigin = EnsureRoot<AccountId>;
+	type ForceOrigin = AssetsForceOrigin;
 	type AssetDeposit = AssetDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
