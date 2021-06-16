@@ -108,7 +108,6 @@ impl<T: Config> ChargeAssetTxPayment<T> where
 	ChargeAssetIdOf<T>: Send + Sync,
 	AssetBalanceOf<T>: Send + Sync + FixedPointOperand,
 	CreditOf<T::AccountId, T::Fungibles>: IsType<ChargeAssetLiquidityOf<T>>,
-	ChargeAssetLiquidityOf<T>: IsType<CreditOf<T::AccountId, T::Fungibles>>,
 {
 	/// utility constructor. Used only in client/factory code.
 	pub fn from(fee: BalanceOf<T>, asset_id: Option<ChargeAssetIdOf<T>>) -> Self {
@@ -183,7 +182,6 @@ impl<T: Config> SignedExtension for ChargeAssetTxPayment<T> where
 	ChargeAssetIdOf<T>: Send + Sync,
 	AssetBalanceOf<T>: Send + Sync + FixedPointOperand,
 	CreditOf<T::AccountId, T::Fungibles>: IsType<ChargeAssetLiquidityOf<T>>,
-	ChargeAssetLiquidityOf<T>: IsType<CreditOf<T::AccountId, T::Fungibles>>,
 {
 	const IDENTIFIER: &'static str = "ChargeAssetTxPayment";
 	type AccountId = T::AccountId;

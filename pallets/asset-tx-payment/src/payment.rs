@@ -67,13 +67,13 @@ pub struct FungiblesAdapter<CON, HC>(PhantomData<(CON, HC)>);
 impl<T, CON, HC> OnChargeAssetTransaction<T> for FungiblesAdapter<CON, HC>
 where
 	T: Config,
-	CON: BalanceConversion<BalanceOf<T>, ChargeAssetIdOf<T>, AssetBalanceOf<T>>,
+	CON: BalanceConversion<BalanceOf<T>, AssetIdOf<T>, AssetBalanceOf<T>>,
 	HC: HandleCredit<T::AccountId, T::Fungibles>,
-	AssetIdOf<T>: Default + IsType<ChargeAssetIdOf<T>>,
+	AssetIdOf<T>: FullCodec + Copy + MaybeSerializeDeserialize + Debug + Default + Eq,
 {
 	type LiquidityInfo = CreditOf<T::AccountId, T::Fungibles>;
 	type Balance = BalanceOf<T>;
-	type AssetId = ChargeAssetIdOf<T>;
+	type AssetId = AssetIdOf<T>;
 
 	/// Withdraw the predicted fee from the transaction origin.
 	///
