@@ -65,7 +65,7 @@ fn load_spec(
 		"integritee-kusama" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::Integritee, "kusama")),
 		"shell-rococo-local" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::Integritee, "rococo-local")),
 		"shell-rococo-local-dev" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::WellKnown, "rococo-local")),
-		"shell-kusama" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::Experimental, "kusama")),
+		"shell-kusama" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::Integritee, "kusama")),
 		"" => panic!("Please supply chain_spec to be loaded."),
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
