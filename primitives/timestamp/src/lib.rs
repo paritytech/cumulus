@@ -63,7 +63,7 @@ impl InherentDataProvider {
 
 	/// Provide the inherent data into the given `inherent_data`.
 	pub fn provide_inherent_data(&self, inherent_data: &mut InherentData) -> Result<(), Error> {
-		// As the parachain starts to building at around `relay_chain_slot + 1` we use that slot to
+		// As the parachain starts building at around `relay_chain_slot + 1` we use that slot to
 		// calculate the timestamp.
 		let data: InherentType = ((*self.relay_chain_slot + 1)
 			* self.relay_chain_slot_duration.as_millis() as u64)
