@@ -237,12 +237,10 @@ fn shell_genesis_config(
 }
 
 fn get_chain_name_ext(chain_type: &ChainType) -> String {
-	let ext = match chain_type {
-		ChainType::Local => " (Local)",
-		ChainType::Development => " (Dev)",
-		ChainType::Live => "",
+	match chain_type {
+		ChainType::Local => " (Local)".into(),
+		ChainType::Development => " (Dev)".into(),
+		ChainType::Live => "".into(),
 		ChainType::Custom(custom) => format!(" ({})", custom),
-	};
-
-	ext.into()
+	}
 }
