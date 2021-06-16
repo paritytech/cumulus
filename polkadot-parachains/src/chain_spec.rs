@@ -98,12 +98,15 @@ pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys) -> ShellChain
 		GenesisKeys::WellKnown => ChainType::Local
 	};
 
-	let (root, endowed, authorities): (AccountId, Vec<AccountId>, Vec<AuraId>) = match genesis_keys {
+	let (root, endowed, authorities) = match genesis_keys {
 		GenesisKeys::Integritee => (IntegriteeKeys::root(), vec![IntegriteeKeys::root()], IntegriteeKeys::authorities()),
 		GenesisKeys::WellKnown => (WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities())
 	};
 
+	let chain_name = format!("IntegriTEE Shell{}", get_chain_name_ext(&chain_type));
+
 	integritee_chain_spec(
+		&chain_name,
 		"integritee-shell-polkadot-v0.9.4",
 		move || shell_genesis_config(
 			root.clone(),
@@ -121,12 +124,15 @@ pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys) -> ChainSpec {
 		GenesisKeys::WellKnown => ChainType::Local
 	};
 
-	let (root, endowed, authorities): (AccountId, Vec<AccountId>, Vec<AuraId>) = match genesis_keys {
+	let (root, endowed, authorities) = match genesis_keys {
 		GenesisKeys::Integritee => (IntegriteeKeys::root(), vec![IntegriteeKeys::root()], IntegriteeKeys::authorities()),
 		GenesisKeys::WellKnown => (WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities())
 	};
 
+	let chain_name = format!("IntegriTEE Network{}", get_chain_name_ext(&chain_type));
+
 	integritee_chain_spec(
+		&chain_name,
 		"integritee-polkadot-v0.9.4",
 		move || {
 			integritee_genesis_config(
@@ -139,13 +145,14 @@ pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys) -> ChainSpec {
 }
 
 fn integritee_chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
+	chain_name: &str,
 	chain_id: &str,
 	testnet_constructor: F,
 	chain_type: ChainType,
 	para_id: ParaId,
 ) -> GenericChainSpec<GenesisConfig, Extensions> {
 	GenericChainSpec::<GenesisConfig, Extensions>::from_genesis(
-		"IntegriTEE PC1",
+		chain_name,
 		chain_id,
 		chain_type,
 		testnet_constructor,
@@ -162,7 +169,7 @@ fn integritee_chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, Genes
 				"tokenSymbol": "TEER"
 				}"#).unwrap()),
 		Extensions {
-			relay_chain: "rococo".into(),
+			relay_chain: "kusama".into(),
 			para_id: para_id.into(),
 		},
 	)
@@ -227,4 +234,15 @@ fn shell_genesis_config(
 		},
 		cumulus_pallet_aura_ext: Default::default(),
 	}
+}
+
+fn get_chain_name_ext(chain_type: &ChainType) -> String {
+	let ext = match chain_type {
+		ChainType::Local => " (Local)",
+		ChainType::Development => " (Dev)",
+		ChainType::Live => "",
+		ChainType::Custom(custom) => format!(" ({})", custom),
+	};
+
+	ext.into()
 }
