@@ -64,6 +64,7 @@ fn load_spec(
 		"integritee-local" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::WellKnown, "rococo")),
 		"shell" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::Integritee, "rococo")),
 		"shell-local" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::WellKnown, "rococo")),
+		"shell-exp" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::Experimental, "rococo")),
 		"kusama-integritee" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::Integritee, "kusama")),
 		"kusama-integritee-local" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::WellKnown, "kusama")),
 		"kusama-shell" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::Integritee, "kusama")),

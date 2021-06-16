@@ -61,6 +61,8 @@ pub enum GenesisKeys {
 	Integritee,
 	/// Use Keys from the keyring for a test setup
 	WellKnown,
+	/// For test purposes
+	Experimental,
 }
 
 struct WellKnownKeys;
@@ -95,12 +97,13 @@ impl IntegriteeKeys {
 pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: &str) -> ShellChainSpec {
 	let chain_type = match genesis_keys {
 		GenesisKeys::Integritee => ChainType::Live,
-		GenesisKeys::WellKnown => ChainType::Local
+		_ => ChainType::Local
 	};
 
 	let (root, endowed, authorities) = match genesis_keys {
 		GenesisKeys::Integritee => (IntegriteeKeys::root(), vec![IntegriteeKeys::root()], IntegriteeKeys::authorities()),
-		GenesisKeys::WellKnown => (WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities())
+		GenesisKeys::WellKnown => (WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities()),
+		GenesisKeys::Experimental => (WellKnownKeys::root(), WellKnownKeys::endowed(), vec![Alice.public().into(), Bob.public().into()])
 	};
 
 	let chain_name = format!("IntegriTEE Shell{}", get_chain_name_ext(&chain_type));
@@ -122,12 +125,12 @@ pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: 
 pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: &str) -> ChainSpec {
 	let chain_type = match genesis_keys {
 		GenesisKeys::Integritee => ChainType::Live,
-		GenesisKeys::WellKnown => ChainType::Local
+		_ => ChainType::Local
 	};
 
 	let (root, endowed, authorities) = match genesis_keys {
 		GenesisKeys::Integritee => (IntegriteeKeys::root(), vec![IntegriteeKeys::root()], IntegriteeKeys::authorities()),
-		GenesisKeys::WellKnown => (WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities())
+		_ => (WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities())
 	};
 
 	let chain_name = format!("IntegriTEE Network{}", get_chain_name_ext(&chain_type));
