@@ -60,11 +60,11 @@ fn load_spec(
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
-		"integritee" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::IntegriteeRoot)),
+		"integritee" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::Integritee)),
 		"integritee-local" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::WellKnown)),
-		"shell" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::IntegriteeRoot)),
+		"shell" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::Integritee)),
 		"shell-local" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::WellKnown)),
-		"" => Box::new(chain_spec::get_chain_spec(para_id)),
+		"" => panic!("Please supply chain_spec to be loaded."),
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
 			if chain_spec.is_shell() {

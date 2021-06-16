@@ -57,6 +57,7 @@ sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkad
 sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.4" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.4" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.4" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.4" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.4" }
 
 # RPC related dependencies

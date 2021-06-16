@@ -15,26 +15,19 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use cumulus_primitives_core::ParaId;
-use hex_literal::hex;
-use rococo_parachain_runtime::{AccountId, AuraId, Signature};
+use rococo_parachain_runtime::{AccountId, AuraId};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::{ChainType, GenericChainSpec};
 use serde::{Deserialize, Serialize};
-use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_core::{sr25519, Public};
+use std::str::FromStr;
+use sp_keyring::AccountKeyring::{Alice, Bob, Charlie, Dave, Eve};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<rococo_parachain_runtime::GenesisConfig, Extensions>;
 
 /// Specialized `ChainSpec` for the shell parachain runtime.
 pub type ShellChainSpec = sc_service::GenericChainSpec<shell_runtime::GenesisConfig, Extensions>;
-
-/// Helper function to generate a crypto pair from seed
-pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
-	TPublic::Pair::from_string(&format!("//{}", seed), None)
-		.expect("static values are valid; qed")
-		.public()
-}
 
 /// The extensions for the [`ChainSpec`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
@@ -53,99 +46,69 @@ impl Extensions {
 	}
 }
 
-type AccountPublic = <Signature as Verify>::Signer;
-
-/// Helper function to generate an account ID from seed
-pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId where
-	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
-{
-	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
-}
-
-pub fn get_chain_spec(id: ParaId) -> ChainSpec {
-	ChainSpec::from_genesis(
-		"Local Testnet",
-		"local_testnet",
-		ChainType::Local,
-		move || {
-			testnet_genesis(
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				vec![
-					get_from_seed::<AuraId>("Alice"),
-					get_from_seed::<AuraId>("Bob"),
-				],
-				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie"),
-					get_account_id_from_seed::<sr25519::Public>("Dave"),
-					get_account_id_from_seed::<sr25519::Public>("Eve"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-				],
-				id,
-			)
-		},
-		vec![],
-		None,
-		None,
-		None,
-		Extensions {
-			relay_chain: "westend-dev".into(),
-			para_id: id.into(),
-		},
-	)
+pub fn public_from_ss58<TPublic: Public + FromStr>(ss58: &str) -> TPublic
+	where
+	// what's up with this weird trait bound??
+	<TPublic as FromStr>::Err: std::fmt::Debug
+ {
+	TPublic::from_str(ss58).expect("supply valid ss58!")
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum GenesisKeys {
-	/// Use integriTEE root as key and endow it.
-	IntegriteeRoot,
-	/// Use Keys from the keyring as root and endow them
+	/// Use integriTEE keys.
+	Integritee,
+	/// Use Keys from the keyring for a test setup
 	WellKnown,
 }
 
-impl GenesisKeys {
-	pub fn root(&self) -> AccountId {
-		match self {
-			GenesisKeys::IntegriteeRoot => hex!["7a7ff92b215258d2441e041425693e2f0c73da4a813db166d7c4018db8d16153"].into(),
-			GenesisKeys::WellKnown => get_account_id_from_seed::<sr25519::Public>("Alice")
-		}
+struct WellKnownKeys;
+
+impl WellKnownKeys {
+	fn root() -> AccountId { Alice.to_account_id() }
+
+	fn endowed() -> Vec<AccountId> {
+		vec![Alice.to_account_id(), Bob.to_account_id(), Charlie.to_account_id()]
 	}
 
-	pub fn endowed_accounts(&self) -> Vec<AccountId> {
-		match self {
-			GenesisKeys::IntegriteeRoot => vec![hex!["7a7ff92b215258d2441e041425693e2f0c73da4a813db166d7c4018db8d16153"].into()],
-			GenesisKeys::WellKnown => vec![
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				get_account_id_from_seed::<sr25519::Public>("Bob"),
-				get_account_id_from_seed::<sr25519::Public>("Charlie"),
-			]
-		}
+	fn authorities() -> Vec<AuraId> {
+		vec![Dave.public().into(), Eve.public().into()]
 	}
+}
 
-	pub fn initial_authorities(&self) -> Vec<AuraId> {
+struct IntegriteeKeys;
+
+impl IntegriteeKeys {
+	fn root() -> AccountId { public_from_ss58::<sr25519::Public>("5EqGFRTN3m2kLpoaThANra5REs5C7B2rfLmmZv2nbJsxaTe1").into() }
+	fn authorities() -> Vec<AuraId> {
 		vec![
-			get_from_seed::<AuraId>("Alice"),
-			get_from_seed::<AuraId>("Bob"),
+			public_from_ss58::<sr25519::Public>("5GZJjbPPD9u6NDgK1ApYmbyGs7EBX4HeEz2y2CD38YJxjvQH").into(),
+			public_from_ss58::<sr25519::Public>("5CcSd1GZus6Jw7rP47LLqMMmtr2KeXCH6W11ZKk1LbCQ9dPY").into(),
+			public_from_ss58::<sr25519::Public>("5FsECrDjBXrh5hXmN4PhQfNPbjYYwwW7edu2UQ8G5LR1JFuH").into(),
+			public_from_ss58::<sr25519::Public>("5HBdSEnswkqm6eoHzzX5PCeKoC15CCy88vARrT8XMaRRuyaE").into(),
+			public_from_ss58::<sr25519::Public>("5GGxVLYTXS7JZAwVzisdXbsugHSD6gtDb3AT3MVzih9jTLQT").into(),
 		]
 	}
 }
 
 pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys) -> ShellChainSpec {
 	let chain_type = match genesis_keys {
-		GenesisKeys::IntegriteeRoot => ChainType::Live,
+		GenesisKeys::Integritee => ChainType::Live,
 		GenesisKeys::WellKnown => ChainType::Local
 	};
 
-	integritee_genesis(
+	let (root, endowed, authorities): (AccountId, Vec<AccountId>, Vec<AuraId>) = match genesis_keys {
+		GenesisKeys::Integritee => (IntegriteeKeys::root(), vec![IntegriteeKeys::root()], IntegriteeKeys::authorities()),
+		GenesisKeys::WellKnown => (WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities())
+	};
+
+	integritee_chain_spec(
 		"integritee-shell-polkadot-v0.9.4",
-		move || shell_testnet_genesis(id, genesis_keys),
+		move || shell_genesis_config(
+			root.clone(),
+			endowed.clone(),
+			authorities.clone(),
+			id),
 		chain_type,
 		id,
 	)
@@ -153,24 +116,28 @@ pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys) -> ShellChain
 
 pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys) -> ChainSpec {
 	let chain_type = match genesis_keys {
-		GenesisKeys::IntegriteeRoot => ChainType::Live,
+		GenesisKeys::Integritee => ChainType::Live,
 		GenesisKeys::WellKnown => ChainType::Local
 	};
 
-	integritee_genesis(
+	let (root, endowed, authorities): (AccountId, Vec<AccountId>, Vec<AuraId>) = match genesis_keys {
+		GenesisKeys::Integritee => (IntegriteeKeys::root(), vec![IntegriteeKeys::root()], IntegriteeKeys::authorities()),
+		GenesisKeys::WellKnown => (WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities())
+	};
+
+	integritee_chain_spec(
 		"integritee-polkadot-v0.9.4",
 		move || {
-			testnet_genesis(
-				genesis_keys.root(),
-				// todo: What do I actually need to put as initial authorities??
-				genesis_keys.initial_authorities(),
-				genesis_keys.endowed_accounts(),
+			integritee_genesis_config(
+				root.clone(),
+				endowed.clone(),
+				authorities.clone(),
 				id,
 			)
 		}, chain_type, id)
 }
 
-fn integritee_genesis<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
+fn integritee_chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
 	chain_id: &str,
 	testnet_constructor: F,
 	chain_type: ChainType,
@@ -201,10 +168,10 @@ fn integritee_genesis<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisC
 }
 
 
-fn testnet_genesis(
+fn integritee_genesis_config(
 	root_key: AccountId,
-	initial_authorities: Vec<AuraId>,
 	endowed_accounts: Vec<AccountId>,
+	initial_authorities: Vec<AuraId>,
 	id: ParaId,
 ) -> rococo_parachain_runtime::GenesisConfig {
 	rococo_parachain_runtime::GenesisConfig {
@@ -231,7 +198,12 @@ fn testnet_genesis(
 	}
 }
 
-fn shell_testnet_genesis(parachain_id: ParaId, genesis_keys: GenesisKeys) -> shell_runtime::GenesisConfig {
+fn shell_genesis_config(
+	root_key: AccountId,
+	endowed_accounts: Vec<AccountId>,
+	initial_authorities: Vec<AuraId>,
+	parachain_id: ParaId,
+) -> shell_runtime::GenesisConfig {
 	shell_runtime::GenesisConfig {
 		frame_system: shell_runtime::SystemConfig {
 			code: shell_runtime::WASM_BINARY
@@ -240,17 +212,17 @@ fn shell_testnet_genesis(parachain_id: ParaId, genesis_keys: GenesisKeys) -> she
 			changes_trie_config: Default::default(),
 		},
 		pallet_balances: shell_runtime::BalancesConfig {
-			balances: genesis_keys.endowed_accounts()
+			balances: endowed_accounts
 				.iter()
 				.cloned()
 				.map(|k| (k, 10_000_000__000_000_000_000))
 				.collect(),
 		},
-		pallet_sudo: shell_runtime::SudoConfig { key: genesis_keys.root() },
+		pallet_sudo: shell_runtime::SudoConfig { key: root_key },
 		parachain_info: shell_runtime::ParachainInfoConfig { parachain_id },
 		cumulus_pallet_parachain_system: Default::default(),
 		pallet_aura: shell_runtime::AuraConfig {
-			authorities: genesis_keys.initial_authorities(),
+			authorities: initial_authorities,
 		},
 		cumulus_pallet_aura_ext: Default::default(),
 	}
