@@ -26,8 +26,36 @@ jobs:
           submodules: 'true'
       - name: Build
         run: cargo build --verbose --release
-      - name: Save binaries
-        uses: actions/upload-artifact@v1
+      - name: 'Create binaries for artifacts: shell.state, shell.wasm, integritee.wasm, integritee-spec.json'
+        # Note: there is no way to pass the parachain-id to the `build-spec` cmd, which which imposes to set
+        # `DEFAULT_PARA_ID=2105` in the `polkadot-parachains/command`.
+        run: |
+          ./target/release/integritee-collator export-genesis-state --chain shell --parachain-id 2015 > shell.state
+          ./target/release/integritee-collator export-genesis-wasm --chain shell > shell.wasm
+          ./target/release/integritee-collator export-genesis-wasm --chain integritee > integritee.wasm
+          ./target/release/integritee-collator build-spec --chain integritee --disable-default-bootnode > integritee-spec.json
+      - name: Upload integritee-collator
+        uses: actions/upload-artifact@v2
         with:
-          name: binaries
+          name: integritee-collator
           path: target/release/integritee-collator
+      - name: Upload shell genesis state
+        uses: actions/upload-artifact@v2
+        with:
+          name: shell.state
+          path: shell.state
+      - name: Upload shell wasm
+        uses: actions/upload-artifact@v2
+        with:
+          name: shell.wasm
+          path: shell.wasm
+      - name: Upload integritee wasm
+        uses: actions/upload-artifact@v2
+        with:
+          name: integritee.wasm
+          path: integritee.wasm
+      - name: Upload integritee spec
+        uses: actions/upload-artifact@v2
+        with:
+          name: integritee-spec.json
+          path: integritee-spec.json
