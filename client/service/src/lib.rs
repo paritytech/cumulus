@@ -248,14 +248,10 @@ struct StartPoVRecovery<'a, Block: BlockT, Client, IQ> {
 	para_id: ParaId,
 	client: Arc<Client>,
 	task_manager: &'a mut TaskManager,
-
 	overseer_handler: OverseerHandler,
 	import_queue: IQ,
-
-
 	_phantom: PhantomData<Block>,
 }
-
 
 impl<'a, Block, Client, IQ> polkadot_service::ExecuteWithClient
 	for StartPoVRecovery<'a, Block, Client, IQ>
@@ -334,7 +330,6 @@ pub fn build_polkadot_full_node(
 			relay_chain_full_node,
 			collator_key,
 		})
-
 	}
 }
 
