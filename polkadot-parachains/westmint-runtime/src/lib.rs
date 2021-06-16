@@ -229,6 +229,8 @@ impl pallet_transaction_payment::Config for Runtime {
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 }
 
+impl pallet_randomness_collective_flip::Config for Runtime {}
+
 impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 	type Call = Call;

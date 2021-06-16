@@ -233,6 +233,8 @@ impl pallet_transaction_payment::Config for Runtime {
 	type FeeMultiplierUpdate = ();
 }
 
+impl pallet_randomness_collective_flip::Config for Runtime {}
+
 impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 	type Event = Event;
