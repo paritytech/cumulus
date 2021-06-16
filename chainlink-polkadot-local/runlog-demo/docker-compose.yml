@@ -1,0 +1,171 @@
+version: "3.6"
+x-chainlink-def: &chainlink-def
+  image: smartcontract/chainlink:0.10.3
+  restart: on-failure
+  secrets:
+    - node_password
+    - apicredentials
+  env_file:
+    - ./chainlink.env
+  command: "node start -d -p /run/secrets/node_password -a /run/secrets/apicredentials"
+
+x-postgres-def: &postgres-def
+  image: postgres
+  restart: on-failure
+  environment:
+    - "POSTGRES_MULTIPLE_DATABASES=chainlink,ei"
+    - "POSTGRES_HOST_AUTH_METHOD=trust"
+
+x-external-initiator-def: &external-initiator-def
+  image: smartcontract/external-initiator:fm
+  command: '{\"name\":\"substrate-node\",\"type\":\"substrate\",\"url\":\"${SA_ENDPOINT}\"}'
+
+x-substrate-adapter-def: &substrate-adapter-def
+  image: smartcontract/dev:substrate-v3-adapter
+  restart: on-failure
+  env_file:
+    - ./adapter.env
+
+services:
+  chain-runlog:
+    container_name: chain-runlog
+    image: paritytech/ci-linux:production
+    working_dir: /var/www/node-template
+    ports:
+      - "9944:9944"
+    environment:
+      - CARGO_HOME=/var/www/node-template/.cargo
+    volumes:
+      - ../substrate-node-example/:/var/www/node-template
+      - ../pallet-chainlink/:/var/www/pallet-chainlink
+      - ../pallet-chainlink-feed/:/var/www/pallet-chainlink-feed
+      - "crl:/root/.local"
+    command: bash -c "cargo build --release && ./target/release/node-template --dev --ws-external"
+
+  chainlink-node1:
+    <<: *chainlink-def
+    depends_on:
+      - postgres-node1
+    ports:
+      - "6691:6688"
+    environment:
+      - "DATABASE_URL=postgresql://chainlink@runlog-demo_postgres-node1_1:5432/chainlink?sslmode=disable"
+    volumes:
+      - "cl1:/chainlink"
+
+  postgres-node1:
+    <<: *postgres-def
+    volumes:
+      - "./docker-init-scripts:/docker-entrypoint-initdb.d"
+      - "pg1:/var/lib/postgresql/data"
+
+  external-initiator-node1:
+    <<: *external-initiator-def
+    depends_on:
+      - postgres-node1
+    environment:
+      - "EI_DATABASEURL=postgresql://ei@runlog-demo_postgres-node1_1:5432/ei?sslmode=disable"
+      - "EI_CHAINLINKURL=http://runlog-demo_chainlink-node1_1:6688/"
+    env_file:
+      - ./external_initiator1.env
+
+  substrate-adapter1:
+    <<: *substrate-adapter-def
+    environment:
+      - "SA_ENDPOINT=${SA_ENDPOINT}"
+      - "SA_PRIVATE_KEY=0x2875481aae0807cf598d6097c901a33b36241c761158c85852a6d79a8f20bc62"
+    # Secret phrase `dry squeeze youth enjoy provide blouse claw engage host what horn next` is account:
+    #  Secret seed:      0x2875481aae0807cf598d6097c901a33b36241c761158c85852a6d79a8f20bc62
+    #  Public key (hex): 0x7c522c8273973e7bcf4a5dbfcc745dba4a3ab08c1e410167d7b1bdf9cb924f6c
+    #  Account ID:       0x7c522c8273973e7bcf4a5dbfcc745dba4a3ab08c1e410167d7b1bdf9cb924f6c
+    #  SS58 Address:     5EsiCstpHTxarfafS3tvG7WDwbrp9Bv6BbyRvpwt3fY8PCtN
+
+  chainlink-node2:
+    <<: *chainlink-def
+    depends_on:
+      - postgres-node2
+    ports:
+      - "6692:6688"
+    environment:
+      - "DATABASE_URL=postgresql://chainlink@runlog-demo_postgres-node2_1:5432/chainlink?sslmode=disable"
+    volumes:
+      - "cl2:/chainlink"
+
+  postgres-node2:
+    <<: *postgres-def
+    volumes:
+      - "./docker-init-scripts:/docker-entrypoint-initdb.d"
+      - "pg2:/var/lib/postgresql/data"
+
+  external-initiator-node2:
+    <<: *external-initiator-def
+    depends_on:
+      - postgres-node2
+    environment:
+      - "EI_DATABASEURL=postgresql://ei@runlog-demo_postgres-node2_1:5432/ei?sslmode=disable"
+      - "EI_CHAINLINKURL=http://runlog-demo_chainlink-node2_1:6688/"
+    env_file:
+      - ./external_initiator2.env
+
+  substrate-adapter2:
+    <<: *substrate-adapter-def
+    environment:
+      - "SA_ENDPOINT=${SA_ENDPOINT}"
+      - "SA_PRIVATE_KEY=0x00ed255f936202d04c70c02737ba322a7aaf961e94bb22c3e15d4ec7f44ab407"
+    # Secret phrase `price trip nominee recycle walk park borrow sausage crucial only wheel joke` is account:
+    #  Secret seed:      0x00ed255f936202d04c70c02737ba322a7aaf961e94bb22c3e15d4ec7f44ab407
+    #  Public key (hex): 0x06f0d58c43477508c0e5d5901342acf93a0208088816ff303996564a1d8c1c54
+    #  Account ID:       0x06f0d58c43477508c0e5d5901342acf93a0208088816ff303996564a1d8c1c54
+    #  SS58 Address:     5CDogos4Dy2tSCvShBHkeFeMscwx9Wi2vFRijjTRRFau3vkJ
+
+  chainlink-node3:
+    <<: *chainlink-def
+    depends_on:
+      - postgres-node3
+    ports:
+      - "6693:6688"
+    environment:
+      - "DATABASE_URL=postgresql://chainlink@runlog-demo_postgres-node3_1:5432/chainlink?sslmode=disable"
+    volumes:
+      - "cl3:/chainlink"
+
+  postgres-node3:
+    <<: *postgres-def
+    volumes:
+      - "./docker-init-scripts:/docker-entrypoint-initdb.d"
+      - "pg3:/var/lib/postgresql/data"
+
+  external-initiator-node3:
+    <<: *external-initiator-def
+    depends_on:
+      - postgres-node3
+    environment:
+      - "EI_DATABASEURL=postgresql://ei@runlog-demo_postgres-node3_1:5432/ei?sslmode=disable"
+      - "EI_CHAINLINKURL=http://runlog-demo_chainlink-node3_1:6688/"
+    env_file:
+      - ./external_initiator3.env
+
+  substrate-adapter3:
+    <<: *substrate-adapter-def
+    environment:
+      - "SA_ENDPOINT=${SA_ENDPOINT}"
+      - "SA_PRIVATE_KEY=0xb9de30043e09e2c6b6d6c3b23505aee0170ba57f8af91bb035d1f1130151755a"
+    # Secret phrase `camp acid then kid between survey dentist delay actor fox ensure soccer` is account:
+    #  Secret seed:      0xb9de30043e09e2c6b6d6c3b23505aee0170ba57f8af91bb035d1f1130151755a
+    #  Public key (hex): 0xfaa31acde43e8859565f7576d5a37e6e8ee1b0f6a7c1ae2e8b0ce2bf76248467
+    #  Account ID:       0xfaa31acde43e8859565f7576d5a37e6e8ee1b0f6a7c1ae2e8b0ce2bf76248467
+    #  SS58 Address:     5HjLHE3A9L6zxUEn6uy8mcx3tqyVxZvVXu7okovfWzemadzs
+
+volumes:
+  pg1:
+  cl1:
+  pg2:
+  cl2:
+  pg3:
+  cl3:
+  crl:
+secrets:
+  node_password:
+    file: ./secrets/password.txt
+  apicredentials:
+    file: ./secrets/apicredentials

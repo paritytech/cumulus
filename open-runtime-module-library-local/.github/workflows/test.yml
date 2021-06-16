@@ -1,0 +1,40 @@
+name: Test
+
+on:
+  pull_request:
+    branches:
+    - master
+  push:
+    branches:
+    - master
+
+jobs:
+  build:
+    runs-on: [self-hosted, linux]
+    env:
+      SCCACHE_CACHE_SIZE: "50G"
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly-2021-02-12
+        components: rustfmt
+        target: wasm32-unknown-unknown
+        override: true
+        default: true
+    - name: Install Wasm toolchain
+      run: rustup target add wasm32-unknown-unknown
+    - name: Check format
+      run: make dev-format-check
+    - name: Install clippy
+      run: rustup component add clippy
+    - name: Update
+      run: cargo update
+    - name: Run clippy
+      run: cargo clippy -- -D warnings
+    - name: Check for Wasm
+      run: make dev-check
+    - name: Run tests
+      run: make dev-test

@@ -1,0 +1,31 @@
+[package]
+name = "orml-utilities"
+description = "Various utilities including `FixedU128` and `LinkedList`."
+repository = "https://github.com/open-web3-stack/open-runtime-module-library/tree/master/utilities"
+license = "Apache-2.0"
+version = "0.4.1-dev"
+authors = ["Laminar Developers <hello@laminar.one>"]
+edition = "2018"
+
+[dependencies]
+serde = { version = "1.0.124", optional = true }
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3", default-features = false }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3", default-features = false }
+
+[dev-dependencies]
+serde_json = "1.0.64"
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3" }
+
+[features]
+default = ["std"]
+std = [
+	"serde",
+	"codec/std",
+	"frame-support/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"sp-io/std",
+]

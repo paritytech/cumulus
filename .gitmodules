@@ -1,6 +1,0 @@
-[submodule "chainlink-polkadot"]
-	path = chainlink-polkadot
-	url = https://github.com/smartcontractkit/chainlink-polkadot.git
-[submodule "open-runtime-module-library"]
-	path = open-runtime-module-library
-	url = https://github.com/open-web3-stack/open-runtime-module-library.git

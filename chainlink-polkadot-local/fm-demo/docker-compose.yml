@@ -1,0 +1,134 @@
+version: "3.6"
+
+x-substrate-adapter-def: &substrate-adapter-def
+  image: smartcontract/dev:substrate-v3-adapter
+  restart: on-failure
+  env_file:
+    - ./adapter.env
+  networks:
+    - fm-substrate
+  depends_on:
+    - chain
+
+services:
+  chain:
+    container_name: chain
+    image: paritytech/ci-linux:production
+    working_dir: /var/www/node-template
+    ports:
+      - "9944:9944"
+    environment:
+      - CARGO_HOME=/var/www/node-template/.cargo
+    volumes:
+      - ../substrate-node-example/:/var/www/node-template
+      - ../pallet-chainlink-feed/:/var/www/pallet-chainlink-feed
+      - "chain:/root/.local"
+    command: bash -c "cargo build --release && ./target/release/node-template --dev --ws-external"
+    networks:
+      - fm-substrate
+
+  chainlink:
+    image: smartcontract/chainlink:0.10.3
+    container_name: chainlink-node
+    restart: on-failure
+    ports:
+      - "6688:6688"
+    depends_on:
+      - postgres
+    secrets:
+      - node_password
+      - apicredentials
+    env_file:
+      - ./chainlink.env
+    environment:
+      - DATABASE_URL=postgresql://chainlink@postgres:5432/chainlink?sslmode=disable
+    volumes:
+      - "cl:/chainlink"
+    networks:
+      - fm-substrate
+    entrypoint:
+      [
+        "chainlink",
+        "node",
+        "start",
+        "-d",
+        "-p",
+        "/run/secrets/node_password",
+        "-a",
+        "/run/secrets/apicredentials",
+      ]
+
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    restart: on-failure
+    environment:
+      - POSTGRES_MULTIPLE_DATABASES=chainlink,ei
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - "./docker-init-scripts/postgres:/docker-entrypoint-initdb.d"
+      - "pg:/var/lib/postgresql/data"
+    networks:
+      - fm-substrate
+
+  external-initiator:
+    image: smartcontract/dev:fm-ei-substrate-v3
+    container_name: external-initiator
+    command: '{\"name\":\"substrate\",\"type\":\"substrate\",\"url\":\"ws://chain:9944/\"}'
+    depends_on:
+      - postgres
+    environment:
+      - "EI_DATABASEURL=postgresql://ei@postgres:5432/ei?sslmode=disable"
+      - "EI_CHAINLINKURL=http://chainlink-node:6688/"
+    env_file:
+      - ./external_initiator.env
+    networks:
+      - fm-substrate
+
+  substrate-adapter1:
+    <<: *substrate-adapter-def
+    container_name: substrate-adapter1
+    ports:
+      - "8081:8080"
+    environment:
+      - "SA_PRIVATE_KEY=0x2875481aae0807cf598d6097c901a33b36241c761158c85852a6d79a8f20bc62"
+    # Secret phrase `dry squeeze youth enjoy provide blouse claw engage host what horn next` is account:
+    #  Secret seed:      0x2875481aae0807cf598d6097c901a33b36241c761158c85852a6d79a8f20bc62
+    #  Public key (hex): 0x7c522c8273973e7bcf4a5dbfcc745dba4a3ab08c1e410167d7b1bdf9cb924f6c
+    #  Account ID:       0x7c522c8273973e7bcf4a5dbfcc745dba4a3ab08c1e410167d7b1bdf9cb924f6c
+    #  SS58 Address:     5EsiCstpHTxarfafS3tvG7WDwbrp9Bv6BbyRvpwt3fY8PCtN
+
+  substrate-adapter2:
+    <<: *substrate-adapter-def
+    container_name: substrate-adapter2
+    ports:
+      - "8082:8080"
+    environment:
+      - "SA_PRIVATE_KEY=0x00ed255f936202d04c70c02737ba322a7aaf961e94bb22c3e15d4ec7f44ab407"
+    # Secret phrase `price trip nominee recycle walk park borrow sausage crucial only wheel joke` is account:
+    #  Secret seed:      0x00ed255f936202d04c70c02737ba322a7aaf961e94bb22c3e15d4ec7f44ab407
+    #  Public key (hex): 0x06f0d58c43477508c0e5d5901342acf93a0208088816ff303996564a1d8c1c54
+    #  Account ID:       0x06f0d58c43477508c0e5d5901342acf93a0208088816ff303996564a1d8c1c54
+    #  SS58 Address:     5CDogos4Dy2tSCvShBHkeFeMscwx9Wi2vFRijjTRRFau3vkJ
+
+  coingecko-adapter:
+    image: public.ecr.aws/chainlink-staging/adapters/coingecko-adapter:develop-latest
+    container_name: coingecko-adapter
+    restart: on-failure
+    ports:
+      - "8083:8080"
+    networks:
+      - fm-substrate
+
+volumes:
+  pg:
+  cl:
+  chain:
+secrets:
+  node_password:
+    file: ./secrets/password.txt
+  apicredentials:
+    file: ./secrets/apicredentials
+networks:
+  fm-substrate:
+    name: fm-substrate

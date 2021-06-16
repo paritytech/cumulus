@@ -1,0 +1,50 @@
+[package]
+name = "pallet-chainlink-feed"
+version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2018"
+license = "Apache-2.0"
+homepage = "https://substrate.dev"
+repository = "https://github.com/paritytech/substrate/"
+description = "chainlink price feed pallet"
+readme = "README.md"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+serde = { version = "1.0.125", optional = true, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "2.0.1", features = ['derive'], default-features = false }
+sp-arithmetic = { default-features = false,  git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.3' }
+sp-std = { default-features = false,  git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.3' }
+sp-core = { default-features = false,  git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.3' }
+# Needed for various traits. In our case, `OnFinalize`.
+sp-runtime = { default-features = false,  git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.3' }
+# Needed for type-safe access to storage DB.
+frame-support = { default-features = false,  git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.3'}
+# `system` module provides us with all sorts of useful stuff and macros depend on it being around.
+frame-system = { default-features = false,  git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.3' }
+frame-benchmarking = { default-features = false,  git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.3', optional = true }
+
+[dev-dependencies]
+sp-std = { default-features = false,  git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.3' }
+sp-io = { default-features = false,  git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.3' }
+pallet-balances = { default-features = false,  git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.3' }
+
+[features]
+default = ["std"]
+std = [
+    "serde",
+    "codec/std",
+    "sp-std/std",
+    "sp-core/std",
+    "sp-runtime/std",
+    "frame-support/std",
+    "frame-system/std",
+    "frame-benchmarking/std",
+]
+runtime-benchmarks = [
+    "frame-benchmarking",
+    "sp-runtime/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
+]

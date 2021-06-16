@@ -55,11 +55,11 @@ pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features 
 
 # -------------- Konomi ------------- #
 # orml
-orml-traits = { path = "../../open-runtime-module-library/traits", default-features = false, version = '0.4.1-dev' }
-orml-tokens = { path = "../../open-runtime-module-library/tokens", default-features = false, version = '0.4.1-dev' }
+orml-traits = { path = "../../open-runtime-module-library-local/traits", default-features = false, version = '0.4.1-dev' }
+orml-tokens = { path = "../../open-runtime-module-library-local/tokens", default-features = false, version = '0.4.1-dev' }
 
 # Chainlink
-pallet-chainlink-feed = { path = "../../chainlink-polkadot/pallet-chainlink-feed", default-features = false }
+pallet-chainlink-feed = { path = "../../chainlink-polkadot-local/pallet-chainlink-feed", default-features = false }
 
 # Local dependencies
 pallet-floating-rate-lend = { default-features = false, path = '../pallets/floating-rate-lend', version = '3.0.0' }

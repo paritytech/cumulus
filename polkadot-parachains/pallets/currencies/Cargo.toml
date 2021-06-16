@@ -21,7 +21,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", default-features
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.3" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.3" }
 
-orml-traits = { path = "../../../open-runtime-module-library/traits", default-features = false, version = '0.4.1-dev' }
+orml-traits = { path = "../../../open-runtime-module-library-local/traits", default-features = false, version = '0.4.1-dev' }
 
 # Local libs
 polkadot-parachain-primitives = { default-features = false, path = '../../primitives', version = '0.1.0'}
@@ -29,7 +29,7 @@ pallet-traits = { path = '../traits', default-features = false, version = '3.0.0
 
 [dev-dependencies]
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.3" }
-orml-tokens = { path = "../../../open-runtime-module-library/tokens", default-features = false, version = '0.4.1-dev' }
+orml-tokens = { path = "../../../open-runtime-module-library-local/tokens", default-features = false, version = '0.4.1-dev' }
 
 [features]
 default = ['std']

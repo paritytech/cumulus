@@ -22,7 +22,7 @@ pallet-sudo = { git = "https://github.com/paritytech/substrate", default-feature
 pallet-traits = { path = '../traits', default-features = false, version = '3.0.0'}
 polkadot-parachain-primitives = { default-features = false, path = '../../primitives', version = '0.1.0'}
 pallet-currencies = { path = '../currencies', default-features = false, version = '3.0.0' }
-orml-traits = { path = "../../../open-runtime-module-library/traits", default-features = false, version = '0.4.1-dev' }
+orml-traits = { path = "../../../open-runtime-module-library-local/traits", default-features = false, version = '0.4.1-dev' }
 substrate-fixed = { git = 'https://github.com/encointer/substrate-fixed.git', branch = "master" }
 log = "0.4.13"
 

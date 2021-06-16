@@ -1,0 +1,21 @@
+on:
+  release:
+    types: [published]
+
+name: Publish Package
+
+jobs:
+  publish:
+    name: Publish Package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - run: make Cargo.toml
+      - run: cargo install cargo-unleash --git https://github.com/xlc/cargo-unleash.git # https://github.com/paritytech/cargo-unleash/pull/38
+      - run: cargo unleash em-dragons
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}

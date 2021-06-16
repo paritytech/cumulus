@@ -1,0 +1,42 @@
+[package]
+name = "orml-tokens"
+description = "Fungible tokens module that implements `MultiCurrency` trait."
+repository = "https://github.com/open-web3-stack/open-runtime-module-library/tree/master/tokens"
+license = "Apache-2.0"
+version = "0.4.1-dev"
+authors = ["Laminar Developers <hello@laminar.one>"]
+edition = "2018"
+
+[dependencies]
+serde = { version = "1.0.124", optional = true }
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3", default-features = false }
+frame-support = {  git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3", default-features = false }
+frame-system = {  git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3", default-features = false }
+orml-traits = { path = "../traits", version = "0.4.1-dev", default-features = false }
+
+[dev-dependencies]
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3" }
+pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3" }
+# Patch doesn't work as `pallet-elections-phragmen` is now 4.0.0 version. Revert `rev` to `statemint` branch after
+# other `statemint` dependencies upgraded.
+pallet-elections-phragmen = { git = "https://github.com/paritytech/substrate", rev = "3f110196163b5ec03bac5ee188d60bedf3ebd91d" }
+
+[features]
+default = ["std"]
+std = [
+	"serde",
+	"codec/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"frame-support/std",
+	"frame-system/std",
+	"orml-traits/std",
+]
+runtime-benchmarks = [
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+]
+try-runtime = ["frame-support/try-runtime"]

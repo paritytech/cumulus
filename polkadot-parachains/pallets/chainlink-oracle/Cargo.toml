@@ -10,7 +10,7 @@ targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
 serde = { version = "1.0.125", optional = true, features = ["derive"] }
-pallet-chainlink-feed = { path = "../../../chainlink-polkadot/pallet-chainlink-feed", default-features = false }
+pallet-chainlink-feed = { path = "../../../chainlink-polkadot-local/pallet-chainlink-feed", default-features = false }
 codec = { default-features = false, features = ['derive'], package = 'parity-scale-codec', version = '2.0.0' }
 frame-system = { default-features = false,  git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.3' }
 frame-support = { default-features = false, git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.3' }
