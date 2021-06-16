@@ -37,7 +37,7 @@ use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 use crate::chain_spec::GenesisKeys;
 
-const DEFAULT_PARA_ID: u32 = 1000;
+const DEFAULT_PARA_ID: u32 = 2015;
 
 trait IdentifyChain {
 	fn is_shell(&self) -> bool;
