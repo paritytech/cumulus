@@ -60,10 +60,14 @@ fn load_spec(
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
-		"integritee" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::Integritee)),
-		"integritee-local" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::WellKnown)),
-		"shell" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::Integritee)),
-		"shell-local" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::WellKnown)),
+		"integritee" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::Integritee, "rococo")),
+		"integritee-local" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::WellKnown, "rococo")),
+		"shell" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::Integritee, "rococo")),
+		"shell-local" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::WellKnown, "rococo")),
+		"kusama-integritee" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::Integritee, "kusama")),
+		"kusama-integritee-local" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::WellKnown, "kusama")),
+		"kusama-shell" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::Integritee, "kusama")),
+		"kusama-shell-local" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::WellKnown, "kusama")),
 		"" => panic!("Please supply chain_spec to be loaded."),
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;

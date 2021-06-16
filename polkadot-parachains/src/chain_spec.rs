@@ -92,7 +92,7 @@ impl IntegriteeKeys {
 	}
 }
 
-pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys) -> ShellChainSpec {
+pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: &str) -> ShellChainSpec {
 	let chain_type = match genesis_keys {
 		GenesisKeys::Integritee => ChainType::Live,
 		GenesisKeys::WellKnown => ChainType::Local
@@ -115,10 +115,11 @@ pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys) -> ShellChain
 			id),
 		chain_type,
 		id,
+		relay_chain,
 	)
 }
 
-pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys) -> ChainSpec {
+pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: &str) -> ChainSpec {
 	let chain_type = match genesis_keys {
 		GenesisKeys::Integritee => ChainType::Live,
 		GenesisKeys::WellKnown => ChainType::Local
@@ -141,7 +142,11 @@ pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys) -> ChainSpec {
 				authorities.clone(),
 				id,
 			)
-		}, chain_type, id)
+		},
+		chain_type,
+		id,
+		relay_chain,
+	)
 }
 
 fn integritee_chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
@@ -150,6 +155,7 @@ fn integritee_chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, Genes
 	testnet_constructor: F,
 	chain_type: ChainType,
 	para_id: ParaId,
+	relay_chain: &str
 ) -> GenericChainSpec<GenesisConfig, Extensions> {
 	GenericChainSpec::<GenesisConfig, Extensions>::from_genesis(
 		chain_name,
@@ -169,7 +175,7 @@ fn integritee_chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, Genes
 				"tokenSymbol": "TEER"
 				}"#).unwrap()),
 		Extensions {
-			relay_chain: "kusama".into(),
+			relay_chain: relay_chain.into(),
 			para_id: para_id.into(),
 		},
 	)
