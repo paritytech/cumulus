@@ -95,10 +95,10 @@ impl IntegriteeKeys {
 	}*/
 }
 
-pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: &str) -> ShellChainSpec {
-	let chain_type = match genesis_keys {
-		GenesisKeys::Integritee => ChainType::Live,
-		_ => ChainType::Local
+pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: RelayChain) -> ShellChainSpec {
+	let chain_type = match relay_chain {
+		RelayChain::RococoLocal => ChainType::Local,
+		RelayChain::Kusama => ChainType::Live
 	};
 
 	let (root, endowed, authorities) = match genesis_keys {
@@ -118,14 +118,14 @@ pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: 
 			id),
 		chain_type,
 		id,
-		relay_chain,
+		&relay_chain.to_string(),
 	)
 }
 
-pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: &str) -> ChainSpec {
-	let chain_type = match genesis_keys {
-		GenesisKeys::Integritee => ChainType::Live,
-		_ => ChainType::Local
+pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: RelayChain) -> ChainSpec {
+	let chain_type = match relay_chain {
+		RelayChain::RococoLocal => ChainType::Local,
+		RelayChain::Kusama => ChainType::Live
 	};
 
 	let (root, endowed, authorities) = match genesis_keys {
@@ -148,7 +148,7 @@ pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: &str)
 		},
 		chain_type,
 		id,
-		relay_chain,
+		&relay_chain.to_string(),
 	)
 }
 
@@ -251,5 +251,19 @@ fn get_chain_name_ext(chain_type: &ChainType) -> String {
 		ChainType::Development => " (Dev)".into(),
 		ChainType::Live => "".into(),
 		ChainType::Custom(custom) => format!(" ({})", custom),
+	}
+}
+
+pub enum RelayChain {
+	RococoLocal,
+	Kusama,
+}
+
+impl ToString for RelayChain {
+	fn to_string(&self) -> String {
+		match self {
+			RelayChain::RococoLocal => "rococo-local".into(),
+			RelayChain::Kusama => "kusama".into(),
+		}
 	}
 }

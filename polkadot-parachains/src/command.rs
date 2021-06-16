@@ -35,7 +35,7 @@ use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
-use crate::chain_spec::GenesisKeys;
+use crate::chain_spec::{GenesisKeys, RelayChain};
 
 const DEFAULT_PARA_ID: u32 = 2015;
 
@@ -60,12 +60,12 @@ fn load_spec(
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
-		"integritee-rococo-local" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::Integritee, "rococo-local")),
-		"integritee-rococo-local-dev" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::WellKnown, "rococo-local")),
-		"integritee-kusama" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::Integritee, "kusama")),
-		"shell-rococo-local" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::Integritee, "rococo-local")),
-		"shell-rococo-local-dev" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::WellKnown, "rococo-local")),
-		"shell-kusama" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::Integritee, "kusama")),
+		"integritee-rococo-local" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::Integritee, RelayChain::RococoLocal)),
+		"integritee-rococo-local-dev" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::WellKnown, RelayChain::RococoLocal)),
+		"integritee-kusama" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::Integritee, RelayChain::Kusama)),
+		"shell-rococo-local" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::RococoLocal)),
+		"shell-rococo-local-dev" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::RococoLocal)),
+		"shell-kusama" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Kusama)),
 		"" => panic!("Please supply chain_spec to be loaded."),
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
