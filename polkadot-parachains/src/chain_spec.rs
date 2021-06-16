@@ -22,6 +22,7 @@ use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Public};
 use std::str::FromStr;
 use sp_keyring::AccountKeyring::{Alice, Bob, Charlie, Dave, Eve};
+use sp_core::crypto::Ss58Codec;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<rococo_parachain_runtime::GenesisConfig, Extensions>;
@@ -51,7 +52,7 @@ pub fn public_from_ss58<TPublic: Public + FromStr>(ss58: &str) -> TPublic
 	// what's up with this weird trait bound??
 	<TPublic as FromStr>::Err: std::fmt::Debug
  {
-	TPublic::from_str(ss58).expect("supply valid ss58!")
+	TPublic::from_ss58check(ss58).expect("supply valid ss58!")
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
