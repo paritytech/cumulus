@@ -230,7 +230,7 @@ construct_runtime! {
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
 
 		// DMP handler.
-		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Storage, Event<T>},
+		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin},
 	}
 }
 
