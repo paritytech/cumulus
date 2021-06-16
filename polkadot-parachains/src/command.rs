@@ -60,7 +60,6 @@ fn load_spec(
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
-		"staging" => Box::new(chain_spec::staging_test_net(para_id)),
 		"integritee" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::IntegriteeRoot)),
 		"integritee-local" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::WellKnown)),
 		"shell" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::IntegriteeRoot)),
