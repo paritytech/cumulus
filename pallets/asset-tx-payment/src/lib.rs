@@ -100,18 +100,18 @@ pub mod pallet {
 /// Require the transactor pay for themselves and maybe include a tip to gain additional priority
 /// in the queue. Allows paying via both `Currency` as well as `fungibles::Balanced`.
 #[derive(Encode, Decode, Clone, Eq, PartialEq)]
-pub struct ChargeAssetTxPayment<T: Config>(#[codec(compact)] BalanceOf<T>, Option<AssetIdOf<T>>);
+pub struct ChargeAssetTxPayment<T: Config>(#[codec(compact)] BalanceOf<T>, Option<ChargeAssetIdOf<T>>);
 
 impl<T: Config> ChargeAssetTxPayment<T> where
 	T::Call: Dispatchable<Info=DispatchInfo, PostInfo=PostDispatchInfo>,
 	BalanceOf<T>: Send + Sync + FixedPointOperand + IsType<ChargeAssetBalanceOf<T>>,
-	AssetIdOf<T>: Send + Sync + IsType<ChargeAssetIdOf<T>>,
+	ChargeAssetIdOf<T>: Send + Sync,
 	AssetBalanceOf<T>: Send + Sync + FixedPointOperand,
 	CreditOf<T::AccountId, T::Fungibles>: IsType<ChargeAssetLiquidityOf<T>>,
 	ChargeAssetLiquidityOf<T>: IsType<CreditOf<T::AccountId, T::Fungibles>>,
 {
 	/// utility constructor. Used only in client/factory code.
-	pub fn from(fee: BalanceOf<T>, asset_id: Option<AssetIdOf<T>>) -> Self {
+	pub fn from(fee: BalanceOf<T>, asset_id: Option<ChargeAssetIdOf<T>>) -> Self {
 		Self(fee, asset_id)
 	}
 
@@ -137,7 +137,7 @@ impl<T: Config> ChargeAssetTxPayment<T> where
 
 		let maybe_asset_id  = self.1;
 		if let Some(asset_id) = maybe_asset_id {
-			T::OnChargeAssetTransaction::withdraw_fee(who, call, info, asset_id.into(), fee.into(), tip.into())
+			T::OnChargeAssetTransaction::withdraw_fee(who, call, info, asset_id, fee.into(), tip.into())
 				.map(|i| (fee, InitialPayment::Asset(i.into())))
 		} else {
 			<<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::withdraw_fee(who, call, info, fee, tip)
@@ -180,7 +180,7 @@ impl<T: Config> sp_std::fmt::Debug for ChargeAssetTxPayment<T>
 impl<T: Config> SignedExtension for ChargeAssetTxPayment<T> where
 	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand + IsType<ChargeAssetBalanceOf<T>>,
 	T::Call: Dispatchable<Info=DispatchInfo, PostInfo=PostDispatchInfo>,
-	AssetIdOf<T>: Send + Sync + IsType<ChargeAssetIdOf<T>>,
+	ChargeAssetIdOf<T>: Send + Sync,
 	AssetBalanceOf<T>: Send + Sync + FixedPointOperand,
 	CreditOf<T::AccountId, T::Fungibles>: IsType<ChargeAssetLiquidityOf<T>>,
 	ChargeAssetLiquidityOf<T>: IsType<CreditOf<T::AccountId, T::Fungibles>>,

@@ -20,8 +20,8 @@ pub trait HandleCredit<AccountId, B: Balanced<AccountId>> {
 /// Handle withdrawing, refunding and depositing of transaction fees.
 pub trait OnChargeAssetTransaction<T: Config> {
 	/// The underlying integer type in which fees are calculated.
-	type Balance: FullCodec + Debug + Default;
-	type AssetId: FullCodec + Debug + Default;
+	type Balance: AtLeast32BitUnsigned + FullCodec + Copy + MaybeSerializeDeserialize + Debug + Default;
+	type AssetId: FullCodec + Copy + MaybeSerializeDeserialize + Debug + Default + Eq;
 	type LiquidityInfo;
 
 	/// Before the transaction is executed the payment of the transaction fees
@@ -67,12 +67,13 @@ pub struct FungiblesAdapter<CON, HC>(PhantomData<(CON, HC)>);
 impl<T, CON, HC> OnChargeAssetTransaction<T> for FungiblesAdapter<CON, HC>
 where
 	T: Config,
-	CON: BalanceConversion<BalanceOf<T>, AssetIdOf<T>, AssetBalanceOf<T>>,
+	CON: BalanceConversion<BalanceOf<T>, ChargeAssetIdOf<T>, AssetBalanceOf<T>>,
 	HC: HandleCredit<T::AccountId, T::Fungibles>,
+	AssetIdOf<T>: Default + IsType<ChargeAssetIdOf<T>>,
 {
 	type LiquidityInfo = CreditOf<T::AccountId, T::Fungibles>;
 	type Balance = BalanceOf<T>;
-	type AssetId = AssetIdOf<T>;
+	type AssetId = ChargeAssetIdOf<T>;
 
 	/// Withdraw the predicted fee from the transaction origin.
 	///
@@ -87,11 +88,11 @@ where
 	) -> Result<Self::LiquidityInfo, TransactionValidityError> {
 		let converted_fee = CON::to_asset_balance(fee, asset_id)
 			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?;
-		let can_withdraw = <T::Fungibles as Inspect<T::AccountId>>::can_withdraw(asset_id, who, converted_fee);
+		let can_withdraw = <T::Fungibles as Inspect<T::AccountId>>::can_withdraw(asset_id.into(), who, converted_fee);
 		if !matches!(can_withdraw, WithdrawConsequence::Success) {
 			return Err(InvalidTransaction::Payment.into());
 		}
-		<T::Fungibles as Balanced<T::AccountId>>::withdraw(asset_id, who, converted_fee)
+		<T::Fungibles as Balanced<T::AccountId>>::withdraw(asset_id.into(), who, converted_fee)
 			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
 	}
 
@@ -108,7 +109,7 @@ where
 		_tip: Self::Balance,
 		paid: Self::LiquidityInfo,
 	) -> Result<(), TransactionValidityError> {
-		let converted_fee = CON::to_asset_balance(corrected_fee, paid.asset())
+		let converted_fee = CON::to_asset_balance(corrected_fee, paid.asset().into())
 			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?;
 		// Calculate how much refund we should return
 		let (final_fee, refund) = paid.split(converted_fee);
