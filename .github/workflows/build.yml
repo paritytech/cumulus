@@ -31,8 +31,11 @@ jobs:
         # `DEFAULT_PARA_ID=2105` in the `polkadot-parachains/command`.
         run: |
           ./target/release/integritee-collator export-genesis-state --chain shell --parachain-id 2015 > shell.state
+          ./target/release/integritee-collator export-genesis-state --chain shell-local --parachain-id 2015 > shell-local.state
           ./target/release/integritee-collator export-genesis-wasm --chain shell > shell.wasm
+          ./target/release/integritee-collator export-genesis-wasm --chain shell-local > shell-local.wasm
           ./target/release/integritee-collator export-genesis-wasm --chain integritee > integritee.wasm
+          ./target/release/integritee-collator export-genesis-wasm --chain integritee-local > integritee-local.wasm
           ./target/release/integritee-collator build-spec --chain integritee --disable-default-bootnode > integritee-spec.json
       - name: Upload integritee-collator
         uses: actions/upload-artifact@v2
@@ -44,7 +47,17 @@ jobs:
         with:
           name: shell.state
           path: shell.state
+      - name: Upload shell-local genesis state
+        uses: actions/upload-artifact@v2
+        with:
+          name: shell-local.state
+          path: shell-local.state
       - name: Upload shell wasm
+        uses: actions/upload-artifact@v2
+        with:
+          name: shell-local.wasm
+          path: shell-local.wasm
+      - name: Upload shell-local wasm
         uses: actions/upload-artifact@v2
         with:
           name: shell.wasm
@@ -54,6 +67,11 @@ jobs:
         with:
           name: integritee.wasm
           path: integritee.wasm
+      - name: Upload integritee-local wasm
+        uses: actions/upload-artifact@v2
+        with:
+          name: integritee-local.wasm
+          path: integritee-local.wasm
       - name: Upload integritee spec
         uses: actions/upload-artifact@v2
         with:
