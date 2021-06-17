@@ -375,7 +375,7 @@ pub mod pallet {
 			let new_candidates = candidates.into_iter().filter_map(|c| {
 				let last_block = <LastAuthoredBlock<T>>::get(c.who.clone());
 				let since_last = now.saturating_sub(last_block);
-				if since_last < kick_threshold || Self::candidates().len() <= T::MinCandidates::get() {
+				if since_last < kick_threshold || Self::candidates().len() as u32 <= T::MinCandidates::get() {
 					Some(c.who)
 				} else {
 					let outcome = Self::try_remove_candidate(&c.who);
