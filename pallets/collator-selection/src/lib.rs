@@ -133,7 +133,7 @@ pub mod pallet {
 		/// Minimum number of candidates that we should have. This is used for disaster recovery.
 		///
 		/// This does not take into account the invulnerables.
-		type MinCandidates: Get<usize>;
+		type MinCandidates: Get<u32>;
 
 
 		/// Maximum number of invulnerables.
