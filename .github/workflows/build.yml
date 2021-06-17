@@ -40,7 +40,7 @@ jobs:
     strategy:
       matrix:
         chain: [shell, integritee]
-        config: [rococo-local, kusama]
+        config: [rococo-local-dev, rococo-local, kusama]
 
     steps:
       - uses: actions/download-artifact@v2
