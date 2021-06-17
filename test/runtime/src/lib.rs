@@ -249,6 +249,8 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type ReservedXcmpWeight = ();
 }
 
+impl pallet_randomness_collective_flip::Config for Runtime {}
+
 parameter_types! {
 	pub storage ParachainId: cumulus_primitives_core::ParaId = 100.into();
 	pub storage UpgradeDetection: bool = false;
