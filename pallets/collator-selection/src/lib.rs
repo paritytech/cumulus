@@ -333,7 +333,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::leave_intent(T::MaxCandidates::get()))]
 		pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-			ensure!(Self::candidates().len() > T::MinCandidates::get(), Error::<T>::TooFewCandidates);
+			ensure!(Self::candidates().len() as u32 > T::MinCandidates::get(), Error::<T>::TooFewCandidates);
 			let current_count = Self::try_remove_candidate(&who)?;
 
 			Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
