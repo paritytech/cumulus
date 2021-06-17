@@ -45,7 +45,7 @@ trait IdentifyChain {
 
 impl IdentifyChain for dyn sc_service::ChainSpec {
 	fn is_shell(&self) -> bool {
-		self.id().starts_with("shell")
+		self.id().starts_with("integritee-shell")
 	}
 }
 
@@ -175,29 +175,18 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
-		if runner.config().chain_spec.is_shell() {
-			runner.async_run(|$config| {
-				let $components = new_partial::<shell_runtime::RuntimeApi, ShellRuntimeExecutor, _>(
-					&$config,
-					crate::service::shell_build_import_queue,
-				)?;
-				let task_manager = $components.task_manager;
-				{ $( $code )* }.map(|v| (v, task_manager))
-			})
-		} else {
-			runner.async_run(|$config| {
-				let $components = new_partial::<
-					rococo_parachain_runtime::RuntimeApi,
-					RococoParachainRuntimeExecutor,
-					_
-				>(
-					&$config,
-					crate::service::rococo_parachain_build_import_queue,
-				)?;
-				let task_manager = $components.task_manager;
-				{ $( $code )* }.map(|v| (v, task_manager))
-			})
-		}
+		runner.async_run(|$config| {
+			let $components = new_partial::<
+				rococo_parachain_runtime::RuntimeApi,
+				RococoParachainRuntimeExecutor,
+				_
+			>(
+				&$config,
+				crate::service::rococo_parachain_build_import_queue,
+			)?;
+			let task_manager = $components.task_manager;
+			{ $( $code )* }.map(|v| (v, task_manager))
+		})
 	}}
 }
 
