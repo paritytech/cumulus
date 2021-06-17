@@ -19,7 +19,7 @@ use crate::{
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{
 		new_partial,
-		RococoParachainRuntimeExecutor, ShellRuntimeExecutor,
+		RococoParachainRuntimeExecutor,
 	},
 };
 use codec::Encode;

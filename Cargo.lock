@@ -5740,6 +5740,7 @@ dependencies = [
 [[package]]
 name = "parachain-info"
 version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4#08b7bcfe21b2ce2a26dcdaa664bf8c016f7c93ae"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",
@@ -5751,7 +5752,6 @@ dependencies = [
 [[package]]
 name = "parachain-info"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4#08b7bcfe21b2ce2a26dcdaa664bf8c016f7c93ae"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",
