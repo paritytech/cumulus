@@ -38,6 +38,7 @@ jobs:
     env:
       CHAIN_SPEC: ${{ matrix.chain }}-${{ matrix.config }}
     strategy:
+      fail-fast: false
       matrix:
         chain: [shell, integritee]
         config: [rococo-local-dev, rococo-local, kusama]
@@ -51,6 +52,7 @@ jobs:
         # Note: there is no way to pass the parachain-id to the `build-spec` cmd, which which imposes to set
         # `DEFAULT_PARA_ID=2015` in the `polkadot-parachains/command`.
         run: |
+          chmod +x ./integritee-collator
           ./integritee-collator export-genesis-state --chain ${{ env.CHAIN_SPEC }} --parachain-id 2015 >  ${{ env.CHAIN_SPEC }}.state
           ./integritee-collator export-genesis-wasm --chain ${{ env.CHAIN_SPEC }} > ${{ env.CHAIN_SPEC }}.wasm
           ./integritee-collator build-spec --chain ${{ env.CHAIN_SPEC }} --disable-default-bootnode > ${{ env.CHAIN_SPEC }}-spec.json
