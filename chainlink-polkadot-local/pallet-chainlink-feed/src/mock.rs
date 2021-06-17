@@ -226,6 +226,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	pallet_chainlink_feed::GenesisConfig::<Test> {
 		pallet_admin: Some(pallet_account),
 		feed_creators: vec![1],
+		feeds: vec![],
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
