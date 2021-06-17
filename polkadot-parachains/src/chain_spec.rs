@@ -82,9 +82,6 @@ struct IntegriteeKeys;
 impl IntegriteeKeys {
 	fn root() -> AccountId { public_from_ss58::<sr25519::Public>("5EqGFRTN3m2kLpoaThANra5REs5C7B2rfLmmZv2nbJsxaTe1").into() }
 	fn authorities() -> Vec<AuraId> {
-		vec![Alice.public().into(), Bob.public().into()]
-	}
-	/*	fn authorities() -> Vec<AuraId> {
 		vec![
 			public_from_ss58::<sr25519::Public>("5GZJjbPPD9u6NDgK1ApYmbyGs7EBX4HeEz2y2CD38YJxjvQH").into(),
 			public_from_ss58::<sr25519::Public>("5CcSd1GZus6Jw7rP47LLqMMmtr2KeXCH6W11ZKk1LbCQ9dPY").into(),
@@ -92,7 +89,7 @@ impl IntegriteeKeys {
 			public_from_ss58::<sr25519::Public>("5HBdSEnswkqm6eoHzzX5PCeKoC15CCy88vARrT8XMaRRuyaE").into(),
 			public_from_ss58::<sr25519::Public>("5GGxVLYTXS7JZAwVzisdXbsugHSD6gtDb3AT3MVzih9jTLQT").into(),
 		]
-	}*/
+	}
 }
 
 pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: RelayChain) -> ShellChainSpec {
