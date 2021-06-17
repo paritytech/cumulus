@@ -348,18 +348,10 @@ pub fn run() -> Result<()> {
 						"no"
 					}
 				);
-
-				if config.chain_spec.is_shell() {
-					crate::service::start_shell_node(config, polkadot_config, id)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
-				} else {
-					crate::service::start_rococo_parachain_node(config, polkadot_config, id)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
-				}
+				crate::service::start_rococo_parachain_node(config, polkadot_config, id)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
 			})
 		}
 	}

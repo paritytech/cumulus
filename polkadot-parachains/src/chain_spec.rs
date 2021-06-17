@@ -61,6 +61,8 @@ pub enum GenesisKeys {
 	Integritee,
 	/// Use Keys from the keyring for a test setup
 	WellKnown,
+	/// Use Keys from the keyring for a test setup
+	Experimental,
 }
 
 struct WellKnownKeys;
@@ -69,11 +71,16 @@ impl WellKnownKeys {
 	fn root() -> AccountId { Alice.to_account_id() }
 
 	fn endowed() -> Vec<AccountId> {
-		vec![Alice.to_account_id(), Bob.to_account_id(), Charlie.to_account_id()]
+		vec![Alice.to_account_id(), Bob.to_account_id()]
 	}
 
 	fn authorities() -> Vec<AuraId> {
-		vec![Alice.public().into(), Bob.public().into()]
+		vec![Charlie.public().into(), Dave.public().into(), Eve.public().into()]
+	}
+
+	fn endowed_and_auth() -> Vec<AccountId> {
+		vec![Alice.to_account_id(), Bob.to_account_id(), Charlie.to_account_id(),
+			 Dave.public().into(), Eve.public().into()]
 	}
 }
 
@@ -104,6 +111,7 @@ pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: 
 	let (root, endowed, authorities) = match genesis_keys {
 		GenesisKeys::Integritee => (IntegriteeKeys::root(), vec![IntegriteeKeys::root()], IntegriteeKeys::authorities()),
 		GenesisKeys::WellKnown => (WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities()),
+		GenesisKeys::Experimental => (WellKnownKeys::root(), WellKnownKeys::endowed_and_auth(), WellKnownKeys::authorities()),
 	};
 
 	let chain_name = format!("IntegriTEE Shell{}", get_chain_name_ext(&chain_type));
