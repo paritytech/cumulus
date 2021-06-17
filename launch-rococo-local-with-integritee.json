@@ -29,6 +29,7 @@
 				{
 					"wsPort": 9944,
 					"port": 31200,
+					"name": "dave",
 					"flags": ["--", "--execution=wasm"]
 				}
 			]
