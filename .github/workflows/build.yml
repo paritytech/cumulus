@@ -75,5 +75,5 @@ jobs:
       - name: Upload build-spec
         uses: actions/upload-artifact@v2
         with:
-          name:  ${{ env.CHAIN_SPEC }}.json
-          path:  ${{ env.CHAIN_SPEC }}.json
+          name:  ${{ env.CHAIN_SPEC }}-spec.json
+          path:  ${{ env.CHAIN_SPEC }}-spec.json
