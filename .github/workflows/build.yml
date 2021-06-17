@@ -26,54 +26,52 @@ jobs:
           submodules: 'true'
       - name: Build
         run: cargo build --verbose --release
-      - name: 'Create binaries for artifacts: shell.state, shell.wasm, integritee.wasm, integritee-spec.json'
-        # Note: there is no way to pass the parachain-id to the `build-spec` cmd, which which imposes to set
-        # `DEFAULT_PARA_ID=2105` in the `polkadot-parachains/command`.
-        run: |
-          ./target/release/integritee-collator export-genesis-state --chain shell --parachain-id 2015 > shell.state
-          ./target/release/integritee-collator export-genesis-state --chain shell-local --parachain-id 2015 > shell-local.state
-          ./target/release/integritee-collator export-genesis-wasm --chain shell > shell.wasm
-          ./target/release/integritee-collator export-genesis-wasm --chain shell-local > shell-local.wasm
-          ./target/release/integritee-collator export-genesis-wasm --chain integritee > integritee.wasm
-          ./target/release/integritee-collator export-genesis-wasm --chain integritee-local > integritee-local.wasm
-          ./target/release/integritee-collator build-spec --chain integritee --disable-default-bootnode > integritee-spec.json
       - name: Upload integritee-collator
         uses: actions/upload-artifact@v2
         with:
           name: integritee-collator
           path: target/release/integritee-collator
-      - name: Upload shell genesis state
+
+  create-artifacts:
+    needs: build
+    runs-on: ubuntu-20.04
+    env:
+      CHAIN_SPEC: ${{ matrix.chain }}-${{ matrix.config }}
+    strategy:
+      matrix:
+        chain: [shell, integritee]
+        config: [rococo-local, kusama]
+
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: integritee-collator
+
+      - name: 'Create binaries for artifacts'
+        # Note: there is no way to pass the parachain-id to the `build-spec` cmd, which which imposes to set
+        # `DEFAULT_PARA_ID=2105` in the `polkadot-parachains/command`.
+        run: |
+          ./integritee-collator export-genesis-state --chain ${{ env.CHAIN_SPEC }} --parachain-id 2015 >  ${{ env.CHAIN_SPEC }}.state
+          ./integritee-collator export-genesis-wasm --chain ${{ env.CHAIN_SPEC }} > ${{ env.CHAIN_SPEC }}.wasm
+          ./integritee-collator build-spec --chain ${{ env.CHAIN_SPEC }} --disable-default-bootnode > ${{ env.CHAIN_SPEC }}-spec.json
+
+
+      - name: Upload Genesis state
         uses: actions/upload-artifact@v2
         with:
-          name: shell.state
-          path: shell.state
-      - name: Upload shell-local genesis state
+          name: ${{ env.CHAIN_SPEC }}.state
+          path:  ${{ env.CHAIN_SPEC }}.state
+
+
+      - name: Upload wasm file
         uses: actions/upload-artifact@v2
         with:
-          name: shell-local.state
-          path: shell-local.state
-      - name: Upload shell wasm
+          name: ${{ env.CHAIN_SPEC }}.wasm
+          path: ${{ env.CHAIN_SPEC }}.wasm
+
+
+      - name: Upload build-spec
         uses: actions/upload-artifact@v2
         with:
-          name: shell-local.wasm
-          path: shell-local.wasm
-      - name: Upload shell-local wasm
-        uses: actions/upload-artifact@v2
-        with:
-          name: shell.wasm
-          path: shell.wasm
-      - name: Upload integritee wasm
-        uses: actions/upload-artifact@v2
-        with:
-          name: integritee.wasm
-          path: integritee.wasm
-      - name: Upload integritee-local wasm
-        uses: actions/upload-artifact@v2
-        with:
-          name: integritee-local.wasm
-          path: integritee-local.wasm
-      - name: Upload integritee spec
-        uses: actions/upload-artifact@v2
-        with:
-          name: integritee-spec.json
-          path: integritee-spec.json
+          name:  ${{ env.CHAIN_SPEC }}.json
+          path:  ${{ env.CHAIN_SPEC }}.json
