@@ -247,14 +247,20 @@ pub mod pallet {
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
+		/// Too many candidates
 		TooManyCandidates,
+		/// Too few candidates
 		TooFewCandidates,
+		/// Unknown error
 		Unknown,
+		/// Permission issue
 		Permission,
+		/// User is already a candidate
 		AlreadyCandidate,
+		/// User is not a candidate
 		NotCandidate,
+		/// User is already an Invulnerable
 		AlreadyInvulnerable,
-		InvalidProof,
 	}
 
 	#[pallet::hooks]
