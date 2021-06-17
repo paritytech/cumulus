@@ -41,6 +41,9 @@
 //! The current implementation resolves congestion of [`Candidates`] in a first-come-first-serve
 //! manner.
 //!
+//! Candidates will not be allowed to get kicked or leave_intent if the total number of candidates
+//! fall below MinCandidates. This is for potential disaster recovery scenarios.
+//!
 //! ### Rewards
 //!
 //! The Collator Selection pallet maintains an on-chain account (the "Pot"). In each block, the
