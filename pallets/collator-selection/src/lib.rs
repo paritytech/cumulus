@@ -127,6 +127,12 @@ pub mod pallet {
 		/// This does not take into account the invulnerables.
 		type MaxCandidates: Get<u32>;
 
+		/// Minimum number of candidates that we should have. This is used for disaster recovery.
+		///
+		/// This does not take into account the invulnerables.
+		type MinCandidates: Get<usize>;
+
+
 		/// Maximum number of invulnerables.
 		///
 		/// Used only for benchmarking.
@@ -239,6 +245,7 @@ pub mod pallet {
 	#[pallet::error]
 	pub enum Error<T> {
 		TooManyCandidates,
+		TooFewCandidates,
 		Unknown,
 		Permission,
 		AlreadyCandidate,
@@ -323,7 +330,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::leave_intent(T::MaxCandidates::get()))]
 		pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-
+			ensure!(Self::candidates().len() > T::MinCandidates::get(), Error::<T>::TooFewCandidates);
 			let current_count = Self::try_remove_candidate(&who)?;
 
 			Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
@@ -365,7 +372,7 @@ pub mod pallet {
 			let new_candidates = candidates.into_iter().filter_map(|c| {
 				let last_block = <LastAuthoredBlock<T>>::get(c.who.clone());
 				let since_last = now.saturating_sub(last_block);
-				if since_last < kick_threshold {
+				if since_last < kick_threshold || Self::candidates().len() <= T::MinCandidates::get() {
 					Some(c.who)
 				} else {
 					let outcome = Self::try_remove_candidate(&c.who);

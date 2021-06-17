@@ -188,6 +188,7 @@ parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
 	pub const MaxCandidates: u32 = 20;
 	pub const MaxInvulnerables: u32 = 20;
+	pub const MinCandidates: usize = 1;
 }
 
 impl Config for Test {
@@ -196,6 +197,7 @@ impl Config for Test {
 	type UpdateOrigin = EnsureSignedBy<RootAccount, u64>;
 	type PotId = PotId;
 	type MaxCandidates = MaxCandidates;
+	type MinCandidates = MinCandidates;
 	type MaxInvulnerables = MaxInvulnerables;
 	type KickThreshold = Period;
 	type WeightInfo = ();
