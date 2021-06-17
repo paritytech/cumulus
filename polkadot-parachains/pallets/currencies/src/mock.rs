@@ -13,7 +13,11 @@ use sp_runtime::{
 };
 
 use crate as currencies;
-use frame_support::traits::GenesisBuild;
+use frame_support::traits::{Contains};
+use pallet_traits::CrossChainTransfer;
+use polkadot_parachain_primitives::ParachainId;
+use frame_support::dispatch::DispatchResult;
+use frame_support::pallet_prelude::GenesisBuild;
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
@@ -92,11 +96,30 @@ parameter_types! {
 	pub const GetBasicCurrencyId: CurrencyId = NATIVE_CURRENCY_ID;
 }
 
+pub struct ContainsStruct;
+impl Contains<CurrencyId> for ContainsStruct {
+    fn contains(_t: &u32) -> bool {
+        true
+    }
+}
+
+pub struct CrossChainTransferStrut;
+impl CrossChainTransfer<AccountId> for CrossChainTransferStrut {
+    type CurrencyId = CurrencyId;
+    type Balance = Balance;
+
+    fn transfer(_chain_id: ParachainId, _currency_id: Self::CurrencyId, _from: &AccountId, _to: &AccountId, _amount: Self::Balance) -> DispatchResult {
+        unimplemented!()
+    }
+}
+
 impl Config for Runtime {
     type Event = Event;
     type GetBasicCurrencyId = GetBasicCurrencyId;
+    type IsCrossCurrencyId = ContainsStruct;
     type BasicCurrency = BasicCurrencyAdapter<PalletBalances>;
     type MultiCurrency = MultiCurrencyAdapter<Tokens>;
+    type CrossCurrency = CrossChainTransferStrut;
 }
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;

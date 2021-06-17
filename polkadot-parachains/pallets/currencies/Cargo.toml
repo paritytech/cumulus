@@ -41,4 +41,6 @@ std = [
     'sp-core/std',
     'sp-runtime/std',
     'serde',
+    'pallet-balances/std',
+    'orml-tokens/std',
 ]
