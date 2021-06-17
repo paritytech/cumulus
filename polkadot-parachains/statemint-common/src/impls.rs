@@ -149,6 +149,7 @@ mod tests {
 		pub const PotId: PalletId = PalletId(*b"PotStake");
 		pub const MaxCandidates: u32 = 20;
 		pub const MaxInvulnerables: u32 = 20;
+		pub const MinInvulnerables: usize = 1;
 	}
 
 	impl pallet_collator_selection::Config for Test {
@@ -157,6 +158,7 @@ mod tests {
 		type UpdateOrigin = EnsureRoot<AccountId>;
 		type PotId = PotId;
 		type MaxCandidates = MaxCandidates;
+		type MinCandidates = MinCandidates;
 		type MaxInvulnerables = MaxInvulnerables;
 		type KickThreshold = ();
 		type WeightInfo = ();
