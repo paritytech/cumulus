@@ -32,7 +32,7 @@ sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rh-v
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "rh-v0.9.5-missing-companions" }
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "rh-v0.9.5-missing-companions" }
 sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "rh-v0.9.5-missing-companions" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.5" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "rh-v0.9.5-missing-companions" }
 sp-session = { git = "https://github.com/paritytech/substrate", branch = "rh-v0.9.5-missing-companions" }
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "rh-v0.9.5-missing-companions" }
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "rh-v0.9.5-missing-companions" }
