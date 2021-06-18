@@ -18,7 +18,7 @@ use crate as collator_selection;
 use sp_core::H256;
 use frame_support::{
 	parameter_types, ord_parameter_types,
-	traits::{FindAuthor, GenesisBuild},
+	traits::{FindAuthor, GenesisBuild, ValidatorRegistration},
 	PalletId
 };
 use sp_runtime::{
@@ -191,6 +191,17 @@ parameter_types! {
 	pub const MinCandidates: u32 = 1;
 }
 
+pub struct IsRegistered;
+impl ValidatorRegistration<u64> for IsRegistered {
+	fn is_registered(id: &u64) -> bool {
+		if *id == 7u64 {
+			false
+		} else {
+			true
+		}
+	}
+}
+
 impl Config for Test {
 	type Event = Event;
 	type Currency = Balances;
@@ -200,6 +211,9 @@ impl Config for Test {
 	type MinCandidates = MinCandidates;
 	type MaxInvulnerables = MaxInvulnerables;
 	type KickThreshold = Period;
+	type ValidatorId = <Self as frame_system::Config>::AccountId;
+	type ValidatorIdOf = IdentityCollator;
+	type ValidatorRegistration = IsRegistered;
 	type WeightInfo = ();
 }
 

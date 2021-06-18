@@ -135,6 +135,17 @@ fn cannot_register_as_candidate_if_invulnerable() {
 }
 
 #[test]
+fn cannot_register_as_candidate_if_keys_not_registered() {
+	new_test_ext().execute_with(|| {
+		// can't 7 because keys not registered.
+		assert_noop!(
+			CollatorSelection::register_as_candidate(Origin::signed(7)),
+			Error::<Test>::ValidatorNotRegistered
+		);
+	})
+}
+
+#[test]
 fn cannot_register_dupe_candidate() {
 	new_test_ext().execute_with(|| {
 		// can add 3 as candidate

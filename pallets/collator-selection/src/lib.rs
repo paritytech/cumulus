@@ -79,7 +79,7 @@ pub mod pallet {
 		pallet_prelude::*,
 		inherent::Vec,
 		traits::{
-			Currency, ReservableCurrency, EnsureOrigin, ExistenceRequirement::KeepAlive,
+			Currency, ReservableCurrency, EnsureOrigin, ExistenceRequirement::KeepAlive, ValidatorRegistration
 		},
 		PalletId,
 	};
@@ -92,6 +92,7 @@ pub mod pallet {
 		},
 		weights::DispatchClass,
 	};
+	use sp_runtime::traits::Convert;
 	use core::ops::Div;
 	use pallet_session::SessionManager;
 	use sp_staking::SessionIndex;
@@ -143,6 +144,18 @@ pub mod pallet {
 
 		// Will be kicked if block is not produced in threshold.
 		type KickThreshold: Get<Self::BlockNumber>;
+
+		/// A stable ID for a validator.
+		type ValidatorId: Member + Parameter;
+
+		/// A conversion from account ID to validator ID.
+		///
+		/// Its cost must be at most one storage read.
+		type ValidatorIdOf: Convert<Self::AccountId, Option<Self::ValidatorId>>;
+
+		/// Validate a user is registered
+		type ValidatorRegistration: ValidatorRegistration<Self::ValidatorId>;
+
 
 		/// The weight information of this pallet.
 		type WeightInfo: WeightInfo;
@@ -261,6 +274,10 @@ pub mod pallet {
 		NotCandidate,
 		/// User is already an Invulnerable
 		AlreadyInvulnerable,
+		/// Account has no associated validator ID
+		NoAssociatedValidatorId,
+		/// Validator ID is not yet registered
+		ValidatorNotRegistered
 	}
 
 	#[pallet::hooks]
@@ -315,6 +332,9 @@ pub mod pallet {
 			let length = <Candidates<T>>::decode_len().unwrap_or_default();
 			ensure!((length as u32) < Self::desired_candidates(), Error::<T>::TooManyCandidates);
 			ensure!(!Self::invulnerables().contains(&who), Error::<T>::AlreadyInvulnerable);
+
+			let validator_key = T::ValidatorIdOf::convert(who.clone()).ok_or(Error::<T>::NoAssociatedValidatorId)?;
+			ensure!(T::ValidatorRegistration::is_registered(&validator_key), Error::<T>::ValidatorNotRegistered);
 
 			let deposit = Self::candidacy_bond();
 			// First authored block is current block plus kick threshold to handle session delay
