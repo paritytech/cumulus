@@ -29,14 +29,10 @@ use sc_executor::native_executor_instance;
 use sc_network::NetworkService;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
-use sp_api::{ConstructRuntimeApi, ApiExt};
-use sp_consensus::{
-	BlockImportParams, BlockOrigin, SlotData,
-	import_queue::{CacheKeyId, Verifier as VerifierT},
-};
-use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
+use sp_api::ConstructRuntimeApi;
+use sp_consensus::{SlotData};
 use sp_keystore::SyncCryptoStorePtr;
-use sp_runtime::{traits::{BlakeTwo256, Header as HeaderT}, generic::BlockId};
+use sp_runtime::traits::BlakeTwo256;
 use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
 
@@ -451,67 +447,4 @@ pub async fn start_rococo_parachain_node(
 		},
 	)
 	.await
-}
-
-enum BuildOnAccess<R> {
-	Uninitialized(Option<Box<dyn FnOnce() -> R + Send + Sync>>),
-	Initialized(R),
-}
-
-impl<R> BuildOnAccess<R> {
-	fn get_mut(&mut self) -> &mut R {
-		loop {
-			match self {
-				Self::Uninitialized(f) => {
-					*self = Self::Initialized((f.take().unwrap())());
-				}
-				Self::Initialized(ref mut r) => return r,
-			}
-		}
-	}
-}
-
-struct Verifier<Client> {
-	client: Arc<Client>,
-	aura_verifier: BuildOnAccess<Box<dyn VerifierT<Block>>>,
-	relay_chain_verifier: Box<dyn VerifierT<Block>>,
-}
-
-#[async_trait::async_trait]
-impl<Client> VerifierT<Block> for Verifier<Client>
-where
-	Client: sp_api::ProvideRuntimeApi<Block> + Send + Sync,
-	Client::Api: AuraApi<Block, AuraId>,
-{
-	async fn verify(
-		&mut self,
-		origin: BlockOrigin,
-		header: Header,
-		justifications: Option<sp_runtime::Justifications>,
-		body: Option<Vec<<Block as sp_runtime::traits::Block>::Extrinsic>>,
-	) -> Result<
-		(
-			BlockImportParams<Block, ()>,
-			Option<Vec<(CacheKeyId, Vec<u8>)>>,
-		),
-		String,
-	> {
-		let block_id = BlockId::hash(*header.parent_hash());
-
-		if self
-			.client
-			.runtime_api()
-			.has_api::<dyn AuraApi<Block, AuraId>>(&block_id)
-			.unwrap_or(false)
-		{
-			self.aura_verifier
-				.get_mut()
-				.verify(origin, header, justifications, body)
-				.await
-		} else {
-			self.relay_chain_verifier
-				.verify(origin, header, justifications, body)
-				.await
-		}
-	}
 }
