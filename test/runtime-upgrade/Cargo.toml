@@ -38,7 +38,7 @@ cumulus-primitives-timestamp = { path = "../../primitives/timestamp", default-fe
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.5" }
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.5" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "rh-v0.9.5-missing-companions" }
 
 [features]
 default = [ "std", "upgrade" ]

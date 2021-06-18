@@ -41,11 +41,10 @@ hex-literal = "0.2.1"
 lazy_static = "1.4"
 
 # Substrate dependencies
-sp-version = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.5" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.5" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.5" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.5" }
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.5" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rh-v0.9.5-missing-companions" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "rh-v0.9.5-missing-companions" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rh-v0.9.5-missing-companions" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "rh-v0.9.5-missing-companions" }
 
 # Cumulus dependencies
 cumulus-test-client = { path = "../../test/client" }
