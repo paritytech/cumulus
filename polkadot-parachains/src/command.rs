@@ -45,7 +45,7 @@ trait IdentifyChain {
 
 impl IdentifyChain for dyn sc_service::ChainSpec {
 	fn is_shell(&self) -> bool {
-		self.id().starts_with("integritee-shell")
+		self.name().starts_with("IntegriTEE Shell")
 	}
 }
 
