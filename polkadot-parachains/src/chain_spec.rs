@@ -107,7 +107,6 @@ pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: 
 
 	integritee_chain_spec(
 		&chain_name,
-		"integritee-shell-polkadot-v0.9.4",
 		move || shell_genesis_config(
 			root.clone(),
 			endowed.clone(),
@@ -134,7 +133,6 @@ pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: Relay
 
 	integritee_chain_spec(
 		&chain_name,
-		"integritee-polkadot-v0.9.4",
 		move || {
 			integritee_genesis_config(
 				root.clone(),
@@ -151,7 +149,6 @@ pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: Relay
 
 fn integritee_chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
 	chain_name: &str,
-	chain_id: &str,
 	testnet_constructor: F,
 	chain_type: ChainType,
 	para_id: ParaId,
@@ -159,14 +156,14 @@ fn integritee_chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, Genes
 ) -> GenericChainSpec<GenesisConfig, Extensions> {
 	GenericChainSpec::<GenesisConfig, Extensions>::from_genesis(
 		chain_name,
-		chain_id,
+		"integritee-polkadot",
 		chain_type,
 		testnet_constructor,
 		Vec::new(),
 		// telemetry endpoints
 		None,
 		// protocol id
-		Some("integritee-polkadot-v0.9.4"),
+		Some("teer"),
 		// properties
 		Some(serde_json::from_str(
 			r#"{
