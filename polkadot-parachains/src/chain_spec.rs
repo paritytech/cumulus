@@ -203,6 +203,7 @@ fn integritee_genesis_config(
 				.collect(),
 		},
 		pallet_sudo: rococo_parachain_runtime::SudoConfig { key: root_key },
+		pallet_vesting: Default::default(),
 		parachain_info: rococo_parachain_runtime::ParachainInfoConfig { parachain_id: id },
 		pallet_aura: rococo_parachain_runtime::AuraConfig {
 			authorities: initial_authorities,
@@ -233,6 +234,7 @@ fn shell_genesis_config(
 				.collect(),
 		},
 		pallet_sudo: shell_runtime::SudoConfig { key: root_key },
+		pallet_vesting: Default::default(),
 		parachain_info: shell_runtime::ParachainInfoConfig { parachain_id },
 		cumulus_pallet_parachain_system: Default::default(),
 		pallet_aura: shell_runtime::AuraConfig {

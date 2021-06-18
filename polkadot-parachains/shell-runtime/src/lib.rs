@@ -25,7 +25,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys,
+	create_runtime_str, generic, impl_opaque_keys, traits::ConvertInto,
 	traits::{BlakeTwo256, Block as BlockT, AccountIdLookup},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
@@ -230,6 +230,18 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
+	pub const MinVestedTransfer: Balance = 100 * ROC;
+}
+
+impl pallet_vesting::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type BlockNumberToBalance = ConvertInto;
+	type MinVestedTransfer = MinVestedTransfer;
+	type WeightInfo = pallet_vesting::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
 	// We do anything the parent chain tells us in this runtime.
 	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 2;
 }
@@ -316,6 +328,7 @@ construct_runtime! {
 		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned} = 20,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 21,
 
+		Vesting: pallet_vesting::{Pallet, Call, Storage, Event<T>, Config<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 30,
 
 		Aura: pallet_aura::{Pallet, Config<T>},

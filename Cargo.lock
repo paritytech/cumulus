@@ -3402,6 +3402,7 @@ dependencies = [
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
+ "pallet-vesting",
  "pallet-xcm",
  "parachain-info 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
  "parity-scale-codec",
@@ -5740,7 +5741,6 @@ dependencies = [
 [[package]]
 name = "parachain-info"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4#08b7bcfe21b2ce2a26dcdaa664bf8c016f7c93ae"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",
@@ -5752,6 +5752,7 @@ dependencies = [
 [[package]]
 name = "parachain-info"
 version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4#08b7bcfe21b2ce2a26dcdaa664bf8c016f7c93ae"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",
@@ -9494,6 +9495,7 @@ dependencies = [
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
+ "pallet-vesting",
  "parachain-info 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.4)",
  "parity-scale-codec",
  "polkadot-parachain",
