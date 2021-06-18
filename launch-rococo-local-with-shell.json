@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../polkadot/target/release/polkadot",
+		"bin": "../bin/polkadot-0.9.3-local-testing",
 		"chain": "rococo-local",
 		"nodes": [
 			{
@@ -30,6 +30,7 @@
 				{
 				"wsPort": 9944,
 				"port": 31200,
+				"name": "dave",
 				"flags": ["--", "--execution=wasm"]
 				}
 			]
@@ -43,7 +44,6 @@
 				{
 					"wsPort": 9915,
 					"port": 31200,
-					"name": "dave",
 					"flags": ["--", "--execution=wasm"]
 				}
 			]
