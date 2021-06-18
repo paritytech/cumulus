@@ -156,7 +156,7 @@ fn integritee_chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, Genes
 ) -> GenericChainSpec<GenesisConfig, Extensions> {
 	GenericChainSpec::<GenesisConfig, Extensions>::from_genesis(
 		chain_name,
-		"integritee-polkadot",
+		&format!("integritee-{}", relay_chain),
 		chain_type,
 		testnet_constructor,
 		Vec::new(),
