@@ -13,31 +13,31 @@ targets = ['x86_64-unknown-linux-gnu']
 codec = { package = 'parity-scale-codec', version = '2.0.0', features = ['derive'], default-features = false }
 
 # Substrate dependencies
-sp-consensus-aura = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.5" }
-sp-std = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.5" }
-sp-io = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.5" }
-frame-executive = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.5" }
-frame-support = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.5" }
-frame-system = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.5" }
-pallet-balances = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.5" }
-sp-runtime = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.5" }
-sp-core = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.5" }
-node-primitives = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.5" }
+sp-consensus-aura = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.6" }
+sp-std = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.6" }
+sp-io = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.6" }
+frame-executive = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.6" }
+frame-support = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.6" }
+frame-system = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.6" }
+pallet-balances = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.6" }
+sp-runtime = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.6" }
+sp-core = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.6" }
+node-primitives = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.6" }
 
 # Polkadot dependencies
-polkadot-runtime-common = { git = 'https://github.com/paritytech/polkadot', default-features = false , branch = "release-v0.9.5" }
-polkadot-primitives = { git = 'https://github.com/paritytech/polkadot', default-features = false , branch = "release-v0.9.5" }
+polkadot-runtime-common = { git = 'https://github.com/paritytech/polkadot', default-features = false , branch = "release-v0.9.6" }
+polkadot-primitives = { git = 'https://github.com/paritytech/polkadot', default-features = false , branch = "release-v0.9.6" }
 
 # Local dependencies
 pallet-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
-sp-io = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.5" }
-pallet-authorship = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.5" }
+sp-io = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.6" }
+pallet-authorship = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.6" }
 
 [build-dependencies]
-substrate-wasm-builder = { git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.5" }
+substrate-wasm-builder = { git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.6" }
 
 [features]
 default = ["std"]
