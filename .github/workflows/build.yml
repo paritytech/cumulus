@@ -57,21 +57,18 @@ jobs:
           ./integritee-collator build-spec --chain ${{ env.CHAIN_SPEC }} --disable-default-bootnode --raw > ${{ env.CHAIN_SPEC }}.json
 
 
-      - name: Calculate file ids
+      - name: Compute file metadata
         id: vars
         run: |
-          echo '::set-output name=sha_short::$(git rev-parse --short HEAD)'
-          echo '::set-output name=state_sha::$(sha256sum ${{ env.CHAIN_SPEC }}.state)'
-          echo '::set-output name=spec_sha::$(sha256sum ${{ env.CHAIN_SPEC }}.json)'
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+          sha256sum ${{ env.CHAIN_SPEC }}.state) >> checksums.txt
+          sha256sum ${{ env.CHAIN_SPEC }}.json >> checksums.txt
 
-      - name: Upload ${{ env.CHAIN_SPEC }}.state
+      - name: Upload ${{ env.CHAIN_SPEC }} Files
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.CHAIN_SPEC }}-${{ steps.vars.outputs.sha_short }}-sha256sum=${{ steps.vars.outputs.state_sha }}.state
-          path: ${{ env.CHAIN_SPEC }}.state
-
-      - name: Upload build-spec for ${{ env.CHAIN_SPEC }}
-        uses: actions/upload-artifact@v2
-        with:
-          name:  ${{ env.CHAIN_SPEC }}-${{ steps.vars.outputs.sha_short }}-sha256sum=${{ steps.vars.outputs.spec_sha }}.json
-          path:  ${{ env.CHAIN_SPEC }}.json
+          name: ${{ env.CHAIN_SPEC }}-"${{ steps.vars.outputs.sha_short }}"
+          path: |
+            checksums.txt
+            ${{ env.CHAIN_SPEC }}.state
+            ${{ env.CHAIN_SPEC }}.json
