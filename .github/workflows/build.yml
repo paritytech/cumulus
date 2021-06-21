@@ -61,7 +61,7 @@ jobs:
         id: vars
         run: |
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-          sha256sum ${{ env.CHAIN_SPEC }}.state) >> checksums.txt
+          sha256sum ${{ env.CHAIN_SPEC }}.state >> checksums.txt
           sha256sum ${{ env.CHAIN_SPEC }}.json >> checksums.txt
 
       - name: Upload ${{ env.CHAIN_SPEC }} Files
