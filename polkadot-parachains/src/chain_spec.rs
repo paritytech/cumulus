@@ -21,7 +21,7 @@ use sc_service::{ChainType, GenericChainSpec};
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Public};
 use std::str::FromStr;
-use sp_keyring::AccountKeyring::{Alice, Bob, Charlie, Dave, Eve};
+use sp_keyring::AccountKeyring::{Alice, Bob, Dave, Eve};
 use sp_core::crypto::Ss58Codec;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
@@ -73,7 +73,7 @@ impl WellKnownKeys {
 	}
 
 	fn authorities() -> Vec<AuraId> {
-		vec![Charlie.public().into(), Dave.public().into(), Eve.public().into()]
+		vec![Dave.public().into(), Eve.public().into()]
 	}
 }
 
