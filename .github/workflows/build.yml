@@ -60,14 +60,13 @@ jobs:
       - name: Compute file metadata
         id: vars
         run: |
-          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           sha256sum ${{ env.CHAIN_SPEC }}.state >> checksums.txt
           sha256sum ${{ env.CHAIN_SPEC }}.json >> checksums.txt
 
       - name: Upload ${{ env.CHAIN_SPEC }} Files
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.CHAIN_SPEC }}-"${{ steps.vars.outputs.sha_short }}"
+          name: ${{ env.CHAIN_SPEC }}-${{ github.sha }}
           path: |
             checksums.txt
             ${{ env.CHAIN_SPEC }}.state
