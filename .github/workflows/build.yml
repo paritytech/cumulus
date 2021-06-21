@@ -67,11 +67,11 @@ jobs:
       - name: Upload ${{ env.CHAIN_SPEC }}.state
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.CHAIN_SPEC }}-${{ steps.vars.outputs.sha_short }}-sha256sum=${{ steps.vars.outputs.state_sha ) }}.state
+          name: ${{ env.CHAIN_SPEC }}-${{ steps.vars.outputs.sha_short }}-sha256sum=${{ steps.vars.outputs.state_sha }}.state
           path: ${{ env.CHAIN_SPEC }}.state
 
       - name: Upload build-spec for ${{ env.CHAIN_SPEC }}
         uses: actions/upload-artifact@v2
         with:
-          name:  ${{ env.CHAIN_SPEC }}-${{ steps.vars.outputs.sha_short }}-sha256sum=${{ steps.vars.outputs.spec_sha ) }}.json
+          name:  ${{ env.CHAIN_SPEC }}-${{ steps.vars.outputs.sha_short }}-sha256sum=${{ steps.vars.outputs.spec_sha }}.json
           path:  ${{ env.CHAIN_SPEC }}.json
