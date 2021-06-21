@@ -56,14 +56,22 @@ jobs:
           ./integritee-collator export-genesis-state --chain ${{ env.CHAIN_SPEC }} --parachain-id 2015 >  ${{ env.CHAIN_SPEC }}.state
           ./integritee-collator build-spec --chain ${{ env.CHAIN_SPEC }} --disable-default-bootnode --raw > ${{ env.CHAIN_SPEC }}.json
 
-      - name: Upload ${{ env.CHAIN_SPEC }}.state and calculate sha256
+
+      - name: Calculate file ids
+        id: vars
+        run: |
+          echo '::set-output name=sha_short::$(git rev-parse --short HEAD)'
+          echo '::set-output name=state_sha::$(sha256sum ${{ env.CHAIN_SPEC }}.state)'
+          echo '::set-output name=spec_sha::$(sha256sum ${{ env.CHAIN_SPEC }}.json)'
+
+      - name: Upload ${{ env.CHAIN_SPEC }}.state
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.CHAIN_SPEC }}-${{ github.sha }}-sha256sum=${{ hashFiles( "${{ env.CHAIN_SPEC }}.state" ) }}.state
+          name: ${{ env.CHAIN_SPEC }}-${{ steps.vars.outputs.sha_short }}-sha256sum=${{ steps.vars.outputs.state_sha ) }}.state
           path: ${{ env.CHAIN_SPEC }}.state
 
-      - name: Upload build-spec for ${{ env.CHAIN_SPEC }} and calculate sha256
+      - name: Upload build-spec for ${{ env.CHAIN_SPEC }}
         uses: actions/upload-artifact@v2
         with:
-          name:  ${{ env.CHAIN_SPEC }}-${{ github.sha }}-sha256sum=${{ hashFiles( ${{ "env.CHAIN_SPEC }}.json" ) }}.json
+          name:  ${{ env.CHAIN_SPEC }}-${{ steps.vars.outputs.sha_short }}-sha256sum=${{ steps.vars.outputs.spec_sha ) }}.json
           path:  ${{ env.CHAIN_SPEC }}.json
