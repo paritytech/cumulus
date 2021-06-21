@@ -59,11 +59,11 @@ jobs:
       - name: Upload ${{ env.CHAIN_SPEC }}.state and calculate sha256
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.CHAIN_SPEC }}-${{ github.sha }}-sha256sum=${{ hashFiles( ${{ env.CHAIN_SPEC }}.json ) }}.state
+          name: ${{ env.CHAIN_SPEC }}-${{ github.sha }}-sha256sum=${{ hashFiles( "${{ env.CHAIN_SPEC }}.state" ) }}.state
           path: ${{ env.CHAIN_SPEC }}.state
 
       - name: Upload build-spec for ${{ env.CHAIN_SPEC }} and calculate sha256
         uses: actions/upload-artifact@v2
         with:
-          name:  ${{ env.CHAIN_SPEC }}-${{ github.sha }}-sha256sum=${{ hashFiles( ${{ env.CHAIN_SPEC }}.json ) }}.json
+          name:  ${{ env.CHAIN_SPEC }}-${{ github.sha }}-sha256sum=${{ hashFiles( ${{ "env.CHAIN_SPEC }}.json" ) }}.json
           path:  ${{ env.CHAIN_SPEC }}.json
