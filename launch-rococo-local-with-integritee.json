@@ -31,6 +31,12 @@
 					"port": 31200,
 					"name": "dave",
 					"flags": ["--", "--execution=wasm"]
+				},
+				{
+					"wsPort": 9945,
+					"port": 31200,
+					"name": "eve",
+					"flags": ["--", "--execution=wasm"]
 				}
 			]
 		},
