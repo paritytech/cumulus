@@ -29,7 +29,7 @@ jobs:
       - name: Upload integritee-collator
         uses: actions/upload-artifact@v2
         with:
-          name: integritee-collator
+          name: integritee-collator-${{ github.sha }}
           path: target/release/integritee-collator
 
   create-artifacts:
@@ -40,13 +40,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        chain: [shell, integritee]
-        config: [rococo-local-dev, rococo-local, kusama]
+        chain: [shell]
+        config: [kusama]
 
     steps:
       - uses: actions/download-artifact@v2
         with:
-          name: integritee-collator
+          name: integritee-collator-${{ github.sha }}
 
       - name: 'Create binaries for artifacts'
         # Note: there is no way to pass the parachain-id to the `build-spec` cmd, which which imposes to set
@@ -54,26 +54,16 @@ jobs:
         run: |
           chmod +x ./integritee-collator
           ./integritee-collator export-genesis-state --chain ${{ env.CHAIN_SPEC }} --parachain-id 2015 >  ${{ env.CHAIN_SPEC }}.state
-          ./integritee-collator export-genesis-wasm --chain ${{ env.CHAIN_SPEC }} > ${{ env.CHAIN_SPEC }}.wasm
-          ./integritee-collator build-spec --chain ${{ env.CHAIN_SPEC }} --disable-default-bootnode > ${{ env.CHAIN_SPEC }}-spec.json
+          ./integritee-collator build-spec --chain ${{ env.CHAIN_SPEC }} --disable-default-bootnode --raw > ${{ env.CHAIN_SPEC }}.json
 
-
-      - name: Upload Genesis state
+      - name: Upload ${{ env.CHAIN_SPEC }}.state and calculate sha256
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.CHAIN_SPEC }}.state
-          path:  ${{ env.CHAIN_SPEC }}.state
+          name: ${{ env.CHAIN_SPEC }}-${{ github.sha }}-sha256sum=${{ hashFiles( ${{ env.CHAIN_SPEC }}.json ) }}.state
+          path: ${{ env.CHAIN_SPEC }}.state
 
-
-      - name: Upload wasm file
+      - name: Upload build-spec for ${{ env.CHAIN_SPEC }} and calculate sha256
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.CHAIN_SPEC }}.wasm
-          path: ${{ env.CHAIN_SPEC }}.wasm
-
-
-      - name: Upload build-spec
-        uses: actions/upload-artifact@v2
-        with:
-          name:  ${{ env.CHAIN_SPEC }}-spec.json
-          path:  ${{ env.CHAIN_SPEC }}-spec.json
+          name:  ${{ env.CHAIN_SPEC }}-${{ github.sha }}-sha256sum=${{ hashFiles( ${{ env.CHAIN_SPEC }}.json ) }}.json
+          path:  ${{ env.CHAIN_SPEC }}.json
