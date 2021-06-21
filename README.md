@@ -9,17 +9,17 @@ This is the repository to run integritee as a parachain in the rococo-v1 testnet
 ```bash
 # Compile Polkadot with the real overseer feature
 git clone https://github.com/paritytech/polkadot
-git checkout rococo-v1
-cargo build --release --features=real-overseer
+git checkout <release tag>  // release tag that matches the branch id in the polkadot-deps
+cargo build --release
 
 # Generate a raw chain spec
-./target/release/polkadot build-spec --chain rococo-local --disable-default-bootnode --raw > rococo-local-cfde-real-overseer.json
+./target/release/polkadot build-spec --chain rococo-local --disable-default-bootnode --raw > rococo-local-cfde.json
 
 # Alice
-./target/release/polkadot --chain rococo-local-cfde-real-overseer.json --alice --tmp
+./target/release/polkadot --chain rococo-local-cfde.json --alice --tmp
 
 # Bob (In a separate terminal)
-./target/release/polkadot --chain rococo-local-cfde-real-overseer.json --bob --tmp --port 30334
+./target/release/polkadot --chain rococo-local-cfde.json --bob --tmp --port 30334
 ```
 
 ### Launch the Parachain
@@ -31,20 +31,20 @@ git checkout master
 cargo build --release
 
 # Export genesis state
-# --parachain-id 1983 as an example that can be chosen freely. Make sure to everywhere use the same parachain id
-./target/release/integritee-collator export-genesis-state --chain integritee-local --parachain-id 1983 > integritee-local-genesis.state
+# --parachain-id 2015 as an example that can be chosen freely. Make sure to everywhere use the same parachain id
+./target/release/integritee-collator export-genesis-state --chain integritee-local-dev --parachain-id 2015 > integritee-local-dev.state
 
 # Export genesis wasm
-./target/release/integritee-collator export-genesis-wasm --chain integritee-local > integritee-local-genesis.wasm
+./target/release/integritee-collator export-genesis-wasm --chain integritee-local-dev > integritee-local.wasm
 
 # Collator
-./target/release/integritee-collator --collator --tmp --parachain-id 1983 --chain integritee-local --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde-real-overseer.json --port 30337 --ws-port 9981
+./target/release/integritee-collator --collator --tmp --parachain-id 2015 --chain integritee-local-dev --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337 --ws-port 9981
 ```
 
 ### Register the Parachain
 Go to [Polkadot Apps](https://polkadot.js.org/apps/) connect to the default local port (Alice) and register the parachain via the `paraSudoWrapper` pallet. After registering, the collator should start producing blocks when the next era starts.
 
-**Note:** Change the `ParaId` to 1983 when registering the parachain.
+**Note:** Change the `ParaId` to 2015 when registering the parachain.
 
 ![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
 
@@ -63,11 +63,11 @@ Prepare genesis state and wasm as follows:
 
 ```bash
 # Export genesis state
-# --parachain-id 1983 as an example that can be chosen freely. Make sure to everywhere use the same parachain id
-./target/release/integritee-collator export-genesis-state --chain integritee-rococo --parachain-id 1983 > integritee-rococo-genesis.state
+# --parachain-id 2015 as an example that can be chosen freely. Make sure to everywhere use the same parachain id
+./target/release/integritee-collator export-genesis-state --chain integritee-rococo-local-dev --parachain-id 2015 > integritee-rococo-local-dev.state
 
 # Export genesis wasm
-./target/release/integritee-collator export-genesis-wasm --chain integritee-rococo > integritee-rococo-genesis.wasm
+./target/release/integritee-collator export-genesis-wasm --chain integritee-rococo-local-dev > integritee-rococo-local-dev.wasm
 
 ```
 then propose the parachain on rococo relay-chain
@@ -76,8 +76,8 @@ run collator
 ```
 integritee-collator \
         --collator \
-        --chain integritee-rococo \
-        --parachain-id 1983 \
+        --chain integritee-rococo-local-dev \
+        --parachain-id 2015 \
         --rpc-cors all \
         --name integritee-rococo-collator-1 \
         -- --execution wasm --chain rococo 
@@ -96,10 +96,10 @@ Prepare a local shell network and generate the `integritee-runtime` wasm blob, w
 node ../polkadot-launch/dist/index.js shell-local-config.json
 
 // generate wasm blob
- ./target/release/integritee-collator export-genesis-wasm --chain integritee-local > integritee-genesis.wasm
+ ./target/release/integritee-collator export-genesis-wasm --chain integritee-rococo-local-dev > integritee-rococo-local-dev.wasm
 ```
 
-After the parachain starts producing blocks a runtime upgrade can be initiated via the polkadot-js/apps interface.
+After the parachain starts producing blocks, a runtime upgrade can be initiated via the polkadot-js/apps interface.
 
 ![image](./docs/sudo-set-code.png)
 
@@ -108,8 +108,8 @@ extrinsics tab in polkadot-js/apps.
 
 ### Caveats
 * Don't forget to enable file upload if you perform drag and drop for the `genesisHead` and `validationCode`. If it is not enabled, Polkadot-js will interpret the path as a string and won't complain but the registration will fail.
-* Don't forget to add the argument `--chain integritee-rococo` for the custom chain config. This argument is omitted in the [Cumulus Workshop](https://substrate.dev/cumulus-workshop/).
-* The relay chain and the collator need to be about equally recent. This might require frequent rebasing of this repository on the `rococo-v1` branch.
+* Don't forget to add the argument `--chain integritee-rococo-local-dev` for the custom chain config. This argument is omitted in the [Cumulus Workshop](https://substrate.dev/cumulus-workshop/).
+* The relay chain and the collator need to be about equally recent. This might require frequent rebasing of this repository on the corresponding release branch.
 
 ### More Resources
 * Thorough Readme about Rococo and Collators in general in the original [repository](https://github.com/paritytech/cumulus) of this fork.
