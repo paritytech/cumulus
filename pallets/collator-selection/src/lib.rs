@@ -343,9 +343,9 @@ pub mod pallet {
 				candidates.remove(index);
 				<LastAuthoredBlock<T>>::remove(who.clone());
 				Ok(candidates.len())
-			});
+			})?;
 			Self::deposit_event(Event::CandidateRemoved(who.clone()));
-			current_count
+			Ok(current_count)
 		}
 
 		/// Assemble the current set of candidates and invulnerables into the next collator set.
