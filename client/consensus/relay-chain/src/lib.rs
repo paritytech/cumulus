@@ -186,7 +186,7 @@ where
 
 		let Proposal {
 			block,
-			storage_changes,
+			storage_changes: _,
 			proof,
 		} = proposer
 			.propose(
@@ -208,7 +208,7 @@ where
 
 		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header);
 		block_import_params.body = Some(extrinsics);
-		block_import_params.storage_changes = Some(storage_changes);
+		// block_import_params.storage_changes = Some(storage_changes);
 
 		if let Err(err) = self
 			.block_import
