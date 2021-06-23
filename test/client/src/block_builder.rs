@@ -167,14 +167,12 @@ pub trait BuildParachainBlockData {
 }
 
 impl<'a> BuildParachainBlockData for sc_block_builder::BlockBuilder<'a, Block, Client, Backend> {
-	fn build_parachain_block(self, parent_state_root: Hash) -> ParachainBlockData<Block> {
+	fn build_parachain_block(self, _: Hash) -> ParachainBlockData<Block> {
 		let built_block = self.build().expect("Builds the block");
 
 		let storage_proof = built_block
 			.proof
-			.expect("We enabled proof recording before.")
-			.into_compact_proof::<<Header as HeaderT>::Hashing>(parent_state_root)
-			.expect("Creates the compact proof");
+			.expect("We enabled proof recording before.");
 
 		let (header, extrinsics) = built_block.block.deconstruct();
 		ParachainBlockData::new(header, extrinsics, storage_proof)
