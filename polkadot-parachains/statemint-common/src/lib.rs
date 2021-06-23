@@ -51,9 +51,12 @@ mod types {
 
 	/// Digest item type.
 	pub type DigestItem = sp_runtime::generic::DigestItem<Hash>;
-	
+
 	// Aura consensus authority.
 	pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;
+
+	// Id used for identifying assets.
+	pub type AssetId = u32;
 }
 
 /// Common constants of statemint and statemine
