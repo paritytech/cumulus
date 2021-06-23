@@ -233,7 +233,6 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
-/// We allow root and the Relay Chain council to execute privileged asset operations.
 pub type AssetsForceOrigin =  EnsureRoot<AccountId>;
 
 parameter_types! {
@@ -329,9 +328,7 @@ impl InstanceFilter<Call> for ProxyType {
 			ProxyType::Any => true,
 			ProxyType::NonTransfer => !matches!(
 				c,
-				Call::Balances(..)
-					| Call::Assets(..)
-					| Call::Uniques(..)
+				Call::Balances(..) | Call::Assets(..) | Call::Uniques(..)
 			),
 			ProxyType::CancelProxy => matches!(
 				c,

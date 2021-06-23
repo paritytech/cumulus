@@ -329,9 +329,7 @@ impl InstanceFilter<Call> for ProxyType {
 			ProxyType::Any => true,
 			ProxyType::NonTransfer => !matches!(
 				c,
-				Call::Balances(..)
-					| Call::Assets(..)
-					| Call::Uniques(..)
+				Call::Balances(..) | Call::Assets(..) | Call::Uniques(..)
 			),
 			ProxyType::CancelProxy => matches!(
 				c,
