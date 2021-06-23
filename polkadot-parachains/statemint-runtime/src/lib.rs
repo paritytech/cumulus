@@ -418,7 +418,7 @@ parameter_types! {
 	pub const RelayNetwork: NetworkId = NetworkId::Polkadot;
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Junction::Parachain(ParachainInfo::parachain_id().into()).into();
-	pub const Local : MultiLocation = MultiLocation::Null;
+	pub const Local: MultiLocation = MultiLocation::Null;
 	pub const StatemintOneLocation: MultiLocation =  MultiLocation::X2(Junction::Parent, Parachain(1000));
 	pub const StatemintTwoLocation: MultiLocation =  MultiLocation::X2(Junction::Parent, Parachain(1001));
 	pub const CheckingAccount: AccountId = AccountId::new(*b"checking_accountchecking_account");
