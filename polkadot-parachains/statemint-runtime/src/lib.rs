@@ -448,8 +448,24 @@ pub type CurrencyTransactor = CurrencyAdapter<
 	// We don't track any teleports.
 	(),
 >;
+
+use frame_support::traits::{Contains, fungibles};
+use sp_runtime::traits::Zero;
+use sp_std::marker::PhantomData;
 use xcm_builder::{FungiblesAdapter, ConvertedConcreteAssetId, AsPrefixedGeneralIndex};
 use xcm_executor::traits::JustTry;
+
+/// Allow checking in assets that have issuance > 0.
+pub struct CheckAsset<A>(PhantomData<A>);
+impl<A> Contains<<A as fungibles::Inspect<AccountId>>::AssetId> for CheckAsset<A>
+where
+	A: fungibles::Inspect<AccountId>
+{
+	fn contains(id: &<A as fungibles::Inspect<AccountId>>::AssetId) -> bool {
+		!A::total_issuance(*id).is_zero()
+	}
+}
+
 pub type FungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
 	Assets,
@@ -463,12 +479,12 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
 	AccountId,
-	// We don't track any teleports.
-	(),
+	// We only allow teleports of known assets.
+	CheckAsset<Assets>,
 	CheckingAccount,
 >;
 /// Means for transacting assets on this chain.
-pub type AssetTransactor = (CurrencyTransactor, FungiblesTransactor);
+pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -529,10 +545,10 @@ impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// How to withdraw and deposit an asset.
-	type AssetTransactor = AssetTransactor;
+	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type IsReserve = NativeAsset;
-	type IsTeleporter = TrustedTeleporters ; // <- should be enough to allow teleportation of DOT
+	type IsTeleporter = TrustedTeleporters;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
