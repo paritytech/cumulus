@@ -1,0 +1,81 @@
+{
+	"relaychain": {
+		"bin": "./bin/polkadot",
+		"chain": "rococo-local",
+		"nodes": [
+			{
+				"name": "alice",
+				"wsPort": 9944,
+				"port": 30444
+			},
+			{
+				"name": "bob",
+				"wsPort": 9955,
+				"port": 30555
+			},
+			{
+				"name": "charlie",
+				"wsPort": 9966,
+				"port": 30666
+			},
+			{
+				"name": "dave",
+				"wsPort": 9977,
+				"port": 30777
+			}
+		],
+		"genesis": {
+			"runtime": {
+				"runtime_genesis_config": {
+					"parachainsConfiguration": {
+						"config": {
+							"validation_upgrade_frequency": 1,
+							"validation_upgrade_delay": 1
+						}
+					}
+				}
+			}
+		}
+	},
+	"parachains": [
+		{
+			"bin": "./bin/polkadot-collator",
+			"id": "1000",
+			"balance": "1000000000000000000000",
+			"chain": "statemint-dev",
+			"nodes": [
+				{
+					"wsPort": 9988,
+					"port": 31200,
+					"name": "alice",
+					"flags": ["-lxcm=debug","--", "--execution=wasm"]
+				}
+			]
+		},
+		{
+			"bin": "./bin/polkadot-collator",
+			"id": "1001",
+			"balance": "1000000000000000000000",
+			"chain": "statemint-dev",
+			"nodes": [
+				{
+					"wsPort": 9999,
+					"port": 31300,
+					"name": "alice",
+					"flags": ["-lxcm=debug", "--", "--execution=wasm"]
+				}
+			]
+		}
+	],
+	"simpleParachains": [],
+	"hrmpChannels": [
+		{
+			"sender": 1000,
+			"recipient": 1001,
+			"maxCapacity": 8,
+			"maxMessageSize": 512
+		}
+	],
+	"types": {},
+	"finalization": false
+}
