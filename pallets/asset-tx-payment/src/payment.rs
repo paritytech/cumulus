@@ -93,7 +93,7 @@ where
 			return Err(InvalidTransaction::Payment.into());
 		}
 		<T::Fungibles as Balanced<T::AccountId>>::withdraw(asset_id.into(), who, converted_fee)
-			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
+			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))
 	}
 
 	/// Hand the fee and the tip over to the `[OnUnbalanced]` implementation.
