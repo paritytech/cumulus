@@ -203,7 +203,7 @@ pub enum ChannelSignal {
 }
 
 /// The aggregate XCMP message format.
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug)]
 pub enum XcmpMessageFormat {
 	/// Encoded `VersionedXcm` messages, all concatenated.
 	ConcatenatedVersionedXcm,
@@ -552,7 +552,7 @@ impl<T: Config> Pallet<T> {
 			// If there are more and we're making progress, we process them after we've given the
 			// other channels a look in. If we've still not unlocked all weight, then we set them
 			// up for processing a second time anyway.
-			if !status[index].2.is_empty() && weight_processed > 0 || weight_available != max_weight
+			if !status[index].2.is_empty() && (weight_processed > 0 || weight_available != max_weight)
 			{
 				if shuffle_index + 1 == shuffled.len() {
 					// Only this queue left. Just run around this loop once more.
