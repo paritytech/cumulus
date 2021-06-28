@@ -24,7 +24,7 @@ async-trait = "0.1.42"
 
 # Parachain runtimes
 rococo-parachain-runtime = { package = "rococo-runtime", path = "rococo" }
-shell-runtime = { package = "shell-runtime", path = "shell" }
+shell-runtime = { path = "shell" }
 statemint-runtime = { path = "statemint" }
 statemine-runtime = { path = "statemine" }
 westmint-runtime = { path = "westmint" }
