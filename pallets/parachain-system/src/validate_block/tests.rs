@@ -19,7 +19,7 @@ use cumulus_primitives_core::{ParachainBlockData, PersistedValidationData};
 use cumulus_test_client::{
 	runtime::{Block, Hash, Header, UncheckedExtrinsic, WASM_BINARY},
 	transfer, BlockData, BuildParachainBlockData, Client, DefaultTestClientBuilderExt, HeadData,
-	InitBlockBuilder, LongestChain, TestClientBuilder, TestClientBuilderExt, ValidationParams,
+	InitBlockBuilder, TestClientBuilder, TestClientBuilderExt, ValidationParams,
 };
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 use sp_consensus::SelectChain;
@@ -44,11 +44,21 @@ fn call_validate_block(
 	.map(|v| Header::decode(&mut &v.head_data.0[..]).expect("Decodes `Header`."))
 }
 
-fn create_test_client() -> (Client, LongestChain) {
-	TestClientBuilder::new()
+fn create_test_client() -> (Client, Header) {
+	use futures::FutureExt as _; // For `now_or_never`
+
+	let (client, longest_chain) = TestClientBuilder::new()
 		// NOTE: this allows easier debugging
 		.set_execution_strategy(sc_client_api::ExecutionStrategy::NativeWhenPossible)
-		.build_with_longest_chain()
+		.build_with_longest_chain();
+
+	let parent_head = longest_chain
+		.best_chain()
+		.now_or_never()
+		.expect("should be available in the best chain")
+		.expect("Best block exists");
+
+	(client, parent_head)
 }
 
 struct TestBlockData {
@@ -88,8 +98,7 @@ fn build_block_with_witness(
 fn validate_block_no_extra_extrinsics() {
 	sp_tracing::try_init_simple();
 
-	let (client, longest_chain) = create_test_client();
-	let parent_head = longest_chain.best_chain().expect("Best block exists");
+	let (client, parent_head) = create_test_client();
 	let TestBlockData {
 		block,
 		validation_data,
@@ -109,8 +118,7 @@ fn validate_block_no_extra_extrinsics() {
 fn validate_block_with_extra_extrinsics() {
 	sp_tracing::try_init_simple();
 
-	let (client, longest_chain) = create_test_client();
-	let parent_head = longest_chain.best_chain().expect("Best block exists");
+	let (client, parent_head) = create_test_client();
 	let extra_extrinsics = vec![
 		transfer(&client, Alice, Bob, 69),
 		transfer(&client, Bob, Charlie, 100),
@@ -142,8 +150,7 @@ fn validate_block_invalid_parent_hash() {
 	sp_tracing::try_init_simple();
 
 	if env::var("RUN_TEST").is_ok() {
-		let (client, longest_chain) = create_test_client();
-		let parent_head = longest_chain.best_chain().expect("Best block exists");
+		let (client, parent_head) = create_test_client();
 		let TestBlockData {
 			block,
 			validation_data,
@@ -175,8 +182,7 @@ fn validate_block_fails_on_invalid_validation_data() {
 	sp_tracing::try_init_simple();
 
 	if env::var("RUN_TEST").is_ok() {
-		let (client, longest_chain) = create_test_client();
-		let parent_head = longest_chain.best_chain().expect("Best block exists");
+		let (client, parent_head) = create_test_client();
 		let TestBlockData { block, .. } =
 			build_block_with_witness(&client, vec![], parent_head.clone(), Default::default());
 
@@ -203,8 +209,7 @@ fn check_inherent_fails_on_validate_block_as_expected() {
 	sp_tracing::try_init_simple();
 
 	if env::var("RUN_TEST").is_ok() {
-		let (client, longest_chain) = create_test_client();
-		let parent_head = longest_chain.best_chain().expect("Best block exists");
+		let (client, parent_head) = create_test_client();
 
 		let TestBlockData {
 			block,
