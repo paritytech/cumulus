@@ -44,14 +44,11 @@ lazy_static = "1.4"
 sp-version = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Cumulus dependencies
 cumulus-test-client = { path = "../../test/client" }
 cumulus-test-relay-sproof-builder = { path = "../../test/relay-sproof-builder" }
-
-futures = { version = "0.3.1", features = ["compat"] }
 
 [features]
 default = [ "std" ]

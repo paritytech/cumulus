@@ -22,9 +22,8 @@ use cumulus_test_client::{
 	InitBlockBuilder, TestClientBuilder, TestClientBuilderExt, ValidationParams,
 };
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
-use sp_consensus::SelectChain;
 use sp_keyring::AccountKeyring::*;
-use sp_runtime::traits::Header as HeaderT;
+use sp_runtime::{generic::BlockId, traits::Header as HeaderT};
 use std::{env, process::Command};
 
 fn call_validate_block(
@@ -45,20 +44,18 @@ fn call_validate_block(
 }
 
 fn create_test_client() -> (Client, Header) {
-	use futures::FutureExt as _; // For `now_or_never`
-
-	let (client, longest_chain) = TestClientBuilder::new()
+	let client = TestClientBuilder::new()
 		// NOTE: this allows easier debugging
 		.set_execution_strategy(sc_client_api::ExecutionStrategy::NativeWhenPossible)
-		.build_with_longest_chain();
+		.build();
 
-	let parent_head = longest_chain
-		.best_chain()
-		.now_or_never()
-		.expect("should be available in the best chain")
-		.expect("Best block exists");
+	let genesis_header = client
+		.header(&BlockId::number(0))
+		.ok()
+		.flatten()
+		.expect("Genesis header exists; qed");
 
-	(client, parent_head)
+	(client, genesis_header)
 }
 
 struct TestBlockData {
