@@ -1040,6 +1040,9 @@ pub trait CheckInherents<Block: BlockT> {
 	) -> frame_support::inherent::CheckInherentsResult;
 }
 
+/// Implements [`BlockNumberProvider`] that returns relaychain block number fetched from
+/// validation data.
+/// NTOE: When validation data is not available (e.g. within on_initialize), 0 will be returned.
 pub struct RelaychainBlockNumberProvider<T>(sp_std::marker::PhantomData<T>);
 
 impl<T: Config> BlockNumberProvider for RelaychainBlockNumberProvider<T> {
