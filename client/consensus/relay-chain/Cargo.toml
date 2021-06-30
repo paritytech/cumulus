@@ -7,18 +7,18 @@ edition = "2018"
 
 [dependencies]
 # Substrate deps
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.5" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.5" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.5" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.5" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.5" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.5" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.5" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.5" }
-substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.5" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7" }
 
 # Polkadot dependencies
-polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.5" }
+polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.7" }
 
 # Cumulus dependencies
 cumulus-client-consensus-common = { path = "../common" }

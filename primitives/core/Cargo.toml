@@ -6,17 +6,17 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.5" }
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.5" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.5" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.5" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.5" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.5" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.5" }
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.5" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.5" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.7" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.7" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.7" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.7" }
 
 # Other dependencies
 impl-trait-for-tuples = "0.2.1"
