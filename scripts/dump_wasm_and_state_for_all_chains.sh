@@ -17,4 +17,5 @@ for spec in ${chainspecs[*]}; do
   $COLLATOR export-genesis-state --chain $spec --parachain-id 2015 > ${spec}.state
   $COLLATOR export-genesis-wasm --chain $spec > ${spec}.wasm
   $COLLATOR build-spec --chain $spec > ${spec}.json
+  $COLLATOR build-spec --chain $spec --raw > ${spec}-raw.json
 done
