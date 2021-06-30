@@ -195,7 +195,7 @@ pub struct ParachainBlockData<B: BlockT> {
 	/// The extrinsics of the parachain block.
 	extrinsics: sp_std::vec::Vec<B::Extrinsic>,
 	/// The data that is required to emulate the storage accesses executed by all extrinsics.
-	storage_proof: sp_trie::CompactProof,
+	storage_proof: sp_trie::StorageProof,
 }
 
 impl<B: BlockT> ParachainBlockData<B> {
@@ -203,7 +203,7 @@ impl<B: BlockT> ParachainBlockData<B> {
 	pub fn new(
 		header: <B as BlockT>::Header,
 		extrinsics: sp_std::vec::Vec<<B as BlockT>::Extrinsic>,
-		storage_proof: sp_trie::CompactProof,
+		storage_proof: sp_trie::StorageProof,
 	) -> Self {
 		Self {
 			header,
@@ -232,19 +232,13 @@ impl<B: BlockT> ParachainBlockData<B> {
 		&self.extrinsics
 	}
 
-	/// Returns the [`CompactProof`](sp_trie::CompactProof).
-	pub fn storage_proof(&self) -> &sp_trie::CompactProof {
+	/// Returns the [`StorageProof`](sp_trie::StorageProof).
+	pub fn storage_proof(&self) -> &sp_trie::StorageProof {
 		&self.storage_proof
 	}
 
 	/// Deconstruct into the inner parts.
-	pub fn deconstruct(
-		self,
-	) -> (
-		B::Header,
-		sp_std::vec::Vec<B::Extrinsic>,
-		sp_trie::CompactProof,
-	) {
+	pub fn deconstruct(self) -> (B::Header, sp_std::vec::Vec<B::Extrinsic>, sp_trie::StorageProof) {
 		(self.header, self.extrinsics, self.storage_proof)
 	}
 }

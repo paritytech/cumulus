@@ -18,7 +18,7 @@ use crate::{Backend, Client};
 use cumulus_primitives_core::{ParachainBlockData, PersistedValidationData};
 use cumulus_primitives_parachain_inherent::{ParachainInherentData, INHERENT_IDENTIFIER};
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
-use cumulus_test_runtime::{Block, GetLastTimestamp, Hash, Header};
+use cumulus_test_runtime::{Block, GetLastTimestamp, Hash};
 use polkadot_primitives::v1::{BlockNumber as PBlockNumber, Hash as PHash};
 use sc_block_builder::{BlockBuilder, BlockBuilderProvider};
 use sp_api::ProvideRuntimeApi;
@@ -167,14 +167,12 @@ pub trait BuildParachainBlockData {
 }
 
 impl<'a> BuildParachainBlockData for sc_block_builder::BlockBuilder<'a, Block, Client, Backend> {
-	fn build_parachain_block(self, parent_state_root: Hash) -> ParachainBlockData<Block> {
+	fn build_parachain_block(self, _: Hash) -> ParachainBlockData<Block> {
 		let built_block = self.build().expect("Builds the block");
 
 		let storage_proof = built_block
 			.proof
-			.expect("We enabled proof recording before.")
-			.into_compact_proof::<<Header as HeaderT>::Hashing>(parent_state_root)
-			.expect("Creates the compact proof");
+			.expect("We enabled proof recording before.");
 
 		let (header, extrinsics) = built_block.block.deconstruct();
 		ParachainBlockData::new(header, extrinsics, storage_proof)
