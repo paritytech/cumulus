@@ -95,9 +95,9 @@ pub const DAYS: BlockNumber = HOURS * 24;
 /// A timestamp: milliseconds since the unix epoch.
 pub type Moment = u64;
 
-pub const ROC: Balance = 1_000_000_000_000;
-pub const MILLIROC: Balance = 1_000_000_000;
-pub const MICROROC: Balance = 1_000_000;
+pub const TEER: Balance = 1_000_000_000_000;
+pub const MILLITEER: Balance = 1_000_000_000;
+pub const MICROTEER: Balance = 1_000_000;
 
 // 1 in 4 blocks (on average, not counting collisions) will be primary babe blocks.
 pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
@@ -198,10 +198,10 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: u128 = 1 * MILLIROC;
-	pub const TransferFee: u128 = 1 * MILLIROC;
-	pub const CreationFee: u128 = 1 * MILLIROC;
-	pub const TransactionByteFee: u128 = 1 * MICROROC;
+	pub const ExistentialDeposit: u128 = 1 * MILLITEER;
+	pub const TransferFee: u128 = 1 * MILLITEER;
+	pub const CreationFee: u128 = 1 * MILLITEER;
+	pub const TransactionByteFee: u128 = 1 * MICROTEER;
 	pub const MaxLocks: u32 = 50;
 }
 
@@ -230,7 +230,7 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
-	pub const MinVestedTransfer: Balance = 100 * ROC;
+	pub const MinVestedTransfer: Balance = 100 * TEER;
 }
 
 impl pallet_vesting::Config for Runtime {

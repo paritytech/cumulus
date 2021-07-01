@@ -104,9 +104,9 @@ pub const DAYS: BlockNumber = HOURS * 24;
 /// A timestamp: milliseconds since the unix epoch.
 pub type Moment = u64;
 
-pub const ROC: Balance = 1_000_000_000_000;
-pub const MILLIROC: Balance = 1_000_000_000;
-pub const MICROROC: Balance = 1_000_000;
+pub const TEER: Balance = 1_000_000_000_000;
+pub const MILLITEER: Balance = 1_000_000_000;
+pub const MICROTEER: Balance = 1_000_000;
 
 // 1 in 4 blocks (on average, not counting collisions) will be primary babe blocks.
 pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
@@ -207,10 +207,10 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: u128 = 1 * MILLIROC;
-	pub const TransferFee: u128 = 1 * MILLIROC;
-	pub const CreationFee: u128 = 1 * MILLIROC;
-	pub const TransactionByteFee: u128 = 1 * MICROROC;
+	pub const ExistentialDeposit: u128 = 1 * MILLITEER;
+	pub const TransferFee: u128 = 1 * MILLITEER;
+	pub const CreationFee: u128 = 1 * MILLITEER;
+	pub const TransactionByteFee: u128 = 1 * MICROTEER;
 	pub const MaxLocks: u32 = 50;
 }
 
@@ -239,7 +239,7 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
-	pub const MinVestedTransfer: Balance = 100 * ROC;
+	pub const MinVestedTransfer: Balance = 100 * TEER;
 }
 
 impl pallet_vesting::Config for Runtime {
@@ -330,8 +330,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 parameter_types! {
 	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
 	pub UnitWeightCost: Weight = 1_000_000;
-	// One ROC buys 1 second of weight.
-	pub const WeightPrice: (MultiLocation, u128) = (X1(Parent), ROC);
+	// One TEER buys 1 second of weight.
+	pub const WeightPrice: (MultiLocation, u128) = (X1(Parent), TEER);
 }
 
 match_type! {
@@ -355,7 +355,7 @@ impl Config for XcmConfig {
 	type AssetTransactor = LocalAssetTransactor;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type IsReserve = NativeAsset;
-	type IsTeleporter = NativeAsset;	// <- should be enough to allow teleportation of ROC
+	type IsTeleporter = NativeAsset;	// <- should be enough to allow teleportation of TEER
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
@@ -414,11 +414,11 @@ impl cumulus_ping::Config for Runtime {
 }
 
 parameter_types! {
-	pub const AssetDeposit: Balance = 1 * ROC;
-	pub const ApprovalDeposit: Balance = 100 * MILLIROC;
+	pub const AssetDeposit: Balance = 1 * TEER;
+	pub const ApprovalDeposit: Balance = 100 * MILLITEER;
 	pub const StringLimit: u32 = 50;
-	pub const MetadataDepositBase: Balance = 1 * ROC;
-	pub const MetadataDepositPerByte: Balance = 10 * MILLIROC;
+	pub const MetadataDepositBase: Balance = 1 * TEER;
+	pub const MetadataDepositPerByte: Balance = 10 * MILLITEER;
 	pub const UnitBody: BodyId = BodyId::Unit;
 }
 
