@@ -115,7 +115,7 @@ pub fn new_partial(
 		config.transaction_pool.clone(),
 		config.role.is_authority().into(),
 		config.prometheus_registry(),
-		task_manager.spawn_handle(),
+		task_manager.spawn_essential_handle(),
 		client.clone(),
 	);
 
@@ -204,7 +204,7 @@ where
 
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
-	let (network, network_status_sinks, system_rpc_tx, start_network) =
+	let (network, system_rpc_tx, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &parachain_config,
 			client: client.clone(),
@@ -232,7 +232,6 @@ where
 		keystore: params.keystore_container.sync_keystore(),
 		backend,
 		network: network.clone(),
-		network_status_sinks,
 		system_rpc_tx,
 		telemetry: None,
 	})?;
@@ -304,9 +303,11 @@ where
 			spawner: task_manager.spawn_handle(),
 			task_manager: &mut task_manager,
 			para_id,
-			collator_key,
 			parachain_consensus,
-			relay_chain_full_node,
+			relay_chain_full_node: cumulus_client_service::RFullNode {
+				relay_chain_full_node,
+				collator_key,
+			},
 			import_queue,
 		};
 
@@ -320,7 +321,10 @@ where
 			announce_block,
 			task_manager: &mut task_manager,
 			para_id,
-			relay_chain_full_node,
+			relay_chain_full_node: cumulus_client_service::RFullNode {
+				relay_chain_full_node,
+				collator_key: CollatorPair::generate().0,
+			},
 		};
 
 		start_full_node(params)?;
@@ -618,8 +622,10 @@ pub fn node_config(
 		rpc_ws: None,
 		rpc_ipc: None,
 		rpc_ws_max_connections: None,
+		rpc_http_threads: None,
 		rpc_cors: None,
 		rpc_methods: Default::default(),
+		rpc_max_payload: None,
 		prometheus_config: None,
 		telemetry_endpoints: None,
 		telemetry_external_transport: None,

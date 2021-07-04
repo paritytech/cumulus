@@ -5,8 +5,9 @@ use frame_system::Config;
 use frame_support::pallet_prelude::{MaybeSerializeDeserialize};
 use frame_support::sp_runtime::traits::AtLeast32BitUnsigned;
 use sp_std::fmt::Debug;
-use codec::{FullCodec};
+use frame_support::traits::MaxEncodedLen;
 pub use frame_support::traits::{Imbalance, Currency as BasicCurrency};
+use codec::FullCodec;
 
 /// A trait to provide the price for a currency
 pub trait PriceProvider<T> where T: Config {
@@ -80,7 +81,7 @@ pub trait MultiCurrency<AccountId> {
 	type CurrencyId: FullCodec + Eq + PartialEq + Copy + MaybeSerializeDeserialize + Debug;
 
 	/// The balance of an account.
-	type Balance: AtLeast32BitUnsigned + FullCodec + Copy + MaybeSerializeDeserialize + Debug + Default;
+	type Balance: AtLeast32BitUnsigned + FullCodec + Copy + MaxEncodedLen + MaybeSerializeDeserialize + Debug + Default;
 
 	// Public immutables
 

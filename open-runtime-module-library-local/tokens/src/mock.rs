@@ -21,7 +21,8 @@ pub const BTC: CurrencyId = 2;
 pub const ETH: CurrencyId = 3;
 pub const ALICE: AccountId = AccountId32::new([0u8; 32]);
 pub const BOB: AccountId = AccountId32::new([1u8; 32]);
-pub const TREASURY_ACCOUNT: AccountId = AccountId32::new([2u8; 32]);
+pub const CHARLIE: AccountId = AccountId32::new([2u8; 32]);
+pub const TREASURY_ACCOUNT: AccountId = AccountId32::new([3u8; 32]);
 pub const ID_1: LockIdentifier = *b"1       ";
 pub const ID_2: LockIdentifier = *b"2       ";
 pub const ID_3: LockIdentifier = *b"3       ";
@@ -240,22 +241,22 @@ construct_runtime!(
 );
 
 pub struct ExtBuilder {
-	endowed_accounts: Vec<(AccountId, CurrencyId, Balance)>,
+	balances: Vec<(AccountId, CurrencyId, Balance)>,
 	treasury_genesis: bool,
 }
 
 impl Default for ExtBuilder {
 	fn default() -> Self {
 		Self {
-			endowed_accounts: vec![],
+			balances: vec![],
 			treasury_genesis: false,
 		}
 	}
 }
 
 impl ExtBuilder {
-	pub fn balances(mut self, endowed_accounts: Vec<(AccountId, CurrencyId, Balance)>) -> Self {
-		self.endowed_accounts = endowed_accounts;
+	pub fn balances(mut self, balances: Vec<(AccountId, CurrencyId, Balance)>) -> Self {
+		self.balances = balances;
 		self
 	}
 
@@ -274,7 +275,7 @@ impl ExtBuilder {
 			.unwrap();
 
 		tokens::GenesisConfig::<Runtime> {
-			endowed_accounts: self.endowed_accounts,
+			balances: self.balances,
 		}
 		.assimilate_storage(&mut t)
 		.unwrap();

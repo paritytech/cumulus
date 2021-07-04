@@ -10,9 +10,8 @@ async function addGenesisParachain(specPath, paraId, headPath, wasmPath, outPath
     const runtimeConfig =
         chainSpec.genesis.runtime.runtime_genesis_config ||
         chainSpec.genesis.runtime;
-    if (runtimeConfig.parachainsParas) {
-        let paras = runtimeConfig.parachainsParas.paras;
-
+    if (runtimeConfig.paras) {
+        let paras = runtimeConfig.paras.paras;
         let new_para = [
             parseInt(paraId),
             {
@@ -21,7 +20,6 @@ async function addGenesisParachain(specPath, paraId, headPath, wasmPath, outPath
                 parachain: true,
             },
         ];
-
         paras.push(new_para);
 
         let data = JSON.stringify(chainSpec, null, 2);

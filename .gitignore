@@ -10,3 +10,5 @@ docker/env/*
 !docker/env/sample.env
 genesis-*
 sample_command.txt
+
+**/node_modules

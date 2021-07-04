@@ -10,19 +10,20 @@ edition = "2018"
 [dependencies]
 serde = { version = "1.0.124", optional = true }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3", default-features = false }
-frame-support = {  git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3", default-features = false }
-frame-system = {  git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3", default-features = false }
+max-encoded-len = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6", default-features = false }
+frame-support = {  git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6", default-features = false }
+frame-system = {  git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6", default-features = false }
 orml-traits = { path = "../traits", version = "0.4.1-dev", default-features = false }
 
 [dev-dependencies]
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3" }
-pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.3" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6" }
+pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6" }
 # Patch doesn't work as `pallet-elections-phragmen` is now 4.0.0 version. Revert `rev` to `statemint` branch after
 # other `statemint` dependencies upgraded.
-pallet-elections-phragmen = { git = "https://github.com/paritytech/substrate", rev = "3f110196163b5ec03bac5ee188d60bedf3ebd91d" }
+pallet-elections-phragmen = { git = "https://github.com/paritytech/substrate", rev = "1d04678e20555e623c974ee1127bc8a45abcf3d6" }
 
 [features]
 default = ["std"]

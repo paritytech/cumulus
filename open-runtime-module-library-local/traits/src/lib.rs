@@ -27,7 +27,7 @@ pub mod auction;
 pub mod currency;
 pub mod data_provider;
 pub mod get_by_key;
-// pub mod location;
+pub mod location;
 pub mod nft;
 pub mod price;
 pub mod rewards;
@@ -80,8 +80,4 @@ impl<T> Handler<T> for Tuple {
 		for_tuples!( #( Tuple::handle(t); )* );
 		Ok(())
 	}
-}
-
-pub trait Contains<T> {
-	fn contains(t: &T) -> bool;
 }

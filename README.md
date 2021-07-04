@@ -81,6 +81,7 @@ git checkout rococo-v1
 cargo build --release
 
 # For the chain spec, please use the chain spec in the konomi cumulus folder: rococo-single-custom.json
+# ./target/release/polkadot build-spec --chain rococo-local --disable-default-bootnode > rococo-single-plain.json
 # Alice
 ./target/release/polkadot --chain <path to rococo-single-custom.json> --alice --tmp
 

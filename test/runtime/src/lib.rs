@@ -96,7 +96,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	transaction_version: 1,
 };
 
-pub const MILLISECS_PER_BLOCK: u64 = 1000;
+pub const MILLISECS_PER_BLOCK: u64 = 6000;
 
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
@@ -209,6 +209,7 @@ parameter_types! {
 	pub const TransferFee: u128 = 0;
 	pub const CreationFee: u128 = 0;
 	pub const TransactionByteFee: u128 = 1;
+	pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -221,6 +222,8 @@ impl pallet_balances::Config for Runtime {
 	type AccountStore = System;
 	type WeightInfo = ();
 	type MaxLocks = ();
+	type MaxReserves = MaxReserves;
+	type ReserveIdentifier = [u8; 8];
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -246,6 +249,8 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type ReservedXcmpWeight = ();
 }
 
+impl pallet_randomness_collective_flip::Config for Runtime {}
+
 parameter_types! {
 	pub storage ParachainId: cumulus_primitives_core::ParaId = 100.into();
 	pub storage UpgradeDetection: bool = false;
@@ -266,11 +271,11 @@ construct_runtime! {
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
+		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>, Config},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>},
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Call, Storage},
-		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 	}
 }
@@ -424,4 +429,39 @@ impl_runtime_apis! {
 	}
 }
 
-cumulus_pallet_parachain_system::register_validate_block!(Runtime, Executive);
+struct CheckInherents;
+
+impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
+	fn check_inherents(
+		block: &Block,
+		relay_state_proof: &cumulus_pallet_parachain_system::RelayChainStateProof,
+	) -> sp_inherents::CheckInherentsResult {
+		if relay_state_proof.read_slot().expect("Reads slot") == 1337u64 {
+			let mut res = sp_inherents::CheckInherentsResult::new();
+			res.put_error(
+				[1u8; 8],
+				&sp_inherents::MakeFatalError::from("You are wrong"),
+			)
+			.expect("Puts error");
+			res
+		} else {
+			let relay_chain_slot = relay_state_proof
+				.read_slot()
+				.expect("Could not read the relay chain slot from the proof");
+
+			let inherent_data =
+				cumulus_primitives_timestamp::InherentDataProvider::from_relay_chain_slot_and_duration(
+					relay_chain_slot,
+					sp_std::time::Duration::from_secs(6),
+				).create_inherent_data().expect("Could not create the timestamp inherent data");
+
+			inherent_data.check_extrinsics(&block)
+		}
+	}
+}
+
+cumulus_pallet_parachain_system::register_validate_block! {
+	Runtime = Runtime,
+	BlockExecutor = Executive,
+	CheckInherents = CheckInherents,
+}
