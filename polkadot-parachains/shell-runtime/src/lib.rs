@@ -60,6 +60,7 @@ use xcm_builder::{
 	ParentAsSuperuser, SovereignSignedViaLocation,
 };
 use xcm_executor::{Config, XcmExecutor};
+use frame_support::traits::Filter;
 
 pub type SessionHandlers = ();
 
@@ -146,6 +147,17 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 13;
 }
 
+pub struct DisableTokenTxFilter;
+impl Filter<Call> for DisableTokenTxFilter {
+	fn filter(call: &Call) -> bool {
+		match call {
+			// Balances and Vesting's transfer (which can be used to transfer)
+			Call::Balances(_) | Call::Vesting(pallet_vesting::Call::vested_transfer(..)) => false,
+			_ => true
+		}
+	}
+}
+
 impl frame_system::Config for Runtime {
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
@@ -177,7 +189,7 @@ impl frame_system::Config for Runtime {
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type DbWeight = ();
-	type BaseCallFilter = ();
+	type BaseCallFilter = DisableTokenTxFilter;
 	type SystemWeightInfo = ();
 	type BlockWeights = RuntimeBlockWeights;
 	type BlockLength = RuntimeBlockLength;
