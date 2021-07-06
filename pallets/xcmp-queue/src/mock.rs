@@ -143,7 +143,7 @@ impl xcm_executor::Config for XcmConfig {
 	type Barrier = ();
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
 	type Trader = ();
-	type ResponseHandler = (); // Don't handle responses for now.
+	type ResponseHandler = ();
 }
 
 pub type XcmRouter = (
