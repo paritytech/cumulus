@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Statemint runtime.
+//! Statemine runtime.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]
@@ -39,11 +39,11 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{All, InstanceFilter, MaxEncodedLen},
+	traits::{All, Filter, InstanceFilter},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
 		DispatchClass, IdentityFee, Weight,
@@ -100,8 +100,8 @@ pub mod opaque {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("statemint"),
-	impl_name: create_runtime_str!("statemint"),
+	spec_name: create_runtime_str!("statemine"),
+	impl_name: create_runtime_str!("statemine"),
 	authoring_version: 1,
 	spec_version: 1,
 	impl_version: 1,
@@ -140,12 +140,24 @@ parameter_types! {
 		})
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
-	pub const SS58Prefix: u8 = 0;
+	pub const SS58Prefix: u8 = 2;
+}
+
+// Don't allow permission-less asset creation.
+pub struct BaseFilter;
+impl Filter<Call> for BaseFilter {
+	fn filter(c: &Call) -> bool {
+		!matches!(
+			c,
+			Call::Assets(pallet_assets::Call::create(..))
+				| Call::Uniques(pallet_uniques::Call::create(..))
+		)
+	}
 }
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
-	type BaseCallFilter = ();
+	type BaseCallFilter = BaseFilter;
 	type BlockWeights = RuntimeBlockWeights;
 	type BlockLength = RuntimeBlockLength;
 	type AccountId = AccountId;
@@ -226,12 +238,10 @@ impl pallet_transaction_payment::Config for Runtime {
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 }
 
-impl pallet_randomness_collective_flip::Config for Runtime {}
-
 parameter_types! {
-	pub const AssetDeposit: Balance = 100 * DOLLARS; // 100 DOLLARS deposit to create asset
+	pub const AssetDeposit: Balance = UNITS; // 1 UNIT deposit to create asset
 	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
-	pub const StringLimit: u32 = 50;
+	pub const AssetsStringLimit: u32 = 50;
 	/// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
 	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
 	pub const MetadataDepositBase: Balance = deposit(1, 68);
@@ -243,7 +253,7 @@ parameter_types! {
 pub type AssetsForceOrigin = EnsureOneOf<
 	AccountId,
 	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>,
+	EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>,
 >;
 
 impl pallet_assets::Config for Runtime {
@@ -256,10 +266,38 @@ impl pallet_assets::Config for Runtime {
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ApprovalDeposit = ApprovalDeposit;
-	type StringLimit = StringLimit;
+	type StringLimit = AssetsStringLimit;
 	type Freezer = ();
 	type Extra = ();
 	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
+}
+
+parameter_types! {
+	pub const ClassDeposit: Balance = UNITS; // 1 UNIT deposit to create asset class
+	pub const InstanceDeposit: Balance = UNITS / 100; // 1/100 UNIT deposit to create asset instance
+	pub const KeyLimit: u32 = 32;	// Max 32 bytes per key
+	pub const ValueLimit: u32 = 64;	// Max 64 bytes per value
+	pub const UniquesMetadataDepositBase: Balance = deposit(1, 129);
+	pub const AttributeDepositBase: Balance = deposit(1, 0);
+	pub const DepositPerByte: Balance = deposit(0, 1);
+	pub const UniquesStringLimit: u32 = 128;
+}
+
+impl pallet_uniques::Config for Runtime {
+	type Event = Event;
+	type ClassId = u32;
+	type InstanceId = u32;
+	type Currency = Balances;
+	type ForceOrigin = AssetsForceOrigin;
+	type ClassDeposit = ClassDeposit;
+	type InstanceDeposit = InstanceDeposit;
+	type MetadataDepositBase = UniquesMetadataDepositBase;
+	type AttributeDepositBase = AttributeDepositBase;
+	type DepositPerByte = DepositPerByte;
+	type StringLimit = UniquesStringLimit;
+	type KeyLimit = KeyLimit;
+	type ValueLimit = ValueLimit;
+	type WeightInfo = weights::pallet_uniques::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -327,18 +365,19 @@ impl InstanceFilter<Call> for ProxyType {
 	fn filter(&self, c: &Call) -> bool {
 		match self {
 			ProxyType::Any => true,
-			ProxyType::NonTransfer => !matches!(
-				c,
-				Call::Balances(..)
-					| Call::Assets(..)
-			),
+			ProxyType::NonTransfer => {
+				!matches!(c, Call::Balances(..) | Call::Assets(..) | Call::Uniques(..))
+			}
 			ProxyType::CancelProxy => matches!(
 				c,
 				Call::Proxy(pallet_proxy::Call::reject_announcement(..))
 					| Call::Utility(..) | Call::Multisig(..)
 			),
 			ProxyType::Assets => {
-				matches!(c, Call::Assets(..) | Call::Utility(..) | Call::Multisig(..))
+				matches!(
+					c,
+					Call::Assets(..) | Call::Utility(..) | Call::Multisig(..) | Call::Uniques(..)
+				)
 			}
 			ProxyType::AssetOwner => matches!(
 				c,
@@ -348,6 +387,16 @@ impl InstanceFilter<Call> for ProxyType {
 					| Call::Assets(pallet_assets::Call::set_team(..))
 					| Call::Assets(pallet_assets::Call::set_metadata(..))
 					| Call::Assets(pallet_assets::Call::clear_metadata(..))
+					| Call::Uniques(pallet_uniques::Call::create(..))
+					| Call::Uniques(pallet_uniques::Call::destroy(..))
+					| Call::Uniques(pallet_uniques::Call::transfer_ownership(..))
+					| Call::Uniques(pallet_uniques::Call::set_team(..))
+					| Call::Uniques(pallet_uniques::Call::set_metadata(..))
+					| Call::Uniques(pallet_uniques::Call::set_attribute(..))
+					| Call::Uniques(pallet_uniques::Call::set_class_metadata(..))
+					| Call::Uniques(pallet_uniques::Call::clear_metadata(..))
+					| Call::Uniques(pallet_uniques::Call::clear_attribute(..))
+					| Call::Uniques(pallet_uniques::Call::clear_class_metadata(..))
 					| Call::Utility(..) | Call::Multisig(..)
 			),
 			ProxyType::AssetManager => matches!(
@@ -358,6 +407,12 @@ impl InstanceFilter<Call> for ProxyType {
 					| Call::Assets(pallet_assets::Call::thaw(..))
 					| Call::Assets(pallet_assets::Call::freeze_asset(..))
 					| Call::Assets(pallet_assets::Call::thaw_asset(..))
+					| Call::Uniques(pallet_uniques::Call::mint(..))
+					| Call::Uniques(pallet_uniques::Call::burn(..))
+					| Call::Uniques(pallet_uniques::Call::freeze(..))
+					| Call::Uniques(pallet_uniques::Call::thaw(..))
+					| Call::Uniques(pallet_uniques::Call::freeze_class(..))
+					| Call::Uniques(pallet_uniques::Call::thaw_class(..))
 					| Call::Utility(..) | Call::Multisig(..)
 			),
 			ProxyType::Collator => matches!(
@@ -409,13 +464,15 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 }
 
+impl pallet_randomness_collective_flip::Config for Runtime {}
+
 impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 parameter_types! {
-	pub const DotLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
-	pub const RelayNetwork: NetworkId = NetworkId::Polkadot;
+	pub const KsmLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
+	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Junction::Parachain(ParachainInfo::parachain_id().into()).into();
 }
@@ -437,7 +494,7 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 	// Use this currency:
 	Balances,
 	// Use this currency when it is a fungible asset matching the given location or name:
-	IsConcrete<DotLocation>,
+	IsConcrete<KsmLocation>,
 	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -471,8 +528,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 parameter_types! {
-	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
-	pub UnitWeightCost: Weight = 1_000_000;
+	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
+	pub UnitWeightCost: Weight = 1_000_000_000;
 }
 
 match_type! {
@@ -497,11 +554,11 @@ impl Config for XcmConfig {
 	type AssetTransactor = LocalAssetTransactor;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type IsReserve = NativeAsset;
-	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of DOT
+	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of KSM
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
-	type Trader = UsingComponents<IdentityFee<Balance>, DotLocation, AccountId, Balances, ()>;
+	type Trader = UsingComponents<IdentityFee<Balance>, KsmLocation, AccountId, Balances, ()>;
 	type ResponseHandler = (); // Don't handle responses for now.
 }
 
@@ -579,6 +636,7 @@ impl pallet_aura::Config for Runtime {
 parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
 	pub const MaxCandidates: u32 = 1000;
+	pub const MinCandidates: u32 = 5;
 	pub const SessionLength: BlockNumber = 6 * HOURS;
 	pub const MaxInvulnerables: u32 = 100;
 }
@@ -587,7 +645,7 @@ parameter_types! {
 pub type CollatorSelectionUpdateOrigin = EnsureOneOf<
 	AccountId,
 	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>,
+	EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>,
 >;
 
 impl pallet_collator_selection::Config for Runtime {
@@ -596,9 +654,13 @@ impl pallet_collator_selection::Config for Runtime {
 	type UpdateOrigin = CollatorSelectionUpdateOrigin;
 	type PotId = PotId;
 	type MaxCandidates = MaxCandidates;
+	type MinCandidates = MinCandidates;
 	type MaxInvulnerables = MaxInvulnerables;
 	// should be a multiple of session or things will get inconsistent
 	type KickThreshold = Period;
+	type ValidatorId = <Self as frame_system::Config>::AccountId;
+	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
+	type ValidatorRegistration = Session;
 	type WeightInfo = weights::pallet_collator_selection::WeightInfo<Runtime>;
 }
 
@@ -640,6 +702,7 @@ construct_runtime!(
 
 		// The main stage. To include pallet-assets-freezer and pallet-uniques.
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
+		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 	}
 );
 
@@ -672,7 +735,16 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPallets,
+	OnRuntimeUpgrade,
 >;
+
+pub struct OnRuntimeUpgrade;
+impl frame_support::traits::OnRuntimeUpgrade for OnRuntimeUpgrade {
+	fn on_runtime_upgrade() -> u64 {
+		sp_io::storage::set(b":c", &[]);
+		RocksDbWeight::get().writes(1)
+	}
+}
 
 impl_runtime_apis! {
 	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
@@ -730,8 +802,9 @@ impl_runtime_apis! {
 		fn validate_transaction(
 			source: TransactionSource,
 			tx: <Block as BlockT>::Extrinsic,
+			block_hash: <Block as BlockT>::Hash,
 		) -> TransactionValidity {
-			Executive::validate_transaction(source, tx)
+			Executive::validate_transaction(source, tx, block_hash)
 		}
 	}
 
@@ -815,6 +888,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_multisig, Multisig);
 			add_benchmark!(params, batches, pallet_proxy, Proxy);
 			add_benchmark!(params, batches, pallet_session, SessionBench::<Runtime>);
+			add_benchmark!(params, batches, pallet_uniques, Uniques);
 			add_benchmark!(params, batches, pallet_utility, Utility);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
 			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);

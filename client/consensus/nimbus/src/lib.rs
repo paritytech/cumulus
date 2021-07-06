@@ -268,7 +268,9 @@ where
 		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header.clone());
 		block_import_params.post_digests.push(sig_digest.clone());
 		block_import_params.body = Some(extrinsics.clone());
-		block_import_params.storage_changes = Some(storage_changes);
+		block_import_params.state_action = sp_consensus::StateAction::ApplyChanges(
+			sp_consensus::StorageChanges::Changes(storage_changes)
+		);
 
 		// Print the same log line as slots (aura and babe)
 		info!(
