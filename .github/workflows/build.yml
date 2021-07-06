@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [ master, integritee-v0.9.4 ]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 

@@ -189,27 +189,27 @@ fn integritee_genesis_config(
 	id: ParaId,
 ) -> rococo_parachain_runtime::GenesisConfig {
 	rococo_parachain_runtime::GenesisConfig {
-		frame_system: rococo_parachain_runtime::SystemConfig {
+		system: rococo_parachain_runtime::SystemConfig {
 			code: rococo_parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 			changes_trie_config: Default::default(),
 		},
-		pallet_balances: rococo_parachain_runtime::BalancesConfig {
+		balances: rococo_parachain_runtime::BalancesConfig {
 			balances: endowed_accounts
 				.iter()
 				.cloned()
 				.map(|k| (k, 10_000_000__000_000_000_000))
 				.collect(),
 		},
-		pallet_sudo: rococo_parachain_runtime::SudoConfig { key: root_key },
-		pallet_vesting: Default::default(),
+		sudo: rococo_parachain_runtime::SudoConfig { key: root_key },
+		vesting: Default::default(),
 		parachain_info: rococo_parachain_runtime::ParachainInfoConfig { parachain_id: id },
-		pallet_aura: rococo_parachain_runtime::AuraConfig {
+		aura: rococo_parachain_runtime::AuraConfig {
 			authorities: initial_authorities,
 		},
-		cumulus_pallet_aura_ext: Default::default(),
-		cumulus_pallet_parachain_system: Default::default(),
+		aura_ext: Default::default(),
+		parachain_system: Default::default(),
 	}
 }
 
@@ -220,27 +220,27 @@ fn shell_genesis_config(
 	parachain_id: ParaId,
 ) -> shell_runtime::GenesisConfig {
 	shell_runtime::GenesisConfig {
-		frame_system: shell_runtime::SystemConfig {
+		system: shell_runtime::SystemConfig {
 			code: shell_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 			changes_trie_config: Default::default(),
 		},
-		pallet_balances: shell_runtime::BalancesConfig {
+		balances: shell_runtime::BalancesConfig {
 			balances: endowed_accounts
 				.iter()
 				.cloned()
 				.map(|k| (k, 10_000_000__000_000_000_000))
 				.collect(),
 		},
-		pallet_sudo: shell_runtime::SudoConfig { key: root_key },
-		pallet_vesting: Default::default(),
+		sudo: shell_runtime::SudoConfig { key: root_key },
+		vesting: Default::default(),
 		parachain_info: shell_runtime::ParachainInfoConfig { parachain_id },
-		cumulus_pallet_parachain_system: Default::default(),
-		pallet_aura: shell_runtime::AuraConfig {
+		parachain_system: Default::default(),
+		aura: shell_runtime::AuraConfig {
 			authorities: initial_authorities,
 		},
-		cumulus_pallet_aura_ext: Default::default(),
+		aura_ext: Default::default(),
 	}
 }
 

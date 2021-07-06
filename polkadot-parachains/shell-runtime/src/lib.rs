@@ -112,13 +112,15 @@ pub fn native_version() -> NativeVersion {
 	}
 }
 
-/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
+/// We assume that ~5% of the block weight is consumed by `on_initialize` handlers.
 /// This is used to limit the maximal weight of a single extrinsic.
+// **This value has been adjusted by integritee**.
 const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(5);
 /// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 500ms of compute with a 6 second average block time.
+// **This value has been adjusted by integritee**.
 const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
 
 parameter_types! {
@@ -215,6 +217,7 @@ parameter_types! {
 	pub const CreationFee: u128 = 1 * MILLITEER;
 	pub const TransactionByteFee: u128 = 1 * MICROTEER;
 	pub const MaxLocks: u32 = 50;
+	pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -227,6 +230,8 @@ impl pallet_balances::Config for Runtime {
 	type AccountStore = System;
 	type WeightInfo = ();
 	type MaxLocks = MaxLocks;
+	type MaxReserves = MaxReserves;
+	type ReserveIdentifier = [u8; 8];
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -304,16 +309,16 @@ parameter_types! {
 pub struct XcmConfig;
 impl Config for XcmConfig {
 	type Call = Call;
-	type XcmSender = ();	// sending XCM not supported
-	type AssetTransactor = ();	// balances not supported
+	type XcmSender = (); // sending XCM not supported
+	type AssetTransactor = (); // balances not supported
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	type IsReserve = ();	// balances not supported
-	type IsTeleporter = ();	// balances not supported
+	type IsReserve = (); // balances not supported
+	type IsTeleporter = (); // balances not supported
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = AllowUnpaidExecutionFrom<JustTheParent>;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;	// balances not supported
-	type Trader = ();	// balances not supported
-	type ResponseHandler = ();	// Don't handle responses for now.
+	type Weigher = FixedWeightBounds<UnitWeightCost, Call>; // balances not supported
+	type Trader = (); // balances not supported
+	type ResponseHandler = (); // Don't handle responses for now.
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
@@ -481,7 +486,19 @@ impl_runtime_apis! {
 	}
 }
 
-cumulus_pallet_parachain_system::register_validate_block!(
-	Runtime,
-	cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
-);
+struct CheckInherents;
+
+impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
+	fn check_inherents(
+		_: &Block,
+		_: &cumulus_pallet_parachain_system::RelayChainStateProof,
+	) -> sp_inherents::CheckInherentsResult {
+		sp_inherents::CheckInherentsResult::new()
+	}
+}
+
+cumulus_pallet_parachain_system::register_validate_block! {
+	Runtime = Runtime,
+	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
+	CheckInherents = CheckInherents,
+}

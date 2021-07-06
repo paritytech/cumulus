@@ -8,15 +8,15 @@ version = "0.1.0"
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.4" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.4" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.4" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.4" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
 
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.4" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.7" }
 
-cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.4", default-features = false }
-cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.4", default-features = false }
+cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.7", default-features = false }
+cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.7", default-features = false }
 
 [features]
 default = ["std"]
