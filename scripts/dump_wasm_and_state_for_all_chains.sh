@@ -2,10 +2,23 @@
 # Remark: wasm and state will be identical for different relay-chains
 chainspecs=("integritee-rococo-local" \
       "integritee-rococo-local-dev" \
+      "integritee-rococo" \
+      "integritee-kusama-local" \
+      "integritee-kusama-local-dev" \
       "integritee-kusama" \
+      "integritee-polkadot-local" \
+      "integritee-polkadot-local-dev" \
+      "integritee-polkadot" \
       "shell-rococo-local" \
       "shell-rococo-local-dev" \
+      "shell-rococo" \
+      "shell-kusama-local" \
+      "shell-kusama-local-dev" \
       "shell-kusama" \
+      "shell-polkadot-local" \
+      "shell-polkadot-local-dev" \
+      "shell-polkadot" \
+
       )
 
 COLLATOR=./target/release/integritee-collator

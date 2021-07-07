@@ -60,12 +60,25 @@ fn load_spec(
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
-		"integritee-rococo-local" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::Integritee, RelayChain::RococoLocal)),
-		"integritee-rococo-local-dev" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::WellKnown, RelayChain::RococoLocal)),
-		"integritee-kusama" => Box::new(chain_spec::integritee_spec(para_id, GenesisKeys::Integritee, RelayChain::Kusama)),
-		"shell-rococo-local" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::RococoLocal)),
-		"shell-rococo-local-dev" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::RococoLocal)),
-		"shell-kusama" => Box::new(chain_spec::get_shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Kusama)),
+		"integritee-rococo-local" => Box::new(chain_spec::integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::RococoLocal)),
+		"integritee-rococo-local-dev" => Box::new(chain_spec::integritee_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::RococoLocal)),
+		"integritee-rococo" => Box::new(chain_spec::integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Rococo)),
+		"integritee-kusama-local" => Box::new(chain_spec::integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::KusamaLocal)),
+		"integritee-kusama-local-dev" => Box::new(chain_spec::integritee_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::KusamaLocal)),
+		"integritee-kusama" => Box::new(chain_spec::integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Kusama)),
+		"integritee-polkadot-local" => Box::new(chain_spec::integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::PolkadotLocal)),
+		"integritee-polkadot-local-dev" => Box::new(chain_spec::integritee_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::PolkadotLocal)),
+		"integritee-polkadot" => Box::new(chain_spec::integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Polkadot)),
+		"shell-rococo-local" => Box::new(chain_spec::shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::RococoLocal)),
+		"shell-rococo-local-dev" => Box::new(chain_spec::shell_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::RococoLocal)),
+		"shell-rococo" => Box::new(chain_spec::shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Rococo)),
+		"shell-kusama-local" => Box::new(chain_spec::shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::KusamaLocal)),
+		"shell-kusama-local-dev" => Box::new(chain_spec::shell_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::KusamaLocal)),
+		"shell-kusama" => Box::new(chain_spec::shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Kusama)),
+		"shell-polkadot-local" => Box::new(chain_spec::shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::PolkadotLocal)),
+		"shell-polkadot-local-dev" => Box::new(chain_spec::shell_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::PolkadotLocal)),
+		"shell-polkadot" => Box::new(chain_spec::shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Polkadot)),
+
 		"" => panic!("Please supply chain_spec to be loaded."),
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;

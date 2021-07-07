@@ -4,7 +4,13 @@ This is the repository to run integritee as a parachain in the rococo-v1 testnet
 
 ## Launch a local setup including a Relay Chain and a Parachain
 
-### Launch the Relay Chain (Local Rococo Testnet)
+Quick: see [polkadot-launch](https://github.com/paritytech/polkadot-launch.git)
+```
+node ../polkadot-launch/dist/cli.js launch-kusama-local-with-shell.json
+```
+
+
+### Manually Launch Local Rococo Testnet
 
 ```bash
 # Compile Polkadot with the real overseer feature
@@ -22,7 +28,7 @@ cargo build --release
 ./target/release/polkadot --chain rococo-local-cfde.json --bob --tmp --port 30334
 ```
 
-### Launch the Parachain
+#### Launch the Parachain
 
 ```bash
 # Compile
@@ -41,7 +47,7 @@ cargo build --release
 ./target/release/integritee-collator --collator --tmp --parachain-id 2015 --chain integritee-local-dev --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337 --ws-port 9981
 ```
 
-### Register the Parachain
+#### Register the Parachain
 Go to [Polkadot Apps](https://polkadot.js.org/apps/) connect to the default local port (Alice) and register the parachain via the `paraSudoWrapper` pallet. After registering, the collator should start producing blocks when the next era starts.
 
 **Note:** Change the `ParaId` to 2015 when registering the parachain.

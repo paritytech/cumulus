@@ -1,7 +1,7 @@
 {
 	"relaychain": {
 		"bin": "../bin/polkadot-0.9.7",
-		"chain": "rococo-local",
+		"chain": "kusama-local",
 		"nodes": [
 			{
 				"name": "alice",
@@ -23,7 +23,7 @@
 	"parachains": [
 		{
 			"bin": "./target/release/integritee-collator",
-			"chain": "shell-rococo-local-dev",
+			"chain": "shell-kusama-local-dev",
 			"id": "2000",
 			"balance": "10_000_000__000_000_000_000",
 			"nodes": [
@@ -43,7 +43,7 @@
 		},
 		{
 			"bin": "./target/release/integritee-collator",
-			"chain": "shell-rococo-local",
+			"chain": "shell-kusama-local",
 			"id": "2015",
 			"balance": "10_000_000__000_000_000_000",
 			"nodes": [

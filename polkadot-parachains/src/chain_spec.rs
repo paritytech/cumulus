@@ -89,52 +89,43 @@ impl IntegriteeKeys {
 			public_from_ss58::<sr25519::Public>("5FsECrDjBXrh5hXmN4PhQfNPbjYYwwW7edu2UQ8G5LR1JFuH").into(),
 			public_from_ss58::<sr25519::Public>("5HBdSEnswkqm6eoHzzX5PCeKoC15CCy88vARrT8XMaRRuyaE").into(),
 			public_from_ss58::<sr25519::Public>("5GGxVLYTXS7JZAwVzisdXbsugHSD6gtDb3AT3MVzih9jTLQT").into(),
-			
+
 			 */
 		]
 	}
 }
 
-pub fn get_shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: RelayChain) -> ShellChainSpec {
-	let chain_type = match relay_chain {
-		RelayChain::RococoLocal => ChainType::Local,
-		RelayChain::Kusama => ChainType::Live
-	};
-
+pub fn shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: RelayChain) -> ShellChainSpec {
 	let (root, endowed, authorities) = match genesis_keys {
 		GenesisKeys::Integritee => (IntegriteeKeys::root(), vec![IntegriteeKeys::root()], IntegriteeKeys::authorities()),
 		GenesisKeys::WellKnown => (WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities()),
 	};
 
-	let chain_name = format!("IntegriTEE Shell{}", get_chain_name_ext(&chain_type));
+	let chain_name = format!("IntegriTEE Shell{}", get_chain_name_ext(&relay_chain.chain_type()));
 
-	integritee_chain_spec(
+	chain_spec(
 		&chain_name,
 		move || shell_genesis_config(
 			root.clone(),
 			endowed.clone(),
 			authorities.clone(),
 			id),
-		chain_type,
+		relay_chain.chain_type(),
 		id,
 		&relay_chain.to_string(),
 	)
 }
 
-pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: RelayChain) -> ChainSpec {
-	let chain_type = match relay_chain {
-		RelayChain::RococoLocal => ChainType::Local,
-		RelayChain::Kusama => ChainType::Live
-	};
+pub fn integritee_chain_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: RelayChain) -> ChainSpec {
 
 	let (root, endowed, authorities) = match genesis_keys {
 		GenesisKeys::Integritee => (IntegriteeKeys::root(), vec![IntegriteeKeys::root()], IntegriteeKeys::authorities()),
 		GenesisKeys::WellKnown => (WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities())
 	};
 
-	let chain_name = format!("IntegriTEE Network{}", get_chain_name_ext(&chain_type));
+	let chain_name = format!("IntegriTEE Network{}", get_chain_name_ext(&relay_chain.chain_type()));
 
-	integritee_chain_spec(
+	chain_spec(
 		&chain_name,
 		move || {
 			integritee_genesis_config(
@@ -144,13 +135,13 @@ pub fn integritee_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: Relay
 				id,
 			)
 		},
-		chain_type,
+		relay_chain.chain_type(),
 		id,
 		&relay_chain.to_string(),
 	)
 }
 
-fn integritee_chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
+fn chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
 	chain_name: &str,
 	testnet_constructor: F,
 	chain_type: ChainType,
@@ -255,14 +246,35 @@ fn get_chain_name_ext(chain_type: &ChainType) -> String {
 
 pub enum RelayChain {
 	RococoLocal,
+	KusamaLocal,
+	PolkadotLocal,
+	Rococo,
 	Kusama,
+	Polkadot
 }
 
 impl ToString for RelayChain {
 	fn to_string(&self) -> String {
 		match self {
 			RelayChain::RococoLocal => "rococo-local".into(),
+			RelayChain::KusamaLocal => "kusama-local".into(),
+			RelayChain::PolkadotLocal => "polkadot-local".into(),
+			RelayChain::Rococo => "rococo".into(),
 			RelayChain::Kusama => "kusama".into(),
+			RelayChain::Polkadot => "polkadot".into(),
+		}
+	}
+}
+
+impl RelayChain {
+	fn chain_type(&self) -> ChainType {
+		match self {
+			RelayChain::RococoLocal => ChainType::Local,
+			RelayChain::KusamaLocal => ChainType::Local,
+			RelayChain::PolkadotLocal => ChainType::Local,
+			RelayChain::Rococo => ChainType::Live,
+			RelayChain::Kusama => ChainType::Live,
+			RelayChain::Polkadot => ChainType::Live,
 		}
 	}
 }
