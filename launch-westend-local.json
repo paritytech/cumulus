@@ -1,0 +1,43 @@
+{
+	"relaychain": {
+		"bin": "../bin/polkadot-0.9.7",
+		"chain": "westend-local",
+		"nodes": [
+			{
+				"name": "alice",
+				"wsPort": 9999,
+				"port": 30444
+			},
+			{
+				"name": "bob",
+				"wsPort": 9988,
+				"port": 30555
+			},
+			{
+				"name": "charlie",
+				"wsPort": 9977,
+				"port": 30666
+			}
+		]
+	},
+	"parachains": [
+	],
+	"simpleParachains": [
+	],
+	"hrmpChannels": [
+	],
+	"types": {
+		"ShardIdentifier": "Hash",
+		"Request": {
+			"shard": "ShardIdentifier",
+			"cyphertext": "Vec<u8>"
+		},
+		"Enclave": {
+			"pubkey": "AccountId",
+			"mrenclave": "Hash",
+			"timestamp": "u64",
+			"url": "Text"
+		}
+	},
+	"finalization": false
+}
