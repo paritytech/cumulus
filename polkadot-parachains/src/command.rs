@@ -45,7 +45,7 @@ trait IdentifyChain {
 
 impl IdentifyChain for dyn sc_service::ChainSpec {
 	fn is_shell(&self) -> bool {
-		self.name().starts_with("IntegriTEE Shell")
+		self.name().starts_with("Integritee Shell")
 	}
 }
 
@@ -93,7 +93,7 @@ fn load_spec(
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		"Integritee collator".into()
+		"Integritee Collator".into()
 	}
 
 	fn impl_version() -> String {
@@ -102,7 +102,7 @@ impl SubstrateCli for Cli {
 
 	fn description() -> String {
 		format!(
-			"Integritee collator\n\nThe command-line arguments provided first will be \
+			"Integritee Collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		{} [parachain-args] -- [relaychain-args]",
@@ -137,7 +137,7 @@ impl SubstrateCli for Cli {
 
 impl SubstrateCli for RelayChainCli {
 	fn impl_name() -> String {
-		"Integritee collator".into()
+		"Integritee Collator".into()
 	}
 
 	fn impl_version() -> String {
@@ -146,7 +146,7 @@ impl SubstrateCli for RelayChainCli {
 
 	fn description() -> String {
 		format!(
-			"Integritee collator\n\nThe command-line arguments provided first will be \
+			"Integritee Collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		{} [parachain-args] -- [relaychain-args]",

@@ -101,7 +101,7 @@ pub fn shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: Rela
 		GenesisKeys::WellKnown => (WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities()),
 	};
 
-	let chain_name = format!("IntegriTEE Shell{}", get_chain_name_ext(&relay_chain.chain_type()));
+	let chain_name = format!("Integritee Shell");
 
 	chain_spec(
 		&chain_name,
@@ -123,7 +123,7 @@ pub fn integritee_chain_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain:
 		GenesisKeys::WellKnown => (WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities())
 	};
 
-	let chain_name = format!("IntegriTEE Network{}", get_chain_name_ext(&relay_chain.chain_type()));
+	let chain_name = format!("Integritee Network");
 
 	chain_spec(
 		&chain_name,
