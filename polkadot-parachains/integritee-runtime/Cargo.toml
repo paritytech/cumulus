@@ -48,7 +48,7 @@ cumulus-primitives-utility = { git = "https://github.com/paritytech/cumulus.git"
 cumulus-pallet-dmp-queue = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.7", default-features = false }
 cumulus-pallet-xcmp-queue = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.7", default-features = false }
 cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.7", default-features = false }
-cumulus-ping = { path = "../pallets/ping", default-features = false }
+cumulus-ping = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.7", default-features = false }
 
 # Polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.7" }

@@ -1,8 +1,6 @@
 [workspace]
 members = [
 	"polkadot-parachains",
-	"polkadot-parachains/pallets/parachain-info",
-	"polkadot-parachains/pallets/ping",
     "polkadot-parachains/integritee-runtime",
 	"polkadot-parachains/shell-runtime",
 ]

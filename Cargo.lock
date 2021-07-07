@@ -1702,6 +1702,7 @@ dependencies = [
 [[package]]
 name = "cumulus-ping"
 version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.7#c5c3abf7eb9d4fdfb588d6560efaa8dca66a8dbc"
 dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-primitives-core",
@@ -3181,7 +3182,7 @@ dependencies = [
 [[package]]
 name = "ias-verify"
 version = "0.1.4"
-source = "git+https://github.com/scs/pallet-substratee-registry.git?branch=polkadot-v0.9.7#0f50dd3481e6e52245cc1f73973a384c698ca948"
+source = "git+https://github.com/scs/pallet-substratee-registry.git?branch=polkadot-v0.9.7#4f1727b8cdda13fa76a3451c58dff8d9eabc605a"
 dependencies = [
  "base64 0.11.0",
  "chrono",
@@ -3433,7 +3434,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-vesting",
  "pallet-xcm",
- "parachain-info 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.7)",
+ "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
  "serde",
@@ -5631,8 +5632,9 @@ dependencies = [
 [[package]]
 name = "pallet-teerex"
 version = "0.9.0"
-source = "git+https://github.com/scs/pallet-substratee-registry.git?branch=polkadot-v0.9.7#0f50dd3481e6e52245cc1f73973a384c698ca948"
+source = "git+https://github.com/scs/pallet-substratee-registry.git?branch=polkadot-v0.9.7#4f1727b8cdda13fa76a3451c58dff8d9eabc605a"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "ias-verify",
@@ -5781,17 +5783,6 @@ dependencies = [
  "sp-std",
  "xcm",
  "xcm-executor",
-]
-
-[[package]]
-name = "parachain-info"
-version = "0.1.0"
-dependencies = [
- "cumulus-primitives-core",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "serde",
 ]
 
 [[package]]
@@ -9548,7 +9539,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-vesting",
- "parachain-info 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.7)",
+ "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
  "serde",
@@ -11475,7 +11466,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.7.3",
+ "rand 0.3.23",
  "static_assertions",
 ]
 
