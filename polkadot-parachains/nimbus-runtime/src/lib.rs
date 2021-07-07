@@ -34,6 +34,7 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+use cumulus_pallet_parachain_system::RelaychainBlockNumberProvider;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
@@ -404,7 +405,7 @@ impl cumulus_ping::Config for Runtime {
 impl pallet_author_inherent::Config for Runtime {
 	type AuthorId = NimbusId;
 	// We start a new slot each time we see a new relay block.
-	type SlotBeacon = pallet_author_inherent::RelayChainBeacon<Self>;
+	type SlotBeacon = RelaychainBlockNumberProvider<Self>;
 	type AccountLookup = PotentialAuthorSet;
 	type EventHandler = ();
 	type CanAuthor = AuthorFilter;

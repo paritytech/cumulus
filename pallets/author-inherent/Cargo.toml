@@ -18,8 +18,6 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 nimbus-primitives = { path = "../../primitives/nimbus", default-features = false }
-# Only required for the slot beacon impl. This should live somewhere else.
-cumulus-pallet-parachain-system = { path = "../parachain-system", default-features = false }
 
 [dev-dependencies]
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
@@ -39,5 +37,4 @@ std = [
 	"sp-std/std",
 	"sp-api/std",
 	"nimbus-primitives/std",
-	"cumulus-pallet-parachain-system/std",
 ]

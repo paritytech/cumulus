@@ -25,6 +25,9 @@ use sp_std::vec::Vec;
 use parity_scale_codec::Codec;
 use sp_application_crypto::KeyTypeId;
 use sp_runtime::ConsensusEngineId;
+//TODO: This trait is in a silly place right now, but should be moved after https://github.com/paritytech/substrate/pull/9209
+// But xlc used it where it is anyway, so I will too.
+use sp_runtime::offchain::storage_lock::BlockNumberProvider;
 
 mod digests;
 mod inherents;
@@ -47,9 +50,25 @@ pub trait SlotBeacon {
 	fn slot() -> u32;
 }
 
-// A dummy impl used in simple tests
-impl SlotBeacon for () {
-	fn slot() -> u32 { 0 }
+/// Anything that can provide a block height can be used as a slot beacon. This could be
+/// used in at least two realistic ways.
+/// 1. Use your own chain's height as the slot number
+/// 2. If you're a parachain, use the relay chain's height as the slot number.
+impl<T: BlockNumberProvider<BlockNumber = u32>> SlotBeacon for T {
+	fn slot() -> u32 {
+		Self::current_block_number()
+	}
+}
+
+/// PLANNED: A SlotBeacon that starts a new slot based on the timestamp. Behaviorally, this is
+/// similar to what aura, babe and company do. Implementation-wise it is different because it
+/// depends on the timestamp pallet for its notion of time.
+pub struct IntervalBeacon;
+
+impl SlotBeacon for IntervalBeacon {
+	fn slot() -> u32 {
+		todo!()
+	}
 }
 
 /// Trait to determine whether this author is eligible to author in this slot.
