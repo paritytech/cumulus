@@ -81,7 +81,9 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
+		/// The fungibles instance used to pay for transactions in assets.
 		type Fungibles: Balanced<Self::AccountId>;
+		/// The actual transaction charging logic that charges the fees.
 		type OnChargeAssetTransaction: OnChargeAssetTransaction<Self>;
 	}
 
@@ -98,6 +100,9 @@ pub mod pallet {
 
 /// Require the transactor pay for themselves and maybe include a tip to gain additional priority
 /// in the queue. Allows paying via both `Currency` as well as `fungibles::Balanced`.
+///
+/// Wraps the transaction logic in `pallet_transaction_payment` and extends it with assets.
+/// An asset id of `None` falls back to the underlying transaction payment via the native currency.
 #[derive(Encode, Decode, Clone, Eq, PartialEq)]
 pub struct ChargeAssetTxPayment<T: Config>(#[codec(compact)] BalanceOf<T>, Option<ChargeAssetIdOf<T>>);
 
@@ -113,6 +118,7 @@ impl<T: Config> ChargeAssetTxPayment<T> where
 		Self(fee, asset_id)
 	}
 
+	/// Fee withdrawal logic that dispatches to either `OnChargeAssetTransaction` or `OnChargeTransaction`.
 	fn withdraw_fee(
 		&self,
 		who: &T::AccountId,
@@ -154,6 +160,7 @@ impl<T: Config> ChargeAssetTxPayment<T> where
 	/// and the entire block weight `(1/1)`, its priority is `fee * min(1, 4) = fee * 1`. This means
 	///  that the transaction which consumes more resources (either length or weight) with the same
 	/// `fee` ends up having lower priority.
+	// NOTE: copied from `pallet_transaction_payment`
 	fn get_priority(len: usize, info: &DispatchInfoOf<T::Call>, final_fee: BalanceOf<T>) -> TransactionPriority {
 		let weight_saturation = T::BlockWeights::get().max_block / info.weight.max(1);
 		let max_block_length = *T::BlockLength::get().max.get(DispatchClass::Normal);
@@ -244,7 +251,6 @@ impl<T: Config> SignedExtension for ChargeAssetTxPayment<T> where
 				T::OnChargeAssetTransaction::correct_and_deposit_fee(
 					&who, info, post_info, actual_fee.into(), tip.into(), already_withdrawn.into())?;
 			},
-			// TODO: do anything else than just asserting that actual_fee is zero?
 			InitialPayment::Nothing => {
 				debug_assert!(actual_fee.is_zero(), "actual fee should be zero if initial fee was zero.");
 			},

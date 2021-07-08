@@ -1,4 +1,4 @@
-///! Traits and default implementation for paying transaction fees.
+///! Traits and default implementation for paying transaction fees in assets.
 use crate::Config;
 use super::*;
 use codec::FullCodec;
@@ -13,19 +13,17 @@ use sp_runtime::{
 };
 use sp_std::{fmt::Debug, marker::PhantomData};
 
-pub trait HandleCredit<AccountId, B: Balanced<AccountId>> {
-	fn handle_credit(credit: CreditOf<AccountId, B>);
-}
-
 /// Handle withdrawing, refunding and depositing of transaction fees.
 pub trait OnChargeAssetTransaction<T: Config> {
 	/// The underlying integer type in which fees are calculated.
 	type Balance: AtLeast32BitUnsigned + FullCodec + Copy + MaybeSerializeDeserialize + Debug + Default;
+	/// The type used to identify the assets used for transaction payment.
 	type AssetId: FullCodec + Copy + MaybeSerializeDeserialize + Debug + Default + Eq;
+	/// The type used to store the intermediate values between pre- and post-dispatch.
 	type LiquidityInfo;
 
 	/// Before the transaction is executed the payment of the transaction fees
-	/// need to be secured.
+	/// needs to be secured.
 	///
 	/// Note: The `fee` already includes the `tip`.
 	fn withdraw_fee(
@@ -52,18 +50,23 @@ pub trait OnChargeAssetTransaction<T: Config> {
 	) -> Result<(), TransactionValidityError>;
 }
 
-/// Implements the transaction payment for a module implementing the `Currency`
-/// trait (eg. the pallet_balances) using an unbalance handler (implementing
-/// `OnUnbalanced`).
+/// Allows specifying what to do with the withdrawn asset fees.
+pub trait HandleCredit<AccountId, B: Balanced<AccountId>> {
+	/// Implement to determine what to do with the withdrawn asset fees.
+	/// Default for `CreditOf` from the assets pallet is to burn and
+	/// decrease total issuance.
+	fn handle_credit(credit: CreditOf<AccountId, B>);
+}
+
+/// Implements the asset transaction for a balance to asset converter (implementing `BalanceConversion`)
+/// and a credit handler (implementing `HandleCredit`).
 ///
-/// The unbalance handler is given 2 unbalanceds in [`OnUnbalanced::on_unbalanceds`]: fee and
-/// then tip.
+/// The credit handler is given the complete fee in terms of
+/// the asset used for the transaction.
 pub struct FungiblesAdapter<CON, HC>(PhantomData<(CON, HC)>);
 
-/// Default implementation for a Currency and an OnUnbalanced handler.
-///
-/// The unbalance handler is given 2 unbalanceds in [`OnUnbalanced::on_unbalanceds`]: fee and
-/// then tip.
+/// Default implementation for a runtime instantiating this pallet, a balance to asset converter
+/// and a credit handler.
 impl<T, CON, HC> OnChargeAssetTransaction<T> for FungiblesAdapter<CON, HC>
 where
 	T: Config,
@@ -96,7 +99,7 @@ where
 			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))
 	}
 
-	/// Hand the fee and the tip over to the `[OnUnbalanced]` implementation.
+	/// Hand the fee and the tip over to the `[HandleCredit]` implementation.
 	/// Since the predicted fee might have been too high, parts of the fee may
 	/// be refunded.
 	///
@@ -109,16 +112,16 @@ where
 		_tip: Self::Balance,
 		paid: Self::LiquidityInfo,
 	) -> Result<(), TransactionValidityError> {
+		// Convert the corrected fee into the asset used for payment.
 		let converted_fee = CON::to_asset_balance(corrected_fee, paid.asset().into())
 			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?;
-		// Calculate how much refund we should return
+		// Calculate how much refund we should return.
 		let (final_fee, refund) = paid.split(converted_fee);
-		// refund to the the account that paid the fees. If this fails, the
+		// Refund to the the account that paid the fees. If this fails, the
 		// account might have dropped below the existential balance. In
 		// that case we don't refund anything.
-		// TODO: what to do in case this errors?
 		let _res = <T::Fungibles as Balanced<T::AccountId>>::resolve(who, refund);
-
+		// Handle the final fee, e.g. by transferring to the block author or burning.
 		HC::handle_credit(final_fee);
 		Ok(())
 	}
