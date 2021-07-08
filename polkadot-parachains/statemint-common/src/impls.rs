@@ -23,7 +23,7 @@ pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<<T as fr
 
 pub type AccountIdOf<R> = <R as frame_system::Config>::AccountId;
 
-/// Logic for the author to get a portion of fees.
+/// Implementation of `OnUnbalanced` that deposits the fees into a staking pot for later payout.
 pub struct ToStakingPot<R>(PhantomData<R>);
 impl<R> OnUnbalanced<NegativeImbalance<R>> for ToStakingPot<R>
 where
@@ -45,6 +45,8 @@ where
 	}
 }
 
+/// Implementation of `OnUnbalanced` that deals with the fees by combining tip and fee and passing
+/// the result on to `ToStakingPot`.
 pub struct DealWithFees<R>(PhantomData<R>);
 impl<R> OnUnbalanced<NegativeImbalance<R>> for DealWithFees<R>
 where
@@ -62,6 +64,8 @@ where
 	}
 }
 
+/// A `HandleCredit` implementation that naively transfers the fees to the block author.
+/// Will drop and burn the assets in case the transfer fails.
 pub struct AssetsToBlockAuthor<R>(PhantomData<R>);
 impl<R> pallet_asset_tx_payment::HandleCredit<AccountIdOf<R>, pallet_assets::Pallet<R>> for AssetsToBlockAuthor<R>
 where
@@ -70,9 +74,8 @@ where
 {
 	fn handle_credit(credit: CreditOf<AccountIdOf<R>, pallet_assets::Pallet<R>>) {
 		let author = pallet_authorship::Pallet::<R>::author();
-		// TODO: what to do in case paying the author fails (e.g. because `fee < min_balance`)
-		// default: drop the result which will trigger the `OnDrop` of the imbalance.
 		use fungibles::Balanced;
+		// Will drop the result which will trigger the `OnDrop` of the imbalance in case of error.
 		let _res = pallet_assets::Pallet::<R>::resolve(&author, credit);
 	}
 }
