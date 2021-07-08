@@ -60,10 +60,10 @@ test-linux-stable:
     # but still want to have debug assertions.
     RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
   script:
-    - time cargo test --all --release --locked
-    # and it's almost free to produce a binary here, please refrain from using
+    # it's almost free to produce a binary here, please refrain from using
     # it in production since it goes with the debug assertions
     - time cargo build --release
+    - time cargo test --all --release --locked
     - sccache -s
     # pack artifacts
     - mkdir -p ./artifacts
