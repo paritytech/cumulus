@@ -23,19 +23,19 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use sp_std::prelude::*;
-use codec::{Encode, Decode, EncodeLike};
-use frame_support::{DefaultNoBound, decl_module, decl_storage, dispatch::DispatchResult, traits::{Get, IsType}, weights::{
-		Weight, DispatchInfo, PostDispatchInfo, GetDispatchInfo, Pays, WeightToFeePolynomial,
-		WeightToFeeCoefficient, DispatchClass,
+use codec::{Encode, Decode};
+use frame_support::{DefaultNoBound, dispatch::DispatchResult, traits::{Get, IsType}, weights::{
+		DispatchInfo, PostDispatchInfo, DispatchClass,
 	}};
 use sp_runtime::{
-	FixedU128, FixedPointNumber, FixedPointOperand, Perquintill, RuntimeDebug,
+	FixedPointOperand,
 	transaction_validity::{
-		InvalidTransaction, TransactionPriority, ValidTransaction, TransactionValidityError, TransactionValidity,
+		InvalidTransaction, TransactionPriority, ValidTransaction,
+		TransactionValidityError, TransactionValidity,
 	},
 	traits::{
-		Saturating, SignedExtension, SaturatedConversion, Convert, Dispatchable,
-		DispatchInfoOf, PostDispatchInfoOf, Zero, One,
+		Saturating, SignedExtension, SaturatedConversion, Dispatchable,
+		DispatchInfoOf, PostDispatchInfoOf, Zero,
 	},
 };
 use pallet_transaction_payment::OnChargeTransaction;
@@ -68,15 +68,7 @@ pub use pallet::*;
 pub mod pallet {
 	use super::*;
 
-	use frame_support::{
-		dispatch::DispatchResultWithPostInfo,
-		pallet_prelude::*,
-		inherent::Vec,
-		traits::{
-			Currency, ReservableCurrency, EnsureOrigin, ExistenceRequirement::KeepAlive,
-		},
-		PalletId,
-	};
+	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
@@ -133,7 +125,7 @@ impl<T: Config> ChargeAssetTxPayment<T> where
 		TransactionValidityError,
 	> {
 		let tip = self.0;
-		let fee = pallet_transaction_payment::Module::<T>::compute_fee(len as u32, info, tip);
+		let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
 
 		if fee.is_zero() {
 			return Ok((fee, InitialPayment::Nothing));
@@ -236,7 +228,7 @@ impl<T: Config> SignedExtension for ChargeAssetTxPayment<T> where
 		_result: &DispatchResult,
 	) -> Result<(), TransactionValidityError> {
 		let (tip, who, initial_payment) = pre;
-		let actual_fee = pallet_transaction_payment::Module::<T>::compute_actual_fee(
+		let actual_fee = pallet_transaction_payment::Pallet::<T>::compute_actual_fee(
 			len as u32,
 			info,
 			post_info,

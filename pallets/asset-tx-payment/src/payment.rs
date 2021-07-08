@@ -3,12 +3,12 @@ use crate::Config;
 use super::*;
 use codec::FullCodec;
 use frame_support::{
-	traits::{Currency, ExistenceRequirement, Get, Imbalance, OnUnbalanced, fungibles::{Balanced, Inspect, CreditOf}, WithdrawReasons},
+	traits::fungibles::{Balanced, Inspect, CreditOf},
 	unsigned::TransactionValidityError,
 };
 use pallet_assets::BalanceConversion;
 use sp_runtime::{
-	traits::{AtLeast32BitUnsigned, DispatchInfoOf, MaybeSerializeDeserialize, PostDispatchInfoOf, Saturating, Zero},
+	traits::{AtLeast32BitUnsigned, DispatchInfoOf, MaybeSerializeDeserialize, PostDispatchInfoOf},
 	transaction_validity::InvalidTransaction,
 };
 use sp_std::{fmt::Debug, marker::PhantomData};
