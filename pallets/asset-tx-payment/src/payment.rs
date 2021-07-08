@@ -87,13 +87,13 @@ where
 		_tip: Self::Balance,
 	) -> Result<Self::LiquidityInfo, TransactionValidityError> {
 		let converted_fee = CON::to_asset_balance(fee, asset_id)
-			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?;
+			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?;
 		let can_withdraw = <T::Fungibles as Inspect<T::AccountId>>::can_withdraw(asset_id.into(), who, converted_fee);
 		if !matches!(can_withdraw, WithdrawConsequence::Success) {
 			return Err(InvalidTransaction::Payment.into());
 		}
 		<T::Fungibles as Balanced<T::AccountId>>::withdraw(asset_id.into(), who, converted_fee)
-			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
+			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))
 	}
 
 	/// Hand the fee and the tip over to the `[OnUnbalanced]` implementation.
