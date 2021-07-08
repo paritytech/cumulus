@@ -38,7 +38,6 @@ use sp_runtime::{
 		DispatchInfoOf, PostDispatchInfoOf, Zero, One,
 	},
 };
-use pallet_balances::NegativeImbalance;
 use pallet_transaction_payment::OnChargeTransaction;
 use frame_support::traits::tokens::{fungibles::{Balanced, Inspect, CreditOf}, WithdrawConsequence};
 
@@ -81,7 +80,7 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_transaction_payment::Config + pallet_balances::Config {
+	pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
 		type Fungibles: Balanced<Self::AccountId>;
 		type OnChargeAssetTransaction: OnChargeAssetTransaction<Self>;
 	}

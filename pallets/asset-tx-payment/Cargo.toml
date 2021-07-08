@@ -24,7 +24,6 @@ sp-io = { version = "3.0.0", git = "https://github.com/paritytech/substrate", br
 sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 pallet-authorship = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 pallet-assets = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-balances = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 pallet-transaction-payment = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
 [dev-dependencies]
