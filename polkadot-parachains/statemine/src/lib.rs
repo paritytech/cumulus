@@ -39,11 +39,11 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use codec::{Decode, Encode, MaxEncodedLen};
+use codec::{Decode, Encode};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{All, Filter, InstanceFilter},
+	traits::{All, Filter, InstanceFilter, MaxEncodedLen},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
 		DispatchClass, IdentityFee, Weight,
