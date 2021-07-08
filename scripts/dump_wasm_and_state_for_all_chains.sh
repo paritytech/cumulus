@@ -22,13 +22,16 @@ chainspecs=("integritee-rococo-local" \
       )
 
 COLLATOR=./target/release/integritee-collator
+DUMP_DIR=./chain_dumps
+
+mkdir -p $DUMP_DIR
 
 $COLLATOR --version
 # Print array values in  lines
 for spec in ${chainspecs[*]}; do
   echo "dumping spec for $spec"
-  $COLLATOR export-genesis-state --chain $spec --parachain-id 2015 > ${spec}.state
-  $COLLATOR export-genesis-wasm --chain $spec > ${spec}.wasm
-  $COLLATOR build-spec --chain $spec > ${spec}.json
-  $COLLATOR build-spec --chain $spec --raw > ${spec}-raw.json
+  $COLLATOR export-genesis-state --chain $spec --parachain-id 2015 > $DUMP_DIR/${spec}.state
+  $COLLATOR export-genesis-wasm --chain $spec >  $DUMP_DIR/${spec}.wasm
+  $COLLATOR build-spec --chain $spec >  $DUMP_DIR/${spec}.json
+  $COLLATOR build-spec --chain $spec --raw > $DUMP_DIR/${spec}-raw.json
 done
