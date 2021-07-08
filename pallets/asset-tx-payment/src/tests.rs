@@ -320,19 +320,13 @@ fn transaction_payment_in_asset_possible() {
 		.build()
 		.execute_with(||
 	{
-		// work around visibility limitations in the assets pallet
-		let force_create = |asset_id, owner, is_sufficient, min_balance| {
-			Call::Assets(AssetsCall::force_create(asset_id, owner, is_sufficient, min_balance))
-				.dispatch(Origin::root())
-		};
-
 		let len = 10;
 		let asset_id = 1;
 		let owner = 42;
 		let min_balance = 2;
 		let caller = 1;
 		let beneficiary = <Runtime as system::Config>::Lookup::unlookup(caller);
-		assert_ok!(force_create(asset_id, owner, true /* is_sufficient */, min_balance));
+		assert_ok!(Assets::force_create(Origin::root(), asset_id, owner, true /* is_sufficient */, min_balance));
 		let balance = 100;
 		assert_ok!(Assets::mint_into(asset_id, &beneficiary, balance));
 		assert_eq!(Assets::balance(asset_id, caller), balance);
