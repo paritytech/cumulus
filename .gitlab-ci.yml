@@ -62,9 +62,9 @@ test-linux-stable:
   script:
     # it's almost free to produce a binary here, please refrain from using
     # it in production since it goes with the debug assertions
-    - time cargo build --release
+    - time cargo build --release --locked --bin polkadot-collator
     - time cargo test --all --release --locked
     - sccache -s
     # pack artifacts
     - mkdir -p ./artifacts
-    - mv ./target/release/cumulus ./artifacts/.
+    - mv ./target/release/polkadot-collator ./artifacts/.
