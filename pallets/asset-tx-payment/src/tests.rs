@@ -344,7 +344,7 @@ fn transaction_payment_in_asset_possible() {
 
 		assert_ok!(
 			ChargeAssetTxPayment::<Runtime>
-				::post_dispatch(pre, &info_from_weight(5), &default_post_info(), len, &Ok(()))
+				::post_dispatch(pre, &info_from_weight(weight), &default_post_info(), len, &Ok(()))
 		);
 		assert_eq!(Assets::balance(asset_id, caller), balance - fee);
 		// check that the block author gets rewarded
@@ -373,6 +373,46 @@ fn transaction_payment_in_asset_possible() {
 		let final_fee = fee_with_tip - (weight - final_weight) * 2;
 		assert_eq!(Assets::balance(asset_id, caller), balance - (final_fee));
 		assert_eq!(Assets::balance(asset_id, BLOCK_AUTHOR), fee + final_fee);
+	});
+}
+
+#[test]
+fn payment_from_account_with_only_assets() {
+	let base_weight = 5;
+	ExtBuilder::default()
+		.balance_factor(10)
+		.base_weight(base_weight)
+		.build()
+		.execute_with(||
+	{
+		let len = 10;
+		let asset_id = 1;
+		let owner = 42;
+		let min_balance = 2;
+		let caller = 333;
+		let beneficiary = <Runtime as system::Config>::Lookup::unlookup(caller);
+		assert_ok!(Assets::force_create(Origin::root(), asset_id, owner, true /* is_sufficient */, min_balance));
+		let balance = 100;
+		assert_ok!(Assets::mint_into(asset_id, &beneficiary, balance));
+		assert_eq!(Assets::balance(asset_id, caller), balance);
+		// assert that native balance is not necessary
+		assert_eq!(Balances::free_balance(caller), 0);
+		let weight = 5;
+		// we have a ratio of 1::2 for native vs asset minimum balance
+		let fee = (base_weight + weight + len as u64) * 2;
+		let pre = ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
+			.pre_dispatch(&caller, CALL, &info_from_weight(weight), len)
+			.unwrap();
+		assert_eq!(Balances::free_balance(caller), 0);
+		// check that fee was charged in the given asset
+		assert_eq!(Assets::balance(asset_id, caller), balance - fee);
+
+		assert_ok!(
+			ChargeAssetTxPayment::<Runtime>
+				::post_dispatch(pre, &info_from_weight(weight), &default_post_info(), len, &Ok(()))
+		);
+		assert_eq!(Assets::balance(asset_id, caller), balance - fee);
+		assert_eq!(Balances::free_balance(caller), 0);
 	});
 }
 
