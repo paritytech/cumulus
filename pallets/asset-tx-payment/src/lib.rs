@@ -47,13 +47,32 @@ mod tests;
 mod payment;
 pub use payment::*;
 
-pub(crate) type BalanceOf<T> = <<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::Balance;
-pub(crate) type AssetBalanceOf<T> = <<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
-pub(crate) type ChargeAssetBalanceOf<T> = <<T as pallet::Config>::OnChargeAssetTransaction as OnChargeAssetTransaction<T>>::Balance;
-pub(crate) type AssetIdOf<T> = <<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
-pub(crate) type ChargeAssetIdOf<T> = <<T as pallet::Config>::OnChargeAssetTransaction as OnChargeAssetTransaction<T>>::AssetId;
-pub(crate) type LiquidityInfoOf<T> = <<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::LiquidityInfo;
-pub(crate) type ChargeAssetLiquidityOf<T> = <<T as pallet::Config>::OnChargeAssetTransaction as OnChargeAssetTransaction<T>>::LiquidityInfo;
+// Type aliases used for interaction with `OnChargeTransaction`.
+// Balance type alias.
+pub(crate) type BalanceOf<T> =
+	<<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::Balance;
+// Liquity info type alias.
+pub(crate) type LiquidityInfoOf<T> =
+	<<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::LiquidityInfo;
+
+// Type alias used for interaction with fungibles (assets).
+// Balance type alias.
+pub(crate) type AssetBalanceOf<T> =
+	<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::Balance;
+/// Asset id type alias.
+pub(crate) type AssetIdOf<T> =
+	<<T as Config>::Fungibles as Inspect<<T as frame_system::Config>::AccountId>>::AssetId;
+
+// Type aliases used for interaction with `OnChargeAssetTransaction`.
+// Balance type alias.
+pub(crate) type ChargeAssetBalanceOf<T> =
+	<<T as Config>::OnChargeAssetTransaction as OnChargeAssetTransaction<T>>::Balance;
+// Asset id type alias.
+pub(crate) type ChargeAssetIdOf<T> =
+	<<T as Config>::OnChargeAssetTransaction as OnChargeAssetTransaction<T>>::AssetId;
+// Liquity info type alias.
+pub(crate) type ChargeAssetLiquidityOf<T> =
+	<<T as Config>::OnChargeAssetTransaction as OnChargeAssetTransaction<T>>::LiquidityInfo;
 
 #[derive(Encode, Decode, DefaultNoBound)]
 pub enum InitialPayment<T: Config> {
@@ -100,9 +119,9 @@ pub struct ChargeAssetTxPayment<T: Config>(#[codec(compact)] BalanceOf<T>, Optio
 
 impl<T: Config> ChargeAssetTxPayment<T> where
 	T::Call: Dispatchable<Info=DispatchInfo, PostInfo=PostDispatchInfo>,
+	AssetBalanceOf<T>: Send + Sync + FixedPointOperand,
 	BalanceOf<T>: Send + Sync + FixedPointOperand + IsType<ChargeAssetBalanceOf<T>>,
 	ChargeAssetIdOf<T>: Send + Sync,
-	AssetBalanceOf<T>: Send + Sync + FixedPointOperand,
 	CreditOf<T::AccountId, T::Fungibles>: IsType<ChargeAssetLiquidityOf<T>>,
 {
 	/// utility constructor. Used only in client/factory code.
@@ -177,10 +196,10 @@ impl<T: Config> sp_std::fmt::Debug for ChargeAssetTxPayment<T>
 }
 
 impl<T: Config> SignedExtension for ChargeAssetTxPayment<T> where
-	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand + IsType<ChargeAssetBalanceOf<T>>,
 	T::Call: Dispatchable<Info=DispatchInfo, PostInfo=PostDispatchInfo>,
-	ChargeAssetIdOf<T>: Send + Sync,
 	AssetBalanceOf<T>: Send + Sync + FixedPointOperand,
+	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand + IsType<ChargeAssetBalanceOf<T>>,
+	ChargeAssetIdOf<T>: Send + Sync,
 	CreditOf<T::AccountId, T::Fungibles>: IsType<ChargeAssetLiquidityOf<T>>,
 {
 	const IDENTIFIER: &'static str = "ChargeAssetTxPayment";

@@ -74,9 +74,9 @@ where
 	HC: HandleCredit<T::AccountId, T::Fungibles>,
 	AssetIdOf<T>: FullCodec + Copy + MaybeSerializeDeserialize + Debug + Default + Eq,
 {
-	type LiquidityInfo = CreditOf<T::AccountId, T::Fungibles>;
 	type Balance = BalanceOf<T>;
 	type AssetId = AssetIdOf<T>;
+	type LiquidityInfo = CreditOf<T::AccountId, T::Fungibles>;
 
 	/// Withdraw the predicted fee from the transaction origin.
 	///
