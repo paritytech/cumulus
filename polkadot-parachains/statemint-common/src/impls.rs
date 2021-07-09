@@ -19,8 +19,10 @@
 use frame_support::traits::{Currency, Imbalance, OnUnbalanced, fungibles::{self, CreditOf}};
 use sp_std::marker::PhantomData;
 
+/// Type alias to conveniently refer to the `Currency::NegativeImbalance` associated type.
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
 
+/// Type alias to conveniently refer to `frame_system`'s `Config::AccountId`.
 pub type AccountIdOf<R> = <R as frame_system::Config>::AccountId;
 
 /// Implementation of `OnUnbalanced` that deposits the fees into a staking pot for later payout.
