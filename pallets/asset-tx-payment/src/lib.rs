@@ -127,6 +127,8 @@ impl<T: Config> ChargeAssetTxPayment<T> where
 		let tip = self.0;
 		let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
 
+		debug_assert!(tip <= fee, "tip should be included in the computed fee");
+
 		if fee.is_zero() {
 			return Ok((fee, InitialPayment::Nothing));
 		}
@@ -245,6 +247,7 @@ impl<T: Config> SignedExtension for ChargeAssetTxPayment<T> where
 			},
 			InitialPayment::Nothing => {
 				debug_assert!(actual_fee.is_zero(), "actual fee should be zero if initial fee was zero.");
+				debug_assert!(tip.is_zero(), "tip should be zero if initial fee was zero.");
 			},
 		}
 
