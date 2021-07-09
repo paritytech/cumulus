@@ -68,4 +68,4 @@ test-linux-stable:
     - sccache -s
     # pack artifacts
     - mkdir -p ./artifacts
-    - mv ./target/release/polkadot-collator ./artifacts/.
+    - mv ${CARGO_TARGET_DIR}/release/polkadot-collator ./artifacts/.
