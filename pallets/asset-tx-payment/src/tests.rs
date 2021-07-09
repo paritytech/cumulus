@@ -434,7 +434,7 @@ fn payment_from_account_with_only_assets() {
 }
 
 #[test]
-fn payment_only_with_existing_asset() {
+fn payment_only_with_existing_sufficient_asset() {
 	let base_weight = 5;
 	ExtBuilder::default()
 		.balance_factor(10)
@@ -446,6 +446,18 @@ fn payment_only_with_existing_asset() {
 		let caller = 1;
 		let weight = 5;
 		let len = 10;
+		// pre_dispatch fails for non-existent asset
+		assert!(
+			ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
+				.pre_dispatch(&caller, CALL, &info_from_weight(weight), len).is_err()
+		);
+
+		// create the non-sufficient asset
+		let min_balance = 2;
+		assert_ok!(Assets::force_create(
+			Origin::root(), asset_id, 42 /* owner */, false /* is_sufficient */, min_balance
+		));
+		// pre_dispatch fails for non-sufficient asset
 		assert!(
 			ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
 				.pre_dispatch(&caller, CALL, &info_from_weight(weight), len).is_err()
