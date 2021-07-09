@@ -599,6 +599,12 @@ impl_runtime_apis! {
 
 	impl nimbus_primitives::AuthorFilterAPI<Block, nimbus_primitives::NimbusId> for Runtime {
 		fn can_author(author: nimbus_primitives::NimbusId, slot: u32) -> bool {
+			// This runtime uses an entropy source that is updated in on_initialize
+			// Therefore we need to initialize it to match the state it will be in when the
+			// next block is being executed.
+			use frame_support::traits::OnInitialize;
+			<Self as pallet_author_filter::Config>::RandomnessSource::on_initialize(System::block_number() + 1);
+
 			AuthorInherent::can_author(&author, &slot)
 		}
 	}
