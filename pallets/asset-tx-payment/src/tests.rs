@@ -2,7 +2,6 @@
 use super::*;
 use crate as pallet_asset_tx_payment;
 use frame_system as system;
-use frame_system::pallet_prelude::*;
 use frame_system::EnsureRoot;
 use frame_support::{
 	assert_ok, parameter_types,
@@ -343,6 +342,52 @@ fn transaction_payment_in_asset_possible() {
 		assert_eq!(Assets::balance(asset_id, caller), balance - fee);
 		// check that the block author gets rewarded
 		assert_eq!(Assets::balance(asset_id, BLOCK_AUTHOR), fee);
+	});
+}
+
+#[test]
+fn transaction_payment_without_fee() {
+	let base_weight = 5;
+	ExtBuilder::default()
+		.balance_factor(10)
+		.base_weight(base_weight)
+		.build()
+		.execute_with(||
+	{
+		// create the asset
+		let asset_id = 1;
+		let min_balance = 2;
+		assert_ok!(Assets::force_create(
+			Origin::root(), asset_id, 42 /* owner */, true /* is_sufficient */, min_balance
+		));
+
+		// mint into the caller account
+		let caller = 1;
+		let beneficiary = <Runtime as system::Config>::Lookup::unlookup(caller);
+		let balance = 100;
+		assert_ok!(Assets::mint_into(asset_id, &beneficiary, balance));
+		assert_eq!(Assets::balance(asset_id, caller), balance);
+		let weight = 5;
+		let len = 10;
+		// we have a ratio of 1::2 for native vs asset minimum balance
+		let fee = (base_weight + weight + len as u64) * 2;
+		let pre = ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
+			.pre_dispatch(&caller, CALL, &info_from_weight(weight), len)
+			.unwrap();
+		// assert that native balance is not used
+		assert_eq!(Balances::free_balance(caller), balance);
+		// check that fee was charged in the given asset
+		assert_eq!(Assets::balance(asset_id, caller), balance - fee);
+		assert_eq!(Assets::balance(asset_id, BLOCK_AUTHOR), 0);
+
+		assert_ok!(
+			ChargeAssetTxPayment::<Runtime>
+				::post_dispatch(pre, &info_from_weight(weight), &post_info_from_pays(Pays::No), len, &Ok(()))
+		);
+		// caller should be refunded
+		assert_eq!(Assets::balance(asset_id, caller), balance);
+		// check that the block author did not get rewarded
+		assert_eq!(Assets::balance(asset_id, BLOCK_AUTHOR), 0);
 	});
 }
 
