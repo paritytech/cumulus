@@ -11,26 +11,34 @@ stages:
 
 variables:                         &default-vars
   GIT_STRATEGY:                    fetch
-  GIT_DEPTH:                       3
+  GIT_DEPTH:                       100
   CARGO_INCREMENTAL:               0
   CARGO_TARGET_DIR:                "/ci-cache/${CI_PROJECT_NAME}/targets/${CI_COMMIT_REF_NAME}/${CI_JOB_NAME}"
+  CI_IMAGE:                        "paritytech/ink-ci-linux:production"
   CI_SERVER_NAME:                  "GitLab CI"
 
+.rust-info-script:                 &rust-info-script
+  - rustup show
+  - cargo --version
+  - rustup +nightly show
+  - cargo +nightly --version
+  - bash --version
+  - sccache -s
+
+.test-refs:                        &test-refs
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_COMMIT_REF_NAME == "master"
+    - if: $CI_COMMIT_REF_NAME == "tags"
+    - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                         # PRs
+    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+.*$/              # i.e. v1.0, v2.1rc1
+
 .docker-env:                       &docker-env
-  image:                           paritytech/ci-linux:production
+  image:                           "${CI_IMAGE}"
   before_script:
-    - cargo -vV
-    - rustc -vV
-    - rustup show
-    - cargo --version
+    - *rust-info-script
     - sccache -s
-  only:
-    - master
-    - /^v[0-9]+\.[0-9]+.*$/        # i.e. v1.0, v2.1rc1
-    - schedules
-    - web
-    - /^[0-9]+$/                   # PRs
-  dependencies:                    []
   interruptible:                   true
   retry:
     max: 2
@@ -54,17 +62,18 @@ variables:                         &default-vars
 test-linux-stable:
   stage:                           test
   <<:                              *docker-env
+  <<:                              *test-refs
+  <<:                              *collect-artifacts
   variables:
     <<:                            *default-vars
     # Enable debug assertions since we are running optimized builds for testing
     # but still want to have debug assertions.
     RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
   script:
-    - cargo clean
+    - time cargo test --all --release --locked
     # it's almost free to produce a binary here, please refrain from using
     # it in production since it goes with the debug assertions
     - time cargo build --release --locked --bin polkadot-collator
-    - time cargo test --all --release --locked
     - sccache -s
     # pack artifacts
     - mkdir -p ./artifacts
