@@ -138,6 +138,6 @@ sp_application_crypto::with_pair! {
 sp_api::decl_runtime_apis! {
 	/// The runtime api used to predict whether an author will be eligible in the given slot
 	pub trait AuthorFilterAPI<AuthorId: Codec> {
-		fn can_author(author: AuthorId, relay_parent: u32) -> bool;
+		fn can_author(author: AuthorId, relay_parent: u32, parent_header: &Block::Header) -> bool;
 	}
 }

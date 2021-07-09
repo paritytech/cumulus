@@ -196,7 +196,8 @@ where
 					// Have to convert to a typed NimbusId to pass to the runtime API. Maybe this is a clue
 					// That I should be passing Vec<u8> across the wasm boundary?
 					NimbusId::from_slice(&type_public_pair.1),
-					validation_data.relay_parent_number
+					validation_data.relay_parent_number,
+					parent,
 				)
 				.expect("Author API should not return error")
 		});

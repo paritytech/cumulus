@@ -39,7 +39,7 @@ use cumulus_pallet_parachain_system::RelaychainBlockNumberProvider;
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, parameter_types, match_type,
-	traits::{Randomness, IsInVec, All},
+	traits::{Randomness, IsInVec, All, OnInitialize},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -47,6 +47,7 @@ pub use frame_support::{
 	StorageValue,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
+use frame_system::InitKind;
 // pub use pallet_balances::Call as BalancesCall;
 // pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
@@ -598,13 +599,14 @@ impl_runtime_apis! {
 
 
 	impl nimbus_primitives::AuthorFilterAPI<Block, nimbus_primitives::NimbusId> for Runtime {
-		fn can_author(author: nimbus_primitives::NimbusId, slot: u32) -> bool {
-			// This runtime uses an entropy source that is updated in on_initialize
+		fn can_author(author: nimbus_primitives::NimbusId, slot: u32, parent_header: &<Block as BlockT>::Header) -> bool {
+			// This runtime uses an entropy source that is updated during block initialization
 			// Therefore we need to initialize it to match the state it will be in when the
-			// next block is being executed.
-			use frame_support::traits::OnInitialize;
-			<Self as pallet_author_filter::Config>::RandomnessSource::on_initialize(System::block_number() + 1);
+			// next block is being executed.			
+			System::initialize(&(parent_header.number + 1), &parent_header.hash(), &parent_header.digest, InitKind::Inspection);
+			<Self as pallet_author_filter::Config>::RandomnessSource::on_initialize(System::block_number());
 
+			// And now the actual prediction call
 			AuthorInherent::can_author(&author, &slot)
 		}
 	}
