@@ -625,6 +625,7 @@ pub fn node_config(
 		rpc_http_threads: None,
 		rpc_cors: None,
 		rpc_methods: Default::default(),
+		rpc_max_payload: None,
 		prometheus_config: None,
 		telemetry_endpoints: None,
 		telemetry_external_transport: None,
@@ -668,7 +669,7 @@ impl TestNode {
 
 	/// Register a parachain at this relay chain.
 	pub async fn schedule_upgrade(&self, validation: Vec<u8>) -> Result<(), RpcTransactionError> {
-		let call = frame_system::Call::set_code_without_checks(validation);
+		let call = frame_system::Call::set_code(validation);
 
 		self.send_extrinsic(
 			runtime::SudoCall::sudo_unchecked_weight(Box::new(call.into()), 1_000),

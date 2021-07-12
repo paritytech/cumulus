@@ -1,13 +1,13 @@
 [package]
-name = 'statemint-runtime'
+name = 'westmint-runtime'
 version = '1.0.0'
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = '2018'
-description = "Statemint parachain runtime"
+description = "Westend variant of Statemint parachain runtime"
 
 [dependencies]
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
 log = { version = "0.4.14", default-features = false }
 parachain-info = { path = "../pallets/parachain-info", default-features = false }
 smallvec = "1.6.1"
@@ -49,7 +49,6 @@ pallet-uniques = { git = "https://github.com/paritytech/substrate", default-feat
 pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 node-primitives = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-max-encoded-len = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Cumulus dependencies
 cumulus-pallet-aura-ext = { path = "../../pallets/aura-ext", default-features = false }
@@ -60,7 +59,7 @@ cumulus-primitives-utility = { path = "../../primitives/utility", default-featur
 cumulus-pallet-dmp-queue = { path = "../../pallets/dmp-queue", default-features = false }
 cumulus-pallet-xcmp-queue = { path = "../../pallets/xcmp-queue", default-features = false }
 cumulus-pallet-xcm = { path = "../../pallets/xcm", default-features = false }
-cumulus-pallet-session-benchmarking = { path = "../../pallets/session-benchmarking", default-features = false, version = "3.0.0" }
+cumulus-pallet-session-benchmarking = {path = "../../pallets/session-benchmarking", default-features = false, version = "3.0.0"}
 cumulus-ping = { path = "../pallets/ping", default-features = false }
 pallet-collator-selection = { path = "../../pallets/collator-selection", default-features = false }
 statemint-common = { path = "../statemint-common", default-features = false }
