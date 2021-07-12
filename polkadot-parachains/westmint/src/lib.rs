@@ -624,6 +624,7 @@ parameter_types! {
 	pub const UniquesMetadataDepositBase: Balance = deposit(1, 129);
 	pub const AttributeDepositBase: Balance = deposit(1, 0);
 	pub const DepositPerByte: Balance = deposit(0, 1);
+	pub const UniquesStringLimit: u32 = 128;
 }
 
 impl pallet_uniques::Config for Runtime {
@@ -637,7 +638,7 @@ impl pallet_uniques::Config for Runtime {
 	type MetadataDepositBase = UniquesMetadataDepositBase;
 	type AttributeDepositBase = AttributeDepositBase;
 	type DepositPerByte = DepositPerByte;
-	type StringLimit = StringLimit;
+	type StringLimit = UniquesStringLimit;
 	type KeyLimit = KeyLimit;
 	type ValueLimit = ValueLimit;
 	type WeightInfo = weights::pallet_uniques::WeightInfo<Runtime>;
