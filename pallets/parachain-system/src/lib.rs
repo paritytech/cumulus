@@ -30,8 +30,8 @@
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
 	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError, OnValidationData,
-	OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage, UpwardMessageSender,
-	XcmpMessageHandler, XcmpMessageSource,
+	OutboundHrmpMessage, ParaId, UpwardMessage, UpwardMessageSender, XcmpMessageHandler,
+	XcmpMessageSource, PersistedValidationData,
 };
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use frame_support::{
@@ -46,7 +46,7 @@ use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
 use relay_state_snapshot::MessagingStateSnapshot;
 use sp_runtime::{
-	traits::{BlakeTwo256, Hash},
+	traits::{BlakeTwo256, Block as BlockT, Hash, BlockNumberProvider},
 	transaction_validity::{
 		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidity,
 		ValidTransaction,
@@ -59,6 +59,31 @@ mod relay_state_snapshot;
 pub mod validate_block;
 #[cfg(test)]
 mod tests;
+
+/// Register the `validate_block` function that is used by parachains to validate blocks on a
+/// validator.
+///
+/// Does *nothing* when `std` feature is enabled.
+///
+/// Expects as parameters the runtime, a block executor and an inherent checker.
+///
+/// # Example
+///
+/// ```
+///     struct BlockExecutor;
+///     struct Runtime;
+///     struct CheckInherents;
+///
+///     cumulus_pallet_parachain_system::register_validate_block! {
+///         Runtime = Runtime,
+///         BlockExecutor = Executive,
+///         CheckInherents = CheckInherents,
+///     }
+///
+/// # fn main() {}
+/// ```
+pub use cumulus_pallet_parachain_system_proc_macro::register_validate_block;
+pub use relay_state_snapshot::RelayChainStateProof;
 
 pub use pallet::*;
 
@@ -309,17 +334,19 @@ pub mod pallet {
 				}
 			}
 
-			let (host_config, relevant_messaging_state) =
-				match relay_state_snapshot::extract_from_proof(
-					T::SelfParaId::get(),
-					vfp.relay_parent_storage_root,
-					relay_chain_state,
-				) {
-					Ok(r) => r,
-					Err(err) => {
-						panic!("invalid relay chain merkle proof: {:?}", err);
-					}
-				};
+			let relay_state_proof = RelayChainStateProof::new(
+				T::SelfParaId::get(),
+				vfp.relay_parent_storage_root,
+				relay_chain_state,
+			)
+			.expect("Invalid relay chain state proof");
+
+			let host_config = relay_state_proof
+				.read_abridged_host_configuration()
+				.expect("Invalid host configuration in relay chain state proof");
+			let relevant_messaging_state = relay_state_proof
+				.read_messaging_state_snapshot()
+				.expect("Invalid messaging state in relay chain state proof");
 
 			<ValidationData<T>>::put(&vfp);
 			<RelevantMessagingState<T>>::put(relevant_messaging_state.clone());
@@ -346,7 +373,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight((1_000, DispatchClass::Operational))]
-		fn sudo_send_upward_message(
+		pub fn sudo_send_upward_message(
 			origin: OriginFor<T>,
 			message: UpwardMessage,
 		) -> DispatchResult {
@@ -356,7 +383,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight((1_000_000, DispatchClass::Operational))]
-		fn authorize_upgrade(origin: OriginFor<T>, code_hash: T::Hash) -> DispatchResult {
+		pub fn authorize_upgrade(origin: OriginFor<T>, code_hash: T::Hash) -> DispatchResult {
 			ensure_root(origin)?;
 
 			AuthorizedUpgrade::<T>::put(&code_hash);
@@ -366,7 +393,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(1_000_000)]
-		fn enact_authorized_upgrade(_: OriginFor<T>, code: Vec<u8>) -> DispatchResultWithPostInfo {
+		pub fn enact_authorized_upgrade(_: OriginFor<T>, code: Vec<u8>) -> DispatchResultWithPostInfo {
 			Self::validate_authorized_upgrade(&code[..])?;
 			Self::set_code_impl(code)?;
 			AuthorizedUpgrade::<T>::kill();
@@ -554,6 +581,18 @@ pub mod pallet {
 
 		fn is_inherent(call: &Self::Call) -> bool {
 			matches!(call, Call::set_validation_data(_))
+		}
+	}
+
+	#[pallet::genesis_config]
+	#[derive(Default)]
+	pub struct GenesisConfig;
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			//TODO: Remove after https://github.com/paritytech/cumulus/issues/479
+			sp_io::storage::set(b":c", &[]);
 		}
 	}
 }
@@ -985,5 +1024,32 @@ impl<T: Config> Pallet<T> {
 impl<T: Config> UpwardMessageSender for Pallet<T> {
 	fn send_upward_message(message: UpwardMessage) -> Result<u32, MessageSendError> {
 		Self::send_upward_message(message)
+	}
+}
+
+/// Something that can check the inherents of a block.
+pub trait CheckInherents<Block: BlockT> {
+	/// Check all inherents of the block.
+	///
+	/// This function gets passed all the extrinsics of the block, so it is up to the callee to
+	/// identify the inherents. The `validation_data` can be used to access the
+	fn check_inherents(
+		block: &Block,
+		validation_data: &RelayChainStateProof,
+	) -> frame_support::inherent::CheckInherentsResult;
+}
+
+/// Implements [`BlockNumberProvider`] that returns relaychain block number fetched from
+/// validation data.
+/// NTOE: When validation data is not available (e.g. within on_initialize), 0 will be returned.
+pub struct RelaychainBlockNumberProvider<T>(sp_std::marker::PhantomData<T>);
+
+impl<T: Config> BlockNumberProvider for RelaychainBlockNumberProvider<T> {
+	type BlockNumber = relay_chain::BlockNumber;
+
+	fn current_block_number() -> relay_chain::BlockNumber {
+		Pallet::<T>::validation_data()
+			.map(|d| d.relay_parent_number)
+			.unwrap_or_default()
 	}
 }

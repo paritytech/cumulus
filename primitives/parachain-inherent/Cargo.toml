@@ -16,10 +16,11 @@ sp-trie = { git = "https://github.com/paritytech/substrate", default-features = 
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 
 # Polkadot dependencies
-polkadot-service = { git = "https://github.com/paritytech/polkadot", optional = true, branch = "master" }
+polkadot-client = { git = "https://github.com/paritytech/polkadot", optional = true, branch = "master" }
 
 # Cumulus dependencies
 cumulus-primitives-core = { path = "../core", default-features = false }
+cumulus-test-relay-sproof-builder = { path = "../../test/relay-sproof-builder", optional = true }
 
 # Other dependencies
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = [ "derive" ] }
@@ -41,5 +42,6 @@ std = [
 	"sp-runtime",
 	"sc-client-api",
 	"sp-api",
-	"polkadot-service",
+	"polkadot-client",
+	"cumulus-test-relay-sproof-builder"
 ]

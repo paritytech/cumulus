@@ -16,13 +16,11 @@
 
 //! The actual implementation of the validate block functionality.
 
-use frame_support::traits::ExecuteBlock;
-use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT, NumberFor};
+use frame_support::traits::{ExecuteBlock, ExtrinsicCall, IsSubType, Get};
+use sp_runtime::traits::{Block as BlockT, Extrinsic, HashFor, Header as HeaderT, NumberFor};
 
-use sp_io::KillChildStorageResult;
+use sp_io::KillStorageResult;
 use sp_std::prelude::*;
-
-use hash_db::{HashDB, EMPTY_PREFIX};
 
 use polkadot_parachain::primitives::{HeadData, ValidationParams, ValidationResult};
 
@@ -32,12 +30,9 @@ use sp_core::storage::ChildInfo;
 use sp_externalities::{set_and_run_with_externalities, Externalities};
 use sp_trie::MemoryDB;
 
-type Ext<'a, B> = sp_state_machine::Ext<
-	'a,
-	HashFor<B>,
-	NumberFor<B>,
-	sp_state_machine::TrieBackend<MemoryDB<HashFor<B>>, HashFor<B>>,
->;
+type TrieBackend<B> = sp_state_machine::TrieBackend<MemoryDB<HashFor<B>>, HashFor<B>>;
+
+type Ext<'a, B> = sp_state_machine::Ext<'a, HashFor<B>, NumberFor<B>, TrieBackend<B>>;
 
 fn with_externalities<F: FnOnce(&mut dyn Externalities) -> R, R>(f: F) -> R {
 	sp_externalities::with_externalities(f).expect("Environmental externalities not set.")
@@ -45,9 +40,18 @@ fn with_externalities<F: FnOnce(&mut dyn Externalities) -> R, R>(f: F) -> R {
 
 /// Validate a given parachain block on a validator.
 #[doc(hidden)]
-pub fn validate_block<B: BlockT, E: ExecuteBlock<B>, PSC: crate::Config>(
+pub fn validate_block<
+	B: BlockT,
+	E: ExecuteBlock<B>,
+	PSC: crate::Config,
+	CI: crate::CheckInherents<B>,
+>(
 	params: ValidationParams,
-) -> ValidationResult {
+) -> ValidationResult
+where
+	B::Extrinsic: ExtrinsicCall,
+	<B::Extrinsic as Extrinsic>::Call: IsSubType<crate::Call<PSC>>,
+{
 	let block_data =
 		cumulus_primitives_core::ParachainBlockData::<B>::decode(&mut &params.block_data.0[..])
 			.expect("Invalid parachain block data");
@@ -65,15 +69,19 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>, PSC: crate::Config>(
 		"Invalid parent hash",
 	);
 
-	let db = storage_proof.into_memory_db();
-	let root = parent_head.state_root().clone();
-	if !HashDB::<HashFor<B>, _>::contains(&db, &root, EMPTY_PREFIX) {
-		panic!("Witness data does not contain given storage root.");
-	}
+	// Uncompress
+	let mut db = MemoryDB::default();
+	let root = match sp_trie::decode_compact::<sp_trie::Layout<HashFor<B>>, _, _>(
+		&mut db,
+		storage_proof.iter_compact_encoded_nodes(),
+		Some(parent_head.state_root()),
+	) {
+		Ok(root) => root,
+		Err(_) => panic!("Compact proof decoding failure."),
+	};
+	sp_std::mem::drop(storage_proof);
+
 	let backend = sp_state_machine::TrieBackend::new(db, root);
-	let mut overlay = sp_state_machine::OverlayedChanges::default();
-	let mut cache = Default::default();
-	let mut ext = Ext::<B>::new(&mut overlay, &mut cache, &backend);
 
 	let _guard = (
 		// Replace storage calls with our own implementations
@@ -115,7 +123,38 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>, PSC: crate::Config>(
 		sp_io::offchain_index::host_clear.replace_implementation(host_offchain_index_clear),
 	);
 
-	set_and_run_with_externalities(&mut ext, || {
+	let inherent_data = block
+		.extrinsics()
+		.iter()
+		.filter_map(|e| e.call().is_sub_type())
+		.find_map(|c| match c {
+			crate::Call::set_validation_data(validation_data) => Some(validation_data.clone()),
+			_ => None,
+		})
+		.expect("Could not find `set_validation_data` inherent");
+
+	run_with_externalities::<B, _, _>(&backend, || {
+		let relay_chain_proof = crate::RelayChainStateProof::new(
+			PSC::SelfParaId::get(),
+			inherent_data.validation_data.relay_parent_storage_root,
+			inherent_data.relay_chain_state.clone(),
+		)
+		.expect("Invalid relay chain state proof");
+
+		let res = CI::check_inherents(&block, &relay_chain_proof);
+
+		if !res.ok() {
+			if log::log_enabled!(log::Level::Error) {
+				res.into_errors().for_each(|e| {
+					log::error!("Checking inherent with identifier `{:?}` failed", e.0)
+				});
+			}
+
+			panic!("Checking inherents failed");
+		}
+	});
+
+	run_with_externalities::<B, _, _>(&backend, || {
 		super::set_and_run_with_validation_params(params, || {
 			E::execute_block(block);
 
@@ -135,6 +174,18 @@ pub fn validate_block<B: BlockT, E: ExecuteBlock<B>, PSC: crate::Config>(
 			}
 		})
 	})
+}
+
+/// Run the given closure with the externalities set.
+fn run_with_externalities<B: BlockT, R, F: FnOnce() -> R>(
+	backend: &TrieBackend<B>,
+	execute: F,
+) -> R {
+	let mut overlay = sp_state_machine::OverlayedChanges::default();
+	let mut cache = Default::default();
+	let mut ext = Ext::<B>::new(&mut overlay, &mut cache, backend);
+
+	set_and_run_with_externalities(&mut ext, || execute())
 }
 
 fn host_storage_read(key: &[u8], value_out: &mut [u8], value_offset: u32) -> Option<u32> {
@@ -170,8 +221,14 @@ fn host_storage_root() -> Vec<u8> {
 	with_externalities(|ext| ext.storage_root())
 }
 
-fn host_storage_clear_prefix(prefix: &[u8]) {
-	with_externalities(|ext| ext.clear_prefix(prefix))
+fn host_storage_clear_prefix(prefix: &[u8], limit: Option<u32>) -> KillStorageResult {
+	with_externalities(|ext| {
+		let (all_removed, num_removed) = ext.clear_prefix(prefix, limit);
+		match all_removed {
+			true => KillStorageResult::AllRemoved(num_removed),
+			false => KillStorageResult::SomeRemaining(num_removed),
+		}
+	})
 }
 
 fn host_storage_changes_root(parent_hash: &[u8]) -> Option<Vec<u8>> {
@@ -239,13 +296,13 @@ fn host_default_child_storage_clear(storage_key: &[u8], key: &[u8]) {
 fn host_default_child_storage_storage_kill(
 	storage_key: &[u8],
 	limit: Option<u32>,
-) -> KillChildStorageResult {
+) -> KillStorageResult {
 	let child_info = ChildInfo::new_default(storage_key);
 	with_externalities(|ext| {
 		let (all_removed, num_removed) = ext.kill_child_storage(&child_info, limit);
 		match all_removed {
-			true => KillChildStorageResult::AllRemoved(num_removed),
-			false => KillChildStorageResult::SomeRemaining(num_removed),
+			true => KillStorageResult::AllRemoved(num_removed),
+			false => KillStorageResult::SomeRemaining(num_removed),
 		}
 	})
 }
@@ -255,9 +312,15 @@ fn host_default_child_storage_exists(storage_key: &[u8], key: &[u8]) -> bool {
 	with_externalities(|ext| ext.exists_child_storage(&child_info, key))
 }
 
-fn host_default_child_storage_clear_prefix(storage_key: &[u8], prefix: &[u8]) {
+fn host_default_child_storage_clear_prefix(storage_key: &[u8], prefix: &[u8], limit: Option<u32>) -> KillStorageResult {
 	let child_info = ChildInfo::new_default(storage_key);
-	with_externalities(|ext| ext.clear_child_prefix(&child_info, prefix))
+	with_externalities(|ext| {
+		let (all_removed, num_removed) = ext.clear_child_prefix(&child_info, prefix, limit);
+		match all_removed {
+			true => KillStorageResult::AllRemoved(num_removed),
+			false => KillStorageResult::SomeRemaining(num_removed),
+		}
+	})
 }
 
 fn host_default_child_storage_root(storage_key: &[u8]) -> Vec<u8> {

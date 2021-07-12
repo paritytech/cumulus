@@ -163,7 +163,7 @@ where
 		config.transaction_pool.clone(),
 		config.role.is_authority().into(),
 		config.prometheus_registry(),
-		task_manager.spawn_handle(),
+		task_manager.spawn_essential_handle(),
 		client.clone(),
 	);
 
@@ -483,6 +483,8 @@ pub async fn start_rococo_parachain_node(
 				slot_duration,
 				// We got around 500ms for proposing
 				block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
+				// And a maximum of 750ms if slots are skipped
+				max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
 				telemetry,
 			}))
 		},
@@ -899,6 +901,8 @@ where
 						slot_duration,
 						// We got around 500ms for proposing
 						block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
+						// And a maximum of 750ms if slots are skipped
+						max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
 						telemetry: telemetry2,
 					})
 				}),

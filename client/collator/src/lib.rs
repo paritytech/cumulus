@@ -25,7 +25,7 @@ use sp_consensus::BlockStatus;
 use sp_core::traits::SpawnNamed;
 use sp_runtime::{
 	generic::BlockId,
-	traits::{Block as BlockT, Header as HeaderT, Zero},
+	traits::{Block as BlockT, HashFor, Header as HeaderT, Zero},
 };
 
 use cumulus_client_consensus_common::ParachainConsensus;
@@ -225,8 +225,19 @@ where
 
 		let (header, extrinsics) = candidate.block.deconstruct();
 
+		let compact_proof = match candidate
+			.proof
+			.into_compact_proof::<HashFor<Block>>(last_head.state_root().clone())
+		{
+			Ok(proof) => proof,
+			Err(e) => {
+				tracing::error!(target: "cumulus-collator", "Failed to compact proof: {:?}", e);
+				return None;
+			}
+		};
+
 		// Create the parachain block data for the validators.
-		let b = ParachainBlockData::<Block>::new(header, extrinsics, candidate.proof);
+		let b = ParachainBlockData::<Block>::new(header, extrinsics, compact_proof);
 
 		tracing::debug!(
 			target: LOG_TARGET,
@@ -311,11 +322,14 @@ pub async fn start_collator<Block, RA, BS, Spawner>(
 	};
 
 	overseer_handler
-		.send_msg(CollationGenerationMessage::Initialize(config))
+		.send_msg(
+			CollationGenerationMessage::Initialize(config),
+			"StartCollator",
+		)
 		.await;
 
 	overseer_handler
-		.send_msg(CollatorProtocolMessage::CollateOn(para_id))
+		.send_msg(CollatorProtocolMessage::CollateOn(para_id), "StartCollator")
 		.await;
 }
 
@@ -333,6 +347,8 @@ mod tests {
 	use polkadot_overseer::{AllSubsystems, HeadSupportsParachains, Overseer};
 	use sp_consensus::BlockOrigin;
 	use sp_core::{testing::TaskExecutor, Pair};
+	use sp_runtime::traits::BlakeTwo256;
+	use sp_state_machine::Backend;
 
 	struct AlwaysSupportsParachains;
 	impl HeadSupportsParachains for AlwaysSupportsParachains {
@@ -376,8 +392,8 @@ mod tests {
 	}
 
 	#[test]
-	fn collates_produces_a_block() {
-		let _ = env_logger::try_init();
+	fn collates_produces_a_block_and_storage_proof_does_not_contains_code() {
+		sp_tracing::try_init_simple();
 
 		let spawner = TaskExecutor::new();
 		let para_id = ParaId::from(100);
@@ -432,8 +448,26 @@ mod tests {
 
 		let block_data = collation.proof_of_validity.block_data;
 
-		let block = Block::decode(&mut &block_data.0[..]).expect("Is a valid block");
+		let block =
+			ParachainBlockData::<Block>::decode(&mut &block_data.0[..]).expect("Is a valid block");
 
 		assert_eq!(1, *block.header().number());
+
+		// Ensure that we did not include `:code` in the proof.
+		let db = block
+			.storage_proof()
+			.to_storage_proof::<BlakeTwo256>(Some(header.state_root()))
+			.unwrap()
+			.0
+			.into_memory_db();
+
+		let backend =
+			sp_state_machine::new_in_mem::<BlakeTwo256>().update_backend(*header.state_root(), db);
+
+		// Should return an error, as it was not included while building the proof.
+		assert!(backend
+			.storage(sp_core::storage::well_known_keys::CODE)
+			.unwrap_err()
+			.contains("Trie lookup error: Database missing expected key"));
 	}
 }

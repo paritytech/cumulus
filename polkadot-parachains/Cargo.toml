@@ -23,11 +23,11 @@ hex-literal = "0.2.1"
 async-trait = "0.1.42"
 
 # Parachain runtimes
-rococo-parachain-runtime = { package = "cumulus-rococo-parachain-runtime", path = "rococo-runtime" }
-shell-runtime = { package = "cumulus-shell-runtime", path = "shell-runtime" }
-statemint-runtime = { path = "statemint-runtime" }
-statemine-runtime = { path = "statemine-runtime" }
-westmint-runtime = { path = "westmint-runtime" }
+rococo-parachain-runtime = { package = "rococo-runtime", path = "rococo" }
+shell-runtime = { path = "shell" }
+statemint-runtime = { path = "statemint" }
+statemine-runtime = { path = "statemine" }
+westmint-runtime = { path = "westmint" }
 statemint-common = { path = "statemint-common" }
 
 # Substrate dependencies
@@ -91,17 +91,6 @@ nix = "0.17"
 rand = "0.7.3"
 tempfile = "3.2.0"
 tokio = { version = "0.2.13", features = ["macros"] }
-
-# Polkadot dependencies
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-
-# Substrate dependencies
-pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [features]
 default = []

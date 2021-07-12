@@ -65,7 +65,7 @@ where
 mod tests {
 	use super::*;
 	use frame_support::traits::FindAuthor;
-	use frame_support::{parameter_types, weights::DispatchClass, PalletId};
+	use frame_support::{parameter_types, PalletId, traits::ValidatorRegistration};
 	use frame_system::{limits, EnsureRoot};
 	use polkadot_primitives::v1::AccountId;
 	use sp_core::H256;
@@ -74,6 +74,7 @@ mod tests {
 		traits::{BlakeTwo256, IdentityLookup},
 		Perbill,
 	};
+	use pallet_collator_selection::IdentityCollator;
 
 	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 	type Block = frame_system::mocking::MockBlock<Test>;
@@ -92,14 +93,6 @@ mod tests {
 
 	parameter_types! {
 		pub const BlockHashCount: u64 = 250;
-		pub BlockWeights: limits::BlockWeights = limits::BlockWeights::builder()
-			.for_class(DispatchClass::all(), |weight| {
-				weight.base_extrinsic = 100;
-			})
-			.for_class(DispatchClass::non_mandatory(), |weight| {
-				weight.max_total = Some(1024);
-			})
-			.build_or_panic();
 		pub BlockLength: limits::BlockLength = limits::BlockLength::max(2 * 1024);
 		pub const AvailableBlockRatio: Perbill = Perbill::one();
 		pub const MaxReserves: u32 = 50;
@@ -119,7 +112,7 @@ mod tests {
 		type Event = Event;
 		type BlockHashCount = BlockHashCount;
 		type BlockLength = BlockLength;
-		type BlockWeights = BlockWeights;
+		type BlockWeights = ();
 		type DbWeight = ();
 		type Version = ();
 		type PalletInfo = PalletInfo;
@@ -153,10 +146,18 @@ mod tests {
 		}
 	}
 
+	pub struct IsRegistered;
+	impl ValidatorRegistration<AccountId> for IsRegistered {
+		fn is_registered(_id: &AccountId) -> bool {
+			true
+		}
+	}
+
 	parameter_types! {
 		pub const PotId: PalletId = PalletId(*b"PotStake");
 		pub const MaxCandidates: u32 = 20;
 		pub const MaxInvulnerables: u32 = 20;
+		pub const MinCandidates: u32 = 1;
 	}
 
 	impl pallet_collator_selection::Config for Test {
@@ -165,7 +166,11 @@ mod tests {
 		type UpdateOrigin = EnsureRoot<AccountId>;
 		type PotId = PotId;
 		type MaxCandidates = MaxCandidates;
+		type MinCandidates = MinCandidates;
 		type MaxInvulnerables = MaxInvulnerables;
+		type ValidatorId = <Self as frame_system::Config>::AccountId;
+		type ValidatorIdOf = IdentityCollator;
+		type ValidatorRegistration = IsRegistered;
 		type KickThreshold = ();
 		type WeightInfo = ();
 	}
