@@ -259,7 +259,7 @@ where
 		tracing::info!(
 			target: LOG_TARGET,
 			?block_hash,
-			"Produced proof-of-validity candidate.",
+			"🈴 Produced proof-of-validity candidate.",
 		);
 
 		Some(CollationResult {

@@ -38,6 +38,8 @@ fn with_externalities<F: FnOnce(&mut dyn Externalities) -> R, R>(f: F) -> R {
 	sp_externalities::with_externalities(f).expect("Environmental externalities not set.")
 }
 
+type ParachainSystem<PSC> = crate::Module<PSC>;
+
 /// Validate a given parachain block on a validator.
 #[doc(hidden)]
 pub fn validate_block<

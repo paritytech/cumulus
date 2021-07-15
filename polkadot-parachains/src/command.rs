@@ -19,7 +19,7 @@ use crate::{
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{
 		StatemineRuntimeExecutor, StatemintRuntimeExecutor, WestmintRuntimeExecutor, new_partial,
-		RococoParachainRuntimeExecutor, ShellRuntimeExecutor, Block,
+		RococoParachainRuntimeExecutor, ShellRuntimeExecutor, NimbusRuntimeExecutor, Block,
 	},
 };
 use codec::Encode;
@@ -41,6 +41,7 @@ const DEFAULT_PARA_ID: u32 = 1000;
 
 trait IdentifyChain {
 	fn is_shell(&self) -> bool;
+	fn is_nimbus(&self) -> bool;
 	fn is_statemint(&self) -> bool;
 	fn is_statemine(&self) -> bool;
 	fn is_westmint(&self) -> bool;
@@ -49,6 +50,9 @@ trait IdentifyChain {
 impl IdentifyChain for dyn sc_service::ChainSpec {
 	fn is_shell(&self) -> bool {
 		self.id().starts_with("shell")
+	}
+	fn is_nimbus(&self) -> bool {
+		self.id().starts_with("nimbus")
 	}
 	fn is_statemint(&self) -> bool {
 		self.id().starts_with("statemint")
@@ -64,6 +68,9 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 	fn is_shell(&self) -> bool {
 		<dyn sc_service::ChainSpec>::is_shell(self)
+	}
+	fn is_nimbus(&self) -> bool {
+		<dyn sc_service::ChainSpec>::is_nimbus(self)
 	}
 	fn is_statemint(&self) -> bool {
 		<dyn sc_service::ChainSpec>::is_statemint(self)
@@ -92,6 +99,7 @@ fn load_spec(
 			&include_bytes!("../res/track.json")[..],
 		)?),
 		"shell" => Box::new(chain_spec::get_shell_chain_spec(para_id)),
+		"nimbus" => Box::new(chain_spec::get_nimbus_chain_spec(para_id)),
 		"statemint-dev" => Box::new(chain_spec::statemint_development_config(para_id)),
 		"statemint-local" => Box::new(chain_spec::statemint_local_config(para_id)),
 		"statemine-dev" => Box::new(chain_spec::statemine_development_config(para_id)),
@@ -121,6 +129,8 @@ fn load_spec(
 				Box::new(chain_spec::WestmintChainSpec::from_json_file(path.into())?)
 			} else if chain_spec.is_shell() {
 				Box::new(chain_spec::ShellChainSpec::from_json_file(path.into())?)
+			} else if chain_spec.is_nimbus() {
+				Box::new(chain_spec::NimbusChainSpec::from_json_file(path.into())?)
 			} else {
 				Box::new(chain_spec)
 			}
@@ -172,6 +182,8 @@ impl SubstrateCli for Cli {
 			&westmint_runtime::VERSION
 		} else if chain_spec.is_shell() {
 			&shell_runtime::VERSION
+		} else if chain_spec.is_nimbus(){
+			&nimbus_runtime::VERSION
 		} else {
 			&rococo_parachain_runtime::VERSION
 		}
@@ -267,7 +279,22 @@ macro_rules! construct_async_run {
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
 			})
-		} else {
+		}
+		else if runner.config().chain_spec.is_nimbus() {
+			runner.async_run(|$config| {
+				let $components = new_partial::<
+					nimbus_runtime::RuntimeApi,
+					NimbusRuntimeExecutor,
+					_
+				>(
+					&$config,
+					crate::service::nimbus_build_import_queue,
+				)?;
+				let task_manager = $components.task_manager;
+				{ $( $code )* }.map(|v| (v, task_manager))
+			})
+		}
+		else {
 			runner.async_run(|$config| {
 				let $components = new_partial::<
 					rococo_parachain_runtime::RuntimeApi,
@@ -472,7 +499,14 @@ pub fn run() -> Result<()> {
 						.await
 						.map(|r| r.0)
 						.map_err(Into::into)
-				} else {
+				}
+				else if config.chain_spec.is_nimbus() {
+					crate::service::start_nimbus_node(config, polkadot_config, id)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into)
+				}
+				else {
 					crate::service::start_rococo_parachain_node(config, polkadot_config, id)
 						.await
 						.map(|r| r.0)

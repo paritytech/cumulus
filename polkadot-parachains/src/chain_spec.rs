@@ -16,18 +16,24 @@
 
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
+// Notice we are bringing in these types from the rococo_parachain_runtime. They are the same types for the nimbus runtime, so they still work.
 use rococo_parachain_runtime::{AccountId, AuraId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
+use sp_runtime::Percent;
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
+use nimbus_primitives::NimbusId;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<rococo_parachain_runtime::GenesisConfig, Extensions>;
 
 /// Specialized `ChainSpec` for the shell parachain runtime.
 pub type ShellChainSpec = sc_service::GenericChainSpec<shell_runtime::GenesisConfig, Extensions>;
+
+/// Specialized ChainSpec` for the nimbus parachain runtime.
+pub type NimbusChainSpec = sc_service::GenericChainSpec<nimbus_runtime::GenesisConfig, Extensions>;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -102,6 +108,47 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 	)
 }
 
+pub fn get_nimbus_chain_spec(id: ParaId) -> NimbusChainSpec {
+	NimbusChainSpec::from_genesis(
+		"Nimbus Local Testnet",
+		"nimbus_local_testnet",
+		ChainType::Local,
+		move || {
+			nimbus_testnet_genesis(
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				//These are hardcoded in the nimbus_testnet_genesis function below. They could be moved here too.
+				// vec![
+				// 	get_from_seed::<NimbusId>("Alice"),
+				// 	get_from_seed::<NimubusId>("Bob"),
+				// ],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+				],
+				id,
+			)
+		},
+		vec![],
+		None,
+		None,
+		None,
+		Extensions {
+			relay_chain: "westend-dev".into(),
+			para_id: id.into(),
+		},
+	)
+}
+
 pub fn get_shell_chain_spec(id: ParaId) -> ShellChainSpec {
 	ShellChainSpec::from_genesis(
 		"Shell Local Testnet",
@@ -153,9 +200,9 @@ pub fn staging_test_net(id: ParaId) -> ChainSpec {
 }
 
 fn testnet_genesis(
-	root_key: AccountId,
+	root_key: rococo_parachain_runtime::AccountId,
 	initial_authorities: Vec<AuraId>,
-	endowed_accounts: Vec<AccountId>,
+	endowed_accounts: Vec<rococo_parachain_runtime::AccountId>,
 	id: ParaId,
 ) -> rococo_parachain_runtime::GenesisConfig {
 	rococo_parachain_runtime::GenesisConfig {
@@ -178,6 +225,41 @@ fn testnet_genesis(
 			authorities: initial_authorities,
 		},
 		aura_ext: Default::default(),
+		parachain_system: Default::default(),
+	}
+}
+
+fn nimbus_testnet_genesis(
+	root_key: AccountId,
+	// initial_authorities: Vec<AuraId>,
+	endowed_accounts: Vec<AccountId>,
+	parachain_id: ParaId,
+) -> nimbus_runtime::GenesisConfig {
+	nimbus_runtime::GenesisConfig {
+		system: rococo_parachain_runtime::SystemConfig {
+			code: nimbus_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!")
+				.to_vec(),
+			changes_trie_config: Default::default(),
+		},
+		balances: nimbus_runtime::BalancesConfig {
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, 1 << 60))
+				.collect(),
+		},
+		sudo: nimbus_runtime::SudoConfig { key: root_key },
+		parachain_info: nimbus_runtime::ParachainInfoConfig { parachain_id },
+		author_filter: nimbus_runtime::AuthorFilterConfig {
+			eligible_ratio: Percent::from_percent(50),
+		},
+		potential_author_set: nimbus_runtime::PotentialAuthorSetConfig {
+			mapping: vec![
+				(get_from_seed::<NimbusId>("Alice"), get_account_id_from_seed::<sr25519::Public>("Alice")),
+				(get_from_seed::<NimbusId>("Bob"), get_account_id_from_seed::<sr25519::Public>("Bob")),
+			]
+		},
 		parachain_system: Default::default(),
 	}
 }

@@ -29,6 +29,7 @@ statemint-runtime = { path = "statemint" }
 statemine-runtime = { path = "statemine" }
 westmint-runtime = { path = "westmint" }
 statemint-common = { path = "statemint-common" }
+nimbus-runtime = { path = "nimbus-runtime" }
 
 # Substrate dependencies
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = "master" }
@@ -75,6 +76,9 @@ cumulus-client-service = { path = "../client/service" }
 cumulus-client-network = { path = "../client/network" }
 cumulus-primitives-core = { path = "../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../primitives/parachain-inherent" }
+nimbus-primitives = { path = "../primitives/nimbus"}
+nimbus-consensus = { path = "../client/consensus/nimbus"}
+pallet-author-inherent = { path = "../pallets/author-inherent"}
 
 # Polkadot dependencies
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -99,4 +103,5 @@ runtime-benchmarks = [
 	'statemint-runtime/runtime-benchmarks',
 	'statemine-runtime/runtime-benchmarks',
 	'westmint-runtime/runtime-benchmarks',
+	#TODO Benchmark nimbus runtime
 ]

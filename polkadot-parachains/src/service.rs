@@ -17,6 +17,10 @@
 use cumulus_client_consensus_aura::{
 	build_aura_consensus, BuildAuraConsensusParams, SlotProportion,
 };
+use nimbus_consensus::{
+	build_nimbus_consensus, BuildNimbusConsensusParams,
+};
+use nimbus_primitives::NimbusId;
 use cumulus_client_consensus_common::{
 	ParachainConsensus, ParachainCandidate, ParachainBlockImport,
 };
@@ -65,6 +69,13 @@ native_executor_instance!(
 	pub ShellRuntimeExecutor,
 	shell_runtime::api::dispatch,
 	shell_runtime::native_version,
+);
+
+native_executor_instance!(
+	pub NimbusRuntimeExecutor,
+	nimbus_runtime::api::dispatch,
+	nimbus_runtime::native_version,
+	//TODO benchmark nimbus
 );
 
 // Native Statemint executor instance.
@@ -576,6 +587,109 @@ pub async fn start_shell_node(
 											)
 										})?;
 									Ok(parachain_inherent)
+								}
+							},
+					},
+				),
+			)
+		},
+	)
+	.await
+}
+
+/// Build the import queue for the nimbus runtime.
+pub fn nimbus_build_import_queue(
+	client: Arc<TFullClient<Block, nimbus_runtime::RuntimeApi, NimbusRuntimeExecutor>>,
+	config: &Configuration,
+	_: Option<TelemetryHandle>,
+	task_manager: &TaskManager,
+) -> Result<
+	sp_consensus::DefaultImportQueue<
+		Block,
+		TFullClient<Block, nimbus_runtime::RuntimeApi, NimbusRuntimeExecutor>,
+	>,
+	sc_service::Error,
+> {
+	nimbus_consensus::import_queue(
+		client.clone(),
+		client,
+		move |_, _| async move {
+			let time = sp_timestamp::InherentDataProvider::from_system_time();
+
+			Ok((time,))
+		},
+		&task_manager.spawn_essential_handle(),
+		config.prometheus_registry().clone(),
+	)
+	.map_err(Into::into)
+}
+
+/// Start a nimbus node.
+pub async fn start_nimbus_node(
+	parachain_config: Configuration,
+	polkadot_config: Configuration,
+	id: ParaId,
+) -> sc_service::error::Result<
+	(TaskManager, Arc<TFullClient<Block, nimbus_runtime::RuntimeApi, NimbusRuntimeExecutor>>)
+> {
+	start_node_impl::<nimbus_runtime::RuntimeApi, NimbusRuntimeExecutor, _, _, _>(
+		parachain_config,
+		polkadot_config,
+		id,
+		|_| Default::default(),
+		nimbus_build_import_queue,
+		|client,
+		 prometheus_registry,
+		 telemetry,
+		 task_manager,
+		 relay_chain_node,
+		 transaction_pool,
+		 _,
+		 keystore,
+		 _| {
+			let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
+				task_manager.spawn_handle(),
+				client.clone(),
+				transaction_pool,
+				prometheus_registry.clone(),
+				telemetry.clone(),
+			);
+
+			let relay_chain_backend = relay_chain_node.backend.clone();
+			let relay_chain_client = relay_chain_node.client.clone();
+
+			Ok(
+				build_nimbus_consensus(
+					BuildNimbusConsensusParams {
+						para_id: id,
+						proposer_factory,
+						block_import: client.clone(),
+						relay_chain_client: relay_chain_node.client.clone(),
+						relay_chain_backend: relay_chain_node.backend.clone(),
+						parachain_client: client.clone(),
+						keystore,
+						create_inherent_data_providers:
+							move |_, (relay_parent, validation_data, author_id)| {
+								let parachain_inherent =
+								cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
+									relay_parent,
+									&relay_chain_client,
+									&*relay_chain_backend,
+									&validation_data,
+									id,
+								);
+								async move {
+									let time = sp_timestamp::InherentDataProvider::from_system_time();
+
+									let parachain_inherent = parachain_inherent.ok_or_else(|| {
+										Box::<dyn std::error::Error + Send + Sync>::from(
+											"Failed to create parachain inherent",
+										)
+									})?;
+
+									let author = nimbus_primitives::InherentDataProvider::<NimbusId>(author_id);
+
+									Ok((time, parachain_inherent, author))
 								}
 							},
 					},
