@@ -22,6 +22,8 @@ use sp_runtime::traits::{Block as BlockT, Extrinsic, HashFor, Header as HeaderT,
 use sp_io::KillStorageResult;
 use sp_std::prelude::*;
 
+use hash_db::{HashDB, EMPTY_PREFIX};
+
 use polkadot_parachain::primitives::{HeadData, ValidationParams, ValidationResult};
 
 use codec::{Decode, Encode};
@@ -69,17 +71,11 @@ where
 		"Invalid parent hash",
 	);
 
-	// Uncompress
-	let mut db = MemoryDB::default();
-	let root = match sp_trie::decode_compact::<sp_trie::Layout<HashFor<B>>, _, _>(
-		&mut db,
-		storage_proof.iter_compact_encoded_nodes(),
-		Some(parent_head.state_root()),
-	) {
-		Ok(root) => root,
-		Err(_) => panic!("Compact proof decoding failure."),
-	};
-	sp_std::mem::drop(storage_proof);
+	let db = storage_proof.into_memory_db();
+	let root = parent_head.state_root().clone();
+	if !HashDB::<HashFor<B>, _>::contains(&db, &root, EMPTY_PREFIX) {
+		panic!("Witness data does not contain given storage root.");
+	}
 
 	let backend = sp_state_machine::TrieBackend::new(db, root);
 
