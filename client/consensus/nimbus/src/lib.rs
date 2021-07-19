@@ -192,11 +192,15 @@ where
 		let at = BlockId::Hash(parent.hash());
 		// Get `AuthorFilterAPI` version.
 		let api_version = api.api_version::<dyn AuthorFilterAPI<B, NimbusId>>(&at)
-			.expect("Runtime api access to not error.")
-			.ok_or(tracing::error!(
+			.expect("Runtime api access to not error.");
+
+		if api_version.is_none() {
+			tracing::error!(
 				target: LOG_TARGET, "Could not find `AuthorFilterAPI` version.",
-			))
-			.ok()?;
+			);
+			return None;
+		}
+		let api_version = api_version.unwrap();
 
 		// Iterate keys until we find an eligible one, or run out of candidates.
 		let maybe_key = available_keys.into_iter().find(|type_public_pair| {
