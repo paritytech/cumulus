@@ -57,7 +57,7 @@ use frame_system::{
 use sp_runtime::Perbill;
 pub use statemint_common as common;
 use statemint_common::{
-	impls::DealWithFees, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
+	impls::DealWithFees, AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
 	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 
@@ -249,7 +249,7 @@ pub type AssetsForceOrigin = EnsureOneOf<
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
 	type Balance = Balance;
-	type AssetId = u32;
+	type AssetId = AssetId;
 	type Currency = Balances;
 	type ForceOrigin = AssetsForceOrigin;
 	type AssetDeposit = AssetDeposit;
@@ -436,6 +436,7 @@ parameter_types! {
 	pub const RelayNetwork: NetworkId = NetworkId::Polkadot;
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Junction::Parachain(ParachainInfo::parachain_id().into()).into();
+	pub const Local: MultiLocation = MultiLocation::Null;
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -451,7 +452,7 @@ pub type LocationToAccountId = (
 );
 
 /// Means for transacting assets on this chain.
-pub type LocalAssetTransactor = CurrencyAdapter<
+pub type CurrencyTransactor = CurrencyAdapter<
 	// Use this currency:
 	Balances,
 	// Use this currency when it is a fungible asset matching the given location or name:
@@ -463,6 +464,43 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 	// We don't track any teleports.
 	(),
 >;
+
+use frame_support::traits::{Contains, fungibles};
+use sp_runtime::traits::Zero;
+use sp_std::marker::PhantomData;
+use xcm_builder::{FungiblesAdapter, ConvertedConcreteAssetId, AsPrefixedGeneralIndex};
+use xcm_executor::traits::JustTry;
+
+/// Allow checking in assets that have issuance > 0.
+pub struct CheckAsset<A>(PhantomData<A>);
+impl<A> Contains<<A as fungibles::Inspect<AccountId>>::AssetId> for CheckAsset<A>
+where
+	A: fungibles::Inspect<AccountId>
+{
+	fn contains(id: &<A as fungibles::Inspect<AccountId>>::AssetId) -> bool {
+		!A::total_issuance(*id).is_zero()
+	}
+}
+
+pub type FungiblesTransactor = FungiblesAdapter<
+	// Use this fungibles implementation:
+	Assets,
+	// Use this currency when it is a fungible asset matching the given location or name:
+	(
+		ConvertedConcreteAssetId<AssetId, Balance, AsPrefixedGeneralIndex<Local, AssetId, JustTry>, JustTry>,
+		ConvertedConcreteAssetId<AssetId, Balance, AsPrefixedGeneralIndex<StatemintOneLocation, AssetId, JustTry>, JustTry>,
+		ConvertedConcreteAssetId<AssetId, Balance, AsPrefixedGeneralIndex<StatemintTwoLocation, AssetId, JustTry>, JustTry>,
+	),
+	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
+	LocationToAccountId,
+	// Our chain's account ID type (we can't get away without mentioning it explicitly):
+	AccountId,
+	// We only allow teleports of known assets.
+	CheckAsset<Assets>,
+	CheckingAccount,
+>;
+/// Means for transacting assets on this chain.
+pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -512,7 +550,7 @@ impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// How to withdraw and deposit an asset.
-	type AssetTransactor = LocalAssetTransactor;
+	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type IsReserve = NativeAsset;
 	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of DOT
