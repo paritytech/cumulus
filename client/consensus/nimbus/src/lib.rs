@@ -188,10 +188,10 @@ where
 			return None;
 		}
 
-		let api = self.parachain_client.runtime_api();
 		let at = BlockId::Hash(parent.hash());
 		// Get `AuthorFilterAPI` version.
-		let api_version = api.api_version::<dyn AuthorFilterAPI<B, NimbusId>>(&at)
+		let api_version = self.parachain_client.runtime_api()
+			.api_version::<dyn AuthorFilterAPI<B, NimbusId>>(&at)
 			.expect("Runtime api access to not error.");
 
 		if api_version.is_none() {
@@ -207,8 +207,8 @@ where
 			// Have to convert to a typed NimbusId to pass to the runtime API. Maybe this is a clue
 			// That I should be passing Vec<u8> across the wasm boundary?
 			if api_version >= 2 {
-				api.can_author(
-					&BlockId::Hash(parent.hash()),
+				self.parachain_client.runtime_api().can_author(
+					&at,
 					NimbusId::from_slice(&type_public_pair.1),
 					validation_data.relay_parent_number,
 					parent,
@@ -216,12 +216,12 @@ where
 				.expect("Author API should not return error")
 			} else {
 				#[allow(deprecated)]
-				api.can_author_before_version_2(
-					&BlockId::Hash(parent.hash()),
+				self.parachain_client.runtime_api().can_author_before_version_2(
+					&at,
 					NimbusId::from_slice(&type_public_pair.1),
 					validation_data.relay_parent_number,
 				)
-				.expect("Author API should not return error")
+				.expect("Author API version 2 should not return error")
 			}
 		});
 
