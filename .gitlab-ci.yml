@@ -7,15 +7,16 @@
 
 stages:
   - test
-  - build
+  - publish
 
 variables:                         &default-vars
   GIT_STRATEGY:                    fetch
   GIT_DEPTH:                       100
   CARGO_INCREMENTAL:               0
   CARGO_TARGET_DIR:                "/ci-cache/${CI_PROJECT_NAME}/targets/${CI_COMMIT_REF_NAME}/${CI_JOB_NAME}"
-  CI_IMAGE:                        "paritytech/ink-ci-linux:production"
-  CI_SERVER_NAME:                  "GitLab CI"
+  CI_IMAGE:                        "paritytech/ci-linux:production"
+  DOCKER_OS:                       "debian:stretch"
+  ARCH:                            "x86_64"
 
 .rust-info-script:                 &rust-info-script
   - rustup show
@@ -25,14 +26,13 @@ variables:                         &default-vars
   - bash --version
   - sccache -s
 
-.test-refs:                        &test-refs
+.publish-refs:                     &publish-refs
   rules:
     - if: $CI_PIPELINE_SOURCE == "web"
     - if: $CI_PIPELINE_SOURCE == "schedule"
-    - if: $CI_COMMIT_REF_NAME == "master"
-    - if: $CI_COMMIT_REF_NAME == "tags"
-    - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                         # PRs
     - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+.*$/              # i.e. v1.0, v2.1rc1
+    # FIXME: remove me
+    - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                         # PRs
 
 .docker-env:                       &docker-env
   image:                           "${CI_IMAGE}"
@@ -40,15 +40,26 @@ variables:                         &default-vars
     - *rust-info-script
     - ./scripts/ci/pre_cache.sh
     - sccache -s
-  interruptible:                   true
   retry:
     max: 2
     when:
       - runner_system_failure
       - unknown_failure
       - api_failure
+  interruptible:                   true
   tags:
     - linux-docker
+
+.kubernetes-env:                   &kubernetes-env
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - unknown_failure
+      - api_failure
+  interruptible:                   true
+  tags:
+    - kubernetes-parity-build
 
 .collect-artifacts:                &collect-artifacts
   artifacts:
@@ -63,7 +74,17 @@ variables:                         &default-vars
 test-linux-stable:
   stage:                           test
   <<:                              *docker-env
-  <<:                              *test-refs
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_COMMIT_REF_NAME == "master"
+    - if: $CI_COMMIT_REF_NAME == "tags"
+    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+.*$/              # i.e. v1.0, v2.1rc1
+    # FIXME: return tag here
+    # It doesn't make sense to build on every commit, so we build on tags
+    - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                         # PRs
+      variables:
+        ARE_WE_RELEASING_YET:      maybe!
   <<:                              *collect-artifacts
   variables:
     <<:                            *default-vars
@@ -73,9 +94,35 @@ test-linux-stable:
   script:
     - time cargo test --all --release --locked
     # it's almost free to produce a binary here, please refrain from using
-    # it in production since it goes with the debug assertions
-    - time cargo build --release --locked --bin polkadot-collator
+    # it in production since it goes with the debug assertions.
+    - if [ "${ARE_WE_RELEASING_YET}" ]; then
+        echo "___Building a binary___"
+        time cargo build --release --locked --bin polkadot-collator;
+        echo "___Packing the artifacts___"
+        mkdir -p ./artifacts;
+        mv ${CARGO_TARGET_DIR}/release/polkadot-collator ./artifacts/.;
+      else
+        exit 0
+      fi
     - sccache -s
-    # pack artifacts
-    - mkdir -p ./artifacts
-    - mv ${CARGO_TARGET_DIR}/release/polkadot-collator ./artifacts/.
+
+#### stage:                        publish
+
+publish-s3:
+  stage:                           publish
+  <<:                              *kubernetes-env
+  image:                           paritytech/awscli:latest
+  <<:                              *publish-refs
+  variables:
+    GIT_STRATEGY:                  none
+    BUCKET:                        "releases.parity.io"
+    PREFIX:                        "cumulus/${ARCH}-${DOCKER_OS}"
+  script:
+    - echo "___Publishing a binary with debug assertions!___"
+    - git describe --tags | tee ./artifacts/VERSION
+    - aws s3 sync ./artifacts/ s3://${BUCKET}/${PREFIX}/$(cat ./artifacts/VERSION)/
+    - echo "___Updating objects in latest path___"
+    - aws s3 sync s3://${BUCKET}/${PREFIX}/$(cat ./artifacts/VERSION)/ s3://${BUCKET}/${PREFIX}/latest/
+  after_script:
+    - aws s3 ls s3://${BUCKET}/${PREFIX}/latest/
+        --recursive --human-readable --summarize
