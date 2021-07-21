@@ -338,7 +338,7 @@ fn follow_new_best_sets_best_after_it_is_imported() {
 
 /// When we import a new best relay chain block, we extract the best parachain block from it and set
 /// it. This works when we follow the relay chain and parachain at the tip of each other, but there
-/// can be race condiditions when we are doing a full sync of both or just the relay chain.
+/// can be race conditions when we are doing a full sync of both or just the relay chain.
 /// The problem is that we import parachain blocks as best as long as we are in major sync. So, we
 /// could import block 100 as best and then import a relay chain block that says that block 99 is
 /// the best parachain block. This should not happen, we should never set the best block to a lower

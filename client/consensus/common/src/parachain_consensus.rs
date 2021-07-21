@@ -352,7 +352,7 @@ where
 			target: "cumulus-consensus",
 			%best_number,
 			block_number = %header.number(),
-			"Skipping importing block as new best block, because there already exist a \
+			"Skipping importing block as new best block, because there already exists a \
 			 best block with an higher number",
 		);
 		return;
