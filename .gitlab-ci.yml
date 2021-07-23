@@ -31,8 +31,6 @@ variables:                         &default-vars
     - if: $CI_PIPELINE_SOURCE == "web"
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+.*$/              # i.e. v1.0, v2.1rc1
-    # FIXME: remove me
-    - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                         # PRs
 
 .docker-env:                       &docker-env
   image:                           "${CI_IMAGE}"
@@ -75,16 +73,17 @@ test-linux-stable:
   stage:                           test
   <<:                              *docker-env
   rules:
-    - if: $CI_PIPELINE_SOURCE == "web"
-    - if: $CI_PIPELINE_SOURCE == "schedule"
     - if: $CI_COMMIT_REF_NAME == "master"
     - if: $CI_COMMIT_REF_NAME == "tags"
-    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+.*$/              # i.e. v1.0, v2.1rc1
-    # FIXME: return tag here
-    # It doesn't make sense to build on every commit, so we build on tags
     - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                         # PRs
+    # It doesn't make sense to build on every commit, so we build on tags
+    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+.*$/              # i.e. v1.0, v2.1rc1
       variables:
         ARE_WE_RELEASING_YET:      maybe!
+    # web and schedule triggers can be provided with the non-empty variable ARE_WE_RELEASING_YET
+    # to run building and publishing the binary.
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
   <<:                              *collect-artifacts
   variables:
     <<:                            *default-vars
@@ -92,18 +91,17 @@ test-linux-stable:
     # but still want to have debug assertions.
     RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
   script:
-    # FIXME: undebug
-    - echo "time cargo test --all --release --locked"
-    # it's almost free to produce a binary here, please refrain from using
-    # it in production since it goes with the debug assertions.
+    - time cargo test --all --release --locked
+    # It's almost free to produce a binary here, please refrain from using it in production since
+    # it goes with the debug assertions.
     - if [ "${ARE_WE_RELEASING_YET}" ]; then
-        echo "___Building a binary___"
-        mkdir -p ${CARGO_TARGET_DIR}/release/polkadot-collator
-        echo "time cargo build --release --locked --bin polkadot-collator" | tee ${CARGO_TARGET_DIR}/release/polkadot-collator;
+        echo "___Building a binary___";
+        time cargo build --release --locked --bin polkadot-collator;
         echo "___Packing the artifacts___";
         mkdir -p ./artifacts;
         mv ${CARGO_TARGET_DIR}/release/polkadot-collator ./artifacts/.;
-        echo ${CI_COMMIT_REF_NAME} | tee ./artifacts/VERSION
+        echo "___The VERSION is either a tag name or the curent branch if triggered not by a tag___";
+        echo ${CI_COMMIT_REF_NAME} | tee ./artifacts/VERSION;
       else
         exit 0;
       fi
@@ -120,8 +118,15 @@ publish-s3:
     GIT_STRATEGY:                  none
     BUCKET:                        "releases.parity.io"
     PREFIX:                        "cumulus/${ARCH}-${DOCKER_OS}"
+  before_script:
+    # Job will fail if no artifacts were provided by test-linux-stable job. It's only possible for
+    # this test to fail if the pipeline was triggered by web or schedule trigger without supplying
+    # a nono-empty ARE_WE_RELEASING_YET variable.
+    - test -e ./artifacts/polkadot-collator ||
+        ( echo "___No artifacts were provided by the previous job, please check the build there___"; exit 1 )
   script:
     - echo "___Publishing a binary with debug assertions!___"
+    - echo "___VERSION = $(cat ./artifacts/VERSION) ___"
     - aws s3 sync ./artifacts/ s3://${BUCKET}/${PREFIX}/$(cat ./artifacts/VERSION)/
     - echo "___Updating objects in latest path___"
     - aws s3 sync s3://${BUCKET}/${PREFIX}/$(cat ./artifacts/VERSION)/ s3://${BUCKET}/${PREFIX}/latest/
