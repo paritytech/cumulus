@@ -6,4 +6,4 @@ edition = "2018"
 build = "build.rs"
 
 [dependencies]
-polkadot-node-core-pvf = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-core-pvf = { git = "https://github.com/paritytech/polkadot", branch = "statemine_v2" }

@@ -7,18 +7,18 @@ edition = "2018"
 
 [dependencies]
 # Substrate deps
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "statemine_v2" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "statemine_v2" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "statemine_v2" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "statemine_v2" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "statemine_v2" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "statemine_v2" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "statemine_v2" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "statemine_v2" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "statemine_v2" }
 
 # Polkadot dependencies
-polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "statemine_v2" }
 
 # Cumulus dependencies
 cumulus-client-consensus-common = { path = "../common" }
