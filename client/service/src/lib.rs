@@ -127,7 +127,7 @@ where
 				overseer_handle: relay_chain_full_node
 					.overseer_handle
 				.clone()
-				.ok_or_else(|| "Polkadot full node did not provided an `OverseerHandler`!")?,
+				.ok_or_else(|| "Polkadot full node did not provide an `OverseerHandle`!")?,
 				_phantom: PhantomData,
 			})?;
 
