@@ -29,6 +29,7 @@ use cumulus_primitives_core::{
 	ParaId,
 };
 
+use crate::rpc as parachain_rpc;
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use futures::lock::Mutex;
 use sc_client_api::ExecutorProvider;
@@ -37,6 +38,7 @@ use sc_consensus::{
 	BlockImportParams,
 };
 use sc_executor::native_executor_instance;
+pub use sc_executor::NativeExecutor;
 use sc_network::NetworkService;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
@@ -51,7 +53,6 @@ use sp_runtime::{
 use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
 
-pub use sc_executor::NativeExecutor;
 
 type BlockNumber = u32;
 type Header = sp_runtime::generic::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>;
@@ -110,7 +111,14 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
 		(),
 		sc_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
 		sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, Executor>>,
-		(Option<Telemetry>, Option<TelemetryWorkerHandle>),
+		(
+			impl Fn(
+				parachain_rpc::DenyUnsafe,
+				parachain_rpc::SubscriptionTaskExecutor,
+			) -> parachain_rpc::RpcExtension,
+			Option<Telemetry>,
+			Option<TelemetryWorkerHandle>,
+		),
 	>,
 	sc_service::Error,
 >
@@ -179,6 +187,23 @@ where
 		&task_manager,
 	)?;
 
+	let rpc_extensions_builder = {
+		let client = client.clone();
+		let transaction_pool = transaction_pool.clone();
+
+		move |deny_unsafe,
+		      subscription_executor: parachain_rpc::SubscriptionTaskExecutor|
+		      -> parachain_rpc::RpcExtension {
+			let deps = parachain_rpc::FullDeps {
+				client: client.clone(),
+				pool: transaction_pool.clone(),
+				deny_unsafe,
+			};
+
+			parachain_rpc::create_full(deps)
+		}
+	};
+
 	let params = PartialComponents {
 		backend,
 		client,
@@ -187,7 +212,7 @@ where
 		task_manager,
 		transaction_pool,
 		select_chain: (),
-		other: (telemetry, telemetry_worker_handle),
+		other: (rpc_extensions_builder, telemetry, telemetry_worker_handle),
 	};
 
 	Ok(params)
@@ -234,7 +259,7 @@ where
 	) -> Result<
 		sc_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
 		sc_service::Error,
-	>,
+	> + 'static,
 	BIC: FnOnce(
 		Arc<TFullClient<Block, RuntimeApi, Executor>>,
 		Option<&Registry>,
@@ -254,7 +279,7 @@ where
 	let parachain_config = prepare_node_config(parachain_config);
 
 	let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config, build_import_queue)?;
-	let (mut telemetry, telemetry_worker_handle) = params.other;
+	let (rpc_extensions_builder, mut telemetry, telemetry_worker_handle) = params.other;
 
 	let relay_chain_full_node =
 		cumulus_client_service::build_polkadot_full_node(polkadot_config, telemetry_worker_handle)
@@ -291,7 +316,7 @@ where
 		})?;
 
 	let rpc_client = client.clone();
-	let rpc_extensions_builder = Box::new(move |_, _| rpc_ext_builder(rpc_client.clone()));
+	let rpc_extensions_builder = Box::new(rpc_extensions_builder);
 
 	sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 		on_demand: None,
