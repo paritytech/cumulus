@@ -75,3 +75,4 @@ sp-version = { git = "https://github.com/paritytech/substrate", branch = "master
 
 # Cumulus
 cumulus-test-runtime-upgrade = { path = "../runtime-upgrade" }
+cumulus-test-client = { path = "../client" }

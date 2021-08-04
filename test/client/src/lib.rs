@@ -17,10 +17,10 @@
 //! A Cumulus test client.
 
 mod block_builder;
-use codec::{Encode, Decode};
+use codec::{Decode, Encode};
 use runtime::{
-	Balance, Block, BlockHashCount, Call, GenesisConfig, Runtime, Signature, SignedExtra,
-	SignedPayload, UncheckedExtrinsic, VERSION,
+	Balance, BlockHashCount, Call, GenesisConfig, NodeBlock as Block, Runtime, Signature,
+	SignedExtra, SignedPayload, UncheckedExtrinsic, VERSION,
 };
 use sc_executor::{sp_wasm_interface::HostFunctions, WasmExecutionMethod, WasmExecutor};
 use sc_executor_common::runtime_blob::RuntimeBlob;
@@ -28,7 +28,7 @@ use sc_service::client;
 use sp_blockchain::HeaderBackend;
 use sp_core::storage::Storage;
 use sp_io::TestExternalities;
-use sp_runtime::{generic::Era, BuildStorage, SaturatedConversion};
+use sp_runtime::{generic::Era, BuildStorage, OpaqueExtrinsic, SaturatedConversion};
 
 pub use block_builder::*;
 pub use cumulus_test_runtime as runtime;
@@ -38,24 +38,15 @@ pub use substrate_test_client::*;
 
 pub type ParachainBlockData = cumulus_primitives_core::ParachainBlockData<Block>;
 
-mod local_executor {
-	use substrate_test_client::sc_executor::native_executor_instance;
-	native_executor_instance!(
-		pub LocalExecutor,
-		cumulus_test_runtime::api::dispatch,
-		cumulus_test_runtime::native_version,
-	);
-}
-
-/// Native executor used for tests.
-pub use local_executor::LocalExecutor;
-
 /// Test client database backend.
 pub type Backend = substrate_test_client::Backend<Block>;
 
 /// Test client executor.
-pub type Executor =
-	client::LocalCallExecutor<Block, Backend, sc_executor::NativeExecutor<LocalExecutor>>;
+pub type Executor = client::LocalCallExecutor<
+	Block,
+	Backend,
+	sc_executor::NativeExecutor<cumulus_test_service::RuntimeExecutor>,
+>;
 
 /// Test client builder for Cumulus
 pub type TestClientBuilder =
@@ -65,7 +56,7 @@ pub type TestClientBuilder =
 pub type LongestChain = sc_consensus::LongestChain<Backend, Block>;
 
 /// Test client type with `LocalExecutor` and generic Backend.
-pub type Client = client::Client<Backend, Executor, Block, runtime::RuntimeApi>;
+pub type Client = cumulus_test_service::Client;
 
 /// Parameters of test-client builder with test-runtime.
 #[derive(Default)]
@@ -113,11 +104,12 @@ fn genesis_config() -> GenesisConfig {
 /// Generate an extrinsic from the provided function call, origin and [`Client`].
 pub fn generate_extrinsic(
 	client: &Client,
+	at: u32,
 	origin: sp_keyring::AccountKeyring,
 	function: Call,
-) -> UncheckedExtrinsic {
-	let current_block_hash = client.info().best_hash;
-	let current_block = client.info().best_number.saturated_into();
+) -> OpaqueExtrinsic {
+	let current_block_hash = client.hash(at).unwrap().unwrap();
+	let current_block = at;
 	let genesis_block = client.hash(0).unwrap().unwrap();
 	let nonce = 0;
 	let period = BlockHashCount::get()
@@ -128,7 +120,7 @@ pub fn generate_extrinsic(
 	let extra: SignedExtra = (
 		frame_system::CheckSpecVersion::<Runtime>::new(),
 		frame_system::CheckGenesis::<Runtime>::new(),
-		frame_system::CheckEra::<Runtime>::from(Era::mortal(period, current_block)),
+		frame_system::CheckEra::<Runtime>::from(Era::mortal(period, current_block.into())),
 		frame_system::CheckNonce::<Runtime>::from(nonce),
 		frame_system::CheckWeight::<Runtime>::new(),
 		pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
@@ -153,18 +145,20 @@ pub fn generate_extrinsic(
 		Signature::Sr25519(signature.clone()),
 		extra.clone(),
 	)
+	.into()
 }
 
 /// Transfer some token from one account to another using a provided test [`Client`].
 pub fn transfer(
 	client: &Client,
+	at: u32,
 	origin: sp_keyring::AccountKeyring,
 	dest: sp_keyring::AccountKeyring,
 	value: Balance,
-) -> UncheckedExtrinsic {
+) -> OpaqueExtrinsic {
 	let function = Call::Balances(pallet_balances::Call::transfer(dest.public().into(), value));
 
-	generate_extrinsic(client, origin, function)
+	generate_extrinsic(client, at, origin, function)
 }
 
 /// Call `validate_block` in the given `wasm_blob`.

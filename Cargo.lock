@@ -2039,6 +2039,7 @@ dependencies = [
  "cumulus-client-service",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
+ "cumulus-test-client",
  "cumulus-test-relay-validation-worker-provider",
  "cumulus-test-runtime",
  "cumulus-test-runtime-upgrade",

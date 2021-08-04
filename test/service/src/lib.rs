@@ -606,7 +606,7 @@ pub fn node_config(
 		},
 		state_cache_size: 67108864,
 		state_cache_child_ratio: None,
-		state_pruning: PruningMode::ArchiveAll,
+		state_pruning: PruningMode::default(),
 		keep_blocks: KeepBlocks::All,
 		transaction_storage: TransactionStorageMode::BlockBody,
 		chain_spec: spec,
