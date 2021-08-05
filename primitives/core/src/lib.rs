@@ -19,7 +19,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::weights::Weight;
 use sp_runtime::{traits::Block as BlockT, RuntimeDebug};
 use sp_std::prelude::*;
 
@@ -37,7 +36,6 @@ pub mod relay_chain {
 	pub use polkadot_core_primitives::*;
 	pub use polkadot_primitives::{v1, v1::well_known_keys};
 }
-use relay_chain::BlockNumber as RelayBlockNumber;
 
 /// An inbound HRMP message.
 pub type InboundHrmpMessage = polkadot_primitives::v1::InboundHrmpMessage<relay_chain::BlockNumber>;
