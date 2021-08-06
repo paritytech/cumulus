@@ -26,7 +26,7 @@ use cumulus_primitives_core::relay_chain::BlockNumber as RelayBlockNumber;
 use codec::{Encode, Decode};
 use scale_info::TypeInfo;
 use sp_runtime::traits::BadOrigin;
-use xcm::{VersionedXcm, v0::{Xcm, Junction, Outcome, ExecuteXcm}};
+use xcm::{VersionedXcm, latest::{Xcm, Junction, Outcome, ExecuteXcm}};
 use frame_support::dispatch::Weight;
 pub use pallet::*;
 
