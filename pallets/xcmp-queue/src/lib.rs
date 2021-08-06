@@ -43,7 +43,7 @@ use rand_chacha::{
 };
 use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::{prelude::*, convert::TryFrom};
-use xcm::{v1::{prelude::*, WrapVersion}, VersionedXcm};
+use xcm::{latest::prelude::*, WrapVersion, VersionedXcm};
 
 pub use pallet::*;
 

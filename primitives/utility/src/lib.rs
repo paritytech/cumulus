@@ -22,7 +22,7 @@
 use sp_std::marker::PhantomData;
 use codec::Encode;
 use cumulus_primitives_core::UpwardMessageSender;
-use xcm::v1::{prelude::*, WrapVersion};
+use xcm::{WrapVersion, latest::prelude::*};
 
 /// Xcm router which recognises the `Parent` destination and handles it by sending the message into
 /// the given UMP `UpwardMessageSender` implementation. Thus this essentially adapts an

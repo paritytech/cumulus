@@ -56,7 +56,7 @@ pub use sp_runtime::{Perbill, Permill};
 // XCM imports
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
 use polkadot_parachain::primitives::Sibling;
-use xcm::v1::prelude::*;
+use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
 	EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset,
