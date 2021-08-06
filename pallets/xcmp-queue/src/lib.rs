@@ -96,7 +96,6 @@ pub mod pallet {
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	#[pallet::metadata(Option<T::Hash> = "Option<Hash>")]
 	pub enum Event<T: Config> {
 		/// Some XCM was executed ok.
 		Success(Option<T::Hash>),
