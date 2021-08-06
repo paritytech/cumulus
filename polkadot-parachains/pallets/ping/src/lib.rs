@@ -104,7 +104,7 @@ pub mod pallet {
 					Xcm::Transact {
 						origin_type: OriginKind::Native,
 						require_weight_at_most: 1_000,
-						call: <T as Config>::Call::from(Call::<T>::ping(seq, payload.clone())).encode().into(),
+						call: <T as Config>::Call::from(Call::<T>::ping { seq, payload: payload.clone() }).encode().into(),
 					},
 				) {
 					Ok(()) => {
@@ -166,7 +166,7 @@ pub mod pallet {
 				Xcm::Transact {
 					origin_type: OriginKind::Native,
 					require_weight_at_most: 1_000,
-					call: <T as Config>::Call::from(Call::<T>::pong(seq, payload.clone())).encode().into(),
+					call: <T as Config>::Call::from(Call::<T>::pong { seq, payload: payload.clone() }).encode().into(),
 				},
 			) {
 				Ok(()) => Self::deposit_event(Event::PongSent(para, seq, payload)),

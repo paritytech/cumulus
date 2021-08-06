@@ -21,6 +21,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use scale_info::TypeInfo;
 use sp_std::{prelude::*, convert::TryFrom};
 use cumulus_primitives_core::relay_chain::BlockNumber as RelayBlockNumber;
 use cumulus_primitives_core::DmpMessageHandler;
@@ -30,7 +31,7 @@ use xcm::{VersionedXcm, v0::{Xcm, Junction, Outcome, ExecuteXcm, Error as XcmErr
 use frame_support::{traits::EnsureOrigin, dispatch::Weight, weights::constants::WEIGHT_PER_MILLIS};
 pub use pallet::*;
 
-#[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct ConfigData {
 	/// The maximum amount of weight any individual message may consume. Messages above this weight
 	/// go into the overweight queue and may only be serviced explicitly by the
@@ -47,7 +48,7 @@ impl Default for ConfigData {
 }
 
 /// Information concerning our message pages.
-#[derive(Copy, Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
+#[derive(Copy, Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct PageIndexData {
 	/// The lowest used page index.
 	begin_used: PageCounter,
