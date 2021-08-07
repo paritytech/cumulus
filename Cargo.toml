@@ -38,7 +38,7 @@ members = [
 
 [profile.release]
 panic = "unwind"
-[patch."https://github.com/paritytech/polkadot"]
+[patch."https://github.com/paritytech/substrate"]
 node-template ={path = "/Users/gav/Core/substrate/bin/node-template/node" }
 frame-benchmarking ={path = "/Users/gav/Core/substrate/frame/benchmarking" }
 frame-support ={path = "/Users/gav/Core/substrate/frame/support" }
@@ -249,6 +249,7 @@ sp-runtime-interface-test ={path = "/Users/gav/Core/substrate/primitives/runtime
 sp-runtime-interface-test-wasm-deprecated ={path = "/Users/gav/Core/substrate/primitives/runtime-interface/test-wasm-deprecated" }
 substrate-test-utils-test-crate ={path = "/Users/gav/Core/substrate/test-utils/test-crate" }
 substrate-frame-rpc-support ={path = "/Users/gav/Core/substrate/utils/frame/rpc/support" }
+[patch."https://github.com/paritytech/polkadot"]
 polkadot-cli ={path = "/Users/gav/Core/polkadot/cli" }
 polkadot-node-core-pvf ={path = "/Users/gav/Core/polkadot/node/core/pvf" }
 polkadot-core-primitives ={path = "/Users/gav/Core/polkadot/core-primitives" }
