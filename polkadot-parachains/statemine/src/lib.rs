@@ -43,7 +43,7 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{All, Filter, InstanceFilter},
+	traits::{All, Contains, InstanceFilter},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
 		DispatchClass, IdentityFee, Weight,
@@ -144,7 +144,7 @@ parameter_types! {
 }
 
 pub struct BaseFilter;
-impl Filter<Call> for BaseFilter {
+impl Contains<Call> for BaseFilter {
 	fn filter(_c: &Call) -> bool { true }
 }
 
