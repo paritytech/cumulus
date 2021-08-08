@@ -30,7 +30,6 @@ sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-f
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
-pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
 pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.7" }
@@ -48,7 +47,6 @@ cumulus-primitives-utility = { git = "https://github.com/paritytech/cumulus.git"
 cumulus-pallet-dmp-queue = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.7", default-features = false }
 cumulus-pallet-xcmp-queue = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.7", default-features = false }
 cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.7", default-features = false }
-cumulus-ping = { git = "https://github.com/paritytech/cumulus.git",  branch = "polkadot-v0.9.7", default-features = false }
 
 # Polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.7" }
@@ -56,6 +54,11 @@ xcm = { git = "https://github.com/paritytech/polkadot", default-features = false
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.7" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.7" }
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.7" }
+
+# Benchmarking
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.7" }
+frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.7" }
+hex-literal = { version = "0.3.2", optional = true }
 
 [dev-dependencies]
 hex-literal = "0.3.1"
@@ -68,7 +71,7 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 [dependencies.pallet-teerex]
 default-features = false
 git = "https://github.com/scs/pallet-substratee-registry.git"
-branch = "polkadot-v0.9.7"
+branch = "runtime-benchmarks-v0.9.7"
 package = 'pallet-teerex'
 
 [features]
@@ -91,7 +94,6 @@ std = [
 	"frame-support/std",
 	"frame-executive/std",
 	"frame-system/std",
-	"pallet-assets/std",
 	"pallet-balances/std",
 	"pallet-randomness-collective-flip/std",
 	"pallet-timestamp/std",
@@ -106,12 +108,28 @@ std = [
 	"cumulus-primitives-core/std",
 	"cumulus-primitives-timestamp/std",
 	"cumulus-primitives-utility/std",
-	"cumulus-ping/std",
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"pallet-aura/std",
 	"sp-consensus-aura/std",
+	# benchmarking stuff
+	"frame-benchmarking/std",
+	"frame-system-benchmarking/std",
 	# TEE
 	"pallet-teerex/std"
+]
+runtime-benchmarks = [
+	# support stuff
+	"frame-benchmarking",
+	"frame-system-benchmarking",
+	"hex-literal",
+	"pallet-xcm/runtime-benchmarks",
+	"xcm-builder/runtime-benchmarks",
+	# actual pallets to be benchmarked
+	"frame-system/runtime-benchmarks",
+	"pallet-balances/runtime-benchmarks",
+	"pallet-timestamp/runtime-benchmarks",
+	"pallet-vesting/runtime-benchmarks",
+	"pallet-teerex/runtime-benchmarks",
 ]

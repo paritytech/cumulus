@@ -235,15 +235,6 @@ fn shell_genesis_config(
 	}
 }
 
-fn get_chain_name_ext(chain_type: &ChainType) -> String {
-	match chain_type {
-		ChainType::Local => " (Local)".into(),
-		ChainType::Development => " (Dev)".into(),
-		ChainType::Live => "".into(),
-		ChainType::Custom(custom) => format!(" ({})", custom),
-	}
-}
-
 pub enum RelayChain {
 	RococoLocal,
 	KusamaLocal,

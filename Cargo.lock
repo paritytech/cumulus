@@ -1700,22 +1700,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-ping"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.7#c5c3abf7eb9d4fdfb588d6560efaa8dca66a8dbc"
-dependencies = [
- "cumulus-pallet-xcm",
- "cumulus-primitives-core",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "serde",
- "sp-runtime",
- "sp-std",
- "xcm",
-]
-
-[[package]]
 name = "cumulus-primitives-core"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.7#c5c3abf7eb9d4fdfb588d6560efaa8dca66a8dbc"
@@ -3182,7 +3166,7 @@ dependencies = [
 [[package]]
 name = "ias-verify"
 version = "0.1.4"
-source = "git+https://github.com/scs/pallet-substratee-registry.git?branch=polkadot-v0.9.7#4f1727b8cdda13fa76a3451c58dff8d9eabc605a"
+source = "git+https://github.com/scs/pallet-substratee-registry.git?branch=runtime-benchmarks-v0.9.7#a60ee32eeb6d630a14d70edfeba43d2faa008457"
 dependencies = [
  "base64 0.11.0",
  "chrono",
@@ -3414,17 +3398,17 @@ dependencies = [
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
- "cumulus-ping",
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
+ "frame-benchmarking",
  "frame-executive",
  "frame-support",
  "frame-system",
+ "frame-system-benchmarking",
  "hex",
  "hex-literal 0.3.2",
  "log",
- "pallet-assets",
  "pallet-aura",
  "pallet-balances",
  "pallet-randomness-collective-flip",
@@ -5032,20 +5016,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-assets"
-version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.7#9c572625f6557dfdb19f47474369a0327d51dfbc"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "max-encoded-len",
- "parity-scale-codec",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-aura"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.7#9c572625f6557dfdb19f47474369a0327d51dfbc"
@@ -5632,13 +5602,15 @@ dependencies = [
 [[package]]
 name = "pallet-teerex"
 version = "0.9.0"
-source = "git+https://github.com/scs/pallet-substratee-registry.git?branch=polkadot-v0.9.7#4f1727b8cdda13fa76a3451c58dff8d9eabc605a"
+source = "git+https://github.com/scs/pallet-substratee-registry.git?branch=runtime-benchmarks-v0.9.7#a60ee32eeb6d630a14d70edfeba43d2faa008457"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "hex-literal 0.3.2",
  "ias-verify",
  "log",
+ "pallet-balances",
  "pallet-timestamp",
  "parity-scale-codec",
  "serde",
@@ -11466,7 +11438,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.3.23",
+ "rand 0.6.5",
  "static_assertions",
 ]
 

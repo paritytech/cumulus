@@ -48,6 +48,7 @@ native_executor_instance!(
 	pub RococoParachainRuntimeExecutor,
 	rococo_parachain_runtime::api::dispatch,
 	rococo_parachain_runtime::native_version,
+	frame_benchmarking::benchmarking::HostFunctions,
 );
 
 /// Starts a `ServiceBuilder` for a full service.
