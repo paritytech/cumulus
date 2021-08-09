@@ -28,7 +28,9 @@ use cumulus_primitives_core::{
 	ParaId,
 };
 
-use crate::rpc as parachain_rpc;
+pub use crate::primitives::{AccountId, Balance, Block, Hash, Header, Nonce};
+use crate::rpc;
+
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use futures::lock::Mutex;
 use sc_client_api::ExecutorProvider;
@@ -51,18 +53,6 @@ use sp_runtime::{
 };
 use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
-
-/// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
-pub type Signature = sp_runtime::MultiSignature;
-/// Some way of identifying an account on the chain. We intentionally make it equivalent
-/// to the public key of our transaction signing scheme.
-pub type AccountId = <<Signature as sp_runtime::traits::Verify>::Signer as sp_runtime::traits::IdentifyAccount>::AccountId;
-type BlockNumber = u32;
-type Header = sp_runtime::generic::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>;
-pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>;
-type Hash = sp_core::H256;
-type Balance = u128;
-type Nonce = u32;
 
 // Native executor instance.
 native_executor_instance!(
@@ -467,14 +457,14 @@ where
 		let client = client.clone();
 		let transaction_pool = transaction_pool.clone();
 
-		Box::new(move |deny_unsafe, _| -> parachain_rpc::RpcExtension {
-			let deps = parachain_rpc::FullDeps {
+		Box::new(move |deny_unsafe, _| -> rpc::RpcExtension {
+			let deps = rpc::FullDeps {
 				client: client.clone(),
 				pool: transaction_pool.clone(),
 				deny_unsafe,
 			};
 
-			parachain_rpc::create_full(deps)
+			rpc::create_full(deps)
 		})
 	};
 
