@@ -1,10 +1,9 @@
 name: Publish Rust Docs
 
 on:
-  pull_request:
-  # push:
-  #   branches:
-  #     - master
+  push:
+    branches:
+      - master
 
 jobs:
   deploy-docs:
@@ -30,8 +29,6 @@ jobs:
           command: doc
           args: --all --no-deps
 
-      # Make an index.html file that redirects to the cumulus-client-collator page
-      # Copied from https://github.com/substrate-developer-hub/rustdocs/blob/master/index.html
       - name: Make index.html
         run:  echo "<meta http-equiv=refresh content=0;url=cumulus_client_collator/index.html>" > ./target/doc/index.html
 
