@@ -12,20 +12,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v1
+        uses: actions/actions/checkout@v2.3.4
 
-      # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
-      # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
-      - name: Setup Rust toolchain
+      - name: Rust show versions
         run: rustup show
 
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-doc-${{ hashFiles('**/Cargo.lock') }}
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v1
 
       - name: Build rustdocs
         uses: actions-rs/cargo@v1
