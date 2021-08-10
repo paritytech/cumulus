@@ -42,12 +42,12 @@ impl<T: UpwardMessageSender, W: WrapVersion> SendXcm for ParentAsUmp<T, W> {
 				let data = versioned_xcm.encode();
 
 				T::send_upward_message(data)
-					.map_err(|e| XcmError::SendFailed(e.into()))?;
+					.map_err(|e| SendError::Transport(e.into()))?;
 
 				Ok(())
 			}
 			// Anything else is unhandled. This includes a message this is meant for us.
-			_ => Err(XcmError::CannotReachDestination(dest, msg)),
+			_ => Err(SendError::CannotReachDestination(dest, msg)),
 		}
 	}
 }
