@@ -74,6 +74,8 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       CHAIN_SPEC: ${{ matrix.chain }}-${{ matrix.config }}
+      working-directory: ./
+      PARACHAIN_IMAGE_NAME: integritee/parachain
     strategy:
       fail-fast: false
       matrix:
@@ -81,6 +83,27 @@ jobs:
         config: [kusama]
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Prepare
+        id: prep
+        run: |
+          DOCKER_IMAGE=${{ env.PARACHAIN_IMAGE_NAME }}
+          VERSION=edge
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          fi
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            VERSION=nightly
+          fi
+          TAGS="${DOCKER_IMAGE}:${VERSION}"
+          if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            TAGS="$TAGS,${DOCKER_IMAGE}:latest"
+          fi
+          VERSION=${{ github.event.release.tag_name }}
+          echo ::set-output name=tags::${TAGS}
+          
       - uses: actions/download-artifact@v2
         with:
           name: integritee-collator-${{ github.sha }}
@@ -108,3 +131,39 @@ jobs:
             checksums.txt
             ${{ env.CHAIN_SPEC }}.state
             ${{ env.CHAIN_SPEC }}.json
+          
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+        with:
+          platforms: all
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Login to DockerHub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          context: ${{env.working-directory}}
+          file: ${{env.working-directory}}/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.prep.outputs.tags }}
+
