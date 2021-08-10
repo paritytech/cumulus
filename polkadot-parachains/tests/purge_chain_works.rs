@@ -58,7 +58,10 @@ fn purge_chain_works() {
 		let base_path = run_node_and_stop();
 
 		assert!(base_path.path().join("chains/local_testnet/db").exists());
-		assert!(base_path.path().join("polkadot/chains/westend_dev/db").exists());
+		assert!(base_path
+			.path()
+			.join("polkadot/chains/westend_dev/db")
+			.exists());
 
 		let status = Command::new(cargo_bin("polkadot-collator"))
 			.args(&["purge-chain", "-d"])
@@ -71,7 +74,13 @@ fn purge_chain_works() {
 		// Make sure that the `parachain_local_testnet` chain folder exists, but the `db` is deleted.
 		assert!(base_path.path().join("chains/local_testnet").exists());
 		assert!(!base_path.path().join("chains/local_testnet/db").exists());
-		assert!(base_path.path().join("polkadot/chains/westend_dev").exists());
-		assert!(!base_path.path().join("polkadot/chains/westend_dev/db").exists());
+		assert!(base_path
+			.path()
+			.join("polkadot/chains/westend_dev")
+			.exists());
+		assert!(!base_path
+			.path()
+			.join("polkadot/chains/westend_dev/db")
+			.exists());
 	}
 }

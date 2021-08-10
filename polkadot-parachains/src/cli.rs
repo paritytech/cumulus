@@ -15,7 +15,6 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::chain_spec;
-use sc_cli;
 use std::path::PathBuf;
 use structopt::StructOpt;
 

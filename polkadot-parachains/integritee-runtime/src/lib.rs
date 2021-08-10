@@ -25,8 +25,8 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys, traits::ConvertInto,
-	traits::{BlakeTwo256, Block as BlockT, AccountIdLookup},
+	create_runtime_str, generic, impl_opaque_keys,
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -37,8 +37,8 @@ use sp_version::RuntimeVersion;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
-	construct_runtime, parameter_types, match_type,
-	traits::{Randomness, All, IsInVec},
+	construct_runtime, match_type, parameter_types,
+	traits::{All, IsInVec, Randomness},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -210,10 +210,10 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: u128 = 1 * MILLITEER;
-	pub const TransferFee: u128 = 1 * MILLITEER;
-	pub const CreationFee: u128 = 1 * MILLITEER;
-	pub const TransactionByteFee: u128 = 1 * MICROTEER;
+	pub const ExistentialDeposit: u128 = MILLITEER;
+	pub const TransferFee: u128 = MILLITEER;
+	pub const CreationFee: u128 = MILLITEER;
+	pub const TransactionByteFee: u128 = MICROTEER;
 	pub const MaxLocks: u32 = 50;
 	pub const MaxReserves: u32 = 50;
 }
@@ -413,10 +413,10 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 }
 
 parameter_types! {
-	pub const AssetDeposit: Balance = 1 * TEER;
+	pub const AssetDeposit: Balance = TEER;
 	pub const ApprovalDeposit: Balance = 100 * MILLITEER;
 	pub const StringLimit: u32 = 50;
-	pub const MetadataDepositBase: Balance = 1 * TEER;
+	pub const MetadataDepositBase: Balance = TEER;
 	pub const MetadataDepositPerByte: Balance = 10 * MILLITEER;
 	pub const UnitBody: BodyId = BodyId::Unit;
 }
@@ -666,7 +666,7 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 			.create_inherent_data()
 			.expect("Could not create the timestamp inherent data");
 
-		inherent_data.check_extrinsics(&block)
+		inherent_data.check_extrinsics(block)
 	}
 }
 

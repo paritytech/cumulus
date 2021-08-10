@@ -13,24 +13,61 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     steps:
-      - name: Install latest nightly
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly-2021-03-25
-          override: true
-          target: wasm32-unknown-unknown
-      - name: Install llvm-10
-        run: sudo apt-get install llvm-10 clang-10
       - uses: actions/checkout@v2
         with:
           submodules: 'true'
+
+      # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
+      # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
+      - name: Setup Rust toolchain
+        run: rustup show
+
+      - name: Cache Rust Dependecies
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+            enclave/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Build
-        run: cargo build --verbose --release
+        run: cargo build --release
+
       - name: Upload integritee-collator
         uses: actions/upload-artifact@v2
         with:
           name: integritee-collator-${{ github.sha }}
           path: target/release/integritee-collator
+
+  fmt:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
+
+      - name: Setup Rust toolchain
+        run: rustup show
+
+      - name: fmt check
+        # fail job on warnings with `-- --check`
+        run: cargo fmt --all -- --check
+
+  clippy:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
+
+      - name: Setup Rust toolchain
+        run: rustup show
+
+      - name: clippy
+        # fail job on warnings with `-- -D warnings`
+        run: cargo clippy -- -D warnings
 
   create-artifacts:
     needs: build

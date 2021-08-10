@@ -14,18 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+#![allow(clippy::inconsistent_digit_grouping)]
+
 use cumulus_primitives_core::ParaId;
 use rococo_parachain_runtime::{AccountId, AuraId};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::{ChainType, GenericChainSpec};
 use serde::{Deserialize, Serialize};
-use sp_core::{sr25519, Public};
-use std::str::FromStr;
+use sp_core::{crypto::Ss58Codec, sr25519, Public};
 use sp_keyring::AccountKeyring::{Alice, Bob, Dave, Eve};
-use sp_core::crypto::Ss58Codec;
+use std::str::FromStr;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec = sc_service::GenericChainSpec<rococo_parachain_runtime::GenesisConfig, Extensions>;
+pub type ChainSpec =
+	sc_service::GenericChainSpec<rococo_parachain_runtime::GenesisConfig, Extensions>;
 
 /// Specialized `ChainSpec` for the shell parachain runtime.
 pub type ShellChainSpec = sc_service::GenericChainSpec<shell_runtime::GenesisConfig, Extensions>;
@@ -48,10 +50,10 @@ impl Extensions {
 }
 
 pub fn public_from_ss58<TPublic: Public + FromStr>(ss58: &str) -> TPublic
-	where
+where
 	// what's up with this weird trait bound??
-	<TPublic as FromStr>::Err: std::fmt::Debug
- {
+	<TPublic as FromStr>::Err: std::fmt::Debug,
+{
 	TPublic::from_ss58check(ss58).expect("supply valid ss58!")
 }
 
@@ -66,7 +68,9 @@ pub enum GenesisKeys {
 struct WellKnownKeys;
 
 impl WellKnownKeys {
-	fn root() -> AccountId { Alice.to_account_id() }
+	fn root() -> AccountId {
+		Alice.to_account_id()
+	}
 
 	fn endowed() -> Vec<AccountId> {
 		vec![Alice.to_account_id(), Bob.to_account_id()]
@@ -80,10 +84,14 @@ impl WellKnownKeys {
 struct IntegriteeKeys;
 
 impl IntegriteeKeys {
-	fn root() -> AccountId { public_from_ss58::<sr25519::Public>("5EqGFRTN3m2kLpoaThANra5REs5C7B2rfLmmZv2nbJsxaTe1").into() }
+	fn root() -> AccountId {
+		public_from_ss58::<sr25519::Public>("5EqGFRTN3m2kLpoaThANra5REs5C7B2rfLmmZv2nbJsxaTe1")
+			.into()
+	}
 	fn authorities() -> Vec<AuraId> {
 		vec![
-			public_from_ss58::<sr25519::Public>("5GZJjbPPD9u6NDgK1ApYmbyGs7EBX4HeEz2y2CD38YJxjvQH").into(),
+			public_from_ss58::<sr25519::Public>("5GZJjbPPD9u6NDgK1ApYmbyGs7EBX4HeEz2y2CD38YJxjvQH")
+				.into(),
 			/*
 			public_from_ss58::<sr25519::Public>("5CcSd1GZus6Jw7rP47LLqMMmtr2KeXCH6W11ZKk1LbCQ9dPY").into(),
 			public_from_ss58::<sr25519::Public>("5FsECrDjBXrh5hXmN4PhQfNPbjYYwwW7edu2UQ8G5LR1JFuH").into(),
@@ -95,46 +103,58 @@ impl IntegriteeKeys {
 	}
 }
 
-pub fn shell_chain_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: RelayChain) -> ShellChainSpec {
+pub fn shell_chain_spec(
+	id: ParaId,
+	genesis_keys: GenesisKeys,
+	relay_chain: RelayChain,
+) -> ShellChainSpec {
 	let (root, endowed, authorities) = match genesis_keys {
-		GenesisKeys::Integritee => (IntegriteeKeys::root(), vec![IntegriteeKeys::root()], IntegriteeKeys::authorities()),
-		GenesisKeys::WellKnown => (WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities()),
+		GenesisKeys::Integritee => (
+			IntegriteeKeys::root(),
+			vec![IntegriteeKeys::root()],
+			IntegriteeKeys::authorities(),
+		),
+		GenesisKeys::WellKnown => (
+			WellKnownKeys::root(),
+			WellKnownKeys::endowed(),
+			WellKnownKeys::authorities(),
+		),
 	};
 
-	let chain_name = format!("Integritee Shell");
+	let chain_name = "Integritee Shell".to_string();
 
 	chain_spec(
 		&chain_name,
-		move || shell_genesis_config(
-			root.clone(),
-			endowed.clone(),
-			authorities.clone(),
-			id),
+		move || shell_genesis_config(root.clone(), endowed.clone(), authorities.clone(), id),
 		relay_chain.chain_type(),
 		id,
 		&relay_chain.to_string(),
 	)
 }
 
-pub fn integritee_chain_spec(id: ParaId, genesis_keys: GenesisKeys, relay_chain: RelayChain) -> ChainSpec {
-
+pub fn integritee_chain_spec(
+	id: ParaId,
+	genesis_keys: GenesisKeys,
+	relay_chain: RelayChain,
+) -> ChainSpec {
 	let (root, endowed, authorities) = match genesis_keys {
-		GenesisKeys::Integritee => (IntegriteeKeys::root(), vec![IntegriteeKeys::root()], IntegriteeKeys::authorities()),
-		GenesisKeys::WellKnown => (WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities())
+		GenesisKeys::Integritee => (
+			IntegriteeKeys::root(),
+			vec![IntegriteeKeys::root()],
+			IntegriteeKeys::authorities(),
+		),
+		GenesisKeys::WellKnown => (
+			WellKnownKeys::root(),
+			WellKnownKeys::endowed(),
+			WellKnownKeys::authorities(),
+		),
 	};
 
-	let chain_name = format!("Integritee Network");
+	let chain_name = "Integritee Network".to_string();
 
 	chain_spec(
 		&chain_name,
-		move || {
-			integritee_genesis_config(
-				root.clone(),
-				endowed.clone(),
-				authorities.clone(),
-				id,
-			)
-		},
+		move || integritee_genesis_config(root.clone(), endowed.clone(), authorities.clone(), id),
 		relay_chain.chain_type(),
 		id,
 		&relay_chain.to_string(),
@@ -146,7 +166,7 @@ fn chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
 	testnet_constructor: F,
 	chain_type: ChainType,
 	para_id: ParaId,
-	relay_chain: &str
+	relay_chain: &str,
 ) -> GenericChainSpec<GenesisConfig, Extensions> {
 	GenericChainSpec::<GenesisConfig, Extensions>::from_genesis(
 		chain_name,
@@ -159,19 +179,22 @@ fn chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
 		// protocol id
 		Some("teer"),
 		// properties
-		Some(serde_json::from_str(
-			r#"{
+		Some(
+			serde_json::from_str(
+				r#"{
 				"ss58Format": 42,
 				"tokenDecimals": 12,
 				"tokenSymbol": "TEER"
-				}"#).unwrap()),
+				}"#,
+			)
+			.unwrap(),
+		),
 		Extensions {
 			relay_chain: relay_chain.into(),
 			para_id: para_id.into(),
 		},
 	)
 }
-
 
 fn integritee_genesis_config(
 	root_key: AccountId,
@@ -241,7 +264,7 @@ pub enum RelayChain {
 	PolkadotLocal,
 	Rococo,
 	Kusama,
-	Polkadot
+	Polkadot,
 }
 
 impl ToString for RelayChain {

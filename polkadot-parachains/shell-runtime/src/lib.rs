@@ -25,8 +25,8 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys, traits::ConvertInto,
-	traits::{BlakeTwo256, Block as BlockT, AccountIdLookup},
+	create_runtime_str, generic, impl_opaque_keys,
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -37,8 +37,8 @@ use sp_version::RuntimeVersion;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
-	construct_runtime, parameter_types, match_type,
-	traits::{Randomness, All, IsInVec},
+	construct_runtime, match_type, parameter_types,
+	traits::{All, IsInVec, Randomness},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -46,21 +46,21 @@ pub use frame_support::{
 	StorageValue,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
+pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
-pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 
 pub use pallet_balances::Call as BalancesCall;
 
 // XCM imports
+use frame_support::traits::Filter;
 use xcm::v0::{Junction::*, MultiLocation, MultiLocation::*, NetworkId};
 use xcm_builder::{
-	LocationInverter, ParentIsDefault, FixedWeightBounds, AllowUnpaidExecutionFrom,
-	ParentAsSuperuser, SovereignSignedViaLocation,
+	AllowUnpaidExecutionFrom, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
+	ParentIsDefault, SovereignSignedViaLocation,
 };
 use xcm_executor::{Config, XcmExecutor};
-use frame_support::traits::Filter;
 
 pub type SessionHandlers = ();
 
@@ -152,11 +152,10 @@ parameter_types! {
 pub struct DisableTokenTxFilter;
 impl Filter<Call> for DisableTokenTxFilter {
 	fn filter(call: &Call) -> bool {
-		match call {
-			// Balances and Vesting's transfer (which can be used to transfer)
-			Call::Balances(_) | Call::Vesting(pallet_vesting::Call::vested_transfer(..)) => false,
-			_ => true
-		}
+		!matches!(
+			call,
+			Call::Balances(_) | Call::Vesting(pallet_vesting::Call::vested_transfer(..))
+		)
 	}
 }
 
@@ -212,10 +211,10 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: u128 = 1 * MILLITEER;
-	pub const TransferFee: u128 = 1 * MILLITEER;
-	pub const CreationFee: u128 = 1 * MILLITEER;
-	pub const TransactionByteFee: u128 = 1 * MICROTEER;
+	pub const ExistentialDeposit: u128 = MILLITEER;
+	pub const TransferFee: u128 = MILLITEER;
+	pub const CreationFee: u128 = MILLITEER;
+	pub const TransactionByteFee: u128 = MICROTEER;
 	pub const MaxLocks: u32 = 50;
 	pub const MaxReserves: u32 = 50;
 }
@@ -330,7 +329,6 @@ impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 }
 
-
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
@@ -339,7 +337,7 @@ construct_runtime! {
 	{
 		System: frame_system::{Pallet, Call, Storage, Config, Event<T>} = 0,
 		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned} = 1,
-		
+
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 4,
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
