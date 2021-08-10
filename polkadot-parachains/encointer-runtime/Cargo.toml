@@ -65,7 +65,7 @@ package = "substrate-fixed"
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "2.1.1", default-features = false, features = ["derive"] }
 log = { version = "0.4.14", default-features = false }
-parachain-info = { path = "../pallets/parachain-info", default-features = false }
+parachain-info = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "master" }
 
 # Substrate dependencies
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -93,14 +93,14 @@ pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", 
 pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Cumulus dependencies
-cumulus-pallet-aura-ext = { path = "../../pallets/aura-ext", default-features = false }
-cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false }
-cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
-cumulus-primitives-utility = { path = "../../primitives/utility", default-features = false }
-cumulus-pallet-dmp-queue = { path = "../../pallets/dmp-queue", default-features = false }
-cumulus-pallet-xcmp-queue = { path = "../../pallets/xcmp-queue", default-features = false }
-cumulus-pallet-xcm = { path = "../../pallets/xcm", default-features = false }
-cumulus-ping = { path = "../pallets/ping", default-features = false }
+cumulus-pallet-aura-ext = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "master" }
+cumulus-pallet-parachain-system = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "master" }
+cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "master" }
+cumulus-primitives-utility = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "master" }
+cumulus-pallet-dmp-queue = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "master" }
+cumulus-pallet-xcmp-queue = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "master" }
+cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "master" }
+cumulus-ping = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "master" }
 
 # Polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }

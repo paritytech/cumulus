@@ -51,13 +51,6 @@ native_executor_instance!(
 	parachain_runtime::native_version,
 );
 
-// Native executor instance.
-native_executor_instance!(
-	pub ShellRuntimeExecutor,
-	cumulus_shell_runtime::api::dispatch,
-	cumulus_shell_runtime::native_version,
-);
-
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
@@ -465,101 +458,6 @@ pub async fn start_rococo_parachain_node(
 				block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
 				telemetry,
 			}))
-		},
-	)
-	.await
-}
-
-/// Build the import queue for the shell runtime.
-pub fn shell_build_import_queue(
-	client: Arc<TFullClient<Block, cumulus_shell_runtime::RuntimeApi, ShellRuntimeExecutor>>,
-	config: &Configuration,
-	_: Option<TelemetryHandle>,
-	task_manager: &TaskManager,
-) -> Result<
-	sp_consensus::DefaultImportQueue<
-		Block,
-		TFullClient<Block, cumulus_shell_runtime::RuntimeApi, ShellRuntimeExecutor>,
-	>,
-	sc_service::Error,
-> {
-	cumulus_client_consensus_relay_chain::import_queue(
-		client.clone(),
-		client,
-		|_, _| async { Ok(()) },
-		&task_manager.spawn_essential_handle(),
-		config.prometheus_registry().clone(),
-	)
-	.map_err(Into::into)
-}
-
-/// Start a rococo-shell parachain node.
-pub async fn start_shell_node(
-	parachain_config: Configuration,
-	collator_key: CollatorPair,
-	polkadot_config: Configuration,
-	id: ParaId,
-) -> sc_service::error::Result<
-	(TaskManager, Arc<TFullClient<Block, cumulus_shell_runtime::RuntimeApi, ShellRuntimeExecutor>>)
-> {
-	start_node_impl::<cumulus_shell_runtime::RuntimeApi, ShellRuntimeExecutor, _, _, _>(
-		parachain_config,
-		collator_key,
-		polkadot_config,
-		id,
-		|_| Default::default(),
-		shell_build_import_queue,
-		|client,
-		 prometheus_registry,
-		 telemetry,
-		 task_manager,
-		 relay_chain_node,
-		 transaction_pool,
-		 _,
-		 _,
-		 _| {
-			let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
-				task_manager.spawn_handle(),
-				client.clone(),
-				transaction_pool,
-				prometheus_registry.clone(),
-				telemetry.clone(),
-			);
-
-			let relay_chain_backend = relay_chain_node.backend.clone();
-			let relay_chain_client = relay_chain_node.client.clone();
-
-			Ok(
-				cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
-					cumulus_client_consensus_relay_chain::BuildRelayChainConsensusParams {
-						para_id: id,
-						proposer_factory,
-						block_import: client.clone(),
-						relay_chain_client: relay_chain_node.client.clone(),
-						relay_chain_backend: relay_chain_node.backend.clone(),
-						create_inherent_data_providers:
-							move |_, (relay_parent, validation_data)| {
-								let parachain_inherent =
-					cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
-						relay_parent,
-						&relay_chain_client,
-						&*relay_chain_backend,
-							&validation_data,
-							id,
-					);
-								async move {
-									let parachain_inherent =
-										parachain_inherent.ok_or_else(|| {
-											Box::<dyn std::error::Error + Send + Sync>::from(
-												"Failed to create parachain inherent",
-											)
-										})?;
-									Ok(parachain_inherent)
-								}
-							},
-					},
-				),
-			)
 		},
 	)
 	.await
