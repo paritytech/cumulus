@@ -774,7 +774,7 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 
 /// Xcm sender for sending to a sibling parachain.
 impl<T: Config> SendXcm for Pallet<T> {
-	fn send_xcm(dest: MultiLocation, msg: Xcm<()>) -> Result<(), SeneError> {
+	fn send_xcm(dest: MultiLocation, msg: Xcm<()>) -> Result<(), SendError> {
 		match &dest {
 			// An HRMP message for a sibling parachain.
 			MultiLocation { parents: 1, interior: X1(Parachain(id)) } => {
