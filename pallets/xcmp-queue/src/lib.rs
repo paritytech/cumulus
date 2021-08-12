@@ -779,7 +779,7 @@ impl<T: Config> SendXcm for Pallet<T> {
 			// An HRMP message for a sibling parachain.
 			MultiLocation { parents: 1, interior: X1(Parachain(id)) } => {
 				let versioned_xcm = T::VersionWrapper::wrap_version(&dest, msg)
-					.map_err(|()| XcmError::DestinationUnsupported)?;
+					.map_err(|()| SendError::DestinationUnsupported)?;
 				let hash = T::Hashing::hash_of(&versioned_xcm);
 				Self::send_fragment(
 					(*id).into(),

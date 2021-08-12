@@ -23,7 +23,7 @@ use sp_runtime::traits::Saturating;
 use frame_system::Config as SystemConfig;
 use cumulus_primitives_core::ParaId;
 use cumulus_pallet_xcm::{Origin as CumulusOrigin, ensure_sibling_para};
-use xcm::latest::{Xcm, Error as XcmError, SendXcm, OriginKind, Junction};
+use xcm::latest::{Xcm, SendXcm, SendError, OriginKind, Junction};
 
 pub use pallet::*;
 
@@ -85,8 +85,8 @@ pub mod pallet {
 		Pinged(ParaId, u32, Vec<u8>),
 		PongSent(ParaId, u32, Vec<u8>),
 		Ponged(ParaId, u32, Vec<u8>, T::BlockNumber),
-		ErrorSendingPing(XcmError, ParaId, u32, Vec<u8>),
-		ErrorSendingPong(XcmError, ParaId, u32, Vec<u8>),
+		ErrorSendingPing(SendError, ParaId, u32, Vec<u8>),
+		ErrorSendingPong(SendError, ParaId, u32, Vec<u8>),
 		UnknownPong(ParaId, u32, Vec<u8>),
 	}
 
