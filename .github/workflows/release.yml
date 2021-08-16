@@ -1,10 +1,9 @@
-name: Build
+name: Release
 
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+  release:
+    types: [published]
+
 
 env:
   CARGO_TERM_COLOR: always

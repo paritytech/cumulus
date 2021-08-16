@@ -17,3 +17,4 @@ polkadot-local*
 
 # autogeneretad weights to be used in the pallet_teerex repository
 pallet_teerex_weights.rs
+integritee-collator
