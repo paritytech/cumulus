@@ -31,7 +31,7 @@ use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult,
+	ApplyExtrinsicResult, Perbill
 };
 
 use sp_std::prelude::*;
@@ -54,10 +54,9 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureOneOf, EnsureRoot,
 };
-use sp_runtime::Perbill;
-pub use statemint_common as common;
 use statemint_common::{
-	impls::DealWithFees, AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
+	impls::{DealWithFees, NonZeroIssuance},
+	AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
 	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 
@@ -74,9 +73,10 @@ use xcm_builder::{
 	EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset,
 	ParentAsSuperuser, ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, FungiblesAdapter,
+	ConvertedConcreteAssetId, AsPrefixedGeneralIndex,
 };
-use xcm_executor::{Config, XcmExecutor};
+use xcm_executor::{Config, XcmExecutor, traits::JustTry};
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -466,23 +466,6 @@ pub type CurrencyTransactor = CurrencyAdapter<
 	(),
 >;
 
-use frame_support::traits::{Contains, fungibles};
-use sp_runtime::traits::Zero;
-use sp_std::marker::PhantomData;
-use xcm_builder::{FungiblesAdapter, ConvertedConcreteAssetId, AsPrefixedGeneralIndex};
-use xcm_executor::traits::JustTry;
-
-/// Allow checking in assets that have issuance > 0.
-pub struct CheckAsset<A>(PhantomData<A>);
-impl<A> Contains<<A as fungibles::Inspect<AccountId>>::AssetId> for CheckAsset<A>
-where
-	A: fungibles::Inspect<AccountId>
-{
-	fn contains(id: &<A as fungibles::Inspect<AccountId>>::AssetId) -> bool {
-		!A::total_issuance(*id).is_zero()
-	}
-}
-
 pub type FungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
 	Assets,
@@ -495,7 +478,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
 	AccountId,
 	// We only allow teleports of known assets.
-	CheckAsset<Assets>,
+	NonZeroIssuance<AccountId, Assets>,
 	CheckingAccount,
 >;
 /// Means for transacting assets on this chain.
@@ -548,7 +531,6 @@ pub struct XcmConfig;
 impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
-	// How to withdraw and deposit an asset.
 	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type IsReserve = NativeAsset;

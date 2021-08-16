@@ -16,9 +16,13 @@
 //! Auxillary struct/enums for Statemint runtime.
 //! Taken from polkadot/runtime/common (at a21cd64) and adapted for Statemint.
 
-use frame_support::traits::{Currency, Imbalance, OnUnbalanced};
+use frame_support::traits::{fungibles, Contains, Currency, Imbalance, OnUnbalanced};
+use sp_runtime::traits::Zero;
+use sp_std::marker::PhantomData;
 
-pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
+pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
+	<T as frame_system::Config>::AccountId,
+>>::NegativeImbalance;
 
 /// Logic for the author to get a portion of fees.
 pub struct ToStakingPot<R>(sp_std::marker::PhantomData<R>);
@@ -32,10 +36,7 @@ where
 	fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
 		let numeric_amount = amount.peek();
 		let staking_pot = <pallet_collator_selection::Pallet<R>>::account_id();
-		<pallet_balances::Pallet<R>>::resolve_creating(
-			&staking_pot,
-			amount,
-		);
+		<pallet_balances::Pallet<R>>::resolve_creating(&staking_pot, amount);
 		<frame_system::Pallet<R>>::deposit_event(pallet_balances::Event::Deposit(
 			staking_pot,
 			numeric_amount,
@@ -61,12 +62,25 @@ where
 	}
 }
 
+/// Allow checking in assets that have issuance > 0.
+pub struct NonZeroIssuance<AccountId, Assets>(PhantomData<(AccountId, Assets)>);
+impl<AccountId, Assets> Contains<<Assets as fungibles::Inspect<AccountId>>::AssetId>
+	for NonZeroIssuance<AccountId, Assets>
+where
+	Assets: fungibles::Inspect<AccountId>,
+{
+	fn contains(id: &<Assets as fungibles::Inspect<AccountId>>::AssetId) -> bool {
+		!Assets::total_issuance(*id).is_zero()
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
 	use frame_support::traits::FindAuthor;
-	use frame_support::{parameter_types, PalletId, traits::ValidatorRegistration};
+	use frame_support::{parameter_types, traits::ValidatorRegistration, PalletId};
 	use frame_system::{limits, EnsureRoot};
+	use pallet_collator_selection::IdentityCollator;
 	use polkadot_primitives::v1::AccountId;
 	use sp_core::H256;
 	use sp_runtime::{
@@ -74,7 +88,6 @@ mod tests {
 		traits::{BlakeTwo256, IdentityLookup},
 		Perbill,
 	};
-	use pallet_collator_selection::IdentityCollator;
 
 	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 	type Block = frame_system::mocking::MockBlock<Test>;
