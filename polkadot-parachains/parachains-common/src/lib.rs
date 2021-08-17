@@ -17,11 +17,11 @@
 
 pub mod impls;
 pub use constants::*;
+pub use opaque::*;
 pub use types::*;
-
 /// Common types of parachains.
 mod types {
-	use sp_runtime::traits::{BlakeTwo256, IdentifyAccount, Verify};
+	use sp_runtime::traits::{IdentifyAccount, Verify};
 
 	/// An index to a block.
 	pub type BlockNumber = u32;
@@ -45,9 +45,6 @@ mod types {
 
 	/// A hash of some data used by the chain.
 	pub type Hash = sp_core::H256;
-
-	/// Block header type as expected by this runtime.
-	pub type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
 
 	/// Digest item type.
 	pub type DigestItem = sp_runtime::generic::DigestItem<Hash>;
@@ -84,4 +81,21 @@ mod constants {
 
 	/// We allow for 0.5 seconds of compute with a 6 second average block time.
 	pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
+}
+
+/// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
+/// the specifics of the runtime. They can then be made to be agnostic over specific formats
+/// of data like extrinsics, allowing for them to continue syncing the network through upgrades
+/// to even the core data structures.
+pub mod opaque {
+	use super::*;
+	use sp_runtime::{generic, traits::BlakeTwo256};
+
+	pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
+	/// Opaque block header type.
+	pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
+	/// Opaque block type.
+	pub type Block = generic::Block<Header, UncheckedExtrinsic>;
+	/// Opaque block identifier type.
+	pub type BlockId = generic::BlockId<Block>;
 }

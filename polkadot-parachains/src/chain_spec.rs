@@ -228,22 +228,22 @@ pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn statemint_session_keys(keys: AuraId) -> statemint_runtime::opaque::SessionKeys {
-	statemint_runtime::opaque::SessionKeys { aura: keys }
+pub fn statemint_session_keys(keys: AuraId) -> statemint_runtime::SessionKeys {
+	statemint_runtime::SessionKeys { aura: keys }
 }
 
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn statemine_session_keys(keys: AuraId) -> statemine_runtime::opaque::SessionKeys {
-	statemine_runtime::opaque::SessionKeys { aura: keys }
+pub fn statemine_session_keys(keys: AuraId) -> statemine_runtime::SessionKeys {
+	statemine_runtime::SessionKeys { aura: keys }
 }
 
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn westmint_session_keys(keys: AuraId) -> westmint_runtime::opaque::SessionKeys {
-	westmint_runtime::opaque::SessionKeys { aura: keys }
+pub fn westmint_session_keys(keys: AuraId) -> westmint_runtime::SessionKeys {
+	westmint_runtime::SessionKeys { aura: keys }
 }
 
 pub fn statemint_development_config(id: ParaId) -> StatemintChainSpec {
