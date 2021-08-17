@@ -28,7 +28,7 @@ shell-runtime = { path = "shell" }
 statemint-runtime = { path = "statemint" }
 statemine-runtime = { path = "statemine" }
 westmint-runtime = { path = "westmint" }
-statemint-common = { path = "statemint-common" }
+parachains-common = { path = "parachains-common" }
 
 # Substrate dependencies
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = "master" }

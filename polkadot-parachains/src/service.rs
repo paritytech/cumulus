@@ -28,8 +28,8 @@ use cumulus_primitives_core::{
 	ParaId,
 };
 
-pub use crate::primitives::{AccountId, Balance, Block, Hash, Header, Nonce};
 use crate::rpc;
+pub use parachains_common::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
 
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use futures::lock::Mutex;

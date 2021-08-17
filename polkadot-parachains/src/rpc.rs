@@ -27,7 +27,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
-use crate::primitives::{AccountId, Balance, Block, Nonce};
+use parachains_common::{AccountId, Balance, Block, Index as Nonce};
 
 /// A type representing all RPC extensions.
 pub type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
