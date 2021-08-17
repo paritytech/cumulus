@@ -36,7 +36,7 @@ pub use sc_executor::NativeExecutor;
 use sc_network::{config::TransportConfig, multiaddr, NetworkService};
 use sc_service::{
 	config::{
-		DatabaseConfig, KeepBlocks, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
+		DatabaseSource, KeepBlocks, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
 		OffchainWorkerConfig, PruningMode, TransactionStorageMode, WasmExecutionMethod,
 	},
 	BasePath, ChainSpec, Configuration, Error as ServiceError, PartialComponents, Role,
@@ -99,7 +99,7 @@ pub fn new_partial(
 		Client,
 		TFullBackend<Block>,
 		(),
-		sp_consensus::import_queue::BasicQueue<Block, PrefixedMemoryDB<BlakeTwo256>>,
+		sc_consensus::import_queue::BasicQueue<Block, PrefixedMemoryDB<BlakeTwo256>>,
 		sc_transaction_pool::FullPool<Block, Client>,
 		(),
 	>,
@@ -162,7 +162,7 @@ async fn start_node_impl<RB>(
 where
 	RB: Fn(
 			Arc<TFullClient<Block, RuntimeApi, RuntimeExecutor>>,
-		) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
+		) -> Result<jsonrpc_core::IoHandler<sc_rpc::Metadata>, sc_service::Error>
 		+ Send
 		+ 'static,
 {
@@ -213,6 +213,7 @@ where
 			import_queue: import_queue.clone(),
 			on_demand: None,
 			block_announce_validator_builder: Some(Box::new(block_announce_validator_builder)),
+			warp_sync: None,
 		})?;
 
 	let rpc_extensions_builder = {
@@ -515,7 +516,7 @@ impl TestNodeBuilder {
 			relay_chain_config,
 			self.para_id,
 			self.wrap_announce_block,
-			|_| Default::default(),
+			|_| Ok(Default::default()),
 			self.consensus,
 		)
 		.await
@@ -599,7 +600,7 @@ pub fn node_config(
 		network: network_config,
 		keystore: KeystoreConfig::InMemory,
 		keystore_remote: Default::default(),
-		database: DatabaseConfig::RocksDb {
+		database: DatabaseSource::RocksDb {
 			path: root.join("db"),
 			cache_size: 128,
 		},
