@@ -54,12 +54,12 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureOneOf, EnsureRoot,
 };
-use sp_runtime::Perbill;
-pub use statemint_common as common;
-use statemint_common::{
+pub use parachains_common as common;
+use parachains_common::{
 	impls::DealWithFees, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
 	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
+use sp_runtime::Perbill;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -327,10 +327,9 @@ impl InstanceFilter<Call> for ProxyType {
 	fn filter(&self, c: &Call) -> bool {
 		match self {
 			ProxyType::Any => true,
-			ProxyType::NonTransfer => !matches!(
-				c,
-				Call::Balances(..) | Call::Assets(..) | Call::Uniques(..)
-			),
+			ProxyType::NonTransfer => {
+				!matches!(c, Call::Balances(..) | Call::Assets(..) | Call::Uniques(..))
+			}
 			ProxyType::CancelProxy => matches!(
 				c,
 				Call::Proxy(pallet_proxy::Call::reject_announcement(..))

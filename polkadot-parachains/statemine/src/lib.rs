@@ -54,12 +54,12 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureOneOf, EnsureRoot,
 };
-use sp_runtime::Perbill;
-pub use statemint_common as common;
-use statemint_common::{
+pub use parachains_common as common;
+use parachains_common::{
 	impls::DealWithFees, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
 	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
+use sp_runtime::Perbill;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -145,7 +145,9 @@ parameter_types! {
 
 pub struct BaseFilter;
 impl Filter<Call> for BaseFilter {
-	fn filter(_c: &Call) -> bool { true }
+	fn filter(_c: &Call) -> bool {
+		true
+	}
 }
 
 // Configure FRAME pallets to include in runtime.
