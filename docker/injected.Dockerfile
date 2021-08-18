@@ -7,7 +7,7 @@
 # Run with (see readme):
 # docker run --rm -it $OWNER/$IMAGE_NAME --collator --tmp --parachain-id 1000 --execution wasm --chain /specs/westmint.json
 
-FROM debian:buster-slim
+FROM docker.io/library/debian:buster-slim
 
 # metadata
 ARG VCS_REF
@@ -45,7 +45,7 @@ RUN apt-get update && \
 
 # add polkadot-collator binary to the docker image
 COPY ./target/release/polkadot-collator /usr/local/bin
-COPY ./polkadot-parachains/res/*.json /specs
+COPY ./polkadot-parachains/res/*.json /specs/
 
 USER polkadot
 
