@@ -54,9 +54,10 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
-use statemint_common::{
+pub use parachains_common as common;
+use parachains_common::{
 	impls::{DealWithFees, NonZeroIssuance},
-	AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
+	opaque, AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
 	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 
@@ -69,32 +70,18 @@ use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
-	EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset,
+	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom,
+	AsPrefixedGeneralIndex, ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin,
+	FixedWeightBounds, FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset,
 	ParentAsSuperuser, ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, FungiblesAdapter,
-	ConvertedConcreteAssetId, AsPrefixedGeneralIndex,
+	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
-use xcm_executor::{Config, XcmExecutor, traits::JustTry};
+use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
-/// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
-/// the specifics of the runtime. They can then be made to be agnostic over specific formats
-/// of data like extrinsics, allowing for them to continue syncing the network through upgrades
-/// to even the core data structures.
-pub mod opaque {
-	use super::*;
-	pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
-
-	/// Opaque block type.
-	pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-
-	pub type SessionHandlers = ();
-
-	impl_opaque_keys! {
-		pub struct SessionKeys {
-			pub aura: Aura,
-		}
+impl_opaque_keys! {
+	pub struct SessionKeys {
+		pub aura: Aura,
 	}
 }
 
@@ -103,7 +90,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("westmint"),
 	impl_name: create_runtime_str!("westmint"),
 	authoring_version: 1,
-	spec_version: 2,
+	spec_version: 3,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -233,7 +220,7 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
-pub type AssetsForceOrigin =  EnsureRoot<AccountId>;
+pub type AssetsForceOrigin = EnsureRoot<AccountId>;
 
 parameter_types! {
 	pub const AssetDeposit: Balance = 100 * UNITS; // 100 WND deposit to create asset
@@ -248,7 +235,7 @@ parameter_types! {
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
 	type Balance = Balance;
-	type AssetId = u32;
+	type AssetId = AssetId;
 	type Currency = Balances;
 	type ForceOrigin = AssetsForceOrigin;
 	type AssetDeposit = AssetDeposit;
@@ -326,10 +313,9 @@ impl InstanceFilter<Call> for ProxyType {
 	fn filter(&self, c: &Call) -> bool {
 		match self {
 			ProxyType::Any => true,
-			ProxyType::NonTransfer => !matches!(
-				c,
-				Call::Balances(..) | Call::Assets(..) | Call::Uniques(..)
-			),
+			ProxyType::NonTransfer => {
+				!matches!(c, Call::Balances(..) | Call::Assets(..) | Call::Uniques(..))
+			}
 			ProxyType::CancelProxy => matches!(
 				c,
 				Call::Proxy(pallet_proxy::Call::reject_announcement(..))
@@ -470,7 +456,12 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	Assets,
 	// Use this currency when it is a fungible asset matching the given location or name:
 	(
-		ConvertedConcreteAssetId<AssetId, Balance, AsPrefixedGeneralIndex<Local, AssetId, JustTry>, JustTry>,
+		ConvertedConcreteAssetId<
+			AssetId,
+			Balance,
+			AsPrefixedGeneralIndex<Local, AssetId, JustTry>,
+			JustTry,
+		>,
 	),
 	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
 	LocationToAccountId,
@@ -602,9 +593,8 @@ impl pallet_session::Config for Runtime {
 	type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
 	type SessionManager = CollatorSelection;
 	// Essentially just Aura, but lets be pedantic.
-	type SessionHandler =
-		<opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
-	type Keys = opaque::SessionKeys;
+	type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
+	type Keys = SessionKeys;
 	type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
 	type WeightInfo = weights::pallet_session::WeightInfo<Runtime>;
 }
@@ -822,13 +812,13 @@ impl_runtime_apis! {
 
 	impl sp_session::SessionKeys<Block> for Runtime {
 		fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
-			opaque::SessionKeys::generate(seed)
+			SessionKeys::generate(seed)
 		}
 
 		fn decode_session_keys(
 			encoded: Vec<u8>,
 		) -> Option<Vec<(Vec<u8>, KeyTypeId)>> {
-			opaque::SessionKeys::decode_into_raw_public_keys(&encoded)
+			SessionKeys::decode_into_raw_public_keys(&encoded)
 		}
 	}
 

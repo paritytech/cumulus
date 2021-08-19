@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Auxillary struct/enums for Statemint runtime.
-//! Taken from polkadot/runtime/common (at a21cd64) and adapted for Statemint.
+//! Auxillary struct/enums for parachain runtimes.
+//! Taken from polkadot/runtime/common (at a21cd64) and adapted for parachains.
 
 use frame_support::traits::{fungibles, Contains, Currency, Imbalance, OnUnbalanced};
 use sp_runtime::traits::Zero;
@@ -77,8 +77,11 @@ where
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use frame_support::traits::FindAuthor;
-	use frame_support::{parameter_types, traits::ValidatorRegistration, PalletId};
+	use frame_support::{
+		parameter_types,
+		traits::{FindAuthor, ValidatorRegistration},
+		PalletId,
+	};
 	use frame_system::{limits, EnsureRoot};
 	use pallet_collator_selection::IdentityCollator;
 	use polkadot_primitives::v1::AccountId;
