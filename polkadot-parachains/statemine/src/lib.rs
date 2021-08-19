@@ -473,38 +473,39 @@ pub type LocationToAccountId = (
 	AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
-/// Means for transacting assets on this chain.
+/// Means for transacting the native currency on this chain.
 pub type CurrencyTransactor = CurrencyAdapter<
 	// Use this currency:
 	Balances,
 	// Use this currency when it is a fungible asset matching the given location or name:
 	IsConcrete<KsmLocation>,
-	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
+	// Convert an XCM MultiLocation into a local account id:
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
 	AccountId,
-	// We don't track any teleports.
+	// We don't track any teleports of `Balances`.
 	(),
 >;
 
+/// Means for transacting assets besides the native currency on this chain.
 pub type FungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
 	Assets,
 	// Use this currency when it is a fungible asset matching the given location or name:
-	(
-		ConvertedConcreteAssetId<
-			AssetId,
-			Balance,
-			AsPrefixedGeneralIndex<Local, AssetId, JustTry>,
-			JustTry,
-		>,
-	),
-	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
+	ConvertedConcreteAssetId<
+		AssetId,
+		Balance,
+		AsPrefixedGeneralIndex<Local, AssetId, JustTry>,
+		JustTry,
+	>,
+	// Convert an XCM MultiLocation into a local account id:
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
 	AccountId,
-	// We only allow teleports of known assets.
+	// We only want to allow teleports of known assets. We use non-zero issuance as an indication
+	// that this asset is known.
 	NonZeroIssuance<AccountId, Assets>,
+	// The account to use for tracking teleports.
 	CheckingAccount,
 >;
 /// Means for transacting assets on this chain.
