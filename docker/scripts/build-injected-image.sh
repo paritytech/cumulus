@@ -1,4 +1,4 @@
-#1/usr/bin/env bash
+#!/usr/bin/env bash
 
 OWNER=parity
 IMAGE_NAME=polkadot-collator
