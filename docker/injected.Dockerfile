@@ -1,12 +1,3 @@
-# Build with:
-# OWNER=parity
-# IMAGE_NAME=polkadot-collator
-# docker build --no-cache --build-arg IMAGE_NAME=$IMAGE_NAME -t $OWNER/$IMAGE_NAME -f ./docker/injected.Dockerfile .
-# docker images | grep $IMAGE_NAME
-
-# Run with (see readme):
-# docker run --rm -it $OWNER/$IMAGE_NAME --collator --tmp --parachain-id 1000 --execution wasm --chain /specs/westmint.json
-
 FROM docker.io/library/debian:buster-slim
 
 # metadata
