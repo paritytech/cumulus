@@ -154,6 +154,11 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 42;
 }
 
+pub struct BaseFilter;
+impl frame_support::traits::Filter<Call> for BaseFilter {
+	fn filter(_c: &Call) -> bool { true }
+}
+
 impl frame_system::Config for Runtime {
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
@@ -185,7 +190,7 @@ impl frame_system::Config for Runtime {
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type DbWeight = ();
-	type BaseCallFilter = ();
+	type BaseCallFilter = BaseFilter;
 	type SystemWeightInfo = ();
 	type BlockWeights = RuntimeBlockWeights;
 	type BlockLength = RuntimeBlockLength;

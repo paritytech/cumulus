@@ -34,9 +34,10 @@ use polkadot_service::ClientHandle;
 use sc_client_api::Backend;
 use sp_api::{ProvideRuntimeApi, BlockId, ApiExt};
 use sp_consensus::{
-	BlockImport, BlockImportParams, BlockOrigin, EnableProofRecording, Environment,
+	BlockOrigin, EnableProofRecording, Environment,
 	ProofRecording, Proposal, Proposer,
 };
+use sc_consensus::{BlockImport, BlockImportParams};
 use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvider};
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT};
 use std::{marker::PhantomData, sync::Arc, time::Duration};
@@ -292,8 +293,8 @@ where
 		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header.clone());
 		block_import_params.post_digests.push(sig_digest.clone());
 		block_import_params.body = Some(extrinsics.clone());
-		block_import_params.state_action = sp_consensus::StateAction::ApplyChanges(
-			sp_consensus::StorageChanges::Changes(storage_changes)
+		block_import_params.state_action = sc_consensus::StateAction::ApplyChanges(
+			sc_consensus::StorageChanges::Changes(storage_changes)
 		);
 
 		// Print the same log line as slots (aura and babe)

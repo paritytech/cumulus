@@ -612,7 +612,7 @@ pub fn nimbus_build_import_queue(
 	_: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
 ) -> Result<
-	sp_consensus::DefaultImportQueue<
+	sc_consensus::DefaultImportQueue<
 		Block,
 		TFullClient<Block, nimbus_runtime::RuntimeApi, NimbusRuntimeExecutor>,
 	>,
@@ -644,7 +644,7 @@ pub async fn start_nimbus_node(
 		parachain_config,
 		polkadot_config,
 		id,
-		|_| Default::default(),
+		|_| Ok(Default::default()),
 		nimbus_build_import_queue,
 		|client,
 		 prometheus_registry,

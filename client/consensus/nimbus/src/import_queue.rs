@@ -20,15 +20,16 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::Result as ClientResult;
 use sp_consensus::{
-	error::Error as ConsensusError,
-	import_queue::{BasicQueue, CacheKeyId, Verifier as VerifierT},
-	BlockImport, BlockImportParams, BlockOrigin,
+	error::Error as ConsensusError, CacheKeyId,
+};
+use sc_consensus::{
+	BlockImport, BlockImportParams, 
+	import_queue::{BasicQueue, Verifier as VerifierT},
 };
 use sp_inherents::{CreateInherentDataProviders, InherentDataProvider};
 use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, Header as HeaderT},
-	Justifications,
 	DigestItem,
 };
 use nimbus_primitives::{NimbusId, NimbusSignature, NimbusPair};
@@ -56,10 +57,7 @@ where
 {
 	async fn verify(
 		&mut self,
-		origin: BlockOrigin,
-		mut header: Block::Header,
-		justifications: Option<Justifications>,
-		mut body: Option<Vec<Block::Extrinsic>>,
+		mut block_params: BlockImportParams<Block, ()>,
 	) -> Result<
 		(
 			BlockImportParams<Block, ()>,
@@ -68,23 +66,23 @@ where
 		String,
 	> {
 
-		debug!(target: crate::LOG_TARGET, "🪲 Header hash before popping digest {:?}", header.hash());
+		debug!(target: crate::LOG_TARGET, "🪲 Header hash before popping digest {:?}", block_params.header.hash());
 		// Grab the digest from the seal
 		//TODO use CompatibleDigest trait here once I write it. For now assume the seal is last.
-		let seal = header.digest_mut().pop().expect("Block should have at least one digest on it");
+		let seal = block_params.header.digest_mut().pop().expect("Block should have at least one digest on it");
 
 		let sig = match seal {
 			DigestItem::Seal(id, ref sig) if id == *b"nmbs" => sig.clone(),
 			_ => return Err("HeaderUnsealed".into()),
 		};
 
-		debug!(target: crate::LOG_TARGET, "🪲 Header hash after popping digest {:?}", header.hash());
+		debug!(target: crate::LOG_TARGET, "🪲 Header hash after popping digest {:?}", block_params.header.hash());
 
 		debug!(target: crate::LOG_TARGET, "🪲 Signature according to verifier is {:?}", sig);
 
 		// Grab the digest from the runtime
 		//TODO use the trait. Maybe this code should move to the trait.
-		let consensus_digest = header
+		let consensus_digest = block_params.header
 			.digest()
 			.logs
 			.iter()
@@ -106,7 +104,7 @@ where
 		// Verify the signature
 		let valid_signature = NimbusPair::verify(
 			&NimbusSignature::try_from(sig).expect("Bytes should convert to signature correctly"),
-			header.hash(),
+			block_params.header.hash(),
 			&NimbusId::from_slice(&claimed_author),
 		);
 
@@ -117,10 +115,10 @@ where
 		}
 
 		// This part copied from RelayChainConsensus. I guess this is the inherent checking.
-		if let Some(inner_body) = body.take() {
+		if let Some(inner_body) = block_params.body.take() {
 			let inherent_data_providers = self
 				.create_inherent_data_providers
-				.create_inherent_data_providers(*header.parent_hash(), ())
+				.create_inherent_data_providers(*block_params.header.parent_hash(), ())
 				.await
 				.map_err(|e| e.to_string())?;
 
@@ -128,13 +126,13 @@ where
 				.create_inherent_data()
 				.map_err(|e| format!("{:?}", e))?;
 
-			let block = Block::new(header.clone(), inner_body);
+			let block = Block::new(block_params.header.clone(), inner_body);
 
 			let inherent_res = self
 				.client
 				.runtime_api()
 				.check_inherents(
-					&BlockId::Hash(*header.parent_hash()),
+					&BlockId::Hash(*block_params.header.parent_hash()),
 					block.clone(),
 					inherent_data,
 				)
@@ -153,17 +151,14 @@ where
 			}
 
 			let (_, inner_body) = block.deconstruct();
-			body = Some(inner_body);
+			block_params.body = Some(inner_body);
 		}
 
-		let mut block_import_params = BlockImportParams::new(origin, header);
-		block_import_params.post_digests.push(seal);
-		block_import_params.body = body;
-		block_import_params.justifications = justifications;
+		block_params.post_digests.push(seal);
 
-		debug!(target: crate::LOG_TARGET, "🪲 Just finished verifier. posthash from params is {:?}", &block_import_params.post_hash());
+		debug!(target: crate::LOG_TARGET, "🪲 Just finished verifier. posthash from params is {:?}", &block_params.post_hash());
 
-		Ok((block_import_params, None))
+		Ok((block_params, None))
 	}
 }
 
