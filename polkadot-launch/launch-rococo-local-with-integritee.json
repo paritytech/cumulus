@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../bin/polkadot-0.9.7",
+		"bin": "../../bin/polkadot-0.9.8",
 		"chain": "rococo-local",
 		"nodes": [
 			{
@@ -22,10 +22,9 @@
 	},
 	"parachains": [
 		{
-			"bin": "./target/release/integritee-collator",
-			"chain": "shell-rococo-local-dev",
+			"bin": "./../target/release/integritee-collator",
+			"chain": "integritee-rococo-local-dev",
 			"id": "2000",
-			"balance": "10_000_000__000_000_000_000",
 			"nodes": [
 				{
 					"wsPort": 9944,
@@ -42,10 +41,9 @@
 			]
 		},
 		{
-			"bin": "./target/release/integritee-collator",
-			"chain": "shell-rococo-local",
+			"bin": "./../target/release/integritee-collator",
+			"chain": "integritee-rococo-local",
 			"id": "2015",
-			"balance": "10_000_000__000_000_000_000",
 			"nodes": [
 				{
 					"wsPort": 9915,
@@ -59,18 +57,6 @@
 	],
 	"hrmpChannels": [
 	],
-	"types": {
-		"ShardIdentifier": "Hash",
-		"Request": {
-			"shard": "ShardIdentifier",
-			"cyphertext": "Vec<u8>"
-		},
-		"Enclave": {
-			"pubkey": "AccountId",
-			"mrenclave": "Hash",
-			"timestamp": "u64",
-			"url": "Text"
-		}
-	},
+	"types": "./polkadot-launch/type-registry.json",
 	"finalization": false
 }

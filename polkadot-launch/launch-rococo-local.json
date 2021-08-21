@@ -1,7 +1,7 @@
 {
 	"relaychain": {
-		"bin": "../bin/polkadot-0.9.7",
-		"chain": "westend-local",
+		"bin": "../../bin/polkadot-0.9.8",
+		"chain": "rococo-local",
 		"nodes": [
 			{
 				"name": "alice",
@@ -26,18 +26,6 @@
 	],
 	"hrmpChannels": [
 	],
-	"types": {
-		"ShardIdentifier": "Hash",
-		"Request": {
-			"shard": "ShardIdentifier",
-			"cyphertext": "Vec<u8>"
-		},
-		"Enclave": {
-			"pubkey": "AccountId",
-			"mrenclave": "Hash",
-			"timestamp": "u64",
-			"url": "Text"
-		}
-	},
+	"types": "./polkadot-launch/type-registry.json",
 	"finalization": false
 }

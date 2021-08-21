@@ -28,7 +28,6 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-            enclave/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build
@@ -63,6 +62,15 @@ jobs:
 
       - name: Setup Rust toolchain
         run: rustup show
+
+      - name: Cache Rust Dependecies
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
 
       - name: clippy
         # fail job on warnings with `-- -D warnings`
