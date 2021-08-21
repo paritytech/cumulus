@@ -60,6 +60,7 @@ pub struct NimbusConsensus<B, PF, BI, RClient, RBackend, ParaClient, CIDP> {
 	relay_chain_backend: Arc<RBackend>,
 	parachain_client: Arc<ParaClient>,
 	keystore: SyncCryptoStorePtr,
+	skip_prediction: bool,
 }
 
 impl<B, PF, BI, RClient, RBackend, ParaClient, CIDP> Clone for NimbusConsensus<B, PF, BI, RClient, RBackend, ParaClient, CIDP> {
@@ -74,6 +75,7 @@ impl<B, PF, BI, RClient, RBackend, ParaClient, CIDP> Clone for NimbusConsensus<B
 			relay_chain_client: self.relay_chain_client.clone(),
 			parachain_client: self.parachain_client.clone(),
 			keystore: self.keystore.clone(),
+			skip_prediction: self.skip_prediction,
 		}
 	}
 }
@@ -97,6 +99,7 @@ where
 		polkadot_backend: Arc<RBackend>,
 		parachain_client: Arc<ParaClient>,
 		keystore: SyncCryptoStorePtr,
+		skip_prediction: bool,
 	) -> Self {
 		Self {
 			para_id,
@@ -109,6 +112,7 @@ where
 			relay_chain_client: polkadot_client,
 			parachain_client,
 			keystore,
+			skip_prediction,
 			_phantom: PhantomData,
 		}
 	}
@@ -204,7 +208,13 @@ where
 		let api_version = api_version.unwrap();
 
 		// Iterate keys until we find an eligible one, or run out of candidates.
+		// If we are skipping prediction, then we author withthe first key we find.
+		// prediction skipping only really amkes sense when there is a single key in the keystore.
 		let maybe_key = available_keys.into_iter().find(|type_public_pair| {
+
+			// If we are not predicting, just return the first one we find.
+			self.skip_prediction ||
+
 			// Have to convert to a typed NimbusId to pass to the runtime API. Maybe this is a clue
 			// That I should be passing Vec<u8> across the wasm boundary?
 			if api_version >= 2 {
@@ -345,6 +355,7 @@ pub struct BuildNimbusConsensusParams<PF, BI, RBackend, ParaClient, CIDP> {
 	pub relay_chain_backend: Arc<RBackend>,
 	pub parachain_client: Arc<ParaClient>,
 	pub keystore: SyncCryptoStorePtr,
+	pub skip_prediction: bool,
 
 }
 
@@ -361,6 +372,7 @@ pub fn build_nimbus_consensus<Block, PF, BI, RBackend, ParaClient, CIDP>(
 		relay_chain_backend,
 		parachain_client,
 		keystore,
+		skip_prediction,
 	}: BuildNimbusConsensusParams<PF, BI, RBackend, ParaClient, CIDP>,
 ) -> Box<dyn ParachainConsensus<Block>>
 where
@@ -389,6 +401,7 @@ where
 		relay_chain_backend,
 		parachain_client,
 		keystore,
+		skip_prediction,
 	)
 	.build()
 }
@@ -409,6 +422,7 @@ struct NimbusConsensusBuilder<Block, PF, BI, RBackend, ParaClient,CIDP> {
 	relay_chain_client: polkadot_service::Client,
 	parachain_client: Arc<ParaClient>,
 	keystore: SyncCryptoStorePtr,
+	skip_prediction: bool,
 }
 
 impl<Block, PF, BI, RBackend, ParaClient, CIDP> NimbusConsensusBuilder<Block, PF, BI, RBackend, ParaClient, CIDP>
@@ -438,6 +452,7 @@ where
 		relay_chain_backend: Arc<RBackend>,
 		parachain_client: Arc<ParaClient>,
 		keystore: SyncCryptoStorePtr,
+		skip_prediction: bool,
 	) -> Self {
 		Self {
 			para_id,
@@ -449,6 +464,7 @@ where
 			relay_chain_client,
 			parachain_client,
 			keystore,
+			skip_prediction,
 		}
 	}
 
@@ -500,6 +516,7 @@ where
 			self.relay_chain_backend,
 			self.parachain_client,
 			self.keystore,
+			self.skip_prediction,
 		))
 	}
 }
