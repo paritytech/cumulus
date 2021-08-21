@@ -43,18 +43,16 @@
 //! make sure that the blocks are imported in the correct order.
 
 use sc_client_api::{BlockBackend, BlockchainEvents, UsageProvider};
+use sc_consensus::import_queue::{ImportQueue, IncomingBlock};
 use sp_api::ProvideRuntimeApi;
-use sp_consensus::{
-	import_queue::{ImportQueue, IncomingBlock},
-	BlockOrigin, BlockStatus,
-};
+use sp_consensus::{BlockOrigin, BlockStatus};
 use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, Header as HeaderT, NumberFor},
 };
 
 use polkadot_node_primitives::{AvailableData, POV_BOMB_LIMIT};
-use polkadot_overseer::OverseerHandler;
+use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::v1::{
 	Block as PBlock, CandidateReceipt, CommittedCandidateReceipt, Id as ParaId, ParachainHost,
 	SessionIndex,
@@ -117,7 +115,7 @@ where
 {
 	/// Create a new instance.
 	pub fn new(
-		overseer_handler: OverseerHandler,
+		overseer_handle: OverseerHandle,
 		relay_chain_slot_duration: Duration,
 		parachain_client: Arc<PC>,
 		parachain_import_queue: IQ,
@@ -127,7 +125,7 @@ where
 		Self {
 			pending_candidates: HashMap::new(),
 			next_candidate_to_recover: Default::default(),
-			active_candidate_recovery: ActiveCandidateRecovery::new(overseer_handler),
+			active_candidate_recovery: ActiveCandidateRecovery::new(overseer_handle),
 			relay_chain_slot_duration,
 			waiting_for_parent: HashMap::new(),
 			parachain_client,
@@ -354,6 +352,7 @@ where
 				origin: None,
 				skip_execution: false,
 				state: None,
+				indexed_body: None,
 			});
 
 			if let Some(waiting) = self.waiting_for_parent.remove(&block_hash) {
