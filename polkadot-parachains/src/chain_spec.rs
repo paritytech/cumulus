@@ -1,4 +1,3 @@
-
 // Copyright 2021 Integritee AG and Supercomputing Systems AG
 // This file is part of the "Integritee parachain" and is
 // based on Cumulus from Parity Technologies (UK) Ltd.
