@@ -1,7 +1,10 @@
 [package]
 name = "integritee-collator"
-version = "0.6.0"
-authors = ["Parity Technologies <admin@parity.io>"]
+description = "The Integritee parachain collator binary"
+version = "1.0.10"
+authors = ["Integritee AG <hello@integritee.network>"]
+homepage = "https://integritee.network/"
+repository = "https://github.com/integritee-network/parachain"
 build = "build.rs"
 edition = "2018"
 

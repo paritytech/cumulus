@@ -3345,7 +3345,7 @@ dependencies = [
 
 [[package]]
 name = "integritee-collator"
-version = "0.6.0"
+version = "1.0.10"
 dependencies = [
  "assert_cmd",
  "async-trait",
@@ -9449,7 +9449,7 @@ dependencies = [
 
 [[package]]
 name = "shell-runtime"
-version = "0.2.1"
+version = "1.0.10"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",

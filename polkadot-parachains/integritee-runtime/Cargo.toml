@@ -1,10 +1,12 @@
 [package]
 name = 'integritee-runtime'
+description = "The Integritee parachain runtime"
 # patch revision must match runtime spec_version
 version = '1.0.10'
-authors = ["Parity Technologies <admin@parity.io>"]
+authors = ["Integritee AG <hello@integritee.network>"]
+homepage = "https://integritee.network/"
+repository = "https://github.com/integritee-network/parachain"
 edition = '2018'
-description = "Simple runtime used by the rococo parachain(s)"
 
 [dependencies]
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
