@@ -267,6 +267,10 @@ pub enum RelayChain {
 	Polkadot,
 }
 
+pub fn shell_westend_config() -> Result<ShellChainSpec, String> {
+	ShellChainSpec::from_json_bytes(&include_bytes!("../res/shell-westend-raw.json")[..])
+}
+
 impl ToString for RelayChain {
 	fn to_string(&self) -> String {
 		match self {

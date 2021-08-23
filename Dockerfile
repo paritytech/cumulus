@@ -16,8 +16,6 @@ COPY integritee-collator /usr/local/bin
 RUN ldd /usr/local/bin/integritee-collator && \
 	/usr/local/bin/integritee-collator --version
 
-COPY shell-westend-raw.json /usr/local/bin
-
 # Shrinking
 RUN rm -rf /usr/lib/python* && \
 	rm -rf /usr/bin /usr/sbin /usr/share/man
