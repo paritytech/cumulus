@@ -50,7 +50,7 @@ parameter_types! {
 type AccountId = u64;
 
 impl frame_system::Config for Test {
-	type BaseCallFilter = frame_support::traits::AllowAll;
+	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
 	type DbWeight = ();
@@ -104,8 +104,8 @@ impl cumulus_pallet_parachain_system::Config for Test {
 }
 
 parameter_types! {
-	pub const RelayChain: MultiLocation = X1(Parent);
-	pub Ancestry: MultiLocation = X1(Parachain(1u32.into()));
+	pub const RelayChain: MultiLocation = MultiLocation::parent();
+	pub Ancestry: MultiLocation = X1(Parachain(1u32.into())).into();
 	pub UnitWeightCost: Weight = 1_000_000;
 }
 
