@@ -755,7 +755,10 @@ mod tests {
 			assert_noop!(DmpQueue::service_overweight(Origin::root(), 0, 9999), Error::<Test>::OverLimit);
 			assert_eq!(take_trace(), vec![ msg_limit_reached(10000) ]);
 
-			let base_weight = super::Call::<Test>::service_overweight(0, 0).get_dispatch_info().weight;
+			let base_weight = super::Call::<Test>::service_overweight {
+				index: 0,
+				weight_limit: 0,
+			}.get_dispatch_info().weight;
 			use frame_support::weights::GetDispatchInfo;
 			let info = DmpQueue::service_overweight(Origin::root(), 0, 20000).unwrap();
 			let actual_weight = info.actual_weight.unwrap();
