@@ -81,7 +81,7 @@ fn load_spec(
 		"shell-polkadot-local" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::PolkadotLocal)),
 		"shell-polkadot-local-dev" => Box::new(shell_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::PolkadotLocal)),
 		"shell-polkadot" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Polkadot)),
-		"shell-westend-config" => Box::new(shell_westend_config()?),
+		"shell-westend" => Box::new(shell_westend_config()?),
 
 		"" => panic!("Please supply chain_spec to be loaded."),
 		path => {
