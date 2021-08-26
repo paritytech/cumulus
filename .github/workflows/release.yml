@@ -180,7 +180,13 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: ${{ matrix.chain }}-runtime-${{ github.sha }}
-
+      - name: Archive Release
+        uses: thedoctor0/zip-release@master
+        with:
+          type: 'zip'
+          path: ./${{ matrix.chain }}-runtime-${{ github.sha }}
+          filename: '${{ matrix.chain }}-runtime-${{ github.sha }}.zip'
+        
       - name: 'Create binaries for artifacts'
         # Note: there is no way to pass the parachain-id to the `build-spec` cmd, which which imposes to set
         # `DEFAULT_PARA_ID=2015` in the `polkadot-parachains/command`.
@@ -238,8 +244,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
             upload_url: ${{ github.event.release.upload_url }}
-            asset_path: ./${{ matrix.chain }}-runtime-${{ github.sha }}
-            asset_name: ${{ matrix.chain }}-runtime-${{ github.sha }}
+            asset_path: ./${{ github.event.release.upload_url }}.zip
+            asset_name: ${{ matrix.chain }}-runtime-${{ github.sha }}.zip
             asset_content_type: application/zip
 
       - name: Login to DockerHub
