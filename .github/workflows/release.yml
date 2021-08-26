@@ -238,7 +238,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
             upload_url: ${{ github.event.release.upload_url }}
-            asset_path: ${{ matrix.chain }}-runtime-${{ github.sha }}
+            asset_path: ./${{ matrix.chain }}-runtime-${{ github.sha }}
             asset_name: ${{ matrix.chain }}-runtime-${{ github.sha }}
             asset_content_type: application/zip
 
