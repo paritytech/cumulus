@@ -1,5 +1,5 @@
 {
-  "name": "Integritee Shell",
+  "name": "Integritee Network",
   "id": "integritee-westend",
   "chainType": "Live",
   "bootNodes": [
@@ -8,7 +8,7 @@
   "telemetryEndpoints": null,
   "protocolId": "teer",
   "properties": {
-    "ss58Format": 42,
+    "ss58Format": 13,
     "tokenDecimals": 12,
     "tokenSymbol": "TEER"
   },

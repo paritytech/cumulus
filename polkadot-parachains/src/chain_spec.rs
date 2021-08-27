@@ -26,7 +26,7 @@ use sp_keyring::AccountKeyring::{Alice, Bob, Dave, Eve};
 use std::str::FromStr;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec =
+pub type IntegriteeChainSpec =
 	sc_service::GenericChainSpec<rococo_parachain_runtime::GenesisConfig, Extensions>;
 
 /// Specialized `ChainSpec` for the shell parachain runtime.
@@ -136,7 +136,7 @@ pub fn integritee_chain_spec(
 	id: ParaId,
 	genesis_keys: GenesisKeys,
 	relay_chain: RelayChain,
-) -> ChainSpec {
+) -> IntegriteeChainSpec {
 	let (root, endowed, authorities) = match genesis_keys {
 		GenesisKeys::Integritee => (
 			IntegriteeKeys::root(),
@@ -182,7 +182,7 @@ fn chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
 		Some(
 			serde_json::from_str(
 				r#"{
-				"ss58Format": 42,
+				"ss58Format": 13,
 				"tokenDecimals": 12,
 				"tokenSymbol": "TEER"
 				}"#,
@@ -263,12 +263,23 @@ pub enum RelayChain {
 	KusamaLocal,
 	PolkadotLocal,
 	Rococo,
-	Kusama,
 	Polkadot,
 }
 
 pub fn shell_westend_config() -> Result<ShellChainSpec, String> {
-	ShellChainSpec::from_json_bytes(&include_bytes!("../res/shell-westend-raw.json")[..])
+	ShellChainSpec::from_json_bytes(&include_bytes!("../res/shell-westend.json")[..])
+}
+
+pub fn integritee_westend_config() -> Result<IntegriteeChainSpec, String> {
+	IntegriteeChainSpec::from_json_bytes(&include_bytes!("../res/integritee-westend.json")[..])
+}
+
+pub fn shell_kusama_config() -> Result<ShellChainSpec, String> {
+	ShellChainSpec::from_json_bytes(&include_bytes!("../res/shell-kusama.json")[..])
+}
+
+pub fn integritee_kusama_config() -> Result<IntegriteeChainSpec, String> {
+	IntegriteeChainSpec::from_json_bytes(&include_bytes!("../res/integritee-kusama.json")[..])
 }
 
 impl ToString for RelayChain {
@@ -278,7 +289,6 @@ impl ToString for RelayChain {
 			RelayChain::KusamaLocal => "kusama-local".into(),
 			RelayChain::PolkadotLocal => "polkadot-local".into(),
 			RelayChain::Rococo => "rococo".into(),
-			RelayChain::Kusama => "kusama".into(),
 			RelayChain::Polkadot => "polkadot".into(),
 		}
 	}
@@ -291,7 +301,6 @@ impl RelayChain {
 			RelayChain::KusamaLocal => ChainType::Local,
 			RelayChain::PolkadotLocal => ChainType::Local,
 			RelayChain::Rococo => ChainType::Live,
-			RelayChain::Kusama => ChainType::Live,
 			RelayChain::Polkadot => ChainType::Live,
 		}
 	}
