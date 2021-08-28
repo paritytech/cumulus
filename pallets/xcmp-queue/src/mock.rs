@@ -142,6 +142,8 @@ impl xcm_executor::Config for XcmConfig {
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type Trader = ();
 	type ResponseHandler = ();
+	type AssetTrap = ();
+	type AssetClaims = ();
 }
 
 pub type XcmRouter = (

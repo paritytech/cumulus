@@ -212,7 +212,9 @@ impl Config for XcmConfig {
 	type Barrier = AllowUnpaidExecutionFrom<JustTheParent>;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>; // balances not supported
 	type Trader = (); // balances not supported
-	type ResponseHandler = (); // Don't handle responses for now.
+	type ResponseHandler = (); // Don't handle responses.
+	type AssetTrap = ();
+	type AssetClaims = ();
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
