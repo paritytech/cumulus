@@ -434,11 +434,6 @@ pub mod pallet {
 		Unauthorized,
 	}
 
-	// TODO: Update docs
-	/// The new validation function we will upgrade to when the relay chain
-	/// reaches [`PendingRelayChainBlockNumber`]. A real validation function must
-	/// exist here as long as [`PendingRelayChainBlockNumber`] is set.
-
 	/// In case of a scheduled upgrade, this storage field contains the validation code to be applied.
 	///
 	/// As soon as the parachain gives us the go-ahead signal, we will overwrite the [`:code`][well_known_keys::CODE]
