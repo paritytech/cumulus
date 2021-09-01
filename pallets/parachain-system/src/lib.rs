@@ -453,6 +453,8 @@ pub mod pallet {
 	pub(super) type NewValidationCode<T: Config> = StorageValue<_, Vec<u8>, OptionQuery>;
 
 	/// The [`PersistedValidationData`] set for this block.
+	/// This value is expected to be set only once per block and it's never stored
+  	/// in the trie.
 	#[pallet::storage]
 	#[pallet::getter(fn validation_data)]
 	pub(super) type ValidationData<T: Config> = StorageValue<_, PersistedValidationData>;
