@@ -63,7 +63,7 @@ sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = 
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # RPC related dependencies
-jsonrpc-core = "15.1.0"
+jsonrpc-core = "18.0.0"
 sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 frame-rpc-system = { package = "substrate-frame-rpc-system", git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -93,7 +93,7 @@ assert_cmd = "0.12"
 nix = "0.17"
 rand = "0.7.3"
 tempfile = "3.2.0"
-tokio = { version = "0.2.13", features = ["macros"] }
+tokio = { version = "1.10", features = ["macros"] }
 
 [features]
 default = []
