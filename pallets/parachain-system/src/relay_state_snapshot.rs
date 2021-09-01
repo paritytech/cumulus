@@ -113,6 +113,11 @@ where
 		.ok_or(ReadEntryErr::Absent)
 }
 
+/// Read an optional entry given by the key and try to decode it. 
+/// Returns `None` if the value specified by the key according to the proof is empty.
+///
+/// Returns `Err` in case the backend can't return the value under the specific key (likely due to
+/// a malformed proof) or if the value couldn't be decoded.
 fn read_optional_entry<T, B>(backend: &B, key: &[u8]) -> Result<Option<T>, ReadEntryErr>
 where
 	T: Decode,
