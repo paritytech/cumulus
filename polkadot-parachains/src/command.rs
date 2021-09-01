@@ -575,12 +575,12 @@ impl CliConfiguration<Self> for RelayChainCli {
 		self.base.base.rpc_ws_max_connections()
 	}
 
-	fn rpc_cors(&self, is_dev: bool) -> Result<Option<Vec<String>>> {
-		self.base.base.rpc_cors(is_dev)
+	fn rpc_http_threads(&self) -> Result<Option<usize>> {
+		self.base.base.rpc_http_threads()
 	}
 
-	fn telemetry_external_transport(&self) -> Result<Option<sc_service::config::ExtTransport>> {
-		self.base.base.telemetry_external_transport()
+	fn rpc_cors(&self, is_dev: bool) -> Result<Option<Vec<String>>> {
+		self.base.base.rpc_cors(is_dev)
 	}
 
 	fn default_heap_pages(&self) -> Result<Option<u64>> {

@@ -184,7 +184,7 @@ impl frame_system::Config for Runtime {
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type DbWeight = ();
-	type BaseCallFilter = ();
+	type BaseCallFilter = frame_support::traits::Everything;
 	type SystemWeightInfo = ();
 	type BlockWeights = RuntimeBlockWeights;
 	type BlockLength = RuntimeBlockLength;
@@ -253,15 +253,6 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 
 parameter_types! {
 	pub storage ParachainId: cumulus_primitives_core::ParaId = 100.into();
-	pub storage UpgradeDetection: bool = false;
-}
-
-pub struct UpgradeDetectionOnRuntimeUpgrade;
-impl frame_support::traits::OnRuntimeUpgrade for UpgradeDetectionOnRuntimeUpgrade {
-	fn on_runtime_upgrade() -> u64 {
-		UpgradeDetection::set(&true);
-		0
-	}
 }
 
 construct_runtime! {
@@ -271,7 +262,9 @@ construct_runtime! {
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
-		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>, Config},
+		ParachainSystem: cumulus_pallet_parachain_system::{
+			Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
+		},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>},
@@ -326,7 +319,6 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPallets,
-	UpgradeDetectionOnRuntimeUpgrade,
 >;
 /// The payload being signed in transactions.
 pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
@@ -335,10 +327,6 @@ decl_runtime_apis! {
 	pub trait GetLastTimestamp {
 		/// Returns the last timestamp of a runtime.
 		fn get_last_timestamp() -> u64;
-	}
-	pub trait GetUpgradeDetection {
-		/// Returns `true` if the runtime has been upgraded at least once.
-		fn has_upgraded() -> bool;
 	}
 }
 
@@ -387,8 +375,9 @@ impl_runtime_apis! {
 		fn validate_transaction(
 			source: TransactionSource,
 			tx: <Block as BlockT>::Extrinsic,
+			block_hash: <Block as BlockT>::Hash,
 		) -> TransactionValidity {
-			Executive::validate_transaction(source, tx)
+			Executive::validate_transaction(source, tx, block_hash)
 		}
 	}
 
@@ -413,12 +402,6 @@ impl_runtime_apis! {
 	impl crate::GetLastTimestamp<Block> for Runtime {
 		fn get_last_timestamp() -> u64 {
 			Timestamp::now()
-		}
-	}
-
-	impl crate::GetUpgradeDetection<Block> for Runtime {
-		fn has_upgraded() -> bool {
-			UpgradeDetection::get()
 		}
 	}
 

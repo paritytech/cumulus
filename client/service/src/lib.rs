@@ -20,20 +20,21 @@
 
 use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
-use polkadot_overseer::OverseerHandler;
+use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::v1::{Block as PBlock, CollatorPair};
 use polkadot_service::{AbstractClient, Client as PClient, ClientHandle, RuntimeApiCollection};
 use sc_client_api::{
 	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, UsageProvider,
 };
+use sc_consensus::{
+	import_queue::{ImportQueue, IncomingBlock, Link, Origin},
+	BlockImport,
+};
 use sc_service::{Configuration, Role, TaskManager};
 use sc_telemetry::TelemetryWorkerHandle;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_consensus::{
-	import_queue::{ImportQueue, IncomingBlock, Link, Origin},
-	BlockImport, BlockOrigin,
-};
+use sp_consensus::BlockOrigin;
 use sp_core::{traits::SpawnNamed, Pair};
 use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, NumberFor},
@@ -118,27 +119,27 @@ where
 	});
 
 	relay_chain_full_node
-			.client
-			.execute_with(StartPoVRecovery {
-				para_id,
-				client: client.clone(),
-				import_queue,
-				task_manager,
-				overseer_handler: relay_chain_full_node
-					.overseer_handler
+		.client
+		.execute_with(StartPoVRecovery {
+			para_id,
+			client: client.clone(),
+			import_queue,
+			task_manager,
+			overseer_handle: relay_chain_full_node
+				.overseer_handle
 				.clone()
-				.ok_or_else(|| "Polkadot full node did not provided an `OverseerHandler`!")?,
-				_phantom: PhantomData,
-			})?;
+				.ok_or_else(|| "Polkadot full node did not provide an `OverseerHandle`!")?,
+			_phantom: PhantomData,
+		})?;
 
 	cumulus_client_collator::start_collator(cumulus_client_collator::StartCollatorParams {
 		runtime_api: client.clone(),
 		block_status,
 		announce_block,
-		overseer_handler: relay_chain_full_node
-			.overseer_handler
+		overseer_handle: relay_chain_full_node
+			.overseer_handle
 			.clone()
-			.ok_or_else(|| "Polkadot full node did not provided an `OverseerHandler`!")?,
+			.ok_or_else(|| "Polkadot full node did not provide an `OverseerHandle`!")?,
 		spawner,
 		para_id,
 		key: relay_chain_full_node.collator_key.clone(),
@@ -248,7 +249,7 @@ struct StartPoVRecovery<'a, Block: BlockT, Client, IQ> {
 	para_id: ParaId,
 	client: Arc<Client>,
 	task_manager: &'a mut TaskManager,
-	overseer_handler: OverseerHandler,
+	overseer_handle: OverseerHandle,
 	import_queue: IQ,
 	_phantom: PhantomData<Block>,
 }
@@ -276,7 +277,7 @@ where
 		PClient: AbstractClient<PBlock, PBackend, Api = Api> + 'static,
 	{
 		let pov_recovery = cumulus_client_pov_recovery::PoVRecovery::new(
-			self.overseer_handler,
+			self.overseer_handle,
 			sc_consensus_babe::Config::get_or_compute(&*client)?.slot_duration(),
 			self.client,
 			self.import_queue,

@@ -13,83 +13,121 @@
 
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
-
 use cumulus_client_consensus_aura::{
 	build_aura_consensus, BuildAuraConsensusParams, SlotProportion,
 };
 use cumulus_client_consensus_common::{
-	ParachainConsensus, ParachainCandidate, ParachainBlockImport,
+	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
 use cumulus_client_network::build_block_announce_validator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::{
-	ParaId, relay_chain::v1::{Hash as PHash, PersistedValidationData},
+	relay_chain::v1::{Hash as PHash, PersistedValidationData},
+	ParaId,
 };
+use polkadot_service::NativeExecutionDispatch;
 
+use crate::rpc;
+pub use parachains_common::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
+
+use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
+use futures::lock::Mutex;
 use sc_client_api::ExecutorProvider;
-use sc_executor::native_executor_instance;
+use sc_consensus::{
+	import_queue::{BasicQueue, Verifier as VerifierT},
+	BlockImportParams,
+};
+use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
-use sp_api::{ConstructRuntimeApi, ApiExt};
-use sp_consensus::{
-	BlockImportParams, BlockOrigin, SlotData,
-	import_queue::{BasicQueue, CacheKeyId, Verifier as VerifierT},
-};
+use sp_api::{ApiExt, ConstructRuntimeApi};
+use sp_consensus::{CacheKeyId, SlotData};
 use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
 use sp_keystore::SyncCryptoStorePtr;
-use sp_runtime::{traits::{BlakeTwo256, Header as HeaderT}, generic::BlockId};
+use sp_runtime::{
+	generic::BlockId,
+	traits::{BlakeTwo256, Header as HeaderT},
+};
 use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
-use futures::lock::Mutex;
-use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 
-pub use sc_executor::NativeExecutor;
+/// Native executor instance.
+pub struct RococoParachainRuntimeExecutor;
 
-type BlockNumber = u32;
-type Header = sp_runtime::generic::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>;
-pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>;
-type Hash = sp_core::H256;
+impl sc_executor::NativeExecutionDispatch for RococoParachainRuntimeExecutor {
+	type ExtendHostFunctions = ();
 
-// Native executor instance.
-native_executor_instance!(
-	pub RococoParachainRuntimeExecutor,
-	rococo_parachain_runtime::api::dispatch,
-	rococo_parachain_runtime::native_version,
-);
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		rococo_parachain_runtime::api::dispatch(method, data)
+	}
 
-// Native executor instance.
-native_executor_instance!(
-	pub ShellRuntimeExecutor,
-	shell_runtime::api::dispatch,
-	shell_runtime::native_version,
-);
+	fn native_version() -> sc_executor::NativeVersion {
+		rococo_parachain_runtime::native_version()
+	}
+}
+
+/// Native executor instance.
+pub struct ShellRuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for ShellRuntimeExecutor {
+	type ExtendHostFunctions = ();
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		shell_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		shell_runtime::native_version()
+	}
+}
 
 // Native Statemint executor instance.
-native_executor_instance!(
-	pub StatemintRuntimeExecutor,
-	statemint_runtime::api::dispatch,
-	statemint_runtime::native_version,
-	frame_benchmarking::benchmarking::HostFunctions,
-);
+pub struct StatemintRuntimeExecutor;
 
-// Native Statemine executor instance.
-native_executor_instance!(
-	pub StatemineRuntimeExecutor,
-	statemine_runtime::api::dispatch,
-	statemine_runtime::native_version,
-	frame_benchmarking::benchmarking::HostFunctions,
-);
+impl sc_executor::NativeExecutionDispatch for StatemintRuntimeExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
-// Native Westmint executor instance.
-native_executor_instance!(
-	pub WestmintRuntimeExecutor,
-	westmint_runtime::api::dispatch,
-	westmint_runtime::native_version,
-	frame_benchmarking::benchmarking::HostFunctions,
-);
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		statemint_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		statemint_runtime::native_version()
+	}
+}
+
+/// Native Statemine executor instance.
+pub struct StatemineRuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for StatemineRuntimeExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		statemine_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		statemine_runtime::native_version()
+	}
+}
+
+/// Native Westmint executor instance.
+pub struct WestmintRuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for WestmintRuntimeExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		westmint_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		westmint_runtime::native_version()
+	}
+}
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
@@ -100,17 +138,23 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
 	build_import_queue: BIQ,
 ) -> Result<
 	PartialComponents<
-		TFullClient<Block, RuntimeApi, Executor>,
+		TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
 		TFullBackend<Block>,
 		(),
-		sp_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
-		sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, Executor>>,
+		sc_consensus::DefaultImportQueue<
+			Block,
+			TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+		>,
+		sc_transaction_pool::FullPool<
+			Block,
+			TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+		>,
 		(Option<Telemetry>, Option<TelemetryWorkerHandle>),
 	>,
 	sc_service::Error,
 >
 where
-	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, Executor>>
+	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
 		+ Send
 		+ Sync
 		+ 'static,
@@ -123,14 +167,17 @@ where
 		> + sp_offchain::OffchainWorkerApi<Block>
 		+ sp_block_builder::BlockBuilder<Block>,
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
-	Executor: sc_executor::NativeExecutionDispatch + 'static,
+	Executor: NativeExecutionDispatch + 'static,
 	BIQ: FnOnce(
-		Arc<TFullClient<Block, RuntimeApi, Executor>>,
+		Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
 		&Configuration,
 		Option<TelemetryHandle>,
 		&TaskManager,
 	) -> Result<
-		sp_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
+		sc_consensus::DefaultImportQueue<
+			Block,
+			TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+		>,
 		sc_service::Error,
 	>,
 {
@@ -145,10 +192,17 @@ where
 		})
 		.transpose()?;
 
+	let executor = sc_executor::NativeElseWasmExecutor::<Executor>::new(
+		config.wasm_method,
+		config.default_heap_pages,
+		config.max_runtime_instances,
+	);
+
 	let (client, backend, keystore_container, task_manager) =
-		sc_service::new_full_parts::<Block, RuntimeApi, Executor>(
+		sc_service::new_full_parts::<Block, RuntimeApi, _>(
 			&config,
 			telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
+			executor,
 		)?;
 	let client = Arc::new(client);
 
@@ -188,20 +242,23 @@ where
 	Ok(params)
 }
 
-/// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
+/// Start a shell node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
-/// This is the actual implementation that is abstract over the executor and the runtime api.
+/// This is the actual implementation that is abstract over the executor and the runtime api for shell nodes.
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
-async fn start_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
+async fn start_shell_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	id: ParaId,
 	rpc_ext_builder: RB,
 	build_import_queue: BIQ,
 	build_consensus: BIC,
-) -> sc_service::error::Result<(TaskManager, Arc<TFullClient<Block, RuntimeApi, Executor>>)>
+) -> sc_service::error::Result<(
+	TaskManager,
+	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+)>
 where
-	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, Executor>>
+	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
 		+ Send
 		+ Sync
 		+ 'static,
@@ -217,26 +274,34 @@ where
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
 	RB: Fn(
-			Arc<TFullClient<Block, RuntimeApi, Executor>>,
-		) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
+			Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+		) -> Result<jsonrpc_core::IoHandler<sc_rpc::Metadata>, sc_service::Error>
 		+ Send
 		+ 'static,
 	BIQ: FnOnce(
-		Arc<TFullClient<Block, RuntimeApi, Executor>>,
+		Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
 		&Configuration,
 		Option<TelemetryHandle>,
 		&TaskManager,
 	) -> Result<
-		sp_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
+		sc_consensus::DefaultImportQueue<
+			Block,
+			TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+		>,
 		sc_service::Error,
 	>,
 	BIC: FnOnce(
-		Arc<TFullClient<Block, RuntimeApi, Executor>>,
+		Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
 		Option<&Registry>,
 		Option<TelemetryHandle>,
 		&TaskManager,
 		&polkadot_service::NewFull<polkadot_service::Client>,
-		Arc<sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, Executor>>>,
+		Arc<
+			sc_transaction_pool::FullPool<
+				Block,
+				TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+			>,
+		>,
 		Arc<NetworkService<Block, Hash>>,
 		SyncCryptoStorePtr,
 		bool,
@@ -251,14 +316,12 @@ where
 	let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config, build_import_queue)?;
 	let (mut telemetry, telemetry_worker_handle) = params.other;
 
-	let relay_chain_full_node = cumulus_client_service::build_polkadot_full_node(
-		polkadot_config,
-		telemetry_worker_handle,
-	)
-	.map_err(|e| match e {
-		polkadot_service::Error::Sub(x) => x,
-		s => format!("{}", s).into(),
-	})?;
+	let relay_chain_full_node =
+		cumulus_client_service::build_polkadot_full_node(polkadot_config, telemetry_worker_handle)
+			.map_err(|e| match e {
+				polkadot_service::Error::Sub(x) => x,
+				s => format!("{}", s).into(),
+			})?;
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -284,6 +347,7 @@ where
 			import_queue: import_queue.clone(),
 			on_demand: None,
 			block_announce_validator_builder: Some(Box::new(|_| block_announce_validator)),
+			warp_sync: None,
 		})?;
 
 	let rpc_client = client.clone();
@@ -354,46 +418,248 @@ where
 	Ok((task_manager, client))
 }
 
+/// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
+///
+/// This is the actual implementation that is abstract over the executor and the runtime api.
+#[sc_tracing::logging::prefix_logs_with("Parachain")]
+async fn start_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
+	parachain_config: Configuration,
+	polkadot_config: Configuration,
+	id: ParaId,
+	_rpc_ext_builder: RB,
+	build_import_queue: BIQ,
+	build_consensus: BIC,
+) -> sc_service::error::Result<(
+	TaskManager,
+	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+)>
+where
+	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+		+ Send
+		+ Sync
+		+ 'static,
+	RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
+		+ sp_api::Metadata<Block>
+		+ sp_session::SessionKeys<Block>
+		+ sp_api::ApiExt<
+			Block,
+			StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
+		> + sp_offchain::OffchainWorkerApi<Block>
+		+ sp_block_builder::BlockBuilder<Block>
+		+ cumulus_primitives_core::CollectCollationInfo<Block>
+		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+		+ frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
+	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
+	Executor: sc_executor::NativeExecutionDispatch + 'static,
+	RB: Fn(
+			Arc<TFullClient<Block, RuntimeApi, Executor>>,
+		) -> Result<jsonrpc_core::IoHandler<sc_rpc::Metadata>, sc_service::Error>
+		+ Send
+		+ 'static,
+	BIQ: FnOnce(
+			Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+			&Configuration,
+			Option<TelemetryHandle>,
+			&TaskManager,
+		) -> Result<
+			sc_consensus::DefaultImportQueue<
+				Block,
+				TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+			>,
+			sc_service::Error,
+		> + 'static,
+	BIC: FnOnce(
+		Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+		Option<&Registry>,
+		Option<TelemetryHandle>,
+		&TaskManager,
+		&polkadot_service::NewFull<polkadot_service::Client>,
+		Arc<
+			sc_transaction_pool::FullPool<
+				Block,
+				TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+			>,
+		>,
+		Arc<NetworkService<Block, Hash>>,
+		SyncCryptoStorePtr,
+		bool,
+	) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
+{
+	if matches!(parachain_config.role, Role::Light) {
+		return Err("Light client not supported!".into());
+	}
+
+	let parachain_config = prepare_node_config(parachain_config);
+
+	let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config, build_import_queue)?;
+	let (mut telemetry, telemetry_worker_handle) = params.other;
+
+	let relay_chain_full_node =
+		cumulus_client_service::build_polkadot_full_node(polkadot_config, telemetry_worker_handle)
+			.map_err(|e| match e {
+				polkadot_service::Error::Sub(x) => x,
+				s => format!("{}", s).into(),
+			})?;
+
+	let client = params.client.clone();
+	let backend = params.backend.clone();
+	let block_announce_validator = build_block_announce_validator(
+		relay_chain_full_node.client.clone(),
+		id,
+		Box::new(relay_chain_full_node.network.clone()),
+		relay_chain_full_node.backend.clone(),
+	);
+
+	let force_authoring = parachain_config.force_authoring;
+	let validator = parachain_config.role.is_authority();
+	let prometheus_registry = parachain_config.prometheus_registry().cloned();
+	let transaction_pool = params.transaction_pool.clone();
+	let mut task_manager = params.task_manager;
+	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
+	let (network, system_rpc_tx, start_network) =
+		sc_service::build_network(sc_service::BuildNetworkParams {
+			config: &parachain_config,
+			client: client.clone(),
+			transaction_pool: transaction_pool.clone(),
+			spawn_handle: task_manager.spawn_handle(),
+			import_queue: import_queue.clone(),
+			on_demand: None,
+			block_announce_validator_builder: Some(Box::new(|_| block_announce_validator)),
+			warp_sync: None,
+		})?;
+
+	let rpc_extensions_builder = {
+		let client = client.clone();
+		let transaction_pool = transaction_pool.clone();
+
+		Box::new(move |deny_unsafe, _| {
+			let deps = rpc::FullDeps {
+				client: client.clone(),
+				pool: transaction_pool.clone(),
+				deny_unsafe,
+			};
+
+			Ok(rpc::create_full(deps))
+		})
+	};
+
+	sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+		on_demand: None,
+		remote_blockchain: None,
+		rpc_extensions_builder,
+		client: client.clone(),
+		transaction_pool: transaction_pool.clone(),
+		task_manager: &mut task_manager,
+		config: parachain_config,
+		keystore: params.keystore_container.sync_keystore(),
+		backend: backend.clone(),
+		network: network.clone(),
+		system_rpc_tx,
+		telemetry: telemetry.as_mut(),
+	})?;
+
+	let announce_block = {
+		let network = network.clone();
+		Arc::new(move |hash, data| network.announce_block(hash, data))
+	};
+
+	if validator {
+		let parachain_consensus = build_consensus(
+			client.clone(),
+			prometheus_registry.as_ref(),
+			telemetry.as_ref().map(|t| t.handle()),
+			&task_manager,
+			&relay_chain_full_node,
+			transaction_pool,
+			network,
+			params.keystore_container.sync_keystore(),
+			force_authoring,
+		)?;
+
+		let spawner = task_manager.spawn_handle();
+
+		let params = StartCollatorParams {
+			para_id: id,
+			block_status: client.clone(),
+			announce_block,
+			client: client.clone(),
+			task_manager: &mut task_manager,
+			relay_chain_full_node,
+			spawner,
+			parachain_consensus,
+			import_queue,
+		};
+
+		start_collator(params).await?;
+	} else {
+		let params = StartFullNodeParams {
+			client: client.clone(),
+			announce_block,
+			task_manager: &mut task_manager,
+			para_id: id,
+			relay_chain_full_node,
+		};
+
+		start_full_node(params)?;
+	}
+
+	start_network.start_network();
+
+	Ok((task_manager, client))
+}
+
 /// Build the import queue for the rococo parachain runtime.
 pub fn rococo_parachain_build_import_queue(
 	client: Arc<
-		TFullClient<Block, rococo_parachain_runtime::RuntimeApi, RococoParachainRuntimeExecutor>,
+		TFullClient<
+			Block,
+			rococo_parachain_runtime::RuntimeApi,
+			NativeElseWasmExecutor<RococoParachainRuntimeExecutor>,
+		>,
 	>,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
 ) -> Result<
-	sp_consensus::DefaultImportQueue<
+	sc_consensus::DefaultImportQueue<
 		Block,
-		TFullClient<Block, rococo_parachain_runtime::RuntimeApi, RococoParachainRuntimeExecutor>,
+		TFullClient<
+			Block,
+			rococo_parachain_runtime::RuntimeApi,
+			NativeElseWasmExecutor<RococoParachainRuntimeExecutor>,
+		>,
 	>,
 	sc_service::Error,
 > {
 	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
 
-	cumulus_client_consensus_aura::import_queue::<sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _>(
-		cumulus_client_consensus_aura::ImportQueueParams {
-			block_import: client.clone(),
-			client: client.clone(),
-			create_inherent_data_providers: move |_, _| async move {
-				let time = sp_timestamp::InherentDataProvider::from_system_time();
+	cumulus_client_consensus_aura::import_queue::<
+		sp_consensus_aura::sr25519::AuthorityPair,
+		_,
+		_,
+		_,
+		_,
+		_,
+		_,
+	>(cumulus_client_consensus_aura::ImportQueueParams {
+		block_import: client.clone(),
+		client: client.clone(),
+		create_inherent_data_providers: move |_, _| async move {
+			let time = sp_timestamp::InherentDataProvider::from_system_time();
 
-				let slot =
-					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
-						*time,
-						slot_duration.slot_duration(),
-					);
+			let slot =
+				sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+					*time,
+					slot_duration.slot_duration(),
+				);
 
-				Ok((time, slot))
-			},
-			registry: config.prometheus_registry().clone(),
-			can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(
-				client.executor().clone(),
-			),
-			spawner: &task_manager.spawn_essential_handle(),
-			telemetry,
+			Ok((time, slot))
 		},
-	)
+		registry: config.prometheus_registry().clone(),
+		can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
+		spawner: &task_manager.spawn_essential_handle(),
+		telemetry,
+	})
 	.map_err(Into::into)
 }
 
@@ -404,13 +670,19 @@ pub async fn start_rococo_parachain_node(
 	id: ParaId,
 ) -> sc_service::error::Result<(
 	TaskManager,
-	Arc<TFullClient<Block, rococo_parachain_runtime::RuntimeApi, RococoParachainRuntimeExecutor>>,
+	Arc<
+		TFullClient<
+			Block,
+			rococo_parachain_runtime::RuntimeApi,
+			NativeElseWasmExecutor<RococoParachainRuntimeExecutor>,
+		>,
+	>,
 )> {
 	start_node_impl::<rococo_parachain_runtime::RuntimeApi, RococoParachainRuntimeExecutor, _, _, _>(
 		parachain_config,
 		polkadot_config,
 		id,
-		|_| Default::default(),
+		|_| Ok(Default::default()),
 		rococo_parachain_build_import_queue,
 		|client,
 		 prometheus_registry,
@@ -494,14 +766,16 @@ pub async fn start_rococo_parachain_node(
 
 /// Build the import queue for the shell runtime.
 pub fn shell_build_import_queue(
-	client: Arc<TFullClient<Block, shell_runtime::RuntimeApi, ShellRuntimeExecutor>>,
+	client: Arc<
+		TFullClient<Block, shell_runtime::RuntimeApi, NativeElseWasmExecutor<ShellRuntimeExecutor>>,
+	>,
 	config: &Configuration,
 	_: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
 ) -> Result<
-	sp_consensus::DefaultImportQueue<
+	sc_consensus::DefaultImportQueue<
 		Block,
-		TFullClient<Block, shell_runtime::RuntimeApi, ShellRuntimeExecutor>,
+		TFullClient<Block, shell_runtime::RuntimeApi, NativeElseWasmExecutor<ShellRuntimeExecutor>>,
 	>,
 	sc_service::Error,
 > {
@@ -522,13 +796,21 @@ pub async fn start_shell_node(
 	id: ParaId,
 ) -> sc_service::error::Result<(
 	TaskManager,
-	Arc<TFullClient<Block, shell_runtime::RuntimeApi, ShellRuntimeExecutor>>,
+	Arc<
+		TFullClient<Block, shell_runtime::RuntimeApi, NativeElseWasmExecutor<ShellRuntimeExecutor>>,
+	>,
 )> {
-	start_node_impl::<shell_runtime::RuntimeApi, ShellRuntimeExecutor, _, _, _>(
+	start_shell_node_impl::<
+		shell_runtime::RuntimeApi,
+		ShellRuntimeExecutor,
+		_,
+		_,
+		_,
+	>(
 		parachain_config,
 		polkadot_config,
 		id,
-		|_| Default::default(),
+		|_| Ok(Default::default()),
 		shell_build_import_queue,
 		|client,
 		 prometheus_registry,
@@ -671,10 +953,7 @@ where
 {
 	async fn verify(
 		&mut self,
-		origin: BlockOrigin,
-		header: Header,
-		justifications: Option<sp_runtime::Justifications>,
-		body: Option<Vec<<Block as sp_runtime::traits::Block>::Extrinsic>>,
+		block_import: BlockImportParams<Block, ()>,
 	) -> Result<
 		(
 			BlockImportParams<Block, ()>,
@@ -682,7 +961,7 @@ where
 		),
 		String,
 	> {
-		let block_id = BlockId::hash(*header.parent_hash());
+		let block_id = BlockId::hash(*block_import.header.parent_hash());
 
 		if self
 			.client
@@ -690,30 +969,28 @@ where
 			.has_api::<dyn AuraApi<Block, AuraId>>(&block_id)
 			.unwrap_or(false)
 		{
-			self.aura_verifier
-				.get_mut()
-				.verify(origin, header, justifications, body)
-				.await
+			self.aura_verifier.get_mut().verify(block_import).await
 		} else {
-			self.relay_chain_verifier
-				.verify(origin, header, justifications, body)
-				.await
+			self.relay_chain_verifier.verify(block_import).await
 		}
 	}
 }
 
 /// Build the import queue for the statemint/statemine/westmine runtime.
 pub fn statemint_build_import_queue<RuntimeApi, Executor>(
-	client: Arc<TFullClient<Block, RuntimeApi, Executor>>,
+	client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
 	config: &Configuration,
 	telemetry_handle: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
 ) -> Result<
-	sp_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
+	sc_consensus::DefaultImportQueue<
+		Block,
+		TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+	>,
 	sc_service::Error,
 >
 where
-	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, Executor>>
+	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
 		+ Send
 		+ Sync
 		+ 'static,
@@ -788,10 +1065,10 @@ pub async fn start_statemint_node<RuntimeApi, Executor>(
 	id: ParaId,
 ) -> sc_service::error::Result<(
 	TaskManager,
-	Arc<TFullClient<Block, RuntimeApi, Executor>>,
+	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
 )>
 where
-	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, Executor>>
+	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
 		+ Send
 		+ Sync
 		+ 'static,
@@ -804,7 +1081,9 @@ where
 		> + sp_offchain::OffchainWorkerApi<Block>
 		+ sp_block_builder::BlockBuilder<Block>
 		+ cumulus_primitives_core::CollectCollationInfo<Block>
-		+ sp_consensus_aura::AuraApi<Block, AuraId>,
+		+ sp_consensus_aura::AuraApi<Block, AuraId>
+		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+		+ frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
@@ -812,7 +1091,7 @@ where
 		parachain_config,
 		polkadot_config,
 		id,
-		|_| Default::default(),
+		|_| Ok(Default::default()),
 		statemint_build_import_queue,
 		|client,
 		 prometheus_registry,
@@ -831,39 +1110,36 @@ where
 			let telemetry2 = telemetry.clone();
 			let prometheus_registry2 = prometheus_registry.map(|r| (*r).clone());
 
-			let aura_consensus = BuildOnAccess::Uninitialized(Some(
-				Box::new(move || {
-					let slot_duration =
-						cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
+			let aura_consensus = BuildOnAccess::Uninitialized(Some(Box::new(move || {
+				let slot_duration =
+					cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
 
-					let proposer_factory =
-						sc_basic_authorship::ProposerFactory::with_proof_recording(
-							spawn_handle,
-							client2.clone(),
-							transaction_pool2,
-							prometheus_registry2.as_ref(),
-							telemetry2.clone(),
-						);
+				let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
+					spawn_handle,
+					client2.clone(),
+					transaction_pool2,
+					prometheus_registry2.as_ref(),
+					telemetry2.clone(),
+				);
 
-					let relay_chain_backend2 = relay_chain_backend.clone();
-					let relay_chain_client2 = relay_chain_client.clone();
+				let relay_chain_backend2 = relay_chain_backend.clone();
+				let relay_chain_client2 = relay_chain_client.clone();
 
-					build_aura_consensus::<
-						sp_consensus_aura::sr25519::AuthorityPair,
-						_,
-						_,
-						_,
-						_,
-						_,
-						_,
-						_,
-						_,
-						_,
-					>(BuildAuraConsensusParams {
-						proposer_factory,
-						create_inherent_data_providers:
-							move |_, (relay_parent, validation_data)| {
-								let parachain_inherent =
+				build_aura_consensus::<
+					sp_consensus_aura::sr25519::AuthorityPair,
+					_,
+					_,
+					_,
+					_,
+					_,
+					_,
+					_,
+					_,
+					_,
+				>(BuildAuraConsensusParams {
+					proposer_factory,
+					create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
+						let parachain_inherent =
 								cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
 									relay_parent,
 									&relay_chain_client,
@@ -871,42 +1147,39 @@ where
 									&validation_data,
 									id,
 								);
-								async move {
-									let time =
-										sp_timestamp::InherentDataProvider::from_system_time();
+						async move {
+							let time = sp_timestamp::InherentDataProvider::from_system_time();
 
-									let slot =
+							let slot =
 									sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
 										*time,
 										slot_duration.slot_duration(),
 									);
 
-									let parachain_inherent =
-										parachain_inherent.ok_or_else(|| {
-											Box::<dyn std::error::Error + Send + Sync>::from(
-												"Failed to create parachain inherent",
-											)
-										})?;
-									Ok((time, slot, parachain_inherent))
-								}
-							},
-						block_import: client2.clone(),
-						relay_chain_client: relay_chain_client2,
-						relay_chain_backend: relay_chain_backend2,
-						para_client: client2.clone(),
-						backoff_authoring_blocks: Option::<()>::None,
-						sync_oracle,
-						keystore,
-						force_authoring,
-						slot_duration,
-						// We got around 500ms for proposing
-						block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
-						// And a maximum of 750ms if slots are skipped
-						max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
-						telemetry: telemetry2,
-					})
-				}),
-			));
+							let parachain_inherent = parachain_inherent.ok_or_else(|| {
+								Box::<dyn std::error::Error + Send + Sync>::from(
+									"Failed to create parachain inherent",
+								)
+							})?;
+							Ok((time, slot, parachain_inherent))
+						}
+					},
+					block_import: client2.clone(),
+					relay_chain_client: relay_chain_client2,
+					relay_chain_backend: relay_chain_backend2,
+					para_client: client2.clone(),
+					backoff_authoring_blocks: Option::<()>::None,
+					sync_oracle,
+					keystore,
+					force_authoring,
+					slot_duration,
+					// We got around 500ms for proposing
+					block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
+					// And a maximum of 750ms if slots are skipped
+					max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
+					telemetry: telemetry2,
+				})
+			})));
 
 			let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
 				task_manager.spawn_handle(),

@@ -25,7 +25,7 @@ use sp_consensus::BlockStatus;
 use sp_core::traits::SpawnNamed;
 use sp_runtime::{
 	generic::BlockId,
-	traits::{Block as BlockT, Header as HeaderT, Zero, HashFor},
+	traits::{Block as BlockT, HashFor, Header as HeaderT, Zero},
 };
 
 use cumulus_client_consensus_common::ParachainConsensus;
@@ -33,7 +33,7 @@ use polkadot_node_primitives::{
 	BlockData, Collation, CollationGenerationConfig, CollationResult, PoV,
 };
 use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
-use polkadot_overseer::OverseerHandler;
+use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::v1::{CollatorPair, Hash as PHash, HeadData, Id as ParaId};
 
 use codec::{Decode, Encode};
@@ -225,9 +225,10 @@ where
 
 		let (header, extrinsics) = candidate.block.deconstruct();
 
-		let compact_proof = match candidate.proof.into_compact_proof::<HashFor<Block>>(
-			last_head.state_root().clone(),
-		) {
+		let compact_proof = match candidate
+			.proof
+			.into_compact_proof::<HashFor<Block>>(last_head.state_root().clone())
+		{
 			Ok(proof) => proof,
 			Err(e) => {
 				tracing::error!(target: "cumulus-collator", "Failed to compact proof: {:?}", e);
@@ -235,11 +236,10 @@ where
 			}
 		};
 
-
 		// Create the parachain block data for the validators.
 		let b = ParachainBlockData::<Block>::new(header, extrinsics, compact_proof);
 
-		tracing::debug!(
+		tracing::info!(
 			target: LOG_TARGET,
 			"PoV size {{ header: {}kb, extrinsics: {}kb, storage_proof: {}kb }}",
 			b.header().encode().len() as f64 / 1024f64,
@@ -275,7 +275,7 @@ pub struct StartCollatorParams<Block: BlockT, RA, BS, Spawner> {
 	pub runtime_api: Arc<RA>,
 	pub block_status: Arc<BS>,
 	pub announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
-	pub overseer_handler: OverseerHandler,
+	pub overseer_handle: OverseerHandle,
 	pub spawner: Spawner,
 	pub key: CollatorPair,
 	pub parachain_consensus: Box<dyn ParachainConsensus<Block>>,
@@ -287,7 +287,7 @@ pub async fn start_collator<Block, RA, BS, Spawner>(
 		para_id,
 		block_status,
 		announce_block,
-		mut overseer_handler,
+		mut overseer_handle,
 		spawner,
 		key,
 		parachain_consensus,
@@ -321,12 +321,15 @@ pub async fn start_collator<Block, RA, BS, Spawner>(
 		}),
 	};
 
-	overseer_handler
-		.send_msg(CollationGenerationMessage::Initialize(config))
+	overseer_handle
+		.send_msg(
+			CollationGenerationMessage::Initialize(config),
+			"StartCollator",
+		)
 		.await;
 
-	overseer_handler
-		.send_msg(CollatorProtocolMessage::CollateOn(para_id))
+	overseer_handle
+		.send_msg(CollatorProtocolMessage::CollateOn(para_id), "StartCollator")
 		.await;
 }
 
@@ -402,7 +405,7 @@ mod tests {
 
 		let all_subsystems =
 			AllSubsystems::<()>::dummy().replace_collation_generation(ForwardSubsystem(sub_tx));
-		let (overseer, handler) = Overseer::new(
+		let (overseer, handle) = Overseer::new(
 			Vec::new(),
 			all_subsystems,
 			None,
@@ -417,7 +420,7 @@ mod tests {
 			runtime_api: client.clone(),
 			block_status: client.clone(),
 			announce_block: Arc::new(announce_block),
-			overseer_handler: handler,
+			overseer_handle: OverseerHandle::Connected(handle),
 			spawner,
 			para_id,
 			key: CollatorPair::generate().0,
@@ -451,9 +454,11 @@ mod tests {
 		assert_eq!(1, *block.header().number());
 
 		// Ensure that we did not include `:code` in the proof.
-		let db = block.storage_proof()
+		let db = block
+			.storage_proof()
 			.to_storage_proof::<BlakeTwo256>(Some(header.state_root()))
-			.unwrap().0
+			.unwrap()
+			.0
 			.into_memory_db();
 
 		let backend =

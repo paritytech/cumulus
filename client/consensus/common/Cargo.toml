@@ -7,6 +7,7 @@ edition = "2018"
 
 [dependencies]
 # Substrate deps
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -46,5 +47,5 @@ cumulus-primitives-core = { path = "../../../primitives/core" }
 polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Other deps
-tokio = { version = "0.2.21", features = ["macros"] }
+tokio = { version = "1.10", features = ["macros"] }
 futures-timer = "3.0.2"
