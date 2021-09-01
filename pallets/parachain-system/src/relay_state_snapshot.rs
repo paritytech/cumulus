@@ -252,7 +252,7 @@ impl RelayChainStateProof {
 	/// Read the go-ahead signal for the upgrade from the relay chain state proof.
 	///
 	/// The go-ahead specifies whether the parachain can apply the upgrade or should abort it. If
-	/// the value is abscent then there is either no judgment by the relay chain yet or no upgrade
+	/// the value is absent then there is either no judgment by the relay chain yet or no upgrade
 	/// is pending.
 	///
 	/// Returns an error if anything failed at reading or decoding.
