@@ -6,16 +6,16 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.9" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.9" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.9" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.9" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.9" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.9" }
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.9" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.9" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
 
 cumulus-primitives-core = { path = "../core", default-features = false }
 

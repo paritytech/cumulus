@@ -11,40 +11,40 @@ serde = { version = "1.0.101", features = ["derive"] }
 async-trait = "0.1.42"
 
 # Substrate
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sc-network = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.9" }
-sp-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sc-network = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
+sp-session = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-trie = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.9" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.9" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.9" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.9" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "hc-contract-experiment-patched-v0.9.9" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "hc-contract-experiment-patched-v0.9.9" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "hc-contract-experiment-patched-v0.9.9" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "hc-contract-experiment-patched-v0.9.9" }
 
 # Cumulus
 cumulus-client-consensus-relay-chain = { path = "../../client/consensus/relay-chain" }
@@ -64,14 +64,14 @@ futures = "0.3.5"
 tokio = { version = "0.2.21", features = ["macros"] }
 
 # Polkadot dependencies
-polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.9" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.9" }
+polkadot-test-runtime = { git = "https://github.com/paritytech/polkadot", branch = "hc-contract-experiment-patched-v0.9.9" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "hc-contract-experiment-patched-v0.9.9" }
 
 # Substrate dependencies
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-version = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-version = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
 
 # Cumulus
 cumulus-test-runtime-upgrade = { path = "../runtime-upgrade" }

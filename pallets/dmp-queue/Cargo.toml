@@ -12,22 +12,22 @@ rand = { version = "0.8.3", default-features = false }
 rand_chacha = { version = "0.3.0", default-features = false }
 
 # Substrate Dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.9" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.9" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.9" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.9" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.9" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
 
 # Polkadot Dependencies
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.9" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.9" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
 
 # Cumulus Dependencies
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 
 [dev-dependencies]
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.9" }
-sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.9" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
+sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
 
 [features]
 default = [ "std" ]

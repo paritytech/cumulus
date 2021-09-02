@@ -7,19 +7,19 @@ edition = "2018"
 
 [dependencies]
 # Substrate deps
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
 
 # Polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.9" }
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.9" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.9" }
-polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.9" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "hc-contract-experiment-patched-v0.9.9" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "hc-contract-experiment-patched-v0.9.9" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "hc-contract-experiment-patched-v0.9.9" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "hc-contract-experiment-patched-v0.9.9" }
 
 # Cumulus deps
 cumulus-primitives-core = { path = "../../primitives/core" }
@@ -38,13 +38,13 @@ tokio = { version = "0.2.21", features = ["macros"] }
 cumulus-test-service = { path = "../../test/service" }
 
 # Polkadot deps
-polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.9" }
+polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "hc-contract-experiment-patched-v0.9.9" }
 
 # substrate deps
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
