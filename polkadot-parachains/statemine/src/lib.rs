@@ -545,7 +545,7 @@ impl Config for XcmConfig {
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;
-	type SubscriptionService = (); // don't handle subscriptions for now
+	type SubscriptionService = PolkadotXcm;
 }
 
 parameter_types! {
