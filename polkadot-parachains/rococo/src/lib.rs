@@ -349,6 +349,9 @@ impl Config for XcmConfig {
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type Trader = UsingComponents<IdentityFee<Balance>, RocLocation, AccountId, Balances, ()>;
 	type ResponseHandler = (); // Don't handle responses for now.
+	type AssetTrap = (); // don't trap for now
+	type AssetClaims = (); // don't claim for now
+	type SubscriptionService = (); // don't handle subscriptions for now
 }
 
 /// No local origins on this chain are allowed to dispatch XCM sends/executions.
@@ -376,6 +379,8 @@ impl pallet_xcm::Config for Runtime {
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Origin = Origin;
 	type Call = Call;
+	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
+	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
@@ -410,6 +415,7 @@ parameter_types! {
 	pub const MetadataDepositBase: Balance = 1 * ROC;
 	pub const MetadataDepositPerByte: Balance = 10 * MILLIROC;
 	pub const UnitBody: BodyId = BodyId::Unit;
+	pub const MaxAuthorities: u32 = 100_000;
 }
 
 /// A majority of the Unit body from Rococo over XCM is our required administration origin.
@@ -434,6 +440,7 @@ impl pallet_assets::Config for Runtime {
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
+	type MaxAuthorities = MaxAuthorities;
 }
 
 construct_runtime! {
@@ -589,7 +596,7 @@ impl_runtime_apis! {
 		}
 
 		fn authorities() -> Vec<AuraId> {
-			Aura::authorities()
+			Aura::authorities().into_inner()
 		}
 	}
 
