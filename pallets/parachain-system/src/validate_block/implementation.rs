@@ -61,6 +61,8 @@ where
 
 	let (header, extrinsics, storage_proof) = block_data.deconstruct();
 
+	let state_version = storage_proof.state_version;
+
 	let head_data = HeadData(header.encode());
 
 	let block = B::new(header, extrinsics);
@@ -81,7 +83,7 @@ where
 	};
 	sp_std::mem::drop(storage_proof);
 
-	let backend = sp_state_machine::TrieBackend::new(db, root);
+	let backend = sp_state_machine::TrieBackend::new(db, root, state_version);
 
 	let _guard = (
 		// Replace storage calls with our own implementations

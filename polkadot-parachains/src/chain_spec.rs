@@ -101,6 +101,7 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 			relay_chain: "westend".into(),
 			para_id: id.into(),
 		},
+		Default::default(),
 	)
 }
 
@@ -118,6 +119,7 @@ pub fn get_shell_chain_spec(id: ParaId) -> ShellChainSpec {
 			relay_chain: "westend".into(),
 			para_id: id.into(),
 		},
+		Default::default(),
 	)
 }
 
@@ -151,6 +153,7 @@ pub fn staging_test_net(id: ParaId) -> ChainSpec {
 			relay_chain: "westend".into(),
 			para_id: id.into(),
 		},
+		Default::default(),
 	)
 }
 
@@ -281,6 +284,7 @@ pub fn statemint_development_config(id: ParaId) -> StatemintChainSpec {
 			relay_chain: "polkadot-dev".into(),
 			para_id: id.into(),
 		},
+		Default::default(),
 	)
 }
 
@@ -333,6 +337,7 @@ pub fn statemint_local_config(id: ParaId) -> StatemintChainSpec {
 			relay_chain: "polkadot-local".into(),
 			para_id: id.into(),
 		},
+		Default::default(),
 	)
 }
 
@@ -417,6 +422,7 @@ pub fn statemine_development_config(id: ParaId) -> StatemineChainSpec {
 			relay_chain: "kusama-dev".into(),
 			para_id: id.into(),
 		},
+		Default::default(),
 	)
 }
 
@@ -469,6 +475,7 @@ pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
 			relay_chain: "kusama-local".into(),
 			para_id: id.into(),
 		},
+		Default::default(),
 	)
 }
 
@@ -524,6 +531,7 @@ pub fn statemine_config(id: ParaId) -> StatemineChainSpec {
 			relay_chain: "kusama".into(),
 			para_id: id.into(),
 		},
+		Default::default(),
 	)
 }
 
@@ -607,6 +615,7 @@ pub fn westmint_development_config(id: ParaId) -> WestmintChainSpec {
 			relay_chain: "westend".into(),
 			para_id: id.into(),
 		},
+		Default::default(),
 	)
 }
 
@@ -660,6 +669,7 @@ pub fn westmint_local_config(id: ParaId) -> WestmintChainSpec {
 			relay_chain: "westend-local".into(),
 			para_id: id.into(),
 		},
+		Default::default(),
 	)
 }
 
@@ -717,6 +727,7 @@ pub fn westmint_config(id: ParaId) -> WestmintChainSpec {
 			relay_chain: "westend".into(),
 			para_id: id.into(),
 		},
+		Default::default(),
 	)
 }
 

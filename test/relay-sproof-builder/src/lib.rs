@@ -102,7 +102,8 @@ impl RelayStateSproofBuilder {
 		sp_state_machine::StorageProof,
 	) {
 		let (db, root) = MemoryDB::<HashFor<polkadot_primitives::v1::Block>>::default_with_root();
-		let mut backend = sp_state_machine::TrieBackend::new(db, root);
+		let state_version = Default::default(); // for test using default.
+		let mut backend = sp_state_machine::TrieBackend::new(db, root, state_version);
 
 		let mut relevant_keys = vec![];
 		{
@@ -110,7 +111,7 @@ impl RelayStateSproofBuilder {
 
 			let mut insert = |key: Vec<u8>, value: Vec<u8>| {
 				relevant_keys.push(key.clone());
-				backend.insert(vec![(None, vec![(key, Some(value))])], false);
+				backend.insert(vec![(None, vec![(key, Some(value))])]);
 			};
 
 			insert(

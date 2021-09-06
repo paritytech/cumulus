@@ -127,11 +127,12 @@ impl RelayChainStateProof {
 		relay_parent_storage_root: relay_chain::v1::Hash,
 		proof: StorageProof,
 	) -> Result<Self, Error> {
+		let state_version = proof.state_version();
 		let db = proof.into_memory_db::<HashFor<relay_chain::Block>>();
 		if !db.contains(&relay_parent_storage_root, EMPTY_PREFIX) {
 			return Err(Error::RootMismatch);
 		}
-		let trie_backend = TrieBackend::new(db, relay_parent_storage_root);
+		let trie_backend = TrieBackend::new(db, relay_parent_storage_root, state_version);
 
 		Ok(Self {
 			para_id,
