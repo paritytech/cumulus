@@ -1,43 +1,58 @@
 // Copyright 2019-2021 Parity Technologies (UK) Ltd.
-// This file is part of Substrate.
+// This file is part of Cumulus.
 
-// Substrate is free software: you can redistribute it and/or modify
+// Cumulus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
-// Substrate is distributed in the hope that it will be useful,
+// Cumulus is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 
 // You should have received a copy of the GNU General Public License
-// along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
+// along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! A Polkadot test client.
+//! A Cumulus test client.
 
 mod block_builder;
-use codec::Encode;
+use codec::{Decode, Encode};
 use runtime::{
 	Balance, Block, BlockHashCount, Call, GenesisConfig, Runtime, Signature, SignedExtra,
 	SignedPayload, UncheckedExtrinsic, VERSION,
 };
+use sc_executor::{sp_wasm_interface::HostFunctions, WasmExecutionMethod, WasmExecutor};
+use sc_executor_common::runtime_blob::RuntimeBlob;
 use sc_service::client;
 use sp_blockchain::HeaderBackend;
 use sp_core::storage::Storage;
+use sp_io::TestExternalities;
 use sp_runtime::{generic::Era, BuildStorage, SaturatedConversion};
 
 pub use block_builder::*;
 pub use cumulus_test_runtime as runtime;
+pub use polkadot_parachain::primitives::{BlockData, HeadData, ValidationParams, ValidationResult};
+pub use sc_executor::error::Result as ExecutorResult;
 pub use substrate_test_client::*;
 
+pub type ParachainBlockData = cumulus_primitives_core::ParachainBlockData<Block>;
+
 mod local_executor {
-	use substrate_test_client::sc_executor::native_executor_instance;
-	native_executor_instance!(
-		pub LocalExecutor,
-		cumulus_test_runtime::api::dispatch,
-		cumulus_test_runtime::native_version,
-	);
+	/// Native executor instance.
+	pub struct LocalExecutor;
+
+	impl sc_executor::NativeExecutionDispatch for LocalExecutor {
+		type ExtendHostFunctions = ();
+
+		fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+			cumulus_test_runtime::api::dispatch(method, data)
+		}
+
+		fn native_version() -> sc_executor::NativeVersion {
+			cumulus_test_runtime::native_version()
+		}
+	}
 }
 
 /// Native executor used for tests.
@@ -48,7 +63,7 @@ pub type Backend = substrate_test_client::Backend<Block>;
 
 /// Test client executor.
 pub type Executor =
-	client::LocalCallExecutor<Block, Backend, sc_executor::NativeExecutor<LocalExecutor>>;
+	client::LocalCallExecutor<Block, Backend, sc_executor::NativeElseWasmExecutor<LocalExecutor>>;
 
 /// Test client builder for Cumulus
 pub type TestClientBuilder =
@@ -158,4 +173,32 @@ pub fn transfer(
 	let function = Call::Balances(pallet_balances::Call::transfer(dest.public().into(), value));
 
 	generate_extrinsic(client, origin, function)
+}
+
+/// Call `validate_block` in the given `wasm_blob`.
+pub fn validate_block(
+	validation_params: ValidationParams,
+	wasm_blob: &[u8],
+) -> ExecutorResult<ValidationResult> {
+	let mut ext = TestExternalities::default();
+	let mut ext_ext = ext.ext();
+
+	let executor = WasmExecutor::new(
+		WasmExecutionMethod::Interpreted,
+		Some(1024),
+		sp_io::SubstrateHostFunctions::host_functions(),
+		1,
+		None,
+	);
+
+	executor
+		.uncached_call(
+			RuntimeBlob::uncompress_if_needed(wasm_blob).expect("RuntimeBlob uncompress & parse"),
+			&mut ext_ext,
+			false,
+			"validate_block",
+			&validation_params.encode(),
+		)
+		.map(|v| ValidationResult::decode(&mut &v[..]).expect("Decode `ValidationResult`."))
+		.map_err(|err| err.into())
 }

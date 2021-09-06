@@ -25,7 +25,7 @@ use cumulus_primitives_core::{ParaId, DmpMessageHandler};
 use cumulus_primitives_core::relay_chain::BlockNumber as RelayBlockNumber;
 use codec::{Encode, Decode};
 use sp_runtime::traits::BadOrigin;
-use xcm::{VersionedXcm, v0::{Xcm, Junction, Outcome, ExecuteXcm}};
+use xcm::{VersionedXcm, latest::{Xcm, Outcome, Parent, ExecuteXcm}};
 use frame_support::dispatch::Weight;
 pub use pallet::*;
 
@@ -72,6 +72,28 @@ pub mod pallet {
 		/// \[ id, outcome \]
 		ExecutedDownward([u8; 8], Outcome),
 	}
+
+	/// Origin for the parachains module.
+	#[derive(PartialEq, Eq, Clone, Encode, Decode)]
+	#[cfg_attr(feature = "std", derive(Debug))]
+	#[pallet::origin]
+	pub enum Origin {
+		/// It comes from the (parent) relay chain.
+		Relay,
+		/// It comes from a (sibling) parachain.
+		SiblingParachain(ParaId),
+	}
+
+	impl From<ParaId> for Origin {
+		fn from(id: ParaId) -> Origin {
+			Origin::SiblingParachain(id)
+		}
+	}
+	impl From<u32> for Origin {
+		fn from(id: u32) -> Origin {
+			Origin::SiblingParachain(id.into())
+		}
+	}
 }
 
 /// For an incoming downward message, this just adapts an XCM executor and executes DMP messages
@@ -96,7 +118,7 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
 				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
-					let outcome = T::XcmExecutor::execute_xcm(Junction::Parent.into(), x, limit);
+					let outcome = T::XcmExecutor::execute_xcm(Parent.into(), x, limit);
 					used += outcome.weight_used();
 					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
 				}
@@ -127,34 +149,13 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
 					let weight_limit = limit.saturating_sub(used);
-					let outcome = T::XcmExecutor::execute_xcm(Junction::Parent.into(), x, weight_limit);
+					let outcome = T::XcmExecutor::execute_xcm(Parent.into(), x, weight_limit);
 					used += outcome.weight_used();
 					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
 				}
 			}
 		}
 		used
-	}
-}
-
-/// Origin for the parachains module.
-#[derive(PartialEq, Eq, Clone, Encode, Decode)]
-#[cfg_attr(feature = "std", derive(Debug))]
-pub enum Origin {
-	/// It comes from the (parent) relay chain.
-	Relay,
-	/// It comes from a (sibling) parachain.
-	SiblingParachain(ParaId),
-}
-
-impl From<ParaId> for Origin {
-	fn from(id: ParaId) -> Origin {
-		Origin::SiblingParachain(id)
-	}
-}
-impl From<u32> for Origin {
-	fn from(id: u32) -> Origin {
-		Origin::SiblingParachain(id.into())
 	}
 }
 

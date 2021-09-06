@@ -25,10 +25,16 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
 use codec::{Decode, Encode};
 use cumulus_primitives_core::{
 	relay_chain::BlockNumber as RelayBlockNumber, ChannelStatus, GetChannelInfo, MessageSendError,
-	ParaId, XcmpMessageHandler, XcmpMessageSource,
+	ParaId, XcmpMessageHandler, XcmpMessageSource, XcmpMessageFormat,
 };
 use frame_support::weights::Weight;
 use rand_chacha::{
@@ -36,11 +42,8 @@ use rand_chacha::{
 	ChaChaRng,
 };
 use sp_runtime::{traits::Hash, RuntimeDebug};
-use sp_std::{convert::TryFrom, prelude::*};
-use xcm::{
-	v0::{Error as XcmError, ExecuteXcm, Junction, MultiLocation, Outcome, SendXcm, Xcm},
-	VersionedXcm,
-};
+use sp_std::{prelude::*, convert::TryFrom};
+use xcm::{latest::prelude::*, WrapVersion, VersionedXcm};
 
 pub use pallet::*;
 
@@ -63,6 +66,9 @@ pub mod pallet {
 
 		/// Information on the avaialble XCMP channels.
 		type ChannelInfo: GetChannelInfo;
+
+		/// Means of converting an `Xcm` into a `VersionedXcm`.
+		type VersionWrapper: WrapVersion;
 	}
 
 	impl Default for QueueConfigData {
@@ -200,18 +206,6 @@ pub struct QueueConfigData {
 pub enum ChannelSignal {
 	Suspend,
 	Resume,
-}
-
-/// The aggregate XCMP message format.
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode)]
-pub enum XcmpMessageFormat {
-	/// Encoded `VersionedXcm` messages, all concatenated.
-	ConcatenatedVersionedXcm,
-	/// Encoded `Vec<u8>` messages, all concatenated.
-	ConcatenatedEncodedBlob,
-	/// One or more channel control signals; these should be interpreted immediately upon receipt
-	/// from the relay-chain.
-	Signals,
 }
 
 impl<T: Config> Pallet<T> {
@@ -357,7 +351,7 @@ impl<T: Config> Pallet<T> {
 		log::debug!("Processing XCMP-XCM: {:?}", &hash);
 		let (result, event) = match Xcm::<T::Call>::try_from(xcm) {
 			Ok(xcm) => {
-				let location = (Junction::Parent, Junction::Parachain(sender.into()));
+				let location = (1, Parachain(sender.into()));
 				match T::XcmExecutor::execute_xcm(location.into(), xcm, max_weight) {
 					Outcome::Error(e) => (Err(e.clone()), Event::Fail(Some(hash), e)),
 					Outcome::Complete(w) => (Ok(w), Event::Success(Some(hash))),
@@ -552,7 +546,7 @@ impl<T: Config> Pallet<T> {
 			// If there are more and we're making progress, we process them after we've given the
 			// other channels a look in. If we've still not unlocked all weight, then we set them
 			// up for processing a second time anyway.
-			if !status[index].2.is_empty() && weight_processed > 0 || weight_available != max_weight
+			if !status[index].2.is_empty() && (weight_processed > 0 || weight_available != max_weight)
 			{
 				if shuffle_index + 1 == shuffled.len() {
 					// Only this queue left. Just run around this loop once more.
@@ -780,23 +774,24 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 
 /// Xcm sender for sending to a sibling parachain.
 impl<T: Config> SendXcm for Pallet<T> {
-	fn send_xcm(dest: MultiLocation, msg: Xcm<()>) -> Result<(), XcmError> {
+	fn send_xcm(dest: MultiLocation, msg: Xcm<()>) -> Result<(), SendError> {
 		match &dest {
 			// An HRMP message for a sibling parachain.
-			MultiLocation::X2(Junction::Parent, Junction::Parachain(id)) => {
-				let msg = VersionedXcm::<()>::from(msg);
-				let hash = T::Hashing::hash_of(&msg);
+			MultiLocation { parents: 1, interior: X1(Parachain(id)) } => {
+				let versioned_xcm = T::VersionWrapper::wrap_version(&dest, msg)
+					.map_err(|()| SendError::DestinationUnsupported)?;
+				let hash = T::Hashing::hash_of(&versioned_xcm);
 				Self::send_fragment(
 					(*id).into(),
 					XcmpMessageFormat::ConcatenatedVersionedXcm,
-					msg,
+					versioned_xcm,
 				)
-				.map_err(|e| XcmError::SendFailed(<&'static str>::from(e)))?;
+				.map_err(|e| SendError::Transport(<&'static str>::from(e)))?;
 				Self::deposit_event(Event::XcmpMessageSent(Some(hash)));
 				Ok(())
 			}
 			// Anything else is unhandled. This includes a message this is meant for us.
-			_ => Err(XcmError::CannotReachDestination(dest, msg)),
+			_ => Err(SendError::CannotReachDestination(dest, msg)),
 		}
 	}
 }

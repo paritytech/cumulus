@@ -20,31 +20,45 @@
 
 use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
-use polkadot_overseer::OverseerHandler;
+use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::v1::{Block as PBlock, CollatorPair};
 use polkadot_service::{AbstractClient, Client as PClient, ClientHandle, RuntimeApiCollection};
 use sc_client_api::{
 	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, UsageProvider,
 };
+use sc_consensus::{
+	import_queue::{ImportQueue, IncomingBlock, Link, Origin},
+	BlockImport,
+};
 use sc_service::{Configuration, Role, TaskManager};
 use sc_telemetry::TelemetryWorkerHandle;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_consensus::{
-	import_queue::{ImportQueue, IncomingBlock, Link, Origin},
-	BlockImport, BlockOrigin,
-};
-use sp_core::traits::SpawnNamed;
+use sp_consensus::BlockOrigin;
+use sp_core::{traits::SpawnNamed, Pair};
 use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, NumberFor},
 	Justifications,
 };
-use std::{marker::PhantomData, sync::Arc};
+use std::{marker::PhantomData, ops::Deref, sync::Arc};
 
 pub mod genesis;
 
-/// Relay chain full node handles.
-type RFullNode<C> = polkadot_service::NewFull<C>;
+/// The relay chain full node handle.
+pub struct RFullNode<C> {
+	/// The relay chain full node handles.
+	pub relay_chain_full_node: polkadot_service::NewFull<C>,
+	/// The collator key used by the node.
+	pub collator_key: CollatorPair,
+}
+
+impl<C> Deref for RFullNode<C> {
+	type Target = polkadot_service::NewFull<C>;
+
+	fn deref(&self) -> &Self::Target {
+		&self.relay_chain_full_node
+	}
+}
 
 /// Parameters given to [`start_collator`].
 pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, Spawner, RClient, IQ> {
@@ -53,7 +67,6 @@ pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, Spawner, RClient, 
 	pub announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 	pub spawner: Spawner,
 	pub para_id: ParaId,
-	pub collator_key: CollatorPair,
 	pub relay_chain_full_node: RFullNode<RClient>,
 	pub task_manager: &'a mut TaskManager,
 	pub parachain_consensus: Box<dyn ParachainConsensus<Block>>,
@@ -72,7 +85,6 @@ pub async fn start_collator<'a, Block, BS, Client, Backend, Spawner, RClient, IQ
 		announce_block,
 		spawner,
 		para_id,
-		collator_key,
 		task_manager,
 		relay_chain_full_node,
 		parachain_consensus,
@@ -106,33 +118,36 @@ where
 		_phantom: PhantomData,
 	});
 
-	relay_chain_full_node.client.execute_with(StartPoVRecovery {
-		para_id,
-		client: client.clone(),
-		import_queue,
-		task_manager,
-		overseer_handler: relay_chain_full_node
-			.overseer_handler
-			.clone()
-			.ok_or_else(|| "Polkadot full node did not provided an `OverseerHandler`!")?,
-		_phantom: PhantomData,
-	})?;
+	relay_chain_full_node
+		.client
+		.execute_with(StartPoVRecovery {
+			para_id,
+			client: client.clone(),
+			import_queue,
+			task_manager,
+			overseer_handle: relay_chain_full_node
+				.overseer_handle
+				.clone()
+				.ok_or_else(|| "Polkadot full node did not provide an `OverseerHandle`!")?,
+			_phantom: PhantomData,
+		})?;
 
 	cumulus_client_collator::start_collator(cumulus_client_collator::StartCollatorParams {
 		runtime_api: client.clone(),
 		block_status,
 		announce_block,
-		overseer_handler: relay_chain_full_node
-			.overseer_handler
-			.ok_or_else(|| "Polkadot full node did not provided an `OverseerHandler`!")?,
+		overseer_handle: relay_chain_full_node
+			.overseer_handle
+			.clone()
+			.ok_or_else(|| "Polkadot full node did not provide an `OverseerHandle`!")?,
 		spawner,
 		para_id,
-		key: collator_key,
+		key: relay_chain_full_node.collator_key.clone(),
 		parachain_consensus,
 	})
 	.await;
 
-	task_manager.add_child(relay_chain_full_node.task_manager);
+	task_manager.add_child(relay_chain_full_node.relay_chain_full_node.task_manager);
 
 	Ok(())
 }
@@ -180,7 +195,7 @@ where
 		_phantom: PhantomData,
 	});
 
-	task_manager.add_child(relay_chain_full_node.task_manager);
+	task_manager.add_child(relay_chain_full_node.relay_chain_full_node.task_manager);
 
 	Ok(())
 }
@@ -234,12 +249,13 @@ struct StartPoVRecovery<'a, Block: BlockT, Client, IQ> {
 	para_id: ParaId,
 	client: Arc<Client>,
 	task_manager: &'a mut TaskManager,
-	overseer_handler: OverseerHandler,
+	overseer_handle: OverseerHandle,
 	import_queue: IQ,
 	_phantom: PhantomData<Block>,
 }
 
-impl<'a, Block, Client, IQ> polkadot_service::ExecuteWithClient for StartPoVRecovery<'a, Block, Client, IQ>
+impl<'a, Block, Client, IQ> polkadot_service::ExecuteWithClient
+	for StartPoVRecovery<'a, Block, Client, IQ>
 where
 	Block: BlockT,
 	Client: UsageProvider<Block>
@@ -261,7 +277,7 @@ where
 		PClient: AbstractClient<PBlock, PBackend, Api = Api> + 'static,
 	{
 		let pov_recovery = cumulus_client_pov_recovery::PoVRecovery::new(
-			self.overseer_handler,
+			self.overseer_handle,
 			sc_consensus_babe::Config::get_or_compute(&*client)?.slot_duration(),
 			self.client,
 			self.import_queue,
@@ -291,7 +307,6 @@ pub fn prepare_node_config(mut parachain_config: Configuration) -> Configuration
 #[sc_tracing::logging::prefix_logs_with("Relaychain")]
 pub fn build_polkadot_full_node(
 	config: Configuration,
-	collator_pair: CollatorPair,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 ) -> Result<RFullNode<PClient>, polkadot_service::Error> {
 	let is_light = matches!(config.role, Role::Light);
@@ -300,14 +315,22 @@ pub fn build_polkadot_full_node(
 			"Light client not supported.".into(),
 		))
 	} else {
-		polkadot_service::build_full(
+		let collator_key = CollatorPair::generate().0;
+
+		let relay_chain_full_node = polkadot_service::build_full(
 			config,
-			polkadot_service::IsCollator::Yes(collator_pair),
+			polkadot_service::IsCollator::Yes(collator_key.clone()),
 			None,
 			true,
 			None,
 			telemetry_worker_handle,
-		)
+			polkadot_service::RealOverseerGen,
+		)?;
+
+		Ok(RFullNode {
+			relay_chain_full_node,
+			collator_key,
+		})
 	}
 }
 

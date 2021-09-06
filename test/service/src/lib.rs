@@ -31,12 +31,10 @@ use cumulus_primitives_core::ParaId;
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 use polkadot_primitives::v1::{CollatorPair, Hash as PHash, PersistedValidationData};
 use sc_client_api::execution_extensions::ExecutionStrategies;
-use sc_executor::native_executor_instance;
-pub use sc_executor::NativeExecutor;
 use sc_network::{config::TransportConfig, multiaddr, NetworkService};
 use sc_service::{
 	config::{
-		DatabaseConfig, KeepBlocks, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
+		DatabaseSource, KeepBlocks, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
 		OffchainWorkerConfig, PruningMode, TransactionStorageMode, WasmExecutionMethod,
 	},
 	BasePath, ChainSpec, Configuration, Error as ServiceError, PartialComponents, Role,
@@ -78,15 +76,27 @@ impl ParachainConsensus<Block> for NullConsensus {
 /// The signature of the announce block fn.
 pub type AnnounceBlockFn = Arc<dyn Fn(Hash, Option<Vec<u8>>) + Send + Sync>;
 
-// Native executor instance.
-native_executor_instance!(
-	pub RuntimeExecutor,
-	cumulus_test_runtime::api::dispatch,
-	cumulus_test_runtime::native_version,
-);
+/// Native executor instance.
+pub struct RuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for RuntimeExecutor {
+	type ExtendHostFunctions = ();
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		cumulus_test_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		cumulus_test_runtime::native_version()
+	}
+}
 
 /// The client type being used by the test service.
-pub type Client = TFullClient<runtime::NodeBlock, runtime::RuntimeApi, RuntimeExecutor>;
+pub type Client = TFullClient<
+	runtime::NodeBlock,
+	runtime::RuntimeApi,
+	sc_executor::NativeElseWasmExecutor<RuntimeExecutor>,
+>;
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
@@ -99,14 +109,20 @@ pub fn new_partial(
 		Client,
 		TFullBackend<Block>,
 		(),
-		sp_consensus::import_queue::BasicQueue<Block, PrefixedMemoryDB<BlakeTwo256>>,
+		sc_consensus::import_queue::BasicQueue<Block, PrefixedMemoryDB<BlakeTwo256>>,
 		sc_transaction_pool::FullPool<Block, Client>,
 		(),
 	>,
 	sc_service::Error,
 > {
+	let executor = sc_executor::NativeElseWasmExecutor::<RuntimeExecutor>::new(
+		config.wasm_method,
+		config.default_heap_pages,
+		config.max_runtime_instances,
+	);
+
 	let (client, backend, keystore_container, task_manager) =
-		sc_service::new_full_parts::<Block, RuntimeApi, RuntimeExecutor>(&config, None)?;
+		sc_service::new_full_parts::<Block, RuntimeApi, _>(&config, None, executor)?;
 	let client = Arc::new(client);
 
 	let registry = config.prometheus_registry();
@@ -115,7 +131,7 @@ pub fn new_partial(
 		config.transaction_pool.clone(),
 		config.role.is_authority().into(),
 		config.prometheus_registry(),
-		task_manager.spawn_handle(),
+		task_manager.spawn_essential_handle(),
 		client.clone(),
 	);
 
@@ -155,14 +171,12 @@ async fn start_node_impl<RB>(
 	consensus: Consensus,
 ) -> sc_service::error::Result<(
 	TaskManager,
-	Arc<TFullClient<Block, RuntimeApi, RuntimeExecutor>>,
+	Arc<Client>,
 	Arc<NetworkService<Block, H256>>,
 	RpcHandlers,
 )>
 where
-	RB: Fn(
-			Arc<TFullClient<Block, RuntimeApi, RuntimeExecutor>>,
-		) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
+	RB: Fn(Arc<Client>) -> Result<jsonrpc_core::IoHandler<sc_rpc::Metadata>, sc_service::Error>
 		+ Send
 		+ 'static,
 {
@@ -204,7 +218,7 @@ where
 
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
-	let (network, network_status_sinks, system_rpc_tx, start_network) =
+	let (network, system_rpc_tx, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &parachain_config,
 			client: client.clone(),
@@ -213,6 +227,7 @@ where
 			import_queue: import_queue.clone(),
 			on_demand: None,
 			block_announce_validator_builder: Some(Box::new(block_announce_validator_builder)),
+			warp_sync: None,
 		})?;
 
 	let rpc_extensions_builder = {
@@ -232,7 +247,6 @@ where
 		keystore: params.keystore_container.sync_keystore(),
 		backend,
 		network: network.clone(),
-		network_status_sinks,
 		system_rpc_tx,
 		telemetry: None,
 	})?;
@@ -304,9 +318,11 @@ where
 			spawner: task_manager.spawn_handle(),
 			task_manager: &mut task_manager,
 			para_id,
-			collator_key,
 			parachain_consensus,
-			relay_chain_full_node,
+			relay_chain_full_node: cumulus_client_service::RFullNode {
+				relay_chain_full_node,
+				collator_key,
+			},
 			import_queue,
 		};
 
@@ -320,7 +336,10 @@ where
 			announce_block,
 			task_manager: &mut task_manager,
 			para_id,
-			relay_chain_full_node,
+			relay_chain_full_node: cumulus_client_service::RFullNode {
+				relay_chain_full_node,
+				collator_key: CollatorPair::generate().0,
+			},
 		};
 
 		start_full_node(params)?;
@@ -511,7 +530,7 @@ impl TestNodeBuilder {
 			relay_chain_config,
 			self.para_id,
 			self.wrap_announce_block,
-			|_| Default::default(),
+			|_| Ok(Default::default()),
 			self.consensus,
 		)
 		.await
@@ -595,7 +614,7 @@ pub fn node_config(
 		network: network_config,
 		keystore: KeystoreConfig::InMemory,
 		keystore_remote: Default::default(),
-		database: DatabaseConfig::RocksDb {
+		database: DatabaseSource::RocksDb {
 			path: root.join("db"),
 			cache_size: 128,
 		},
@@ -618,11 +637,12 @@ pub fn node_config(
 		rpc_ws: None,
 		rpc_ipc: None,
 		rpc_ws_max_connections: None,
+		rpc_http_threads: None,
 		rpc_cors: None,
 		rpc_methods: Default::default(),
+		rpc_max_payload: None,
 		prometheus_config: None,
 		telemetry_endpoints: None,
-		telemetry_external_transport: None,
 		default_heap_pages: None,
 		offchain_worker: OffchainWorkerConfig {
 			enabled: true,
@@ -663,7 +683,7 @@ impl TestNode {
 
 	/// Register a parachain at this relay chain.
 	pub async fn schedule_upgrade(&self, validation: Vec<u8>) -> Result<(), RpcTransactionError> {
-		let call = frame_system::Call::set_code_without_checks(validation);
+		let call = frame_system::Call::set_code(validation);
 
 		self.send_extrinsic(
 			runtime::SudoCall::sudo_unchecked_weight(Box::new(call.into()), 1_000),

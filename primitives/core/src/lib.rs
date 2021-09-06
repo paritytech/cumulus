@@ -18,24 +18,24 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::{Decode, Encode};
+use sp_runtime::{traits::Block as BlockT, RuntimeDebug};
 use sp_std::prelude::*;
-use codec::{Encode, Decode};
-use sp_runtime::{RuntimeDebug, traits::Block as BlockT};
-use frame_support::weights::Weight;
 
 pub use polkadot_core_primitives::InboundDownwardMessage;
-pub use polkadot_parachain::primitives::{Id as ParaId, UpwardMessage, ValidationParams};
+pub use polkadot_parachain::primitives::{
+	DmpMessageHandler, Id as ParaId, UpwardMessage, ValidationParams, XcmpMessageFormat,
+	XcmpMessageHandler,
+};
 pub use polkadot_primitives::v1::{
-	PersistedValidationData, AbridgedHostConfiguration, AbridgedHrmpChannel,
+	AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData,
 };
 
 /// A module that re-exports relevant relay chain definitions.
 pub mod relay_chain {
 	pub use polkadot_core_primitives::*;
-	pub use polkadot_primitives::v1;
-	pub use polkadot_primitives::v1::well_known_keys;
+	pub use polkadot_primitives::{v1, v1::well_known_keys};
 }
-use relay_chain::BlockNumber as RelayBlockNumber;
 
 /// An inbound HRMP message.
 pub type InboundHrmpMessage = polkadot_primitives::v1::InboundHrmpMessage<relay_chain::BlockNumber>;
@@ -89,47 +89,6 @@ pub trait GetChannelInfo {
 	fn get_channel_max(id: ParaId) -> Option<usize>;
 }
 
-/// Something that should be called when a downward message is received.
-pub trait DmpMessageHandler {
-	/// Handle some incoming DMP messages (note these are individual XCM messages).
-	///
-	/// Also, process messages up to some `max_weight`.
-	fn handle_dmp_messages(
-		iter: impl Iterator<Item=(RelayBlockNumber, Vec<u8>)>,
-		max_weight: Weight,
-	) -> Weight;
-}
-impl DmpMessageHandler for () {
-	fn handle_dmp_messages(
-		iter: impl Iterator<Item=(RelayBlockNumber, Vec<u8>)>,
-		_max_weight: Weight,
-	) -> Weight {
-		iter.for_each(drop);
-		0
-	}
-}
-
-/// Something that should be called for each batch of messages received over XCMP.
-pub trait XcmpMessageHandler {
-	/// Handle some incoming XCMP messages (note these are the big one-per-block aggregate
-	/// messages).
-	///
-	/// Also, process messages up to some `max_weight`.
-	fn handle_xcmp_messages<'a, I: Iterator<Item=(ParaId, RelayBlockNumber, &'a [u8])>>(
-		iter: I,
-		max_weight: Weight,
-	) -> Weight;
-}
-impl XcmpMessageHandler for () {
-	fn handle_xcmp_messages<'a, I: Iterator<Item=(ParaId, RelayBlockNumber, &'a [u8])>>(
-		iter: I,
-		_max_weight: Weight,
-	) -> Weight {
-		for _ in iter {}
-		0
-	}
-}
-
 /// Something that should be called when sending an upward message.
 pub trait UpwardMessageSender {
 	/// Send the given UMP message; return the expected number of blocks before the message will
@@ -158,15 +117,13 @@ pub enum ChannelStatus {
 /// A means of figuring out what outbound XCMP messages should be being sent.
 pub trait XcmpMessageSource {
 	/// Take a single XCMP message from the queue for the given `dest`, if one exists.
-	fn take_outbound_messages(
-		maximum_channels: usize,
-	) -> Vec<(ParaId, Vec<u8>)>;
+	fn take_outbound_messages(maximum_channels: usize) -> Vec<(ParaId, Vec<u8>)>;
 }
 
 impl XcmpMessageSource for () {
-	fn take_outbound_messages(
-		_maximum_channels: usize,
-	) -> Vec<(ParaId, Vec<u8>)> { vec![] }
+	fn take_outbound_messages(_maximum_channels: usize) -> Vec<(ParaId, Vec<u8>)> {
+		vec![]
+	}
 }
 
 /// The "quality of service" considerations for message sending.
@@ -191,14 +148,14 @@ pub trait OnValidationData {
 ///
 /// This is send as PoV (proof of validity block) to the relay-chain validators. There it will be
 /// passed to the parachain validation Wasm blob to be validated.
-#[derive(codec::Encode, codec::Decode)]
+#[derive(codec::Encode, codec::Decode, Clone)]
 pub struct ParachainBlockData<B: BlockT> {
 	/// The header of the parachain block.
 	header: B::Header,
 	/// The extrinsics of the parachain block.
 	extrinsics: sp_std::vec::Vec<B::Extrinsic>,
 	/// The data that is required to emulate the storage accesses executed by all extrinsics.
-	storage_proof: sp_trie::StorageProof,
+	storage_proof: sp_trie::CompactProof,
 }
 
 impl<B: BlockT> ParachainBlockData<B> {
@@ -206,7 +163,7 @@ impl<B: BlockT> ParachainBlockData<B> {
 	pub fn new(
 		header: <B as BlockT>::Header,
 		extrinsics: sp_std::vec::Vec<<B as BlockT>::Extrinsic>,
-		storage_proof: sp_trie::StorageProof,
+		storage_proof: sp_trie::CompactProof,
 	) -> Self {
 		Self {
 			header,
@@ -235,13 +192,19 @@ impl<B: BlockT> ParachainBlockData<B> {
 		&self.extrinsics
 	}
 
-	/// Returns the [`StorageProof`](sp_trie::StorageProof).
-	pub fn storage_proof(&self) -> &sp_trie::StorageProof {
+	/// Returns the [`CompactProof`](sp_trie::CompactProof).
+	pub fn storage_proof(&self) -> &sp_trie::CompactProof {
 		&self.storage_proof
 	}
 
 	/// Deconstruct into the inner parts.
-	pub fn deconstruct(self) -> (B::Header, sp_std::vec::Vec<B::Extrinsic>, sp_trie::StorageProof) {
+	pub fn deconstruct(
+		self,
+	) -> (
+		B::Header,
+		sp_std::vec::Vec<B::Extrinsic>,
+		sp_trie::CompactProof,
+	) {
 		(self.header, self.extrinsics, self.storage_proof)
 	}
 }
@@ -265,7 +228,6 @@ sp_api::decl_runtime_apis! {
 	/// Runtime api to collect information about a collation.
 	pub trait CollectCollationInfo {
 		/// Collect information about a collation.
-		#[skip_initialize_block]
 		fn collect_collation_info() -> CollationInfo;
 	}
 }

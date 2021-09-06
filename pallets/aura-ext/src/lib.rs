@@ -25,10 +25,12 @@
 //! ```
 //!# struct Runtime;
 //!# struct Executive;
-//! cumulus_pallet_parachain_system::register_validate_block!(
-//!     Runtime,
-//!     cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
-//! );
+//!# struct CheckInherents;
+//! cumulus_pallet_parachain_system::register_validate_block! {
+//!     Runtime = Runtime,
+//!     BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
+//!     CheckInherents = CheckInherents,
+//! }
 //! ```
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -60,7 +62,7 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_finalize(_: BlockNumberFor<T>) {
 			// Update to the latest AuRa authorities.
-			Authorities::<T>::put(Aura::<T>::authorities());
+			Authorities::<T>::put(Aura::<T>::authorities().into_inner());
 		}
 
 		fn on_initialize(_: BlockNumberFor<T>) -> Weight {
@@ -96,7 +98,7 @@ pub mod pallet {
 				"AuRa authorities empty, maybe wrong order in `construct_runtime!`?",
 			);
 
-			Authorities::<T>::put(authorities);
+			Authorities::<T>::put(authorities.into_inner());
 		}
 	}
 }

@@ -17,9 +17,10 @@
 use sc_client_api::{
 	Backend, BlockBackend, BlockImportNotification, BlockchainEvents, Finalizer, UsageProvider,
 };
+use sc_consensus::{BlockImport, BlockImportParams, ForkChoiceStrategy};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Error as ClientError, Result as ClientResult};
-use sp_consensus::{BlockImport, BlockImportParams, BlockOrigin, BlockStatus, ForkChoiceStrategy};
+use sp_consensus::{BlockOrigin, BlockStatus};
 use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, Header as HeaderT},
@@ -80,7 +81,7 @@ where
 		let header = match Block::Header::decode(&mut &finalized_head[..]) {
 			Ok(header) => header,
 			Err(err) => {
-				tracing::warn!(
+				tracing::debug!(
 					target: "cumulus-consensus",
 					error = ?err,
 					"Could not decode parachain header while following finalized heads.",
@@ -286,7 +287,7 @@ async fn handle_new_best_parachain_head<Block, P>(
 	let parachain_head = match <<Block as BlockT>::Header>::decode(&mut &head[..]) {
 		Ok(header) => header,
 		Err(err) => {
-			tracing::warn!(
+			tracing::debug!(
 				target: "cumulus-consensus",
 				error = ?err,
 				"Could not decode Parachain header while following best heads.",
@@ -346,6 +347,18 @@ where
 	P: UsageProvider<Block> + Send + Sync + BlockBackend<Block>,
 	for<'a> &'a P: BlockImport<Block>,
 {
+	let best_number = parachain.usage_info().chain.best_number;
+	if *header.number() < best_number {
+		tracing::debug!(
+			target: "cumulus-consensus",
+			%best_number,
+			block_number = %header.number(),
+			"Skipping importing block as new best block, because there already exists a \
+			 best block with an higher number",
+		);
+		return;
+	}
+
 	// Make it the new best block
 	let mut block_import_params = BlockImportParams::new(BlockOrigin::ConsensusBroadcast, header);
 	block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(true));

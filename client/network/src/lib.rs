@@ -33,13 +33,13 @@ use sp_runtime::{
 	traits::{Block as BlockT, HashFor, Header as HeaderT},
 };
 
-use polkadot_node_primitives::{SignedFullStatement, Statement};
+use polkadot_node_primitives::{SignedFullStatement, Statement, CollationSecondedSignal};
 use polkadot_parachain::primitives::HeadData;
 use polkadot_primitives::v1::{
 	Block as PBlock, Hash as PHash, CandidateReceipt, CompactStatement, Id as ParaId,
 	OccupiedCoreAssumption, ParachainHost, UncheckedSigned, SigningContext,
 };
-use polkadot_service::ClientHandle;
+use polkadot_client::ClientHandle;
 
 use codec::{Decode, Encode};
 use futures::{
@@ -414,7 +414,7 @@ where
 ///
 /// Returns a boxed [`BlockAnnounceValidator`].
 pub fn build_block_announce_validator<Block: BlockT, B>(
-	relay_chain_client: polkadot_service::Client,
+	relay_chain_client: polkadot_client::Client,
 	para_id: ParaId,
 	relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
 	relay_chain_backend: Arc<B>,
@@ -436,12 +436,12 @@ where
 /// Block announce validator builder.
 ///
 /// Builds a [`BlockAnnounceValidator`] for a parachain. As this requires
-/// a concrete relay chain client instance, the builder takes a [`polkadot_service::Client`]
-/// that wraps this concrete instanace. By using [`polkadot_service::ExecuteWithClient`]
+/// a concrete relay chain client instance, the builder takes a [`polkadot_client::Client`]
+/// that wraps this concrete instanace. By using [`polkadot_client::ExecuteWithClient`]
 /// the builder gets access to this concrete instance.
 struct BlockAnnounceValidatorBuilder<Block, B> {
 	phantom: PhantomData<Block>,
-	relay_chain_client: polkadot_service::Client,
+	relay_chain_client: polkadot_client::Client,
 	para_id: ParaId,
 	relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
 	relay_chain_backend: Arc<B>,
@@ -455,7 +455,7 @@ where
 {
 	/// Create a new instance of the builder.
 	fn new(
-		relay_chain_client: polkadot_service::Client,
+		relay_chain_client: polkadot_client::Client,
 		para_id: ParaId,
 		relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
 		relay_chain_backend: Arc<B>,
@@ -475,7 +475,7 @@ where
 	}
 }
 
-impl<Block: BlockT, B> polkadot_service::ExecuteWithClient
+impl<Block: BlockT, B> polkadot_client::ExecuteWithClient
 	for BlockAnnounceValidatorBuilder<Block, B>
 where
 	B: Backend<PBlock> + Send + 'static,
@@ -490,8 +490,8 @@ where
 			sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
 		PBackend: Backend<PBlock>,
 		PBackend::State: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
-		Api: polkadot_service::RuntimeApiCollection<StateBackend = PBackend::State>,
-		PClient: polkadot_service::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
+		Api: polkadot_client::RuntimeApiCollection<StateBackend = PBackend::State>,
+		PClient: polkadot_client::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
 	{
 		Box::new(BlockAnnounceValidator::new(
 			client.clone(),
@@ -530,7 +530,7 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 	pub fn wait_to_announce(
 		&mut self,
 		block_hash: <Block as BlockT>::Hash,
-		signed_stmt_recv: oneshot::Receiver<SignedFullStatement>,
+		signed_stmt_recv: oneshot::Receiver<CollationSecondedSignal>,
 	) {
 		let announce_block = self.announce_block.clone();
 
@@ -557,10 +557,10 @@ impl<Block: BlockT> WaitToAnnounce<Block> {
 async fn wait_to_announce<Block: BlockT>(
 	block_hash: <Block as BlockT>::Hash,
 	announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
-	signed_stmt_recv: oneshot::Receiver<SignedFullStatement>,
+	signed_stmt_recv: oneshot::Receiver<CollationSecondedSignal>,
 ) {
 	let statement = match signed_stmt_recv.await {
-		Ok(s) => s,
+		Ok(s) => s.statement,
 		Err(_) => {
 			tracing::debug!(
 				target: "cumulus-network",
