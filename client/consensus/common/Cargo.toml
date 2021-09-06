@@ -7,17 +7,17 @@ edition = "2018"
 
 [dependencies]
 # Substrate deps
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-trie = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
 
 # Polkadot deps
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "hc-contract-experiment-patched-v0.9.9" }
@@ -32,10 +32,10 @@ dyn-clone = "1.0.4"
 
 [dev-dependencies]
 # Substrate deps
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
 
 # Cumulus dependencies
 cumulus-test-runtime = { path = "../../../test/runtime" }

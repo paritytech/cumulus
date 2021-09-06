@@ -14,41 +14,41 @@ smallvec = "1.6.1"
 hex-literal = { version = '0.3.1', optional = true }
 
 # Substrate dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-sp-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
 
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", optional = true, default-features = false, branch = "cmichi-tmp-experiment" }
-frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", optional = true, default-features = false, branch = "cmichi-tmp-experiment" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-pallet-multisig = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-pallet-proxy = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-pallet-uniques = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", optional = true, default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", optional = true, default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+pallet-multisig = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+pallet-proxy = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+pallet-uniques = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
 
-node-primitives = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
+node-primitives = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
 
 # Cumulus dependencies
 cumulus-pallet-aura-ext = { path = "../../pallets/aura-ext", default-features = false }
@@ -77,7 +77,7 @@ hex-literal = "0.3.1"
 hex = "0.4.3"
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
 
 [features]
 default = [ "std" ]

@@ -12,10 +12,10 @@ rand = { version = "0.8.3", default-features = false }
 rand_chacha = { version = "0.3.0", default-features = false }
 
 # Substrate Dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "cmichi-tmp-experiment" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
 
 # Polkadot Dependencies
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "hc-contract-experiment-patched-v0.9.9" }
@@ -25,11 +25,11 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", default-feature
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 
 [dev-dependencies]
-sp-core = { git = 'https://github.com/paritytech/substrate', branch = "cmichi-tmp-experiment" }
-sp-io = { git = 'https://github.com/paritytech/substrate', branch = "cmichi-tmp-experiment" }
+sp-core = { git = 'https://github.com/paritytech/substrate', branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-io = { git = 'https://github.com/paritytech/substrate', branch = "hc-contract-experiment-patched-v0.9.9" }
 cumulus-pallet-parachain-system = { path = "../parachain-system" }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "hc-contract-experiment-patched-v0.9.9" }
-pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = "cmichi-tmp-experiment" }
+pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = "hc-contract-experiment-patched-v0.9.9" }
 
 [features]
 default = [ "std" ]

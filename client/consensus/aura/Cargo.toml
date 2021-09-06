@@ -7,22 +7,22 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sp-application-crypto = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sc-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sc-consensus-slots = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
-substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "cmichi-tmp-experiment" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sp-application-crypto = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sc-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sc-consensus-slots = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "hc-contract-experiment-patched-v0.9.9" }
 
 # Polkadot dependencies
 polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "hc-contract-experiment-patched-v0.9.9" }
