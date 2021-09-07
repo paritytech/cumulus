@@ -1,0 +1,62 @@
+name: Publish Docker image for new releases
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  main:
+    name: Push to Dockerhub
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download integritee-collator from release
+        uses: dsaltares/fetch-gh-release-asset@master
+        with:
+          version: "tags/${{ github.event.release.tag_name }}"
+          file: "integritee-collator"
+          target: "integritee-collator"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+         path: /tmp/.buildx-cache
+         key: ${{ runner.os }}-buildx-${{ github.sha }}
+         restore-keys: |
+           ${{ runner.os }}-buildx-
+
+      - name: Login to Dockerhub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Build and push
+        id:   docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          tags: |
+            integritee/parachain:latest
+            integritee/parachain:${{ github.event.release.tag_name }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
+
+      - name: Slack Notification
+        uses: 8398a7/action-slack@v3
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow,job,took # selectable (default: repo,message)
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

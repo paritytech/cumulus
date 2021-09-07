@@ -11,6 +11,7 @@ RUN mv /usr/share/ca* /tmp && \
 	ln -s /integritee/.local/share/integritee-collator /data
 
 COPY integritee-collator /usr/local/bin
+RUN chmod +x /usr/local/bin/integritee-collator
 
 # checks
 RUN ldd /usr/local/bin/integritee-collator && \
