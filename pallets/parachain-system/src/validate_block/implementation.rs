@@ -27,6 +27,7 @@ use polkadot_parachain::primitives::{HeadData, ValidationParams, ValidationResul
 use codec::{Decode, Encode};
 
 use sp_core::storage::ChildInfo;
+use sp_core::StateVersion;
 use sp_externalities::{set_and_run_with_externalities, Externalities};
 use sp_trie::MemoryDB;
 
@@ -61,8 +62,6 @@ where
 
 	let (header, extrinsics, storage_proof) = block_data.deconstruct();
 
-	let state_version = storage_proof.state_version;
-
 	let head_data = HeadData(header.encode());
 
 	let block = B::new(header, extrinsics);
@@ -83,7 +82,7 @@ where
 	};
 	sp_std::mem::drop(storage_proof);
 
-	let backend = sp_state_machine::TrieBackend::new(db, root, state_version);
+	let backend = sp_state_machine::TrieBackend::new(db, root);
 
 	let _guard = (
 		// Replace storage calls with our own implementations
@@ -220,7 +219,7 @@ fn host_storage_clear(key: &[u8]) {
 }
 
 fn host_storage_root() -> Vec<u8> {
-	with_externalities(|ext| ext.storage_root())
+	with_externalities(|ext| ext.storage_root(StateVersion::V1))
 }
 
 fn host_storage_clear_prefix(prefix: &[u8], limit: Option<u32>) -> KillStorageResult {
@@ -327,7 +326,7 @@ fn host_default_child_storage_clear_prefix(storage_key: &[u8], prefix: &[u8], li
 
 fn host_default_child_storage_root(storage_key: &[u8]) -> Vec<u8> {
 	let child_info = ChildInfo::new_default(storage_key);
-	with_externalities(|ext| ext.child_storage_root(&child_info))
+	with_externalities(|ext| ext.child_storage_root(&child_info, StateVersion::V1))
 }
 
 fn host_default_child_storage_next_key(storage_key: &[u8], key: &[u8]) -> Option<Vec<u8>> {

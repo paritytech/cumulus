@@ -4923,7 +4923,7 @@ dependencies = [
 [[package]]
 name = "node-primitives"
 version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#f708278335e30667af1434e19872a862c54ebf8b"
+source = "git+https://github.com/cheme/substrate?branch=state-update4-host2#8514d5fd90a4babf70f12466e0b9d1e0c646d45d"
 dependencies = [
  "frame-system",
  "parity-scale-codec",
@@ -5102,7 +5102,7 @@ dependencies = [
 [[package]]
 name = "pallet-assets"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#f708278335e30667af1434e19872a862c54ebf8b"
+source = "git+https://github.com/cheme/substrate?branch=state-update4-host2#8514d5fd90a4babf70f12466e0b9d1e0c646d45d"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5115,7 +5115,7 @@ dependencies = [
 [[package]]
 name = "pallet-aura"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#f708278335e30667af1434e19872a862c54ebf8b"
+source = "git+https://github.com/cheme/substrate?branch=state-update4-host2#8514d5fd90a4babf70f12466e0b9d1e0c646d45d"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5872,7 +5872,7 @@ dependencies = [
 [[package]]
 name = "pallet-uniques"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#f708278335e30667af1434e19872a862c54ebf8b"
+source = "git+https://github.com/cheme/substrate?branch=state-update4-host2#8514d5fd90a4babf70f12466e0b9d1e0c646d45d"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8858,7 +8858,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-aura"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#f708278335e30667af1434e19872a862c54ebf8b"
+source = "git+https://github.com/cheme/substrate?branch=state-update4-host2#8514d5fd90a4babf70f12466e0b9d1e0c646d45d"
 dependencies = [
  "async-trait",
  "derive_more 0.99.14",
@@ -12529,13 +12529,13 @@ dependencies = [
 ]
 
 [[patch.unused]]
-name = "trie-bench"
-version = "0.28.0"
-source = "git+https://github.com/cheme/trie.git?branch=hashed-value-simple4-new#97caad53d595c3ecc604763a30b47dc634fd63cf"
-
-[[patch.unused]]
 name = "frame-support-test"
 version = "3.0.0"
+source = "git+https://github.com/cheme/substrate?branch=state-update4-host2#8514d5fd90a4babf70f12466e0b9d1e0c646d45d"
+
+[[patch.unused]]
+name = "node-runtime"
+version = "3.0.0-dev"
 source = "git+https://github.com/cheme/substrate?branch=state-update4-host2#8514d5fd90a4babf70f12466e0b9d1e0c646d45d"
 
 [[patch.unused]]
@@ -12557,3 +12557,8 @@ source = "git+https://github.com/cheme/substrate?branch=state-update4-host2#8514
 name = "test-runner"
 version = "0.9.0"
 source = "git+https://github.com/cheme/substrate?branch=state-update4-host2#8514d5fd90a4babf70f12466e0b9d1e0c646d45d"
+
+[[patch.unused]]
+name = "trie-bench"
+version = "0.28.0"
+source = "git+https://github.com/cheme/trie.git?branch=hashed-value-simple4-new#97caad53d595c3ecc604763a30b47dc634fd63cf"

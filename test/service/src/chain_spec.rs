@@ -73,7 +73,6 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 		Extensions {
 			para_id: id.into(),
 		},
-		Default::default(),
 	)
 }
 

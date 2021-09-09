@@ -456,7 +456,6 @@ mod tests {
 		// Ensure that we did not include `:code` in the proof.
 		let proof = block
 			.storage_proof();
-		let state_version = proof.state_version;
 		let db = proof
 			.to_storage_proof::<BlakeTwo256>(Some(header.state_root()))
 			.unwrap()
@@ -464,7 +463,7 @@ mod tests {
 			.into_memory_db();
 
 		let backend =
-			sp_state_machine::new_in_mem::<BlakeTwo256>(state_version).update_backend(*header.state_root(), db);
+			sp_state_machine::new_in_mem::<BlakeTwo256>().update_backend(*header.state_root(), db);
 
 		// Should return an error, as it was not included while building the proof.
 		assert!(backend
