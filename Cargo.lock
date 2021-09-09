@@ -5961,6 +5961,8 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "substrate-wasm-builder",
+ "xcm",
+ "xcm-executor",
 ]
 
 [[package]]
@@ -8421,6 +8423,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-xcm",
  "parachain-info",
+ "parachains-common",
  "parity-scale-codec",
  "polkadot-parachain",
  "serde",

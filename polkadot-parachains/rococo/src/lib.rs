@@ -53,6 +53,15 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
+use parachains_common::{
+	impls::{AssetsFrom, NonZeroIssuance},
+	AssetId
+};
+use xcm_builder::FungiblesAdapter;
+use xcm_builder::ConvertedConcreteAssetId;
+use xcm_builder::AsPrefixedGeneralIndex;
+use xcm_executor::traits::JustTry;
+
 // XCM imports
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
 use polkadot_parachain::primitives::Sibling;
@@ -261,6 +270,7 @@ parameter_types! {
 	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
+	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -276,7 +286,7 @@ pub type LocationToAccountId = (
 );
 
 /// Means for transacting assets on this chain.
-pub type LocalAssetTransactor = CurrencyAdapter<
+pub type CurrencyTransactor = CurrencyAdapter<
 	// Use this currency:
 	Balances,
 	// Use this currency when it is a fungible asset matching the given location or name:
@@ -288,6 +298,30 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 	// We don't track any teleports.
 	(),
 >;
+
+/// Means for transacting assets besides the native currency on this chain.
+pub type FungiblesTransactor = FungiblesAdapter<
+	// Use this fungibles implementation:
+	Assets,
+	// Use this currency when it is a fungible asset matching the given location or name:
+	ConvertedConcreteAssetId<
+		AssetId,
+		u64,
+		AsPrefixedGeneralIndex<StatemintLocation, AssetId, JustTry>,
+		JustTry,
+	>,
+	// Convert an XCM MultiLocation into a local account id:
+	LocationToAccountId,
+	// Our chain's account ID type (we can't get away without mentioning it explicitly):
+	AccountId,
+	// We only want to allow teleports of known assets. We use non-zero issuance as an indication
+	// that this asset is known.
+	NonZeroIssuance<AccountId, Assets>,
+	// The account to use for tracking teleports.
+	CheckingAccount,
+>;
+/// Means for transacting assets on this chain.
+pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -335,14 +369,20 @@ pub type Barrier = (
 	// ^^^ Parent & its unit plurality gets free execution
 );
 
+parameter_types! {
+	pub StatemintLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
+}
+
+pub type Reserves = (NativeAsset, AssetsFrom<StatemintLocation>);
+
 pub struct XcmConfig;
 impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// How to withdraw and deposit an asset.
-	type AssetTransactor = LocalAssetTransactor;
+	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	type IsReserve = NativeAsset;
+	type IsReserve = Reserves;
 	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of ROC
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
@@ -424,7 +464,7 @@ pub type AdminOrigin = EnsureXcm<IsMajorityOfBody<RocLocation, UnitBody>>;
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
 	type Balance = u64;
-	type AssetId = u32;
+	type AssetId = AssetId;
 	type Currency = Balances;
 	type ForceOrigin = AdminOrigin;
 	type AssetDeposit = AssetDeposit;

@@ -16,9 +16,11 @@
 //! Auxillary struct/enums for parachain runtimes.
 //! Taken from polkadot/runtime/common (at a21cd64) and adapted for parachains.
 
-use frame_support::traits::{fungibles, Contains, Currency, Imbalance, OnUnbalanced};
+use frame_support::traits::{fungibles, Contains, Currency, Get, Imbalance, OnUnbalanced};
 use sp_runtime::traits::Zero;
 use sp_std::marker::PhantomData;
+use xcm_executor::traits::FilterAssetLocation;
+use xcm::latest::{AssetId, Fungibility::Fungible, MultiAsset, MultiLocation};
 
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
 	<T as frame_system::Config>::AccountId,
@@ -71,6 +73,15 @@ where
 {
 	fn contains(id: &<Assets as fungibles::Inspect<AccountId>>::AssetId) -> bool {
 		!Assets::total_issuance(*id).is_zero()
+	}
+}
+
+pub struct AssetsFrom<T>(PhantomData<T>);
+impl<T: Get<MultiLocation>> FilterAssetLocation for AssetsFrom<T> {
+	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+		let loc = T::get();
+		&loc == origin && matches!(asset, MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) }
+			if asset_loc.match_and_split(&loc).is_some())
 	}
 }
 
