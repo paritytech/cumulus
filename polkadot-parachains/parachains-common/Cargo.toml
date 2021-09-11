@@ -10,7 +10,7 @@ targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
 # External dependencies
-codec = { package = 'parity-scale-codec', version = '2.0.0', features = ['derive'], default-features = false }
+codec = { package = 'parity-scale-codec', version = '2.3.0', features = ['derive'], default-features = false }
 
 # Substrate dependencies
 sp-consensus-aura = { git = 'https://github.com/paritytech/substrate', branch = "master", default-features = false }

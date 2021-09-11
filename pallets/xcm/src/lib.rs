@@ -23,9 +23,12 @@
 use sp_std::{prelude::*, convert::TryFrom};
 use cumulus_primitives_core::{ParaId, DmpMessageHandler};
 use cumulus_primitives_core::relay_chain::BlockNumber as RelayBlockNumber;
-use codec::{Encode, Decode};
+use codec::{Decode, DecodeLimit, Encode};
 use sp_runtime::traits::BadOrigin;
-use xcm::{VersionedXcm, latest::{Xcm, Outcome, Parent, ExecuteXcm}};
+use xcm::{
+	latest::{Xcm, Outcome, Parent, ExecuteXcm},
+	MAX_XCM_DECODE_DEPTH, VersionedXcm,
+};
 use frame_support::dispatch::Weight;
 pub use pallet::*;
 
@@ -112,8 +115,11 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 		let mut used = 0;
 		for (_sent_at, data) in iter {
 			let id = sp_io::hashing::twox_64(&data[..]);
-			let msg = VersionedXcm::<T::Call>::decode(&mut &data[..])
-				.map(Xcm::<T::Call>::try_from);
+			let msg = VersionedXcm::<T::Call>::decode_and_advance_with_depth_limit(
+				MAX_XCM_DECODE_DEPTH,
+				&mut &data[..],
+			)
+			.map(Xcm::<T::Call>::try_from);
 			match msg {
 				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
 				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
@@ -142,8 +148,11 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 		let mut used = 0;
 		for (_sent_at, data) in iter {
 			let id = sp_io::hashing::twox_64(&data[..]);
-			let msg = VersionedXcm::<T::Call>::decode(&mut &data[..])
-				.map(Xcm::<T::Call>::try_from);
+			let msg = VersionedXcm::<T::Call>::decode_and_advance_with_depth_limit(
+				MAX_XCM_DECODE_DEPTH,
+				&mut &data[..],
+			)
+			.map(Xcm::<T::Call>::try_from);
 			match msg {
 				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
 				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),

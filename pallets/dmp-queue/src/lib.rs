@@ -24,9 +24,9 @@
 use sp_std::{prelude::*, convert::TryFrom};
 use cumulus_primitives_core::relay_chain::BlockNumber as RelayBlockNumber;
 use cumulus_primitives_core::DmpMessageHandler;
-use codec::{Encode, Decode};
+use codec::{Decode, DecodeLimit, Encode};
 use sp_runtime::RuntimeDebug;
-use xcm::{VersionedXcm, latest::prelude::*};
+use xcm::{latest::prelude::*, MAX_XCM_DECODE_DEPTH, VersionedXcm};
 use frame_support::{traits::EnsureOrigin, dispatch::Weight, weights::constants::WEIGHT_PER_MILLIS};
 pub use pallet::*;
 
@@ -233,8 +233,11 @@ pub mod pallet {
 			data: &[u8],
 		) -> Result<Weight, (MessageId, Weight)> {
 			let id = sp_io::hashing::blake2_256(&data[..]);
-			let maybe_msg = VersionedXcm::<T::Call>::decode(&mut &data[..])
-				.map(Xcm::<T::Call>::try_from);
+			let maybe_msg = VersionedXcm::<T::Call>::decode_and_advance_with_depth_limit(
+				MAX_XCM_DECODE_DEPTH,
+				&mut &data[..],
+			)
+			.map(Xcm::<T::Call>::try_from);
 			match maybe_msg {
 				Err(_) => {
 					Self::deposit_event(Event::InvalidFormat(id));

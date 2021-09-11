@@ -24,7 +24,7 @@ sp-io = { default-features = false, git = 'https://github.com/paritytech/substra
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
-codec = { package = "parity-scale-codec", version = "2.0.0", features = [ "derive" ] }
+codec = { package = "parity-scale-codec", version = "2.3.0", features = [ "derive" ] }
 sp-core = { git = 'https://github.com/paritytech/substrate', branch = "master" }
 
 [features]

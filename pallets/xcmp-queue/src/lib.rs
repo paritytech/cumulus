@@ -31,7 +31,7 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-use codec::{Decode, Encode};
+use codec::{Decode, DecodeLimit, Encode};
 use cumulus_primitives_core::{
 	relay_chain::BlockNumber as RelayBlockNumber, ChannelStatus, GetChannelInfo, MessageSendError,
 	ParaId, XcmpMessageHandler, XcmpMessageSource, XcmpMessageFormat,
@@ -43,7 +43,7 @@ use rand_chacha::{
 };
 use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::{prelude::*, convert::TryFrom};
-use xcm::{latest::prelude::*, WrapVersion, VersionedXcm};
+use xcm::{latest::prelude::*, MAX_XCM_DECODE_DEPTH, WrapVersion, VersionedXcm};
 
 pub use pallet::*;
 
@@ -256,7 +256,10 @@ impl<T: Config> Pallet<T> {
 		let have_active = s[index].4 > s[index].3;
 		let appended = have_active
 			&& <OutboundXcmpMessages<T>>::mutate(recipient, s[index].4 - 1, |s| {
-				if XcmpMessageFormat::decode(&mut &s[..]) != Ok(format) {
+				if XcmpMessageFormat::decode_and_advance_with_depth_limit(
+					MAX_XCM_DECODE_DEPTH,
+					&mut &s[..],
+				) != Ok(format) {
 					return false;
 				}
 				if s.len() + data.len() > max_message_size {
@@ -382,7 +385,10 @@ impl<T: Config> Pallet<T> {
 			XcmpMessageFormat::ConcatenatedVersionedXcm => {
 				while !remaining_fragments.is_empty() {
 					last_remaining_fragments = remaining_fragments;
-					if let Ok(xcm) = VersionedXcm::<T::Call>::decode(&mut remaining_fragments) {
+					if let Ok(xcm) = VersionedXcm::<T::Call>::decode_and_advance_with_depth_limit(
+						MAX_XCM_DECODE_DEPTH,
+						&mut remaining_fragments,
+					) {
 						let weight = max_weight - weight_used;
 						match Self::handle_xcm_message(sender, sent_at, xcm, weight) {
 							Ok(used) => weight_used = weight_used.saturating_add(used),
@@ -405,7 +411,10 @@ impl<T: Config> Pallet<T> {
 			XcmpMessageFormat::ConcatenatedEncodedBlob => {
 				while !remaining_fragments.is_empty() {
 					last_remaining_fragments = remaining_fragments;
-					if let Ok(blob) = <Vec<u8>>::decode(&mut remaining_fragments) {
+					if let Ok(blob) = <Vec<u8>>::decode_and_advance_with_depth_limit(
+						32, // hardcoded constant since we don't process any blob XCMP msgs anyway
+						&mut remaining_fragments,
+					) {
 						let weight = max_weight - weight_used;
 						match Self::handle_blob_message(sender, sent_at, blob, weight) {
 							Ok(used) => weight_used = weight_used.saturating_add(used),
@@ -615,7 +624,10 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 		for (sender, sent_at, data) in iter {
 			// Figure out the message format.
 			let mut data_ref = data;
-			let format = match XcmpMessageFormat::decode(&mut data_ref) {
+			let format = match XcmpMessageFormat::decode_and_advance_with_depth_limit(
+				MAX_XCM_DECODE_DEPTH,
+				&mut data_ref,
+			) {
 				Ok(f) => f,
 				Err(_) => {
 					debug_assert!(
