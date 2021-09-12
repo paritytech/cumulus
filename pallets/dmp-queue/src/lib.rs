@@ -233,7 +233,7 @@ pub mod pallet {
 			data: &[u8],
 		) -> Result<Weight, (MessageId, Weight)> {
 			let id = sp_io::hashing::blake2_256(&data[..]);
-			let maybe_msg = VersionedXcm::<T::Call>::decode_and_advance_with_depth_limit(
+			let maybe_msg = VersionedXcm::<T::Call>::decode_all_with_depth_limit(
 				MAX_XCM_DECODE_DEPTH,
 				&mut &data[..],
 			)

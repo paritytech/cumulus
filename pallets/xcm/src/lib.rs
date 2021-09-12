@@ -115,7 +115,7 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 		let mut used = 0;
 		for (_sent_at, data) in iter {
 			let id = sp_io::hashing::twox_64(&data[..]);
-			let msg = VersionedXcm::<T::Call>::decode_and_advance_with_depth_limit(
+			let msg = VersionedXcm::<T::Call>::decode_all_with_depth_limit(
 				MAX_XCM_DECODE_DEPTH,
 				&mut &data[..],
 			)
@@ -148,7 +148,7 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 		let mut used = 0;
 		for (_sent_at, data) in iter {
 			let id = sp_io::hashing::twox_64(&data[..]);
-			let msg = VersionedXcm::<T::Call>::decode_and_advance_with_depth_limit(
+			let msg = VersionedXcm::<T::Call>::decode_all_with_depth_limit(
 				MAX_XCM_DECODE_DEPTH,
 				&mut &data[..],
 			)

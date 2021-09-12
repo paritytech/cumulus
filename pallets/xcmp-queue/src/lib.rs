@@ -411,7 +411,7 @@ impl<T: Config> Pallet<T> {
 			XcmpMessageFormat::ConcatenatedEncodedBlob => {
 				while !remaining_fragments.is_empty() {
 					last_remaining_fragments = remaining_fragments;
-					if let Ok(blob) = <Vec<u8>>::decode_and_advance_with_depth_limit(
+					if let Ok(blob) = <Vec<u8>>::decode_all_with_depth_limit(
 						32, // hardcoded constant since we don't process any blob XCMP msgs anyway
 						&mut remaining_fragments,
 					) {
