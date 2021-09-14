@@ -50,7 +50,7 @@ eventually be included by the relay chain for a parachain.
 To run a Rococo collator you will need to compile the following binary:
 
 ```
-cargo build --release -p polkadot-collator
+cargo build --release --locked -p polkadot-collator
 ```
 
 Otherwise you can compile it with 
@@ -59,7 +59,7 @@ Otherwise you can compile it with
 ```bash
 docker run --rm -it -w /shellhere/cumulus \
                     -v $(pwd):/shellhere/cumulus \
-                    paritytech/ci-linux:production cargo build --release -p polkadot-collator
+                    paritytech/ci-linux:production cargo build --release --locked -p polkadot-collator
 sudo chown -R $(id -u):$(id -g) target/
 ```
 
