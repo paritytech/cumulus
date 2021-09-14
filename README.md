@@ -53,6 +53,22 @@ To run a Rococo collator you will need to compile the following binary:
 cargo build --release -p polkadot-collator
 ```
 
+Otherwise you can compile it with 
+[Parity CI docker image](https://github.com/paritytech/scripts/tree/master/dockerfiles/ci-linux):
+
+```bash
+git clone https://github.com/paritytech/cumulus
+cd cumulus
+docker pull paritytech/ci-linux:production
+docker run --rm -it -w /shellhere/cumulus \
+                    -v $(pwd):/shellhere/cumulus \
+                    paritytech/ci-linux:production cargo build --release -p polkadot-collator
+sudo chown -R $(id -u):$(id -g) target/
+```
+
+If you want to reproduce other steps of CI process you can use the following 
+[guide](https://github.com/paritytech/scripts#gitlab-ci-for-building-docker-images).
+
 Once the executable is built, launch collators for each parachain (repeat once each for chain
 `tick`, `trick`, `track`):
 
@@ -124,7 +140,7 @@ cargo build --release
 
 ## Build the docker image
 
-After building `polkadot-collator` with cargo as documented in [this chapter](#build--launch-rococo-collators), the following will allow producting a new docker image where the compiled binary is injected:
+After building `polkadot-collator` with cargo or with Parity docker image as documented in [this chapter](#build--launch-rococo-collators), the following will allow producting a new docker image where the compiled binary is injected:
 
 ```
 ./docker/scripts/build-injected-image.sh
