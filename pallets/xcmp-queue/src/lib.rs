@@ -31,7 +31,7 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-use codec::{Decode, DecodeLimit, Encode};
+use codec::{Decode, DecodeAll, DecodeLimit, Encode};
 use cumulus_primitives_core::{
 	relay_chain::BlockNumber as RelayBlockNumber, ChannelStatus, GetChannelInfo, MessageSendError,
 	ParaId, XcmpMessageHandler, XcmpMessageSource, XcmpMessageFormat,
@@ -411,10 +411,7 @@ impl<T: Config> Pallet<T> {
 			XcmpMessageFormat::ConcatenatedEncodedBlob => {
 				while !remaining_fragments.is_empty() {
 					last_remaining_fragments = remaining_fragments;
-					if let Ok(blob) = <Vec<u8>>::decode_all_with_depth_limit(
-						32, // hardcoded constant since we don't process any blob XCMP msgs anyway
-						&mut remaining_fragments,
-					) {
+					if let Ok(blob) = <Vec<u8>>::decode_all(&mut remaining_fragments) {
 						let weight = max_weight - weight_used;
 						match Self::handle_blob_message(sender, sent_at, blob, weight) {
 							Ok(used) => weight_used = weight_used.saturating_add(used),
