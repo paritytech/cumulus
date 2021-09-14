@@ -57,9 +57,6 @@ Otherwise you can compile it with
 [Parity CI docker image](https://github.com/paritytech/scripts/tree/master/dockerfiles/ci-linux):
 
 ```bash
-git clone https://github.com/paritytech/cumulus
-cd cumulus
-docker pull paritytech/ci-linux:production
 docker run --rm -it -w /shellhere/cumulus \
                     -v $(pwd):/shellhere/cumulus \
                     paritytech/ci-linux:production cargo build --release -p polkadot-collator
