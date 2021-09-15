@@ -30,8 +30,8 @@
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
 	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError, OnValidationData,
-	OutboundHrmpMessage, ParaId, UpwardMessage, UpwardMessageSender, XcmpMessageHandler,
-	XcmpMessageSource, PersistedValidationData,
+	OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage, UpwardMessageSender,
+	XcmpMessageHandler, XcmpMessageSource,
 };
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use frame_support::{
@@ -46,7 +46,7 @@ use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
 use relay_state_snapshot::MessagingStateSnapshot;
 use sp_runtime::{
-	traits::{BlakeTwo256, Block as BlockT, Hash, BlockNumberProvider},
+	traits::{BlakeTwo256, Block as BlockT, BlockNumberProvider, Hash},
 	transaction_validity::{
 		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidity,
 		ValidTransaction,
@@ -393,7 +393,10 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(1_000_000)]
-		pub fn enact_authorized_upgrade(_: OriginFor<T>, code: Vec<u8>) -> DispatchResultWithPostInfo {
+		pub fn enact_authorized_upgrade(
+			_: OriginFor<T>,
+			code: Vec<u8>,
+		) -> DispatchResultWithPostInfo {
 			Self::validate_authorized_upgrade(&code[..])?;
 			Self::set_code_impl(code)?;
 			AuthorizedUpgrade::<T>::kill();
@@ -579,7 +582,7 @@ pub mod pallet {
 		}
 
 		fn is_inherent(call: &Self::Call) -> bool {
-			matches!(call, Call::set_validation_data {..})
+			matches!(call, Call::set_validation_data { .. })
 		}
 	}
 
@@ -598,7 +601,7 @@ pub mod pallet {
 	#[pallet::validate_unsigned]
 	impl<T: Config> sp_runtime::traits::ValidateUnsigned for Pallet<T> {
 		type Call = Call<T>;
-	
+
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			if let Call::enact_authorized_upgrade { ref code } = call {
 				if let Ok(hash) = Self::validate_authorized_upgrade(code) {
@@ -611,7 +614,7 @@ pub mod pallet {
 					});
 				}
 			}
-			if let Call::set_validation_data {..} = call {
+			if let Call::set_validation_data { .. } = call {
 				return Ok(Default::default());
 			}
 			Err(InvalidTransaction::Call.into())
@@ -941,7 +944,7 @@ impl<T: Config> Pallet<T> {
 
 pub struct ParachainSetCode<T>(sp_std::marker::PhantomData<T>);
 
-impl<T: Config> frame_system::SetCode for ParachainSetCode<T> {
+impl<T: Config> frame_system::SetCode<T> for ParachainSetCode<T> {
 	fn set_code(code: Vec<u8>) -> DispatchResult {
 		Pallet::<T>::set_code_impl(code)
 	}
