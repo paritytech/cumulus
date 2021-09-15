@@ -107,6 +107,7 @@ parameter_types! {
 	pub const RelayChain: MultiLocation = MultiLocation::parent();
 	pub Ancestry: MultiLocation = X1(Parachain(1u32.into())).into();
 	pub UnitWeightCost: Weight = 1_000_000;
+	pub const MaxInstructions: u32 = 100;
 }
 
 /// Means for transacting assets on this chain.
@@ -138,9 +139,12 @@ impl xcm_executor::Config for XcmConfig {
 	type IsTeleporter = NativeAsset;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = ();
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
+	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type Trader = ();
 	type ResponseHandler = ();
+	type AssetTrap = ();
+	type AssetClaims = ();
+	type SubscriptionService = ();
 }
 
 pub type XcmRouter = (
