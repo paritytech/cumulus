@@ -9,6 +9,7 @@ codec = { package = "parity-scale-codec", version = "2.0.0" }
 rand = "0.7.3"
 serde = { version = "1.0.101", features = ["derive"] }
 async-trait = "0.1.42"
+tokio = "1.10.0"
 
 # Substrate
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "master" }
