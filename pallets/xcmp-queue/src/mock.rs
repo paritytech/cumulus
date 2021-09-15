@@ -141,6 +141,7 @@ impl xcm_executor::Config for XcmConfig {
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
 	type Trader = ();
 	type ResponseHandler = ();
+	type SubscriptionService = ();
 }
 
 pub type XcmRouter = (

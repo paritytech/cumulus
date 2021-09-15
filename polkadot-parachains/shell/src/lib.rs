@@ -212,6 +212,7 @@ impl Config for XcmConfig {
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>; // balances not supported
 	type Trader = (); // balances not supported
 	type ResponseHandler = (); // Don't handle responses for now.
+	type SubscriptionService = (); // don't handle subscriptions for now
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
