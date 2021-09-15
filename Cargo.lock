@@ -4855,7 +4855,6 @@ source = "git+https://github.com/paritytech/substrate?branch=master#63b32fbaa276
 dependencies = [
  "frame-system",
  "parity-scale-codec",
- "scale-info",
  "sp-application-crypto",
  "sp-core",
  "sp-runtime",
@@ -5037,7 +5036,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "parity-scale-codec",
- "scale-info",
  "sp-runtime",
  "sp-std",
 ]
@@ -5051,7 +5049,6 @@ dependencies = [
  "frame-system",
  "pallet-timestamp",
  "parity-scale-codec",
- "scale-info",
  "sp-application-crypto",
  "sp-consensus-aura",
  "sp-runtime",
@@ -5597,7 +5594,6 @@ dependencies = [
  "frame-system",
  "parity-scale-codec",
  "safe-mix",
- "scale-info",
  "sp-runtime",
  "sp-std",
 ]
@@ -5848,7 +5844,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "parity-scale-codec",
- "scale-info",
  "sp-runtime",
  "sp-std",
 ]
@@ -9968,7 +9963,6 @@ source = "git+https://github.com/paritytech/substrate?branch=master#63b32fbaa276
 dependencies = [
  "async-trait",
  "parity-scale-codec",
- "scale-info",
  "sp-api",
  "sp-application-crypto",
  "sp-consensus",
