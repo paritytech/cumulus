@@ -72,12 +72,14 @@ variables:                         &default-vars
 
 fmt:
   stage:                           lint
+  image:                           "${CI_IMAGE}"
   <<:                              *kubernetes-env
   script:
     - cargo +nightly fmt --all -- --check
 
 clippy:
   stage:                           lint
+  image:                           "${CI_IMAGE}"
   <<:                              *kubernetes-env
   script:
     # add clippy is temporary until tests in substrate are not fixed
