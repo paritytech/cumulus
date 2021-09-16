@@ -28,8 +28,8 @@ use cumulus_primitives_core::ParaId;
 use log::info;
 use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
-	build_runtime, ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams,
-	KeystoreParams, NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
+	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
+	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
