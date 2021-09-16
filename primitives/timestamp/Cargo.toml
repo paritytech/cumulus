@@ -7,18 +7,18 @@ description = "Provides timestamp related functionality for parachains."
 
 [dependencies]
 # Substrate dependencies
-sp-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.9" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.9" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.9" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
 
 # Cumulus dependencies
 cumulus-primitives-core = { path = "../core", default-features = false }
 
 [dev-dependencies]
 # Substrate dependencies
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
 
 # Cumulus dependencies
 cumulus-test-client = { path = "../../test/client" }

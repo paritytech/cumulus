@@ -16,25 +16,25 @@ targets = ['x86_64-unknown-linux-gnu']
 log = { version = "0.4.0", default-features = false }
 codec = { default-features = false, features = ['derive'], package = 'parity-scale-codec', version = '2.0.0' }
 serde = { version = "1.0.119", default-features = false }
-sp-std = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.9" }
-sp-runtime = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.9" }
-sp-staking = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.9" }
-frame-support = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.9" }
-frame-system = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.9" }
-pallet-authorship = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.9" }
-pallet-session = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.9" }
+sp-std = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
+sp-runtime = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
+sp-staking = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
+frame-support = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
+frame-system = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
+pallet-authorship = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
+pallet-session = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
 
-frame-benchmarking = { default-features = false, optional = true, git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.9" }
+frame-benchmarking = { default-features = false, optional = true, git = 'https://github.com/paritytech/substrate', branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
 
 [dev-dependencies]
-sp-core = { git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.9" }
-sp-io = { git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.9" }
-sp-tracing = { git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.9" }
-sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.9" }
-pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.9" }
-sp-consensus-aura = { git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.9" }
-pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.9" }
-pallet-aura = { git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.9" }
+sp-core = { git = 'https://github.com/paritytech/substrate', branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
+sp-io = { git = 'https://github.com/paritytech/substrate', branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
+sp-tracing = { git = 'https://github.com/paritytech/substrate', branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
+sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
+pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
+sp-consensus-aura = { git = 'https://github.com/paritytech/substrate', branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
+pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
+pallet-aura = { git = 'https://github.com/paritytech/substrate', branch = "apopiak/polkadot-v0.9.9-compilation-fix" }
 
 [features]
 default = ['std']
