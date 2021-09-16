@@ -70,17 +70,17 @@ variables:                         &default-vars
 
 #### stage:                        lint
 
+fmt:
+  stage:                           lint
+  <<:                              *docker-env
+  script:
+    - cargo +nightly fmt --all -- --check
+
 clippy:
   stage:                           lint
   <<:                              *docker-env
   script:
     - cargo clippy -- -D warnings
-
-fmt:
-  stage:                           lint
-  <<:                              *docker-env
-  script:
-    - cargo fmt --all -- --check
 
 #### stage:                        test
 
