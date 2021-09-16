@@ -6,6 +6,7 @@ use_small_heuristics = "Max"
 # Imports
 imports_granularity = "Crate"
 reorder_imports = true
+merge_imports=true
 
 # Consistency
 newline_style = "Unix"
