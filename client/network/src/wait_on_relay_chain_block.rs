@@ -94,9 +94,7 @@ where
 	) -> impl Future<Output = Result<(), Error>> {
 		let _lock = self.backend.get_import_lock().read();
 		match self.backend.blockchain().status(BlockId::Hash(hash)) {
-			Ok(BlockStatus::InChain) => {
-				return ready(Ok(())).boxed()
-			},
+			Ok(BlockStatus::InChain) => return ready(Ok(())).boxed(),
 			Err(err) => return ready(Err(Error::BlockchainError(hash, err))).boxed(),
 			_ => {},
 		}

@@ -130,9 +130,7 @@ impl BlockAnnounceData {
 		let runtime_api_block_id = BlockId::Hash(self.receipt.descriptor.relay_parent);
 		let session_index = match runtime_api.session_index_for_child(&runtime_api_block_id) {
 			Ok(r) => r,
-			Err(e) => {
-				return Err(BlockAnnounceError(format!("{:?}", e)))
-			},
+			Err(e) => return Err(BlockAnnounceError(format!("{:?}", e))),
 		};
 
 		let signing_context =
@@ -141,9 +139,7 @@ impl BlockAnnounceData {
 		// Check that the signer is a legit validator.
 		let authorities = match runtime_api.validators(&runtime_api_block_id) {
 			Ok(r) => r,
-			Err(e) => {
-				return Err(BlockAnnounceError(format!("{:?}", e)))
-			},
+			Err(e) => return Err(BlockAnnounceError(format!("{:?}", e))),
 		};
 		let signer = match authorities.get(validator_index.0 as usize) {
 			Some(r) => r,
