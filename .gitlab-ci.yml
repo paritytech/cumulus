@@ -82,8 +82,8 @@ clippy:
   script:
     # add clippy is temporary until tests in substrate are not fixed
     # https://github.com/paritytech/substrate/pull/9637
-    - rustup component add clippy
-    - cargo clippy -- -D warnings
+    - rustup component add clippy --toolchain nightly-x86_64-unknown-linux-gnu
+    - cargo +nightly clippy -- -D warnings
 
 #### stage:                        test
 
