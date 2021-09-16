@@ -172,7 +172,7 @@ pub fn transfer(
 ) -> UncheckedExtrinsic {
 	let function = Call::Balances(pallet_balances::Call::transfer {
 		dest: dest.public().into(),
-        value,
+		value,
 	});
 
 	generate_extrinsic(client, origin, function)
