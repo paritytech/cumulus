@@ -79,8 +79,7 @@ fmt:
 
 clippy:
   stage:                           lint
-  image:                           "${CI_IMAGE}"
-  <<:                              *kubernetes-env
+  <<:                              *docker-env
   script:
     # add clippy is temporary until tests in substrate are not fixed
     # https://github.com/paritytech/substrate/pull/9637
