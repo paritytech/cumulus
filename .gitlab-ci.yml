@@ -72,13 +72,13 @@ variables:                         &default-vars
 
 fmt:
   stage:                           lint
-  <<:                              *docker-env
+  <<:                              *kubernetes-env
   script:
     - cargo +nightly fmt --all -- --check
 
 clippy:
   stage:                           lint
-  <<:                              *docker-env
+  <<:                              *kubernetes-env
   script:
     # add clippy is temporary until tests in substrate are not fixed
     # https://github.com/paritytech/substrate/pull/9637
