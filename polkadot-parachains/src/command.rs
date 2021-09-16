@@ -423,13 +423,10 @@ pub fn run() -> Result<()> {
 					generate_genesis_block(&config.chain_spec).map_err(|e| format!("{:?}", e))?;
 				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
-				let tokio_runtime = build_runtime()?;
-				let polkadot_config = SubstrateCli::create_configuration(
-					&polkadot_cli,
-					&polkadot_cli,
-					tokio_runtime.handle().clone(),
-				)
-				.map_err(|err| format!("Relay chain argument error: {}", err))?;
+				let tokio_handle = config.tokio_handle.clone();
+				let polkadot_config =
+					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
+						.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
 				info!("Parachain id: {:?}", id);
 				info!("Parachain Account: {}", parachain_account);
