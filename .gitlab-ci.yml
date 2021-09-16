@@ -80,6 +80,9 @@ clippy:
   stage:                           lint
   <<:                              *docker-env
   script:
+    # add clippy is temporary until tests in substrate are not fixed
+    # https://github.com/paritytech/substrate/pull/9637
+    - rustup component add clippy
     - cargo clippy -- -D warnings
 
 #### stage:                        test
