@@ -6,6 +6,7 @@
 
 
 stages:
+  - lint
   - test
   - publish
 
@@ -66,6 +67,20 @@ variables:                         &default-vars
     expire_in:                     28 days
     paths:
       - ./artifacts/
+
+#### stage:                        lint
+
+clippy:
+  stage:                           lint
+  <<:                              *docker-env
+  script:
+    - cargo clippy -- -D warnings
+
+fmt:
+  stage:                           lint
+  <<:                              *docker-env
+  script:
+    - cargo fmt --all -- --check
 
 #### stage:                        test
 
