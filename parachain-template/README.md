@@ -334,7 +334,7 @@ that it's off.
 Now that you have the prerequisites:
 1. Install it with `yarn global add polkadot-launch` or `npm i polkadot-launch -g`
 1. Check that the paths in `polkadot-launch/config.json` point to the `polkadot` and
-   `parachain-template-node` executables
+   `parachain-collator` executables
 1. Launch the network with `polkadot-launch polkadot-launch/config.json`
 
 At this point you should be able to use [Polkadot JS Apps](https://polkadot.js.org/apps/)
