@@ -67,7 +67,7 @@ pub enum Error {
 	Slot(ReadEntryErr),
 	/// The upgrade go-ahead signal cannot be read.
 	UpgradeGoAhead(ReadEntryErr),
-	///  The upgrade restriction signall cannot be read.
+	/// The upgrade restriction signal cannot be read.
 	UpgradeRestriction(ReadEntryErr),
 	/// The host configuration cannot be extracted.
 	Config(ReadEntryErr),

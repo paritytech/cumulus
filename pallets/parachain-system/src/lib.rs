@@ -443,7 +443,7 @@ pub mod pallet {
 
 	/// In case of a scheduled upgrade, this storage field contains the validation code to be applied.
 	///
-	/// As soon as the parachain gives us the go-ahead signal, we will overwrite the [`:code`][well_known_keys::CODE]
+	/// As soon as the relay chain gives us the go-ahead signal, we will overwrite the [`:code`][well_known_keys::CODE]
 	/// which will result the next block process with the new validation code. This concludes the upgrade process.
 	///
 	/// [well_known_keys::CODE]: sp_core::storage::well_known_keys::CODE
@@ -475,7 +475,7 @@ pub mod pallet {
 	/// candidate will be invalid.
 	///
 	/// This storage item is a mirror of the corresponding value for the current parachain from the
-	/// relay-chain. This value is emphemeral which means it doesn't hit the storage. This value is
+	/// relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
 	/// set after the inherent.
 	#[pallet::storage]
 	pub(super) type UpgradeRestrictionSignal<T: Config> =
