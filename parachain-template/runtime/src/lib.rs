@@ -330,7 +330,7 @@ impl pallet_timestamp::Config for Runtime {
 	type Moment = u64;
 	type OnTimestampSet = ();
 	type MinimumPeriod = MinimumPeriod;
-	type WeightInfo = (); // TODO: Add benchmarked weights.
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -565,7 +565,7 @@ impl pallet_session::Config for Runtime {
 	type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = SessionKeys;
 	type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
-	type WeightInfo = (); // TODO: Add benchmarked weights.
+	type WeightInfo = ();
 }
 
 impl pallet_aura::Config for Runtime {
@@ -603,7 +603,7 @@ impl pallet_collator_selection::Config for Runtime {
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
 	type ValidatorRegistration = Session;
-	type WeightInfo = (); // TODO: Add benchmarked weights.
+	type WeightInfo = ();
 }
 
 /// Configure the pallet template in pallets/template.
