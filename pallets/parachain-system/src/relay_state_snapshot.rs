@@ -18,18 +18,18 @@ use codec::{Decode, Encode};
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId,
 };
-use sp_trie::{MemoryDB, HashDBT, EMPTY_PREFIX};
+use scale_info::TypeInfo;
 use sp_runtime::traits::HashFor;
 use sp_state_machine::{Backend, TrieBackend};
 use sp_std::vec::Vec;
-use sp_trie::StorageProof;
+use sp_trie::{HashDBT, MemoryDB, StorageProof, EMPTY_PREFIX};
 
 /// A snapshot of some messaging related state of relay chain pertaining to the current parachain.
 ///
 /// This data is essential for making sure that the parachain is aware of current resource use on
 /// the relay chain and that the candidates produced for this parachain do not exceed any of these
 /// limits.
-#[derive(Clone, Encode, Decode)]
+#[derive(Clone, Encode, Decode, TypeInfo)]
 pub struct MessagingStateSnapshot {
 	/// The current message queue chain head for downward message queue.
 	///
@@ -150,14 +150,11 @@ impl RelayChainStateProof {
 	) -> Result<Self, Error> {
 		let db = proof.into_memory_db::<HashFor<relay_chain::Block>>();
 		if !db.contains(&relay_parent_storage_root, EMPTY_PREFIX) {
-			return Err(Error::RootMismatch);
+			return Err(Error::RootMismatch)
 		}
 		let trie_backend = TrieBackend::new(db, relay_parent_storage_root);
 
-		Ok(Self {
-			para_id,
-			trie_backend,
-		})
+		Ok(Self { para_id, trie_backend })
 	}
 
 	/// Read the [`MessagingStateSnapshot`] from the relay chain state proof.
@@ -194,10 +191,7 @@ impl RelayChainStateProof {
 
 		let mut ingress_channels = Vec::with_capacity(ingress_channel_index.len());
 		for sender in ingress_channel_index {
-			let channel_id = relay_chain::v1::HrmpChannelId {
-				sender,
-				recipient: self.para_id,
-			};
+			let channel_id = relay_chain::v1::HrmpChannelId { sender, recipient: self.para_id };
 			let hrmp_channel: AbridgedHrmpChannel = read_entry(
 				&self.trie_backend,
 				&relay_chain::well_known_keys::hrmp_channels(channel_id),
@@ -209,10 +203,7 @@ impl RelayChainStateProof {
 
 		let mut egress_channels = Vec::with_capacity(egress_channel_index.len());
 		for recipient in egress_channel_index {
-			let channel_id = relay_chain::v1::HrmpChannelId {
-				sender: self.para_id,
-				recipient,
-			};
+			let channel_id = relay_chain::v1::HrmpChannelId { sender: self.para_id, recipient };
 			let hrmp_channel: AbridgedHrmpChannel = read_entry(
 				&self.trie_backend,
 				&relay_chain::well_known_keys::hrmp_channels(channel_id),

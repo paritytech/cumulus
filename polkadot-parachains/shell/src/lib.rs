@@ -22,6 +22,8 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use codec::{Decode, Encode};
+use scale_info::TypeInfo;
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
@@ -73,10 +75,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
-	NativeVersion {
-		runtime_version: VERSION,
-		can_author_with: Default::default(),
-	}
+	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
 /// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
@@ -241,7 +240,7 @@ construct_runtime! {
 }
 
 /// Simple implementation which fails any transaction which is signed.
-#[derive(Eq, PartialEq, Clone, Default, sp_core::RuntimeDebug, codec::Encode, codec::Decode)]
+#[derive(Eq, PartialEq, Clone, Default, sp_core::RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct DisallowSigned;
 impl sp_runtime::traits::SignedExtension for DisallowSigned {
 	const IDENTIFIER: &'static str = "DisallowSigned";
@@ -319,7 +318,7 @@ impl_runtime_apis! {
 
 	impl sp_api::Metadata<Block> for Runtime {
 		fn metadata() -> OpaqueMetadata {
-			Runtime::metadata().into()
+			OpaqueMetadata::new(Runtime::metadata().into())
 		}
 	}
 

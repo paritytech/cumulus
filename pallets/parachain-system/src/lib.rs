@@ -30,8 +30,8 @@
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
 	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError, OnValidationData,
-	OutboundHrmpMessage, ParaId, UpwardMessage, UpwardMessageSender, XcmpMessageHandler,
-	XcmpMessageSource, PersistedValidationData,
+	OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage, UpwardMessageSender,
+	XcmpMessageHandler, XcmpMessageSource,
 };
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use frame_support::{
@@ -46,7 +46,7 @@ use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
 use relay_state_snapshot::MessagingStateSnapshot;
 use sp_runtime::{
-	traits::{BlakeTwo256, Block as BlockT, Hash, BlockNumberProvider},
+	traits::{BlakeTwo256, Block as BlockT, BlockNumberProvider, Hash},
 	transaction_validity::{
 		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidity,
 		ValidTransaction,
@@ -151,8 +151,8 @@ pub mod pallet {
 						false,
 						"host configuration is promised to set until `on_finalize`; qed",
 					);
-					return;
-				}
+					return
+				},
 			};
 			let relevant_messaging_state = match Self::relevant_messaging_state() {
 				Some(ok) => ok,
@@ -162,8 +162,8 @@ pub mod pallet {
 						"relevant messaging state is promised to be set until `on_finalize`; \
 							qed",
 					);
-					return;
-				}
+					return
+				},
 			};
 
 			<PendingUpwardMessages<T>>::mutate(|up| {
@@ -179,19 +179,16 @@ pub mod pallet {
 				// available_capacity and available_size.
 				let num = up
 					.iter()
-					.scan(
-						(available_capacity as usize, available_size as usize),
-						|state, msg| {
-							let (cap_left, size_left) = *state;
-							match (cap_left.checked_sub(1), size_left.checked_sub(msg.len())) {
-								(Some(new_cap), Some(new_size)) => {
-									*state = (new_cap, new_size);
-									Some(())
-								}
-								_ => None,
-							}
-						},
-					)
+					.scan((available_capacity as usize, available_size as usize), |state, msg| {
+						let (cap_left, size_left) = *state;
+						match (cap_left.checked_sub(1), size_left.checked_sub(msg.len())) {
+							(Some(new_cap), Some(new_size)) => {
+								*state = (new_cap, new_size);
+								Some(())
+							},
+							_ => None,
+						}
+					})
 					.count();
 
 				// TODO: #274 Return back messages that do not longer fit into the queue.
@@ -369,10 +366,7 @@ pub mod pallet {
 				vfp.relay_parent_number,
 			);
 
-			Ok(PostDispatchInfo {
-				actual_weight: Some(total_weight),
-				pays_fee: Pays::No,
-			})
+			Ok(PostDispatchInfo { actual_weight: Some(total_weight), pays_fee: Pays::No })
 		}
 
 		#[pallet::weight((1_000, DispatchClass::Operational))]
@@ -396,7 +390,10 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(1_000_000)]
-		pub fn enact_authorized_upgrade(_: OriginFor<T>, code: Vec<u8>) -> DispatchResultWithPostInfo {
+		pub fn enact_authorized_upgrade(
+			_: OriginFor<T>,
+			code: Vec<u8>,
+		) -> DispatchResultWithPostInfo {
 			Self::validate_authorized_upgrade(&code[..])?;
 			Self::set_code_impl(code)?;
 			AuthorizedUpgrade::<T>::kill();
@@ -406,7 +403,6 @@ pub mod pallet {
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	#[pallet::metadata(T::Hash = "Hash")]
 	pub enum Event<T: Config> {
 		/// The validation function has been scheduled to apply.
 		ValidationFunctionStored,
@@ -579,17 +575,16 @@ pub mod pallet {
 			cumulus_primitives_parachain_inherent::INHERENT_IDENTIFIER;
 
 		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-			let data: ParachainInherentData = data
-				.get_data(&Self::INHERENT_IDENTIFIER)
-				.ok()
-				.flatten()
-				.expect("validation function params are always injected into inherent data; qed");
+			let data: ParachainInherentData =
+				data.get_data(&Self::INHERENT_IDENTIFIER).ok().flatten().expect(
+					"validation function params are always injected into inherent data; qed",
+				);
 
-			Some(Call::set_validation_data(data))
+			Some(Call::set_validation_data { data })
 		}
 
 		fn is_inherent(call: &Self::Call) -> bool {
-			matches!(call, Call::set_validation_data(_))
+			matches!(call, Call::set_validation_data { .. })
 		}
 	}
 
@@ -608,9 +603,9 @@ pub mod pallet {
 	#[pallet::validate_unsigned]
 	impl<T: Config> sp_runtime::traits::ValidateUnsigned for Pallet<T> {
 		type Call = Call<T>;
-	
+
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-			if let Call::enact_authorized_upgrade(ref code) = call {
+			if let Call::enact_authorized_upgrade { ref code } = call {
 				if let Ok(hash) = Self::validate_authorized_upgrade(code) {
 					return Ok(ValidTransaction {
 						priority: 100,
@@ -618,11 +613,11 @@ pub mod pallet {
 						provides: vec![hash.as_ref().to_vec()],
 						longevity: TransactionLongevity::max_value(),
 						propagate: true,
-					});
+					})
 				}
 			}
-			if let Call::set_validation_data(..) = call {
-				return Ok(Default::default());
+			if let Call::set_validation_data { .. } = call {
+				return Ok(Default::default())
 			}
 			Err(InvalidTransaction::Call.into())
 		}
@@ -657,8 +652,8 @@ impl<T: Config> GetChannelInfo for Pallet<T> {
 		let channels = match Self::relevant_messaging_state() {
 			None => {
 				log::warn!("calling `get_channel_status` with no RelevantMessagingState?!");
-				return ChannelStatus::Closed;
-			}
+				return ChannelStatus::Closed
+			},
 			Some(d) => d.egress_channels,
 		};
 		// ^^^ NOTE: This storage field should carry over from the previous block. So if it's
@@ -674,7 +669,7 @@ impl<T: Config> GetChannelInfo for Pallet<T> {
 		let meta = &channels[index].1;
 		if meta.msg_count + 1 > meta.max_capacity {
 			// The channel is at its capacity. Skip it for now.
-			return ChannelStatus::Full;
+			return ChannelStatus::Full
 		}
 		let max_size_now = meta.max_total_size - meta.total_size;
 		let max_size_ever = meta.max_message_size;
@@ -778,9 +773,7 @@ impl<T: Config> Pallet<T> {
 			// A violation of the assertion below indicates that one of the messages submitted
 			// by the collator was sent from a sender that doesn't have a channel opened to
 			// this parachain, according to the relay-parent state.
-			assert!(ingress_channels
-				.binary_search_by_key(sender, |&(s, _)| s)
-				.is_ok(),);
+			assert!(ingress_channels.binary_search_by_key(sender, |&(s, _)| s).is_ok(),);
 		}
 
 		// Second, prepare horizontal messages for a more convenient processing:
@@ -794,9 +787,7 @@ impl<T: Config> Pallet<T> {
 		let mut horizontal_messages = horizontal_messages
 			.into_iter()
 			.flat_map(|(sender, channel_contents)| {
-				channel_contents
-					.into_iter()
-					.map(move |message| (sender, message))
+				channel_contents.into_iter().map(move |message| (sender, message))
 			})
 			.collect::<Vec<_>>();
 		horizontal_messages.sort_by(|a, b| {
@@ -813,10 +804,7 @@ impl<T: Config> Pallet<T> {
 
 		{
 			for (sender, ref horizontal_message) in &horizontal_messages {
-				if hrmp_watermark
-					.map(|w| w < horizontal_message.sent_at)
-					.unwrap_or(true)
-				{
+				if hrmp_watermark.map(|w| w < horizontal_message.sent_at).unwrap_or(true) {
 					hrmp_watermark = Some(horizontal_message.sent_at);
 				}
 
@@ -935,7 +923,7 @@ impl<T: Config> Pallet<T> {
 
 pub struct ParachainSetCode<T>(sp_std::marker::PhantomData<T>);
 
-impl<T: Config> frame_system::SetCode for ParachainSetCode<T> {
+impl<T: Config> frame_system::SetCode<T> for ParachainSetCode<T> {
 	fn set_code(code: Vec<u8>) -> DispatchResult {
 		Pallet::<T>::set_code_impl(code)
 	}
@@ -949,7 +937,7 @@ impl<T: Config> frame_system::SetCode for ParachainSetCode<T> {
 /// A head for an empty chain is agreed to be a zero hash.
 ///
 /// [hash chain]: https://en.wikipedia.org/wiki/Hash_chain
-#[derive(Default, Clone, codec::Encode, codec::Decode)]
+#[derive(Default, Clone, codec::Encode, codec::Decode, scale_info::TypeInfo)]
 struct MessageQueueChain(relay_chain::Hash);
 
 impl MessageQueueChain {
@@ -993,11 +981,10 @@ impl<T: Config> Pallet<T> {
 		//
 		// However, changing this setting is expected to be rare.
 		match Self::host_configuration() {
-			Some(cfg) => {
+			Some(cfg) =>
 				if message.len() > cfg.max_upward_message_size as usize {
-					return Err(MessageSendError::TooBig);
-				}
-			}
+					return Err(MessageSendError::TooBig)
+				},
 			None => {
 				// This storage field should carry over from the previous block. So if it's None
 				// then it must be that this is an edge-case where a message is attempted to be
@@ -1008,7 +995,7 @@ impl<T: Config> Pallet<T> {
 				// returned back to the sender.
 				//
 				// Thus fall through here.
-			}
+			},
 		};
 		<PendingUpwardMessages<T>>::append(message);
 		Ok(0)

@@ -124,7 +124,7 @@ where
 		Client::Api: AuraApi<B, P::Public>,
 		BI: BlockImport<B, Transaction = sp_api::TransactionFor<Client, B>> + Send + Sync + 'static,
 		SO: SyncOracle + Send + Sync + Clone + 'static,
-		BS: BackoffAuthoringBlocksStrategy<NumberFor<B>> + Send + 'static,
+		BS: BackoffAuthoringBlocksStrategy<NumberFor<B>> + Send + Sync + 'static,
 		PF: Environment<B, Error = Error> + Send + Sync + 'static,
 		PF::Proposer: Proposer<
 			B,
@@ -215,9 +215,8 @@ where
 		relay_parent: PHash,
 		validation_data: &PersistedValidationData,
 	) -> Option<ParachainCandidate<B>> {
-		let (inherent_data, inherent_data_providers) = self
-			.inherent_data(parent.hash(), validation_data, relay_parent)
-			.await?;
+		let (inherent_data, inherent_data_providers) =
+			self.inherent_data(parent.hash(), validation_data, relay_parent).await?;
 
 		let info = SlotInfo::new(
 			inherent_data_providers.slot(),
@@ -234,10 +233,7 @@ where
 
 		let res = self.aura_worker.lock().await.on_slot(info).await?;
 
-		Some(ParachainCandidate {
-			block: res.block,
-			proof: res.storage_proof,
-		})
+		Some(ParachainCandidate { block: res.block, proof: res.storage_proof })
 	}
 }
 
@@ -304,7 +300,7 @@ where
 		+ Sync
 		+ 'static,
 	SO: SyncOracle + Send + Sync + Clone + 'static,
-	BS: BackoffAuthoringBlocksStrategy<NumberFor<Block>> + Send + 'static,
+	BS: BackoffAuthoringBlocksStrategy<NumberFor<Block>> + Send + Sync + 'static,
 	PF: Environment<Block, Error = Error> + Send + Sync + 'static,
 	PF::Proposer: Proposer<
 		Block,
@@ -387,7 +383,7 @@ where
 		+ Sync
 		+ 'static,
 	SO: SyncOracle + Send + Sync + Clone + 'static,
-	BS: BackoffAuthoringBlocksStrategy<NumberFor<Block>> + Send + 'static,
+	BS: BackoffAuthoringBlocksStrategy<NumberFor<Block>> + Send + Sync + 'static,
 	PF: Environment<Block, Error = Error> + Send + Sync + 'static,
 	PF::Proposer: Proposer<
 		Block,
@@ -469,7 +465,7 @@ where
 		+ Sync
 		+ 'static,
 	SO: SyncOracle + Send + Sync + Clone + 'static,
-	BS: BackoffAuthoringBlocksStrategy<NumberFor<Block>> + Send + 'static,
+	BS: BackoffAuthoringBlocksStrategy<NumberFor<Block>> + Send + Sync + 'static,
 	PF: Environment<Block, Error = Error> + Send + Sync + 'static,
 	PF::Proposer: Proposer<
 		Block,
