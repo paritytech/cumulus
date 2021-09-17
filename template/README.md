@@ -51,7 +51,7 @@ Clone and build [Polkadot](https://github.com/paritytech/polkadot) (beware of th
 
 ```bash
 # Get a fresh clone, or `cd` to where you have polkadot already:
-git clone -b v0.9.7 --depth 1 https://github.com/paritytech/polkadot.git
+git clone -b v0.9.10 --depth 1 https://github.com/paritytech/polkadot.git
 cd polkadot
 cargo build --release
 ```
@@ -320,6 +320,24 @@ reporting _parachain_ blocks:
 ```
 
 **Note the delay here!** It may take some time for your relay chain to enter a new epoch.
+
+## Using `polkadot-launch` Tool
+
+You can also get a relay chain and some collators deployed using the [`polkadot-launch`](https://github.com/paritytech/polkadot-launch)
+tool ‒ it starts Polkadot and registers the Canvas parachain on it automatically.
+
+To use `polkadot-launch` you must ensure that you're using Node.js `v14.x` or newer. If
+you're on macOS, you must also ensure that your machine's firewall is disabled. You can
+do this by going to "System Preferences" > "Security & Privacy" > "Firewall" and ensuring
+that it's off.
+
+Now that you have the prerequisites:
+1. Install it with `yarn global add polkadot-launch` or `npm i polkadot-launch -g`
+1. Check that the paths in `polkadot-launch/config.json` point to the `polkadot` and `canvas` executables
+1. Launch the network with `polkadot-launch polkadot-launch/config.json`
+
+At this point you should be able to use [Polkadot JS Apps](https://polkadot.js.org/apps/)
+to connect to the Polkadot relay chain nodes as well as the Canvas collator.
 
 ## Rococo & Westend Relay Chain Testnets
 
