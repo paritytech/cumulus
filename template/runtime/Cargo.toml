@@ -1,5 +1,5 @@
 [package]
-name = "canvas-runtime"
+name = "parachain-template-runtime"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 license = "GPL-3.0-only"
@@ -52,17 +52,17 @@ pallet-transaction-payment-rpc-runtime-api = { git = 'https://github.com/parityt
 
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 
-# Cumulus Dependencies
-cumulus-pallet-aura-ext = { git = 'https://github.com/paritytech/cumulus', default-features = false , branch = "master" }
-cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus', default-features = false , branch = "master" }
-cumulus-pallet-parachain-system = { git = 'https://github.com/paritytech/cumulus', default-features = false , branch = "master" }
-cumulus-pallet-xcm = { git = 'https://github.com/paritytech/cumulus', default-features = false , branch = "master" }
-cumulus-pallet-xcmp-queue = { git = 'https://github.com/paritytech/cumulus', default-features = false , branch = "master" }
-cumulus-primitives-core = { git = 'https://github.com/paritytech/cumulus', default-features = false , branch = "master" }
-cumulus-primitives-timestamp = { git = 'https://github.com/paritytech/cumulus', default-features = false , branch = "master" }
-cumulus-primitives-utility = { git = 'https://github.com/paritytech/cumulus', default-features = false , branch = "master" }
-parachain-info = { git = 'https://github.com/paritytech/cumulus', default-features = false , branch = "master" }
-pallet-collator-selection = { git = 'https://github.com/paritytech/cumulus', default-features = false , branch = "master" }
+# Cumulus dependencies
+cumulus-pallet-aura-ext = { path = "../../pallets/aura-ext", default-features = false }
+cumulus-pallet-dmp-queue = { path = "../../pallets/dmp-queue", default-features = false }
+cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false }
+cumulus-pallet-xcm = { path = "../../pallets/xcm", default-features = false }
+cumulus-pallet-xcmp-queue = { path = "../../pallets/xcmp-queue", default-features = false }
+cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
+cumulus-primitives-timestamp = { path = "../../primitives/timestamp", default-features = false }
+cumulus-primitives-utility = { path = "../../primitives/utility", default-features = false }
+pallet-collator-selection = { path = "../../pallets/collator-selection", default-features = false }
+parachain-info = { path = "../../polkadot-parachains/pallets/parachain-info", default-features = false }
 
 # Polkadot Dependencies
 polkadot-parachain = { git = 'https://github.com/paritytech/polkadot', default-features = false , branch = "master" }

@@ -965,125 +965,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "canvas-node"
-version = "0.1.0"
-dependencies = [
- "canvas-runtime",
- "cumulus-client-cli 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-client-collator 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-client-consensus-aura 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-client-consensus-common 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-client-network 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-client-service 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-primitives-parachain-inherent 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "derive_more",
- "frame-benchmarking",
- "frame-benchmarking-cli",
- "hex-literal 0.3.3",
- "jsonrpc-core",
- "log",
- "pallet-contracts-rpc",
- "pallet-transaction-payment-rpc",
- "parity-scale-codec",
- "polkadot-cli",
- "polkadot-parachain",
- "polkadot-primitives",
- "polkadot-service",
- "polkadot-test-service",
- "sc-basic-authorship",
- "sc-chain-spec",
- "sc-cli",
- "sc-client-api",
- "sc-consensus",
- "sc-executor",
- "sc-keystore",
- "sc-network",
- "sc-rpc",
- "sc-rpc-api",
- "sc-service",
- "sc-telemetry",
- "sc-tracing",
- "sc-transaction-pool",
- "sc-transaction-pool-api",
- "serde",
- "sp-api",
- "sp-block-builder",
- "sp-blockchain",
- "sp-consensus",
- "sp-consensus-aura",
- "sp-core",
- "sp-inherents",
- "sp-keystore",
- "sp-offchain",
- "sp-runtime",
- "sp-session",
- "sp-timestamp",
- "sp-transaction-pool",
- "structopt",
- "substrate-build-script-utils",
- "substrate-frame-rpc-system",
- "substrate-prometheus-endpoint",
-]
-
-[[package]]
-name = "canvas-runtime"
-version = "0.1.0"
-dependencies = [
- "cumulus-pallet-aura-ext 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-pallet-dmp-queue 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-pallet-parachain-system 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-pallet-xcm 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-pallet-xcmp-queue 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-primitives-timestamp 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-primitives-utility 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "frame-benchmarking",
- "frame-executive",
- "frame-support",
- "frame-system",
- "frame-system-benchmarking",
- "frame-system-rpc-runtime-api",
- "log",
- "pallet-aura",
- "pallet-authorship",
- "pallet-balances",
- "pallet-collator-selection 3.0.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "pallet-contracts",
- "pallet-contracts-primitives",
- "pallet-contracts-rpc-runtime-api",
- "pallet-randomness-collective-flip",
- "pallet-session",
- "pallet-sudo",
- "pallet-timestamp",
- "pallet-transaction-payment",
- "pallet-transaction-payment-rpc-runtime-api",
- "pallet-xcm",
- "parachain-info 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "parity-scale-codec",
- "polkadot-parachain",
- "polkadot-runtime-common",
- "serde",
- "smallvec",
- "sp-api",
- "sp-block-builder",
- "sp-consensus-aura",
- "sp-core",
- "sp-inherents",
- "sp-io",
- "sp-offchain",
- "sp-runtime",
- "sp-session",
- "sp-std",
- "sp-transaction-pool",
- "sp-version",
- "substrate-wasm-builder",
- "xcm",
- "xcm-builder",
- "xcm-executor",
-]
-
-[[package]]
 name = "cargo-platform"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1536,23 +1417,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-client-cli"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
-dependencies = [
- "sc-cli",
- "sc-service",
- "structopt",
-]
-
-[[package]]
 name = "cumulus-client-collator"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "cumulus-client-consensus-common 0.1.0",
- "cumulus-client-network 0.1.0",
- "cumulus-primitives-core 0.1.0",
+ "cumulus-client-consensus-common",
+ "cumulus-client-network",
+ "cumulus-primitives-core",
  "cumulus-test-client",
  "cumulus-test-runtime",
  "futures 0.3.17",
@@ -1574,65 +1445,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-client-collator"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
-dependencies = [
- "cumulus-client-consensus-common 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-client-network 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "futures 0.3.17",
- "parity-scale-codec",
- "parking_lot 0.10.2",
- "polkadot-node-primitives",
- "polkadot-node-subsystem",
- "polkadot-overseer",
- "polkadot-primitives",
- "sc-client-api",
- "sp-api",
- "sp-consensus",
- "sp-core",
- "sp-runtime",
- "tracing",
-]
-
-[[package]]
 name = "cumulus-client-consensus-aura"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "cumulus-client-consensus-common 0.1.0",
- "cumulus-primitives-core 0.1.0",
- "futures 0.3.17",
- "parity-scale-codec",
- "polkadot-client",
- "sc-client-api",
- "sc-consensus",
- "sc-consensus-aura",
- "sc-consensus-slots",
- "sc-telemetry",
- "sp-api",
- "sp-application-crypto",
- "sp-block-builder",
- "sp-blockchain",
- "sp-consensus",
- "sp-consensus-aura",
- "sp-core",
- "sp-inherents",
- "sp-keystore",
- "sp-runtime",
- "substrate-prometheus-endpoint",
- "tracing",
-]
-
-[[package]]
-name = "cumulus-client-consensus-aura"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
-dependencies = [
- "async-trait",
- "cumulus-client-consensus-common 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
+ "cumulus-client-consensus-common",
+ "cumulus-primitives-core",
  "futures 0.3.17",
  "parity-scale-codec",
  "polkadot-client",
@@ -1678,32 +1496,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-client-consensus-common"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
-dependencies = [
- "async-trait",
- "dyn-clone",
- "futures 0.3.17",
- "parity-scale-codec",
- "polkadot-primitives",
- "sc-client-api",
- "sc-consensus",
- "sp-api",
- "sp-blockchain",
- "sp-consensus",
- "sp-runtime",
- "sp-trie",
- "tracing",
-]
-
-[[package]]
 name = "cumulus-client-consensus-relay-chain"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "cumulus-client-consensus-common 0.1.0",
- "cumulus-primitives-core 0.1.0",
+ "cumulus-client-consensus-common",
+ "cumulus-primitives-core",
  "futures 0.3.17",
  "parking_lot 0.10.2",
  "polkadot-client",
@@ -1724,7 +1522,7 @@ dependencies = [
 name = "cumulus-client-network"
 version = "0.1.0"
 dependencies = [
- "cumulus-primitives-core 0.1.0",
+ "cumulus-primitives-core",
  "cumulus-test-service",
  "derive_more",
  "futures 0.3.17",
@@ -1752,33 +1550,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-client-network"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
-dependencies = [
- "derive_more",
- "futures 0.3.17",
- "futures-timer 3.0.2",
- "parity-scale-codec",
- "parking_lot 0.10.2",
- "polkadot-client",
- "polkadot-node-primitives",
- "polkadot-parachain",
- "polkadot-primitives",
- "sc-client-api",
- "sp-api",
- "sp-blockchain",
- "sp-consensus",
- "sp-core",
- "sp-runtime",
- "tracing",
-]
-
-[[package]]
 name = "cumulus-client-pov-recovery"
 version = "0.1.0"
 dependencies = [
- "cumulus-primitives-core 0.1.0",
+ "cumulus-primitives-core",
  "cumulus-test-service",
  "futures 0.3.17",
  "futures-timer 3.0.2",
@@ -1802,65 +1577,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-client-pov-recovery"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
-dependencies = [
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "futures 0.3.17",
- "futures-timer 3.0.2",
- "parity-scale-codec",
- "polkadot-node-primitives",
- "polkadot-node-subsystem",
- "polkadot-overseer",
- "polkadot-primitives",
- "rand 0.8.4",
- "sc-client-api",
- "sc-consensus",
- "sp-api",
- "sp-consensus",
- "sp-maybe-compressed-blob",
- "sp-runtime",
- "tracing",
-]
-
-[[package]]
 name = "cumulus-client-service"
 version = "0.1.0"
 dependencies = [
- "cumulus-client-collator 0.1.0",
- "cumulus-client-consensus-common 0.1.0",
- "cumulus-client-pov-recovery 0.1.0",
- "cumulus-primitives-core 0.1.0",
- "parity-scale-codec",
- "parking_lot 0.10.2",
- "polkadot-overseer",
- "polkadot-primitives",
- "polkadot-service",
- "sc-chain-spec",
- "sc-client-api",
- "sc-consensus",
- "sc-consensus-babe",
- "sc-service",
- "sc-telemetry",
- "sc-tracing",
- "sp-api",
- "sp-blockchain",
- "sp-consensus",
- "sp-core",
- "sp-runtime",
- "tracing",
-]
-
-[[package]]
-name = "cumulus-client-service"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
-dependencies = [
- "cumulus-client-collator 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-client-consensus-common 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-client-pov-recovery 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
+ "cumulus-client-collator",
+ "cumulus-client-consensus-common",
+ "cumulus-client-pov-recovery",
+ "cumulus-primitives-core",
  "parity-scale-codec",
  "parking_lot 0.10.2",
  "polkadot-overseer",
@@ -1885,25 +1608,7 @@ dependencies = [
 name = "cumulus-pallet-aura-ext"
 version = "0.1.0"
 dependencies = [
- "cumulus-pallet-parachain-system 0.1.0",
- "frame-executive",
- "frame-support",
- "frame-system",
- "pallet-aura",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-application-crypto",
- "sp-consensus-aura",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "cumulus-pallet-aura-ext"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
-dependencies = [
+ "cumulus-pallet-parachain-system",
  "frame-executive",
  "frame-support",
  "frame-system",
@@ -1921,7 +1626,7 @@ dependencies = [
 name = "cumulus-pallet-dmp-queue"
 version = "0.1.0"
 dependencies = [
- "cumulus-primitives-core 0.1.0",
+ "cumulus-primitives-core",
  "frame-support",
  "frame-system",
  "log",
@@ -1937,32 +1642,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-pallet-dmp-queue"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
-dependencies = [
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "frame-support",
- "frame-system",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "xcm",
- "xcm-executor",
-]
-
-[[package]]
 name = "cumulus-pallet-parachain-system"
 version = "0.1.0"
 dependencies = [
- "cumulus-pallet-parachain-system-proc-macro 0.1.0",
- "cumulus-primitives-core 0.1.0",
- "cumulus-primitives-parachain-inherent 0.1.0",
+ "cumulus-pallet-parachain-system-proc-macro",
+ "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
  "cumulus-test-client",
- "cumulus-test-relay-sproof-builder 0.1.0",
+ "cumulus-test-relay-sproof-builder",
  "environmental",
  "frame-support",
  "frame-system",
@@ -1990,48 +1677,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-pallet-parachain-system"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
-dependencies = [
- "cumulus-pallet-parachain-system-proc-macro 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-primitives-parachain-inherent 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "environmental",
- "frame-support",
- "frame-system",
- "log",
- "pallet-balances",
- "parity-scale-codec",
- "polkadot-parachain",
- "scale-info",
- "serde",
- "sp-core",
- "sp-externalities",
- "sp-inherents",
- "sp-io",
- "sp-runtime",
- "sp-state-machine",
- "sp-std",
- "sp-trie",
- "sp-version",
- "xcm",
-]
-
-[[package]]
 name = "cumulus-pallet-parachain-system-proc-macro"
 version = "0.1.0"
-dependencies = [
- "proc-macro-crate 1.0.0",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "cumulus-pallet-parachain-system-proc-macro"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
 dependencies = [
  "proc-macro-crate 1.0.0",
  "proc-macro2",
@@ -2055,24 +1702,7 @@ dependencies = [
 name = "cumulus-pallet-xcm"
 version = "0.1.0"
 dependencies = [
- "cumulus-primitives-core 0.1.0",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "xcm",
-]
-
-[[package]]
-name = "cumulus-pallet-xcm"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
-dependencies = [
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
+ "cumulus-primitives-core",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -2088,8 +1718,8 @@ dependencies = [
 name = "cumulus-pallet-xcmp-queue"
 version = "0.1.0"
 dependencies = [
- "cumulus-pallet-parachain-system 0.1.0",
- "cumulus-primitives-core 0.1.0",
+ "cumulus-pallet-parachain-system",
+ "cumulus-primitives-core",
  "frame-support",
  "frame-system",
  "log",
@@ -2107,29 +1737,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-pallet-xcmp-queue"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
-dependencies = [
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "frame-support",
- "frame-system",
- "log",
- "parity-scale-codec",
- "rand_chacha 0.3.1",
- "scale-info",
- "sp-runtime",
- "sp-std",
- "xcm",
- "xcm-executor",
-]
-
-[[package]]
 name = "cumulus-ping"
 version = "0.1.0"
 dependencies = [
- "cumulus-pallet-xcm 0.1.0",
- "cumulus-primitives-core 0.1.0",
+ "cumulus-pallet-xcm",
+ "cumulus-primitives-core",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -2157,51 +1769,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-primitives-core"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
-dependencies = [
- "frame-support",
- "impl-trait-for-tuples",
- "parity-scale-codec",
- "polkadot-core-primitives",
- "polkadot-parachain",
- "polkadot-primitives",
- "sp-api",
- "sp-runtime",
- "sp-std",
- "sp-trie",
-]
-
-[[package]]
 name = "cumulus-primitives-parachain-inherent"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "cumulus-primitives-core 0.1.0",
- "cumulus-test-relay-sproof-builder 0.1.0",
- "parity-scale-codec",
- "polkadot-client",
- "sc-client-api",
- "scale-info",
- "sp-api",
- "sp-core",
- "sp-inherents",
- "sp-runtime",
- "sp-state-machine",
- "sp-std",
- "sp-trie",
- "tracing",
-]
-
-[[package]]
-name = "cumulus-primitives-parachain-inherent"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
-dependencies = [
- "async-trait",
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-test-relay-sproof-builder 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
+ "cumulus-primitives-core",
+ "cumulus-test-relay-sproof-builder",
  "parity-scale-codec",
  "polkadot-client",
  "sc-client-api",
@@ -2220,9 +1793,9 @@ dependencies = [
 name = "cumulus-primitives-timestamp"
 version = "0.1.0"
 dependencies = [
- "cumulus-primitives-core 0.1.0",
+ "cumulus-primitives-core",
  "cumulus-test-client",
- "cumulus-test-relay-sproof-builder 0.1.0",
+ "cumulus-test-relay-sproof-builder",
  "futures 0.3.17",
  "parity-scale-codec",
  "sp-consensus",
@@ -2234,38 +1807,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-primitives-timestamp"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
-dependencies = [
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "sp-inherents",
- "sp-std",
- "sp-timestamp",
-]
-
-[[package]]
 name = "cumulus-primitives-utility"
 version = "0.1.0"
 dependencies = [
- "cumulus-primitives-core 0.1.0",
- "frame-support",
- "parity-scale-codec",
- "polkadot-core-primitives",
- "polkadot-parachain",
- "polkadot-primitives",
- "sp-runtime",
- "sp-std",
- "sp-trie",
- "xcm",
-]
-
-[[package]]
-name = "cumulus-primitives-utility"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
-dependencies = [
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
+ "cumulus-primitives-core",
  "frame-support",
  "parity-scale-codec",
  "polkadot-core-primitives",
@@ -2281,9 +1826,9 @@ dependencies = [
 name = "cumulus-test-client"
 version = "0.1.0"
 dependencies = [
- "cumulus-primitives-core 0.1.0",
- "cumulus-primitives-parachain-inherent 0.1.0",
- "cumulus-test-relay-sproof-builder 0.1.0",
+ "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
+ "cumulus-test-relay-sproof-builder",
  "cumulus-test-runtime",
  "cumulus-test-service",
  "frame-system",
@@ -2312,20 +1857,7 @@ dependencies = [
 name = "cumulus-test-relay-sproof-builder"
 version = "0.1.0"
 dependencies = [
- "cumulus-primitives-core 0.1.0",
- "parity-scale-codec",
- "polkadot-primitives",
- "sp-runtime",
- "sp-state-machine",
- "sp-std",
-]
-
-[[package]]
-name = "cumulus-test-relay-sproof-builder"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
-dependencies = [
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
+ "cumulus-primitives-core",
  "parity-scale-codec",
  "polkadot-primitives",
  "sp-runtime",
@@ -2344,9 +1876,9 @@ dependencies = [
 name = "cumulus-test-runtime"
 version = "0.1.0"
 dependencies = [
- "cumulus-pallet-parachain-system 0.1.0",
- "cumulus-primitives-core 0.1.0",
- "cumulus-primitives-timestamp 0.1.0",
+ "cumulus-pallet-parachain-system",
+ "cumulus-primitives-core",
+ "cumulus-primitives-timestamp",
  "frame-executive",
  "frame-support",
  "frame-system",
@@ -2376,9 +1908,9 @@ dependencies = [
 name = "cumulus-test-runtime-upgrade"
 version = "0.1.0"
 dependencies = [
- "cumulus-pallet-parachain-system 0.1.0",
- "cumulus-primitives-core 0.1.0",
- "cumulus-primitives-timestamp 0.1.0",
+ "cumulus-pallet-parachain-system",
+ "cumulus-primitives-core",
+ "cumulus-primitives-timestamp",
  "frame-executive",
  "frame-support",
  "frame-system",
@@ -2409,12 +1941,12 @@ name = "cumulus-test-service"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "cumulus-client-consensus-common 0.1.0",
+ "cumulus-client-consensus-common",
  "cumulus-client-consensus-relay-chain",
- "cumulus-client-network 0.1.0",
- "cumulus-client-service 0.1.0",
- "cumulus-primitives-core 0.1.0",
- "cumulus-primitives-parachain-inherent 0.1.0",
+ "cumulus-client-network",
+ "cumulus-client-service",
+ "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
  "cumulus-test-relay-validation-worker-provider",
  "cumulus-test-runtime",
  "cumulus-test-runtime-upgrade",
@@ -3569,17 +3101,6 @@ checksum = "126888268dcc288495a26bf004b38c5fdbb31682f992c84ceb046a1f0fe38840"
 dependencies = [
  "crypto-mac 0.8.0",
  "digest 0.9.0",
-]
-
-[[package]]
-name = "hmac-drbg"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6e570451493f10f6581b48cdd530413b63ea9e780f544bfd3bdcaa0d89d1a7b"
-dependencies = [
- "digest 0.8.1",
- "generic-array 0.12.3",
- "hmac 0.7.1",
 ]
 
 [[package]]
@@ -4752,22 +4273,6 @@ dependencies = [
 
 [[package]]
 name = "libsecp256k1"
-version = "0.3.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fc1e2c808481a63dc6da2074752fdd4336a3c8fcc68b83db6f1fd5224ae7962"
-dependencies = [
- "arrayref",
- "crunchy",
- "digest 0.8.1",
- "hmac-drbg 0.2.0",
- "rand 0.7.3",
- "sha2 0.8.2",
- "subtle 2.4.0",
- "typenum",
-]
-
-[[package]]
-name = "libsecp256k1"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bd1137239ab33b41aa9637a88a28249e5e70c40a42ccc92db7f12cc356c1fcd7"
@@ -4775,7 +4280,7 @@ dependencies = [
  "arrayref",
  "base64 0.12.3",
  "digest 0.9.0",
- "hmac-drbg 0.3.0",
+ "hmac-drbg",
  "libsecp256k1-core",
  "libsecp256k1-gen-ecmult",
  "libsecp256k1-gen-genmult",
@@ -4794,7 +4299,7 @@ dependencies = [
  "arrayref",
  "base64 0.12.3",
  "digest 0.9.0",
- "hmac-drbg 0.3.0",
+ "hmac-drbg",
  "libsecp256k1-core",
  "libsecp256k1-gen-ecmult",
  "libsecp256k1-gen-genmult",
@@ -5766,25 +5271,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-collator-selection"
-version = "3.0.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "pallet-authorship",
- "pallet-session",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-runtime",
- "sp-staking",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-collective"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#c000780dba99a611fadbf83873073e024be1be0b"
@@ -5797,89 +5283,6 @@ dependencies = [
  "scale-info",
  "sp-core",
  "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-contracts"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#c000780dba99a611fadbf83873073e024be1be0b"
-dependencies = [
- "bitflags",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "libsecp256k1 0.3.5",
- "log",
- "pallet-contracts-primitives",
- "pallet-contracts-proc-macro",
- "parity-scale-codec",
- "pwasm-utils",
- "rand 0.7.3",
- "scale-info",
- "serde",
- "smallvec",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-sandbox",
- "sp-std",
- "wasmi-validation",
-]
-
-[[package]]
-name = "pallet-contracts-primitives"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#c000780dba99a611fadbf83873073e024be1be0b"
-dependencies = [
- "bitflags",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-contracts-proc-macro"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#c000780dba99a611fadbf83873073e024be1be0b"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "pallet-contracts-rpc"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#c000780dba99a611fadbf83873073e024be1be0b"
-dependencies = [
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
- "pallet-contracts-primitives",
- "pallet-contracts-rpc-runtime-api",
- "parity-scale-codec",
- "serde",
- "sp-api",
- "sp-blockchain",
- "sp-core",
- "sp-rpc",
- "sp-runtime",
-]
-
-[[package]]
-name = "pallet-contracts-rpc-runtime-api"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#c000780dba99a611fadbf83873073e024be1be0b"
-dependencies = [
- "pallet-contracts-primitives",
- "parity-scale-codec",
- "scale-info",
- "sp-api",
  "sp-runtime",
  "sp-std",
 ]
@@ -6503,7 +5906,7 @@ dependencies = [
 name = "parachain-info"
 version = "0.1.0"
 dependencies = [
- "cumulus-primitives-core 0.1.0",
+ "cumulus-primitives-core",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -6512,16 +5915,118 @@ dependencies = [
 ]
 
 [[package]]
-name = "parachain-info"
+name = "parachain-template-node"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#1dd000a0111a3f38ff52234e977d299cb4e8517f"
 dependencies = [
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
+ "cumulus-client-cli",
+ "cumulus-client-collator",
+ "cumulus-client-consensus-aura",
+ "cumulus-client-consensus-common",
+ "cumulus-client-network",
+ "cumulus-client-service",
+ "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
+ "derive_more",
+ "frame-benchmarking",
+ "frame-benchmarking-cli",
+ "hex-literal 0.3.3",
+ "jsonrpc-core",
+ "log",
+ "pallet-transaction-payment-rpc",
+ "parachain-template-runtime",
+ "parity-scale-codec",
+ "polkadot-cli",
+ "polkadot-parachain",
+ "polkadot-primitives",
+ "polkadot-service",
+ "polkadot-test-service",
+ "sc-basic-authorship",
+ "sc-chain-spec",
+ "sc-cli",
+ "sc-client-api",
+ "sc-consensus",
+ "sc-executor",
+ "sc-keystore",
+ "sc-network",
+ "sc-rpc",
+ "sc-rpc-api",
+ "sc-service",
+ "sc-telemetry",
+ "sc-tracing",
+ "sc-transaction-pool",
+ "sc-transaction-pool-api",
+ "serde",
+ "sp-api",
+ "sp-block-builder",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-inherents",
+ "sp-keystore",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-timestamp",
+ "sp-transaction-pool",
+ "structopt",
+ "substrate-build-script-utils",
+ "substrate-frame-rpc-system",
+ "substrate-prometheus-endpoint",
+]
+
+[[package]]
+name = "parachain-template-runtime"
+version = "0.1.0"
+dependencies = [
+ "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
+ "cumulus-primitives-core",
+ "cumulus-primitives-timestamp",
+ "cumulus-primitives-utility",
+ "frame-benchmarking",
+ "frame-executive",
  "frame-support",
  "frame-system",
+ "frame-system-benchmarking",
+ "frame-system-rpc-runtime-api",
+ "log",
+ "pallet-aura",
+ "pallet-authorship",
+ "pallet-balances",
+ "pallet-collator-selection",
+ "pallet-randomness-collective-flip",
+ "pallet-session",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-transaction-payment",
+ "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-xcm",
+ "parachain-info",
  "parity-scale-codec",
- "scale-info",
+ "polkadot-parachain",
+ "polkadot-runtime-common",
  "serde",
+ "smallvec",
+ "sp-api",
+ "sp-block-builder",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-std",
+ "sp-transaction-pool",
+ "sp-version",
+ "substrate-wasm-builder",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
 ]
 
 [[package]]
@@ -6534,7 +6039,7 @@ dependencies = [
  "node-primitives",
  "pallet-authorship",
  "pallet-balances",
- "pallet-collator-selection 3.0.0",
+ "pallet-collator-selection",
  "parity-scale-codec",
  "polkadot-primitives",
  "polkadot-runtime-common",
@@ -7039,14 +6544,14 @@ version = "0.1.0"
 dependencies = [
  "assert_cmd",
  "async-trait",
- "cumulus-client-cli 0.1.0",
- "cumulus-client-consensus-aura 0.1.0",
- "cumulus-client-consensus-common 0.1.0",
+ "cumulus-client-cli",
+ "cumulus-client-consensus-aura",
+ "cumulus-client-consensus-common",
  "cumulus-client-consensus-relay-chain",
- "cumulus-client-network 0.1.0",
- "cumulus-client-service 0.1.0",
- "cumulus-primitives-core 0.1.0",
- "cumulus-primitives-parachain-inherent 0.1.0",
+ "cumulus-client-network",
+ "cumulus-client-service",
+ "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "futures 0.3.17",
@@ -8804,15 +8309,15 @@ dependencies = [
 name = "rococo-runtime"
 version = "0.1.0"
 dependencies = [
- "cumulus-pallet-aura-ext 0.1.0",
- "cumulus-pallet-dmp-queue 0.1.0",
- "cumulus-pallet-parachain-system 0.1.0",
- "cumulus-pallet-xcm 0.1.0",
- "cumulus-pallet-xcmp-queue 0.1.0",
+ "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
  "cumulus-ping",
- "cumulus-primitives-core 0.1.0",
- "cumulus-primitives-timestamp 0.1.0",
- "cumulus-primitives-utility 0.1.0",
+ "cumulus-primitives-core",
+ "cumulus-primitives-timestamp",
+ "cumulus-primitives-utility",
  "frame-executive",
  "frame-support",
  "frame-system",
@@ -8827,7 +8332,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-xcm",
- "parachain-info 0.1.0",
+ "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
  "scale-info",
@@ -10249,16 +9754,16 @@ dependencies = [
 name = "shell-runtime"
 version = "0.1.0"
 dependencies = [
- "cumulus-pallet-dmp-queue 0.1.0",
- "cumulus-pallet-parachain-system 0.1.0",
- "cumulus-pallet-xcm 0.1.0",
- "cumulus-primitives-core 0.1.0",
- "cumulus-primitives-utility 0.1.0",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcm",
+ "cumulus-primitives-core",
+ "cumulus-primitives-utility",
  "frame-executive",
  "frame-support",
  "frame-system",
  "log",
- "parachain-info 0.1.0",
+ "parachain-info",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -10909,20 +10414,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-sandbox"
-version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#c000780dba99a611fadbf83873073e024be1be0b"
-dependencies = [
- "log",
- "parity-scale-codec",
- "sp-core",
- "sp-io",
- "sp-std",
- "sp-wasm-interface",
- "wasmi",
-]
-
-[[package]]
 name = "sp-serializer"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#c000780dba99a611fadbf83873073e024be1be0b"
@@ -11138,16 +10629,16 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 name = "statemine-runtime"
 version = "2.0.0"
 dependencies = [
- "cumulus-pallet-aura-ext 0.1.0",
- "cumulus-pallet-dmp-queue 0.1.0",
- "cumulus-pallet-parachain-system 0.1.0",
+ "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
  "cumulus-pallet-session-benchmarking",
- "cumulus-pallet-xcm 0.1.0",
- "cumulus-pallet-xcmp-queue 0.1.0",
+ "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
  "cumulus-ping",
- "cumulus-primitives-core 0.1.0",
- "cumulus-primitives-timestamp 0.1.0",
- "cumulus-primitives-utility 0.1.0",
+ "cumulus-primitives-core",
+ "cumulus-primitives-timestamp",
+ "cumulus-primitives-utility",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -11161,7 +10652,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-collator-selection 3.0.0",
+ "pallet-collator-selection",
  "pallet-multisig",
  "pallet-proxy",
  "pallet-randomness-collective-flip",
@@ -11173,7 +10664,7 @@ dependencies = [
  "pallet-uniques",
  "pallet-utility",
  "pallet-xcm",
- "parachain-info 0.1.0",
+ "parachain-info",
  "parachains-common",
  "parity-scale-codec",
  "polkadot-parachain",
@@ -11203,16 +10694,16 @@ dependencies = [
 name = "statemint-runtime"
 version = "1.0.0"
 dependencies = [
- "cumulus-pallet-aura-ext 0.1.0",
- "cumulus-pallet-dmp-queue 0.1.0",
- "cumulus-pallet-parachain-system 0.1.0",
+ "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
  "cumulus-pallet-session-benchmarking",
- "cumulus-pallet-xcm 0.1.0",
- "cumulus-pallet-xcmp-queue 0.1.0",
+ "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
  "cumulus-ping",
- "cumulus-primitives-core 0.1.0",
- "cumulus-primitives-timestamp 0.1.0",
- "cumulus-primitives-utility 0.1.0",
+ "cumulus-primitives-core",
+ "cumulus-primitives-timestamp",
+ "cumulus-primitives-utility",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -11226,7 +10717,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-collator-selection 3.0.0",
+ "pallet-collator-selection",
  "pallet-multisig",
  "pallet-proxy",
  "pallet-randomness-collective-flip",
@@ -11238,7 +10729,7 @@ dependencies = [
  "pallet-uniques",
  "pallet-utility",
  "pallet-xcm",
- "parachain-info 0.1.0",
+ "parachain-info",
  "parachains-common",
  "parity-scale-codec",
  "polkadot-parachain",
@@ -12294,7 +11785,6 @@ checksum = "d2ee05bba3d1d994652079893941a2ef9324d2b58a63c31b40678fb7eddd7a5a"
 dependencies = [
  "downcast-rs",
  "libc",
- "libm",
  "memory_units",
  "num-rational 0.2.4",
  "num-traits",
@@ -12630,16 +12120,16 @@ dependencies = [
 name = "westmint-runtime"
 version = "1.0.0"
 dependencies = [
- "cumulus-pallet-aura-ext 0.1.0",
- "cumulus-pallet-dmp-queue 0.1.0",
- "cumulus-pallet-parachain-system 0.1.0",
+ "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
  "cumulus-pallet-session-benchmarking",
- "cumulus-pallet-xcm 0.1.0",
- "cumulus-pallet-xcmp-queue 0.1.0",
+ "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
  "cumulus-ping",
- "cumulus-primitives-core 0.1.0",
- "cumulus-primitives-timestamp 0.1.0",
- "cumulus-primitives-utility 0.1.0",
+ "cumulus-primitives-core",
+ "cumulus-primitives-timestamp",
+ "cumulus-primitives-utility",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -12653,7 +12143,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-collator-selection 3.0.0",
+ "pallet-collator-selection",
  "pallet-multisig",
  "pallet-proxy",
  "pallet-randomness-collective-flip",
@@ -12665,7 +12155,7 @@ dependencies = [
  "pallet-uniques",
  "pallet-utility",
  "pallet-xcm",
- "parachain-info 0.1.0",
+ "parachain-info",
  "parachains-common",
  "parity-scale-codec",
  "polkadot-parachain",

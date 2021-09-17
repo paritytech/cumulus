@@ -1,5 +1,5 @@
 [package]
-name = "canvas-node"
+name = "parachain-template-node"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 license = "GPL-3.0-only"
@@ -20,8 +20,7 @@ name = 'canvas'
 path = 'src/main.rs'
 
 [features]
-runtime-benchmarks = ['canvas-runtime/runtime-benchmarks']
-contracts-unstable-interface = ['canvas-runtime/contracts-unstable-interface']
+runtime-benchmarks = ['parachain-template-runtime/runtime-benchmarks']
 
 [dependencies]
 derive_more = '0.99.2'
@@ -35,7 +34,7 @@ hex-literal = "0.3.1"
 jsonrpc-core = '18.0.0'
 
 # Local Dependencies
-canvas-runtime = { path = '../runtime' }
+parachain-template-runtime = { path = '../runtime' }
 
 # Substrate Dependencies
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = "master" }
@@ -79,14 +78,14 @@ sp-timestamp = { git = 'https://github.com/paritytech/substrate', branch = "mast
 sp-transaction-pool = { git = 'https://github.com/paritytech/substrate', branch = "master" }
 
 # Cumulus dependencies
-cumulus-client-consensus-aura = { git = 'https://github.com/paritytech/cumulus', branch = "master" }
-cumulus-client-consensus-common = { git = 'https://github.com/paritytech/cumulus', branch = "master" }
-cumulus-client-collator = { git = 'https://github.com/paritytech/cumulus', branch = "master" }
-cumulus-client-cli = { git = 'https://github.com/paritytech/cumulus', branch = "master" }
-cumulus-client-network = { git = 'https://github.com/paritytech/cumulus', branch = "master" }
-cumulus-client-service = { git = 'https://github.com/paritytech/cumulus', branch = "master" }
-cumulus-primitives-core = { git = 'https://github.com/paritytech/cumulus', branch = "master" }
-cumulus-primitives-parachain-inherent = { git = 'https://github.com/paritytech/cumulus', branch = "master" }
+cumulus-client-cli = { path = "../../client/cli" }
+cumulus-client-collator = { path = "../../client/collator" }
+cumulus-client-consensus-aura = { path = "../../client/consensus/aura" }
+cumulus-client-consensus-common = { path = "../../client/consensus/common" }
+cumulus-client-network = { path = "../../client/network" }
+cumulus-client-service = { path = "../../client/service" }
+cumulus-primitives-core = { path = "../../primitives/core" }
+cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent" }
 
 # Polkadot dependencies
 polkadot-cli = { git = 'https://github.com/paritytech/polkadot', branch = "master" }
