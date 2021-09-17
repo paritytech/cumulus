@@ -121,9 +121,9 @@ pub fn local_testnet_config(id: ParaId) -> ChainSpec {
 
 	ChainSpec::from_genesis(
 		// Name
-		"Canvas",
+		"Local Testnet",
 		// ID
-		"canvas_local",
+		"local_testnet",
 		ChainType::Local,
 		move || {
 			testnet_genesis(
