@@ -28,12 +28,14 @@ members = [
 	"polkadot-parachains/statemint",
 	"polkadot-parachains/statemine",
 	"polkadot-parachains/westmint",
-	"test/runtime",
-	"test/runtime-upgrade",
+	"template/node",
+	"template/runtime",
 	"test/client",
-	"test/service",
 	"test/relay-sproof-builder",
 	"test/relay-validation-worker-provider",
+	"test/runtime",
+	"test/runtime-upgrade",
+	"test/service",
 ]
 
 [profile.release]
