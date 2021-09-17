@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 // Local Runtime Types
 use parachain_template_runtime::{
-	opaque::Block, AccountId, Balance, BlockNumber, Hash, Index as Nonce, RuntimeApi,
+	opaque::Block, AccountId, Balance, Hash, Index as Nonce, RuntimeApi,
 };
 
 // Cumulus Imports
@@ -32,9 +32,9 @@ use sp_runtime::traits::BlakeTwo256;
 use substrate_prometheus_endpoint::Registry;
 
 /// Native executor instance.
-pub struct CanvasRuntimeExecutor;
+pub struct TemplateRuntimeExecutor;
 
-impl sc_executor::NativeExecutionDispatch for CanvasRuntimeExecutor {
+impl sc_executor::NativeExecutionDispatch for TemplateRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -50,6 +50,7 @@ impl sc_executor::NativeExecutionDispatch for CanvasRuntimeExecutor {
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
+#[allow(clippy::type_complexity)]
 pub fn new_partial<RuntimeApi, Executor, BIQ>(
 	config: &Configuration,
 	build_import_queue: BIQ,
@@ -117,7 +118,7 @@ where
 
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, _>(
-			&config,
+			config,
 			telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
 			executor,
 		)?;
@@ -189,8 +190,7 @@ where
 		+ sp_block_builder::BlockBuilder<Block>
 		+ cumulus_primitives_core::CollectCollationInfo<Block>
 		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
-		+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
-		+ pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber, Hash>,
+		+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
 	RB: Fn(
@@ -351,15 +351,16 @@ where
 }
 
 /// Build the import queue for the parachain runtime.
+#[allow(clippy::type_complexity)]
 pub fn parachain_build_import_queue(
-	client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<CanvasRuntimeExecutor>>>,
+	client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<TemplateRuntimeExecutor>>>,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
 ) -> Result<
 	sc_consensus::DefaultImportQueue<
 		Block,
-		TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<CanvasRuntimeExecutor>>,
+		TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<TemplateRuntimeExecutor>>,
 	>,
 	sc_service::Error,
 > {
@@ -387,7 +388,7 @@ pub fn parachain_build_import_queue(
 
 			Ok((time, slot))
 		},
-		registry: config.prometheus_registry().clone(),
+		registry: config.prometheus_registry(),
 		can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
 		spawner: &task_manager.spawn_essential_handle(),
 		telemetry,
@@ -402,9 +403,9 @@ pub async fn start_parachain_node(
 	id: ParaId,
 ) -> sc_service::error::Result<(
 	TaskManager,
-	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<CanvasRuntimeExecutor>>>,
+	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<TemplateRuntimeExecutor>>>,
 )> {
-	start_node_impl::<RuntimeApi, CanvasRuntimeExecutor, _, _, _>(
+	start_node_impl::<RuntimeApi, TemplateRuntimeExecutor, _, _, _>(
 		parachain_config,
 		polkadot_config,
 		id,
@@ -425,7 +426,7 @@ pub async fn start_parachain_node(
 				task_manager.spawn_handle(),
 				client.clone(),
 				transaction_pool,
-				prometheus_registry.clone(),
+				prometheus_registry,
 				telemetry.clone(),
 			);
 
@@ -473,7 +474,7 @@ pub async fn start_parachain_node(
 				block_import: client.clone(),
 				relay_chain_client: relay_chain_node.client.clone(),
 				relay_chain_backend: relay_chain_node.backend.clone(),
-				para_client: client.clone(),
+				para_client: client,
 				backoff_authoring_blocks: Option::<()>::None,
 				sync_oracle,
 				keystore,
@@ -489,3 +490,4 @@ pub async fn start_parachain_node(
 	)
 	.await
 }
+

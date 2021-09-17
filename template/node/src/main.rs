@@ -1,3 +1,5 @@
+//! Substrate Node CLI library.
+
 #![warn(missing_docs)]
 
 mod chain_spec;

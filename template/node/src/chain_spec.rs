@@ -1,10 +1,9 @@
 use cumulus_primitives_core::ParaId;
-use hex_literal::hex;
 use parachain_template_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
+use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
@@ -200,7 +199,7 @@ fn testnet_genesis(
 				.map(|(acc, aura)| {
 					(
 						acc.clone(),                 // account id
-						acc.clone(),                 // validator id
+						acc,                         // validator id
 						template_session_keys(aura), // session keys
 					)
 				})
