@@ -23,7 +23,6 @@ use sp_state_machine::MemoryDB;
 use sp_std::collections::btree_map::BTreeMap;
 
 /// Builds a sproof (portmanteau of 'spoof' and 'proof') of the relay chain state.
-// #[derive(Clone)]
 pub struct RelayStateSproofBuilder {
 	/// The para id of the current parachain.
 	///
