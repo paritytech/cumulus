@@ -1,13 +1,13 @@
 [package]
 name = "parachain-template-node"
 version = "0.1.0"
-authors = ["Parity Technologies <admin@parity.io>"]
-license = "GPL-3.0-only"
-description = "A node implementation for Canvas, a Substrate parachain for smart contracts."
-homepage = "https://github.com/paritytech/canvas"
-repository = "https://github.com/paritytech/canvas"
-build = "build.rs"
+authors = ["Anonymous"]
+description = "A new Cumulus FRAME-based Substrate Node, ready for hacking together a parachain."
+license = "Unlicense"
+homepage = "https://substrate.dev"
+repository = "https://github.com/paritytech/cumulus/"
 edition = "2018"
+build = "build.rs"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
