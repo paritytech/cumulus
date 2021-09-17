@@ -15,7 +15,10 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{Config, Pallet};
-use frame_support::{traits::StorageVersion, weights::Weight};
+use frame_support::{
+	traits::{Get, StorageVersion},
+	weights::Weight,
+};
 
 /// The current storage version.
 pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -25,7 +28,9 @@ pub fn on_runtime_upgrade<T: Config>() -> Weight {
 	let mut weight: Weight = 0;
 
 	if StorageVersion::get::<Pallet<T>>() == 0 {
-		weight = weight.saturating_add(v1::migrate::<T>());
+		weight = weight
+			.saturating_add(v1::migrate::<T>())
+			.saturating_add(T::DbWeight::get().writes(1));
 		StorageVersion::new(1).put::<Pallet<T>>();
 	}
 
