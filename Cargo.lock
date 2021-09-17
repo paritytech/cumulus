@@ -5742,12 +5742,13 @@ dependencies = [
 
 [[package]]
 name = "pallet-template"
-version = "3.0.0"
+version = "0.1.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
+ "scale-info",
  "serde",
  "sp-core",
  "sp-io",

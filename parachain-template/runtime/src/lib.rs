@@ -58,7 +58,7 @@ use xcm_builder::{
 use xcm_executor::{Config, XcmExecutor};
 
 /// Import the template pallet.
-pub use template;
+pub use pallet_template;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = MultiSignature;
@@ -607,7 +607,7 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 /// Configure the pallet template in pallets/template.
-impl template::Config for Runtime {
+impl pallet_template::Config for Runtime {
 	type Event = Event;
 }
 
@@ -645,7 +645,7 @@ construct_runtime!(
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
 		// Template
-		TemplatePallet: template::{Pallet, Call, Storage, Event<T>},
+		TemplatePallet: pallet_template::{Pallet, Call, Storage, Event<T>},
 	}
 );
 

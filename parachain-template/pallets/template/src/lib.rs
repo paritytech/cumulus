@@ -41,7 +41,6 @@ pub mod pallet {
 	// Pallets use events to inform users when important changes are made.
 	// https://substrate.dev/docs/en/knowledgebase/runtime/events
 	#[pallet::event]
-	#[pallet::metadata(T::AccountId = "AccountId")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Event documentation should end with an array that provides descriptive names for event
@@ -99,7 +98,7 @@ pub mod pallet {
 					// Update the value in storage with the incremented result.
 					<Something<T>>::put(new);
 					Ok(().into())
-				},
+				}
 			}
 		}
 	}
