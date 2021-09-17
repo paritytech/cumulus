@@ -328,12 +328,12 @@ pub mod pallet {
 
 					Self::put_parachain_code(&validation_code);
 					Self::deposit_event(Event::ValidationFunctionApplied(vfp.relay_parent_number));
-				}
+				},
 				Some(relay_chain::v1::UpgradeGoAhead::Abort) => {
 					<PendingValidationCode<T>>::kill();
 					Self::deposit_event(Event::ValidationFunctionDiscarded);
-				}
-				None => {}
+				},
+				None => {},
 			}
 			<UpgradeRestrictionSignal<T>>::put(
 				relay_state_proof
@@ -873,24 +873,12 @@ impl<T: Config> Pallet<T> {
 	fn set_code_impl(validation_function: Vec<u8>) -> DispatchResult {
 		// Ensure that `ValidationData` exists. We do not care about the validation data per se,
 		// but we do care about the [`UpgradeRestrictionSignal`] which arrives with the same inherent.
-		ensure!(
-			<ValidationData<T>>::exists(),
-			Error::<T>::ValidationDataNotAvailable,
-		);
-		ensure!(
-			<UpgradeRestrictionSignal<T>>::get().is_none(),
-			Error::<T>::ProhibitedByPolkadot
-		);
+		ensure!(<ValidationData<T>>::exists(), Error::<T>::ValidationDataNotAvailable,);
+		ensure!(<UpgradeRestrictionSignal<T>>::get().is_none(), Error::<T>::ProhibitedByPolkadot);
 
-		ensure!(
-			!<PendingValidationCode<T>>::exists(),
-			Error::<T>::OverlappingUpgrades
-		);
+		ensure!(!<PendingValidationCode<T>>::exists(), Error::<T>::OverlappingUpgrades);
 		let cfg = Self::host_configuration().ok_or(Error::<T>::HostConfigurationNotAvailable)?;
-		ensure!(
-			validation_function.len() <= cfg.max_code_size as usize,
-			Error::<T>::TooBig
-		);
+		ensure!(validation_function.len() <= cfg.max_code_size as usize, Error::<T>::TooBig);
 
 		// When a code upgrade is scheduled, it has to be applied in two
 		// places, synchronized: both polkadot and the individual parachain

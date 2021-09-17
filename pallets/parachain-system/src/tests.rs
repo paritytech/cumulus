@@ -469,10 +469,7 @@ fn aborted_upgrade() {
 			}
 		})
 		.add(123, || {
-			assert_ok!(System::set_code(
-				RawOrigin::Root.into(),
-				Default::default()
-			));
+			assert_ok!(System::set_code(RawOrigin::Root.into(), Default::default()));
 		})
 		.add_with_post_test(
 			1234,

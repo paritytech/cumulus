@@ -71,7 +71,7 @@ impl Default for RelayStateSproofBuilder {
 	}
 }
 
-// TODO: derive `Copy` and `Clone` for `UpgradeGoAhead` to avoid manual implementation. 
+// TODO: derive `Copy` and `Clone` for `UpgradeGoAhead` to avoid manual implementation.
 impl Clone for RelayStateSproofBuilder {
 	fn clone(&self) -> Self {
 		RelayStateSproofBuilder {

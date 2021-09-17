@@ -113,7 +113,7 @@ where
 		.ok_or(ReadEntryErr::Absent)
 }
 
-/// Read an optional entry given by the key and try to decode it. 
+/// Read an optional entry given by the key and try to decode it.
 /// Returns `None` if the value specified by the key according to the proof is empty.
 ///
 /// Returns `Err` in case the backend can't return the value under the specific key (likely due to
@@ -237,12 +237,8 @@ impl RelayChainStateProof {
 	///
 	/// Returns an error if anything failed at reading or decoding.
 	pub fn read_slot(&self) -> Result<relay_chain::v1::Slot, Error> {
-		read_entry(
-			&self.trie_backend,
-			relay_chain::well_known_keys::CURRENT_SLOT,
-			None,
-		)
-		.map_err(Error::Slot)
+		read_entry(&self.trie_backend, relay_chain::well_known_keys::CURRENT_SLOT, None)
+			.map_err(Error::Slot)
 	}
 
 	/// Read the go-ahead signal for the upgrade from the relay chain state proof.
