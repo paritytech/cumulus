@@ -22,7 +22,6 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use pallet_contracts::weights::WeightInfo;
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -413,46 +412,6 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
-parameter_types! {
-	pub ContractDeposit: Balance = deposit(
-		1,
-		  <pallet_contracts::Pallet<Runtime>>::contract_info_size(),
-	);
-	// The lazy deletion runs inside on_initialize.
-	pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
-		RuntimeBlockWeights::get().max_block;
-	// The weight needed for decoding the queue should be less or equal than a fifth
-	// of the overall weight dedicated to the lazy deletion.
-	pub DeletionQueueDepth: u32 = ((DeletionWeightLimit::get() / (
-			<Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(1) -
-			<Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(0)
-		)) / 5) as u32;
-	pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
-}
-
-impl pallet_contracts::Config for Runtime {
-	type Time = Timestamp;
-	type Randomness = RandomnessCollectiveFlip;
-	type Currency = Balances;
-	type Event = Event;
-	type Call = Call;
-	/// The safest default is to allow no calls at all.
-	///
-	/// Runtimes should whitelist dispatchables that are allowed to be called from contracts
-	/// and make sure they are stable. Dispatchables exposed to contracts are not allowed to
-	/// change because that would break already deployed contracts. The `Call` structure itself
-	/// is not allowed to change the indices of existing pallets, too.
-	type CallFilter = frame_support::traits::Nothing;
-	type ContractDeposit = ContractDeposit;
-	type WeightPrice = pallet_transaction_payment::Pallet<Self>;
-	type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-	type ChainExtension = ();
-	type DeletionQueueDepth = DeletionQueueDepth;
-	type DeletionWeightLimit = DeletionWeightLimit;
-	type Schedule = Schedule;
-	type CallStack = [pallet_contracts::Frame<Self>; 31];
-}
-
 impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
@@ -698,8 +657,7 @@ construct_runtime!(
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-		// Smart Contracts.
-		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>} = 40,
+		// Template
 	}
 );
 
@@ -810,38 +768,6 @@ impl_runtime_apis! {
 		}
 	}
 
-impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
-		for Runtime
-	{
-		fn call(
-			origin: AccountId,
-			dest: AccountId,
-			value: Balance,
-			gas_limit: u64,
-			input_data: Vec<u8>,
-		) -> pallet_contracts_primitives::ContractExecResult {
-			Contracts::bare_call(origin, dest, value, gas_limit, input_data, CONTRACTS_DEBUG_OUTPUT)
-		}
-
-		fn instantiate(
-			origin: AccountId,
-			endowment: Balance,
-			gas_limit: u64,
-			code: pallet_contracts_primitives::Code<Hash>,
-			data: Vec<u8>,
-			salt: Vec<u8>,
-		) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId>
-		{
-			Contracts::bare_instantiate(origin, endowment, gas_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
-		}
-
-		fn get_storage(
-			address: AccountId,
-			key: [u8; 32],
-		) -> pallet_contracts_primitives::GetStorageResult {
-			Contracts::get_storage(address, key)
-		}
-	}
 
 	#[cfg(feature = "runtime-benchmarks")]
 	impl frame_benchmarking::Benchmark<Block> for Runtime {

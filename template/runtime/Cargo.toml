@@ -72,11 +72,6 @@ xcm-builder = { git = 'https://github.com/paritytech/polkadot', default-features
 xcm-executor = { git = 'https://github.com/paritytech/polkadot', default-features = false , branch = "master" }
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot', default-features = false , branch = "master" }
 
-# Contracts specific packages
-pallet-contracts = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-contracts-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-
 [features]
 default = [
 	"std",
@@ -105,9 +100,6 @@ std = [
 	"pallet-sudo/std",
 	"pallet-balances/std",
 	"pallet-collator-selection/std",
-	"pallet-contracts-primitives/std",
-	"pallet-contracts-rpc-runtime-api/std",
-	"pallet-contracts/std",
 	"pallet-randomness-collective-flip/std",
 	"pallet-session/std",
 	"pallet-timestamp/std",
@@ -127,12 +119,6 @@ std = [
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
-]
-
-# Make contract callable functions marked as __unstable__ available. Do not enable
-# on live chains as those are subject to change.
-contracts-unstable-interface = [
-	"pallet-contracts/unstable-interface"
 ]
 
 runtime-benchmarks = [

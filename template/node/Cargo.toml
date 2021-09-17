@@ -94,6 +94,3 @@ polkadot-parachain = { git = 'https://github.com/paritytech/polkadot', branch = 
 polkadot-primitives = { git = 'https://github.com/paritytech/polkadot', branch = "master" }
 polkadot-service = { git = 'https://github.com/paritytech/polkadot', branch = "master" }
 polkadot-test-service = { git = 'https://github.com/paritytech/polkadot', branch = "master" }
-
-# Contracts specific packages
-pallet-contracts-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
