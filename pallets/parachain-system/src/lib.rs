@@ -323,7 +323,12 @@ pub mod pallet {
 				.expect("Invalid upgrade go ahead signal");
 			match upgrade_go_ahead_signal {
 				Some(relay_chain::v1::UpgradeGoAhead::GoAhead) => {
+					assert!(
+						<PendingValidationCode<T>>::exists(),
+						"No new validation function found in storage, GoAhead signal is not expected",
+					);
 					let validation_code = <PendingValidationCode<T>>::take();
+
 					Self::put_parachain_code(&validation_code);
 					Self::deposit_event(Event::ValidationFunctionApplied(vfp.relay_parent_number));
 				}
