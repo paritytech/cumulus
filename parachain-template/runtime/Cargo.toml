@@ -21,6 +21,9 @@ scale-info = { version = "1.0.0", default-features = false, features = ["derive"
 serde = { version = "1.0.119", optional = true, features = ["derive"] }
 smallvec = "1.6.1"
 
+# Local Dependencies
+pallet-template = { path = "../pallets/template", default-features = false }
+
 # Substrate Dependencies
 ## Substrate Primitive Dependencies
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
@@ -107,9 +110,10 @@ std = [
 	"pallet-collator-selection/std",
 	"pallet-randomness-collective-flip/std",
 	"pallet-session/std",
+	"pallet-template/std",
 	"pallet-timestamp/std",
-	"pallet-transaction-payment/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
+	"pallet-transaction-payment/std",
 	"cumulus-pallet-aura-ext/std",
     "cumulus-pallet-dmp-queue/std",
 	"cumulus-pallet-parachain-system/std",
@@ -134,7 +138,8 @@ runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
+	"pallet-collator-selection/runtime-benchmarks",
+	"pallet-template/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
-	"pallet-collator-selection/runtime-benchmarks",
 ]
