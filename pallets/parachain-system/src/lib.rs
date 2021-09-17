@@ -445,7 +445,7 @@ pub mod pallet {
 	/// As soon as the parachain gives us the go-ahead signal, we will overwrite the [`:code`][well_known_keys::CODE]
 	/// which will result the next block process with the new validation code. This concludes the upgrade process.
 	///
-	/// [well_known_keys::CODE]: [sp_core::storage::well_known_keys::CODE]
+	/// [well_known_keys::CODE]: sp_core::storage::well_known_keys::CODE
 	#[pallet::storage]
 	#[pallet::getter(fn new_validation_function)]
 	pub(super) type PendingValidationCode<T: Config> = StorageValue<_, Vec<u8>, ValueQuery>;
