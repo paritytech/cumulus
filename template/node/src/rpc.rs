@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use canvas_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Hash, Index as Nonce};
+use parachain_template_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Hash, Index as Nonce};
 use pallet_contracts_rpc::{Contracts, ContractsApi};
 
 use sc_client_api::AuxStore;

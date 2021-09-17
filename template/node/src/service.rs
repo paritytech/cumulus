@@ -1,26 +1,10 @@
-// Copyright (C) 2018-2021 Parity Technologies (UK) Ltd.
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 // std
 use std::sync::Arc;
 
 // Local Runtime Types
-use canvas_runtime::{
+use parachain_template_runtime::{
 	opaque::Block, AccountId, Balance, BlockNumber, Hash, Index as Nonce, RuntimeApi,
 };
 
@@ -54,11 +38,11 @@ impl sc_executor::NativeExecutionDispatch for CanvasRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		canvas_runtime::api::dispatch(method, data)
+		parachain_template_runtime::api::dispatch(method, data)
 	}
 
 	fn native_version() -> sc_executor::NativeVersion {
-		canvas_runtime::native_version()
+		parachain_template_runtime::native_version()
 	}
 }
 

@@ -1,25 +1,9 @@
-// Copyright (C) 2018-2021 Parity Technologies (UK) Ltd.
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{new_partial, CanvasRuntimeExecutor},
 };
-use canvas_runtime::{Block, RuntimeApi};
+use parachain_template_runtime::{Block, RuntimeApi};
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
@@ -40,7 +24,7 @@ fn load_spec(
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
 		"dev" => Box::new(chain_spec::development_config(para_id)),
-		"canvas-rococo" => Box::new(chain_spec::rococo_testnet_config(para_id)),
+		"template-rococo" => Box::new(chain_spec::rococo_testnet_config(para_id)),
 		"" | "local" => Box::new(chain_spec::local_testnet_config(para_id)),
 		path => Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
 	})
@@ -48,7 +32,7 @@ fn load_spec(
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		"Canvas".into()
+		"Parachain Collator Template".into()
 	}
 
 	fn impl_version() -> String {
@@ -57,7 +41,7 @@ impl SubstrateCli for Cli {
 
 	fn description() -> String {
 		format!(
-			"Canvas Node\n\nThe command-line arguments provided first will be \
+			"Parachain Collator Template\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		{} [parachain-args] -- [relaychain-args]",
@@ -70,7 +54,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn support_url() -> String {
-		"https://github.com/paritytech/canvas/issues/new".into()
+		"https://github.com/paritytech/cumulus/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {
@@ -78,17 +62,17 @@ impl SubstrateCli for Cli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		load_spec(id, self.run.parachain_id.unwrap_or(1002).into())
+		load_spec(id, self.run.parachain_id.unwrap_or(2000).into())
 	}
 
 	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		&canvas_runtime::VERSION
+		&parachain_template_runtime::VERSION
 	}
 }
 
 impl SubstrateCli for RelayChainCli {
 	fn impl_name() -> String {
-		"Canvas Node".into()
+		"Parachain Collator Template".into()
 	}
 
 	fn impl_version() -> String {
@@ -96,7 +80,7 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn description() -> String {
-		"Canvas Node\n\nThe command-line arguments provided first will be \
+		"Parachain Collator Template\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		parachain-collator [parachain-args] -- [relaychain-args]"
@@ -108,7 +92,7 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn support_url() -> String {
-		"https://github.com/paritytech/canvas/issues/new".into()
+		"https://github.com/paritytech/cumulus/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {
@@ -214,7 +198,7 @@ pub fn run() -> Result<()> {
 
 			let block: Block = generate_genesis_block(&load_spec(
 				&params.chain.clone().unwrap_or_default(),
-				params.parachain_id.unwrap_or(1002).into(),
+				params.parachain_id.unwrap_or(2000).into(),
 			)?)?;
 			let raw_header = block.header().encode();
 			let output_buf = if params.raw {
@@ -276,7 +260,7 @@ pub fn run() -> Result<()> {
 						.chain(cli.relaychain_args.iter()),
 				);
 
-				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(1002));
+				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(2000));
 
 				let parachain_account =
 					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);

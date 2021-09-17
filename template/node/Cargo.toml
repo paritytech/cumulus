@@ -16,7 +16,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [[bin]]
-name = "canvas"
+name = "parachain-template-node"
 path = "src/main.rs"
 
 [features]
