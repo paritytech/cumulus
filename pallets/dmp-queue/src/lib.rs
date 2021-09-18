@@ -30,7 +30,7 @@ pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::{convert::TryFrom, prelude::*};
-use xcm::{latest::prelude::*, MAX_XCM_DECODE_DEPTH, VersionedXcm};
+use xcm::{latest::prelude::*, VersionedXcm, MAX_XCM_DECODE_DEPTH};
 
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct ConfigData {

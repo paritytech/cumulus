@@ -31,7 +31,7 @@ use sp_runtime::traits::BadOrigin;
 use sp_std::{convert::TryFrom, prelude::*};
 use xcm::{
 	latest::{ExecuteXcm, Outcome, Parent, Xcm},
-	MAX_XCM_DECODE_DEPTH, VersionedXcm,
+	VersionedXcm, MAX_XCM_DECODE_DEPTH,
 };
 
 #[frame_support::pallet]

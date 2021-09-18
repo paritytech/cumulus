@@ -44,7 +44,7 @@ use rand_chacha::{
 use scale_info::TypeInfo;
 use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::{convert::TryFrom, prelude::*};
-use xcm::{latest::prelude::*, MAX_XCM_DECODE_DEPTH, VersionedXcm, WrapVersion};
+use xcm::{latest::prelude::*, VersionedXcm, WrapVersion, MAX_XCM_DECODE_DEPTH};
 
 pub use pallet::*;
 
@@ -252,8 +252,9 @@ impl<T: Config> Pallet<T> {
 				if XcmpMessageFormat::decode_and_advance_with_depth_limit(
 					MAX_XCM_DECODE_DEPTH,
 					&mut &s[..],
-				) != Ok(format) {
-					return false;
+				) != Ok(format)
+				{
+					return false
 				}
 				if s.len() + data.len() > max_message_size {
 					return false
