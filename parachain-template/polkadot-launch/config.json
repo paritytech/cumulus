@@ -26,6 +26,7 @@
 					"name": "alice",
 					"port": 31200,
 					"flags": [
+						"--force-authoring",
 						"--",
 						"--execution=wasm"
 					]
