@@ -120,7 +120,7 @@ std = [
 	"cumulus-primitives-core/std",
 	"cumulus-primitives-timestamp/std",
 	"cumulus-primitives-utility/std",
-    "cumulus-pallet-dmp-queue/std",
+	"cumulus-pallet-dmp-queue/std",
 	"parachain-info/std",
 	"polkadot-parachain/std",
 	"polkadot-runtime-common/std",
