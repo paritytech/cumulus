@@ -50,8 +50,21 @@ eventually be included by the relay chain for a parachain.
 To run a Rococo collator you will need to compile the following binary:
 
 ```
-cargo build --release -p polkadot-collator
+cargo build --release --locked -p polkadot-collator
 ```
+
+Otherwise you can compile it with 
+[Parity CI docker image](https://github.com/paritytech/scripts/tree/master/dockerfiles/ci-linux):
+
+```bash
+docker run --rm -it -w /shellhere/cumulus \
+                    -v $(pwd):/shellhere/cumulus \
+                    paritytech/ci-linux:production cargo build --release --locked -p polkadot-collator
+sudo chown -R $(id -u):$(id -g) target/
+```
+
+If you want to reproduce other steps of CI process you can use the following 
+[guide](https://github.com/paritytech/scripts#gitlab-ci-for-building-docker-images).
 
 Once the executable is built, launch collators for each parachain (repeat once each for chain
 `tick`, `trick`, `track`):
@@ -80,8 +93,6 @@ chain, and from the relay chain to its destination parachain.
 ```bash
 # Compile Polkadot with the real overseer feature
 git clone https://github.com/paritytech/polkadot
-git fetch
-git checkout rococo-v1
 cargo build --release
 
 # Generate a raw chain spec
@@ -99,8 +110,6 @@ cargo build --release
 ```bash
 # Compile
 git clone https://github.com/paritytech/cumulus
-git fetch
-git checkout rococo-v1
 cargo build --release
 
 # Export genesis state
@@ -121,3 +130,17 @@ cargo build --release
 ```
 ### Register the parachain
 ![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
+
+## Build the docker image
+
+After building `polkadot-collator` with cargo or with Parity docker image as documented in [this chapter](#build--launch-rococo-collators), the following will allow producting a new docker image where the compiled binary is injected:
+
+```
+./docker/scripts/build-injected-image.sh
+```
+
+You may then start a new contaier:
+
+```
+docker run --rm -it $OWNER/$IMAGE_NAME --collator --tmp --parachain-id 1000 --execution wasm --chain /specs/westmint.json
+```

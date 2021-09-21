@@ -31,16 +31,14 @@ use cumulus_primitives_core::ParaId;
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 use polkadot_primitives::v1::{CollatorPair, Hash as PHash, PersistedValidationData};
 use sc_client_api::execution_extensions::ExecutionStrategies;
-use sc_executor::native_executor_instance;
-pub use sc_executor::NativeExecutor;
 use sc_network::{config::TransportConfig, multiaddr, NetworkService};
 use sc_service::{
 	config::{
-		DatabaseConfig, KeepBlocks, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
+		DatabaseSource, KeepBlocks, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
 		OffchainWorkerConfig, PruningMode, TransactionStorageMode, WasmExecutionMethod,
 	},
 	BasePath, ChainSpec, Configuration, Error as ServiceError, PartialComponents, Role,
-	RpcHandlers, TFullBackend, TFullClient, TaskExecutor, TaskManager,
+	RpcHandlers, TFullBackend, TFullClient, TaskManager,
 };
 use sp_arithmetic::traits::SaturatedConversion;
 use sp_blockchain::HeaderBackend;
@@ -78,15 +76,27 @@ impl ParachainConsensus<Block> for NullConsensus {
 /// The signature of the announce block fn.
 pub type AnnounceBlockFn = Arc<dyn Fn(Hash, Option<Vec<u8>>) + Send + Sync>;
 
-// Native executor instance.
-native_executor_instance!(
-	pub RuntimeExecutor,
-	cumulus_test_runtime::api::dispatch,
-	cumulus_test_runtime::native_version,
-);
+/// Native executor instance.
+pub struct RuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for RuntimeExecutor {
+	type ExtendHostFunctions = ();
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		cumulus_test_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		cumulus_test_runtime::native_version()
+	}
+}
 
 /// The client type being used by the test service.
-pub type Client = TFullClient<runtime::NodeBlock, runtime::RuntimeApi, RuntimeExecutor>;
+pub type Client = TFullClient<
+	runtime::NodeBlock,
+	runtime::RuntimeApi,
+	sc_executor::NativeElseWasmExecutor<RuntimeExecutor>,
+>;
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
@@ -99,14 +109,20 @@ pub fn new_partial(
 		Client,
 		TFullBackend<Block>,
 		(),
-		sp_consensus::import_queue::BasicQueue<Block, PrefixedMemoryDB<BlakeTwo256>>,
+		sc_consensus::import_queue::BasicQueue<Block, PrefixedMemoryDB<BlakeTwo256>>,
 		sc_transaction_pool::FullPool<Block, Client>,
 		(),
 	>,
 	sc_service::Error,
 > {
+	let executor = sc_executor::NativeElseWasmExecutor::<RuntimeExecutor>::new(
+		config.wasm_method,
+		config.default_heap_pages,
+		config.max_runtime_instances,
+	);
+
 	let (client, backend, keystore_container, task_manager) =
-		sc_service::new_full_parts::<Block, RuntimeApi, RuntimeExecutor>(&config, None)?;
+		sc_service::new_full_parts::<Block, RuntimeApi, _>(&config, None, executor)?;
 	let client = Arc::new(client);
 
 	let registry = config.prometheus_registry();
@@ -155,19 +171,17 @@ async fn start_node_impl<RB>(
 	consensus: Consensus,
 ) -> sc_service::error::Result<(
 	TaskManager,
-	Arc<TFullClient<Block, RuntimeApi, RuntimeExecutor>>,
+	Arc<Client>,
 	Arc<NetworkService<Block, H256>>,
 	RpcHandlers,
 )>
 where
-	RB: Fn(
-			Arc<TFullClient<Block, RuntimeApi, RuntimeExecutor>>,
-		) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
+	RB: Fn(Arc<Client>) -> Result<jsonrpc_core::IoHandler<sc_rpc::Metadata>, sc_service::Error>
 		+ Send
 		+ 'static,
 {
 	if matches!(parachain_config.role, Role::Light) {
-		return Err("Light client not supported!".into());
+		return Err("Light client not supported!".into())
 	}
 
 	let mut parachain_config = prepare_node_config(parachain_config);
@@ -213,6 +227,7 @@ where
 			import_queue: import_queue.clone(),
 			on_demand: None,
 			block_announce_validator_builder: Some(Box::new(block_announce_validator_builder)),
+			warp_sync: None,
 		})?;
 
 	let rpc_extensions_builder = {
@@ -259,37 +274,35 @@ where
 				let relay_chain_client = relay_chain_full_node.client.clone();
 				let relay_chain_backend = relay_chain_full_node.backend.clone();
 
-				Box::new(
-					cumulus_client_consensus_relay_chain::RelayChainConsensus::new(
-						para_id,
-						proposer_factory,
-						move |_, (relay_parent, validation_data)| {
-							let parachain_inherent =
-								cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
-									relay_parent,
-									&*relay_chain_client,
-									&*relay_chain_backend,
-									&validation_data,
-									para_id,
-								);
+				Box::new(cumulus_client_consensus_relay_chain::RelayChainConsensus::new(
+					para_id,
+					proposer_factory,
+					move |_, (relay_parent, validation_data)| {
+						let parachain_inherent =
+							cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
+								relay_parent,
+								&*relay_chain_client,
+								&*relay_chain_backend,
+								&validation_data,
+								para_id,
+							);
 
-							async move {
-								let time = sp_timestamp::InherentDataProvider::from_system_time();
+						async move {
+							let time = sp_timestamp::InherentDataProvider::from_system_time();
 
-								let parachain_inherent = parachain_inherent.ok_or_else(|| {
-									Box::<dyn std::error::Error + Send + Sync>::from(String::from(
-										"error",
-									))
-								})?;
-								Ok((time, parachain_inherent))
-							}
-						},
-						client.clone(),
-						relay_chain_full_node.client.clone(),
-						relay_chain_full_node.backend.clone(),
-					),
-				)
-			}
+							let parachain_inherent = parachain_inherent.ok_or_else(|| {
+								Box::<dyn std::error::Error + Send + Sync>::from(String::from(
+									"error",
+								))
+							})?;
+							Ok((time, parachain_inherent))
+						}
+					},
+					client.clone(),
+					relay_chain_full_node.client.clone(),
+					relay_chain_full_node.backend.clone(),
+				))
+			},
 			Consensus::Null => Box::new(NullConsensus),
 		};
 
@@ -360,7 +373,7 @@ enum Consensus {
 /// A builder to create a [`TestNode`].
 pub struct TestNodeBuilder {
 	para_id: ParaId,
-	task_executor: TaskExecutor,
+	tokio_handle: tokio::runtime::Handle,
 	key: Sr25519Keyring,
 	collator_key: Option<CollatorPair>,
 	parachain_nodes: Vec<MultiaddrWithPeerId>,
@@ -376,13 +389,13 @@ impl TestNodeBuilder {
 	/// Create a new instance of `Self`.
 	///
 	/// `para_id` - The parachain id this node is running for.
-	/// `task_executor` - The task executor to use.
+	/// `tokio_handle` - The tokio handler to use.
 	/// `key` - The key that will be used to generate the name and that will be passed as `dev_seed`.
-	pub fn new(para_id: ParaId, task_executor: TaskExecutor, key: Sr25519Keyring) -> Self {
+	pub fn new(para_id: ParaId, tokio_handle: tokio::runtime::Handle, key: Sr25519Keyring) -> Self {
 		TestNodeBuilder {
 			key,
 			para_id,
-			task_executor,
+			tokio_handle,
 			collator_key: None,
 			parachain_nodes: Vec::new(),
 			parachain_nodes_exclusive: false,
@@ -451,8 +464,7 @@ impl TestNodeBuilder {
 		mut self,
 		nodes: impl IntoIterator<Item = &'a polkadot_test_service::PolkadotTestNode>,
 	) -> Self {
-		self.relay_chain_nodes
-			.extend(nodes.into_iter().map(|n| n.addr.clone()));
+		self.relay_chain_nodes.extend(nodes.into_iter().map(|n| n.addr.clone()));
 		self
 	}
 
@@ -486,9 +498,8 @@ impl TestNodeBuilder {
 	/// Build the [`TestNode`].
 	pub async fn build(self) -> TestNode {
 		let parachain_config = node_config(
-			self.storage_update_func_parachain
-				.unwrap_or_else(|| Box::new(|| ())),
-			self.task_executor.clone(),
+			self.storage_update_func_parachain.unwrap_or_else(|| Box::new(|| ())),
+			self.tokio_handle.clone(),
 			self.key.clone(),
 			self.parachain_nodes,
 			self.parachain_nodes_exclusive,
@@ -497,9 +508,8 @@ impl TestNodeBuilder {
 		)
 		.expect("could not generate Configuration");
 		let mut relay_chain_config = polkadot_test_service::node_config(
-			self.storage_update_func_relay_chain
-				.unwrap_or_else(|| Box::new(|| ())),
-			self.task_executor,
+			self.storage_update_func_relay_chain.unwrap_or_else(|| Box::new(|| ())),
+			self.tokio_handle,
 			self.key,
 			self.relay_chain_nodes,
 			false,
@@ -515,7 +525,7 @@ impl TestNodeBuilder {
 			relay_chain_config,
 			self.para_id,
 			self.wrap_announce_block,
-			|_| Default::default(),
+			|_| Ok(Default::default()),
 			self.consensus,
 		)
 		.await
@@ -524,13 +534,7 @@ impl TestNodeBuilder {
 		let peer_id = network.local_peer_id().clone();
 		let addr = MultiaddrWithPeerId { multiaddr, peer_id };
 
-		TestNode {
-			task_manager,
-			client,
-			network,
-			addr,
-			rpc_handlers,
-		}
+		TestNode { task_manager, client, network, addr, rpc_handlers }
 	}
 }
 
@@ -542,7 +546,7 @@ impl TestNodeBuilder {
 /// adjustments to the runtime genesis.
 pub fn node_config(
 	storage_update_func: impl Fn(),
-	task_executor: TaskExecutor,
+	tokio_handle: tokio::runtime::Handle,
 	key: Sr25519Keyring,
 	nodes: Vec<MultiaddrWithPeerId>,
 	nodes_exlusive: bool,
@@ -551,18 +555,11 @@ pub fn node_config(
 ) -> Result<Configuration, ServiceError> {
 	let base_path = BasePath::new_temp_dir()?;
 	let root = base_path.path().to_path_buf();
-	let role = if is_collator {
-		Role::Authority
-	} else {
-		Role::Full
-	};
+	let role = if is_collator { Role::Authority } else { Role::Full };
 	let key_seed = key.to_seed();
 	let mut spec = Box::new(chain_spec::get_chain_spec(para_id));
 
-	let mut storage = spec
-		.as_storage_builder()
-		.build_storage()
-		.expect("could not build storage");
+	let mut storage = spec.as_storage_builder().build_storage().expect("could not build storage");
 
 	BasicExternalities::execute_with_storage(&mut storage, storage_update_func);
 	spec.set_storage(storage);
@@ -594,15 +591,12 @@ pub fn node_config(
 		impl_name: "cumulus-test-node".to_string(),
 		impl_version: "0.1".to_string(),
 		role,
-		task_executor,
+		tokio_handle,
 		transaction_pool: Default::default(),
 		network: network_config,
 		keystore: KeystoreConfig::InMemory,
 		keystore_remote: Default::default(),
-		database: DatabaseConfig::RocksDb {
-			path: root.join("db"),
-			cache_size: 128,
-		},
+		database: DatabaseSource::RocksDb { path: root.join("db"), cache_size: 128 },
 		state_cache_size: 67108864,
 		state_cache_child_ratio: None,
 		state_pruning: PruningMode::ArchiveAll,
@@ -622,18 +616,13 @@ pub fn node_config(
 		rpc_ws: None,
 		rpc_ipc: None,
 		rpc_ws_max_connections: None,
-		rpc_http_threads: None,
 		rpc_cors: None,
 		rpc_methods: Default::default(),
 		rpc_max_payload: None,
 		prometheus_config: None,
 		telemetry_endpoints: None,
-		telemetry_external_transport: None,
 		default_heap_pages: None,
-		offchain_worker: OffchainWorkerConfig {
-			enabled: true,
-			indexing_enabled: false,
-		},
+		offchain_worker: OffchainWorkerConfig { enabled: true, indexing_enabled: false },
 		force_authoring: false,
 		disable_grandpa: false,
 		dev_key_seed: Some(key_seed),
@@ -669,10 +658,10 @@ impl TestNode {
 
 	/// Register a parachain at this relay chain.
 	pub async fn schedule_upgrade(&self, validation: Vec<u8>) -> Result<(), RpcTransactionError> {
-		let call = frame_system::Call::set_code(validation);
+		let call = frame_system::Call::set_code { code: validation };
 
 		self.send_extrinsic(
-			runtime::SudoCall::sudo_unchecked_weight(Box::new(call.into()), 1_000),
+			runtime::SudoCall::sudo_unchecked_weight { call: Box::new(call.into()), weight: 1_000 },
 			Sr25519Keyring::Alice,
 		)
 		.await
@@ -710,14 +699,7 @@ pub fn construct_extrinsic(
 	let raw_payload = runtime::SignedPayload::from_raw(
 		function.clone(),
 		extra.clone(),
-		(
-			runtime::VERSION.spec_version,
-			genesis_block,
-			current_block_hash,
-			(),
-			(),
-			(),
-		),
+		(runtime::VERSION.spec_version, genesis_block, current_block_hash, (), (), ()),
 	);
 	let signature = raw_payload.using_encoded(|e| caller.sign(e));
 	runtime::UncheckedExtrinsic::new_signed(
@@ -733,13 +715,13 @@ pub fn construct_extrinsic(
 /// This is essentially a wrapper around
 /// [`run_validator_node`](polkadot_test_service::run_validator_node).
 pub fn run_relay_chain_validator_node(
-	task_executor: TaskExecutor,
+	tokio_handle: tokio::runtime::Handle,
 	key: Sr25519Keyring,
 	storage_update_func: impl Fn(),
 	boot_nodes: Vec<MultiaddrWithPeerId>,
 ) -> polkadot_test_service::PolkadotTestNode {
 	polkadot_test_service::run_validator_node(
-		task_executor,
+		tokio_handle,
 		key,
 		storage_update_func,
 		boot_nodes,

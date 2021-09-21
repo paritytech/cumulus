@@ -41,7 +41,7 @@ frame_support::construct_runtime!(
 );
 
 const CALL: &<Runtime as frame_system::Config>::Call =
-	&Call::Balances(BalancesCall::transfer(2, 69));
+	&Call::Balances(BalancesCall::transfer{ dest: 2, value: 69 });
 
 thread_local! {
 	static EXTRINSIC_BASE_WEIGHT: RefCell<u64> = RefCell::new(0);
@@ -69,7 +69,7 @@ parameter_types! {
 }
 
 impl frame_system::Config for Runtime {
-	type BaseCallFilter = ();
+	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = BlockWeights;
 	type BlockLength = ();
 	type DbWeight = ();
@@ -174,7 +174,7 @@ pub struct CreditToBlockAuthor;
 impl HandleCredit<AccountId, Assets> for CreditToBlockAuthor {
 
 	fn handle_credit(credit: CreditOf<AccountId, Assets>) {
-		let author = pallet_authorship::Module::<Runtime>::author();
+		let author = pallet_authorship::Pallet::<Runtime>::author();
 		// TODO: what to do in case paying the author fails (e.g. because `fee < min_balance`)
 		// default: drop the result which will trigger the `OnDrop` of the imbalance.
 		let _res = <Assets as Balanced<AccountId>>::resolve(&author, credit);

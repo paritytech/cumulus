@@ -6,10 +6,10 @@ edition = "2018"
 
 [dependencies]
 # Other dependencies
-codec = { package = "parity-scale-codec", version = "2.0.0", features = [ "derive" ], default-features = false }
-log = { version = "0.4.14", default-features = false }
-rand = { version = "0.8.3", default-features = false }
+codec = { package = "parity-scale-codec", version = "2.3.0", features = [ "derive" ], default-features = false }
 rand_chacha = { version = "0.3.0", default-features = false }
+scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
+log = { version = "0.4.14", default-features = false }
 
 # Substrate Dependencies
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -25,17 +25,18 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", default-feature
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 
 [dev-dependencies]
-sp-core = { git = 'https://github.com/paritytech/substrate', branch = "master", version = '3.0.0' }
-sp-io = { git = 'https://github.com/paritytech/substrate', branch = "master", version = '3.0.0' }
+sp-core = { git = 'https://github.com/paritytech/substrate', branch = "master" }
+sp-io = { git = 'https://github.com/paritytech/substrate', branch = "master" }
 cumulus-pallet-parachain-system = { path = "../parachain-system" }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = "master", version = '3.0.0' }
+pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = "master" }
 
 [features]
 default = [ "std" ]
 std = [
 	"codec/std",
 	"log/std",
+	"scale-info/std",
 	"sp-std/std",
 	"sp-runtime/std",
 	"frame-support/std",

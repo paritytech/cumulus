@@ -18,7 +18,7 @@ use sp_runtime::traits::Block as BlockT;
 
 use polkadot_node_primitives::AvailableData;
 use polkadot_node_subsystem::messages::AvailabilityRecoveryMessage;
-use polkadot_overseer::OverseerHandler;
+use polkadot_overseer::Handle as OverseerHandle;
 
 use futures::{channel::oneshot, stream::FuturesUnordered, Future, FutureExt, StreamExt};
 
@@ -34,16 +34,12 @@ pub(crate) struct ActiveCandidateRecovery<Block: BlockT> {
 	>,
 	/// The block hashes of the candidates currently being recovered.
 	candidates: HashSet<Block::Hash>,
-	overseer_handler: OverseerHandler,
+	overseer_handle: OverseerHandle,
 }
 
 impl<Block: BlockT> ActiveCandidateRecovery<Block> {
-	pub fn new(overseer_handler: OverseerHandler) -> Self {
-		Self {
-			recoveries: Default::default(),
-			candidates: Default::default(),
-			overseer_handler,
-		}
+	pub fn new(overseer_handle: OverseerHandle) -> Self {
+		Self { recoveries: Default::default(), candidates: Default::default(), overseer_handle }
 	}
 
 	/// Recover the given `pending_candidate`.
@@ -54,7 +50,7 @@ impl<Block: BlockT> ActiveCandidateRecovery<Block> {
 	) {
 		let (tx, rx) = oneshot::channel();
 
-		self.overseer_handler
+		self.overseer_handle
 			.send_msg(
 				AvailabilityRecoveryMessage::RecoverAvailableData(
 					pending_candidate.receipt,
@@ -80,14 +76,14 @@ impl<Block: BlockT> ActiveCandidateRecovery<Block> {
 							"Availability recovery failed",
 						);
 						(block_hash, None)
-					}
+					},
 					Err(_) => {
 						tracing::debug!(
 							target: crate::LOG_TARGET,
 							"Availability recovery oneshot channel closed",
 						);
 						(block_hash, None)
-					}
+					},
 				}
 			}
 			.boxed(),
@@ -106,7 +102,7 @@ impl<Block: BlockT> ActiveCandidateRecovery<Block> {
 		loop {
 			if let Some(res) = self.recoveries.next().await {
 				self.candidates.remove(&res.0);
-				return res;
+				return res
 			} else {
 				futures::pending!()
 			}

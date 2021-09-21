@@ -15,15 +15,14 @@
 
 use super::*;
 use crate as xcmp_queue;
-use sp_core::H256;
 use frame_support::parameter_types;
+use sp_core::H256;
 use sp_runtime::{
+	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
-	testing::{Header},
 };
 use xcm_builder::{
-	FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset, CurrencyAdapter,
-	ParentIsDefault,
+	CurrencyAdapter, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset, ParentIsDefault,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -38,7 +37,9 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Config, Storage, Inherent, Event<T>},
+		ParachainSystem: cumulus_pallet_parachain_system::{
+			Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
+		},
 		XcmpQueue: xcmp_queue::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -51,7 +52,7 @@ parameter_types! {
 type AccountId = u64;
 
 impl frame_system::Config for Test {
-	type BaseCallFilter = ();
+	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
 	type DbWeight = ();
@@ -105,11 +106,10 @@ impl cumulus_pallet_parachain_system::Config for Test {
 }
 
 parameter_types! {
-	pub const RelayChain: MultiLocation = MultiLocation::X1(Junction::Parent);
-	pub Ancestry: MultiLocation = MultiLocation::X1(
-		Junction::Parachain(1u32.into())
-	);
+	pub const RelayChain: MultiLocation = MultiLocation::parent();
+	pub Ancestry: MultiLocation = X1(Parachain(1u32.into())).into();
 	pub UnitWeightCost: Weight = 1_000_000;
+	pub const MaxInstructions: u32 = 100;
 }
 
 /// Means for transacting assets on this chain.
@@ -126,9 +126,7 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 	(),
 >;
 
-pub type LocationToAccountId = (
-	ParentIsDefault<AccountId>,
-);
+pub type LocationToAccountId = (ParentIsDefault<AccountId>,);
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
@@ -141,9 +139,12 @@ impl xcm_executor::Config for XcmConfig {
 	type IsTeleporter = NativeAsset;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = ();
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
+	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type Trader = ();
 	type ResponseHandler = ();
+	type AssetTrap = ();
+	type AssetClaims = ();
+	type SubscriptionService = ();
 }
 
 pub type XcmRouter = (
@@ -155,6 +156,7 @@ impl Config for Test {
 	type Event = Event;
 	type XcmExecutor = xcm_executor::XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
+	type VersionWrapper = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

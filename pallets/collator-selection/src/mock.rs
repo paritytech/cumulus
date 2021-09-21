@@ -15,19 +15,19 @@
 
 use super::*;
 use crate as collator_selection;
-use sp_core::H256;
 use frame_support::{
-	parameter_types, ord_parameter_types,
+	ord_parameter_types, parameter_types,
 	traits::{FindAuthor, GenesisBuild, ValidatorRegistration},
-	PalletId
+	PalletId,
 };
-use sp_runtime::{
-	RuntimeAppPublic,
-	traits::{BlakeTwo256, IdentityLookup, OpaqueKeys},
-	testing::{Header, UintAuthorityId},
-};
-use frame_system::{EnsureSignedBy};
 use frame_system as system;
+use frame_system::EnsureSignedBy;
+use sp_core::H256;
+use sp_runtime::{
+	testing::{Header, UintAuthorityId},
+	traits::{BlakeTwo256, IdentityLookup, OpaqueKeys},
+	RuntimeAppPublic,
+};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -55,7 +55,7 @@ parameter_types! {
 }
 
 impl system::Config for Test {
-	type BaseCallFilter = ();
+	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
 	type DbWeight = ();
@@ -100,7 +100,8 @@ impl pallet_balances::Config for Test {
 pub struct Author4;
 impl FindAuthor<u64> for Author4 {
 	fn find_author<'a, I>(_digests: I) -> Option<u64>
-		where I: 'a + IntoIterator<Item = (frame_support::ConsensusEngineId, &'a [u8])>,
+	where
+		I: 'a + IntoIterator<Item = (frame_support::ConsensusEngineId, &'a [u8])>,
 	{
 		Some(4)
 	}
@@ -126,6 +127,8 @@ impl pallet_timestamp::Config for Test {
 
 impl pallet_aura::Config for Test {
 	type AuthorityId = sp_consensus_aura::sr25519::AuthorityId;
+	type MaxAuthorities = MaxAuthorities;
+	type DisabledValidators = ();
 }
 
 sp_runtime::impl_opaque_keys! {
@@ -189,6 +192,7 @@ parameter_types! {
 	pub const MaxCandidates: u32 = 20;
 	pub const MaxInvulnerables: u32 = 20;
 	pub const MinCandidates: u32 = 1;
+	pub const MaxAuthorities: u32 = 100_000;
 }
 
 pub struct IsRegistered;
@@ -221,22 +225,13 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	sp_tracing::try_init_simple();
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let invulnerables = vec![1, 2];
-	let keys = invulnerables.iter().map(|i|
-		(
-			*i,
-			*i,
-			MockSessionKeys { aura: UintAuthorityId(*i) },
-		)
-	).collect::<Vec<_>>();
+	let keys = invulnerables
+		.iter()
+		.map(|i| (*i, *i, MockSessionKeys { aura: UintAuthorityId(*i) }))
+		.collect::<Vec<_>>();
 
 	let balances = pallet_balances::GenesisConfig::<Test> {
-		balances: vec![
-			(1, 100),
-			(2, 100),
-			(3, 100),
-			(4, 100),
-			(5, 100),
-		],
+		balances: vec![(1, 100), (2, 100), (3, 100), (4, 100), (5, 100)],
 	};
 	let collator_selection = collator_selection::GenesisConfig::<Test> {
 		desired_candidates: 2,
@@ -253,7 +248,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 }
 
 pub fn initialize_to_block(n: u64) {
-	for i in System::block_number()+1..=n {
+	for i in System::block_number() + 1..=n {
 		System::set_block_number(i);
 		<AllPallets as frame_support::traits::OnInitialize<u64>>::on_initialize(i);
 	}

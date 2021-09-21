@@ -13,14 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Auxillary struct/enums for Statemint runtime.
-//! Taken from polkadot/runtime/common (at a21cd64) and adapted for Statemint.
+//! Auxillary struct/enums for parachain runtimes.
+//! Taken from polkadot/runtime/common (at a21cd64) and adapted for parachains.
 
 use frame_support::traits::{Currency, Imbalance, OnUnbalanced, fungibles::{self, CreditOf}};
 use sp_std::marker::PhantomData;
 
 /// Type alias to conveniently refer to the `Currency::NegativeImbalance` associated type.
-pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
+pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
+	<T as frame_system::Config>::AccountId,
+>>::NegativeImbalance;
 
 /// Type alias to conveniently refer to `frame_system`'s `Config::AccountId`.
 pub type AccountIdOf<R> = <R as frame_system::Config>::AccountId;
@@ -36,10 +38,7 @@ where
 	fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
 		let numeric_amount = amount.peek();
 		let staking_pot = <pallet_collator_selection::Pallet<R>>::account_id();
-		<pallet_balances::Pallet<R>>::resolve_creating(
-			&staking_pot,
-			amount,
-		);
+		<pallet_balances::Pallet<R>>::resolve_creating(&staking_pot, amount);
 		<frame_system::Pallet<R>>::deposit_event(pallet_balances::Event::Deposit(
 			staking_pot,
 			numeric_amount,
@@ -85,9 +84,13 @@ where
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use frame_support::traits::FindAuthor;
-	use frame_support::{parameter_types, PalletId, traits::ValidatorRegistration};
+	use frame_support::{
+		parameter_types,
+		traits::{FindAuthor, ValidatorRegistration},
+		PalletId,
+	};
 	use frame_system::{limits, EnsureRoot};
+	use pallet_collator_selection::IdentityCollator;
 	use polkadot_primitives::v1::AccountId;
 	use sp_core::H256;
 	use sp_runtime::{
@@ -95,7 +98,6 @@ mod tests {
 		traits::{BlakeTwo256, IdentityLookup},
 		Perbill,
 	};
-	use pallet_collator_selection::IdentityCollator;
 
 	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 	type Block = frame_system::mocking::MockBlock<Test>;
@@ -120,7 +122,7 @@ mod tests {
 	}
 
 	impl frame_system::Config for Test {
-		type BaseCallFilter = ();
+		type BaseCallFilter = frame_support::traits::Everything;
 		type Origin = Origin;
 		type Index = u64;
 		type BlockNumber = u64;
@@ -204,9 +206,7 @@ mod tests {
 	}
 
 	pub fn new_test_ext() -> sp_io::TestExternalities {
-		let mut t = frame_system::GenesisConfig::default()
-			.build_storage::<Test>()
-			.unwrap();
+		let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 		// We use default for brevity, but you can configure as desired if needed.
 		pallet_balances::GenesisConfig::<Test>::default()
 			.assimilate_storage(&mut t)

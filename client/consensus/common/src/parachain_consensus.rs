@@ -17,9 +17,10 @@
 use sc_client_api::{
 	Backend, BlockBackend, BlockImportNotification, BlockchainEvents, Finalizer, UsageProvider,
 };
+use sc_consensus::{BlockImport, BlockImportParams, ForkChoiceStrategy};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Error as ClientError, Result as ClientResult};
-use sp_consensus::{BlockImport, BlockImportParams, BlockOrigin, BlockStatus, ForkChoiceStrategy};
+use sp_consensus::{BlockOrigin, BlockStatus};
 use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, Header as HeaderT},
@@ -74,7 +75,7 @@ where
 			h
 		} else {
 			tracing::debug!(target: "cumulus-consensus", "Stopping following finalized head.");
-			return;
+			return
 		};
 
 		let header = match Block::Header::decode(&mut &finalized_head[..]) {
@@ -85,8 +86,8 @@ where
 					error = ?err,
 					"Could not decode parachain header while following finalized heads.",
 				);
-				continue;
-			}
+				continue
+			},
 		};
 
 		let hash = header.hash();
@@ -139,12 +140,8 @@ pub async fn run_parachain_consensus<P, R, Block, B>(
 	R: RelaychainClient,
 	B: Backend<Block>,
 {
-	let follow_new_best = follow_new_best(
-		para_id,
-		parachain.clone(),
-		relay_chain.clone(),
-		announce_block,
-	);
+	let follow_new_best =
+		follow_new_best(para_id, parachain.clone(), relay_chain.clone(), announce_block);
 	let follow_finalized_head = follow_finalized_head(para_id, parachain, relay_chain);
 	select! {
 		_ = follow_new_best.fuse() => {},
@@ -241,12 +238,12 @@ async fn handle_new_block_imported<Block, P>(
 	};
 
 	let unset_hash = if notification.header.number() < unset_best_header.number() {
-		return;
+		return
 	} else if notification.header.number() == unset_best_header.number() {
 		let unset_hash = unset_best_header.hash();
 
 		if unset_hash != notification.hash {
-			return;
+			return
 		} else {
 			unset_hash
 		}
@@ -262,7 +259,7 @@ async fn handle_new_block_imported<Block, P>(
 				.expect("We checked above that the value is set; qed");
 
 			import_block_as_new_best(unset_hash, unset_best_header, parachain).await;
-		}
+		},
 		state => tracing::debug!(
 			target: "cumulus-consensus",
 			?unset_best_header,
@@ -291,8 +288,8 @@ async fn handle_new_best_parachain_head<Block, P>(
 				error = ?err,
 				"Could not decode Parachain header while following best heads.",
 			);
-			return;
-		}
+			return
+		},
 	};
 
 	let hash = parachain_head.hash();
@@ -310,14 +307,14 @@ async fn handle_new_best_parachain_head<Block, P>(
 				unset_best_header.take();
 
 				import_block_as_new_best(hash, parachain_head, parachain).await;
-			}
+			},
 			Ok(BlockStatus::InChainPruned) => {
 				tracing::error!(
 					target: "cumulus-collator",
 					block_hash = ?hash,
 					"Trying to set pruned block as new best!",
 				);
-			}
+			},
 			Ok(BlockStatus::Unknown) => {
 				*unset_best_header = Some(parachain_head);
 
@@ -326,7 +323,7 @@ async fn handle_new_best_parachain_head<Block, P>(
 					block_hash = ?hash,
 					"Parachain block not yet imported, waiting for import to enact as best block.",
 				);
-			}
+			},
 			Err(e) => {
 				tracing::error!(
 					target: "cumulus-collator",
@@ -334,8 +331,8 @@ async fn handle_new_best_parachain_head<Block, P>(
 					error = ?e,
 					"Failed to get block status of block.",
 				);
-			}
-			_ => {}
+			},
+			_ => {},
 		}
 	}
 }
@@ -346,15 +343,24 @@ where
 	P: UsageProvider<Block> + Send + Sync + BlockBackend<Block>,
 	for<'a> &'a P: BlockImport<Block>,
 {
+	let best_number = parachain.usage_info().chain.best_number;
+	if *header.number() < best_number {
+		tracing::debug!(
+			target: "cumulus-consensus",
+			%best_number,
+			block_number = %header.number(),
+			"Skipping importing block as new best block, because there already exists a \
+			 best block with an higher number",
+		);
+		return
+	}
+
 	// Make it the new best block
 	let mut block_import_params = BlockImportParams::new(BlockOrigin::ConsensusBroadcast, header);
 	block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(true));
 	block_import_params.import_existing = true;
 
-	if let Err(err) = (&*parachain)
-		.import_block(block_import_params, Default::default())
-		.await
-	{
+	if let Err(err) = (&*parachain).import_block(block_import_params, Default::default()).await {
 		tracing::warn!(
 			target: "cumulus-consensus",
 			block_hash = ?hash,
@@ -379,10 +385,7 @@ where
 		self.import_notification_stream()
 			.filter_map(move |n| {
 				future::ready(if n.is_new_best {
-					relay_chain
-						.parachain_head_at(&BlockId::hash(n.hash), para_id)
-						.ok()
-						.flatten()
+					relay_chain.parachain_head_at(&BlockId::hash(n.hash), para_id).ok().flatten()
 				} else {
 					None
 				})
@@ -396,10 +399,7 @@ where
 		self.finality_notification_stream()
 			.filter_map(move |n| {
 				future::ready(
-					relay_chain
-						.parachain_head_at(&BlockId::hash(n.hash), para_id)
-						.ok()
-						.flatten(),
+					relay_chain.parachain_head_at(&BlockId::hash(n.hash), para_id).ok().flatten(),
 				)
 			})
 			.boxed()

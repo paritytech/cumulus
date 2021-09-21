@@ -33,13 +33,14 @@ use cumulus_primitives_core::{
 use futures::lock::Mutex;
 use polkadot_client::ClientHandle;
 use sc_client_api::{backend::AuxStore, Backend, BlockOf};
+use sc_consensus::BlockImport;
 use sc_consensus_slots::{BackoffAuthoringBlocksStrategy, SlotInfo};
 use sc_telemetry::TelemetryHandle;
 use sp_api::ProvideRuntimeApi;
 use sp_application_crypto::AppPublic;
 use sp_blockchain::{HeaderBackend, ProvideCache};
 use sp_consensus::{
-	BlockImport, EnableProofRecording, Environment, ProofRecording, Proposer, SlotData, SyncOracle,
+	EnableProofRecording, Environment, ProofRecording, Proposer, SlotData, SyncOracle,
 };
 use sp_consensus_aura::AuraApi;
 use sp_core::crypto::Pair;
@@ -52,8 +53,7 @@ mod import_queue;
 
 pub use import_queue::{build_verifier, import_queue, BuildVerifierParams, ImportQueueParams};
 pub use sc_consensus_aura::{
-	slot_duration, AuraVerifier, BuildAuraWorkerParams, SlotDuration,
-	SlotProportion,
+	slot_duration, AuraVerifier, BuildAuraWorkerParams, SlotDuration, SlotProportion,
 };
 pub use sc_consensus_slots::InherentDataProviderExt;
 
@@ -124,7 +124,7 @@ where
 		Client::Api: AuraApi<B, P::Public>,
 		BI: BlockImport<B, Transaction = sp_api::TransactionFor<Client, B>> + Send + Sync + 'static,
 		SO: SyncOracle + Send + Sync + Clone + 'static,
-		BS: BackoffAuthoringBlocksStrategy<NumberFor<B>> + Send + 'static,
+		BS: BackoffAuthoringBlocksStrategy<NumberFor<B>> + Send + Sync + 'static,
 		PF: Environment<B, Error = Error> + Send + Sync + 'static,
 		PF::Proposer: Proposer<
 			B,
@@ -138,8 +138,8 @@ where
 		P::Public: AppPublic + Hash + Member + Encode + Decode,
 		P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
 	{
-		let worker =
-			sc_consensus_aura::build_aura_worker::<P, _, _, _, _, _, _, _, _>(BuildAuraWorkerParams {
+		let worker = sc_consensus_aura::build_aura_worker::<P, _, _, _, _, _, _, _, _>(
+			BuildAuraWorkerParams {
 				client: para_client,
 				block_import: ParachainBlockImport::new(block_import),
 				justification_sync_link: (),
@@ -151,7 +151,8 @@ where
 				telemetry,
 				block_proposal_slot_portion,
 				max_block_proposal_slot_portion,
-			});
+			},
+		);
 
 		Self {
 			create_inherent_data_providers: Arc::new(create_inherent_data_providers),
@@ -214,9 +215,8 @@ where
 		relay_parent: PHash,
 		validation_data: &PersistedValidationData,
 	) -> Option<ParachainCandidate<B>> {
-		let (inherent_data, inherent_data_providers) = self
-			.inherent_data(parent.hash(), validation_data, relay_parent)
-			.await?;
+		let (inherent_data, inherent_data_providers) =
+			self.inherent_data(parent.hash(), validation_data, relay_parent).await?;
 
 		let info = SlotInfo::new(
 			inherent_data_providers.slot(),
@@ -233,10 +233,7 @@ where
 
 		let res = self.aura_worker.lock().await.on_slot(info).await?;
 
-		Some(ParachainCandidate {
-			block: res.block,
-			proof: res.storage_proof,
-		})
+		Some(ParachainCandidate { block: res.block, proof: res.storage_proof })
 	}
 }
 
@@ -303,7 +300,7 @@ where
 		+ Sync
 		+ 'static,
 	SO: SyncOracle + Send + Sync + Clone + 'static,
-	BS: BackoffAuthoringBlocksStrategy<NumberFor<Block>> + Send + 'static,
+	BS: BackoffAuthoringBlocksStrategy<NumberFor<Block>> + Send + Sync + 'static,
 	PF: Environment<Block, Error = Error> + Send + Sync + 'static,
 	PF::Proposer: Proposer<
 		Block,
@@ -386,7 +383,7 @@ where
 		+ Sync
 		+ 'static,
 	SO: SyncOracle + Send + Sync + Clone + 'static,
-	BS: BackoffAuthoringBlocksStrategy<NumberFor<Block>> + Send + 'static,
+	BS: BackoffAuthoringBlocksStrategy<NumberFor<Block>> + Send + Sync + 'static,
 	PF: Environment<Block, Error = Error> + Send + Sync + 'static,
 	PF::Proposer: Proposer<
 		Block,
@@ -468,7 +465,7 @@ where
 		+ Sync
 		+ 'static,
 	SO: SyncOracle + Send + Sync + Clone + 'static,
-	BS: BackoffAuthoringBlocksStrategy<NumberFor<Block>> + Send + 'static,
+	BS: BackoffAuthoringBlocksStrategy<NumberFor<Block>> + Send + Sync + 'static,
 	PF: Environment<Block, Error = Error> + Send + Sync + 'static,
 	PF::Proposer: Proposer<
 		Block,

@@ -16,19 +16,18 @@
 
 use std::{marker::PhantomData, sync::Arc};
 
+use sc_consensus::{
+	import_queue::{BasicQueue, Verifier as VerifierT},
+	BlockImport, BlockImportParams,
+};
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::Result as ClientResult;
-use sp_consensus::{
-	error::Error as ConsensusError,
-	import_queue::{BasicQueue, CacheKeyId, Verifier as VerifierT},
-	BlockImport, BlockImportParams, BlockOrigin,
-};
+use sp_consensus::{error::Error as ConsensusError, CacheKeyId};
 use sp_inherents::{CreateInherentDataProviders, InherentDataProvider};
 use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, Header as HeaderT},
-	Justifications,
 };
 
 /// A verifier that just checks the inherents.
@@ -41,11 +40,7 @@ pub struct Verifier<Client, Block, CIDP> {
 impl<Client, Block, CIDP> Verifier<Client, Block, CIDP> {
 	/// Create a new instance.
 	pub fn new(client: Arc<Client>, create_inherent_data_providers: CIDP) -> Self {
-		Self {
-			client,
-			create_inherent_data_providers,
-			_marker: PhantomData,
-		}
+		Self { client, create_inherent_data_providers, _marker: PhantomData }
 	}
 }
 
@@ -59,35 +54,25 @@ where
 {
 	async fn verify(
 		&mut self,
-		origin: BlockOrigin,
-		header: Block::Header,
-		justifications: Option<Justifications>,
-		mut body: Option<Vec<Block::Extrinsic>>,
-	) -> Result<
-		(
-			BlockImportParams<Block, ()>,
-			Option<Vec<(CacheKeyId, Vec<u8>)>>,
-		),
-		String,
-	> {
-		if let Some(inner_body) = body.take() {
+		mut block_params: BlockImportParams<Block, ()>,
+	) -> Result<(BlockImportParams<Block, ()>, Option<Vec<(CacheKeyId, Vec<u8>)>>), String> {
+		if let Some(inner_body) = block_params.body.take() {
 			let inherent_data_providers = self
 				.create_inherent_data_providers
-				.create_inherent_data_providers(*header.parent_hash(), ())
+				.create_inherent_data_providers(*block_params.header.parent_hash(), ())
 				.await
 				.map_err(|e| e.to_string())?;
 
-			let inherent_data = inherent_data_providers
-				.create_inherent_data()
-				.map_err(|e| format!("{:?}", e))?;
+			let inherent_data =
+				inherent_data_providers.create_inherent_data().map_err(|e| format!("{:?}", e))?;
 
-			let block = Block::new(header.clone(), inner_body);
+			let block = Block::new(block_params.header.clone(), inner_body);
 
 			let inherent_res = self
 				.client
 				.runtime_api()
 				.check_inherents(
-					&BlockId::Hash(*header.parent_hash()),
+					&BlockId::Hash(*block.header().parent_hash()),
 					block.clone(),
 					inherent_data,
 				)
@@ -106,17 +91,12 @@ where
 			}
 
 			let (_, inner_body) = block.deconstruct();
-			body = Some(inner_body);
+			block_params.body = Some(inner_body);
 		}
 
-		let post_hash = Some(header.hash());
-		let mut block_import_params = BlockImportParams::new(origin, header);
-		block_import_params.body = body;
-		block_import_params.justifications = justifications;
+		block_params.post_hash = Some(block_params.header.hash());
 
-		block_import_params.post_hash = post_hash;
-
-		Ok((block_import_params, None))
+		Ok((block_params, None))
 	}
 }
 
@@ -139,9 +119,7 @@ where
 
 	Ok(BasicQueue::new(
 		verifier,
-		Box::new(cumulus_client_consensus_common::ParachainBlockImport::new(
-			block_import,
-		)),
+		Box::new(cumulus_client_consensus_common::ParachainBlockImport::new(block_import)),
 		None,
 		spawner,
 		registry,

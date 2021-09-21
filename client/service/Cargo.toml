@@ -18,6 +18,7 @@ sc-service = { git = "https://github.com/paritytech/substrate", branch = "master
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -31,5 +32,5 @@ polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "
 
 # Other deps
 tracing = "0.1.22"
-codec = { package = "parity-scale-codec", version = "2.0.0" }
+codec = { package = "parity-scale-codec", version = "2.3.0" }
 parking_lot = "0.10.2"

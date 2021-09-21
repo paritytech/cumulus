@@ -62,7 +62,7 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_finalize(_: BlockNumberFor<T>) {
 			// Update to the latest AuRa authorities.
-			Authorities::<T>::put(Aura::<T>::authorities());
+			Authorities::<T>::put(Aura::<T>::authorities().into_inner());
 		}
 
 		fn on_initialize(_: BlockNumberFor<T>) -> Weight {
@@ -98,7 +98,7 @@ pub mod pallet {
 				"AuRa authorities empty, maybe wrong order in `construct_runtime!`?",
 			);
 
-			Authorities::<T>::put(authorities);
+			Authorities::<T>::put(authorities.into_inner());
 		}
 	}
 }
@@ -131,18 +131,14 @@ where
 				(Some(s), false) => {
 					seal = Some(s);
 					false
-				}
+				},
 			}
 		});
 
 		let seal = seal.expect("Could not find an AuRa seal digest!");
 
 		let author = Aura::<T>::find_author(
-			header
-				.digest()
-				.logs()
-				.iter()
-				.filter_map(|d| d.as_pre_runtime()),
+			header.digest().logs().iter().filter_map(|d| d.as_pre_runtime()),
 		)
 		.expect("Could not find AuRa author index!");
 
@@ -150,9 +146,9 @@ where
 
 		if !authorities
 			.get(author as usize)
-			.unwrap_or_else(||
+			.unwrap_or_else(|| {
 				panic!("Invalid AuRa author index {} for authorities: {:?}", author, authorities)
-			)
+			})
 			.verify(&pre_hash, &seal)
 		{
 			panic!("Invalid AuRa seal");

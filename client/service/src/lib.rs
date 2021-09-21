@@ -20,20 +20,21 @@
 
 use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
-use polkadot_overseer::OverseerHandler;
+use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::v1::{Block as PBlock, CollatorPair};
 use polkadot_service::{AbstractClient, Client as PClient, ClientHandle, RuntimeApiCollection};
 use sc_client_api::{
 	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, UsageProvider,
 };
+use sc_consensus::{
+	import_queue::{ImportQueue, IncomingBlock, Link, Origin},
+	BlockImport,
+};
 use sc_service::{Configuration, Role, TaskManager};
 use sc_telemetry::TelemetryWorkerHandle;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_consensus::{
-	import_queue::{ImportQueue, IncomingBlock, Link, Origin},
-	BlockImport, BlockOrigin,
-};
+use sp_consensus::BlockOrigin;
 use sp_core::{traits::SpawnNamed, Pair};
 use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, NumberFor},
@@ -117,28 +118,26 @@ where
 		_phantom: PhantomData,
 	});
 
-	relay_chain_full_node
-			.client
-			.execute_with(StartPoVRecovery {
-				para_id,
-				client: client.clone(),
-				import_queue,
-				task_manager,
-				overseer_handler: relay_chain_full_node
-					.overseer_handler
-				.clone()
-				.ok_or_else(|| "Polkadot full node did not provided an `OverseerHandler`!")?,
-				_phantom: PhantomData,
-			})?;
+	relay_chain_full_node.client.execute_with(StartPoVRecovery {
+		para_id,
+		client: client.clone(),
+		import_queue,
+		task_manager,
+		overseer_handle: relay_chain_full_node
+			.overseer_handle
+			.clone()
+			.ok_or_else(|| "Polkadot full node did not provide an `OverseerHandle`!")?,
+		_phantom: PhantomData,
+	})?;
 
 	cumulus_client_collator::start_collator(cumulus_client_collator::StartCollatorParams {
 		runtime_api: client.clone(),
 		block_status,
 		announce_block,
-		overseer_handler: relay_chain_full_node
-			.overseer_handler
+		overseer_handle: relay_chain_full_node
+			.overseer_handle
 			.clone()
-			.ok_or_else(|| "Polkadot full node did not provided an `OverseerHandler`!")?,
+			.ok_or_else(|| "Polkadot full node did not provide an `OverseerHandle`!")?,
 		spawner,
 		para_id,
 		key: relay_chain_full_node.collator_key.clone(),
@@ -238,9 +237,7 @@ where
 			self.announce_block,
 		);
 
-		self.task_manager
-			.spawn_essential_handle()
-			.spawn("cumulus-consensus", consensus);
+		self.task_manager.spawn_essential_handle().spawn("cumulus-consensus", consensus);
 	}
 }
 
@@ -248,7 +245,7 @@ struct StartPoVRecovery<'a, Block: BlockT, Client, IQ> {
 	para_id: ParaId,
 	client: Arc<Client>,
 	task_manager: &'a mut TaskManager,
-	overseer_handler: OverseerHandler,
+	overseer_handle: OverseerHandle,
 	import_queue: IQ,
 	_phantom: PhantomData<Block>,
 }
@@ -276,7 +273,7 @@ where
 		PClient: AbstractClient<PBlock, PBackend, Api = Api> + 'static,
 	{
 		let pov_recovery = cumulus_client_pov_recovery::PoVRecovery::new(
-			self.overseer_handler,
+			self.overseer_handle,
 			sc_consensus_babe::Config::get_or_compute(&*client)?.slot_duration(),
 			self.client,
 			self.import_queue,
@@ -310,9 +307,7 @@ pub fn build_polkadot_full_node(
 ) -> Result<RFullNode<PClient>, polkadot_service::Error> {
 	let is_light = matches!(config.role, Role::Light);
 	if is_light {
-		Err(polkadot_service::Error::Sub(
-			"Light client not supported.".into(),
-		))
+		Err(polkadot_service::Error::Sub("Light client not supported.".into()))
 	} else {
 		let collator_key = CollatorPair::generate().0;
 
@@ -326,10 +321,7 @@ pub fn build_polkadot_full_node(
 			polkadot_service::RealOverseerGen,
 		)?;
 
-		Ok(RFullNode {
-			relay_chain_full_node,
-			collator_key,
-		})
+		Ok(RFullNode { relay_chain_full_node, collator_key })
 	}
 }
 
@@ -358,9 +350,7 @@ impl<Block: BlockT> ImportQueue<Block> for SharedImportQueue<Block> {
 		number: NumberFor<Block>,
 		justifications: Justifications,
 	) {
-		self.0
-			.lock()
-			.import_justifications(who, hash, number, justifications)
+		self.0.lock().import_justifications(who, hash, number, justifications)
 	}
 
 	fn poll_actions(&mut self, cx: &mut std::task::Context, link: &mut dyn Link<Block>) {

@@ -24,6 +24,7 @@
 
 use sp_std::prelude::*;
 use codec::{Encode, Decode};
+use scale_info::TypeInfo;
 use frame_support::{DefaultNoBound, dispatch::DispatchResult, traits::{Get, IsType}, weights::{
 		DispatchInfo, PostDispatchInfo, DispatchClass,
 	}};
@@ -74,7 +75,7 @@ pub(crate) type ChargeAssetIdOf<T> =
 pub(crate) type ChargeAssetLiquidityOf<T> =
 	<<T as Config>::OnChargeAssetTransaction as OnChargeAssetTransaction<T>>::LiquidityInfo;
 
-#[derive(Encode, Decode, DefaultNoBound)]
+#[derive(Encode, Decode, DefaultNoBound, TypeInfo)]
 pub enum InitialPayment<T: Config> {
 	Nothing,
 	Native(LiquidityInfoOf<T>),
@@ -114,7 +115,8 @@ pub mod pallet {
 ///
 /// Wraps the transaction logic in `pallet_transaction_payment` and extends it with assets.
 /// An asset id of `None` falls back to the underlying transaction payment via the native currency.
-#[derive(Encode, Decode, Clone, Eq, PartialEq)]
+#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[scale_info(skip_type_params(T))]
 pub struct ChargeAssetTxPayment<T: Config>(#[codec(compact)] BalanceOf<T>, Option<ChargeAssetIdOf<T>>);
 
 impl<T: Config> ChargeAssetTxPayment<T> where

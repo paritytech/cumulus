@@ -6,12 +6,13 @@ edition = '2018'
 description = "Westend variant of Statemint parachain runtime"
 
 [dependencies]
-serde = { version = "1.0.101", optional = true, features = ["derive"] }
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
+codec = { package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive", "max-encoded-len"] }
+hex-literal = { version = '0.3.1', optional = true }
 log = { version = "0.4.14", default-features = false }
 parachain-info = { path = "../pallets/parachain-info", default-features = false }
+scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
+serde = { version = "1.0.101", optional = true, features = ["derive"] }
 smallvec = "1.6.1"
-hex-literal = { version = '0.3.1', optional = true }
 
 # Substrate dependencies
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -45,6 +46,7 @@ pallet-sudo = { git = "https://github.com/paritytech/substrate", default-feature
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-uniques = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 node-primitives = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -61,7 +63,7 @@ cumulus-pallet-xcm = { path = "../../pallets/xcm", default-features = false }
 cumulus-pallet-session-benchmarking = {path = "../../pallets/session-benchmarking", default-features = false, version = "3.0.0"}
 cumulus-ping = { path = "../pallets/ping", default-features = false }
 pallet-collator-selection = { path = "../../pallets/collator-selection", default-features = false }
-statemint-common = { path = "../statemint-common", default-features = false }
+parachains-common = { path = "../parachains-common", default-features = false }
 
 # Polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -73,7 +75,6 @@ pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features 
 
 [dev-dependencies]
 hex-literal = "0.3.1"
-hex = "0.4.3"
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -81,6 +82,7 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 [features]
 default = [ "std" ]
 runtime-benchmarks = [
+	'cumulus-pallet-session-benchmarking/runtime-benchmarks',
 	'hex-literal',
 	'sp-runtime/runtime-benchmarks',
 	'xcm-builder/runtime-benchmarks',
@@ -92,7 +94,7 @@ runtime-benchmarks = [
 	'pallet-balances/runtime-benchmarks',
 	'pallet-multisig/runtime-benchmarks',
 	'pallet-proxy/runtime-benchmarks',
-	'cumulus-pallet-session-benchmarking/runtime-benchmarks',
+	'pallet-uniques/runtime-benchmarks',
 	'pallet-utility/runtime-benchmarks',
 	'pallet-timestamp/runtime-benchmarks',
 	'pallet-xcm/runtime-benchmarks',
@@ -100,6 +102,7 @@ runtime-benchmarks = [
 ]
 std = [
 	"codec/std",
+	"scale-info/std",
 	"serde",
 	"log/std",
 	"sp-api/std",
@@ -129,6 +132,7 @@ std = [
 	"pallet-timestamp/std",
 	"pallet-transaction-payment/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
+	"pallet-uniques/std",
 	"pallet-utility/std",
 	"parachain-info/std",
 	"cumulus-pallet-aura-ext/std",
@@ -146,5 +150,5 @@ std = [
 	"xcm-executor/std",
 	"sp-consensus-aura/std",
 	"node-primitives/std",
-	"statemint-common/std",
+	"parachains-common/std",
 ]

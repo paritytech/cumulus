@@ -43,10 +43,10 @@ use cumulus_primitives_core::{
 use parking_lot::Mutex;
 use polkadot_client::ClientHandle;
 use sc_client_api::Backend;
+use sc_consensus::{BlockImport, BlockImportParams};
 use sp_api::ProvideRuntimeApi;
 use sp_consensus::{
-	BlockImport, BlockImportParams, BlockOrigin, EnableProofRecording, Environment, ProofRecording,
-	Proposal, Proposer,
+	BlockOrigin, EnableProofRecording, Environment, ProofRecording, Proposal, Proposer,
 };
 use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvider};
 use sp_runtime::traits::{Block as BlockT, HashFor, Header as HeaderT};
@@ -180,15 +180,10 @@ where
 			)
 			.ok()?;
 
-		let inherent_data = self
-			.inherent_data(parent.hash(), &validation_data, relay_parent)
-			.await?;
+		let inherent_data =
+			self.inherent_data(parent.hash(), &validation_data, relay_parent).await?;
 
-		let Proposal {
-			block,
-			storage_changes,
-			proof,
-		} = proposer
+		let Proposal { block, storage_changes, proof } = proposer
 			.propose(
 				inherent_data,
 				Default::default(),
@@ -208,8 +203,8 @@ where
 
 		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header);
 		block_import_params.body = Some(extrinsics);
-		block_import_params.state_action = sp_consensus::StateAction::ApplyChanges(
-			sp_consensus::StorageChanges::Changes(storage_changes)
+		block_import_params.state_action = sc_consensus::StateAction::ApplyChanges(
+			sc_consensus::StorageChanges::Changes(storage_changes),
 		);
 
 		if let Err(err) = self
@@ -226,7 +221,7 @@ where
 				"Error importing build block.",
 			);
 
-			return None;
+			return None
 		}
 
 		Some(ParachainCandidate { block, proof })

@@ -33,7 +33,7 @@ use polkadot_node_primitives::{
 	BlockData, Collation, CollationGenerationConfig, CollationResult, PoV,
 };
 use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
-use polkadot_overseer::OverseerHandler;
+use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::v1::{CollatorPair, Hash as PHash, HeadData, Id as ParaId};
 
 use codec::{Decode, Encode};
@@ -81,12 +81,7 @@ where
 	) -> Self {
 		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(spawner, announce_block)));
 
-		Self {
-			block_status,
-			wait_to_announce,
-			runtime_api,
-			parachain_consensus,
-		}
+		Self { block_status, wait_to_announce, runtime_api, parachain_consensus }
 	}
 
 	/// Checks the status of the given block hash in the Parachain.
@@ -101,7 +96,7 @@ where
 					"Skipping candidate production, because block is still queued for import.",
 				);
 				false
-			}
+			},
 			Ok(BlockStatus::InChainWithState) => true,
 			Ok(BlockStatus::InChainPruned) => {
 				tracing::error!(
@@ -110,7 +105,7 @@ where
 					hash,
 				);
 				false
-			}
+			},
 			Ok(BlockStatus::KnownBad) => {
 				tracing::error!(
 					target: LOG_TARGET,
@@ -118,7 +113,7 @@ where
 					"Block is tagged as known bad and is included in the relay chain! Skipping candidate production!",
 				);
 				false
-			}
+			},
 			Ok(BlockStatus::Unknown) => {
 				if header.number().is_zero() {
 					tracing::error!(
@@ -134,7 +129,7 @@ where
 					);
 				}
 				false
-			}
+			},
 			Err(e) => {
 				tracing::error!(
 					target: LOG_TARGET,
@@ -143,7 +138,7 @@ where
 					"Failed to get block status.",
 				);
 				false
-			}
+			},
 		}
 	}
 
@@ -168,8 +163,8 @@ where
 					error = ?e,
 					"Failed to collect collation info.",
 				);
-				return None;
-			}
+				return None
+			},
 		};
 
 		Some(Collation {
@@ -202,13 +197,13 @@ where
 					error = ?e,
 					"Could not decode the head data."
 				);
-				return None;
-			}
+				return None
+			},
 		};
 
 		let last_head_hash = last_head.hash();
 		if !self.check_block_status(last_head_hash, &last_head) {
-			return None;
+			return None
 		}
 
 		tracing::info!(
@@ -232,14 +227,14 @@ where
 			Ok(proof) => proof,
 			Err(e) => {
 				tracing::error!(target: "cumulus-collator", "Failed to compact proof: {:?}", e);
-				return None;
-			}
+				return None
+			},
 		};
 
 		// Create the parachain block data for the validators.
 		let b = ParachainBlockData::<Block>::new(header, extrinsics, compact_proof);
 
-		tracing::debug!(
+		tracing::info!(
 			target: LOG_TARGET,
 			"PoV size {{ header: {}kb, extrinsics: {}kb, storage_proof: {}kb }}",
 			b.header().encode().len() as f64 / 1024f64,
@@ -252,20 +247,11 @@ where
 
 		let (result_sender, signed_stmt_recv) = oneshot::channel();
 
-		self.wait_to_announce
-			.lock()
-			.wait_to_announce(block_hash, signed_stmt_recv);
+		self.wait_to_announce.lock().wait_to_announce(block_hash, signed_stmt_recv);
 
-		tracing::info!(
-			target: LOG_TARGET,
-			?block_hash,
-			"Produced proof-of-validity candidate.",
-		);
+		tracing::info!(target: LOG_TARGET, ?block_hash, "Produced proof-of-validity candidate.",);
 
-		Some(CollationResult {
-			collation,
-			result_sender: Some(result_sender),
-		})
+		Some(CollationResult { collation, result_sender: Some(result_sender) })
 	}
 }
 
@@ -275,7 +261,7 @@ pub struct StartCollatorParams<Block: BlockT, RA, BS, Spawner> {
 	pub runtime_api: Arc<RA>,
 	pub block_status: Arc<BS>,
 	pub announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
-	pub overseer_handler: OverseerHandler,
+	pub overseer_handle: OverseerHandle,
 	pub spawner: Spawner,
 	pub key: CollatorPair,
 	pub parachain_consensus: Box<dyn ParachainConsensus<Block>>,
@@ -287,7 +273,7 @@ pub async fn start_collator<Block, RA, BS, Spawner>(
 		para_id,
 		block_status,
 		announce_block,
-		mut overseer_handler,
+		mut overseer_handle,
 		spawner,
 		key,
 		parachain_consensus,
@@ -321,14 +307,11 @@ pub async fn start_collator<Block, RA, BS, Spawner>(
 		}),
 	};
 
-	overseer_handler
-		.send_msg(
-			CollationGenerationMessage::Initialize(config),
-			"StartCollator",
-		)
+	overseer_handle
+		.send_msg(CollationGenerationMessage::Initialize(config), "StartCollator")
 		.await;
 
-	overseer_handler
+	overseer_handle
 		.send_msg(CollatorProtocolMessage::CollateOn(para_id), "StartCollator")
 		.await;
 }
@@ -384,10 +367,7 @@ mod tests {
 				.await
 				.expect("Imports the block");
 
-			Some(ParachainCandidate {
-				block,
-				proof: proof.expect("Proof is returned"),
-			})
+			Some(ParachainCandidate { block, proof: proof.expect("Proof is returned") })
 		}
 	}
 
@@ -404,8 +384,8 @@ mod tests {
 		let (sub_tx, sub_rx) = mpsc::channel(64);
 
 		let all_subsystems =
-			AllSubsystems::<()>::dummy().replace_collation_generation(ForwardSubsystem(sub_tx));
-		let (overseer, handler) = Overseer::new(
+			AllSubsystems::<()>::dummy().replace_collation_generation(|_| ForwardSubsystem(sub_tx));
+		let (overseer, handle) = Overseer::new(
 			Vec::new(),
 			all_subsystems,
 			None,
@@ -420,13 +400,11 @@ mod tests {
 			runtime_api: client.clone(),
 			block_status: client.clone(),
 			announce_block: Arc::new(announce_block),
-			overseer_handler: handler,
+			overseer_handle: OverseerHandle::Connected(handle),
 			spawner,
 			para_id,
 			key: CollatorPair::generate().0,
-			parachain_consensus: Box::new(DummyParachainConsensus {
-				client: client.clone(),
-			}),
+			parachain_consensus: Box::new(DummyParachainConsensus { client: client.clone() }),
 		});
 		block_on(collator_start);
 

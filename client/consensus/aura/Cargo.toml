@@ -21,6 +21,7 @@ sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "mas
 sc-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus-slots = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot dependencies
@@ -32,7 +33,6 @@ cumulus-primitives-core = { path = "../../../primitives/core" }
 
 # Other deps
 futures = { version = "0.3.8", features = ["compat"] }
-codec = { package = "parity-scale-codec", version = "2.0.0", features = [ "derive" ] }
+codec = { package = "parity-scale-codec", version = "2.3.0", features = [ "derive" ] }
 tracing = "0.1.22"
 async-trait = "0.1.42"
-parking_lot = "0.10.2"
