@@ -45,7 +45,7 @@ pub use frame_support::{
 	},
 	StorageValue,
 };
-use frame_system::limits::{BlockLength, BlockWeights};
+use frame_system::{EnsureOneOf, EnsureRoot, limits::{BlockLength, BlockWeights}};
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -361,12 +361,18 @@ match_type! {
 		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Unit, .. }) }
 	};
 }
+match_type! {
+	pub type Statemint: impl Contains<MultiLocation> = {
+		MultiLocation { parents: 1, interior: X1(Parachain(1000)) }
+	};
+}
 
 pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<Everything>,
 	AllowUnpaidExecutionFrom<ParentOrParentsUnitPlurality>,
 	// ^^^ Parent & its unit plurality gets free execution
+	AllowUnpaidExecutionFrom<Statemint>,
 );
 
 parameter_types! {
@@ -459,7 +465,11 @@ parameter_types! {
 }
 
 /// A majority of the Unit body from Rococo over XCM is our required administration origin.
-pub type AdminOrigin = EnsureXcm<IsMajorityOfBody<RocLocation, UnitBody>>;
+pub type AdminOrigin = EnsureOneOf<
+	AccountId,
+	EnsureRoot<AccountId>,
+	EnsureXcm<IsMajorityOfBody<RocLocation, UnitBody>>,
+>;
 
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
