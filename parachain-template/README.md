@@ -1,6 +1,6 @@
 # Substrate Cumulus Parachain Template
 
-A new [Cumulus](https://github.com/paritytech/cumulus/)-based Substrate node, ready for hacking :cloud:
+A new [Cumulus](https://github.com/paritytech/cumulus/)-based Substrate node, ready for hacking :cloud:.
 
 This project is a fork of the
 [Substrate Node Template](https://github.com/substrate-developer-hub/substrate-node-template)
