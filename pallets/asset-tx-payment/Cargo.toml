@@ -1,12 +1,12 @@
 [package]
 name = "pallet-asset-tx-payment"
-version = "3.0.0"
+version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 license = "Apache-2.0"
 homepage = "https://substrate.dev"
-repository = "https://github.com/paritytech/substrate/"
-description = "FRAME pallet to manage transaction payments"
+repository = "https://github.com/paritytech/cumulus/"
+description = "pallet to manage transaction payments in assets"
 readme = "README.md"
 
 [package.metadata.docs.rs]
@@ -32,7 +32,7 @@ serde = { version = "1.0.101", optional = true }
 [dev-dependencies]
 smallvec = "1.4.1"
 serde_json = "1.0.41"
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master"}
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-storage = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [features]
