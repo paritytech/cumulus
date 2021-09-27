@@ -17,6 +17,7 @@
 //! Taken from polkadot/runtime/common (at a21cd64) and adapted for parachains.
 
 use frame_support::traits::{Currency, Imbalance, OnUnbalanced, fungibles::{self, CreditOf}};
+use pallet_asset_tx_payment::HandleCredit;
 use sp_std::marker::PhantomData;
 
 /// Type alias to conveniently refer to the `Currency::NegativeImbalance` associated type.
@@ -68,7 +69,7 @@ where
 /// A `HandleCredit` implementation that naively transfers the fees to the block author.
 /// Will drop and burn the assets in case the transfer fails.
 pub struct AssetsToBlockAuthor<R>(PhantomData<R>);
-impl<R> pallet_asset_tx_payment::HandleCredit<AccountIdOf<R>, pallet_assets::Pallet<R>> for AssetsToBlockAuthor<R>
+impl<R> HandleCredit<AccountIdOf<R>, pallet_assets::Pallet<R>> for AssetsToBlockAuthor<R>
 where
 	R: pallet_authorship::Config + pallet_assets::Config,
 	AccountIdOf<R>: From<polkadot_primitives::v1::AccountId> + Into<polkadot_primitives::v1::AccountId>,
