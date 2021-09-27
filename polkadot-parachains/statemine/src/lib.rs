@@ -56,9 +56,9 @@ use frame_system::{
 };
 pub use parachains_common as common;
 use parachains_common::{
-	impls::{DealWithFees, AssetsToBlockAuthor}, opaque, AccountId, AuraId, Balance, BlockNumber,
-	Hash, Header, Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT,
-	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
+	impls::{AssetsToBlockAuthor, DealWithFees},
+	opaque, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
+	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use sp_runtime::Perbill;
 
@@ -671,7 +671,7 @@ impl pallet_asset_tx_payment::Config for Runtime {
 	type Fungibles = Assets;
 	type OnChargeAssetTransaction = pallet_asset_tx_payment::FungiblesAdapter<
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
-		AssetsToBlockAuthor<Runtime>
+		AssetsToBlockAuthor<Runtime>,
 	>;
 }
 
