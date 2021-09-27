@@ -19,8 +19,10 @@ use crate::Config;
 
 use codec::FullCodec;
 use frame_support::{
-	traits::fungibles::{Balanced, CreditOf, Inspect},
-	traits::tokens::BalanceConversion,
+	traits::{
+		fungibles::{Balanced, CreditOf, Inspect},
+		tokens::BalanceConversion,
+	},
 	unsigned::TransactionValidityError,
 };
 use scale_info::TypeInfo;
@@ -124,7 +126,7 @@ where
 			converted_fee,
 		);
 		if !matches!(can_withdraw, WithdrawConsequence::Success) {
-			return Err(InvalidTransaction::Payment.into());
+			return Err(InvalidTransaction::Payment.into())
 		}
 		<T::Fungibles as Balanced<T::AccountId>>::withdraw(asset_id.into(), who, converted_fee)
 			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))

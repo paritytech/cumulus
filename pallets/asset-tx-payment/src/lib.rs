@@ -37,11 +37,13 @@ use sp_std::prelude::*;
 use codec::{Decode, Encode};
 use frame_support::{
 	dispatch::DispatchResult,
-	traits::tokens::{
-		fungibles::{Balanced, CreditOf, Inspect},
-		WithdrawConsequence,
+	traits::{
+		tokens::{
+			fungibles::{Balanced, CreditOf, Inspect},
+			WithdrawConsequence,
+		},
+		Get, IsType,
 	},
-	traits::{Get, IsType},
 	weights::{DispatchClass, DispatchInfo, PostDispatchInfo},
 	DefaultNoBound,
 };
@@ -166,7 +168,7 @@ where
 		debug_assert!(tip <= fee, "tip should be included in the computed fee");
 
 		if fee.is_zero() {
-			return Ok((fee, InitialPayment::Nothing));
+			return Ok((fee, InitialPayment::Nothing))
 		}
 
 		let maybe_asset_id = self.1;
@@ -284,7 +286,7 @@ where
 			InitialPayment::Native(already_withdrawn) => {
 				<<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::correct_and_deposit_fee(
 					&who, info, post_info, actual_fee, tip, already_withdrawn)?;
-			}
+			},
 			InitialPayment::Asset(already_withdrawn) => {
 				T::OnChargeAssetTransaction::correct_and_deposit_fee(
 					&who,
@@ -294,14 +296,14 @@ where
 					tip.into(),
 					already_withdrawn.into(),
 				)?;
-			}
+			},
 			InitialPayment::Nothing => {
 				debug_assert!(
 					actual_fee.is_zero(),
 					"actual fee should be zero if initial fee was zero."
 				);
 				debug_assert!(tip.is_zero(), "tip should be zero if initial fee was zero.");
-			}
+			},
 		}
 
 		Ok(())
