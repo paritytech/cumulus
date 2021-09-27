@@ -40,7 +40,6 @@ use sp_runtime::{
 };
 use std::cell::RefCell;
 
-
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 type Balance = u64;
@@ -62,7 +61,7 @@ frame_support::construct_runtime!(
 );
 
 const CALL: &<Runtime as frame_system::Config>::Call =
-	&Call::Balances(BalancesCall::transfer{ dest: 2, value: 69 });
+	&Call::Balances(BalancesCall::transfer { dest: 2, value: 69 });
 
 thread_local! {
 	static EXTRINSIC_BASE_WEIGHT: RefCell<u64> = RefCell::new(0);
@@ -178,7 +177,8 @@ pub struct HardcodedAuthor;
 const BLOCK_AUTHOR: AccountId = 1234;
 impl FindAuthor<AccountId> for HardcodedAuthor {
 	fn find_author<'a, I>(_: I) -> Option<AccountId>
-		where I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
+	where
+		I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
 	{
 		Some(BLOCK_AUTHOR)
 	}
@@ -193,7 +193,6 @@ impl pallet_authorship::Config for Runtime {
 
 pub struct CreditToBlockAuthor;
 impl HandleCredit<AccountId, Assets> for CreditToBlockAuthor {
-
 	fn handle_credit(credit: CreditOf<AccountId, Assets>) {
 		let author = pallet_authorship::Pallet::<Runtime>::author();
 		// TODO: what to do in case paying the author fails (e.g. because `fee < min_balance`)
@@ -205,24 +204,21 @@ impl HandleCredit<AccountId, Assets> for CreditToBlockAuthor {
 impl Config for Runtime {
 	type Fungibles = Assets;
 	type OnChargeAssetTransaction = FungiblesAdapter<
-		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>, CreditToBlockAuthor>;
+		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
+		CreditToBlockAuthor,
+	>;
 }
 
 pub struct ExtBuilder {
 	balance_factor: u64,
 	base_weight: u64,
 	byte_fee: u64,
-	weight_to_fee: u64
+	weight_to_fee: u64,
 }
 
 impl Default for ExtBuilder {
 	fn default() -> Self {
-		Self {
-			balance_factor: 1,
-			base_weight: 0,
-			byte_fee: 1,
-			weight_to_fee: 1,
-		}
+		Self { balance_factor: 1, base_weight: 0, byte_fee: 1, weight_to_fee: 1 }
 	}
 }
 
@@ -251,12 +247,14 @@ impl ExtBuilder {
 					(3, 30 * self.balance_factor),
 					(4, 40 * self.balance_factor),
 					(5, 50 * self.balance_factor),
-					(6, 60 * self.balance_factor)
+					(6, 60 * self.balance_factor),
 				]
 			} else {
 				vec![]
 			},
-		}.assimilate_storage(&mut t).unwrap();
+		}
+		.assimilate_storage(&mut t)
+		.unwrap();
 		t.into()
 	}
 }
@@ -268,24 +266,15 @@ pub fn info_from_weight(w: Weight) -> DispatchInfo {
 }
 
 fn post_info_from_weight(w: Weight) -> PostDispatchInfo {
-	PostDispatchInfo {
-		actual_weight: Some(w),
-		pays_fee: Default::default(),
-	}
+	PostDispatchInfo { actual_weight: Some(w), pays_fee: Default::default() }
 }
 
 fn post_info_from_pays(p: Pays) -> PostDispatchInfo {
-	PostDispatchInfo {
-		actual_weight: None,
-		pays_fee: p,
-	}
+	PostDispatchInfo { actual_weight: None, pays_fee: p }
 }
 
 fn default_post_info() -> PostDispatchInfo {
-	PostDispatchInfo {
-		actual_weight: None,
-		pays_fee: Default::default(),
-	}
+	PostDispatchInfo { actual_weight: None, pays_fee: Default::default() }
 }
 
 #[test]
@@ -294,31 +283,36 @@ fn transaction_payment_in_native_possible() {
 		.balance_factor(10)
 		.base_weight(5)
 		.build()
-		.execute_with(||
-	{
-		let len = 10;
-		let pre = ChargeAssetTxPayment::<Runtime>::from(0, None)
-			.pre_dispatch(&1, CALL, &info_from_weight(5), len)
-			.unwrap();
-		assert_eq!(Balances::free_balance(1), 100 - 5 - 5 - 10);
+		.execute_with(|| {
+			let len = 10;
+			let pre = ChargeAssetTxPayment::<Runtime>::from(0, None)
+				.pre_dispatch(&1, CALL, &info_from_weight(5), len)
+				.unwrap();
+			assert_eq!(Balances::free_balance(1), 100 - 5 - 5 - 10);
 
-		assert_ok!(
-			ChargeAssetTxPayment::<Runtime>
-				::post_dispatch(pre, &info_from_weight(5), &default_post_info(), len, &Ok(()))
-		);
-		assert_eq!(Balances::free_balance(1), 100 - 5 - 5 - 10);
+			assert_ok!(ChargeAssetTxPayment::<Runtime>::post_dispatch(
+				pre,
+				&info_from_weight(5),
+				&default_post_info(),
+				len,
+				&Ok(())
+			));
+			assert_eq!(Balances::free_balance(1), 100 - 5 - 5 - 10);
 
-		let pre = ChargeAssetTxPayment::<Runtime>::from(5 /* tipped */, None)
-			.pre_dispatch(&2, CALL, &info_from_weight(100), len)
-			.unwrap();
-		assert_eq!(Balances::free_balance(2), 200 - 5 - 10 - 100 - 5);
+			let pre = ChargeAssetTxPayment::<Runtime>::from(5 /* tipped */, None)
+				.pre_dispatch(&2, CALL, &info_from_weight(100), len)
+				.unwrap();
+			assert_eq!(Balances::free_balance(2), 200 - 5 - 10 - 100 - 5);
 
-		assert_ok!(
-			ChargeAssetTxPayment::<Runtime>
-				::post_dispatch(pre, &info_from_weight(100), &post_info_from_weight(50), len, &Ok(()))
-		);
-		assert_eq!(Balances::free_balance(2), 200 - 5 - 10 - 50 - 5);
-	});
+			assert_ok!(ChargeAssetTxPayment::<Runtime>::post_dispatch(
+				pre,
+				&info_from_weight(100),
+				&post_info_from_weight(50),
+				len,
+				&Ok(())
+			));
+			assert_eq!(Balances::free_balance(2), 200 - 5 - 10 - 50 - 5);
+		});
 }
 
 #[test]
@@ -328,42 +322,48 @@ fn transaction_payment_in_asset_possible() {
 		.balance_factor(10)
 		.base_weight(base_weight)
 		.build()
-		.execute_with(||
-	{
-		// create the asset
-		let asset_id = 1;
-		let min_balance = 2;
-		assert_ok!(Assets::force_create(
-			Origin::root(), asset_id, 42 /* owner */, true /* is_sufficient */, min_balance
-		));
+		.execute_with(|| {
+			// create the asset
+			let asset_id = 1;
+			let min_balance = 2;
+			assert_ok!(Assets::force_create(
+				Origin::root(),
+				asset_id,
+				42,   /* owner */
+				true, /* is_sufficient */
+				min_balance
+			));
 
-		// mint into the caller account
-		let caller = 1;
-		let beneficiary = <Runtime as system::Config>::Lookup::unlookup(caller);
-		let balance = 100;
-		assert_ok!(Assets::mint_into(asset_id, &beneficiary, balance));
-		assert_eq!(Assets::balance(asset_id, caller), balance);
-		let weight = 5;
-		let len = 10;
-		// we have a ratio of 1::2 for native vs asset minimum balance
-		let fee = (base_weight + weight + len as u64) * 2;
-		let pre = ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
-			.pre_dispatch(&caller, CALL, &info_from_weight(weight), len)
-			.unwrap();
-		// assert that native balance is not used
-		assert_eq!(Balances::free_balance(caller), balance);
-		// check that fee was charged in the given asset
-		assert_eq!(Assets::balance(asset_id, caller), balance - fee);
-		assert_eq!(Assets::balance(asset_id, BLOCK_AUTHOR), 0);
+			// mint into the caller account
+			let caller = 1;
+			let beneficiary = <Runtime as system::Config>::Lookup::unlookup(caller);
+			let balance = 100;
+			assert_ok!(Assets::mint_into(asset_id, &beneficiary, balance));
+			assert_eq!(Assets::balance(asset_id, caller), balance);
+			let weight = 5;
+			let len = 10;
+			// we have a ratio of 1::2 for native vs asset minimum balance
+			let fee = (base_weight + weight + len as u64) * 2;
+			let pre = ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
+				.pre_dispatch(&caller, CALL, &info_from_weight(weight), len)
+				.unwrap();
+			// assert that native balance is not used
+			assert_eq!(Balances::free_balance(caller), balance);
+			// check that fee was charged in the given asset
+			assert_eq!(Assets::balance(asset_id, caller), balance - fee);
+			assert_eq!(Assets::balance(asset_id, BLOCK_AUTHOR), 0);
 
-		assert_ok!(
-			ChargeAssetTxPayment::<Runtime>
-				::post_dispatch(pre, &info_from_weight(weight), &default_post_info(), len, &Ok(()))
-		);
-		assert_eq!(Assets::balance(asset_id, caller), balance - fee);
-		// check that the block author gets rewarded
-		assert_eq!(Assets::balance(asset_id, BLOCK_AUTHOR), fee);
-	});
+			assert_ok!(ChargeAssetTxPayment::<Runtime>::post_dispatch(
+				pre,
+				&info_from_weight(weight),
+				&default_post_info(),
+				len,
+				&Ok(())
+			));
+			assert_eq!(Assets::balance(asset_id, caller), balance - fee);
+			// check that the block author gets rewarded
+			assert_eq!(Assets::balance(asset_id, BLOCK_AUTHOR), fee);
+		});
 }
 
 #[test]
@@ -373,43 +373,49 @@ fn transaction_payment_without_fee() {
 		.balance_factor(10)
 		.base_weight(base_weight)
 		.build()
-		.execute_with(||
-	{
-		// create the asset
-		let asset_id = 1;
-		let min_balance = 2;
-		assert_ok!(Assets::force_create(
-			Origin::root(), asset_id, 42 /* owner */, true /* is_sufficient */, min_balance
-		));
+		.execute_with(|| {
+			// create the asset
+			let asset_id = 1;
+			let min_balance = 2;
+			assert_ok!(Assets::force_create(
+				Origin::root(),
+				asset_id,
+				42,   /* owner */
+				true, /* is_sufficient */
+				min_balance
+			));
 
-		// mint into the caller account
-		let caller = 1;
-		let beneficiary = <Runtime as system::Config>::Lookup::unlookup(caller);
-		let balance = 100;
-		assert_ok!(Assets::mint_into(asset_id, &beneficiary, balance));
-		assert_eq!(Assets::balance(asset_id, caller), balance);
-		let weight = 5;
-		let len = 10;
-		// we have a ratio of 1::2 for native vs asset minimum balance
-		let fee = (base_weight + weight + len as u64) * 2;
-		let pre = ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
-			.pre_dispatch(&caller, CALL, &info_from_weight(weight), len)
-			.unwrap();
-		// assert that native balance is not used
-		assert_eq!(Balances::free_balance(caller), balance);
-		// check that fee was charged in the given asset
-		assert_eq!(Assets::balance(asset_id, caller), balance - fee);
-		assert_eq!(Assets::balance(asset_id, BLOCK_AUTHOR), 0);
+			// mint into the caller account
+			let caller = 1;
+			let beneficiary = <Runtime as system::Config>::Lookup::unlookup(caller);
+			let balance = 100;
+			assert_ok!(Assets::mint_into(asset_id, &beneficiary, balance));
+			assert_eq!(Assets::balance(asset_id, caller), balance);
+			let weight = 5;
+			let len = 10;
+			// we have a ratio of 1::2 for native vs asset minimum balance
+			let fee = (base_weight + weight + len as u64) * 2;
+			let pre = ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
+				.pre_dispatch(&caller, CALL, &info_from_weight(weight), len)
+				.unwrap();
+			// assert that native balance is not used
+			assert_eq!(Balances::free_balance(caller), balance);
+			// check that fee was charged in the given asset
+			assert_eq!(Assets::balance(asset_id, caller), balance - fee);
+			assert_eq!(Assets::balance(asset_id, BLOCK_AUTHOR), 0);
 
-		assert_ok!(
-			ChargeAssetTxPayment::<Runtime>
-				::post_dispatch(pre, &info_from_weight(weight), &post_info_from_pays(Pays::No), len, &Ok(()))
-		);
-		// caller should be refunded
-		assert_eq!(Assets::balance(asset_id, caller), balance);
-		// check that the block author did not get rewarded
-		assert_eq!(Assets::balance(asset_id, BLOCK_AUTHOR), 0);
-	});
+			assert_ok!(ChargeAssetTxPayment::<Runtime>::post_dispatch(
+				pre,
+				&info_from_weight(weight),
+				&post_info_from_pays(Pays::No),
+				len,
+				&Ok(())
+			));
+			// caller should be refunded
+			assert_eq!(Assets::balance(asset_id, caller), balance);
+			// check that the block author did not get rewarded
+			assert_eq!(Assets::balance(asset_id, BLOCK_AUTHOR), 0);
+		});
 }
 
 #[test]
@@ -419,40 +425,46 @@ fn asset_transaction_payment_with_tip_and_refund() {
 		.balance_factor(10)
 		.base_weight(base_weight)
 		.build()
-		.execute_with(||
-	{
-		// create the asset
-		let asset_id = 1;
-		let min_balance = 2;
-		assert_ok!(Assets::force_create(
-			Origin::root(), asset_id, 42 /* owner */, true /* is_sufficient */, min_balance
-		));
+		.execute_with(|| {
+			// create the asset
+			let asset_id = 1;
+			let min_balance = 2;
+			assert_ok!(Assets::force_create(
+				Origin::root(),
+				asset_id,
+				42,   /* owner */
+				true, /* is_sufficient */
+				min_balance
+			));
 
-		// mint into the caller account
-		let caller = 2;
-		let beneficiary = <Runtime as system::Config>::Lookup::unlookup(caller);
-		let balance = 1000;
-		assert_ok!(Assets::mint_into(asset_id, &beneficiary, balance));
-		assert_eq!(Assets::balance(asset_id, caller), balance);
-		let weight = 100;
-		let tip = 5;
-		let len = 10;
-		// we have a ratio of 1::2 for native vs asset minimum balance
-		let fee_with_tip = (base_weight + weight + len as u64 + tip) * 2;
-		let pre = ChargeAssetTxPayment::<Runtime>::from(tip, Some(asset_id))
-			.pre_dispatch(&caller, CALL, &info_from_weight(weight), len)
-			.unwrap();
-		assert_eq!(Assets::balance(asset_id, caller), balance - fee_with_tip);
+			// mint into the caller account
+			let caller = 2;
+			let beneficiary = <Runtime as system::Config>::Lookup::unlookup(caller);
+			let balance = 1000;
+			assert_ok!(Assets::mint_into(asset_id, &beneficiary, balance));
+			assert_eq!(Assets::balance(asset_id, caller), balance);
+			let weight = 100;
+			let tip = 5;
+			let len = 10;
+			// we have a ratio of 1::2 for native vs asset minimum balance
+			let fee_with_tip = (base_weight + weight + len as u64 + tip) * 2;
+			let pre = ChargeAssetTxPayment::<Runtime>::from(tip, Some(asset_id))
+				.pre_dispatch(&caller, CALL, &info_from_weight(weight), len)
+				.unwrap();
+			assert_eq!(Assets::balance(asset_id, caller), balance - fee_with_tip);
 
-		let final_weight = 50;
-		assert_ok!(
-			ChargeAssetTxPayment::<Runtime>
-				::post_dispatch(pre, &info_from_weight(weight), &post_info_from_weight(final_weight), len, &Ok(()))
-		);
-		let final_fee = fee_with_tip - (weight - final_weight) * 2;
-		assert_eq!(Assets::balance(asset_id, caller), balance - (final_fee));
-		assert_eq!(Assets::balance(asset_id, BLOCK_AUTHOR), final_fee);
-	});
+			let final_weight = 50;
+			assert_ok!(ChargeAssetTxPayment::<Runtime>::post_dispatch(
+				pre,
+				&info_from_weight(weight),
+				&post_info_from_weight(final_weight),
+				len,
+				&Ok(())
+			));
+			let final_fee = fee_with_tip - (weight - final_weight) * 2;
+			assert_eq!(Assets::balance(asset_id, caller), balance - (final_fee));
+			assert_eq!(Assets::balance(asset_id, BLOCK_AUTHOR), final_fee);
+		});
 }
 
 #[test]
@@ -462,41 +474,47 @@ fn payment_from_account_with_only_assets() {
 		.balance_factor(10)
 		.base_weight(base_weight)
 		.build()
-		.execute_with(||
-	{
-		// create the asset
-		let asset_id = 1;
-		let min_balance = 2;
-		assert_ok!(Assets::force_create(
-			Origin::root(), asset_id, 42 /* owner */, true /* is_sufficient */, min_balance
-		));
+		.execute_with(|| {
+			// create the asset
+			let asset_id = 1;
+			let min_balance = 2;
+			assert_ok!(Assets::force_create(
+				Origin::root(),
+				asset_id,
+				42,   /* owner */
+				true, /* is_sufficient */
+				min_balance
+			));
 
-		// mint into the caller account
-		let caller = 333;
-		let beneficiary = <Runtime as system::Config>::Lookup::unlookup(caller);
-		let balance = 100;
-		assert_ok!(Assets::mint_into(asset_id, &beneficiary, balance));
-		assert_eq!(Assets::balance(asset_id, caller), balance);
-		// assert that native balance is not necessary
-		assert_eq!(Balances::free_balance(caller), 0);
-		let weight = 5;
-		let len = 10;
-		// we have a ratio of 1::2 for native vs asset minimum balance
-		let fee = (base_weight + weight + len as u64) * 2;
-		let pre = ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
-			.pre_dispatch(&caller, CALL, &info_from_weight(weight), len)
-			.unwrap();
-		assert_eq!(Balances::free_balance(caller), 0);
-		// check that fee was charged in the given asset
-		assert_eq!(Assets::balance(asset_id, caller), balance - fee);
+			// mint into the caller account
+			let caller = 333;
+			let beneficiary = <Runtime as system::Config>::Lookup::unlookup(caller);
+			let balance = 100;
+			assert_ok!(Assets::mint_into(asset_id, &beneficiary, balance));
+			assert_eq!(Assets::balance(asset_id, caller), balance);
+			// assert that native balance is not necessary
+			assert_eq!(Balances::free_balance(caller), 0);
+			let weight = 5;
+			let len = 10;
+			// we have a ratio of 1::2 for native vs asset minimum balance
+			let fee = (base_weight + weight + len as u64) * 2;
+			let pre = ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
+				.pre_dispatch(&caller, CALL, &info_from_weight(weight), len)
+				.unwrap();
+			assert_eq!(Balances::free_balance(caller), 0);
+			// check that fee was charged in the given asset
+			assert_eq!(Assets::balance(asset_id, caller), balance - fee);
 
-		assert_ok!(
-			ChargeAssetTxPayment::<Runtime>
-				::post_dispatch(pre, &info_from_weight(weight), &default_post_info(), len, &Ok(()))
-		);
-		assert_eq!(Assets::balance(asset_id, caller), balance - fee);
-		assert_eq!(Balances::free_balance(caller), 0);
-	});
+			assert_ok!(ChargeAssetTxPayment::<Runtime>::post_dispatch(
+				pre,
+				&info_from_weight(weight),
+				&default_post_info(),
+				len,
+				&Ok(())
+			));
+			assert_eq!(Assets::balance(asset_id, caller), balance - fee);
+			assert_eq!(Balances::free_balance(caller), 0);
+		});
 }
 
 #[test]
@@ -506,27 +524,28 @@ fn payment_only_with_existing_sufficient_asset() {
 		.balance_factor(10)
 		.base_weight(base_weight)
 		.build()
-		.execute_with(||
-	{
-		let asset_id = 1;
-		let caller = 1;
-		let weight = 5;
-		let len = 10;
-		// pre_dispatch fails for non-existent asset
-		assert!(
-			ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
-				.pre_dispatch(&caller, CALL, &info_from_weight(weight), len).is_err()
-		);
+		.execute_with(|| {
+			let asset_id = 1;
+			let caller = 1;
+			let weight = 5;
+			let len = 10;
+			// pre_dispatch fails for non-existent asset
+			assert!(ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
+				.pre_dispatch(&caller, CALL, &info_from_weight(weight), len)
+				.is_err());
 
-		// create the non-sufficient asset
-		let min_balance = 2;
-		assert_ok!(Assets::force_create(
-			Origin::root(), asset_id, 42 /* owner */, false /* is_sufficient */, min_balance
-		));
-		// pre_dispatch fails for non-sufficient asset
-		assert!(
-			ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
-				.pre_dispatch(&caller, CALL, &info_from_weight(weight), len).is_err()
-		);
-	});
+			// create the non-sufficient asset
+			let min_balance = 2;
+			assert_ok!(Assets::force_create(
+				Origin::root(),
+				asset_id,
+				42,    /* owner */
+				false, /* is_sufficient */
+				min_balance
+			));
+			// pre_dispatch fails for non-sufficient asset
+			assert!(ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
+				.pre_dispatch(&caller, CALL, &info_from_weight(weight), len)
+				.is_err());
+		});
 }

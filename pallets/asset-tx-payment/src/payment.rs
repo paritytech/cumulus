@@ -14,15 +14,14 @@
 // limitations under the License.
 
 ///! Traits and default implementation for paying transaction fees in assets.
-
 use super::*;
 use crate::Config;
 
 use codec::FullCodec;
 use frame_support::{
-	traits::fungibles::{Balanced, Inspect, CreditOf},
-	unsigned::TransactionValidityError,
+	traits::fungibles::{Balanced, CreditOf, Inspect},
 	traits::tokens::BalanceConversion,
+	unsigned::TransactionValidityError,
 };
 use scale_info::TypeInfo;
 use sp_runtime::{
@@ -42,13 +41,7 @@ pub trait OnChargeAssetTransaction<T: Config> {
 		+ Default
 		+ TypeInfo;
 	/// The type used to identify the assets used for transaction payment.
-	type AssetId: FullCodec
-		+ Copy
-		+ MaybeSerializeDeserialize
-		+ Debug
-		+ Default
-		+ Eq
-		+ TypeInfo;
+	type AssetId: FullCodec + Copy + MaybeSerializeDeserialize + Debug + Default + Eq + TypeInfo;
 	/// The type used to store the intermediate values between pre- and post-dispatch.
 	type LiquidityInfo;
 
@@ -125,7 +118,11 @@ where
 	) -> Result<Self::LiquidityInfo, TransactionValidityError> {
 		let converted_fee = CON::to_asset_balance(fee, asset_id)
 			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?;
-		let can_withdraw = <T::Fungibles as Inspect<T::AccountId>>::can_withdraw(asset_id.into(), who, converted_fee);
+		let can_withdraw = <T::Fungibles as Inspect<T::AccountId>>::can_withdraw(
+			asset_id.into(),
+			who,
+			converted_fee,
+		);
 		if !matches!(can_withdraw, WithdrawConsequence::Success) {
 			return Err(InvalidTransaction::Payment.into());
 		}

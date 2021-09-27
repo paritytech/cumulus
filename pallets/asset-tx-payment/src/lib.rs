@@ -59,7 +59,6 @@ use sp_runtime::{
 	FixedPointOperand,
 };
 
-
 #[cfg(test)]
 mod tests;
 
@@ -135,10 +134,14 @@ pub mod pallet {
 /// An asset id of `None` falls back to the underlying transaction payment via the native currency.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct ChargeAssetTxPayment<T: Config>(#[codec(compact)] BalanceOf<T>, Option<ChargeAssetIdOf<T>>);
+pub struct ChargeAssetTxPayment<T: Config>(
+	#[codec(compact)] BalanceOf<T>,
+	Option<ChargeAssetIdOf<T>>,
+);
 
-impl<T: Config> ChargeAssetTxPayment<T> where
-	T::Call: Dispatchable<Info=DispatchInfo, PostInfo=PostDispatchInfo>,
+impl<T: Config> ChargeAssetTxPayment<T>
+where
+	T::Call: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 	AssetBalanceOf<T>: Send + Sync + FixedPointOperand,
 	BalanceOf<T>: Send + Sync + FixedPointOperand + IsType<ChargeAssetBalanceOf<T>>,
 	ChargeAssetIdOf<T>: Send + Sync,
@@ -156,13 +159,7 @@ impl<T: Config> ChargeAssetTxPayment<T> where
 		call: &T::Call,
 		info: &DispatchInfoOf<T::Call>,
 		len: usize,
-	) -> Result<
-		(
-			BalanceOf<T>,
-			InitialPayment<T>,
-		),
-		TransactionValidityError,
-	> {
+	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		let tip = self.0;
 		let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
 
@@ -172,10 +169,17 @@ impl<T: Config> ChargeAssetTxPayment<T> where
 			return Ok((fee, InitialPayment::Nothing));
 		}
 
-		let maybe_asset_id  = self.1;
+		let maybe_asset_id = self.1;
 		if let Some(asset_id) = maybe_asset_id {
-			T::OnChargeAssetTransaction::withdraw_fee(who, call, info, asset_id, fee.into(), tip.into())
-				.map(|i| (fee, InitialPayment::Asset(i.into())))
+			T::OnChargeAssetTransaction::withdraw_fee(
+				who,
+				call,
+				info,
+				asset_id,
+				fee.into(),
+				tip.into(),
+			)
+			.map(|i| (fee, InitialPayment::Asset(i.into())))
 		} else {
 			<<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::withdraw_fee(who, call, info, fee, tip)
 				.map(|i| (fee, InitialPayment::Native(i)))
@@ -194,17 +198,21 @@ impl<T: Config> ChargeAssetTxPayment<T> where
 	///  that the transaction which consumes more resources (either length or weight) with the same
 	/// `fee` ends up having lower priority.
 	// NOTE: copied from `pallet_transaction_payment`
-	fn get_priority(len: usize, info: &DispatchInfoOf<T::Call>, final_fee: BalanceOf<T>) -> TransactionPriority {
+	fn get_priority(
+		len: usize,
+		info: &DispatchInfoOf<T::Call>,
+		final_fee: BalanceOf<T>,
+	) -> TransactionPriority {
 		let weight_saturation = T::BlockWeights::get().max_block / info.weight.max(1);
 		let max_block_length = *T::BlockLength::get().max.get(DispatchClass::Normal);
 		let len_saturation = max_block_length as u64 / (len as u64).max(1);
-		let coefficient: BalanceOf<T> = weight_saturation.min(len_saturation).saturated_into::<BalanceOf<T>>();
+		let coefficient: BalanceOf<T> =
+			weight_saturation.min(len_saturation).saturated_into::<BalanceOf<T>>();
 		final_fee.saturating_mul(coefficient).saturated_into::<TransactionPriority>()
 	}
 }
 
-impl<T: Config> sp_std::fmt::Debug for ChargeAssetTxPayment<T>
-{
+impl<T: Config> sp_std::fmt::Debug for ChargeAssetTxPayment<T> {
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
 		write!(f, "ChargeAssetTxPayment<{:?}, {:?}>", self.0, self.1.encode())
@@ -215,8 +223,9 @@ impl<T: Config> sp_std::fmt::Debug for ChargeAssetTxPayment<T>
 	}
 }
 
-impl<T: Config> SignedExtension for ChargeAssetTxPayment<T> where
-	T::Call: Dispatchable<Info=DispatchInfo, PostInfo=PostDispatchInfo>,
+impl<T: Config> SignedExtension for ChargeAssetTxPayment<T>
+where
+	T::Call: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 	AssetBalanceOf<T>: Send + Sync + FixedPointOperand,
 	BalanceOf<T>: Send + Sync + From<u64> + FixedPointOperand + IsType<ChargeAssetBalanceOf<T>>,
 	ChargeAssetIdOf<T>: Send + Sync,
@@ -234,7 +243,9 @@ impl<T: Config> SignedExtension for ChargeAssetTxPayment<T> where
 		// imbalance resulting from withdrawing the fee
 		InitialPayment<T>,
 	);
-	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> { Ok(()) }
+	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
+		Ok(())
+	}
 
 	fn validate(
 		&self,
@@ -244,10 +255,7 @@ impl<T: Config> SignedExtension for ChargeAssetTxPayment<T> where
 		len: usize,
 	) -> TransactionValidity {
 		let (fee, _) = self.withdraw_fee(who, call, info, len)?;
-		Ok(ValidTransaction {
-			priority: Self::get_priority(len, info, fee),
-			..Default::default()
-		})
+		Ok(ValidTransaction { priority: Self::get_priority(len, info, fee), ..Default::default() })
 	}
 
 	fn pre_dispatch(
@@ -255,7 +263,7 @@ impl<T: Config> SignedExtension for ChargeAssetTxPayment<T> where
 		who: &Self::AccountId,
 		call: &Self::Call,
 		info: &DispatchInfoOf<Self::Call>,
-		len: usize
+		len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
 		let (_fee, initial_payment) = self.withdraw_fee(who, call, info, len)?;
 		Ok((self.0, who.clone(), initial_payment))
@@ -270,24 +278,30 @@ impl<T: Config> SignedExtension for ChargeAssetTxPayment<T> where
 	) -> Result<(), TransactionValidityError> {
 		let (tip, who, initial_payment) = pre;
 		let actual_fee = pallet_transaction_payment::Pallet::<T>::compute_actual_fee(
-			len as u32,
-			info,
-			post_info,
-			tip,
+			len as u32, info, post_info, tip,
 		);
 		match initial_payment {
 			InitialPayment::Native(already_withdrawn) => {
 				<<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<T>>::correct_and_deposit_fee(
 					&who, info, post_info, actual_fee, tip, already_withdrawn)?;
-			},
+			}
 			InitialPayment::Asset(already_withdrawn) => {
 				T::OnChargeAssetTransaction::correct_and_deposit_fee(
-					&who, info, post_info, actual_fee.into(), tip.into(), already_withdrawn.into())?;
-			},
+					&who,
+					info,
+					post_info,
+					actual_fee.into(),
+					tip.into(),
+					already_withdrawn.into(),
+				)?;
+			}
 			InitialPayment::Nothing => {
-				debug_assert!(actual_fee.is_zero(), "actual fee should be zero if initial fee was zero.");
+				debug_assert!(
+					actual_fee.is_zero(),
+					"actual fee should be zero if initial fee was zero."
+				);
 				debug_assert!(tip.is_zero(), "tip should be zero if initial fee was zero.");
-			},
+			}
 		}
 
 		Ok(())
