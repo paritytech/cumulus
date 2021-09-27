@@ -13,32 +13,52 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # Asset Transaction Payment Module
+//! # Asset Transaction Payment Pallet
 //!
-//! This module provides the basic logic needed to pay the absolute minimum amount needed for a
-//! transaction to be included via the assets (other than the main token of the chain).
+//! This pallet allows runtimes that include it to pay for transactions in assets other than the
+//! main token of the chain.
+//!
+//! ## Overview
+//! It does this by extending transactions to include an optional `AssetId` that specifies the asset
+//! to be used for payment (defaulting to the native token on `None`). It expects an
+//! `OnChargeAssetTransaction` implementation analogously to `pallet-transaction-payment`. The
+//! included `FungiblesAdapter` (implementing `OnChargeAssetTransaction`) determines the fee amount
+//! by converting the fee calculated by `pallet-transaction-payment` into the desired asset.
+//!
+//! ## Integration
+//! This pallet wraps FRAME's transaction payment pallet and functions as a replacement. This means
+//! you should include both pallets in your `construct_runtime` macro, but only include this
+//! pallet's `SignedExtension` (`ChargeAssetTxPayment`).
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use sp_std::prelude::*;
-use codec::{Encode, Decode};
-use scale_info::TypeInfo;
-use frame_support::{DefaultNoBound, dispatch::DispatchResult, traits::{Get, IsType}, weights::{
-		DispatchInfo, PostDispatchInfo, DispatchClass,
-	}};
-use sp_runtime::{
-	FixedPointOperand,
-	transaction_validity::{
-		InvalidTransaction, TransactionPriority, ValidTransaction,
-		TransactionValidityError, TransactionValidity,
+
+use codec::{Decode, Encode};
+use frame_support::{
+	dispatch::DispatchResult,
+	traits::tokens::{
+		fungibles::{Balanced, CreditOf, Inspect},
+		WithdrawConsequence,
 	},
-	traits::{
-		Saturating, SignedExtension, SaturatedConversion, Dispatchable,
-		DispatchInfoOf, PostDispatchInfoOf, Zero,
-	},
+	traits::{Get, IsType},
+	weights::{DispatchClass, DispatchInfo, PostDispatchInfo},
+	DefaultNoBound,
 };
 use pallet_transaction_payment::OnChargeTransaction;
-use frame_support::traits::tokens::{fungibles::{Balanced, Inspect, CreditOf}, WithdrawConsequence};
+use scale_info::TypeInfo;
+use sp_runtime::{
+	traits::{
+		DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SaturatedConversion, Saturating,
+		SignedExtension, Zero,
+	},
+	transaction_validity::{
+		InvalidTransaction, TransactionPriority, TransactionValidity, TransactionValidityError,
+		ValidTransaction,
+	},
+	FixedPointOperand,
+};
+
 
 #[cfg(test)]
 mod tests;

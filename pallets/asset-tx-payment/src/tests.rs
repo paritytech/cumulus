@@ -15,24 +15,31 @@
 
 use super::*;
 use crate as pallet_asset_tx_payment;
-use frame_system as system;
-use frame_system::EnsureRoot;
+
 use frame_support::{
-	assert_ok, parameter_types,
+	assert_ok,
 	pallet_prelude::*,
+	parameter_types,
+	traits::{fungibles::Mutate, FindAuthor},
 	weights::{
-		DispatchClass, DispatchInfo, PostDispatchInfo, Weight,
-		WeightToFeePolynomial, WeightToFeeCoefficients, WeightToFeeCoefficient,
+		DispatchClass, DispatchInfo, PostDispatchInfo, Weight, WeightToFeeCoefficient,
+		WeightToFeeCoefficients, WeightToFeePolynomial,
 	},
-	traits::{FindAuthor, fungibles::Mutate},
 	ConsensusEngineId,
 };
+use frame_system as system;
+use frame_system::EnsureRoot;
 use pallet_balances::Call as BalancesCall;
 use pallet_transaction_payment::CurrencyAdapter;
-use sp_core::H256;
-use sp_runtime::{Perbill, testing::Header, traits::{BlakeTwo256, ConvertInto, IdentityLookup, StaticLookup}};
-use std::cell::RefCell;
 use smallvec::smallvec;
+use sp_core::H256;
+use sp_runtime::{
+	testing::Header,
+	traits::{BlakeTwo256, ConvertInto, IdentityLookup, StaticLookup},
+	Perbill,
+};
+use std::cell::RefCell;
+
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;

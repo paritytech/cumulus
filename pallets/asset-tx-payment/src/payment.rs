@@ -14,15 +14,17 @@
 // limitations under the License.
 
 ///! Traits and default implementation for paying transaction fees in assets.
-use crate::Config;
+
 use super::*;
+use crate::Config;
+
 use codec::FullCodec;
-use scale_info::TypeInfo;
 use frame_support::{
 	traits::fungibles::{Balanced, Inspect, CreditOf},
 	unsigned::TransactionValidityError,
 	traits::tokens::BalanceConversion,
 };
+use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{AtLeast32BitUnsigned, DispatchInfoOf, MaybeSerializeDeserialize, PostDispatchInfoOf},
 	transaction_validity::InvalidTransaction,
@@ -50,8 +52,7 @@ pub trait OnChargeAssetTransaction<T: Config> {
 	/// The type used to store the intermediate values between pre- and post-dispatch.
 	type LiquidityInfo;
 
-	/// Before the transaction is executed the payment of the transaction fees
-	/// needs to be secured.
+	/// Before the transaction is executed the payment of the transaction fees needs to be secured.
 	///
 	/// Note: The `fee` already includes the `tip`.
 	fn withdraw_fee(
@@ -95,12 +96,11 @@ impl<A, B: Balanced<A>> HandleCredit<A, B> for () {
 /// Implements the asset transaction for a balance to asset converter (implementing
 /// `BalanceConversion`) and a credit handler (implementing `HandleCredit`).
 ///
-/// The credit handler is given the complete fee in terms of
-/// the asset used for the transaction.
+/// The credit handler is given the complete fee in terms of the asset used for the transaction.
 pub struct FungiblesAdapter<CON, HC>(PhantomData<(CON, HC)>);
 
-/// Default implementation for a runtime instantiating this pallet, a balance to asset converter
-/// and a credit handler.
+/// Default implementation for a runtime instantiating this pallet, a balance to asset converter and
+/// a credit handler.
 impl<T, CON, HC> OnChargeAssetTransaction<T> for FungiblesAdapter<CON, HC>
 where
 	T: Config,
@@ -134,8 +134,7 @@ where
 	}
 
 	/// Hand the fee and the tip over to the `[HandleCredit]` implementation.
-	/// Since the predicted fee might have been too high, parts of the fee may
-	/// be refunded.
+	/// Since the predicted fee might have been too high, parts of the fee may be refunded.
 	///
 	/// Note: The `corrected_fee` already includes the `tip`.
 	fn correct_and_deposit_fee(
