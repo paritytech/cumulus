@@ -86,8 +86,14 @@ pub trait HandleCredit<AccountId, B: Balanced<AccountId>> {
 	fn handle_credit(credit: CreditOf<AccountId, B>);
 }
 
-/// Implements the asset transaction for a balance to asset converter (implementing `BalanceConversion`)
-/// and a credit handler (implementing `HandleCredit`).
+/// Default implementation that just drops the credit according to the `OnDrop` in the underlying
+/// imbalance type.
+impl<A, B: Balanced<A>> HandleCredit<A, B> for () {
+	fn handle_credit(_credit: CreditOf<A, B>) {}
+}
+
+/// Implements the asset transaction for a balance to asset converter (implementing
+/// `BalanceConversion`) and a credit handler (implementing `HandleCredit`).
 ///
 /// The credit handler is given the complete fee in terms of
 /// the asset used for the transaction.
