@@ -16,7 +16,10 @@
 //! Auxillary struct/enums for parachain runtimes.
 //! Taken from polkadot/runtime/common (at a21cd64) and adapted for parachains.
 
-use frame_support::traits::{Currency, Imbalance, OnUnbalanced, fungibles::{self, CreditOf}};
+use frame_support::traits::{
+	fungibles::{self, CreditOf},
+	Currency, Imbalance, OnUnbalanced,
+};
 use pallet_asset_tx_payment::HandleCredit;
 use sp_std::marker::PhantomData;
 
@@ -33,7 +36,8 @@ pub struct ToStakingPot<R>(PhantomData<R>);
 impl<R> OnUnbalanced<NegativeImbalance<R>> for ToStakingPot<R>
 where
 	R: pallet_balances::Config + pallet_collator_selection::Config,
-	AccountIdOf<R>: From<polkadot_primitives::v1::AccountId> + Into<polkadot_primitives::v1::AccountId>,
+	AccountIdOf<R>:
+		From<polkadot_primitives::v1::AccountId> + Into<polkadot_primitives::v1::AccountId>,
 	<R as frame_system::Config>::Event: From<pallet_balances::Event<R>>,
 {
 	fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
@@ -53,7 +57,8 @@ pub struct DealWithFees<R>(PhantomData<R>);
 impl<R> OnUnbalanced<NegativeImbalance<R>> for DealWithFees<R>
 where
 	R: pallet_balances::Config + pallet_collator_selection::Config,
-	AccountIdOf<R>: From<polkadot_primitives::v1::AccountId> + Into<polkadot_primitives::v1::AccountId>,
+	AccountIdOf<R>:
+		From<polkadot_primitives::v1::AccountId> + Into<polkadot_primitives::v1::AccountId>,
 	<R as frame_system::Config>::Event: From<pallet_balances::Event<R>>,
 {
 	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance<R>>) {
@@ -72,7 +77,8 @@ pub struct AssetsToBlockAuthor<R>(PhantomData<R>);
 impl<R> HandleCredit<AccountIdOf<R>, pallet_assets::Pallet<R>> for AssetsToBlockAuthor<R>
 where
 	R: pallet_authorship::Config + pallet_assets::Config,
-	AccountIdOf<R>: From<polkadot_primitives::v1::AccountId> + Into<polkadot_primitives::v1::AccountId>,
+	AccountIdOf<R>:
+		From<polkadot_primitives::v1::AccountId> + Into<polkadot_primitives::v1::AccountId>,
 {
 	fn handle_credit(credit: CreditOf<AccountIdOf<R>, pallet_assets::Pallet<R>>) {
 		let author = pallet_authorship::Pallet::<R>::author();
