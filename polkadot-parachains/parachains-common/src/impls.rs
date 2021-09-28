@@ -17,7 +17,7 @@
 //! Taken from polkadot/runtime/common (at a21cd64) and adapted for parachains.
 
 use frame_support::traits::{
-	fungibles::{self, CreditOf},
+	fungibles::{CreditOf, Balanced},
 	Currency, Imbalance, OnUnbalanced,
 };
 use pallet_asset_tx_payment::HandleCredit;
@@ -82,8 +82,7 @@ where
 {
 	fn handle_credit(credit: CreditOf<AccountIdOf<R>, pallet_assets::Pallet<R>>) {
 		let author = pallet_authorship::Pallet::<R>::author();
-		use fungibles::Balanced;
-		// Will drop the result which will trigger the `OnDrop` of the imbalance in case of error.
+		// In case of error: Will drop the result triggering the `OnDrop` of the imbalance.
 		let _res = pallet_assets::Pallet::<R>::resolve(&author, credit);
 	}
 }
