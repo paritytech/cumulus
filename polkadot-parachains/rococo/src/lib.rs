@@ -45,7 +45,10 @@ pub use frame_support::{
 	},
 	StorageValue,
 };
-use frame_system::{EnsureOneOf, EnsureRoot, limits::{BlockLength, BlockWeights}};
+use frame_system::{
+	limits::{BlockLength, BlockWeights},
+	EnsureOneOf, EnsureRoot,
+};
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -55,11 +58,9 @@ pub use sp_runtime::{Perbill, Permill};
 
 use parachains_common::{
 	impls::{AssetsFrom, NonZeroIssuance},
-	AssetId
+	AssetId,
 };
-use xcm_builder::FungiblesAdapter;
-use xcm_builder::ConvertedConcreteAssetId;
-use xcm_builder::AsPrefixedGeneralIndex;
+use xcm_builder::{AsPrefixedGeneralIndex, ConvertedConcreteAssetId, FungiblesAdapter};
 use xcm_executor::traits::JustTry;
 
 // XCM imports
