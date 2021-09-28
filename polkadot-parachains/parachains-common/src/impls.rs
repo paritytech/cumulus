@@ -17,7 +17,7 @@
 //! Taken from polkadot/runtime/common (at a21cd64) and adapted for parachains.
 
 use frame_support::traits::{
-	fungibles::{CreditOf, Balanced},
+	fungibles::{Balanced, CreditOf},
 	Currency, Imbalance, OnUnbalanced,
 };
 use pallet_asset_tx_payment::HandleCredit;
