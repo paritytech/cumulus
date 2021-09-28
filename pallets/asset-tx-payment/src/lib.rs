@@ -169,13 +169,10 @@ where
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, self.tip);
-
 		debug_assert!(self.tip <= fee, "tip should be included in the computed fee");
 		if fee.is_zero() {
-			return Ok((fee, InitialPayment::Nothing))
-		}
-
-		if let Some(asset_id) = self.asset_id {
+			Ok((fee, InitialPayment::Nothing))
+		} else if let Some(asset_id) = self.asset_id {
 			T::OnChargeAssetTransaction::withdraw_fee(
 				who,
 				call,
