@@ -95,10 +95,14 @@ pub(crate) type ChargeAssetIdOf<T> =
 pub(crate) type ChargeAssetLiquidityOf<T> =
 	<<T as Config>::OnChargeAssetTransaction as OnChargeAssetTransaction<T>>::LiquidityInfo;
 
+/// Used to pass the initial payment info from pre- to post-dispatch.
 #[derive(Encode, Decode, DefaultNoBound, TypeInfo)]
 pub enum InitialPayment<T: Config> {
+	/// No initial fee was payed.
 	Nothing,
+	/// The initial fee was payed in the native currency.
 	Native(LiquidityInfoOf<T>),
+	/// The initial fee was payed in an asset.
 	Asset(CreditOf<T::AccountId, T::Fungibles>),
 }
 
@@ -201,6 +205,7 @@ where
 	///  that the transaction which consumes more resources (either length or weight) with the same
 	/// `fee` ends up having lower priority.
 	// NOTE: copied from `pallet_transaction_payment`
+	// TODO: remove as soon as https://github.com/paritytech/substrate/pull/9834 is available
 	fn get_priority(
 		len: usize,
 		info: &DispatchInfoOf<T::Call>,
