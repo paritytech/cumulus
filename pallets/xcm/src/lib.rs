@@ -20,14 +20,19 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::{prelude::*, convert::TryFrom};
-use cumulus_primitives_core::{ParaId, DmpMessageHandler};
-use cumulus_primitives_core::relay_chain::BlockNumber as RelayBlockNumber;
-use codec::{Encode, Decode};
-use sp_runtime::traits::BadOrigin;
-use xcm::{VersionedXcm, latest::{Xcm, Outcome, Parent, ExecuteXcm}};
+use codec::{Decode, DecodeLimit, Encode};
+use cumulus_primitives_core::{
+	relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler, ParaId,
+};
 use frame_support::dispatch::Weight;
 pub use pallet::*;
+use scale_info::TypeInfo;
+use sp_runtime::traits::BadOrigin;
+use sp_std::{convert::TryFrom, prelude::*};
+use xcm::{
+	latest::{ExecuteXcm, Outcome, Parent, Xcm},
+	VersionedXcm, MAX_XCM_DECODE_DEPTH,
+};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -49,8 +54,7 @@ pub mod pallet {
 	}
 
 	#[pallet::error]
-	pub enum Error<T> {
-	}
+	pub enum Error<T> {}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
@@ -60,7 +64,6 @@ pub mod pallet {
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	#[pallet::metadata(T::BlockNumber = "BlockNumber")]
 	pub enum Event<T: Config> {
 		/// Downward message is invalid XCM.
 		/// \[ id \]
@@ -74,7 +77,7 @@ pub mod pallet {
 	}
 
 	/// Origin for the parachains module.
-	#[derive(PartialEq, Eq, Clone, Encode, Decode)]
+	#[derive(PartialEq, Eq, Clone, Encode, Decode, TypeInfo)]
 	#[cfg_attr(feature = "std", derive(Debug))]
 	#[pallet::origin]
 	pub enum Origin {
@@ -106,14 +109,17 @@ pub mod pallet {
 pub struct UnlimitedDmpExecution<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 	fn handle_dmp_messages(
-		iter: impl Iterator<Item=(RelayBlockNumber, Vec<u8>)>,
+		iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
 		limit: Weight,
 	) -> Weight {
 		let mut used = 0;
 		for (_sent_at, data) in iter {
 			let id = sp_io::hashing::twox_64(&data[..]);
-			let msg = VersionedXcm::<T::Call>::decode(&mut &data[..])
-				.map(Xcm::<T::Call>::try_from);
+			let msg = VersionedXcm::<T::Call>::decode_all_with_depth_limit(
+				MAX_XCM_DECODE_DEPTH,
+				&mut &data[..],
+			)
+			.map(Xcm::<T::Call>::try_from);
 			match msg {
 				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
 				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
@@ -121,7 +127,7 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 					let outcome = T::XcmExecutor::execute_xcm(Parent.into(), x, limit);
 					used += outcome.weight_used();
 					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
-				}
+				},
 			}
 		}
 		used
@@ -136,14 +142,17 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 pub struct LimitAndDropDmpExecution<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 	fn handle_dmp_messages(
-		iter: impl Iterator<Item=(RelayBlockNumber, Vec<u8>)>,
+		iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
 		limit: Weight,
 	) -> Weight {
 		let mut used = 0;
 		for (_sent_at, data) in iter {
 			let id = sp_io::hashing::twox_64(&data[..]);
-			let msg = VersionedXcm::<T::Call>::decode(&mut &data[..])
-				.map(Xcm::<T::Call>::try_from);
+			let msg = VersionedXcm::<T::Call>::decode_all_with_depth_limit(
+				MAX_XCM_DECODE_DEPTH,
+				&mut &data[..],
+			)
+			.map(Xcm::<T::Call>::try_from);
 			match msg {
 				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
 				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
@@ -152,7 +161,7 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 					let outcome = T::XcmExecutor::execute_xcm(Parent.into(), x, weight_limit);
 					used += outcome.weight_used();
 					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
-				}
+				},
 			}
 		}
 		used
@@ -162,7 +171,8 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 /// Ensure that the origin `o` represents a sibling parachain.
 /// Returns `Ok` with the parachain ID of the sibling or an `Err` otherwise.
 pub fn ensure_sibling_para<OuterOrigin>(o: OuterOrigin) -> Result<ParaId, BadOrigin>
-	where OuterOrigin: Into<Result<Origin, OuterOrigin>>
+where
+	OuterOrigin: Into<Result<Origin, OuterOrigin>>,
 {
 	match o.into() {
 		Ok(Origin::SiblingParachain(id)) => Ok(id),
@@ -173,7 +183,8 @@ pub fn ensure_sibling_para<OuterOrigin>(o: OuterOrigin) -> Result<ParaId, BadOri
 /// Ensure that the origin `o` represents is the relay chain.
 /// Returns `Ok` if it does or an `Err` otherwise.
 pub fn ensure_relay<OuterOrigin>(o: OuterOrigin) -> Result<(), BadOrigin>
-	where OuterOrigin: Into<Result<Origin, OuterOrigin>>
+where
+	OuterOrigin: Into<Result<Origin, OuterOrigin>>,
 {
 	match o.into() {
 		Ok(Origin::Relay) => Ok(()),
