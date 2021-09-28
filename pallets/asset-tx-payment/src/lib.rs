@@ -69,10 +69,9 @@ pub use payment::*;
 
 // Type aliases used for interaction with `OnChargeTransaction`.
 pub(crate) type OnChargeTransactionOf<T> =
-<T as pallet_transaction_payment::Config>::OnChargeTransaction;
+	<T as pallet_transaction_payment::Config>::OnChargeTransaction;
 // Balance type alias.
-pub(crate) type BalanceOf<T> =
-	<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::Balance;
+pub(crate) type BalanceOf<T> = <OnChargeTransactionOf<T> as OnChargeTransaction<T>>::Balance;
 // Liquity info type alias.
 pub(crate) type LiquidityInfoOf<T> =
 	<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::LiquidityInfo;
@@ -185,9 +184,11 @@ where
 			)
 			.map(|i| (fee, InitialPayment::Asset(i.into())))
 		} else {
-			<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(who, call, info, fee, tip)
-				.map(|i| (fee, InitialPayment::Native(i)))
-				.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
+			<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
+				who, call, info, fee, tip,
+			)
+			.map(|i| (fee, InitialPayment::Native(i)))
+			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
 		}
 	}
 
@@ -287,7 +288,13 @@ where
 		match initial_payment {
 			InitialPayment::Native(already_withdrawn) => {
 				<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::correct_and_deposit_fee(
-					&who, info, post_info, actual_fee, tip, already_withdrawn)?;
+					&who,
+					info,
+					post_info,
+					actual_fee,
+					tip,
+					already_withdrawn,
+				)?;
 			},
 			InitialPayment::Asset(already_withdrawn) => {
 				T::OnChargeAssetTransaction::correct_and_deposit_fee(
