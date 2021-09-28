@@ -137,10 +137,11 @@ pub mod pallet {
 /// An asset id of `None` falls back to the underlying transaction payment via the native currency.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct ChargeAssetTxPayment<T: Config>(
-	#[codec(compact)] BalanceOf<T>,
-	Option<ChargeAssetIdOf<T>>,
-);
+pub struct ChargeAssetTxPayment<T: Config> {
+	#[codec(compact)]
+	tip: BalanceOf<T>,
+	asset_id: Option<ChargeAssetIdOf<T>>,
+}
 
 impl<T: Config> ChargeAssetTxPayment<T>
 where
@@ -151,8 +152,8 @@ where
 	CreditOf<T::AccountId, T::Fungibles>: IsType<ChargeAssetLiquidityOf<T>>,
 {
 	/// utility constructor. Used only in client/factory code.
-	pub fn from(fee: BalanceOf<T>, asset_id: Option<ChargeAssetIdOf<T>>) -> Self {
-		Self(fee, asset_id)
+	pub fn from(tip: BalanceOf<T>, asset_id: Option<ChargeAssetIdOf<T>>) -> Self {
+		Self { tip, asset_id }
 	}
 
 	/// Fee withdrawal logic that dispatches to either `OnChargeAssetTransaction` or `OnChargeTransaction`.
@@ -163,29 +164,26 @@ where
 		info: &DispatchInfoOf<T::Call>,
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
-		let tip = self.0;
-		let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
+		let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, self.tip);
 
-		debug_assert!(tip <= fee, "tip should be included in the computed fee");
-
+		debug_assert!(self.tip <= fee, "tip should be included in the computed fee");
 		if fee.is_zero() {
 			return Ok((fee, InitialPayment::Nothing))
 		}
 
-		let maybe_asset_id = self.1;
-		if let Some(asset_id) = maybe_asset_id {
+		if let Some(asset_id) = self.asset_id {
 			T::OnChargeAssetTransaction::withdraw_fee(
 				who,
 				call,
 				info,
 				asset_id,
 				fee.into(),
-				tip.into(),
+				self.tip.into(),
 			)
 			.map(|i| (fee, InitialPayment::Asset(i.into())))
 		} else {
 			<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
-				who, call, info, fee, tip,
+				who, call, info, fee, self.tip,
 			)
 			.map(|i| (fee, InitialPayment::Native(i)))
 			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
@@ -220,7 +218,7 @@ where
 impl<T: Config> sp_std::fmt::Debug for ChargeAssetTxPayment<T> {
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		write!(f, "ChargeAssetTxPayment<{:?}, {:?}>", self.0, self.1.encode())
+		write!(f, "ChargeAssetTxPayment<{:?}, {:?}>", self.tip, self.asset_id.encode())
 	}
 	#[cfg(not(feature = "std"))]
 	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
@@ -271,7 +269,7 @@ where
 		len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
 		let (_fee, initial_payment) = self.withdraw_fee(who, call, info, len)?;
-		Ok((self.0, who.clone(), initial_payment))
+		Ok((self.tip, who.clone(), initial_payment))
 	}
 
 	fn post_dispatch(
