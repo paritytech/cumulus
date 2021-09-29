@@ -8,7 +8,7 @@ FILE=$1
 
 # Higlight indexes that were deleted
 function find_deletions() {
-    printf "\n## Deletions\n"
+    echo "\n## Deletions\n"
     RES=$(cat "$FILE" | grep -n '\[\-\]' | tr -s " ")
     if [ "$RES" ]; then
         echo "$RES" | awk '{ printf "%s\\n", $0 }'
@@ -19,7 +19,7 @@ function find_deletions() {
 
 # Highlight indexes that have been deleted
 function find_index_changes() {
-    printf "\n## Index changes\n"
+    echo "\n## Index changes\n"
     RES=$(cat "$FILE" | grep -E -n -i 'idx:\s*([0-9]+)\s*(->)\s*([0-9]+)' | tr -s " ")
     if [ "$RES" ]; then
         echo "$RES" | awk '{ printf "%s\\n", $0 }'
@@ -30,7 +30,7 @@ function find_index_changes() {
 
 # Highlight values that decreased
 function find_decreases() {
-    printf "\n## Decreases\n"
+    echo "\n## Decreases\n"
     OUT=$(cat "$FILE" | grep -E -i -o '([0-9]+)\s*(->)\s*([0-9]+)' | awk '$1 > $3 { printf "%s;", $0 }')
     IFS=$';' LIST=("$OUT")
     unset RES
@@ -45,11 +45,11 @@ function find_decreases() {
     fi
 }
 
-printf "\n------------------------------ SUMMARY -------------------------------"
-printf "\n⚠️ This filter is here to help spotting changes that should be reviewed carefully."
-printf "\n⚠️ It catches only index changes, deletions and value decreases".
+echo "\n------------------------------ SUMMARY -------------------------------"
+echo "\n⚠️ This filter is here to help spotting changes that should be reviewed carefully."
+echo "\n⚠️ It catches only index changes, deletions and value decreases".
 
 find_deletions "$FILE"
 find_index_changes "$FILE"
 find_decreases "$FILE"
-printf "\n----------------------------------------------------------------------\n"
+echo "\n----------------------------------------------------------------------\n"
