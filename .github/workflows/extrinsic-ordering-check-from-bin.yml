@@ -70,7 +70,9 @@ jobs:
           cat output.txt
 
       - name: Stop our local node
-        run: pkill polkadot-collator || return 0
+        run: |
+          pkill polkadot-collator
+        continue-on-error: true
 
       - name: Save output as artifact
         uses: actions/upload-artifact@v2
