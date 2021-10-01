@@ -327,9 +327,7 @@ mod tests {
 	use cumulus_test_runtime::{Block, Header};
 	use futures::{channel::mpsc, executor::block_on, StreamExt};
 	use polkadot_node_subsystem_test_helpers::ForwardSubsystem;
-	use polkadot_overseer::{
-		dummy::dummy_overseer_builder, HeadSupportsParachains, Overseer,
-	};
+	use polkadot_overseer::{dummy::dummy_overseer_builder, HeadSupportsParachains};
 	use sp_consensus::BlockOrigin;
 	use sp_core::{testing::TaskExecutor, Pair};
 	use sp_runtime::traits::BlakeTwo256;
