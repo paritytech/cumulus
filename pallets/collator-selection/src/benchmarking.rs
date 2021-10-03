@@ -20,14 +20,17 @@ use super::*;
 #[allow(unused)]
 use crate::Pallet as CollatorSelection;
 use sp_std::prelude::*;
+use sp_runtime::traits::Convert;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller, account};
 use frame_system::{RawOrigin, EventRecord};
 use frame_support::{
 	assert_ok,
+	assert_noop,
 	traits::{Currency, Get, EnsureOrigin},
+	codec::Decode
 };
 use pallet_authorship::EventHandler;
-use pallet_session::SessionManager;
+use pallet_session::{SessionManager, Pallet as Session};
 
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -51,10 +54,69 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	assert_eq!(event, &system_event);
 }
 
+// pub fn create_funded_user_with_balance<T: Config>(
+// 	string: &'static str,
+// 	n: u32,
+// 	balance: BalanceOf<T>,
+// ) -> T::AccountId {
+// 	let user = account(string, n, SEED);
+// 	let _ = T::Currency::make_free_balance_be(&user, balance);
+// 	user
+// }
+
+pub fn create_funded_user<T: Config>(
+	string: &'static str,
+	n: u32,
+	balance_factor: u32,
+) -> T::AccountId {
+	let user = account(string, n, SEED);
+	let balance = T::Currency::minimum_balance() * balance_factor.into();
+	let _ = T::Currency::make_free_balance_be(&user, balance);
+	user
+}
+
+fn keys<T: Config>(c: u32) -> <T as pallet_session::Config>::Keys {
+	use rand::{RngCore, SeedableRng};
+
+	let keys = {
+		let mut keys = [0u8; 128];
+
+		// we keep the keys for the first validator as 0x00000...
+		if c > 0 {
+			let mut rng = rand::rngs::StdRng::seed_from_u64(c as u64);
+			rng.fill_bytes(&mut keys);
+		}
+
+		keys
+	};
+
+	Decode::decode(&mut &keys[..]).unwrap()
+}
+
+fn validator<T: Config>(c: u32)-> (T::AccountId, <T as pallet_session::Config>::Keys) {
+	// (account("candidate", c, SEED), keys::<T>(c))
+	(create_funded_user::<T>("candidate", c, 1000), keys::<T>(c))
+	// let who = create_funded_user::<T>("candidate", c, 1000);
+	// (who, <T as Config>::ValidatorIdOf::convert(who.clone()).unwrap())
+}
+
+fn add_validators<T: Config>(count: u32) {
+	let validators = (0..count).map(|c| validator::<T>(c)).collect::<Vec<_>>();
+	log::debug!(target: "nacho","VALIDATORS - {:?}", &validators);
+	for (who, key) in validators {
+			log::debug!(target: "nacho","VALIDATOR ------------- WHO {:?}, KEY {:?}", &who, &key);
+			<pallet_session::Module<T>>::set_keys(
+			RawOrigin::Signed(who).into(), key, vec![]
+		).unwrap();
+	}
+}
+
 fn register_candidates<T: Config>(count: u32) {
 	let candidates = (0..count).map(|c| account("candidate", c, SEED)).collect::<Vec<_>>();
 	assert!(<CandidacyBond<T>>::get() > 0u32.into(), "Bond cannot be zero!");
+	log::debug!(target: "nacho","CANDIDATES - {:?}", &candidates);
 	for who in candidates {
+		log::debug!(target: "nacho","CANDIDATE ------------- WHO {:?}", &who);
 		T::Currency::make_free_balance_be(&who, <CandidacyBond<T>>::get() * 2u32.into());
 		<CollatorSelection<T>>::register_as_candidate(RawOrigin::Signed(who).into()).unwrap();
 	}
@@ -104,17 +166,32 @@ benchmarks! {
 	// one.
 	register_as_candidate {
 		let c in 1 .. T::MaxCandidates::get();
+		// let c in 1 .. 2;
+		log::debug!(target: "nacho","C -------- {:?}", c);
 
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c + 1);
+
+		add_validators::<T>(c);
+
 		register_candidates::<T>(c);
 
 		let caller: T::AccountId = whitelisted_caller();
 		let bond: BalanceOf<T> = T::Currency::minimum_balance() * 2u32.into();
 		T::Currency::make_free_balance_be(&caller, bond.clone());
 
+		let mut key = [0u8; 128];
+
+		<pallet_session::Module<T>>::set_keys(
+			RawOrigin::Signed(
+				caller.clone()).into(),
+				Decode::decode(&mut &key[..]).unwrap(),
+				vec![]
+		)?;
+
 	}: _(RawOrigin::Signed(caller.clone()))
 	verify {
+		log::debug!(target: "nacho","VERIFIED --------");
 		assert_last_event::<T>(Event::CandidateAdded(caller, bond / 2u32.into()).into());
 	}
 
@@ -127,9 +204,21 @@ benchmarks! {
 
 		let leaving = <Candidates<T>>::get().last().unwrap().who.clone();
 		whitelist!(leaving);
-	}: _(RawOrigin::Signed(leaving.clone()))
+	}: {
+		// _(RawOrigin::Signed(leaving.clone()))
+		if c <= T::MinCandidates::get() {
+			assert_noop!(
+				<CollatorSelection<T>>::leave_intent(RawOrigin::Signed(leaving.clone()).into()),
+				Error::<T>::TooFewCandidates
+			);
+		} else {
+			assert_ok!(<CollatorSelection<T>>::leave_intent(RawOrigin::Signed(leaving.clone()).into()));
+		}
+	}
 	verify {
-		assert_last_event::<T>(Event::CandidateRemoved(leaving).into());
+		if c > T::MinCandidates::get() {
+			assert_last_event::<T>(Event::CandidateRemoved(leaving).into());
+		}
 	}
 
 	// worse case is paying a non-existing candidate account.
