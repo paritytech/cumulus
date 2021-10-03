@@ -218,42 +218,55 @@ benchmarks! {
 		assert_eq!(frame_system::Pallet::<T>::block_number(), new_block);
 	}
 
-	// // worse case is on new session.
-	// // TODO review this benchmark
-	// new_session {
-	// 	let r in 1 .. T::MaxCandidates::get();
-	// 	let c in 1 .. T::MaxCandidates::get();
+	// worse case is on new session.
+	// TODO review this benchmark
+	new_session {
+		let r in 1 .. T::MaxCandidates::get();
+		let c in 1 .. T::MaxCandidates::get();
 
-	// 	<CandidacyBond<T>>::put(T::Currency::minimum_balance());
-	// 	<DesiredCandidates<T>>::put(c);
-	// 	frame_system::Pallet::<T>::set_block_number(0u32.into());
+		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
+		<DesiredCandidates<T>>::put(c);
+		frame_system::Pallet::<T>::set_block_number(0u32.into());
 
-	// 	register_validators::<T>(c);
-	// 	register_candidates::<T>(c);
+		register_validators::<T>(c);
+		register_candidates::<T>(c);
 
-	// 	let new_block: T::BlockNumber = 1800u32.into();
-	// 	let zero_block: T::BlockNumber = 0u32.into();
-	// 	let candidates = <Candidates<T>>::get();
+		let new_block: T::BlockNumber = 1800u32.into();
+		let zero_block: T::BlockNumber = 0u32.into();
+		let candidates = <Candidates<T>>::get();
 
-	// 	let non_removals = c.saturating_sub(r);
+		let non_removals = c.saturating_sub(r);
 
-	// 	for i in 0..c {
-	// 		<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), zero_block);
-	// 	}
-	// 	for i in 0..non_removals {
-	// 		<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), new_block);
-	// 	}
+		for i in 0..c {
+			<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), zero_block);
+		}
 
-	// 	let pre_length = <Candidates<T>>::get().len();
-	// 	frame_system::Pallet::<T>::set_block_number(new_block);
+		if non_removals > 0 {
+			for i in 0..non_removals {
+				<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), new_block);
+			}
+		} else {
+			for i in 0..c {
+				<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), new_block);
+			}
+		}
 
-	// 	assert!(<Candidates<T>>::get().len() == c as usize);
+		let pre_length = <Candidates<T>>::get().len();
 
-	// }: {
-	// 	<CollatorSelection<T> as SessionManager<_>>::new_session(0)
-	// } verify {
-	// 	assert!(<Candidates<T>>::get().len() < pre_length);
-	// }
+		frame_system::Pallet::<T>::set_block_number(new_block);
+
+		assert!(<Candidates<T>>::get().len() == c as usize);
+	}: {
+		<CollatorSelection<T> as SessionManager<_>>::new_session(0)
+	} verify {
+		if c > r && non_removals >= T::MinCandidates::get() {
+			assert!(<Candidates<T>>::get().len() < pre_length);
+		} else if c > r && non_removals < T::MinCandidates::get() {
+			assert!(<Candidates<T>>::get().len() == T::MinCandidates::get() as usize);
+		} else {
+			assert!(<Candidates<T>>::get().len() == pre_length);
+		}
+	}
 }
 
 impl_benchmark_test_suite!(CollatorSelection, crate::mock::new_test_ext(), crate::mock::Test,);
