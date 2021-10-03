@@ -335,7 +335,6 @@ pub mod pallet {
 			ensure!(!Self::invulnerables().contains(&who), Error::<T>::AlreadyInvulnerable);
 
 			let validator_key = <T as self::Config>::ValidatorIdOf::convert(who.clone()).ok_or(Error::<T>::NoAssociatedValidatorId)?;
-			log::debug!(target: "nacho", "REGISTER ---------------- WHO {:?} with KEY {:?}", &who, &validator_key);
 			ensure!(T::ValidatorRegistration::is_registered(&validator_key), Error::<T>::ValidatorNotRegistered);
 
 			let deposit = Self::candidacy_bond();
