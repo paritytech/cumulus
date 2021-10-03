@@ -83,7 +83,7 @@ pub mod pallet {
 		},
 		PalletId,
 	};
-	use frame_system::{pallet_prelude::*};
+	use frame_system::pallet_prelude::*;
 	use frame_system::Config as SystemConfig;
 	use frame_support::{
 		sp_runtime::{
@@ -150,10 +150,10 @@ pub mod pallet {
 		/// A conversion from account ID to validator ID.
 		///
 		/// Its cost must be at most one storage read.
-		type ValidatorIdOf: Convert<Self::AccountId, Option<<Self as self::Config>::ValidatorId>>;
+		type ValidatorIdOf: Convert<Self::AccountId, Option<Self::ValidatorId>>;
 
 		/// Validate a user is registered
-		type ValidatorRegistration: ValidatorRegistration<<Self as self::Config>::ValidatorId>;
+		type ValidatorRegistration: ValidatorRegistration<Self::ValidatorId>;
 
 		/// The weight information of this pallet.
 		type WeightInfo: WeightInfo;
