@@ -1,7 +1,7 @@
 #!/bin/bash
 
 steps=50
-repeat=20
+repeat=1
 statemineOutput=./polkadot-parachains/statemine/src/weights
 statemintOutput=./polkadot-parachains/statemint/src/weights
 statemineChain=statemine-dev

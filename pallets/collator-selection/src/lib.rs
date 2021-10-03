@@ -83,12 +83,12 @@ pub mod pallet {
 		},
 		PalletId,
 	};
-	use frame_system::{self as system, pallet_prelude::*};
+	use frame_system::{pallet_prelude::*};
 	use frame_system::Config as SystemConfig;
 	use frame_support::{
 		sp_runtime::{
 			RuntimeDebug,
-			traits::{AccountIdConversion, CheckedSub, Zero, Saturating, OpaqueKeys},
+			traits::{AccountIdConversion, CheckedSub, Zero, Saturating},
 		},
 		weights::DispatchClass,
 	};
@@ -112,7 +112,7 @@ pub mod pallet {
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_session::Config {
+	pub trait Config: frame_system::Config {
 		/// Overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
@@ -157,9 +157,6 @@ pub mod pallet {
 
 		/// The weight information of this pallet.
 		type WeightInfo: WeightInfo;
-
-		// /// Session Keys.
-		// type Keys: OpaqueKeys + Member + Parameter + Default;
 	}
 
 	/// Basic information about a collation candidate.
@@ -286,7 +283,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(<T as self::Config>::WeightInfo::set_invulnerables(new.len() as u32))]
+		#[pallet::weight(T::WeightInfo::set_invulnerables(new.len() as u32))]
 		pub fn set_invulnerables(
 			origin: OriginFor<T>,
 			new: Vec<T::AccountId>,
@@ -303,7 +300,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(<T as self::Config>::WeightInfo::set_desired_candidates())]
+		#[pallet::weight(T::WeightInfo::set_desired_candidates())]
 		pub fn set_desired_candidates(origin: OriginFor<T>, max: u32) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
 			// we trust origin calls, this is just a for more accurate benchmarking
@@ -317,7 +314,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(<T as self::Config>::WeightInfo::set_candidacy_bond())]
+		#[pallet::weight(T::WeightInfo::set_candidacy_bond())]
 		pub fn set_candidacy_bond(origin: OriginFor<T>, bond: BalanceOf<T>) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
 			<CandidacyBond<T>>::put(&bond);
@@ -325,7 +322,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(<T as self::Config>::WeightInfo::register_as_candidate(T::MaxCandidates::get()))]
+		#[pallet::weight(T::WeightInfo::register_as_candidate(T::MaxCandidates::get()))]
 		pub fn register_as_candidate(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 
@@ -334,7 +331,7 @@ pub mod pallet {
 			ensure!((length as u32) < Self::desired_candidates(), Error::<T>::TooManyCandidates);
 			ensure!(!Self::invulnerables().contains(&who), Error::<T>::AlreadyInvulnerable);
 
-			let validator_key = <T as self::Config>::ValidatorIdOf::convert(who.clone()).ok_or(Error::<T>::NoAssociatedValidatorId)?;
+			let validator_key = T::ValidatorIdOf::convert(who.clone()).ok_or(Error::<T>::NoAssociatedValidatorId)?;
 			ensure!(T::ValidatorRegistration::is_registered(&validator_key), Error::<T>::ValidatorNotRegistered);
 
 			let deposit = Self::candidacy_bond();
@@ -354,16 +351,16 @@ pub mod pallet {
 				})?;
 
 			Self::deposit_event(Event::CandidateAdded(who, deposit));
-			Ok(Some(<T as self::Config>::WeightInfo::register_as_candidate(current_count as u32)).into())
+			Ok(Some(T::WeightInfo::register_as_candidate(current_count as u32)).into())
 		}
 
-		#[pallet::weight(<T as self::Config>::WeightInfo::leave_intent(T::MaxCandidates::get()))]
+		#[pallet::weight(T::WeightInfo::leave_intent(T::MaxCandidates::get()))]
 		pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			ensure!(Self::candidates().len() as u32 > T::MinCandidates::get(), Error::<T>::TooFewCandidates);
 			let current_count = Self::try_remove_candidate(&who)?;
 
-			Ok(Some(<T as self::Config>::WeightInfo::leave_intent(current_count as u32)).into())
+			Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
 		}
 	}
 
@@ -432,7 +429,7 @@ pub mod pallet {
 			<LastAuthoredBlock<T>>::insert(author, frame_system::Pallet::<T>::block_number());
 
 			frame_system::Pallet::<T>::register_extra_weight_unchecked(
-				<T as self::Config>::WeightInfo::note_author(),
+				T::WeightInfo::note_author(),
 				DispatchClass::Mandatory,
 			);
 		}
@@ -459,7 +456,7 @@ pub mod pallet {
 			let removed = candidates_len_before - active_candidates_len;
 
 			frame_system::Pallet::<T>::register_extra_weight_unchecked(
-				<T as self::Config>::WeightInfo::new_session(candidates_len_before as u32, removed as u32),
+				T::WeightInfo::new_session(candidates_len_before as u32, removed as u32),
 				DispatchClass::Mandatory,
 			);
 			Some(result)
