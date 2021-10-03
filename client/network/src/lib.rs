@@ -41,7 +41,7 @@ use polkadot_primitives::v1::{
 	OccupiedCoreAssumption, ParachainHost, SigningContext, UncheckedSigned,
 };
 
-use codec::{Decode, Encode, DecodeAll};
+use codec::{Decode, DecodeAll, Encode};
 use futures::{
 	channel::oneshot,
 	future::{ready, FutureExt},
