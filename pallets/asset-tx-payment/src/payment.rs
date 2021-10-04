@@ -149,9 +149,8 @@ where
 			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?;
 		// Calculate how much refund we should return.
 		let (final_fee, refund) = paid.split(converted_fee);
-		// Refund to the the account that paid the fees. If this fails, the
-		// account might have dropped below the existential balance. In
-		// that case we don't refund anything.
+		// Refund to the account that paid the fees. If this fails, the account might have dropped
+		// below the existential balance. In that case we don't refund anything.
 		let _res = <T::Fungibles as Balanced<T::AccountId>>::resolve(who, refund);
 		// Handle the final fee, e.g. by transferring to the block author or burning.
 		HC::handle_credit(final_fee);
