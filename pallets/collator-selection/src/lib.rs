@@ -136,7 +136,6 @@ pub mod pallet {
 		/// This does not take into account the invulnerables.
 		type MinCandidates: Get<u32>;
 
-
 		/// Maximum number of invulnerables.
 		///
 		/// Used only for benchmarking.
@@ -155,7 +154,6 @@ pub mod pallet {
 
 		/// Validate a user is registered
 		type ValidatorRegistration: ValidatorRegistration<Self::ValidatorId>;
-
 
 		/// The weight information of this pallet.
 		type WeightInfo: WeightInfo;
