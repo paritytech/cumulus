@@ -52,7 +52,7 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	assert_eq!(event, &system_event);
 }
 
-pub fn create_funded_user<T: Config>(
+fn create_funded_user<T: Config>(
 	string: &'static str,
 	n: u32,
 	balance_factor: u32,
@@ -88,7 +88,7 @@ fn register_validators<T: Config + session::Config>(count: u32) {
 	let validators = (0..count).map(|c| validator::<T>(c)).collect::<Vec<_>>();
 
 	for (who, keys) in validators {
-			<session::Module<T>>::set_keys(
+		<session::Module<T>>::set_keys(
 			RawOrigin::Signed(who).into(), keys, vec![]
 		).unwrap();
 	}
