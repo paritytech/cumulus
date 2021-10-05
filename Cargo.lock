@@ -2620,7 +2620,7 @@ dependencies = [
 [[package]]
 name = "frame-benchmarking-cli"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.10#47ed70a3cb50f64b0691c63d2ec2cc80553a2dee"
+source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.10#acb44df78015906174daf359b40916b7bef58c57"
 dependencies = [
  "Inflector",
  "chrono",
@@ -8473,7 +8473,7 @@ dependencies = [
 [[package]]
 name = "remote-externalities"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.10#47ed70a3cb50f64b0691c63d2ec2cc80553a2dee"
+source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.10#acb44df78015906174daf359b40916b7bef58c57"
 dependencies = [
  "env_logger 0.8.4",
  "hex",
@@ -9054,7 +9054,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-aura"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.10#47ed70a3cb50f64b0691c63d2ec2cc80553a2dee"
+source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.10#acb44df78015906174daf359b40916b7bef58c57"
 dependencies = [
  "async-trait",
  "derive_more 0.99.16",
@@ -11306,7 +11306,7 @@ dependencies = [
 [[package]]
 name = "substrate-build-script-utils"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.10#47ed70a3cb50f64b0691c63d2ec2cc80553a2dee"
+source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.10#acb44df78015906174daf359b40916b7bef58c57"
 dependencies = [
  "platforms",
 ]
@@ -12107,7 +12107,7 @@ checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
 [[package]]
 name = "try-runtime-cli"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.10#47ed70a3cb50f64b0691c63d2ec2cc80553a2dee"
+source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.10#acb44df78015906174daf359b40916b7bef58c57"
 dependencies = [
  "frame-try-runtime",
  "log",
@@ -12136,7 +12136,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f559b464de2e2bdabcac6a210d12e9b5a5973c251e102c44c585c71d51bd78e"
 dependencies = [
  "cfg-if 1.0.0",
- "rand 0.6.5",
+ "rand 0.8.4",
  "static_assertions",
 ]
 
