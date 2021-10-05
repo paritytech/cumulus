@@ -366,7 +366,6 @@ parameter_types! {
 	pub const OperationalFeeMultiplier: u8 = 5;
 }
 
-
 impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
 	type TransactionByteFee = TransactionByteFee;
