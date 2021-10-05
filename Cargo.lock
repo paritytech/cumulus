@@ -1620,22 +1620,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-ping"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#70afaae2cfa279c9cd80e897c76eb5c2386ee017"
-dependencies = [
- "cumulus-pallet-xcm",
- "cumulus-primitives-core",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "serde",
- "sp-runtime",
- "sp-std",
- "xcm",
-]
-
-[[package]]
 name = "cumulus-primitives-core"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus?branch=master#70afaae2cfa279c9cd80e897c76eb5c2386ee017"
@@ -1998,7 +1982,6 @@ dependencies = [
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
- "cumulus-ping",
  "cumulus-primitives-core",
  "cumulus-primitives-utility",
  "encointer-primitives",
@@ -2008,7 +1991,6 @@ dependencies = [
  "hex",
  "hex-literal 0.3.1",
  "log",
- "pallet-assets",
  "pallet-aura",
  "pallet-balances",
  "pallet-encointer-balances",
@@ -4889,19 +4871,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ff55baddef9e4ad00f88b6c743a2a8062d4c6ade126c2a528644b8e444d52ce"
 dependencies = [
  "stable_deref_trait",
-]
-
-[[package]]
-name = "pallet-assets"
-version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#1d7f6e12c651d776fc0dc1adefd007bb60f60b63"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]

@@ -7,65 +7,23 @@ authors = ["Encointer <info@encointer.org>"]
 license = "GPL-3.0"
 edition = '2018'
 
-[dependencies.encointer-scheduler]
-default-features = false
-git = "https://github.com/encointer/pallets"
-branch = "master"
-package = "pallet-encointer-scheduler"
-
-[dependencies.encointer-ceremonies]
-default-features = false
-git = "https://github.com/encointer/pallets"
-branch = "master"
-package = "pallet-encointer-ceremonies"
-
-[dependencies.encointer-communities]
-default-features = false
-git = "https://github.com/encointer/pallets"
-branch = "master"
-package = "pallet-encointer-communities"
-
-[dependencies.encointer-balances]
-default-features = false
-git = "https://github.com/encointer/pallets"
-branch = "master"
-package = "pallet-encointer-balances"
-
-[dependencies.encointer-bazaar]
-default-features = false
-git = "https://github.com/encointer/pallets"
-branch = "master"
-package = "pallet-encointer-bazaar"
-
-[dependencies.encointer-primitives]
-default-features = false
-git = "https://github.com/encointer/pallets"
-branch = "master"
-package = "encointer-primitives"
-
-[dependencies.encointer-personhood-oracle]
-default-features = false
-git = "https://github.com/encointer/pallets"
-branch = "master"
-package = "pallet-encointer-personhood-oracle"
-
-[dependencies.encointer-sybil-gate]
-default-features = false
-git = "https://github.com/encointer/pallets"
-branch = "master"
-package = "pallet-encointer-sybil-gate-template"
-
-[dependencies.fixed]
-default-features = false
-git = "https://github.com/encointer/substrate-fixed"
-tag = "v0.5.6"
-package = "substrate-fixed"
-
 [dependencies]
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "2.1.1", default-features = false, features = ["derive"] }
 log = { version = "0.4.14", default-features = false }
 parachain-info = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "master" }
+
+# encointer deps
+encointer-primitives = { default-features = false, git = "https://github.com/encointer/pallets", branch = "master" }
+pallet-encointer-scheduler = { default-features = false, git = "https://github.com/encointer/pallets", branch = "master" }
+pallet-encointer-ceremonies = { default-features = false, git = "https://github.com/encointer/pallets", branch = "master" }
+pallet-encointer-communities = { default-features = false, git = "https://github.com/encointer/pallets", branch = "master" }
+pallet-encointer-balances = { default-features = false, git = "https://github.com/encointer/pallets", branch = "master" }
+pallet-encointer-bazaar = { default-features = false, git = "https://github.com/encointer/pallets", branch = "master" }
+pallet-encointer-personhood-oracle = { default-features = false, git = "https://github.com/encointer/pallets", branch = "master" }
+pallet-encointer-sybil-gate-template = { default-features = false, git = "https://github.com/encointer/pallets", branch = "master" }
+
+fixed = { package = "substrate-fixed", default-features = false, git = "https://github.com/encointer/substrate-fixed", tag = "v0.5.6" }
 
 # Substrate dependencies
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -84,7 +42,6 @@ sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-f
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -100,7 +57,6 @@ cumulus-primitives-utility = { git = "https://github.com/paritytech/cumulus", de
 cumulus-pallet-dmp-queue = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "master" }
 cumulus-pallet-xcmp-queue = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "master" }
 cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "master" }
-cumulus-ping = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "master" }
 
 # Polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -136,7 +92,6 @@ std = [
 	"frame-support/std",
 	"frame-executive/std",
 	"frame-system/std",
-	"pallet-assets/std",
 	"pallet-balances/std",
 	"pallet-randomness-collective-flip/std",
 	"pallet-timestamp/std",
@@ -150,19 +105,18 @@ std = [
 	"cumulus-pallet-xcm/std",
 	"cumulus-primitives-core/std",
 	"cumulus-primitives-utility/std",
-	"cumulus-ping/std",
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"pallet-aura/std",
 	"sp-consensus-aura/std",
-	"encointer-scheduler/std",
-	"encointer-ceremonies/std",
-	"encointer-balances/std",
-	"encointer-communities/std",
-	"encointer-bazaar/std",
 	"encointer-primitives/std",
-	"encointer-personhood-oracle/std",
-	"encointer-sybil-gate/std",
+	"pallet-encointer-scheduler/std",
+	"pallet-encointer-ceremonies/std",
+	"pallet-encointer-balances/std",
+	"pallet-encointer-communities/std",
+	"pallet-encointer-bazaar/std",
+	"pallet-encointer-personhood-oracle/std",
+	"pallet-encointer-sybil-gate-template/std",
 	"fixed/std"
 ]

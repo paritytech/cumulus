@@ -219,7 +219,7 @@ fn testnet_genesis(
 			authorities: initial_authorities,
 		},
 		cumulus_pallet_aura_ext: Default::default(),
-		encointer_scheduler: parachain_runtime::EncointerSchedulerConfig {
+		pallet_encointer_scheduler: parachain_runtime::EncointerSchedulerConfig {
 			current_phase: CeremonyPhaseType::REGISTERING,
 			current_ceremony_index: 1,
 			ceremony_master: root_key.clone(),
@@ -229,15 +229,15 @@ fn testnet_genesis(
 				(CeremonyPhaseType::ATTESTING, 600_000),
 			],
 		},
-		encointer_ceremonies: parachain_runtime::EncointerCeremoniesConfig {
+		pallet_encointer_ceremonies: parachain_runtime::EncointerCeremoniesConfig {
 			ceremony_reward: BalanceType::from_num(1),
 			time_tolerance: 600_000,   // +-10min
 			location_tolerance: 1_000, // [m]
 		},
-		encointer_communities: parachain_runtime::EncointerCommunitiesConfig {
+		pallet_encointer_communities: parachain_runtime::EncointerCommunitiesConfig {
 			community_master: root_key,
 		},
-		encointer_balances: parachain_runtime::EncointerBalancesConfig {
+		pallet_encointer_balances: parachain_runtime::EncointerBalancesConfig {
 			demurrage_per_block_default: Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128),
 		},
 	}

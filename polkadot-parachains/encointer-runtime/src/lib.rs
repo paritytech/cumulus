@@ -55,13 +55,13 @@ pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 
 // A few exports that help ease life for downstream crates.
-pub use encointer_balances::Call as EncointerBalancesCall;
-pub use encointer_bazaar::Call as EncointerBazaarCall;
-pub use encointer_ceremonies::Call as EncointerCeremoniesCall;
-pub use encointer_communities::Call as EncointerCommunitiesCall;
-pub use encointer_personhood_oracle::Call as EncointerPersonhoodOracleCall;
-pub use encointer_scheduler::Call as EncointerSchedulerCall;
-pub use encointer_sybil_gate::Call as EncointerSybilGateCall;
+pub use pallet_encointer_balances::Call as EncointerBalancesCall;
+pub use pallet_encointer_bazaar::Call as EncointerBazaarCall;
+pub use pallet_encointer_ceremonies::Call as EncointerCeremoniesCall;
+pub use pallet_encointer_communities::Call as EncointerCommunitiesCall;
+pub use pallet_encointer_personhood_oracle::Call as EncointerPersonhoodOracleCall;
+pub use pallet_encointer_scheduler::Call as EncointerSchedulerCall;
+pub use pallet_encointer_sybil_gate_template::Call as EncointerSybilGateCall;
 
 pub use encointer_primitives::balances::{BalanceEntry, BalanceType, Demurrage};
 pub use encointer_primitives::scheduler::CeremonyPhaseType;
@@ -77,7 +77,7 @@ use xcm_builder::{
 	UsingComponents, SignedToAccountId32,
 };
 use xcm_executor::{Config, XcmExecutor, traits::ShouldExecute};
-use pallet_xcm::{XcmPassthrough, EnsureXcm, IsMajorityOfBody};
+use pallet_xcm::XcmPassthrough;
 use xcm::v0::Xcm;
 
 pub type SessionHandlers = ();
@@ -102,6 +102,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 
 /// A type to hold UTC unix epoch [ms]
 pub type Moment = u64;
+
 pub const ONE_DAY: Moment = 86_400_000;
 
 pub const MILLISECS_PER_BLOCK: u64 = 12000;
@@ -115,9 +116,9 @@ pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
 
-pub const ROC: Balance = 1_000_000_000_000;
-pub const MILLIROC: Balance = 1_000_000_000;
-pub const MICROROC: Balance = 1_000_000;
+pub const ERT: Balance = 1_000_000_000_000;
+pub const MILLIERT: Balance = 1_000_000_000;
+pub const MICROERT: Balance = 1_000_000;
 
 // 1 in 4 blocks (on average, not counting collisions) will be primary babe blocks.
 pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
@@ -131,14 +132,14 @@ pub fn native_version() -> NativeVersion {
 	}
 }
 
-/// We assume that ~10% of the block weight is consumed by `on_initalize` handlers.
+/// We assume that ~5% of the block weight is consumed by `on_initalize` handlers.
 /// This is used to limit the maximal weight of a single extrinsic.
-const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
+const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(5);
 /// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
-/// We allow for 2 seconds of compute with a 6 second average block time.
-const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
+/// We allow for 500 ms of compute with a 6 second average block time.
+const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
 
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 250;
@@ -218,10 +219,10 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: u128 = 1 * MILLIROC;
-	pub const TransferFee: u128 = 1 * MILLIROC;
-	pub const CreationFee: u128 = 1 * MILLIROC;
-	pub const TransactionByteFee: u128 = 1 * MICROROC;
+	pub const ExistentialDeposit: u128 = 1 * MILLIERT;
+	pub const TransferFee: u128 = 1 * MILLIERT;
+	pub const CreationFee: u128 = 1 * MILLIERT;
+	pub const TransactionByteFee: u128 = 1 * MICROERT;
 	pub const MaxLocks: u32 = 50;
 }
 
@@ -270,8 +271,8 @@ impl parachain_info::Config for Runtime {}
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 parameter_types! {
-	pub const RocLocation: MultiLocation = X1(Parent);
-	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
+	pub const EncointerLocation: MultiLocation = X1(Parent);
+	pub const EncointerNetwork: NetworkId = NetworkId::Polkadot;
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = X1(Parachain(ParachainInfo::parachain_id().into()));
 }
@@ -285,7 +286,7 @@ pub type LocationToAccountId = (
 	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
-	AccountId32Aliases<RococoNetwork, AccountId>,
+	AccountId32Aliases<EncointerNetwork, AccountId>,
 );
 
 /// Means for transacting assets on this chain.
@@ -293,7 +294,7 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 	// Use this currency:
 	Balances,
 	// Use this currency when it is a fungible asset matching the given location or name:
-	IsConcrete<RocLocation>,
+	IsConcrete<EncointerLocation>,
 	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -321,7 +322,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	ParentAsSuperuser<Origin>,
 	// Native signed account converter; this just converts an `AccountId32` origin into a normal
 	// `Origin::Signed` origin of the same 32-byte value.
-	SignedAccountId32AsNative<RococoNetwork, Origin>,
+	SignedAccountId32AsNative<EncointerNetwork, Origin>,
 	// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
 	XcmPassthrough<Origin>,
 );
@@ -329,8 +330,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 parameter_types! {
 	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
 	pub UnitWeightCost: Weight = 1_000_000;
-	// One ROC buys 1 second of weight.
-	pub const WeightPrice: (MultiLocation, u128) = (X1(Parent), ROC);
+	// One ERT buys 1 second of weight.
+	pub const WeightPrice: (MultiLocation, u128) = (X1(Parent), ERT);
 }
 
 match_type! {
@@ -342,6 +343,7 @@ match_type! {
 /// Transparent XcmTransact Barrier for sybil demo. Polkadot will probably come up with a
 /// better solution for this. Currently, they have not setup a barrier config for `XcmTransact`
 pub struct AllowXcmTransactFrom<T>(PhantomData<T>);
+
 impl<T: Contains<MultiLocation>> ShouldExecute for AllowXcmTransactFrom<T> {
 	fn should_execute<Call>(
 		_origin: &MultiLocation,
@@ -351,7 +353,7 @@ impl<T: Contains<MultiLocation>> ShouldExecute for AllowXcmTransactFrom<T> {
 		_weight_credit: &mut Weight,
 	) -> Result<(), ()> {
 		match message {
-			Xcm::Transact { origin_type: _ , require_weight_at_most: _, call: _ } => Ok(()),
+			Xcm::Transact { origin_type: _, require_weight_at_most: _, call: _ } => Ok(()),
 			_ => Err(())
 		}
 	}
@@ -366,6 +368,7 @@ pub type Barrier = (
 );
 
 pub struct XcmConfig;
+
 impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
@@ -373,17 +376,18 @@ impl Config for XcmConfig {
 	type AssetTransactor = LocalAssetTransactor;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type IsReserve = NativeAsset;
-	type IsTeleporter = NativeAsset;	// <- should be enough to allow teleportation of ROC
+	type IsTeleporter = NativeAsset;
+	// <- should be enough to allow teleportation of ERT
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
-	type Trader = UsingComponents<IdentityFee<Balance>, RocLocation, AccountId, Balances, ()>;
-	type ResponseHandler = ();	// Don't handle responses for now.
+	type Trader = UsingComponents<IdentityFee<Balance>, EncointerLocation, AccountId, Balances, ()>;
+	type ResponseHandler = ();    // Don't handle responses for now.
 }
 
 /// No local origins on this chain are allowed to dispatch XCM sends/executions.
 pub type LocalOriginToLocation = (
-	SignedToAccountId32<Origin, AccountId, RococoNetwork>,
+	SignedToAccountId32<Origin, AccountId, EncointerNetwork>,
 );
 
 /// The means for routing XCM messages which are not for local execution into the right message
@@ -424,39 +428,13 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 	type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
 }
 
-impl cumulus_ping::Config for Runtime {
-	type Event = Event;
-	type Origin = Origin;
-	type Call = Call;
-	type XcmSender = XcmRouter;
-}
-
 parameter_types! {
-	pub const AssetDeposit: Balance = 1 * ROC;
-	pub const ApprovalDeposit: Balance = 100 * MILLIROC;
+	pub const AssetDeposit: Balance = 1 * ERT;
+	pub const ApprovalDeposit: Balance = 100 * MILLIERT;
 	pub const StringLimit: u32 = 50;
-	pub const MetadataDepositBase: Balance = 1 * ROC;
-	pub const MetadataDepositPerByte: Balance = 10 * MILLIROC;
+	pub const MetadataDepositBase: Balance = 1 * ERT;
+	pub const MetadataDepositPerByte: Balance = 10 * MILLIERT;
 	pub const UnitBody: BodyId = BodyId::Unit;
-}
-
-/// A majority of the Unit body from Rococo over XCM is our required administration origin.
-pub type AdminOrigin = EnsureXcm<IsMajorityOfBody<RocLocation, UnitBody>>;
-
-impl pallet_assets::Config for Runtime {
-	type Event = Event;
-	type Balance = u64;
-	type AssetId = u32;
-	type Currency = Balances;
-	type ForceOrigin = AdminOrigin;
-	type AssetDeposit = AssetDeposit;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ApprovalDeposit = ApprovalDeposit;
-	type StringLimit = StringLimit;
-	type Freezer = ();
-	type Extra = ();
-	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_aura::Config for Runtime {
@@ -466,37 +444,37 @@ impl pallet_aura::Config for Runtime {
 parameter_types! {
 	pub const MomentsPerDay: Moment = 86_400_000; // [ms/d]
 }
-impl encointer_scheduler::Config for Runtime {
+impl pallet_encointer_scheduler::Config for Runtime {
 	type Event = Event;
-	type OnCeremonyPhaseChange = encointer_ceremonies::Module<Runtime>;
+	type OnCeremonyPhaseChange = pallet_encointer_ceremonies::Module<Runtime>;
 	type MomentsPerDay = MomentsPerDay;
 }
 
-impl encointer_ceremonies::Config for Runtime {
+impl pallet_encointer_ceremonies::Config for Runtime {
 	type Event = Event;
 	type Public = <MultiSignature as Verify>::Signer;
 	type Signature = MultiSignature;
 	type RandomnessSource = pallet_randomness_collective_flip::Module<Runtime>;
 }
 
-impl encointer_communities::Config for Runtime {
+impl pallet_encointer_communities::Config for Runtime {
 	type Event = Event;
 }
 
-impl encointer_balances::Config for Runtime {
+impl pallet_encointer_balances::Config for Runtime {
 	type Event = Event;
 }
 
-impl encointer_bazaar::Config for Runtime {
+impl pallet_encointer_bazaar::Config for Runtime {
 	type Event = Event;
 }
 
-impl encointer_personhood_oracle::Config for Runtime {
+impl pallet_encointer_personhood_oracle::Config for Runtime {
 	type Event = Event;
 	type XcmSender = XcmRouter;
 }
 
-impl encointer_sybil_gate::Config for Runtime {
+impl pallet_encointer_sybil_gate_template::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
 	type XcmSender = XcmRouter;
@@ -511,38 +489,33 @@ construct_runtime! {
 		NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>},
-		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Call, Storage},
-		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
+		System: frame_system::{Pallet, Call, Storage, Config, Event<T>} = 0,
+		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>, ValidateUnsigned} = 1,
+		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Call, Storage} = 2,
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
+		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 4,
+		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
 
-		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>, ValidateUnsigned} = 20,
-		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 21,
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
+		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
 
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 30,
-		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 31,
-
-		Aura: pallet_aura::{Pallet, Config<T>},
-		AuraExt: cumulus_pallet_aura_ext::{Pallet, Config},
+		Aura: pallet_aura::{Pallet, Config<T>} = 23,
+		AuraExt: cumulus_pallet_aura_ext::{Pallet, Config} = 24,
 
 		// XCM helpers.
-		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 50,
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin} = 51,
-		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 52,
-		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 53,
+		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin} = 31,
+		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 32,
+		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
-		EncointerCeremonies: encointer_ceremonies::{Pallet, Call, Storage, Config<T>, Event<T>},
-		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>},
-		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Config, Event<T>},
-		EncointerBazaar: encointer_bazaar::{Pallet, Call, Storage, Event<T>},
-		// Pallet index = 14/15 is the default. But I want to be explicit here, such that we know
-		// for sure, what to enter in the polkadot-ui.
-		EncointerPersonhoodOracle: encointer_personhood_oracle::{Pallet, Call, Event} = 14,
-		EncointerSybilGate: encointer_sybil_gate::{Pallet, Call, Storage, Event<T>} = 15,
+		EncointerScheduler: pallet_encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event} = 50,
+		EncointerCeremonies: pallet_encointer_ceremonies::{Pallet, Call, Storage, Config<T>, Event<T>} = 51,
+		EncointerCommunities: pallet_encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>} = 52,
+		EncointerBalances: pallet_encointer_balances::{Pallet, Call, Storage, Config, Event<T>} = 53,
+		EncointerBazaar: pallet_encointer_bazaar::{Pallet, Call, Storage, Event<T>} = 54,
 
-		Spambot: cumulus_ping::{Pallet, Call, Storage, Event<T>} = 99,
+		EncointerPersonhoodOracle: pallet_encointer_personhood_oracle::{Pallet, Call, Event} = 60,
+		EncointerSybilGate: pallet_encointer_sybil_gate_template::{Pallet, Call, Storage, Event<T>} = 61,
 	}
 }
 
