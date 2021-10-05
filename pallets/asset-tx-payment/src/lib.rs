@@ -42,21 +42,19 @@ use frame_support::{
 			fungibles::{Balanced, CreditOf, Inspect},
 			WithdrawConsequence,
 		},
-		Get, IsType,
+		IsType,
 	},
-	weights::{DispatchClass, DispatchInfo, PostDispatchInfo},
+	weights::{DispatchInfo, PostDispatchInfo},
 	DefaultNoBound,
 };
 use pallet_transaction_payment::OnChargeTransaction;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{
-		DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SaturatedConversion, Saturating,
-		SignedExtension, Zero,
+		DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension, Zero,
 	},
 	transaction_validity::{
-		InvalidTransaction, TransactionPriority, TransactionValidity, TransactionValidityError,
-		ValidTransaction,
+		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransaction,
 	},
 	FixedPointOperand,
 };
@@ -190,31 +188,6 @@ where
 			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
 		}
 	}
-
-	/// Get an appropriate priority for a transaction with the given length and info.
-	///
-	/// This will try and optimise the `fee/weight` `fee/length`, whichever is consuming more of the
-	/// maximum corresponding limit.
-	///
-	/// For example, if a transaction consumed 1/4th of the block length and half of the weight, its
-	/// final priority is `fee * min(2, 4) = fee * 2`. If it consumed `1/4th` of the block length
-	/// and the entire block weight `(1/1)`, its priority is `fee * min(1, 4) = fee * 1`. This means
-	///  that the transaction which consumes more resources (either length or weight) with the same
-	/// `fee` ends up having lower priority.
-	// NOTE: copied from `pallet_transaction_payment`
-	// TODO: remove as soon as https://github.com/paritytech/substrate/pull/9834 is available
-	fn get_priority(
-		len: usize,
-		info: &DispatchInfoOf<T::Call>,
-		final_fee: BalanceOf<T>,
-	) -> TransactionPriority {
-		let weight_saturation = T::BlockWeights::get().max_block / info.weight.max(1);
-		let max_block_length = *T::BlockLength::get().max.get(DispatchClass::Normal);
-		let len_saturation = max_block_length as u64 / (len as u64).max(1);
-		let coefficient: BalanceOf<T> =
-			weight_saturation.min(len_saturation).saturated_into::<BalanceOf<T>>();
-		final_fee.saturating_mul(coefficient).saturated_into::<TransactionPriority>()
-	}
 }
 
 impl<T: Config> sp_std::fmt::Debug for ChargeAssetTxPayment<T> {
@@ -259,8 +232,10 @@ where
 		info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> TransactionValidity {
+		use pallet_transaction_payment::ChargeTransactionPayment;
 		let (fee, _) = self.withdraw_fee(who, call, info, len)?;
-		Ok(ValidTransaction { priority: Self::get_priority(len, info, fee), ..Default::default() })
+		let priority = ChargeTransactionPayment::<T>::get_priority(info, len, self.tip, fee);
+		Ok(ValidTransaction { priority, ..Default::default() })
 	}
 
 	fn pre_dispatch(
