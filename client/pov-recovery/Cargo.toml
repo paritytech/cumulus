@@ -1,6 +1,6 @@
 [package]
 name = "cumulus-client-pov-recovery"
-version = "0.1.1"
+version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 description = "Cumulus-specific networking protocol"
 edition = "2018"
