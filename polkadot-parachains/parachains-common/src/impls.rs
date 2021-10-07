@@ -86,7 +86,7 @@ where
 	fn handle_credit(credit: CreditOf<AccountIdOf<R>, pallet_assets::Pallet<R>>) {
 		let author = pallet_authorship::Pallet::<R>::author();
 		// In case of error: Will drop the result triggering the `OnDrop` of the imbalance.
-		let _res = pallet_assets::Pallet::<R>::resolve(&author, credit);
+		let _ = pallet_assets::Pallet::<R>::resolve(&author, credit);
 	}
 }
 

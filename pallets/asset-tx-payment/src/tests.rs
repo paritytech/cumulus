@@ -202,7 +202,7 @@ impl HandleCredit<AccountId, Assets> for CreditToBlockAuthor {
 		let author = pallet_authorship::Pallet::<Runtime>::author();
 		// TODO: what to do in case paying the author fails (e.g. because `fee < min_balance`)
 		// default: drop the result which will trigger the `OnDrop` of the imbalance.
-		let _res = <Assets as Balanced<AccountId>>::resolve(&author, credit);
+		let _ = <Assets as Balanced<AccountId>>::resolve(&author, credit);
 	}
 }
 
