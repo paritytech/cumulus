@@ -1,6 +1,6 @@
 [package]
 name = "cumulus-test-relay-validation-worker-provider"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 build = "build.rs"
