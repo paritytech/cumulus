@@ -89,7 +89,7 @@ impl<A, B: Balanced<A>> HandleCredit<A, B> for () {
 }
 
 /// Implements the asset transaction for a balance to asset converter (implementing
-/// `BalanceConversion`) and a credit handler (implementing `HandleCredit`).
+/// [`BalanceConversion`]) and a credit handler (implementing [`HandleCredit`]).
 ///
 /// The credit handler is given the complete fee in terms of the asset used for the transaction.
 pub struct FungiblesAdapter<CON, HC>(PhantomData<(CON, HC)>);

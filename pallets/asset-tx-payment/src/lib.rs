@@ -21,14 +21,15 @@
 //! ## Overview
 //! It does this by extending transactions to include an optional `AssetId` that specifies the asset
 //! to be used for payment (defaulting to the native token on `None`). It expects an
-//! `OnChargeAssetTransaction` implementation analogously to `pallet-transaction-payment`. The
-//! included `FungiblesAdapter` (implementing `OnChargeAssetTransaction`) determines the fee amount
-//! by converting the fee calculated by `pallet-transaction-payment` into the desired asset.
+//! [`OnChargeAssetTransaction`] implementation analogously to [`pallet-transaction-payment`]. The
+//! included [`FungiblesAdapter`] (implementing [`OnChargeAssetTransaction`]) determines the fee
+//! amount by converting the fee calculated by [`pallet-transaction-payment`] into the desired
+//! asset.
 //!
 //! ## Integration
 //! This pallet wraps FRAME's transaction payment pallet and functions as a replacement. This means
 //! you should include both pallets in your `construct_runtime` macro, but only include this
-//! pallet's `SignedExtension` (`ChargeAssetTxPayment`).
+//! pallet's [`SignedExtension`] ([`ChargeAssetTxPayment`]).
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -133,7 +134,7 @@ pub mod pallet {
 /// Require the transactor pay for themselves and maybe include a tip to gain additional priority
 /// in the queue. Allows paying via both `Currency` as well as `fungibles::Balanced`.
 ///
-/// Wraps the transaction logic in `pallet_transaction_payment` and extends it with assets.
+/// Wraps the transaction logic in [`pallet_transaction_payment`] and extends it with assets.
 /// An asset id of `None` falls back to the underlying transaction payment via the native currency.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
@@ -219,6 +220,7 @@ where
 		// imbalance resulting from withdrawing the fee
 		InitialPayment<T>,
 	);
+
 	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
 		Ok(())
 	}
