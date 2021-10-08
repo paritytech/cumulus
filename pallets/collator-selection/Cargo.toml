@@ -49,11 +49,8 @@ runtime-benchmarks = [
 std = [
 	'codec/std',
 	'log/std',
-<<<<<<< HEAD
 	'scale-info/std',
-=======
 	'rand/std',
->>>>>>> 288a98d3... Fix Benchmarks for Statemine-V4 release (#639)
 	'sp-runtime/std',
 	'sp-staking/std',
 	'sp-std/std',
