@@ -27,7 +27,7 @@ use frame_support::{
 };
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{AtLeast32BitUnsigned, DispatchInfoOf, MaybeSerializeDeserialize, PostDispatchInfoOf},
+	traits::{AtLeast32BitUnsigned, DispatchInfoOf, MaybeSerializeDeserialize, One, PostDispatchInfoOf},
 	transaction_validity::InvalidTransaction,
 };
 use sp_std::{fmt::Debug, marker::PhantomData};
@@ -118,8 +118,13 @@ where
 		fee: Self::Balance,
 		_tip: Self::Balance,
 	) -> Result<Self::LiquidityInfo, TransactionValidityError> {
+		// We don't know the precision of the underlying asset. Because the converted fee could be
+		// less than one (e.g. 0.5) but gets rounded down by integer division we introduce a minimum
+		// fee.
+		let min_converted_fee = if fee.is_zero() { Zero::zero() } else { One::one() };
 		let converted_fee = CON::to_asset_balance(fee, asset_id)
-			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?;
+			.map_err(|_| TransactionValidityError::from(InvalidTransaction::Payment))?
+			.max(min_converted_fee);
 		let can_withdraw = <T::Fungibles as Inspect<T::AccountId>>::can_withdraw(
 			asset_id.into(),
 			who,
@@ -144,9 +149,11 @@ where
 		_tip: Self::Balance,
 		paid: Self::LiquidityInfo,
 	) -> Result<(), TransactionValidityError> {
+		let min_converted_fee = if corrected_fee.is_zero() { Zero::zero() } else { One::one() };
 		// Convert the corrected fee into the asset used for payment.
 		let converted_fee = CON::to_asset_balance(corrected_fee, paid.asset().into())
-			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?;
+			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })?
+			.max(min_converted_fee);
 		// Calculate how much refund we should return.
 		let (final_fee, refund) = paid.split(converted_fee);
 		// Refund to the account that paid the fees. If this fails, the account might have dropped
