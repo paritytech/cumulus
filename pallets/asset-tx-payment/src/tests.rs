@@ -464,7 +464,8 @@ fn asset_transaction_payment_with_tip_and_refund() {
 			let len = 10;
 			// we convert the from weight to fee based on the ratio between asset min balance and
 			// existential deposit
-			let fee_with_tip = (base_weight + weight + len as u64 + tip) * min_balance / ExistentialDeposit::get();
+			let fee_with_tip =
+				(base_weight + weight + len as u64 + tip) * min_balance / ExistentialDeposit::get();
 			let pre = ChargeAssetTxPayment::<Runtime>::from(tip, Some(asset_id))
 				.pre_dispatch(&caller, CALL, &info_from_weight(weight), len)
 				.unwrap();
@@ -478,7 +479,8 @@ fn asset_transaction_payment_with_tip_and_refund() {
 				len,
 				&Ok(())
 			));
-			let final_fee = fee_with_tip - (weight - final_weight) * min_balance / ExistentialDeposit::get();
+			let final_fee =
+				fee_with_tip - (weight - final_weight) * min_balance / ExistentialDeposit::get();
 			assert_eq!(Assets::balance(asset_id, caller), balance - (final_fee));
 			assert_eq!(Assets::balance(asset_id, BLOCK_AUTHOR), final_fee);
 		});
@@ -602,8 +604,8 @@ fn converted_fee_is_never_zero_if_input_fee_is_not() {
 			assert_eq!(fee, 0);
 			{
 				let pre = ChargeAssetTxPayment::<Runtime>::from(0, Some(asset_id))
-				.pre_dispatch(&caller, CALL, &info_from_pays(Pays::No), len)
-				.unwrap();
+					.pre_dispatch(&caller, CALL, &info_from_pays(Pays::No), len)
+					.unwrap();
 				// `Pays::No` still implies no fees
 				assert_eq!(Assets::balance(asset_id, caller), balance);
 
