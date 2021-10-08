@@ -13,12 +13,12 @@ readme = "README.md"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-sp-std = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "master" }
-sp-runtime = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "master" }
-frame-support = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "master" }
-frame-system = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "master" }
-frame-benchmarking = { default-features = false, optional = true, git = 'https://github.com/paritytech/substrate', branch = "master" }
-pallet-session = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "master" }
+sp-std = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.11" }
+sp-runtime = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.11" }
+frame-support = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.11" }
+frame-system = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.11" }
+frame-benchmarking = { default-features = false, optional = true, git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.11" }
+pallet-session = { default-features = false, git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.11" }
 
 [features]
 default = ["std"]
