@@ -22,8 +22,8 @@ use crate::Pallet as CollatorSelection;
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::{
 	assert_ok,
-	traits::{Currency, Get, EnsureOrigin},
-	codec::Decode
+	codec::Decode,
+	traits::{Currency, EnsureOrigin, Get},
 };
 use frame_system::{EventRecord, RawOrigin};
 use pallet_authorship::EventHandler;
@@ -80,7 +80,7 @@ fn keys<T: Config + session::Config>(c: u32) -> <T as session::Config>::Keys {
 	Decode::decode(&mut &keys[..]).unwrap()
 }
 
-fn validator<T: Config + session::Config>(c: u32)-> (T::AccountId, <T as session::Config>::Keys) {
+fn validator<T: Config + session::Config>(c: u32) -> (T::AccountId, <T as session::Config>::Keys) {
 	(create_funded_user::<T>("candidate", c, 1000), keys::<T>(c))
 }
 
@@ -88,9 +88,7 @@ fn register_validators<T: Config + session::Config>(count: u32) {
 	let validators = (0..count).map(|c| validator::<T>(c)).collect::<Vec<_>>();
 
 	for (who, keys) in validators {
-		<session::Module<T>>::set_keys(
-			RawOrigin::Signed(who).into(), keys, vec![]
-		).unwrap();
+		<session::Module<T>>::set_keys(RawOrigin::Signed(who).into(), keys, vec![]).unwrap();
 	}
 }
 
