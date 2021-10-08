@@ -179,7 +179,6 @@ impl pallet_session::Config for Test {
 	type SessionManager = CollatorSelection;
 	type SessionHandler = TestSessionHandler;
 	type Keys = MockSessionKeys;
-	type DisabledValidatorsThreshold = ();
 	type WeightInfo = ();
 }
 
