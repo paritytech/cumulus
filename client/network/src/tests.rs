@@ -487,9 +487,5 @@ sp_api::mock_impl_runtime_apis! {
 		fn validation_code_by_hash(_: ValidationCodeHash) -> Option<ValidationCode> {
 			None
 		}
-
-		fn on_chain_votes() -> Option<ScrapedOnChainVotes<Hash>> {
-			None
-		}
 	}
 }
