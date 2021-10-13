@@ -30,7 +30,7 @@ and treat as best.
 A Polkadot [collator](https://wiki.polkadot.network/docs/en/learn-collator) for the parachain is
 implemented by [`cumulus-collator`](collator).
 
-# Statemint :coin:
+# Statemint 🪙
 
 This repository also contains the Statemint runtime (as well as the canary runtime Statemine and the
 test runtime Westmint).
