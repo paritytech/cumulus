@@ -26,19 +26,19 @@ use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{BlakeTwo256, Block as BlockT, AccountIdLookup, Verify},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, Verify},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
-use sp_std::{prelude::*, marker::PhantomData};
+use sp_std::{marker::PhantomData, prelude::*};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
-	construct_runtime, parameter_types, match_type,
-	traits::{Randomness, IsInVec, All, Contains},
+	construct_runtime, match_type, parameter_types,
+	traits::{All, Contains, IsInVec, Randomness},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -46,10 +46,10 @@ pub use frame_support::{
 	StorageValue,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
+pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
-pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
@@ -63,22 +63,23 @@ pub use pallet_encointer_personhood_oracle::Call as EncointerPersonhoodOracleCal
 pub use pallet_encointer_scheduler::Call as EncointerSchedulerCall;
 pub use pallet_encointer_sybil_gate_template::Call as EncointerSybilGateCall;
 
-pub use encointer_primitives::balances::{BalanceEntry, BalanceType, Demurrage};
-pub use encointer_primitives::scheduler::CeremonyPhaseType;
+pub use encointer_primitives::{
+	balances::{BalanceEntry, BalanceType, Demurrage},
+	scheduler::CeremonyPhaseType,
+};
 
 // XCM imports
-use polkadot_parachain::primitives::Sibling;
-use xcm::v0::{MultiAsset, MultiLocation, MultiLocation::*, Junction::*, BodyId, NetworkId};
-use xcm_builder::{
-	AccountId32Aliases, CurrencyAdapter, LocationInverter, ParentIsDefault, RelayChainAsNative,
-	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-	SovereignSignedViaLocation, EnsureXcmOrigin, AllowUnpaidExecutionFrom, ParentAsSuperuser,
-	AllowTopLevelPaidExecutionFrom, TakeWeightCredit, FixedWeightBounds, IsConcrete, NativeAsset,
-	UsingComponents, SignedToAccountId32,
-};
-use xcm_executor::{Config, XcmExecutor, traits::ShouldExecute};
 use pallet_xcm::XcmPassthrough;
-use xcm::v0::Xcm;
+use polkadot_parachain::primitives::Sibling;
+use xcm::v0::{BodyId, Junction::*, MultiAsset, MultiLocation, MultiLocation::*, NetworkId, Xcm};
+use xcm_builder::{
+	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
+	EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset,
+	ParentAsSuperuser, ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative,
+	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+};
+use xcm_executor::{traits::ShouldExecute, Config, XcmExecutor};
 
 pub type SessionHandlers = ();
 
@@ -126,10 +127,7 @@ pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
-	NativeVersion {
-		runtime_version: VERSION,
-		can_author_with: Default::default(),
-	}
+	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
 /// We assume that ~5% of the block weight is consumed by `on_initalize` handlers.
@@ -354,7 +352,7 @@ impl<T: Contains<MultiLocation>> ShouldExecute for AllowXcmTransactFrom<T> {
 	) -> Result<(), ()> {
 		match message {
 			Xcm::Transact { origin_type: _, require_weight_at_most: _, call: _ } => Ok(()),
-			_ => Err(())
+			_ => Err(()),
 		}
 	}
 }
@@ -363,8 +361,7 @@ pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
 	AllowUnpaidExecutionFrom<ParentOrParentsUnitPlurality>,
-	AllowXcmTransactFrom<All<MultiLocation>>
-	// ^^^ Parent & its unit plurality gets free execution
+	AllowXcmTransactFrom<All<MultiLocation>>, // ^^^ Parent & its unit plurality gets free execution
 );
 
 pub struct XcmConfig;
@@ -382,13 +379,11 @@ impl Config for XcmConfig {
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
 	type Trader = UsingComponents<IdentityFee<Balance>, EncointerLocation, AccountId, Balances, ()>;
-	type ResponseHandler = ();    // Don't handle responses for now.
+	type ResponseHandler = (); // Don't handle responses for now.
 }
 
 /// No local origins on this chain are allowed to dispatch XCM sends/executions.
-pub type LocalOriginToLocation = (
-	SignedToAccountId32<Origin, AccountId, EncointerNetwork>,
-);
+pub type LocalOriginToLocation = (SignedToAccountId32<Origin, AccountId, EncointerNetwork>,);
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.

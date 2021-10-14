@@ -16,9 +16,7 @@
 
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use parachain_runtime::{
-	AccountId, AuraId, BalanceType, Demurrage, CeremonyPhaseType, Signature,
-};
+use parachain_runtime::{AccountId, AuraId, BalanceType, CeremonyPhaseType, Demurrage, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
@@ -27,7 +25,6 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<parachain_runtime::GenesisConfig, Extensions>;
-
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -57,8 +54,8 @@ type AccountPublic = <Signature as Verify>::Signer;
 
 /// Helper function to generate an account ID from seed
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
-	where
-		AccountPublic: From<<TPublic::Pair as Pair>::Public>,
+where
+	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
 {
 	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
@@ -71,10 +68,7 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 		move || {
 			testnet_genesis(
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				vec![
-					get_from_seed::<AuraId>("Alice"),
-					get_from_seed::<AuraId>("Bob"),
-				],
+				vec![get_from_seed::<AuraId>("Alice"), get_from_seed::<AuraId>("Bob")],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -96,10 +90,7 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 		None,
 		None,
 		None,
-		Extensions {
-			relay_chain: "westend-dev".into(),
-			para_id: id.into(),
-		},
+		Extensions { relay_chain: "westend-dev".into(), para_id: id.into() },
 	)
 }
 
@@ -124,12 +115,14 @@ pub fn encointer_spec(id: ParaId, use_well_known_keys: bool) -> ChainSpec {
 		"Encointer PC1",
 		"encointer-rococo-v1",
 		chain_type,
-		move || testnet_genesis(root_account.clone(),
-								vec![
-									get_from_seed::<AuraId>("Alice"),
-									get_from_seed::<AuraId>("Bob"),
-								],
-								endowed_accounts.clone(), id),
+		move || {
+			testnet_genesis(
+				root_account.clone(),
+				vec![get_from_seed::<AuraId>("Alice"), get_from_seed::<AuraId>("Bob")],
+				endowed_accounts.clone(),
+				id,
+			)
+		},
 		Vec::new(),
 		// telemetry endpoints
 		None,
@@ -144,32 +137,31 @@ pub fn encointer_spec(id: ParaId, use_well_known_keys: bool) -> ChainSpec {
 			"tokenSymbol": "ERT"
 		  }"#,
 			)
-				.unwrap(),
+			.unwrap(),
 		),
-		Extensions {
-			relay_chain: "rococo".into(),
-			para_id: id.into(),
-		},
+		Extensions { relay_chain: "rococo".into(), para_id: id.into() },
 	)
 }
 
 pub fn sybil_dummy_spec(id: ParaId) -> ChainSpec {
 	let root_account = get_account_id_from_seed::<sr25519::Public>("Alice");
 	let endowed_accounts = vec![
-			get_account_id_from_seed::<sr25519::Public>("Alice"),
-			get_account_id_from_seed::<sr25519::Public>("Bob"),
+		get_account_id_from_seed::<sr25519::Public>("Alice"),
+		get_account_id_from_seed::<sr25519::Public>("Bob"),
 	];
 
 	ChainSpec::from_genesis(
 		"Sybil Dummy",
 		"sybil-dummy-rococo-v1",
 		ChainType::Local,
-		move || testnet_genesis(root_account.clone(),
-								vec![
-									get_from_seed::<AuraId>("Alice"),
-									get_from_seed::<AuraId>("Bob"),
-								],
-								endowed_accounts.clone(), id),
+		move || {
+			testnet_genesis(
+				root_account.clone(),
+				vec![get_from_seed::<AuraId>("Alice"), get_from_seed::<AuraId>("Bob")],
+				endowed_accounts.clone(),
+				id,
+			)
+		},
 		Vec::new(),
 		// telemetry endpoints
 		None,
@@ -184,12 +176,9 @@ pub fn sybil_dummy_spec(id: ParaId) -> ChainSpec {
 			"tokenSymbol": "DUM"
 		  }"#,
 			)
-				.unwrap(),
+			.unwrap(),
 		),
-		Extensions {
-			relay_chain: "rococo".into(),
-			para_id: id.into(),
-		},
+		Extensions { relay_chain: "rococo".into(), para_id: id.into() },
 	)
 }
 
@@ -207,17 +196,11 @@ fn testnet_genesis(
 			changes_trie_config: Default::default(),
 		},
 		pallet_balances: parachain_runtime::BalancesConfig {
-			balances: endowed_accounts
-				.iter()
-				.cloned()
-				.map(|k| (k, 1 << 60))
-				.collect(),
+			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
 		pallet_sudo: parachain_runtime::SudoConfig { key: root_key.clone() },
 		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },
-		pallet_aura: parachain_runtime::AuraConfig {
-			authorities: initial_authorities,
-		},
+		pallet_aura: parachain_runtime::AuraConfig { authorities: initial_authorities },
 		cumulus_pallet_aura_ext: Default::default(),
 		pallet_encointer_scheduler: parachain_runtime::EncointerSchedulerConfig {
 			current_phase: CeremonyPhaseType::REGISTERING,
@@ -238,7 +221,9 @@ fn testnet_genesis(
 			community_master: root_key,
 		},
 		pallet_encointer_balances: parachain_runtime::EncointerBalancesConfig {
-			demurrage_per_block_default: Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128),
+			demurrage_per_block_default: Demurrage::from_bits(
+				0x0000000000000000000001E3F0A8A973_i128,
+			),
 		},
 	}
 }

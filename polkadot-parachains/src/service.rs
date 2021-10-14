@@ -204,7 +204,7 @@ where
 	) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
 {
 	if matches!(parachain_config.role, Role::Light) {
-		return Err("Light client not supported!".into());
+		return Err("Light client not supported!".into())
 	}
 
 	let parachain_config = prepare_node_config(parachain_config);
@@ -375,9 +375,10 @@ pub async fn start_rococo_parachain_node(
 	collator_key: CollatorPair,
 	polkadot_config: Configuration,
 	id: ParaId,
-) -> sc_service::error::Result<
-	(TaskManager, Arc<TFullClient<Block, parachain_runtime::RuntimeApi, RococoParachainRuntimeExecutor>>)
-> {
+) -> sc_service::error::Result<(
+	TaskManager,
+	Arc<TFullClient<Block, parachain_runtime::RuntimeApi, RococoParachainRuntimeExecutor>>,
+)> {
 	start_node_impl::<parachain_runtime::RuntimeApi, RococoParachainRuntimeExecutor, _, _, _>(
 		parachain_config,
 		collator_key,
