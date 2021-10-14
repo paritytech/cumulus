@@ -13,6 +13,8 @@
 
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
+
+use cumulus_client_collator::RelayChainDirect;
 use cumulus_client_consensus_aura::{
 	build_aura_consensus, BuildAuraConsensusParams, SlotProportion,
 };
@@ -704,7 +706,8 @@ pub async fn start_rococo_parachain_node(
 			);
 
 			let relay_chain_backend = relay_chain_node.backend.clone();
-			let relay_chain_client = relay_chain_node.client.clone();
+			let relay_chain_direct = RelayChainDirect{ polkadot_client: relay_chain_node.client.clone() };
+
 			Ok(build_aura_consensus::<
 				sp_consensus_aura::sr25519::AuthorityPair,
 				_,
@@ -720,9 +723,9 @@ pub async fn start_rococo_parachain_node(
 				proposer_factory,
 				create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
 					let parachain_inherent =
-					cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
+					cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 						relay_parent,
-						&relay_chain_client,
+						&relay_chain_direct,
 						&*relay_chain_backend,
 						&validation_data,
 						id,

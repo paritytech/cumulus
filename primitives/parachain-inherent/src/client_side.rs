@@ -18,84 +18,22 @@
 
 use crate::ParachainInherentData;
 use codec::Decode;
+use cumulus_client_collator::RelayChainInterface;
 use cumulus_primitives_core::{
 	relay_chain::{
 		self,
 		v1::{HrmpChannelId, ParachainHost},
 		Block as PBlock, Hash as PHash,
 	},
-	InboundDownwardMessage, InboundHrmpMessage, ParaId, PersistedValidationData,
+	ParaId, PersistedValidationData,
 };
 use polkadot_client::{Client, ClientHandle, ExecuteWithClient};
 use sc_client_api::Backend;
 use sp_api::ProvideRuntimeApi;
 use sp_runtime::generic::BlockId;
 use sp_state_machine::Backend as _;
-use std::collections::BTreeMap;
 
 const LOG_TARGET: &str = "parachain-inherent";
-
-/// Returns the whole contents of the downward message queue for the parachain we are collating
-/// for.
-///
-/// Returns `None` in case of an error.
-fn retrieve_dmq_contents<PClient>(
-	polkadot_client: &PClient,
-	para_id: ParaId,
-	relay_parent: PHash,
-) -> Option<Vec<InboundDownwardMessage>>
-where
-	PClient: ProvideRuntimeApi<PBlock>,
-	PClient::Api: ParachainHost<PBlock>,
-{
-	polkadot_client
-		.runtime_api()
-		.dmq_contents_with_context(
-			&BlockId::hash(relay_parent),
-			sp_core::ExecutionContext::Importing,
-			para_id,
-		)
-		.map_err(|e| {
-			tracing::error!(
-				target: LOG_TARGET,
-				relay_parent = ?relay_parent,
-				error = ?e,
-				"An error occured during requesting the downward messages.",
-			);
-		})
-		.ok()
-}
-
-/// Returns channels contents for each inbound HRMP channel addressed to the parachain we are
-/// collating for.
-///
-/// Empty channels are also included.
-fn retrieve_all_inbound_hrmp_channel_contents<PClient>(
-	polkadot_client: &PClient,
-	para_id: ParaId,
-	relay_parent: PHash,
-) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>>
-where
-	PClient: ProvideRuntimeApi<PBlock>,
-	PClient::Api: ParachainHost<PBlock>,
-{
-	polkadot_client
-		.runtime_api()
-		.inbound_hrmp_channels_contents_with_context(
-			&BlockId::hash(relay_parent),
-			sp_core::ExecutionContext::Importing,
-			para_id,
-		)
-		.map_err(|e| {
-			tracing::error!(
-				target: LOG_TARGET,
-				relay_parent = ?relay_parent,
-				error = ?e,
-				"An error occured during requesting the inbound HRMP messages.",
-			);
-		})
-		.ok()
-}
 
 /// Collect the relevant relay chain state in form of a proof for putting it into the validation
 /// data inherent.
@@ -197,22 +135,22 @@ impl ParachainInherentData {
 	/// Create the [`ParachainInherentData`] at the given `relay_parent`.
 	///
 	/// Returns `None` if the creation failed.
-	pub fn create_at<PClient>(
+	pub fn create_at<T>(
 		relay_parent: PHash,
-		polkadot_client: &PClient,
+		relay_chain_interface: &T,
 		polkadot_backend: &impl Backend<PBlock>,
 		validation_data: &PersistedValidationData,
 		para_id: ParaId,
 	) -> Option<ParachainInherentData>
 	where
-		PClient: ProvideRuntimeApi<PBlock>,
-		PClient::Api: ParachainHost<PBlock>,
+		T: RelayChainInterface,
 	{
 		let relay_chain_state =
 			collect_relay_storage_proof(polkadot_backend, para_id, relay_parent)?;
-		let downward_messages = retrieve_dmq_contents(polkadot_client, para_id, relay_parent)?;
-		let horizontal_messages =
-			retrieve_all_inbound_hrmp_channel_contents(polkadot_client, para_id, relay_parent)?;
+		let downward_messages =
+			relay_chain_interface.retrieve_dmq_contents(para_id, relay_parent)?;
+		let horizontal_messages = relay_chain_interface
+			.retrieve_all_inbound_hrmp_channel_contents(para_id, relay_parent)?;
 
 		Some(ParachainInherentData {
 			downward_messages,
@@ -281,12 +219,13 @@ where
 		Client: ProvideRuntimeApi<PBlock>,
 		Client::Api: ParachainHost<PBlock>,
 	{
-		ParachainInherentData::create_at(
-			self.relay_parent,
-			&*client,
-			self.relay_chain_backend,
-			self.validation_data,
-			self.para_id,
-		)
+		todo!();
+		// ParachainInherentData::create_at(
+		// 	self.relay_parent,
+		// 	&*client,
+		// 	self.relay_chain_backend,
+		// 	self.validation_data,
+		// 	self.para_id,
+		// )
 	}
 }

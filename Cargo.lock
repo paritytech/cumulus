@@ -1423,6 +1423,7 @@ dependencies = [
  "futures 0.3.17",
  "parity-scale-codec",
  "parking_lot 0.10.2",
+ "polkadot-client",
  "polkadot-node-primitives",
  "polkadot-node-subsystem",
  "polkadot-node-subsystem-test-helpers",
@@ -1767,6 +1768,7 @@ name = "cumulus-primitives-parachain-inherent"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "cumulus-client-collator",
  "cumulus-primitives-core",
  "cumulus-test-relay-sproof-builder",
  "parity-scale-codec",
