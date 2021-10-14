@@ -3,7 +3,7 @@
 ## Asset Transaction Payment Pallet
 
 This pallet allows runtimes that include it to pay for transactions in assets other than the
-main token of the chain.
+native token of the chain.
 
 ### Overview
 It does this by extending transactions to include an optional `AssetId` that specifies the asset
