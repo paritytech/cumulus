@@ -6126,7 +6126,6 @@ dependencies = [
  "frame-executive",
  "frame-support",
  "frame-system",
- "node-primitives",
  "pallet-asset-tx-payment",
  "pallet-assets",
  "pallet-authorship",
