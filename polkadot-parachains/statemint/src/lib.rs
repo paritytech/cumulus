@@ -127,9 +127,21 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 0;
 }
 
+pub struct BaseFilter;
+impl Contains<Call> for BaseFilter {
+	fn contains(c: &Call) -> bool {
+		// Disable permissionless asset creation.
+		!matches!(
+			c,
+			Call::Assets(pallet_assets::Call::create(..))
+				| Call::Uniques(pallet_uniques::Call::create(..))
+		)
+	}
+}
+
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
-	type BaseCallFilter = frame_support::traits::Everything;
+	type BaseCallFilter = BaseFilter;
 	type BlockWeights = RuntimeBlockWeights;
 	type BlockLength = RuntimeBlockLength;
 	type AccountId = AccountId;
