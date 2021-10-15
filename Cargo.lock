@@ -6617,6 +6617,7 @@ dependencies = [
  "assert_cmd",
  "async-trait",
  "cumulus-client-cli",
+ "cumulus-client-collator",
  "cumulus-client-consensus-aura",
  "cumulus-client-consensus-common",
  "cumulus-client-consensus-relay-chain",
