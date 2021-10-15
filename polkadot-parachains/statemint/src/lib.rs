@@ -133,8 +133,8 @@ impl Contains<Call> for BaseFilter {
 		// Disable permissionless asset creation.
 		!matches!(
 			c,
-			Call::Assets(pallet_assets::Call::create(..))
-				| Call::Uniques(pallet_uniques::Call::create(..))
+			Call::Assets(pallet_assets::Call::create(..)) |
+				Call::Uniques(pallet_uniques::Call::create(..))
 		)
 	}
 }
