@@ -35,11 +35,10 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
-
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{All, IsInVec, Randomness},
+	traits::{IsInVec, Randomness},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -47,16 +46,15 @@ pub use frame_support::{
 	StorageValue,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
+pub use pallet_balances::Call as BalancesCall;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
-
-pub use pallet_balances::Call as BalancesCall;
-
 // XCM imports
-use frame_support::traits::Filter;
-use xcm::v0::{Junction::*, MultiLocation, MultiLocation::*, NetworkId};
+use frame_support::traits::Contains;
+//use xcm::v0::{Junction::*, MultiLocation, MultiLocation::*, NetworkId};
+use xcm::latest::prelude::*;
 use xcm_builder::{
 	AllowUnpaidExecutionFrom, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
 	ParentIsDefault, SovereignSignedViaLocation,
@@ -151,8 +149,8 @@ parameter_types! {
 }
 
 pub struct DisableTokenTxFilter;
-impl Filter<Call> for DisableTokenTxFilter {
-	fn filter(call: &Call) -> bool {
+impl Contains<Call> for DisableTokenTxFilter {
+	fn contains(call: &Call) -> bool {
 		!matches!(
 			call,
 			Call::Balances(_) | Call::Vesting(pallet_vesting::Call::vested_transfer(..))
@@ -279,7 +277,7 @@ impl parachain_info::Config for Runtime {}
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 parameter_types! {
-	pub const RococoLocation: MultiLocation = X1(Parent);
+	pub const RococoLocation: MultiLocation = MultiLocation::parent();
 	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 }
@@ -298,7 +296,10 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 match_type! {
-	pub type JustTheParent: impl Contains<MultiLocation> = { X1(Parent) };
+	pub type JustTheParent: impl Contains<MultiLocation> = {
+		//X1(Parent)
+		MultiLocation { parents: 1, interior: Here }
+	};
 }
 
 parameter_types! {
@@ -319,6 +320,7 @@ impl Config for XcmConfig {
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>; // balances not supported
 	type Trader = (); // balances not supported
 	type ResponseHandler = (); // Don't handle responses for now.
+	type SubscriptionService = (); // don't handle subscriptions for now
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
@@ -328,6 +330,7 @@ impl cumulus_pallet_xcm::Config for Runtime {
 
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
+	type DisabledValidators = ();
 }
 
 construct_runtime! {

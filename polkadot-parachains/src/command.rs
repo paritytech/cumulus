@@ -70,6 +70,7 @@ fn load_spec(
 		
 		"integritee-kusama-local" => Box::new(integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::KusamaLocal)),
 		"integritee-kusama-local-dev" => Box::new(integritee_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::KusamaLocal)),
+		"integritee-kusama-fresh" => Box::new(integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Kusama)),
 		"integritee-kusama" => Box::new(integritee_kusama_config()?),
 
 		"integritee-westend" => Box::new(integritee_westend_config()?),
@@ -84,6 +85,7 @@ fn load_spec(
 		
 		"shell-kusama-local" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::KusamaLocal)),
 		"shell-kusama-local-dev" => Box::new(shell_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::KusamaLocal)),
+		"shell-kusama-fresh" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Kusama)),
 		"shell-kusama" => Box::new(shell_kusama_config()?),
 		
 		"shell-polkadot-local" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::PolkadotLocal)),

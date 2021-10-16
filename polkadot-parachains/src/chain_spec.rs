@@ -260,6 +260,7 @@ fn shell_genesis_config(
 
 pub enum RelayChain {
 	RococoLocal,
+	Kusama,
 	KusamaLocal,
 	PolkadotLocal,
 	Rococo,
@@ -286,6 +287,7 @@ impl ToString for RelayChain {
 	fn to_string(&self) -> String {
 		match self {
 			RelayChain::RococoLocal => "rococo-local".into(),
+			RelayChain::Kusama => "kusama".into(),
 			RelayChain::KusamaLocal => "kusama-local".into(),
 			RelayChain::PolkadotLocal => "polkadot-local".into(),
 			RelayChain::Rococo => "rococo".into(),
@@ -300,6 +302,7 @@ impl RelayChain {
 			RelayChain::RococoLocal => ChainType::Local,
 			RelayChain::KusamaLocal => ChainType::Local,
 			RelayChain::PolkadotLocal => ChainType::Local,
+			RelayChain::Kusama => ChainType::Live,
 			RelayChain::Rococo => ChainType::Live,
 			RelayChain::Polkadot => ChainType::Live,
 		}
