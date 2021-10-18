@@ -10,7 +10,6 @@ edition = "2018"
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -25,7 +24,7 @@ polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", bran
 cumulus-primitives-core = { path = "../../primitives/core" }
 
 # other deps
-codec = { package = "parity-scale-codec", version = "2.0.0", features = [ "derive" ] }
+codec = { package = "parity-scale-codec", version = "2.3.0", features = [ "derive" ] }
 futures = { version = "0.3.1", features = ["compat"] }
 futures-timer = "3.0.2"
 tracing = "0.1.22"
@@ -37,14 +36,8 @@ tokio = { version = "1.10", features = ["macros"] }
 # Cumulus deps
 cumulus-test-service = { path = "../../test/service" }
 
-# Polkadot deps
-polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-
 # substrate deps
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }

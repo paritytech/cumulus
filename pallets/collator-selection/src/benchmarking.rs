@@ -19,15 +19,16 @@ use super::*;
 
 #[allow(unused)]
 use crate::Pallet as CollatorSelection;
-use sp_std::prelude::*;
-use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller, account};
-use frame_system::{RawOrigin, EventRecord};
+use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::{
 	assert_ok,
-	traits::{Currency, Get, EnsureOrigin},
+	codec::Decode,
+	traits::{Currency, EnsureOrigin, Get},
 };
+use frame_system::{EventRecord, RawOrigin};
 use pallet_authorship::EventHandler;
-use pallet_session::SessionManager;
+use pallet_session::{self as session, SessionManager};
+use sp_std::prelude::*;
 
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -38,7 +39,7 @@ const SEED: u32 = 0;
 macro_rules! whitelist {
 	($acc:ident) => {
 		frame_benchmarking::benchmarking::add_to_whitelist(
-			frame_system::Account::<T>::hashed_key_for(&$acc).into()
+			frame_system::Account::<T>::hashed_key_for(&$acc).into(),
 		);
 	};
 }
@@ -51,9 +52,50 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	assert_eq!(event, &system_event);
 }
 
+fn create_funded_user<T: Config>(
+	string: &'static str,
+	n: u32,
+	balance_factor: u32,
+) -> T::AccountId {
+	let user = account(string, n, SEED);
+	let balance = T::Currency::minimum_balance() * balance_factor.into();
+	let _ = T::Currency::make_free_balance_be(&user, balance);
+	user
+}
+
+fn keys<T: Config + session::Config>(c: u32) -> <T as session::Config>::Keys {
+	use rand::{RngCore, SeedableRng};
+
+	let keys = {
+		let mut keys = [0u8; 128];
+
+		if c > 0 {
+			let mut rng = rand::rngs::StdRng::seed_from_u64(c as u64);
+			rng.fill_bytes(&mut keys);
+		}
+
+		keys
+	};
+
+	Decode::decode(&mut &keys[..]).unwrap()
+}
+
+fn validator<T: Config + session::Config>(c: u32) -> (T::AccountId, <T as session::Config>::Keys) {
+	(create_funded_user::<T>("candidate", c, 1000), keys::<T>(c))
+}
+
+fn register_validators<T: Config + session::Config>(count: u32) {
+	let validators = (0..count).map(|c| validator::<T>(c)).collect::<Vec<_>>();
+
+	for (who, keys) in validators {
+		<session::Module<T>>::set_keys(RawOrigin::Signed(who).into(), keys, vec![]).unwrap();
+	}
+}
+
 fn register_candidates<T: Config>(count: u32) {
 	let candidates = (0..count).map(|c| account("candidate", c, SEED)).collect::<Vec<_>>();
 	assert!(<CandidacyBond<T>>::get() > 0u32.into(), "Bond cannot be zero!");
+
 	for who in candidates {
 		T::Currency::make_free_balance_be(&who, <CandidacyBond<T>>::get() * 2u32.into());
 		<CollatorSelection<T>>::register_as_candidate(RawOrigin::Signed(who).into()).unwrap();
@@ -61,7 +103,7 @@ fn register_candidates<T: Config>(count: u32) {
 }
 
 benchmarks! {
-	where_clause { where T: pallet_authorship::Config }
+	where_clause { where T: pallet_authorship::Config + session::Config }
 
 	set_invulnerables {
 		let b in 1 .. T::MaxInvulnerables::get();
@@ -107,11 +149,19 @@ benchmarks! {
 
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c + 1);
+
+		register_validators::<T>(c);
 		register_candidates::<T>(c);
 
 		let caller: T::AccountId = whitelisted_caller();
 		let bond: BalanceOf<T> = T::Currency::minimum_balance() * 2u32.into();
 		T::Currency::make_free_balance_be(&caller, bond.clone());
+
+		<session::Module<T>>::set_keys(
+			RawOrigin::Signed(caller.clone()).into(),
+			keys::<T>(c + 1),
+			vec![]
+		).unwrap();
 
 	}: _(RawOrigin::Signed(caller.clone()))
 	verify {
@@ -120,9 +170,11 @@ benchmarks! {
 
 	// worse case is the last candidate leaving.
 	leave_intent {
-		let c in 1 .. T::MaxCandidates::get();
+		let c in (T::MinCandidates::get() + 1) .. T::MaxCandidates::get();
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c);
+
+		register_validators::<T>(c);
 		register_candidates::<T>(c);
 
 		let leaving = <Candidates<T>>::get().last().unwrap().who.clone();
@@ -151,8 +203,7 @@ benchmarks! {
 		assert_eq!(frame_system::Pallet::<T>::block_number(), new_block);
 	}
 
-	// worse case is on new session.
-	// TODO review this benchmark
+	// worst case for new session.
 	new_session {
 		let r in 1 .. T::MaxCandidates::get();
 		let c in 1 .. T::MaxCandidates::get();
@@ -160,6 +211,8 @@ benchmarks! {
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c);
 		frame_system::Pallet::<T>::set_block_number(0u32.into());
+
+		register_validators::<T>(c);
 		register_candidates::<T>(c);
 
 		let new_block: T::BlockNumber = 1800u32.into();
@@ -171,19 +224,32 @@ benchmarks! {
 		for i in 0..c {
 			<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), zero_block);
 		}
-		for i in 0..non_removals {
-			<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), new_block);
+
+		if non_removals > 0 {
+			for i in 0..non_removals {
+				<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), new_block);
+			}
+		} else {
+			for i in 0..c {
+				<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), new_block);
+			}
 		}
 
 		let pre_length = <Candidates<T>>::get().len();
+
 		frame_system::Pallet::<T>::set_block_number(new_block);
 
 		assert!(<Candidates<T>>::get().len() == c as usize);
-
 	}: {
 		<CollatorSelection<T> as SessionManager<_>>::new_session(0)
 	} verify {
-		assert!(<Candidates<T>>::get().len() < pre_length);
+		if c > r && non_removals >= T::MinCandidates::get() {
+			assert!(<Candidates<T>>::get().len() < pre_length);
+		} else if c > r && non_removals < T::MinCandidates::get() {
+			assert!(<Candidates<T>>::get().len() == T::MinCandidates::get() as usize);
+		} else {
+			assert!(<Candidates<T>>::get().len() == pre_length);
+		}
 	}
 }
 

@@ -113,10 +113,7 @@ pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
-	NativeVersion {
-		runtime_version: VERSION,
-		can_author_with: Default::default(),
-	}
+	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
 /// We assume that ~10% of the block weight is consumed by `on_initalize` handlers.
@@ -226,11 +223,16 @@ impl pallet_balances::Config for Runtime {
 	type ReserveIdentifier = [u8; 8];
 }
 
+parameter_types! {
+	pub const OperationalFeeMultiplier: u8 = 5;
+}
+
 impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
 	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = IdentityFee<Balance>;
 	type FeeMultiplierUpdate = ();
+	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 }
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
@@ -347,7 +349,7 @@ impl_runtime_apis! {
 
 	impl sp_api::Metadata<Block> for Runtime {
 		fn metadata() -> OpaqueMetadata {
-			Runtime::metadata().into()
+			OpaqueMetadata::new(Runtime::metadata().into())
 		}
 	}
 
@@ -421,11 +423,8 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 	) -> sp_inherents::CheckInherentsResult {
 		if relay_state_proof.read_slot().expect("Reads slot") == 1337u64 {
 			let mut res = sp_inherents::CheckInherentsResult::new();
-			res.put_error(
-				[1u8; 8],
-				&sp_inherents::MakeFatalError::from("You are wrong"),
-			)
-			.expect("Puts error");
+			res.put_error([1u8; 8], &sp_inherents::MakeFatalError::from("You are wrong"))
+				.expect("Puts error");
 			res
 		} else {
 			let relay_chain_slot = relay_state_proof

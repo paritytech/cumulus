@@ -17,12 +17,12 @@
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId,
 };
+use polkadot_primitives::v1::UpgradeGoAhead;
 use sp_runtime::traits::HashFor;
 use sp_state_machine::MemoryDB;
 use sp_std::collections::btree_map::BTreeMap;
 
 /// Builds a sproof (portmanteau of 'spoof' and 'proof') of the relay chain state.
-#[derive(Clone)]
 pub struct RelayStateSproofBuilder {
 	/// The para id of the current parachain.
 	///
@@ -36,6 +36,7 @@ pub struct RelayStateSproofBuilder {
 
 	pub host_config: AbridgedHostConfiguration,
 	pub dmq_mqc_head: Option<relay_chain::Hash>,
+	pub upgrade_go_ahead: Option<UpgradeGoAhead>,
 	pub relay_dispatch_queue_size: Option<(u32, u32)>,
 	pub hrmp_ingress_channel_index: Option<Vec<ParaId>>,
 	pub hrmp_egress_channel_index: Option<Vec<ParaId>>,
@@ -59,11 +60,32 @@ impl Default for RelayStateSproofBuilder {
 				validation_upgrade_delay: 6,
 			},
 			dmq_mqc_head: None,
+			upgrade_go_ahead: None,
 			relay_dispatch_queue_size: None,
 			hrmp_ingress_channel_index: None,
 			hrmp_egress_channel_index: None,
 			hrmp_channels: BTreeMap::new(),
 			current_slot: 0.into(),
+		}
+	}
+}
+
+// TODO: derive `Copy` and `Clone` for `UpgradeGoAhead` to avoid manual implementation.
+impl Clone for RelayStateSproofBuilder {
+	fn clone(&self) -> Self {
+		RelayStateSproofBuilder {
+			para_id: self.para_id,
+			host_config: self.host_config.clone(),
+			dmq_mqc_head: self.dmq_mqc_head.clone(),
+			upgrade_go_ahead: self.upgrade_go_ahead.as_ref().map(|u| match u {
+				UpgradeGoAhead::Abort => UpgradeGoAhead::Abort,
+				UpgradeGoAhead::GoAhead => UpgradeGoAhead::GoAhead,
+			}),
+			relay_dispatch_queue_size: self.relay_dispatch_queue_size,
+			hrmp_ingress_channel_index: self.hrmp_ingress_channel_index.clone(),
+			hrmp_egress_channel_index: self.hrmp_egress_channel_index.clone(),
+			hrmp_channels: self.hrmp_channels.clone(),
+			current_slot: self.current_slot.clone(),
 		}
 	}
 }
@@ -81,10 +103,7 @@ impl RelayStateSproofBuilder {
 		}
 
 		self.hrmp_channels
-			.entry(relay_chain::v1::HrmpChannelId {
-				sender,
-				recipient: self.para_id,
-			})
+			.entry(relay_chain::v1::HrmpChannelId { sender, recipient: self.para_id })
 			.or_insert_with(|| AbridgedHrmpChannel {
 				max_capacity: 0,
 				max_total_size: 0,
@@ -97,10 +116,7 @@ impl RelayStateSproofBuilder {
 
 	pub fn into_state_root_and_proof(
 		self,
-	) -> (
-		polkadot_primitives::v1::Hash,
-		sp_state_machine::StorageProof,
-	) {
+	) -> (polkadot_primitives::v1::Hash, sp_state_machine::StorageProof) {
 		let (db, root) = MemoryDB::<HashFor<polkadot_primitives::v1::Block>>::default_with_root();
 		let state_version = Default::default(); // for test using default.
 		let mut backend = sp_state_machine::TrieBackend::new(db, root);
@@ -114,10 +130,7 @@ impl RelayStateSproofBuilder {
 				backend.insert(vec![(None, vec![(key, Some(value))])], state_version);
 			};
 
-			insert(
-				relay_chain::well_known_keys::ACTIVE_CONFIG.to_vec(),
-				self.host_config.encode(),
-			);
+			insert(relay_chain::well_known_keys::ACTIVE_CONFIG.to_vec(), self.host_config.encode());
 			if let Some(dmq_mqc_head) = self.dmq_mqc_head {
 				insert(
 					relay_chain::well_known_keys::dmq_mqc_head(self.para_id),
@@ -128,6 +141,12 @@ impl RelayStateSproofBuilder {
 				insert(
 					relay_chain::well_known_keys::relay_dispatch_queue_size(self.para_id),
 					relay_dispatch_queue_size.encode(),
+				);
+			}
+			if let Some(upgrade_go_ahead) = self.upgrade_go_ahead {
+				insert(
+					relay_chain::well_known_keys::upgrade_go_ahead_signal(self.para_id),
+					upgrade_go_ahead.encode(),
 				);
 			}
 			if let Some(hrmp_ingress_channel_index) = self.hrmp_ingress_channel_index {
@@ -151,16 +170,10 @@ impl RelayStateSproofBuilder {
 				);
 			}
 			for (channel, metadata) in self.hrmp_channels {
-				insert(
-					relay_chain::well_known_keys::hrmp_channels(channel),
-					metadata.encode(),
-				);
+				insert(relay_chain::well_known_keys::hrmp_channels(channel), metadata.encode());
 			}
 
-			insert(
-				relay_chain::well_known_keys::CURRENT_SLOT.to_vec(),
-				self.current_slot.encode(),
-			);
+			insert(relay_chain::well_known_keys::CURRENT_SLOT.to_vec(), self.current_slot.encode());
 		}
 
 		let root = backend.root().clone();

@@ -18,18 +18,18 @@ use codec::{Decode, Encode};
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId,
 };
-use sp_trie::{MemoryDB, HashDBT, EMPTY_PREFIX};
+use scale_info::TypeInfo;
 use sp_runtime::traits::HashFor;
 use sp_state_machine::{Backend, TrieBackend};
 use sp_std::vec::Vec;
-use sp_trie::StorageProof;
+use sp_trie::{HashDBT, MemoryDB, StorageProof, EMPTY_PREFIX};
 
 /// A snapshot of some messaging related state of relay chain pertaining to the current parachain.
 ///
 /// This data is essential for making sure that the parachain is aware of current resource use on
 /// the relay chain and that the candidates produced for this parachain do not exceed any of these
 /// limits.
-#[derive(Clone, Encode, Decode)]
+#[derive(Clone, Encode, Decode, TypeInfo)]
 pub struct MessagingStateSnapshot {
 	/// The current message queue chain head for downward message queue.
 	///
@@ -65,6 +65,10 @@ pub enum Error {
 	RootMismatch,
 	/// The slot cannot be extracted.
 	Slot(ReadEntryErr),
+	/// The upgrade go-ahead signal cannot be read.
+	UpgradeGoAhead(ReadEntryErr),
+	/// The upgrade restriction signal cannot be read.
+	UpgradeRestriction(ReadEntryErr),
 	/// The host configuration cannot be extracted.
 	Config(ReadEntryErr),
 	/// The DMQ MQC head cannot be extracted.
@@ -109,6 +113,23 @@ where
 		.ok_or(ReadEntryErr::Absent)
 }
 
+/// Read an optional entry given by the key and try to decode it.
+/// Returns `None` if the value specified by the key according to the proof is empty.
+///
+/// Returns `Err` in case the backend can't return the value under the specific key (likely due to
+/// a malformed proof) or if the value couldn't be decoded.
+fn read_optional_entry<T, B>(backend: &B, key: &[u8]) -> Result<Option<T>, ReadEntryErr>
+where
+	T: Decode,
+	B: Backend<HashFor<relay_chain::Block>>,
+{
+	match read_entry(backend, key, None) {
+		Ok(v) => Ok(Some(v)),
+		Err(ReadEntryErr::Absent) => Ok(None),
+		Err(err) => Err(err),
+	}
+}
+
 /// A state proof extracted from the relay chain.
 ///
 /// This state proof is extracted from the relay chain block we are building on top of.
@@ -129,14 +150,11 @@ impl RelayChainStateProof {
 	) -> Result<Self, Error> {
 		let db = proof.into_memory_db::<HashFor<relay_chain::Block>>();
 		if !db.contains(&relay_parent_storage_root, EMPTY_PREFIX) {
-			return Err(Error::RootMismatch);
+			return Err(Error::RootMismatch)
 		}
 		let trie_backend = TrieBackend::new(db, relay_parent_storage_root);
 
-		Ok(Self {
-			para_id,
-			trie_backend,
-		})
+		Ok(Self { para_id, trie_backend })
 	}
 
 	/// Read the [`MessagingStateSnapshot`] from the relay chain state proof.
@@ -173,10 +191,7 @@ impl RelayChainStateProof {
 
 		let mut ingress_channels = Vec::with_capacity(ingress_channel_index.len());
 		for sender in ingress_channel_index {
-			let channel_id = relay_chain::v1::HrmpChannelId {
-				sender,
-				recipient: self.para_id,
-			};
+			let channel_id = relay_chain::v1::HrmpChannelId { sender, recipient: self.para_id };
 			let hrmp_channel: AbridgedHrmpChannel = read_entry(
 				&self.trie_backend,
 				&relay_chain::well_known_keys::hrmp_channels(channel_id),
@@ -188,10 +203,7 @@ impl RelayChainStateProof {
 
 		let mut egress_channels = Vec::with_capacity(egress_channel_index.len());
 		for recipient in egress_channel_index {
-			let channel_id = relay_chain::v1::HrmpChannelId {
-				sender: self.para_id,
-				recipient,
-			};
+			let channel_id = relay_chain::v1::HrmpChannelId { sender: self.para_id, recipient };
 			let hrmp_channel: AbridgedHrmpChannel = read_entry(
 				&self.trie_backend,
 				&relay_chain::well_known_keys::hrmp_channels(channel_id),
@@ -225,6 +237,40 @@ impl RelayChainStateProof {
 	///
 	/// Returns an error if anything failed at reading or decoding.
 	pub fn read_slot(&self) -> Result<relay_chain::v1::Slot, Error> {
-		read_entry(&self.trie_backend, relay_chain::well_known_keys::CURRENT_SLOT, None).map_err(Error::Slot)
+		read_entry(&self.trie_backend, relay_chain::well_known_keys::CURRENT_SLOT, None)
+			.map_err(Error::Slot)
+	}
+
+	/// Read the go-ahead signal for the upgrade from the relay chain state proof.
+	///
+	/// The go-ahead specifies whether the parachain can apply the upgrade or should abort it. If
+	/// the value is absent then there is either no judgment by the relay chain yet or no upgrade
+	/// is pending.
+	///
+	/// Returns an error if anything failed at reading or decoding.
+	pub fn read_upgrade_go_ahead_signal(
+		&self,
+	) -> Result<Option<relay_chain::v1::UpgradeGoAhead>, Error> {
+		read_optional_entry(
+			&self.trie_backend,
+			&relay_chain::well_known_keys::upgrade_go_ahead_signal(self.para_id),
+		)
+		.map_err(Error::UpgradeGoAhead)
+	}
+
+	/// Read the upgrade restriction signal for the upgrade from the relay chain state proof.
+	///
+	/// If the upgrade restriction is not `None`, then the parachain cannot signal an upgrade at
+	/// this block.
+	///
+	/// Returns an error if anything failed at reading or decoding.
+	pub fn read_upgrade_restriction_signal(
+		&self,
+	) -> Result<Option<relay_chain::v1::UpgradeRestriction>, Error> {
+		read_optional_entry(
+			&self.trie_backend,
+			&relay_chain::well_known_keys::upgrade_restriction_signal(self.para_id),
+		)
+		.map_err(Error::UpgradeRestriction)
 	}
 }

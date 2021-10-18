@@ -29,7 +29,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -43,7 +43,7 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{Contains, Everything, InstanceFilter},
+	traits::{Contains, Everything, InstanceFilter, Nothing},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
 		DispatchClass, IdentityFee, Weight,
@@ -56,11 +56,10 @@ use frame_system::{
 };
 pub use parachains_common as common;
 use parachains_common::{
-	impls::DealWithFees, opaque, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index,
-	Signature, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO,
-	SLOT_DURATION,
+	impls::{AssetsToBlockAuthor, DealWithFees, NonZeroIssuance},
+	opaque, AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
+	AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
-use sp_runtime::Perbill;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -71,13 +70,14 @@ use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
-	EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset,
+	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom,
+	AsPrefixedGeneralIndex, ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin,
+	FixedWeightBounds, FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset,
 	ParentAsSuperuser, ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative,
-	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+	SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
-use xcm_executor::{Config, XcmExecutor};
+use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
 impl_opaque_keys! {
 	pub struct SessionKeys {
@@ -90,19 +90,16 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("statemine"),
 	impl_name: create_runtime_str!("statemine"),
 	authoring_version: 1,
-	spec_version: 3,
+	spec_version: 5,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 1,
+	transaction_version: 3,
 };
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
-	NativeVersion {
-		runtime_version: VERSION,
-		can_author_with: Default::default(),
-	}
+	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
 parameter_types! {
@@ -210,6 +207,7 @@ impl pallet_balances::Config for Runtime {
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
 	pub const TransactionByteFee: Balance = 1 * MILLICENTS;
+	pub const OperationalFeeMultiplier: u8 = 5;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -218,6 +216,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = WeightToFee;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
+	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 }
 
 parameter_types! {
@@ -241,7 +240,7 @@ pub type AssetsForceOrigin = EnsureOneOf<
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
 	type Balance = Balance;
-	type AssetId = u32;
+	type AssetId = AssetId;
 	type Currency = Balances;
 	type ForceOrigin = AssetsForceOrigin;
 	type AssetDeposit = AssetDeposit;
@@ -320,7 +319,17 @@ parameter_types! {
 
 /// The type used to represent the kinds of proxying allowed.
 #[derive(
-	Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug, MaxEncodedLen,
+	Copy,
+	Clone,
+	Eq,
+	PartialEq,
+	Ord,
+	PartialOrd,
+	Encode,
+	Decode,
+	RuntimeDebug,
+	MaxEncodedLen,
+	scale_info::TypeInfo,
 )]
 pub enum ProxyType {
 	/// Fully permissioned proxy. Can execute any call on behalf of _proxied_.
@@ -347,59 +356,60 @@ impl InstanceFilter<Call> for ProxyType {
 	fn filter(&self, c: &Call) -> bool {
 		match self {
 			ProxyType::Any => true,
-			ProxyType::NonTransfer => {
-				!matches!(c, Call::Balances(..) | Call::Assets(..) | Call::Uniques(..))
-			}
+			ProxyType::NonTransfer =>
+				!matches!(c, Call::Balances { .. } | Call::Assets { .. } | Call::Uniques { .. }),
 			ProxyType::CancelProxy => matches!(
 				c,
-				Call::Proxy(pallet_proxy::Call::reject_announcement(..))
-					| Call::Utility(..) | Call::Multisig(..)
+				Call::Proxy(pallet_proxy::Call::reject_announcement { .. }) |
+					Call::Utility { .. } | Call::Multisig { .. }
 			),
 			ProxyType::Assets => {
 				matches!(
 					c,
-					Call::Assets(..) | Call::Utility(..) | Call::Multisig(..) | Call::Uniques(..)
+					Call::Assets { .. } |
+						Call::Utility { .. } | Call::Multisig { .. } |
+						Call::Uniques { .. }
 				)
-			}
+			},
 			ProxyType::AssetOwner => matches!(
 				c,
-				Call::Assets(pallet_assets::Call::create(..))
-					| Call::Assets(pallet_assets::Call::destroy(..))
-					| Call::Assets(pallet_assets::Call::transfer_ownership(..))
-					| Call::Assets(pallet_assets::Call::set_team(..))
-					| Call::Assets(pallet_assets::Call::set_metadata(..))
-					| Call::Assets(pallet_assets::Call::clear_metadata(..))
-					| Call::Uniques(pallet_uniques::Call::create(..))
-					| Call::Uniques(pallet_uniques::Call::destroy(..))
-					| Call::Uniques(pallet_uniques::Call::transfer_ownership(..))
-					| Call::Uniques(pallet_uniques::Call::set_team(..))
-					| Call::Uniques(pallet_uniques::Call::set_metadata(..))
-					| Call::Uniques(pallet_uniques::Call::set_attribute(..))
-					| Call::Uniques(pallet_uniques::Call::set_class_metadata(..))
-					| Call::Uniques(pallet_uniques::Call::clear_metadata(..))
-					| Call::Uniques(pallet_uniques::Call::clear_attribute(..))
-					| Call::Uniques(pallet_uniques::Call::clear_class_metadata(..))
-					| Call::Utility(..) | Call::Multisig(..)
+				Call::Assets(pallet_assets::Call::create { .. }) |
+					Call::Assets(pallet_assets::Call::destroy { .. }) |
+					Call::Assets(pallet_assets::Call::transfer_ownership { .. }) |
+					Call::Assets(pallet_assets::Call::set_team { .. }) |
+					Call::Assets(pallet_assets::Call::set_metadata { .. }) |
+					Call::Assets(pallet_assets::Call::clear_metadata { .. }) |
+					Call::Uniques(pallet_uniques::Call::create { .. }) |
+					Call::Uniques(pallet_uniques::Call::destroy { .. }) |
+					Call::Uniques(pallet_uniques::Call::transfer_ownership { .. }) |
+					Call::Uniques(pallet_uniques::Call::set_team { .. }) |
+					Call::Uniques(pallet_uniques::Call::set_metadata { .. }) |
+					Call::Uniques(pallet_uniques::Call::set_attribute { .. }) |
+					Call::Uniques(pallet_uniques::Call::set_class_metadata { .. }) |
+					Call::Uniques(pallet_uniques::Call::clear_metadata { .. }) |
+					Call::Uniques(pallet_uniques::Call::clear_attribute { .. }) |
+					Call::Uniques(pallet_uniques::Call::clear_class_metadata { .. }) |
+					Call::Utility { .. } | Call::Multisig { .. }
 			),
 			ProxyType::AssetManager => matches!(
 				c,
-				Call::Assets(pallet_assets::Call::mint(..))
-					| Call::Assets(pallet_assets::Call::burn(..))
-					| Call::Assets(pallet_assets::Call::freeze(..))
-					| Call::Assets(pallet_assets::Call::thaw(..))
-					| Call::Assets(pallet_assets::Call::freeze_asset(..))
-					| Call::Assets(pallet_assets::Call::thaw_asset(..))
-					| Call::Uniques(pallet_uniques::Call::mint(..))
-					| Call::Uniques(pallet_uniques::Call::burn(..))
-					| Call::Uniques(pallet_uniques::Call::freeze(..))
-					| Call::Uniques(pallet_uniques::Call::thaw(..))
-					| Call::Uniques(pallet_uniques::Call::freeze_class(..))
-					| Call::Uniques(pallet_uniques::Call::thaw_class(..))
-					| Call::Utility(..) | Call::Multisig(..)
+				Call::Assets(pallet_assets::Call::mint { .. }) |
+					Call::Assets(pallet_assets::Call::burn { .. }) |
+					Call::Assets(pallet_assets::Call::freeze { .. }) |
+					Call::Assets(pallet_assets::Call::thaw { .. }) |
+					Call::Assets(pallet_assets::Call::freeze_asset { .. }) |
+					Call::Assets(pallet_assets::Call::thaw_asset { .. }) |
+					Call::Uniques(pallet_uniques::Call::mint { .. }) |
+					Call::Uniques(pallet_uniques::Call::burn { .. }) |
+					Call::Uniques(pallet_uniques::Call::freeze { .. }) |
+					Call::Uniques(pallet_uniques::Call::thaw { .. }) |
+					Call::Uniques(pallet_uniques::Call::freeze_class { .. }) |
+					Call::Uniques(pallet_uniques::Call::thaw_class { .. }) |
+					Call::Utility { .. } | Call::Multisig { .. }
 			),
 			ProxyType::Collator => matches!(
 				c,
-				Call::CollatorSelection(..) | Call::Utility(..) | Call::Multisig(..)
+				Call::CollatorSelection { .. } | Call::Utility { .. } | Call::Multisig { .. }
 			),
 		}
 	}
@@ -457,6 +467,8 @@ parameter_types! {
 	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
+	pub const Local: MultiLocation = Here.into();
+	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -471,19 +483,43 @@ pub type LocationToAccountId = (
 	AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
-/// Means for transacting assets on this chain.
-pub type LocalAssetTransactor = CurrencyAdapter<
+/// Means for transacting the native currency on this chain.
+pub type CurrencyTransactor = CurrencyAdapter<
 	// Use this currency:
 	Balances,
 	// Use this currency when it is a fungible asset matching the given location or name:
 	IsConcrete<KsmLocation>,
-	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
+	// Convert an XCM MultiLocation into a local account id:
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
 	AccountId,
-	// We don't track any teleports.
+	// We don't track any teleports of `Balances`.
 	(),
 >;
+
+/// Means for transacting assets besides the native currency on this chain.
+pub type FungiblesTransactor = FungiblesAdapter<
+	// Use this fungibles implementation:
+	Assets,
+	// Use this currency when it is a fungible asset matching the given location or name:
+	ConvertedConcreteAssetId<
+		AssetId,
+		Balance,
+		AsPrefixedGeneralIndex<Local, AssetId, JustTry>,
+		JustTry,
+	>,
+	// Convert an XCM MultiLocation into a local account id:
+	LocationToAccountId,
+	// Our chain's account ID type (we can't get away without mentioning it explicitly):
+	AccountId,
+	// We only want to allow teleports of known assets. We use non-zero issuance as an indication
+	// that this asset is known.
+	NonZeroIssuance<AccountId, Assets>,
+	// The account to use for tracking teleports.
+	CheckingAccount,
+>;
+/// Means for transacting assets on this chain.
+pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -534,7 +570,7 @@ impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// How to withdraw and deposit an asset.
-	type AssetTransactor = LocalAssetTransactor;
+	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type IsReserve = NativeAsset;
 	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of KSM
@@ -553,7 +589,7 @@ parameter_types! {
 }
 
 /// No local origins on this chain are allowed to dispatch XCM sends/executions.
-pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, RelayNetwork>;
+pub type LocalOriginToLocation = ();
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
@@ -569,7 +605,7 @@ impl pallet_xcm::Config for Runtime {
 	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
 	type XcmRouter = XcmRouter;
 	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-	type XcmExecuteFilter = Everything;
+	type XcmExecuteFilter = Nothing;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;
 	type XcmReserveTransferFilter = Everything;
@@ -601,7 +637,6 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 }
 
 parameter_types! {
-	pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(33);
 	pub const Period: u32 = 6 * HOURS;
 	pub const Offset: u32 = 0;
 	pub const MaxAuthorities: u32 = 100_000;
@@ -618,7 +653,6 @@ impl pallet_session::Config for Runtime {
 	// Essentially just Aura, but lets be pedantic.
 	type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = SessionKeys;
-	type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
 	type WeightInfo = weights::pallet_session::WeightInfo<Runtime>;
 }
 
@@ -659,6 +693,14 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = weights::pallet_collator_selection::WeightInfo<Runtime>;
 }
 
+impl pallet_asset_tx_payment::Config for Runtime {
+	type Fungibles = Assets;
+	type OnChargeAssetTransaction = pallet_asset_tx_payment::FungiblesAdapter<
+		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
+		AssetsToBlockAuthor<Runtime>,
+	>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -678,6 +720,7 @@ construct_runtime!(
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+		AssetTxPayment: pallet_asset_tx_payment::{Pallet} = 12,
 
 		// Collator support. the order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
@@ -719,7 +762,7 @@ pub type SignedExtra = (
 	frame_system::CheckEra<Runtime>,
 	frame_system::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
-	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+	pallet_asset_tx_payment::ChargeAssetTxPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
@@ -732,17 +775,8 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPallets,
-	OnRuntimeUpgrade,
+	(),
 >;
-
-pub struct OnRuntimeUpgrade;
-impl frame_support::traits::OnRuntimeUpgrade for OnRuntimeUpgrade {
-	fn on_runtime_upgrade() -> u64 {
-		frame_support::migrations::migrate_from_pallet_version_to_storage_version::<
-			AllPalletsWithSystem,
-		>(&RocksDbWeight::get())
-	}
-}
 
 impl_runtime_apis! {
 	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
@@ -771,7 +805,7 @@ impl_runtime_apis! {
 
 	impl sp_api::Metadata<Block> for Runtime {
 		fn metadata() -> OpaqueMetadata {
-			Runtime::metadata().into()
+			OpaqueMetadata::new(Runtime::metadata().into())
 		}
 	}
 

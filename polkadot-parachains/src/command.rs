@@ -18,8 +18,8 @@ use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{
-		StatemineRuntimeExecutor, StatemintRuntimeExecutor, WestmintRuntimeExecutor, new_partial,
-		RococoParachainRuntimeExecutor, ShellRuntimeExecutor, Block,
+		new_partial, Block, RococoParachainRuntimeExecutor, ShellRuntimeExecutor,
+		StatemineRuntimeExecutor, StatemintRuntimeExecutor, WestmintRuntimeExecutor,
 	},
 };
 use codec::Encode;
@@ -124,7 +124,7 @@ fn load_spec(
 			} else {
 				Box::new(chain_spec)
 			}
-		}
+		},
 	})
 }
 
@@ -292,27 +292,27 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::BuildSpec(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
-		}
+		},
 		Some(Subcommand::CheckBlock(cmd)) => {
 			construct_async_run!(|components, cli, cmd, config| {
 				Ok(cmd.run(components.client, components.import_queue))
 			})
-		}
+		},
 		Some(Subcommand::ExportBlocks(cmd)) => {
 			construct_async_run!(|components, cli, cmd, config| {
 				Ok(cmd.run(components.client, config.database))
 			})
-		}
+		},
 		Some(Subcommand::ExportState(cmd)) => {
 			construct_async_run!(|components, cli, cmd, config| {
 				Ok(cmd.run(components.client, config.chain_spec))
 			})
-		}
+		},
 		Some(Subcommand::ImportBlocks(cmd)) => {
 			construct_async_run!(|components, cli, cmd, config| {
 				Ok(cmd.run(components.client, components.import_queue))
 			})
-		}
+		},
 		Some(Subcommand::PurgeChain(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 
@@ -327,13 +327,13 @@ pub fn run() -> Result<()> {
 				let polkadot_config = SubstrateCli::create_configuration(
 					&polkadot_cli,
 					&polkadot_cli,
-					config.task_executor.clone(),
+					config.tokio_handle.clone(),
 				)
 				.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
 				cmd.run(config, polkadot_config)
 			})
-		}
+		},
 		Some(Subcommand::Revert(cmd)) => construct_async_run!(|components, cli, cmd, config| {
 			Ok(cmd.run(components.client, components.backend))
 		}),
@@ -360,7 +360,7 @@ pub fn run() -> Result<()> {
 			}
 
 			Ok(())
-		}
+		},
 		Some(Subcommand::ExportGenesisWasm(params)) => {
 			let mut builder = sc_cli::LoggerBuilder::new("");
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
@@ -381,8 +381,8 @@ pub fn run() -> Result<()> {
 			}
 
 			Ok(())
-		}
-		Some(Subcommand::Benchmark(cmd)) => {
+		},
+		Some(Subcommand::Benchmark(cmd)) =>
 			if cfg!(feature = "runtime-benchmarks") {
 				let runner = cli.create_runner(cmd)?;
 				if runner.config().chain_spec.is_statemine() {
@@ -398,8 +398,8 @@ pub fn run() -> Result<()> {
 				Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
 					.into())
-			}
-		}
+			},
+		Some(Subcommand::Key(cmd)) => Ok(cmd.run(&cli)?),
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 
@@ -423,50 +423,40 @@ pub fn run() -> Result<()> {
 					generate_genesis_block(&config.chain_spec).map_err(|e| format!("{:?}", e))?;
 				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
-				let task_executor = config.task_executor.clone();
+				let tokio_handle = config.tokio_handle.clone();
 				let polkadot_config =
-					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, task_executor)
+					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
 						.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
 				info!("Parachain id: {:?}", id);
 				info!("Parachain Account: {}", parachain_account);
 				info!("Parachain genesis state: {}", genesis_state);
-				info!(
-					"Is collating: {}",
-					if config.role.is_authority() {
-						"yes"
-					} else {
-						"no"
-					}
-				);
+				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
 				if config.chain_spec.is_statemint() {
-					crate::service::start_statemint_node::<statemint_runtime::RuntimeApi, StatemintRuntimeExecutor>(
-						config,
-						polkadot_config,
-						id,
-					)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
+					crate::service::start_statemint_node::<
+						statemint_runtime::RuntimeApi,
+						StatemintRuntimeExecutor,
+					>(config, polkadot_config, id)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
 				} else if config.chain_spec.is_statemine() {
-					crate::service::start_statemint_node::<statemine_runtime::RuntimeApi, StatemineRuntimeExecutor>(
-						config,
-						polkadot_config,
-						id,
-					)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
+					crate::service::start_statemint_node::<
+						statemine_runtime::RuntimeApi,
+						StatemineRuntimeExecutor,
+					>(config, polkadot_config, id)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
 				} else if config.chain_spec.is_westmint() {
-					crate::service::start_statemint_node::<westmint_runtime::RuntimeApi, WestmintRuntimeExecutor>(
-						config,
-						polkadot_config,
-						id,
-					)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
+					crate::service::start_statemint_node::<
+						westmint_runtime::RuntimeApi,
+						WestmintRuntimeExecutor,
+					>(config, polkadot_config, id)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
 				} else if config.chain_spec.is_shell() {
 					crate::service::start_shell_node(config, polkadot_config, id)
 						.await
@@ -479,7 +469,7 @@ pub fn run() -> Result<()> {
 						.map_err(Into::into)
 				}
 			})
-		}
+		},
 	}
 }
 
@@ -548,11 +538,7 @@ impl CliConfiguration<Self> for RelayChainCli {
 	fn chain_id(&self, is_dev: bool) -> Result<String> {
 		let chain_id = self.base.base.chain_id(is_dev)?;
 
-		Ok(if chain_id.is_empty() {
-			self.chain_id.clone().unwrap_or_default()
-		} else {
-			chain_id
-		})
+		Ok(if chain_id.is_empty() { self.chain_id.clone().unwrap_or_default() } else { chain_id })
 	}
 
 	fn role(&self, is_dev: bool) -> Result<sc_service::Role> {
@@ -573,10 +559,6 @@ impl CliConfiguration<Self> for RelayChainCli {
 
 	fn rpc_ws_max_connections(&self) -> Result<Option<usize>> {
 		self.base.base.rpc_ws_max_connections()
-	}
-
-	fn rpc_http_threads(&self) -> Result<Option<usize>> {
-		self.base.base.rpc_http_threads()
 	}
 
 	fn rpc_cors(&self, is_dev: bool) -> Result<Option<Vec<String>>> {

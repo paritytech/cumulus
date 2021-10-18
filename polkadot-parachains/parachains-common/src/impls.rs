@@ -16,19 +16,31 @@
 //! Auxillary struct/enums for parachain runtimes.
 //! Taken from polkadot/runtime/common (at a21cd64) and adapted for parachains.
 
-use frame_support::traits::{Currency, Imbalance, OnUnbalanced};
+use frame_support::traits::{
+	fungibles::{self, Balanced, CreditOf},
+	Contains, Currency, Get, Imbalance, OnUnbalanced,
+};
+use pallet_asset_tx_payment::HandleCredit;
+use sp_runtime::traits::Zero;
+use sp_std::marker::PhantomData;
+use xcm::latest::{AssetId, Fungibility::Fungible, MultiAsset, MultiLocation};
+use xcm_executor::traits::FilterAssetLocation;
 
+/// Type alias to conveniently refer to the `Currency::NegativeImbalance` associated type.
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
 	<T as frame_system::Config>::AccountId,
 >>::NegativeImbalance;
 
-/// Logic for the author to get a portion of fees.
-pub struct ToStakingPot<R>(sp_std::marker::PhantomData<R>);
+/// Type alias to conveniently refer to `frame_system`'s `Config::AccountId`.
+pub type AccountIdOf<R> = <R as frame_system::Config>::AccountId;
+
+/// Implementation of `OnUnbalanced` that deposits the fees into a staking pot for later payout.
+pub struct ToStakingPot<R>(PhantomData<R>);
 impl<R> OnUnbalanced<NegativeImbalance<R>> for ToStakingPot<R>
 where
 	R: pallet_balances::Config + pallet_collator_selection::Config,
-	<R as frame_system::Config>::AccountId: From<polkadot_primitives::v1::AccountId>,
-	<R as frame_system::Config>::AccountId: Into<polkadot_primitives::v1::AccountId>,
+	AccountIdOf<R>:
+		From<polkadot_primitives::v1::AccountId> + Into<polkadot_primitives::v1::AccountId>,
 	<R as frame_system::Config>::Event: From<pallet_balances::Event<R>>,
 {
 	fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
@@ -42,12 +54,14 @@ where
 	}
 }
 
-pub struct DealWithFees<R>(sp_std::marker::PhantomData<R>);
+/// Implementation of `OnUnbalanced` that deals with the fees by combining tip and fee and passing
+/// the result on to `ToStakingPot`.
+pub struct DealWithFees<R>(PhantomData<R>);
 impl<R> OnUnbalanced<NegativeImbalance<R>> for DealWithFees<R>
 where
 	R: pallet_balances::Config + pallet_collator_selection::Config,
-	<R as frame_system::Config>::AccountId: From<polkadot_primitives::v1::AccountId>,
-	<R as frame_system::Config>::AccountId: Into<polkadot_primitives::v1::AccountId>,
+	AccountIdOf<R>:
+		From<polkadot_primitives::v1::AccountId> + Into<polkadot_primitives::v1::AccountId>,
 	<R as frame_system::Config>::Event: From<pallet_balances::Event<R>>,
 {
 	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance<R>>) {
@@ -57,6 +71,45 @@ where
 			}
 			<ToStakingPot<R> as OnUnbalanced<_>>::on_unbalanced(fees);
 		}
+	}
+}
+
+/// A `HandleCredit` implementation that naively transfers the fees to the block author.
+/// Will drop and burn the assets in case the transfer fails.
+pub struct AssetsToBlockAuthor<R>(PhantomData<R>);
+impl<R> HandleCredit<AccountIdOf<R>, pallet_assets::Pallet<R>> for AssetsToBlockAuthor<R>
+where
+	R: pallet_authorship::Config + pallet_assets::Config,
+	AccountIdOf<R>:
+		From<polkadot_primitives::v1::AccountId> + Into<polkadot_primitives::v1::AccountId>,
+{
+	fn handle_credit(credit: CreditOf<AccountIdOf<R>, pallet_assets::Pallet<R>>) {
+		let author = pallet_authorship::Pallet::<R>::author();
+		// In case of error: Will drop the result triggering the `OnDrop` of the imbalance.
+		let _ = pallet_assets::Pallet::<R>::resolve(&author, credit);
+	}
+}
+
+/// Allow checking in assets that have issuance > 0.
+pub struct NonZeroIssuance<AccountId, Assets>(PhantomData<(AccountId, Assets)>);
+impl<AccountId, Assets> Contains<<Assets as fungibles::Inspect<AccountId>>::AssetId>
+	for NonZeroIssuance<AccountId, Assets>
+where
+	Assets: fungibles::Inspect<AccountId>,
+{
+	fn contains(id: &<Assets as fungibles::Inspect<AccountId>>::AssetId) -> bool {
+		!Assets::total_issuance(*id).is_zero()
+	}
+}
+
+/// Asset filter that allows all assets from a certain location.
+pub struct AssetsFrom<T>(PhantomData<T>);
+impl<T: Get<MultiLocation>> FilterAssetLocation for AssetsFrom<T> {
+	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+		let loc = T::get();
+		&loc == origin &&
+			matches!(asset, MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) }
+			if asset_loc.match_and_split(&loc).is_some())
 	}
 }
 
@@ -77,6 +130,7 @@ mod tests {
 		traits::{BlakeTwo256, IdentityLookup},
 		Perbill,
 	};
+	use xcm::prelude::*;
 
 	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 	type Block = frame_system::mocking::MockBlock<Test>;
@@ -185,9 +239,7 @@ mod tests {
 	}
 
 	pub fn new_test_ext() -> sp_io::TestExternalities {
-		let mut t = frame_system::GenesisConfig::default()
-			.build_storage::<Test>()
-			.unwrap();
+		let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 		// We use default for brevity, but you can configure as desired if needed.
 		pallet_balances::GenesisConfig::<Test>::default()
 			.assimilate_storage(&mut t)
@@ -208,5 +260,25 @@ mod tests {
 			// Author gets 100% of tip and 100% of fee = 30
 			assert_eq!(Balances::free_balance(CollatorSelection::account_id()), 30);
 		});
+	}
+
+	#[test]
+	fn assets_from_filters_correctly() {
+		parameter_types! {
+			pub SomeSiblingParachain: MultiLocation = MultiLocation::new(1, X1(Parachain(1234)));
+		}
+
+		let asset_location = SomeSiblingParachain::get()
+			.clone()
+			.pushed_with_interior(GeneralIndex(42))
+			.expect("multilocation will only have 2 junctions; qed");
+		let asset = MultiAsset { id: Concrete(asset_location), fun: 1_000_000.into() };
+		assert!(
+			AssetsFrom::<SomeSiblingParachain>::filter_asset_location(
+				&asset,
+				&SomeSiblingParachain::get()
+			),
+			"AssetsFrom should allow assets from any of its interior locations"
+		);
 	}
 }

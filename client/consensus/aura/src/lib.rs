@@ -215,9 +215,8 @@ where
 		relay_parent: PHash,
 		validation_data: &PersistedValidationData,
 	) -> Option<ParachainCandidate<B>> {
-		let (inherent_data, inherent_data_providers) = self
-			.inherent_data(parent.hash(), validation_data, relay_parent)
-			.await?;
+		let (inherent_data, inherent_data_providers) =
+			self.inherent_data(parent.hash(), validation_data, relay_parent).await?;
 
 		let info = SlotInfo::new(
 			inherent_data_providers.slot(),
@@ -234,10 +233,7 @@ where
 
 		let res = self.aura_worker.lock().await.on_slot(info).await?;
 
-		Some(ParachainCandidate {
-			block: res.block,
-			proof: res.storage_proof,
-		})
+		Some(ParachainCandidate { block: res.block, proof: res.storage_proof })
 	}
 }
 
@@ -282,8 +278,6 @@ pub fn build_aura_consensus<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Er
 ) -> Box<dyn ParachainConsensus<Block>>
 where
 	Block: BlockT,
-	// Rust bug: https://github.com/rust-lang/rust/issues/24159
-	sc_client_api::StateBackendFor<RBackend, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
 	RBackend: Backend<PBlock> + 'static,
 	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)>
 		+ Send
@@ -365,8 +359,6 @@ impl<Block, PF, BI, RBackend, CIDP, Client, SO, BS, P, Error>
 	AuraConsensusBuilder<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Error>
 where
 	Block: BlockT,
-	// Rust bug: https://github.com/rust-lang/rust/issues/24159
-	sc_client_api::StateBackendFor<RBackend, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
 	RBackend: Backend<PBlock> + 'static,
 	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)>
 		+ Send
@@ -447,8 +439,6 @@ impl<Block, PF, BI, RBackend, CIDP, Client, SO, BS, P, Error> polkadot_client::E
 	for AuraConsensusBuilder<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Error>
 where
 	Block: BlockT,
-	// Rust bug: https://github.com/rust-lang/rust/issues/24159
-	sc_client_api::StateBackendFor<RBackend, PBlock>: sc_client_api::StateBackend<HashFor<PBlock>>,
 	RBackend: Backend<PBlock> + 'static,
 	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)>
 		+ Send

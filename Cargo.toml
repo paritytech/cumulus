@@ -7,6 +7,7 @@ members = [
 	"client/network",
 	"client/pov-recovery",
 	"client/service",
+	"pallets/asset-tx-payment",
 	"pallets/aura-ext",
 	"pallets/collator-selection",
 	"pallets/dmp-queue",
@@ -15,6 +16,8 @@ members = [
 	"pallets/session-benchmarking",
 	"pallets/xcm",
 	"pallets/xcmp-queue",
+	"parachain-template/node",
+	"parachain-template/runtime",
 	"primitives/core",
 	"primitives/parachain-inherent",
 	"primitives/timestamp",
@@ -28,12 +31,12 @@ members = [
 	"polkadot-parachains/statemint",
 	"polkadot-parachains/statemine",
 	"polkadot-parachains/westmint",
-	"test/runtime",
-	"test/runtime-upgrade",
 	"test/client",
-	"test/service",
 	"test/relay-sproof-builder",
 	"test/relay-validation-worker-provider",
+	"test/runtime",
+	"test/runtime-upgrade",
+	"test/service",
 ]
 
 [profile.release]
@@ -41,6 +44,7 @@ panic = "unwind"
 
 [patch.'https://github.com/paritytech/substrate']
 sp-core = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
+sc-rpc-api = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
 node-primitives = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
 sp-std = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
 sc-client-api = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
@@ -76,7 +80,6 @@ pallet-grandpa = { git="https://github.com/cheme/substrate", branch="state-updat
 frame-executive = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
 pallet-elections-phragmen = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
 pallet-election-provider-multi-phase = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
-frame-metadata = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
 frame-support-test = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
 remote-externalities = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
 sc-informant = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
@@ -187,9 +190,18 @@ sp-panic-handler = { git="https://github.com/cheme/substrate", branch="state-upd
 sp-npos-elections = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
 sp-npos-elections-solution-type = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
 pallet-aura = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
-pallet-assets = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
 pallet-uniques = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
 node-runtime = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
+generate-bags = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
+pallet-assets = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
+pallet-bags-list = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
+pallet-beefy = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
+pallet-beefy-mmr = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
+beefy-gadget = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
+beefy-gadget-rpc = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
+beefy-merkle-tree = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
+beefy-primitives = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
+
 
 [patch.'https://github.com/paritytech/polkadot']
 westend-runtime = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
