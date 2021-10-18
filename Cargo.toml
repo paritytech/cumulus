@@ -239,7 +239,6 @@ polkadot-availability-bitfield-distribution = { git="https://github.com/cheme/po
 polkadot-overseer = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
 polkadot-overseer-gen = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
 polkadot-overseer-gen-proc-macro = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
-polkadot-overseer-all-subsystems-gen = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
 polkadot-service = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
 polkadot-runtime = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
 polkadot-runtime-common = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }

@@ -69,7 +69,7 @@ where
 
 	// Uncompress
 	let mut db = MemoryDB::default();
-	let root = match sp_trie::decode_compact::<sp_trie::Layout<HashFor<B>>, _, _>(
+	let root = match sp_trie::decode_compact::<sp_trie::LayoutV1<HashFor<B>>, _, _>(
 		&mut db,
 		storage_proof.iter_compact_encoded_nodes(),
 		Some(parent_head.state_root()),
