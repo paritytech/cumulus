@@ -20,16 +20,10 @@ use crate::ParachainInherentData;
 use codec::Decode;
 use cumulus_client_collator::RelayChainInterface;
 use cumulus_primitives_core::{
-	relay_chain::{
-		self,
-		v1::{HrmpChannelId, ParachainHost},
-		Block as PBlock, Hash as PHash,
-	},
+	relay_chain::{self, v1::HrmpChannelId, Block as PBlock, Hash as PHash},
 	ParaId, PersistedValidationData,
 };
-use polkadot_client::{Client, ClientHandle, ExecuteWithClient};
 use sc_client_api::Backend;
-use sp_api::ProvideRuntimeApi;
 use sp_runtime::generic::BlockId;
 use sp_state_machine::Backend as _;
 
@@ -159,24 +153,6 @@ impl ParachainInherentData {
 			relay_chain_state,
 		})
 	}
-
-	/// Create the [`ParachainInherentData`] at the given `relay_parent`.
-	///
-	/// Returns `None` if the creation failed.
-	pub fn create_at_with_client(
-		relay_parent: PHash,
-		polkadot_client: &Client,
-		relay_chain_backend: &impl Backend<PBlock>,
-		validation_data: &PersistedValidationData,
-		para_id: ParaId,
-	) -> Option<ParachainInherentData> {
-		polkadot_client.execute_with(CreateAtWithClient {
-			relay_chain_backend,
-			validation_data,
-			para_id,
-			relay_parent,
-		})
-	}
 }
 
 #[async_trait::async_trait]
@@ -194,38 +170,5 @@ impl sp_inherents::InherentDataProvider for ParachainInherentData {
 		_: &[u8],
 	) -> Option<Result<(), sp_inherents::Error>> {
 		None
-	}
-}
-
-/// Special structure to run [`ParachainInherentData::create_at`] with a [`Client`].
-struct CreateAtWithClient<'a, B> {
-	relay_parent: PHash,
-	relay_chain_backend: &'a B,
-	validation_data: &'a PersistedValidationData,
-	para_id: ParaId,
-}
-
-impl<'a, B> ExecuteWithClient for CreateAtWithClient<'a, B>
-where
-	B: Backend<PBlock>,
-{
-	type Output = Option<ParachainInherentData>;
-
-	fn execute_with_client<Client, Api, Backend>(
-		self,
-		client: std::sync::Arc<Client>,
-	) -> Self::Output
-	where
-		Client: ProvideRuntimeApi<PBlock>,
-		Client::Api: ParachainHost<PBlock>,
-	{
-		todo!();
-		// ParachainInherentData::create_at(
-		// 	self.relay_parent,
-		// 	&*client,
-		// 	self.relay_chain_backend,
-		// 	self.validation_data,
-		// 	self.para_id,
-		// )
 	}
 }

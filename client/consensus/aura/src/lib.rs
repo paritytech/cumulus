@@ -27,11 +27,10 @@ use cumulus_client_consensus_common::{
 	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
 use cumulus_primitives_core::{
-	relay_chain::v1::{Block as PBlock, Hash as PHash, ParachainHost},
+	relay_chain::v1::{Block as PBlock, Hash as PHash},
 	PersistedValidationData,
 };
 use futures::lock::Mutex;
-use polkadot_client::ClientHandle;
 use sc_client_api::{backend::AuxStore, Backend, BlockOf};
 use sc_consensus::BlockImport;
 use sc_consensus_slots::{BackoffAuthoringBlocksStrategy, SlotInfo};
@@ -51,6 +50,7 @@ use std::{convert::TryFrom, hash::Hash, marker::PhantomData, sync::Arc};
 
 mod import_queue;
 
+use cumulus_client_collator::RelayChainInterface;
 pub use import_queue::{build_verifier, import_queue, BuildVerifierParams, ImportQueueParams};
 pub use sc_consensus_aura::{
 	slot_duration, AuraVerifier, BuildAuraWorkerParams, SlotDuration, SlotProportion,
@@ -60,9 +60,9 @@ pub use sc_consensus_slots::InherentDataProviderExt;
 const LOG_TARGET: &str = "aura::cumulus";
 
 /// The implementation of the AURA consensus for parachains.
-pub struct AuraConsensus<B, RClient, RBackend, CIDP> {
+pub struct AuraConsensus<B, RCInterface, RBackend, CIDP> {
 	create_inherent_data_providers: Arc<CIDP>,
-	relay_chain_client: Arc<RClient>,
+	relay_chain_interface: RCInterface,
 	relay_chain_backend: Arc<RBackend>,
 	aura_worker: Arc<
 		Mutex<
@@ -74,23 +74,25 @@ pub struct AuraConsensus<B, RClient, RBackend, CIDP> {
 	slot_duration: SlotDuration,
 }
 
-impl<B, RClient, RBackend, CIDP> Clone for AuraConsensus<B, RClient, RBackend, CIDP> {
+impl<B, RCInterface, RBackend, CIDP> Clone for AuraConsensus<B, RCInterface, RBackend, CIDP>
+where
+	RCInterface: Clone + Send + Sync,
+{
 	fn clone(&self) -> Self {
 		Self {
 			create_inherent_data_providers: self.create_inherent_data_providers.clone(),
 			relay_chain_backend: self.relay_chain_backend.clone(),
-			relay_chain_client: self.relay_chain_client.clone(),
+			relay_chain_interface: self.relay_chain_interface.clone(),
 			aura_worker: self.aura_worker.clone(),
 			slot_duration: self.slot_duration,
 		}
 	}
 }
 
-impl<B, RClient, RBackend, CIDP> AuraConsensus<B, RClient, RBackend, CIDP>
+impl<B, RCInterface, RBackend, CIDP> AuraConsensus<B, RCInterface, RBackend, CIDP>
 where
 	B: BlockT,
-	RClient: ProvideRuntimeApi<PBlock>,
-	RClient::Api: ParachainHost<PBlock>,
+	RCInterface: RelayChainInterface + Clone + Send + Sync,
 	RBackend: Backend<PBlock>,
 	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)>,
 	CIDP::InherentDataProviders: InherentDataProviderExt,
@@ -105,7 +107,7 @@ where
 		backoff_authoring_blocks: Option<BS>,
 		keystore: SyncCryptoStorePtr,
 		create_inherent_data_providers: CIDP,
-		polkadot_client: Arc<RClient>,
+		relay_chain_interface: RCInterface,
 		polkadot_backend: Arc<RBackend>,
 		slot_duration: SlotDuration,
 		telemetry: Option<TelemetryHandle>,
@@ -157,7 +159,7 @@ where
 		Self {
 			create_inherent_data_providers: Arc::new(create_inherent_data_providers),
 			relay_chain_backend: polkadot_backend,
-			relay_chain_client: polkadot_client,
+			relay_chain_interface,
 			aura_worker: Arc::new(Mutex::new(worker)),
 			slot_duration,
 		}
@@ -200,11 +202,13 @@ where
 }
 
 #[async_trait::async_trait]
-impl<B, RClient, RBackend, CIDP> ParachainConsensus<B> for AuraConsensus<B, RClient, RBackend, CIDP>
+impl<B, RCInterface, RBackend, CIDP> ParachainConsensus<B>
+	for AuraConsensus<B, RCInterface, RBackend, CIDP>
 where
 	B: BlockT,
-	RClient: ProvideRuntimeApi<PBlock> + Send + Sync,
-	RClient::Api: ParachainHost<PBlock>,
+	RCInterface: RelayChainInterface + Clone + Send + Sync,
+	// RClient: ProvideRuntimeApi<PBlock> + Send + Sync,
+	// RClient::Api: ParachainHost<PBlock>,
 	RBackend: Backend<PBlock>,
 	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)> + Send + Sync,
 	CIDP::InherentDataProviders: InherentDataProviderExt + Send,
@@ -238,11 +242,11 @@ where
 }
 
 /// Paramaters of [`build_aura_consensus`].
-pub struct BuildAuraConsensusParams<PF, BI, RBackend, CIDP, Client, BS, SO> {
+pub struct BuildAuraConsensusParams<PF, BI, RBackend, CIDP, Client, BS, SO, RCInterface> {
 	pub proposer_factory: PF,
 	pub create_inherent_data_providers: CIDP,
 	pub block_import: BI,
-	pub relay_chain_client: polkadot_client::Client,
+	pub relay_chain_interface: RCInterface,
 	pub relay_chain_backend: Arc<RBackend>,
 	pub para_client: Arc<Client>,
 	pub backoff_authoring_blocks: Option<BS>,
@@ -258,12 +262,12 @@ pub struct BuildAuraConsensusParams<PF, BI, RBackend, CIDP, Client, BS, SO> {
 /// Build the [`AuraConsensus`].
 ///
 /// Returns a boxed [`ParachainConsensus`].
-pub fn build_aura_consensus<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Error>(
+pub fn build_aura_consensus<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Error, RCInterface>(
 	BuildAuraConsensusParams {
 		proposer_factory,
 		create_inherent_data_providers,
 		block_import,
-		relay_chain_client,
+		relay_chain_interface,
 		relay_chain_backend,
 		para_client,
 		backoff_authoring_blocks,
@@ -274,7 +278,7 @@ pub fn build_aura_consensus<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Er
 		telemetry,
 		block_proposal_slot_portion,
 		max_block_proposal_slot_portion,
-	}: BuildAuraConsensusParams<PF, BI, RBackend, CIDP, Client, BS, SO>,
+	}: BuildAuraConsensusParams<PF, BI, RBackend, CIDP, Client, BS, SO, RCInterface>,
 ) -> Box<dyn ParachainConsensus<Block>>
 where
 	Block: BlockT,
@@ -311,12 +315,13 @@ where
 	P: Pair + Send + Sync,
 	P::Public: AppPublic + Hash + Member + Encode + Decode,
 	P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
+	RCInterface: RelayChainInterface + Clone + Send + Sync + 'static,
 {
-	AuraConsensusBuilder::<P, _, _, _, _, _, _, _, _, _>::new(
+	AuraConsensusBuilder::<P, _, _, _, _, _, _, _, _, _, _>::new(
 		proposer_factory,
 		block_import,
 		create_inherent_data_providers,
-		relay_chain_client,
+		relay_chain_interface,
 		relay_chain_backend,
 		para_client,
 		backoff_authoring_blocks,
@@ -337,13 +342,13 @@ where
 /// a concrete relay chain client instance, the builder takes a [`polkadot_client::Client`]
 /// that wraps this concrete instance. By using [`polkadot_client::ExecuteWithClient`]
 /// the builder gets access to this concrete instance.
-struct AuraConsensusBuilder<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Error> {
+struct AuraConsensusBuilder<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Error, RCInterface> {
 	_phantom: PhantomData<(Block, Error, P)>,
 	proposer_factory: PF,
 	create_inherent_data_providers: CIDP,
 	block_import: BI,
 	relay_chain_backend: Arc<RBackend>,
-	relay_chain_client: polkadot_client::Client,
+	relay_chain_interface: RCInterface,
 	para_client: Arc<Client>,
 	backoff_authoring_blocks: Option<BS>,
 	sync_oracle: SO,
@@ -355,8 +360,8 @@ struct AuraConsensusBuilder<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Er
 	max_block_proposal_slot_portion: Option<SlotProportion>,
 }
 
-impl<Block, PF, BI, RBackend, CIDP, Client, SO, BS, P, Error>
-	AuraConsensusBuilder<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Error>
+impl<Block, PF, BI, RBackend, CIDP, Client, SO, BS, P, Error, RCInterface>
+	AuraConsensusBuilder<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Error, RCInterface>
 where
 	Block: BlockT,
 	RBackend: Backend<PBlock> + 'static,
@@ -392,13 +397,14 @@ where
 	P: Pair + Send + Sync,
 	P::Public: AppPublic + Hash + Member + Encode + Decode,
 	P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
+	RCInterface: RelayChainInterface + Clone + Send + Sync + 'static,
 {
 	/// Create a new instance of the builder.
 	fn new(
 		proposer_factory: PF,
 		block_import: BI,
 		create_inherent_data_providers: CIDP,
-		relay_chain_client: polkadot_client::Client,
+		relay_chain_interface: RCInterface,
 		relay_chain_backend: Arc<RBackend>,
 		para_client: Arc<Client>,
 		backoff_authoring_blocks: Option<BS>,
@@ -416,7 +422,7 @@ where
 			block_import,
 			create_inherent_data_providers,
 			relay_chain_backend,
-			relay_chain_client,
+			relay_chain_interface,
 			para_client,
 			backoff_authoring_blocks,
 			sync_oracle,
@@ -431,58 +437,6 @@ where
 
 	/// Build the relay chain consensus.
 	fn build(self) -> Box<dyn ParachainConsensus<Block>> {
-		self.relay_chain_client.clone().execute_with(self)
-	}
-}
-
-impl<Block, PF, BI, RBackend, CIDP, Client, SO, BS, P, Error> polkadot_client::ExecuteWithClient
-	for AuraConsensusBuilder<P, Block, PF, BI, RBackend, CIDP, Client, SO, BS, Error>
-where
-	Block: BlockT,
-	RBackend: Backend<PBlock> + 'static,
-	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)>
-		+ Send
-		+ Sync
-		+ 'static,
-	CIDP::InherentDataProviders: InherentDataProviderExt + Send,
-	Client: ProvideRuntimeApi<Block>
-		+ BlockOf
-		+ ProvideCache<Block>
-		+ AuxStore
-		+ HeaderBackend<Block>
-		+ Send
-		+ Sync
-		+ 'static,
-	Client::Api: AuraApi<Block, P::Public>,
-	BI: BlockImport<Block, Transaction = sp_api::TransactionFor<Client, Block>>
-		+ Send
-		+ Sync
-		+ 'static,
-	SO: SyncOracle + Send + Sync + Clone + 'static,
-	BS: BackoffAuthoringBlocksStrategy<NumberFor<Block>> + Send + Sync + 'static,
-	PF: Environment<Block, Error = Error> + Send + Sync + 'static,
-	PF::Proposer: Proposer<
-		Block,
-		Error = Error,
-		Transaction = sp_api::TransactionFor<Client, Block>,
-		ProofRecording = EnableProofRecording,
-		Proof = <EnableProofRecording as ProofRecording>::Proof,
-	>,
-	Error: std::error::Error + Send + From<sp_consensus::Error> + 'static,
-	P: Pair + Send + Sync,
-	P::Public: AppPublic + Hash + Member + Encode + Decode,
-	P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
-{
-	type Output = Box<dyn ParachainConsensus<Block>>;
-
-	fn execute_with_client<PClient, Api, PBackend>(self, client: Arc<PClient>) -> Self::Output
-	where
-		<Api as sp_api::ApiExt<PBlock>>::StateBackend: sp_api::StateBackend<HashFor<PBlock>>,
-		PBackend: Backend<PBlock>,
-		PBackend::State: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
-		Api: polkadot_client::RuntimeApiCollection<StateBackend = PBackend::State>,
-		PClient: polkadot_client::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
-	{
 		Box::new(AuraConsensus::new::<P, _, _, _, _, _, _>(
 			self.para_client,
 			self.block_import,
@@ -492,7 +446,7 @@ where
 			self.backoff_authoring_blocks,
 			self.keystore,
 			self.create_inherent_data_providers,
-			client.clone(),
+			self.relay_chain_interface.clone(),
 			self.relay_chain_backend,
 			self.slot_duration,
 			self.telemetry,

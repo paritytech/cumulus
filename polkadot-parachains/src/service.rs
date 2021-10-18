@@ -719,6 +719,7 @@ pub async fn start_rococo_parachain_node(
 				_,
 				_,
 				_,
+				_,
 			>(BuildAuraConsensusParams {
 				proposer_factory,
 				create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
@@ -748,7 +749,7 @@ pub async fn start_rococo_parachain_node(
 					}
 				},
 				block_import: client.clone(),
-				relay_chain_client: relay_chain_node.client.clone(),
+				relay_chain_interface: RelayChainDirect{polkadot_client: relay_chain_node.client.clone()} ,
 				relay_chain_backend: relay_chain_node.backend.clone(),
 				para_client: client.clone(),
 				backoff_authoring_blocks: Option::<()>::None,
@@ -827,7 +828,8 @@ pub async fn start_shell_node(
 			);
 
 			let relay_chain_backend = relay_chain_node.backend.clone();
-			let relay_chain_client = relay_chain_node.client.clone();
+			let relay_chain_interface =
+				RelayChainDirect { polkadot_client: relay_chain_node.client.clone() };
 
 			Ok(cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
 				cumulus_client_consensus_relay_chain::BuildRelayChainConsensusParams {
@@ -838,13 +840,13 @@ pub async fn start_shell_node(
 					relay_chain_backend: relay_chain_node.backend.clone(),
 					create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
 						let parachain_inherent =
-					cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
-						relay_parent,
-						&relay_chain_client,
-						&*relay_chain_backend,
-							&validation_data,
-							id,
-					);
+							cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
+								relay_parent,
+								&relay_chain_interface,
+								&*relay_chain_backend,
+								&validation_data,
+								id,
+							);
 						async move {
 							let parachain_inherent = parachain_inherent.ok_or_else(|| {
 								Box::<dyn std::error::Error + Send + Sync>::from(
@@ -1110,9 +1112,12 @@ where
 
 				let relay_chain_backend2 = relay_chain_backend.clone();
 				let relay_chain_client2 = relay_chain_client.clone();
+				let relay_chain_interface =
+					RelayChainDirect { polkadot_client: relay_chain_client.clone() };
 
 				build_aura_consensus::<
 					sp_consensus_aura::sr25519::AuthorityPair,
+					_,
 					_,
 					_,
 					_,
@@ -1126,13 +1131,13 @@ where
 					proposer_factory,
 					create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
 						let parachain_inherent =
-								cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
-									relay_parent,
-									&relay_chain_client,
-									&*relay_chain_backend,
-									&validation_data,
-									id,
-								);
+							cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
+								relay_parent,
+								&relay_chain_interface,
+								&*relay_chain_backend,
+								&validation_data,
+								id,
+							);
 						async move {
 							let time = sp_timestamp::InherentDataProvider::from_system_time();
 
@@ -1151,7 +1156,9 @@ where
 						}
 					},
 					block_import: client2.clone(),
-					relay_chain_client: relay_chain_client2,
+					relay_chain_interface: RelayChainDirect {
+						polkadot_client: relay_chain_client2.clone(),
+					},
 					relay_chain_backend: relay_chain_backend2,
 					para_client: client2.clone(),
 					backoff_authoring_blocks: Option::<()>::None,
@@ -1176,7 +1183,8 @@ where
 			);
 
 			let relay_chain_backend = relay_chain_node.backend.clone();
-			let relay_chain_client = relay_chain_node.client.clone();
+			let relay_chain_interface =
+				RelayChainDirect { polkadot_client: relay_chain_node.client.clone() };
 
 			let relay_chain_consensus =
 				cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
@@ -1189,9 +1197,9 @@ where
 						create_inherent_data_providers:
 							move |_, (relay_parent, validation_data)| {
 								let parachain_inherent =
-									cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
+									cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 										relay_parent,
-										&relay_chain_client,
+										&relay_chain_interface,
 										&*relay_chain_backend,
 										&validation_data,
 										id,

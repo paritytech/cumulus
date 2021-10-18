@@ -20,6 +20,7 @@ use cumulus_client_service::{
 use cumulus_primitives_core::ParaId;
 
 // Substrate Imports
+use cumulus_client_collator::RelayChainDirect;
 use sc_client_api::ExecutorProvider;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
@@ -431,9 +432,11 @@ pub async fn start_parachain_node(
 			);
 
 			let relay_chain_backend = relay_chain_node.backend.clone();
-			let relay_chain_client = relay_chain_node.client.clone();
+			let relay_chain_interface =
+				RelayChainDirect { polkadot_client: relay_chain_node.client.clone() };
 			Ok(build_aura_consensus::<
 				sp_consensus_aura::sr25519::AuthorityPair,
+				_,
 				_,
 				_,
 				_,
@@ -447,13 +450,13 @@ pub async fn start_parachain_node(
 				proposer_factory,
 				create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
 					let parachain_inherent =
-					cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
-						relay_parent,
-						&relay_chain_client,
-						&*relay_chain_backend,
-						&validation_data,
-						id,
-					);
+						cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
+							relay_parent,
+							&relay_chain_interface,
+							&*relay_chain_backend,
+							&validation_data,
+							id,
+						);
 					async move {
 						let time = sp_timestamp::InherentDataProvider::from_system_time();
 
@@ -472,7 +475,9 @@ pub async fn start_parachain_node(
 					}
 				},
 				block_import: client.clone(),
-				relay_chain_client: relay_chain_node.client.clone(),
+				relay_chain_interface: RelayChainDirect {
+					polkadot_client: relay_chain_node.client.clone(),
+				},
 				relay_chain_backend: relay_chain_node.backend.clone(),
 				para_client: client,
 				backoff_authoring_blocks: Option::<()>::None,

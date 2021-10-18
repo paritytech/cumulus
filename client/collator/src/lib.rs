@@ -295,8 +295,9 @@ pub trait RelayChainInterface {
 	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>>;
 }
 
-pub struct RelayChainDirect {
-	pub polkadot_client: polkadot_client::Client,
+#[derive(Clone)]
+pub struct RelayChainDirect<T> {
+	pub polkadot_client: T,
 }
 
 /// Special structure to run [`ParachainInherentData::create_at`] with a [`Client`].
@@ -366,16 +367,14 @@ impl ExecuteWithClient for InboundHrmpMessageWithClient {
 	}
 }
 
-impl RelayChainInterface for RelayChainDirect {
+impl RelayChainInterface for RelayChainDirect<polkadot_client::Client> {
 	fn retrieve_dmq_contents(
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> Option<Vec<InboundDownwardMessage>> {
-		self.polkadot_client.execute_with(DmqContentsWithClient {
-			para_id,
-			relay_parent,
-		})
+		self.polkadot_client
+			.execute_with(DmqContentsWithClient { para_id, relay_parent })
 	}
 
 	fn retrieve_all_inbound_hrmp_channel_contents(
@@ -384,10 +383,7 @@ impl RelayChainInterface for RelayChainDirect {
 		relay_parent: PHash,
 	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
 		self.polkadot_client
-			.execute_with(InboundHrmpMessageWithClient {
-				para_id,
-				relay_parent,
-			})
+			.execute_with(InboundHrmpMessageWithClient { para_id, relay_parent })
 	}
 }
 
