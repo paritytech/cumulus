@@ -12457,11 +12457,6 @@ dependencies = [
 ]
 
 [[patch.unused]]
-name = "trie-bench"
-version = "0.29.0"
-source = "git+https://github.com/cheme/trie.git?branch=hashed-value-simple4-new#89b344dd525d6f7bb39ef67788131f099b40c09f"
-
-[[patch.unused]]
 name = "frame-support-test"
 version = "3.0.0"
 source = "git+https://github.com/cheme/substrate?branch=state-update4-host2#a343138f400ad45f047d7fb277e14cc4bec5806b"
@@ -12500,3 +12495,8 @@ source = "git+https://github.com/cheme/substrate?branch=state-update4-host2#a343
 name = "test-runner"
 version = "0.9.0"
 source = "git+https://github.com/cheme/substrate?branch=state-update4-host2#a343138f400ad45f047d7fb277e14cc4bec5806b"
+
+[[patch.unused]]
+name = "trie-bench"
+version = "0.29.0"
+source = "git+https://github.com/cheme/trie.git?branch=hashed-value-simple4-new#89b344dd525d6f7bb39ef67788131f099b40c09f"
