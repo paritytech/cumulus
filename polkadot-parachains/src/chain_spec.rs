@@ -188,10 +188,13 @@ pub type StatemineChainSpec =
 	sc_service::GenericChainSpec<statemine_runtime::GenesisConfig, Extensions>;
 pub type WestmintChainSpec =
 	sc_service::GenericChainSpec<westmint_runtime::GenesisConfig, Extensions>;
+pub type RockmineChainSpec =
+	sc_service::GenericChainSpec<rockmine_runtime::GenesisConfig, Extensions>;
 
 const STATEMINT_ED: StatemintBalance = statemint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 const STATEMINE_ED: StatemintBalance = statemine_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 const WESTMINT_ED: StatemintBalance = westmint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const ROCKMINE_ED: StatemintBalance = rockmine_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -226,6 +229,13 @@ pub fn statemine_session_keys(keys: AuraId) -> statemine_runtime::SessionKeys {
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
 pub fn westmint_session_keys(keys: AuraId) -> westmint_runtime::SessionKeys {
 	westmint_runtime::SessionKeys { aura: keys }
+}
+
+/// Generate the session keys from individual elements.
+///
+/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
+pub fn rockmine_session_keys(keys: AuraId) -> rockmine_runtime::SessionKeys {
+	rockmine_runtime::SessionKeys { aura: keys }
 }
 
 pub fn statemint_development_config(id: ParaId) -> StatemintChainSpec {
@@ -562,7 +572,7 @@ pub fn westmint_development_config(id: ParaId) -> WestmintChainSpec {
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "westend".into(), para_id: id.into() },
+		Extensions { relay_chain: "westend-dev".into(), para_id: id.into() },
 	)
 }
 
@@ -702,6 +712,190 @@ fn westmint_genesis(
 						acc.clone(),                 // account id
 						acc.clone(),                 // validator id
 						westmint_session_keys(aura), // session keys
+					)
+				})
+				.collect(),
+		},
+		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
+		// of this.
+		aura: Default::default(),
+		aura_ext: Default::default(),
+		parachain_system: Default::default(),
+	}
+}
+
+pub fn rockmine_development_config(id: ParaId) -> RockmineChainSpec {
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("tokenSymbol".into(), "ROC".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
+	RockmineChainSpec::from_genesis(
+		// Name
+		"Rockmine Development",
+		// ID
+		"rockmine_dev",
+		ChainType::Local,
+		move || {
+			rockmine_genesis(
+				// initial collators.
+				vec![(
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_collator_keys_from_seed("Alice"),
+				)],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+				],
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				id,
+			)
+		},
+		vec![],
+		None,
+		None,
+		Some(properties),
+		Extensions { relay_chain: "rococo-dev".into(), para_id: id.into() },
+	)
+}
+
+pub fn rockmine_local_config(id: ParaId) -> RockmineChainSpec {
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("tokenSymbol".into(), "ROC".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
+	RockmineChainSpec::from_genesis(
+		// Name
+		"Rockmine Local",
+		// ID
+		"rockmine_local",
+		ChainType::Local,
+		move || {
+			rockmine_genesis(
+				// initial collators.
+				vec![
+					(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed("Alice"),
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed("Bob"),
+					),
+				],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+				],
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				id,
+			)
+		},
+		vec![],
+		None,
+		None,
+		Some(properties),
+		Extensions { relay_chain: "rococo-local".into(), para_id: id.into() },
+	)
+}
+
+pub fn rockmine_config(id: ParaId) -> RockmineChainSpec {
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("tokenSymbol".into(), "ROC".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
+	RockmineChainSpec::from_genesis(
+		// Name
+		"Rockmine",
+		// ID
+		"rockmine",
+		ChainType::Live,
+		move || {
+			rockmine_genesis(
+				// initial collators.
+				vec![
+					(
+						hex!("9cfd429fa002114f33c1d3e211501d62830c9868228eb3b4b8ae15a83de04325")
+							.into(),
+						hex!("9cfd429fa002114f33c1d3e211501d62830c9868228eb3b4b8ae15a83de04325")
+							.unchecked_into(),
+					),
+					(
+						hex!("12a03fb4e7bda6c9a07ec0a11d03c24746943e054ff0bb04938970104c783876")
+							.into(),
+						hex!("12a03fb4e7bda6c9a07ec0a11d03c24746943e054ff0bb04938970104c783876")
+							.unchecked_into(),
+					),
+					(
+						hex!("1256436307dfde969324e95b8c62cb9101f520a39435e6af0f7ac07b34e1931f")
+							.into(),
+						hex!("1256436307dfde969324e95b8c62cb9101f520a39435e6af0f7ac07b34e1931f")
+							.unchecked_into(),
+					),
+					(
+						hex!("98102b7bca3f070f9aa19f58feed2c0a4e107d203396028ec17a47e1ed80e322")
+							.into(),
+						hex!("98102b7bca3f070f9aa19f58feed2c0a4e107d203396028ec17a47e1ed80e322")
+							.unchecked_into(),
+					),
+				],
+				vec![],
+				// re-use the Rococo sudo key
+				hex!("6648d7f3382690650c681aba1b993cd11e54deb4df21a3a18c3e2177de9f7342").into(),
+				id,
+			)
+		},
+		vec![],
+		None,
+		None,
+		Some(properties),
+		Extensions { relay_chain: "rococo".into(), para_id: id.into() },
+	)
+}
+
+fn rockmine_genesis(
+	invulnerables: Vec<(AccountId, AuraId)>,
+	endowed_accounts: Vec<AccountId>,
+	root_key: AccountId,
+	id: ParaId,
+) -> rockmine_runtime::GenesisConfig {
+	rockmine_runtime::GenesisConfig {
+		system: rockmine_runtime::SystemConfig {
+			code: rockmine_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!")
+				.to_vec(),
+			changes_trie_config: Default::default(),
+		},
+		balances: rockmine_runtime::BalancesConfig {
+			balances: endowed_accounts.iter().cloned().map(|k| (k, ROCKMINE_ED * 4096)).collect(),
+		},
+		sudo: rockmine_runtime::SudoConfig { key: root_key },
+		parachain_info: rockmine_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: rockmine_runtime::CollatorSelectionConfig {
+			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
+			candidacy_bond: ROCKMINE_ED * 16,
+			..Default::default()
+		},
+		session: rockmine_runtime::SessionConfig {
+			keys: invulnerables
+				.iter()
+				.cloned()
+				.map(|(acc, aura)| {
+					(
+						acc.clone(),                 // account id
+						acc.clone(),                 // validator id
+						rockmine_session_keys(aura), // session keys
 					)
 				})
 				.collect(),

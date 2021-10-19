@@ -129,6 +129,21 @@ impl sc_executor::NativeExecutionDispatch for WestmintRuntimeExecutor {
 	}
 }
 
+/// Native Rockmine executor instance.
+pub struct RockmineRuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for RockmineRuntimeExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		rockmine_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		rockmine_runtime::native_version()
+	}
+}
+
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
@@ -1041,7 +1056,7 @@ where
 	))
 }
 
-/// Start a statemint/statemine/westmint parachain node.
+/// Start a statemint/statemine/westmint/rockmine parachain node.
 pub async fn start_statemint_node<RuntimeApi, Executor>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,

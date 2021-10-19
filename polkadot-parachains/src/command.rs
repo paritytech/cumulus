@@ -20,6 +20,7 @@ use crate::{
 	service::{
 		new_partial, Block, RococoParachainRuntimeExecutor, ShellRuntimeExecutor,
 		StatemineRuntimeExecutor, StatemintRuntimeExecutor, WestmintRuntimeExecutor,
+		RockmineRuntimeExecutor
 	},
 };
 use codec::Encode;
@@ -36,7 +37,7 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 
-// default to the Statemint/Statemine/Westmint id
+// default to the Statemint/Statemine/Westmint/Rockmine id
 const DEFAULT_PARA_ID: u32 = 1000;
 
 trait IdentifyChain {
@@ -44,6 +45,7 @@ trait IdentifyChain {
 	fn is_statemint(&self) -> bool;
 	fn is_statemine(&self) -> bool;
 	fn is_westmint(&self) -> bool;
+	fn is_rockmine(&self) -> bool;
 }
 
 impl IdentifyChain for dyn sc_service::ChainSpec {
@@ -59,6 +61,9 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 	fn is_westmint(&self) -> bool {
 		self.id().starts_with("westmint")
 	}
+	fn is_rockmine(&self) -> bool {
+		self.id().starts_with("rockmine")
+	}
 }
 
 impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
@@ -73,6 +78,9 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 	}
 	fn is_westmint(&self) -> bool {
 		<dyn sc_service::ChainSpec>::is_westmint(self)
+	}
+	fn is_rockmine(&self) -> bool {
+		<dyn sc_service::ChainSpec>::is_rockmine(self)
 	}
 }
 
@@ -110,6 +118,14 @@ fn load_spec(
 		"westmint" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../res/westmint.json")[..],
 		)?),
+		"rockmine-dev" => Box::new(chain_spec::rockmine_development_config(para_id)),
+		"rockmine-local" => Box::new(chain_spec::rockmine_local_config(para_id)),
+		// the chain spec as used for generating the upgrade genesis values
+		"rockmine-genesis" => Box::new(chain_spec::rockmine_config(para_id)),
+		// the shell-based chain spec as used for syncing
+		"rockmine" => Box::new(chain_spec::ChainSpec::from_json_bytes(
+			&include_bytes!("../res/rockmine.json")[..],
+		)?),
 		"" => Box::new(chain_spec::get_chain_spec(para_id)),
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
@@ -119,6 +135,8 @@ fn load_spec(
 				Box::new(chain_spec::StatemineChainSpec::from_json_file(path.into())?)
 			} else if chain_spec.is_westmint() {
 				Box::new(chain_spec::WestmintChainSpec::from_json_file(path.into())?)
+			} else if chain_spec.is_rockmine() {
+				Box::new(chain_spec::RockmineChainSpec::from_json_file(path.into())?)
 			} else if chain_spec.is_shell() {
 				Box::new(chain_spec::ShellChainSpec::from_json_file(path.into())?)
 			} else {
@@ -170,6 +188,8 @@ impl SubstrateCli for Cli {
 			&statemine_runtime::VERSION
 		} else if chain_spec.is_westmint() {
 			&westmint_runtime::VERSION
+		} else if chain_spec.is_rockmine() {
+			&rockmine_runtime::VERSION
 		} else if chain_spec.is_shell() {
 			&shell_runtime::VERSION
 		} else {
@@ -252,6 +272,15 @@ macro_rules! construct_async_run {
 		} else if runner.config().chain_spec.is_statemint() {
 			runner.async_run(|$config| {
 				let $components = new_partial::<statemint_runtime::RuntimeApi, StatemintRuntimeExecutor, _>(
+					&$config,
+					crate::service::statemint_build_import_queue,
+				)?;
+				let task_manager = $components.task_manager;
+				{ $( $code )* }.map(|v| (v, task_manager))
+			})
+		} else if runner.config().chain_spec.is_rockmine() {
+			runner.async_run(|$config| {
+				let $components = new_partial::<rockmine_runtime::RuntimeApi, RockmineRuntimeExecutor, _>(
 					&$config,
 					crate::service::statemint_build_import_queue,
 				)?;
@@ -391,6 +420,8 @@ pub fn run() -> Result<()> {
 					runner.sync_run(|config| cmd.run::<Block, WestmintRuntimeExecutor>(config))
 				} else if runner.config().chain_spec.is_statemint() {
 					runner.sync_run(|config| cmd.run::<Block, StatemintRuntimeExecutor>(config))
+				} else if runner.config().chain_spec.is_rockmine() {
+					runner.sync_run(|config| cmd.run::<Block, RockmineRuntimeExecutor>(config))
 				} else {
 					Err("Chain doesn't support benchmarking".into())
 				}
@@ -453,6 +484,14 @@ pub fn run() -> Result<()> {
 					crate::service::start_statemint_node::<
 						westmint_runtime::RuntimeApi,
 						WestmintRuntimeExecutor,
+					>(config, polkadot_config, id)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
+				} else if config.chain_spec.is_rockmine() {
+					crate::service::start_statemint_node::<
+						rockmine_runtime::RuntimeApi,
+						RockmineRuntimeExecutor,
 					>(config, polkadot_config, id)
 					.await
 					.map(|r| r.0)
