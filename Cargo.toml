@@ -274,10 +274,3 @@ polkadot-dispute-distribution = { git="https://github.com/cheme/polkadot-1", bra
 polkadot-erasure-coding = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
 polkadot-gossip-support = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
 slot-range-helper = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
-
-[patch.crates-io]
-hash-db = { git = "https://github.com/cheme/trie.git", branch = "hashed-value-simple4-new" }
-memory-db = { git = "https://github.com/cheme/trie.git", branch = "hashed-value-simple4-new" }
-trie-db = { git = "https://github.com/cheme/trie.git", branch = "hashed-value-simple4-new" }
-trie-root = { git = "https://github.com/cheme/trie.git", branch = "hashed-value-simple4-new" }
-trie-bench = { git = "https://github.com/cheme/trie.git", branch = "hashed-value-simple4-new" }
