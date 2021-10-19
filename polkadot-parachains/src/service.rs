@@ -836,7 +836,9 @@ pub async fn start_shell_node(
 					para_id: id,
 					proposer_factory,
 					block_import: client.clone(),
-					relay_chain_client: relay_chain_node.client.clone(),
+					relay_chain_interface: RelayChainDirect {
+						polkadot_client: relay_chain_node.client.clone(),
+					},
 					relay_chain_backend: relay_chain_node.backend.clone(),
 					create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
 						let parachain_inherent =
@@ -1192,7 +1194,9 @@ where
 						para_id: id,
 						proposer_factory,
 						block_import: client.clone(),
-						relay_chain_client: relay_chain_node.client.clone(),
+						relay_chain_interface: RelayChainDirect {
+							polkadot_client: relay_chain_node.client.clone(),
+						},
 						relay_chain_backend: relay_chain_node.backend.clone(),
 						create_inherent_data_providers:
 							move |_, (relay_parent, validation_data)| {
