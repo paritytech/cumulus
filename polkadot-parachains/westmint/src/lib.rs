@@ -722,7 +722,7 @@ construct_runtime!(
 
 		// XCM helpers.
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>},
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin},
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin},
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>},
 
