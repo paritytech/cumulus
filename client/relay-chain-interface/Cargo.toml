@@ -1,0 +1,16 @@
+[package]
+name = "cumulus-relay-chain-interface"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+
+cumulus-primitives-core = { path = "../../primitives/core" }
+
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
+tracing = "0.1.25"
