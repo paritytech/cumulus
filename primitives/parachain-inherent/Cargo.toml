@@ -18,7 +18,7 @@ sp-api = { git = "https://github.com/paritytech/substrate", branch = "master", o
 # Cumulus dependencies
 cumulus-primitives-core = { path = "../core", default-features = false }
 cumulus-test-relay-sproof-builder = { path = "../../test/relay-sproof-builder", optional = true }
-cumulus-client-collator = { path = "../../client/collator", optional = true }
+cumulus-relay-chain-interface = { path = "../../client/relay-chain-interface", optional = true }
 
 # Other dependencies
 async-trait = { version = "0.1.42", optional = true }
@@ -42,6 +42,6 @@ std = [
 	"sp-runtime",
 	"sc-client-api",
 	"sp-api",
-	"cumulus-client-collator",
+	"cumulus-relay-chain-interface",
 	"cumulus-test-relay-sproof-builder"
 ]

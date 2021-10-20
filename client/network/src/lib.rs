@@ -33,7 +33,7 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT},
 };
 
-use polkadot_client::ClientHandle;
+use cumulus_relay_chain_interface::RelayChainInterface;
 use polkadot_node_primitives::{CollationSecondedSignal, Statement};
 use polkadot_parachain::primitives::HeadData;
 use polkadot_primitives::v1::{
@@ -48,6 +48,7 @@ use futures::{
 	Future,
 };
 
+use polkadot_client::ClientHandle;
 use std::{convert::TryFrom, fmt, marker::PhantomData, pin::Pin, sync::Arc};
 
 use wait_on_relay_chain_block::WaitOnRelayChainBlock;

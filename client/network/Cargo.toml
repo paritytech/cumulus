@@ -28,6 +28,8 @@ tracing = "0.1.22"
 parking_lot = "0.10.2"
 derive_more = "0.99.2"
 
+cumulus-relay-chain-interface = {path = "../relay-chain-interface"}
+
 [dev-dependencies]
 tokio = { version = "1.10", features = ["macros"] }
 

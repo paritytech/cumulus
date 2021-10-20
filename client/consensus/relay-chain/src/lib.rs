@@ -33,7 +33,6 @@
 //!
 //! 5. After the parachain candidate got backed and included, all collators start at 1.
 
-use cumulus_client_collator::RelayChainInterface;
 use cumulus_client_consensus_common::{
 	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
@@ -41,6 +40,7 @@ use cumulus_primitives_core::{
 	relay_chain::v1::{Block as PBlock, Hash as PHash},
 	ParaId, PersistedValidationData,
 };
+use cumulus_relay_chain_interface::RelayChainInterface;
 use parking_lot::Mutex;
 use sc_client_api::Backend;
 use sc_consensus::{BlockImport, BlockImportParams};

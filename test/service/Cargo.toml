@@ -49,7 +49,7 @@ cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent" }
 cumulus-test-runtime = { path = "../runtime" }
 cumulus-test-relay-validation-worker-provider = { path = "../relay-validation-worker-provider" }
-
+cumulus-relay-chain-interface = { path = "../../client/relay-chain-interface" }
 # RPC related dependencies
 jsonrpc-core = "18.0.0"
 

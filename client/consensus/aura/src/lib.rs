@@ -50,7 +50,7 @@ use std::{convert::TryFrom, hash::Hash, marker::PhantomData, sync::Arc};
 
 mod import_queue;
 
-use cumulus_client_collator::RelayChainInterface;
+use cumulus_relay_chain_interface::RelayChainInterface;
 pub use import_queue::{build_verifier, import_queue, BuildVerifierParams, ImportQueueParams};
 pub use sc_consensus_aura::{
 	slot_duration, AuraVerifier, BuildAuraWorkerParams, SlotDuration, SlotProportion,

@@ -1418,6 +1418,7 @@ dependencies = [
  "cumulus-client-consensus-common",
  "cumulus-client-network",
  "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
  "cumulus-test-client",
  "cumulus-test-runtime",
  "futures 0.3.17",
@@ -1447,6 +1448,7 @@ dependencies = [
  "cumulus-client-collator",
  "cumulus-client-consensus-common",
  "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
  "futures 0.3.17",
  "parity-scale-codec",
  "sc-client-api",
@@ -1495,9 +1497,9 @@ name = "cumulus-client-consensus-relay-chain"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "cumulus-client-collator",
  "cumulus-client-consensus-common",
  "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
  "futures 0.3.17",
  "parking_lot 0.10.2",
  "sc-client-api",
@@ -1518,6 +1520,7 @@ name = "cumulus-client-network"
 version = "0.1.0"
 dependencies = [
  "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
  "cumulus-test-service",
  "derive_more",
  "futures 0.3.17",
@@ -1768,8 +1771,8 @@ name = "cumulus-primitives-parachain-inherent"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "cumulus-client-collator",
  "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
  "cumulus-test-relay-sproof-builder",
  "parity-scale-codec",
  "sc-client-api",
@@ -1815,6 +1818,17 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "xcm",
+]
+
+[[package]]
+name = "cumulus-relay-chain-interface"
+version = "0.1.0"
+dependencies = [
+ "cumulus-primitives-core",
+ "polkadot-client",
+ "sp-api",
+ "sp-core",
+ "tracing",
 ]
 
 [[package]]
@@ -1943,6 +1957,7 @@ dependencies = [
  "cumulus-client-service",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
+ "cumulus-relay-chain-interface",
  "cumulus-test-relay-validation-worker-provider",
  "cumulus-test-runtime",
  "cumulus-test-runtime-upgrade",
@@ -6011,6 +6026,7 @@ dependencies = [
  "cumulus-client-service",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
+ "cumulus-relay-chain-interface",
  "derive_more",
  "frame-benchmarking",
  "frame-benchmarking-cli",
@@ -6625,6 +6641,7 @@ dependencies = [
  "cumulus-client-service",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
+ "cumulus-relay-chain-interface",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "futures 0.3.17",

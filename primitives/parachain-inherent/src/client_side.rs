@@ -18,11 +18,11 @@
 
 use crate::ParachainInherentData;
 use codec::Decode;
-use cumulus_client_collator::RelayChainInterface;
 use cumulus_primitives_core::{
 	relay_chain::{self, v1::HrmpChannelId, Block as PBlock, Hash as PHash},
 	ParaId, PersistedValidationData,
 };
+use cumulus_relay_chain_interface::RelayChainInterface;
 use sc_client_api::Backend;
 use sp_runtime::generic::BlockId;
 use sp_state_machine::Backend as _;
