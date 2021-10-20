@@ -122,10 +122,10 @@ fn load_spec(
 		"rockmine-local" => Box::new(chain_spec::rockmine_local_config(para_id)),
 		// the chain spec as used for generating the upgrade genesis values
 		"rockmine-genesis" => Box::new(chain_spec::rockmine_config(para_id)),
-		// the shell-based chain spec as used for syncing
-		"rockmine" => Box::new(chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("../res/rockmine.json")[..],
-		)?),
+		// // the shell-based chain spec as used for syncing
+		// "rockmine" => Box::new(chain_spec::ChainSpec::from_json_bytes(
+		// 	&include_bytes!("../res/rockmine.json")[..],
+		// )?),
 		"" => Box::new(chain_spec::get_chain_spec(para_id)),
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;

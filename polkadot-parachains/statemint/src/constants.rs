@@ -40,7 +40,7 @@ pub mod fee {
 	use smallvec::smallvec;
 	pub use sp_runtime::Perbill;
 
-	/// The block saturation level. Fees will be updates based on this value.
+	/// The block saturation level. Fees will be updated based on this value.
 	pub const TARGET_BLOCK_FULLNESS: Perbill = Perbill::from_percent(25);
 
 	/// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
