@@ -437,10 +437,10 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	// foreign chains who want to have a local sovereign account on this chain which they control.
 	SovereignSignedViaLocation<LocationToAccountId, Origin>,
 	// Native converter for Relay-chain (Parent) location; will converts to a `Relay` origin when
-	// recognised.
+	// recognized.
 	RelayChainAsNative<RelayChainOrigin, Origin>,
 	// Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
-	// recognised.
+	// recognized.
 	SiblingParachainAsNative<cumulus_pallet_xcm::Origin, Origin>,
 	// Native signed account converter; this just converts an `AccountId32` origin into a normal
 	// `Origin::Signed` origin of the same 32-byte value.
