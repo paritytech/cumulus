@@ -1,10 +1,17 @@
 use cumulus_primitives_core::{
-	relay_chain::{v1::ParachainHost, Block as PBlock, BlockId, Hash as PHash, InboundHrmpMessage},
-	InboundDownwardMessage, ParaId,
+	relay_chain::{
+		v1::{CommittedCandidateReceipt, OccupiedCoreAssumption, ParachainHost},
+		BlakeTwo256, Block as PBlock, BlockId, Hash as PHash, InboundHrmpMessage,
+	},
+	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use polkadot_client::{ClientHandle, ExecuteWithClient};
-use sp_api::ProvideRuntimeApi;
+use polkadot_client::{AbstractClient, ClientHandle, ExecuteWithClient, RuntimeApiCollection};
+use sc_client_api::{
+	BlockchainEvents, FinalityNotifications, ImportNotifications, StorageEventStream, StorageKey,
+};
+use sp_api::{ApiError, ApiExt, ProvideRuntimeApi};
 use sp_core::sp_std::{collections::btree_map::BTreeMap, sync::Arc};
+use std::marker::PhantomData;
 
 const LOG_TARGET: &str = "cumulus-collator";
 
@@ -28,6 +35,19 @@ pub trait RelayChainInterface {
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>>;
+
+	fn persisted_validation_data(
+		&self,
+		block_id: &BlockId,
+		para_id: ParaId,
+		_: OccupiedCoreAssumption,
+	) -> Result<Option<PersistedValidationData>, ApiError>;
+
+	fn candidate_pending_availability(
+		&self,
+		block_id: &BlockId,
+		para_id: ParaId,
+	) -> Result<Option<CommittedCandidateReceipt>, ApiError>;
 }
 
 #[derive(Clone)]
@@ -101,6 +121,46 @@ impl ExecuteWithClient for InboundHrmpMessageWithClient {
 			.ok()
 	}
 }
+struct CandidatePendingAvailabilityWithClient {
+	block_id: BlockId,
+	para_id: ParaId,
+}
+
+impl ExecuteWithClient for CandidatePendingAvailabilityWithClient {
+	type Output = Result<Option<CommittedCandidateReceipt>, ApiError>;
+
+	fn execute_with_client<Client, Api, Backend>(self, client: Arc<Client>) -> Self::Output
+	where
+		Client: ProvideRuntimeApi<PBlock>,
+		Client::Api: ParachainHost<PBlock>,
+	{
+		client
+			.runtime_api()
+			.candidate_pending_availability(&self.block_id, self.para_id)
+	}
+}
+
+struct PersistedValidationDataWithClient {
+	block_id: BlockId,
+	para_id: ParaId,
+	occupied_core_assumption: OccupiedCoreAssumption,
+}
+
+impl ExecuteWithClient for PersistedValidationDataWithClient {
+	type Output = Result<Option<PersistedValidationData>, ApiError>;
+
+	fn execute_with_client<Client, Api, Backend>(self, client: Arc<Client>) -> Self::Output
+	where
+		Client: ProvideRuntimeApi<PBlock>,
+		Client::Api: ParachainHost<PBlock>,
+	{
+		client.runtime_api().persisted_validation_data(
+			&self.block_id,
+			self.para_id,
+			self.occupied_core_assumption,
+		)
+	}
+}
 
 impl RelayChainInterface for RelayChainDirect<polkadot_client::Client> {
 	fn retrieve_dmq_contents(
@@ -119,5 +179,29 @@ impl RelayChainInterface for RelayChainDirect<polkadot_client::Client> {
 	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
 		self.polkadot_client
 			.execute_with(InboundHrmpMessageWithClient { para_id, relay_parent })
+	}
+
+	fn persisted_validation_data(
+		&self,
+		block_id: &BlockId,
+		para_id: ParaId,
+		occupied_core_assumption: OccupiedCoreAssumption,
+	) -> Result<Option<PersistedValidationData>, ApiError> {
+		self.polkadot_client.execute_with(PersistedValidationDataWithClient {
+			block_id: block_id.clone(),
+			para_id,
+			occupied_core_assumption,
+		})
+	}
+
+	fn candidate_pending_availability(
+		&self,
+		block_id: &BlockId,
+		para_id: ParaId,
+	) -> Result<Option<CommittedCandidateReceipt>, ApiError> {
+		self.polkadot_client.execute_with(CandidatePendingAvailabilityWithClient {
+			block_id: block_id.clone(),
+			para_id,
+		})
 	}
 }

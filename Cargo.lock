@@ -1527,7 +1527,6 @@ dependencies = [
  "futures-timer 3.0.2",
  "parity-scale-codec",
  "parking_lot 0.10.2",
- "polkadot-client",
  "polkadot-node-primitives",
  "polkadot-parachain",
  "polkadot-primitives",
@@ -1826,8 +1825,10 @@ version = "0.1.0"
 dependencies = [
  "cumulus-primitives-core",
  "polkadot-client",
+ "sc-client-api",
  "sp-api",
  "sp-core",
+ "sp-runtime",
  "tracing",
 ]
 
