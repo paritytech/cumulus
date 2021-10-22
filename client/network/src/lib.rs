@@ -33,7 +33,7 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT},
 };
 
-use cumulus_relay_chain_interface::RelayChainInterface;
+use polkadot_client::ClientHandle;
 use polkadot_node_primitives::{CollationSecondedSignal, Statement};
 use polkadot_parachain::primitives::HeadData;
 use polkadot_primitives::v1::{
@@ -230,27 +230,27 @@ impl TryFrom<&'_ CollationSecondedSignal> for BlockAnnounceData {
 /// chain. If it is at the tip, it is required to provide a justification or otherwise we reject
 /// it. However, if the announcement is for a block below the tip the announcement is accepted
 /// as it probably comes from a node that is currently syncing the chain.
-pub struct BlockAnnounceValidator<Block, RCInterface, B, BCE> {
+pub struct BlockAnnounceValidator<Block, R, B, BCE> {
 	phantom: PhantomData<Block>,
-	relay_chain_interface: RCInterface,
+	relay_chain_client: Arc<R>,
 	relay_chain_backend: Arc<B>,
 	para_id: ParaId,
 	relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
 	wait_on_relay_chain_block: WaitOnRelayChainBlock<B, BCE>,
 }
 
-impl<Block, RCInterface, B, BCE> BlockAnnounceValidator<Block, RCInterface, B, BCE> {
+impl<Block, R, B, BCE> BlockAnnounceValidator<Block, R, B, BCE> {
 	/// Create a new [`BlockAnnounceValidator`].
 	pub fn new(
-		relay_chain_interface: RCInterface,
+		relay_chain_client: Arc<R>,
 		para_id: ParaId,
 		relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
 		relay_chain_backend: Arc<B>,
-		relay_chain_blockchain_events: RCInterface,
+		relay_chain_blockchain_events: Arc<BCE>,
 	) -> Self {
 		Self {
 			phantom: Default::default(),
-			relay_chain_interface,
+			relay_chain_client,
 			para_id,
 			relay_chain_sync_oracle,
 			relay_chain_backend: relay_chain_backend.clone(),
@@ -262,18 +262,20 @@ impl<Block, RCInterface, B, BCE> BlockAnnounceValidator<Block, RCInterface, B, B
 	}
 }
 
-impl<Block: BlockT, RCInterface, B, BCE> BlockAnnounceValidator<Block, RCInterface, B, BCE>
+impl<Block: BlockT, R, B, BCE> BlockAnnounceValidator<Block, R, B, BCE>
 where
-	RCInterface: RelayChainInterface + Send + Sync + Clone + 'static,
+	R: ProvideRuntimeApi<PBlock> + Send + Sync + 'static,
+	R::Api: ParachainHost<PBlock>,
 	B: Backend<PBlock> + 'static,
 {
 	/// Get the included block of the given parachain in the relay chain.
 	fn included_block(
-		relay_chain_interface: &RCInterface,
+		relay_chain_client: &R,
 		block_id: &BlockId<PBlock>,
 		para_id: ParaId,
 	) -> Result<Block::Header, BoxedError> {
-		let validation_data = relay_chain_interface
+		let validation_data = relay_chain_client
+			.runtime_api()
 			.persisted_validation_data(block_id, para_id, OccupiedCoreAssumption::TimedOut)
 			.map_err(|e| Box::new(BlockAnnounceError(format!("{:?}", e))) as Box<_>)?
 			.ok_or_else(|| {
@@ -291,11 +293,12 @@ where
 
 	/// Get the backed block hash of the given parachain in the relay chain.
 	fn backed_block_hash(
-		relay_chain_interface: &RCInterface,
+		relay_chain_client: &R,
 		block_id: &BlockId<PBlock>,
 		para_id: ParaId,
 	) -> Result<Option<PHash>, BoxedError> {
-		let candidate_receipt = relay_chain_interface
+		let candidate_receipt = relay_chain_client
+			.runtime_api()
 			.candidate_pending_availability(block_id, para_id)
 			.map_err(|e| Box::new(BlockAnnounceError(format!("{:?}", e))) as Box<_>)?;
 
@@ -307,7 +310,7 @@ where
 		&self,
 		header: Block::Header,
 	) -> impl Future<Output = Result<Validation, BoxedError>> {
-		let relay_chain_interface = self.relay_chain_interface.clone();
+		let relay_chain_client = self.relay_chain_client.clone();
 		let relay_chain_backend = self.relay_chain_backend.clone();
 		let para_id = self.para_id;
 
@@ -318,10 +321,10 @@ where
 			let block_number = header.number();
 
 			let best_head =
-				Self::included_block(&relay_chain_interface, &runtime_api_block_id, para_id)?;
+				Self::included_block(&*relay_chain_client, &runtime_api_block_id, para_id)?;
 			let known_best_number = best_head.number();
 			let backed_block =
-				|| Self::backed_block_hash(&relay_chain_interface, &runtime_api_block_id, para_id);
+				|| Self::backed_block_hash(&*relay_chain_client, &runtime_api_block_id, para_id);
 
 			if best_head == header {
 				tracing::debug!(target: LOG_TARGET, "Announced block matches best block.",);
@@ -345,10 +348,11 @@ where
 	}
 }
 
-impl<Block: BlockT, RCInterface, B, BCE> BlockAnnounceValidatorT<Block>
-	for BlockAnnounceValidator<Block, RCInterface, B, BCE>
+impl<Block: BlockT, P, B, BCE> BlockAnnounceValidatorT<Block>
+	for BlockAnnounceValidator<Block, P, B, BCE>
 where
-	RCInterface: RelayChainInterface + Send + Sync + Clone + 'static,
+	P: ProvideRuntimeApi<PBlock> + Send + Sync + 'static,
+	P::Api: ParachainHost<PBlock>,
 	B: Backend<PBlock> + 'static,
 	BCE: BlockchainEvents<PBlock> + 'static + Send + Sync,
 {
@@ -377,7 +381,7 @@ where
 				.boxed(),
 		};
 
-		let relay_chain_client = self.relay_chain_interface.clone();
+		let relay_chain_client = self.relay_chain_client.clone();
 		let header_encoded = header.encode();
 		let wait_on_relay_chain_block = self.wait_on_relay_chain_block.clone();
 
@@ -404,18 +408,17 @@ where
 /// Build a block announce validator instance.
 ///
 /// Returns a boxed [`BlockAnnounceValidator`].
-pub fn build_block_announce_validator<Block: BlockT, B, RCInterface>(
-	relay_chain_interface: RCInterface,
+pub fn build_block_announce_validator<Block: BlockT, B>(
+	relay_chain_client: polkadot_client::Client,
 	para_id: ParaId,
 	relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
 	relay_chain_backend: Arc<B>,
 ) -> Box<dyn BlockAnnounceValidatorT<Block> + Send>
 where
 	B: Backend<PBlock> + Send + 'static,
-	RCInterface: RelayChainInterface + Send + Sync + Clone + 'static,
 {
 	BlockAnnounceValidatorBuilder::new(
-		relay_chain_interface,
+		relay_chain_client,
 		para_id,
 		relay_chain_sync_oracle,
 		relay_chain_backend,
@@ -429,28 +432,27 @@ where
 /// a concrete relay chain client instance, the builder takes a [`polkadot_client::Client`]
 /// that wraps this concrete instanace. By using [`polkadot_client::ExecuteWithClient`]
 /// the builder gets access to this concrete instance.
-struct BlockAnnounceValidatorBuilder<Block, B, RCInterface> {
+struct BlockAnnounceValidatorBuilder<Block, B> {
 	phantom: PhantomData<Block>,
-	relay_chain_interface: RCInterface,
+	relay_chain_client: polkadot_client::Client,
 	para_id: ParaId,
 	relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
 	relay_chain_backend: Arc<B>,
 }
 
-impl<Block: BlockT, B, RCInterface> BlockAnnounceValidatorBuilder<Block, B, RCInterface>
+impl<Block: BlockT, B> BlockAnnounceValidatorBuilder<Block, B>
 where
 	B: Backend<PBlock> + Send + 'static,
-	RCInterface: RelayChainInterface + Clone + Send + Sync + 'static,
 {
 	/// Create a new instance of the builder.
 	fn new(
-		relay_chain_interface: RCInterface,
+		relay_chain_client: polkadot_client::Client,
 		para_id: ParaId,
 		relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
 		relay_chain_backend: Arc<B>,
 	) -> Self {
 		Self {
-			relay_chain_interface,
+			relay_chain_client,
 			para_id,
 			relay_chain_sync_oracle,
 			relay_chain_backend,
@@ -460,42 +462,35 @@ where
 
 	/// Build the block announce validator.
 	fn build(self) -> Box<dyn BlockAnnounceValidatorT<Block> + Send> {
-		Box::new(BlockAnnounceValidator::new(
-			self.relay_chain_interface,
-			self.para_id,
-			self.relay_chain_sync_oracle,
-			self.relay_chain_backend,
-			self.relay_chain_interface.clone(),
-		))
+		self.relay_chain_client.clone().execute_with(self)
 	}
 }
 
-// impl<Block: BlockT, B, RCInterface> polkadot_client::ExecuteWithClient
-// 	for BlockAnnounceValidatorBuilder<Block, B, RCInterface>
-// where
-// 	B: Backend<PBlock> + Send + 'static,
-// 	RCInterface: RelayChainInterface + Send + 'static,
-// {
-// 	type Output = Box<dyn BlockAnnounceValidatorT<Block> + Send>;
-//
-// 	fn execute_with_client<PClient, Api, PBackend>(self, client: Arc<PClient>) -> Self::Output
-// 	where
-// 		<Api as sp_api::ApiExt<PBlock>>::StateBackend:
-// 			sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
-// 		PBackend: Backend<PBlock>,
-// 		PBackend::State: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
-// 		Api: polkadot_client::RuntimeApiCollection<StateBackend = PBackend::State>,
-// 		PClient: polkadot_client::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
-// 	{
-// 		Box::new(BlockAnnounceValidator::new(
-// 			self.relay_chain_interface,
-// 			self.para_id,
-// 			self.relay_chain_sync_oracle,
-// 			self.relay_chain_backend,
-// 			self.relay_chain_interface.clone(),
-// 		))
-// 	}
-// }
+impl<Block: BlockT, B> polkadot_client::ExecuteWithClient
+	for BlockAnnounceValidatorBuilder<Block, B>
+where
+	B: Backend<PBlock> + Send + 'static,
+{
+	type Output = Box<dyn BlockAnnounceValidatorT<Block> + Send>;
+
+	fn execute_with_client<PClient, Api, PBackend>(self, client: Arc<PClient>) -> Self::Output
+	where
+		<Api as sp_api::ApiExt<PBlock>>::StateBackend:
+			sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
+		PBackend: Backend<PBlock>,
+		PBackend::State: sp_api::StateBackend<sp_runtime::traits::BlakeTwo256>,
+		Api: polkadot_client::RuntimeApiCollection<StateBackend = PBackend::State>,
+		PClient: polkadot_client::AbstractClient<PBlock, PBackend, Api = Api> + 'static,
+	{
+		Box::new(BlockAnnounceValidator::new(
+			client.clone(),
+			self.para_id,
+			self.relay_chain_sync_oracle,
+			self.relay_chain_backend,
+			client,
+		))
+	}
+}
 
 /// Wait before announcing a block that a candidate message has been received for this block, then
 /// add this message as justification for the block announcement.
