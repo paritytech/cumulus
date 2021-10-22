@@ -67,7 +67,7 @@ fn load_spec(
 		"integritee-rococo-local" => Box::new(integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::RococoLocal)),
 		"integritee-rococo-local-dev" => Box::new(integritee_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::RococoLocal)),
 		"integritee-rococo" => Box::new(integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Rococo)),
-		
+
 		"integritee-kusama-local" => Box::new(integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::KusamaLocal)),
 		"integritee-kusama-local-dev" => Box::new(integritee_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::KusamaLocal)),
 		"integritee-kusama-fresh" => Box::new(integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Kusama)),
@@ -78,16 +78,16 @@ fn load_spec(
 		"integritee-polkadot-local" => Box::new(integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::PolkadotLocal)),
 		"integritee-polkadot-local-dev" => Box::new(integritee_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::PolkadotLocal)),
 		"integritee-polkadot" => Box::new(integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Polkadot)),
-		
+
 		"shell-rococo-local" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::RococoLocal)),
 		"shell-rococo-local-dev" => Box::new(shell_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::RococoLocal)),
 		"shell-rococo" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Rococo)),
-		
+
 		"shell-kusama-local" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::KusamaLocal)),
 		"shell-kusama-local-dev" => Box::new(shell_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::KusamaLocal)),
 		"shell-kusama-fresh" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Kusama)),
 		"shell-kusama" => Box::new(shell_kusama_config()?),
-		
+
 		"shell-polkadot-local" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::PolkadotLocal)),
 		"shell-polkadot-local-dev" => Box::new(shell_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::PolkadotLocal)),
 		"shell-polkadot" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Polkadot)),
@@ -262,7 +262,7 @@ pub fn run() -> Result<()> {
 				let polkadot_config = SubstrateCli::create_configuration(
 					&polkadot_cli,
 					&polkadot_cli,
-					config.task_executor.clone(),
+					config.tokio_handle.clone(),
 				)
 				.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
@@ -358,7 +358,7 @@ pub fn run() -> Result<()> {
 					generate_genesis_block(&config.chain_spec).map_err(|e| format!("{:?}", e))?;
 				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
-				let task_executor = config.task_executor.clone();
+				let task_executor = config.tokio_handle.clone();
 				let polkadot_config =
 					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, task_executor)
 						.map_err(|err| format!("Relay chain argument error: {}", err))?;
@@ -477,10 +477,6 @@ impl CliConfiguration<Self> for RelayChainCli {
 
 	fn rpc_cors(&self, is_dev: bool) -> Result<Option<Vec<String>>> {
 		self.base.base.rpc_cors(is_dev)
-	}
-
-	fn telemetry_external_transport(&self) -> Result<Option<sc_service::config::ExtTransport>> {
-		self.base.base.telemetry_external_transport()
 	}
 
 	fn default_heap_pages(&self) -> Result<Option<u64>> {

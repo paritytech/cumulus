@@ -153,7 +153,7 @@ impl Contains<Call> for DisableTokenTxFilter {
 	fn contains(call: &Call) -> bool {
 		!matches!(
 			call,
-			Call::Balances(_) | Call::Vesting(pallet_vesting::Call::vested_transfer(..))
+			Call::Balances(_) | Call::Vesting(pallet_vesting::Call::vested_transfer { .. })
 		)
 	}
 }
@@ -237,6 +237,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = IdentityFee<Balance>;
 	type FeeMultiplierUpdate = ();
+	type OperationalFeeMultiplier = ();
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -254,6 +255,7 @@ impl pallet_vesting::Config for Runtime {
 	type BlockNumberToBalance = ConvertInto;
 	type MinVestedTransfer = MinVestedTransfer;
 	type WeightInfo = pallet_vesting::weights::SubstrateWeight<Runtime>;
+	const MAX_VESTING_SCHEDULES: u32 = 28;
 }
 
 parameter_types! {
@@ -305,6 +307,7 @@ match_type! {
 parameter_types! {
 	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
 	pub UnitWeightCost: Weight = 1_000_000;
+	pub const MaxInstructions: u32 = 100;
 }
 
 pub struct XcmConfig;
@@ -317,9 +320,11 @@ impl Config for XcmConfig {
 	type IsTeleporter = (); // balances not supported
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = AllowUnpaidExecutionFrom<JustTheParent>;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call>; // balances not supported
+	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>; // balances not supported
 	type Trader = (); // balances not supported
 	type ResponseHandler = (); // Don't handle responses for now.
+	type AssetTrap = ();
+	type AssetClaims = ();
 	type SubscriptionService = (); // don't handle subscriptions for now
 }
 
@@ -328,9 +333,14 @@ impl cumulus_pallet_xcm::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
+parameter_types! {
+	pub const MaxAuthorities: u32 = 100_000;
+}
+
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
+	type MaxAuthorities = MaxAuthorities;
 }
 
 construct_runtime! {
@@ -420,7 +430,7 @@ impl_runtime_apis! {
 
 	impl sp_api::Metadata<Block> for Runtime {
 		fn metadata() -> OpaqueMetadata {
-			Runtime::metadata().into()
+			OpaqueMetadata::new(Runtime::metadata().into())
 		}
 	}
 
@@ -478,7 +488,28 @@ impl_runtime_apis! {
 		}
 
 		fn authorities() -> Vec<AuraId> {
-			Aura::authorities()
+			Aura::authorities().to_vec()
+		}
+	}
+
+	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
+		fn account_nonce(account: AccountId) -> Index {
+			System::account_nonce(account)
+		}
+	}
+
+	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance> for Runtime {
+		fn query_info(
+			uxt: <Block as BlockT>::Extrinsic,
+			len: u32,
+		) -> pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo<Balance> {
+			TransactionPayment::query_info(uxt, len)
+		}
+		fn query_fee_details(
+			uxt: <Block as BlockT>::Extrinsic,
+			len: u32,
+		) -> pallet_transaction_payment::FeeDetails<Balance> {
+			TransactionPayment::query_fee_details(uxt, len)
 		}
 	}
 

@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../../bin/polkadot-0.9.10",
+		"bin": "../../bin/polkadot-0.9.11",
 		"chain": "kusama-local",
 		"nodes": [
 			{

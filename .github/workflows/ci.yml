@@ -1,10 +1,10 @@
 name: CI
 
-on: 
-  push: 
+on:
+  push:
     branches:
       - master
-    tags: 
+    tags:
       - '[0-9]+.[0-9]+.[0-9]+'
   pull_request:
     branches: [master]
@@ -17,7 +17,7 @@ on:
 
 env:
   VERBOSE: ${{ github.events.input.verbose }}
-  SUBWASM_VERSION: 0.12.0
+  SUBWASM_VERSION: 0.14.1
 
 
 jobs:
@@ -78,14 +78,14 @@ jobs:
         run: |
           cargo clean -p integritee-collator
           cargo build --release
-        
+
       # Upload artifacts
       - name: Upload integritee-collator
         uses: actions/upload-artifact@v2
         with:
           name: integritee-collator-${{ github.sha }}
           path: target/release/integritee-collator
-          
+
       - name: Slack Notification
         uses: 8398a7/action-slack@v3
         if: failure()
@@ -203,7 +203,7 @@ jobs:
             ${{ matrix.runtime }}-metadata.json
 #            ${{ matrix.runtime }}-diff.txt
 
-          
+
       - name: Upload ${{ matrix.runtime }} runtime
         uses: actions/upload-artifact@v2
         with:
@@ -238,7 +238,7 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: integritee-collator-${{ github.sha }}
-          
+
       - name: 'Create binaries for artifacts'
         # Note: there is no way to pass the parachain-id to the `build-spec` cmd, which which imposes to set
         # `DEFAULT_PARA_ID=2015` in the `polkadot-parachains/command`.
@@ -294,7 +294,7 @@ jobs:
       - name: Changelog
         uses: scottbrenner/generate-changelog-action@master
         id: Changelog
-          
+
       - name: Display structure of downloaded files
         run: ls -R
         working-directory: .
