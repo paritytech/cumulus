@@ -24,7 +24,7 @@ use cumulus_primitives_core::UpwardMessageSender;
 use sp_std::marker::PhantomData;
 use xcm::{latest::prelude::*, WrapVersion};
 
-/// Xcm router which recognises the `Parent` destination and handles it by sending the message into
+/// Xcm router which recognizes the `Parent` destination and handles it by sending the message into
 /// the given UMP `UpwardMessageSender` implementation. Thus this essentially adapts an
 /// `UpwardMessageSender` trait impl into a `SendXcm` trait impl.
 ///
