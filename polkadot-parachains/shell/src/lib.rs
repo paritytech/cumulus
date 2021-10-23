@@ -197,6 +197,7 @@ parameter_types! {
 	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
 	pub UnitWeightCost: Weight = 1_000_000;
 	pub const MaxInstructions: u32 = 100;
+	pub const MaxAssetsIntoHolding: u32 = 64;
 }
 
 pub struct XcmConfig;
@@ -215,6 +216,8 @@ impl Config for XcmConfig {
 	type AssetTrap = (); // don't trap for now
 	type AssetClaims = (); // don't claim for now
 	type SubscriptionService = (); // don't handle subscriptions for now
+	type PalletInstancesInfo = ();
+	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {

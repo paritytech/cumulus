@@ -380,6 +380,7 @@ pub type Barrier = (
 
 parameter_types! {
 	pub StatemintLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
+	pub MaxAssetsIntoHolding: u32 = 64;
 }
 
 pub type Reserves = (NativeAsset, AssetsFrom<StatemintLocation>);
@@ -401,6 +402,8 @@ impl Config for XcmConfig {
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;
 	type SubscriptionService = PolkadotXcm;
+	type PalletInstancesInfo = ();
+	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
 }
 
 /// Local origins on this chain are allowed to dispatch XCM sends/executions.

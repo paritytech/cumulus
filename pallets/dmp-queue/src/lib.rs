@@ -473,7 +473,7 @@ mod tests {
 
 	fn msg(weight: Weight) -> Xcm {
 		Xcm(vec![Transact {
-			origin_type: OriginKind::Native,
+			origin_kind: OriginKind::Native,
 			require_weight_at_most: weight,
 			call: vec![].into(),
 		}])

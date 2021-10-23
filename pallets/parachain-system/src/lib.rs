@@ -660,7 +660,7 @@ impl<T: Config> GetChannelInfo for Pallet<T> {
 		// None then it must be that this is an edge-case where a message is attempted to be
 		// sent at the first block. It should be safe to assume that there are no channels
 		// opened at all so early. At least, relying on this assumption seems to be a better
-		// tradeoff, compared to introducing an error variant that the clients should be
+		// trade-off, compared to introducing an error variant that the clients should be
 		// prepared to handle.
 		let index = match channels.binary_search_by_key(&id, |item| item.0) {
 			Err(_) => return ChannelStatus::Closed,

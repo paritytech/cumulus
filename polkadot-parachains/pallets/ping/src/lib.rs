@@ -91,7 +91,7 @@ pub mod pallet {
 				match T::XcmSender::send_xcm(
 					(1, Junction::Parachain(para.into())),
 					Xcm(vec![Transact {
-						origin_type: OriginKind::Native,
+						origin_kind: OriginKind::Native,
 						require_weight_at_most: 1_000,
 						call: <T as Config>::Call::from(Call::<T>::ping {
 							seq,
@@ -167,7 +167,7 @@ pub mod pallet {
 			match T::XcmSender::send_xcm(
 				(1, Junction::Parachain(para.into())),
 				Xcm(vec![Transact {
-					origin_type: OriginKind::Native,
+					origin_kind: OriginKind::Native,
 					require_weight_at_most: 1_000,
 					call: <T as Config>::Call::from(Call::<T>::pong {
 						seq,

@@ -110,6 +110,7 @@ parameter_types! {
 	pub Ancestry: MultiLocation = X1(Parachain(1u32.into())).into();
 	pub UnitWeightCost: Weight = 1_000_000;
 	pub const MaxInstructions: u32 = 100;
+	pub const MaxAssetsIntoHolding: u32 = 64;
 }
 
 /// Means for transacting assets on this chain.
