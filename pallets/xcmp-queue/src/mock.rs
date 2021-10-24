@@ -146,6 +146,8 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetTrap = ();
 	type AssetClaims = ();
 	type SubscriptionService = ();
+	type PalletInstancesInfo = AllPallets;
+	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
 }
 
 pub type XcmRouter = (

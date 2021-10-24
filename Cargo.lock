@@ -2472,7 +2472,7 @@ dependencies = [
 [[package]]
 name = "frame-benchmarking-cli"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#632b32300eb9376767c2ae7b38e79b3f7f5329b1"
+source = "git+https://github.com/paritytech/substrate?branch=master#969a70d1864fc5d5f6c378bcfd03f1b3ea434049"
 dependencies = [
  "Inflector",
  "chrono",
@@ -8225,7 +8225,7 @@ dependencies = [
 [[package]]
 name = "remote-externalities"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#632b32300eb9376767c2ae7b38e79b3f7f5329b1"
+source = "git+https://github.com/paritytech/substrate?branch=master#969a70d1864fc5d5f6c378bcfd03f1b3ea434049"
 dependencies = [
  "env_logger 0.9.0",
  "jsonrpsee-proc-macros",
@@ -10904,7 +10904,7 @@ dependencies = [
 [[package]]
 name = "substrate-build-script-utils"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#632b32300eb9376767c2ae7b38e79b3f7f5329b1"
+source = "git+https://github.com/paritytech/substrate?branch=master#969a70d1864fc5d5f6c378bcfd03f1b3ea434049"
 dependencies = [
  "platforms",
 ]
@@ -11451,7 +11451,7 @@ checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
 [[package]]
 name = "try-runtime-cli"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#632b32300eb9376767c2ae7b38e79b3f7f5329b1"
+source = "git+https://github.com/paritytech/substrate?branch=master#969a70d1864fc5d5f6c378bcfd03f1b3ea434049"
 dependencies = [
  "jsonrpsee-ws-client",
  "log",
