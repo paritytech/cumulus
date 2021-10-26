@@ -94,12 +94,11 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 	)
 }
 
-pub fn encointer_spec(id: ParaId, use_well_known_keys: bool) -> ChainSpec {
+pub fn encointer_spec(id: ParaId, use_well_known_keys: bool, relay_chain: RelayChain) -> ChainSpec {
 	// encointer_root
 	let mut root_account: AccountId =
 		hex!["107f9c5385955bc57ac108b46b36498c4a8348eb964258b9b2ac53797d94794b"].into();
 	let mut endowed_accounts = vec![root_account.clone()];
-	let mut chain_type = ChainType::Live;
 
 	if use_well_known_keys {
 		root_account = get_account_id_from_seed::<sr25519::Public>("Alice");
@@ -108,13 +107,12 @@ pub fn encointer_spec(id: ParaId, use_well_known_keys: bool) -> ChainSpec {
 			get_account_id_from_seed::<sr25519::Public>("Bob"),
 			get_account_id_from_seed::<sr25519::Public>("Charlie"),
 		];
-		chain_type = ChainType::Local;
 	}
 
 	ChainSpec::from_genesis(
 		"Encointer PC1",
 		"encointer-rococo-v1",
-		chain_type,
+		relay_chain.chain_type(),
 		move || {
 			testnet_genesis(
 				root_account.clone(),
@@ -139,11 +137,11 @@ pub fn encointer_spec(id: ParaId, use_well_known_keys: bool) -> ChainSpec {
 			)
 			.unwrap(),
 		),
-		Extensions { relay_chain: "rococo".into(), para_id: id.into() },
+		Extensions { relay_chain: relay_chain.to_string(), para_id: id.into() },
 	)
 }
 
-pub fn sybil_dummy_spec(id: ParaId) -> ChainSpec {
+pub fn sybil_dummy_spec(id: ParaId, relay_chain: RelayChain) -> ChainSpec {
 	let root_account = get_account_id_from_seed::<sr25519::Public>("Alice");
 	let endowed_accounts = vec![
 		get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -153,7 +151,7 @@ pub fn sybil_dummy_spec(id: ParaId) -> ChainSpec {
 	ChainSpec::from_genesis(
 		"Sybil Dummy",
 		"sybil-dummy-rococo-v1",
-		ChainType::Local,
+		relay_chain.chain_type(),
 		move || {
 			testnet_genesis(
 				root_account.clone(),
@@ -178,7 +176,7 @@ pub fn sybil_dummy_spec(id: ParaId) -> ChainSpec {
 			)
 			.unwrap(),
 		),
-		Extensions { relay_chain: "rococo".into(), para_id: id.into() },
+		Extensions { relay_chain: relay_chain.to_string(), para_id: id.into() },
 	)
 }
 
@@ -189,20 +187,20 @@ fn testnet_genesis(
 	id: ParaId,
 ) -> parachain_runtime::GenesisConfig {
 	parachain_runtime::GenesisConfig {
-		frame_system: parachain_runtime::SystemConfig {
+		system: parachain_runtime::SystemConfig {
 			code: parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 			changes_trie_config: Default::default(),
 		},
-		pallet_balances: parachain_runtime::BalancesConfig {
+		balances: parachain_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
-		pallet_sudo: parachain_runtime::SudoConfig { key: root_key.clone() },
+		sudo: parachain_runtime::SudoConfig { key: root_key.clone() },
 		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },
-		pallet_aura: parachain_runtime::AuraConfig { authorities: initial_authorities },
-		cumulus_pallet_aura_ext: Default::default(),
-		pallet_encointer_scheduler: parachain_runtime::EncointerSchedulerConfig {
+		aura: parachain_runtime::AuraConfig { authorities: initial_authorities },
+		aura_ext: Default::default(),
+		encointer_scheduler: parachain_runtime::EncointerSchedulerConfig {
 			current_phase: CeremonyPhaseType::REGISTERING,
 			current_ceremony_index: 1,
 			ceremony_master: root_key.clone(),
@@ -212,18 +210,53 @@ fn testnet_genesis(
 				(CeremonyPhaseType::ATTESTING, 600_000),
 			],
 		},
-		pallet_encointer_ceremonies: parachain_runtime::EncointerCeremoniesConfig {
+		encointer_ceremonies: parachain_runtime::EncointerCeremoniesConfig {
 			ceremony_reward: BalanceType::from_num(1),
 			time_tolerance: 600_000,   // +-10min
 			location_tolerance: 1_000, // [m]
 		},
-		pallet_encointer_communities: parachain_runtime::EncointerCommunitiesConfig {
+		encointer_communities: parachain_runtime::EncointerCommunitiesConfig {
 			community_master: root_key,
 		},
-		pallet_encointer_balances: parachain_runtime::EncointerBalancesConfig {
+		encointer_balances: parachain_runtime::EncointerBalancesConfig {
 			demurrage_per_block_default: Demurrage::from_bits(
 				0x0000000000000000000001E3F0A8A973_i128,
 			),
 		},
+	}
+}
+
+pub enum RelayChain {
+	RococoLocal,
+	// Kusama,
+	// KusamaLocal,
+	// PolkadotLocal,
+	Rococo,
+	// Polkadot,
+}
+
+impl ToString for RelayChain {
+	fn to_string(&self) -> String {
+		match self {
+			RelayChain::RococoLocal => "rococo-local".into(),
+			// RelayChain::Kusama => "kusama".into(),
+			// RelayChain::KusamaLocal => "kusama-local".into(),
+			// RelayChain::PolkadotLocal => "polkadot-local".into(),
+			RelayChain::Rococo => "rococo".into(),
+			// RelayChain::Polkadot => "polkadot".into(),
+		}
+	}
+}
+
+impl RelayChain {
+	fn chain_type(&self) -> ChainType {
+		match self {
+			RelayChain::RococoLocal => ChainType::Local,
+			// RelayChain::KusamaLocal => ChainType::Local,
+			// RelayChain::PolkadotLocal => ChainType::Local,
+			// RelayChain::Kusama => ChainType::Live,
+			RelayChain::Rococo => ChainType::Live,
+			// RelayChain::Polkadot => ChainType::Live,
+		}
 	}
 }

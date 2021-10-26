@@ -16,7 +16,9 @@
 
 use crate::{
 	chain_spec,
+	chain_spec::RelayChain,
 	cli::{Cli, RelayChainCli, Subcommand},
+	service::{new_partial, Block, RococoParachainRuntimeExecutor},
 };
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
@@ -32,14 +34,21 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 
+const DEFAULT_PARA_ID: u32 = 2015;
+
+// If we don't skipp here, each cmd expands to 5 lines. I think we have better overview like this.
+#[rustfmt::skip]
 fn load_spec(
 	id: &str,
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	match id {
-		"encointer-rococo" => Ok(Box::new(chain_spec::encointer_spec(para_id, false))),
-		"encointer-local" => Ok(Box::new(chain_spec::encointer_spec(para_id, true))),
-		"sybil-dummy" => Ok(Box::new(chain_spec::sybil_dummy_spec(para_id))),
+		"encointer-rococo" => Ok(Box::new(chain_spec::encointer_spec(para_id, false, RelayChain::Rococo))),
+		"encointer-rococo-local" => Ok(Box::new(chain_spec::encointer_spec(para_id, true, RelayChain::RococoLocal))),
+
+		"sybil-dummy-rococo" => Ok(Box::new(chain_spec::sybil_dummy_spec(para_id, RelayChain::Rococo))),
+		"sybil-dummy-rococo-local" => Ok(Box::new(chain_spec::sybil_dummy_spec(para_id, RelayChain::RococoLocal))),
+		
 		"" => Ok(Box::new(chain_spec::get_chain_spec(para_id))),
 		path => Ok({
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
@@ -80,7 +89,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		load_spec(id, self.run.parachain_id.unwrap_or(100).into())
+		load_spec(id, self.run.parachain_id.unwrap_or(DEFAULT_PARA_ID).into())
 	}
 
 	fn native_runtime_version(_chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -138,8 +147,6 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 		.remove(sp_core::storage::well_known_keys::CODE)
 		.ok_or_else(|| "Could not find wasm file in genesis state!".into())
 }
-
-use crate::service::{new_partial, RococoParachainRuntimeExecutor};
 
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
@@ -219,7 +226,7 @@ pub fn run() -> Result<()> {
 
 			let block: crate::service::Block = generate_genesis_block(&load_spec(
 				&params.chain.clone().unwrap_or_default(),
-				params.parachain_id.unwrap_or(100).into(),
+				params.parachain_id.unwrap_or(DEFAULT_PARA_ID).into(),
 			)?)?;
 			let raw_header = block.header().encode();
 			let output_buf = if params.raw {
@@ -257,12 +264,19 @@ pub fn run() -> Result<()> {
 
 			Ok(())
 		},
+		Some(Subcommand::Benchmark(cmd)) =>
+			if cfg!(feature = "runtime-benchmarks") {
+				let runner = cli.create_runner(cmd)?;
+				runner.sync_run(|config| cmd.run::<Block, RococoParachainRuntimeExecutor>(config))
+			} else {
+				Err("Benchmarking wasn't enabled when building the node. \
+				You can enable it with `--features runtime-benchmarks`."
+					.into())
+			},
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
-			runner.run_node_until_exit(|config| async move {
-				// TODO
-				let key = sp_core::Pair::generate().0;
 
+			runner.run_node_until_exit(|config| async move {
 				let para_id =
 					chain_spec::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
 
@@ -273,7 +287,7 @@ pub fn run() -> Result<()> {
 						.chain(cli.relaychain_args.iter()),
 				);
 
-				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(100));
+				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(DEFAULT_PARA_ID));
 
 				let parachain_account =
 					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
@@ -292,7 +306,7 @@ pub fn run() -> Result<()> {
 				info!("Parachain genesis state: {}", genesis_state);
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
-				crate::service::start_rococo_parachain_node(config, key, polkadot_config, id)
+				crate::service::start_rococo_parachain_node(config, polkadot_config, id)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
@@ -387,6 +401,10 @@ impl CliConfiguration<Self> for RelayChainCli {
 
 	fn rpc_ws_max_connections(&self) -> Result<Option<usize>> {
 		self.base.base.rpc_ws_max_connections()
+	}
+
+	fn rpc_http_threads(&self) -> Result<Option<usize>> {
+		self.base.base.rpc_http_threads()
 	}
 
 	fn rpc_cors(&self, is_dev: bool) -> Result<Option<Vec<String>>> {

@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../polkadot/target/release/polkadot",
+		"bin": "../../bin/polkadot-v0.9.10",
 		"chain": "rococo-local",
 		"nodes": [
 			{
@@ -18,40 +18,33 @@
 				"wsPort": 9977,
 				"port": 30666
 			}
-		],
-		"runtime_genesis_config": {
-			"parachainsConfiguration": {
-				"config": {
-					"validation_upgrade_frequency": 1,
-					"validation_upgrade_delay": 1
-				}
-			}
-		}
+		]
 	},
 	"parachains": [
 		{
-			"bin": "./target/release/encointer-collator",
-			"chain": "encointer-local",
+			"bin": "../target/release/encointer-collator",
+			"chain": "encointer-rococo",
 			"id": "1862",
 			"balance": "1000000000000000000000",
 			"nodes": [
 				{
 					"wsPort": 9944,
 					"port": 31200,
-					"flags": ["-lencointer=debug", "--", "--execution=wasm"]
+					"flags": ["-lencointer=debug", "--force-authoring", "--", "--execution=wasm"]
 				}
 			]
 		},
 		{
-			"bin": "./target/release/encointer-collator",
-			"chain": "sybil-dummy",
+			"bin": "../target/release/encointer-collator",
+			"chain": "sybil-dummy-rococo",
 			"id": "1863",
 			"balance": "1000000000000000000000",
 			"nodes": [
 				{
 					"wsPort": 9955,
 					"port": 31300,
-					"flags": ["-lencointer=debug", "--", "--execution=wasm"]
+					"name": "alice",
+					"flags": ["-lencointer=debug", "--force-authoring", "--", "--execution=wasm"]
 				}
 			]
 		}

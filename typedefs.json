@@ -1,4 +1,6 @@
 {
+  "Address": "MultiAddress",
+  "LookupSource": "MultiAddress",
   "CeremonyPhaseType": {
     "_enum": [
       "Registering",
