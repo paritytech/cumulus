@@ -402,7 +402,7 @@ impl<T: Config> Pallet<T> {
 				while !remaining_fragments.is_empty() {
 					last_remaining_fragments = remaining_fragments;
 					match <Vec<u8>>::decode_all(&mut remaining_fragments) {
-						Ok(blob) if blob.len() > 0 => {
+						Ok(blob) if remaining_fragments.len() < last_remaining_fragments.len() => {
 							let weight = max_weight - weight_used;
 							match Self::handle_blob_message(sender, sent_at, blob, weight) {
 								Ok(used) => weight_used = weight_used.saturating_add(used),
