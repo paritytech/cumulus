@@ -512,6 +512,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 parameter_types! {
 	pub UnitWeightCost: Weight = 1_000;
 	pub const MaxInstructions: u32 = 100;
+	pub const MaxAssetsIntoHolding: u32 = 64;
 }
 
 match_type! {
@@ -526,6 +527,10 @@ pub type Barrier = (
 	AllowTopLevelPaidExecutionFrom<Everything>,
 	AllowUnpaidExecutionFrom<ParentOrParentsPlurality>,
 	// ^^^ Parent & its plurality gets free execution
+	// Expected responses are OK.
+	AllowKnownQueryResponses<XcmPallet>,
+	// Subscriptions for version tracking are OK.
+	AllowSubscriptionsFrom<Everything>,
 );
 
 pub struct XcmConfig;
