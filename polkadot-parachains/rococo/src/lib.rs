@@ -377,7 +377,7 @@ pub type Barrier = (
 	// ^^^ Parent & its unit plurality gets free execution
 	AllowUnpaidExecutionFrom<Statemint>,
 	// Expected responses are OK.
-	AllowKnownQueryResponses<XcmPallet>,
+	AllowKnownQueryResponses<PolkadotXcm>,
 	// Subscriptions for version tracking are OK.
 	AllowSubscriptionsFrom<Everything>,
 );

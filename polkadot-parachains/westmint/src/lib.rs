@@ -75,7 +75,8 @@ use xcm_builder::{
 	FixedWeightBounds, FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset,
 	ParentAsSuperuser, ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, AllowKnownQueryResponses,
+	AllowSubscriptionsFrom,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
@@ -512,7 +513,6 @@ pub type XcmOriginToTransactDispatchOrigin = (
 parameter_types! {
 	pub UnitWeightCost: Weight = 1_000;
 	pub const MaxInstructions: u32 = 100;
-	pub const MaxAssetsIntoHolding: u32 = 64;
 }
 
 match_type! {
