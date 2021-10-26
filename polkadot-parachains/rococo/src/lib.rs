@@ -60,7 +60,10 @@ use parachains_common::{
 	impls::{AssetsFrom, NonZeroIssuance},
 	AssetId,
 };
-use xcm_builder::{AllowKnownQueryResponses, AllowSubscriptionsFrom, AsPrefixedGeneralIndex, ConvertedConcreteAssetId, FungiblesAdapter};
+use xcm_builder::{
+	AllowKnownQueryResponses, AllowSubscriptionsFrom, AsPrefixedGeneralIndex,
+	ConvertedConcreteAssetId, FungiblesAdapter,
+};
 use xcm_executor::traits::JustTry;
 
 // XCM imports
@@ -384,7 +387,6 @@ pub type Barrier = (
 
 parameter_types! {
 	pub StatemintLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
-	pub MaxAssetsIntoHolding: u32 = 64;
 }
 
 pub type Reserves = (NativeAsset, AssetsFrom<StatemintLocation>);
