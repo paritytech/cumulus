@@ -75,6 +75,7 @@ use xcm_builder::{
 	ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
 	FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser,
 	ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 	UsingComponents,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
