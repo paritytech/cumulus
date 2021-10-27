@@ -29,11 +29,18 @@ pub type EncointerChainSpec = GenericChainSpec<parachain_runtime::GenesisConfig,
 /// Specialized `ChainSpec` for the launch parachain runtime.
 pub type LaunchChainSpec = GenericChainSpec<launch_runtime::GenesisConfig, Extensions>;
 
+pub const ENDOWED_FUNDING: u128 = 1 << 60;
+
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
 	TPublic::Pair::from_string(&format!("//{}", seed), None)
 		.expect("static values are valid; qed")
 		.public()
+}
+
+/// Configure `endowed_accounts` with initial balance of `ENDOWED_FUNDING`.
+pub fn allocate_endowance(endowed_accounts: Vec<AccountId>) -> Vec<(AccountId, u128)> {
+	endowed_accounts.into_iter().map(|k| (k, ENDOWED_FUNDING)).collect()
 }
 
 /// The extensions for the [`ChainSpec`].
@@ -89,7 +96,7 @@ pub fn encointer_spec(
 			encointer_genesis(
 				root_account.clone(),
 				vec![get_from_seed::<AuraId>("Alice"), get_from_seed::<AuraId>("Bob")],
-				endowed_accounts.clone(),
+				allocate_endowance(endowed_accounts.clone()),
 				id,
 			)
 		},
@@ -125,7 +132,7 @@ pub fn launch_spec(
 			launch_genesis(
 				root_account.clone(),
 				vec![get_from_seed::<AuraId>("Alice"), get_from_seed::<AuraId>("Bob")],
-				endowed_accounts.clone(),
+				allocate_endowance(endowed_accounts.clone()),
 				id,
 			)
 		},
@@ -177,7 +184,7 @@ pub fn sybil_dummy_spec(id: ParaId, relay_chain: RelayChain) -> EncointerChainSp
 			encointer_genesis(
 				root_account.clone(),
 				vec![get_from_seed::<AuraId>("Alice"), get_from_seed::<AuraId>("Bob")],
-				endowed_accounts.clone(),
+				allocate_endowance(endowed_accounts.clone()),
 				id,
 			)
 		},
@@ -204,7 +211,7 @@ pub fn sybil_dummy_spec(id: ParaId, relay_chain: RelayChain) -> EncointerChainSp
 fn encointer_genesis(
 	root_key: AccountId,
 	initial_authorities: Vec<AuraId>,
-	endowed_accounts: Vec<AccountId>,
+	endowance_allocation: Vec<(AccountId, u128)>,
 	id: ParaId,
 ) -> parachain_runtime::GenesisConfig {
 	parachain_runtime::GenesisConfig {
@@ -214,13 +221,12 @@ fn encointer_genesis(
 				.to_vec(),
 			changes_trie_config: Default::default(),
 		},
-		balances: parachain_runtime::BalancesConfig {
-			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
-		},
+		balances: parachain_runtime::BalancesConfig { balances: endowance_allocation },
 		sudo: parachain_runtime::SudoConfig { key: root_key.clone() },
 		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },
 		aura: parachain_runtime::AuraConfig { authorities: initial_authorities },
 		aura_ext: Default::default(),
+		treasury: Default::default(),
 		encointer_scheduler: parachain_runtime::EncointerSchedulerConfig {
 			current_phase: CeremonyPhaseType::REGISTERING,
 			current_ceremony_index: 1,
@@ -250,7 +256,7 @@ fn encointer_genesis(
 fn launch_genesis(
 	root_key: AccountId,
 	initial_authorities: Vec<AuraId>,
-	endowed_accounts: Vec<AccountId>,
+	endowance_allocation: Vec<(AccountId, u128)>,
 	id: ParaId,
 ) -> launch_runtime::GenesisConfig {
 	launch_runtime::GenesisConfig {
@@ -260,13 +266,12 @@ fn launch_genesis(
 				.to_vec(),
 			changes_trie_config: Default::default(),
 		},
-		balances: launch_runtime::BalancesConfig {
-			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
-		},
+		balances: launch_runtime::BalancesConfig { balances: endowance_allocation },
 		sudo: launch_runtime::SudoConfig { key: root_key.clone() },
 		parachain_info: launch_runtime::ParachainInfoConfig { parachain_id: id },
 		aura: launch_runtime::AuraConfig { authorities: initial_authorities },
 		aura_ext: Default::default(),
+		treasury: Default::default(),
 	}
 }
 
