@@ -6,15 +6,24 @@ on:
     branches: [ master ]
 
 jobs:
+  cancel_previous_runs:
+    name: Cancel Previous Runs
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: styfle/cancel-workflow-action@0.4.1
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
+
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 
-      # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
-      # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
       - name: Setup Rust toolchain
         run: rustup show
+
+      - uses: Swatinem/rust-cache@v1
+
       - name: cargo check
         run: cargo check
 
