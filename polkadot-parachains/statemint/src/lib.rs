@@ -77,6 +77,9 @@ use xcm_builder::{
 	ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
 	UsingComponents,
 };
+use xcm_executor::{traits::JustTry, Config, XcmExecutor};
+
+impl_opaque_keys! {
 	pub struct SessionKeys {
 		pub aura: Aura,
 	}
