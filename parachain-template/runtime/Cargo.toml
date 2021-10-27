@@ -73,12 +73,12 @@ parachain-info = { path = "../../polkadot-parachains/pallets/parachain-info", de
 cumulus-pallet-session-benchmarking = {path = "../../pallets/session-benchmarking", default-features = false, version = "3.0.0"}
 
 # Polkadot Dependencies
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.11" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.11" }
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.11" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.11" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.11" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.11" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
 
 [features]
 default = [

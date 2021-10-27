@@ -16,7 +16,7 @@ sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v
 sp-trie = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11" }
 
 # Polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.11" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
 
 # Other deps
 futures = { version = "0.3.8", features = ["compat"] }

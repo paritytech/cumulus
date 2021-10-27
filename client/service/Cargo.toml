@@ -26,9 +26,9 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.11" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.11" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.11" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
 
 # Other deps
 tracing = "0.1.22"

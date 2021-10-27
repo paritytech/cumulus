@@ -35,9 +35,9 @@ sp-trie = { git = "https://github.com/paritytech/substrate", branch = "polkadot-
 substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.11" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.11" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.11" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
 
 # Cumulus
 cumulus-client-consensus-relay-chain = { path = "../../client/consensus/relay-chain" }
@@ -56,7 +56,7 @@ jsonrpc-core = "18.0.0"
 futures = "0.3.5"
 
 # Polkadot dependencies
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.11" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
 
 # Substrate dependencies
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11" }

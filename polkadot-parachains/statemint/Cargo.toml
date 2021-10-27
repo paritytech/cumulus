@@ -67,12 +67,12 @@ pallet-collator-selection = { path = "../../pallets/collator-selection", default
 parachains-common = { path = "../parachains-common", default-features = false }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.11" }
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.11" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.11" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.11" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.11" }
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.11" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
 
 [dev-dependencies]
 hex-literal = "0.3.1"

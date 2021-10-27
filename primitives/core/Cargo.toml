@@ -13,9 +13,9 @@ sp-trie = { git = "https://github.com/paritytech/substrate", default-features = 
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.11" }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.11" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.11" }
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.11" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kckyeung/fix-xcm-weight-hardcoded-v0.9.11" }
 
 # Other dependencies
 impl-trait-for-tuples = "0.2.1"
