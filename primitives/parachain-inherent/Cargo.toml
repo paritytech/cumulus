@@ -30,6 +30,7 @@ tracing = { version = "0.1.22", optional = true }
 
 [features]
 default = [ "std" ]
+client-side = ["polkadot-client", "std"]
 std = [
 	"async-trait",
 	"codec/std",
@@ -44,6 +45,5 @@ std = [
 	"sp-runtime",
 	"sc-client-api",
 	"sp-api",
-	"polkadot-client",
 	"cumulus-test-relay-sproof-builder"
 ]

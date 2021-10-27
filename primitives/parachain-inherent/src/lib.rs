@@ -35,9 +35,9 @@ use scale_info::TypeInfo;
 use sp_inherents::InherentIdentifier;
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
-#[cfg(feature = "std")]
+#[cfg(feature = "client-side")]
 mod client_side;
-#[cfg(feature = "std")]
+#[cfg(feature = "client-side")]
 pub use client_side::*;
 #[cfg(feature = "std")]
 mod mock;
