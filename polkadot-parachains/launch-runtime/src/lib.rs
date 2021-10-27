@@ -158,6 +158,27 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 42;
 }
 
+pub struct SudoOnly;
+impl Contains<Call> for SudoOnly {
+	fn contains(call: &Call) -> bool {
+		// the system relevant pallets have either:
+		//
+		// * `ensure_root(origin)`
+		// * `ensure_none(origin)`
+		//
+		// So effectively, this is a `SudoOnly` filter.
+		!matches!(
+			call,
+			// only enable force_transfer/set_balance, which are root calls.
+			Call::Balances(
+				pallet_balances::Call::transfer { .. } |
+					pallet_balances::Call::transfer_all { .. } |
+					pallet_balances::Call::transfer_keep_alive { .. }
+			) | Call::Treasury(_)
+		)
+	}
+}
+
 impl frame_system::Config for Runtime {
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
@@ -189,7 +210,7 @@ impl frame_system::Config for Runtime {
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type DbWeight = ();
-	type BaseCallFilter = frame_support::traits::Everything;
+	type BaseCallFilter = SudoOnly;
 	type SystemWeightInfo = ();
 	type BlockWeights = RuntimeBlockWeights;
 	type BlockLength = RuntimeBlockLength;
