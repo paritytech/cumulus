@@ -2,6 +2,7 @@
 members = [
 	"polkadot-parachains",
     "polkadot-parachains/encointer-runtime",
+    "polkadot-parachains/launch-runtime",
 ]
 
 [profile.release]

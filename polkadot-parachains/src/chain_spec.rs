@@ -17,14 +17,17 @@
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
 use parachain_runtime::{AccountId, AuraId, BalanceType, CeremonyPhaseType, Demurrage, Signature};
-use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
-use sc_service::ChainType;
+use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup, Properties};
+use sc_service::{ChainType, GenericChainSpec};
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec = sc_service::GenericChainSpec<parachain_runtime::GenesisConfig, Extensions>;
+pub type EncointerChainSpec = GenericChainSpec<parachain_runtime::GenesisConfig, Extensions>;
+
+/// Specialized `ChainSpec` for the launch parachain runtime.
+pub type LaunchChainSpec = GenericChainSpec<launch_runtime::GenesisConfig, Extensions>;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -60,41 +63,12 @@ where
 	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
 
-pub fn get_chain_spec(id: ParaId) -> ChainSpec {
-	ChainSpec::from_genesis(
-		"Local Testnet",
-		"local_testnet",
-		ChainType::Local,
-		move || {
-			testnet_genesis(
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				vec![get_from_seed::<AuraId>("Alice"), get_from_seed::<AuraId>("Bob")],
-				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie"),
-					get_account_id_from_seed::<sr25519::Public>("Dave"),
-					get_account_id_from_seed::<sr25519::Public>("Eve"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-				],
-				id,
-			)
-		},
-		vec![],
-		None,
-		None,
-		None,
-		Extensions { relay_chain: "westend-dev".into(), para_id: id.into() },
-	)
-}
-
-pub fn encointer_spec(id: ParaId, use_well_known_keys: bool, relay_chain: RelayChain) -> ChainSpec {
+/// Chain-spec for the encointer runtime
+pub fn encointer_spec(
+	id: ParaId,
+	use_well_known_keys: bool,
+	relay_chain: RelayChain,
+) -> EncointerChainSpec {
 	// encointer_root
 	let mut root_account: AccountId =
 		hex!["107f9c5385955bc57ac108b46b36498c4a8348eb964258b9b2ac53797d94794b"].into();
@@ -109,51 +83,98 @@ pub fn encointer_spec(id: ParaId, use_well_known_keys: bool, relay_chain: RelayC
 		];
 	}
 
-	ChainSpec::from_genesis(
-		"Encointer PC1",
-		"encointer-rococo-v1",
-		relay_chain.chain_type(),
+	chain_spec(
+		"Encointer Network",
 		move || {
-			testnet_genesis(
+			encointer_genesis(
 				root_account.clone(),
 				vec![get_from_seed::<AuraId>("Alice"), get_from_seed::<AuraId>("Bob")],
 				endowed_accounts.clone(),
 				id,
 			)
 		},
+		relay_chain.chain_type(),
+		id,
+		&relay_chain,
+	)
+}
+
+/// Chain-spec for the launch runtime
+pub fn launch_spec(
+	id: ParaId,
+	use_well_known_keys: bool,
+	relay_chain: RelayChain,
+) -> LaunchChainSpec {
+	// encointer_root
+	let mut root_account: AccountId =
+		hex!["107f9c5385955bc57ac108b46b36498c4a8348eb964258b9b2ac53797d94794b"].into();
+	let mut endowed_accounts = vec![root_account.clone()];
+
+	if use_well_known_keys {
+		root_account = get_account_id_from_seed::<sr25519::Public>("Alice");
+		endowed_accounts = vec![
+			get_account_id_from_seed::<sr25519::Public>("Alice"),
+			get_account_id_from_seed::<sr25519::Public>("Bob"),
+			get_account_id_from_seed::<sr25519::Public>("Charlie"),
+		];
+	}
+
+	chain_spec(
+		"Encointer Launch",
+		move || {
+			launch_genesis(
+				root_account.clone(),
+				vec![get_from_seed::<AuraId>("Alice"), get_from_seed::<AuraId>("Bob")],
+				endowed_accounts.clone(),
+				id,
+			)
+		},
+		relay_chain.chain_type(),
+		id,
+		&relay_chain,
+	)
+}
+
+/// decorates the given `testnet_constructor` with metadata.
+///
+/// Intended to remove redundant code when defining encointer-launch-runtime and
+/// encointer-parachain-runtime chain-specs.
+fn chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
+	chain_name: &str,
+	testnet_constructor: F,
+	chain_type: ChainType,
+	para_id: ParaId,
+	relay_chain: &RelayChain,
+) -> GenericChainSpec<GenesisConfig, Extensions> {
+	GenericChainSpec::<GenesisConfig, Extensions>::from_genesis(
+		chain_name,
+		&format!("encointer-{}", relay_chain.to_string()),
+		chain_type,
+		testnet_constructor,
 		Vec::new(),
 		// telemetry endpoints
 		None,
 		// protocol id
-		Some("encointer-rococo-v1"),
+		Some("dot"),
 		// properties
-		Some(
-			serde_json::from_str(
-				r#"{
-			"ss58Format": 42,
-			"tokenDecimals": 12,
-			"tokenSymbol": "ERT"
-		  }"#,
-			)
-			.unwrap(),
-		),
-		Extensions { relay_chain: relay_chain.to_string(), para_id: id.into() },
+		Some(relay_chain.properties()),
+		Extensions { relay_chain: relay_chain.to_string(), para_id: para_id.into() },
 	)
 }
 
-pub fn sybil_dummy_spec(id: ParaId, relay_chain: RelayChain) -> ChainSpec {
+pub fn sybil_dummy_spec(id: ParaId, relay_chain: RelayChain) -> EncointerChainSpec {
 	let root_account = get_account_id_from_seed::<sr25519::Public>("Alice");
 	let endowed_accounts = vec![
 		get_account_id_from_seed::<sr25519::Public>("Alice"),
 		get_account_id_from_seed::<sr25519::Public>("Bob"),
 	];
 
-	ChainSpec::from_genesis(
+	EncointerChainSpec::from_genesis(
 		"Sybil Dummy",
 		"sybil-dummy-rococo-v1",
 		relay_chain.chain_type(),
 		move || {
-			testnet_genesis(
+			encointer_genesis(
 				root_account.clone(),
 				vec![get_from_seed::<AuraId>("Alice"), get_from_seed::<AuraId>("Bob")],
 				endowed_accounts.clone(),
@@ -180,7 +201,7 @@ pub fn sybil_dummy_spec(id: ParaId, relay_chain: RelayChain) -> ChainSpec {
 	)
 }
 
-fn testnet_genesis(
+fn encointer_genesis(
 	root_key: AccountId,
 	initial_authorities: Vec<AuraId>,
 	endowed_accounts: Vec<AccountId>,
@@ -226,6 +247,29 @@ fn testnet_genesis(
 	}
 }
 
+fn launch_genesis(
+	root_key: AccountId,
+	initial_authorities: Vec<AuraId>,
+	endowed_accounts: Vec<AccountId>,
+	id: ParaId,
+) -> launch_runtime::GenesisConfig {
+	launch_runtime::GenesisConfig {
+		system: launch_runtime::SystemConfig {
+			code: launch_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!")
+				.to_vec(),
+			changes_trie_config: Default::default(),
+		},
+		balances: launch_runtime::BalancesConfig {
+			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
+		},
+		sudo: launch_runtime::SudoConfig { key: root_key.clone() },
+		parachain_info: launch_runtime::ParachainInfoConfig { parachain_id: id },
+		aura: launch_runtime::AuraConfig { authorities: initial_authorities },
+		aura_ext: Default::default(),
+	}
+}
+
 pub enum RelayChain {
 	RococoLocal,
 	// Kusama,
@@ -259,4 +303,21 @@ impl RelayChain {
 			// RelayChain::Polkadot => ChainType::Live,
 		}
 	}
+
+	fn properties(&self) -> Properties {
+		match self {
+			RelayChain::RococoLocal | RelayChain::Rococo => rococo_properties(),
+		}
+	}
+}
+
+fn rococo_properties() -> Properties {
+	serde_json::from_str(
+		r#"{
+				"ss58Format": 42,
+				"tokenDecimals": 12,
+				"tokenSymbol": "ROC"
+				}"#,
+	)
+	.unwrap()
 }

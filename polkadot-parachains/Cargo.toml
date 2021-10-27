@@ -25,6 +25,7 @@ async-trait = "0.1.42"
 
 # Parachain dependencies
 parachain-runtime = { package = "encointer-parachain-runtime", path = "encointer-runtime" }
+launch-runtime = { package = "encointer-launch-runtime", path = "launch-runtime" }
 
 # Substrate dependencies
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.10" }
