@@ -25,7 +25,7 @@ cat shell-spec-plain.json | jq --rawfile code shell-hex.txt '.genesis.runtime.sy
 $binary build-spec --chain edited-shell-plain.json --raw > shell-spec-raw.json
 
 # build genesis data
-$binary export-genesis-state --parachain-id=1000 --chain shell-spec-raw.json > shell_genesis
+$binary export-genesis-state --parachain-id=1000 --chain shell-spec-raw.json > shell-head-data
 
 # build genesis wasm
-$binary export-genesis-wasm --chain shell-spec-raw.json > shell_wasm
+$binary export-genesis-wasm --chain shell-spec-raw.json > shell-wasm
