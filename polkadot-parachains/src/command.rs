@@ -18,7 +18,9 @@ use crate::{
 	chain_spec,
 	chain_spec::{EncointerChainSpec, LaunchChainSpec, RelayChain},
 	cli::{Cli, RelayChainCli, Subcommand},
-	service::{new_partial, Block, RococoParachainRuntimeExecutor},
+	service::{
+		new_partial, Block, EncointerParachainRuntimeExecutor, LaunchParachainRuntimeExecutor,
+	},
 };
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
@@ -177,10 +179,20 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
-		runner.async_run(|$config| {
+		if runner.config().chain_spec.is_launch() {
+			runner.async_run(|$config| {
+				let $components = new_partial::<launch_runtime::RuntimeApi, LaunchParachainRuntimeExecutor, _>(
+					&$config,
+					crate::service::launch_parachain_build_import_queue,
+				)?;
+				let task_manager = $components.task_manager;
+				{ $( $code )* }.map(|v| (v, task_manager))
+			})
+		} else {
+			runner.async_run(|$config| {
 			let $components = new_partial::<
 				parachain_runtime::RuntimeApi,
-				RococoParachainRuntimeExecutor,
+				EncointerParachainRuntimeExecutor,
 				_
 			>(
 				&$config,
@@ -189,6 +201,7 @@ macro_rules! construct_async_run {
 			let task_manager = $components.task_manager;
 			{ $( $code )* }.map(|v| (v, task_manager))
 		})
+		}
 	}}
 }
 
@@ -235,7 +248,7 @@ pub fn run() -> Result<()> {
 				let polkadot_config = SubstrateCli::create_configuration(
 					&polkadot_cli,
 					&polkadot_cli,
-					config.task_executor.clone(),
+					config.tokio_handle.clone(),
 				)
 				.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
@@ -293,12 +306,20 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::Benchmark(cmd)) =>
 			if cfg!(feature = "runtime-benchmarks") {
 				let runner = cli.create_runner(cmd)?;
-				runner.sync_run(|config| cmd.run::<Block, RococoParachainRuntimeExecutor>(config))
+				if runner.config().chain_spec.is_launch() {
+					runner
+						.sync_run(|config| cmd.run::<Block, LaunchParachainRuntimeExecutor>(config))
+				} else {
+					runner.sync_run(|config| {
+						cmd.run::<Block, EncointerParachainRuntimeExecutor>(config)
+					})
+				}
 			} else {
 				Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
 					.into())
 			},
+		Some(Subcommand::Key(cmd)) => Ok(cmd.run(&cli)?),
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 
@@ -322,9 +343,9 @@ pub fn run() -> Result<()> {
 					generate_genesis_block(&config.chain_spec).map_err(|e| format!("{:?}", e))?;
 				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
-				let task_executor = config.task_executor.clone();
+				let tokio_handle = config.tokio_handle.clone();
 				let polkadot_config =
-					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, task_executor)
+					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
 						.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
 				info!("Parachain id: {:?}", id);
@@ -332,10 +353,17 @@ pub fn run() -> Result<()> {
 				info!("Parachain genesis state: {}", genesis_state);
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
-				crate::service::start_rococo_parachain_node(config, polkadot_config, id)
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into)
+				if config.chain_spec.is_launch() {
+					crate::service::start_launch_parachain_node(config, polkadot_config, id)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into)
+				} else {
+					crate::service::start_rococo_parachain_node(config, polkadot_config, id)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into)
+				}
 			})
 		},
 	}
@@ -429,16 +457,8 @@ impl CliConfiguration<Self> for RelayChainCli {
 		self.base.base.rpc_ws_max_connections()
 	}
 
-	fn rpc_http_threads(&self) -> Result<Option<usize>> {
-		self.base.base.rpc_http_threads()
-	}
-
 	fn rpc_cors(&self, is_dev: bool) -> Result<Option<Vec<String>>> {
 		self.base.base.rpc_cors(is_dev)
-	}
-
-	fn telemetry_external_transport(&self) -> Result<Option<sc_service::config::ExtTransport>> {
-		self.base.base.telemetry_external_transport()
 	}
 
 	fn default_heap_pages(&self) -> Result<Option<u64>> {

@@ -16,7 +16,8 @@
 
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use parachain_runtime::{AccountId, AuraId, BalanceType, CeremonyPhaseType, Demurrage, Signature};
+// use parachain_runtime::{AccountId, AuraId, BalanceType, CeremonyPhaseType, Demurrage, Signature};
+use parachain_runtime::{AccountId, AuraId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup, Properties};
 use sc_service::{ChainType, GenericChainSpec};
 use serde::{Deserialize, Serialize};
@@ -227,29 +228,29 @@ fn encointer_genesis(
 		aura: parachain_runtime::AuraConfig { authorities: initial_authorities },
 		aura_ext: Default::default(),
 		treasury: Default::default(),
-		encointer_scheduler: parachain_runtime::EncointerSchedulerConfig {
-			current_phase: CeremonyPhaseType::REGISTERING,
-			current_ceremony_index: 1,
-			ceremony_master: root_key.clone(),
-			phase_durations: vec![
-				(CeremonyPhaseType::REGISTERING, 600_000),
-				(CeremonyPhaseType::ASSIGNING, 600_000),
-				(CeremonyPhaseType::ATTESTING, 600_000),
-			],
-		},
-		encointer_ceremonies: parachain_runtime::EncointerCeremoniesConfig {
-			ceremony_reward: BalanceType::from_num(1),
-			time_tolerance: 600_000,   // +-10min
-			location_tolerance: 1_000, // [m]
-		},
-		encointer_communities: parachain_runtime::EncointerCommunitiesConfig {
-			community_master: root_key,
-		},
-		encointer_balances: parachain_runtime::EncointerBalancesConfig {
-			demurrage_per_block_default: Demurrage::from_bits(
-				0x0000000000000000000001E3F0A8A973_i128,
-			),
-		},
+		// encointer_scheduler: parachain_runtime::EncointerSchedulerConfig {
+		// 	current_phase: CeremonyPhaseType::REGISTERING,
+		// 	current_ceremony_index: 1,
+		// 	ceremony_master: root_key.clone(),
+		// 	phase_durations: vec![
+		// 		(CeremonyPhaseType::REGISTERING, 600_000),
+		// 		(CeremonyPhaseType::ASSIGNING, 600_000),
+		// 		(CeremonyPhaseType::ATTESTING, 600_000),
+		// 	],
+		// },
+		// encointer_ceremonies: parachain_runtime::EncointerCeremoniesConfig {
+		// 	ceremony_reward: BalanceType::from_num(1),
+		// 	time_tolerance: 600_000,   // +-10min
+		// 	location_tolerance: 1_000, // [m]
+		// },
+		// encointer_communities: parachain_runtime::EncointerCommunitiesConfig {
+		// 	community_master: root_key,
+		// },
+		// encointer_balances: parachain_runtime::EncointerBalancesConfig {
+		// 	demurrage_per_block_default: Demurrage::from_bits(
+		// 		0x0000000000000000000001E3F0A8A973_i128,
+		// 	),
+		// },
 	}
 }
 
