@@ -338,8 +338,8 @@ fn statemint_genesis(
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                 // account id
-						acc,                         // validator id
+						acc.clone(),                  // account id
+						acc,                          // validator id
 						statemint_session_keys(aura), // session keys
 					)
 				})
@@ -515,8 +515,8 @@ fn statemine_genesis(
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                 // account id
-						acc,                         // validator id
+						acc.clone(),                  // account id
+						acc,                          // validator id
 						statemine_session_keys(aura), // session keys
 					)
 				})
