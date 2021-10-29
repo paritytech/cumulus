@@ -194,8 +194,7 @@ fn testnet_genesis(
 		},
 		session: parachain_template_runtime::SessionConfig {
 			keys: invulnerables
-				.iter()
-				.cloned()
+				.into_iter()
 				.map(|(acc, aura)| {
 					(
 						acc.clone(),                 // account id

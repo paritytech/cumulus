@@ -335,11 +335,11 @@ fn statemint_genesis(
 		},
 		session: statemint_runtime::SessionConfig {
 			keys: invulnerables
-				.iter()
+				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                  // account id
-						acc.clone(),                  // validator id
+						acc.clone(),                 // account id
+						acc,                         // validator id
 						statemint_session_keys(aura), // session keys
 					)
 				})
@@ -512,12 +512,11 @@ fn statemine_genesis(
 		},
 		session: statemine_runtime::SessionConfig {
 			keys: invulnerables
-				.iter()
-				.cloned()
+				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                  // account id
-						acc.clone(),                  // validator id
+						acc.clone(),                 // account id
+						acc,                         // validator id
 						statemine_session_keys(aura), // session keys
 					)
 				})
@@ -694,12 +693,11 @@ fn westmint_genesis(
 		},
 		session: westmint_runtime::SessionConfig {
 			keys: invulnerables
-				.iter()
-				.cloned()
+				.into_iter()
 				.map(|(acc, aura)| {
 					(
 						acc.clone(),                 // account id
-						acc.clone(),                 // validator id
+						acc,                         // validator id
 						westmint_session_keys(aura), // session keys
 					)
 				})
