@@ -96,7 +96,7 @@ pub fn encointer_spec(
 		move || {
 			encointer_genesis(
 				root_account.clone(),
-				vec![get_from_seed::<AuraId>("Alice"), get_from_seed::<AuraId>("Bob")],
+				vec![get_from_seed::<AuraId>("Alice")],
 				allocate_endowance(endowed_accounts.clone()),
 				id,
 			)
@@ -132,7 +132,7 @@ pub fn launch_spec(
 		move || {
 			launch_genesis(
 				root_account.clone(),
-				vec![get_from_seed::<AuraId>("Alice"), get_from_seed::<AuraId>("Bob")],
+				vec![get_from_seed::<AuraId>("Alice")],
 				allocate_endowance(endowed_accounts.clone()),
 				id,
 			)
@@ -184,7 +184,7 @@ pub fn sybil_dummy_spec(id: ParaId, relay_chain: RelayChain) -> EncointerChainSp
 		move || {
 			encointer_genesis(
 				root_account.clone(),
-				vec![get_from_seed::<AuraId>("Alice"), get_from_seed::<AuraId>("Bob")],
+				vec![get_from_seed::<AuraId>("Alice")],
 				allocate_endowance(endowed_accounts.clone()),
 				id,
 			)

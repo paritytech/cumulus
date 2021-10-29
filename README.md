@@ -5,7 +5,7 @@ This is the repository to run encointer as a parachain in the rococo-v1 testnet.
 ## Demos
 
 * [Sybil Defense Demo](docs/sybil-demo)
-* [Native Downward Token Tx Demo](docs/upward-downward-native-token-tx)
+* [Native Downward-/ Upward Token Tx Demo](docs/downward-upward-native-token-tx)
 
 ## Polkadot-JS type extensions
 
