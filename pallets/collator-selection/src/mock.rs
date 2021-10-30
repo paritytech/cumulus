@@ -127,7 +127,7 @@ impl pallet_timestamp::Config for Test {
 
 impl pallet_aura::Config for Test {
 	type AuthorityId = sp_consensus_aura::sr25519::AuthorityId;
-	type MaxAuthorities = MaxAuthorities;
+	type MaxAuthorities = MaxValidatorsCount;
 	type DisabledValidators = ();
 }
 
@@ -179,6 +179,8 @@ impl pallet_session::Config for Test {
 	type SessionManager = CollatorSelection;
 	type SessionHandler = TestSessionHandler;
 	type Keys = MockSessionKeys;
+	type MaxValidatorsCount = MaxValidatorsCount;
+	type MaxKeysEncodingSize = MaxKeysEncodingSize;
 	type WeightInfo = ();
 }
 
@@ -191,7 +193,8 @@ parameter_types! {
 	pub const MaxCandidates: u32 = 20;
 	pub const MaxInvulnerables: u32 = 20;
 	pub const MinCandidates: u32 = 1;
-	pub const MaxAuthorities: u32 = 100_000;
+	pub const MaxValidatorsCount: u32 = 4_000;
+	pub const MaxKeysEncodingSize: u32 = 1_000;
 }
 
 pub struct IsRegistered;
@@ -217,6 +220,7 @@ impl Config for Test {
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = IdentityCollator;
 	type ValidatorRegistration = IsRegistered;
+	type MaxValidatorsCount = MaxValidatorsCount;
 	type WeightInfo = ();
 }
 
