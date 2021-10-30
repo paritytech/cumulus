@@ -557,7 +557,8 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 parameter_types! {
 	pub const Period: u32 = 6 * HOURS;
 	pub const Offset: u32 = 0;
-	pub const MaxAuthorities: u32 = 100_000;
+	pub const MaxValidatorsCount: u32 = 4_000;
+	pub const MaxKeysEncodingSize: u32 = 1_000;
 }
 
 impl pallet_session::Config for Runtime {
@@ -571,13 +572,15 @@ impl pallet_session::Config for Runtime {
 	// Essentially just Aura, but lets be pedantic.
 	type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = SessionKeys;
+	type MaxValidatorsCount = MaxValidatorsCount;
+	type MaxKeysEncodingSize = MaxKeysEncodingSize;
 	type WeightInfo = ();
 }
 
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
-	type MaxAuthorities = MaxAuthorities;
+	type MaxAuthorities = MaxValidatorsCount;
 }
 
 parameter_types! {
@@ -604,6 +607,7 @@ impl pallet_collator_selection::Config for Runtime {
 	type MaxCandidates = MaxCandidates;
 	type MinCandidates = MinCandidates;
 	type MaxInvulnerables = MaxInvulnerables;
+	type MaxValidatorsCount = MaxValidatorsCount;
 	// should be a multiple of session or things will get inconsistent
 	type KickThreshold = Period;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;

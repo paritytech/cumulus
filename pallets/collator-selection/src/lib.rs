@@ -89,12 +89,13 @@ pub mod pallet {
 			ValidatorRegistration,
 		},
 		weights::DispatchClass,
-		PalletId,
+		BoundedVec, PalletId,
 	};
 	use frame_system::{pallet_prelude::*, Config as SystemConfig};
 	use pallet_session::SessionManager;
 	use sp_runtime::traits::Convert;
 	use sp_staking::SessionIndex;
+	use sp_std::convert::TryFrom;
 
 	type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
@@ -138,6 +139,10 @@ pub mod pallet {
 		///
 		/// Used only for benchmarking.
 		type MaxInvulnerables: Get<u32>;
+
+		/// Maximum number of validators.
+		/// We should have `MaxValidatorsCount::get() >= MaxCandidates::get() + MinCandidates::get()`
+		type MaxValidatorsCount: Get<u32>;
 
 		// Will be kicked if block is not produced in threshold.
 		type KickThreshold: Get<Self::BlockNumber>;
@@ -234,6 +239,11 @@ pub mod pallet {
 			assert!(
 				T::MaxCandidates::get() >= self.desired_candidates,
 				"genesis desired_candidates are more than T::MaxCandidates",
+			);
+			assert!(
+				T::MaxValidatorsCount::get()
+					>= T::MaxInvulnerables::get() + T::MaxCandidates::get(),
+				"MaxValidatorsCount has to be >= MaxInvulnerable + MaxCandidates"
 			);
 
 			<DesiredCandidates<T>>::put(&self.desired_candidates);
@@ -416,8 +426,8 @@ pub mod pallet {
 				.filter_map(|c| {
 					let last_block = <LastAuthoredBlock<T>>::get(c.who.clone());
 					let since_last = now.saturating_sub(last_block);
-					if since_last < kick_threshold ||
-						Self::candidates().len() as u32 <= T::MinCandidates::get()
+					if since_last < kick_threshold
+						|| Self::candidates().len() as u32 <= T::MinCandidates::get()
 					{
 						Some(c.who)
 					} else {
@@ -463,8 +473,10 @@ pub mod pallet {
 	}
 
 	/// Play the role of the session manager.
-	impl<T: Config> SessionManager<T::AccountId> for Pallet<T> {
-		fn new_session(index: SessionIndex) -> Option<Vec<T::AccountId>> {
+	impl<T: Config> SessionManager<T::AccountId, T::MaxValidatorsCount> for Pallet<T> {
+		fn new_session(
+			index: SessionIndex,
+		) -> Option<BoundedVec<T::AccountId, T::MaxValidatorsCount>> {
 			log::info!(
 				"assembling new collators for new session {} at #{:?}",
 				index,
@@ -481,6 +493,12 @@ pub mod pallet {
 			frame_system::Pallet::<T>::register_extra_weight_unchecked(
 				T::WeightInfo::new_session(candidates_len_before as u32, removed as u32),
 				DispatchClass::Mandatory,
+			);
+
+			// This should never really error if candidates and invulnerables are bounded properly
+			let result = BoundedVec::try_from(result).expect(
+				"Should be bounded by MaxValidatorsCount which is >= sum \
+				of MaxInvulnerables and MaxCandidates",
 			);
 			Some(result)
 		}

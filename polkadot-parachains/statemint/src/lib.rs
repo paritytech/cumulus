@@ -133,8 +133,8 @@ impl Contains<Call> for BaseFilter {
 		// Disable permissionless asset creation.
 		!matches!(
 			c,
-			Call::Assets(pallet_assets::Call::create { .. }) |
-				Call::Uniques(pallet_uniques::Call::create { .. })
+			Call::Assets(pallet_assets::Call::create { .. })
+				| Call::Uniques(pallet_uniques::Call::create { .. })
 		)
 	}
 }
@@ -335,56 +335,60 @@ impl InstanceFilter<Call> for ProxyType {
 	fn filter(&self, c: &Call) -> bool {
 		match self {
 			ProxyType::Any => true,
-			ProxyType::NonTransfer =>
-				!matches!(c, Call::Balances { .. } | Call::Assets { .. } | Call::Uniques { .. }),
+			ProxyType::NonTransfer => {
+				!matches!(c, Call::Balances { .. } | Call::Assets { .. } | Call::Uniques { .. })
+			}
 			ProxyType::CancelProxy => matches!(
 				c,
-				Call::Proxy(pallet_proxy::Call::reject_announcement { .. }) |
-					Call::Utility { .. } | Call::Multisig { .. }
+				Call::Proxy(pallet_proxy::Call::reject_announcement { .. })
+					| Call::Utility { .. }
+					| Call::Multisig { .. }
 			),
 			ProxyType::Assets => {
 				matches!(
 					c,
-					Call::Assets { .. } |
-						Call::Utility { .. } | Call::Multisig { .. } |
-						Call::Uniques { .. }
+					Call::Assets { .. }
+						| Call::Utility { .. } | Call::Multisig { .. }
+						| Call::Uniques { .. }
 				)
-			},
+			}
 			ProxyType::AssetOwner => matches!(
 				c,
-				Call::Assets(pallet_assets::Call::create { .. }) |
-					Call::Assets(pallet_assets::Call::destroy { .. }) |
-					Call::Assets(pallet_assets::Call::transfer_ownership { .. }) |
-					Call::Assets(pallet_assets::Call::set_team { .. }) |
-					Call::Assets(pallet_assets::Call::set_metadata { .. }) |
-					Call::Assets(pallet_assets::Call::clear_metadata { .. }) |
-					Call::Uniques(pallet_uniques::Call::create { .. }) |
-					Call::Uniques(pallet_uniques::Call::destroy { .. }) |
-					Call::Uniques(pallet_uniques::Call::transfer_ownership { .. }) |
-					Call::Uniques(pallet_uniques::Call::set_team { .. }) |
-					Call::Uniques(pallet_uniques::Call::set_metadata { .. }) |
-					Call::Uniques(pallet_uniques::Call::set_attribute { .. }) |
-					Call::Uniques(pallet_uniques::Call::set_class_metadata { .. }) |
-					Call::Uniques(pallet_uniques::Call::clear_metadata { .. }) |
-					Call::Uniques(pallet_uniques::Call::clear_attribute { .. }) |
-					Call::Uniques(pallet_uniques::Call::clear_class_metadata { .. }) |
-					Call::Utility { .. } | Call::Multisig { .. }
+				Call::Assets(pallet_assets::Call::create { .. })
+					| Call::Assets(pallet_assets::Call::destroy { .. })
+					| Call::Assets(pallet_assets::Call::transfer_ownership { .. })
+					| Call::Assets(pallet_assets::Call::set_team { .. })
+					| Call::Assets(pallet_assets::Call::set_metadata { .. })
+					| Call::Assets(pallet_assets::Call::clear_metadata { .. })
+					| Call::Uniques(pallet_uniques::Call::create { .. })
+					| Call::Uniques(pallet_uniques::Call::destroy { .. })
+					| Call::Uniques(pallet_uniques::Call::transfer_ownership { .. })
+					| Call::Uniques(pallet_uniques::Call::set_team { .. })
+					| Call::Uniques(pallet_uniques::Call::set_metadata { .. })
+					| Call::Uniques(pallet_uniques::Call::set_attribute { .. })
+					| Call::Uniques(pallet_uniques::Call::set_class_metadata { .. })
+					| Call::Uniques(pallet_uniques::Call::clear_metadata { .. })
+					| Call::Uniques(pallet_uniques::Call::clear_attribute { .. })
+					| Call::Uniques(pallet_uniques::Call::clear_class_metadata { .. })
+					| Call::Utility { .. }
+					| Call::Multisig { .. }
 			),
 			ProxyType::AssetManager => matches!(
 				c,
-				Call::Assets(pallet_assets::Call::mint { .. }) |
-					Call::Assets(pallet_assets::Call::burn { .. }) |
-					Call::Assets(pallet_assets::Call::freeze { .. }) |
-					Call::Assets(pallet_assets::Call::thaw { .. }) |
-					Call::Assets(pallet_assets::Call::freeze_asset { .. }) |
-					Call::Assets(pallet_assets::Call::thaw_asset { .. }) |
-					Call::Uniques(pallet_uniques::Call::mint { .. }) |
-					Call::Uniques(pallet_uniques::Call::burn { .. }) |
-					Call::Uniques(pallet_uniques::Call::freeze { .. }) |
-					Call::Uniques(pallet_uniques::Call::thaw { .. }) |
-					Call::Uniques(pallet_uniques::Call::freeze_class { .. }) |
-					Call::Uniques(pallet_uniques::Call::thaw_class { .. }) |
-					Call::Utility { .. } | Call::Multisig { .. }
+				Call::Assets(pallet_assets::Call::mint { .. })
+					| Call::Assets(pallet_assets::Call::burn { .. })
+					| Call::Assets(pallet_assets::Call::freeze { .. })
+					| Call::Assets(pallet_assets::Call::thaw { .. })
+					| Call::Assets(pallet_assets::Call::freeze_asset { .. })
+					| Call::Assets(pallet_assets::Call::thaw_asset { .. })
+					| Call::Uniques(pallet_uniques::Call::mint { .. })
+					| Call::Uniques(pallet_uniques::Call::burn { .. })
+					| Call::Uniques(pallet_uniques::Call::freeze { .. })
+					| Call::Uniques(pallet_uniques::Call::thaw { .. })
+					| Call::Uniques(pallet_uniques::Call::freeze_class { .. })
+					| Call::Uniques(pallet_uniques::Call::thaw_class { .. })
+					| Call::Utility { .. }
+					| Call::Multisig { .. }
 			),
 			ProxyType::Collator => matches!(
 				c,
@@ -624,7 +628,8 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 parameter_types! {
 	pub const Period: u32 = 6 * HOURS;
 	pub const Offset: u32 = 0;
-	pub const MaxAuthorities: u32 = 100_000;
+	pub const MaxValidatorsCount: u32 = 4_000;
+	pub const MaxKeysEncodingSize: u32 = 1_000;
 }
 
 impl pallet_session::Config for Runtime {
@@ -639,12 +644,14 @@ impl pallet_session::Config for Runtime {
 	type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = SessionKeys;
 	type WeightInfo = weights::pallet_session::WeightInfo<Runtime>;
+	type MaxValidatorsCount = MaxValidatorsCount;
+	type MaxKeysEncodingSize = MaxKeysEncodingSize;
 }
 
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
-	type MaxAuthorities = MaxAuthorities;
+	type MaxAuthorities = MaxValidatorsCount;
 }
 
 parameter_types! {
@@ -670,6 +677,7 @@ impl pallet_collator_selection::Config for Runtime {
 	type MaxCandidates = MaxCandidates;
 	type MinCandidates = MinCandidates;
 	type MaxInvulnerables = MaxInvulnerables;
+	type MaxValidatorsCount = MaxValidatorsCount;
 	// should be a multiple of session or things will get inconsistent
 	type KickThreshold = Period;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
