@@ -89,13 +89,12 @@ pub mod pallet {
 			ValidatorRegistration,
 		},
 		weights::DispatchClass,
-		BoundedVec, PalletId,
+		PalletId, WeakBoundedVec,
 	};
 	use frame_system::{pallet_prelude::*, Config as SystemConfig};
 	use pallet_session::SessionManager;
 	use sp_runtime::traits::Convert;
 	use sp_staking::SessionIndex;
-	use sp_std::convert::TryFrom;
 
 	type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
@@ -476,7 +475,7 @@ pub mod pallet {
 	impl<T: Config> SessionManager<T::AccountId, T::MaxValidatorsCount> for Pallet<T> {
 		fn new_session(
 			index: SessionIndex,
-		) -> Option<BoundedVec<T::AccountId, T::MaxValidatorsCount>> {
+		) -> Option<WeakBoundedVec<T::AccountId, T::MaxValidatorsCount>> {
 			log::info!(
 				"assembling new collators for new session {} at #{:?}",
 				index,
@@ -496,11 +495,13 @@ pub mod pallet {
 			);
 
 			// This should never really error if candidates and invulnerables are bounded properly
-			let result = BoundedVec::try_from(result).expect(
-				"Should be bounded by MaxValidatorsCount which is >= sum \
-				of MaxInvulnerables and MaxCandidates",
-			);
-			Some(result)
+			Some(WeakBoundedVec::force_from(
+				result,
+				Some(
+					"Should be bounded by MaxValidatorsCount which is >= sum \
+					of MaxInvulnerables and MaxCandidates",
+				),
+			))
 		}
 		fn start_session(_: SessionIndex) {
 			// we don't care.
