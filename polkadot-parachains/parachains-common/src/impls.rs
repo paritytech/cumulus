@@ -107,8 +107,8 @@ pub struct AssetsFrom<T>(PhantomData<T>);
 impl<T: Get<MultiLocation>> FilterAssetLocation for AssetsFrom<T> {
 	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
 		let loc = T::get();
-		&loc == origin &&
-			matches!(asset, MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) }
+		&loc == origin
+			&& matches!(asset, MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) }
 			if asset_loc.match_and_split(&loc).is_some())
 	}
 }
@@ -214,6 +214,7 @@ mod tests {
 		pub const MaxCandidates: u32 = 20;
 		pub const MaxInvulnerables: u32 = 20;
 		pub const MinCandidates: u32 = 1;
+		pub const MaxValidatorsCount: u32 = 100;
 	}
 
 	impl pallet_collator_selection::Config for Test {
@@ -224,6 +225,7 @@ mod tests {
 		type MaxCandidates = MaxCandidates;
 		type MinCandidates = MinCandidates;
 		type MaxInvulnerables = MaxInvulnerables;
+		type MaxValidatorsCount = MaxValidatorsCount;
 		type ValidatorId = <Self as frame_system::Config>::AccountId;
 		type ValidatorIdOf = IdentityCollator;
 		type ValidatorRegistration = IsRegistered;
