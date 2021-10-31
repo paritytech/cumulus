@@ -15,7 +15,6 @@ log = "0.4.8"
 codec = { package = "parity-scale-codec", version = "2.3.0" }
 structopt = "0.3.3"
 serde = { version = "1.0.101", features = ["derive"] }
-hex-literal = "0.2.1"
 async-trait = "0.1.42"
 
 # added by encointer
@@ -49,6 +48,7 @@ sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polk
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
 sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
 sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }

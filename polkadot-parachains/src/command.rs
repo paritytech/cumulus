@@ -16,7 +16,7 @@
 
 use crate::{
 	chain_spec,
-	chain_spec::{EncointerChainSpec, LaunchChainSpec, RelayChain},
+	chain_spec::{EncointerChainSpec, GenesisKeys, LaunchChainSpec, RelayChain},
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{
 		new_partial, Block, EncointerParachainRuntimeExecutor, LaunchParachainRuntimeExecutor,
@@ -61,11 +61,11 @@ fn load_spec(
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
-		"encointer-rococo" => Box::new(chain_spec::encointer_spec(para_id, false, RelayChain::Rococo)),
-		"encointer-rococo-local" => Box::new(chain_spec::encointer_spec(para_id, true, RelayChain::RococoLocal)),
+		"encointer-rococo" => Box::new(chain_spec::encointer_spec(para_id, GenesisKeys::Encointer, RelayChain::Rococo)),
+		"encointer-rococo-local" => Box::new(chain_spec::encointer_spec(para_id, GenesisKeys::WellKnown, RelayChain::RococoLocal)),
 
-		"launch-rococo" => Box::new(chain_spec::launch_spec(para_id, false, RelayChain::Rococo)),
-		"launch-rococo-local" => Box::new(chain_spec::launch_spec(para_id, true, RelayChain::RococoLocal)),
+		"launch-rococo" => Box::new(chain_spec::launch_spec(para_id, GenesisKeys::Encointer, RelayChain::Rococo)),
+		"launch-rococo-local" => Box::new(chain_spec::launch_spec(para_id, GenesisKeys::WellKnown, RelayChain::RococoLocal)),
 
 		"sybil-dummy-rococo" => Box::new(chain_spec::sybil_dummy_spec(para_id, RelayChain::Rococo)),
 		"sybil-dummy-rococo-local" => Box::new(chain_spec::sybil_dummy_spec(para_id, RelayChain::RococoLocal)),
