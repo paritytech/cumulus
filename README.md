@@ -19,7 +19,7 @@ This is the repository to run encointer as a parachain in the rococo-v1 testnet.
 # Compile Polkadot
 git clone https://github.com/paritytech/polkadot
 git fetch
-git checkout 70afaae2cfa279c9cd80e897c76eb5c2386ee017
+git checkout v0.9.12
 cargo build --release
 
 # Generate a raw chain spec
@@ -41,14 +41,13 @@ git checkout master
 cargo build --release
 
 # Export genesis state
-# --parachain-id 1862 as an example that can be chosen freely. Make sure to everywhere use the same parachain id
-./target/release/encointer-collator export-genesis-state --chain encointer-local --parachain-id 1862 > encointer-local-genesis.state
+./target/release/encointer-collator export-genesis-state --chain launch-rococo-local --parachain-id 2000 > encointer-local-genesis.state
 
 # Export genesis wasm
-./target/release/encointer-collator export-genesis-wasm --chain encointer-local > encointer-local-genesis.wasm
+./target/release/encointer-collator export-genesis-wasm --chain launch-rococo-local > encointer-local-genesis.wasm
 
 # Collator
-./target/release/encointer-collator --collator --tmp --parachain-id 1862 --chain encointer-local --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde-real-overseer.json --port 30337 --ws-port 9981
+./target/release/encointer-collator --collator --tmp --parachain-id 2000 --chain launch-rococo-local --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337 --ws-port 9981
 ```
 
 ### Register the Parachain
