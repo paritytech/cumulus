@@ -124,9 +124,9 @@ pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
 
-pub const ERT: Balance = 1_000_000_000_000;
-pub const MILLIERT: Balance = 1_000_000_000;
-pub const MICROERT: Balance = 1_000_000;
+pub const KSM: Balance = 1_000_000_000_000;
+pub const MILLIKSM: Balance = 1_000_000_000;
+pub const MICROKSM: Balance = 1_000_000;
 
 // 1 in 4 blocks (on average, not counting collisions) will be primary babe blocks.
 pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
@@ -225,10 +225,10 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: u128 = 1 * MILLIERT;
-	pub const TransferFee: u128 = 1 * MILLIERT;
-	pub const CreationFee: u128 = 1 * MILLIERT;
-	pub const TransactionByteFee: u128 = 1 * MICROERT;
+	pub const ExistentialDeposit: u128 = 1 * MILLIKSM;
+	pub const TransferFee: u128 = 1 * MILLIKSM;
+	pub const CreationFee: u128 = 1 * MILLIKSM;
+	pub const TransactionByteFee: u128 = 1 * MICROKSM;
 	pub const MaxLocks: u32 = 50;
 	pub const MaxReserves: u32 = 50;
 }
@@ -263,7 +263,7 @@ impl pallet_transaction_payment::Config for Runtime {
 
 parameter_types! {
 	pub const ProposalBond: Permill = Permill::from_percent(5);
-	pub const ProposalBondMinimum: Balance = 100 * MILLIERT;
+	pub const ProposalBondMinimum: Balance = 100 * MILLIKSM;
 	pub const SpendPeriod: BlockNumber = 6 * DAYS;
 	pub const Burn: Permill = Permill::from_percent(1);
 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
@@ -385,7 +385,7 @@ parameter_types! {
 	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
 	pub UnitWeightCost: Weight = 1_000_000;
 	// One ERT buys 1 second of weight.
-	pub const WeightPrice: (MultiLocation, u128) = (MultiLocation::parent(), ERT);
+	pub const WeightPrice: (MultiLocation, u128) = (MultiLocation::parent(), KSM);
 	pub const MaxInstructions: u32 = 100;
 }
 
@@ -484,11 +484,11 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 }
 
 parameter_types! {
-	pub const AssetDeposit: Balance = 1 * ERT;
-	pub const ApprovalDeposit: Balance = 100 * MILLIERT;
+	pub const AssetDeposit: Balance = 1 * KSM;
+	pub const ApprovalDeposit: Balance = 100 * MILLIKSM;
 	pub const AssetsStringLimit: u32 = 50;
-	pub const MetadataDepositBase: Balance = 1 * ERT;
-	pub const MetadataDepositPerByte: Balance = 10 * MILLIERT;
+	pub const MetadataDepositBase: Balance = 1 * KSM;
+	pub const MetadataDepositPerByte: Balance = 10 * MILLIKSM;
 	pub const UnitBody: BodyId = BodyId::Unit;
 	pub const MaxAuthorities: u32 = 100_000;
 }
