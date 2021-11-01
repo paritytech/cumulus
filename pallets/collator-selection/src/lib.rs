@@ -240,8 +240,8 @@ pub mod pallet {
 				"genesis desired_candidates are more than T::MaxCandidates",
 			);
 			assert!(
-				T::MaxValidatorsCount::get()
-					>= T::MaxInvulnerables::get() + T::MaxCandidates::get(),
+				T::MaxValidatorsCount::get() >=
+					T::MaxInvulnerables::get() + T::MaxCandidates::get(),
 				"MaxValidatorsCount has to be >= MaxInvulnerable + MaxCandidates"
 			);
 
@@ -425,8 +425,8 @@ pub mod pallet {
 				.filter_map(|c| {
 					let last_block = <LastAuthoredBlock<T>>::get(c.who.clone());
 					let since_last = now.saturating_sub(last_block);
-					if since_last < kick_threshold
-						|| Self::candidates().len() as u32 <= T::MinCandidates::get()
+					if since_last < kick_threshold ||
+						Self::candidates().len() as u32 <= T::MinCandidates::get()
 					{
 						Some(c.who)
 					} else {
