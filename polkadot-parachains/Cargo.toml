@@ -91,4 +91,6 @@ tempfile = "3.2.0"
 default = []
 runtime-benchmarks = [
 	'polkadot-service/runtime-benchmarks',
+	'launch-runtime/runtime-benchmarks',
+	'parachain-runtime/runtime-benchmarks',
 ]
