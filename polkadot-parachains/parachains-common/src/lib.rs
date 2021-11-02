@@ -15,9 +15,14 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+// the two mods do not exist upstream
+pub mod currency;
+pub mod fee;
+
 pub use constants::*;
 pub use opaque::*;
 pub use types::*;
+
 /// Common types of parachains.
 mod types {
 	use sp_runtime::traits::{IdentifyAccount, Verify};

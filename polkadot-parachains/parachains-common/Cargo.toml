@@ -13,6 +13,10 @@ targets = ['x86_64-unknown-linux-gnu']
 codec = { package = 'parity-scale-codec', version = '2.3.0', features = ['derive'], default-features = false }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 
+# dependencies not existing upstream
+smallvec = "1.6.1"
+node-primitives = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
+
 # Substrate dependencies
 sp-consensus-aura = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.12" }
 sp-std = { git = 'https://github.com/paritytech/substrate', default-features = false , branch = "polkadot-v0.9.12" }
@@ -50,6 +54,7 @@ std = [
 	'frame-support/std',
 	'frame-executive/std',
 	'frame-system/std',
+	'node-primitives/std',
 	'pallet-assets/std',
 	'pallet-authorship/std',
 	'pallet-balances/std',

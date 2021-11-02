@@ -30,6 +30,10 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureOneOf, EnsureRoot,
 };
+use parachains_common::{
+	currency::{EXISTENTIAL_DEPOSIT, MILLICENTS, UNITS},
+	fee::{SlowAdjustingFeeUpdate, WeightToFee},
+};
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
@@ -110,10 +114,6 @@ pub const EPOCH_DURATION_IN_BLOCKS: u32 = 10 * MINUTES;
 pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
-
-pub const KSM: Balance = 1_000_000_000_000;
-pub const MILLIKSM: Balance = 1_000_000_000;
-pub const MICROKSM: Balance = 1_000_000;
 
 // 1 in 4 blocks (on average, not counting collisions) will be primary babe blocks.
 pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
@@ -232,10 +232,7 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: u128 = 1 * MILLIKSM;
-	pub const TransferFee: u128 = 1 * MILLIKSM;
-	pub const CreationFee: u128 = 1 * MILLIKSM;
-	pub const TransactionByteFee: u128 = 1 * MICROKSM;
+	pub const ExistentialDeposit: u128 = EXISTENTIAL_DEPOSIT;
 	pub const MaxLocks: u32 = 50;
 	pub const MaxReserves: u32 = 50;
 }
@@ -257,20 +254,22 @@ impl pallet_balances::Config for Runtime {
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
 parameter_types! {
+	/// Relay Chain `TransactionByteFee` / 10, same as statemine
+	pub const TransactionByteFee: u128 = 1 * MILLICENTS;
 	pub const OperationalFeeMultiplier: u8 = 5;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
 	type TransactionByteFee = TransactionByteFee;
-	type WeightToFee = IdentityFee<Balance>;
-	type FeeMultiplierUpdate = ();
+	type WeightToFee = WeightToFee;
+	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 }
 
 parameter_types! {
 	pub const ProposalBond: Permill = Permill::from_percent(5);
-	pub const ProposalBondMinimum: Balance = 100 * MILLIKSM;
+	pub const ProposalBondMinimum: Balance = 100 * MILLICENTS;
 	pub const SpendPeriod: BlockNumber = 6 * DAYS;
 	pub const Burn: Permill = Permill::from_percent(1);
 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
@@ -392,7 +391,7 @@ parameter_types! {
 	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
 	pub UnitWeightCost: Weight = 1_000_000;
 	// One ERT buys 1 second of weight.
-	pub const WeightPrice: (MultiLocation, u128) = (MultiLocation::parent(), KSM);
+	pub const WeightPrice: (MultiLocation, u128) = (MultiLocation::parent(), UNITS);
 	pub const MaxInstructions: u32 = 100;
 }
 
@@ -491,11 +490,6 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 }
 
 parameter_types! {
-	pub const AssetDeposit: Balance = 1 * KSM;
-	pub const ApprovalDeposit: Balance = 100 * MILLIKSM;
-	pub const AssetsStringLimit: u32 = 50;
-	pub const MetadataDepositBase: Balance = 1 * KSM;
-	pub const MetadataDepositPerByte: Balance = 10 * MILLIKSM;
 	pub const UnitBody: BodyId = BodyId::Unit;
 	pub const MaxAuthorities: u32 = 100_000;
 }
