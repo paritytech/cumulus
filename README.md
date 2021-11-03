@@ -146,6 +146,14 @@ Every pallet with a `type WeightInfo` parameter in its config must be benchmarke
 4. [runtime/src/weights] add the new file to the modules
 4. [runtime] replace the placeholder `type WeightInfo = ()` with `type WeightInfo = weights::<new_pallet>::WeightInfo<Runtime>`
 
+### Update hardcoded chain-specs
+We have some hardcoded chain-specs to be sure that independent binaries can work with the same `genesis_hash`. However,
+sometimes we need to update the nodes' (i.e. the client's) spec, when we perform a substrate update. The following script
+creates new hard-coded chain-specs while migrating relevant data.
+
+`./scripts/update_hardcoded_chain_specs.py --migrate-genesis`
+
+
 ### More Resources
 * Thorough Readme about Rococo and Collators in general in the original [repository](https://github.com/paritytech/cumulus) of this fork.
 * Parachains on Rococo in the [Polkadot Wiki](https://wiki.polkadot.network/docs/en/build-parachains-rococo#rococo-v1-parachain-requirements)

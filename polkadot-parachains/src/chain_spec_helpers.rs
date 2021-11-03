@@ -36,8 +36,10 @@ where
 /// Defines the key set to use for root, endowed accounts, or authorities.
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum GenesisKeys {
-	/// Use Encointer keys.
+	/// Use Encointer keys. Root is not in endowed keys.
 	Encointer,
+	/// Use Encointer keys. Root is in endowed keys.
+	EncointerWithRootEndowed,
 	/// Use Keys from the keyring for a test setup
 	WellKnown,
 }
@@ -82,23 +84,23 @@ impl EncointerKeys {
 }
 
 pub enum RelayChain {
-	RococoLocal,
-	// Kusama,
-	// KusamaLocal,
-	// PolkadotLocal,
+	Kusama,
+	KusamaLocal,
 	Rococo,
-	// Polkadot,
+	RococoLocal,
+	Westend,
+	WestendLocal,
 }
 
 impl ToString for RelayChain {
 	fn to_string(&self) -> String {
 		match self {
-			RelayChain::RococoLocal => "rococo-local".into(),
-			// RelayChain::Kusama => "kusama".into(),
-			// RelayChain::KusamaLocal => "kusama-local".into(),
-			// RelayChain::PolkadotLocal => "polkadot-local".into(),
 			RelayChain::Rococo => "rococo".into(),
-			// RelayChain::Polkadot => "polkadot".into(),
+			RelayChain::RococoLocal => "rococo-local".into(),
+			RelayChain::Kusama => "kusama".into(),
+			RelayChain::KusamaLocal => "kusama-local".into(),
+			RelayChain::Westend => "westend".into(),
+			RelayChain::WestendLocal => "westend-local".into(),
 		}
 	}
 }
@@ -106,18 +108,28 @@ impl ToString for RelayChain {
 impl RelayChain {
 	pub fn chain_type(&self) -> ChainType {
 		match self {
-			RelayChain::RococoLocal => ChainType::Local,
-			// RelayChain::KusamaLocal => ChainType::Local,
-			// RelayChain::PolkadotLocal => ChainType::Local,
-			// RelayChain::Kusama => ChainType::Live,
 			RelayChain::Rococo => ChainType::Live,
-			// RelayChain::Polkadot => ChainType::Live,
+			RelayChain::RococoLocal => ChainType::Local,
+			RelayChain::Kusama => ChainType::Live,
+			RelayChain::KusamaLocal => ChainType::Local,
+			RelayChain::Westend => ChainType::Local,
+			RelayChain::WestendLocal => ChainType::Live,
 		}
 	}
 
 	pub fn properties(&self) -> Properties {
 		match self {
-			RelayChain::RococoLocal | RelayChain::Rococo => rococo_properties(),
+			RelayChain::Kusama | RelayChain::KusamaLocal => kusama_properties(),
+			RelayChain::Rococo | RelayChain::RococoLocal => rococo_properties(),
+			RelayChain::Westend | RelayChain::WestendLocal => westend_properties(),
+		}
+	}
+
+	pub fn protocol_id(&self) -> &'static str {
+		match self {
+			RelayChain::Kusama | RelayChain::KusamaLocal => "ksmcc3",
+			RelayChain::Rococo | RelayChain::RococoLocal => "rococo",
+			RelayChain::Westend | RelayChain::WestendLocal => "wnd2",
 		}
 	}
 }
@@ -128,6 +140,28 @@ pub fn rococo_properties() -> Properties {
 				"ss58Format": 42,
 				"tokenDecimals": 12,
 				"tokenSymbol": "ROC"
+				}"#,
+	)
+	.unwrap()
+}
+
+pub fn kusama_properties() -> Properties {
+	serde_json::from_str(
+		r#"{
+				"ss58Format": 2,
+				"tokenDecimals": 12,
+				"tokenSymbol": "KSM"
+				}"#,
+	)
+	.unwrap()
+}
+
+pub fn westend_properties() -> Properties {
+	serde_json::from_str(
+		r#"{
+				"ss58Format": 42,
+				"tokenDecimals": 12,
+				"tokenSymbol": "WND"
 				}"#,
 	)
 	.unwrap()

@@ -55,6 +55,16 @@ impl Extensions {
 	}
 }
 
+/// hard-coded launch-runtime config for kusama
+pub fn launch_kusama() -> Result<LaunchChainSpec, String> {
+	LaunchChainSpec::from_json_bytes(&include_bytes!("../res/launch-kusama.json")[..])
+}
+
+/// hard-coded launch-runtime config for westend
+pub fn launch_westend() -> Result<LaunchChainSpec, String> {
+	LaunchChainSpec::from_json_bytes(&include_bytes!("../res/launch-westend.json")[..])
+}
+
 /// Chain-spec for the encointer runtime
 pub fn encointer_spec(
 	id: ParaId,
@@ -63,6 +73,8 @@ pub fn encointer_spec(
 ) -> EncointerChainSpec {
 	let (root, endowed, authorities) = match genesis_keys {
 		GenesisKeys::Encointer =>
+			(EncointerKeys::root(), [].to_vec(), EncointerKeys::authorities()),
+		GenesisKeys::EncointerWithRootEndowed =>
 			(EncointerKeys::root(), vec![EncointerKeys::root()], EncointerKeys::authorities()),
 		GenesisKeys::WellKnown =>
 			(WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities()),
@@ -92,6 +104,8 @@ pub fn launch_spec(
 ) -> LaunchChainSpec {
 	let (root, endowed, authorities) = match genesis_keys {
 		GenesisKeys::Encointer =>
+			(EncointerKeys::root(), [].to_vec(), EncointerKeys::authorities()),
+		GenesisKeys::EncointerWithRootEndowed =>
 			(EncointerKeys::root(), vec![EncointerKeys::root()], EncointerKeys::authorities()),
 		GenesisKeys::WellKnown =>
 			(WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities()),
@@ -133,7 +147,7 @@ fn chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
 		// telemetry endpoints
 		None,
 		// protocol id
-		Some("dot"),
+		Some(relay_chain.protocol_id()),
 		// properties
 		Some(relay_chain.properties()),
 		Extensions { relay_chain: relay_chain.to_string(), para_id: para_id.into() },
