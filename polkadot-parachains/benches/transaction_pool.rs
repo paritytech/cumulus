@@ -258,10 +258,6 @@ fn transaction_pool_benchmarks(c: &mut Criterion) {
 		cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle.clone(), Charlie)
 			.enable_collator()
 			.connect_to_relay_chain_nodes(vec![&alice, &bob])
-			// .wrap_announce_block(|_| {
-			// 	Never announce any block
-			// Arc::new(|_, _| {})
-			// })
 			.build(),
 	);
 
@@ -272,14 +268,13 @@ fn transaction_pool_benchmarks(c: &mut Criterion) {
 		runtime.block_on(
 			cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle.clone(), Dave)
 				.enable_collator()
-				// .use_null_consensus()
 				.connect_to_parachain_node(&charlie)
 				.connect_to_relay_chain_nodes(vec![&alice, &bob])
 				.build(),
 		),
 	);
 
-	runtime.block_on(dave.wait_for_blocks(7));
+	runtime.block_on(dave.wait_for_blocks(3));
 
 	let mut group = c.benchmark_group("Transaction pool");
 	let account_num = 10;
