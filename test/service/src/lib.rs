@@ -98,6 +98,8 @@ pub type Client = TFullClient<
 	sc_executor::NativeElseWasmExecutor<RuntimeExecutor>,
 >;
 
+pub type TransactionPool = Arc<sc_transaction_pool::FullPool<Block, Client>>;
+
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
@@ -174,6 +176,7 @@ async fn start_node_impl<RB>(
 	Arc<Client>,
 	Arc<NetworkService<Block, H256>>,
 	RpcHandlers,
+	TransactionPool,
 )>
 where
 	RB: Fn(Arc<Client>) -> Result<jsonrpc_core::IoHandler<sc_rpc::Metadata>, sc_service::Error>
@@ -266,7 +269,7 @@ where
 				let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
 					task_manager.spawn_handle(),
 					client.clone(),
-					transaction_pool,
+					transaction_pool.clone(),
 					prometheus_registry.as_ref(),
 					None,
 				);
@@ -345,7 +348,7 @@ where
 
 	start_network.start_network();
 
-	Ok((task_manager, client, network, rpc_handlers))
+	Ok((task_manager, client, network, rpc_handlers, transaction_pool))
 }
 
 /// A Cumulus test node instance used for testing.
@@ -361,6 +364,8 @@ pub struct TestNode {
 	pub addr: MultiaddrWithPeerId,
 	/// RPCHandlers to make RPC queries.
 	pub rpc_handlers: RpcHandlers,
+
+	pub transaction_pool: TransactionPool,
 }
 
 enum Consensus {
@@ -519,7 +524,7 @@ impl TestNodeBuilder {
 			format!("{} (relay chain)", relay_chain_config.network.node_name);
 
 		let multiaddr = parachain_config.network.listen_addresses[0].clone();
-		let (task_manager, client, network, rpc_handlers) = start_node_impl(
+		let (task_manager, client, network, rpc_handlers, transaction_pool) = start_node_impl(
 			parachain_config,
 			self.collator_key,
 			relay_chain_config,
@@ -534,7 +539,7 @@ impl TestNodeBuilder {
 		let peer_id = network.local_peer_id().clone();
 		let addr = MultiaddrWithPeerId { multiaddr, peer_id };
 
-		TestNode { task_manager, client, network, addr, rpc_handlers }
+		TestNode { task_manager, client, network, addr, rpc_handlers, transaction_pool }
 	}
 }
 
