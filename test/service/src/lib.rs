@@ -633,7 +633,7 @@ pub fn node_config(
 		base_path: Some(base_path),
 		informant_output_format: Default::default(),
 		wasm_runtime_overrides: None,
-		disable_log_reloading: false,
+		ws_max_out_buffer_capacity: None,
 	})
 }
 
