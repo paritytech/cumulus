@@ -116,7 +116,7 @@ yarn install
 yarn build
 
 # In the root directory of this repository simply execute
-node ../polkadot-launch/dist/index.js polkadot-launch-config.json
+node ../polkadot-launch/dist/cli.js ./polkadot-launch/launch-rococo-local-with-launch.json
 ```
 
 This launches the local testnet and creates 5 log files: `alice.log`, `bob.log`, `charlie.log`, which are the logs of the relay chain nodes and `9944.log`, `9955.log`, which are the logs of the two parachains.
