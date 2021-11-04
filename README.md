@@ -1,11 +1,11 @@
 # Cumulus :cloud:
 
-A set of tools for writing [Substrate](https://substrate.dev/)-based
+A set of tools for writing [Substrate](https://substrate.io/)-based
 [Polkadot](https://wiki.polkadot.network/en/)
 [parachains](https://wiki.polkadot.network/docs/en/learn-parachains). Refer to the included
 [overview](docs/overview.md) for architectural details, and the
-[Cumulus workshop](https://substrate.dev/cumulus-workshop) for a hand-holding walkthrough
-of using these tools.
+[Cumulus tutorial](https://docs.substrate.io/tutorials/v3/cumulus/start-relay) for a
+guided walk-through of using these tools.
 
 It's easy to write blockchains using Substrate, and the overhead of writing parachains'
 distribution, p2p, database, and synchronization layers should be just as low. This project aims to
@@ -17,11 +17,11 @@ beautiful and functional.
 ## Consensus
 
 [`cumulus-consensus`](consensus) is a
-[consensus engine](https://substrate.dev/docs/en/knowledgebase/advanced/consensus) for Substrate
+[consensus engine](https://docs.substrate.io/v3/advanced/consensus) for Substrate
 that follows a Polkadot
-[relay chain](https://wiki.polkadot.network/docs/en/learn-architecture#relay-chain). This will run a
-Polkadot node internally, and dictate to the client and synchronization algorithms which chain to
-follow,
+[relay chain](https://wiki.polkadot.network/docs/en/learn-architecture#relay-chain). This will run
+a Polkadot node internally, and dictate to the client and synchronization algorithms which chain
+to follow,
 [finalize](https://wiki.polkadot.network/docs/en/learn-consensus#probabilistic-vs-provable-finality),
 and treat as best.
 
@@ -29,6 +29,30 @@ and treat as best.
 
 A Polkadot [collator](https://wiki.polkadot.network/docs/en/learn-collator) for the parachain is
 implemented by [`cumulus-collator`](collator).
+
+# Statemint 🪙
+
+This repository also contains the Statemint runtime (as well as the canary runtime Statemine and the
+test runtime Westmint).
+Statemint is a common good parachain providing an asset store for the Polkadot ecosystem.
+
+## Build & Launch a Node
+
+To run a Statemine or Westmint node (Statemint is not deployed, yet) you will need to compile the
+`polkadot-collator` binary:
+
+```sh
+cargo build --release --locked -p polkadot-collator
+```
+
+Once the executable is built, launch the parachain node via:
+
+```sh
+CHAIN=westmint # or statemine
+./target/release/polkadot-collator --chain $CHAIN
+```
+
+Refer to the [setup instructions below](#local-setup) to run a local network for development.
 
 # Rococo :crown:
 
@@ -53,7 +77,7 @@ To run a Rococo collator you will need to compile the following binary:
 cargo build --release --locked -p polkadot-collator
 ```
 
-Otherwise you can compile it with 
+Otherwise you can compile it with
 [Parity CI docker image](https://github.com/paritytech/scripts/tree/master/dockerfiles/ci-linux):
 
 ```bash
@@ -63,7 +87,7 @@ docker run --rm -it -w /shellhere/cumulus \
 sudo chown -R $(id -u):$(id -g) target/
 ```
 
-If you want to reproduce other steps of CI process you can use the following 
+If you want to reproduce other steps of CI process you can use the following
 [guide](https://github.com/paritytech/scripts#gitlab-ci-for-building-docker-images).
 
 Once the executable is built, launch collators for each parachain (repeat once each for chain
@@ -86,7 +110,9 @@ The network uses horizontal message passing (HRMP) to enable communication betwe
 the relay chain and, in turn, between parachains. This means that every message is sent to the relay
 chain, and from the relay chain to its destination parachain.
 
-## Launch a local setup including a Relay Chain and a Parachain
+## Local Setup
+
+Launch a local setup including a Relay Chain and a Parachain.
 
 ### Launch the Relay Chain
 
