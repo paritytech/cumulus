@@ -1,0 +1,62 @@
+name: Delete-Release
+
+on:
+  release:
+    types: [deleted] # should be deleted
+
+jobs:
+  purge-image:
+    name: Delete image from ghcr.io
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set output
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+
+      - name: Check output
+        env:
+          RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
+        run: |
+          echo $RELEASE_VERSION
+          echo ${{ steps.vars.outputs.tag }}
+          echo ${{github.event.pull_request.number}}
+
+      - name: Login to DockerHub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      # Unfortunately accessing the repo with personal access token is not possible
+      # Workaround: disable 2FA and user password instead of TOKEN
+      - name: Delete docker tag
+        run: |
+          ORGANIZATION="encointer"
+          IMAGE="parachain"
+          TAG="${{ steps.vars.outputs.tag }}"
+
+          login_data() {
+          cat <<EOF
+          {
+            "username": "${{ secrets.DOCKER_HUB_USERNAME }}",
+            "password": "${{ secrets.DOCKERHUB_PASSWORD }}"
+          }
+          EOF
+          }
+
+          TOKEN=`curl -s -H "Content-Type: application/json" -X POST -d "$(login_data)" "https://hub.docker.com/v2/users/login/" | jq -r .token`
+
+          curl "https://hub.docker.com/v2/repositories/${ORGANIZATION}/${IMAGE}/tags/${TAG}/" \
+          -X DELETE \
+          -H "Authorization: JWT ${TOKEN}"
+
+      - name: Delete tag as well
+        uses: dev-drprasad/delete-tag-and-release@v0.2.0
+        with:
+          delete_release: false # it is triggered by release deletion
+          tag_name: ${{ steps.vars.outputs.tag }} # tag name to delete
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

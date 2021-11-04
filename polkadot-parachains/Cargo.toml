@@ -21,8 +21,8 @@ async-trait = "0.1.42"
 serde_json = "1.0.64"
 
 # Parachain runtimes
-parachain-runtime = { package = "encointer-parachain-runtime", path = "encointer-runtime" }
-launch-runtime = { package = "encointer-launch-runtime", path = "launch-runtime" }
+parachain-runtime = { package = "encointer-runtime", path = "encointer-runtime" }
+launch-runtime = { package = "launch-runtime", path = "launch-runtime" }
 parachains-common = { path = "parachains-common" }
 
 # Substrate dependencies

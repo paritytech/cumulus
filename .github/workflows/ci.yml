@@ -1,11 +1,40 @@
-name: Cargo check
+name: CI
+
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
   pull_request:
-    branches: [ master ]
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      verbose:
+        description: "Set --verbose to get verbose build output"
+        required: false
+        default: 'true'
+
+env:
+  VERBOSE: ${{ github.events.input.verbose }}
+  SUBWASM_VERSION: 0.14.1
+
 
 jobs:
+
+  # this job set up dynamic configuration shared among jobs
+  config:
+    name: Set up Config
+    runs-on: ubuntu-latest
+    env:
+      ENABLE_CHECK: true
+    outputs:
+      check: ${{ steps.check.outputs.check }}
+      runs: ${{ steps.runs.outputs.runs }}
+    steps:
+      - id: check
+        run: echo "::set-output name=check::${{ env.ENABLE_CHECK }}"
+
   cancel_previous_runs:
     name: Cancel Previous Runs
     runs-on: ubuntu-20.04
@@ -14,21 +43,64 @@ jobs:
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
 
-  check:
-    runs-on: ubuntu-latest
+  build_primary_binaries:
+    name: Primary build ${{ matrix.binary }} for ${{ matrix.rust-target }} on (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+        rust: [stable]
+        binary: [release]
+    env:
+      RUST_BACKTRACE: full
+      RUSTV: ${{ matrix.rust }}
+      TARGET: ${{ matrix.rust-target }}
+      RUST_BIN_DIR: target/${{ matrix.rust-target }}/debug
+      RELEASE_NAME: debug
     steps:
       - uses: actions/checkout@v2
 
+      - name: Print env
+        run: |
+          echo "RUST_BIN_DIR = ${{ env.RUST_BIN_DIR }} "
+
+      # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
+      # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
       - name: Setup Rust toolchain
         run: rustup show
 
       - uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ matrix.os }}-${{ env.RUST_BIN_DIR }}-${{ matrix.binary }}
 
-      - name: cargo check
-        run: cargo check
+      - name: Release
+        if: ${{ matrix.binary == 'release' }}
+        run: cargo build --release
 
-  fmt:
-    runs-on: ubuntu-latest
+      # Upload artifacts
+      - name: Upload encointer-collator
+        uses: actions/upload-artifact@v2
+        with:
+          name: encointer-collator-${{ github.sha }}
+          path: target/release/encointer-collator
+
+
+  # Run all checks and unit test. This always run on debug mode
+  check:
+    name: Rust check ${{ matrix.check }} (${{ matrix.rust-target }})
+    needs: config
+    if: ${{ needs.config.outputs.check == 'true' }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        rust: [stable]
+        rust-target: [x86_64-unknown-linux-gnu]
+        check: [fmt] # ignore clippy for now
+    env:
+      RUST_BACKTRACE: full
+      RUSTV: ${{ matrix.rust }}
+      TARGET: ${{ matrix.rust-target }}
     steps:
       - uses: actions/checkout@v2
 
@@ -37,5 +109,218 @@ jobs:
       - name: Setup Rust toolchain
         run: rustup show
 
-      - name: cargo fmt
+      - uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ matrix.rust-target }}-${{ matrix.check }}
+
+      - name: Fmt
+        if: ${{ matrix.check == 'fmt' }}
         run: cargo fmt --all -- --check
+
+      - name: Clippy
+        if: ${{ matrix.check == 'clippy' }}
+        run: cargo clippy -- -D warnings
+
+  build-runtimes:
+    name: Build Runtimes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        runtime: ["encointer", "launch"]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Cache target dir
+        uses: actions/cache@v2
+        with:
+          path: "${{ github.workspace }}/runtime/${{ matrix.runtime }}/target"
+          key: srtool-target-${{ matrix.runtime }}-${{ github.sha }}
+          restore-keys: |
+            srtool-target-${{ matrix.runtime }}-
+            srtool-target-
+
+      - name: Srtool build
+        id: srtool_build
+        uses: chevdor/srtool-actions@v0.3.0
+        with:
+          chain: ${{ matrix.runtime }}
+          runtime_dir: polkadot-parachains/${{ matrix.runtime }}-runtime
+
+      - name: Summary
+        run: |
+          echo '${{ steps.srtool_build.outputs.json }}' | jq > ${{ matrix.runtime }}-srtool-digest.json
+          cat ${{ matrix.runtime }}-srtool-digest.json
+          echo "Compact Runtime: ${{ steps.srtool_build.outputs.wasm }}"
+          echo "Compressed Runtime: ${{ steps.srtool_build.outputs.wasm_compressed }}"
+
+      # We now get extra information thanks to subwasm
+      - name: Install subwasm
+        run: |
+          wget https://github.com/chevdor/subwasm/releases/download/v${{ env.SUBWASM_VERSION }}/subwasm_linux_amd64_v${{ env.SUBWASM_VERSION }}.deb
+          sudo dpkg -i subwasm_linux_amd64_v${{ env.SUBWASM_VERSION }}.deb
+          subwasm --version
+
+      - name: Show Runtime information
+        shell: bash
+        run: |
+          subwasm info ${{ steps.srtool_build.outputs.wasm }}
+          subwasm info ${{ steps.srtool_build.outputs.wasm_compressed }}
+          subwasm --json info ${{ steps.srtool_build.outputs.wasm }} > ${{ matrix.runtime }}-info.json
+          subwasm --json info ${{ steps.srtool_build.outputs.wasm_compressed }} > ${{ matrix.runtime }}-compressed-info.json
+
+      - name: Extract the metadata
+        shell: bash
+        run: |
+          subwasm meta ${{ steps.srtool_build.outputs.wasm }}
+          subwasm --json meta ${{ steps.srtool_build.outputs.wasm }} > ${{ matrix.runtime }}-metadata.json
+
+# This is unsupported it wants to diff the metadata with a running chain. i.e. wss://kusama-<matrix.chain>-rpc.parity.io
+#      - name: Check the metadata diff
+#        shell: bash
+#        run: |
+#          subwasm diff ${{ steps.srtool_build.outputs.wasm }} --chain-b ${{ matrix.chain }} > ${{ matrix.chain }}-diff.txt
+#          cat ${{ matrix.chain }}-diff.txt
+
+      - name: Upload ${{ matrix.runtime }} srtool json
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.runtime }}-srtool-json-${{ github.sha }}
+          path: |
+            ${{ matrix.runtime }}-srtool-digest.json
+            ${{ matrix.runtime }}-info.json
+            ${{ matrix.runtime }}-compressed-info.json
+            ${{ matrix.runtime }}-metadata.json
+#            ${{ matrix.runtime }}-diff.txt
+
+
+      - name: Upload ${{ matrix.runtime }} runtime
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.runtime }}-runtime-${{ github.sha }}
+          path: |
+            ${{ steps.srtool_build.outputs.wasm }}
+            ${{ steps.srtool_build.outputs.wasm_compressed }}
+
+  create_artifacts:
+    needs: [ build_primary_binaries, build-runtimes ]
+    runs-on: ubuntu-20.04
+    env:
+      CHAIN_SPEC: ${{ matrix.chain }}-${{ matrix.config }}
+    strategy:
+      fail-fast: false
+      matrix:
+        chain: [encointer, launch]
+        config: [rococo]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: encointer-collator-${{ github.sha }}
+
+      - name: 'Create binaries for artifacts'
+        # Note: there is no way to pass the parachain-id to the `build-spec` cmd, which which imposes to set
+        # `DEFAULT_PARA_ID=2014` in the `polkadot-parachains/src/commands.rs`.
+        run: |
+          chmod +x ./encointer-collator
+          ./encointer-collator export-genesis-state --chain ${{ env.CHAIN_SPEC }} --parachain-id 2014 >  ${{ env.CHAIN_SPEC }}.state
+          ./encointer-collator build-spec --chain ${{ env.CHAIN_SPEC }} --disable-default-bootnode --raw > ${{ env.CHAIN_SPEC }}.json
+
+
+      - name: Compute file metadata
+        id: vars
+        run: |
+          sha256sum ${{ env.CHAIN_SPEC }}.state >> checksums.txt
+          sha256sum ${{ env.CHAIN_SPEC }}.json >> checksums.txt
+
+      - name: Upload ${{ env.CHAIN_SPEC }} Files
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.CHAIN_SPEC }}-${{ github.sha }}
+          path: |
+            checksums.txt
+            ${{ env.CHAIN_SPEC }}.state
+            ${{ env.CHAIN_SPEC }}.json
+
+  release:
+    name: Draft Release
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    needs: [create_artifacts, build_primary_binaries, check]
+    outputs:
+      release_url: ${{ steps.create-release.outputs.html_url }}
+      asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download Integritee Collator
+        uses: actions/download-artifact@v2
+        with:
+          name: encointer-collator-${{ github.sha }}
+
+      - name: Create required package.json
+        run: test -f package.json || echo '{}' >package.json
+
+      - name: Changelog
+        uses: scottbrenner/generate-changelog-action@master
+        id: Changelog
+
+      - name: Display structure of downloaded files
+        run: ls -R
+        working-directory: .
+
+      - name: Release
+        id: create-release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          body: |
+            ${{ steps.Changelog.outputs.changelog }}
+          draft: true
+          files: |
+            encointer-collator
+
+  publish-runtimes:
+    name: Publish Runtimes
+    runs-on: ubuntu-latest
+    needs: ["release"]
+    strategy:
+      matrix:
+        runtime: ["encointer", "launch"]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+      - name: Set up Ruby 2.7
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+
+      - name: Get runtime version
+        id: get-runtime-ver
+        run: |
+          ls
+          ls "${{ matrix.runtime }}-runtime-${{ github.sha }}"
+          runtime_ver="$(ruby -e 'require "./scripts/github/lib.rb"; puts get_runtime("${{ matrix.runtime }}")')"
+          echo "::set-output name=runtime_ver::$runtime_ver"
+
+      - name: Upload compact ${{ matrix.runtime }} wasm
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.release.outputs.asset_upload_url }}
+          asset_path: "${{ matrix.runtime }}-runtime-${{ github.sha }}/${{ matrix.runtime }}_runtime.compact.wasm"
+          asset_name: ${{ matrix.runtime }}_runtime-v${{ steps.get-runtime-ver.outputs.runtime_ver }}.compact.wasm
+          asset_content_type: application/wasm
+
+      - name: Upload compressed ${{ matrix.runtime }} wasm
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.release.outputs.asset_upload_url }}
+          asset_path: "${{ matrix.runtime }}-runtime-${{ github.sha }}/${{ matrix.runtime }}_runtime.compact.compressed.wasm"
+          asset_name: ${{ matrix.runtime }}_runtime-v${{ steps.get-runtime-ver.outputs.runtime_ver }}.compact.compressed.wasm
+          asset_content_type: application/wasm

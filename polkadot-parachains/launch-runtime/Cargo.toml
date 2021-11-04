@@ -1,5 +1,5 @@
 [package]
-name = 'encointer-launch-runtime'
+name = 'launch-runtime'
 # minor revision must match collator node
 # patch revision must match runtime spec_version
 version = '0.5.9'
