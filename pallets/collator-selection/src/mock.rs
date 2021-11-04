@@ -26,7 +26,7 @@ use sp_core::H256;
 use sp_runtime::{
 	testing::{Header, UintAuthorityId},
 	traits::{BlakeTwo256, IdentityLookup, OpaqueKeys},
-	Perbill, RuntimeAppPublic,
+	RuntimeAppPublic,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -161,13 +161,12 @@ impl pallet_session::SessionHandler<u64> for TestSessionHandler {
 		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
 	}
 	fn on_before_session_ending() {}
-	fn on_disabled(_: usize) {}
+	fn on_disabled(_: u32) {}
 }
 
 parameter_types! {
 	pub const Offset: u64 = 0;
 	pub const Period: u64 = 10;
-	pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(17);
 }
 
 impl pallet_session::Config for Test {
@@ -180,7 +179,6 @@ impl pallet_session::Config for Test {
 	type SessionManager = CollatorSelection;
 	type SessionHandler = TestSessionHandler;
 	type Keys = MockSessionKeys;
-	type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
 	type WeightInfo = ();
 }
 
