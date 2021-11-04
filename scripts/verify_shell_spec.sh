@@ -17,5 +17,13 @@ sha256sum sorted.json > chainspec-checksum
 
 # overwrite the sorted chainspec json...
 jq --sort-keys . $spec_path > sorted.json
-# ... so that we can verify the checksum
+# ...so that we can verify the checksum
 sha256sum --check chainspec-checksum
+
+cp shell-head-data shell-head-data-copy
+# generate the checksum for the freshly generated head data
+sha256sum shell-head-data-copy > head-data-checksum
+# overwrite the head data with the repo version...
+cp polkadot-parachains/res/shell-statemint-head-data shell-head-data-copy
+# ...so that we can verify the checksum
+sha256sum --check head-data-checksum
