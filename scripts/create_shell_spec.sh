@@ -23,7 +23,7 @@ cat shell-spec-plain.json | jq --rawfile code shell-hex.txt '.genesis.runtime.sy
     | jq '.name = "Shell"' \
     | jq '.id = "shell"' \
     | jq '.chainType = "Live"' \
-    | jq '.bootNodes = ["/ip4/34.65.213.18/tcp/30334/p2p/12D3KooWF63ZxKtZMYs5247WQA8fcTiGJb2osXykc31cmjwNLwem", "/ip4/34.65.104.62/tcp/30334/p2p/12D3KooWBJTqpLCKVBEbH4jvn7DvxDhSnmFFM7e8rohQqTGfmLSK", "/ip4/34.65.35.228/tcp/30334/p2p/12D3KooWF5jLarW11PF1yVncAKnk9rNGEa9WiZ7hMkEpT4HPpkLp", "/ip4/34.65.251.121/tcp/30334/p2p/12D3KooWDj3YNpKp2hW8g5zasxk54PtxHS1fN4AZUPu3hUwitPnh"]' \
+    | jq '.bootNodes = ["/ip4/34.65.116.156/tcp/30334/p2p/12D3KooWMdwvej593sntpXcxpUaFcsjc1EpCr5CL1JMoKmEhgj1N", "/ip4/34.65.105.127/tcp/30334/p2p/12D3KooWRywSWa2sQpcRuLhSeNSEs6bepLGgcdxFg8P7jtXRuiYf", "/ip4/34.65.142.204/tcp/30334/p2p/12D3KooWDGnPd5PzgvcbSwXsCBN3kb1dWbu58sy6R7h4fJGnZtq5", "/ip4/34.65.32.100/tcp/30334/p2p/12D3KooWSzHX7A3t6BwUQrq8R9ZVWLrfyYgkYLfpKMcRs14oFSgc"]' \
     | jq '.relay_chain = "polkadot"' \
     > edited-shell-plain.json
 
