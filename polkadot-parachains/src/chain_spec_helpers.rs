@@ -38,8 +38,8 @@ where
 pub enum GenesisKeys {
 	/// Use Encointer keys. Root is not in endowed keys.
 	Encointer,
-	/// Use Encointer keys. Root is in endowed keys.
-	EncointerWithRootEndowed,
+	/// Use Encointer keys. the council is in endowed keys.
+	EncointerWithCouncilEndowed,
 	/// Use Keys from the keyring for a test setup
 	WellKnown,
 }
@@ -47,10 +47,6 @@ pub enum GenesisKeys {
 pub struct WellKnownKeys;
 
 impl WellKnownKeys {
-	pub fn root() -> AccountId {
-		Alice.to_account_id()
-	}
-
 	pub fn endowed() -> Vec<AccountId> {
 		vec![Alice.to_account_id(), Bob.to_account_id()]
 	}
@@ -73,6 +69,8 @@ impl WellKnownKeys {
 pub struct EncointerKeys;
 
 impl EncointerKeys {
+	// keep it for now, will be the prime member of the council
+	#[allow(unused)]
 	pub fn root() -> AccountId {
 		public_from_ss58::<sr25519::Public>("5CSLXnYZQeVDvNmanYEJn4YXXhgFLKYwp2f216NsDehR8mVU")
 			.into()

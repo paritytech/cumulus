@@ -71,20 +71,20 @@ pub fn encointer_spec(
 	genesis_keys: GenesisKeys,
 	relay_chain: RelayChain,
 ) -> EncointerChainSpec {
-	let (root, endowed, authorities) = match genesis_keys {
+	let (council, endowed, authorities) = match genesis_keys {
 		GenesisKeys::Encointer =>
-			(EncointerKeys::root(), [].to_vec(), EncointerKeys::authorities()),
-		GenesisKeys::EncointerWithRootEndowed =>
-			(EncointerKeys::root(), vec![EncointerKeys::root()], EncointerKeys::authorities()),
+			(EncointerKeys::council(), [].to_vec(), EncointerKeys::authorities()),
+		GenesisKeys::EncointerWithCouncilEndowed =>
+			(EncointerKeys::council(), EncointerKeys::council(), EncointerKeys::authorities()),
 		GenesisKeys::WellKnown =>
-			(WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities()),
+			(WellKnownKeys::council(), WellKnownKeys::endowed(), WellKnownKeys::authorities()),
 	};
 
 	chain_spec(
 		"Encointer Network",
 		move || {
 			encointer_genesis(
-				root.clone(),
+				council.clone(),
 				authorities.clone(),
 				allocate_endowance(endowed.clone()),
 				id,
@@ -102,20 +102,20 @@ pub fn launch_spec(
 	genesis_keys: GenesisKeys,
 	relay_chain: RelayChain,
 ) -> LaunchChainSpec {
-	let (root, endowed, authorities) = match genesis_keys {
+	let (council, endowed, authorities) = match genesis_keys {
 		GenesisKeys::Encointer =>
-			(EncointerKeys::root(), [].to_vec(), EncointerKeys::authorities()),
-		GenesisKeys::EncointerWithRootEndowed =>
-			(EncointerKeys::root(), vec![EncointerKeys::root()], EncointerKeys::authorities()),
+			(EncointerKeys::council(), [].to_vec(), EncointerKeys::authorities()),
+		GenesisKeys::EncointerWithCouncilEndowed =>
+			(EncointerKeys::council(), EncointerKeys::council(), EncointerKeys::authorities()),
 		GenesisKeys::WellKnown =>
-			(WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities()),
+			(WellKnownKeys::council(), WellKnownKeys::endowed(), WellKnownKeys::authorities()),
 	};
 
 	chain_spec(
 		"Encointer Launch",
 		move || {
 			launch_genesis(
-				root.clone(),
+				council.clone(),
 				authorities.clone(),
 				allocate_endowance(endowed.clone()),
 				id,
@@ -155,8 +155,8 @@ fn chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
 }
 
 pub fn sybil_dummy_spec(id: ParaId, relay_chain: RelayChain) -> EncointerChainSpec {
-	let (root, endowed, authorities) =
-		(WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities());
+	let (council, endowed, authorities) =
+		(WellKnownKeys::council(), WellKnownKeys::endowed(), WellKnownKeys::authorities());
 
 	EncointerChainSpec::from_genesis(
 		"Sybil Dummy",
@@ -164,7 +164,7 @@ pub fn sybil_dummy_spec(id: ParaId, relay_chain: RelayChain) -> EncointerChainSp
 		relay_chain.chain_type(),
 		move || {
 			encointer_genesis(
-				root.clone(),
+				council.clone(),
 				authorities.clone(),
 				allocate_endowance(endowed.clone()),
 				id,
@@ -191,7 +191,7 @@ pub fn sybil_dummy_spec(id: ParaId, relay_chain: RelayChain) -> EncointerChainSp
 }
 
 fn encointer_genesis(
-	_root_key: AccountId,
+	encointer_council: Vec<AccountId>,
 	initial_authorities: Vec<AuraId>,
 	endowance_allocation: Vec<(AccountId, u128)>,
 	id: ParaId,
@@ -209,8 +209,11 @@ fn encointer_genesis(
 		aura: parachain_runtime::AuraConfig { authorities: initial_authorities },
 		aura_ext: Default::default(),
 		treasury: Default::default(),
-		collective: Default::default(),
-		membership: Default::default(),
+		collective:Default::default(),
+		membership: parachain_runtime::MembershipConfig {
+			members: encointer_council,
+			phantom: Default::default(),
+		}
 		// encointer_scheduler: parachain_runtime::EncointerSchedulerConfig {
 		// 	current_phase: CeremonyPhaseType::REGISTERING,
 		// 	current_ceremony_index: 1,
@@ -238,7 +241,7 @@ fn encointer_genesis(
 }
 
 fn launch_genesis(
-	_root_key: AccountId,
+	encointer_council: Vec<AccountId>,
 	initial_authorities: Vec<AuraId>,
 	endowance_allocation: Vec<(AccountId, u128)>,
 	id: ParaId,
@@ -257,6 +260,9 @@ fn launch_genesis(
 		aura_ext: Default::default(),
 		treasury: Default::default(),
 		collective: Default::default(),
-		membership: Default::default(),
+		membership: launch_runtime::MembershipConfig {
+			members: encointer_council,
+			phantom: Default::default(),
+		},
 	}
 }
