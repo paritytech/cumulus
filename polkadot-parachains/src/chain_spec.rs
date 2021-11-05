@@ -191,7 +191,7 @@ pub fn sybil_dummy_spec(id: ParaId, relay_chain: RelayChain) -> EncointerChainSp
 }
 
 fn encointer_genesis(
-	root_key: AccountId,
+	_root_key: AccountId,
 	initial_authorities: Vec<AuraId>,
 	endowance_allocation: Vec<(AccountId, u128)>,
 	id: ParaId,
@@ -205,11 +205,12 @@ fn encointer_genesis(
 		},
 		parachain_system: Default::default(),
 		balances: parachain_runtime::BalancesConfig { balances: endowance_allocation },
-		sudo: parachain_runtime::SudoConfig { key: root_key.clone() },
 		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },
 		aura: parachain_runtime::AuraConfig { authorities: initial_authorities },
 		aura_ext: Default::default(),
 		treasury: Default::default(),
+		collective: Default::default(),
+		membership: Default::default(),
 		// encointer_scheduler: parachain_runtime::EncointerSchedulerConfig {
 		// 	current_phase: CeremonyPhaseType::REGISTERING,
 		// 	current_ceremony_index: 1,
