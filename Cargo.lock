@@ -3619,6 +3619,7 @@ dependencies = [
  "pallet-aura",
  "pallet-balances",
  "pallet-collective",
+ "pallet-membership",
  "pallet-randomness-collective-flip",
  "pallet-timestamp",
  "pallet-transaction-payment",

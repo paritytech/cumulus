@@ -493,6 +493,20 @@ impl pallet_collective::Config for Runtime {
 	type WeightInfo = ();
 }
 
+// support for collective pallet
+impl pallet_membership::Config for Runtime {
+	type Event = Event;
+	type AddOrigin = EnsureRoot<AccountId>;
+	type RemoveOrigin = EnsureRoot<AccountId>;
+	type SwapOrigin = EnsureRoot<AccountId>;
+	type ResetOrigin = EnsureRoot<AccountId>;
+	type PrimeOrigin = EnsureRoot<AccountId>;
+	type MembershipInitialized = Collective;
+	type MembershipChanged = Collective;
+	type MaxMembers = MaxMembers;
+	type WeightInfo = ();
+}
+
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
@@ -522,7 +536,10 @@ construct_runtime! {
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
 		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>} = 40,
-		Collective: pallet_collective::{Pallet, Call, Storage, Origin<T>, Config<T>, Event<T> } = 44
+
+		// encointer council
+		Collective: pallet_collective::{Pallet, Call, Storage, Origin<T>, Config<T>, Event<T> } = 50,
+		Membership: pallet_membership::{Pallet, Call, Storage, Event<T>, Config<T>} = 51,
 	}
 }
 

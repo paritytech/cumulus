@@ -256,5 +256,6 @@ fn launch_genesis(
 		aura_ext: Default::default(),
 		treasury: Default::default(),
 		collective: Default::default(),
+		membership: Default::default(),
 	}
 }
