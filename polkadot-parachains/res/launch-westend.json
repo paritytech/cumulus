@@ -3,7 +3,7 @@
   "id": "encointer-westend",
   "chainType": "Local",
   "bootNodes": [
-    "/ip4/138.68.105.130/tcp/30333/p2p/12D3KooWEjkyi49NDmKTECizx8dKDyVnpL7QD62Deu4rVat4r2Ha"
+    "/ip4/138.68.105.130/tcp/30333/p2p/12D3KooWJ8F8XL7prXHo94QgZ5pMQkYhzUFbXRvx7ncM9wmFDizh"
   ],
   "telemetryEndpoints": null,
   "protocolId": "wnd2",
