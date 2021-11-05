@@ -237,7 +237,7 @@ fn encointer_genesis(
 }
 
 fn launch_genesis(
-	root_key: AccountId,
+	_root_key: AccountId,
 	initial_authorities: Vec<AuraId>,
 	endowance_allocation: Vec<(AccountId, u128)>,
 	id: ParaId,
@@ -251,7 +251,6 @@ fn launch_genesis(
 		},
 		parachain_system: Default::default(),
 		balances: launch_runtime::BalancesConfig { balances: endowance_allocation },
-		sudo: launch_runtime::SudoConfig { key: root_key.clone() },
 		parachain_info: launch_runtime::ParachainInfoConfig { parachain_id: id },
 		aura: launch_runtime::AuraConfig { authorities: initial_authorities },
 		aura_ext: Default::default(),

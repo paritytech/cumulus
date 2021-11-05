@@ -160,30 +160,16 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 42;
 }
 
-pub struct SudoOnly;
-impl Contains<Call> for SudoOnly {
-	fn contains(call: &Call) -> bool {
-		// the system relevant pallets have either:
-		//
-		// * `ensure_root(origin)`
-		// * `ensure_none(origin)`
-		//
-		// So effectively, this is a `SudoOnly` filter.
-		!matches!(
-			call,
-			// only enable force_transfer/set_balance, which are root calls.
-			Call::Balances(
-				pallet_balances::Call::transfer { .. } |
-					pallet_balances::Call::transfer_all { .. } |
-					pallet_balances::Call::transfer_keep_alive { .. }
-			) | Call::Treasury(_)
-		)
+pub struct BaseFilter;
+impl Contains<Call> for BaseFilter {
+	fn contains(_c: &Call) -> bool {
+		true
 	}
 }
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
-	type BaseCallFilter = SudoOnly;
+	type BaseCallFilter = BaseFilter;
 	type BlockWeights = RuntimeBlockWeights;
 	type BlockLength = RuntimeBlockLength;
 	type AccountId = AccountId;
@@ -286,11 +272,6 @@ impl pallet_utility::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
 	type WeightInfo = weights::pallet_utility::WeightInfo<Runtime>;
-}
-
-impl pallet_sudo::Config for Runtime {
-	type Call = Call;
-	type Event = Event;
 }
 
 parameter_types! {
@@ -509,7 +490,6 @@ construct_runtime! {
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 2,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 4,
-		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
 		Utility: pallet_utility::{Pallet, Call, Event} = 6,
 
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,

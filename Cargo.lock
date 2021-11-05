@@ -3619,7 +3619,6 @@ dependencies = [
  "pallet-aura",
  "pallet-balances",
  "pallet-randomness-collective-flip",
- "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
