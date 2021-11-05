@@ -16,6 +16,9 @@ mkdir -p "$WEIGHT_OUTPUT_DIR"
 pallets=(
   "frame_system" \
   "pallet_balances" \
+  "pallet_collective" \
+# ^^^ takes some time to complete
+  "pallet_pallet_membership" \
   "pallet_timestamp" \
   "pallet_treasury" \
   "pallet_utility" \

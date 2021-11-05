@@ -23,7 +23,7 @@ use parachain_runtime::{AccountId, AuraId};
 use sc_chain_spec::Properties;
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Public};
-use sp_keyring::AccountKeyring::{Alice, Bob};
+use sp_keyring::AccountKeyring::{Alice, Bob, Charlie, Dave, Eve};
 use std::str::FromStr;
 
 pub fn public_from_ss58<TPublic: Public + FromStr>(ss58: &str) -> TPublic
@@ -38,8 +38,8 @@ where
 pub enum GenesisKeys {
 	/// Use Encointer keys. Root is not in endowed keys.
 	Encointer,
-	/// Use Encointer keys. Root is in endowed keys.
-	EncointerWithRootEndowed,
+	/// Use Encointer keys. the council is in endowed keys.
+	EncointerWithCouncilEndowed,
 	/// Use Keys from the keyring for a test setup
 	WellKnown,
 }
@@ -47,22 +47,30 @@ pub enum GenesisKeys {
 pub struct WellKnownKeys;
 
 impl WellKnownKeys {
-	pub fn root() -> AccountId {
-		Alice.to_account_id()
-	}
-
 	pub fn endowed() -> Vec<AccountId> {
-		vec![Alice.to_account_id(), Bob.to_account_id()]
+		Self::council()
 	}
 
 	pub fn authorities() -> Vec<AuraId> {
 		vec![Alice.public().into()]
+	}
+
+	pub fn council() -> Vec<AccountId> {
+		vec![
+			Alice.to_account_id(),
+			Bob.to_account_id(),
+			Charlie.to_account_id(),
+			Dave.to_account_id(),
+			Eve.to_account_id(),
+		]
 	}
 }
 
 pub struct EncointerKeys;
 
 impl EncointerKeys {
+	// keep it for now, will be the prime member of the council
+	#[allow(unused)]
 	pub fn root() -> AccountId {
 		public_from_ss58::<sr25519::Public>("5CSLXnYZQeVDvNmanYEJn4YXXhgFLKYwp2f216NsDehR8mVU")
 			.into()
@@ -79,6 +87,16 @@ impl EncointerKeys {
 				.into(),
 			public_from_ss58::<sr25519::Public>("5EWpnnj53PL9KbJAMnsrezQYZhwQ6UwnqSknnXd1ptVvRfVJ")
 				.into(),
+		]
+	}
+
+	pub fn council() -> Vec<AccountId> {
+		vec![
+			Alice.to_account_id(),
+			Bob.to_account_id(),
+			Charlie.to_account_id(),
+			Dave.to_account_id(),
+			Eve.to_account_id(),
 		]
 	}
 }

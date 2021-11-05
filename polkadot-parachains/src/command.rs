@@ -69,12 +69,12 @@ fn load_spec(
 
 		"launch-kusama" => Box::new(chain_spec::launch_kusama()?),
 		"launch-kusama-fresh" => Box::new(chain_spec::launch_spec(para_id, GenesisKeys::Encointer, RelayChain::Kusama)),
-		"launch-kusama-local" => Box::new(chain_spec::launch_spec(para_id, GenesisKeys::EncointerWithRootEndowed, RelayChain::KusamaLocal)),
+		"launch-kusama-local" => Box::new(chain_spec::launch_spec(para_id, GenesisKeys::EncointerWithCouncilEndowed, RelayChain::KusamaLocal)),
 		"launch-kusama-local-dev" => Box::new(chain_spec::launch_spec(para_id, GenesisKeys::WellKnown, RelayChain::KusamaLocal)),
 
 		"launch-westend" => Box::new(chain_spec::launch_westend()?),
 		"launch-westend-fresh" => Box::new(chain_spec::launch_spec(para_id, GenesisKeys::Encointer, RelayChain::Westend)),
-		"launch-westend-local" => Box::new(chain_spec::launch_spec(para_id, GenesisKeys::EncointerWithRootEndowed, RelayChain::WestendLocal)),
+		"launch-westend-local" => Box::new(chain_spec::launch_spec(para_id, GenesisKeys::EncointerWithCouncilEndowed, RelayChain::WestendLocal)),
 		"launch-westend-local-dev" => Box::new(chain_spec::launch_spec(para_id, GenesisKeys::WellKnown, RelayChain::WestendLocal)),
 
 		"sybil-dummy-rococo" => Box::new(chain_spec::sybil_dummy_spec(para_id, RelayChain::Rococo)),
