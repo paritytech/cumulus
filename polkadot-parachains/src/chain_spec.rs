@@ -255,5 +255,6 @@ fn launch_genesis(
 		aura: launch_runtime::AuraConfig { authorities: initial_authorities },
 		aura_ext: Default::default(),
 		treasury: Default::default(),
+		collective: Default::default(),
 	}
 }

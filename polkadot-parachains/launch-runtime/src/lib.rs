@@ -476,6 +476,23 @@ impl pallet_aura::Config for Runtime {
 	type MaxAuthorities = MaxAuthorities;
 }
 
+parameter_types! {
+	pub const MotionDuration: BlockNumber = 5;
+	pub const MaxProposals: u32 = 100;
+	pub const MaxMembers: u32 = 100;
+}
+
+impl pallet_collective::Config for Runtime {
+	type Origin = Origin;
+	type Proposal = Call;
+	type Event = Event;
+	type MotionDuration = MotionDuration;
+	type MaxProposals = MaxProposals;
+	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	type MaxMembers = MaxMembers;
+	type WeightInfo = ();
+}
+
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
@@ -505,6 +522,7 @@ construct_runtime! {
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
 		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>} = 40,
+		Collective: pallet_collective::{Pallet, Call, Storage, Origin<T>, Config<T>, Event<T> } = 44
 	}
 }
 
