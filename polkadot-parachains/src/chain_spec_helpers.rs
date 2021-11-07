@@ -69,12 +69,6 @@ impl WellKnownKeys {
 pub struct EncointerKeys;
 
 impl EncointerKeys {
-	// keep it for now, will be the prime member of the council
-	#[allow(unused)]
-	pub fn root() -> AccountId {
-		public_from_ss58::<sr25519::Public>("5CSLXnYZQeVDvNmanYEJn4YXXhgFLKYwp2f216NsDehR8mVU")
-			.into()
-	}
 	pub fn authorities() -> Vec<AuraId> {
 		vec![
 			public_from_ss58::<sr25519::Public>("5ECixNNkkfjHYqzwEkbuoVdzRqBpW2eTp8rp2SYR8fuNfQ4G")
@@ -92,11 +86,16 @@ impl EncointerKeys {
 
 	pub fn council() -> Vec<AccountId> {
 		vec![
-			Alice.to_account_id(),
-			Bob.to_account_id(),
-			Charlie.to_account_id(),
-			Dave.to_account_id(),
-			Eve.to_account_id(),
+			public_from_ss58::<sr25519::Public>("D5eJR9q92FPG2gTKc46URfFhWFdfueNEPjgKRSH1sVjEnk1")
+				.into(),
+			public_from_ss58::<sr25519::Public>("GcXMwCNrK3YoaZKRyZk4CiHvAxMBtJm2vb1LzGNohUm2vgL")
+				.into(),
+			public_from_ss58::<sr25519::Public>("Ckz9Mgx5ZfpbN52aHFQ68nUCPVhEjUx8X8wLySZwoiCSpEe")
+				.into(),
+			public_from_ss58::<sr25519::Public>("JCmeshGL5mdw6gzCViGvVWxP9tUQXYGEpr7iuRQNksUbSUU")
+				.into(),
+			public_from_ss58::<sr25519::Public>("GCFEM2oEpqD8EXnZNiva9cmfK6UWgWqFycxwn88s1gkuqvF")
+				.into(),
 		]
 	}
 }
