@@ -1899,38 +1899,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-test-runtime-upgrade"
-version = "0.1.0"
-dependencies = [
- "cumulus-pallet-parachain-system",
- "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
- "frame-executive",
- "frame-support",
- "frame-system",
- "pallet-balances",
- "pallet-randomness-collective-flip",
- "pallet-sudo",
- "pallet-timestamp",
- "pallet-transaction-payment",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-api",
- "sp-block-builder",
- "sp-core",
- "sp-inherents",
- "sp-io",
- "sp-offchain",
- "sp-runtime",
- "sp-session",
- "sp-std",
- "sp-transaction-pool",
- "sp-version",
- "substrate-wasm-builder",
-]
-
-[[package]]
 name = "cumulus-test-service"
 version = "0.1.0"
 dependencies = [
@@ -1943,7 +1911,6 @@ dependencies = [
  "cumulus-primitives-parachain-inherent",
  "cumulus-test-relay-validation-worker-provider",
  "cumulus-test-runtime",
- "cumulus-test-runtime-upgrade",
  "frame-system",
  "futures 0.3.17",
  "jsonrpc-core",
@@ -1968,13 +1935,12 @@ dependencies = [
  "sp-arithmetic",
  "sp-blockchain",
  "sp-core",
+ "sp-io",
  "sp-keyring",
- "sp-maybe-compressed-blob",
  "sp-runtime",
  "sp-state-machine",
  "sp-timestamp",
  "sp-trie",
- "sp-version",
  "substrate-test-client",
  "substrate-test-utils",
  "tokio",
