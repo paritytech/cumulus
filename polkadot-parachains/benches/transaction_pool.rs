@@ -43,16 +43,9 @@ use sp_runtime::{generic::BlockId, OpaqueExtrinsic, SaturatedConversion};
 use cumulus_primitives_core::{relay_chain::Block, ParaId};
 use cumulus_test_runtime::RuntimeApi;
 use cumulus_test_service::{
-	initial_head_data, Client, Keyring::*, RuntimeExecutor, TransactionPool,
+	construct_extrinsic, fetch_nonce, initial_head_data, Client, Keyring::*, RuntimeExecutor,
+	TransactionPool,
 };
-
-pub fn fetch_nonce(client: &Client, account: sp_core::sr25519::Pair) -> u32 {
-	let best_hash = client.chain_info().best_hash;
-	client
-		.runtime_api()
-		.account_nonce(&generic::BlockId::Hash(best_hash), account.public().into())
-		.expect("Fetching account nonce works; qed")
-}
 
 pub fn create_extrinsic(
 	client: &Client,
@@ -64,7 +57,7 @@ pub fn create_extrinsic(
 	let genesis_hash = client.block_hash(0).ok().flatten().expect("Genesis block exists; qed");
 	let best_hash = client.chain_info().best_hash;
 	let best_block = client.chain_info().best_number;
-	let nonce = nonce.unwrap_or_else(|| fetch_nonce(client, sender.clone()));
+	let nonce = nonce.unwrap_or_else(|| fetch_nonce(client, Sr25519Keyring::Alice));
 
 	let period = node_runtime::BlockHashCount::get()
 		.checked_next_power_of_two()
@@ -120,7 +113,7 @@ fn create_accounts(num: usize) -> Vec<sr25519::Pair> {
 ///
 /// `start_nonce` is the current nonce of Alice.
 fn create_account_extrinsics(client: &Client, accounts: &[sr25519::Pair]) -> Vec<OpaqueExtrinsic> {
-	let start_nonce = fetch_nonce(client, Sr25519Keyring::Alice.pair());
+	let start_nonce = fetch_nonce(client, Sr25519Keyring::Alice);
 
 	accounts
 		.iter()
@@ -128,9 +121,8 @@ fn create_account_extrinsics(client: &Client, accounts: &[sr25519::Pair]) -> Vec
 		.map(|(i, a)| {
 			vec![
 				// Reset the nonce by removing any funds
-				create_extrinsic(
+				construct_extrinsic(
 					client,
-					Sr25519Keyring::Alice.pair(),
 					SudoCall::sudo {
 						call: Box::new(
 							BalancesCall::set_balance {
@@ -141,12 +133,12 @@ fn create_account_extrinsics(client: &Client, accounts: &[sr25519::Pair]) -> Vec
 							.into(),
 						),
 					},
+					Sr25519Keyring::Alice,
 					Some(start_nonce + (i as u32) * 2),
 				),
 				// Give back funds
-				create_extrinsic(
+				construct_extrinsic(
 					client,
-					Sr25519Keyring::Alice.pair(),
 					SudoCall::sudo {
 						call: Box::new(
 							BalancesCall::set_balance {
@@ -157,6 +149,7 @@ fn create_account_extrinsics(client: &Client, accounts: &[sr25519::Pair]) -> Vec
 							.into(),
 						),
 					},
+					Sr25519Keyring::Alice,
 					Some(start_nonce + (i as u32) * 2 + 1),
 				),
 			]
@@ -175,13 +168,16 @@ fn create_benchmark_extrinsics(
 		.iter()
 		.map(|account| {
 			(0..extrinsics_per_account).map(move |nonce| {
-				create_extrinsic(
+				let public_key = account.public().clone();
+				let keyring =
+					Sr25519Keyring::from_public(&public_key).expect("Unable to create account");
+				construct_extrinsic(
 					client,
-					account.clone(),
 					BalancesCall::transfer {
 						dest: Sr25519Keyring::Bob.to_account_id().into(),
 						value: 1 * DOLLARS,
 					},
+					keyring,
 					Some(nonce as u32),
 				)
 			})

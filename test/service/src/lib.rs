@@ -29,7 +29,9 @@ use cumulus_client_service::{
 };
 use cumulus_primitives_core::ParaId;
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
+use frame_system_rpc_runtime_api::AccountNonceApi;
 use polkadot_primitives::v1::{CollatorPair, Hash as PHash, PersistedValidationData};
+use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_network::{config::TransportConfig, multiaddr, NetworkService};
 use sc_service::{
@@ -656,7 +658,7 @@ impl TestNode {
 		function: impl Into<runtime::Call>,
 		caller: Sr25519Keyring,
 	) -> Result<RpcTransactionOutput, RpcTransactionError> {
-		let extrinsic = construct_extrinsic(&*self.client, function, caller);
+		let extrinsic = construct_extrinsic(&*self.client, function, caller, Some(0));
 
 		self.rpc_handlers.send_transaction(extrinsic.into()).await
 	}
@@ -674,17 +676,26 @@ impl TestNode {
 	}
 }
 
+pub fn fetch_nonce(client: &Client, account: Sr25519Keyring) -> u32 {
+	let best_hash = client.chain_info().best_hash;
+	client
+		.runtime_api()
+		.account_nonce(&generic::BlockId::Hash(best_hash), account.public().into())
+		.expect("Fetching account nonce works; qed")
+}
+
 /// Construct an extrinsic that can be applied to the test runtime.
 pub fn construct_extrinsic(
 	client: &Client,
 	function: impl Into<runtime::Call>,
 	caller: Sr25519Keyring,
+	nonce: Option<u32>,
 ) -> runtime::UncheckedExtrinsic {
 	let function = function.into();
 	let current_block_hash = client.info().best_hash;
 	let current_block = client.info().best_number.saturated_into();
 	let genesis_block = client.hash(0).unwrap().unwrap();
-	let nonce = 0;
+	let nonce = nonce.unwrap_or_else(|| fetch_nonce(client, caller.clone()));
 	let period = runtime::BlockHashCount::get()
 		.checked_next_power_of_two()
 		.map(|c| c / 2)
