@@ -74,7 +74,7 @@ async fn test_runtime_upgrade() {
 	expected_runtime_version.spec_version += 1;
 
 	let wasm = cumulus_test_runtime::wasm_spec_version_incremented::WASM_BINARY
-		.expect("Wasm binary with incremented spec version should have been build");
+		.expect("Wasm binary with incremented spec version should have been built");
 
 	// schedule runtime upgrade
 	charlie.schedule_upgrade(wasm.into()).await.unwrap();
