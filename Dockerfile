@@ -17,10 +17,10 @@ RUN ldd /usr/local/bin/encointer-collator && \
 	/usr/local/bin/encointer-collator --version
 
 # Shrinking
-RUN rm -rf /usr/lib/python* && \
-	rm -rf /usr/bin /usr/sbin /usr/share/man
+#RUN rm -rf /usr/lib/python* && \
+#	rm -rf /usr/bin /usr/sbin /usr/share/man
 
-USER encointer
+#USER encointer
 EXPOSE 30333 9933 9944 9615
 VOLUME ["/data"]
 
