@@ -1,8 +1,8 @@
 [package]
 name = "encointer-collator"
 # align with the runtimes
-version = "0.5.9"
-authors = ["Parity Technologies <admin@parity.io>"]
+version = "0.6.0"
+authors = ["Encointer <info@encointer.org>"]
 build = "build.rs"
 edition = "2018"
 
