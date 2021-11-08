@@ -47,61 +47,6 @@ use cumulus_test_service::{
 	TransactionPool,
 };
 
-pub fn create_extrinsic(
-	client: &Client,
-	sender: sp_core::sr25519::Pair,
-	function: impl Into<node_runtime::Call>,
-	nonce: Option<u32>,
-) -> node_runtime::UncheckedExtrinsic {
-	let function = function.into();
-	let genesis_hash = client.block_hash(0).ok().flatten().expect("Genesis block exists; qed");
-	let best_hash = client.chain_info().best_hash;
-	let best_block = client.chain_info().best_number;
-
-	let alice_keypair = Sr25519Keyring::Alice.pair();
-	let nonce = nonce.unwrap_or_else(|| fetch_nonce(client, alice_keypair));
-
-	let period = node_runtime::BlockHashCount::get()
-		.checked_next_power_of_two()
-		.map(|c| c / 2)
-		.unwrap_or(2) as u64;
-	let tip = 0;
-	let extra: node_runtime::SignedExtra = (
-		frame_system::CheckSpecVersion::<node_runtime::Runtime>::new(),
-		frame_system::CheckTxVersion::<node_runtime::Runtime>::new(),
-		frame_system::CheckGenesis::<node_runtime::Runtime>::new(),
-		frame_system::CheckEra::<node_runtime::Runtime>::from(generic::Era::mortal(
-			period,
-			best_block.saturated_into(),
-		)),
-		frame_system::CheckNonce::<node_runtime::Runtime>::from(nonce),
-		frame_system::CheckWeight::<node_runtime::Runtime>::new(),
-		pallet_transaction_payment::ChargeTransactionPayment::<node_runtime::Runtime>::from(tip),
-	);
-
-	let raw_payload = node_runtime::SignedPayload::from_raw(
-		function.clone(),
-		extra.clone(),
-		(
-			node_runtime::VERSION.spec_version,
-			node_runtime::VERSION.transaction_version,
-			genesis_hash,
-			best_hash,
-			(),
-			(),
-			(),
-		),
-	);
-	let signature = raw_payload.using_encoded(|e| sender.sign(e));
-
-	node_runtime::UncheckedExtrinsic::new_signed(
-		function.clone(),
-		sp_runtime::AccountId32::from(sender.public()).into(),
-		node_runtime::Signature::Sr25519(signature.clone()),
-		extra.clone(),
-	)
-}
-
 fn create_accounts(num: usize) -> Vec<sr25519::Pair> {
 	(0..num)
 		.map(|i| {
