@@ -129,8 +129,8 @@ impl RelayChain {
 			RelayChain::RococoLocal => ChainType::Local,
 			RelayChain::Kusama => ChainType::Live,
 			RelayChain::KusamaLocal => ChainType::Local,
-			RelayChain::Westend => ChainType::Local,
-			RelayChain::WestendLocal => ChainType::Live,
+			RelayChain::Westend => ChainType::Live,
+			RelayChain::WestendLocal => ChainType::Local,
 		}
 	}
 
@@ -139,14 +139,6 @@ impl RelayChain {
 			RelayChain::Kusama | RelayChain::KusamaLocal => kusama_properties(),
 			RelayChain::Rococo | RelayChain::RococoLocal => rococo_properties(),
 			RelayChain::Westend | RelayChain::WestendLocal => westend_properties(),
-		}
-	}
-
-	pub fn protocol_id(&self) -> &'static str {
-		match self {
-			RelayChain::Kusama | RelayChain::KusamaLocal => "ksmcc3",
-			RelayChain::Rococo | RelayChain::RococoLocal => "rococo",
-			RelayChain::Westend | RelayChain::WestendLocal => "wnd2",
 		}
 	}
 }

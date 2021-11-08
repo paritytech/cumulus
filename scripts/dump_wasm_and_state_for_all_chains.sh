@@ -16,9 +16,12 @@ DUMP_DIR=${3:-./chain_dumps}
 mkdir -p ${DUMP_DIR}
 
 chainspecs=("encointer-rococo" \
-      "encointer-rococo-local" \
+      "encointer-rococo-fresh" \
+      "encointer-westend-fresh" \
+      "encointer-kusama-fresh" \
 
       "launch-rococo" \
+      "launch-rococo-fresh" \
       "launch-rococo-local" \
 
       "launch-kusama" \

@@ -61,25 +61,36 @@ fn load_spec(
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
-		"encointer-rococo" => Box::new(chain_spec::encointer_spec(para_id, GenesisKeys::Encointer, RelayChain::Rococo)),
-		"encointer-rococo-local" => Box::new(chain_spec::encointer_spec(para_id, GenesisKeys::WellKnown, RelayChain::RococoLocal)),
+		"encointer-rococo" 			=> Box::new(chain_spec::encointer_rococo()?),
+		"encointer-rococo-fresh" 	=> Box::new(chain_spec::encointer_spec(1003.into(), GenesisKeys::Encointer, RelayChain::Rococo)),
+		"encointer-rococo-local" 	=> Box::new(chain_spec::encointer_spec(1003.into(), GenesisKeys::WellKnown, RelayChain::RococoLocal)),
 
-		"launch-rococo" => Box::new(chain_spec::launch_spec(para_id, GenesisKeys::Encointer, RelayChain::Rococo)),
-		"launch-rococo-local" => Box::new(chain_spec::launch_spec(para_id, GenesisKeys::WellKnown, RelayChain::RococoLocal)),
+		"encointer-westend" 		=> Box::new(chain_spec::encointer_westend()?),
+		"encointer-westend-fresh" 	=> Box::new(chain_spec::encointer_spec(1001.into(), GenesisKeys::Encointer, RelayChain::Westend)),
+		"encointer-westend-local" 	=> Box::new(chain_spec::encointer_spec(1001.into(), GenesisKeys::WellKnown, RelayChain::WestendLocal)),
 
-		"launch-kusama" => Box::new(chain_spec::launch_kusama()?),
-		"launch-kusama-fresh" => Box::new(chain_spec::launch_spec(para_id, GenesisKeys::Encointer, RelayChain::Kusama)),
-		"launch-kusama-local" => Box::new(chain_spec::launch_spec(para_id, GenesisKeys::EncointerWithCouncilEndowed, RelayChain::KusamaLocal)),
-		"launch-kusama-local-dev" => Box::new(chain_spec::launch_spec(para_id, GenesisKeys::WellKnown, RelayChain::KusamaLocal)),
+		"encointer-kusama" 			=> Box::new(chain_spec::encointer_kusama()?),
+		"encointer-kusama-fresh" 	=> Box::new(chain_spec::encointer_spec(1001.into(), GenesisKeys::Encointer, RelayChain::Kusama)),
+		"encointer-kusama-local" 	=> Box::new(chain_spec::encointer_spec(1001.into(), GenesisKeys::WellKnown, RelayChain::KusamaLocal)),
 
-		"launch-westend" => Box::new(chain_spec::launch_westend()?),
-		"launch-westend-fresh" => Box::new(chain_spec::launch_spec(para_id, GenesisKeys::Encointer, RelayChain::Westend)),
-		"launch-westend-local" => Box::new(chain_spec::launch_spec(para_id, GenesisKeys::EncointerWithCouncilEndowed, RelayChain::WestendLocal)),
-		"launch-westend-local-dev" => Box::new(chain_spec::launch_spec(para_id, GenesisKeys::WellKnown, RelayChain::WestendLocal)),
+		"launch-rococo" 			=> Box::new(chain_spec::launch_rococo()?),
+		"launch-rococo-fresh" 		=> Box::new(chain_spec::launch_spec(1003.into(), GenesisKeys::Encointer, RelayChain::Rococo)),
+		"launch-rococo-local" 		=> Box::new(chain_spec::launch_spec(1003.into(), GenesisKeys::WellKnown, RelayChain::RococoLocal)),
+
+		"launch-westend" 			=> Box::new(chain_spec::launch_westend()?),
+		"launch-westend-fresh" 		=> Box::new(chain_spec::launch_spec(1001.into(), GenesisKeys::Encointer, 						RelayChain::Westend)),
+		"launch-westend-local" 		=> Box::new(chain_spec::launch_spec(1001.into(), GenesisKeys::EncointerWithCouncilEndowed, 	RelayChain::WestendLocal)),
+		"launch-westend-local-dev" 	=> Box::new(chain_spec::launch_spec(1001.into(), GenesisKeys::WellKnown, 						RelayChain::WestendLocal)),
+
+		"launch-kusama" 			=> Box::new(chain_spec::launch_kusama()?),
+		"launch-kusama-fresh" 		=> Box::new(chain_spec::launch_spec(1001.into(), GenesisKeys::Encointer, 						RelayChain::Kusama)),
+		"launch-kusama-local" 		=> Box::new(chain_spec::launch_spec(1001.into(), GenesisKeys::EncointerWithCouncilEndowed, 	RelayChain::KusamaLocal)),
+		"launch-kusama-local-dev" 	=> Box::new(chain_spec::launch_spec(1001.into(), GenesisKeys::WellKnown, 						RelayChain::KusamaLocal)),
+
 
 		"sybil-dummy-rococo" => Box::new(chain_spec::sybil_dummy_spec(para_id, RelayChain::Rococo)),
 		"sybil-dummy-rococo-local" => Box::new(chain_spec::sybil_dummy_spec(para_id, RelayChain::RococoLocal)),
-		
+
 		"" => return Err("No chain-spec specified".into()),
 		path => {
 			let chain_spec = EncointerChainSpec::from_json_file(path.into())?;
