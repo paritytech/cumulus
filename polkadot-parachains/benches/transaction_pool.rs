@@ -277,9 +277,10 @@ fn transaction_pool_benchmarks(c: &mut Criterion) {
 	group.sample_size(10);
 	group.throughput(Throughput::Elements(account_num as u64 * extrinsics_per_account as u64));
 
-	let handle2 = tokio_handle.clone();
 	let accounts = create_accounts(account_num);
 	let mut counter = 1;
+
+	let benchmark_handle = tokio_handle.clone();
 	group.bench_function(
 		format!("{} transfers from {} accounts", account_num * extrinsics_per_account, account_num),
 		move |b| {
@@ -287,19 +288,21 @@ fn transaction_pool_benchmarks(c: &mut Criterion) {
 				|| {
 					let prepare_extrinsics = create_account_extrinsics(&*dave.client, &accounts);
 
-					handle2.block_on(future::join_all(prepare_extrinsics.into_iter().map(|tx| {
-						submit_tx_and_wait_for_inclusion(
-							&dave.transaction_pool,
-							tx,
-							&*dave.client,
-							true,
-						)
-					})));
+					benchmark_handle.block_on(future::join_all(
+						prepare_extrinsics.into_iter().map(|tx| {
+							submit_tx_and_wait_for_inclusion(
+								&dave.transaction_pool,
+								tx,
+								&*dave.client,
+								true,
+							)
+						}),
+					));
 
 					create_benchmark_extrinsics(&*dave.client, &accounts, extrinsics_per_account)
 				},
 				|extrinsics| {
-					handle2.block_on(future::join_all(extrinsics.into_iter().map(|tx| {
+					benchmark_handle.block_on(future::join_all(extrinsics.into_iter().map(|tx| {
 						submit_tx_and_wait_for_inclusion(
 							&dave.transaction_pool,
 							tx,
