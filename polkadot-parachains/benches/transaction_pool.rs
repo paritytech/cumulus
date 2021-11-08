@@ -57,7 +57,9 @@ pub fn create_extrinsic(
 	let genesis_hash = client.block_hash(0).ok().flatten().expect("Genesis block exists; qed");
 	let best_hash = client.chain_info().best_hash;
 	let best_block = client.chain_info().best_number;
-	let nonce = nonce.unwrap_or_else(|| fetch_nonce(client, Sr25519Keyring::Alice));
+
+	let alice_keypair = Sr25519Keyring::Alice.pair();
+	let nonce = nonce.unwrap_or_else(|| fetch_nonce(client, alice_keypair));
 
 	let period = node_runtime::BlockHashCount::get()
 		.checked_next_power_of_two()
@@ -113,7 +115,7 @@ fn create_accounts(num: usize) -> Vec<sr25519::Pair> {
 ///
 /// `start_nonce` is the current nonce of Alice.
 fn create_account_extrinsics(client: &Client, accounts: &[sr25519::Pair]) -> Vec<OpaqueExtrinsic> {
-	let start_nonce = fetch_nonce(client, Sr25519Keyring::Alice);
+	let start_nonce = fetch_nonce(client, Sr25519Keyring::Alice.pair());
 
 	accounts
 		.iter()
@@ -133,7 +135,7 @@ fn create_account_extrinsics(client: &Client, accounts: &[sr25519::Pair]) -> Vec
 							.into(),
 						),
 					},
-					Sr25519Keyring::Alice,
+					Sr25519Keyring::Alice.pair(),
 					Some(start_nonce + (i as u32) * 2),
 				),
 				// Give back funds
@@ -149,7 +151,7 @@ fn create_account_extrinsics(client: &Client, accounts: &[sr25519::Pair]) -> Vec
 							.into(),
 						),
 					},
-					Sr25519Keyring::Alice,
+					Sr25519Keyring::Alice.pair(),
 					Some(start_nonce + (i as u32) * 2 + 1),
 				),
 			]
@@ -168,16 +170,13 @@ fn create_benchmark_extrinsics(
 		.iter()
 		.map(|account| {
 			(0..extrinsics_per_account).map(move |nonce| {
-				let public_key = account.public().clone();
-				let keyring =
-					Sr25519Keyring::from_public(&public_key).expect("Unable to create account");
 				construct_extrinsic(
 					client,
 					BalancesCall::transfer {
 						dest: Sr25519Keyring::Bob.to_account_id().into(),
 						value: 1 * DOLLARS,
 					},
-					keyring,
+					account.clone(),
 					Some(nonce as u32),
 				)
 			})

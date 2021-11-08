@@ -658,7 +658,7 @@ impl TestNode {
 		function: impl Into<runtime::Call>,
 		caller: Sr25519Keyring,
 	) -> Result<RpcTransactionOutput, RpcTransactionError> {
-		let extrinsic = construct_extrinsic(&*self.client, function, caller, Some(0));
+		let extrinsic = construct_extrinsic(&*self.client, function, caller.pair(), Some(0));
 
 		self.rpc_handlers.send_transaction(extrinsic.into()).await
 	}
@@ -676,7 +676,7 @@ impl TestNode {
 	}
 }
 
-pub fn fetch_nonce(client: &Client, account: Sr25519Keyring) -> u32 {
+pub fn fetch_nonce(client: &Client, account: sp_core::sr25519::Pair) -> u32 {
 	let best_hash = client.chain_info().best_hash;
 	client
 		.runtime_api()
@@ -688,7 +688,7 @@ pub fn fetch_nonce(client: &Client, account: Sr25519Keyring) -> u32 {
 pub fn construct_extrinsic(
 	client: &Client,
 	function: impl Into<runtime::Call>,
-	caller: Sr25519Keyring,
+	caller: sp_core::sr25519::Pair,
 	nonce: Option<u32>,
 ) -> runtime::UncheckedExtrinsic {
 	let function = function.into();
