@@ -511,7 +511,7 @@ pub type LocalOriginToLocation = ();
 /// queues.
 pub type XcmRouter = (
 	// Two routers - use UMP to communicate with the relay chain:
-	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, ()>,
+	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm>,
 	// ..and XCMP to communicate with the sibling chains.
 	XcmpQueue,
 );
@@ -543,7 +543,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type Event = Event;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
-	type VersionWrapper = ();
+	type VersionWrapper = PolkadotXcm;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -775,6 +775,7 @@ impl_runtime_apis! {
 
 			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_balances, Balances);
+			list_benchmark!(list, extra, pallet_session, SessionBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
 			list_benchmark!(list, extra, pallet_collator_selection, CollatorSelection);
 
