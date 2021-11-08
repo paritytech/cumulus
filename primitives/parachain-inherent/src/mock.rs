@@ -15,7 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{ParachainInherentData, INHERENT_IDENTIFIER};
-use cumulus_primitives_core::PersistedValidationData;
+use cumulus_primitives_core::{InboundDownwardMessage, PersistedValidationData};
 use sp_inherents::{InherentData, InherentDataProvider};
 
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
@@ -29,6 +29,8 @@ use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 /// relay_block_number = offset + relay_blocks_per_para_block * current_para_block
 /// To simulate a parachain that starts in relay block 1000 and gets a block in every other relay
 /// block, use 1000 and 2
+/// 
+/// TODO Docs about the XCM injection
 pub struct MockValidationDataInherentDataProvider {
 	/// The current block number of the local block chain (the parachain)
 	pub current_para_block: u32,
@@ -38,6 +40,11 @@ pub struct MockValidationDataInherentDataProvider {
 	/// The number of relay blocks that elapses between each parablock. Probably set this to 1 or 2
 	/// to simulate optimistic or realistic relay chain behavior.
 	pub relay_blocks_per_para_block: u32,
+	/// Inbound downward XCM messages to be injected into the block.
+	pub downward_messages: Vec<InboundDownwardMessage>,
+	//TODO also support horizontal messages, but let's fous on downward for PoC phase.
+	// Inbound Horizontal messages sorted by channel
+	// pub horizontal_messages: BTreeMap<ParaId, Vec<InboundHrmpMessage>>
 }
 
 #[async_trait::async_trait]
@@ -61,7 +68,7 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 				relay_parent_number,
 				max_pov_size: Default::default(),
 			},
-			downward_messages: Default::default(),
+			downward_messages: self.downward_messages.clone(),
 			horizontal_messages: Default::default(),
 			relay_chain_state: proof,
 		};
