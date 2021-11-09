@@ -462,7 +462,7 @@ dependencies = [
 [[package]]
 name = "beefy-gadget"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "beefy-primitives",
  "fnv",
@@ -490,7 +490,7 @@ dependencies = [
 [[package]]
 name = "beefy-gadget-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "beefy-gadget",
  "beefy-primitives",
@@ -510,12 +510,12 @@ dependencies = [
 [[package]]
 name = "beefy-merkle-tree"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 
 [[package]]
 name = "beefy-primitives"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -2081,9 +2081,9 @@ dependencies = [
 
 [[package]]
 name = "directories"
-version = "3.0.2"
+version = "4.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e69600ff1703123957937708eb27f7a564e48885c537782722ed0ba3189ce1d7"
+checksum = "f51c5d4ddabd36886dd3e1438cb358cdcb0d7c499cb99cb4ac2e38e18b5cb210"
 dependencies = [
  "dirs-sys",
 ]
@@ -2423,6 +2423,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37ab347416e802de484e4d03c7316c48f1ecb56574dfd4a46a80f173ce1de04d"
 
 [[package]]
+name = "fixedbitset"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "398ea4fabe40b9b0d885340a2a991a44c8a645624075ad966d21f88688e2b69e"
+
+[[package]]
 name = "flate2"
 version = "1.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2444,7 +2450,7 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 [[package]]
 name = "fork-tree"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "parity-scale-codec",
 ]
@@ -2462,7 +2468,7 @@ dependencies = [
 [[package]]
 name = "frame-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -2482,7 +2488,7 @@ dependencies = [
 [[package]]
 name = "frame-benchmarking-cli"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "Inflector",
  "chrono",
@@ -2508,7 +2514,7 @@ dependencies = [
 [[package]]
 name = "frame-election-provider-support"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -2522,7 +2528,7 @@ dependencies = [
 [[package]]
 name = "frame-executive"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -2550,7 +2556,7 @@ dependencies = [
 [[package]]
 name = "frame-support"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "bitflags",
  "frame-metadata",
@@ -2565,6 +2571,7 @@ dependencies = [
  "smallvec",
  "sp-arithmetic",
  "sp-core",
+ "sp-core-hashing-proc-macro",
  "sp-inherents",
  "sp-io",
  "sp-runtime",
@@ -2572,12 +2579,13 @@ dependencies = [
  "sp-state-machine",
  "sp-std",
  "sp-tracing",
+ "tt-call",
 ]
 
 [[package]]
 name = "frame-support-procedural"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "Inflector",
  "frame-support-procedural-tools",
@@ -2589,7 +2597,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural-tools"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support-procedural-tools-derive",
  "proc-macro-crate 1.1.0",
@@ -2601,7 +2609,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural-tools-derive"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2611,7 +2619,7 @@ dependencies = [
 [[package]]
 name = "frame-system"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support",
  "log",
@@ -2628,7 +2636,7 @@ dependencies = [
 [[package]]
 name = "frame-system-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -2643,7 +2651,7 @@ dependencies = [
 [[package]]
 name = "frame-system-rpc-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -2652,7 +2660,7 @@ dependencies = [
 [[package]]
 name = "frame-try-runtime"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support",
  "sp-api",
@@ -3839,8 +3847,8 @@ dependencies = [
  "multistream-select",
  "parking_lot 0.11.1",
  "pin-project 1.0.8",
- "prost",
- "prost-build",
+ "prost 0.8.0",
+ "prost-build 0.8.0",
  "rand 0.7.3",
  "ring",
  "rw-stream-sink",
@@ -3889,8 +3897,8 @@ dependencies = [
  "libp2p-core",
  "libp2p-swarm",
  "log",
- "prost",
- "prost-build",
+ "prost 0.8.0",
+ "prost-build 0.8.0",
  "rand 0.7.3",
  "smallvec",
 ]
@@ -3911,8 +3919,8 @@ dependencies = [
  "libp2p-core",
  "libp2p-swarm",
  "log",
- "prost",
- "prost-build",
+ "prost 0.8.0",
+ "prost-build 0.8.0",
  "rand 0.7.3",
  "regex",
  "sha2 0.9.8",
@@ -3931,8 +3939,8 @@ dependencies = [
  "libp2p-core",
  "libp2p-swarm",
  "log",
- "prost",
- "prost-build",
+ "prost 0.8.0",
+ "prost-build 0.8.0",
  "smallvec",
  "wasm-timer",
 ]
@@ -3952,8 +3960,8 @@ dependencies = [
  "libp2p-core",
  "libp2p-swarm",
  "log",
- "prost",
- "prost-build",
+ "prost 0.8.0",
+ "prost-build 0.8.0",
  "rand 0.7.3",
  "sha2 0.9.8",
  "smallvec",
@@ -4014,8 +4022,8 @@ dependencies = [
  "lazy_static",
  "libp2p-core",
  "log",
- "prost",
- "prost-build",
+ "prost 0.8.0",
+ "prost-build 0.8.0",
  "rand 0.8.4",
  "sha2 0.9.8",
  "snow",
@@ -4050,8 +4058,8 @@ dependencies = [
  "futures 0.3.17",
  "libp2p-core",
  "log",
- "prost",
- "prost-build",
+ "prost 0.8.0",
+ "prost-build 0.8.0",
  "unsigned-varint 0.7.0",
  "void",
 ]
@@ -4084,8 +4092,8 @@ dependencies = [
  "libp2p-swarm",
  "log",
  "pin-project 1.0.8",
- "prost",
- "prost-build",
+ "prost 0.8.0",
+ "prost-build 0.8.0",
  "rand 0.7.3",
  "smallvec",
  "unsigned-varint 0.7.0",
@@ -4368,9 +4376,9 @@ dependencies = [
 
 [[package]]
 name = "linregress"
-version = "0.4.3"
+version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e6e407dadb4ca4b31bc69c27aff00e7ca4534fdcee855159b039a7cebb5f395"
+checksum = "d6c601a85f5ecd1aba625247bca0031585fb1c446461b142878a16f8245ddeb8"
 dependencies = [
  "nalgebra",
  "statrs",
@@ -4520,6 +4528,15 @@ name = "memmap2"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e73be3b7d04a0123e933fea1d50d126cc7196bbc0362c0ce426694f777194eee"
+dependencies = [
+ "libc",
+]
+
+[[package]]
+name = "memmap2"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4647a11b578fead29cdbb34d4adef8dd3dc35b876c9c6d5240d83f205abfe96e"
 dependencies = [
  "libc",
 ]
@@ -4864,7 +4881,7 @@ dependencies = [
 [[package]]
 name = "node-primitives"
 version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-system",
  "parity-scale-codec",
@@ -5035,30 +5052,25 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-tx-payment"
-version = "0.1.0"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support",
  "frame-system",
- "pallet-assets",
- "pallet-authorship",
- "pallet-balances",
  "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",
  "serde",
- "serde_json",
- "smallvec",
  "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
- "sp-storage",
 ]
 
 [[package]]
 name = "pallet-assets"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5072,7 +5084,7 @@ dependencies = [
 [[package]]
 name = "pallet-aura"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5088,7 +5100,7 @@ dependencies = [
 [[package]]
 name = "pallet-authority-discovery"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5104,7 +5116,7 @@ dependencies = [
 [[package]]
 name = "pallet-authorship"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5119,7 +5131,7 @@ dependencies = [
 [[package]]
 name = "pallet-babe"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5143,7 +5155,7 @@ dependencies = [
 [[package]]
 name = "pallet-bags-list"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -5163,7 +5175,7 @@ dependencies = [
 [[package]]
 name = "pallet-balances"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5178,7 +5190,7 @@ dependencies = [
 [[package]]
 name = "pallet-beefy"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "beefy-primitives",
  "frame-support",
@@ -5194,7 +5206,7 @@ dependencies = [
 [[package]]
 name = "pallet-beefy-mmr"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "beefy-merkle-tree",
  "beefy-primitives",
@@ -5219,7 +5231,7 @@ dependencies = [
 [[package]]
 name = "pallet-bounties"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5324,7 +5336,7 @@ dependencies = [
 [[package]]
 name = "pallet-collective"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5341,7 +5353,7 @@ dependencies = [
 [[package]]
 name = "pallet-democracy"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5357,7 +5369,7 @@ dependencies = [
 [[package]]
 name = "pallet-election-provider-multi-phase"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -5374,14 +5386,14 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "static_assertions",
- "strum 0.21.0",
- "strum_macros 0.21.1",
+ "strum",
+ "strum_macros",
 ]
 
 [[package]]
 name = "pallet-elections-phragmen"
 version = "5.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5399,7 +5411,7 @@ dependencies = [
 [[package]]
 name = "pallet-gilt"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5414,7 +5426,7 @@ dependencies = [
 [[package]]
 name = "pallet-grandpa"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5437,7 +5449,7 @@ dependencies = [
 [[package]]
 name = "pallet-identity"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "enumflags2",
  "frame-benchmarking",
@@ -5453,7 +5465,7 @@ dependencies = [
 [[package]]
 name = "pallet-im-online"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5473,7 +5485,7 @@ dependencies = [
 [[package]]
 name = "pallet-indices"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5490,7 +5502,7 @@ dependencies = [
 [[package]]
 name = "pallet-membership"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5507,7 +5519,7 @@ dependencies = [
 [[package]]
 name = "pallet-mmr"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "ckb-merkle-mountain-range",
  "frame-benchmarking",
@@ -5525,7 +5537,7 @@ dependencies = [
 [[package]]
 name = "pallet-mmr-primitives"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5541,7 +5553,7 @@ dependencies = [
 [[package]]
 name = "pallet-mmr-rpc"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "jsonrpc-core",
  "jsonrpc-core-client",
@@ -5558,7 +5570,7 @@ dependencies = [
 [[package]]
 name = "pallet-multisig"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5573,7 +5585,7 @@ dependencies = [
 [[package]]
 name = "pallet-nicks"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5587,7 +5599,7 @@ dependencies = [
 [[package]]
 name = "pallet-offences"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5604,7 +5616,7 @@ dependencies = [
 [[package]]
 name = "pallet-offences-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -5627,7 +5639,7 @@ dependencies = [
 [[package]]
 name = "pallet-proxy"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5642,7 +5654,7 @@ dependencies = [
 [[package]]
 name = "pallet-randomness-collective-flip"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5656,7 +5668,7 @@ dependencies = [
 [[package]]
 name = "pallet-recovery"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5670,7 +5682,7 @@ dependencies = [
 [[package]]
 name = "pallet-scheduler"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5686,7 +5698,7 @@ dependencies = [
 [[package]]
 name = "pallet-session"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5707,7 +5719,7 @@ dependencies = [
 [[package]]
 name = "pallet-session-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5723,7 +5735,7 @@ dependencies = [
 [[package]]
 name = "pallet-society"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5737,7 +5749,7 @@ dependencies = [
 [[package]]
 name = "pallet-staking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -5760,7 +5772,7 @@ dependencies = [
 [[package]]
 name = "pallet-staking-reward-curve"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "proc-macro-crate 1.1.0",
  "proc-macro2",
@@ -5771,7 +5783,7 @@ dependencies = [
 [[package]]
 name = "pallet-staking-reward-fn"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "log",
  "sp-arithmetic",
@@ -5780,7 +5792,7 @@ dependencies = [
 [[package]]
 name = "pallet-sudo"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5809,7 +5821,7 @@ dependencies = [
 [[package]]
 name = "pallet-timestamp"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5827,7 +5839,7 @@ dependencies = [
 [[package]]
 name = "pallet-tips"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5846,7 +5858,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5863,7 +5875,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "jsonrpc-core",
  "jsonrpc-core-client",
@@ -5880,7 +5892,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment-rpc-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "pallet-transaction-payment",
  "parity-scale-codec",
@@ -5891,7 +5903,7 @@ dependencies = [
 [[package]]
 name = "pallet-treasury"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5908,7 +5920,7 @@ dependencies = [
 [[package]]
 name = "pallet-uniques"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5922,7 +5934,7 @@ dependencies = [
 [[package]]
 name = "pallet-utility"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5938,7 +5950,7 @@ dependencies = [
 [[package]]
 name = "pallet-vesting"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6142,9 +6154,9 @@ dependencies = [
 
 [[package]]
 name = "parity-db"
-version = "0.3.2"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91b679c6acc14fac74382942e2b73bea441686a33430b951ea03b5aeb6a7f254"
+checksum = "7cb5195cb862b13055cf7f7a76c55073dc73885c2a61511e322b8c1666be7332"
 dependencies = [
  "blake2-rfc",
  "crc32fast",
@@ -6153,7 +6165,7 @@ dependencies = [
  "libc",
  "log",
  "lz4",
- "memmap2",
+ "memmap2 0.2.0",
  "parking_lot 0.11.1",
  "rand 0.8.4",
  "snap",
@@ -6414,7 +6426,17 @@ version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "467d164a6de56270bd7c4d070df81d07beace25012d5103ced4e9ff08d6afdb7"
 dependencies = [
- "fixedbitset",
+ "fixedbitset 0.2.0",
+ "indexmap",
+]
+
+[[package]]
+name = "petgraph"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a13a2fa9d0b63e5f22328828741e523766fff0ee9e779316902290dff3f824f"
+dependencies = [
+ "fixedbitset 0.4.0",
  "indexmap",
 ]
 
@@ -7089,7 +7111,7 @@ dependencies = [
  "polkadot-primitives",
  "sc-authority-discovery",
  "sc-network",
- "strum 0.22.0",
+ "strum",
  "thiserror",
 ]
 
@@ -7941,7 +7963,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "de5e2533f59d08fcf364fd374ebda0692a70bd6d7e66ef97f306f45c6c5d8020"
 dependencies = [
  "bytes 1.0.1",
- "prost-derive",
+ "prost-derive 0.8.0",
+]
+
+[[package]]
+name = "prost"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "444879275cb4fd84958b1a1d5420d15e6fcf7c235fe47f053c9c2a80aceb6001"
+dependencies = [
+ "bytes 1.0.1",
+ "prost-derive 0.9.0",
 ]
 
 [[package]]
@@ -7955,9 +7987,29 @@ dependencies = [
  "itertools",
  "log",
  "multimap",
- "petgraph",
- "prost",
- "prost-types",
+ "petgraph 0.5.1",
+ "prost 0.8.0",
+ "prost-types 0.8.0",
+ "tempfile",
+ "which",
+]
+
+[[package]]
+name = "prost-build"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62941722fb675d463659e49c4f3fe1fe792ff24fe5bbaa9c08cd3b98a1c354f5"
+dependencies = [
+ "bytes 1.0.1",
+ "heck",
+ "itertools",
+ "lazy_static",
+ "log",
+ "multimap",
+ "petgraph 0.6.0",
+ "prost 0.9.0",
+ "prost-types 0.9.0",
+ "regex",
  "tempfile",
  "which",
 ]
@@ -7976,13 +8028,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "prost-derive"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9cc1a3263e07e0bf68e96268f37665207b49560d98739662cdfaae215c720fe"
+dependencies = [
+ "anyhow",
+ "itertools",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "prost-types"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "603bbd6394701d13f3f25aada59c7de9d35a6a5887cfc156181234a44002771b"
 dependencies = [
  "bytes 1.0.1",
- "prost",
+ "prost 0.8.0",
+]
+
+[[package]]
+name = "prost-types"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "534b7a0e836e3c482d2693070f982e39e7611da9695d4d1f5a4b186b51faef0a"
+dependencies = [
+ "bytes 1.0.1",
+ "prost 0.9.0",
 ]
 
 [[package]]
@@ -8292,7 +8367,7 @@ dependencies = [
 [[package]]
 name = "remote-externalities"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "env_logger 0.9.0",
  "jsonrpsee-proc-macros",
@@ -8610,7 +8685,7 @@ dependencies = [
 [[package]]
 name = "sc-allocator"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "log",
  "sp-core",
@@ -8621,7 +8696,7 @@ dependencies = [
 [[package]]
 name = "sc-authority-discovery"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -8631,8 +8706,8 @@ dependencies = [
  "libp2p",
  "log",
  "parity-scale-codec",
- "prost",
- "prost-build",
+ "prost 0.8.0",
+ "prost-build 0.9.0",
  "rand 0.7.3",
  "sc-client-api",
  "sc-network",
@@ -8648,7 +8723,7 @@ dependencies = [
 [[package]]
 name = "sc-basic-authorship"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "futures 0.3.17",
  "futures-timer 3.0.2",
@@ -8671,7 +8746,7 @@ dependencies = [
 [[package]]
 name = "sc-block-builder"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "parity-scale-codec",
  "sc-client-api",
@@ -8687,9 +8762,10 @@ dependencies = [
 [[package]]
 name = "sc-chain-spec"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "impl-trait-for-tuples",
+ "memmap2 0.5.0",
  "parity-scale-codec",
  "sc-chain-spec-derive",
  "sc-network",
@@ -8703,7 +8779,7 @@ dependencies = [
 [[package]]
 name = "sc-chain-spec-derive"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "proc-macro-crate 1.1.0",
  "proc-macro2",
@@ -8714,7 +8790,7 @@ dependencies = [
 [[package]]
 name = "sc-cli"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "chrono",
  "fdlimit",
@@ -8752,7 +8828,7 @@ dependencies = [
 [[package]]
 name = "sc-client-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "fnv",
  "futures 0.3.17",
@@ -8780,7 +8856,7 @@ dependencies = [
 [[package]]
 name = "sc-client-db"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "hash-db",
  "kvdb",
@@ -8805,7 +8881,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-trait",
  "futures 0.3.17",
@@ -8829,7 +8905,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-aura"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -8858,7 +8934,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-babe"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -8901,7 +8977,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-babe-rpc"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "derive_more",
  "futures 0.3.17",
@@ -8925,7 +9001,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-epochs"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "fork-tree",
  "parity-scale-codec",
@@ -8938,7 +9014,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-slots"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-trait",
  "futures 0.3.17",
@@ -8964,7 +9040,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-uncles"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "sc-client-api",
  "sp-authorship",
@@ -8975,7 +9051,7 @@ dependencies = [
 [[package]]
 name = "sc-executor"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "lazy_static",
  "libsecp256k1 0.6.0",
@@ -8987,6 +9063,7 @@ dependencies = [
  "sc-executor-wasmtime",
  "sp-api",
  "sp-core",
+ "sp-core-hashing-proc-macro",
  "sp-externalities",
  "sp-io",
  "sp-panic-handler",
@@ -9001,7 +9078,7 @@ dependencies = [
 [[package]]
 name = "sc-executor-common"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "derive_more",
  "environmental",
@@ -9019,7 +9096,7 @@ dependencies = [
 [[package]]
 name = "sc-executor-wasmi"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "log",
  "parity-scale-codec",
@@ -9035,7 +9112,7 @@ dependencies = [
 [[package]]
 name = "sc-executor-wasmtime"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "cfg-if 1.0.0",
  "libc",
@@ -9053,7 +9130,7 @@ dependencies = [
 [[package]]
 name = "sc-finality-grandpa"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -9090,7 +9167,7 @@ dependencies = [
 [[package]]
 name = "sc-finality-grandpa-rpc"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "derive_more",
  "finality-grandpa",
@@ -9114,7 +9191,7 @@ dependencies = [
 [[package]]
 name = "sc-informant"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "ansi_term 0.12.1",
  "futures 0.3.17",
@@ -9131,7 +9208,7 @@ dependencies = [
 [[package]]
 name = "sc-keystore"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -9146,7 +9223,7 @@ dependencies = [
 [[package]]
 name = "sc-light"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "hash-db",
  "parity-scale-codec",
@@ -9164,7 +9241,7 @@ dependencies = [
 [[package]]
 name = "sc-network"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-std",
  "async-trait",
@@ -9184,12 +9261,12 @@ dependencies = [
  "linked-hash-map",
  "linked_hash_set",
  "log",
- "lru 0.6.6",
+ "lru 0.7.0",
  "parity-scale-codec",
  "parking_lot 0.11.1",
  "pin-project 1.0.8",
- "prost",
- "prost-build",
+ "prost 0.8.0",
+ "prost-build 0.9.0",
  "rand 0.7.3",
  "sc-block-builder",
  "sc-client-api",
@@ -9215,13 +9292,13 @@ dependencies = [
 [[package]]
 name = "sc-network-gossip"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "futures 0.3.17",
  "futures-timer 3.0.2",
  "libp2p",
  "log",
- "lru 0.6.6",
+ "lru 0.7.0",
  "sc-network",
  "sp-runtime",
  "substrate-prometheus-endpoint",
@@ -9231,7 +9308,7 @@ dependencies = [
 [[package]]
 name = "sc-offchain"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "bytes 1.0.1",
  "fnv",
@@ -9242,6 +9319,7 @@ dependencies = [
  "hyper-rustls",
  "log",
  "num_cpus",
+ "once_cell",
  "parity-scale-codec",
  "parking_lot 0.11.1",
  "rand 0.7.3",
@@ -9258,7 +9336,7 @@ dependencies = [
 [[package]]
 name = "sc-peerset"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "futures 0.3.17",
  "libp2p",
@@ -9271,7 +9349,7 @@ dependencies = [
 [[package]]
 name = "sc-proposer-metrics"
 version = "0.9.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "log",
  "substrate-prometheus-endpoint",
@@ -9280,7 +9358,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "futures 0.3.17",
  "hash-db",
@@ -9311,7 +9389,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc-api"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "futures 0.3.17",
  "jsonrpc-core",
@@ -9336,7 +9414,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc-server"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "futures 0.3.17",
  "jsonrpc-core",
@@ -9353,7 +9431,7 @@ dependencies = [
 [[package]]
 name = "sc-service"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-trait",
  "directories",
@@ -9377,7 +9455,6 @@ dependencies = [
  "sc-executor",
  "sc-informant",
  "sc-keystore",
- "sc-light",
  "sc-network",
  "sc-offchain",
  "sc-rpc",
@@ -9418,7 +9495,7 @@ dependencies = [
 [[package]]
 name = "sc-state-db"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "log",
  "parity-scale-codec",
@@ -9432,7 +9509,7 @@ dependencies = [
 [[package]]
 name = "sc-sync-state-rpc"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "jsonrpc-core",
  "jsonrpc-core-client",
@@ -9454,7 +9531,7 @@ dependencies = [
 [[package]]
 name = "sc-telemetry"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "chrono",
  "futures 0.3.17",
@@ -9472,7 +9549,7 @@ dependencies = [
 [[package]]
 name = "sc-tracing"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "ansi_term 0.12.1",
  "atty",
@@ -9503,7 +9580,7 @@ dependencies = [
 [[package]]
 name = "sc-tracing-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "proc-macro-crate 1.1.0",
  "proc-macro2",
@@ -9514,7 +9591,7 @@ dependencies = [
 [[package]]
 name = "sc-transaction-pool"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "futures 0.3.17",
  "intervalier",
@@ -9541,7 +9618,7 @@ dependencies = [
 [[package]]
 name = "sc-transaction-pool-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "derive_more",
  "futures 0.3.17",
@@ -9555,7 +9632,7 @@ dependencies = [
 [[package]]
 name = "sc-utils"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "futures 0.3.17",
  "futures-timer 3.0.2",
@@ -10006,7 +10083,7 @@ dependencies = [
 [[package]]
 name = "sp-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "hash-db",
  "log",
@@ -10023,7 +10100,7 @@ dependencies = [
 [[package]]
 name = "sp-api-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "blake2-rfc",
  "proc-macro-crate 1.1.0",
@@ -10035,7 +10112,7 @@ dependencies = [
 [[package]]
 name = "sp-application-crypto"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -10048,7 +10125,7 @@ dependencies = [
 [[package]]
 name = "sp-arithmetic"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "integer-sqrt",
  "num-traits",
@@ -10063,7 +10140,7 @@ dependencies = [
 [[package]]
 name = "sp-authority-discovery"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -10076,7 +10153,7 @@ dependencies = [
 [[package]]
 name = "sp-authorship"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-trait",
  "parity-scale-codec",
@@ -10088,7 +10165,7 @@ dependencies = [
 [[package]]
 name = "sp-block-builder"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -10100,11 +10177,11 @@ dependencies = [
 [[package]]
 name = "sp-blockchain"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "futures 0.3.17",
  "log",
- "lru 0.6.6",
+ "lru 0.7.0",
  "parity-scale-codec",
  "parking_lot 0.11.1",
  "sp-api",
@@ -10118,7 +10195,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-trait",
  "futures 0.3.17",
@@ -10137,7 +10214,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-aura"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-trait",
  "parity-scale-codec",
@@ -10155,7 +10232,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-babe"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-trait",
  "merlin",
@@ -10178,10 +10255,11 @@ dependencies = [
 [[package]]
 name = "sp-consensus-slots"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
+ "serde",
  "sp-arithmetic",
  "sp-runtime",
 ]
@@ -10189,7 +10267,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-vrf"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "parity-scale-codec",
  "schnorrkel",
@@ -10201,9 +10279,10 @@ dependencies = [
 [[package]]
 name = "sp-core"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "base58",
+ "bitflags",
  "blake2-rfc",
  "byteorder",
  "dyn-clonable",
@@ -10229,6 +10308,7 @@ dependencies = [
  "secrecy",
  "serde",
  "sha2 0.9.8",
+ "sp-core-hashing",
  "sp-debug-derive",
  "sp-externalities",
  "sp-runtime-interface",
@@ -10245,9 +10325,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp-core-hashing"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+dependencies = [
+ "blake2-rfc",
+ "byteorder",
+ "sha2 0.9.8",
+ "sp-std",
+ "tiny-keccak",
+ "twox-hash",
+]
+
+[[package]]
+name = "sp-core-hashing-proc-macro"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "sp-core-hashing",
+ "syn",
+]
+
+[[package]]
 name = "sp-database"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "kvdb",
  "parking_lot 0.11.1",
@@ -10256,7 +10360,7 @@ dependencies = [
 [[package]]
 name = "sp-debug-derive"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -10266,7 +10370,7 @@ dependencies = [
 [[package]]
 name = "sp-externalities"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "environmental",
  "parity-scale-codec",
@@ -10277,7 +10381,7 @@ dependencies = [
 [[package]]
 name = "sp-finality-grandpa"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "finality-grandpa",
  "log",
@@ -10295,7 +10399,7 @@ dependencies = [
 [[package]]
 name = "sp-inherents"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-trait",
  "impl-trait-for-tuples",
@@ -10309,7 +10413,7 @@ dependencies = [
 [[package]]
 name = "sp-io"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "futures 0.3.17",
  "hash-db",
@@ -10333,18 +10437,18 @@ dependencies = [
 [[package]]
 name = "sp-keyring"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "lazy_static",
  "sp-core",
  "sp-runtime",
- "strum 0.20.0",
+ "strum",
 ]
 
 [[package]]
 name = "sp-keystore"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -10361,7 +10465,7 @@ dependencies = [
 [[package]]
 name = "sp-maybe-compressed-blob"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "zstd",
 ]
@@ -10369,7 +10473,7 @@ dependencies = [
 [[package]]
 name = "sp-npos-elections"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -10384,7 +10488,7 @@ dependencies = [
 [[package]]
 name = "sp-npos-elections-solution-type"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "proc-macro-crate 1.1.0",
  "proc-macro2",
@@ -10395,7 +10499,7 @@ dependencies = [
 [[package]]
 name = "sp-offchain"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "sp-api",
  "sp-core",
@@ -10405,15 +10509,17 @@ dependencies = [
 [[package]]
 name = "sp-panic-handler"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "backtrace",
+ "lazy_static",
+ "regex",
 ]
 
 [[package]]
 name = "sp-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "rustc-hash",
  "serde",
@@ -10423,7 +10529,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "either",
  "hash256-std-hasher",
@@ -10445,7 +10551,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "impl-trait-for-tuples",
  "parity-scale-codec",
@@ -10462,7 +10568,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "Inflector",
  "proc-macro-crate 1.1.0",
@@ -10474,7 +10580,7 @@ dependencies = [
 [[package]]
 name = "sp-serializer"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "serde",
  "serde_json",
@@ -10483,7 +10589,7 @@ dependencies = [
 [[package]]
 name = "sp-session"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -10497,7 +10603,7 @@ dependencies = [
 [[package]]
 name = "sp-staking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -10508,7 +10614,7 @@ dependencies = [
 [[package]]
 name = "sp-state-machine"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "hash-db",
  "log",
@@ -10531,12 +10637,12 @@ dependencies = [
 [[package]]
 name = "sp-std"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 
 [[package]]
 name = "sp-storage"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "impl-serde",
  "parity-scale-codec",
@@ -10549,7 +10655,7 @@ dependencies = [
 [[package]]
 name = "sp-tasks"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "log",
  "sp-core",
@@ -10562,7 +10668,7 @@ dependencies = [
 [[package]]
 name = "sp-timestamp"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-trait",
  "futures-timer 3.0.2",
@@ -10578,7 +10684,7 @@ dependencies = [
 [[package]]
 name = "sp-tracing"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "parity-scale-codec",
  "sp-std",
@@ -10590,7 +10696,7 @@ dependencies = [
 [[package]]
 name = "sp-transaction-pool"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "sp-api",
  "sp-runtime",
@@ -10599,7 +10705,7 @@ dependencies = [
 [[package]]
 name = "sp-transaction-storage-proof"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-trait",
  "log",
@@ -10615,7 +10721,7 @@ dependencies = [
 [[package]]
 name = "sp-trie"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "hash-db",
  "memory-db",
@@ -10630,7 +10736,7 @@ dependencies = [
 [[package]]
 name = "sp-version"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "impl-serde",
  "parity-scale-codec",
@@ -10646,7 +10752,7 @@ dependencies = [
 [[package]]
 name = "sp-version-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "parity-scale-codec",
  "proc-macro2",
@@ -10657,7 +10763,7 @@ dependencies = [
 [[package]]
 name = "sp-wasm-interface"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "impl-trait-for-tuples",
  "parity-scale-codec",
@@ -10899,50 +11005,11 @@ dependencies = [
 
 [[package]]
 name = "strum"
-version = "0.20.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7318c509b5ba57f18533982607f24070a55d353e90d4cae30c467cdb2ad5ac5c"
-dependencies = [
- "strum_macros 0.20.1",
-]
-
-[[package]]
-name = "strum"
-version = "0.21.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aaf86bbcfd1fa9670b7a129f64fc0c9fcbbfe4f1bc4210e9e98fe71ffc12cde2"
-
-[[package]]
-name = "strum"
 version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f7ac893c7d471c8a21f31cfe213ec4f6d9afeed25537c772e08ef3f005f8729e"
 dependencies = [
- "strum_macros 0.22.0",
-]
-
-[[package]]
-name = "strum_macros"
-version = "0.20.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee8bc6b87a5112aeeab1f4a9f7ab634fe6cbefc4850006df31267f4cfb9e3149"
-dependencies = [
- "heck",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "strum_macros"
-version = "0.21.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d06aaeeee809dbc59eb4556183dd927df67db1540de5be8d3ec0b6636358a5ec"
-dependencies = [
- "heck",
- "proc-macro2",
- "quote",
- "syn",
+ "strum_macros",
 ]
 
 [[package]]
@@ -10973,7 +11040,7 @@ dependencies = [
 [[package]]
 name = "substrate-build-script-utils"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "platforms",
 ]
@@ -10981,7 +11048,7 @@ dependencies = [
 [[package]]
 name = "substrate-frame-rpc-system"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "frame-system-rpc-runtime-api",
  "futures 0.3.17",
@@ -11003,7 +11070,7 @@ dependencies = [
 [[package]]
 name = "substrate-prometheus-endpoint"
 version = "0.9.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-std",
  "derive_more",
@@ -11017,7 +11084,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-client"
 version = "2.0.1"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "async-trait",
  "futures 0.3.17",
@@ -11044,7 +11111,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-utils"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "futures 0.3.17",
  "substrate-test-utils-derive",
@@ -11054,7 +11121,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-utils-derive"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "proc-macro-crate 1.1.0",
  "proc-macro2",
@@ -11065,7 +11132,7 @@ dependencies = [
 [[package]]
 name = "substrate-wasm-builder"
 version = "5.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "ansi_term 0.12.1",
  "build-helper",
@@ -11520,7 +11587,7 @@ checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
 [[package]]
 name = "try-runtime-cli"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#945377f35fd6ba265d6bd2b808e97749471dec0b"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
 dependencies = [
  "jsonrpsee-ws-client",
  "log",
@@ -11540,6 +11607,12 @@ dependencies = [
  "sp-version",
  "structopt",
 ]
+
+[[package]]
+name = "tt-call"
+version = "1.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5e66dcbec4290c69dd03c57e76c2469ea5c7ce109c6dd4351c13055cf71ea055"
 
 [[package]]
 name = "twox-hash"
@@ -11871,9 +11944,9 @@ dependencies = [
 
 [[package]]
 name = "wasmi"
-version = "0.9.0"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2ee05bba3d1d994652079893941a2ef9324d2b58a63c31b40678fb7eddd7a5a"
+checksum = "ca00c5147c319a8ec91ec1a0edbec31e566ce2c9cc93b3f9bb86a9efd0eb795d"
 dependencies = [
  "downcast-rs",
  "libc",
@@ -12462,3 +12535,283 @@ dependencies = [
  "cc",
  "libc",
 ]
+
+[[patch.unused]]
+name = "chain-spec-builder"
+version = "2.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "frame-support-test"
+version = "3.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "frame-support-test-compile-pass"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "frame-support-test-pallet"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "generate-bags"
+version = "3.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "node-bench"
+version = "0.9.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "node-cli"
+version = "3.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "node-executor"
+version = "3.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "node-inspect"
+version = "0.9.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "node-rpc"
+version = "3.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "node-runtime"
+version = "3.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "node-runtime-generate-bags"
+version = "3.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "node-template"
+version = "3.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "node-template-runtime"
+version = "3.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "node-testing"
+version = "3.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "pallet-atomic-swap"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "pallet-bags-list-fuzzer"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "pallet-bags-list-remote-tests"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "pallet-contracts"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "pallet-contracts-primitives"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "pallet-contracts-proc-macro"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "pallet-contracts-rpc"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "pallet-contracts-rpc-runtime-api"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "pallet-elections"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "pallet-example"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "pallet-example-offchain-worker"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "pallet-example-parallel"
+version = "3.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "pallet-lottery"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "pallet-node-authorization"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "pallet-scored-pool"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "pallet-template"
+version = "3.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "pallet-transaction-storage"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "sc-consensus-manual-seal"
+version = "0.10.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "sc-consensus-pow"
+version = "0.10.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "sc-network-test"
+version = "0.8.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "sc-runtime-test"
+version = "2.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "sc-service-test"
+version = "2.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "sp-api-test"
+version = "2.0.1"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "sp-application-crypto-test"
+version = "2.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "sp-arithmetic-fuzzer"
+version = "2.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "sp-consensus-pow"
+version = "0.10.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "sp-npos-elections-fuzzer"
+version = "2.0.0-alpha.5"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "sp-runtime-interface-test"
+version = "2.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "sp-runtime-interface-test-wasm"
+version = "2.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "sp-runtime-interface-test-wasm-deprecated"
+version = "2.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "sp-sandbox"
+version = "0.10.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "sp-test-primitives"
+version = "2.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "subkey"
+version = "2.0.1"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "substrate-frame-cli"
+version = "4.0.0-dev"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "substrate-frame-rpc-support"
+version = "3.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "substrate-test-runtime"
+version = "2.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "substrate-test-runtime-client"
+version = "2.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "substrate-test-runtime-transaction-pool"
+version = "2.0.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "substrate-test-utils-test-crate"
+version = "0.1.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "test-runner"
+version = "0.9.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
+
+[[patch.unused]]
+name = "test-runner-example"
+version = "0.1.0"
+source = "git+https://github.com/georgesdib/substrate/?branch=asset-tx-payment-from-cumulus#d4883ff2ce2a08b397ed38a6abb9b9b07608691b"
