@@ -367,7 +367,6 @@ pub struct TestNode {
 	pub addr: MultiaddrWithPeerId,
 	/// RPCHandlers to make RPC queries.
 	pub rpc_handlers: RpcHandlers,
-
 	/// Node's transaction pool
 	pub transaction_pool: TransactionPool,
 }
