@@ -100,6 +100,7 @@ pub type Client = TFullClient<
 	sc_executor::NativeElseWasmExecutor<RuntimeExecutor>,
 >;
 
+/// Transaction pool type used by the test service
 pub type TransactionPool = Arc<sc_transaction_pool::FullPool<Block, Client>>;
 
 /// Starts a `ServiceBuilder` for a full service.
@@ -367,6 +368,7 @@ pub struct TestNode {
 	/// RPCHandlers to make RPC queries.
 	pub rpc_handlers: RpcHandlers,
 
+	/// Node's transaction pool
 	pub transaction_pool: TransactionPool,
 }
 
@@ -676,6 +678,7 @@ impl TestNode {
 	}
 }
 
+/// Fetch account nonce for key pair
 pub fn fetch_nonce(client: &Client, account: sp_core::sr25519::Pair) -> u32 {
 	let best_hash = client.chain_info().best_hash;
 	client
