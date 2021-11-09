@@ -18,6 +18,7 @@ frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate"
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -50,6 +51,11 @@ cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inh
 cumulus-test-runtime = { path = "../runtime" }
 cumulus-test-relay-validation-worker-provider = { path = "../relay-validation-worker-provider" }
 
+criterion = { version = "0.3.5", features = [ "async_tokio" ] }
+node-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+node-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+node-primitives = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
 # RPC related dependencies
 jsonrpc-core = "18.0.0"
 
@@ -67,3 +73,7 @@ sp-version = { git = "https://github.com/paritytech/substrate", branch = "master
 
 # Cumulus
 cumulus-test-runtime-upgrade = { path = "../runtime-upgrade" }
+
+[[bench]]
+name = "transaction_pool"
+harness = false
