@@ -2053,6 +2053,7 @@ dependencies = [
  "sp-runtime",
  "sp-state-machine",
  "sp-timestamp",
+ "sp-tracing",
  "sp-trie",
  "sp-version",
  "substrate-test-client",

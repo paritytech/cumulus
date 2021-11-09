@@ -16,10 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::sync::Arc;
-
 use criterion::{criterion_group, criterion_main, BatchSize, Criterion, Throughput};
-use futures::{future, StreamExt};
+use futures::{future, join, StreamExt};
 use node_primitives::AccountId;
 use node_runtime::{BalancesCall, SudoCall};
 use polkadot_service::polkadot_runtime::constants::currency::DOLLARS;
@@ -141,14 +139,14 @@ async fn submit_tx_and_wait_for_inclusion(
 }
 
 fn transaction_pool_benchmarks(c: &mut Criterion) {
-	// sp_tracing::try_init_simple();
+	sp_tracing::try_init_simple();
 	let mut builder = sc_cli::LoggerBuilder::new("");
 	builder.with_colors(false);
 	let _ = builder.init();
 
 	let para_id = ParaId::from(100);
 	let runtime = tokio::runtime::Runtime::new().expect("Creates tokio runtime");
-	let tokio_handle = runtime.handle().clone();
+	let tokio_handle = runtime.handle();
 
 	// Start alice
 	let alice = cumulus_test_service::run_relay_chain_validator_node(
@@ -187,20 +185,16 @@ fn transaction_pool_benchmarks(c: &mut Criterion) {
 			.build(),
 	);
 
-	// Run dave as parachain full node
-	//
-	// It will need to recover the pov blocks through availability recovery.
-	let dave = Arc::new(
-		runtime.block_on(
-			cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle.clone(), Dave)
-				.enable_collator()
-				.connect_to_parachain_node(&charlie)
-				.connect_to_relay_chain_nodes(vec![&alice, &bob])
-				.build(),
-		),
+	// Run dave as parachain collator
+	let dave = runtime.block_on(
+		cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle.clone(), Dave)
+			.enable_collator()
+			.connect_to_parachain_node(&charlie)
+			.connect_to_relay_chain_nodes(vec![&alice, &bob])
+			.build(),
 	);
 
-	runtime.block_on(dave.wait_for_blocks(3));
+	runtime.block_on(dave.wait_for_blocks(2));
 
 	let mut group = c.benchmark_group("Transaction pool");
 	let account_num = 10;
@@ -214,7 +208,7 @@ fn transaction_pool_benchmarks(c: &mut Criterion) {
 	let benchmark_handle = tokio_handle.clone();
 	group.bench_function(
 		format!("{} transfers from {} accounts", account_num * extrinsics_per_account, account_num),
-		move |b| {
+		|b| {
 			b.iter_batched(
 				|| {
 					let prepare_extrinsics = create_account_extrinsics(&*dave.client, &accounts);
@@ -250,10 +244,14 @@ fn transaction_pool_benchmarks(c: &mut Criterion) {
 		},
 	);
 
-	runtime.block_on(alice.task_manager.clean_shutdown());
-	runtime.block_on(bob.task_manager.clean_shutdown());
-	runtime.block_on(charlie.task_manager.clean_shutdown());
-	// runtime.block_on(dave.task_manager.clean_shutdown());
+	runtime.block_on(async {
+		join!(
+			alice.task_manager.clean_shutdown(),
+			bob.task_manager.clean_shutdown(),
+			charlie.task_manager.clean_shutdown(),
+			dave.task_manager.clean_shutdown(),
+		)
+	});
 }
 
 criterion_group!(benches, transaction_pool_benchmarks);
