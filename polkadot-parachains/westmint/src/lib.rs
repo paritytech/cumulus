@@ -511,17 +511,17 @@ parameter_types! {
 }
 
 match_type! {
-	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
+	pub type ParentOrParentsPlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
-		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
+		MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
 	};
 }
 
 pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<Everything>,
-	// Parent and its exec plurality get free execution
-	AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+	// Parent and its plurality get free execution
+	AllowUnpaidExecutionFrom<ParentOrParentsPlurality>,
 	// Expected responses are OK.
 	AllowKnownQueryResponses<PolkadotXcm>,
 	// Subscriptions for version tracking are OK.
