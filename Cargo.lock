@@ -1981,6 +1981,7 @@ dependencies = [
  "frame-executive",
  "frame-support",
  "frame-system",
+ "frame-system-rpc-runtime-api",
  "pallet-balances",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
