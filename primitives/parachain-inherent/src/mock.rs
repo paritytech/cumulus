@@ -15,7 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{ParachainInherentData, INHERENT_IDENTIFIER};
-use cumulus_primitives_core::{InboundDownwardMessage, PersistedValidationData};
+use cumulus_primitives_core::{InboundDownwardMessage, PersistedValidationData, ParaId};
 use sp_inherents::{InherentData, InherentDataProvider};
 
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
@@ -32,6 +32,10 @@ use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 ///
 /// TODO Docs about the XCM injection
 pub struct MockValidationDataInherentDataProvider {
+	/// The parachain id of the parachain being mocked.
+	/// This field is only important if xcm is being used.
+	/// If you are not interested in injecting simulated XCM message, you ca nuse any value
+	pub para_id: ParaId,
 	/// The current block number of the local block chain (the parachain)
 	pub current_para_block: u32,
 	/// The relay block in which this parachain appeared to start. This will be the relay block
@@ -55,13 +59,14 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 	) -> Result<(), sp_inherents::Error> {
 		// Use the "sproof" (spoof proof) builder to build valid mock state root and proof.
 		let mut sproof_builder = RelayStateSproofBuilder::default();
+		// Set the sproof builder up to match the runtime
+		sproof_builder.para_id = self.para_id;
 		println!("initial head: {:?}", sproof_builder.dmq_mqc_head);
-		// TODO This hash is copied from the log just to see if this approach works
-		// at all. I'll need to actually build the mcq_chain to do this properly.
+		// TODO Eventually I'll need to actually build the mcq_chain to do this properly.
 		sproof_builder.dmq_mqc_head = Some(sp_core::H256::from(hex_literal::hex!(
-			"3aa68593568d161595300df95c6164c11c6ce7c2ddd7ae816d8220e9273b555a"
+			"6bc623c33c8aef0262bd9f9de1b18c3231f2ca48504d89a923953518d2bf2a44"
 		)));
-		println!("modified head: {:?}", sproof_builder.dmq_mqc_head);
+
 		let (relay_storage_root, proof) = sproof_builder.into_state_root_and_proof();
 
 		// Calculate the mocked relay block based on the current para block
