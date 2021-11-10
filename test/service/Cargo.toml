@@ -72,5 +72,5 @@ sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v
 substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
 
 [[bench]]
-name = "transaction_pool"
+name = "transaction_throughput"
 harness = false

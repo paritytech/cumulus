@@ -678,11 +678,11 @@ impl TestNode {
 }
 
 /// Fetch account nonce for key pair
-pub fn fetch_nonce(client: &Client, account: sp_core::sr25519::Pair) -> u32 {
+pub fn fetch_nonce(client: &Client, account: sp_core::sr25519::Public) -> u32 {
 	let best_hash = client.chain_info().best_hash;
 	client
 		.runtime_api()
-		.account_nonce(&generic::BlockId::Hash(best_hash), account.public().into())
+		.account_nonce(&generic::BlockId::Hash(best_hash), account.into())
 		.expect("Fetching account nonce works; qed")
 }
 
@@ -697,7 +697,7 @@ pub fn construct_extrinsic(
 	let current_block_hash = client.info().best_hash;
 	let current_block = client.info().best_number.saturated_into();
 	let genesis_block = client.hash(0).unwrap().unwrap();
-	let nonce = nonce.unwrap_or_else(|| fetch_nonce(client, caller.clone()));
+	let nonce = nonce.unwrap_or_else(|| fetch_nonce(client, caller.public()));
 	let period = runtime::BlockHashCount::get()
 		.checked_next_power_of_two()
 		.map(|c| c / 2)

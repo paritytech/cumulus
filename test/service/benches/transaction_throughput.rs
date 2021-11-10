@@ -1,4 +1,4 @@
-// This file is part of Substrate.
+// This file is part of Cumulus.
 
 // Copyright (C) 2021 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -44,7 +44,7 @@ fn create_accounts(num: usize) -> Vec<sr25519::Pair> {
 ///
 /// `start_nonce` is the current nonce of Alice.
 fn create_account_extrinsics(client: &Client, accounts: &[sr25519::Pair]) -> Vec<OpaqueExtrinsic> {
-	let start_nonce = fetch_nonce(client, Sr25519Keyring::Alice.pair());
+	let start_nonce = fetch_nonce(client, Sr25519Keyring::Alice.public());
 
 	accounts
 		.iter()
@@ -138,7 +138,7 @@ async fn submit_tx_and_wait_for_inclusion(
 	}
 }
 
-fn transaction_pool_benchmarks(c: &mut Criterion) {
+fn transaction_throughput_benchmarks(c: &mut Criterion) {
 	sp_tracing::try_init_simple();
 	let mut builder = sc_cli::LoggerBuilder::new("");
 	builder.with_colors(false);
@@ -194,7 +194,7 @@ fn transaction_pool_benchmarks(c: &mut Criterion) {
 			.build(),
 	);
 
-	runtime.block_on(dave.wait_for_blocks(2));
+	runtime.block_on(dave.wait_for_blocks(1));
 
 	let mut group = c.benchmark_group("Transaction pool");
 	let account_num = 10;
@@ -254,5 +254,5 @@ fn transaction_pool_benchmarks(c: &mut Criterion) {
 	});
 }
 
-criterion_group!(benches, transaction_pool_benchmarks);
+criterion_group!(benches, transaction_throughput_benchmarks);
 criterion_main!(benches);
