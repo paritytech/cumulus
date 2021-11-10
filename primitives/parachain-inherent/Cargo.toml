@@ -20,7 +20,7 @@ polkadot-client = { git = "https://github.com/paritytech/polkadot", optional = t
 
 # Cumulus dependencies
 cumulus-primitives-core = { git = "https://github.com/purestake/cumulus", branch = "moonbeam-polkadot-v0.9.11", default-features = false }
-cumulus-test-relay-sproof-builder = { git = "https://github.com/purestake/cumulus", branch = "moonbeam-polkadot-v0.9.11",, optional = true }
+cumulus-test-relay-sproof-builder = { git = "https://github.com/purestake/cumulus", branch = "moonbeam-polkadot-v0.9.11", optional = true }
 
 # Other dependencies
 async-trait = { version = "0.1.42", optional = true }
