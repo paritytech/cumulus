@@ -70,12 +70,13 @@ use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom,
-	AsPrefixedGeneralIndex, ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin,
-	FixedWeightBounds, FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset,
-	ParentAsSuperuser, ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative,
-	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
+	ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
+	FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser,
+	ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+	UsingComponents,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
@@ -90,10 +91,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("westmint"),
 	impl_name: create_runtime_str!("westmint"),
 	authoring_version: 1,
-	spec_version: 5,
+	spec_version: 600,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 3,
+	transaction_version: 4,
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -212,15 +213,6 @@ impl pallet_transaction_payment::Config for Runtime {
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 }
 
-impl pallet_randomness_collective_flip::Config for Runtime {}
-
-impl pallet_sudo::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
-}
-
-pub type AssetsForceOrigin = EnsureRoot<AccountId>;
-
 parameter_types! {
 	pub const AssetDeposit: Balance = 1 * UNITS; // 1 WND deposit to create asset
 	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
@@ -230,6 +222,8 @@ parameter_types! {
 	pub const MetadataDepositBase: Balance = deposit(1, 68);
 	pub const MetadataDepositPerByte: Balance = deposit(0, 1);
 }
+
+pub type AssetsForceOrigin = EnsureRoot<AccountId>;
 
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
@@ -300,7 +294,7 @@ parameter_types! {
 pub enum ProxyType {
 	/// Fully permissioned proxy. Can execute any call on behalf of _proxied_.
 	Any,
-	/// Can execute any call that does not transfer funds, including asset transfers.
+	/// Can execute any call that does not transfer funds or assets.
 	NonTransfer,
 	/// Proxy with the ability to reject time-delay proxy announcements.
 	CancelProxy,
@@ -510,7 +504,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 parameter_types! {
-	pub UnitWeightCost: Weight = 1_000;
+	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
+	pub UnitWeightCost: Weight = 1_000_000_000;
 	pub const MaxInstructions: u32 = 100;
 }
 
@@ -524,8 +519,12 @@ match_type! {
 pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<Everything>,
+	// Parent and its plurality get free execution
 	AllowUnpaidExecutionFrom<ParentOrParentsPlurality>,
-	// ^^^ Parent & its plurality gets free execution
+	// Expected responses are OK.
+	AllowKnownQueryResponses<PolkadotXcm>,
+	// Subscriptions for version tracking are OK.
+	AllowSubscriptionsFrom<Everything>,
 );
 
 pub struct XcmConfig;
@@ -557,7 +556,7 @@ pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, RelayNet
 /// queues.
 pub type XcmRouter = (
 	// Two routers - use UMP to communicate with the relay chain:
-	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, ()>,
+	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm>,
 	// ..and XCMP to communicate with the sibling chains.
 	XcmpQueue,
 );
@@ -575,7 +574,6 @@ impl pallet_xcm::Config for Runtime {
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Origin = Origin;
 	type Call = Call;
-
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 	// Override for AdvertisedXcmVersion default
 	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
@@ -590,7 +588,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type Event = Event;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
-	type VersionWrapper = ();
+	type VersionWrapper = PolkadotXcm;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -633,10 +631,12 @@ parameter_types! {
 	pub const MaxInvulnerables: u32 = 100;
 }
 
+pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
+
 impl pallet_collator_selection::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
-	type UpdateOrigin = EnsureRoot<AccountId>;
+	type UpdateOrigin = CollatorSelectionUpdateOrigin;
 	type PotId = PotId;
 	type MaxCandidates = MaxCandidates;
 	type MinCandidates = MinCandidates;
@@ -685,6 +685,11 @@ impl pallet_uniques::Config for Runtime {
 	type WeightInfo = weights::pallet_uniques::WeightInfo<Runtime>;
 }
 
+impl pallet_sudo::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -692,44 +697,44 @@ construct_runtime!(
 		NodeBlock = opaque::Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		// System support stuff;
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		// System support stuff.
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 0,
 		ParachainSystem: cumulus_pallet_parachain_system::{
 			Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
-		},
-		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-		ParachainInfo: parachain_info::{Pallet, Storage, Config},
-		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
+		} = 1,
+		// RandomnessCollectiveFlip = 2 removed
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
+		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 4,
 
-		// Monetary stuff;
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
+		// Monetary stuff.
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
+		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+		AssetTxPayment: pallet_asset_tx_payment::{Pallet} = 12,
 
-		// Collator support. the order of these 4 are important and shall not change.
-		Authorship: pallet_authorship::{Pallet, Call, Storage},
-		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>},
-		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
-		Aura: pallet_aura::{Pallet, Storage, Config<T>},
-		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config},
-
-		// The main stage.
-		Utility: pallet_utility::{Pallet, Call, Event},
-		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
-		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>},
-		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
+		// Collator support. the order of these 5 are important and shall not change.
+		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
+		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
+		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
+		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
+		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
 
 		// XCM helpers.
-		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>},
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
-		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin},
-		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>},
+		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 31,
+		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
+		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-		// More things for the main stage
-		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>},
+		// Handy utilities.
+		Utility: pallet_utility::{Pallet, Call, Event} = 40,
+		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
+		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 42,
 
-		// More Monetary stuff
-		AssetTxPayment: pallet_asset_tx_payment::{Pallet},
+		// The main stage.
+		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
+		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
+
+		// Sudo pallet to force root
+		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
 	}
 );
 
@@ -762,8 +767,18 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPallets,
-	(),
+	RemoveCollectiveFlip,
 >;
+
+pub struct RemoveCollectiveFlip;
+impl frame_support::traits::OnRuntimeUpgrade for RemoveCollectiveFlip {
+	fn on_runtime_upgrade() -> Weight {
+		use frame_support::storage::migration;
+		// Remove the storage value `RandomMaterial` from removed pallet `RandomnessCollectiveFlip`
+		migration::remove_storage_prefix(b"RandomnessCollectiveFlip", b"RandomMaterial", b"");
+		<Runtime as frame_system::Config>::DbWeight::get().writes(1)
+	}
+}
 
 impl_runtime_apis! {
 	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
@@ -934,6 +949,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_multisig, Multisig);
 			add_benchmark!(params, batches, pallet_proxy, Proxy);
 			add_benchmark!(params, batches, pallet_session, SessionBench::<Runtime>);
+			add_benchmark!(params, batches, pallet_uniques, Uniques);
 			add_benchmark!(params, batches, pallet_utility, Utility);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
 			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);
