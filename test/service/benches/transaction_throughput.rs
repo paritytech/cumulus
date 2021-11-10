@@ -17,13 +17,11 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use criterion::{criterion_group, criterion_main, BatchSize, Criterion, Throughput};
+use cumulus_test_runtime::{AccountId, BalancesCall, SudoCall};
 use futures::{future, join, StreamExt};
-use node_primitives::AccountId;
-use node_runtime::{BalancesCall, SudoCall};
 use polkadot_service::polkadot_runtime::constants::currency::DOLLARS;
 use sc_transaction_pool_api::{TransactionPool as _, TransactionSource, TransactionStatus};
 use sp_core::{crypto::Pair, sr25519};
-use sp_keyring::Sr25519Keyring;
 use sp_runtime::{generic::BlockId, OpaqueExtrinsic};
 
 use cumulus_primitives_core::ParaId;
@@ -34,7 +32,7 @@ use cumulus_test_service::{
 fn create_accounts(num: usize) -> Vec<sr25519::Pair> {
 	(0..num)
 		.map(|i| {
-			Pair::from_string(&format!("{}/{}", Sr25519Keyring::Alice.to_seed(), i), None)
+			Pair::from_string(&format!("{}/{}", Alice.to_seed(), i), None)
 				.expect("Creates account pair")
 		})
 		.collect()
@@ -44,7 +42,7 @@ fn create_accounts(num: usize) -> Vec<sr25519::Pair> {
 ///
 /// `start_nonce` is the current nonce of Alice.
 fn create_account_extrinsics(client: &Client, accounts: &[sr25519::Pair]) -> Vec<OpaqueExtrinsic> {
-	let start_nonce = fetch_nonce(client, Sr25519Keyring::Alice.public());
+	let start_nonce = fetch_nonce(client, Alice.public());
 
 	accounts
 		.iter()
@@ -64,7 +62,7 @@ fn create_account_extrinsics(client: &Client, accounts: &[sr25519::Pair]) -> Vec
 							.into(),
 						),
 					},
-					Sr25519Keyring::Alice.pair(),
+					Alice.pair(),
 					Some(start_nonce + (i as u32) * 2),
 				),
 				// Give back funds
@@ -80,7 +78,7 @@ fn create_account_extrinsics(client: &Client, accounts: &[sr25519::Pair]) -> Vec
 							.into(),
 						),
 					},
-					Sr25519Keyring::Alice.pair(),
+					Alice.pair(),
 					Some(start_nonce + (i as u32) * 2 + 1),
 				),
 			]
@@ -101,10 +99,7 @@ fn create_benchmark_extrinsics(
 			(0..extrinsics_per_account).map(move |nonce| {
 				construct_extrinsic(
 					client,
-					BalancesCall::transfer {
-						dest: Sr25519Keyring::Bob.to_account_id().into(),
-						value: 1 * DOLLARS,
-					},
+					BalancesCall::transfer { dest: Bob.to_account_id().into(), value: 1 * DOLLARS },
 					account.clone(),
 					Some(nonce as u32),
 				)

@@ -1971,9 +1971,6 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "futures 0.3.17",
  "jsonrpc-core",
- "node-cli",
- "node-primitives",
- "node-runtime",
  "pallet-transaction-payment",
  "parity-scale-codec",
  "polkadot-primitives",
@@ -4904,101 +4901,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "node-cli"
-version = "3.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
-dependencies = [
- "frame-benchmarking-cli",
- "frame-system",
- "frame-system-rpc-runtime-api",
- "futures 0.3.17",
- "hex-literal 0.3.3",
- "log",
- "node-executor",
- "node-inspect",
- "node-primitives",
- "node-rpc",
- "node-runtime",
- "pallet-balances",
- "pallet-im-online",
- "pallet-transaction-payment",
- "parity-scale-codec",
- "rand 0.7.3",
- "sc-authority-discovery",
- "sc-basic-authorship",
- "sc-chain-spec 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sc-cli 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sc-client-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sc-consensus 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sc-consensus-babe",
- "sc-consensus-slots",
- "sc-consensus-uncles",
- "sc-executor 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sc-finality-grandpa",
- "sc-network 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sc-rpc 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sc-service 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sc-sync-state-rpc",
- "sc-telemetry 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sc-transaction-pool 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sc-transaction-pool-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "serde",
- "sp-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-authority-discovery",
- "sp-authorship",
- "sp-consensus 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-consensus-babe",
- "sp-core 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-finality-grandpa 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-inherents 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-keyring 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-keystore 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-timestamp",
- "sp-transaction-pool 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-transaction-storage-proof 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-trie 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "structopt",
- "substrate-build-script-utils",
- "substrate-frame-cli",
- "try-runtime-cli",
-]
-
-[[package]]
-name = "node-executor"
-version = "3.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
-dependencies = [
- "frame-benchmarking",
- "node-primitives",
- "node-runtime",
- "parity-scale-codec",
- "sc-executor 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "scale-info",
- "sp-core 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-keystore 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-state-machine 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-trie 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
-]
-
-[[package]]
-name = "node-inspect"
-version = "0.9.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
-dependencies = [
- "derive_more",
- "parity-scale-codec",
- "sc-cli 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sc-client-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sc-executor 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sc-service 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-blockchain 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-core 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "structopt",
-]
-
-[[package]]
 name = "node-primitives"
 version = "2.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
@@ -5009,115 +4911,6 @@ dependencies = [
  "sp-application-crypto 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
  "sp-core 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
  "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
-]
-
-[[package]]
-name = "node-rpc"
-version = "3.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
-dependencies = [
- "jsonrpc-core",
- "node-primitives",
- "pallet-contracts-rpc",
- "pallet-mmr-rpc",
- "pallet-transaction-payment-rpc",
- "sc-chain-spec 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sc-client-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sc-consensus-babe",
- "sc-consensus-babe-rpc",
- "sc-consensus-epochs",
- "sc-finality-grandpa",
- "sc-finality-grandpa-rpc",
- "sc-rpc 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sc-rpc-api 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sc-sync-state-rpc",
- "sc-transaction-pool-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-block-builder 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-blockchain 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-consensus 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-consensus-babe",
- "sp-keystore 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "substrate-frame-rpc-system",
-]
-
-[[package]]
-name = "node-runtime"
-version = "3.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
-dependencies = [
- "frame-benchmarking",
- "frame-election-provider-support",
- "frame-executive",
- "frame-support",
- "frame-system",
- "frame-system-rpc-runtime-api",
- "frame-try-runtime",
- "log",
- "node-primitives",
- "pallet-assets",
- "pallet-authority-discovery",
- "pallet-authorship",
- "pallet-babe",
- "pallet-bags-list",
- "pallet-balances",
- "pallet-bounties",
- "pallet-collective",
- "pallet-contracts",
- "pallet-contracts-primitives",
- "pallet-contracts-rpc-runtime-api",
- "pallet-democracy",
- "pallet-election-provider-multi-phase",
- "pallet-elections-phragmen",
- "pallet-gilt",
- "pallet-grandpa",
- "pallet-identity",
- "pallet-im-online",
- "pallet-indices",
- "pallet-lottery",
- "pallet-membership",
- "pallet-mmr",
- "pallet-multisig",
- "pallet-offences",
- "pallet-proxy",
- "pallet-randomness-collective-flip",
- "pallet-recovery",
- "pallet-scheduler",
- "pallet-session",
- "pallet-society",
- "pallet-staking",
- "pallet-staking-reward-curve",
- "pallet-sudo",
- "pallet-timestamp",
- "pallet-tips",
- "pallet-transaction-payment",
- "pallet-transaction-payment-rpc-runtime-api",
- "pallet-transaction-storage",
- "pallet-treasury",
- "pallet-uniques",
- "pallet-utility",
- "pallet-vesting",
- "parity-scale-codec",
- "scale-info",
- "sp-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-authority-discovery",
- "sp-block-builder 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-consensus-babe",
- "sp-core 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-inherents 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-io 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-keyring 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-npos-elections",
- "sp-offchain 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-session 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-staking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-std 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-transaction-pool 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-version 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "static_assertions",
- "substrate-wasm-builder",
 ]
 
 [[package]]
@@ -5600,89 +5393,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-contracts"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
-dependencies = [
- "bitflags",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "libsecp256k1 0.6.0",
- "log",
- "pallet-contracts-primitives",
- "pallet-contracts-proc-macro",
- "parity-scale-codec",
- "pwasm-utils",
- "rand 0.7.3",
- "scale-info",
- "serde",
- "smallvec",
- "sp-core 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-io 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-sandbox",
- "sp-std 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "wasmi-validation",
-]
-
-[[package]]
-name = "pallet-contracts-primitives"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
-dependencies = [
- "bitflags",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-std 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
-]
-
-[[package]]
-name = "pallet-contracts-proc-macro"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "pallet-contracts-rpc"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
-dependencies = [
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
- "pallet-contracts-primitives",
- "pallet-contracts-rpc-runtime-api",
- "parity-scale-codec",
- "serde",
- "sp-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-blockchain 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-core 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-rpc 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
-]
-
-[[package]]
-name = "pallet-contracts-rpc-runtime-api"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
-dependencies = [
- "pallet-contracts-primitives",
- "parity-scale-codec",
- "scale-info",
- "sp-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-std 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
-]
-
-[[package]]
 name = "pallet-democracy"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
@@ -5827,19 +5537,6 @@ dependencies = [
  "sp-core 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
  "sp-io 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
  "sp-keyring 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-std 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
-]
-
-[[package]]
-name = "pallet-lottery"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
-dependencies = [
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "scale-info",
  "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
  "sp-std 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
 ]
@@ -5992,20 +5689,6 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "sp-io 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-std 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
-]
-
-[[package]]
-name = "pallet-randomness-collective-flip"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
-dependencies = [
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "safe-mix",
- "scale-info",
  "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
  "sp-std 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
 ]
@@ -6243,24 +5926,6 @@ dependencies = [
  "parity-scale-codec",
  "sp-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
  "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
-]
-
-[[package]]
-name = "pallet-transaction-storage"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
-dependencies = [
- "frame-support",
- "frame-system",
- "pallet-balances",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-inherents 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-io 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-std 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-transaction-storage-proof 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
 ]
 
 [[package]]
@@ -9004,15 +8669,6 @@ checksum = "3e75f6a532d0fd9f7f13144f392b6ad56a32696bfcd9c78f797f16bbb6f072d6"
 
 [[package]]
 name = "rustc_version"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "138e3e0acb6c9fb258b19b67cb8abd63c00679d2851805ea151465464fe9030a"
-dependencies = [
- "semver 0.9.0",
-]
-
-[[package]]
-name = "rustc_version"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0dfe2087c51c460008730de8b57e6a320782fbfb312e1f4d520e6c6fae155ee"
@@ -9070,15 +8726,6 @@ name = "ryu"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "71d301d4193d031abdd79ff7e3dd721168a9572ef3fe51a1517aba235bd8f86e"
-
-[[package]]
-name = "safe-mix"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d3d055a2582e6b00ed7a31c1524040aa391092bf636328350813f3a0605215c"
-dependencies = [
- "rustc_version 0.2.3",
-]
 
 [[package]]
 name = "salsa20"
@@ -10805,15 +10452,6 @@ dependencies = [
 
 [[package]]
 name = "semver"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d7eb9ef2c18661902cc47e535f9bc51b78acd254da71d375c2f6720d9a40403"
-dependencies = [
- "semver-parser 0.7.0",
-]
-
-[[package]]
-name = "semver"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f301af10236f6df4160f7c3f04eec6dbc70ace82d23326abad5edee88801c6b6"
@@ -11992,20 +11630,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-sandbox"
-version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
-dependencies = [
- "log",
- "parity-scale-codec",
- "sp-core 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-io 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-std 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-wasm-interface 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "wasmi",
-]
-
-[[package]]
 name = "sp-serializer"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
@@ -12668,19 +12292,6 @@ version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
 dependencies = [
  "platforms",
-]
-
-[[package]]
-name = "substrate-frame-cli"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#800fac14306a77c3dd7fa178c8d4a6a77d52d3bd"
-dependencies = [
- "frame-support",
- "frame-system",
- "sc-cli 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-core 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
- "structopt",
 ]
 
 [[package]]
@@ -13618,9 +13229,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ca00c5147c319a8ec91ec1a0edbec31e566ce2c9cc93b3f9bb86a9efd0eb795d"
 dependencies = [
  "downcast-rs",
- "errno",
  "libc",
- "libm",
  "memory_units",
  "num-rational 0.2.4",
  "num-traits",
