@@ -15,7 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{ParachainInherentData, INHERENT_IDENTIFIER};
-use cumulus_primitives_core::{InboundDownwardMessage, PersistedValidationData, ParaId};
+use cumulus_primitives_core::{InboundDownwardMessage, PersistedValidationData, ParaId, relay_chain};
 use sp_inherents::{InherentData, InherentDataProvider};
 
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
@@ -36,6 +36,9 @@ pub struct MockValidationDataInherentDataProvider {
 	/// This field is only important if xcm is being used.
 	/// If you are not interested in injecting simulated XCM message, you ca nuse any value
 	pub para_id: ParaId,
+	/// The starting state of the mdq_mqc_head. Also only necessary when inserting xcm. Maybe these should
+	/// be grouped into a single field like mock_xcm config or something
+	pub starting_dmq_mqc_head: relay_chain::Hash,
 	/// The current block number of the local block chain (the parachain)
 	pub current_para_block: u32,
 	/// The relay block in which this parachain appeared to start. This will be the relay block
@@ -59,13 +62,18 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 	) -> Result<(), sp_inherents::Error> {
 		// Use the "sproof" (spoof proof) builder to build valid mock state root and proof.
 		let mut sproof_builder = RelayStateSproofBuilder::default();
+
 		// Set the sproof builder up to match the runtime
 		sproof_builder.para_id = self.para_id;
-		println!("initial head: {:?}", sproof_builder.dmq_mqc_head);
-		// TODO Eventually I'll need to actually build the mcq_chain to do this properly.
-		sproof_builder.dmq_mqc_head = Some(sp_core::H256::from(hex_literal::hex!(
-			"6bc623c33c8aef0262bd9f9de1b18c3231f2ca48504d89a923953518d2bf2a44"
-		)));
+		
+		// Make a MessageQueueChain object with the root that is actually in storage
+		let mut dmq_mqc = crate::MessageQueueChain(self.starting_dmq_mqc_head);
+
+		for message in &self.downward_messages {
+			dmq_mqc.extend_downward(message);
+		}
+
+		sproof_builder.dmq_mqc_head = Some(dmq_mqc.0);
 
 		let (relay_storage_root, proof) = sproof_builder.into_state_root_and_proof();
 
