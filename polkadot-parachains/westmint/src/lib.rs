@@ -91,10 +91,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("westmint"),
 	impl_name: create_runtime_str!("westmint"),
 	authoring_version: 1,
-	spec_version: 504,
+	spec_version: 600,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 3,
+	transaction_version: 4,
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -212,8 +212,6 @@ impl pallet_transaction_payment::Config for Runtime {
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 }
-
-impl pallet_randomness_collective_flip::Config for Runtime {}
 
 impl pallet_sudo::Config for Runtime {
 	type Event = Event;
@@ -512,7 +510,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 parameter_types! {
-	pub UnitWeightCost: Weight = 1_000;
+	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
+	pub UnitWeightCost: Weight = 1_000_000_000;
 	pub const MaxInstructions: u32 = 100;
 }
 
@@ -697,44 +696,44 @@ construct_runtime!(
 		NodeBlock = opaque::Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		// System support stuff;
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		// System support stuff.
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 0,
 		ParachainSystem: cumulus_pallet_parachain_system::{
 			Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
-		},
-		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-		ParachainInfo: parachain_info::{Pallet, Storage, Config},
-		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
+		} = 1,
+		// RandomnessCollectiveFlip = 2 removed
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
+		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 4,
 
-		// Monetary stuff;
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
+		// Monetary stuff.
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
+		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+		AssetTxPayment: pallet_asset_tx_payment::{Pallet} = 12,
 
-		// Collator support. the order of these 4 are important and shall not change.
-		Authorship: pallet_authorship::{Pallet, Call, Storage},
-		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>},
-		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
-		Aura: pallet_aura::{Pallet, Storage, Config<T>},
-		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config},
-
-		// The main stage.
-		Utility: pallet_utility::{Pallet, Call, Event},
-		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
-		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>},
-		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
+		// Collator support. the order of these 5 are important and shall not change.
+		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
+		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
+		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
+		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
+		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
 
 		// XCM helpers.
-		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>},
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin},
-		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin},
-		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>},
+		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 31,
+		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
+		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-		// More things for the main stage
-		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>},
+		// Handy utilities.
+		Utility: pallet_utility::{Pallet, Call, Event} = 40,
+		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
+		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 42,
 
-		// More Monetary stuff
-		AssetTxPayment: pallet_asset_tx_payment::{Pallet},
+		// The main stage.
+		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
+		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
+
+		// Sudo pallet to force root
+		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
 	}
 );
 
@@ -767,8 +766,18 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPallets,
-	(),
+	RemoveCollectiveFlip,
 >;
+
+pub struct RemoveCollectiveFlip;
+impl frame_support::traits::OnRuntimeUpgrade for RemoveCollectiveFlip {
+	fn on_runtime_upgrade() -> Weight {
+		use frame_support::storage::migration;
+		// Remove the storage value `RandomMaterial` from removed pallet `RandomnessCollectiveFlip`
+		migration::remove_storage_prefix(b"RandomnessCollectiveFlip", b"RandomMaterial", b"");
+		<Runtime as frame_system::Config>::DbWeight::get().writes(1)
+	}
+}
 
 impl_runtime_apis! {
 	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
