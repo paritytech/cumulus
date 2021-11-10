@@ -239,7 +239,7 @@ where
 
 		self.task_manager
 			.spawn_essential_handle()
-			.spawn("cumulus-consensus", "", consensus);
+			.spawn("cumulus-consensus", None, consensus);
 	}
 }
 
@@ -285,7 +285,7 @@ where
 
 		self.task_manager.spawn_essential_handle().spawn(
 			"cumulus-pov-recovery",
-			"",
+			None,
 			pov_recovery.run(),
 		);
 
