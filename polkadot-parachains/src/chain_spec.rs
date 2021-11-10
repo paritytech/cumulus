@@ -356,7 +356,7 @@ fn statemint_genesis(
 		parachain_system: Default::default(),
 		polkadot_xcm: statemint_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
-		}
+		},
 	}
 }
 
@@ -535,7 +535,7 @@ fn statemine_genesis(
 		parachain_system: Default::default(),
 		polkadot_xcm: statemine_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
-		}
+		},
 	}
 }
 
@@ -722,6 +722,6 @@ fn westmint_genesis(
 		parachain_system: Default::default(),
 		polkadot_xcm: westmint_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
-		}
+		},
 	}
 }
