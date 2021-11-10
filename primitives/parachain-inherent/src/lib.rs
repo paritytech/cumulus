@@ -28,7 +28,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use cumulus_primitives_core::{
-	InboundDownwardMessage, InboundHrmpMessage, ParaId, PersistedValidationData,
+	InboundDownwardMessage, InboundHrmpMessage, ParaId, PersistedValidationData, relay_chain::{BlakeTwo256, Hash as RelayHash, HashT as _},
 };
 
 use scale_info::TypeInfo;
@@ -67,4 +67,45 @@ pub struct ParachainInherentData {
 	/// were sent. In combination with the rule of no more than one message in a channel per block,
 	/// this means `sent_at` is **strictly** greater than the previous one (if any).
 	pub horizontal_messages: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
+}
+
+//TODO I copied this straight out of parachain system to avoid circular dependencies. It should
+// probably be moved here rather than copied.
+
+
+/// This struct provides ability to extend a message queue chain (MQC) and compute a new head.
+///
+/// MQC is an instance of a [hash chain] applied to a message queue. Using a hash chain it's
+/// possible to represent a sequence of messages using only a single hash.
+///
+/// A head for an empty chain is agreed to be a zero hash.
+///
+/// [hash chain]: https://en.wikipedia.org/wiki/Hash_chain
+#[derive(Default, Clone, codec::Encode, codec::Decode, scale_info::TypeInfo)]
+pub struct MessageQueueChain(RelayHash);
+
+impl MessageQueueChain {
+	pub fn extend_hrmp(&mut self, horizontal_message: &InboundHrmpMessage) -> &mut Self {
+		let prev_head = self.0;
+		self.0 = BlakeTwo256::hash_of(&(
+			prev_head,
+			horizontal_message.sent_at,
+			BlakeTwo256::hash_of(&horizontal_message.data),
+		));
+		self
+	}
+
+	pub fn extend_downward(&mut self, downward_message: &InboundDownwardMessage) -> &mut Self {
+		let prev_head = self.0;
+		self.0 = BlakeTwo256::hash_of(&(
+			prev_head,
+			downward_message.sent_at,
+			BlakeTwo256::hash_of(&downward_message.msg),
+		));
+		self
+	}
+
+	pub fn head(&self) -> RelayHash {
+		self.0
+	}
 }
