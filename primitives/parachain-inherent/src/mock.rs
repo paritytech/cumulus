@@ -48,10 +48,10 @@ pub struct MockValidationDataInherentDataProvider {
 	/// to simulate optimistic or realistic relay chain behavior.
 	pub relay_blocks_per_para_block: u32,
 	/// Inbound downward XCM messages to be injected into the block.
-	pub downward_messages: Vec<InboundDownwardMessage>,
+	pub downward_messages: Vec<Vec<u8>>,
 	//TODO also support horizontal messages, but let's fous on downward for PoC phase.
 	// Inbound Horizontal messages sorted by channel
-	// pub horizontal_messages: BTreeMap<ParaId, Vec<InboundHrmpMessage>>
+	// pub horizontal_messages: BTreeMap<Channel, Vec<Vec<u8>>>
 }
 
 #[async_trait::async_trait]
@@ -60,40 +60,51 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 		&self,
 		inherent_data: &mut InherentData,
 	) -> Result<(), sp_inherents::Error> {
-		// Use the "sproof" (spoof proof) builder to build valid mock state root and proof.
-		let mut sproof_builder = RelayStateSproofBuilder::default();
-
-		// Set the sproof builder up to match the runtime
-		sproof_builder.para_id = self.para_id;
-		
-		// Make a MessageQueueChain object with the root that is actually in storage
-		let mut dmq_mqc = crate::MessageQueueChain(self.starting_dmq_mqc_head);
-
-		for message in &self.downward_messages {
-			dmq_mqc.extend_downward(message);
-		}
-
-		sproof_builder.dmq_mqc_head = Some(dmq_mqc.0);
-
-		let (relay_storage_root, proof) = sproof_builder.into_state_root_and_proof();
 
 		// Calculate the mocked relay block based on the current para block
 		let relay_parent_number =
 			self.relay_offset + self.relay_blocks_per_para_block * self.current_para_block;
+		
+		// Prepare the XCM messages
+		let downward_messages = self.downward_messages
+			.iter()
+			.cloned()
+			.map(|msg|
+				InboundDownwardMessage{
+					sent_at: relay_parent_number,
+					msg,
+				}
+			)
+			.collect();
+		let horizontal_messages = Default::default(); //TODO
 
-		let data = ParachainInherentData {
-			validation_data: PersistedValidationData {
-				parent_head: Default::default(),
-				relay_parent_storage_root: relay_storage_root,
-				relay_parent_number,
-				max_pov_size: Default::default(),
-			},
-			downward_messages: self.downward_messages.clone(),
-			horizontal_messages: Default::default(),
-			relay_chain_state: proof,
-		};
+		// Make a MessageQueueChain object with the root that is actually in storage
+		let mut dmq_mqc = crate::MessageQueueChain(self.starting_dmq_mqc_head);
 
-		inherent_data.put_data(INHERENT_IDENTIFIER, &data)
+		for message in &downward_messages {
+			dmq_mqc.extend_downward(message);
+		}
+
+		// Use the "sproof" (spoof proof) builder to build valid mock state root and proof.
+		let mut sproof_builder = RelayStateSproofBuilder::default();
+		sproof_builder.para_id = self.para_id;
+		sproof_builder.dmq_mqc_head = Some(dmq_mqc.0);
+		let (relay_parent_storage_root, proof) = sproof_builder.into_state_root_and_proof();
+
+		inherent_data.put_data(
+			INHERENT_IDENTIFIER,
+			&ParachainInherentData {
+				validation_data: PersistedValidationData {
+					parent_head: Default::default(),
+					relay_parent_storage_root,
+					relay_parent_number,
+					max_pov_size: Default::default(),
+				},
+				downward_messages,
+				horizontal_messages,
+				relay_chain_state: proof,
+			}
+		)
 	}
 
 	// Copied from the real implementation
