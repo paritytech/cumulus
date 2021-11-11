@@ -13,6 +13,7 @@ serde = { version = "1.0.101", optional = true, features = ["derive"] }
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "dp-update-jsonrpsee-client" }
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "dp-update-jsonrpsee-client" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "dp-update-jsonrpsee-client" }
+frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "dp-update-jsonrpsee-client" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "dp-update-jsonrpsee-client" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "dp-update-jsonrpsee-client" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "dp-update-jsonrpsee-client" }
@@ -48,6 +49,7 @@ std = [
 	"frame-executive/std",
 	"frame-support/std",
 	"frame-system/std",
+	"frame-system-rpc-runtime-api/std",
 	"pallet-balances/std",
 	"pallet-sudo/std",
 	"pallet-timestamp/std",
