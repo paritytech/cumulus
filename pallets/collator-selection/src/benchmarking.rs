@@ -88,7 +88,7 @@ fn register_validators<T: Config + session::Config>(count: u32) {
 	let validators = (0..count).map(|c| validator::<T>(c)).collect::<Vec<_>>();
 
 	for (who, keys) in validators {
-		<session::Module<T>>::set_keys(RawOrigin::Signed(who).into(), keys, vec![]).unwrap();
+		<session::Pallet<T>>::set_keys(RawOrigin::Signed(who).into(), keys, vec![]).unwrap();
 	}
 }
 
@@ -157,7 +157,7 @@ benchmarks! {
 		let bond: BalanceOf<T> = T::Currency::minimum_balance() * 2u32.into();
 		T::Currency::make_free_balance_be(&caller, bond.clone());
 
-		<session::Module<T>>::set_keys(
+		<session::Pallet<T>>::set_keys(
 			RawOrigin::Signed(caller.clone()).into(),
 			keys::<T>(c + 1),
 			vec![]
@@ -203,8 +203,7 @@ benchmarks! {
 		assert_eq!(frame_system::Pallet::<T>::block_number(), new_block);
 	}
 
-	// worse case is on new session.
-	// TODO review this benchmark
+	// worst case for new session.
 	new_session {
 		let r in 1 .. T::MaxCandidates::get();
 		let c in 1 .. T::MaxCandidates::get();
