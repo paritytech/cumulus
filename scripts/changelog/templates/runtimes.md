@@ -1,5 +1,12 @@
 ## Runtimes
 
+{% set rtm = srtool[0] -%}
+
+The runtimes included in this release can be found below.
+They have been generated using:
+- `{{ rtm.data.gen }}`
+- `{{ rtm.data.rustc }}`
+
 {%- for runtime in srtool %}
 ### {{ runtime.name | capitalize }}:
 ```
