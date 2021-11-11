@@ -7,18 +7,18 @@ edition = "2018"
 
 [dependencies]
 # Substrate deps
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "dp-update-jsonrpsee-client" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "dp-update-jsonrpsee-client" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "dp-update-jsonrpsee-client" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "dp-update-jsonrpsee-client" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "dp-update-jsonrpsee-client" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "dp-update-jsonrpsee-client" }
 
 # Polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "dp-update-jsonrpsee" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "dp-update-jsonrpsee" }
+polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "dp-update-jsonrpsee" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "dp-update-jsonrpsee" }
 
 # other deps
 codec = { package = "parity-scale-codec", version = "2.3.0", features = [ "derive" ] }
@@ -36,14 +36,14 @@ cumulus-test-service = { path = "../../test/service" }
 cumulus-primitives-core = { path = "../../primitives/core" }
 
 # Polkadot deps
-polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "dp-update-jsonrpsee" }
 
 # substrate deps
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "dp-update-jsonrpsee-client" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "dp-update-jsonrpsee-client" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "dp-update-jsonrpsee-client" }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "dp-update-jsonrpsee-client" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "dp-update-jsonrpsee-client" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "dp-update-jsonrpsee-client" }
+substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "dp-update-jsonrpsee-client" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "dp-update-jsonrpsee-client" }
