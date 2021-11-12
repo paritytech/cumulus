@@ -113,13 +113,8 @@ where
 		max_block_proposal_slot_portion: Option<SlotProportion>,
 	) -> Self
 	where
-		Client: ProvideRuntimeApi<B>
-			+ BlockOf
-			+ AuxStore
-			+ HeaderBackend<B>
-			+ Send
-			+ Sync
-			+ 'static,
+		Client:
+			ProvideRuntimeApi<B> + BlockOf + AuxStore + HeaderBackend<B> + Send + Sync + 'static,
 		Client::Api: AuraApi<B, P::Public>,
 		BI: BlockImport<B, Transaction = sp_api::TransactionFor<Client, B>> + Send + Sync + 'static,
 		SO: SyncOracle + Send + Sync + Clone + 'static,
