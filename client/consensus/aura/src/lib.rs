@@ -38,7 +38,7 @@ use sc_consensus_slots::{BackoffAuthoringBlocksStrategy, SlotInfo};
 use sc_telemetry::TelemetryHandle;
 use sp_api::ProvideRuntimeApi;
 use sp_application_crypto::AppPublic;
-use sp_blockchain::{HeaderBackend, ProvideCache};
+use sp_blockchain::HeaderBackend;
 use sp_consensus::{
 	EnableProofRecording, Environment, ProofRecording, Proposer, SlotData, SyncOracle,
 };
@@ -115,7 +115,6 @@ where
 	where
 		Client: ProvideRuntimeApi<B>
 			+ BlockOf
-			+ ProvideCache<B>
 			+ AuxStore
 			+ HeaderBackend<B>
 			+ Send
@@ -286,7 +285,6 @@ where
 	CIDP::InherentDataProviders: InherentDataProviderExt + Send,
 	Client: ProvideRuntimeApi<Block>
 		+ BlockOf
-		+ ProvideCache<Block>
 		+ AuxStore
 		+ HeaderBackend<Block>
 		+ Send
@@ -367,7 +365,6 @@ where
 	CIDP::InherentDataProviders: InherentDataProviderExt + Send,
 	Client: ProvideRuntimeApi<Block>
 		+ BlockOf
-		+ ProvideCache<Block>
 		+ AuxStore
 		+ HeaderBackend<Block>
 		+ Send
@@ -447,7 +444,6 @@ where
 	CIDP::InherentDataProviders: InherentDataProviderExt + Send,
 	Client: ProvideRuntimeApi<Block>
 		+ BlockOf
-		+ ProvideCache<Block>
 		+ AuxStore
 		+ HeaderBackend<Block>
 		+ Send
