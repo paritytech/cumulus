@@ -4,10 +4,14 @@
 
 ## Changes
 
-You can find below the full list of the {{ cl.changes | length }} changes in this release.
-
 <!-- <details><summary>Changes since statemine_v5</summary> -->
-{% for pr in cl.changes | sort(attribute="merged_at") %}
-- {{ m_c::change(c=pr) }}
+{# The changes are sorted by merge date #}
+{%- for pr in cl.changes | sort(attribute="merged_at") %}
+
+{%- if pr.meta.B and pr.meta.B.value == 0 %}
+{#- We skip silent ones -#}
+{%- else -%}
+1. {{ m_c::change(c=pr) }}
+{% endif -%}
 {% endfor %}
 <!-- </details> -->

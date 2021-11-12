@@ -1,10 +1,17 @@
+{# This is the entry point of the template -#}
+
 # {{cl.repository.name | capitalize }}
+
+{# {%- include "debug.md.tera" -%} #}
+{# header warning and important notices -#}
 {% include "pre_release.md.tera" -%}
 {% include "global_priority.md.tera" -%}
 {% include "host_functions.md.tera" -%}
 
+{% include "migrations.md.tera" -%}
+
 {% include "runtimes.md.tera" -%}
 
-{% include "docker_image.md.tera" -%}
-
 {% include "changes.md.tera" -%}
+
+{% include "docker_image.md.tera" -%}

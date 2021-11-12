@@ -1,7 +1,7 @@
 {# This macro shows ONE change #}
 {%- macro change(c) -%}
 
-{%- if c.meta.C and c.meta.C.value >= 7-%}
+{%- if c.meta.C and c.meta.C.value >= 7 -%}
 {%- set prio = "❗️HIGH" -%}
 {%- elif c.meta.C and c.meta.C.value >= 5 -%}
 {%- set prio = "📣 Medium" -%}
@@ -11,14 +11,14 @@
 {%- set prio = "" -%}
 {%- endif -%}
 
-{%- if c.meta.D and c.meta.D.value == 1-%}
-{%- set audit = "✅ audtited" -%}
+{%- if c.meta.D and c.meta.D.value == 1 -%}
+{%- set audit = "✅ audtited " -%}
 {%- elif c.meta.D and c.meta.D.value == 2 -%}
-{%- set audit = "✅ trivial" -%}
+{%- set audit = "✅ trivial " -%}
 {%- elif c.meta.D and c.meta.D.value == 3 -%}
-{%- set audit = "✅ trivial" -%}
+{%- set audit = "✅ trivial " -%}
 {%- elif c.meta.D and c.meta.D.value == 5 -%}
-{%- set audit = "⏳ pending non-critical audit" -%}
+{%- set audit = "⏳ pending non-critical audit " -%}
 {%- else -%}
 {%- set audit = "" -%}
 {%- endif -%}
@@ -28,6 +28,5 @@
 {%- else -%}
 {%- set xcm = "" -%}
 {%- endif -%}
-
-{{ audit }} {{- xcm }} [`#{{c.number}}`]({{c.html_url}}) {{- prio }} - {{ c.title | capitalize }}
-{%- endmacro change %}
+{{- audit }}[`#{{c.number}}`]({{c.html_url}}) {{- prio }} - {{ c.title | capitalize | truncate(length=60, end="…") }} {{xcm }}
+{%- endmacro change -%}

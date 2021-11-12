@@ -11,8 +11,9 @@ They have been generated using [srtool](https://github.com/paritytech/srtool):
 - `{{ rtm.data.rustc }}`
 
 {%- for runtime in srtool | sort(attribute="name") %}
-{% set HIDE_VAR = "HIDE_SRTOOL_" ~ runtime.name | upper %}
-{% if not env is containing(HIDE_VAR) %}
+{%- set HIDE_VAR = "HIDE_SRTOOL_" ~ runtime.name | upper %}
+{%- if not env is containing(HIDE_VAR) %}
+
 {{ m_r::runtime(runtime=runtime) }}
-{% endif %}
-{% endfor %}
+{%- endif %}
+{%- endfor %}

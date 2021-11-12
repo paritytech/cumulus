@@ -10,6 +10,7 @@ source .env
 
 # call for instance as:
 # ./build-cl.sh statemine-v5.0.0
+# you may set the ENV NO_CACHE to force a reload
 OWNER=paritytech
 REPO=cumulus
 REF1=${1}
@@ -22,8 +23,12 @@ echo Building changelog for $OWNER/$REPO between $REF1 and $REF2
 
 export RUST_LOG=debug;
 
+if [[ ${NO_CACHE} ]]; then
+    echo NO_CACHE set
+fi
+
 # This is acting as cache so we don't spend time querying while testing
-if [ ! -f "$CL_FILE" ]; then
+if [[ ${NO_CACHE} || ! -f "$CL_FILE" ]]; then
     echo Generating $CL_FILE
     changelogerator $OWNER/$REPO -f $REF1 -t $REF2 > $CL_FILE
 else

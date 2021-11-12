@@ -39,3 +39,18 @@ Currently, the considered labels are:
 Note that labels with the same letter are mutually exclusive.
 A PR should not have both `B0` and `B5`, or both `C1` and `C9`. In case of conflicts, the template will
 decide which label will be considered.
+
+## Dev and debuggin
+
+### Hot Reload
+
+The following command allows **Hot Reload**:
+```
+fswatch templates -e ".*\.md$" | xargs -n1 -I{} ./changelog.sh statemine-v5.0.0
+```
+### Caching
+
+By default, if the changelog data from Github is already present, the calls to the Github API will be skipped
+and the local version of the data will be used. This is much faster.
+If you know that some labels have changed in Github, you probably want to refresh the data.
+You can then either delete manually the `cumulus.json` file or `export NO_CACHE=1` to force refreshing the data.
