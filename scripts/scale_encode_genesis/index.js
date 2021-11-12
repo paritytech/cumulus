@@ -3,7 +3,12 @@ const { exit } = require("process");
 const {WsProvider, ApiPromise} = require("@polkadot/api");
 const util = require("@polkadot/util");
 
-async function connect(port, types) {
+// Utility script constructing a SCALE-encoded setStorage call from a key-value json array of
+// genesis values by connecting to a running instance of the chain. (It is not required to be
+// functional or synced.)
+
+// connect to a local substrate chain and return the api object
+async function connect(port, types = {}) {
 	const provider = new WsProvider("ws://127.0.0.1:" + port);
 	const api = await ApiPromise.create({
 		provider,
@@ -28,7 +33,7 @@ fs.readFile(input, "utf8", (err, data) => {
 
   const genesis = JSON.parse(data);
 
-  connect(9944, {}).then(api => {
+  connect(9944).then(api => {
 	const setStorage = api.tx.system.setStorage(genesis);
 	const raw = setStorage.method.toU8a();
 	const hex = util.u8aToHex(raw);
