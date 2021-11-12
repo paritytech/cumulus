@@ -1,11 +1,24 @@
-{%- if c.meta.E and c.meta.C.value == 4 -%}
-## ⚠️ New Host functions
+{%- import "change.md.tera" as m_c -%}
+{%- set count = 0 -%}
 
-The runtimes in this release contain new **host function**. That means it critical that
+## Host functions
+
+{% for pr in cl.changes | sort(attribute="merged_at") -%}
+
+{%- if pr.meta.B and pr.meta.B.value == 0 -%}
+{#- We skip silent ones -#}
+{%- else -%}
+{%- if pr.meta.E and pr.meta.E.value == 4 -%}
+{%- set count = count + 1 -%}
+- {{ m_c::change(c=pr) }}
+{% endif -%}
+{% endif -%}
+{%- endfor -%}
+
+<!-- {{ count }} host functions were detected -->
+{% if count > 0 -%}
+⚠️ The runtimes in this release contain new **host function**. It critical that
 you update your client before the chain switches to the new runtimes.
-
-{%- else %}
-<!-- No host function detected -->
+{%- else -%}
 ℹ️ This release does not contain any new host function.
 {%- endif %}
-

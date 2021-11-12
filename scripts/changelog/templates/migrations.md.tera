@@ -1,4 +1,5 @@
-{%- import "change.md.tera" as m_c -%}
+{%- import "change.md.tera" as m_c %}
+
 ## Migrations
 
 {% for pr in cl.changes | sort(attribute="merged_at") -%}

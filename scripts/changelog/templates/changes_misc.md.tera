@@ -1,0 +1,27 @@
+{%- import "change.md.tera" as m_c -%}
+### Misc
+
+{#- The changes are sorted by merge date #}
+{%- for pr in cl.changes | sort(attribute="merged_at") %}
+    {%- if pr.meta.B  %}
+        {%- if pr.meta.B.value == 0 %}
+        {#- We skip silent ones -#}
+        {%- else -%}
+
+            {%- if pr.meta.B.value == 1 %}
+- {{ m_c::change(c=pr) }}
+            {%- endif -%}
+        {% endif -%}
+    {% endif -%}
+{% endfor %}
+
+{%- for pr in cl.changes | sort(attribute="merged_at") %}
+    {%- if pr.meta.B  and pr.meta.B.value == 0 %}
+        {#- We skip silent ones -#}
+    {%- else -%}
+
+        {%- if pr.meta.B and pr.meta.B.value != 1 and pr.meta.B.value != 5 and pr.meta.B.value != 7 or pr.meta.C or not pr.meta.B %}
+- {{ m_c::change(c=pr) }}
+        {%- endif -%}
+    {% endif -%}
+{% endfor %}

@@ -1,6 +1,9 @@
 {# This is the entry point of the template -#}
 
-# {{cl.repository.name | capitalize }}
+# {{ cl.repository.name | capitalize }}
+
+IMPORTANT: The following release notes currently only concern the changes introduced
+in the cumulus repo. Please refer as well to the changes in the matching Polkadot release.
 
 {# {%- include "debug.md.tera" -%} #}
 {# header warning and important notices -#}

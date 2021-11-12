@@ -11,6 +11,8 @@
 {%- set prio = "" -%}
 {%- endif -%}
 
+{%- set audit = "" -%}
+{#
 {%- if c.meta.D and c.meta.D.value == 1 -%}
 {%- set audit = "✅ audtited " -%}
 {%- elif c.meta.D and c.meta.D.value == 2 -%}
@@ -22,11 +24,12 @@
 {%- else -%}
 {%- set audit = "" -%}
 {%- endif -%}
+#}
 
 {%- if c.meta.T and c.meta.T.value == 6 -%}
-{%- set xcm = "⛓ XCM" -%}
+{%- set xcm = " [⛓ XCM]" -%}
 {%- else -%}
 {%- set xcm = "" -%}
 {%- endif -%}
-{{- audit }}[`#{{c.number}}`]({{c.html_url}}) {{- prio }} - {{ c.title | capitalize | truncate(length=60, end="…") }} {{xcm }}
+{{- audit }}[`#{{c.number}}`]({{c.html_url}}) {{- prio }} - {{ c.title | capitalize | truncate(length=60, end="…") }}{{xcm }}
 {%- endmacro change -%}

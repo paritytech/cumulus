@@ -1,17 +1,8 @@
 {# This include generates the section showing the changes #}
-
-{%- import "change.md.tera" as m_c -%}
-
 ## Changes
 
-<!-- <details><summary>Changes since statemine_v5</summary> -->
-{# The changes are sorted by merge date #}
-{%- for pr in cl.changes | sort(attribute="merged_at") %}
+{% include "changes_runtime.md.tera" %}
 
-{%- if pr.meta.B and pr.meta.B.value == 0 %}
-{#- We skip silent ones -#}
-{%- else -%}
-1. {{ m_c::change(c=pr) }}
-{% endif -%}
-{% endfor %}
-<!-- </details> -->
+{% include "changes_client.md.tera" %}
+
+{% include "changes_misc.md.tera" %}

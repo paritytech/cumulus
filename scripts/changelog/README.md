@@ -32,8 +32,8 @@ Currently, the considered labels are:
 - E4 => new host function
 - B0 => silent, not showing up
 - B1-releasenotes (misc unless other labels)
-- B7-runtimenoteworthy (runtime changes)
 - B5-client (client changes)
+- B7-runtimenoteworthy (runtime changes)
 - T6-XCM
 
 Note that labels with the same letter are mutually exclusive.
