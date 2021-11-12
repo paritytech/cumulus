@@ -23,6 +23,11 @@
 {%- set audit = "" -%}
 {%- endif -%}
 
+{%- if c.meta.T and c.meta.T.value == 6 -%}
+{%- set xcm = "⛓ XCM" -%}
+{%- else -%}
+{%- set xcm = "" -%}
+{%- endif -%}
 
-{{ audit }} [`#{{c.number}}`]({{c.html_url}}) {{- prio }} - {{ c.title | capitalize }}
+{{ audit }} {{- xcm }} [`#{{c.number}}`]({{c.html_url}}) {{- prio }} - {{ c.title | capitalize }}
 {%- endmacro change %}

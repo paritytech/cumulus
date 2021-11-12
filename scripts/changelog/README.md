@@ -34,7 +34,7 @@ Currently, the considered labels are:
 - B1-releasenotes (misc unless other labels)
 - B7-runtimenoteworthy (runtime changes)
 - B5-client (client changes)
-- B6-XCM
+- T6-XCM
 
 Note that labels with the same letter are mutually exclusive.
 A PR should not have both `B0` and `B5`, or both `C1` and `C9`. In case of conflicts, the template will
