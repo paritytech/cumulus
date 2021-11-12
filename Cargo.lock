@@ -6527,7 +6527,7 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-service",
- "rococo-runtime 0.1.0",
+ "rococo-parachain-runtime",
  "sc-basic-authorship",
  "sc-chain-spec",
  "sc-cli",
@@ -7424,7 +7424,7 @@ dependencies = [
  "polkadot-runtime",
  "polkadot-runtime-parachains",
  "polkadot-statement-distribution",
- "rococo-runtime 0.9.12",
+ "rococo-runtime",
  "sc-authority-discovery",
  "sc-basic-authorship",
  "sc-block-builder",
@@ -8258,7 +8258,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rococo-runtime"
+name = "rococo-parachain-runtime"
 version = "0.1.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
