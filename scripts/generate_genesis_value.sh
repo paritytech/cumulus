@@ -6,17 +6,20 @@ usage() {
     exit 1
 }
 
+set -e
+
 chain_id=$1
+work_dir="polkadot-parachains/res"
 
 [ -z "$chain_id" ] && usage
 
-pushd generate_genesis_values
+pushd scripts/generate_genesis_values
 yarn
 popd
 
-node generate_genesis_values ../polkadot-parachains/res/$chain_id.json ../polkadot-parachains/res/${chain_id}_genesis_values.json
+node scripts/generate_genesis_values $work_dir/$chain_id.json $work_dir/${chain_id}_values.json
 
-pushd scale_encode_genesis
+pushd scripts/scale_encode_genesis
 yarn
 popd
-node scale_encode_genesis ../polkadot-parachains/res/${chain_id}_genesis_values.json ${chain_id}_genesis_values.txt
+node scripts/scale_encode_genesis $work_dir/${chain_id}_values.json $work_dir/${chain_id}_values.scale
