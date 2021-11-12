@@ -315,6 +315,44 @@ pub fn statemint_local_config(id: ParaId) -> StatemintChainSpec {
 	)
 }
 
+// Not used for syncing, but just to determine the genesis values set for the upgrade from shell.
+pub fn statemint_config(id: ParaId) -> StatemintChainSpec {
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("tokenSymbol".into(), "DOT".into());
+	properties.insert("tokenDecimals".into(), 10.into());
+
+	StatemintChainSpec::from_genesis(
+		// Name
+		"Statemint",
+		// ID
+		"statemint",
+		ChainType::Live,
+		move || {
+			statemint_genesis(
+				// initial collators.
+				vec![
+					(
+						//TODO add actual prod keys
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed("Alice"),
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed("Bob"),
+					),
+				],
+				vec![],
+				id,
+			)
+		},
+		vec![],
+		None,
+		None,
+		Some(properties),
+		Extensions { relay_chain: "polkadot".into(), para_id: id.into() },
+	)
+}
+
 fn statemint_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
@@ -444,6 +482,7 @@ pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
 	)
 }
 
+// Not used for syncing, but just to determine the genesis values set for the upgrade from shell.
 pub fn statemine_config(id: ParaId) -> StatemineChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "KSM".into());
