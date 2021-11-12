@@ -2,7 +2,7 @@
 ### Misc
 
 {#- The changes are sorted by merge date #}
-{%- for pr in cl.changes | sort(attribute="merged_at") %}
+{%- for pr in cumulus.changes | sort(attribute="merged_at") %}
     {%- if pr.meta.B  %}
         {%- if pr.meta.B.value == 0 %}
         {#- We skip silent ones -#}
@@ -15,7 +15,7 @@
     {% endif -%}
 {% endfor %}
 
-{%- for pr in cl.changes | sort(attribute="merged_at") %}
+{%- for pr in cumulus.changes | sort(attribute="merged_at") %}
     {%- if pr.meta.B  and pr.meta.B.value == 0 %}
         {#- We skip silent ones -#}
     {%- else -%}

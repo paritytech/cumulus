@@ -5,7 +5,7 @@ set -e
 DIR=`dirname "$BASH_SOURCE"`
 pushd $DIR
 
-# The following is fake and comes from CI
+# The following is fake and shoud come from CI
 source .env
 
 # call for instance as:
@@ -43,8 +43,8 @@ jq \
     --slurpfile srtool_westmint digests/westmint-srtool-digest.json \
     --slurpfile srtool_statemint digests/statemint-srtool-digest.json \
     --slurpfile srtool_statemine digests/statemine-srtool-digest.json \
-    --slurpfile cl $CL_FILE \
-    -n '{ cl: $cl[0], srtool: [
+    --slurpfile cumulus $CL_FILE \
+    -n '{ cumulus: $cumulus[0], srtool: [
         { name: "rococo", data: $srtool_rococo[0] },
         { name: "shell", data: $srtool_shell[0] },
         { name: "westmint", data: $srtool_westmint[0] },

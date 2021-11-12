@@ -1,12 +1,12 @@
 ## Global Priority
 
-{%- if cl.meta.C and cl.meta.C.max >= 7-%}
+{%- if cumulus.meta.C and cumulus.meta.C.max >= 7-%}
 {%- set prio = "❗️HIGH" -%}
 {%- set txt = "You must upgrade as as soon as possible" -%}
-{%- elif cl.meta.C and cl.meta.C.max >= 5 -%}
+{%- elif cumulus.meta.C and cumulus.meta.C.max >= 5 -%}
 {%- set prio = "📣 Medium" -%}
 {%- set txt = "You should upgrade in a timely manner" -%}
-{%- elif cl.meta.C and cl.meta.C.max >= 3 -%}
+{%- elif cumulus.meta.C and cumulus.meta.C.max >= 3 -%}
 {%- set prio = "📌 Low" -%}
 {%- set txt = "You may upgrade at your convenience" -%}
 {%- endif %}

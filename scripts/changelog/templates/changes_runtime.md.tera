@@ -3,7 +3,7 @@
 ### Runtime
 
 {#- The changes are sorted by merge date -#}
-{% for pr in cl.changes | sort(attribute="merged_at") -%}
+{% for pr in cumulus.changes | sort(attribute="merged_at") -%}
 
 {%- if pr.meta.B  -%}
 {%- if pr.meta.B.value == 0 -%}
