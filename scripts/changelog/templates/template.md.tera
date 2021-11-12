@@ -1,0 +1,10 @@
+# {{cl.repository.name | capitalize }}
+{% include "pre_release.md.tera" -%}
+{% include "global_priority.md.tera" -%}
+{% include "host_functions.md.tera" -%}
+
+{% include "runtimes.md.tera" -%}
+
+{% include "docker_image.md.tera" -%}
+
+{% include "changes.md.tera" -%}

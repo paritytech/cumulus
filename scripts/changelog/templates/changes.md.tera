@@ -1,8 +1,10 @@
-{%- import "change.md" as m_c -%}
+{# This include generates the section showing the changes #}
+
+{%- import "change.md.tera" as m_c -%}
 
 ## Changes
 
-You can find below the full list of the {{ cl.changes | length }} in this release.
+You can find below the full list of the {{ cl.changes | length }} changes in this release.
 
 <!-- <details><summary>Changes since statemine_v5</summary> -->
 {% for pr in cl.changes | sort(attribute="merged_at") %}

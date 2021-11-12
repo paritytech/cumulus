@@ -47,6 +47,6 @@ jq \
         { name: "statemine", data: $srtool_statemine[0] }
     ] }' | tee context.json
 
-tera --env --env-key env --include-path templates --template templates/template.md context.json | tee release-notes-cumulus.md
+tera --env --env-key env --include-path templates --template templates/template.md.tera context.json | tee release-notes-cumulus.md
 
 popd

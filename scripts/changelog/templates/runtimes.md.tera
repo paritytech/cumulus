@@ -1,0 +1,18 @@
+{# This include shows the list and details of the runtimes #}
+{%- import "runtime.md.tera" as m_r -%}
+
+## Runtimes
+
+{% set rtm = srtool[0] -%}
+
+The Details about the runtimes included in this release can be found below.
+They have been generated using [srtool](https://github.com/paritytech/srtool):
+- `{{ rtm.data.gen }}`
+- `{{ rtm.data.rustc }}`
+
+{%- for runtime in srtool | sort(attribute="name") %}
+{% set HIDE_VAR = "HIDE_SRTOOL_" ~ runtime.name | upper %}
+{% if not env is containing(HIDE_VAR) %}
+{{ m_r::runtime(runtime=runtime) }}
+{% endif %}
+{% endfor %}
