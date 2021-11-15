@@ -22,7 +22,7 @@ mod chain_spec;
 mod genesis;
 
 use core::future::Future;
-use cumulus_client_collator::RelayChainInterface;
+use cumulus_relay_chain_interface::RelayChainInterface;
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
@@ -179,6 +179,23 @@ impl RelayChainInterface for RelayChainFullClient {
 	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
 		todo!()
 	}
+
+fn persisted_validation_data(
+		&self,
+		block_id: &polkadot_service::BlockId,
+		para_id: ParaId,
+		_: polkadot_primitives::v1::OccupiedCoreAssumption,
+	) -> Result<Option<PersistedValidationData>, ApiError> {
+        todo!()
+    }
+
+fn candidate_pending_availability(
+		&self,
+		block_id: &polkadot_service::BlockId,
+		para_id: ParaId,
+	) -> Result<Option<polkadot_primitives::v1::CommittedCandidateReceipt>, ApiError> {
+        todo!()
+    }
 }
 
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.

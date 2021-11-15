@@ -20,7 +20,7 @@ use cumulus_client_service::{
 use cumulus_primitives_core::ParaId;
 
 // Substrate Imports
-use cumulus_relay_chain_interface::RelayChainDirect;
+use cumulus_relay_chain_interface::{RelayChainDirect, RelayChainDirectBuilder, build_relay_chain_direct};
 use sc_client_api::ExecutorProvider;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
@@ -432,8 +432,8 @@ pub async fn start_parachain_node(
 			);
 
 			let relay_chain_backend = relay_chain_node.backend.clone();
-			let relay_chain_interface =
-				RelayChainDirect { polkadot_client: relay_chain_node.client.clone() };
+			let relay_chain_interface = build_relay_chain_direct(relay_chain_node.client.clone());
+			let relay_chain_interface2 = relay_chain_interface.clone();
 			Ok(build_aura_consensus::<
 				sp_consensus_aura::sr25519::AuthorityPair,
 				_,
@@ -475,9 +475,7 @@ pub async fn start_parachain_node(
 					}
 				},
 				block_import: client.clone(),
-				relay_chain_interface: RelayChainDirect {
-					polkadot_client: relay_chain_node.client.clone(),
-				},
+				relay_chain_interface: relay_chain_interface2,
 				relay_chain_backend: relay_chain_node.backend.clone(),
 				para_client: client,
 				backoff_authoring_blocks: Option::<()>::None,

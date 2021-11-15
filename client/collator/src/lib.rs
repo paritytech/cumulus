@@ -18,10 +18,9 @@
 
 use cumulus_client_network::WaitToAnnounce;
 use cumulus_primitives_core::{
-	relay_chain::{v1::ParachainHost, Block as PBlock, Hash as PHash},
-	CollectCollationInfo, InboundDownwardMessage, ParachainBlockData, PersistedValidationData,
+	relay_chain::{Hash as PHash},
+	ParachainBlockData, PersistedValidationData,
 };
-use cumulus_relay_chain_interface::RelayChainInterface;
 
 use sc_client_api::BlockBackend;
 use sp_api::ProvideRuntimeApi;
@@ -41,11 +40,9 @@ use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::v1::{CollatorPair, HeadData, Id as ParaId};
 
 use codec::{Decode, Encode};
-use cumulus_primitives_core::relay_chain::InboundHrmpMessage;
+use cumulus_primitives_core::CollectCollationInfo;
 use futures::{channel::oneshot, FutureExt};
 use parking_lot::Mutex;
-use polkadot_client::{ClientHandle, ExecuteWithClient};
-use sp_core::sp_std::collections::btree_map::BTreeMap;
 use std::sync::Arc;
 use tracing::Instrument;
 

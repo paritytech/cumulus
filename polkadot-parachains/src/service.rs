@@ -28,7 +28,7 @@ use cumulus_primitives_core::{
 	relay_chain::v1::{Hash as PHash, PersistedValidationData},
 	ParaId,
 };
-use cumulus_relay_chain_interface::RelayChainDirect;
+use cumulus_relay_chain_interface::build_relay_chain_direct;
 use polkadot_service::NativeExecutionDispatch;
 
 use crate::rpc;
@@ -116,7 +116,9 @@ impl sc_executor::NativeExecutionDispatch for StatemineRuntimeExecutor {
 	}
 }
 
-/// Native Westmint executor instance.
+/**
+Native Westmint executor instance.
+*/
 pub struct WestmintRuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for WestmintRuntimeExecutor {
@@ -706,7 +708,8 @@ pub async fn start_rococo_parachain_node(
 			);
 
 			let relay_chain_backend = relay_chain_node.backend.clone();
-			let relay_chain_direct = RelayChainDirect{ polkadot_client: relay_chain_node.client.clone() };
+			let relay_chain_direct =  build_relay_chain_direct(relay_chain_node.client.clone());
+			let relay_chain_direct_for_aura_consensus =  relay_chain_direct.clone();
 
 			Ok(build_aura_consensus::<
 				sp_consensus_aura::sr25519::AuthorityPair,
@@ -749,7 +752,7 @@ pub async fn start_rococo_parachain_node(
 					}
 				},
 				block_import: client.clone(),
-				relay_chain_interface: RelayChainDirect{polkadot_client: relay_chain_node.client.clone()} ,
+				relay_chain_interface:  relay_chain_direct_for_aura_consensus,
 				relay_chain_backend: relay_chain_node.backend.clone(),
 				para_client: client.clone(),
 				backoff_authoring_blocks: Option::<()>::None,
@@ -828,17 +831,14 @@ pub async fn start_shell_node(
 			);
 
 			let relay_chain_backend = relay_chain_node.backend.clone();
-			let relay_chain_interface =
-				RelayChainDirect { polkadot_client: relay_chain_node.client.clone() };
+			let relay_chain_interface = build_relay_chain_direct(relay_chain_node.client.clone());
 
 			Ok(cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
 				cumulus_client_consensus_relay_chain::BuildRelayChainConsensusParams {
 					para_id: id,
 					proposer_factory,
 					block_import: client.clone(),
-					relay_chain_interface: RelayChainDirect {
-						polkadot_client: relay_chain_node.client.clone(),
-					},
+					relay_chain_interface: relay_chain_interface.clone(),
 					relay_chain_backend: relay_chain_node.backend.clone(),
 					create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
 						let parachain_inherent =
@@ -1113,9 +1113,8 @@ where
 				);
 
 				let relay_chain_backend2 = relay_chain_backend.clone();
-				let relay_chain_client2 = relay_chain_client.clone();
-				let relay_chain_interface =
-					RelayChainDirect { polkadot_client: relay_chain_client.clone() };
+				let relay_chain_interface = build_relay_chain_direct(relay_chain_client.clone());
+				let relay_chain_interface2 = relay_chain_interface.clone();
 
 				build_aura_consensus::<
 					sp_consensus_aura::sr25519::AuthorityPair,
@@ -1158,9 +1157,7 @@ where
 						}
 					},
 					block_import: client2.clone(),
-					relay_chain_interface: RelayChainDirect {
-						polkadot_client: relay_chain_client2.clone(),
-					},
+					relay_chain_interface: relay_chain_interface2,
 					relay_chain_backend: relay_chain_backend2,
 					para_client: client2.clone(),
 					backoff_authoring_blocks: Option::<()>::None,
@@ -1185,8 +1182,7 @@ where
 			);
 
 			let relay_chain_backend = relay_chain_node.backend.clone();
-			let relay_chain_interface =
-				RelayChainDirect { polkadot_client: relay_chain_node.client.clone() };
+			let relay_chain_interface = build_relay_chain_direct(relay_chain_node.client.clone());
 
 			let relay_chain_consensus =
 				cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
@@ -1194,9 +1190,7 @@ where
 						para_id: id,
 						proposer_factory,
 						block_import: client.clone(),
-						relay_chain_interface: RelayChainDirect {
-							polkadot_client: relay_chain_node.client.clone(),
-						},
+						relay_chain_interface: relay_chain_interface.clone(),
 						relay_chain_backend: relay_chain_node.backend.clone(),
 						create_inherent_data_providers:
 							move |_, (relay_parent, validation_data)| {

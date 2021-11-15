@@ -1434,7 +1434,6 @@ dependencies = [
  "cumulus-relay-chain-interface",
  "futures 0.3.17",
  "parity-scale-codec",
- "polkadot-client",
  "sc-client-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
  "sc-consensus 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
  "sc-consensus-aura",
@@ -1486,7 +1485,6 @@ dependencies = [
  "cumulus-relay-chain-interface",
  "futures 0.3.17",
  "parking_lot 0.10.2",
- "polkadot-client",
  "sc-client-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
  "sc-consensus 0.10.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
  "sp-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
@@ -1505,13 +1503,13 @@ name = "cumulus-client-network"
 version = "0.1.0"
 dependencies = [
  "cumulus-primitives-core",
- "cumulus-relay-chain-interface",
  "cumulus-test-service",
  "derive_more",
  "futures 0.3.17",
  "futures-timer 3.0.2",
  "parity-scale-codec",
  "parking_lot 0.10.2",
+ "polkadot-client",
  "polkadot-node-primitives",
  "polkadot-parachain",
  "polkadot-primitives",
@@ -1759,7 +1757,6 @@ dependencies = [
  "cumulus-relay-chain-interface",
  "cumulus-test-relay-sproof-builder",
  "parity-scale-codec",
- "polkadot-client",
  "sc-client-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
  "scale-info",
  "sp-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
@@ -1811,10 +1808,10 @@ version = "0.1.0"
 dependencies = [
  "cumulus-primitives-core",
  "polkadot-client",
- "sc-client-api",
- "sp-api",
- "sp-core",
- "sp-runtime",
+ "sc-client-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-api 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-core 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
+ "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=master)",
  "tracing",
 ]
 

@@ -1,17 +1,15 @@
+use std::sync::Arc;
+
 use cumulus_primitives_core::{
 	relay_chain::{
 		v1::{CommittedCandidateReceipt, OccupiedCoreAssumption, ParachainHost},
-		BlakeTwo256, Block as PBlock, BlockId, Hash as PHash, InboundHrmpMessage,
+		Block as PBlock, BlockId, Hash as PHash, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use polkadot_client::{AbstractClient, ClientHandle, ExecuteWithClient, RuntimeApiCollection};
-use sc_client_api::{
-	BlockchainEvents, FinalityNotifications, ImportNotifications, StorageEventStream, StorageKey,
-};
-use sp_api::{ApiError, ApiExt, ProvideRuntimeApi};
-use sp_core::sp_std::{collections::btree_map::BTreeMap, sync::Arc};
-use std::marker::PhantomData;
+use sp_core::sp_std::collections::btree_map::BTreeMap;
+use polkadot_client::{ClientHandle, ExecuteWithClient};
+use sp_api::{ApiError, ProvideRuntimeApi};
 
 const LOG_TARGET: &str = "cumulus-collator";
 
@@ -50,126 +48,37 @@ pub trait RelayChainInterface {
 	) -> Result<Option<CommittedCandidateReceipt>, ApiError>;
 }
 
-#[derive(Clone)]
-pub struct RelayChainDirect<T> {
-	pub polkadot_client: T,
+pub struct RelayChainDirect<Client> {
+	pub polkadot_client: Arc<Client>,
 }
 
-/// Special structure to run [`ParachainInherentData::create_at`] with a [`Client`].
-struct DmqContentsWithClient {
-	relay_parent: PHash,
-	para_id: ParaId,
-}
 
-impl ExecuteWithClient for DmqContentsWithClient {
-	type Output = Option<Vec<InboundDownwardMessage>>;
-
-	fn execute_with_client<Client, Api, Backend>(self, client: Arc<Client>) -> Self::Output
-	where
-		Client: ProvideRuntimeApi<PBlock>,
-		Client::Api: ParachainHost<PBlock>,
-	{
-		let my_client = &*client;
-		my_client
-			.runtime_api()
-			.dmq_contents_with_context(
-				&BlockId::hash(self.relay_parent),
-				sp_core::ExecutionContext::Importing,
-				self.para_id,
-			)
-			.map_err(|e| {
-				tracing::error!(
-					target: LOG_TARGET,
-					relay_parent = ?self.relay_parent,
-					error = ?e,
-					"An error occured during requesting the downward messages.",
-				);
-			})
-			.ok()
-	}
-}
-
-struct InboundHrmpMessageWithClient {
-	relay_parent: PHash,
-	para_id: ParaId,
-}
-
-impl ExecuteWithClient for InboundHrmpMessageWithClient {
-	type Output = Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>>;
-
-	fn execute_with_client<Client, Api, Backend>(self, client: Arc<Client>) -> Self::Output
-	where
-		Client: ProvideRuntimeApi<PBlock>,
-		Client::Api: ParachainHost<PBlock>,
-	{
-		let my_client = &*client;
-		my_client
-			.runtime_api()
-			.inbound_hrmp_channels_contents_with_context(
-				&BlockId::hash(self.relay_parent),
-				sp_core::ExecutionContext::Importing,
-				self.para_id,
-			)
-			.map_err(|e| {
-				tracing::error!(
-					target: LOG_TARGET,
-					relay_parent = ?self.relay_parent,
-					error = ?e,
-					"An error occured during requesting the inbound HRMP messages.",
-				);
-			})
-			.ok()
-	}
-}
-struct CandidatePendingAvailabilityWithClient {
-	block_id: BlockId,
-	para_id: ParaId,
-}
-
-impl ExecuteWithClient for CandidatePendingAvailabilityWithClient {
-	type Output = Result<Option<CommittedCandidateReceipt>, ApiError>;
-
-	fn execute_with_client<Client, Api, Backend>(self, client: Arc<Client>) -> Self::Output
-	where
-		Client: ProvideRuntimeApi<PBlock>,
-		Client::Api: ParachainHost<PBlock>,
-	{
-		client
-			.runtime_api()
-			.candidate_pending_availability(&self.block_id, self.para_id)
-	}
-}
-
-struct PersistedValidationDataWithClient {
-	block_id: BlockId,
-	para_id: ParaId,
-	occupied_core_assumption: OccupiedCoreAssumption,
-}
-
-impl ExecuteWithClient for PersistedValidationDataWithClient {
-	type Output = Result<Option<PersistedValidationData>, ApiError>;
-
-	fn execute_with_client<Client, Api, Backend>(self, client: Arc<Client>) -> Self::Output
-	where
-		Client: ProvideRuntimeApi<PBlock>,
-		Client::Api: ParachainHost<PBlock>,
-	{
-		client.runtime_api().persisted_validation_data(
-			&self.block_id,
-			self.para_id,
-			self.occupied_core_assumption,
-		)
-	}
-}
-
-impl RelayChainInterface for RelayChainDirect<polkadot_client::Client> {
+impl <Client>RelayChainInterface for RelayChainDirect<Client>
+where
+	Client: ProvideRuntimeApi<PBlock>,
+	Client::Api: ParachainHost<PBlock>,
+{
 	fn retrieve_dmq_contents(
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> Option<Vec<InboundDownwardMessage>> {
 		self.polkadot_client
-			.execute_with(DmqContentsWithClient { para_id, relay_parent })
+			.runtime_api()
+			.dmq_contents_with_context(
+				&BlockId::hash(relay_parent),
+				sp_core::ExecutionContext::Importing,
+				para_id,
+			)
+			.map_err(|e| {
+				tracing::error!(
+					target: LOG_TARGET,
+					relay_parent = ?relay_parent,
+					error = ?e,
+					"An error occured during requesting the downward messages.",
+				);
+			})
+			.ok()
 	}
 
 	fn retrieve_all_inbound_hrmp_channel_contents(
@@ -178,7 +87,21 @@ impl RelayChainInterface for RelayChainDirect<polkadot_client::Client> {
 		relay_parent: PHash,
 	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
 		self.polkadot_client
-			.execute_with(InboundHrmpMessageWithClient { para_id, relay_parent })
+			.runtime_api()
+			.inbound_hrmp_channels_contents_with_context(
+				&BlockId::hash(relay_parent),
+				sp_core::ExecutionContext::Importing,
+				para_id,
+			)
+			.map_err(|e| {
+				tracing::error!(
+					target: LOG_TARGET,
+					relay_parent = ?relay_parent,
+					error = ?e,
+					"An error occured during requesting the inbound HRMP messages.",
+				);
+			})
+			.ok()
 	}
 
 	fn persisted_validation_data(
@@ -187,11 +110,11 @@ impl RelayChainInterface for RelayChainDirect<polkadot_client::Client> {
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> Result<Option<PersistedValidationData>, ApiError> {
-		self.polkadot_client.execute_with(PersistedValidationDataWithClient {
-			block_id: block_id.clone(),
+		self.polkadot_client.runtime_api().persisted_validation_data(
+			block_id,
 			para_id,
 			occupied_core_assumption,
-		})
+		)
 	}
 
 	fn candidate_pending_availability(
@@ -199,9 +122,70 @@ impl RelayChainInterface for RelayChainDirect<polkadot_client::Client> {
 		block_id: &BlockId,
 		para_id: ParaId,
 	) -> Result<Option<CommittedCandidateReceipt>, ApiError> {
-		self.polkadot_client.execute_with(CandidatePendingAvailabilityWithClient {
-			block_id: block_id.clone(),
-			para_id,
-		})
+		self.polkadot_client
+			.runtime_api()
+			.candidate_pending_availability(block_id, para_id)
 	}
+}
+
+pub struct RelayChainDirectBuilder {
+	polkadot_client: polkadot_client::Client,
+}
+
+impl RelayChainDirectBuilder {
+	pub fn build(self) -> Arc<dyn RelayChainInterface + Sync + Send> {
+		self.polkadot_client.clone().execute_with(self)
+	}
+}
+
+impl ExecuteWithClient for RelayChainDirectBuilder {
+	type Output = Arc<dyn RelayChainInterface + Sync + Send>;
+
+	fn execute_with_client<Client, Api, Backend>(self, client: Arc<Client>) -> Self::Output
+	where
+		Client: ProvideRuntimeApi<PBlock> + 'static + Sync + Send,
+		Client::Api: ParachainHost<PBlock>,
+	{
+		Arc::new(RelayChainDirect { polkadot_client: client })
+	}
+}
+
+impl RelayChainInterface for Arc<dyn RelayChainInterface + Sync + Send> {
+    fn retrieve_dmq_contents(
+		&self,
+		para_id: ParaId,
+		relay_parent: PHash,
+	) -> Option<Vec<InboundDownwardMessage>> {
+		(**self).retrieve_dmq_contents(para_id, relay_parent)
+    }
+
+    fn retrieve_all_inbound_hrmp_channel_contents(
+		&self,
+		para_id: ParaId,
+		relay_parent: PHash,
+	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
+		(**self).retrieve_all_inbound_hrmp_channel_contents(para_id, relay_parent)
+    }
+
+    fn persisted_validation_data(
+		&self,
+		block_id: &BlockId,
+		para_id: ParaId,
+		occupied_core_assumption: OccupiedCoreAssumption,
+	) -> Result<Option<PersistedValidationData>, ApiError> {
+		(**self).persisted_validation_data(block_id, para_id, occupied_core_assumption)
+    }
+
+    fn candidate_pending_availability(
+		&self,
+		block_id: &BlockId,
+		para_id: ParaId,
+	) -> Result<Option<CommittedCandidateReceipt>, ApiError> {
+		(**self).candidate_pending_availability(block_id, para_id)
+	}
+}
+
+pub fn build_relay_chain_direct(client: polkadot_client::Client) -> Arc<(dyn RelayChainInterface + Send + Sync + 'static)> {
+	let relay_chain_builder = RelayChainDirectBuilder { polkadot_client: client };
+	relay_chain_builder.build()
 }
