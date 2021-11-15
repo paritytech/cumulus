@@ -6055,7 +6055,6 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-service",
- "polkadot-test-service",
  "sc-basic-authorship",
  "sc-chain-spec",
  "sc-cli",
