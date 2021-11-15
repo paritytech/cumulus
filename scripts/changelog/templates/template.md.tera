@@ -2,14 +2,26 @@
 
 # {{ cumulus.repository.name | capitalize }}
 
+This release contains the changes between `{{ env.REF1 }}` and `{{ env.REF2 }}`.
+
 IMPORTANT: The following release notes currently only concern the changes introduced
 in the cumulus repo. Please refer as well to the changes in the matching Polkadot release.
 
-{# {%- include "debug.md.tera" -%} #}
+{%- set changes = cumulus.changes | concat(with=substrate.changes) -%}
+{%- set changes = changes | concat(with=polkadot.changes) -%}
+
+{% if env.DEBUG %}
+{%- include "debug.md.tera" -%}
+{% endif %}
+
 {# header warning and important notices -#}
 {% include "pre_release.md.tera" -%}
+
 {% include "global_priority.md.tera" -%}
+
 {% include "host_functions.md.tera" -%}
+
+{% include "compiler.md.tera" -%}
 
 {% include "migrations.md.tera" -%}
 

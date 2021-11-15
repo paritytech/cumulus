@@ -1,4 +1,3 @@
 changelog.md
-context.json
-cumulus.json
+*.json
 release-notes*.md
