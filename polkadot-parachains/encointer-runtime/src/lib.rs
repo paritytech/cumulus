@@ -22,9 +22,10 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
-	traits::{Imbalance, OnUnbalanced},
-	PalletId,
+	traits::{Imbalance, InstanceFilter, OnUnbalanced},
+	PalletId, RuntimeDebug,
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
@@ -34,6 +35,7 @@ use parachains_common::{
 	currency::{EXISTENTIAL_DEPOSIT, MILLICENTS},
 	fee::{SlowAdjustingFeeUpdate, WeightToFee},
 };
+use scale_info::TypeInfo;
 use sp_api::impl_runtime_apis;
 use sp_core::{
 	u32_trait::{_1, _2},
@@ -41,7 +43,7 @@ use sp_core::{
 };
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, Verify},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -72,18 +74,18 @@ pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 
 // A few exports that help ease life for downstream crates.
-// pub use pallet_encointer_balances::Call as EncointerBalancesCall;
-// pub use pallet_encointer_bazaar::Call as EncointerBazaarCall;
-// pub use pallet_encointer_ceremonies::Call as EncointerCeremoniesCall;
-// pub use pallet_encointer_communities::Call as EncointerCommunitiesCall;
+pub use pallet_encointer_balances::Call as EncointerBalancesCall;
+pub use pallet_encointer_bazaar::Call as EncointerBazaarCall;
+pub use pallet_encointer_ceremonies::Call as EncointerCeremoniesCall;
+pub use pallet_encointer_communities::Call as EncointerCommunitiesCall;
 // pub use pallet_encointer_personhood_oracle::Call as EncointerPersonhoodOracleCall;
-// pub use pallet_encointer_scheduler::Call as EncointerSchedulerCall;
+pub use pallet_encointer_scheduler::Call as EncointerSchedulerCall;
 // pub use pallet_encointer_sybil_gate_template::Call as EncointerSybilGateCall;
 
-// pub use encointer_primitives::{
-// 	balances::{BalanceEntry, BalanceType, Demurrage},
-// 	scheduler::CeremonyPhaseType,
-// };
+pub use encointer_primitives::{
+	balances::{BalanceEntry, BalanceType, Demurrage},
+	scheduler::CeremonyPhaseType,
+};
 
 // XCM imports
 use pallet_xcm::XcmPassthrough;
@@ -151,6 +153,81 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(5);
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 500 ms of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
+
+//TODO add meaningful values
+parameter_types! {
+	pub const ProxyDepositBase: Balance = 32;
+	pub const ProxyDepositFactor: Balance = 32;
+	pub const MaxProxies: u16 = 32;
+	pub const AnnouncementDepositBase: Balance = 32;
+	pub const AnnouncementDepositFactor: Balance = 32;
+	pub const MaxPending: u16 = 32;
+}
+
+/// The type used to represent the kinds of proxying allowed.
+#[derive(
+	Copy,
+	Clone,
+	Eq,
+	PartialEq,
+	Ord,
+	PartialOrd,
+	Encode,
+	Decode,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
+)]
+pub enum ProxyType {
+	Any,
+	NonTransfer,
+	BazaarEdit,
+}
+
+impl Default for ProxyType {
+	fn default() -> Self {
+		Self::Any
+	}
+}
+impl InstanceFilter<Call> for ProxyType {
+	fn filter(&self, c: &Call) -> bool {
+		match self {
+			ProxyType::Any => true,
+			ProxyType::NonTransfer => matches!(c, Call::EncointerBazaar(..)),
+			ProxyType::BazaarEdit => matches!(
+				c,
+				Call::EncointerBazaar(EncointerBazaarCall::create_offering { .. }) |
+					Call::EncointerBazaar(EncointerBazaarCall::update_offering { .. }) |
+					Call::EncointerBazaar(EncointerBazaarCall::delete_offering { .. })
+			),
+		}
+	}
+
+	fn is_superset(&self, o: &Self) -> bool {
+		match (self, o) {
+			(x, y) if x == y => true,
+			(ProxyType::Any, _) => true,
+			(_, ProxyType::Any) => false,
+			(ProxyType::NonTransfer, _) => true,
+			_ => false,
+		}
+	}
+}
+
+impl pallet_proxy::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type Currency = Balances;
+	type ProxyType = ProxyType;
+	type ProxyDepositBase = ProxyDepositBase;
+	type ProxyDepositFactor = ProxyDepositFactor;
+	type MaxProxies = MaxProxies;
+	type WeightInfo = ();
+	type MaxPending = MaxPending;
+	type CallHasher = BlakeTwo256;
+	type AnnouncementDepositBase = AnnouncementDepositBase;
+	type AnnouncementDepositFactor = AnnouncementDepositFactor;
+}
 
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 250;
@@ -489,31 +566,31 @@ parameter_types! {
 	pub const MomentsPerDay: Moment = 86_400_000; // [ms/d]
 }
 
-// impl pallet_encointer_scheduler::Config for Runtime {
-// 	type Event = Event;
-// 	type OnCeremonyPhaseChange = EncointerCeremonies;
-// 	type MomentsPerDay = MomentsPerDay;
-// }
-//
-// impl pallet_encointer_ceremonies::Config for Runtime {
-// 	type Event = Event;
-// 	type Public = <Signature as Verify>::Signer;
-// 	type Signature = Signature;
-// 	type RandomnessSource = RandomnessCollectiveFlip;
-// }
-//
-// impl pallet_encointer_communities::Config for Runtime {
-// 	type Event = Event;
-// }
-//
-// impl pallet_encointer_balances::Config for Runtime {
-// 	type Event = Event;
-// }
-//
-// impl pallet_encointer_bazaar::Config for Runtime {
-// 	type Event = Event;
-// }
-//
+impl pallet_encointer_scheduler::Config for Runtime {
+	type Event = Event;
+	type OnCeremonyPhaseChange = EncointerCeremonies;
+	type MomentsPerDay = MomentsPerDay;
+}
+
+impl pallet_encointer_ceremonies::Config for Runtime {
+	type Event = Event;
+	type Public = <Signature as Verify>::Signer;
+	type Signature = Signature;
+	type RandomnessSource = RandomnessCollectiveFlip;
+}
+
+impl pallet_encointer_communities::Config for Runtime {
+	type Event = Event;
+}
+
+impl pallet_encointer_balances::Config for Runtime {
+	type Event = Event;
+}
+
+impl pallet_encointer_bazaar::Config for Runtime {
+	type Event = Event;
+}
+
 // impl pallet_encointer_personhood_oracle::Config for Runtime {
 // 	type Event = Event;
 // 	type XcmSender = XcmRouter;
@@ -602,19 +679,20 @@ construct_runtime! {
 		// Handy utilities.
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
 		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>} = 43,
+		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 44,
 
 		// Encointer council.
 		Collective: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Config<T>, Event<T> } = 50,
 		Membership: pallet_membership::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 51,
 
-		// EncointerScheduler: pallet_encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event} = 50,
-		// EncointerCeremonies: pallet_encointer_ceremonies::{Pallet, Call, Storage, Config<T>, Event<T>} = 51,
-		// EncointerCommunities: pallet_encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>} = 52,
-		// EncointerBalances: pallet_encointer_balances::{Pallet, Call, Storage, Config, Event<T>} = 53,
-		// EncointerBazaar: pallet_encointer_bazaar::{Pallet, Call, Storage, Event<T>} = 54,
+		EncointerScheduler: pallet_encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event} = 60,
+		EncointerCeremonies: pallet_encointer_ceremonies::{Pallet, Call, Storage, Config<T>, Event<T>} = 61,
+		EncointerCommunities: pallet_encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>} = 62,
+		EncointerBalances: pallet_encointer_balances::{Pallet, Call, Storage, Config, Event<T>} = 63,
+		EncointerBazaar: pallet_encointer_bazaar::{Pallet, Call, Storage, Event<T>} = 64,
 		//
-		// EncointerPersonhoodOracle: pallet_encointer_personhood_oracle::{Pallet, Call, Event} = 60,
-		// EncointerSybilGate: pallet_encointer_sybil_gate_template::{Pallet, Call, Storage, Event<T>} = 61,
+		// EncointerPersonhoodOracle: pallet_encointer_personhood_oracle::{Pallet, Call, Event} = 70,
+		// EncointerSybilGate: pallet_encointer_sybil_gate_template::{Pallet, Call, Storage, Event<T>} = 71,
 	}
 }
 

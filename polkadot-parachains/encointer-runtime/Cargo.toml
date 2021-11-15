@@ -15,16 +15,16 @@ scale-info = { version = "1.0.0", default-features = false, features = ["derive"
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 
 # encointer deps
-#encointer-primitives = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.10" }
-#pallet-encointer-scheduler = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.10" }
-#pallet-encointer-ceremonies = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.10" }
-#pallet-encointer-communities = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.10" }
-#pallet-encointer-balances = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.10" }
-#pallet-encointer-bazaar = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.10" }
-#pallet-encointer-personhood-oracle = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.10" }
-#pallet-encointer-sybil-gate-template = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.10" }
+encointer-primitives = { default-features = false, features = ['serde_derive'], git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.12" }
+pallet-encointer-scheduler = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.12" }
+pallet-encointer-ceremonies = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.12" }
+pallet-encointer-communities = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.12" }
+pallet-encointer-balances = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.12" }
+pallet-encointer-bazaar = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.12" }
+#pallet-encointer-personhood-oracle = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.12" }
+#pallet-encointer-sybil-gate-template = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.12" }
 
-fixed = { package = "substrate-fixed", default-features = false, git = "https://github.com/encointer/substrate-fixed", tag = "v0.5.6" }
+fixed = { package = "substrate-fixed", default-features = false, git = "https://github.com/encointer/substrate-fixed", tag = "v0.5.7" }
 
 # Substrate dependencies
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
@@ -48,6 +48,7 @@ pallet-aura = { git = "https://github.com/paritytech/substrate", default-feature
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
 pallet-collective = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
 pallet-membership = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
+pallet-proxy = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.12" }
 pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
@@ -106,6 +107,7 @@ std = [
 	"pallet-balances/std",
 	"pallet-collective/std",
 	"pallet-membership/std",
+	"pallet-proxy/std",
 	"pallet-randomness-collective-flip/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment/std",
@@ -126,13 +128,13 @@ std = [
 	"xcm-executor/std",
 	"pallet-aura/std",
 	"sp-consensus-aura/std",
-#	"encointer-primitives/std",
-#	"encointer-primitives/serde_derive",
-#	"pallet-encointer-scheduler/std",
-#	"pallet-encointer-ceremonies/std",
-#	"pallet-encointer-balances/std",
-#	"pallet-encointer-communities/std",
-#	"pallet-encointer-bazaar/std",
+	"encointer-primitives/std",
+	"encointer-primitives/serde_derive",
+	"pallet-encointer-scheduler/std",
+	"pallet-encointer-ceremonies/std",
+	"pallet-encointer-balances/std",
+	"pallet-encointer-communities/std",
+	"pallet-encointer-bazaar/std",
 #	"pallet-encointer-personhood-oracle/std",
 #	"pallet-encointer-sybil-gate-template/std",
 	"fixed/std"
