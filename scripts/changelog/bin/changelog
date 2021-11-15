@@ -1,0 +1,96 @@
+# !/usr/bin/env ruby
+
+# frozen_string_literal: true
+
+require_relative '../lib/changelog'
+require 'logger'
+
+logger = Logger.new($stdout)
+logger.level = Logger::DEBUG
+logger.debug('Starting')
+
+# call for instance as:
+# ruby ./bin/changelog statemine-v5.0.0
+owner = 'paritytech'
+repo = 'cumulus'
+
+REF1 = 'statemine-v5.0.0'
+REF2 = 'HEAD'
+
+gh_cumulus = SubRef.new(format('%s/%s', owner, repo))
+
+POLKADOT_REF1 = gh_cumulus.get_dependency_reference(REF1, 'polkadot-client')
+POLKADOT_REF2 = gh_cumulus.get_dependency_reference(REF2, 'polkadot-client')
+
+SUBSTRATE_REF1 = gh_cumulus.get_dependency_reference(REF1, 'sp-io')
+SUBSTRATE_REF2 = gh_cumulus.get_dependency_reference(REF2, 'sp-io')
+
+logger.debug('Polkadot from: ' + POLKADOT_REF1)
+logger.debug('Polkadot to:   ' + POLKADOT_REF2)
+
+logger.debug('Substrate from: ' + SUBSTRATE_REF1)
+logger.debug('Substrate to:   ' + SUBSTRATE_REF2)
+
+# you may set the ENV NO_CACHE to force fetching from Github
+# NO_CACHE=1
+
+cumulus_data = 'cumulus.json'
+substrate_data = 'substrate.json'
+polkadot_data = 'polkadot.json'
+
+logger.debug('Using CUMULUS:   ' + cumulus_data)
+logger.debug('Using SUBSTRATE: ' + substrate_data)
+logger.debug('Using POLKADOT:  ' + polkadot_data)
+
+# p Building changelog for $owner/$repo between $REF1 and $REF2
+
+logger.warn('NO_CACHE set') if ENV['NO_CACHE']
+
+# This is acting as cache so we don't spend time querying while testing
+# if [[ ${NO_CACHE} || ! -f "$cumulus_data" ]]; then
+#     echo Fetching data for Cumulus into $cumulus_data
+#     changelogerator $owner/$repo -f $REF1 -t $REF2 > $cumulus_data
+# else
+#     echo Re-using $cumulus_data
+# fi
+
+# if [[ ${NO_CACHE} || ! -f "$polkadot_data" ]]; then
+#     echo Fetching data for Polkadot into $polkadot_data
+#     changelogerator $owner/polkadot -f v$V1 -t v$V2 > $polkadot_data
+# else
+#     echo Re-using $polkadot_data
+# fi
+
+# if [[ ${NO_CACHE} || ! -f "$substrate_data" ]]; then
+#     echo Fetching data for Substrate into $substrate_data
+#     changelogerator $owner/substrate -f polkadot-v$V1 -t polkadot-v$V2 > $substrate_data
+# else
+#     echo Re-using $substrate_data
+# fi
+
+# Here we compose all the pieces together into one
+# single big json file.
+# jq \
+#     --slurpfile cumulus $cumulus_data \
+#     --slurpfile substrate $substrate_data \
+#     --slurpfile polkadot $polkadot_data \
+#     --slurpfile srtool_rococo digests/rococo-srtool-digest.json \
+#     --slurpfile srtool_shell digests/shell-srtool-digest.json \
+#     --slurpfile srtool_westmint digests/westmint-srtool-digest.json \
+#     --slurpfile srtool_statemint digests/statemint-srtool-digest.json \
+#     --slurpfile srtool_statemine digests/statemine-srtool-digest.json \
+#     -n '{
+#             cumulus: $cumulus[0],
+#             substrate: $substrate[0],
+#             polkadot: $polkadot[0],
+#         srtool: [
+#         { name: "rococo", data: $srtool_rococo[0] },
+#         { name: "shell", data: $srtool_shell[0] },
+#         { name: "westmint", data: $srtool_westmint[0] },
+#         { name: "statemint", data: $srtool_statemint[0] },
+#         { name: "statemine", data: $srtool_statemine[0] }
+#     ] }' | tee context.json
+
+# tera --env --env-key env --include-path templates --template templates/template.md.tera context.json | tee release-notes-cumulus.md
+
+p 'END'
