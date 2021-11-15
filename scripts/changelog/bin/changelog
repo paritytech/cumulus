@@ -2,6 +2,12 @@
 
 # frozen_string_literal: true
 
+# call for instance as:
+# ruby ./bin/changelog statemine-v5.0.0
+#
+# You may set the ENV NO_CACHE to force fetching from Github
+# You should also ensure you set the ENV: GITHUB_TOKEN
+
 require_relative '../lib/changelog'
 require 'logger'
 
@@ -9,30 +15,25 @@ logger = Logger.new($stdout)
 logger.level = Logger::DEBUG
 logger.debug('Starting')
 
-# call for instance as:
-# ruby ./bin/changelog statemine-v5.0.0
 owner = 'paritytech'
 repo = 'cumulus'
 
-REF1 = 'statemine-v5.0.0'
-REF2 = 'HEAD'
+ref1 = 'statemine-v5.0.0'
+ref2 = 'HEAD'
 
 gh_cumulus = SubRef.new(format('%s/%s', owner, repo))
 
-POLKADOT_REF1 = gh_cumulus.get_dependency_reference(REF1, 'polkadot-client')
-POLKADOT_REF2 = gh_cumulus.get_dependency_reference(REF2, 'polkadot-client')
+polkadot_ref1 = gh_cumulus.get_dependency_reference(ref1, 'polkadot-client')
+polkadot_ref2 = gh_cumulus.get_dependency_reference(ref2, 'polkadot-client')
 
-SUBSTRATE_REF1 = gh_cumulus.get_dependency_reference(REF1, 'sp-io')
-SUBSTRATE_REF2 = gh_cumulus.get_dependency_reference(REF2, 'sp-io')
+substrate_ref1 = gh_cumulus.get_dependency_reference(ref1, 'sp-io')
+substrate_ref2 = gh_cumulus.get_dependency_reference(ref2, 'sp-io')
 
-logger.debug('Polkadot from: ' + POLKADOT_REF1)
-logger.debug('Polkadot to:   ' + POLKADOT_REF2)
+logger.debug('Polkadot from:   ' + polkadot_ref1)
+logger.debug('Polkadot to:     ' + polkadot_ref2)
 
-logger.debug('Substrate from: ' + SUBSTRATE_REF1)
-logger.debug('Substrate to:   ' + SUBSTRATE_REF2)
-
-# you may set the ENV NO_CACHE to force fetching from Github
-# NO_CACHE=1
+logger.debug('Substrate from:  ' + substrate_ref1)
+logger.debug('Substrate to:    ' + substrate_ref2)
 
 cumulus_data = 'cumulus.json'
 substrate_data = 'substrate.json'
@@ -42,55 +43,58 @@ logger.debug('Using CUMULUS:   ' + cumulus_data)
 logger.debug('Using SUBSTRATE: ' + substrate_data)
 logger.debug('Using POLKADOT:  ' + polkadot_data)
 
-# p Building changelog for $owner/$repo between $REF1 and $REF2
-
 logger.warn('NO_CACHE set') if ENV['NO_CACHE']
 
 # This is acting as cache so we don't spend time querying while testing
-# if [[ ${NO_CACHE} || ! -f "$cumulus_data" ]]; then
-#     echo Fetching data for Cumulus into $cumulus_data
-#     changelogerator $owner/$repo -f $REF1 -t $REF2 > $cumulus_data
-# else
-#     echo Re-using $cumulus_data
-# fi
+if ENV['NO_CACHE'] || !File.file?(cumulus_data)
+  logger.debug(format('Fetching data for Cumulus into %s', cumulus_data))
+  cmd = format('changelogerator %s/%s -f %s -t %s > %s', owner, repo, ref1, ref2, cumulus_data)
+  system(cmd)
+else
+  logger.debug('Re-using:' + cumulus_data)
+end
 
-# if [[ ${NO_CACHE} || ! -f "$polkadot_data" ]]; then
-#     echo Fetching data for Polkadot into $polkadot_data
-#     changelogerator $owner/polkadot -f v$V1 -t v$V2 > $polkadot_data
-# else
-#     echo Re-using $polkadot_data
-# fi
+if ENV['NO_CACHE'] || !File.file?(polkadot_data)
+  logger.debug(format('Fetching data for Polkadot into %s', polkadot_data))
+  cmd = format('changelogerator %s/%s -f %s -t %s > %s', owner, 'polkadot', polkadot_ref1, polkadot_ref2,
+               polkadot_data)
+  system(cmd)
+else
+  logger.debug('Re-using:' + polkadot_data)
+end
 
-# if [[ ${NO_CACHE} || ! -f "$substrate_data" ]]; then
-#     echo Fetching data for Substrate into $substrate_data
-#     changelogerator $owner/substrate -f polkadot-v$V1 -t polkadot-v$V2 > $substrate_data
-# else
-#     echo Re-using $substrate_data
-# fi
+if ENV['NO_CACHE'] || !File.file?(substrate_data)
+  logger.debug(format('Fetching data for Substrate into %s', substrate_data))
+  cmd = format('changelogerator %s/%s -f %s -t %s > %s', owner, 'substrate', substrate_ref1, substrate_ref2,
+               substrate_data)
+  system(cmd)
+else
+  logger.debug('Re-using:' + substrate_data)
+end
 
 # Here we compose all the pieces together into one
 # single big json file.
-# jq \
-#     --slurpfile cumulus $cumulus_data \
-#     --slurpfile substrate $substrate_data \
-#     --slurpfile polkadot $polkadot_data \
-#     --slurpfile srtool_rococo digests/rococo-srtool-digest.json \
-#     --slurpfile srtool_shell digests/shell-srtool-digest.json \
-#     --slurpfile srtool_westmint digests/westmint-srtool-digest.json \
-#     --slurpfile srtool_statemint digests/statemint-srtool-digest.json \
-#     --slurpfile srtool_statemine digests/statemine-srtool-digest.json \
-#     -n '{
-#             cumulus: $cumulus[0],
-#             substrate: $substrate[0],
-#             polkadot: $polkadot[0],
-#         srtool: [
-#         { name: "rococo", data: $srtool_rococo[0] },
-#         { name: "shell", data: $srtool_shell[0] },
-#         { name: "westmint", data: $srtool_westmint[0] },
-#         { name: "statemint", data: $srtool_statemint[0] },
-#         { name: "statemine", data: $srtool_statemine[0] }
-#     ] }' | tee context.json
+cmd = format('jq \
+    --slurpfile cumulus %s \
+    --slurpfile substrate %s \
+    --slurpfile polkadot %s \
+    --slurpfile srtool_rococo digests/rococo-srtool-digest.json \
+    --slurpfile srtool_shell digests/shell-srtool-digest.json \
+    --slurpfile srtool_westmint digests/westmint-srtool-digest.json \
+    --slurpfile srtool_statemint digests/statemint-srtool-digest.json \
+    --slurpfile srtool_statemine digests/statemine-srtool-digest.json \
+    -n \'{
+            cumulus: $cumulus[0],
+            substrate: $substrate[0],
+            polkadot: $polkadot[0],
+        srtool: [
+        { name: "rococo", data: $srtool_rococo[0] },
+        { name: "shell", data: $srtool_shell[0] },
+        { name: "westmint", data: $srtool_westmint[0] },
+        { name: "statemint", data: $srtool_statemint[0] },
+        { name: "statemine", data: $srtool_statemine[0] }
+    ] }\' | tee context.json', cumulus_data, substrate_data, polkadot_data)
+system(cmd)
 
-# tera --env --env-key env --include-path templates --template templates/template.md.tera context.json | tee release-notes-cumulus.md
-
-p 'END'
+cmd = 'tera --env --env-key env --include-path templates --template templates/template.md.tera context.json | tee release-notes-cumulus.md'
+system(cmd)
