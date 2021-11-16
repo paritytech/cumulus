@@ -18,8 +18,8 @@ logger.debug('Starting')
 owner = 'paritytech'
 repo = 'cumulus'
 
-ref1 = 'statemine-v5.0.0'
-ref2 = 'HEAD'
+ref1 = ARGV[0]
+ref2 = ARGV[1] || 'HEAD'
 
 gh_cumulus = SubRef.new(format('%s/%s', owner, repo))
 

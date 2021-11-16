@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# require 'json'
 require_relative '../lib/changelog'
 require 'test/unit'
 
@@ -17,15 +16,6 @@ class TestChangelog < Test::Unit::TestCase
     c = SubRef.new('paritytech/polkadot')
     ref = '9999999'
     package = 'sc-cli'
-    assert_raise do
-      c.get_dependency_reference(ref, package)
-    end
-  end
-
-  def test_get_dep_ref_invalid_package
-    c = SubRef.new('paritytech/polkadot')
-    ref = '13c2695'
-    package = 'foobar'
     assert_raise do
       c.get_dependency_reference(ref, package)
     end
