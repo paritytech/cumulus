@@ -98,13 +98,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NO_CACHE: 1
           DEBUG: 1
-          SHELL_DIGEST: ${{env.GITHUB_WORKSPACE}}/shell-srtool-json/shell_srtool_output.json
-          WESTMINT_DIGEST: ${{env.GITHUB_WORKSPACE}}/westmint-srtool-json/westmint_srtool_output.json
-          STATEMINE_DIGEST: ${{env.GITHUB_WORKSPACE}}/statemine-srtool-json/statemine_srtool_output.json
-          STATEMINT_DIGEST: ${{env.GITHUB_WORKSPACE}}/statemint-srtool-json/statemint_srtool_output.json
-          ROCOCO_DIGEST: ${{env.GITHUB_WORKSPACE}}/rococo-srtool-json/rococo_srtool_output.json
-          REF1: ${{ github.event.inputs.srtool_tag }}
+          SHELL_DIGEST: ./shell-srtool-json/shell_srtool_output.json
+          WESTMINT_DIGEST: ./westmint-srtool-json/westmint_srtool_output.json
+          STATEMINE_DIGEST: ./statemine-srtool-json/statemine_srtool_output.json
+          STATEMINT_DIGEST: ./statemint-srtool-json/statemint_srtool_output.json
+          ROCOCO_DIGEST: ./rococo-srtool-json/rococo_srtool_output.json
+          REF1: ${{ github.event.inputs.previous_tag }}
           REF2: HEAD
+          HIDE_SRTOOL_ROCOCO: false
+          HIDE_SRTOOL_SHELL: false
         run: |
           find ${{env.GITHUB_WORKSPACE}} -type f -name "*_srtool_output.json"
           ls -al $SHELL_DIGEST
