@@ -7022,19 +7022,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "polkadot-node-core-dispute-participation"
-version = "0.9.13"
-source = "git+https://github.com/paritytech/polkadot?branch=master#a711993f93ffb64351a8d86aa548e73975172de1"
-dependencies = [
- "futures 0.3.17",
- "polkadot-node-primitives",
- "polkadot-node-subsystem",
- "polkadot-primitives",
- "thiserror",
- "tracing",
-]
-
-[[package]]
 name = "polkadot-node-core-parachains-inherent"
 version = "0.9.13"
 source = "git+https://github.com/paritytech/polkadot?branch=master#a711993f93ffb64351a8d86aa548e73975172de1"
