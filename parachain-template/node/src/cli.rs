@@ -1,7 +1,6 @@
 use crate::chain_spec;
 use std::path::PathBuf;
 use structopt::StructOpt;
-use polkadot_service::chain_spec::Extensions;
 
 /// Sub-commands supported by the collator.
 #[derive(Debug, StructOpt)]
