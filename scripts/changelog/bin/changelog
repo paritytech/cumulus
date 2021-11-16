@@ -75,17 +75,23 @@ else
   logger.debug('Re-using:' + substrate_data)
 end
 
+SHELL_DIGEST=${SHELL_DIGEST:-digests/shell-srtool-digest.json}
+WESTMINT_DIGEST=${WESTMINT_DIGEST:-digests/westmint-srtool-digest.json}
+STATEMINE_DIGEST=${STATEMINE_DIGEST:-digests/statemine-srtool-digest.json}
+STATEMINT_DIGEST=${STATEMINT_DIGEST:-digests/rococo-srtool-digest.json}
+ROCOCO_DIGEST=${ROCOCO_DIGEST:-digests/rococo-srtool-digest.json}
+
 # Here we compose all the pieces together into one
 # single big json file.
 cmd = format('jq \
     --slurpfile cumulus %s \
     --slurpfile substrate %s \
     --slurpfile polkadot %s \
-    --slurpfile srtool_rococo digests/rococo-srtool-digest.json \
-    --slurpfile srtool_shell digests/shell-srtool-digest.json \
-    --slurpfile srtool_westmint digests/westmint-srtool-digest.json \
-    --slurpfile srtool_statemint digests/statemint-srtool-digest.json \
-    --slurpfile srtool_statemine digests/statemine-srtool-digest.json \
+    --slurpfile srtool_shell $SHELL_DIGEST \
+    --slurpfile srtool_westmint $WESTMINT_DIGEST \
+    --slurpfile srtool_statemine $STATEMINE_DIGEST \
+    --slurpfile srtool_statemint $STATEMINT_DIGEST \
+    --slurpfile srtool_rococo $ROCOCO_DIGEST \
     -n \'{
             cumulus: $cumulus[0],
             substrate: $substrate[0],
