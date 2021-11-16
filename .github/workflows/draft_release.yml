@@ -50,6 +50,7 @@ jobs:
         with:
           image: paritytech/srtool
           chain: ${{ matrix.runtime }}
+          runtime_dir: polkadot-parachains/${{ matrix.runtime }}
 
       - name: Store srtool digest to disk
         run: |
