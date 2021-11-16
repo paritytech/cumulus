@@ -10,7 +10,7 @@
     {%- else -%}
 
         {%- if pr.meta.B.value == 5 %}
-- {{ m_c::change(c=pr) }} {{ pr.meta.B | json_encode }}
+- {{ m_c::change(c=pr) }}
         {%- endif -%}
     {% endif -%}
     {% endif -%}
