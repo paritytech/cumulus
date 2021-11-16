@@ -3,7 +3,7 @@
 
 ## Host functions
 
-{% for pr in cumulus.changes | sort(attribute="merged_at") -%}
+{% for pr in changes | sort(attribute="merged_at") -%}
 
 {%- if pr.meta.B and pr.meta.B.value == 0 -%}
 {#- We skip silent ones -#}

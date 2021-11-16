@@ -11,15 +11,21 @@ The content of the release notes is generated from the template files under the 
 
 Run:
 ```
-./changelog.sh <ref_since> [<ref_until>=HEAD]
+./bin/changelog <ref_since> [<ref_until>=HEAD]
 ```
 
 For instance:
 ```
-./changelog.sh statemine-v5.0.0
+./bin/changelog statemine-v5.0.0
 ```
 
 A file called `release-notes-cumulus.md` will be generated and can be used for the release.
+
+## ENV
+
+You may use the following ENV:
+- DEBUG
+- NO_CACHE
 
 ## Considered labels
 
@@ -46,7 +52,7 @@ decide which label will be considered.
 
 The following command allows **Hot Reload**:
 ```
-fswatch templates -e ".*\.md$" | xargs -n1 -I{} ./changelog.sh statemine-v5.0.0
+fswatch templates -e ".*\.md$" | xargs -n1 -I{} ./bin/changelog statemine-v5.0.0
 ```
 ### Caching
 

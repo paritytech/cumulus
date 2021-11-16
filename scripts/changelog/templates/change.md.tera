@@ -2,11 +2,11 @@
 {%- macro change(c) -%}
 
 {%- if c.meta.C and c.meta.C.value >= 7 -%}
-{%- set prio = "❗️HIGH" -%}
+{%- set prio = " ❗️HIGH" -%}
 {%- elif c.meta.C and c.meta.C.value >= 5 -%}
-{%- set prio = "📣 Medium" -%}
+{%- set prio = " 📣 Medium" -%}
 {%- elif c.meta.C and c.meta.C.value >= 3 -%}
-{%- set prio = "📌 Low" -%}
+{%- set prio = " 📌 Low" -%}
 {%- else -%}
 {%- set prio = "" -%}
 {%- endif -%}
@@ -26,10 +26,20 @@
 {%- endif -%}
 #}
 
+{%- if c.html_url is containing("polkadot") -%}
+{%- set repo = "[P]" -%}
+{%- elif c.html_url is containing("cumulus") -%}
+{%- set repo = "[C]" -%}
+{%- elif c.html_url is containing("substrate") -%}
+{%- set repo = "[S]" -%}
+{%- else -%}
+{%- set repo = "   " -%}
+{%- endif -%}
+
 {%- if c.meta.T and c.meta.T.value == 6 -%}
 {%- set xcm = " [⛓ XCM]" -%}
 {%- else -%}
 {%- set xcm = "" -%}
 {%- endif -%}
-{{- audit }}[`#{{c.number}}`]({{c.html_url}}) {{- prio }} - {{ c.title | capitalize | truncate(length=60, end="…") }}{{xcm }}
+{{repo}} {{ audit }}[`#{{c.number}}`]({{c.html_url}}) {{- prio }} - {{ c.title | capitalize | truncate(length=60, end="…") }}{{xcm }}
 {%- endmacro change -%}

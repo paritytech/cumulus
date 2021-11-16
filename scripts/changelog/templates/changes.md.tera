@@ -1,10 +1,14 @@
 {# This include generates the section showing the changes #}
 ## Changes
 
-IMPORTANT: The following changes are only for the Cumulus repo.
-
 {% include "changes_client.md.tera" %}
 
 {% include "changes_runtime.md.tera" %}
 
 {% include "changes_misc.md.tera" %}
+
+**Legend:**
+
+- \[C\]: Cumulus
+- \[P\]: Polkadot
+- \[S\]: Substrate

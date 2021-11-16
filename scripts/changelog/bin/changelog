@@ -3,7 +3,7 @@
 # frozen_string_literal: true
 
 # call for instance as:
-# ruby ./bin/changelog statemine-v5.0.0
+# ./bin/changelog statemine-v5.0.0
 #
 # You may set the ENV NO_CACHE to force fetching from Github
 # You should also ensure you set the ENV: GITHUB_TOKEN
@@ -20,6 +20,9 @@ repo = 'cumulus'
 
 ref1 = ARGV[0]
 ref2 = ARGV[1] || 'HEAD'
+
+ENV['REF1'] = ref1
+ENV['REF2'] = ref2
 
 gh_cumulus = SubRef.new(format('%s/%s', owner, repo))
 
