@@ -1,5 +1,4 @@
 {# This is the entry point of the template -#}
-
 # {{ cumulus.repository.name | capitalize }}
 
 This release contains the changes between `{{ env.REF1 }}` and `{{ env.REF2 }}`.
