@@ -51,7 +51,7 @@ pub struct MockValidationDataInherentDataProvider {
 	/// Inbound downward XCM messages to be injected into the block.
 	pub downward_messages: Vec<Vec<u8>>,
 	// Inbound Horizontal messages sorted by channel
-	pub horizontal_messages: BTreeMap<ParaId, Vec<Vec<u8>>>,
+	pub horizontal_messages: Vec<(ParaId, Vec<u8>)>,
 }
 
 /// Parameters for how the Mock inherent data provider should inject XCM messages
@@ -115,24 +115,26 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 			)
 			.collect();
 
-		let horizontal_messages = self
+		let mut hrmp_map = BTreeMap::<ParaId, Vec<InboundHrmpMessage>>::new();
+		self
 			.horizontal_messages
 			.iter()
-			.map(|(para_id, msgs)|
-				(
-					*para_id,
-					msgs
-						.iter()
-						.map(|msg|
-							InboundHrmpMessage {
-								sent_at: relay_parent_number,
-								data: msg.clone(),
-							}
-						)
-						.collect()
-				)
-			)
-			.collect();
+			.map(|(para_id, msg)| {
+				let wrapped = InboundHrmpMessage {
+					sent_at: relay_parent_number,
+					data: msg.clone(),
+				};
+
+				match hrmp_map.get_mut(para_id) {
+					Some(msgs) => {
+						msgs.push(wrapped);
+					},
+					None => {
+						hrmp_map.insert(*para_id, vec![wrapped]);
+					}
+				}
+			})
+			.count();
 
 		// Make sure the validation against the state proof passes
 		let mut dmq_mqc = crate::MessageQueueChain(self.xcm_config.starting_dmq_mqc_head);
@@ -156,7 +158,7 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 					max_pov_size: Default::default(),
 				},
 				downward_messages,
-				horizontal_messages,
+				horizontal_messages: hrmp_map,
 				relay_chain_state: proof,
 			}
 		)
