@@ -241,7 +241,7 @@ impl<Block, R, B, BCE> BlockAnnounceValidator<Block, R, B, BCE> {
 		para_id: ParaId,
 		relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
 		relay_chain_backend: Arc<B>,
-		relay_chain_blockchain_events: Arc<BCE>,
+		relay_chain_blockchain_events: BCE,
 	) -> Self {
 		Self {
 			phantom: Default::default(),
@@ -460,7 +460,7 @@ where
 			self.para_id,
 			self.relay_chain_sync_oracle,
 			self.relay_chain_backend,
-			client,
+			self.relay_chain_interface.clone(),
 		))
 	}
 }
