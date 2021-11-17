@@ -14,13 +14,14 @@ sp-std = { git = "https://github.com/paritytech/substrate", default-features = f
 sp-state-machine = { git = "https://github.com/paritytech/substrate", optional = true , branch = "master" }
 sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", optional = true , branch = "master" }
+sp-storage = { git = "https://github.com/paritytech/substrate", optional = true , branch = "master" }
 
 # Polkadot dependencies
 polkadot-client = { git = "https://github.com/paritytech/polkadot", optional = true, branch = "master" }
 
 # Cumulus dependencies
-cumulus-primitives-core = { git = "https://github.com/purestake/cumulus", branch = "moonbeam-polkadot-v0.9.11", default-features = false }
-cumulus-test-relay-sproof-builder = { git = "https://github.com/purestake/cumulus", branch = "moonbeam-polkadot-v0.9.11", optional = true }
+cumulus-primitives-core = { git = "https://github.com/purestake/cumulus", branch = "moonbeam-polkadot-v0.9.12", default-features = false }
+cumulus-test-relay-sproof-builder = { git = "https://github.com/purestake/cumulus", branch = "moonbeam-polkadot-v0.9.12", optional = true }
 
 # Other dependencies
 async-trait = { version = "0.1.42", optional = true }
