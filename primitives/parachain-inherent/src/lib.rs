@@ -69,10 +69,6 @@ pub struct ParachainInherentData {
 	pub horizontal_messages: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
 }
 
-//TODO I copied this straight out of parachain system to avoid circular dependencies. It should
-// probably be moved here rather than copied.
-
-
 /// This struct provides ability to extend a message queue chain (MQC) and compute a new head.
 ///
 /// MQC is an instance of a [hash chain] applied to a message queue. Using a hash chain it's
