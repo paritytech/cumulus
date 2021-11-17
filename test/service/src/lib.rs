@@ -22,13 +22,13 @@ mod chain_spec;
 mod genesis;
 
 use core::future::Future;
-use cumulus_relay_chain_interface::RelayChainInterface;
+use cumulus_relay_chain_interface::RelayChainDirect;
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
-use cumulus_primitives_core::{InboundDownwardMessage, ParaId};
+use cumulus_primitives_core::ParaId;
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 use polkadot_primitives::v1::{CollatorPair, Hash as PHash, PersistedValidationData};
 use sc_client_api::execution_extensions::ExecutionStrategies;
@@ -48,13 +48,13 @@ use sp_keyring::Sr25519Keyring;
 use sp_runtime::{codec::Encode, generic, traits::BlakeTwo256};
 use sp_state_machine::BasicExternalities;
 use sp_trie::PrefixedMemoryDB;
-use std::{collections::BTreeMap, sync::Arc};
+use std::sync::Arc;
 use substrate_test_client::{
 	BlockchainEventsExt, RpcHandlersExt, RpcTransactionError, RpcTransactionOutput,
 };
 
+
 pub use chain_spec::*;
-use cumulus_primitives_core::relay_chain::InboundHrmpMessage;
 pub use cumulus_test_runtime as runtime;
 pub use genesis::*;
 pub use sp_keyring::Sr25519Keyring as Keyring;
@@ -157,45 +157,6 @@ pub fn new_partial(
 	};
 
 	Ok(params)
-}
-
-struct RelayChainFullClient {
-	full_client: Arc<polkadot_test_service::Client>,
-}
-
-impl RelayChainInterface for RelayChainFullClient {
-	fn retrieve_dmq_contents(
-		&self,
-		para_id: ParaId,
-		relay_parent: PHash,
-	) -> Option<Vec<InboundDownwardMessage>> {
-		todo!()
-	}
-
-	fn retrieve_all_inbound_hrmp_channel_contents(
-		&self,
-		para_id: ParaId,
-		relay_parent: PHash,
-	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
-		todo!()
-	}
-
-fn persisted_validation_data(
-		&self,
-		block_id: &polkadot_service::BlockId,
-		para_id: ParaId,
-		_: polkadot_primitives::v1::OccupiedCoreAssumption,
-	) -> Result<Option<PersistedValidationData>, ApiError> {
-        todo!()
-    }
-
-fn candidate_pending_availability(
-		&self,
-		block_id: &polkadot_service::BlockId,
-		para_id: ParaId,
-	) -> Result<Option<polkadot_primitives::v1::CommittedCandidateReceipt>, ApiError> {
-        todo!()
-    }
 }
 
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
@@ -311,11 +272,12 @@ where
 					prometheus_registry.as_ref(),
 					None,
 				);
-				let relay_chain_client = relay_chain_full_node.client.clone();
 				let relay_chain_backend = relay_chain_full_node.backend.clone();
-				let relay_chain_interface =
-					RelayChainFullClient { full_client: relay_chain_client };
 
+				let relay_chain_interface =
+					Arc::new(RelayChainDirect {polkadot_client: relay_chain_full_node.client.clone() });
+
+				let relay_chain_interface2 = relay_chain_interface.clone();
 				Box::new(cumulus_client_consensus_relay_chain::RelayChainConsensus::new(
 					para_id,
 					proposer_factory,
@@ -341,7 +303,7 @@ where
 						}
 					},
 					client.clone(),
-					relay_chain_full_node.client.clone(),
+					relay_chain_interface2,
 					relay_chain_full_node.backend.clone(),
 				))
 			},

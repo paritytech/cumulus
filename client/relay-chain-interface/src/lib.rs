@@ -185,6 +185,44 @@ impl RelayChainInterface for Arc<dyn RelayChainInterface + Sync + Send> {
 	}
 }
 
+impl <Client>RelayChainInterface for Arc<RelayChainDirect<Client>>
+	where
+		Client: ProvideRuntimeApi<PBlock> + 'static + Sync + Send,
+	Client::Api: ParachainHost<PBlock>, {
+    fn retrieve_dmq_contents(
+		&self,
+		para_id: ParaId,
+		relay_parent: PHash,
+	) -> Option<Vec<InboundDownwardMessage>> {
+		(**self).retrieve_dmq_contents(para_id, relay_parent)
+    }
+
+    fn retrieve_all_inbound_hrmp_channel_contents(
+		&self,
+		para_id: ParaId,
+		relay_parent: PHash,
+	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
+		(**self).retrieve_all_inbound_hrmp_channel_contents(para_id, relay_parent)
+    }
+
+    fn persisted_validation_data(
+		&self,
+		block_id: &BlockId,
+		para_id: ParaId,
+		occupied_core_assumption: OccupiedCoreAssumption,
+	) -> Result<Option<PersistedValidationData>, ApiError> {
+		(**self).persisted_validation_data(block_id, para_id, occupied_core_assumption)
+    }
+
+    fn candidate_pending_availability(
+		&self,
+		block_id: &BlockId,
+		para_id: ParaId,
+	) -> Result<Option<CommittedCandidateReceipt>, ApiError> {
+		(**self).candidate_pending_availability(block_id, para_id)
+	}
+}
+
 pub fn build_relay_chain_direct(client: polkadot_client::Client) -> Arc<(dyn RelayChainInterface + Send + Sync + 'static)> {
 	let relay_chain_builder = RelayChainDirectBuilder { polkadot_client: client };
 	relay_chain_builder.build()

@@ -27,6 +27,7 @@ sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch 
 sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }

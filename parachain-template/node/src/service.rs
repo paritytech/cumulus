@@ -20,7 +20,7 @@ use cumulus_client_service::{
 use cumulus_primitives_core::ParaId;
 
 // Substrate Imports
-use cumulus_relay_chain_interface::{RelayChainDirect, RelayChainDirectBuilder, build_relay_chain_direct};
+use cumulus_relay_chain_interface::build_relay_chain_direct;
 use sc_client_api::ExecutorProvider;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
