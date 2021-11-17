@@ -2,7 +2,7 @@
 name = 'rococo-runtime'
 version = '0.1.0'
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = '2018'
+edition = "2021"
 description = "Simple runtime used by the rococo parachain(s)"
 
 [dependencies]
@@ -32,7 +32,6 @@ frame-system = { git = "https://github.com/paritytech/substrate", default-featur
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -85,7 +84,6 @@ std = [
 	"frame-system/std",
 	"pallet-assets/std",
 	"pallet-balances/std",
-	"pallet-randomness-collective-flip/std",
 	"pallet-timestamp/std",
 	"pallet-sudo/std",
 	"pallet-transaction-payment/std",

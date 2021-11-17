@@ -1,9 +1,9 @@
 [package]
 name = "polkadot-collator"
-version = "4.0.0"
+version = "5.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 build = "build.rs"
-edition = "2018"
+edition = "2021"
 
 [[bin]]
 name = "polkadot-collator"
