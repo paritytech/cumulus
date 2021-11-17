@@ -2,18 +2,23 @@ use std::sync::Arc;
 
 use cumulus_primitives_core::{
 	relay_chain::{
-		v1::{CommittedCandidateReceipt, OccupiedCoreAssumption, ParachainHost},
+		v1::{
+			CommittedCandidateReceipt, OccupiedCoreAssumption, ParachainHost, SessionIndex,
+			ValidatorId,
+		},
 		Block as PBlock, BlockId, Hash as PHash, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use sp_core::sp_std::collections::btree_map::BTreeMap;
 use polkadot_client::{ClientHandle, ExecuteWithClient};
 use sp_api::{ApiError, ProvideRuntimeApi};
+use sp_core::sp_std::collections::btree_map::BTreeMap;
 
 const LOG_TARGET: &str = "cumulus-collator";
 
 pub trait RelayChainInterface {
+	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError>;
+
 	/// Returns the whole contents of the downward message queue for the parachain we are collating
 	/// for.
 	///
@@ -46,14 +51,15 @@ pub trait RelayChainInterface {
 		block_id: &BlockId,
 		para_id: ParaId,
 	) -> Result<Option<CommittedCandidateReceipt>, ApiError>;
+
+	fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError>;
 }
 
 pub struct RelayChainDirect<Client> {
 	pub polkadot_client: Arc<Client>,
 }
 
-
-impl <Client>RelayChainInterface for RelayChainDirect<Client>
+impl<Client> RelayChainInterface for RelayChainDirect<Client>
 where
 	Client: ProvideRuntimeApi<PBlock>,
 	Client::Api: ParachainHost<PBlock>,
@@ -126,6 +132,14 @@ where
 			.runtime_api()
 			.candidate_pending_availability(block_id, para_id)
 	}
+
+	fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError> {
+		self.polkadot_client.runtime_api().session_index_for_child(block_id)
+	}
+
+	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
+		self.polkadot_client.runtime_api().validators(block_id)
+	}
 }
 
 pub struct RelayChainDirectBuilder {
@@ -151,79 +165,97 @@ impl ExecuteWithClient for RelayChainDirectBuilder {
 }
 
 impl RelayChainInterface for Arc<dyn RelayChainInterface + Sync + Send> {
-    fn retrieve_dmq_contents(
+	fn retrieve_dmq_contents(
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> Option<Vec<InboundDownwardMessage>> {
 		(**self).retrieve_dmq_contents(para_id, relay_parent)
-    }
+	}
 
-    fn retrieve_all_inbound_hrmp_channel_contents(
+	fn retrieve_all_inbound_hrmp_channel_contents(
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
 		(**self).retrieve_all_inbound_hrmp_channel_contents(para_id, relay_parent)
-    }
+	}
 
-    fn persisted_validation_data(
+	fn persisted_validation_data(
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> Result<Option<PersistedValidationData>, ApiError> {
 		(**self).persisted_validation_data(block_id, para_id, occupied_core_assumption)
-    }
+	}
 
-    fn candidate_pending_availability(
+	fn candidate_pending_availability(
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
 	) -> Result<Option<CommittedCandidateReceipt>, ApiError> {
 		(**self).candidate_pending_availability(block_id, para_id)
 	}
+
+	fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError> {
+		(**self).session_index_for_child(block_id)
+	}
+
+	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
+		(**self).validators(block_id)
+	}
 }
 
-impl <Client>RelayChainInterface for Arc<RelayChainDirect<Client>>
-	where
-		Client: ProvideRuntimeApi<PBlock> + 'static + Sync + Send,
-	Client::Api: ParachainHost<PBlock>, {
-    fn retrieve_dmq_contents(
+impl<T> RelayChainInterface for Arc<T>
+where
+	T: RelayChainInterface,
+{
+	fn retrieve_dmq_contents(
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> Option<Vec<InboundDownwardMessage>> {
 		(**self).retrieve_dmq_contents(para_id, relay_parent)
-    }
+	}
 
-    fn retrieve_all_inbound_hrmp_channel_contents(
+	fn retrieve_all_inbound_hrmp_channel_contents(
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
 		(**self).retrieve_all_inbound_hrmp_channel_contents(para_id, relay_parent)
-    }
+	}
 
-    fn persisted_validation_data(
+	fn persisted_validation_data(
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> Result<Option<PersistedValidationData>, ApiError> {
 		(**self).persisted_validation_data(block_id, para_id, occupied_core_assumption)
-    }
+	}
 
-    fn candidate_pending_availability(
+	fn candidate_pending_availability(
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
 	) -> Result<Option<CommittedCandidateReceipt>, ApiError> {
 		(**self).candidate_pending_availability(block_id, para_id)
 	}
+
+	fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError> {
+		(**self).session_index_for_child(block_id)
+	}
+
+	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
+		(**self).validators(block_id)
+	}
 }
 
-pub fn build_relay_chain_direct(client: polkadot_client::Client) -> Arc<(dyn RelayChainInterface + Send + Sync + 'static)> {
+pub fn build_relay_chain_direct(
+	client: polkadot_client::Client,
+) -> Arc<(dyn RelayChainInterface + Send + Sync + 'static)> {
 	let relay_chain_builder = RelayChainDirectBuilder { polkadot_client: client };
 	relay_chain_builder.build()
 }

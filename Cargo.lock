@@ -1502,6 +1502,7 @@ name = "cumulus-client-network"
 version = "0.1.0"
 dependencies = [
  "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
  "cumulus-test-service",
  "derive_more",
  "futures 0.3.17",
