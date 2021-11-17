@@ -30,6 +30,24 @@ jobs:
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
 
+  # test:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v2
+  #       with:
+  #         fetch-depth: 0
+  #         path: cumulus
+  #     - uses: ruby/setup-ruby@v1
+  #       with:
+  #         ruby-version: 3.0.0
+  #     - name: Prepare tooling
+  #       run: |
+  #         cd cumulus/scripts/changelog
+  #         sudo gem install bundler changelogerator
+  #         bundle install
+  #         changelogerator --help
+
   build-runtimes:
     runs-on: ubuntu-latest
     strategy:
@@ -87,21 +105,19 @@ jobs:
           fetch-depth: 0
           path: cumulus
 
-      - name: Set up Ruby
-        uses: actions/setup-ruby@v1
+      - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.0
+          ruby-version: 3.0.0
 
       - name: Download srtool json output
         uses: actions/download-artifact@v2
 
       - name: Prepare tooling
         run: |
-          pushd scripts/changelog &> /dev/null
-          gem install changelogerator
+          cd cumulus/scripts/changelog
+          gem install bundler changelogerator
           bundle install
           changelogerator --help
-          popd &> /dev/null
 
       - name: Generate release notes
         env:
