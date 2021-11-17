@@ -7,9 +7,13 @@ on:
   #     - v[0-9]+.[0-9]+.[0-9]+*
   workflow_dispatch:
     inputs:
-      previous_tag:
-        description: The previous tag to use for the diff
+      ref1:
+        description: The 'from' tag to use for the diff
         default: statemine-v5.0.0
+        required: true
+      ref2:
+        description: The 'to' tag to use for the diff
+        default: HEAD
         required: true
 
 jobs:
@@ -91,6 +95,14 @@ jobs:
       - name: Download srtool json output
         uses: actions/download-artifact@v2
 
+      - name: Prepare tooling
+        run: |
+          pushd scripts/changelog &> /dev/null
+          gem install changelogerator
+          bundle install
+          changelogerator --help
+          popd &> /dev/null
+
       - name: Generate release notes
         env:
           RUSTC_STABLE: ${{ needs.get-rust-versions.outputs.rustc-stable }}
@@ -103,8 +115,8 @@ jobs:
           STATEMINE_DIGEST: ./statemine-srtool-json/statemine_srtool_output.json
           STATEMINT_DIGEST: ./statemint-srtool-json/statemint_srtool_output.json
           ROCOCO_DIGEST: ./rococo-srtool-json/rococo_srtool_output.json
-          REF1: ${{ github.event.inputs.previous_tag }}
-          REF2: HEAD
+          REF1: ${{ github.event.inputs.ref1 }}
+          REF2: ${{ github.event.inputs.ref2 }}
           HIDE_SRTOOL_ROCOCO: false
           HIDE_SRTOOL_SHELL: false
         run: |
@@ -116,15 +128,12 @@ jobs:
           ls -al $ROCOCO_DIGEST
 
           echo "The diff will be computed from $REF1 to $REF2"
-
           pushd scripts/changelog &> /dev/null
-          gem install changelogerator
-          bundle install
+
           ./bin/changelog $REF1 $REF2 | tee release_text.md
 
           ls -al release_text.md
           cat release_text.md
-
           popd &> /dev/null
 
       - name: Create draft release
