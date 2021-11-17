@@ -15,8 +15,14 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{ParachainInherentData, INHERENT_IDENTIFIER};
-use cumulus_primitives_core::{InboundDownwardMessage, PersistedValidationData, ParaId, relay_chain};
+use cumulus_primitives_core::{InboundDownwardMessage, InboundHrmpMessage, ParaId, PersistedValidationData, relay_chain};
 use sp_inherents::{InherentData, InherentDataProvider};
+use std::collections::BTreeMap;
+use sp_api::BlockId;
+use sp_core::twox_128;
+use codec::Decode;
+use sc_client_api::{Backend, StorageProvider};
+use sp_runtime::traits::Block;
 
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 
@@ -32,13 +38,6 @@ use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 ///
 /// TODO Docs about the XCM injection
 pub struct MockValidationDataInherentDataProvider {
-	/// The parachain id of the parachain being mocked.
-	/// This field is only important if xcm is being used.
-	/// If you are not interested in injecting simulated XCM message, you ca nuse any value
-	pub para_id: ParaId,
-	/// The starting state of the mdq_mqc_head. Also only necessary when inserting xcm. Maybe these should
-	/// be grouped into a single field like mock_xcm config or something
-	pub starting_dmq_mqc_head: relay_chain::Hash,
 	/// The current block number of the local block chain (the parachain)
 	pub current_para_block: u32,
 	/// The relay block in which this parachain appeared to start. This will be the relay block
@@ -47,11 +46,50 @@ pub struct MockValidationDataInherentDataProvider {
 	/// The number of relay blocks that elapses between each parablock. Probably set this to 1 or 2
 	/// to simulate optimistic or realistic relay chain behavior.
 	pub relay_blocks_per_para_block: u32,
+	/// XCM messages and associated configuration information.
+	pub xcm_config: MockXcmConfig,
 	/// Inbound downward XCM messages to be injected into the block.
 	pub downward_messages: Vec<Vec<u8>>,
-	//TODO also support horizontal messages, but let's fous on downward for PoC phase.
 	// Inbound Horizontal messages sorted by channel
-	// pub horizontal_messages: BTreeMap<Channel, Vec<Vec<u8>>>
+	pub horizontal_messages: BTreeMap<ParaId, Vec<Vec<u8>>>,
+}
+
+/// Parameters for how the Mock inherent data provider should inject XCM messages
+pub struct MockXcmConfig {
+	/// The parachain id of the parachain being mocked.
+	pub para_id: ParaId,
+	/// The starting state of the dmq_mqc_head.
+	pub starting_dmq_mqc_head: relay_chain::Hash,
+}
+
+impl MockXcmConfig {
+	/// Utility method for creating a MockXcmConfig by reading the dmq_mqc_head directly
+	/// from the storage of a previous block at common storage keys.
+	pub fn new_from_standard_storage<B: Block, BE: Backend<B>, C: StorageProvider<B, BE>>(
+		client: &C,
+		parent_block: B::Hash,
+		para_id: ParaId,
+	) -> Self {
+
+		let starting_dmq_mqc_head = client
+			.storage(
+				&BlockId::Hash(parent_block),
+				&sp_storage::StorageKey(
+					[twox_128(b"ParachainSystem"), twox_128(b"LastDmqMqcHead")].concat().to_vec(),
+				),
+			)
+			.expect("We should be able to read storage from the parent block.")
+			.map(|ref mut raw_data| {
+				Decode::decode(&mut &raw_data.0[..])
+					.expect("Stored data should decode correctly")
+			})
+			.unwrap_or_default();
+		
+		Self {
+			para_id,
+			starting_dmq_mqc_head,
+		}
+	}
 }
 
 #[async_trait::async_trait]
@@ -65,8 +103,8 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 		let relay_parent_number =
 			self.relay_offset + self.relay_blocks_per_para_block * self.current_para_block;
 		
-		// Prepare the XCM messages
-		let downward_messages = self.downward_messages
+		let downward_messages = self
+			.downward_messages
 			.iter()
 			.cloned()
 			.map(|msg|
@@ -76,19 +114,36 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 				}
 			)
 			.collect();
-		let horizontal_messages = Default::default(); //TODO
 
-		// Make a MessageQueueChain object with the root that is actually in storage
-		let mut dmq_mqc = crate::MessageQueueChain(self.starting_dmq_mqc_head);
+		let horizontal_messages = self
+			.horizontal_messages
+			.iter()
+			.map(|(para_id, msgs)|
+				(
+					*para_id,
+					msgs
+						.iter()
+						.map(|msg|
+							InboundHrmpMessage {
+								sent_at: relay_parent_number,
+								data: msg.clone(),
+							}
+						)
+						.collect()
+				)
+			)
+			.collect();
 
+		// Make sure the validation against the state proof passes
+		let mut dmq_mqc = crate::MessageQueueChain(self.xcm_config.starting_dmq_mqc_head);
 		for message in &downward_messages {
 			dmq_mqc.extend_downward(message);
 		}
 
 		// Use the "sproof" (spoof proof) builder to build valid mock state root and proof.
 		let mut sproof_builder = RelayStateSproofBuilder::default();
-		sproof_builder.para_id = self.para_id;
-		sproof_builder.dmq_mqc_head = Some(dmq_mqc.0);
+		sproof_builder.para_id = self.xcm_config.para_id;
+		sproof_builder.dmq_mqc_head = Some(dmq_mqc.head());
 		let (relay_parent_storage_root, proof) = sproof_builder.into_state_root_and_proof();
 
 		inherent_data.put_data(
