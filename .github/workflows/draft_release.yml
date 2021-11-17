@@ -131,11 +131,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NO_CACHE: 1
           DEBUG: 1
-          SHELL_DIGEST: ./shell-srtool-json/shell_srtool_output.json
-          WESTMINT_DIGEST: ./westmint-srtool-json/westmint_srtool_output.json
-          STATEMINE_DIGEST: ./statemine-srtool-json/statemine_srtool_output.json
-          STATEMINT_DIGEST: ./statemint-srtool-json/statemint_srtool_output.json
-          ROCOCO_DIGEST: ./rococo-srtool-json/rococo_srtool_output.json
+          SHELL_DIGEST: ${{ github.workspace}}/shell-srtool-json/shell_srtool_output.json
+          WESTMINT_DIGEST: ${{ github.workspace}}/westmint-srtool-json/westmint_srtool_output.json
+          STATEMINE_DIGEST: ${{ github.workspace}}/statemine-srtool-json/statemine_srtool_output.json
+          STATEMINT_DIGEST: ${{ github.workspace}}/statemint-srtool-json/statemint_srtool_output.json
+          ROCOCO_DIGEST: ${{ github.workspace}}/rococo-srtool-json/rococo_srtool_output.json
           REF1: ${{ github.event.inputs.ref1 }}
           REF2: ${{ github.event.inputs.ref2 }}
           HIDE_SRTOOL_ROCOCO: false
@@ -149,7 +149,7 @@ jobs:
           ls -al $ROCOCO_DIGEST
 
           echo "The diff will be computed from $REF1 to $REF2"
-          cd cumulus/scripts/changelog
+          cd scripts/changelog
           ./bin/changelog $REF1 $REF2 | tee release_text.md
           ls -al release_text.md
           cat release_text.md
