@@ -1,5 +1,5 @@
 {# This macro shows ONE change #}
-{%- macro change(c) -%}
+{%- macro change(c, cml="☁️", dot="🔗", sub="🔬") -%}
 
 {%- if c.meta.C and c.meta.C.value >= 7 -%}
 {%- set prio = " ❗️HIGH" -%}
@@ -27,11 +27,11 @@
 #}
 
 {%- if c.html_url is containing("polkadot") -%}
-{%- set repo = "[P]" -%}
+{%- set repo = dot -%}
 {%- elif c.html_url is containing("cumulus") -%}
-{%- set repo = "[C]" -%}
+{%- set repo = cml -%}
 {%- elif c.html_url is containing("substrate") -%}
-{%- set repo = "[S]" -%}
+{%- set repo = sub -%}
 {%- else -%}
 {%- set repo = "   " -%}
 {%- endif -%}
@@ -41,5 +41,5 @@
 {%- else -%}
 {%- set xcm = "" -%}
 {%- endif -%}
-{{repo}} {{ audit }}[`#{{c.number}}`]({{c.html_url}}) {{- prio }} - {{ c.title | capitalize | truncate(length=60, end="…") }}{{xcm }}
+{{- repo }} {{ audit }}[`#{{c.number}}`]({{c.html_url}}) {{- prio }} - {{ c.title | capitalize | truncate(length=60, end="…") }}{{xcm }}
 {%- endmacro change -%}

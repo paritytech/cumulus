@@ -5,10 +5,11 @@ This release contains the changes between `{{ env.REF1 }}` and `{{ env.REF2 }}`.
 
 {%- set changes = cumulus.changes | concat(with=substrate.changes) -%}
 {%- set changes = changes | concat(with=polkadot.changes) -%}
-
-{% if env.DEBUG %}
 {%- include "debug.md.tera" -%}
-{% endif %}
+
+{%- set CML = "☁️" -%}
+{%- set DOT = "🔗" -%}
+{%- set SUB = "🔬" -%}
 
 {# header warning and important notices -#}
 {% include "pre_release.md.tera" -%}
