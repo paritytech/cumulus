@@ -5,7 +5,7 @@
   "bootNodes": [
   ],
   "telemetryEndpoints": null,
-  "protocolId": "teer-k",
+  "protocolId": "nctr-k",
   "properties": {
     "ss58Format": 2,
     "tokenDecimals": 12,
