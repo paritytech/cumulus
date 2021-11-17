@@ -1765,7 +1765,7 @@ dependencies = [
 [[package]]
 name = "cumulus-primitives-core"
 version = "0.1.0"
-source = "git+https://github.com/purestake/cumulus?branch=moonbeam-polkadot-v0.9.11#e0ef78f83dd9d1167d6fc520598f53cdcac5a1e1"
+source = "git+https://github.com/purestake/cumulus?branch=moonbeam-polkadot-v0.9.12#ea2b71e0f6030abdb5dfc67bb53af111d336b6f2"
 dependencies = [
  "frame-support",
  "impl-trait-for-tuples",
@@ -1784,8 +1784,8 @@ name = "cumulus-primitives-parachain-inherent"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "cumulus-primitives-core",
- "cumulus-test-relay-sproof-builder",
+ "cumulus-primitives-core 0.1.0 (git+https://github.com/purestake/cumulus?branch=moonbeam-polkadot-v0.9.12)",
+ "cumulus-test-relay-sproof-builder 0.1.0 (git+https://github.com/purestake/cumulus?branch=moonbeam-polkadot-v0.9.12)",
  "parity-scale-codec",
  "polkadot-client",
  "sc-client-api",
@@ -1880,9 +1880,9 @@ dependencies = [
 [[package]]
 name = "cumulus-test-relay-sproof-builder"
 version = "0.1.0"
-source = "git+https://github.com/purestake/cumulus?branch=moonbeam-polkadot-v0.9.11#e0ef78f83dd9d1167d6fc520598f53cdcac5a1e1"
+source = "git+https://github.com/purestake/cumulus?branch=moonbeam-polkadot-v0.9.12#ea2b71e0f6030abdb5dfc67bb53af111d336b6f2"
 dependencies = [
- "cumulus-primitives-core 0.1.0 (git+https://github.com/purestake/cumulus?branch=moonbeam-polkadot-v0.9.11)",
+ "cumulus-primitives-core 0.1.0 (git+https://github.com/purestake/cumulus?branch=moonbeam-polkadot-v0.9.12)",
  "parity-scale-codec",
  "polkadot-primitives",
  "sp-runtime",
