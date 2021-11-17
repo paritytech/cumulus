@@ -65,7 +65,7 @@ pub struct MockXcmConfig {
 impl MockXcmConfig {
 	/// Utility method for creating a MockXcmConfig by reading the dmq_mqc_head directly
 	/// from the storage of a previous block at common storage keys.
-	pub fn new_from_standard_storage<B: Block, BE: Backend<B>, C: StorageProvider<B, BE>>(
+	pub fn from_standard_storage<B: Block, BE: Backend<B>, C: StorageProvider<B, BE>>(
 		client: &C,
 		parent_block: B::Hash,
 		para_id: ParaId,
