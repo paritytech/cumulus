@@ -7,16 +7,16 @@ edition = "2018"
 
 [dependencies]
 # Substrate deps
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
+sc-consensus = { git = "https://github.com/purestake/substrate", branch = "moonbeam-polkadot-v0.9.12" }
+sc-client-api = { git = "https://github.com/purestake/substrate", branch = "moonbeam-polkadot-v0.9.12" }
+sp-consensus = { git = "https://github.com/purestake/substrate", branch = "moonbeam-polkadot-v0.9.12" }
+sp-runtime = { git = "https://github.com/purestake/substrate", branch = "moonbeam-polkadot-v0.9.12" }
+sp-blockchain = { git = "https://github.com/purestake/substrate", branch = "moonbeam-polkadot-v0.9.12" }
+sp-api = { git = "https://github.com/purestake/substrate", branch = "moonbeam-polkadot-v0.9.12" }
+sp-trie = { git = "https://github.com/purestake/substrate", branch = "moonbeam-polkadot-v0.9.12" }
 
 # Polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.12" }
+polkadot-primitives = { git = "https://github.com/purestake/polkadot", branch = "moonbeam-polkadot-v0.9.12" }
 
 # Other deps
 futures = { version = "0.3.8", features = ["compat"] }
@@ -27,7 +27,7 @@ dyn-clone = "1.0.4"
 
 [dev-dependencies]
 # Substrate deps
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
+sp-tracing = { git = "https://github.com/purestake/substrate", branch = "moonbeam-polkadot-v0.9.12" }
 # Cumulus dependencies
 cumulus-test-client = { path = "../../../test/client" }
 # Other deps

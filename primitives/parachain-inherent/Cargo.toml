@@ -6,17 +6,17 @@ edition = "2018"
 
 [dependencies]
 # Substrate dependencies
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", optional = true , branch = "polkadot-v0.9.12" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", optional = true , branch = "polkadot-v0.9.12" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", optional = true , branch = "polkadot-v0.9.12" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-sp-api = { git = "https://github.com/paritytech/substrate", optional = true , branch = "polkadot-v0.9.12" }
+sp-inherents = { git = "https://github.com/purestake/substrate", default-features = false, branch = "moonbeam-polkadot-v0.9.12" }
+sp-core = { git = "https://github.com/purestake/substrate", default-features = false, branch = "moonbeam-polkadot-v0.9.12" }
+sc-client-api = { git = "https://github.com/purestake/substrate", optional = true , branch = "moonbeam-polkadot-v0.9.12" }
+sp-runtime = { git = "https://github.com/purestake/substrate", optional = true , branch = "moonbeam-polkadot-v0.9.12" }
+sp-std = { git = "https://github.com/purestake/substrate", default-features = false, branch = "moonbeam-polkadot-v0.9.12" }
+sp-state-machine = { git = "https://github.com/purestake/substrate", optional = true , branch = "moonbeam-polkadot-v0.9.12" }
+sp-trie = { git = "https://github.com/purestake/substrate", default-features = false, branch = "moonbeam-polkadot-v0.9.12" }
+sp-api = { git = "https://github.com/purestake/substrate", optional = true , branch = "moonbeam-polkadot-v0.9.12" }
 
 # Polkadot dependencies
-polkadot-client = { git = "https://github.com/paritytech/polkadot", optional = true, branch = "release-v0.9.12" }
+polkadot-client = { git = "https://github.com/purestake/polkadot", optional = true, branch = "moonbeam-polkadot-v0.9.12" }
 
 # Cumulus dependencies
 cumulus-primitives-core = { path = "../core", default-features = false }
