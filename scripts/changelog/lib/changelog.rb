@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# A Class to find Substrate references
 class SubRef
   require 'octokit'
   require 'toml'
