@@ -741,7 +741,7 @@ impl<T: Config> Pallet<T> {
 			weight_used += T::DmpMessageHandler::handle_dmp_messages(message_iter, max_weight);
 			<LastDmqMqcHead<T>>::put(&dmq_head);
 
-			Self::deposit_event(Event::DownwardMessagesProcessed(weight_used, dmq_head.0));
+			Self::deposit_event(Event::DownwardMessagesProcessed(weight_used, dmq_head.head()));
 		}
 
 		// After hashing each message in the message queue chain submitted by the collator, we
@@ -749,7 +749,7 @@ impl<T: Config> Pallet<T> {
 		//
 		// A mismatch means that at least some of the submitted messages were altered, omitted or
 		// added improperly.
-		assert_eq!(dmq_head.0, expected_dmq_mqc_head);
+		assert_eq!(dmq_head.head(), expected_dmq_mqc_head);
 
 		ProcessedDownwardMessages::<T>::put(dm_count);
 
