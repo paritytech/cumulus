@@ -1,7 +1,7 @@
 {# This is the entry point of the template -#}
 # {{ cumulus.repository.name | capitalize }}
 
-This release contains the changes between `{{ env.REF1 }}` and `{{ env.REF2 }}`.
+This release contains the changes from `{{ env.REF1 }}` to `{{ env.REF2 }}`.
 
 {%- set changes = cumulus.changes | concat(with=substrate.changes) -%}
 {%- set changes = changes | concat(with=polkadot.changes) -%}
