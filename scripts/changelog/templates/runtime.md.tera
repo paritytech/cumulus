@@ -10,6 +10,12 @@
 {%- endif %}
 
 {%- set comp_ratio = 100 - (runtime.data.runtimes.compressed.subwasm.compression.size_compressed / runtime.data.runtimes.compressed.subwasm.compression.size_decompressed *100) %}
+<!-- gen    : {{ runtime.data.gen }} -->
+<!-- commit : {{ runtime.data.commit }} -->
+<!-- tag    : {{ runtime.data.tag }} -->
+<!-- branch : {{ runtime.data.branch }} -->
+<!-- rustc  : {{ runtime.data.rustc }} -->
+<!-- pkg    : {{ runtime.data.pkg }} -->
 ```
 🏋️ Runtime Size:			{{ runtime.data.runtimes.compressed.subwasm.size | filesizeformat }} ({{ runtime.data.runtimes.compressed.subwasm.size }} bytes)
 🔥 Core Version:			statemine-600 (statemine-0.tx4.au1)
