@@ -119,6 +119,11 @@ jobs:
           bundle install
           changelogerator --help
 
+          URL=https://github.com/chevdor/tera-cli/releases/download/v0.2.1/tera-cli_linux_amd64.deb
+          wget $URL -O tera.deb
+          sudo dpkg -i tera.deb
+          tera --version
+
       - name: Generate release notes
         env:
           RUSTC_STABLE: ${{ needs.get-rust-versions.outputs.rustc-stable }}
