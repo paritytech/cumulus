@@ -1837,6 +1837,7 @@ dependencies = [
  "sp-runtime",
  "sp-state-machine",
  "sp-std",
+ "sp-storage",
  "sp-trie",
  "tracing",
 ]
