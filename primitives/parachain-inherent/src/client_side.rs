@@ -137,7 +137,7 @@ impl ParachainInherentData {
 		para_id: ParaId,
 	) -> Option<ParachainInherentData>
 	where
-		T: RelayChainInterface,
+		T: RelayChainInterface<PBlock>,
 	{
 		let relay_chain_state =
 			collect_relay_storage_proof(polkadot_backend, para_id, relay_parent)?;

@@ -20,7 +20,7 @@
 //! that use the relay chain provided consensus. See [`BlockAnnounceValidator`]
 //! and [`WaitToAnnounce`] for more information about this implementation.
 
-use sc_client_api::{Backend, BlockchainEvents};
+use sc_client_api::Backend;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{
 	block_validation::{BlockAnnounceValidator as BlockAnnounceValidatorT, Validation},
@@ -136,7 +136,7 @@ impl BlockAnnounceData {
 	/// Returns an `Err(_)` if it failed.
 	fn check_signature<P>(self, relay_chain_client: &P) -> Result<Validation, BlockAnnounceError>
 	where
-		P: RelayChainInterface + Send + Sync + 'static,
+		P: RelayChainInterface<PBlock> + Send + Sync + 'static,
 	{
 		let validator_index = self.statement.unchecked_validator_index();
 
@@ -225,41 +225,43 @@ impl TryFrom<&'_ CollationSecondedSignal> for BlockAnnounceData {
 /// chain. If it is at the tip, it is required to provide a justification or otherwise we reject
 /// it. However, if the announcement is for a block below the tip the announcement is accepted
 /// as it probably comes from a node that is currently syncing the chain.
-pub struct BlockAnnounceValidator<Block, R, B, BCE> {
+pub struct BlockAnnounceValidator<Block, R, B> {
 	phantom: PhantomData<Block>,
 	relay_chain_interface: R,
 	relay_chain_backend: Arc<B>,
 	para_id: ParaId,
 	relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
-	wait_on_relay_chain_block: WaitOnRelayChainBlock<B, BCE>,
+	wait_on_relay_chain_block: WaitOnRelayChainBlock<B, R>,
 }
 
-impl<Block, R, B, BCE> BlockAnnounceValidator<Block, R, B, BCE> {
+impl<Block, RCInterface, B> BlockAnnounceValidator<Block, RCInterface, B>
+where
+	RCInterface: Clone,
+{
 	/// Create a new [`BlockAnnounceValidator`].
 	pub fn new(
-		relay_chain_interface: R,
+		relay_chain_interface: RCInterface,
 		para_id: ParaId,
 		relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
 		relay_chain_backend: Arc<B>,
-		relay_chain_blockchain_events: BCE,
 	) -> Self {
 		Self {
 			phantom: Default::default(),
-			relay_chain_interface,
+			relay_chain_interface: relay_chain_interface.clone(),
 			para_id,
 			relay_chain_sync_oracle,
 			relay_chain_backend: relay_chain_backend.clone(),
 			wait_on_relay_chain_block: WaitOnRelayChainBlock::new(
 				relay_chain_backend,
-				relay_chain_blockchain_events,
+				relay_chain_interface,
 			),
 		}
 	}
 }
 
-impl<Block: BlockT, R, B, BCE> BlockAnnounceValidator<Block, R, B, BCE>
+impl<Block: BlockT, R, B> BlockAnnounceValidator<Block, R, B>
 where
-	R: RelayChainInterface + Clone,
+	R: RelayChainInterface<PBlock> + Clone,
 	B: Backend<PBlock> + 'static,
 {
 	/// Get the included block of the given parachain in the relay chain.
@@ -340,12 +342,10 @@ where
 	}
 }
 
-impl<Block: BlockT, P, B, BCE> BlockAnnounceValidatorT<Block>
-	for BlockAnnounceValidator<Block, P, B, BCE>
+impl<Block: BlockT, P, B> BlockAnnounceValidatorT<Block> for BlockAnnounceValidator<Block, P, B>
 where
-	P: RelayChainInterface + Clone + Send + Sync + 'static,
+	P: RelayChainInterface<PBlock> + Clone + Send + Sync + 'static,
 	B: Backend<PBlock> + 'static,
-	BCE: BlockchainEvents<PBlock> + 'static + Send + Sync,
 {
 	fn validate(
 		&mut self,
@@ -407,7 +407,7 @@ pub fn build_block_announce_validator<Block: BlockT, B, RCInterface>(
 ) -> Box<dyn BlockAnnounceValidatorT<Block> + Send>
 where
 	B: Backend<PBlock> + Send + 'static,
-	RCInterface: RelayChainInterface + Clone + Send + Sync,
+	RCInterface: RelayChainInterface<PBlock> + Clone + Send + Sync + 'static,
 {
 	BlockAnnounceValidatorBuilder::new(
 		relay_chain_interface,
@@ -435,7 +435,7 @@ struct BlockAnnounceValidatorBuilder<Block, B, RCInterface> {
 impl<Block: BlockT, B, RCInterface> BlockAnnounceValidatorBuilder<Block, B, RCInterface>
 where
 	B: Backend<PBlock> + Send + 'static,
-	RCInterface: RelayChainInterface + Clone + Send + Sync,
+	RCInterface: RelayChainInterface<PBlock> + Clone + Send + Sync + 'static,
 {
 	/// Create a new instance of the builder.
 	fn new(
@@ -460,7 +460,6 @@ where
 			self.para_id,
 			self.relay_chain_sync_oracle,
 			self.relay_chain_backend,
-			self.relay_chain_interface.clone(),
 		))
 	}
 }

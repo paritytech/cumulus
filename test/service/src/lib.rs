@@ -22,13 +22,13 @@ mod chain_spec;
 mod genesis;
 
 use core::future::Future;
-use cumulus_relay_chain_interface::RelayChainDirect;
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
+use cumulus_relay_chain_interface::{build_relay_chain_direct, RelayChainDirect};
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 use polkadot_primitives::v1::{CollatorPair, Hash as PHash, PersistedValidationData};
 use sc_client_api::execution_extensions::ExecutionStrategies;
@@ -52,7 +52,6 @@ use std::sync::Arc;
 use substrate_test_client::{
 	BlockchainEventsExt, RpcHandlersExt, RpcTransactionError, RpcTransactionOutput,
 };
-
 
 pub use chain_spec::*;
 pub use cumulus_test_runtime as runtime;
@@ -209,12 +208,14 @@ where
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
+
+	let relay_chain_interface =
+		Arc::new(RelayChainDirect { polkadot_client: relay_chain_full_node.client.clone() });
 	let block_announce_validator = BlockAnnounceValidator::new(
-		relay_chain_full_node.client.clone(),
+		relay_chain_interface,
 		para_id,
 		Box::new(relay_chain_full_node.network.clone()),
 		relay_chain_full_node.backend.clone(),
-		relay_chain_full_node.client.clone(),
 	);
 	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
 
@@ -274,8 +275,9 @@ where
 				);
 				let relay_chain_backend = relay_chain_full_node.backend.clone();
 
-				let relay_chain_interface =
-					Arc::new(RelayChainDirect {polkadot_client: relay_chain_full_node.client.clone() });
+				let relay_chain_interface = Arc::new(RelayChainDirect {
+					polkadot_client: relay_chain_full_node.client.clone(),
+				});
 
 				let relay_chain_interface2 = relay_chain_interface.clone();
 				Box::new(cumulus_client_consensus_relay_chain::RelayChainConsensus::new(

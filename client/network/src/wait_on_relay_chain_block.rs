@@ -16,15 +16,15 @@
 
 //! Provides the [`WaitOnRelayChainBlock`] type.
 
+use cumulus_relay_chain_interface::RelayChainInterface;
 use futures::{future::ready, Future, FutureExt, StreamExt};
 use polkadot_primitives::v1::{Block as PBlock, Hash as PHash};
 use sc_client_api::{
 	blockchain::{self, BlockStatus, HeaderBackend},
-	Backend, BlockchainEvents,
+	Backend,
 };
 use sp_runtime::generic::BlockId;
 use std::{sync::Arc, time::Duration};
-use cumulus_relay_chain_interface::RelayChainInterface;
 
 /// The timeout in seconds after that the waiting for a block should be aborted.
 const TIMEOUT_IN_SECONDS: u64 = 6;
@@ -64,20 +64,23 @@ pub enum Error {
 ///
 /// The timeout is set to 6 seconds. This should be enough time to import the block in the current
 /// round and if not, the new round of the relay chain already started anyway.
-pub struct WaitOnRelayChainBlock<B, BCE> {
-	block_chain_events: BCE,
+pub struct WaitOnRelayChainBlock<B, R> {
+	block_chain_events: R,
 	backend: Arc<B>,
 }
 
-impl<B, BCE> Clone for WaitOnRelayChainBlock<B, BCE> {
+impl<B, RCInterface> Clone for WaitOnRelayChainBlock<B, RCInterface>
+where
+	RCInterface: Clone,
+{
 	fn clone(&self) -> Self {
 		Self { backend: self.backend.clone(), block_chain_events: self.block_chain_events.clone() }
 	}
 }
 
-impl<B, BCE> WaitOnRelayChainBlock<B, BCE> {
+impl<B, RCInterface> WaitOnRelayChainBlock<B, RCInterface> {
 	/// Creates a new instance of `Self`.
-	pub fn new(backend: Arc<B>, block_chain_events: BCE) -> Self {
+	pub fn new(backend: Arc<B>, block_chain_events: RCInterface) -> Self {
 		Self { backend, block_chain_events }
 	}
 }
@@ -85,7 +88,7 @@ impl<B, BCE> WaitOnRelayChainBlock<B, BCE> {
 impl<B, RCInterface> WaitOnRelayChainBlock<B, RCInterface>
 where
 	B: Backend<PBlock>,
-	RCInterface: RelayChainInterface,
+	RCInterface: RelayChainInterface<PBlock>,
 {
 	pub fn wait_on_relay_chain_block(
 		&self,

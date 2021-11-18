@@ -89,9 +89,7 @@ impl<B, PF, BI, RCInterface, RBackend, CIDP>
 	RelayChainConsensus<B, PF, BI, RCInterface, RBackend, CIDP>
 where
 	B: BlockT,
-	// RClient: ProvideRuntimeApi<PBlock>,
-	// RClient::Api: ParachainHost<PBlock>,
-	RCInterface: RelayChainInterface,
+	RCInterface: RelayChainInterface<PBlock>,
 	RBackend: Backend<PBlock>,
 	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)>,
 {
@@ -155,7 +153,7 @@ impl<B, PF, BI, RCInterface, RBackend, CIDP> ParachainConsensus<B>
 	for RelayChainConsensus<B, PF, BI, RCInterface, RBackend, CIDP>
 where
 	B: BlockT,
-	RCInterface: RelayChainInterface + Send + Sync + Clone,
+	RCInterface: RelayChainInterface<PBlock> + Send + Sync + Clone,
 	RBackend: Backend<PBlock>,
 	BI: BlockImport<B> + Send + Sync,
 	PF: Environment<B> + Send + Sync,
@@ -265,7 +263,7 @@ where
 	BI: BlockImport<Block> + Send + Sync + 'static,
 	RBackend: Backend<PBlock> + 'static,
 	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)> + 'static,
-	RCInterface: RelayChainInterface + Clone + Send + Sync + 'static,
+	RCInterface: RelayChainInterface<PBlock> + Clone + Send + Sync + 'static,
 {
 	RelayChainConsensusBuilder::new(
 		para_id,
@@ -308,7 +306,7 @@ where
 	BI: BlockImport<Block> + Send + Sync + 'static,
 	RBackend: Backend<PBlock> + 'static,
 	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)> + 'static,
-	RCInterface: RelayChainInterface + Send + Sync + Clone + 'static,
+	RCInterface: RelayChainInterface<PBlock> + Send + Sync + Clone + 'static,
 {
 	/// Create a new instance of the builder.
 	fn new(

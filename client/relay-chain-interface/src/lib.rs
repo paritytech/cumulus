@@ -11,12 +11,13 @@ use cumulus_primitives_core::{
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
 use polkadot_client::{ClientHandle, ExecuteWithClient};
-use sp_api::{ApiError, ProvideRuntimeApi};
+use sc_client_api::BlockchainEvents;
+use sp_api::{ApiError, BlockT, ProvideRuntimeApi};
 use sp_core::sp_std::collections::btree_map::BTreeMap;
 
 const LOG_TARGET: &str = "cumulus-collator";
 
-pub trait RelayChainInterface {
+pub trait RelayChainInterface<Block: BlockT> {
 	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError>;
 
 	/// Returns the whole contents of the downward message queue for the parachain we are collating
@@ -53,16 +54,27 @@ pub trait RelayChainInterface {
 	) -> Result<Option<CommittedCandidateReceipt>, ApiError>;
 
 	fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError>;
+
+	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<Block>;
+	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<Block>;
+	fn storage_changes_notification_stream(
+		&self,
+		filter_keys: Option<&[sc_client_api::StorageKey]>,
+		child_filter_keys: Option<
+			&[(sc_client_api::StorageKey, Option<Vec<sc_client_api::StorageKey>>)],
+		>,
+	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<Block::Hash>>;
 }
 
 pub struct RelayChainDirect<Client> {
 	pub polkadot_client: Arc<Client>,
 }
 
-impl<Client> RelayChainInterface for RelayChainDirect<Client>
+impl<Client, Block> RelayChainInterface<Block> for RelayChainDirect<Client>
 where
-	Client: ProvideRuntimeApi<PBlock>,
+	Client: ProvideRuntimeApi<PBlock> + BlockchainEvents<Block>,
 	Client::Api: ParachainHost<PBlock>,
+	Block: BlockT,
 {
 	fn retrieve_dmq_contents(
 		&self,
@@ -140,6 +152,25 @@ where
 	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
 		self.polkadot_client.runtime_api().validators(block_id)
 	}
+
+	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<Block> {
+		self.polkadot_client.import_notification_stream()
+	}
+
+	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<Block> {
+		self.polkadot_client.finality_notification_stream()
+	}
+
+	fn storage_changes_notification_stream(
+		&self,
+		filter_keys: Option<&[sc_client_api::StorageKey]>,
+		child_filter_keys: Option<
+			&[(sc_client_api::StorageKey, Option<Vec<sc_client_api::StorageKey>>)],
+		>,
+	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<Block::Hash>> {
+		self.polkadot_client
+			.storage_changes_notification_stream(filter_keys, child_filter_keys)
+	}
 }
 
 pub struct RelayChainDirectBuilder {
@@ -147,69 +178,25 @@ pub struct RelayChainDirectBuilder {
 }
 
 impl RelayChainDirectBuilder {
-	pub fn build(self) -> Arc<dyn RelayChainInterface + Sync + Send> {
+	pub fn build(self) -> Arc<dyn RelayChainInterface<PBlock> + Sync + Send> {
 		self.polkadot_client.clone().execute_with(self)
 	}
 }
 
 impl ExecuteWithClient for RelayChainDirectBuilder {
-	type Output = Arc<dyn RelayChainInterface + Sync + Send>;
+	type Output = Arc<dyn RelayChainInterface<PBlock> + Sync + Send>;
 
 	fn execute_with_client<Client, Api, Backend>(self, client: Arc<Client>) -> Self::Output
 	where
-		Client: ProvideRuntimeApi<PBlock> + 'static + Sync + Send,
+		Client: ProvideRuntimeApi<PBlock> + BlockchainEvents<PBlock> + 'static + Sync + Send,
 		Client::Api: ParachainHost<PBlock>,
 	{
 		Arc::new(RelayChainDirect { polkadot_client: client })
 	}
 }
 
-impl RelayChainInterface for Arc<dyn RelayChainInterface + Sync + Send> {
-	fn retrieve_dmq_contents(
-		&self,
-		para_id: ParaId,
-		relay_parent: PHash,
-	) -> Option<Vec<InboundDownwardMessage>> {
-		(**self).retrieve_dmq_contents(para_id, relay_parent)
-	}
-
-	fn retrieve_all_inbound_hrmp_channel_contents(
-		&self,
-		para_id: ParaId,
-		relay_parent: PHash,
-	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
-		(**self).retrieve_all_inbound_hrmp_channel_contents(para_id, relay_parent)
-	}
-
-	fn persisted_validation_data(
-		&self,
-		block_id: &BlockId,
-		para_id: ParaId,
-		occupied_core_assumption: OccupiedCoreAssumption,
-	) -> Result<Option<PersistedValidationData>, ApiError> {
-		(**self).persisted_validation_data(block_id, para_id, occupied_core_assumption)
-	}
-
-	fn candidate_pending_availability(
-		&self,
-		block_id: &BlockId,
-		para_id: ParaId,
-	) -> Result<Option<CommittedCandidateReceipt>, ApiError> {
-		(**self).candidate_pending_availability(block_id, para_id)
-	}
-
-	fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError> {
-		(**self).session_index_for_child(block_id)
-	}
-
-	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
-		(**self).validators(block_id)
-	}
-}
-
-impl<T> RelayChainInterface for Arc<T>
-where
-	T: RelayChainInterface,
+impl<Block: BlockT> RelayChainInterface<Block>
+	for Arc<dyn RelayChainInterface<Block> + Sync + Send>
 {
 	fn retrieve_dmq_contents(
 		&self,
@@ -251,11 +238,94 @@ where
 	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
 		(**self).validators(block_id)
 	}
+
+	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<Block> {
+		(**self).import_notification_stream()
+	}
+
+	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<Block> {
+		(**self).finality_notification_stream()
+	}
+
+	fn storage_changes_notification_stream(
+		&self,
+		filter_keys: Option<&[sc_client_api::StorageKey]>,
+		child_filter_keys: Option<
+			&[(sc_client_api::StorageKey, Option<Vec<sc_client_api::StorageKey>>)],
+		>,
+	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<Block::Hash>> {
+		(**self).storage_changes_notification_stream(filter_keys, child_filter_keys)
+	}
+}
+
+impl<T, Block> RelayChainInterface<Block> for Arc<T>
+where
+	T: RelayChainInterface<Block>,
+	Block: BlockT,
+{
+	fn retrieve_dmq_contents(
+		&self,
+		para_id: ParaId,
+		relay_parent: PHash,
+	) -> Option<Vec<InboundDownwardMessage>> {
+		(**self).retrieve_dmq_contents(para_id, relay_parent)
+	}
+
+	fn retrieve_all_inbound_hrmp_channel_contents(
+		&self,
+		para_id: ParaId,
+		relay_parent: PHash,
+	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
+		(**self).retrieve_all_inbound_hrmp_channel_contents(para_id, relay_parent)
+	}
+
+	fn persisted_validation_data(
+		&self,
+		block_id: &BlockId,
+		para_id: ParaId,
+		occupied_core_assumption: OccupiedCoreAssumption,
+	) -> Result<Option<PersistedValidationData>, ApiError> {
+		(**self).persisted_validation_data(block_id, para_id, occupied_core_assumption)
+	}
+
+	fn candidate_pending_availability(
+		&self,
+		block_id: &BlockId,
+		para_id: ParaId,
+	) -> Result<Option<CommittedCandidateReceipt>, ApiError> {
+		(**self).candidate_pending_availability(block_id, para_id)
+	}
+
+	fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError> {
+		(**self).session_index_for_child(block_id)
+	}
+
+	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
+		(**self).validators(block_id)
+	}
+
+	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<Block> {
+		(**self).import_notification_stream()
+	}
+
+	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<Block> {
+		(**self).finality_notification_stream()
+	}
+
+	fn storage_changes_notification_stream(
+		&self,
+		filter_keys: Option<&[sc_client_api::StorageKey]>,
+		child_filter_keys: Option<
+			&[(sc_client_api::StorageKey, Option<Vec<sc_client_api::StorageKey>>)],
+		>,
+	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<Block::Hash>> {
+		(**self).storage_changes_notification_stream(filter_keys, child_filter_keys)
+	}
 }
 
 pub fn build_relay_chain_direct(
 	client: polkadot_client::Client,
-) -> Arc<(dyn RelayChainInterface + Send + Sync + 'static)> {
+) -> Arc<(dyn RelayChainInterface<PBlock> + Send + Sync + 'static)> {
 	let relay_chain_builder = RelayChainDirectBuilder { polkadot_client: client };
 	relay_chain_builder.build()
 }

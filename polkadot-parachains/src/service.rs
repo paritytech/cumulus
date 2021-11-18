@@ -329,8 +329,10 @@ where
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
+
+	let relay_chain_interface = build_relay_chain_direct(relay_chain_full_node.client.clone());
 	let block_announce_validator = build_block_announce_validator(
-		relay_chain_full_node.client.clone(),
+		relay_chain_interface,
 		id,
 		Box::new(relay_chain_full_node.network.clone()),
 		relay_chain_full_node.backend.clone(),
@@ -507,8 +509,9 @@ where
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
+	let relay_chain_interface = build_relay_chain_direct(relay_chain_full_node.client.clone());
 	let block_announce_validator = build_block_announce_validator(
-		relay_chain_full_node.client.clone(),
+		relay_chain_interface,
 		id,
 		Box::new(relay_chain_full_node.network.clone()),
 		relay_chain_full_node.backend.clone(),

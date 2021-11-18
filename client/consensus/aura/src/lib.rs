@@ -92,7 +92,7 @@ where
 impl<B, RCInterface, RBackend, CIDP> AuraConsensus<B, RCInterface, RBackend, CIDP>
 where
 	B: BlockT,
-	RCInterface: RelayChainInterface + Clone + Send + Sync,
+	RCInterface: RelayChainInterface<PBlock> + Clone + Send + Sync,
 	RBackend: Backend<PBlock>,
 	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)>,
 	CIDP::InherentDataProviders: InherentDataProviderExt,
@@ -206,7 +206,7 @@ impl<B, RCInterface, RBackend, CIDP> ParachainConsensus<B>
 	for AuraConsensus<B, RCInterface, RBackend, CIDP>
 where
 	B: BlockT,
-	RCInterface: RelayChainInterface + Clone + Send + Sync,
+	RCInterface: RelayChainInterface<PBlock> + Clone + Send + Sync,
 	// RClient: ProvideRuntimeApi<PBlock> + Send + Sync,
 	// RClient::Api: ParachainHost<PBlock>,
 	RBackend: Backend<PBlock>,
@@ -315,7 +315,7 @@ where
 	P: Pair + Send + Sync,
 	P::Public: AppPublic + Hash + Member + Encode + Decode,
 	P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
-	RCInterface: RelayChainInterface + Clone + Send + Sync + 'static,
+	RCInterface: RelayChainInterface<PBlock> + Clone + Send + Sync + 'static,
 {
 	AuraConsensusBuilder::<P, _, _, _, _, _, _, _, _, _, _>::new(
 		proposer_factory,
@@ -397,7 +397,7 @@ where
 	P: Pair + Send + Sync,
 	P::Public: AppPublic + Hash + Member + Encode + Decode,
 	P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
-	RCInterface: RelayChainInterface + Clone + Send + Sync + 'static,
+	RCInterface: RelayChainInterface<PBlock> + Clone + Send + Sync + 'static,
 {
 	/// Create a new instance of the builder.
 	fn new(
