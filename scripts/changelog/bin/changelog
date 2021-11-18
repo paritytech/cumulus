@@ -20,6 +20,7 @@ repo = 'cumulus'
 
 ref1 = ARGV[0]
 ref2 = ARGV[1] || 'HEAD'
+output = ARGV[2] || 'release-notes.md'
 
 ENV['REF1'] = ref1
 ENV['REF2'] = ref2
@@ -111,6 +112,6 @@ cmd = format('jq \
              ROCOCO_DIGEST)
 system(cmd)
 
-cmd = 'tera --env --env-key env --include-path templates \
-        --template templates/template.md.tera context.json'
+cmd = format('tera --env --env-key env --include-path templates \
+        --template templates/template.md.tera context.json > %s', output)
 system(cmd)

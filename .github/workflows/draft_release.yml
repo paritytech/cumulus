@@ -137,8 +137,8 @@ jobs:
 
           echo "The diff will be computed from $REF1 to $REF2"
           cd cumulus/scripts/changelog
-          ./bin/changelog $REF1 $REF2 | tee release_text.md
-          ls -al release_text.md
+          ./bin/changelog $REF1 $REF2 release-notes.md
+          ls -al release-notes.md
 
       - name: Create draft release
         id: create-release
@@ -148,7 +148,7 @@ jobs:
         with:
           tag_name: parachains-${{ github.ref }}
           release_name: Parachains ${{ github.ref }}
-          body_path: ./cumulus/scripts/changelog/release_text.md
+          body_path: ./cumulus/scripts/changelog/release-notes.md
           draft: true
 
   publish-runtimes:
@@ -166,15 +166,15 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 2.7
+          ruby-version: 3.0.0
 
-      # - name: Get runtime version
-      #   id: get-runtime-ver
-      #   run: |
-      #     ls
-      #     ls "${{ matrix.runtime }}-runtime"
-      #     runtime_ver="$(ruby -e 'require "./scripts/github/lib.rb"; puts get_runtime("${{ matrix.runtime }}")')"
-      #     echo "::set-output name=runtime_ver::$runtime_ver"
+      - name: Get runtime version
+        id: get-runtime-ver
+        run: |
+          ls
+          ls "${{ matrix.runtime }}-runtime"
+          runtime_ver="$(ruby -e 'require "./scripts/github/runtime-version.rb"; puts get_runtime("${{ matrix.runtime }}")')"
+          echo "::set-output name=runtime_ver::$runtime_ver"
 
       - name: Upload compressed ${{ matrix.runtime }} wasm
         uses: actions/upload-release-asset@v1
@@ -183,8 +183,7 @@ jobs:
         with:
           upload_url: ${{ needs.publish-draft-release.outputs.asset_upload_url }}
           asset_path: "${{ matrix.runtime }}-runtime/${{ matrix.runtime }}_runtime.compact.compressed.wasm"
-          # asset_name: ${{ matrix.runtime }}_runtime-v${{ steps.get-runtime-ver.outputs.runtime_ver }}.compact.compressed.wasm
-          asset_name: ${{ matrix.runtime }}_runtime.compact.compressed.wasm
+          asset_name: ${{ matrix.runtime }}_runtime-v${{ steps.get-runtime-ver.outputs.runtime_ver }}.compact.compressed.wasm
           asset_content_type: application/wasm
 
   post_to_matrix:
@@ -197,7 +196,10 @@ jobs:
           room_id: ${{ secrets.INTERNAL_POLKADOT_MATRIX_ROOM_ID }}
           access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
           message: |
-            **A new version of Cumulus was tagged**:
+            ## New draft for **${GITHUB_REPOSITORY}**
+
             ${{ github.ref }}<br/>
-            Draft release created: ${{ needs.publish-draft-release.outputs.release_url }}
+            Draft release created: [Link to draft](${{ needs.publish-draft-release.outputs.release_url }})
+            The link above will no longer be valid if the draft is edited. You can then use the following link:
+            [${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases)
           server: "matrix.parity.io"
