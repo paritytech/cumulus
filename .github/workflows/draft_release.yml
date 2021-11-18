@@ -134,7 +134,6 @@ jobs:
           cd cumulus/scripts/changelog
           ./bin/changelog $REF1 $REF2 | tee release_text.md
           ls -al release_text.md
-          cat release_text.md
 
       - name: Create draft release
         id: create-release
@@ -142,7 +141,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
+          tag_name: parachains-${{ github.ref }}
           release_name: Parachains ${{ github.ref }}
           body_path: ./release_text.md
           draft: true
@@ -160,8 +159,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v2
 
-      - name: Set up Ruby 2.7
-        uses: actions/setup-ruby@v1
+      - uses: ruby/setup-ruby@v1
         with:
           ruby-version: 2.7
 

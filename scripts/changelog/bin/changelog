@@ -103,7 +103,7 @@ cmd = format('jq \
         { name: "westmint", data: $srtool_westmint[0] },
         { name: "statemint", data: $srtool_statemint[0] },
         { name: "statemine", data: $srtool_statemine[0] }
-    ] }\' | tee context.json', cumulus_data, substrate_data, polkadot_data,
+    ] }\' > context.json', cumulus_data, substrate_data, polkadot_data,
              SHELL_DIGEST,
              WESTMINT_DIGEST,
              STATEMINE_DIGEST,
@@ -112,6 +112,5 @@ cmd = format('jq \
 system(cmd)
 
 cmd = 'tera --env --env-key env --include-path templates \
-        --template templates/template.md.tera context.json | \
-        tee release-notes-cumulus.md'
+        --template templates/template.md.tera context.json'
 system(cmd)
