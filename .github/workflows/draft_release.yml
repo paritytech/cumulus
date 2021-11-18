@@ -148,7 +148,7 @@ jobs:
         with:
           tag_name: parachains-${{ github.ref }}
           release_name: Parachains ${{ github.ref }}
-          body_path: ./release_text.md
+          body_path: ./cumulus/scripts/changelog/release_text.md
           draft: true
 
   publish-runtimes:
@@ -168,13 +168,13 @@ jobs:
         with:
           ruby-version: 2.7
 
-      - name: Get runtime version
-        id: get-runtime-ver
-        run: |
-          ls
-          ls "${{ matrix.runtime }}-runtime"
-          runtime_ver="$(ruby -e 'require "./scripts/github/lib.rb"; puts get_runtime("${{ matrix.runtime }}")')"
-          echo "::set-output name=runtime_ver::$runtime_ver"
+      # - name: Get runtime version
+      #   id: get-runtime-ver
+      #   run: |
+      #     ls
+      #     ls "${{ matrix.runtime }}-runtime"
+      #     runtime_ver="$(ruby -e 'require "./scripts/github/lib.rb"; puts get_runtime("${{ matrix.runtime }}")')"
+      #     echo "::set-output name=runtime_ver::$runtime_ver"
 
       - name: Upload compressed ${{ matrix.runtime }} wasm
         uses: actions/upload-release-asset@v1
@@ -183,7 +183,8 @@ jobs:
         with:
           upload_url: ${{ needs.publish-draft-release.outputs.asset_upload_url }}
           asset_path: "${{ matrix.runtime }}-runtime/${{ matrix.runtime }}_runtime.compact.compressed.wasm"
-          asset_name: ${{ matrix.runtime }}_runtime-v${{ steps.get-runtime-ver.outputs.runtime_ver }}.compact.compressed.wasm
+          # asset_name: ${{ matrix.runtime }}_runtime-v${{ steps.get-runtime-ver.outputs.runtime_ver }}.compact.compressed.wasm
+          asset_name: ${{ matrix.runtime }}_runtime.compact.compressed.wasm
           asset_content_type: application/wasm
 
   post_to_matrix:
