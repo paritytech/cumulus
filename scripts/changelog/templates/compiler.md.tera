@@ -2,5 +2,5 @@
 
 This release was tested against the following versions of `rustc`. Other versions may work.
 
-- Rust Stable: `{{ env.RUST_STABLE }}`
-- Rust Nightly: `{{ env.RUST_NIGHTLY }}`
+- Rust Stable: `{{ env.RUSTC_STABLE }}`
+- Rust Nightly: `{{ env.RUSTC_NIGHTLY }}`
