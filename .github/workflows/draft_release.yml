@@ -15,6 +15,10 @@ on:
         description: The 'to' tag to use for the diff
         default: HEAD
         required: true
+      pre_release:
+        description: For pre-releases
+        default: "true"
+        required: true
 
 jobs:
   get-rust-versions:
@@ -120,6 +124,7 @@ jobs:
           ROCOCO_DIGEST: ${{ github.workspace}}/rococo-srtool-json/rococo_srtool_output.json
           REF1: ${{ github.event.inputs.ref1 }}
           REF2: ${{ github.event.inputs.ref2 }}
+          PRE_RELEASE: ${{ github.event.inputs.pre_release }}
           HIDE_SRTOOL_ROCOCO: false
           HIDE_SRTOOL_SHELL: false
         run: |
