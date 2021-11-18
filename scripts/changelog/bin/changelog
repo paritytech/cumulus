@@ -17,7 +17,6 @@ logger.debug('Starting')
 
 owner = 'paritytech'
 repo = 'cumulus'
-
 ref1 = ARGV[0]
 ref2 = ARGV[1] || 'HEAD'
 output = ARGV[2] || 'release-notes.md'
