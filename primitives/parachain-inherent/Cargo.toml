@@ -20,8 +20,8 @@ sp-storage = { git = "https://github.com/paritytech/substrate", optional = true 
 polkadot-client = { git = "https://github.com/paritytech/polkadot", optional = true, branch = "master" }
 
 # Cumulus dependencies
-cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
-cumulus-test-relay-sproof-builder = { git = "https://github.com/paritytech/cumulus", branch = "master", optional = true }
+cumulus-primitives-core = { path = "../core", default-features = false }
+cumulus-test-relay-sproof-builder = { path = "../../test/relay-sproof-builder", optional = true }
 
 # Other dependencies
 async-trait = { version = "0.1.42", optional = true }
