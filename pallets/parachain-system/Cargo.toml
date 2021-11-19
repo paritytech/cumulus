@@ -7,9 +7,9 @@ description = "Base pallet for cumulus-based parachains"
 
 [dependencies]
 # Cumulus dependencies
-cumulus-primitives-core = { git = "https://github.com/purestake/cumulus", branch = "moonbeam-polkadot-v0.9.12", default-features = false }
-cumulus-primitives-parachain-inherent = { git = "https://github.com/purestake/cumulus", branch = "moonbeam-polkadot-v0.9.12", default-features = false }
-cumulus-pallet-parachain-system-proc-macro = { git = "https://github.com/purestake/cumulus", branch = "moonbeam-polkadot-v0.9.12", default-features = false }
+cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
+cumulus-primitives-parachain-inherent = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
+cumulus-pallet-parachain-system-proc-macro = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
 
 # Polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, features = [ "wasm-api" ], branch = "master" }
