@@ -37,7 +37,7 @@
 {%- endif -%}
 
 {%- if c.meta.T and c.meta.T.value == 6 -%}
-{%- set xcm = " [⛓ XCM]" -%}
+{%- set xcm = " [✉️ XCM]" -%}
 {%- else -%}
 {%- set xcm = "" -%}
 {%- endif -%}
