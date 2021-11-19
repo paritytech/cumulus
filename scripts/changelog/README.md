@@ -19,14 +19,23 @@ For instance:
 ./bin/changelog statemine-v5.0.0
 ```
 
-A file called `release-notes-cumulus.md` will be generated and can be used for the release.
+A file called `release-notes.md` will be generated and can be used for the release.
 
 ## ENV
 
-You may use the following ENV:
-- DEBUG
-- NO_CACHE
+You may use the following ENV for testing:
 
+```
+RUSTC_STABLE="rustc 1.56.1 (59eed8a2a 2021-11-01)"
+RUSTC_NIGHTLY="rustc 1.57.0-nightly (51e514c0f 2021-09-12)"
+PRE_RELEASE=true
+HIDE_SRTOOL_ROCOCO=true
+HIDE_SRTOOL_SHELL=true
+REF1=statemine-v5.0.0
+REF2=HEAD
+DEBUG=1
+NO_CACHE=1
+```
 ## Considered labels
 
 The following list will likely evolve over time and it will be hard to keep it in sync.
