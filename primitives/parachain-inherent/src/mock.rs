@@ -49,9 +49,9 @@ pub struct MockValidationDataInherentDataProvider {
 	/// XCM messages and associated configuration information.
 	pub xcm_config: MockXcmConfig,
 	/// Inbound downward XCM messages to be injected into the block.
-	pub downward_messages: Vec<Vec<u8>>,
+	pub raw_downward_messages: Vec<Vec<u8>>,
 	// Inbound Horizontal messages sorted by channel
-	pub horizontal_messages: Vec<(ParaId, Vec<u8>)>,
+	pub raw_horizontal_messages: Vec<(ParaId, Vec<u8>)>,
 }
 
 /// Parameters for how the Mock inherent data provider should inject XCM messages
@@ -60,10 +60,12 @@ pub struct MockXcmConfig {
 	pub para_id: ParaId,
 	/// The starting state of the dmq_mqc_head.
 	pub starting_dmq_mqc_head: relay_chain::Hash,
+	/// The starting state of each parachain's mqc head
+	pub starting_hrmp_mqc_heads: BTreeMap<ParaId, relay_chain::Hash>,
 }
 
 impl MockXcmConfig {
-	/// Utility method for creating a MockXcmConfig by reading the dmq_mqc_head directly
+	/// Utility method for creating a MockXcmConfig by reading the mqc_heads directly
 	/// from the storage of a previous block at common storage keys.
 	pub fn from_standard_storage<B: Block, BE: Backend<B>, C: StorageProvider<B, BE>>(
 		client: &C,
@@ -85,9 +87,24 @@ impl MockXcmConfig {
 			})
 			.unwrap_or_default();
 		
+		let starting_hrmp_mqc_heads = client
+			.storage(
+				&BlockId::Hash(parent_block),
+				&sp_storage::StorageKey(
+					[twox_128(b"ParachainSystem"), twox_128(b"LastHrmpMqcHeads")].concat().to_vec(),
+				),
+			)
+			.expect("We should be able to read storage from the parent block.")
+			.map(|ref mut raw_data| {
+				Decode::decode(&mut &raw_data.0[..])
+					.expect("Stored data should decode correctly")
+			})
+			.unwrap_or_default();
+		
 		Self {
 			para_id,
 			starting_dmq_mqc_head,
+			starting_hrmp_mqc_heads,
 		}
 	}
 }
@@ -103,49 +120,58 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 		let relay_parent_number =
 			self.relay_offset + self.relay_blocks_per_para_block * self.current_para_block;
 		
-		let downward_messages = self
-			.downward_messages
-			.iter()
-			.cloned()
-			.map(|msg|
-				InboundDownwardMessage{
-					sent_at: relay_parent_number,
-					msg,
-				}
-			)
-			.collect();
-
-		let mut hrmp_map = BTreeMap::<ParaId, Vec<InboundHrmpMessage>>::new();
-		self
-			.horizontal_messages
-			.iter()
-			.map(|(para_id, msg)| {
-				let wrapped = InboundHrmpMessage {
-					sent_at: relay_parent_number,
-					data: msg.clone(),
-				};
-
-				match hrmp_map.get_mut(para_id) {
-					Some(msgs) => {
-						msgs.push(wrapped);
-					},
-					None => {
-						hrmp_map.insert(*para_id, vec![wrapped]);
-					}
-				}
-			})
-			.count();
-
-		// Make sure the validation against the state proof passes
-		let mut dmq_mqc = crate::MessageQueueChain(self.xcm_config.starting_dmq_mqc_head);
-		for message in &downward_messages {
-			dmq_mqc.extend_downward(message);
-		}
-
 		// Use the "sproof" (spoof proof) builder to build valid mock state root and proof.
 		let mut sproof_builder = RelayStateSproofBuilder::default();
 		sproof_builder.para_id = self.xcm_config.para_id;
+		
+		// Process the downward messages and set up the correct head
+		let mut downward_messages = Vec::new();
+		let mut dmq_mqc = crate::MessageQueueChain(self.xcm_config.starting_dmq_mqc_head);
+		for msg in &self.raw_downward_messages {
+			let wrapped = InboundDownwardMessage{
+				sent_at: relay_parent_number,
+				msg: msg.clone(),
+			};
+
+			dmq_mqc.extend_downward(&wrapped);
+			downward_messages.push(wrapped);
+		}
 		sproof_builder.dmq_mqc_head = Some(dmq_mqc.head());
+
+		// Process the hrmp messages and set up the correct heads
+		// Begin by colelcting them into a Map
+		let mut horizontal_messages = BTreeMap::<ParaId, Vec<InboundHrmpMessage>>::new();
+		for (para_id, msg) in &self.raw_horizontal_messages {
+			let wrapped = InboundHrmpMessage {
+				sent_at: relay_parent_number,
+				data: msg.clone(),
+			};
+
+			match horizontal_messages.get_mut(para_id) {
+				Some(msgs) => {
+					msgs.push(wrapped);
+				},
+				None => {
+					horizontal_messages.insert(*para_id, vec![wrapped]);
+				}
+			}
+		}
+
+		// Now iterate again, updating the heads as we go
+		for (para_id, messages) in &horizontal_messages {
+			let mut channel_mqc = crate::MessageQueueChain(
+				*self
+					.xcm_config
+					.starting_hrmp_mqc_heads
+					.get(para_id)
+					.unwrap_or(&relay_chain::Hash::default())
+			);
+			for message in messages {
+				channel_mqc.extend_hrmp(message);
+			}
+			sproof_builder.upsert_inbound_channel(*para_id).mqc_head = Some(channel_mqc.head());
+		}
+		
 		let (relay_parent_storage_root, proof) = sproof_builder.into_state_root_and_proof();
 
 		inherent_data.put_data(
@@ -158,7 +184,7 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 					max_pov_size: Default::default(),
 				},
 				downward_messages,
-				horizontal_messages: hrmp_map,
+				horizontal_messages,
 				relay_chain_state: proof,
 			}
 		)
