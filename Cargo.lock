@@ -1680,9 +1680,9 @@ dependencies = [
 name = "cumulus-pallet-parachain-system"
 version = "0.1.0"
 dependencies = [
- "cumulus-pallet-parachain-system-proc-macro 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-primitives-parachain-inherent 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
+ "cumulus-pallet-parachain-system-proc-macro",
+ "cumulus-primitives-core 0.1.0",
+ "cumulus-primitives-parachain-inherent",
  "cumulus-test-client",
  "cumulus-test-relay-sproof-builder 0.1.0",
  "environmental",
@@ -1714,17 +1714,6 @@ dependencies = [
 [[package]]
 name = "cumulus-pallet-parachain-system-proc-macro"
 version = "0.1.0"
-dependencies = [
- "proc-macro-crate 1.1.0",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "cumulus-pallet-parachain-system-proc-macro"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#6b603201c534dec955e20b64e2dd20b16d9016fb"
 dependencies = [
  "proc-macro-crate 1.1.0",
  "proc-macro2",
@@ -1854,28 +1843,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-primitives-parachain-inherent"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=master#6b603201c534dec955e20b64e2dd20b16d9016fb"
-dependencies = [
- "async-trait",
- "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "cumulus-test-relay-sproof-builder 0.1.0 (git+https://github.com/paritytech/cumulus?branch=master)",
- "parity-scale-codec",
- "polkadot-client",
- "sc-client-api",
- "scale-info",
- "sp-api",
- "sp-core",
- "sp-inherents",
- "sp-runtime",
- "sp-state-machine",
- "sp-std",
- "sp-trie",
- "tracing",
-]
-
-[[package]]
 name = "cumulus-primitives-timestamp"
 version = "0.1.0"
 dependencies = [
@@ -1913,7 +1880,7 @@ name = "cumulus-test-client"
 version = "0.1.0"
 dependencies = [
  "cumulus-primitives-core 0.1.0",
- "cumulus-primitives-parachain-inherent 0.1.0",
+ "cumulus-primitives-parachain-inherent",
  "cumulus-test-relay-sproof-builder 0.1.0",
  "cumulus-test-runtime",
  "cumulus-test-service",
@@ -2014,7 +1981,7 @@ dependencies = [
  "cumulus-client-network",
  "cumulus-client-service",
  "cumulus-primitives-core 0.1.0",
- "cumulus-primitives-parachain-inherent 0.1.0",
+ "cumulus-primitives-parachain-inherent",
  "cumulus-test-relay-validation-worker-provider",
  "cumulus-test-runtime",
  "frame-system",
@@ -6104,7 +6071,7 @@ dependencies = [
  "cumulus-client-network",
  "cumulus-client-service",
  "cumulus-primitives-core 0.1.0",
- "cumulus-primitives-parachain-inherent 0.1.0",
+ "cumulus-primitives-parachain-inherent",
  "derive_more",
  "frame-benchmarking",
  "frame-benchmarking-cli",
@@ -6753,7 +6720,7 @@ dependencies = [
  "cumulus-client-network",
  "cumulus-client-service",
  "cumulus-primitives-core 0.1.0",
- "cumulus-primitives-parachain-inherent 0.1.0",
+ "cumulus-primitives-parachain-inherent",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "futures 0.3.17",
