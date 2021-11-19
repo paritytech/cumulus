@@ -6,9 +6,7 @@
 {% set rtm = srtool[0] -%}
 
 The Details about the runtimes included in this release can be found below.
-They have been generated using [srtool](https://github.com/paritytech/srtool):
-- `{{ rtm.data.gen }}`
-- `{{ rtm.data.rustc }}`
+They have been generated using [{{ rtm.data.gen }}](https://github.com/paritytech/srtool) and `{{ rtm.data.rustc }}`.
 
 {%- for runtime in srtool | sort(attribute="name") %}
 {%- set HIDE_VAR = "HIDE_SRTOOL_" ~ runtime.name | upper %}

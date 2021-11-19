@@ -7,9 +7,9 @@ This release contains the changes from `{{ env.REF1 }}` to `{{ env.REF2 }}`.
 {%- set changes = changes | concat(with=polkadot.changes) -%}
 {%- include "debug.md.tera" -%}
 
-{%- set CML = "☁️" -%}
-{%- set DOT = "🔗" -%}
-{%- set SUB = "🔬" -%}
+{%- set CML = "[C]" -%}
+{%- set DOT = "[P]" -%}
+{%- set SUB = "[S]" -%}
 
 {# header warning and important notices -#}
 {% include "pre_release.md.tera" -%}
