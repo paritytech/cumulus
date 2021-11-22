@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        runtime: ["shell", "statemine", "statemint", "westmint", "rococo"]
+        runtime: ["shell", "statemine", "statemint", "westmint", "rococo-parachain"]
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
@@ -157,7 +157,7 @@ jobs:
       RUNTIME_DIR: polkadot-parachains
     strategy:
       matrix:
-        runtime: ["shell", "statemine", "statemint", "westmint", "rococo"]
+        runtime: ["shell", "statemine", "statemint", "westmint", "rococo-parachain"]
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
