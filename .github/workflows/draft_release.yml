@@ -38,6 +38,8 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.inputs.ref2 }}
 
       - name: Cache target dir
         uses: actions/cache@v2
@@ -86,6 +88,7 @@ jobs:
         with:
           fetch-depth: 0
           path: cumulus
+          ref: ${{ github.event.inputs.ref2 }}
 
       - uses: ruby/setup-ruby@v1
         with:
@@ -158,6 +161,8 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.inputs.ref2 }}
 
       - name: Download artifacts
         uses: actions/download-artifact@v2
