@@ -9,7 +9,7 @@ on:
         required: true
       ref2:
         description: The 'to' tag to use for the diff
-        default: HEAD
+        default: release-statemine-v6
         required: true
       pre_release:
         description: For pre-releases
