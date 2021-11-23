@@ -6,7 +6,7 @@ description = "A new Cumulus FRAME-based Substrate Node, ready for hacking toget
 license = "Unlicense"
 homepage = "https://substrate.io"
 repository = "https://github.com/paritytech/cumulus/"
-edition = "2018"
+edition = "2021"
 build = "build.rs"
 
 [package.metadata.docs.rs]
@@ -93,4 +93,3 @@ polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "maste
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }

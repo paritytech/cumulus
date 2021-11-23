@@ -3,7 +3,7 @@ name = "polkadot-collator"
 version = "5.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 build = "build.rs"
-edition = "2018"
+edition = "2021"
 
 [[bin]]
 name = "polkadot-collator"
@@ -19,7 +19,7 @@ hex-literal = "0.2.1"
 async-trait = "0.1.42"
 
 # Parachain runtimes
-rococo-parachain-runtime = { package = "rococo-runtime", path = "rococo" }
+rococo-parachain-runtime = { path = "rococo-parachain" }
 shell-runtime = { path = "shell" }
 statemint-runtime = { path = "statemint" }
 statemine-runtime = { path = "statemine" }
