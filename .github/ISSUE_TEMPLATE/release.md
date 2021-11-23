@@ -5,12 +5,6 @@ title: Cumulus {{ env.VERSION }} Release checklist
 ---
 # Release Checklist
 
-This is the release checklist for Statemine v6 and the initial version of
-Statemint :tada: (also v6 because of code parity with Statemine).
-**All** following checks should be completed before publishing a
-new release of the Statemine runtime. The current release candidate can be
-checked out with `git checkout release-statemine-v6`.
-
 ### Runtime Releases
 
 These checks should be performed on the codebase.
@@ -19,17 +13,17 @@ These checks should be performed on the codebase.
     last release for any native runtimes from any existing use on public
     (non-private/test) networks.
 - [ ] Verify previously [completed migrations](#old-migrations-removed) are
-    removed for any public (non-private/test) networks. @apopiak 
+    removed for any public (non-private/test) networks. @apopiak
   - No migrations added in the last release that would need to be removed.
 - [ ] Verify pallet and [extrinsic ordering](#extrinsic-ordering) as well as `SignedExtension`s have stayed
-    the same. Bump `transaction_version` if not. @NachoPal 
+    the same. Bump `transaction_version` if not. @NachoPal
 - [ ] Verify new extrinsics have been correctly whitelisted/blacklisted for
-    [proxy filters](#proxy-filtering). @apopiak  
+    [proxy filters](#proxy-filtering). @apopiak
   - No new extrinsics.
 - [ ] Verify [benchmarks](#benchmarks) have been updated for any modified
-    runtime logic. @NachoPal 
-  - [ ] Verify the weights are up-to-date. @NachoPal 
-- [ ] Verify that the various pieces of XCM config are sane. @apopiak 
+    runtime logic. @NachoPal
+  - [ ] Verify the weights are up-to-date. @NachoPal
+- [ ] Verify that the various pieces of XCM config are sane. @apopiak
 
 The following checks can be performed after we have forked off to the release-
 candidate branch or started an additional release candidate branch (rc-2, rc-3, etc)
@@ -43,20 +37,22 @@ candidate branch or started an additional release candidate branch (rc-2, rc-3, 
 
 ### Initial Statemint Release
 On top of the regular runtime release process, this release will also need to cover the following points:
-- [ ] genesis configuration for Statemint @apopiak 
-- [ ] determine `setStorage` call for governance to set the initial state Statemint should have after the upgrade (replacing the usual genesis process, but making use of the genesis config) @apopiak 
-- [ ] create adusted chain spec that will be used for syncing Statemint @NachoPal 
-- [ ] test the upgrade process (including `setStorage` calls) @apopiak 
+- [ ] genesis configuration for Statemint @apopiak
+- [ ] determine `setStorage` call for governance to set the initial state Statemint should have after the upgrade (replacing the usual genesis process, but making use of the genesis config) @apopiak
+- [ ] create adusted chain spec that will be used for syncing Statemint @NachoPal
+- [ ] test the upgrade process (including `setStorage` calls) @apopiak
 
 ### All Releases
 
 - [ ] Check that the new polkadot-collator versions have [run on the network](#burn-in)
-    without issue. @PierreBesson 
+    without issue. @PierreBesson
 - [ ] Check that a draft release has been created at
     https://github.com/paritytech/cumulus/releases with relevant [release
-    notes](#release-notes) @chevdor 
+    notes](#release-notes) @chevdor
 - [ ] Check that [build artifacts](#build-artifacts) have been added to the
-    draft-release @chevdor 
+    draft-release @chevdor
+
+---
 
 ## Notes
 
@@ -96,6 +92,12 @@ The release notes may also list:
 A runtime upgrade must bump the spec number. This may follow a pattern with the
 client release (e.g. runtime v12 corresponds to v0.8.12, even if the current
 runtime is not v11).
+
+### Runtime version bump between RCs
+
+The clients need to be aware of runtime changes. However, we do not want to bump the
+`spec_version` for every single release candidate. Instead, we can bump the `impl` field of the version
+to signal the change to the client.
 
 ### Old Migrations Removed
 
@@ -146,7 +148,7 @@ date to include them.
 ### Benchmarks
 
 Until #631 is done, running the benchmarks is a manual process:
-1. Connect to the bechmarking machine `149.202.69.202`
+1. Connect to the bechmarking machine
 2. Make sure no one else is using the machine with `htop check`
 3. Pull in the branch of Cumulus that has the version of Statemine you want to release
 4. Recompile `cargo build --release --features runtime-benchmarks`
@@ -157,7 +159,3 @@ Until #631 is done, running the benchmarks is a manual process:
    - `/polkadot-parachains/westmint/src/weights`
    - `/polkadot-parachains/statemint/src/weights`
 8. Commit the changes in your local and create a PR
-
-### Polkadot JS
-
-Ensure that a release of [Polkadot JS API](https://github.com/polkadot-js/api/) can interact with the new runtime (mostly related to RPCs with the new metadata).
