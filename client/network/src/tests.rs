@@ -15,6 +15,7 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
+use cumulus_primitives_core::relay_chain::BlakeTwo256;
 use cumulus_relay_chain_interface::RelayChainDirect;
 use cumulus_test_service::runtime::{Block, Hash, Header};
 use futures::{executor::block_on, poll, task::Poll};
@@ -31,13 +32,14 @@ use polkadot_test_client::{
 	Client as PClient, ClientBlockImportExt, DefaultTestClientBuilderExt, FullBackend as PBackend,
 	InitPolkadotBlockBuilder, TestClientBuilder, TestClientBuilderExt,
 };
+use sc_client_api::BlockchainEvents;
 use sp_api::{ApiRef, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_consensus::BlockOrigin;
 use sp_core::H256;
 use sp_keyring::Sr25519Keyring;
 use sp_keystore::{testing::KeyStore, SyncCryptoStore, SyncCryptoStorePtr};
-use sp_runtime::RuntimeAppPublic;
+use sp_runtime::{OpaqueExtrinsic, RuntimeAppPublic};
 use std::collections::BTreeMap;
 
 fn check_error(error: crate::BoxedError, check_error: impl Fn(&BlockAnnounceError) -> bool) {
@@ -63,9 +65,9 @@ impl SyncOracle for DummyCollatorNetwork {
 }
 
 fn make_validator_and_api(
-) -> (BlockAnnounceValidator<Block, RelayChainDirect<PClient>, PBackend>, Arc<TestApi>) {
+) -> (BlockAnnounceValidator<Block, RelayChainDirect<TestApi>, PBackend>, Arc<TestApi>) {
 	let api = Arc::new(TestApi::new());
-	let relay_chain_interface = RelayChainDirect { polkadot_client: api.relay_client.clone() };
+	let relay_chain_interface = RelayChainDirect { polkadot_client: api.clone() };
 	(
 		BlockAnnounceValidator::new(
 			relay_chain_interface,
@@ -410,6 +412,34 @@ impl ProvideRuntimeApi<PBlock> for TestApi {
 
 	fn runtime_api<'a>(&'a self) -> ApiRef<'a, Self::Api> {
 		RuntimeApi { data: self.data.clone() }.into()
+	}
+}
+
+impl BlockchainEvents<PBlock> for TestApi {
+	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<PBlock> {
+		self.relay_client.import_notification_stream()
+	}
+
+	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<PBlock> {
+		self.relay_client.finality_notification_stream()
+	}
+
+	fn storage_changes_notification_stream(
+		&self,
+		filter_keys: Option<&[sc_client_api::StorageKey]>,
+		child_filter_keys: Option<
+			&[(sc_client_api::StorageKey, Option<Vec<sc_client_api::StorageKey>>)],
+		>,
+	) -> sp_blockchain::Result<
+		sc_client_api::StorageEventStream<
+			<sp_runtime::generic::Block<
+				sp_runtime::generic::Header<u32, BlakeTwo256>,
+				OpaqueExtrinsic,
+			> as BlockT>::Hash,
+		>,
+	> {
+		self.relay_client
+			.storage_changes_notification_stream(filter_keys, child_filter_keys)
 	}
 }
 
