@@ -70,6 +70,12 @@ pub struct RelayChainDirect<Client> {
 	pub polkadot_client: Arc<Client>,
 }
 
+impl<T> Clone for RelayChainDirect<T> {
+	fn clone(&self) -> Self {
+		Self { polkadot_client: self.polkadot_client.clone() }
+	}
+}
+
 impl<Client, Block> RelayChainInterface<Block> for RelayChainDirect<Client>
 where
 	Client: ProvideRuntimeApi<PBlock> + BlockchainEvents<Block>,

@@ -15,6 +15,7 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
+use cumulus_relay_chain_interface::RelayChainDirect;
 use cumulus_test_service::runtime::{Block, Hash, Header};
 use futures::{executor::block_on, poll, task::Poll};
 use parking_lot::Mutex;
@@ -62,16 +63,15 @@ impl SyncOracle for DummyCollatorNetwork {
 }
 
 fn make_validator_and_api(
-) -> (BlockAnnounceValidator<Block, TestApi, PBackend, PClient>, Arc<TestApi>) {
+) -> (BlockAnnounceValidator<Block, RelayChainDirect<PClient>, PBackend>, Arc<TestApi>) {
 	let api = Arc::new(TestApi::new());
-
+	let relay_chain_interface = RelayChainDirect { polkadot_client: api.relay_client.clone() };
 	(
 		BlockAnnounceValidator::new(
-			api.clone(),
+			relay_chain_interface,
 			ParaId::from(56),
 			Box::new(DummyCollatorNetwork),
 			api.relay_backend.clone(),
-			api.relay_client.clone(),
 		),
 		api,
 	)

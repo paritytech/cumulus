@@ -129,6 +129,7 @@ where
 mod tests {
 	use super::*;
 
+	use cumulus_relay_chain_interface::RelayChainDirect;
 	use polkadot_test_client::{
 		construct_transfer_extrinsic, BlockBuilderExt, Client, ClientBlockImportExt,
 		DefaultTestClientBuilderExt, ExecutionStrategy, FullBackend, InitPolkadotBlockBuilder,
@@ -139,7 +140,8 @@ mod tests {
 
 	use futures::{executor::block_on, poll, task::Poll};
 
-	fn build_client_backend_and_block() -> (Arc<Client>, Arc<FullBackend>, PBlock) {
+	fn build_client_backend_and_block(
+	) -> (Arc<Client>, Arc<FullBackend>, PBlock, RelayChainDirect<Client>) {
 		let builder =
 			TestClientBuilder::new().set_execution_strategy(ExecutionStrategy::NativeWhenPossible);
 		let backend = builder.backend();
@@ -148,17 +150,17 @@ mod tests {
 		let block_builder = client.init_polkadot_block_builder();
 		let block = block_builder.build().expect("Finalizes the block").block;
 
-		(client, backend, block)
+		(client.clone(), backend, block, RelayChainDirect { polkadot_client: client })
 	}
 
 	#[test]
 	fn returns_directly_for_available_block() {
-		let (mut client, backend, block) = build_client_backend_and_block();
+		let (mut client, backend, block, relay_chain_interface) = build_client_backend_and_block();
 		let hash = block.hash();
 
 		block_on(client.import(BlockOrigin::Own, block)).expect("Imports the block");
 
-		let wait = WaitOnRelayChainBlock::new(backend, client);
+		let wait = WaitOnRelayChainBlock::new(backend, relay_chain_interface);
 
 		block_on(async move {
 			// Should be ready on the first poll
@@ -168,10 +170,10 @@ mod tests {
 
 	#[test]
 	fn resolve_after_block_import_notification_was_received() {
-		let (mut client, backend, block) = build_client_backend_and_block();
+		let (mut client, backend, block, relay_chain_interface) = build_client_backend_and_block();
 		let hash = block.hash();
 
-		let wait = WaitOnRelayChainBlock::new(backend, client.clone());
+		let wait = WaitOnRelayChainBlock::new(backend, relay_chain_interface);
 
 		block_on(async move {
 			let mut future = wait.wait_on_relay_chain_block(hash);
@@ -188,17 +190,17 @@ mod tests {
 
 	#[test]
 	fn wait_for_block_time_out_when_block_is_not_imported() {
-		let (client, backend, block) = build_client_backend_and_block();
+		let (_, backend, block, relay_chain_interface) = build_client_backend_and_block();
 		let hash = block.hash();
 
-		let wait = WaitOnRelayChainBlock::new(backend, client.clone());
+		let wait = WaitOnRelayChainBlock::new(backend, relay_chain_interface);
 
 		assert!(matches!(block_on(wait.wait_on_relay_chain_block(hash)), Err(Error::Timeout(_))));
 	}
 
 	#[test]
 	fn do_not_resolve_after_different_block_import_notification_was_received() {
-		let (mut client, backend, block) = build_client_backend_and_block();
+		let (mut client, backend, block, relay_chain_interface) = build_client_backend_and_block();
 		let hash = block.hash();
 
 		let ext = construct_transfer_extrinsic(
@@ -213,7 +215,7 @@ mod tests {
 		let block2 = block_builder.build().expect("Build second block").block;
 		let hash2 = block2.hash();
 
-		let wait = WaitOnRelayChainBlock::new(backend, client.clone());
+		let wait = WaitOnRelayChainBlock::new(backend, relay_chain_interface);
 
 		block_on(async move {
 			let mut future = wait.wait_on_relay_chain_block(hash);

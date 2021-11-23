@@ -225,13 +225,13 @@ impl TryFrom<&'_ CollationSecondedSignal> for BlockAnnounceData {
 /// chain. If it is at the tip, it is required to provide a justification or otherwise we reject
 /// it. However, if the announcement is for a block below the tip the announcement is accepted
 /// as it probably comes from a node that is currently syncing the chain.
-pub struct BlockAnnounceValidator<Block, R, B> {
+pub struct BlockAnnounceValidator<Block, RCInterface, B> {
 	phantom: PhantomData<Block>,
-	relay_chain_interface: R,
+	relay_chain_interface: RCInterface,
 	relay_chain_backend: Arc<B>,
 	para_id: ParaId,
 	relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
-	wait_on_relay_chain_block: WaitOnRelayChainBlock<B, R>,
+	wait_on_relay_chain_block: WaitOnRelayChainBlock<B, RCInterface>,
 }
 
 impl<Block, RCInterface, B> BlockAnnounceValidator<Block, RCInterface, B>
