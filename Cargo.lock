@@ -1459,6 +1459,7 @@ dependencies = [
  "cumulus-client-consensus-common",
  "cumulus-client-network",
  "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
  "cumulus-test-client",
  "cumulus-test-runtime",
  "futures 0.3.17",
@@ -1484,11 +1485,12 @@ name = "cumulus-client-consensus-aura"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "cumulus-client-collator",
  "cumulus-client-consensus-common",
  "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
  "futures 0.3.17",
  "parity-scale-codec",
- "polkadot-client",
  "sc-client-api",
  "sc-consensus",
  "sc-consensus-aura",
@@ -1537,9 +1539,9 @@ dependencies = [
  "async-trait",
  "cumulus-client-consensus-common",
  "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
  "futures 0.3.17",
  "parking_lot 0.10.2",
- "polkadot-client",
  "sc-client-api",
  "sc-consensus",
  "sp-api",
@@ -1558,13 +1560,13 @@ name = "cumulus-client-network"
 version = "0.1.0"
 dependencies = [
  "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
  "cumulus-test-service",
  "derive_more",
  "futures 0.3.17",
  "futures-timer 3.0.2",
  "parity-scale-codec",
  "parking_lot 0.10.2",
- "polkadot-client",
  "polkadot-node-primitives",
  "polkadot-parachain",
  "polkadot-primitives",
@@ -1809,9 +1811,9 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
  "cumulus-test-relay-sproof-builder",
  "parity-scale-codec",
- "polkadot-client",
  "sc-client-api",
  "scale-info",
  "sp-api",
@@ -1855,6 +1857,19 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "xcm",
+]
+
+[[package]]
+name = "cumulus-relay-chain-interface"
+version = "0.1.0"
+dependencies = [
+ "cumulus-primitives-core",
+ "polkadot-client",
+ "sc-client-api",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "tracing",
 ]
 
 [[package]]
@@ -1945,12 +1960,14 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "criterion",
+ "cumulus-client-collator",
  "cumulus-client-consensus-common",
  "cumulus-client-consensus-relay-chain",
  "cumulus-client-network",
  "cumulus-client-service",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
+ "cumulus-relay-chain-interface",
  "cumulus-test-relay-validation-worker-provider",
  "cumulus-test-runtime",
  "frame-system",
@@ -1976,6 +1993,7 @@ dependencies = [
  "sc-transaction-pool",
  "sc-transaction-pool-api",
  "serde",
+ "sp-api",
  "sp-arithmetic",
  "sp-blockchain",
  "sp-core",
@@ -6037,6 +6055,7 @@ dependencies = [
  "cumulus-client-service",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
+ "cumulus-relay-chain-interface",
  "derive_more",
  "frame-benchmarking",
  "frame-benchmarking-cli",
@@ -6679,6 +6698,7 @@ dependencies = [
  "assert_cmd",
  "async-trait",
  "cumulus-client-cli",
+ "cumulus-client-collator",
  "cumulus-client-consensus-aura",
  "cumulus-client-consensus-common",
  "cumulus-client-consensus-relay-chain",
@@ -6686,6 +6706,7 @@ dependencies = [
  "cumulus-client-service",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
+ "cumulus-relay-chain-interface",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "futures 0.3.17",
