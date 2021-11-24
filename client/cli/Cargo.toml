@@ -8,5 +8,5 @@ edition = "2021"
 structopt = "0.3.3"
 
 # Substrate dependencies
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }

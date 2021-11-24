@@ -12,22 +12,22 @@ cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inh
 cumulus-pallet-parachain-system-proc-macro = { path = "proc-macro", default-features = false }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, features = [ "wasm-api" ], branch = "kiz-temp" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kiz-temp" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, features = [ "wasm-api" ], branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 # Substrate dependencies
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
-sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
-sp-externalities = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-externalities = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Other Dependencies
 codec = { package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive"]}
@@ -42,10 +42,10 @@ hex-literal = "0.2.1"
 lazy_static = "1.4"
 
 # Substrate dependencies
-sp-version = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
+sp-version = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Cumulus dependencies
 cumulus-test-client = { path = "../../test/client" }

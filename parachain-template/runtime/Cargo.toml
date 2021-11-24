@@ -12,7 +12,7 @@ edition = "2021"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [dependencies]
 hex-literal = { version = '0.3.1', optional = true }
@@ -27,36 +27,36 @@ pallet-template = { path = "../pallets/template", default-features = false }
 
 # Substrate Dependencies
 ## Substrate Primitive Dependencies
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-sp-session = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-sp-version = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+sp-session = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+sp-version = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 
 ## Substrate FRAME Dependencies
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true , branch = "kiz-temp" }
-frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true , branch = "kiz-temp" }
-frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true , branch = "master" }
+frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true , branch = "master" }
+frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 
 ## Substrate Pallet Dependencies
-pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
-pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-temp" }
+pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
 
 # Cumulus dependencies
 cumulus-pallet-aura-ext = { path = "../../pallets/aura-ext", default-features = false }
@@ -72,12 +72,12 @@ parachain-info = { path = "../../polkadot-parachains/pallets/parachain-info", de
 cumulus-pallet-session-benchmarking = {path = "../../pallets/session-benchmarking", default-features = false, version = "3.0.0"}
 
 # Polkadot Dependencies
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "kiz-temp" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "kiz-temp" }
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kiz-temp" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "kiz-temp" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "kiz-temp" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "kiz-temp" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
 
 [features]
 default = [

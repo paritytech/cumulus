@@ -6,16 +6,16 @@ edition = "2021"
 
 [dependencies]
 # Substrate dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kiz-temp" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kiz-temp" }
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kiz-temp" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kiz-temp" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 cumulus-primitives-core = { path = "../core", default-features = false }
 

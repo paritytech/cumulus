@@ -12,24 +12,24 @@ scale-info = { version = "1.0.0", default-features = false, features = ["derive"
 log = { version = "0.4.14", default-features = false }
 
 # Substrate Dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot Dependencies
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kiz-temp" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kiz-temp" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 # Cumulus Dependencies
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 
 [dev-dependencies]
-sp-core = { git = 'https://github.com/paritytech/substrate', branch = "kiz-temp" }
-sp-io = { git = 'https://github.com/paritytech/substrate', branch = "kiz-temp" }
+sp-core = { git = 'https://github.com/paritytech/substrate', branch = "master" }
+sp-io = { git = 'https://github.com/paritytech/substrate', branch = "master" }
 cumulus-pallet-parachain-system = { path = "../parachain-system" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "kiz-temp" }
-pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = "kiz-temp" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = "master" }
 
 [features]
 default = [ "std" ]

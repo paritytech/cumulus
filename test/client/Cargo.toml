@@ -5,23 +5,23 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 
 [dependencies]
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-sc-executor-common = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-executor-common = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Cumulus deps
 cumulus-test-runtime = { path = "../runtime" }
@@ -31,8 +31,8 @@ cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent" }
 
 # Polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "kiz-temp" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "kiz-temp" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Other deps
 codec = { package = "parity-scale-codec", version = "2.3.0", default-features = false, features = [ "derive" ] }
