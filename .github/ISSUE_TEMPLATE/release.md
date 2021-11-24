@@ -35,12 +35,6 @@ candidate branch or started an additional release candidate branch (rc-2, rc-3, 
     runtime changes.
 - [ ] Push runtime upgrade to Westmint and verify network stability.
 
-### Initial Statemint Release
-On top of the regular runtime release process, this release will also need to cover the following points:
-- [ ] genesis configuration for Statemint @apopiak
-- [ ] determine `setStorage` call for governance to set the initial state Statemint should have after the upgrade (replacing the usual genesis process, but making use of the genesis config) @apopiak
-- [ ] create adusted chain spec that will be used for syncing Statemint @NachoPal
-- [ ] test the upgrade process (including `setStorage` calls) @apopiak
 
 ### All Releases
 
