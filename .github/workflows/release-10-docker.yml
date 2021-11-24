@@ -35,6 +35,12 @@ jobs:
           sha_result=$?
           echo sha_result: $sha_result
 
+          # Parity Security
+          gpg --receive-keys 9D4B2B6EB8F97156D19669A9FF0812D491B96798
+
+          # Chevdor
+          gpg --receive-keys 2835EAF92072BC01D188AF2C4A092B93E97CE1E2
+
           gpg --verify polkadot-collator.asc
           gpg_result=$?
           echo gpg_result: $gpg_result
