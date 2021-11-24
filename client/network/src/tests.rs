@@ -65,15 +65,15 @@ impl SyncOracle for DummyCollatorNetwork {
 }
 
 fn make_validator_and_api(
-) -> (BlockAnnounceValidator<Block, RelayChainDirect<TestApi>, PBackend>, Arc<TestApi>) {
+) -> (BlockAnnounceValidator<Block, RelayChainDirect<TestApi>>, Arc<TestApi>) {
 	let api = Arc::new(TestApi::new());
-	let relay_chain_interface = RelayChainDirect { polkadot_client: api.clone() };
+	let relay_chain_interface =
+		RelayChainDirect { polkadot_client: api.clone(), backend: api.relay_backend.clone() };
 	(
 		BlockAnnounceValidator::new(
 			relay_chain_interface,
 			ParaId::from(56),
 			Box::new(DummyCollatorNetwork),
-			api.relay_backend.clone(),
 		),
 		api,
 	)

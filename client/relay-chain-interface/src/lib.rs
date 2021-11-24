@@ -10,16 +10,22 @@ use cumulus_primitives_core::{
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use polkadot_client::{ClientHandle, ExecuteWithClient};
-use sc_client_api::BlockchainEvents;
+use parking_lot::RwLock;
+use polkadot_client::{ClientHandle, ExecuteWithClient, FullBackend};
+use sc_client_api::{blockchain::BlockStatus, Backend, BlockchainEvents, HeaderBackend};
 use sp_api::{ApiError, BlockT, ProvideRuntimeApi};
 use sp_core::sp_std::collections::btree_map::BTreeMap;
 
 const LOG_TARGET: &str = "cumulus-collator";
 
 pub trait RelayChainInterface<Block: BlockT> {
+	fn get_import_lock(&self) -> &RwLock<()>;
+
 	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError>;
 
+	fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error>;
+
+	fn best_block_hash(&self) -> PHash;
 	/// Returns the whole contents of the downward message queue for the parachain we are collating
 	/// for.
 	///
@@ -68,11 +74,12 @@ pub trait RelayChainInterface<Block: BlockT> {
 
 pub struct RelayChainDirect<Client> {
 	pub polkadot_client: Arc<Client>,
+	pub backend: Arc<FullBackend>,
 }
 
 impl<T> Clone for RelayChainDirect<T> {
 	fn clone(&self) -> Self {
-		Self { polkadot_client: self.polkadot_client.clone() }
+		Self { polkadot_client: self.polkadot_client.clone(), backend: self.backend.clone() }
 	}
 }
 
@@ -177,10 +184,23 @@ where
 		self.polkadot_client
 			.storage_changes_notification_stream(filter_keys, child_filter_keys)
 	}
+
+	fn best_block_hash(&self) -> PHash {
+		self.backend.blockchain().info().best_hash
+	}
+
+	fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error> {
+		self.backend.blockchain().status(block_id)
+	}
+
+	fn get_import_lock(&self) -> &RwLock<()> {
+		self.backend.get_import_lock()
+	}
 }
 
 pub struct RelayChainDirectBuilder {
 	polkadot_client: polkadot_client::Client,
+	backend: Arc<FullBackend>,
 }
 
 impl RelayChainDirectBuilder {
@@ -197,7 +217,7 @@ impl ExecuteWithClient for RelayChainDirectBuilder {
 		Client: ProvideRuntimeApi<PBlock> + BlockchainEvents<PBlock> + 'static + Sync + Send,
 		Client::Api: ParachainHost<PBlock>,
 	{
-		Arc::new(RelayChainDirect { polkadot_client: client })
+		Arc::new(RelayChainDirect { polkadot_client: client, backend: self.backend })
 	}
 }
 
@@ -261,6 +281,18 @@ impl<Block: BlockT> RelayChainInterface<Block>
 		>,
 	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<Block::Hash>> {
 		(**self).storage_changes_notification_stream(filter_keys, child_filter_keys)
+	}
+
+	fn best_block_hash(&self) -> PHash {
+		(**self).best_block_hash()
+	}
+
+	fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error> {
+		(**self).block_status(block_id)
+	}
+
+	fn get_import_lock(&self) -> &RwLock<()> {
+		(**self).get_import_lock()
 	}
 }
 
@@ -327,11 +359,24 @@ where
 	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<Block::Hash>> {
 		(**self).storage_changes_notification_stream(filter_keys, child_filter_keys)
 	}
+
+	fn best_block_hash(&self) -> PHash {
+		(**self).best_block_hash()
+	}
+
+	fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error> {
+		(**self).block_status(block_id)
+	}
+
+	fn get_import_lock(&self) -> &RwLock<()> {
+		(**self).get_import_lock()
+	}
 }
 
 pub fn build_relay_chain_direct(
 	client: polkadot_client::Client,
+	backend: Arc<FullBackend>,
 ) -> Arc<(dyn RelayChainInterface<PBlock> + Send + Sync + 'static)> {
-	let relay_chain_builder = RelayChainDirectBuilder { polkadot_client: client };
+	let relay_chain_builder = RelayChainDirectBuilder { polkadot_client: client, backend };
 	relay_chain_builder.build()
 }

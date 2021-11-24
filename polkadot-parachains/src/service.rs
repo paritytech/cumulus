@@ -330,12 +330,15 @@ where
 	let client = params.client.clone();
 	let backend = params.backend.clone();
 
-	let relay_chain_interface = build_relay_chain_direct(relay_chain_full_node.client.clone());
+	let relay_chain_interface = build_relay_chain_direct(
+		relay_chain_full_node.client.clone(),
+		relay_chain_full_node.backend.clone(),
+	);
+
 	let block_announce_validator = build_block_announce_validator(
 		relay_chain_interface,
 		id,
 		Box::new(relay_chain_full_node.network.clone()),
-		relay_chain_full_node.backend.clone(),
 	);
 
 	let force_authoring = parachain_config.force_authoring;
@@ -506,12 +509,15 @@ where
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
-	let relay_chain_interface = build_relay_chain_direct(relay_chain_full_node.client.clone());
+	let relay_chain_interface = build_relay_chain_direct(
+		relay_chain_full_node.client.clone(),
+		relay_chain_full_node.backend.clone(),
+	);
+
 	let block_announce_validator = build_block_announce_validator(
 		relay_chain_interface,
 		id,
 		Box::new(relay_chain_full_node.network.clone()),
-		relay_chain_full_node.backend.clone(),
 	);
 
 	let force_authoring = parachain_config.force_authoring;
@@ -705,7 +711,7 @@ pub async fn start_rococo_parachain_node(
 			);
 
 			let relay_chain_backend = relay_chain_node.backend.clone();
-			let relay_chain_direct =  build_relay_chain_direct(relay_chain_node.client.clone());
+			let relay_chain_direct =  build_relay_chain_direct(relay_chain_node.client.clone(), relay_chain_backend.clone());
 			let relay_chain_direct_for_aura_consensus =  relay_chain_direct.clone();
 
 			Ok(build_aura_consensus::<
@@ -828,7 +834,10 @@ pub async fn start_shell_node(
 			);
 
 			let relay_chain_backend = relay_chain_node.backend.clone();
-			let relay_chain_interface = build_relay_chain_direct(relay_chain_node.client.clone());
+			let relay_chain_interface = build_relay_chain_direct(
+				relay_chain_node.client.clone(),
+				relay_chain_backend.clone(),
+			);
 
 			Ok(cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
 				cumulus_client_consensus_relay_chain::BuildRelayChainConsensusParams {
@@ -1110,7 +1119,10 @@ where
 				);
 
 				let relay_chain_backend2 = relay_chain_backend.clone();
-				let relay_chain_interface = build_relay_chain_direct(relay_chain_client.clone());
+				let relay_chain_interface = build_relay_chain_direct(
+					relay_chain_client.clone(),
+					relay_chain_backend2.clone(),
+				);
 				let relay_chain_interface2 = relay_chain_interface.clone();
 
 				build_aura_consensus::<
@@ -1179,7 +1191,10 @@ where
 			);
 
 			let relay_chain_backend = relay_chain_node.backend.clone();
-			let relay_chain_interface = build_relay_chain_direct(relay_chain_node.client.clone());
+			let relay_chain_interface = build_relay_chain_direct(
+				relay_chain_node.client.clone(),
+				relay_chain_backend.clone(),
+			);
 
 			let relay_chain_consensus =
 				cumulus_client_consensus_relay_chain::build_relay_chain_consensus(

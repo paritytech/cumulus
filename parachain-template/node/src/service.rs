@@ -246,12 +246,15 @@ where
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
-	let relay_chain_interface = build_relay_chain_direct(relay_chain_full_node.client.clone());
+	let relay_chain_interface = build_relay_chain_direct(
+		relay_chain_full_node.client.clone(),
+		relay_chain_full_node.backend.clone(),
+	);
+
 	let block_announce_validator = build_block_announce_validator(
 		relay_chain_interface,
 		id,
 		Box::new(relay_chain_full_node.network.clone()),
-		relay_chain_full_node.backend.clone(),
 	);
 
 	let force_authoring = parachain_config.force_authoring;
@@ -430,7 +433,10 @@ pub async fn start_parachain_node(
 			);
 
 			let relay_chain_backend = relay_chain_node.backend.clone();
-			let relay_chain_interface = build_relay_chain_direct(relay_chain_node.client.clone());
+			let relay_chain_interface = build_relay_chain_direct(
+				relay_chain_node.client.clone(),
+				relay_chain_backend.clone(),
+			);
 			let relay_chain_interface2 = relay_chain_interface.clone();
 			Ok(build_aura_consensus::<
 				sp_consensus_aura::sr25519::AuthorityPair,
