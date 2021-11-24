@@ -4,7 +4,7 @@
 # ./scripts/generate_genesis_value.sh
 usage() {
     echo Usage:
-    echo "$0 <chain-id>"
+    echo "$0 <chain-id> [rpc endpoint]"
     exit 1
 }
 
@@ -40,6 +40,7 @@ check_collator() {
 set -e
 
 chain_id=$1
+rpc_endpoint=$2
 work_dir="polkadot-parachains/res"
 chain_spec=$work_dir/$chain_id.json
 chain_values=$work_dir/${chain_id}_values.json
@@ -47,10 +48,19 @@ chain_values_scale=$work_dir/${chain_id}_values.scale
 
 [ -z "$chain_id" ] && usage
 chain_spec_summary
-check_collator
-echo -e "Make sure you have a collator running, if you don't, NOW is the time to start it with:"
-echo -e "target/release/polkadot-collator --chain $chain_spec --tmp\n"
-read -p "You can abort with CTRL+C if this is not correct, otherwise press ENTER "
+
+if [ "$rpc_endpoint" == "" ]; then
+    # default connecting to the official rpc
+    rpc_endpoint='wss://statemint-shell.polkadot.io'
+fi
+
+if [[ "$rpc_endpoint" =~ "localhost" ]]; then
+    check_collator
+    echo -e "Make sure you have a collator running with the correct version at $rpc_endpoint."
+    echo -e "If you don't, NOW is the time to start it with:"
+    echo -e "target/release/polkadot-collator --chain polkadot-parachains/res/shell-statemint.json --tmp\n"
+    read -p "You can abort with CTRL+C if this is not correct, otherwise press ENTER "
+fi
 
 echo "Generating genesis values..."
 pushd scripts/generate_genesis_values
@@ -64,7 +74,7 @@ pushd scripts/scale_encode_genesis
 yarn
 popd
 
-node scripts/scale_encode_genesis $chain_values $chain_values_scale
+node scripts/scale_encode_genesis $chain_values $chain_values_scale $rpc_endpoint
 
 
 ls -al polkadot-parachains/res/${chain_id}_value*.*

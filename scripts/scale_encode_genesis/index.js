@@ -8,8 +8,8 @@ const util = require("@polkadot/util");
 // functional or synced.)
 
 // connect to a local substrate chain and return the api object
-async function connect(port, types = {}) {
-	const provider = new WsProvider("ws://localhost:" + port);
+async function connect(endpoint, types = {}) {
+	const provider = new WsProvider(endpoint);
 	const api = await ApiPromise.create({
 		provider,
 		types,
@@ -19,12 +19,13 @@ async function connect(port, types = {}) {
 }
 
 if (!process.argv[2] || !process.argv[3]) {
-	console.log("usage: node generate_keys <input json> <scale output file>");
+	console.log("usage: node generate_keys <input json> <scale output file> [rpc enpoint]");
 	exit();
 }
 
 const input = process.argv[2];
 const output = process.argv[3];
+const rpcEnpoint = process.argv[4] || "ws://localhost:9944";
 
 console.log("Processing", input, output);
 fs.readFile(input, "utf8", (err, data) => {
@@ -36,8 +37,8 @@ fs.readFile(input, "utf8", (err, data) => {
 	const genesis = JSON.parse(data);
 
 	console.log("loaded genesis, length =  ", genesis.length);
-	console.log('Connecting via WebSocket to :9944');
-	connect(9944)
+	console.log(`Connecting to RPC endpoint: ${rpcEnpoint}`);
+	connect(rpcEnpoint)
 		.then((api) => {
 			console.log('Connected');
 			const setStorage = api.tx.system.setStorage(genesis);
