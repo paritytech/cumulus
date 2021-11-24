@@ -39,10 +39,15 @@ jobs:
           gpg_result=$?
           echo gpg_result: $gpg_result
 
+      - name: Checkout sources
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
       - name: Build injected image
         run: |
-          echo TODO
+          ./docker/scripts/build-injected-image.sh
 
       - name: Tag and Publish
         run: |
-          echo TODO
+          docker images
