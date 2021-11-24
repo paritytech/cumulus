@@ -66,7 +66,5 @@ popd
 
 node scripts/scale_encode_genesis $chain_values $chain_values_scale
 
-# echo "Stopping your collator"
-# pkill polkadot-collator
 
 ls -al polkadot-parachains/res/${chain_id}_value*.*
