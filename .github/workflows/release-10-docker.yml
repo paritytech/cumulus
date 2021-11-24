@@ -35,7 +35,7 @@ jobs:
           sha_result=$?
           echo sha_result: $sha_result
 
-          gpg --verify $BINARY.asc
+          gpg --verify polkadot-collator.asc
           gpg_result=$?
           echo gpg_result: $gpg_result
 
