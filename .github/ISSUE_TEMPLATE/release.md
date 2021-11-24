@@ -13,7 +13,7 @@ These checks should be performed on the codebase.
     last release for any native runtimes from any existing use on public
     (non-private/test) networks.
 - [ ] Verify previously [completed migrations](#old-migrations-removed) are
-    removed for any public (non-private/test) networks. @apopiak
+    removed for any public (non-private/test) networks.
   - No migrations added in the last release that would need to be removed.
 - [ ] Verify pallet and [extrinsic ordering](#extrinsic-ordering) as well as `SignedExtension`s have stayed
     the same. Bump `transaction_version` if not. @NachoPal
