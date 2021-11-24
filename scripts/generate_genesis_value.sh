@@ -50,7 +50,7 @@ chain_spec_summary
 check_collator
 echo -e "Make sure you have a collator running, if you don't, NOW is the time to start it with:"
 echo -e "target/release/polkadot-collator --chain $chain_spec --tmp\n"
-read -p "You can abort with CTRL+C if this is not correct, other press ENTER "
+read -p "You can abort with CTRL+C if this is not correct, otherwise press ENTER "
 
 echo "Generating genesis values..."
 pushd scripts/generate_genesis_values
