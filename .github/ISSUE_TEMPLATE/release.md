@@ -16,14 +16,14 @@ These checks should be performed on the codebase.
     removed for any public (non-private/test) networks.
   - No migrations added in the last release that would need to be removed.
 - [ ] Verify pallet and [extrinsic ordering](#extrinsic-ordering) as well as `SignedExtension`s have stayed
-    the same. Bump `transaction_version` if not. @NachoPal
+    the same. Bump `transaction_version` if not.
 - [ ] Verify new extrinsics have been correctly whitelisted/blacklisted for
-    [proxy filters](#proxy-filtering). @apopiak
+    [proxy filters](#proxy-filtering).
   - No new extrinsics.
 - [ ] Verify [benchmarks](#benchmarks) have been updated for any modified
-    runtime logic. @NachoPal
-  - [ ] Verify the weights are up-to-date. @NachoPal
-- [ ] Verify that the various pieces of XCM config are sane. @apopiak
+    runtime logic.
+  - [ ] Verify the weights are up-to-date.
+- [ ] Verify that the various pieces of XCM config are sane.
 
 The following checks can be performed after we have forked off to the release-
 candidate branch or started an additional release candidate branch (rc-2, rc-3, etc)
