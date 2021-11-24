@@ -10,25 +10,25 @@ scale-info = { version = "1.0.0", default-features = false, features = ["derive"
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 
 # Substrate dependencies
-frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+sp-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
+sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-temp" }
 
 # Cumulus dependencies
 cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false }
@@ -36,7 +36,7 @@ cumulus-primitives-core = { path = "../../primitives/core", default-features = f
 cumulus-primitives-timestamp = { path = "../../primitives/timestamp", default-features = false }
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
 
 [features]
 default = [ "std" ]

@@ -27,6 +27,7 @@ use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use log::info;
 use polkadot_parachain::primitives::AccountIdConversion;
+use polkadot_service::TaskManager;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
@@ -390,6 +391,33 @@ pub fn run() -> Result<()> {
 				Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
 					.into())
+			},
+		Some(Subcommand::TryRuntime(cmd)) =>
+			if cfg!(feature = "try-runtime") {
+				// grab the task manager.
+				let runner = cli.create_runner(cmd)?;
+				let registry = &runner.config().prometheus_config.as_ref().map(|cfg| &cfg.registry);
+				let task_manager =
+					TaskManager::new(runner.config().tokio_handle.clone(), *registry)
+						.map_err(|e| format!("Error: {:?}", e))?;
+
+				if runner.config().chain_spec.is_statemine() {
+					runner.async_run(|config| {
+						Ok((cmd.run::<Block, StatemineRuntimeExecutor>(config), task_manager))
+					})
+				} else if runner.config().chain_spec.is_westmint() {
+					runner.async_run(|config| {
+						Ok((cmd.run::<Block, WestmintRuntimeExecutor>(config), task_manager))
+					})
+				} else if runner.config().chain_spec.is_statemint() {
+					runner.async_run(|config| {
+						Ok((cmd.run::<Block, StatemintRuntimeExecutor>(config), task_manager))
+					})
+				} else {
+					Err("Chain doesn't support try-runtime".into())
+				}
+			} else {
+				Err("Try-runtime must be enabled by `--features try-runtime`.".into())
 			},
 		Some(Subcommand::Key(cmd)) => Ok(cmd.run(&cli)?),
 		None => {

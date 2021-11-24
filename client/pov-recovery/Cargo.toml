@@ -7,18 +7,18 @@ edition = "2021"
 
 [dependencies]
 # Substrate deps
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
+sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
 
 # Polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "kiz-temp" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "kiz-temp" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "kiz-temp" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "kiz-temp" }
 
 # Cumulus deps
 cumulus-primitives-core = { path = "../../primitives/core" }
@@ -37,7 +37,7 @@ tokio = { version = "1.10", features = ["macros"] }
 cumulus-test-service = { path = "../../test/service" }
 
 # substrate deps
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
+substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "kiz-temp" }
