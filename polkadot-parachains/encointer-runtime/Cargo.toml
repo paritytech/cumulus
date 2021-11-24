@@ -1,6 +1,6 @@
 [package]
 name = 'encointer-runtime'
-# minor revision must match collator node
+# major.minor revision must match collator node
 # patch revision must match runtime spec_version
 version = '0.6.2'
 authors = ["Encointer <info@encointer.org>"]
