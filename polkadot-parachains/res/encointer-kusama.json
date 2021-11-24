@@ -1,5 +1,5 @@
 {
-  "name": "Encointer Network",
+  "name": "Encointer Network (Kusama)",
   "id": "encointer-kusama",
   "chainType": "Live",
   "bootNodes": [
