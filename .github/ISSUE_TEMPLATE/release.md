@@ -31,20 +31,21 @@ candidate branch or started an additional release candidate branch (rc-2, rc-3, 
 - [ ] Verify [new migrations](#new-migrations) complete successfully, and the
     runtime state is correctly updated for any public (non-private/test)
     networks.
-- [ ] Verify [Polkadot JS API](#polkadot-js) are up to date with the latest
-    runtime changes.
+- [ ] Run integration tests.
+  - [ ] Teleport Relay -> Statemin* and back.
+  - [ ] Create asset (if applicable), mint and transfer
 - [ ] Push runtime upgrade to Westmint and verify network stability.
 
 
 ### All Releases
 
 - [ ] Check that the new polkadot-collator versions have [run on the network](#burn-in)
-    without issue. @PierreBesson
+    without issue.
 - [ ] Check that a draft release has been created at
     https://github.com/paritytech/cumulus/releases with relevant [release
-    notes](#release-notes) @chevdor
+    notes](#release-notes).
 - [ ] Check that [build artifacts](#build-artifacts) have been added to the
-    draft-release @chevdor
+    draft-release.
 
 ---
 
