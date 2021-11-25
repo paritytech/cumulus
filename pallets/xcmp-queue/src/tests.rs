@@ -43,7 +43,7 @@ fn bad_message_is_handled() {
 		InboundXcmpMessages::<Test>::insert(ParaId::from(1000), 1, bad_data);
 		let format = XcmpMessageFormat::ConcatenatedEncodedBlob;
 		// This should exit with an error.
-		XcmpQueue::process_xcmp_message(1000.into(), (1, format), 10_000_000_000);
+		XcmpQueue::process_xcmp_message(1000.into(), (1, format), 10_000_000_000, 10_000_000_000);
 	});
 }
 
@@ -60,6 +60,6 @@ fn other_bad_message_is_handled() {
 		InboundXcmpMessages::<Test>::insert(ParaId::from(1000), 1, bad_data);
 		let format = XcmpMessageFormat::ConcatenatedEncodedBlob;
 		// This should exit with an error.
-		XcmpQueue::process_xcmp_message(1000.into(), (1, format), 10_000_000_000);
+		XcmpQueue::process_xcmp_message(1000.into(), (1, format), 10_000_000_000, 10_000_000_000);
 	});
 }
