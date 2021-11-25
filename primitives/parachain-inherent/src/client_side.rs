@@ -32,14 +32,14 @@ const LOG_TARGET: &str = "parachain-inherent";
 /// Collect the relevant relay chain state in form of a proof for putting it into the validation
 /// data inherent.
 fn collect_relay_storage_proof(
-	polkadot_backend: &impl Backend<PBlock>,
+	relay_chain_interface: &impl RelayChainInterface<PBlock>,
 	para_id: ParaId,
 	relay_parent: PHash,
 ) -> Option<sp_state_machine::StorageProof> {
 	use relay_chain::well_known_keys as relay_well_known_keys;
 
-	let relay_parent_state_backend = polkadot_backend
-		.state_at(BlockId::Hash(relay_parent))
+	let relay_parent_state_backend = relay_chain_interface
+		.get_state_at(BlockId::Hash(relay_parent))
 		.map_err(|e| {
 			tracing::error!(
 				target: LOG_TARGET,
@@ -132,7 +132,6 @@ impl ParachainInherentData {
 	pub fn create_at<T>(
 		relay_parent: PHash,
 		relay_chain_interface: &T,
-		polkadot_backend: &impl Backend<PBlock>,
 		validation_data: &PersistedValidationData,
 		para_id: ParaId,
 	) -> Option<ParachainInherentData>
@@ -140,7 +139,8 @@ impl ParachainInherentData {
 		T: RelayChainInterface<PBlock>,
 	{
 		let relay_chain_state =
-			collect_relay_storage_proof(polkadot_backend, para_id, relay_parent)?;
+			collect_relay_storage_proof(relay_chain_interface, para_id, relay_parent)?;
+
 		let downward_messages =
 			relay_chain_interface.retrieve_dmq_contents(para_id, relay_parent)?;
 		let horizontal_messages = relay_chain_interface

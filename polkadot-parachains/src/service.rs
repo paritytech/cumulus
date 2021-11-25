@@ -733,7 +733,6 @@ pub async fn start_rococo_parachain_node(
 					cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 						relay_parent,
 						&relay_chain_direct,
-						&*relay_chain_backend,
 						&validation_data,
 						id,
 					);
@@ -851,7 +850,6 @@ pub async fn start_shell_node(
 							cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 								relay_parent,
 								&relay_chain_interface,
-								&*relay_chain_backend,
 								&validation_data,
 								id,
 							);
@@ -1144,7 +1142,6 @@ where
 							cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 								relay_parent,
 								&relay_chain_interface,
-								&*relay_chain_backend,
 								&validation_data,
 								id,
 							);
@@ -1210,7 +1207,6 @@ where
 									cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 										relay_parent,
 										&relay_chain_interface,
-										&*relay_chain_backend,
 										&validation_data,
 										id,
 									);

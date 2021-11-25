@@ -19,6 +19,11 @@ use sp_core::sp_std::collections::btree_map::BTreeMap;
 const LOG_TARGET: &str = "cumulus-collator";
 
 pub trait RelayChainInterface<Block: BlockT> {
+	fn get_state_at(
+		&self,
+		block_id: BlockId,
+	) -> Result<<FullBackend as sc_client_api::Backend<PBlock>>::State, sp_blockchain::Error>;
+
 	fn get_import_lock(&self) -> &RwLock<()>;
 
 	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError>;
@@ -196,6 +201,13 @@ where
 	fn get_import_lock(&self) -> &RwLock<()> {
 		self.backend.get_import_lock()
 	}
+
+	fn get_state_at(
+		&self,
+		block_id: BlockId,
+	) -> Result<<FullBackend as sc_client_api::Backend<PBlock>>::State, sp_blockchain::Error> {
+		self.backend.state_at(block_id)
+	}
 }
 
 pub struct RelayChainDirectBuilder {
@@ -294,6 +306,13 @@ impl<Block: BlockT> RelayChainInterface<Block>
 	fn get_import_lock(&self) -> &RwLock<()> {
 		(**self).get_import_lock()
 	}
+
+	fn get_state_at(
+		&self,
+		block_id: BlockId,
+	) -> Result<<FullBackend as sc_client_api::Backend<PBlock>>::State, sp_blockchain::Error> {
+		(**self).get_state_at(block_id)
+	}
 }
 
 impl<T, Block> RelayChainInterface<Block> for Arc<T>
@@ -370,6 +389,13 @@ where
 
 	fn get_import_lock(&self) -> &RwLock<()> {
 		(**self).get_import_lock()
+	}
+
+	fn get_state_at(
+		&self,
+		block_id: BlockId,
+	) -> Result<<FullBackend as sc_client_api::Backend<PBlock>>::State, sp_blockchain::Error> {
+		(**self).get_state_at(block_id)
 	}
 }
 
