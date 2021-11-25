@@ -218,6 +218,7 @@ where
 	let relay_chain_interface = Arc::new(RelayChainDirect {
 		polkadot_client: relay_chain_full_node.client.clone(),
 		backend: relay_chain_full_node.backend.clone(),
+		network: relay_chain_full_node.network.clone(),
 	});
 	let block_announce_validator = BlockAnnounceValidator::new(
 		relay_chain_interface,
@@ -280,6 +281,7 @@ where
 				let relay_chain_interface = Arc::new(RelayChainDirect {
 					polkadot_client: relay_chain_full_node.client.clone(),
 					backend: relay_chain_full_node.backend.clone(),
+					network: relay_chain_full_node.network.clone(),
 				});
 
 				let relay_chain_interface2 = relay_chain_interface.clone();

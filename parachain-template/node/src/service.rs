@@ -249,6 +249,7 @@ where
 	let relay_chain_interface = build_relay_chain_direct(
 		relay_chain_full_node.client.clone(),
 		relay_chain_full_node.backend.clone(),
+		relay_chain_full_node.network.clone(),
 	);
 
 	let block_announce_validator = build_block_announce_validator(
@@ -435,6 +436,7 @@ pub async fn start_parachain_node(
 			let relay_chain_interface = build_relay_chain_direct(
 				relay_chain_node.client.clone(),
 				relay_chain_node.backend.clone(),
+				relay_chain_node.network.clone(),
 			);
 
 			let relay_chain_interface2 = relay_chain_interface.clone();

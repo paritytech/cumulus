@@ -13,6 +13,7 @@ use cumulus_primitives_core::{
 use parking_lot::RwLock;
 use polkadot_client::{ClientHandle, ExecuteWithClient, FullBackend};
 use sc_client_api::{blockchain::BlockStatus, Backend, BlockchainEvents, HeaderBackend};
+use sc_network::NetworkService;
 use sp_api::{ApiError, BlockT, ProvideRuntimeApi};
 use sp_core::sp_std::collections::btree_map::BTreeMap;
 
@@ -75,16 +76,23 @@ pub trait RelayChainInterface<Block: BlockT> {
 			&[(sc_client_api::StorageKey, Option<Vec<sc_client_api::StorageKey>>)],
 		>,
 	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<Block::Hash>>;
+
+	fn is_major_syncing(&self) -> bool;
 }
 
 pub struct RelayChainDirect<Client> {
 	pub polkadot_client: Arc<Client>,
 	pub backend: Arc<FullBackend>,
+	pub network: Arc<NetworkService<PBlock, PHash>>,
 }
 
 impl<T> Clone for RelayChainDirect<T> {
 	fn clone(&self) -> Self {
-		Self { polkadot_client: self.polkadot_client.clone(), backend: self.backend.clone() }
+		Self {
+			polkadot_client: self.polkadot_client.clone(),
+			backend: self.backend.clone(),
+			network: self.network.clone(),
+		}
 	}
 }
 
@@ -208,11 +216,16 @@ where
 	) -> Result<<FullBackend as sc_client_api::Backend<PBlock>>::State, sp_blockchain::Error> {
 		self.backend.state_at(block_id)
 	}
+
+	fn is_major_syncing(&self) -> bool {
+		self.network.is_major_syncing()
+	}
 }
 
 pub struct RelayChainDirectBuilder {
 	polkadot_client: polkadot_client::Client,
 	backend: Arc<FullBackend>,
+	network: Arc<NetworkService<PBlock, PHash>>,
 }
 
 impl RelayChainDirectBuilder {
@@ -229,7 +242,11 @@ impl ExecuteWithClient for RelayChainDirectBuilder {
 		Client: ProvideRuntimeApi<PBlock> + BlockchainEvents<PBlock> + 'static + Sync + Send,
 		Client::Api: ParachainHost<PBlock>,
 	{
-		Arc::new(RelayChainDirect { polkadot_client: client, backend: self.backend })
+		Arc::new(RelayChainDirect {
+			polkadot_client: client,
+			backend: self.backend,
+			network: self.network,
+		})
 	}
 }
 
@@ -312,6 +329,10 @@ impl<Block: BlockT> RelayChainInterface<Block>
 		block_id: BlockId,
 	) -> Result<<FullBackend as sc_client_api::Backend<PBlock>>::State, sp_blockchain::Error> {
 		(**self).get_state_at(block_id)
+	}
+
+	fn is_major_syncing(&self) -> bool {
+		(**self).is_major_syncing()
 	}
 }
 
@@ -397,12 +418,17 @@ where
 	) -> Result<<FullBackend as sc_client_api::Backend<PBlock>>::State, sp_blockchain::Error> {
 		(**self).get_state_at(block_id)
 	}
+
+	fn is_major_syncing(&self) -> bool {
+		(**self).is_major_syncing()
+	}
 }
 
 pub fn build_relay_chain_direct(
 	client: polkadot_client::Client,
 	backend: Arc<FullBackend>,
+	network: Arc<NetworkService<PBlock, PHash>>,
 ) -> Arc<(dyn RelayChainInterface<PBlock> + Send + Sync + 'static)> {
-	let relay_chain_builder = RelayChainDirectBuilder { polkadot_client: client, backend };
+	let relay_chain_builder = RelayChainDirectBuilder { polkadot_client: client, backend, network };
 	relay_chain_builder.build()
 }

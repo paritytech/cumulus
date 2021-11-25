@@ -333,6 +333,7 @@ where
 	let relay_chain_interface = build_relay_chain_direct(
 		relay_chain_full_node.client.clone(),
 		relay_chain_full_node.backend.clone(),
+		relay_chain_full_node.network.clone(),
 	);
 
 	let block_announce_validator = build_block_announce_validator(
@@ -512,6 +513,7 @@ where
 	let relay_chain_interface = build_relay_chain_direct(
 		relay_chain_full_node.client.clone(),
 		relay_chain_full_node.backend.clone(),
+		relay_chain_full_node.network.clone(),
 	);
 
 	let block_announce_validator = build_block_announce_validator(
@@ -710,7 +712,7 @@ pub async fn start_rococo_parachain_node(
 				telemetry.clone(),
 			);
 
-			let relay_chain_direct =  build_relay_chain_direct(relay_chain_node.client.clone(), relay_chain_node.backend.clone());
+			let relay_chain_direct =  build_relay_chain_direct(relay_chain_node.client.clone(), relay_chain_node.backend.clone(), relay_chain_node.network.clone());
 			let relay_chain_direct_for_aura_consensus =  relay_chain_direct.clone();
 
 			Ok(build_aura_consensus::<
@@ -832,6 +834,7 @@ pub async fn start_shell_node(
 			let relay_chain_interface = build_relay_chain_direct(
 				relay_chain_node.client.clone(),
 				relay_chain_node.backend.clone(),
+				relay_chain_node.network.clone(),
 			);
 
 			Ok(cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
@@ -1100,6 +1103,7 @@ where
 			let relay_chain_interface = build_relay_chain_direct(
 				relay_chain_node.client.clone(),
 				relay_chain_node.backend.clone(),
+				relay_chain_node.network.clone(),
 			);
 
 			let aura_consensus = BuildOnAccess::Uninitialized(Some(Box::new(move || {
@@ -1181,6 +1185,7 @@ where
 			let relay_chain_interface = build_relay_chain_direct(
 				relay_chain_node.client.clone(),
 				relay_chain_node.backend.clone(),
+				relay_chain_node.network.clone(),
 			);
 
 			let relay_chain_consensus =
