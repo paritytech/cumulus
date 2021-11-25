@@ -277,11 +277,9 @@ where
 					prometheus_registry.as_ref(),
 					None,
 				);
-				let relay_chain_backend = relay_chain_full_node.backend.clone();
-
 				let relay_chain_interface = Arc::new(RelayChainDirect {
 					polkadot_client: relay_chain_full_node.client.clone(),
-					backend: relay_chain_backend.clone(),
+					backend: relay_chain_full_node.backend.clone(),
 				});
 
 				let relay_chain_interface2 = relay_chain_interface.clone();
@@ -310,7 +308,6 @@ where
 					},
 					client.clone(),
 					relay_chain_interface2,
-					relay_chain_full_node.backend.clone(),
 				))
 			},
 			Consensus::Null => Box::new(NullConsensus),
