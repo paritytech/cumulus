@@ -37,6 +37,9 @@ pub fn allocate_endowance(endowed_accounts: Vec<AccountId>) -> Vec<(AccountId, u
 	endowed_accounts.into_iter().map(|k| (k, ENDOWED_FUNDING)).collect()
 }
 
+/// The default XCM version to set in genesis config.
+const SAFE_XCM_VERSION: u32 = 2;
+
 /// The extensions for the [`ChainSpec`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
 #[serde(deny_unknown_fields)]
@@ -191,13 +194,15 @@ fn encointer_genesis(
 			code: parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			changes_trie_config: Default::default(),
 		},
 		parachain_system: Default::default(),
 		balances: parachain_runtime::BalancesConfig { balances: endowance_allocation },
 		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },
 		aura: parachain_runtime::AuraConfig { authorities: initial_authorities },
 		aura_ext: Default::default(),
+		polkadot_xcm: parachain_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
+		},
 		treasury: Default::default(),
 		collective: Default::default(),
 		membership: parachain_runtime::MembershipConfig {
@@ -241,13 +246,15 @@ fn launch_genesis(
 			code: launch_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			changes_trie_config: Default::default(),
 		},
 		parachain_system: Default::default(),
 		balances: launch_runtime::BalancesConfig { balances: endowance_allocation },
 		parachain_info: launch_runtime::ParachainInfoConfig { parachain_id: id },
 		aura: launch_runtime::AuraConfig { authorities: initial_authorities },
 		aura_ext: Default::default(),
+		polkadot_xcm: launch_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
+		},
 		treasury: Default::default(),
 		collective: Default::default(),
 		membership: launch_runtime::MembershipConfig {

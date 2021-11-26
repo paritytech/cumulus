@@ -36,8 +36,6 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 
-const DEFAULT_PARA_ID: u32 = 2015;
-
 trait IdentifyChain {
 	fn is_launch(&self) -> bool;
 }
@@ -58,7 +56,6 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 #[rustfmt::skip]
 fn load_spec(
 	id: &str,
-	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
 		"encointer-rococo" 			=> Box::new(chain_spec::encointer_rococo()?),
@@ -88,8 +85,8 @@ fn load_spec(
 		"launch-kusama-local-dev" 	=> Box::new(chain_spec::launch_spec(1001.into(), GenesisKeys::WellKnown, 						RelayChain::KusamaLocal)),
 
 
-		"sybil-dummy-rococo" => Box::new(chain_spec::sybil_dummy_spec(para_id, RelayChain::Rococo)),
-		"sybil-dummy-rococo-local" => Box::new(chain_spec::sybil_dummy_spec(para_id, RelayChain::RococoLocal)),
+		"sybil-dummy-rococo" => Box::new(chain_spec::sybil_dummy_spec(1863.into(), RelayChain::Rococo)),
+		"sybil-dummy-rococo-local" => Box::new(chain_spec::sybil_dummy_spec(1863.into(), RelayChain::RococoLocal)),
 
 		"" => return Err("No chain-spec specified".into()),
 		path => {
@@ -117,7 +114,7 @@ impl SubstrateCli for Cli {
 			"Encointer collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
-		{} [parachain-args] -- [relaychain-args]",
+		{} [parachain-args] -- [relay_chain-args]",
 			Self::executable_name()
 		)
 	}
@@ -135,7 +132,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		load_spec(id, self.run.parachain_id.unwrap_or(DEFAULT_PARA_ID).into())
+		load_spec(id)
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -160,8 +157,8 @@ impl SubstrateCli for RelayChainCli {
 		format!(
 			"Encointer collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
-		to the relaychain node.\n\n\
-		{} [parachain-args] -- [relaychain-args]",
+		to the relay chain node.\n\n\
+		{} [parachain-args] -- [relay_chain-args]",
 			Self::executable_name()
 		)
 	}
@@ -284,10 +281,8 @@ pub fn run() -> Result<()> {
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
 			let _ = builder.init();
 
-			let block: crate::service::Block = generate_genesis_block(&load_spec(
-				&params.chain.clone().unwrap_or_default(),
-				params.parachain_id.unwrap_or(DEFAULT_PARA_ID).into(),
-			)?)?;
+			let block: crate::service::Block =
+				generate_genesis_block(&load_spec(&params.chain.clone().unwrap_or_default())?)?;
 			let raw_header = block.header().encode();
 			let output_buf = if params.raw {
 				raw_header
@@ -345,8 +340,9 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 
 			runner.run_node_until_exit(|config| async move {
-				let para_id =
-					chain_spec::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
+				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
+					.map(|e| e.para_id)
+					.ok_or_else(|| "Could not find parachain extension in chain-spec.")?;
 
 				let polkadot_cli = RelayChainCli::new(
 					&config,
@@ -355,7 +351,7 @@ pub fn run() -> Result<()> {
 						.chain(cli.relaychain_args.iter()),
 				);
 
-				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(DEFAULT_PARA_ID));
+				let id = ParaId::from(para_id);
 
 				let parachain_account =
 					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);

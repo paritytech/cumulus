@@ -137,6 +137,10 @@ The current weights have been benchmarked with the following reference hardware:
 2. run: `./scripts/benchmark_launch_runtime.sh` and `./scripts/benchmark_encointer_runtime.sh`.
 3. If changed, update the reference hardware above.
 
+**Note**: With the current substrate version, we brick the `frame_system::Weight` file because the `set_changes_trie_config`
+has been removed from the pallet, but it still exists in the trait definition. So after running the benchmark, we need 
+to add the function manually again.
+
 ### Adding new pallets to be benchmarked
 Every pallet with a `type WeightInfo` parameter in its config must be benchmarked.
 

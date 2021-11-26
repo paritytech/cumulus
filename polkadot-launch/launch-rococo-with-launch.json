@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../../bin/polkadot-v0.9.12",
+		"bin": "../../bin/polkadot-v0.9.13-rc1-trusted-encointer",
 		"chain": "rococo",
 		"nodes": [
 			{
@@ -24,7 +24,6 @@
 		{
 			"bin": "../target/release/encointer-collator",
 			"chain": "launch-rococo",
-			"id": "1862",
 			"balance": "1000000000000000000000",
 			"nodes": [
 				{

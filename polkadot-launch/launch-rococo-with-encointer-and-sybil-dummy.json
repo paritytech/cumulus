@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../../bin/polkadot-v0.9.12",
+		"bin": "../../bin/polkadot-v0.9.13-rc1-trusted-encointer",
 		"chain": "rococo",
 		"nodes": [
 			{
@@ -24,7 +24,6 @@
 		{
 			"bin": "../target/release/encointer-collator",
 			"chain": "encointer-rococo",
-			"id": "1862",
 			"balance": "1000000000000000000000",
 			"nodes": [
 				{
@@ -37,7 +36,6 @@
 		{
 			"bin": "../target/release/encointer-collator",
 			"chain": "sybil-dummy-rococo",
-			"id": "1863",
 			"balance": "1000000000000000000000",
 			"nodes": [
 				{
@@ -53,14 +51,14 @@
 	],
 	"hrmpChannels": [
 		{
-			"sender": 1862,
+			"sender": 1003,
 			"recipient": 1863,
 			"maxCapacity": 8,
 			"maxMessageSize": 512
 		},
 		{
 			"sender": 1863,
-			"recipient": 1862,
+			"recipient": 1003,
 			"maxCapacity": 8,
 			"maxMessageSize": 512
 		}

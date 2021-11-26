@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../../bin/polkadot-v0.9.12",
+		"bin": "../../bin/polkadot-v0.9.13-rc1-trusted-encointer",
 		"chain": "westend-local",
 		"nodes": [
 			{
@@ -24,7 +24,6 @@
 		{
 			"bin": "../../bin/polkadot-collator-v0.9.12",
 			"chain": "westmint-local",
-			"id": "1000",
 			"balance": "1000000000000000000000",
 			"nodes": [
 				{

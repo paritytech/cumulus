@@ -3,7 +3,7 @@
 # Create `WeightInfo` implementations for all the pallets and store it in the weight module of the `encointer-runtime`.
 
 NODE=${1:-target/release/encointer-collator}
-CHAIN_SPEC=${2:-encointer-rococo}
+CHAIN_SPEC=${2:-encointer-rococo-fresh}
 WEIGHT_OUTPUT_DIR=${3:-polkadot-parachains/encointer-runtime/src/weights}
 
 echo "Running benchmarks for all pallets:"

@@ -1,25 +1,29 @@
 # Upward/ Downward native-token transfers
-Working example for `polkadot-v0.9.12` to transfer the native token from the relay-chain to the parachain
- via the `xcm-pallet`. The message format is very generic, hence the correct extrinsics for those transfers are shown below.
+Working example for `polkadot-v0.9.13` to transfer the native token from the relay-chain to the parachain
+ via the `xcm-pallet` and vice-versa. The message format is very generic, hence the correct extrinsics for those transfers are shown below.
 
-Before we can send xcm-messages between the relay chain, we must overwrite the xcm-version. Polkadot defaults to version
-two, which is not yet supported by the `Cumulus` template. This is a sudo call.
-We can either set it globally with `forceDefaultXcmVersion` or only for a certain parachain with `forceXcmVersion`.
+### Preliminaries
+The relay chain must have marked encointer as a trusted teleporter, which is not yet the case. This polkadot fork contains
+slightly amended westend and rococo runtimes, where encointer is a trusted teleporter.
 
-* `sudo.call(xcmPallet.forceDefaultXcmVersion(Some(1)))`
-* `sudo.call(xcmPallet.forceXcmVersion(1862, 1))`
+* Polkadot relay chain: https://github.com/encointer/polkadot/tree/v0.9.13-trusted-encointer
 
-
+* For debugging it greatly helps to pass `-lxcm=trace` to the collator. a subsequent `less 9944.log | grep xcm`, neatly 
+  displays all XCM steps.
+  
 ## Downwards Tx
-Send from Alice on the relay chain to AliceStash on the parachain.
+Send from Alice on the relay chain to Ferdie on the parachain.
 
 ![downward-token-tx.png](downward-token-tx.png)
 
 ## Upwards Token Tx
-Send from AliceStash on the parachain to AliceStash on the relay chain.
+Send from Alice on the parachain to Ferdie on the relay chain.
 
-Note: This only works if there has been a `ReserveAssetTransfer` from the relay chain to the parachain before, which will
-put some relay-chain tokens into the reserve allocated to the encointer-parachains asset register.
+**Note**: The relay chain tracks teleported assets. Hence, we must perform a downward transfer before we do the upward
+transfer such that the total token stream in parachain direction remains positive. Otherwise, we get a `NotWithdrawable` 
+error upon the upward transfer on the relay chain side. In production system this condition always holds as the 
+parachain starts with 0 tokens anyhow.
+
 
 ![upward-token-tx.png](downward-token-tx.png)
 
