@@ -99,7 +99,6 @@ runtime-benchmarks = [
 	'westmint-runtime/runtime-benchmarks',
 ]
 try-runtime = [
-	'polkadot-service/try-runtime',
 	'statemint-runtime/try-runtime',
 	'statemine-runtime/try-runtime',
 	'westmint-runtime/try-runtime',
