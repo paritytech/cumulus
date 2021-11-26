@@ -25,6 +25,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub mod migration;
+
 #[cfg(test)]
 mod mock;
 
@@ -51,6 +53,8 @@ pub use pallet::*;
 /// Index used to identify overweight XCMs.
 pub type OverweightIndex = u64;
 
+const LOG_TARGET: &str = "xcmp_queue";
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -59,6 +63,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::storage_version(migration::STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
@@ -80,6 +85,10 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_runtime_upgrade() -> Weight {
+			migration::migrate_to_latest::<T>()
+		}
+
 		fn on_idle(_now: T::BlockNumber, max_weight: Weight) -> Weight {
 			// on_idle processes additional messages with any remaining block weight.
 			Self::service_xcmp_queue(max_weight)
