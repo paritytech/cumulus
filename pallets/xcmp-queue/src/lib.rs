@@ -457,14 +457,6 @@ impl<T: Config> Pallet<T> {
 						match Self::handle_xcm_message(sender, sent_at, xcm, weight) {
 							Ok(used) => weight_used = weight_used.saturating_add(used),
 							Err(XcmError::WeightLimitReached(required))
-								if required <= max_weight =>
-							{
-								// That message didn't get processed this time because of being
-								// too heavy. We leave it around for next time and bail.
-								remaining_fragments = last_remaining_fragments;
-								break
-							},
-							Err(XcmError::WeightLimitReached(required))
 								if required > max_individual_weight =>
 							{
 								// overweight - add to overweight queue and continue with message
@@ -477,6 +469,14 @@ impl<T: Config> Pallet<T> {
 								Self::deposit_event(Event::OverweightEnqueued(
 									sender, sent_at, index, required,
 								));
+							},
+							Err(XcmError::WeightLimitReached(required))
+								if required <= max_weight =>
+							{
+								// That message didn't get processed this time because of being
+								// too heavy. We leave it around for next time and bail.
+								remaining_fragments = last_remaining_fragments;
+								break
 							},
 							Err(_) => {
 								// Message looks invalid; don't attempt to retry
