@@ -303,9 +303,6 @@ pub mod pallet {
 				horizontal_messages,
 			} = data;
 
-			log::info!(target: "mock-xcm", "🤞⛓️📨 In parachain inherent");
-			log::info!(target: "mock-xcm", "🤞⛓️📨 downward messages are: {:?}", downward_messages);
-
 			Self::validate_validation_data(&vfp);
 
 			let relay_state_proof = RelayChainStateProof::new(
