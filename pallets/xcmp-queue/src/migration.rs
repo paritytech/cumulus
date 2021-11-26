@@ -36,8 +36,8 @@ pub fn migrate_to_latest<T: Config>() -> Weight {
 }
 
 mod v0 {
-	use codec::{Decode, Encode};
 	use super::*;
+	use codec::{Decode, Encode};
 
 	#[derive(Encode, Decode, Debug)]
 	pub struct QueueConfigData {
@@ -76,8 +76,8 @@ pub fn migrate_to_v1<T: Config>() -> Weight {
 			resume_threshold: pre.resume_threshold,
 			threshold_weight: pre.threshold_weight,
 			weight_restrict_decay: pre.weight_restrict_decay,
-			xcmp_max_individual_weight:
-				super::QueueConfigData::default().xcmp_max_individual_weight,
+			xcmp_max_individual_weight: super::QueueConfigData::default()
+				.xcmp_max_individual_weight,
 		}
 	};
 
