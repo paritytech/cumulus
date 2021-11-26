@@ -9,9 +9,8 @@
 #
 # All arguments are optional.
 
-PARA_ID=${1:-2015}
-COLLATOR=${2:-./target/release/encointer-collator}
-DUMP_DIR=${3:-./chain_dumps}
+COLLATOR=${1:-./target/release/encointer-collator}
+DUMP_DIR=${2:-./chain_dumps}
 
 mkdir -p ${DUMP_DIR}
 
@@ -41,5 +40,5 @@ chainspecs=("encointer-rococo" \
 $COLLATOR --version
 # Print array values in  lines
 for spec in ${chainspecs[*]}; do
-  ./scripts/dump_wasm_state_and_spec.sh ${spec} ${PARA_ID} ${COLLATOR} ${DUMP_DIR}
+  ./scripts/dump_wasm_state_and_spec.sh ${spec} ${COLLATOR} ${DUMP_DIR}
 done

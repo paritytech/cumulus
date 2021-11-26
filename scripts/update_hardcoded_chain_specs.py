@@ -22,12 +22,22 @@ import subprocess
 
 SPECS = [
     {
+        "chain_id": "encointer-kusama",
+    },
+    {
+        "chain_id": "encointer-rococo",
+    },
+    {
+        "chain_id": "encointer-westend",
+    },
+    {
         "chain_id": "launch-kusama",
-        "para_id": 2014,
+    },
+    {
+        "chain_id": "launch-rococo",
     },
     {
         "chain_id": "launch-westend",
-        "para_id": 2103,
     }
 ]
 COLLATOR = "target/release/encointer-collator"
@@ -37,10 +47,9 @@ RES_DIR = "polkadot-parachains/res"
 def main(migrate_genesis: bool):
     for s in SPECS:
         chain_spec = s["chain_id"]
-        para_id = s["para_id"]
 
         ret = subprocess.call(
-            f'scripts/dump_wasm_state_and_spec.sh {chain_spec}-fresh {para_id} {COLLATOR} {RES_DIR}',
+            f'scripts/dump_wasm_state_and_spec.sh {chain_spec}-fresh {COLLATOR} {RES_DIR}',
             stdout=subprocess.PIPE,
             shell=True
         )
@@ -70,6 +79,7 @@ def main(migrate_genesis: bool):
         # remove side-products
         os.remove(f'{new_file_base}.json')
         os.remove(f'{new_file_base}-raw.json')
+        os.remove(f'{new_file_base}-raw-unsorted.json')
         os.remove(f'{new_file_base}.state')
         os.remove(f'{new_file_base}.wasm')
 
