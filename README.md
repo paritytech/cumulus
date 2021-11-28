@@ -7,10 +7,6 @@ This is the repository to run encointer as a parachain in the rococo-v1 testnet.
 * [Sybil Defense Demo](docs/sybil-demo)
 * [Native Downward-/ Upward Token Tx Demo](docs/downward-upward-native-token-tx)
 
-## Polkadot-JS type extensions
-
-[typedefs.json](typedefs.json)
-
 ## Launch a local setup including a Relay Chain and a Parachain
 
 ### Launch the Relay Chain (Local Rococo Testnet)

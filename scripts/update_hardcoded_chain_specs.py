@@ -44,7 +44,7 @@ COLLATOR = "target/release/encointer-collator"
 RES_DIR = "polkadot-parachains/res"
 
 
-def main(migrate_genesis: bool):
+def main(regenesis: bool):
     for s in SPECS:
         chain_spec = s["chain_id"]
 
@@ -68,7 +68,7 @@ def main(migrate_genesis: bool):
 
                 new_json["bootNodes"] = orig_json["bootNodes"]
 
-                if migrate_genesis:
+                if not regenesis:
                     new_json["genesis"] = orig_json["genesis"]
 
                 # go to beginning of the file to overwrite
@@ -86,9 +86,9 @@ def main(migrate_genesis: bool):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--migrate-genesis', help='Create entirely new chain spec, not preserving previous genesis state', action='store_true')
+    parser.add_argument('--regenesis', help='Overwrite genesis state in chain spec. Use this for resetting chains entirely', action='store_true')
 
     args = parser.parse_args()
-    print(f'Updating chain specs migrating-genesis == {args.migrate_genesis}')
+    print(f'Updating chain specs. Preserving bootnodes. (re-genesis == {args.regenesis})')
 
-    main(args.migrate_genesis)
+    main(args.regenesis)

@@ -63,6 +63,5 @@
 			"maxMessageSize": 512
 		}
 	],
-	"types": "./typedefs.json",
 	"finalization": false
 }

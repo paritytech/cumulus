@@ -139,7 +139,7 @@ fn chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
 		// telemetry endpoints
 		None,
 		// protocol id
-		None,
+		Some(&format!("nctr-{}", relay_chain.to_string().chars().nth(0).unwrap())),
 		// properties
 		Some(relay_chain.properties()),
 		Extensions { relay_chain: relay_chain.to_string(), para_id: para_id.into() },
