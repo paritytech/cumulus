@@ -65,20 +65,24 @@ use parachains_common::{
 pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
+use frame_support::traits::Get;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
+use sp_std::{borrow::Borrow, marker::PhantomData, result};
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
-	ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
-	FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser,
-	ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-	UsingComponents,
+	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
+	CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete,
+	LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsDefault, RelayChainAsNative,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
-use xcm_executor::{traits::JustTry, Config, XcmExecutor};
+use xcm_executor::{
+	traits::{Convert, JustTry},
+	Config, XcmExecutor,
+};
 
 impl_opaque_keys! {
 	pub struct SessionKeys {
@@ -428,6 +432,7 @@ parameter_types! {
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	pub const Local: MultiLocation = Here.into();
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
+	pub Remote: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -456,6 +461,40 @@ pub type CurrencyTransactor = CurrencyAdapter<
 	(),
 >;
 
+pub struct AsPrefixedGeneralIndexFromLocalOrRemote<
+	LocalPrefix,
+	RemotePrefix,
+	AssetId,
+	ConvertAssetId,
+>(PhantomData<(LocalPrefix, RemotePrefix, AssetId, ConvertAssetId)>);
+impl<
+		LocalPrefix: Get<MultiLocation>,
+		RemotePrefix: Get<MultiLocation>,
+		AssetId: Clone,
+		ConvertAssetId: Convert<u128, AssetId>,
+	> Convert<MultiLocation, AssetId>
+	for AsPrefixedGeneralIndexFromLocalOrRemote<LocalPrefix, RemotePrefix, AssetId, ConvertAssetId>
+{
+	fn convert_ref(id: impl Borrow<MultiLocation>) -> result::Result<AssetId, ()> {
+		let prefix = LocalPrefix::get();
+		let remote_prefix = RemotePrefix::get();
+		let id = id.borrow();
+		match id.interior().at(prefix.interior().len()) {
+			Some(Junction::GeneralIndex(id)) => ConvertAssetId::convert_ref(id),
+			_ => match id.interior().at(remote_prefix.interior().len()) {
+				Some(Junction::GeneralIndex(id)) => ConvertAssetId::convert_ref(id),
+				_ => Err(()),
+			},
+		}
+	}
+	fn reverse_ref(what: impl Borrow<AssetId>) -> result::Result<MultiLocation, ()> {
+		let mut location = LocalPrefix::get();
+		let id = ConvertAssetId::reverse_ref(what)?;
+		location.push_interior(Junction::GeneralIndex(id)).map_err(|_| ())?;
+		Ok(location)
+	}
+}
+
 /// Means for transacting assets besides the native currency on this chain.
 pub type FungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
@@ -464,7 +503,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	ConvertedConcreteAssetId<
 		AssetId,
 		Balance,
-		AsPrefixedGeneralIndex<Local, AssetId, JustTry>,
+		AsPrefixedGeneralIndexFromLocalOrRemote<Local, Remote, AssetId, JustTry>,
 		JustTry,
 	>,
 	// Convert an XCM MultiLocation into a local account id:
@@ -477,6 +516,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	// The account to use for tracking teleports.
 	CheckingAccount,
 >;
+
 /// Means for transacting assets on this chain.
 pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor);
 
