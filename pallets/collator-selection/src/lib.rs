@@ -294,13 +294,14 @@ pub mod pallet {
 			}
 
 			// check if the invulnerables have associated validator keys before they are set
-			let who = ensure_signed(origin)?;
-			let validator_key = T::ValidatorIdOf::convert(who.clone())
-				.ok_or(Error::<T>::NoAssociatedValidatorId)?;
-			ensure!(
-				T::ValidatorRegistration::is_registered(&validator_key),
-				Error::<T>::ValidatorNotRegistered
-			);
+			for account_id in new {
+				let validator_key = T::ValidatorIdOf::convert(account_id.clone())
+					.ok_or(Error::<T>::NoAssociatedValidatorId)?;
+				ensure!(
+					T::ValidatorRegistration::is_registered(&validator_key),
+					Error::<T>::ValidatorNotRegistered
+				);
+			}
 
 			<Invulnerables<T>>::put(&new);
 			Self::deposit_event(Event::NewInvulnerables(new));
