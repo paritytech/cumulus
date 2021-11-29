@@ -124,9 +124,9 @@ pub mod pallet {
 
 	/// Status of the inbound XCMP channels.
 	#[pallet::storage]
-	pub(super) type InboundXcmpStatus<T: Config> = StorageValue<
+	pub(super) type InboundChannelStatus<T: Config> = StorageValue<
 		_,
-		Vec<(ParaId, InboundStatus, Vec<(RelayBlockNumber, XcmpMessageFormat)>)>,
+		Vec<InboundChannelDetails>,
 		ValueQuery,
 	>;
 
@@ -169,7 +169,7 @@ pub mod pallet {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub enum InboundStatus {
+pub enum InboundState {
 	Ok,
 	Suspended,
 }
@@ -178,6 +178,13 @@ pub enum InboundStatus {
 pub enum OutboundStatus {
 	Ok,
 	Suspended,
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
+pub struct InboundChannelDetails {
+	sender: ParaId,
+	state: InboundState,
+	message_metadata: Vec<(RelayBlockNumber, XcmpMessageFormat)>,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
@@ -468,7 +475,7 @@ impl<T: Config> Pallet<T> {
 	/// for the second &c. though empirical and or practical factors may give rise to adjusting it
 	/// further.
 	fn service_xcmp_queue(max_weight: Weight) -> Weight {
-		let mut status = <InboundXcmpStatus<T>>::get(); // <- sorted.
+		let mut status = <InboundChannelStatus<T>>::get(); // <- sorted.
 		if status.len() == 0 {
 			return 0
 		}
@@ -493,7 +500,7 @@ impl<T: Config> Pallet<T> {
 			max_weight.saturating_sub(weight_used) >= threshold_weight
 		{
 			let index = shuffled[shuffle_index];
-			let sender = status[index].0;
+			let sender = status[index].sender;
 
 			if weight_available != max_weight {
 				// Get incrementally closer to freeing up max_weight for message execution over the
@@ -510,34 +517,34 @@ impl<T: Config> Pallet<T> {
 				}
 			}
 
-			let weight_processed = if status[index].2.is_empty() {
+			let weight_processed = if status[index].message_metadata.is_empty() {
 				debug_assert!(false, "channel exists in status; there must be messages; qed");
 				0
 			} else {
 				// Process up to one block's worth for now.
 				let weight_remaining = weight_available.saturating_sub(weight_used);
 				let (weight_processed, is_empty) =
-					Self::process_xcmp_message(sender, status[index].2[0], weight_remaining);
+					Self::process_xcmp_message(sender, status[index].message_metadata[0], weight_remaining);
 				if is_empty {
-					status[index].2.remove(0);
+					status[index].message_metadata.remove(0);
 				}
 				weight_processed
 			};
 			weight_used += weight_processed;
 
-			if status[index].2.len() as u32 <= resume_threshold &&
-				status[index].1 == InboundStatus::Suspended
+			if status[index].message_metadata.len() as u32 <= resume_threshold &&
+				status[index].state == InboundState::Suspended
 			{
 				// Resume
 				let r = Self::send_signal(sender, ChannelSignal::Resume);
 				debug_assert!(r.is_ok(), "WARNING: Failed sending resume into suspended channel");
-				status[index].1 = InboundStatus::Ok;
+				status[index].state = InboundState::Ok;
 			}
 
 			// If there are more and we're making progress, we process them after we've given the
 			// other channels a look in. If we've still not unlocked all weight, then we set them
 			// up for processing a second time anyway.
-			if !status[index].2.is_empty() &&
+			if !status[index].message_metadata.is_empty() &&
 				(weight_processed > 0 || weight_available != max_weight)
 			{
 				if shuffle_index + 1 == shuffled.len() {
@@ -550,9 +557,9 @@ impl<T: Config> Pallet<T> {
 		}
 
 		// Only retain the senders that have non-empty queues.
-		status.retain(|item| !item.2.is_empty());
+		status.retain(|item| !item.message_metadata.is_empty());
 
-		<InboundXcmpStatus<T>>::put(status);
+		<InboundChannelStatus<T>>::put(status);
 		weight_used
 	}
 
@@ -593,7 +600,7 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 		iter: I,
 		max_weight: Weight,
 	) -> Weight {
-		let mut status = <InboundXcmpStatus<T>>::get();
+		let mut status = <InboundChannelStatus<T>>::get();
 
 		let QueueConfigData { suspend_threshold, drop_threshold, .. } = <QueueConfig<T>>::get();
 
@@ -621,11 +628,11 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 				}
 			} else {
 				// Record the fact we received it.
-				match status.binary_search_by_key(&sender, |item| item.0) {
+				match status.binary_search_by_key(&sender, |item| item.sender) {
 					Ok(i) => {
-						let count = status[i].2.len();
-						if count as u32 >= suspend_threshold && status[i].1 == InboundStatus::Ok {
-							status[i].1 = InboundStatus::Suspended;
+						let count = status[i].message_metadata.len();
+						if count as u32 >= suspend_threshold && status[i].state == InboundState::Ok {
+							status[i].state = InboundState::Suspended;
 							let r = Self::send_signal(sender, ChannelSignal::Suspend);
 							if r.is_err() {
 								log::warn!(
@@ -634,7 +641,7 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 							}
 						}
 						if (count as u32) < drop_threshold {
-							status[i].2.push((sent_at, format));
+							status[i].message_metadata.push((sent_at, format));
 						} else {
 							debug_assert!(
 								false,
@@ -642,7 +649,11 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 							);
 						}
 					},
-					Err(_) => status.push((sender, InboundStatus::Ok, vec![(sent_at, format)])),
+					Err(_) => status.push(InboundChannelDetails {
+						sender,
+						state: InboundState::Ok,
+						message_metadata: vec![(sent_at, format)],
+					}),
 				}
 				// Queue the payload for later execution.
 				<InboundXcmpMessages<T>>::insert(sender, sent_at, data_ref);
@@ -652,7 +663,7 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 			// `status.is_empty()` here.
 		}
 		status.sort();
-		<InboundXcmpStatus<T>>::put(status);
+		<InboundChannelStatus<T>>::put(status);
 
 		Self::service_xcmp_queue(max_weight)
 	}
