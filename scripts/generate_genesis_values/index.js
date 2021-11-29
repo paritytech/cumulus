@@ -52,6 +52,7 @@ fs.readFile(input, "utf8", (err, data) => {
     Object.entries(spec.genesis.raw.top).filter(
       ([key, value]) => !startsWith(key, filter_prefixes)
     );
+  genesis.sort();
 
   fs.writeFileSync(output, JSON.stringify(genesis));
 });
