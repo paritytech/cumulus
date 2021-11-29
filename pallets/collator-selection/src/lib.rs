@@ -292,6 +292,16 @@ pub mod pallet {
 					"invulnerables > T::MaxInvulnerables; you might need to run benchmarks again"
 				);
 			}
+
+			// check if the invulnerables have associated validator keys before they are set
+			let who = ensure_signed(origin)?;
+			let validator_key = T::ValidatorIdOf::convert(who.clone())
+				.ok_or(Error::<T>::NoAssociatedValidatorId)?;
+			ensure!(
+				T::ValidatorRegistration::is_registered(&validator_key),
+				Error::<T>::ValidatorNotRegistered
+			);
+
 			<Invulnerables<T>>::put(&new);
 			Self::deposit_event(Event::NewInvulnerables(new));
 			Ok(().into())
@@ -416,8 +426,8 @@ pub mod pallet {
 				.filter_map(|c| {
 					let last_block = <LastAuthoredBlock<T>>::get(c.who.clone());
 					let since_last = now.saturating_sub(last_block);
-					if since_last < kick_threshold ||
-						Self::candidates().len() as u32 <= T::MinCandidates::get()
+					if since_last < kick_threshold
+						|| Self::candidates().len() as u32 <= T::MinCandidates::get()
 					{
 						Some(c.who)
 					} else {
