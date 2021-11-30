@@ -25,10 +25,10 @@ use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::{
-	relay_chain::v1::{Hash as PHash, PersistedValidationData},
+	relay_chain::v1::{Block as PBlock, Hash as PHash, PersistedValidationData},
 	ParaId,
 };
-use cumulus_relay_chain_interface::build_relay_chain_direct_from_full;
+use cumulus_relay_chain_interface::{build_relay_chain_direct_from_full, RelayChainInterface};
 use polkadot_service::NativeExecutionDispatch;
 
 use crate::rpc;
@@ -332,10 +332,7 @@ where
 
 	let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_full_node);
 
-	let block_announce_validator = build_block_announce_validator(
-		relay_chain_interface,
-		id
-	);
+	let block_announce_validator = build_block_announce_validator(relay_chain_interface, id);
 
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
@@ -475,7 +472,7 @@ where
 		Option<&Registry>,
 		Option<TelemetryHandle>,
 		&TaskManager,
-		&polkadot_service::NewFull<polkadot_service::Client>,
+		Arc<dyn RelayChainInterface<PBlock> + Sync + Send>,
 		Arc<
 			sc_transaction_pool::FullPool<
 				Block,
@@ -507,10 +504,8 @@ where
 	let backend = params.backend.clone();
 	let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_full_node);
 
-	let block_announce_validator = build_block_announce_validator(
-		relay_chain_interface,
-		id,
-	);
+	let block_announce_validator =
+		build_block_announce_validator(relay_chain_interface.clone(), id);
 
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
@@ -568,7 +563,7 @@ where
 			prometheus_registry.as_ref(),
 			telemetry.as_ref().map(|t| t.handle()),
 			&task_manager,
-			&relay_chain_full_node,
+			relay_chain_interface.clone(),
 			transaction_pool,
 			network,
 			params.keystore_container.sync_keystore(),
@@ -687,7 +682,7 @@ pub async fn start_rococo_parachain_node(
 		 prometheus_registry,
 		 telemetry,
 		 task_manager,
-		 relay_chain_node,
+		 relay_chain_interface,
 		 transaction_pool,
 		 sync_oracle,
 		 keystore,
@@ -702,9 +697,7 @@ pub async fn start_rococo_parachain_node(
 				telemetry.clone(),
 			);
 
-			// let relay_chain_direct =  build_relay_chain_direct(relay_chain_node.client.clone(), relay_chain_node.backend.clone(), );
-			let relay_chain_direct =  build_relay_chain_direct_from_full(&relay_chain_node);
-			let relay_chain_direct_for_aura_consensus =  relay_chain_direct.clone();
+			let relay_chain_direct_for_aura_consensus =  relay_chain_interface.clone();
 
 			Ok(build_aura_consensus::<
 				sp_consensus_aura::sr25519::AuthorityPair,
@@ -723,7 +716,7 @@ pub async fn start_rococo_parachain_node(
 					let parachain_inherent =
 					cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 						relay_parent,
-						&relay_chain_direct,
+						&relay_chain_interface,
 						&validation_data,
 						id,
 					);
@@ -1076,7 +1069,7 @@ where
 		 prometheus_registry,
 		 telemetry,
 		 task_manager,
-		 relay_chain_node,
+		 relay_chain_interface,
 		 transaction_pool,
 		 sync_oracle,
 		 keystore,
@@ -1086,9 +1079,7 @@ where
 			let transaction_pool2 = transaction_pool.clone();
 			let telemetry2 = telemetry.clone();
 			let prometheus_registry2 = prometheus_registry.map(|r| (*r).clone());
-
-			let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_node);
-
+			let relay_chain_for_aura = relay_chain_interface.clone();
 			let aura_consensus = BuildOnAccess::Uninitialized(Some(Box::new(move || {
 				let slot_duration =
 					cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
@@ -1101,7 +1092,7 @@ where
 					telemetry2.clone(),
 				);
 
-				let relay_chain_interface2 = relay_chain_interface.clone();
+				let relay_chain_interface2 = relay_chain_for_aura.clone();
 
 				build_aura_consensus::<
 					sp_consensus_aura::sr25519::AuthorityPair,
@@ -1120,7 +1111,7 @@ where
 						let parachain_inherent =
 							cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 								relay_parent,
-								&relay_chain_interface,
+								&relay_chain_for_aura,
 								&validation_data,
 								id,
 							);
@@ -1164,8 +1155,6 @@ where
 				prometheus_registry.clone(),
 				telemetry.clone(),
 			);
-
-			let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_node);
 
 			let relay_chain_consensus =
 				cumulus_client_consensus_relay_chain::build_relay_chain_consensus(

@@ -248,10 +248,7 @@ where
 	let backend = params.backend.clone();
 	let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_full_node);
 
-	let block_announce_validator = build_block_announce_validator(
-		relay_chain_interface,
-		id,
-	);
+	let block_announce_validator = build_block_announce_validator(relay_chain_interface, id);
 
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();

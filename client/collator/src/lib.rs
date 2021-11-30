@@ -18,8 +18,7 @@
 
 use cumulus_client_network::WaitToAnnounce;
 use cumulus_primitives_core::{
-	relay_chain::{Hash as PHash},
-	ParachainBlockData, PersistedValidationData,
+	relay_chain::Hash as PHash, ParachainBlockData, PersistedValidationData,
 };
 
 use sc_client_api::BlockBackend;
