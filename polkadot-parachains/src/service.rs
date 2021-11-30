@@ -84,6 +84,21 @@ impl sc_executor::NativeExecutionDispatch for ShellRuntimeExecutor {
 	}
 }
 
+/// Native executor instance.
+pub struct SeedlingRuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for SeedlingRuntimeExecutor {
+	type ExtendHostFunctions = ();
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		seedling_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		seedling_runtime::native_version()
+	}
+}
+
 // Native Statemint executor instance.
 pub struct StatemintRuntimeExecutor;
 
