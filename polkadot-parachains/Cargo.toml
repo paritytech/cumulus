@@ -102,4 +102,5 @@ try-runtime = [
 	'statemint-runtime/try-runtime',
 	'statemine-runtime/try-runtime',
 	'westmint-runtime/try-runtime',
+	'shell-runtime/try-runtime',
 ]

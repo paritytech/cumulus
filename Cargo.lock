@@ -9840,6 +9840,7 @@ dependencies = [
  "frame-executive",
  "frame-support",
  "frame-system",
+ "frame-try-runtime",
  "log",
  "parachain-info",
  "parity-scale-codec",
