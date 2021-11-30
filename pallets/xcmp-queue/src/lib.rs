@@ -177,19 +177,32 @@ pub enum OutboundState {
 	Suspended,
 }
 
+/// Struct containing detailed information about the inbound channel.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
 pub struct InboundChannelDetails {
+	/// The `ParaId` of the parachain that this channel is connected with.
 	sender: ParaId,
+	/// The state of the channel.
 	state: InboundState,
+	/// The ordered metadata of each inbound message.
+	///
+	/// Contains info about the relay block number that the message was sent at, and the format
+	/// of the incoming message.
 	message_metadata: Vec<(RelayBlockNumber, XcmpMessageFormat)>,
 }
 
+/// Struct containing detailed information about the outbound channel.
 #[derive(Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
 pub struct OutboundChannelDetails {
+	/// The `ParaId` of the parachain that this channel is connected with.
 	recipient: ParaId,
+	/// The state of the channel.
 	state: OutboundState,
+	/// Whether or not any signals exists in this channel.
 	signals_exist: bool,
+	/// The index of the first outbound message.
 	first_index: u16,
+	/// The index of the last outbound message.
 	last_index: u16,
 }
 
