@@ -119,6 +119,7 @@ cargo-check-try-runtime:
   stage:                           test
   <<:                              *docker-env
   script:
+    # Check that the node will compile with `try-runtime` feature flag.
     - time cargo check --features try-runtime
     - sccache -s
 
