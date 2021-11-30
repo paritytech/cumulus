@@ -144,3 +144,5 @@ runtime-benchmarks = [
 	"pallet-xcm/runtime-benchmarks",
 	'cumulus-pallet-session-benchmarking/runtime-benchmarks',
 ]
+
+try-runtime = ["frame-support/try-runtime"]

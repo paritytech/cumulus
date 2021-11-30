@@ -413,6 +413,10 @@ pub fn run() -> Result<()> {
 					runner.async_run(|config| {
 						Ok((cmd.run::<Block, StatemintRuntimeExecutor>(config), task_manager))
 					})
+				} else if runner.config().chain_spec.is_shell() {
+					runner.async_run(|config| {
+						Ok((cmd.run::<Block, ShellRuntimeExecutor>(config), task_manager))
+					})
 				} else {
 					Err("Chain doesn't support try-runtime".into())
 				}

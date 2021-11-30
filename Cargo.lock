@@ -4133,7 +4133,7 @@ dependencies = [
  "log",
  "prost",
  "prost-build",
- "unsigned-varint 0.7.0",
+ "unsigned-varint 0.7.1",
  "void",
 ]
 
@@ -4182,7 +4182,7 @@ checksum = "14a6d2b9e7677eff61dc3d2854876aaf3976d84a01ef6664b610c77a0c9407c5"
 dependencies = [
  "asynchronous-codec 0.6.0",
  "bimap",
- "futures 0.3.17",
+ "futures 0.3.18",
  "libp2p-core",
  "libp2p-swarm",
  "log",
@@ -4191,7 +4191,7 @@ dependencies = [
  "rand 0.8.4",
  "sha2 0.9.8",
  "thiserror",
- "unsigned-varint 0.7.0",
+ "unsigned-varint 0.7.1",
  "void",
  "wasm-timer",
 ]
@@ -9991,7 +9991,7 @@ dependencies = [
  "base64",
  "bytes 1.1.0",
  "flate2",
- "futures 0.3.17",
+ "futures 0.3.18",
  "httparse",
  "log",
  "rand 0.8.4",
