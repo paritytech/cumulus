@@ -198,7 +198,7 @@ pub struct OutboundChannelDetails {
 	recipient: ParaId,
 	/// The state of the channel.
 	state: OutboundState,
-	/// Whether or not any signals exists in this channel.
+	/// Whether or not any signals exist in this channel.
 	signals_exist: bool,
 	/// The index of the first outbound message.
 	first_index: u16,
