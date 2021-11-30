@@ -20,6 +20,7 @@ use cumulus_relay_chain_interface::RelayChainInterface;
 use futures::{future::ready, Future, FutureExt, StreamExt};
 use polkadot_primitives::v1::{Block as PBlock, Hash as PHash};
 use sc_client_api::blockchain::{self, BlockStatus};
+use sp_consensus::SyncOracle;
 use sp_runtime::generic::BlockId;
 use std::time::Duration;
 
@@ -121,9 +122,23 @@ where
 	}
 }
 
+struct DummyNetwork {}
+
+impl SyncOracle for DummyNetwork {
+	fn is_major_syncing(&mut self) -> bool {
+		todo!()
+	}
+
+	fn is_offline(&mut self) -> bool {
+		todo!()
+	}
+}
+
 #[cfg(test)]
 mod tests {
-	use super::*;
+	use std::sync::Mutex;
+
+use super::*;
 
 	use cumulus_relay_chain_interface::RelayChainDirect;
 	use polkadot_test_client::{
@@ -145,11 +160,16 @@ mod tests {
 
 		let block_builder = client.init_polkadot_block_builder();
 		let block = block_builder.build().expect("Finalizes the block").block;
+		let dummy_network: Box<dyn SyncOracle + Sync + Send> = Box::new(DummyNetwork {});
 
 		(
 			client.clone(),
 			block,
-			RelayChainDirect { polkadot_client: client, backend: backend.clone() },
+			RelayChainDirect {
+				polkadot_client: client,
+				backend: backend.clone(),
+				network: Arc::new(Mutex::new(dummy_network)),
+			},
 		)
 	}
 

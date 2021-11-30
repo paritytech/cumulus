@@ -28,7 +28,7 @@ use cumulus_primitives_core::{
 	relay_chain::v1::{Hash as PHash, PersistedValidationData},
 	ParaId,
 };
-use cumulus_relay_chain_interface::build_relay_chain_direct;
+use cumulus_relay_chain_interface::build_relay_chain_direct_from_full;
 use polkadot_service::NativeExecutionDispatch;
 
 use crate::rpc;
@@ -330,11 +330,7 @@ where
 	let client = params.client.clone();
 	let backend = params.backend.clone();
 
-	let relay_chain_interface = build_relay_chain_direct(
-		relay_chain_full_node.client.clone(),
-		relay_chain_full_node.backend.clone(),
-		relay_chain_full_node.network.clone(),
-	);
+	let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_full_node);
 
 	let block_announce_validator = build_block_announce_validator(
 		relay_chain_interface,
@@ -510,11 +506,7 @@ where
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
-	let relay_chain_interface = build_relay_chain_direct(
-		relay_chain_full_node.client.clone(),
-		relay_chain_full_node.backend.clone(),
-		relay_chain_full_node.network.clone(),
-	);
+	let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_full_node);
 
 	let block_announce_validator = build_block_announce_validator(
 		relay_chain_interface,
@@ -712,7 +704,8 @@ pub async fn start_rococo_parachain_node(
 				telemetry.clone(),
 			);
 
-			let relay_chain_direct =  build_relay_chain_direct(relay_chain_node.client.clone(), relay_chain_node.backend.clone(), relay_chain_node.network.clone());
+			// let relay_chain_direct =  build_relay_chain_direct(relay_chain_node.client.clone(), relay_chain_node.backend.clone(), );
+			let relay_chain_direct =  build_relay_chain_direct_from_full(&relay_chain_node);
 			let relay_chain_direct_for_aura_consensus =  relay_chain_direct.clone();
 
 			Ok(build_aura_consensus::<
@@ -831,11 +824,7 @@ pub async fn start_shell_node(
 				telemetry.clone(),
 			);
 
-			let relay_chain_interface = build_relay_chain_direct(
-				relay_chain_node.client.clone(),
-				relay_chain_node.backend.clone(),
-				relay_chain_node.network.clone(),
-			);
+			let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_node);
 
 			Ok(cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
 				cumulus_client_consensus_relay_chain::BuildRelayChainConsensusParams {
@@ -1100,11 +1089,7 @@ where
 			let telemetry2 = telemetry.clone();
 			let prometheus_registry2 = prometheus_registry.map(|r| (*r).clone());
 
-			let relay_chain_interface = build_relay_chain_direct(
-				relay_chain_node.client.clone(),
-				relay_chain_node.backend.clone(),
-				relay_chain_node.network.clone(),
-			);
+			let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_node);
 
 			let aura_consensus = BuildOnAccess::Uninitialized(Some(Box::new(move || {
 				let slot_duration =
@@ -1182,11 +1167,7 @@ where
 				telemetry.clone(),
 			);
 
-			let relay_chain_interface = build_relay_chain_direct(
-				relay_chain_node.client.clone(),
-				relay_chain_node.backend.clone(),
-				relay_chain_node.network.clone(),
-			);
+			let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_node);
 
 			let relay_chain_consensus =
 				cumulus_client_consensus_relay_chain::build_relay_chain_consensus(

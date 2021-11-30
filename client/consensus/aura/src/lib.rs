@@ -31,7 +31,7 @@ use cumulus_primitives_core::{
 	PersistedValidationData,
 };
 use futures::lock::Mutex;
-use sc_client_api::{backend::AuxStore, Backend, BlockOf};
+use sc_client_api::{backend::AuxStore, BlockOf};
 use sc_consensus::BlockImport;
 use sc_consensus_slots::{BackoffAuthoringBlocksStrategy, SlotInfo};
 use sc_telemetry::TelemetryHandle;

@@ -42,7 +42,7 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_interface::RelayChainInterface;
 use parking_lot::Mutex;
-use sc_client_api::Backend;
+
 use sc_consensus::{BlockImport, BlockImportParams};
 use sp_consensus::{
 	BlockOrigin, EnableProofRecording, Environment, ProofRecording, Proposal, Proposer,

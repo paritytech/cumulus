@@ -40,7 +40,7 @@ use sp_core::H256;
 use sp_keyring::Sr25519Keyring;
 use sp_keystore::{testing::KeyStore, SyncCryptoStore, SyncCryptoStorePtr};
 use sp_runtime::{OpaqueExtrinsic, RuntimeAppPublic};
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Mutex as StdMutex};
 
 fn check_error(error: crate::BoxedError, check_error: impl Fn(&BlockAnnounceError) -> bool) {
 	let error = *error
@@ -67,8 +67,12 @@ impl SyncOracle for DummyCollatorNetwork {
 fn make_validator_and_api(
 ) -> (BlockAnnounceValidator<Block, RelayChainDirect<TestApi>>, Arc<TestApi>) {
 	let api = Arc::new(TestApi::new());
-	let relay_chain_interface =
-		RelayChainDirect { polkadot_client: api.clone(), backend: api.relay_backend.clone() };
+	let network: Box<dyn SyncOracle + Sync + Send> = Box::new(DummyCollatorNetwork {});
+	let relay_chain_interface = RelayChainDirect {
+		polkadot_client: api.clone(),
+		backend: api.relay_backend.clone(),
+		network: Arc::new(StdMutex::new(network)),
+	};
 	(
 		BlockAnnounceValidator::new(
 			relay_chain_interface,

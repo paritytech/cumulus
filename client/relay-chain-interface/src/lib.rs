@@ -13,11 +13,12 @@ use cumulus_primitives_core::{
 use parking_lot::RwLock;
 use polkadot_client::{ClientHandle, ExecuteWithClient, FullBackend};
 use sc_client_api::{blockchain::BlockStatus, Backend, BlockchainEvents, HeaderBackend};
-use sc_network::NetworkService;
 use sp_api::{ApiError, BlockT, ProvideRuntimeApi};
+use sp_consensus::SyncOracle;
 use sp_core::sp_std::collections::btree_map::BTreeMap;
+use std::sync::Mutex;
 
-const LOG_TARGET: &str = "cumulus-collator";
+const LOG_TARGET: &str = "relay-chain-interface";
 
 pub trait RelayChainInterface<Block: BlockT> {
 	fn get_state_at(
@@ -83,7 +84,7 @@ pub trait RelayChainInterface<Block: BlockT> {
 pub struct RelayChainDirect<Client> {
 	pub polkadot_client: Arc<Client>,
 	pub backend: Arc<FullBackend>,
-	pub network: Arc<NetworkService<PBlock, PHash>>,
+	pub network: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
 }
 
 impl<T> Clone for RelayChainDirect<T> {
@@ -218,14 +219,15 @@ where
 	}
 
 	fn is_major_syncing(&self) -> bool {
-		self.network.is_major_syncing()
+		let mut network = self.network.lock().unwrap();
+		network.is_major_syncing()
 	}
 }
 
 pub struct RelayChainDirectBuilder {
 	polkadot_client: polkadot_client::Client,
 	backend: Arc<FullBackend>,
-	network: Arc<NetworkService<PBlock, PHash>>,
+	network: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
 }
 
 impl RelayChainDirectBuilder {
@@ -427,8 +429,19 @@ where
 pub fn build_relay_chain_direct(
 	client: polkadot_client::Client,
 	backend: Arc<FullBackend>,
-	network: Arc<NetworkService<PBlock, PHash>>,
+	network: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
 ) -> Arc<(dyn RelayChainInterface<PBlock> + Send + Sync + 'static)> {
+	let relay_chain_builder = RelayChainDirectBuilder { polkadot_client: client, backend, network };
+	relay_chain_builder.build()
+}
+
+pub fn build_relay_chain_direct_from_full(
+	full_node: &polkadot_service::NewFull<polkadot_client::Client>,
+) -> Arc<(dyn RelayChainInterface<PBlock> + Send + Sync + 'static)> {
+	let client = full_node.client.clone();
+	let backend = full_node.backend.clone();
+	let test: Box<dyn SyncOracle + Send + Sync> = Box::new(full_node.network.clone());
+	let network = Arc::new(Mutex::new(test));
 	let relay_chain_builder = RelayChainDirectBuilder { polkadot_client: client, backend, network };
 	relay_chain_builder.build()
 }

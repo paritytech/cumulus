@@ -20,7 +20,7 @@ use cumulus_client_service::{
 use cumulus_primitives_core::ParaId;
 
 // Substrate Imports
-use cumulus_relay_chain_interface::build_relay_chain_direct;
+use cumulus_relay_chain_interface::build_relay_chain_direct_from_full;
 use sc_client_api::ExecutorProvider;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
@@ -246,11 +246,7 @@ where
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
-	let relay_chain_interface = build_relay_chain_direct(
-		relay_chain_full_node.client.clone(),
-		relay_chain_full_node.backend.clone(),
-		relay_chain_full_node.network.clone(),
-	);
+	let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_full_node);
 
 	let block_announce_validator = build_block_announce_validator(
 		relay_chain_interface,
@@ -433,11 +429,7 @@ pub async fn start_parachain_node(
 				telemetry.clone(),
 			);
 
-			let relay_chain_interface = build_relay_chain_direct(
-				relay_chain_node.client.clone(),
-				relay_chain_node.backend.clone(),
-				relay_chain_node.network.clone(),
-			);
+			let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_node);
 
 			let relay_chain_interface2 = relay_chain_interface.clone();
 			Ok(build_aura_consensus::<

@@ -1566,7 +1566,8 @@ dependencies = [
  "futures 0.3.17",
  "futures-timer 3.0.2",
  "parity-scale-codec",
- "parking_lot 0.10.2",
+ "parking_lot 0.11.2",
+ "polkadot-client",
  "polkadot-node-primitives",
  "polkadot-parachain",
  "polkadot-primitives",
@@ -1864,10 +1865,13 @@ name = "cumulus-relay-chain-interface"
 version = "0.1.0"
 dependencies = [
  "cumulus-primitives-core",
+ "enum_dispatch",
  "parking_lot 0.11.2",
  "polkadot-client",
+ "polkadot-service",
  "sc-client-api",
  "sc-network",
+ "sc-service",
  "sp-api",
  "sp-blockchain",
  "sp-consensus",
@@ -2239,6 +2243,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c5f0096a91d210159eceb2ff5e1c4da18388a170e1e3ce948aac9c8fdbbf595"
 dependencies = [
  "heck",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "enum_dispatch"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd53b3fde38a39a06b2e66dc282f3e86191e53bd04cc499929c15742beae3df8"
+dependencies = [
+ "once_cell",
  "proc-macro2",
  "quote",
  "syn",
@@ -11543,7 +11559,7 @@ dependencies = [
  "chrono",
  "lazy_static",
  "matchers",
- "parking_lot 0.10.2",
+ "parking_lot 0.11.2",
  "regex",
  "serde",
  "serde_json",

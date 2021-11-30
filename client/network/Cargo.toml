@@ -26,7 +26,7 @@ codec = { package = "parity-scale-codec", version = "2.3.0", features = [ "deriv
 futures = { version = "0.3.1", features = ["compat"] }
 futures-timer = "3.0.2"
 tracing = "0.1.22"
-parking_lot = "0.10.2"
+parking_lot = "0.11.1"
 derive_more = "0.99.2"
 
 [dev-dependencies]
@@ -35,9 +35,9 @@ tokio = { version = "1.10", features = ["macros"] }
 # Cumulus deps
 cumulus-test-service = { path = "../../test/service" }
 cumulus-primitives-core = { path = "../../primitives/core" }
-
 # Polkadot deps
 polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # substrate deps
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }

@@ -50,7 +50,7 @@ use sp_keyring::Sr25519Keyring;
 use sp_runtime::{codec::Encode, generic, traits::BlakeTwo256};
 use sp_state_machine::BasicExternalities;
 use sp_trie::PrefixedMemoryDB;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use substrate_test_client::{
 	BlockchainEventsExt, RpcHandlersExt, RpcTransactionError, RpcTransactionOutput,
 };
@@ -218,7 +218,7 @@ where
 	let relay_chain_interface = Arc::new(RelayChainDirect {
 		polkadot_client: relay_chain_full_node.client.clone(),
 		backend: relay_chain_full_node.backend.clone(),
-		network: relay_chain_full_node.network.clone(),
+		network: Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),
 	});
 	let block_announce_validator = BlockAnnounceValidator::new(
 		relay_chain_interface,
@@ -281,7 +281,7 @@ where
 				let relay_chain_interface = Arc::new(RelayChainDirect {
 					polkadot_client: relay_chain_full_node.client.clone(),
 					backend: relay_chain_full_node.backend.clone(),
-					network: relay_chain_full_node.network.clone(),
+					network: Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),
 				});
 
 				let relay_chain_interface2 = relay_chain_interface.clone();

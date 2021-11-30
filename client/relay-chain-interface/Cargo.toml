@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 
@@ -17,6 +18,7 @@ sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "mas
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
 parking_lot = "0.11.1"
-
+enum_dispatch = "0.3.7"
 tracing = "0.1.25"
