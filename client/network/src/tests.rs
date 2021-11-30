@@ -48,19 +48,6 @@ fn check_error(error: crate::BoxedError, check_error: impl Fn(&BlockAnnounceErro
 }
 
 #[derive(Clone)]
-struct DummyCollatorNetwork;
-
-impl SyncOracle for DummyCollatorNetwork {
-	fn is_major_syncing(&mut self) -> bool {
-		false
-	}
-
-	fn is_offline(&mut self) -> bool {
-		unimplemented!("Not required in tests")
-	}
-}
-
-#[derive(Clone)]
 struct DummyRelayChainInterface {
 	data: Arc<Mutex<ApiData>>,
 	relay_client: Arc<PClient>,
@@ -191,11 +178,7 @@ fn make_validator_and_api(
 ) -> (BlockAnnounceValidator<Block, Arc<DummyRelayChainInterface>>, Arc<DummyRelayChainInterface>) {
 	let relay_chain_interface = Arc::new(DummyRelayChainInterface::new());
 	(
-		BlockAnnounceValidator::new(
-			relay_chain_interface.clone(),
-			ParaId::from(56),
-			Box::new(DummyCollatorNetwork),
-		),
+		BlockAnnounceValidator::new(relay_chain_interface.clone(), ParaId::from(56)),
 		relay_chain_interface,
 	)
 }

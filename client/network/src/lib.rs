@@ -20,9 +20,8 @@
 //! that use the relay chain provided consensus. See [`BlockAnnounceValidator`]
 //! and [`WaitToAnnounce`] for more information about this implementation.
 
-use sp_consensus::{
-	block_validation::{BlockAnnounceValidator as BlockAnnounceValidatorT, Validation},
-	SyncOracle,
+use sp_consensus::block_validation::{
+	BlockAnnounceValidator as BlockAnnounceValidatorT, Validation,
 };
 use sp_core::traits::SpawnNamed;
 use sp_runtime::{
@@ -227,7 +226,6 @@ pub struct BlockAnnounceValidator<Block, RCInterface> {
 	phantom: PhantomData<Block>,
 	relay_chain_interface: RCInterface,
 	para_id: ParaId,
-	relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
 	wait_on_relay_chain_block: WaitOnRelayChainBlock<RCInterface>,
 }
 
@@ -236,16 +234,11 @@ where
 	RCInterface: Clone,
 {
 	/// Create a new [`BlockAnnounceValidator`].
-	pub fn new(
-		relay_chain_interface: RCInterface,
-		para_id: ParaId,
-		relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
-	) -> Self {
+	pub fn new(relay_chain_interface: RCInterface, para_id: ParaId) -> Self {
 		Self {
 			phantom: Default::default(),
 			relay_chain_interface: relay_chain_interface.clone(),
 			para_id,
-			relay_chain_sync_oracle,
 			wait_on_relay_chain_block: WaitOnRelayChainBlock::new(relay_chain_interface),
 		}
 	}
@@ -341,7 +334,7 @@ where
 		header: &Block::Header,
 		mut data: &[u8],
 	) -> Pin<Box<dyn Future<Output = Result<Validation, BoxedError>> + Send>> {
-		if self.relay_chain_sync_oracle.is_major_syncing() {
+		if self.relay_chain_interface.is_major_syncing() {
 			return ready(Ok(Validation::Success { is_new_best: false })).boxed()
 		}
 
@@ -391,13 +384,11 @@ where
 pub fn build_block_announce_validator<Block: BlockT, RCInterface>(
 	relay_chain_interface: RCInterface,
 	para_id: ParaId,
-	relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
 ) -> Box<dyn BlockAnnounceValidatorT<Block> + Send>
 where
 	RCInterface: RelayChainInterface<PBlock> + Clone + Send + Sync + 'static,
 {
-	BlockAnnounceValidatorBuilder::new(relay_chain_interface, para_id, relay_chain_sync_oracle)
-		.build()
+	BlockAnnounceValidatorBuilder::new(relay_chain_interface, para_id).build()
 }
 
 /// Block announce validator builder.
@@ -407,7 +398,6 @@ struct BlockAnnounceValidatorBuilder<Block, RCInterface> {
 	phantom: PhantomData<Block>,
 	relay_chain_interface: RCInterface,
 	para_id: ParaId,
-	relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
 }
 
 impl<Block: BlockT, RCInterface> BlockAnnounceValidatorBuilder<Block, RCInterface>
@@ -415,21 +405,13 @@ where
 	RCInterface: RelayChainInterface<PBlock> + Clone + Send + Sync + 'static,
 {
 	/// Create a new instance of the builder.
-	fn new(
-		relay_chain_interface: RCInterface,
-		para_id: ParaId,
-		relay_chain_sync_oracle: Box<dyn SyncOracle + Send>,
-	) -> Self {
-		Self { relay_chain_interface, para_id, relay_chain_sync_oracle, phantom: PhantomData }
+	fn new(relay_chain_interface: RCInterface, para_id: ParaId) -> Self {
+		Self { relay_chain_interface, para_id, phantom: PhantomData }
 	}
 
 	/// Build the block announce validator.
 	fn build(self) -> Box<dyn BlockAnnounceValidatorT<Block> + Send> {
-		Box::new(BlockAnnounceValidator::new(
-			self.relay_chain_interface.clone(),
-			self.para_id,
-			self.relay_chain_sync_oracle,
-		))
+		Box::new(BlockAnnounceValidator::new(self.relay_chain_interface.clone(), self.para_id))
 	}
 }
 

@@ -138,7 +138,7 @@ impl SyncOracle for DummyNetwork {
 mod tests {
 	use std::sync::Mutex;
 
-use super::*;
+	use super::*;
 
 	use cumulus_relay_chain_interface::RelayChainDirect;
 	use polkadot_test_client::{

@@ -334,8 +334,7 @@ where
 
 	let block_announce_validator = build_block_announce_validator(
 		relay_chain_interface,
-		id,
-		Box::new(relay_chain_full_node.network.clone()),
+		id
 	);
 
 	let force_authoring = parachain_config.force_authoring;
@@ -511,7 +510,6 @@ where
 	let block_announce_validator = build_block_announce_validator(
 		relay_chain_interface,
 		id,
-		Box::new(relay_chain_full_node.network.clone()),
 	);
 
 	let force_authoring = parachain_config.force_authoring;

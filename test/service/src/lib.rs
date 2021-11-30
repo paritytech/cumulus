@@ -220,11 +220,7 @@ where
 		backend: relay_chain_full_node.backend.clone(),
 		network: Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),
 	});
-	let block_announce_validator = BlockAnnounceValidator::new(
-		relay_chain_interface,
-		para_id,
-		Box::new(relay_chain_full_node.network.clone()),
-	);
+	let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface, para_id);
 	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
 
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
