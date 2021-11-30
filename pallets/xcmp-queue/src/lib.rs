@@ -124,10 +124,7 @@ pub mod pallet {
 
 	/// Status of the inbound XCMP channels.
 	#[pallet::storage]
-	// Whenever there is a need for a storage migration, remove this prefix renaming and migrate
-	// the storage item name to InboundChannelStatus
-	#[pallet::storage_prefix = "InboundXcmpStatus"]
-	pub(super) type InboundChannelStatus<T: Config> =
+	pub(super) type InboundXcmpStatus<T: Config> =
 		StorageValue<_, Vec<InboundChannelDetails>, ValueQuery>;
 
 	/// Inbound aggregate XCMP messages. It can only be one per ParaId/block.
@@ -149,10 +146,7 @@ pub mod pallet {
 	/// case of the need to send a high-priority signal message this block.
 	/// The bool is true if there is a signal message waiting to be sent.
 	#[pallet::storage]
-	// Whenever there is a need for a storage migration, remove this prefix renaming and migrate
-	// the storage item name to OutboundChannelStatus
-	#[pallet::storage_prefix = "OutboundXcmpStatus"]
-	pub(super) type OutboundChannelStatus<T: Config> =
+	pub(super) type OutboundXcmpStatus<T: Config> =
 		StorageValue<_, Vec<OutboundChannelDetails>, ValueQuery>;
 
 	// The new way of doing it:
@@ -295,7 +289,7 @@ impl<T: Config> Pallet<T> {
 			return Err(MessageSendError::TooBig)
 		}
 
-		let mut s = <OutboundChannelStatus<T>>::get();
+		let mut s = <OutboundXcmpStatus<T>>::get();
 		let index = s.iter().position(|item| item.recipient == recipient).unwrap_or_else(|| {
 			s.push(OutboundChannelDetails::new(recipient));
 			s.len() - 1
@@ -326,7 +320,7 @@ impl<T: Config> Pallet<T> {
 			new_page.extend_from_slice(&data[..]);
 			<OutboundXcmpMessages<T>>::insert(recipient, page_index, new_page);
 			let r = (s[index].last_index - s[index].first_index - 1) as u32;
-			<OutboundChannelStatus<T>>::put(s);
+			<OutboundXcmpStatus<T>>::put(s);
 			Ok(r)
 		}
 	}
@@ -334,7 +328,7 @@ impl<T: Config> Pallet<T> {
 	/// Sends a signal to the `dest` chain over XCMP. This is guaranteed to be dispatched on this
 	/// block.
 	fn send_signal(dest: ParaId, signal: ChannelSignal) -> Result<(), ()> {
-		let mut s = <OutboundChannelStatus<T>>::get();
+		let mut s = <OutboundXcmpStatus<T>>::get();
 		if let Some(index) = s.iter().position(|item| item.recipient == dest) {
 			s[index].signals_exist = true;
 		} else {
@@ -347,7 +341,7 @@ impl<T: Config> Pallet<T> {
 				signal.using_encoded(|s| page.extend_from_slice(s));
 			}
 		});
-		<OutboundChannelStatus<T>>::put(s);
+		<OutboundXcmpStatus<T>>::put(s);
 
 		Ok(())
 	}
@@ -522,7 +516,7 @@ impl<T: Config> Pallet<T> {
 	/// for the second &c. though empirical and or practical factors may give rise to adjusting it
 	/// further.
 	fn service_xcmp_queue(max_weight: Weight) -> Weight {
-		let mut status = <InboundChannelStatus<T>>::get(); // <- sorted.
+		let mut status = <InboundXcmpStatus<T>>::get(); // <- sorted.
 		if status.len() == 0 {
 			return 0
 		}
@@ -609,12 +603,12 @@ impl<T: Config> Pallet<T> {
 		// Only retain the senders that have non-empty queues.
 		status.retain(|item| !item.message_metadata.is_empty());
 
-		<InboundChannelStatus<T>>::put(status);
+		<InboundXcmpStatus<T>>::put(status);
 		weight_used
 	}
 
 	fn suspend_channel(target: ParaId) {
-		<OutboundChannelStatus<T>>::mutate(|s| {
+		<OutboundXcmpStatus<T>>::mutate(|s| {
 			if let Some(index) = s.iter().position(|item| item.recipient == target) {
 				let ok = s[index].state == OutboundState::Ok;
 				debug_assert!(ok, "WARNING: Attempt to suspend channel that was not Ok.");
@@ -626,7 +620,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn resume_channel(target: ParaId) {
-		<OutboundChannelStatus<T>>::mutate(|s| {
+		<OutboundXcmpStatus<T>>::mutate(|s| {
 			if let Some(index) = s.iter().position(|item| item.recipient == target) {
 				let suspended = s[index].state == OutboundState::Suspended;
 				debug_assert!(
@@ -650,7 +644,7 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 		iter: I,
 		max_weight: Weight,
 	) -> Weight {
-		let mut status = <InboundChannelStatus<T>>::get();
+		let mut status = <InboundXcmpStatus<T>>::get();
 
 		let QueueConfigData { suspend_threshold, drop_threshold, .. } = <QueueConfig<T>>::get();
 
@@ -714,7 +708,7 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 			// `status.is_empty()` here.
 		}
 		status.sort();
-		<InboundChannelStatus<T>>::put(status);
+		<InboundXcmpStatus<T>>::put(status);
 
 		Self::service_xcmp_queue(max_weight)
 	}
@@ -722,7 +716,7 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 
 impl<T: Config> XcmpMessageSource for Pallet<T> {
 	fn take_outbound_messages(maximum_channels: usize) -> Vec<(ParaId, Vec<u8>)> {
-		let mut statuses = <OutboundChannelStatus<T>>::get();
+		let mut statuses = <OutboundXcmpStatus<T>>::get();
 		let old_statuses_len = statuses.len();
 		let max_message_count = statuses.len().min(maximum_channels);
 		let mut result = Vec::with_capacity(max_message_count);
@@ -827,7 +821,7 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 		// be no less than the pruned channels.
 		statuses.rotate_left(result.len() - pruned);
 
-		<OutboundChannelStatus<T>>::put(statuses);
+		<OutboundXcmpStatus<T>>::put(statuses);
 
 		result
 	}
