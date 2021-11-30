@@ -124,11 +124,8 @@ pub mod pallet {
 
 	/// Status of the inbound XCMP channels.
 	#[pallet::storage]
-	pub(super) type InboundChannelStatus<T: Config> = StorageValue<
-		_,
-		Vec<InboundChannelDetails>,
-		ValueQuery,
-	>;
+	pub(super) type InboundChannelStatus<T: Config> =
+		StorageValue<_, Vec<InboundChannelDetails>, ValueQuery>;
 
 	/// Inbound aggregate XCMP messages. It can only be one per ParaId/block.
 	#[pallet::storage]
@@ -149,8 +146,8 @@ pub mod pallet {
 	/// case of the need to send a high-priority signal message this block.
 	/// The bool is true if there is a signal message waiting to be sent.
 	#[pallet::storage]
-	pub(super) type OutboundXcmpStatus<T: Config> =
-		StorageValue<_, Vec<(ParaId, OutboundStatus, bool, u16, u16)>, ValueQuery>;
+	pub(super) type OutboundChannelStatus<T: Config> =
+		StorageValue<_, Vec<OutboundChannelDetails>, ValueQuery>;
 
 	// The new way of doing it:
 	/// The messages outbound in a given XCMP channel.
@@ -175,7 +172,7 @@ pub enum InboundState {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub enum OutboundStatus {
+pub enum OutboundState {
 	Ok,
 	Suspended,
 }
@@ -185,6 +182,37 @@ pub struct InboundChannelDetails {
 	sender: ParaId,
 	state: InboundState,
 	message_metadata: Vec<(RelayBlockNumber, XcmpMessageFormat)>,
+}
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
+pub struct OutboundChannelDetails {
+	recipient: ParaId,
+	state: OutboundState,
+	signals_exist: bool,
+	first_index: u16,
+	last_index: u16,
+}
+
+impl OutboundChannelDetails {
+	pub fn new(recipient: ParaId) -> OutboundChannelDetails {
+		OutboundChannelDetails {
+			recipient,
+			state: OutboundState::Ok,
+			signals_exist: false,
+			first_index: 0,
+			last_index: 0,
+		}
+	}
+
+	pub fn with_signals(mut self) -> OutboundChannelDetails {
+		self.signals_exist = true;
+		self
+	}
+
+	pub fn with_suspended_state(mut self) -> OutboundChannelDetails {
+		self.state = OutboundState::Suspended;
+		self
+	}
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
@@ -248,14 +276,14 @@ impl<T: Config> Pallet<T> {
 			return Err(MessageSendError::TooBig)
 		}
 
-		let mut s = <OutboundXcmpStatus<T>>::get();
-		let index = s.iter().position(|item| item.0 == recipient).unwrap_or_else(|| {
-			s.push((recipient, OutboundStatus::Ok, false, 0, 0));
+		let mut s = <OutboundChannelStatus<T>>::get();
+		let index = s.iter().position(|item| item.recipient == recipient).unwrap_or_else(|| {
+			s.push(OutboundChannelDetails::new(recipient));
 			s.len() - 1
 		});
-		let have_active = s[index].4 > s[index].3;
+		let have_active = s[index].last_index > s[index].first_index;
 		let appended = have_active &&
-			<OutboundXcmpMessages<T>>::mutate(recipient, s[index].4 - 1, |s| {
+			<OutboundXcmpMessages<T>>::mutate(recipient, s[index].last_index - 1, |s| {
 				if XcmpMessageFormat::decode_and_advance_with_depth_limit(
 					MAX_XCM_DECODE_DEPTH,
 					&mut &s[..],
@@ -270,16 +298,16 @@ impl<T: Config> Pallet<T> {
 				return true
 			});
 		if appended {
-			Ok((s[index].4 - s[index].3 - 1) as u32)
+			Ok((s[index].last_index - s[index].first_index - 1) as u32)
 		} else {
 			// Need to add a new page.
-			let page_index = s[index].4;
-			s[index].4 += 1;
+			let page_index = s[index].last_index;
+			s[index].last_index += 1;
 			let mut new_page = format.encode();
 			new_page.extend_from_slice(&data[..]);
 			<OutboundXcmpMessages<T>>::insert(recipient, page_index, new_page);
-			let r = (s[index].4 - s[index].3 - 1) as u32;
-			<OutboundXcmpStatus<T>>::put(s);
+			let r = (s[index].last_index - s[index].first_index - 1) as u32;
+			<OutboundChannelStatus<T>>::put(s);
 			Ok(r)
 		}
 	}
@@ -287,11 +315,11 @@ impl<T: Config> Pallet<T> {
 	/// Sends a signal to the `dest` chain over XCMP. This is guaranteed to be dispatched on this
 	/// block.
 	fn send_signal(dest: ParaId, signal: ChannelSignal) -> Result<(), ()> {
-		let mut s = <OutboundXcmpStatus<T>>::get();
-		if let Some(index) = s.iter().position(|item| item.0 == dest) {
-			s[index].2 = true;
+		let mut s = <OutboundChannelStatus<T>>::get();
+		if let Some(index) = s.iter().position(|item| item.recipient == dest) {
+			s[index].signals_exist = true;
 		} else {
-			s.push((dest, OutboundStatus::Ok, true, 0, 0));
+			s.push(OutboundChannelDetails::new(dest).with_signals());
 		}
 		<SignalMessages<T>>::mutate(dest, |page| {
 			if page.is_empty() {
@@ -300,7 +328,7 @@ impl<T: Config> Pallet<T> {
 				signal.using_encoded(|s| page.extend_from_slice(s));
 			}
 		});
-		<OutboundXcmpStatus<T>>::put(s);
+		<OutboundChannelStatus<T>>::put(s);
 
 		Ok(())
 	}
@@ -523,8 +551,11 @@ impl<T: Config> Pallet<T> {
 			} else {
 				// Process up to one block's worth for now.
 				let weight_remaining = weight_available.saturating_sub(weight_used);
-				let (weight_processed, is_empty) =
-					Self::process_xcmp_message(sender, status[index].message_metadata[0], weight_remaining);
+				let (weight_processed, is_empty) = Self::process_xcmp_message(
+					sender,
+					status[index].message_metadata[0],
+					weight_remaining,
+				);
 				if is_empty {
 					status[index].message_metadata.remove(0);
 				}
@@ -564,29 +595,29 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn suspend_channel(target: ParaId) {
-		<OutboundXcmpStatus<T>>::mutate(|s| {
-			if let Some(index) = s.iter().position(|item| item.0 == target) {
-				let ok = s[index].1 == OutboundStatus::Ok;
+		<OutboundChannelStatus<T>>::mutate(|s| {
+			if let Some(index) = s.iter().position(|item| item.recipient == target) {
+				let ok = s[index].state == OutboundState::Ok;
 				debug_assert!(ok, "WARNING: Attempt to suspend channel that was not Ok.");
-				s[index].1 = OutboundStatus::Suspended;
+				s[index].state = OutboundState::Suspended;
 			} else {
-				s.push((target, OutboundStatus::Suspended, false, 0, 0));
+				s.push(OutboundChannelDetails::new(target).with_suspended_state());
 			}
 		});
 	}
 
 	fn resume_channel(target: ParaId) {
-		<OutboundXcmpStatus<T>>::mutate(|s| {
-			if let Some(index) = s.iter().position(|item| item.0 == target) {
-				let suspended = s[index].1 == OutboundStatus::Suspended;
+		<OutboundChannelStatus<T>>::mutate(|s| {
+			if let Some(index) = s.iter().position(|item| item.recipient == target) {
+				let suspended = s[index].state == OutboundState::Suspended;
 				debug_assert!(
 					suspended,
 					"WARNING: Attempt to resume channel that was not suspended."
 				);
-				if s[index].3 == s[index].4 {
+				if s[index].first_index == s[index].last_index {
 					s.remove(index);
 				} else {
-					s[index].1 = OutboundStatus::Ok;
+					s[index].state = OutboundState::Ok;
 				}
 			} else {
 				debug_assert!(false, "WARNING: Attempt to resume channel that was not suspended.");
@@ -631,7 +662,8 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 				match status.binary_search_by_key(&sender, |item| item.sender) {
 					Ok(i) => {
 						let count = status[i].message_metadata.len();
-						if count as u32 >= suspend_threshold && status[i].state == InboundState::Ok {
+						if count as u32 >= suspend_threshold && status[i].state == InboundState::Ok
+						{
 							status[i].state = InboundState::Suspended;
 							let r = Self::send_signal(sender, ChannelSignal::Suspend);
 							if r.is_err() {
@@ -671,53 +703,59 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 
 impl<T: Config> XcmpMessageSource for Pallet<T> {
 	fn take_outbound_messages(maximum_channels: usize) -> Vec<(ParaId, Vec<u8>)> {
-		let mut statuses = <OutboundXcmpStatus<T>>::get();
+		let mut statuses = <OutboundChannelStatus<T>>::get();
 		let old_statuses_len = statuses.len();
 		let max_message_count = statuses.len().min(maximum_channels);
 		let mut result = Vec::with_capacity(max_message_count);
 
 		for status in statuses.iter_mut() {
-			let (para_id, outbound_status, mut signalling, mut begin, mut end) = *status;
+			let OutboundChannelDetails {
+				recipient: para_id,
+				state: outbound_state,
+				mut signals_exist,
+				mut first_index,
+				mut last_index,
+			} = *status;
 
 			if result.len() == max_message_count {
 				// We check this condition in the beginning of the loop so that we don't include
 				// a message where the limit is 0.
 				break
 			}
-			if outbound_status == OutboundStatus::Suspended {
+			if outbound_state == OutboundState::Suspended {
 				continue
 			}
 			let (max_size_now, max_size_ever) = match T::ChannelInfo::get_channel_status(para_id) {
 				ChannelStatus::Closed => {
 					// This means that there is no such channel anymore. Nothing to be done but
 					// swallow the messages and discard the status.
-					for i in begin..end {
+					for i in first_index..last_index {
 						<OutboundXcmpMessages<T>>::remove(para_id, i);
 					}
-					if signalling {
+					if signals_exist {
 						<SignalMessages<T>>::remove(para_id);
 					}
-					*status = (para_id, OutboundStatus::Ok, false, 0, 0);
+					*status = OutboundChannelDetails::new(para_id);
 					continue
 				},
 				ChannelStatus::Full => continue,
 				ChannelStatus::Ready(n, e) => (n, e),
 			};
 
-			let page = if signalling {
+			let page = if signals_exist {
 				let page = <SignalMessages<T>>::get(para_id);
 				if page.len() < max_size_now {
 					<SignalMessages<T>>::remove(para_id);
-					signalling = false;
+					signals_exist = false;
 					page
 				} else {
 					continue
 				}
-			} else if end > begin {
-				let page = <OutboundXcmpMessages<T>>::get(para_id, begin);
+			} else if last_index > first_index {
+				let page = <OutboundXcmpMessages<T>>::get(para_id, first_index);
 				if page.len() < max_size_now {
-					<OutboundXcmpMessages<T>>::remove(para_id, begin);
-					begin += 1;
+					<OutboundXcmpMessages<T>>::remove(para_id, first_index);
+					first_index += 1;
 					page
 				} else {
 					continue
@@ -725,9 +763,9 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 			} else {
 				continue
 			};
-			if begin == end {
-				begin = 0;
-				end = 0;
+			if first_index == last_index {
+				first_index = 0;
+				last_index = 0;
 			}
 
 			if page.len() > max_size_ever {
@@ -739,7 +777,13 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 				result.push((para_id, page));
 			}
 
-			*status = (para_id, outbound_status, signalling, begin, end);
+			*status = OutboundChannelDetails {
+				recipient: para_id,
+				state: outbound_state,
+				signals_exist,
+				first_index,
+				last_index,
+			};
 		}
 
 		// Sort the outbound messages by ascending recipient para id to satisfy the acceptance
@@ -754,7 +798,9 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 		//
 		// To mitigate this we shift all processed elements towards the end of the vector using
 		// `rotate_left`. To get intuition how it works see the examples in its rustdoc.
-		statuses.retain(|x| x.1 == OutboundStatus::Suspended || x.2 || x.3 < x.4);
+		statuses.retain(|x| {
+			x.state == OutboundState::Suspended || x.signals_exist || x.first_index < x.last_index
+		});
 
 		// old_status_len must be >= status.len() since we never add anything to status.
 		let pruned = old_statuses_len - statuses.len();
@@ -762,7 +808,7 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 		// be no less than the pruned channels.
 		statuses.rotate_left(result.len() - pruned);
 
-		<OutboundXcmpStatus<T>>::put(statuses);
+		<OutboundChannelStatus<T>>::put(statuses);
 
 		result
 	}
