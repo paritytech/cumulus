@@ -124,6 +124,8 @@ pub mod pallet {
 
 	/// Status of the inbound XCMP channels.
 	#[pallet::storage]
+	// Whenever there is a need for a storage migration, remove this prefix renaming and migrate
+	// the storage item name to InboundChannelStatus
 	#[pallet::storage_prefix = "InboundXcmpStatus"]
 	pub(super) type InboundChannelStatus<T: Config> =
 		StorageValue<_, Vec<InboundChannelDetails>, ValueQuery>;
@@ -147,6 +149,8 @@ pub mod pallet {
 	/// case of the need to send a high-priority signal message this block.
 	/// The bool is true if there is a signal message waiting to be sent.
 	#[pallet::storage]
+	// Whenever there is a need for a storage migration, remove this prefix renaming and migrate
+	// the storage item name to OutboundChannelStatus
 	#[pallet::storage_prefix = "OutboundXcmpStatus"]
 	pub(super) type OutboundChannelStatus<T: Config> =
 		StorageValue<_, Vec<OutboundChannelDetails>, ValueQuery>;
