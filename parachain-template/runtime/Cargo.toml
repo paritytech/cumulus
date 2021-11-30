@@ -150,6 +150,5 @@ runtime-benchmarks = [
 
 try-runtime = [
 	"frame-try-runtime",
-	"frame-support/try-runtime",
 	"frame-executive/try-runtime",
 ]
