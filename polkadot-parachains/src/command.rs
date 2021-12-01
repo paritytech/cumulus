@@ -92,8 +92,16 @@ fn load_spec(
 			&include_bytes!("../res/track.json")[..],
 		)?),
 		"shell" => Box::new(chain_spec::get_shell_chain_spec(para_id)),
+		// -- Statemint
 		"statemint-dev" => Box::new(chain_spec::statemint_development_config(para_id)),
 		"statemint-local" => Box::new(chain_spec::statemint_local_config(para_id)),
+		// the chain spec as used for generating the upgrade genesis values
+		"statemint-genesis" => Box::new(chain_spec::statemint_config(para_id)),
+		// the shell-based chain spec as used for syncing
+		"statemint" => Box::new(chain_spec::ChainSpec::from_json_bytes(
+			&include_bytes!("../res/statemint.json")[..],
+		)?),
+		// -- Statemine
 		"statemine-dev" => Box::new(chain_spec::statemine_development_config(para_id)),
 		"statemine-local" => Box::new(chain_spec::statemine_local_config(para_id)),
 		// the chain spec as used for generating the upgrade genesis values
@@ -102,6 +110,7 @@ fn load_spec(
 		"statemine" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../res/statemine.json")[..],
 		)?),
+		// -- Westmint
 		"westmint-dev" => Box::new(chain_spec::westmint_development_config(para_id)),
 		"westmint-local" => Box::new(chain_spec::westmint_local_config(para_id)),
 		// the chain spec as used for generating the upgrade genesis values
