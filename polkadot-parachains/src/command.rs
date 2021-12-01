@@ -20,7 +20,6 @@ use crate::{
 	service::{
 		new_partial, Block, RococoParachainRuntimeExecutor, ShellRuntimeExecutor,
 		StatemineRuntimeExecutor, StatemintRuntimeExecutor, WestmintRuntimeExecutor,
-		SeedlingRuntimeExecutor
 	},
 };
 use codec::Encode;
@@ -48,7 +47,7 @@ trait IdentifyChain {
 impl IdentifyChain for dyn sc_service::ChainSpec {
 	fn is_shell(&self) -> bool {
 		self.id().starts_with("shell")
-	},
+	}
 	fn is_seedling(&self) -> bool {
 		self.id().starts_with("seedling")
 	}
@@ -265,20 +264,11 @@ macro_rules! construct_async_run {
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
 			})
-		} else if runner.config().chain_spec.is_shell() {
+		} else if runner.config().chain_spec.is_shell() || runner.config().chain_spec.is_seedling() {
 			runner.async_run(|$config| {
 				let $components = new_partial::<shell_runtime::RuntimeApi, ShellRuntimeExecutor, _>(
 					&$config,
 					crate::service::shell_build_import_queue,
-				)?;
-				let task_manager = $components.task_manager;
-				{ $( $code )* }.map(|v| (v, task_manager))
-			})
-		} else if runner.config().chain_spec.is_seedling() {
-			runner.async_run(|$config| {
-				let $components = new_partial::<seedling_runtime::RuntimeApi, SeedlingRuntimeExecutor, _>(
-					&$config,
-					crate::service::seedling_build_import_queue,
 				)?;
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
@@ -472,7 +462,7 @@ pub fn run() -> Result<()> {
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
-				} else if config.chain_spec.is_shell() {
+				} else if config.chain_spec.is_shell() || config.chain_spec.is_seedling() {
 					crate::service::start_shell_node(config, polkadot_config, id)
 						.await
 						.map(|r| r.0)

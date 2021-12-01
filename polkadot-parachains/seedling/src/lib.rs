@@ -245,6 +245,22 @@ construct_runtime! {
 	}
 }
 
+/// Simple implementation which fails any transaction which is signed.
+#[derive(Eq, PartialEq, Clone, Default, sp_core::RuntimeDebug, Encode, Decode, TypeInfo)]
+pub struct Nothing;
+impl sp_runtime::traits::SignedExtension for Nothing {
+	const IDENTIFIER: &'static str = "Nothing";
+	type AccountId = AccountId;
+	type Call = Call;
+	type AdditionalSigned = ();
+	type Pre = ();
+	fn additional_signed(
+		&self,
+	) -> sp_std::result::Result<(), sp_runtime::transaction_validity::TransactionValidityError> {
+		Ok(())
+	}
+}
+
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = sp_runtime::MultiSignature;
 /// Some way of identifying an account on the chain. We intentionally make it equivalent
@@ -267,7 +283,7 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 /// BlockId type as expected by this runtime.
 pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
-pub type SignedExtra = ();
+pub type SignedExtra = Nothing;
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
