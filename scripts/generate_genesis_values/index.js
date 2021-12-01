@@ -3,7 +3,8 @@ const { exit } = require("process");
 const { xxhashAsHex } = require("@polkadot/util-crypto");
 
 // Utility script scraping a chain spec for the genesis keys and values and writing them out as a
-// json array of pairs. Filters the keys for anything already present in a shell runtime.
+// json array of pairs. Filters the keys for anything already present in a shell runtime and sorts
+// the output for reproducibility.
 
 if (!process.argv[2] || !process.argv[3]) {
   console.log("usage: node generate_keys <input chainspec> <output json>");

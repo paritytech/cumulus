@@ -7,7 +7,7 @@ const util = require("@polkadot/util");
 // genesis values by connecting to a running instance of the chain. (It is not required to be
 // functional or synced.)
 
-// connect to a local substrate chain and return the api object
+// connect to a substrate chain and return the api object
 async function connect(endpoint, types = {}) {
 	const provider = new WsProvider(endpoint);
 	const api = await ApiPromise.create({
@@ -25,6 +25,7 @@ if (!process.argv[2] || !process.argv[3]) {
 
 const input = process.argv[2];
 const output = process.argv[3];
+// default to localhost and the default Substrate port
 const rpcEnpoint = process.argv[4] || "ws://localhost:9944";
 
 console.log("Processing", input, output);

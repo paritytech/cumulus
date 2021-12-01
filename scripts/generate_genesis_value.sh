@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Call from the root of the repo as:
-# ./scripts/generate_genesis_value.sh
+# ./scripts/generate_genesis_value.sh <chain-id> [rpc endpoint]
 usage() {
     echo Usage:
     echo "$0 <chain-id> [rpc endpoint]"
