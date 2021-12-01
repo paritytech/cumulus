@@ -20,9 +20,9 @@
 
 use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
-use polkadot_overseer::Handle as OverseerHandle;
+use cumulus_relay_chain_interface::RelayChainInterface;
 use polkadot_primitives::v1::{Block as PBlock, CollatorPair};
-use polkadot_service::{AbstractClient, Client as PClient, ClientHandle, RuntimeApiCollection};
+use polkadot_service::Client as PClient;
 use sc_client_api::{
 	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, UsageProvider,
 };
@@ -37,10 +37,10 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::BlockOrigin;
 use sp_core::{traits::SpawnNamed, Pair};
 use sp_runtime::{
-	traits::{BlakeTwo256, Block as BlockT, NumberFor},
+	traits::{Block as BlockT, NumberFor},
 	Justifications,
 };
-use std::{marker::PhantomData, ops::Deref, sync::Arc};
+use std::{ops::Deref, sync::Arc};
 
 pub mod genesis;
 
@@ -61,16 +61,17 @@ impl<C> Deref for RFullNode<C> {
 }
 
 /// Parameters given to [`start_collator`].
-pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, Spawner, RClient, IQ> {
+pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, RCInterface, Spawner, IQ> {
 	pub block_status: Arc<BS>,
 	pub client: Arc<Client>,
 	pub announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 	pub spawner: Spawner,
 	pub para_id: ParaId,
-	pub relay_chain_full_node: RFullNode<RClient>,
+	pub relay_chain_interface: RCInterface,
 	pub task_manager: &'a mut TaskManager,
 	pub parachain_consensus: Box<dyn ParachainConsensus<Block>>,
 	pub import_queue: IQ,
+	pub collator_key: CollatorPair,
 }
 
 /// Start a collator node for a parachain.
@@ -78,7 +79,7 @@ pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, Spawner, RClient, 
 /// A collator is similar to a validator in a normal blockchain.
 /// It is responsible for producing blocks and sending the blocks to a
 /// parachain validator for validation and inclusion into the relay chain.
-pub async fn start_collator<'a, Block, BS, Client, Backend, Spawner, RClient, IQ>(
+pub async fn start_collator<'a, Block, BS, Client, Backend, RCInterface, Spawner, IQ>(
 	StartCollatorParams {
 		block_status,
 		client,
@@ -86,10 +87,11 @@ pub async fn start_collator<'a, Block, BS, Client, Backend, Spawner, RClient, IQ
 		spawner,
 		para_id,
 		task_manager,
-		relay_chain_full_node,
+		relay_chain_interface,
 		parachain_consensus,
 		import_queue,
-	}: StartCollatorParams<'a, Block, BS, Client, Spawner, RClient, IQ>,
+		collator_key,
+	}: StartCollatorParams<'a, Block, BS, Client, RCInterface, Spawner, IQ>,
 ) -> sc_service::error::Result<()>
 where
 	Block: BlockT,
@@ -106,55 +108,58 @@ where
 	Client::Api: CollectCollationInfo<Block>,
 	for<'b> &'b Client: BlockImport<Block>,
 	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
-	RClient: ClientHandle,
+	RCInterface: RelayChainInterface<PBlock> + Send + Sync + Clone + 'static,
 	Backend: BackendT<Block> + 'static,
 	IQ: ImportQueue<Block> + 'static,
 {
-	relay_chain_full_node.client.execute_with(StartConsensus {
+	let consensus = cumulus_client_consensus_common::run_parachain_consensus(
 		para_id,
-		announce_block: announce_block.clone(),
-		client: client.clone(),
-		task_manager,
-		_phantom: PhantomData,
-	});
+		client.clone(),
+		relay_chain_interface.clone(),
+		announce_block.clone(),
+	);
 
-	relay_chain_full_node.client.execute_with(StartPoVRecovery {
-		para_id,
-		client: client.clone(),
-		import_queue,
-		task_manager,
-		overseer_handle: relay_chain_full_node
-			.overseer_handle
-			.clone()
+	task_manager
+		.spawn_essential_handle()
+		.spawn("cumulus-consensus", None, consensus);
+
+	let pov_recovery = cumulus_client_pov_recovery::PoVRecovery::new(
+		relay_chain_interface
+			.overseer_handle()
 			.ok_or_else(|| "Polkadot full node did not provide an `OverseerHandle`!")?,
-		_phantom: PhantomData,
-	})?;
+		relay_chain_interface.slot_duration()?,
+		client.clone(),
+		import_queue,
+		relay_chain_interface.clone(),
+		para_id,
+	);
+
+	task_manager
+		.spawn_essential_handle()
+		.spawn("cumulus-pov-recovery", None, pov_recovery.run());
 
 	cumulus_client_collator::start_collator(cumulus_client_collator::StartCollatorParams {
 		runtime_api: client.clone(),
 		block_status,
 		announce_block,
-		overseer_handle: relay_chain_full_node
-			.overseer_handle
-			.clone()
+		overseer_handle: relay_chain_interface
+			.overseer_handle()
 			.ok_or_else(|| "Polkadot full node did not provide an `OverseerHandle`!")?,
 		spawner,
 		para_id,
-		key: relay_chain_full_node.collator_key.clone(),
+		key: collator_key,
 		parachain_consensus,
 	})
 	.await;
-
-	task_manager.add_child(relay_chain_full_node.relay_chain_full_node.task_manager);
 
 	Ok(())
 }
 
 /// Parameters given to [`start_full_node`].
-pub struct StartFullNodeParams<'a, Block: BlockT, Client, PClient> {
+pub struct StartFullNodeParams<'a, Block: BlockT, Client, RCInterface> {
 	pub para_id: ParaId,
 	pub client: Arc<Client>,
-	pub relay_chain_full_node: RFullNode<PClient>,
+	pub relay_chain_interface: RCInterface,
 	pub task_manager: &'a mut TaskManager,
 	pub announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 }
@@ -163,14 +168,14 @@ pub struct StartFullNodeParams<'a, Block: BlockT, Client, PClient> {
 ///
 /// A full node will only sync the given parachain and will follow the
 /// tip of the chain.
-pub fn start_full_node<Block, Client, Backend, PClient>(
+pub fn start_full_node<Block, Client, Backend, RCInterface>(
 	StartFullNodeParams {
 		client,
 		announce_block,
 		task_manager,
-		relay_chain_full_node,
+		relay_chain_interface,
 		para_id,
-	}: StartFullNodeParams<Block, Client, PClient>,
+	}: StartFullNodeParams<Block, Client, RCInterface>,
 ) -> sc_service::error::Result<()>
 where
 	Block: BlockT,
@@ -183,114 +188,20 @@ where
 		+ 'static,
 	for<'a> &'a Client: BlockImport<Block>,
 	Backend: BackendT<Block> + 'static,
-	PClient: ClientHandle,
+	RCInterface: RelayChainInterface<PBlock> + Sync + Send + Clone + 'static,
 {
-	relay_chain_full_node.client.execute_with(StartConsensus {
-		announce_block,
+	let consensus = cumulus_client_consensus_common::run_parachain_consensus(
 		para_id,
-		client,
-		task_manager,
-		_phantom: PhantomData,
-	});
+		client.clone(),
+		relay_chain_interface.clone(),
+		announce_block,
+	);
 
-	task_manager.add_child(relay_chain_full_node.relay_chain_full_node.task_manager);
+	task_manager
+		.spawn_essential_handle()
+		.spawn("cumulus-consensus", None, consensus);
 
 	Ok(())
-}
-
-struct StartConsensus<'a, Block: BlockT, Client, Backend> {
-	para_id: ParaId,
-	announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
-	client: Arc<Client>,
-	task_manager: &'a mut TaskManager,
-	_phantom: PhantomData<Backend>,
-}
-
-impl<'a, Block, Client, Backend> polkadot_service::ExecuteWithClient
-	for StartConsensus<'a, Block, Client, Backend>
-where
-	Block: BlockT,
-	Client: Finalizer<Block, Backend>
-		+ UsageProvider<Block>
-		+ Send
-		+ Sync
-		+ BlockBackend<Block>
-		+ BlockchainEvents<Block>
-		+ 'static,
-	for<'b> &'b Client: BlockImport<Block>,
-	Backend: BackendT<Block> + 'static,
-{
-	type Output = ();
-
-	fn execute_with_client<PClient, Api, PBackend>(self, client: Arc<PClient>) -> Self::Output
-	where
-		<Api as sp_api::ApiExt<PBlock>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
-		PBackend: sc_client_api::Backend<PBlock>,
-		PBackend::State: sp_api::StateBackend<BlakeTwo256>,
-		Api: RuntimeApiCollection<StateBackend = PBackend::State>,
-		PClient: AbstractClient<PBlock, PBackend, Api = Api> + 'static,
-	{
-		let consensus = cumulus_client_consensus_common::run_parachain_consensus(
-			self.para_id,
-			self.client.clone(),
-			client.clone(),
-			self.announce_block,
-		);
-
-		self.task_manager
-			.spawn_essential_handle()
-			.spawn("cumulus-consensus", None, consensus);
-	}
-}
-
-struct StartPoVRecovery<'a, Block: BlockT, Client, IQ> {
-	para_id: ParaId,
-	client: Arc<Client>,
-	task_manager: &'a mut TaskManager,
-	overseer_handle: OverseerHandle,
-	import_queue: IQ,
-	_phantom: PhantomData<Block>,
-}
-
-impl<'a, Block, Client, IQ> polkadot_service::ExecuteWithClient
-	for StartPoVRecovery<'a, Block, Client, IQ>
-where
-	Block: BlockT,
-	Client: UsageProvider<Block>
-		+ Send
-		+ Sync
-		+ BlockBackend<Block>
-		+ BlockchainEvents<Block>
-		+ 'static,
-	IQ: ImportQueue<Block> + 'static,
-{
-	type Output = sc_service::error::Result<()>;
-
-	fn execute_with_client<PClient, Api, PBackend>(self, client: Arc<PClient>) -> Self::Output
-	where
-		<Api as sp_api::ApiExt<PBlock>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
-		PBackend: sc_client_api::Backend<PBlock>,
-		PBackend::State: sp_api::StateBackend<BlakeTwo256>,
-		Api: RuntimeApiCollection<StateBackend = PBackend::State>,
-		PClient: AbstractClient<PBlock, PBackend, Api = Api> + 'static,
-	{
-		let pov_recovery = cumulus_client_pov_recovery::PoVRecovery::new(
-			self.overseer_handle,
-			sc_consensus_babe::Config::get_or_compute(&*client)?.slot_duration(),
-			self.client,
-			self.import_queue,
-			client,
-			self.para_id,
-		);
-
-		self.task_manager.spawn_essential_handle().spawn(
-			"cumulus-pov-recovery",
-			None,
-			pov_recovery.run(),
-		);
-
-		Ok(())
-	}
 }
 
 /// Prepare the parachain's node condifugration

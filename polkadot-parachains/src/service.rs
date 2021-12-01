@@ -330,15 +330,18 @@ where
 	let client = params.client.clone();
 	let backend = params.backend.clone();
 
-	let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_full_node);
+	let mut task_manager = params.task_manager;
+	let collator_key = relay_chain_full_node.collator_key.clone();
+	let relay_chain_interface =
+		build_relay_chain_direct_from_full(relay_chain_full_node, &mut task_manager);
 
-	let block_announce_validator = build_block_announce_validator(relay_chain_interface, id);
+	let block_announce_validator =
+		build_block_announce_validator(relay_chain_interface.clone(), id);
 
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let transaction_pool = params.transaction_pool.clone();
-	let mut task_manager = params.task_manager;
 	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
 	let (network, system_rpc_tx, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
@@ -393,10 +396,11 @@ where
 			announce_block,
 			client: client.clone(),
 			task_manager: &mut task_manager,
-			relay_chain_full_node,
+			relay_chain_interface,
 			spawner,
 			parachain_consensus,
 			import_queue,
+			collator_key,
 		};
 
 		start_collator(params).await?;
@@ -406,7 +410,7 @@ where
 			announce_block,
 			task_manager: &mut task_manager,
 			para_id: id,
-			relay_chain_full_node,
+			relay_chain_interface: relay_chain_full_node,
 		};
 
 		start_full_node(params)?;
@@ -502,6 +506,8 @@ where
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
+
+	let collator_key = relay_chain_full_node.collator_key.clone();
 	let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_full_node);
 
 	let block_announce_validator =
@@ -578,10 +584,11 @@ where
 			announce_block,
 			client: client.clone(),
 			task_manager: &mut task_manager,
-			relay_chain_full_node,
+			relay_chain_interface: relay_chain_interface.clone(),
 			spawner,
 			parachain_consensus,
 			import_queue,
+			collator_key,
 		};
 
 		start_collator(params).await?;
@@ -591,7 +598,7 @@ where
 			announce_block,
 			task_manager: &mut task_manager,
 			para_id: id,
-			relay_chain_full_node,
+			relay_chain_interface: relay_chain_full_node,
 		};
 
 		start_full_node(params)?;

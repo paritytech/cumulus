@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use cumulus_primitives_core::{
 	relay_chain::{
@@ -12,7 +12,10 @@ use cumulus_primitives_core::{
 };
 use parking_lot::RwLock;
 use polkadot_client::{ClientHandle, ExecuteWithClient, FullBackend};
-use sc_client_api::{blockchain::BlockStatus, Backend, BlockchainEvents, HeaderBackend};
+use polkadot_service::{AuxStore, BabeApi, Handle, TaskManager};
+use sc_client_api::{
+	blockchain::BlockStatus, Backend, BlockchainEvents, HeaderBackend, UsageProvider,
+};
 use sp_api::{ApiError, BlockT, ProvideRuntimeApi};
 use sp_consensus::SyncOracle;
 use sp_core::sp_std::collections::btree_map::BTreeMap;
@@ -79,12 +82,17 @@ pub trait RelayChainInterface<Block: BlockT> {
 	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<Block::Hash>>;
 
 	fn is_major_syncing(&self) -> bool;
+
+	fn slot_duration(&self) -> Result<Duration, sp_blockchain::Error>;
+
+	fn overseer_handle(&self) -> Option<Handle>;
 }
 
 pub struct RelayChainDirect<Client> {
 	pub polkadot_client: Arc<Client>,
 	pub backend: Arc<FullBackend>,
 	pub network: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
+	pub overseer_handle: Option<Handle>,
 }
 
 impl<T> Clone for RelayChainDirect<T> {
@@ -93,14 +101,15 @@ impl<T> Clone for RelayChainDirect<T> {
 			polkadot_client: self.polkadot_client.clone(),
 			backend: self.backend.clone(),
 			network: self.network.clone(),
+			overseer_handle: self.overseer_handle.clone(),
 		}
 	}
 }
 
 impl<Client, Block> RelayChainInterface<Block> for RelayChainDirect<Client>
 where
-	Client: ProvideRuntimeApi<PBlock> + BlockchainEvents<Block>,
-	Client::Api: ParachainHost<PBlock>,
+	Client: ProvideRuntimeApi<PBlock> + BlockchainEvents<Block> + AuxStore + UsageProvider<PBlock>,
+	Client::Api: ParachainHost<PBlock> + BabeApi<PBlock>,
 	Block: BlockT,
 {
 	fn retrieve_dmq_contents(
@@ -222,12 +231,21 @@ where
 		let mut network = self.network.lock().unwrap();
 		network.is_major_syncing()
 	}
+
+	fn slot_duration(&self) -> Result<Duration, sp_blockchain::Error> {
+		Ok(sc_consensus_babe::Config::get_or_compute(&*self.polkadot_client)?.slot_duration())
+	}
+
+	fn overseer_handle(&self) -> Option<Handle> {
+		self.overseer_handle.clone()
+	}
 }
 
 pub struct RelayChainDirectBuilder {
 	polkadot_client: polkadot_client::Client,
 	backend: Arc<FullBackend>,
 	network: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
+	overseer_handle: Option<Handle>,
 }
 
 impl RelayChainDirectBuilder {
@@ -241,13 +259,20 @@ impl ExecuteWithClient for RelayChainDirectBuilder {
 
 	fn execute_with_client<Client, Api, Backend>(self, client: Arc<Client>) -> Self::Output
 	where
-		Client: ProvideRuntimeApi<PBlock> + BlockchainEvents<PBlock> + 'static + Sync + Send,
-		Client::Api: ParachainHost<PBlock>,
+		Client: ProvideRuntimeApi<PBlock>
+			+ BlockchainEvents<PBlock>
+			+ AuxStore
+			+ UsageProvider<PBlock>
+			+ 'static
+			+ Sync
+			+ Send,
+		Client::Api: ParachainHost<PBlock> + BabeApi<PBlock>,
 	{
 		Arc::new(RelayChainDirect {
 			polkadot_client: client,
 			backend: self.backend,
 			network: self.network,
+			overseer_handle: self.overseer_handle,
 		})
 	}
 }
@@ -335,6 +360,14 @@ impl<Block: BlockT> RelayChainInterface<Block>
 
 	fn is_major_syncing(&self) -> bool {
 		(**self).is_major_syncing()
+	}
+
+	fn slot_duration(&self) -> Result<Duration, sp_blockchain::Error> {
+		(**self).slot_duration()
+	}
+
+	fn overseer_handle(&self) -> Option<Handle> {
+		(**self).overseer_handle()
 	}
 }
 
@@ -424,24 +457,30 @@ where
 	fn is_major_syncing(&self) -> bool {
 		(**self).is_major_syncing()
 	}
-}
 
-pub fn build_relay_chain_direct(
-	client: polkadot_client::Client,
-	backend: Arc<FullBackend>,
-	network: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
-) -> Arc<(dyn RelayChainInterface<PBlock> + Send + Sync + 'static)> {
-	let relay_chain_builder = RelayChainDirectBuilder { polkadot_client: client, backend, network };
-	relay_chain_builder.build()
+	fn slot_duration(&self) -> Result<Duration, sp_blockchain::Error> {
+		(**self).slot_duration()
+	}
+
+	fn overseer_handle(&self) -> Option<Handle> {
+		(**self).overseer_handle()
+	}
 }
 
 pub fn build_relay_chain_direct_from_full(
 	full_node: &polkadot_service::NewFull<polkadot_client::Client>,
+	task_manager: &mut TaskManager,
 ) -> Arc<(dyn RelayChainInterface<PBlock> + Send + Sync + 'static)> {
 	let client = full_node.client.clone();
 	let backend = full_node.backend.clone();
 	let test: Box<dyn SyncOracle + Send + Sync> = Box::new(full_node.network.clone());
 	let network = Arc::new(Mutex::new(test));
-	let relay_chain_builder = RelayChainDirectBuilder { polkadot_client: client, backend, network };
+	let relay_chain_builder = RelayChainDirectBuilder {
+		polkadot_client: client,
+		backend,
+		network,
+		overseer_handle: full_node.overseer_handle.clone(),
+	};
+	task_manager.add_child(full_node.task_manager);
 	relay_chain_builder.build()
 }

@@ -219,6 +219,7 @@ where
 		polkadot_client: relay_chain_full_node.client.clone(),
 		backend: relay_chain_full_node.backend.clone(),
 		network: Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),
+		overseer_handle: None,
 	});
 	let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface, para_id);
 	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
@@ -278,6 +279,7 @@ where
 					polkadot_client: relay_chain_full_node.client.clone(),
 					backend: relay_chain_full_node.backend.clone(),
 					network: Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),
+					overseer_handle: None,
 				});
 
 				let relay_chain_interface2 = relay_chain_interface.clone();

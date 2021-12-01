@@ -17,10 +17,10 @@ use cumulus_client_network::build_block_announce_validator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
-use cumulus_primitives_core::ParaId;
+use cumulus_primitives_core::{relay_chain::v1::Block as PBlock, ParaId};
 
 // Substrate Imports
-use cumulus_relay_chain_interface::build_relay_chain_direct_from_full;
+use cumulus_relay_chain_interface::{build_relay_chain_direct_from_full, RelayChainInterface};
 use sc_client_api::ExecutorProvider;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
@@ -216,7 +216,7 @@ where
 		Option<&Registry>,
 		Option<TelemetryHandle>,
 		&TaskManager,
-		&polkadot_service::NewFull<polkadot_service::Client>,
+		Arc<dyn RelayChainInterface<PBlock> + Sync + Send>,
 		Arc<
 			sc_transaction_pool::FullPool<
 				Block,
@@ -246,15 +246,16 @@ where
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
+	let collator_key = relay_chain_full_node.collator_key.clone();
 	let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_full_node);
 
-	let block_announce_validator = build_block_announce_validator(relay_chain_interface, id);
+	let block_announce_validator =
+		build_block_announce_validator(relay_chain_interface.clone(), id);
 
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let transaction_pool = params.transaction_pool.clone();
-	let mut task_manager = params.task_manager;
 	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
 	let (network, system_rpc_tx, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
@@ -306,7 +307,7 @@ where
 			prometheus_registry.as_ref(),
 			telemetry.as_ref().map(|t| t.handle()),
 			&task_manager,
-			&relay_chain_full_node,
+			relay_chain_interface.clone(),
 			transaction_pool,
 			network,
 			params.keystore_container.sync_keystore(),
@@ -321,10 +322,11 @@ where
 			announce_block,
 			client: client.clone(),
 			task_manager: &mut task_manager,
-			relay_chain_full_node,
+			relay_chain_interface,
 			spawner,
 			parachain_consensus,
 			import_queue,
+			collator_key,
 		};
 
 		start_collator(params).await?;
@@ -334,7 +336,7 @@ where
 			announce_block,
 			task_manager: &mut task_manager,
 			para_id: id,
-			relay_chain_full_node,
+			relay_chain_interface: relay_chain_full_node,
 		};
 
 		start_full_node(params)?;
@@ -410,7 +412,7 @@ pub async fn start_parachain_node(
 		 prometheus_registry,
 		 telemetry,
 		 task_manager,
-		 relay_chain_node,
+		 relay_chain_interface,
 		 transaction_pool,
 		 sync_oracle,
 		 keystore,
@@ -424,8 +426,6 @@ pub async fn start_parachain_node(
 				prometheus_registry,
 				telemetry.clone(),
 			);
-
-			let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_node);
 
 			let relay_chain_interface2 = relay_chain_interface.clone();
 			Ok(build_aura_consensus::<

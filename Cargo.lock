@@ -1515,6 +1515,7 @@ name = "cumulus-client-consensus-common"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "cumulus-relay-chain-interface",
  "cumulus-test-client",
  "dyn-clone",
  "futures 0.3.17",
@@ -1592,6 +1593,7 @@ name = "cumulus-client-pov-recovery"
 version = "0.1.0"
 dependencies = [
  "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
  "cumulus-test-service",
  "futures 0.3.17",
  "futures-timer 3.0.2",
@@ -1622,6 +1624,7 @@ dependencies = [
  "cumulus-client-consensus-common",
  "cumulus-client-pov-recovery",
  "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
  "parity-scale-codec",
  "parking_lot 0.10.2",
  "polkadot-overseer",
@@ -1870,6 +1873,7 @@ dependencies = [
  "polkadot-client",
  "polkadot-service",
  "sc-client-api",
+ "sc-consensus-babe",
  "sc-network",
  "sc-service",
  "sp-api",
