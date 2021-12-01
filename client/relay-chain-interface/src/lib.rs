@@ -468,7 +468,7 @@ where
 }
 
 pub fn build_relay_chain_direct_from_full(
-	full_node: &polkadot_service::NewFull<polkadot_client::Client>,
+	full_node: polkadot_service::NewFull<polkadot_client::Client>,
 	task_manager: &mut TaskManager,
 ) -> Arc<(dyn RelayChainInterface<PBlock> + Send + Sync + 'static)> {
 	let client = full_node.client.clone();

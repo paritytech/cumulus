@@ -247,7 +247,11 @@ where
 	let client = params.client.clone();
 	let backend = params.backend.clone();
 	let collator_key = relay_chain_full_node.collator_key.clone();
-	let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_full_node);
+	let mut task_manager = params.task_manager;
+	let relay_chain_interface = build_relay_chain_direct_from_full(
+		relay_chain_full_node.relay_chain_full_node,
+		&mut task_manager,
+	);
 
 	let block_announce_validator =
 		build_block_announce_validator(relay_chain_interface.clone(), id);
@@ -336,7 +340,7 @@ where
 			announce_block,
 			task_manager: &mut task_manager,
 			para_id: id,
-			relay_chain_interface: relay_chain_full_node,
+			relay_chain_interface,
 		};
 
 		start_full_node(params)?;

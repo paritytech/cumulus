@@ -299,7 +299,7 @@ where
 		Option<&Registry>,
 		Option<TelemetryHandle>,
 		&TaskManager,
-		&polkadot_service::NewFull<polkadot_service::Client>,
+		Arc<dyn RelayChainInterface<PBlock> + Sync + Send>,
 		Arc<
 			sc_transaction_pool::FullPool<
 				Block,
@@ -331,9 +331,12 @@ where
 	let backend = params.backend.clone();
 
 	let mut task_manager = params.task_manager;
+
 	let collator_key = relay_chain_full_node.collator_key.clone();
-	let relay_chain_interface =
-		build_relay_chain_direct_from_full(relay_chain_full_node, &mut task_manager);
+	let relay_chain_interface = build_relay_chain_direct_from_full(
+		relay_chain_full_node.relay_chain_full_node,
+		&mut task_manager,
+	);
 
 	let block_announce_validator =
 		build_block_announce_validator(relay_chain_interface.clone(), id);
@@ -381,7 +384,7 @@ where
 			prometheus_registry.as_ref(),
 			telemetry.as_ref().map(|t| t.handle()),
 			&task_manager,
-			&relay_chain_full_node,
+			relay_chain_interface.clone(),
 			transaction_pool,
 			network,
 			params.keystore_container.sync_keystore(),
@@ -410,7 +413,7 @@ where
 			announce_block,
 			task_manager: &mut task_manager,
 			para_id: id,
-			relay_chain_interface: relay_chain_full_node,
+			relay_chain_interface,
 		};
 
 		start_full_node(params)?;
@@ -508,7 +511,11 @@ where
 	let backend = params.backend.clone();
 
 	let collator_key = relay_chain_full_node.collator_key.clone();
-	let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_full_node);
+	let mut task_manager = params.task_manager;
+	let relay_chain_interface = build_relay_chain_direct_from_full(
+		relay_chain_full_node.relay_chain_full_node,
+		&mut task_manager,
+	);
 
 	let block_announce_validator =
 		build_block_announce_validator(relay_chain_interface.clone(), id);
@@ -517,7 +524,6 @@ where
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let transaction_pool = params.transaction_pool.clone();
-	let mut task_manager = params.task_manager;
 	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
 	let (network, system_rpc_tx, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
@@ -598,7 +604,7 @@ where
 			announce_block,
 			task_manager: &mut task_manager,
 			para_id: id,
-			relay_chain_interface: relay_chain_full_node,
+			relay_chain_interface,
 		};
 
 		start_full_node(params)?;
@@ -809,7 +815,7 @@ pub async fn start_shell_node(
 		 prometheus_registry,
 		 telemetry,
 		 task_manager,
-		 relay_chain_node,
+		 relay_chain_interface,
 		 transaction_pool,
 		 _,
 		 _,
@@ -821,8 +827,6 @@ pub async fn start_shell_node(
 				prometheus_registry.clone(),
 				telemetry.clone(),
 			);
-
-			let relay_chain_interface = build_relay_chain_direct_from_full(&relay_chain_node);
 
 			Ok(cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
 				cumulus_client_consensus_relay_chain::BuildRelayChainConsensusParams {
