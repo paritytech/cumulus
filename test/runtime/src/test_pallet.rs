@@ -15,7 +15,6 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 /// A special pallet that exposes dispatchables that are only useful for testing.
-
 pub use pallet::*;
 
 #[frame_support::pallet]
@@ -37,8 +36,13 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// A test dispatchable for setting a custom head data in `validate_block`.
 		#[pallet::weight(0)]
-		pub fn set_custom_validation_head_data(_: OriginFor<T>, custom_header: sp_std::vec::Vec<u8>) -> DispatchResult {
-			cumulus_pallet_parachain_system::Pallet::<T>::set_custom_validation_head_data(custom_header);
+		pub fn set_custom_validation_head_data(
+			_: OriginFor<T>,
+			custom_header: sp_std::vec::Vec<u8>,
+		) -> DispatchResult {
+			cumulus_pallet_parachain_system::Pallet::<T>::set_custom_validation_head_data(
+				custom_header,
+			);
 			Ok(())
 		}
 	}

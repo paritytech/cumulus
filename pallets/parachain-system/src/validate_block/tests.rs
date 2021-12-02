@@ -148,7 +148,9 @@ fn validate_block_returns_custom_head_data() {
 		generate_extrinsic(
 			&client,
 			Charlie,
-			TestPalletCall::set_custom_validation_head_data { custom_header: expected_header.clone() },
+			TestPalletCall::set_custom_validation_head_data {
+				custom_header: expected_header.clone(),
+			},
 		),
 		transfer(&client, Bob, Charlie, 100),
 	];
