@@ -28,7 +28,7 @@ use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
-use cumulus_relay_chain_interface::RelayChainDirect;
+use cumulus_relay_chain_interface::{build_relay_chain_direct_from_full, RelayChainDirect};
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use polkadot_primitives::v1::{CollatorPair, Hash as PHash, PersistedValidationData};
@@ -216,12 +216,13 @@ where
 	let backend = params.backend.clone();
 
 	let relay_chain_interface = Arc::new(RelayChainDirect {
-		polkadot_client: relay_chain_full_node.client.clone(),
+		full_client: relay_chain_full_node.client.clone(),
 		backend: relay_chain_full_node.backend.clone(),
 		network: Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),
-		overseer_handle: None,
+		overseer_handle: relay_chain_full_node.overseer_handle.clone(),
 	});
-	let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface, para_id);
+	let block_announce_validator =
+		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
 	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
 
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
@@ -276,10 +277,10 @@ where
 					None,
 				);
 				let relay_chain_interface = Arc::new(RelayChainDirect {
-					polkadot_client: relay_chain_full_node.client.clone(),
+					full_client: relay_chain_full_node.client.clone(),
 					backend: relay_chain_full_node.backend.clone(),
 					network: Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),
-					overseer_handle: None,
+					overseer_handle: relay_chain_full_node.overseer_handle.clone(),
 				});
 
 				let relay_chain_interface2 = relay_chain_interface.clone();
@@ -313,8 +314,8 @@ where
 			Consensus::Null => Box::new(NullConsensus),
 		};
 
-		let relay_chain_full_node =
-			relay_chain_full_node.with_client(polkadot_test_service::TestClient);
+		// let relay_chain_full_node =
+		// 	relay_chain_full_node.with_client(polkadot_test_service::TestClient);
 
 		let params = StartCollatorParams {
 			block_status: client.clone(),
@@ -324,27 +325,22 @@ where
 			task_manager: &mut task_manager,
 			para_id,
 			parachain_consensus,
-			relay_chain_full_node: cumulus_client_service::RFullNode {
-				relay_chain_full_node,
-				collator_key,
-			},
+			relay_chain_interface,
+			collator_key,
 			import_queue,
 		};
 
 		start_collator(params).await?;
 	} else {
-		let relay_chain_full_node =
-			relay_chain_full_node.with_client(polkadot_test_service::TestClient);
+		// let relay_chain_full_node =
+		// relay_chain_full_node.with_client(polkadot_test_service::TestClient);
 
 		let params = StartFullNodeParams {
 			client: client.clone(),
 			announce_block,
 			task_manager: &mut task_manager,
 			para_id,
-			relay_chain_full_node: cumulus_client_service::RFullNode {
-				relay_chain_full_node,
-				collator_key: CollatorPair::generate().0,
-			},
+			relay_chain_interface,
 		};
 
 		start_full_node(params)?;

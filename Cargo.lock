@@ -1572,6 +1572,7 @@ dependencies = [
  "polkadot-node-primitives",
  "polkadot-parachain",
  "polkadot-primitives",
+ "polkadot-service",
  "polkadot-test-client",
  "sc-cli",
  "sc-client-api",

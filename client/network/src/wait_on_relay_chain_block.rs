@@ -166,9 +166,10 @@ mod tests {
 			client.clone(),
 			block,
 			RelayChainDirect {
-				polkadot_client: client,
+				full_client: client,
 				backend: backend.clone(),
 				network: Arc::new(Mutex::new(dummy_network)),
+				overseer_handle: None,
 			},
 		)
 	}

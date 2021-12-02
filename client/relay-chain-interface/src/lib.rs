@@ -89,7 +89,7 @@ pub trait RelayChainInterface<Block: BlockT> {
 }
 
 pub struct RelayChainDirect<Client> {
-	pub polkadot_client: Arc<Client>,
+	pub full_client: Arc<Client>,
 	pub backend: Arc<FullBackend>,
 	pub network: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
 	pub overseer_handle: Option<Handle>,
@@ -98,7 +98,7 @@ pub struct RelayChainDirect<Client> {
 impl<T> Clone for RelayChainDirect<T> {
 	fn clone(&self) -> Self {
 		Self {
-			polkadot_client: self.polkadot_client.clone(),
+			full_client: self.full_client.clone(),
 			backend: self.backend.clone(),
 			network: self.network.clone(),
 			overseer_handle: self.overseer_handle.clone(),
@@ -117,7 +117,7 @@ where
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> Option<Vec<InboundDownwardMessage>> {
-		self.polkadot_client
+		self.full_client
 			.runtime_api()
 			.dmq_contents_with_context(
 				&BlockId::hash(relay_parent),
@@ -140,7 +140,7 @@ where
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
-		self.polkadot_client
+		self.full_client
 			.runtime_api()
 			.inbound_hrmp_channels_contents_with_context(
 				&BlockId::hash(relay_parent),
@@ -164,7 +164,7 @@ where
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> Result<Option<PersistedValidationData>, ApiError> {
-		self.polkadot_client.runtime_api().persisted_validation_data(
+		self.full_client.runtime_api().persisted_validation_data(
 			block_id,
 			para_id,
 			occupied_core_assumption,
@@ -176,25 +176,23 @@ where
 		block_id: &BlockId,
 		para_id: ParaId,
 	) -> Result<Option<CommittedCandidateReceipt>, ApiError> {
-		self.polkadot_client
-			.runtime_api()
-			.candidate_pending_availability(block_id, para_id)
+		self.full_client.runtime_api().candidate_pending_availability(block_id, para_id)
 	}
 
 	fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError> {
-		self.polkadot_client.runtime_api().session_index_for_child(block_id)
+		self.full_client.runtime_api().session_index_for_child(block_id)
 	}
 
 	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
-		self.polkadot_client.runtime_api().validators(block_id)
+		self.full_client.runtime_api().validators(block_id)
 	}
 
 	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<Block> {
-		self.polkadot_client.import_notification_stream()
+		self.full_client.import_notification_stream()
 	}
 
 	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<Block> {
-		self.polkadot_client.finality_notification_stream()
+		self.full_client.finality_notification_stream()
 	}
 
 	fn storage_changes_notification_stream(
@@ -204,7 +202,7 @@ where
 			&[(sc_client_api::StorageKey, Option<Vec<sc_client_api::StorageKey>>)],
 		>,
 	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<Block::Hash>> {
-		self.polkadot_client
+		self.full_client
 			.storage_changes_notification_stream(filter_keys, child_filter_keys)
 	}
 
@@ -233,7 +231,7 @@ where
 	}
 
 	fn slot_duration(&self) -> Result<Duration, sp_blockchain::Error> {
-		Ok(sc_consensus_babe::Config::get_or_compute(&*self.polkadot_client)?.slot_duration())
+		Ok(sc_consensus_babe::Config::get_or_compute(&*self.full_client)?.slot_duration())
 	}
 
 	fn overseer_handle(&self) -> Option<Handle> {
@@ -269,7 +267,7 @@ impl ExecuteWithClient for RelayChainDirectBuilder {
 		Client::Api: ParachainHost<PBlock> + BabeApi<PBlock>,
 	{
 		Arc::new(RelayChainDirect {
-			polkadot_client: client,
+			full_client: client,
 			backend: self.backend,
 			network: self.network,
 			overseer_handle: self.overseer_handle,
@@ -471,13 +469,11 @@ pub fn build_relay_chain_direct_from_full(
 	full_node: polkadot_service::NewFull<polkadot_client::Client>,
 	task_manager: &mut TaskManager,
 ) -> Arc<(dyn RelayChainInterface<PBlock> + Send + Sync + 'static)> {
-	let client = full_node.client.clone();
-	let backend = full_node.backend.clone();
 	let test: Box<dyn SyncOracle + Send + Sync> = Box::new(full_node.network.clone());
 	let network = Arc::new(Mutex::new(test));
 	let relay_chain_builder = RelayChainDirectBuilder {
-		polkadot_client: client,
-		backend,
+		polkadot_client: full_node.client,
+		backend: full_node.backend,
 		network,
 		overseer_handle: full_node.overseer_handle.clone(),
 	};

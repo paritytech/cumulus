@@ -25,6 +25,7 @@ use polkadot_primitives::v1::{
 	Hash as PHash, HeadData, Id as ParaId, InboundDownwardMessage, InboundHrmpMessage,
 	OccupiedCoreAssumption, PersistedValidationData, SessionIndex, SigningContext, ValidatorId,
 };
+use polkadot_service::Handle;
 use polkadot_test_client::{
 	Client as PClient, ClientBlockImportExt, DefaultTestClientBuilderExt, FullBackend as PBackend,
 	InitPolkadotBlockBuilder, TestClientBuilder, TestClientBuilderExt,
@@ -75,7 +76,7 @@ impl RelayChainInterface<PBlock> for DummyRelayChainInterface {
 		&self,
 		_: cumulus_primitives_core::relay_chain::BlockId,
 	) -> Result<<FullBackend as sc_client_api::Backend<PBlock>>::State, sp_blockchain::Error> {
-		unimplemented!("Not needed for test 1")
+		unimplemented!("Not needed for test")
 	}
 
 	fn get_import_lock(&self) -> &RwLock<()> {
@@ -101,7 +102,7 @@ impl RelayChainInterface<PBlock> for DummyRelayChainInterface {
 	}
 
 	fn retrieve_dmq_contents(&self, _: ParaId, _: PHash) -> Option<Vec<InboundDownwardMessage>> {
-		unimplemented!("Not needed for test 5")
+		unimplemented!("Not needed for test")
 	}
 
 	fn retrieve_all_inbound_hrmp_channel_contents(
@@ -171,6 +172,14 @@ impl RelayChainInterface<PBlock> for DummyRelayChainInterface {
 
 	fn is_major_syncing(&self) -> bool {
 		false
+	}
+
+	fn slot_duration(&self) -> Result<std::time::Duration, sp_blockchain::Error> {
+		unimplemented!("Not needed for test")
+	}
+
+	fn overseer_handle(&self) -> Option<Handle> {
+		unimplemented!("Not needed for test")
 	}
 }
 
