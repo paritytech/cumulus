@@ -25,7 +25,7 @@ error upon the upward transfer on the relay chain side. In production system thi
 parachain starts with 0 tokens anyhow.
 
 
-![upward-token-tx.png](downward-token-tx.png)
+![upward-token-tx.png](upward-token-tx.png)
 
 # Related Resources
 * Shawn Tabrizi's XCM [workshop](https://www.youtube.com/watch?v=5cgq5jOZx9g&list=PLp0_ueXY_enX6S5sogeo7GHD1BXTLj5Xr&index=20) 
