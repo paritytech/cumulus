@@ -460,7 +460,7 @@ impl<T: Config> Pallet<T> {
 
 	fn handle_xcm_message(
 		sender: ParaId,
-		_sent_at: RelayBlockNumber, // Review Q: why is this arg still here?
+		_sent_at: RelayBlockNumber,
 		xcm: VersionedXcm<T::Call>,
 		max_weight: Weight,
 	) -> Result<Weight, XcmError> {
