@@ -22,9 +22,10 @@ use frame_support::traits::{
 };
 use pallet_asset_tx_payment::HandleCredit;
 use sp_runtime::traits::Zero;
-use sp_std::marker::PhantomData;
-use xcm::latest::{AssetId, Fungibility::Fungible, MultiAsset, MultiLocation};
-use xcm_executor::traits::FilterAssetLocation;
+use sp_std::{borrow::Borrow, marker::PhantomData, result};
+use xcm::latest::{AssetId, Fungibility::Fungible, Junction, MultiAsset, MultiLocation};
+
+use xcm_executor::traits::{Convert, FilterAssetLocation};
 
 /// Type alias to conveniently refer to the `Currency::NegativeImbalance` associated type.
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
@@ -113,6 +114,44 @@ impl<T: Get<MultiLocation>> FilterAssetLocation for AssetsFrom<T> {
 	}
 }
 
+/// Converter struct with two main usage scenarios:
+/// 1. Transfer asset from local to other para-chain
+/// 	- with `reverse_ref` to convert a numeric asset ID (must be `TryFrom/TryInto<u128>`) into a `GeneralIndex` junction
+/// 2. Transfer asset back from other para-chain to local
+/// 	- with `convert_ref` to convert multilocation struct `(1,X2(ParaChain(para_id),GeneralIndex(general_index))` to a numeric asset ID
+pub struct AsPrefixedGeneralIndexFromLocalOrRemote<
+	LocalPrefix,
+	RemotePrefix,
+	AssetId,
+	ConvertAssetId,
+>(PhantomData<(LocalPrefix, RemotePrefix, AssetId, ConvertAssetId)>);
+impl<
+		LocalPrefix: Get<MultiLocation>,
+		RemotePrefix: Get<MultiLocation>,
+		AssetId: Clone,
+		ConvertAssetId: Convert<u128, AssetId>,
+	> Convert<MultiLocation, AssetId>
+	for AsPrefixedGeneralIndexFromLocalOrRemote<LocalPrefix, RemotePrefix, AssetId, ConvertAssetId>
+{
+	fn convert_ref(id: impl Borrow<MultiLocation>) -> result::Result<AssetId, ()> {
+		let id = id.borrow();
+
+		match id.match_and_split(&LocalPrefix::get()) {
+			Some(Junction::GeneralIndex(id)) => ConvertAssetId::convert_ref(id),
+			_ => match id.match_and_split(&RemotePrefix::get()) {
+				Some(Junction::GeneralIndex(id)) => ConvertAssetId::convert_ref(id),
+				_ => Err(()),
+			},
+		}
+	}
+	fn reverse_ref(what: impl Borrow<AssetId>) -> result::Result<MultiLocation, ()> {
+		let mut location = LocalPrefix::get();
+		let id = ConvertAssetId::reverse_ref(what)?;
+		location.push_interior(Junction::GeneralIndex(id)).map_err(|_| ())?;
+		Ok(location)
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -130,7 +169,9 @@ mod tests {
 		traits::{BlakeTwo256, IdentityLookup},
 		Perbill,
 	};
+
 	use xcm::prelude::*;
+	use xcm_executor::traits::JustTry;
 
 	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 	type Block = frame_system::mocking::MockBlock<Test>;
@@ -280,5 +321,60 @@ mod tests {
 			),
 			"AssetsFrom should allow assets from any of its interior locations"
 		);
+	}
+
+	#[test]
+	fn assets_from_convert_correctly() {
+		parameter_types! {
+			pub const Local: MultiLocation = Here.into();
+			pub Remote: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
+		}
+		let local_asset_location = Local::get().pushed_with_interior(GeneralIndex(42)).unwrap();
+		let remote_asset_location = Remote::get().pushed_with_interior(GeneralIndex(42)).unwrap();
+		let mut asset_id =
+			AsPrefixedGeneralIndexFromLocalOrRemote::<Local, Remote, u32, JustTry>::convert_ref(
+				&local_asset_location,
+			)
+			.unwrap_or(u32::default());
+		assert_eq!(asset_id, 42);
+		asset_id =
+			AsPrefixedGeneralIndexFromLocalOrRemote::<Local, Remote, u32, JustTry>::convert_ref(
+				&remote_asset_location,
+			)
+			.unwrap_or(u32::default());
+		assert_eq!(asset_id, 42);
+	}
+
+	#[test]
+	fn assets_from_convert_error_with_different_parent() {
+		parameter_types! {
+			pub const Local: MultiLocation = Here.into();
+			pub Remote: MultiLocation = MultiLocation::new(2, Junctions::Here);
+		}
+		let remote_asset_location = MultiLocation::new(1, X1(GeneralIndex(42)));
+		let asset_id =
+			AsPrefixedGeneralIndexFromLocalOrRemote::<Local, Remote, u32, JustTry>::convert_ref(
+				&remote_asset_location,
+			)
+			.unwrap_or(u32::default());
+		assert_eq!(asset_id, u32::default())
+	}
+
+	#[test]
+	fn assets_from_convert_error_with_different_interiors() {
+		parameter_types! {
+			pub const Local: MultiLocation = Here.into();
+			pub Remote: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
+		}
+		let mut remote_asset_location =
+			Remote::get().pushed_with_interior(PalletInstance(10)).unwrap();
+		remote_asset_location =
+			remote_asset_location.pushed_with_interior(GeneralIndex(42)).unwrap();
+		let asset_id =
+			AsPrefixedGeneralIndexFromLocalOrRemote::<Local, Remote, u32, JustTry>::convert_ref(
+				&remote_asset_location,
+			)
+			.unwrap_or(u32::default());
+		assert_eq!(asset_id, u32::default())
 	}
 }

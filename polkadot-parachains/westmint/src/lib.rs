@@ -65,18 +65,18 @@ use parachains_common::{
 pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
+use crate::common::impls::AsPrefixedGeneralIndexFromLocalOrRemote;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
-	ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
-	FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser,
-	ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-	UsingComponents,
+	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
+	CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete,
+	LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsDefault, RelayChainAsNative,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
@@ -428,6 +428,7 @@ parameter_types! {
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	pub const Local: MultiLocation = Here.into();
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
+	pub Remote: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -464,7 +465,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	ConvertedConcreteAssetId<
 		AssetId,
 		Balance,
-		AsPrefixedGeneralIndex<Local, AssetId, JustTry>,
+		AsPrefixedGeneralIndexFromLocalOrRemote<Local, Remote, AssetId, JustTry>,
 		JustTry,
 	>,
 	// Convert an XCM MultiLocation into a local account id:
@@ -477,6 +478,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	// The account to use for tracking teleports.
 	CheckingAccount,
 >;
+
 /// Means for transacting assets on this chain.
 pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor);
 
