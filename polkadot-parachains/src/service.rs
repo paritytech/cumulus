@@ -775,9 +775,7 @@ pub async fn start_rococo_parachain_node(
 
 /// Build the import queue for the shell runtime.
 pub fn shell_build_import_queue<RuntimeApi, Executor>(
-	client: Arc<
-		TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-	>,
+	client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
 	config: &Configuration,
 	_: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
@@ -790,17 +788,17 @@ pub fn shell_build_import_queue<RuntimeApi, Executor>(
 >
 where
 	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
-	+ Send
-	+ Sync
-	+ 'static,
+		+ Send
+		+ Sync
+		+ 'static,
 	RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
-	+ sp_api::Metadata<Block>
-	+ sp_session::SessionKeys<Block>
-	+ sp_api::ApiExt<
-		Block,
-		StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
-	> + sp_offchain::OffchainWorkerApi<Block>
-	+ sp_block_builder::BlockBuilder<Block>,
+		+ sp_api::Metadata<Block>
+		+ sp_session::SessionKeys<Block>
+		+ sp_api::ApiExt<
+			Block,
+			StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
+		> + sp_offchain::OffchainWorkerApi<Block>
+		+ sp_block_builder::BlockBuilder<Block>,
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
@@ -821,24 +819,22 @@ pub async fn start_shell_node<RuntimeApi, Executor>(
 	id: ParaId,
 ) -> sc_service::error::Result<(
 	TaskManager,
-	Arc<
-		TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-	>,
+	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
 )>
 where
 	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
-	+ Send
-	+ Sync
-	+ 'static,
+		+ Send
+		+ Sync
+		+ 'static,
 	RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
-	+ sp_api::Metadata<Block>
-	+ sp_session::SessionKeys<Block>
-	+ sp_api::ApiExt<
-		Block,
-		StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
-	> + sp_offchain::OffchainWorkerApi<Block>
-	+ sp_block_builder::BlockBuilder<Block>
-	+ cumulus_primitives_core::CollectCollationInfo<Block>,
+		+ sp_api::Metadata<Block>
+		+ sp_session::SessionKeys<Block>
+		+ sp_api::ApiExt<
+			Block,
+			StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
+		> + sp_offchain::OffchainWorkerApi<Block>
+		+ sp_block_builder::BlockBuilder<Block>
+		+ cumulus_primitives_core::CollectCollationInfo<Block>,
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
 {
