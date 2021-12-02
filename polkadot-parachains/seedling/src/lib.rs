@@ -40,7 +40,7 @@ use sp_version::RuntimeVersion;
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{Everything, IsInVec, Randomness},
+	traits::{Contains, IsInVec, Randomness},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -113,6 +113,19 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 42;
 }
 
+pub struct OnlySetValidationData;
+impl Contains<Call> for OnlySetValidationData {
+	fn contains(c: &Call) -> bool {
+		// Disallow everything that is not set_validation_data.
+		matches!(
+			c,
+			Call::ParachainSystem(
+				cumulus_pallet_parachain_system::Call::set_validation_data { .. }
+			)
+		)
+	}
+}
+
 impl frame_system::Config for Runtime {
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
@@ -144,7 +157,7 @@ impl frame_system::Config for Runtime {
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type DbWeight = ();
-	type BaseCallFilter = frame_support::traits::Nothing;
+	type BaseCallFilter = OnlySetValidationData;
 	type SystemWeightInfo = ();
 	type BlockWeights = RuntimeBlockWeights;
 	type BlockLength = RuntimeBlockLength;

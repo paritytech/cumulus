@@ -20,6 +20,7 @@ use crate::{
 	service::{
 		new_partial, Block, RococoParachainRuntimeExecutor, ShellRuntimeExecutor,
 		StatemineRuntimeExecutor, StatemintRuntimeExecutor, WestmintRuntimeExecutor,
+		SeedlingRuntimeExecutor
 	},
 };
 use codec::Encode;
@@ -264,9 +265,18 @@ macro_rules! construct_async_run {
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
 			})
-		} else if runner.config().chain_spec.is_shell() || runner.config().chain_spec.is_seedling() {
+		} else if runner.config().chain_spec.is_shell() {
 			runner.async_run(|$config| {
 				let $components = new_partial::<shell_runtime::RuntimeApi, ShellRuntimeExecutor, _>(
+					&$config,
+					crate::service::shell_build_import_queue,
+				)?;
+				let task_manager = $components.task_manager;
+				{ $( $code )* }.map(|v| (v, task_manager))
+			})
+		} else if runner.config().chain_spec.is_seedling() {
+			runner.async_run(|$config| {
+				let $components = new_partial::<seedling_runtime::RuntimeApi, SeedlingRuntimeExecutor, _>(
 					&$config,
 					crate::service::shell_build_import_queue,
 				)?;
@@ -462,11 +472,22 @@ pub fn run() -> Result<()> {
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
-				} else if config.chain_spec.is_shell() || config.chain_spec.is_seedling() {
-					crate::service::start_shell_node(config, polkadot_config, id)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
+				} else if config.chain_spec.is_shell() {
+					crate::service::start_shell_node::<
+						shell_runtime::RuntimeApi,
+						ShellRuntimeExecutor,
+					>(config, polkadot_config, id)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
+				} else if config.chain_spec.is_seedling() {
+					crate::service::start_shell_node::<
+						seedling_runtime::RuntimeApi,
+						SeedlingRuntimeExecutor,
+					>(config, polkadot_config, id)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
 				} else {
 					crate::service::start_rococo_parachain_node(config, polkadot_config, id)
 						.await
