@@ -113,16 +113,19 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 42;
 }
 
-pub struct OnlySetValidationData;
-impl Contains<Call> for OnlySetValidationData {
+pub struct BaseFilter;
+impl Contains<Call> for BaseFilter {
 	fn contains(c: &Call) -> bool {
-		// Disallow everything that is not set_validation_data.
-		matches!(
-			c,
-			Call::ParachainSystem(
-				cumulus_pallet_parachain_system::Call::set_validation_data { .. }
-			)
-		)
+		// Disallow everything that is not set_validation_data or set_code
+		match c {
+			Call::ParachainSystem(cumulus_pallet_parachain_system::Call::set_validation_data {
+				..
+			}) => true,
+			Call::Sudo(pallet_sudo::Call::sudo_unchecked_weight { call: ref x, .. }) => {
+				matches!(x.as_ref(), &Call::System(frame_system::Call::set_code { .. }))
+			},
+			_ => false,
+		}
 	}
 }
 
@@ -153,11 +156,11 @@ impl frame_system::Config for Runtime {
 	type Version = Version;
 	/// Converts a module to an index of this module in the runtime.
 	type PalletInfo = PalletInfo;
-	type AccountData = ();
+	type AccountData = pallet_balances::AccountData<u128>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type DbWeight = ();
-	type BaseCallFilter = OnlySetValidationData;
+	type BaseCallFilter = BaseFilter;
 	type SystemWeightInfo = ();
 	type BlockWeights = RuntimeBlockWeights;
 	type BlockLength = RuntimeBlockLength;
@@ -258,22 +261,6 @@ construct_runtime! {
 	}
 }
 
-/// Simple implementation which fails any transaction which is signed.
-#[derive(Eq, PartialEq, Clone, Default, sp_core::RuntimeDebug, Encode, Decode, TypeInfo)]
-pub struct Nothing;
-impl sp_runtime::traits::SignedExtension for Nothing {
-	const IDENTIFIER: &'static str = "Nothing";
-	type AccountId = AccountId;
-	type Call = Call;
-	type AdditionalSigned = ();
-	type Pre = ();
-	fn additional_signed(
-		&self,
-	) -> sp_std::result::Result<(), sp_runtime::transaction_validity::TransactionValidityError> {
-		Ok(())
-	}
-}
-
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = sp_runtime::MultiSignature;
 /// Some way of identifying an account on the chain. We intentionally make it equivalent
@@ -296,7 +283,13 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 /// BlockId type as expected by this runtime.
 pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
-pub type SignedExtra = Nothing;
+pub type SignedExtra = (
+	frame_system::CheckSpecVersion<Runtime>,
+	frame_system::CheckTxVersion<Runtime>,
+	frame_system::CheckGenesis<Runtime>,
+	frame_system::CheckEra<Runtime>,
+	frame_system::CheckNonce<Runtime>,
+);
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
