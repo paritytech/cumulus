@@ -46,7 +46,7 @@ use sp_core::crypto::Pair;
 use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvider};
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, Member, NumberFor};
-use std::{convert::TryFrom, hash::Hash, marker::PhantomData, sync::Arc};
+use std::{convert::TryFrom, hash::Hash, sync::Arc};
 
 mod import_queue;
 

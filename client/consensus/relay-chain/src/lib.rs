@@ -254,68 +254,11 @@ where
 	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)> + 'static,
 	RCInterface: RelayChainInterface<PBlock> + Clone + Send + Sync + 'static,
 {
-	RelayChainConsensusBuilder::new(
+	Box::new(RelayChainConsensus::new(
 		para_id,
 		proposer_factory,
-		block_import,
 		create_inherent_data_providers,
+		block_import,
 		relay_chain_interface,
-	)
-	.build()
-}
-
-/// Relay chain consensus builder.
-///
-/// Builds a [`RelayChainConsensus`] for a parachain.
-struct RelayChainConsensusBuilder<Block, PF, BI, CIDP, RCInterface> {
-	para_id: ParaId,
-	_phantom: PhantomData<Block>,
-	proposer_factory: PF,
-	create_inherent_data_providers: CIDP,
-	block_import: BI,
-	relay_chain_interface: RCInterface,
-}
-
-impl<Block, PF, BI, CIDP, RCInterface> RelayChainConsensusBuilder<Block, PF, BI, CIDP, RCInterface>
-where
-	Block: BlockT,
-	PF: Environment<Block> + Send + Sync + 'static,
-	PF::Proposer: Proposer<
-		Block,
-		Transaction = BI::Transaction,
-		ProofRecording = EnableProofRecording,
-		Proof = <EnableProofRecording as ProofRecording>::Proof,
-	>,
-	BI: BlockImport<Block> + Send + Sync + 'static,
-	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)> + 'static,
-	RCInterface: RelayChainInterface<PBlock> + Send + Sync + Clone + 'static,
-{
-	/// Create a new instance of the builder.
-	fn new(
-		para_id: ParaId,
-		proposer_factory: PF,
-		block_import: BI,
-		create_inherent_data_providers: CIDP,
-		relay_chain_interface: RCInterface,
-	) -> Self {
-		Self {
-			para_id,
-			_phantom: PhantomData,
-			proposer_factory,
-			block_import,
-			create_inherent_data_providers,
-			relay_chain_interface,
-		}
-	}
-
-	/// Build the relay chain consensus.
-	fn build(self) -> Box<dyn ParachainConsensus<Block>> {
-		Box::new(RelayChainConsensus::new(
-			self.para_id,
-			self.proposer_factory,
-			self.create_inherent_data_providers,
-			self.block_import,
-			self.relay_chain_interface,
-		))
-	}
+	))
 }

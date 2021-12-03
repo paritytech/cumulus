@@ -268,6 +268,7 @@ where
 		.map(|w| (w)(announce_block.clone()))
 		.unwrap_or_else(|| announce_block);
 
+	let relay_chain_interface_for_closure = relay_chain_interface.clone();
 	if let Some(collator_key) = collator_key {
 		let parachain_consensus: Box<dyn ParachainConsensus<Block>> = match consensus {
 			Consensus::RelayChain => {
@@ -278,14 +279,7 @@ where
 					prometheus_registry.as_ref(),
 					None,
 				);
-				let relay_chain_interface = Arc::new(RelayChainDirect {
-					full_client: relay_chain_full_node.client.clone(),
-					backend: relay_chain_full_node.backend.clone(),
-					network: Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),
-					overseer_handle: relay_chain_full_node.overseer_handle.clone(),
-				});
-
-				let relay_chain_interface2 = relay_chain_interface.clone();
+				let relay_chain_interface2 = relay_chain_interface_for_closure.clone();
 				Box::new(cumulus_client_consensus_relay_chain::RelayChainConsensus::new(
 					para_id,
 					proposer_factory,
@@ -293,7 +287,7 @@ where
 						let parachain_inherent =
 							cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 								relay_parent,
-								&relay_chain_interface,
+								&relay_chain_interface_for_closure,
 								&validation_data,
 								para_id,
 							);
@@ -331,7 +325,6 @@ where
 
 		start_collator(params).await?;
 	} else {
-
 		let params = StartFullNodeParams {
 			client: client.clone(),
 			announce_block,
