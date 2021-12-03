@@ -266,10 +266,7 @@ where
 
 /// Relay chain consensus builder.
 ///
-/// Builds a [`RelayChainConsensus`] for a parachain. As this requires
-/// a concrete relay chain client instance, the builder takes a [`polkadot_client::Client`]
-/// that wraps this concrete instanace. By using [`polkadot_client::ExecuteWithClient`]
-/// the builder gets access to this concrete instance.
+/// Builds a [`RelayChainConsensus`] for a parachain.
 struct RelayChainConsensusBuilder<Block, PF, BI, CIDP, RCInterface> {
 	para_id: ParaId,
 	_phantom: PhantomData<Block>,

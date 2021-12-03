@@ -12,13 +12,16 @@ use cumulus_primitives_core::{
 };
 use parking_lot::RwLock;
 use polkadot_client::{ClientHandle, ExecuteWithClient, FullBackend};
-use polkadot_service::{AuxStore, BabeApi, Handle, TaskManager};
+use polkadot_service::{
+	AuxStore, BabeApi, CollatorPair, Configuration, Handle, NewFull, Role, TaskManager,
+};
 use sc_client_api::{
 	blockchain::BlockStatus, Backend, BlockchainEvents, HeaderBackend, UsageProvider,
 };
+use sc_telemetry::TelemetryWorkerHandle;
 use sp_api::{ApiError, BlockT, ProvideRuntimeApi};
 use sp_consensus::SyncOracle;
-use sp_core::sp_std::collections::btree_map::BTreeMap;
+use sp_core::{sp_std::collections::btree_map::BTreeMap, Pair};
 use std::sync::Mutex;
 
 const LOG_TARGET: &str = "relay-chain-interface";
@@ -239,6 +242,12 @@ where
 	}
 }
 
+/// Builder for a concrete relay chain interface, creatd from a full node. Builds
+/// a [`RelayChainDirect`] to access relay chain data necessary for parachain operation.
+///
+/// The builder takes a [`polkadot_client::Client`]
+/// that wraps a concrete instance. By using [`polkadot_client::ExecuteWithClient`]
+/// the builder gets access to this concrete instance and instantiates a RelayChainDirect with it.
 pub struct RelayChainDirectBuilder {
 	polkadot_client: polkadot_client::Client,
 	backend: Arc<FullBackend>,
@@ -465,12 +474,67 @@ where
 	}
 }
 
+/// Build the Polkadot full node using the given `config`.
+#[sc_tracing::logging::prefix_logs_with("Relaychain")]
+pub fn build_polkadot_full_node(
+	config: Configuration,
+	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
+) -> Result<(NewFull<polkadot_client::Client>, CollatorPair), polkadot_service::Error> {
+	let is_light = matches!(config.role, Role::Light);
+	if is_light {
+		Err(polkadot_service::Error::Sub("Light client not supported.".into()))
+	} else {
+		let collator_key = CollatorPair::generate().0;
+
+		let relay_chain_full_node = polkadot_service::build_full(
+			config,
+			polkadot_service::IsCollator::Yes(collator_key.clone()),
+			None,
+			true,
+			None,
+			telemetry_worker_handle,
+			polkadot_service::RealOverseerGen,
+		)?;
+
+		Ok((relay_chain_full_node, collator_key))
+	}
+}
+
+pub fn build_relay_chain_interface(
+	polkadot_config: Configuration,
+	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
+	task_manager: &mut TaskManager,
+) -> Result<
+	(Arc<(dyn RelayChainInterface<PBlock> + Send + Sync + 'static)>, CollatorPair),
+	polkadot_service::Error,
+> {
+	let (full_node, collator_key) =
+		build_polkadot_full_node(polkadot_config, telemetry_worker_handle).map_err(
+			|e| match e {
+				polkadot_service::Error::Sub(x) => x,
+				s => format!("{}", s).into(),
+			},
+		)?;
+
+	let sync_oracle: Box<dyn SyncOracle + Send + Sync> = Box::new(full_node.network.clone());
+	let network = Arc::new(Mutex::new(sync_oracle));
+	let relay_chain_interface_builder = RelayChainDirectBuilder {
+		polkadot_client: full_node.client.clone(),
+		backend: full_node.backend.clone(),
+		network,
+		overseer_handle: full_node.overseer_handle.clone(),
+	};
+	task_manager.add_child(full_node.task_manager);
+
+	Ok((relay_chain_interface_builder.build(), collator_key))
+}
+
 pub fn build_relay_chain_direct_from_full(
 	full_node: polkadot_service::NewFull<polkadot_client::Client>,
 	task_manager: &mut TaskManager,
 ) -> Arc<(dyn RelayChainInterface<PBlock> + Send + Sync + 'static)> {
-	let test: Box<dyn SyncOracle + Send + Sync> = Box::new(full_node.network.clone());
-	let network = Arc::new(Mutex::new(test));
+	let sync_oracle: Box<dyn SyncOracle + Send + Sync> = Box::new(full_node.network.clone());
+	let network = Arc::new(Mutex::new(sync_oracle));
 	let relay_chain_builder = RelayChainDirectBuilder {
 		polkadot_client: full_node.client,
 		backend: full_node.backend,

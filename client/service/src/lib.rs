@@ -22,7 +22,6 @@ use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
 use cumulus_relay_chain_interface::RelayChainInterface;
 use polkadot_primitives::v1::{Block as PBlock, CollatorPair};
-use polkadot_service::Client as PClient;
 use sc_client_api::{
 	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, UsageProvider,
 };
@@ -30,35 +29,18 @@ use sc_consensus::{
 	import_queue::{ImportQueue, IncomingBlock, Link, Origin},
 	BlockImport,
 };
-use sc_service::{Configuration, Role, TaskManager};
-use sc_telemetry::TelemetryWorkerHandle;
+use sc_service::{Configuration, TaskManager};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::BlockOrigin;
-use sp_core::{traits::SpawnNamed, Pair};
+use sp_core::traits::SpawnNamed;
 use sp_runtime::{
 	traits::{Block as BlockT, NumberFor},
 	Justifications,
 };
-use std::{ops::Deref, sync::Arc};
+use std::sync::Arc;
 
 pub mod genesis;
-
-/// The relay chain full node handle.
-pub struct RFullNode<C> {
-	/// The relay chain full node handles.
-	pub relay_chain_full_node: polkadot_service::NewFull<C>,
-	/// The collator key used by the node.
-	pub collator_key: CollatorPair,
-}
-
-impl<C> Deref for RFullNode<C> {
-	type Target = polkadot_service::NewFull<C>;
-
-	fn deref(&self) -> &Self::Target {
-		&self.relay_chain_full_node
-	}
-}
 
 /// Parameters given to [`start_collator`].
 pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, RCInterface, Spawner, IQ> {
@@ -212,32 +194,6 @@ pub fn prepare_node_config(mut parachain_config: Configuration) -> Configuration
 	parachain_config.announce_block = false;
 
 	parachain_config
-}
-
-/// Build the Polkadot full node using the given `config`.
-#[sc_tracing::logging::prefix_logs_with("Relaychain")]
-pub fn build_polkadot_full_node(
-	config: Configuration,
-	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
-) -> Result<RFullNode<PClient>, polkadot_service::Error> {
-	let is_light = matches!(config.role, Role::Light);
-	if is_light {
-		Err(polkadot_service::Error::Sub("Light client not supported.".into()))
-	} else {
-		let collator_key = CollatorPair::generate().0;
-
-		let relay_chain_full_node = polkadot_service::build_full(
-			config,
-			polkadot_service::IsCollator::Yes(collator_key.clone()),
-			None,
-			true,
-			None,
-			telemetry_worker_handle,
-			polkadot_service::RealOverseerGen,
-		)?;
-
-		Ok(RFullNode { relay_chain_full_node, collator_key })
-	}
 }
 
 /// A shared import queue

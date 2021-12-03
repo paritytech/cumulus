@@ -20,7 +20,7 @@ use cumulus_client_service::{
 use cumulus_primitives_core::{relay_chain::v1::Block as PBlock, ParaId};
 
 // Substrate Imports
-use cumulus_relay_chain_interface::{build_relay_chain_direct_from_full, RelayChainInterface};
+use cumulus_relay_chain_interface::{build_relay_chain_interface, RelayChainInterface};
 use sc_client_api::ExecutorProvider;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
@@ -237,21 +237,16 @@ where
 	let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config, build_import_queue)?;
 	let (mut telemetry, telemetry_worker_handle) = params.other;
 
-	let relay_chain_full_node =
-		cumulus_client_service::build_polkadot_full_node(polkadot_config, telemetry_worker_handle)
+	let client = params.client.clone();
+	let backend = params.backend.clone();
+	let mut task_manager = params.task_manager;
+
+	let (relay_chain_interface, collator_key) =
+		build_relay_chain_interface(polkadot_config, telemetry_worker_handle, &mut task_manager)
 			.map_err(|e| match e {
 				polkadot_service::Error::Sub(x) => x,
 				s => format!("{}", s).into(),
 			})?;
-
-	let client = params.client.clone();
-	let backend = params.backend.clone();
-	let collator_key = relay_chain_full_node.collator_key.clone();
-	let mut task_manager = params.task_manager;
-	let relay_chain_interface = build_relay_chain_direct_from_full(
-		relay_chain_full_node.relay_chain_full_node,
-		&mut task_manager,
-	);
 
 	let block_announce_validator =
 		build_block_announce_validator(relay_chain_interface.clone(), id);
