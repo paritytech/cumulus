@@ -28,7 +28,7 @@ use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
-use cumulus_relay_chain_interface::{build_relay_chain_direct_from_full, RelayChainDirect};
+use cumulus_relay_chain_interface::RelayChainDirect;
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use polkadot_primitives::v1::{CollatorPair, Hash as PHash, PersistedValidationData};
@@ -221,6 +221,8 @@ where
 		network: Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),
 		overseer_handle: relay_chain_full_node.overseer_handle.clone(),
 	});
+	task_manager.add_child(relay_chain_full_node.task_manager);
+
 	let block_announce_validator =
 		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
 	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
@@ -314,9 +316,6 @@ where
 			Consensus::Null => Box::new(NullConsensus),
 		};
 
-		// let relay_chain_full_node =
-		// 	relay_chain_full_node.with_client(polkadot_test_service::TestClient);
-
 		let params = StartCollatorParams {
 			block_status: client.clone(),
 			announce_block,
@@ -332,8 +331,6 @@ where
 
 		start_collator(params).await?;
 	} else {
-		// let relay_chain_full_node =
-		// relay_chain_full_node.with_client(polkadot_test_service::TestClient);
 
 		let params = StartFullNodeParams {
 			client: client.clone(),
