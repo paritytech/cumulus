@@ -298,134 +298,19 @@ where
 	P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
 	RCInterface: RelayChainInterface<PBlock> + Clone + Send + Sync + 'static,
 {
-	AuraConsensusBuilder::<P, _, _, _, _, _, _, _, _, _>::new(
-		proposer_factory,
-		block_import,
-		create_inherent_data_providers,
-		relay_chain_interface,
+	Box::new(AuraConsensus::new::<P, _, _, _, _, _, _>(
 		para_client,
-		backoff_authoring_blocks,
+		block_import,
 		sync_oracle,
+		proposer_factory,
 		force_authoring,
+		backoff_authoring_blocks,
 		keystore,
+		create_inherent_data_providers,
+		relay_chain_interface.clone(),
 		slot_duration,
 		telemetry,
 		block_proposal_slot_portion,
 		max_block_proposal_slot_portion,
-	)
-	.build()
-}
-
-/// Aura consensus builder.
-///
-/// Builds a [`AuraConsensus`] for a parachain. As this requires
-/// a concrete relay chain client instance, the builder takes a [`polkadot_client::Client`]
-/// that wraps this concrete instance. By using [`polkadot_client::ExecuteWithClient`]
-/// the builder gets access to this concrete instance.
-struct AuraConsensusBuilder<P, Block, PF, BI, CIDP, Client, SO, BS, Error, RCInterface> {
-	_phantom: PhantomData<(Block, Error, P)>,
-	proposer_factory: PF,
-	create_inherent_data_providers: CIDP,
-	block_import: BI,
-	relay_chain_interface: RCInterface,
-	para_client: Arc<Client>,
-	backoff_authoring_blocks: Option<BS>,
-	sync_oracle: SO,
-	force_authoring: bool,
-	keystore: SyncCryptoStorePtr,
-	slot_duration: SlotDuration,
-	telemetry: Option<TelemetryHandle>,
-	block_proposal_slot_portion: SlotProportion,
-	max_block_proposal_slot_portion: Option<SlotProportion>,
-}
-
-impl<Block, PF, BI, CIDP, Client, SO, BS, P, Error, RCInterface>
-	AuraConsensusBuilder<P, Block, PF, BI, CIDP, Client, SO, BS, Error, RCInterface>
-where
-	Block: BlockT,
-	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)>
-		+ Send
-		+ Sync
-		+ 'static,
-	CIDP::InherentDataProviders: InherentDataProviderExt + Send,
-	Client: ProvideRuntimeApi<Block>
-		+ BlockOf
-		+ AuxStore
-		+ HeaderBackend<Block>
-		+ Send
-		+ Sync
-		+ 'static,
-	Client::Api: AuraApi<Block, P::Public>,
-	BI: BlockImport<Block, Transaction = sp_api::TransactionFor<Client, Block>>
-		+ Send
-		+ Sync
-		+ 'static,
-	SO: SyncOracle + Send + Sync + Clone + 'static,
-	BS: BackoffAuthoringBlocksStrategy<NumberFor<Block>> + Send + Sync + 'static,
-	PF: Environment<Block, Error = Error> + Send + Sync + 'static,
-	PF::Proposer: Proposer<
-		Block,
-		Error = Error,
-		Transaction = sp_api::TransactionFor<Client, Block>,
-		ProofRecording = EnableProofRecording,
-		Proof = <EnableProofRecording as ProofRecording>::Proof,
-	>,
-	Error: std::error::Error + Send + From<sp_consensus::Error> + 'static,
-	P: Pair + Send + Sync,
-	P::Public: AppPublic + Hash + Member + Encode + Decode,
-	P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
-	RCInterface: RelayChainInterface<PBlock> + Clone + Send + Sync + 'static,
-{
-	/// Create a new instance of the builder.
-	fn new(
-		proposer_factory: PF,
-		block_import: BI,
-		create_inherent_data_providers: CIDP,
-		relay_chain_interface: RCInterface,
-		para_client: Arc<Client>,
-		backoff_authoring_blocks: Option<BS>,
-		sync_oracle: SO,
-		force_authoring: bool,
-		keystore: SyncCryptoStorePtr,
-		slot_duration: SlotDuration,
-		telemetry: Option<TelemetryHandle>,
-		block_proposal_slot_portion: SlotProportion,
-		max_block_proposal_slot_portion: Option<SlotProportion>,
-	) -> Self {
-		Self {
-			_phantom: PhantomData,
-			proposer_factory,
-			block_import,
-			create_inherent_data_providers,
-			relay_chain_interface,
-			para_client,
-			backoff_authoring_blocks,
-			sync_oracle,
-			force_authoring,
-			keystore,
-			slot_duration,
-			telemetry,
-			block_proposal_slot_portion,
-			max_block_proposal_slot_portion,
-		}
-	}
-
-	/// Build the relay chain consensus.
-	fn build(self) -> Box<dyn ParachainConsensus<Block>> {
-		Box::new(AuraConsensus::new::<P, _, _, _, _, _, _>(
-			self.para_client,
-			self.block_import,
-			self.sync_oracle,
-			self.proposer_factory,
-			self.force_authoring,
-			self.backoff_authoring_blocks,
-			self.keystore,
-			self.create_inherent_data_providers,
-			self.relay_chain_interface.clone(),
-			self.slot_duration,
-			self.telemetry,
-			self.block_proposal_slot_portion,
-			self.max_block_proposal_slot_portion,
-		))
-	}
+	))
 }

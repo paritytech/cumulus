@@ -528,19 +528,3 @@ pub fn build_relay_chain_interface(
 
 	Ok((relay_chain_interface_builder.build(), collator_key))
 }
-
-pub fn build_relay_chain_direct_from_full(
-	full_node: polkadot_service::NewFull<polkadot_client::Client>,
-	task_manager: &mut TaskManager,
-) -> Arc<(dyn RelayChainInterface<PBlock> + Send + Sync + 'static)> {
-	let sync_oracle: Box<dyn SyncOracle + Send + Sync> = Box::new(full_node.network.clone());
-	let network = Arc::new(Mutex::new(sync_oracle));
-	let relay_chain_builder = RelayChainDirectBuilder {
-		polkadot_client: full_node.client,
-		backend: full_node.backend,
-		network,
-		overseer_handle: full_node.overseer_handle.clone(),
-	};
-	task_manager.add_child(full_node.task_manager);
-	relay_chain_builder.build()
-}
