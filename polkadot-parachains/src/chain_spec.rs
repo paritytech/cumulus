@@ -124,14 +124,14 @@ pub fn get_seedling_chain_spec() -> SeedlingChainSpec {
 		move || {
 			seedling_testnet_genesis(
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				2001.into(),
+				2000.into(),
 			)
 		},
 		Vec::new(),
 		None,
 		None,
 		None,
-		Extensions { relay_chain: "westend".into(), para_id: 2001 },
+		Extensions { relay_chain: "westend".into(), para_id: 2000 },
 	)
 }
 

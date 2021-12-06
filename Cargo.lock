@@ -9642,11 +9642,8 @@ dependencies = [
 name = "seedling-runtime"
 version = "0.1.0"
 dependencies = [
- "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
- "cumulus-pallet-xcm",
  "cumulus-primitives-core",
- "cumulus-primitives-utility",
  "frame-executive",
  "frame-support",
  "frame-system",
@@ -9669,9 +9666,6 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "xcm",
- "xcm-builder",
- "xcm-executor",
 ]
 
 [[package]]
