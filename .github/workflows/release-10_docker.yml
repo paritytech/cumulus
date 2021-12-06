@@ -9,7 +9,6 @@ on:
   release:
     types:
       - published
-      - edited
 
 jobs:
   docker_build_publish:
@@ -35,6 +34,7 @@ jobs:
             echo " - Fetching $f from $URL"
             wget $URL -O $f
           done
+          chmod a+x polkadot-collator
           ls -al
 
       - name: Check files
@@ -43,7 +43,6 @@ jobs:
           ls -al *collator*
           shasum -a 256 -c polkadot-collator.sha256
           sha_result=$?
-          echo sha_result: $sha_result
 
           # Parity Security
           gpg --receive-keys 9D4B2B6EB8F97156D19669A9FF0812D491B96798
@@ -53,15 +52,57 @@ jobs:
 
           gpg --verify polkadot-collator.asc
           gpg_result=$?
+
+          echo sha_result: $sha_result
           echo gpg_result: $gpg_result
+
+          if [[ $sha_result -ne 0 || $gpg_result -ne 0 ]]; then
+            echo "Check failed, exiting with error"
+            exit 1
+          else
+            echo "Checks passed"
+          fi
 
       - name: Build injected image
         run: |
           mkdir -p target/release
-          chmod a+x polkadot-collator
           cp -f polkadot-collator* target/release/
           ./docker/scripts/build-injected-image.sh
 
       - name: Tag and Publish
+        env:
+          IMAGE: polkadot-collator
         run: |
-          docker images
+          OWNER=$(echo ${GITHUB_REPOSITORY} | cut  -f1 -d/)
+          TARGET_REPO=$OWNER
+          if [[ $OWNER =~ ^parity.*$ ]]; then
+            TARGET_REPO="parity"
+          fi
+
+          docker run --rm -it $TARGET_REPO/$IMAGE --version
+          VERSION=$(docker run --rm -it $TARGET_REPO/$IMAGE --version | awk '{ print $2 }' )
+          PARTS=($(echo $VERSION | tr "-" "\n"))
+          SEMVER=$PARTS[1]
+          GITREF=$PARTS[2]
+          PRE=${{ github.event.release.prerelease }}
+          PRE_STR=""
+
+          echo "SEMVER=$SEMVER"
+          echo "GITREF=$GITREF"
+          echo "PRE=$PRE"
+          echo "PRE_STR=$PRE_STR"
+
+          # Build a tag such as:
+          # 1.2.3-8a1201273 or
+          # 1.2.3-pre-8a1201273 for pre-releases
+          [[ $PRE == "true" ]] && PRE_STR="-pre"
+          TAG=${SEMVER}${PRE_STR}-${GITREF}
+
+          docker tag $TARGET_REPO/$IMAGE $TARGET_REPO/$IMAGE:$TAG
+          echo docker push $TARGET_REPO/$IMAGE:$TAG
+          if [[ $PRE != "true" ]]; then
+            docker tag $TARGET_REPO/$IMAGE $TARGET_REPO/$IMAGE:latest
+            echo docker push $TARGET_REPO/$IMAGE:latest
+          fi
+
+          docker images | grep $TARGET_REPO/$IMAGE
