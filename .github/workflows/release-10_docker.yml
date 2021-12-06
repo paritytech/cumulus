@@ -1,5 +1,10 @@
 name: Release - Docker
 
+# This workflow listens to pubished releases.
+# It includes releases and pre-releases.
+# It fetches the binaries, builds an injected docker
+# image and publishes it.
+
 on:
   release:
     types:
@@ -50,10 +55,10 @@ jobs:
           gpg_result=$?
           echo gpg_result: $gpg_result
 
-
       - name: Build injected image
         run: |
-          cp polkadot-collator* target/release/
+          mkdir -p target/release
+          cp -f polkadot-collator* target/release/
           ./docker/scripts/build-injected-image.sh
 
       - name: Tag and Publish
