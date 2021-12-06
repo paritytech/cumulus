@@ -76,6 +76,12 @@ jobs:
           cp -f $BINARY* target/release/
           ./docker/scripts/build-injected-image.sh
 
+      - name: Login to Dockerhub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Tag and Publish
         run: |
           OWNER=$(echo ${GITHUB_REPOSITORY} | cut  -f1 -d/)
@@ -104,14 +110,14 @@ jobs:
           echo "TAG=$TAG"
 
           docker tag $TARGET_REPO/$BINARY $TARGET_REPO/$BINARY:$TAG
-          echo docker push $TARGET_REPO/$BINARY:$TAG
+          docker push $TARGET_REPO/$BINARY:$TAG
 
           if [[ $PRE != "true" ]]; then
             docker tag $TARGET_REPO/$BINARY $TARGET_REPO/$BINARY:latest
             docker tag $TARGET_REPO/$BINARY $TARGET_REPO/$BINARY:$SEMVER
 
-            echo docker push $TARGET_REPO/$BINARY:latest
-            echo docker push $TARGET_REPO/$BINARY:$SEMVER
+            docker push $TARGET_REPO/$BINARY:latest
+            docker push $TARGET_REPO/$BINARY:$SEMVER
           fi
 
           docker images | grep $TARGET_REPO/$BINARY
