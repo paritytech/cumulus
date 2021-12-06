@@ -83,12 +83,11 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Tag and Publish
+        env:
+          DOCKERHUB_OWNER: ${{ secrets.DOCKERHUB_OWNER }}
         run: |
-          OWNER=$(echo ${GITHUB_REPOSITORY} | cut  -f1 -d/)
-          TARGET_REPO=$OWNER
-          if [[ $OWNER =~ ^parity.*$ ]]; then
-            TARGET_REPO="parity"
-          fi
+          REPO_OWNER=$(echo ${GITHUB_REPOSITORY} | cut  -f1 -d/)
+          TARGET_REPO=${DOCKERHUB_OWNER:-$REPO_OWNER}
 
           docker run --pull never --rm $TARGET_REPO/$BINARY --version
           VERSION=$(docker run --pull never --rm $TARGET_REPO/$BINARY --version | awk '{ print $2 }' )
