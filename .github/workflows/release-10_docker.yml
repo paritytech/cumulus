@@ -65,6 +65,7 @@ jobs:
 
       - name: Build injected image
         run: |
+          export OWNER=$(echo ${GITHUB_REPOSITORY} | cut  -f1 -d/)
           mkdir -p target/release
           cp -f polkadot-collator* target/release/
           ./docker/scripts/build-injected-image.sh
@@ -79,8 +80,8 @@ jobs:
             TARGET_REPO="parity"
           fi
 
-          docker run --rm $TARGET_REPO/$IMAGE --version
-          VERSION=$(docker run --rm $TARGET_REPO/$IMAGE --version | awk '{ print $2 }' )
+          docker run --pull never --rm $TARGET_REPO/$IMAGE --version
+          VERSION=$(docker run --pull never --rm $TARGET_REPO/$IMAGE --version | awk '{ print $2 }' )
           SEMVER=$( echo $VERSION | cut -f1 -d- )
           GITREF=$( echo $VERSION | cut -f2 -d- )
           PRE=${{ github.event.release.prerelease }}
@@ -101,7 +102,10 @@ jobs:
           echo docker push $TARGET_REPO/$IMAGE:$TAG
           if [[ $PRE != "true" ]]; then
             docker tag $TARGET_REPO/$IMAGE $TARGET_REPO/$IMAGE:latest
+            docker tag $TARGET_REPO/$IMAGE $TARGET_REPO/$IMAGE:$SEMVER
+
             echo docker push $TARGET_REPO/$IMAGE:latest
+            echo docker push $TARGET_REPO/$IMAGE:$SEMVER
           fi
 
           docker images | grep $TARGET_REPO/$IMAGE
