@@ -128,14 +128,14 @@ impl ParachainInherentData {
 	/// Create the [`ParachainInherentData`] at the given `relay_parent`.
 	///
 	/// Returns `None` if the creation failed.
-	pub fn create_at<T>(
+	pub fn create_at<RCInterface>(
 		relay_parent: PHash,
-		relay_chain_interface: &T,
+		relay_chain_interface: &RCInterface,
 		validation_data: &PersistedValidationData,
 		para_id: ParaId,
 	) -> Option<ParachainInherentData>
 	where
-		T: RelayChainInterface<PBlock>,
+		RCInterface: RelayChainInterface<PBlock>,
 	{
 		let relay_chain_state =
 			collect_relay_storage_proof(relay_chain_interface, para_id, relay_parent)?;
