@@ -294,7 +294,7 @@ pub mod pallet {
 			}
 
 			// check if the invulnerables have associated validator keys before they are set
-			for account_id in new {
+			for account_id in &new {
 				let validator_key = T::ValidatorIdOf::convert(account_id.clone())
 					.ok_or(Error::<T>::NoAssociatedValidatorId)?;
 				ensure!(
