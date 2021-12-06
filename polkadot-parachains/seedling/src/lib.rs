@@ -22,8 +22,6 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use codec::{Decode, Encode};
-use scale_info::TypeInfo;
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
@@ -51,14 +49,6 @@ use frame_system::limits::{BlockLength, BlockWeights};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
-
-// XCM imports
-use xcm::latest::prelude::*;
-use xcm_builder::{
-	AllowUnpaidExecutionFrom, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
-	ParentIsDefault, SovereignSignedViaLocation,
-};
-use xcm_executor::{Config, XcmExecutor};
 
 /// This runtime version.
 #[sp_version::runtime_version]
@@ -173,75 +163,18 @@ impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 }
 
-parameter_types! {
-	// We do anything the parent chain tells us in this runtime.
-	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 2;
-}
-
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
 	type OnValidationData = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
 	type OutboundXcmpMessageSource = ();
-	type DmpMessageHandler = cumulus_pallet_xcm::UnlimitedDmpExecution<Runtime>;
-	type ReservedDmpWeight = ReservedDmpWeight;
+	type DmpMessageHandler = ();
+	type ReservedDmpWeight = ();
 	type XcmpMessageHandler = ();
 	type ReservedXcmpWeight = ();
 }
 
 impl parachain_info::Config for Runtime {}
-
-parameter_types! {
-	// pub const RococoLocation: MultiLocation = MultiLocation::parent();
-	// pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
-	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-}
-
-/// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
-/// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
-/// bias the kind of local `Origin` it will become.
-pub type XcmOriginToTransactDispatchOrigin = (
-	// Sovereign account converter; this attempts to derive an `AccountId` from the origin location
-	// using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
-	// foreign chains who want to have a local sovereign account on this chain which they control.
-	SovereignSignedViaLocation<ParentIsDefault<AccountId>, Origin>,
-	// Superuser converter for the Relay-chain (Parent) location. This will allow it to issue a
-	// transaction from the Root origin.
-	ParentAsSuperuser<Origin>,
-);
-
-match_type! {
-	pub type JustTheParent: impl Contains<MultiLocation> = { MultiLocation { parents:1, interior: Here } };
-}
-
-parameter_types! {
-	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-	pub UnitWeightCost: Weight = 1_000_000_000;
-	pub const MaxInstructions: u32 = 100;
-}
-
-pub struct XcmConfig;
-impl Config for XcmConfig {
-	type Call = Call;
-	type XcmSender = (); // sending XCM not supported
-	type AssetTransactor = (); // balances not supported
-	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	type IsReserve = (); // balances not supported
-	type IsTeleporter = (); // balances not supported
-	type LocationInverter = LocationInverter<Ancestry>;
-	type Barrier = AllowUnpaidExecutionFrom<JustTheParent>;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>; // balances not supported
-	type Trader = (); // balances not supported
-	type ResponseHandler = (); // Don't handle responses for now.
-	type AssetTrap = (); // don't trap for now
-	type AssetClaims = (); // don't claim for now
-	type SubscriptionService = (); // don't handle subscriptions for now
-}
-
-impl cumulus_pallet_xcm::Config for Runtime {
-	type Event = Event;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
-}
 
 construct_runtime! {
 	pub enum Runtime where
@@ -255,9 +188,6 @@ construct_runtime! {
 			Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
 		},
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
-
-		// DMP handler.
-		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin},
 	}
 }
 
