@@ -131,9 +131,9 @@ impl BlockAnnounceData {
 	/// Check the signature of the statement.
 	///
 	/// Returns an `Err(_)` if it failed.
-	fn check_signature<P>(self, relay_chain_client: &P) -> Result<Validation, BlockAnnounceError>
+	fn check_signature<RCInterface>(self, relay_chain_client: &RCInterface) -> Result<Validation, BlockAnnounceError>
 	where
-		P: RelayChainInterface<PBlock> + Send + Sync + 'static,
+		RCInterface: RelayChainInterface<PBlock> + Send + Sync + 'static,
 	{
 		let validator_index = self.statement.unchecked_validator_index();
 
