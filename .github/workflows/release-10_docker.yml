@@ -70,8 +70,10 @@ jobs:
           fi
 
       - name: Build injected image
+        env:
+          DOCKERHUB_OWNER: ${{ secrets.DOCKERHUB_OWNER }}
         run: |
-          export OWNER=$(echo ${GITHUB_REPOSITORY} | cut  -f1 -d/)
+          export OWNER=$DOCKERHUB_OWNER
           mkdir -p target/release
           cp -f $BINARY* target/release/
           ./docker/scripts/build-injected-image.sh
@@ -86,11 +88,8 @@ jobs:
         env:
           DOCKERHUB_OWNER: ${{ secrets.DOCKERHUB_OWNER }}
         run: |
-          REPO_OWNER=$(echo ${GITHUB_REPOSITORY} | cut  -f1 -d/)
-          TARGET_REPO=${DOCKERHUB_OWNER:-$REPO_OWNER}
-
-          docker run --pull never --rm $TARGET_REPO/$BINARY --version
-          VERSION=$(docker run --pull never --rm $TARGET_REPO/$BINARY --version | awk '{ print $2 }' )
+          docker run --pull never --rm $DOCKERHUB_OWNER/$BINARY --version
+          VERSION=$(docker run --pull never --rm $DOCKERHUB_OWNER/$BINARY --version | awk '{ print $2 }' )
           SEMVER=$( echo $VERSION | cut -f1 -d- )
           GITREF=$( echo $VERSION | cut -f2 -d- )
           PRE=${{ github.event.release.prerelease }}
@@ -108,15 +107,15 @@ jobs:
           echo "PRE_STR=$PRE_STR"
           echo "TAG=$TAG"
 
-          docker tag $TARGET_REPO/$BINARY $TARGET_REPO/$BINARY:$TAG
-          docker push $TARGET_REPO/$BINARY:$TAG
+          docker tag $DOCKERHUB_OWNER/$BINARY $DOCKERHUB_OWNER/$BINARY:$TAG
+          docker push $DOCKERHUB_OWNER/$BINARY:$TAG
 
           if [[ $PRE != "true" ]]; then
-            docker tag $TARGET_REPO/$BINARY $TARGET_REPO/$BINARY:latest
-            docker tag $TARGET_REPO/$BINARY $TARGET_REPO/$BINARY:$SEMVER
+            docker tag $DOCKERHUB_OWNER/$BINARY $DOCKERHUB_OWNER/$BINARY:latest
+            docker tag $DOCKERHUB_OWNER/$BINARY $DOCKERHUB_OWNER/$BINARY:$SEMVER
 
-            docker push $TARGET_REPO/$BINARY:latest
-            docker push $TARGET_REPO/$BINARY:$SEMVER
+            docker push $DOCKERHUB_OWNER/$BINARY:latest
+            docker push $DOCKERHUB_OWNER/$BINARY:$SEMVER
           fi
 
-          docker images | grep $TARGET_REPO/$BINARY
+          docker images | grep $DOCKERHUB_OWNER/$BINARY
