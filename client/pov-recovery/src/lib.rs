@@ -53,8 +53,7 @@ use sp_runtime::{
 use polkadot_node_primitives::{AvailableData, POV_BOMB_LIMIT};
 use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::v1::{
-	Block as PBlock, CandidateReceipt, CommittedCandidateReceipt, Id as ParaId,
-	SessionIndex,
+	Block as PBlock, CandidateReceipt, CommittedCandidateReceipt, Id as ParaId, SessionIndex,
 };
 
 use cumulus_primitives_core::ParachainBlockData;
