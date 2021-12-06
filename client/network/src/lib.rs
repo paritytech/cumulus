@@ -131,7 +131,10 @@ impl BlockAnnounceData {
 	/// Check the signature of the statement.
 	///
 	/// Returns an `Err(_)` if it failed.
-	fn check_signature<RCInterface>(self, relay_chain_client: &RCInterface) -> Result<Validation, BlockAnnounceError>
+	fn check_signature<RCInterface>(
+		self,
+		relay_chain_client: &RCInterface,
+	) -> Result<Validation, BlockAnnounceError>
 	where
 		RCInterface: RelayChainInterface<PBlock> + Send + Sync + 'static,
 	{

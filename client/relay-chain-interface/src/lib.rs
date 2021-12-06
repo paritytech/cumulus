@@ -26,6 +26,7 @@ use std::sync::Mutex;
 
 const LOG_TARGET: &str = "relay-chain-interface";
 
+/// Should be used for all interaction with the relay chain in cumulus.
 pub trait RelayChainInterface<Block: BlockT> {
 	fn get_state_at(
 		&self,
@@ -39,6 +40,7 @@ pub trait RelayChainInterface<Block: BlockT> {
 	fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error>;
 
 	fn best_block_hash(&self) -> PHash;
+
 	/// Returns the whole contents of the downward message queue for the parachain we are collating
 	/// for.
 	///
@@ -91,14 +93,16 @@ pub trait RelayChainInterface<Block: BlockT> {
 	fn overseer_handle(&self) -> Option<Handle>;
 }
 
-pub struct RelayChainDirect<Client> {
+/// RelayChainLocal is used to interact with a full node that is running locally
+/// in the same process.
+pub struct RelayChainLocal<Client> {
 	pub full_client: Arc<Client>,
 	pub backend: Arc<FullBackend>,
 	pub network: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
 	pub overseer_handle: Option<Handle>,
 }
 
-impl<T> Clone for RelayChainDirect<T> {
+impl<T> Clone for RelayChainLocal<T> {
 	fn clone(&self) -> Self {
 		Self {
 			full_client: self.full_client.clone(),
@@ -109,7 +113,7 @@ impl<T> Clone for RelayChainDirect<T> {
 	}
 }
 
-impl<Client, Block> RelayChainInterface<Block> for RelayChainDirect<Client>
+impl<Client, Block> RelayChainInterface<Block> for RelayChainLocal<Client>
 where
 	Client: ProvideRuntimeApi<PBlock> + BlockchainEvents<Block> + AuxStore + UsageProvider<PBlock>,
 	Client::Api: ParachainHost<PBlock> + BabeApi<PBlock>,
@@ -243,25 +247,25 @@ where
 }
 
 /// Builder for a concrete relay chain interface, creatd from a full node. Builds
-/// a [`RelayChainDirect`] to access relay chain data necessary for parachain operation.
+/// a [`RelayChainLocal`] to access relay chain data necessary for parachain operation.
 ///
 /// The builder takes a [`polkadot_client::Client`]
 /// that wraps a concrete instance. By using [`polkadot_client::ExecuteWithClient`]
-/// the builder gets access to this concrete instance and instantiates a RelayChainDirect with it.
-pub struct RelayChainDirectBuilder {
+/// the builder gets access to this concrete instance and instantiates a RelayChainLocal with it.
+pub struct RelayChainLocalBuilder {
 	polkadot_client: polkadot_client::Client,
 	backend: Arc<FullBackend>,
 	network: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
 	overseer_handle: Option<Handle>,
 }
 
-impl RelayChainDirectBuilder {
+impl RelayChainLocalBuilder {
 	pub fn build(self) -> Arc<dyn RelayChainInterface<PBlock> + Sync + Send> {
 		self.polkadot_client.clone().execute_with(self)
 	}
 }
 
-impl ExecuteWithClient for RelayChainDirectBuilder {
+impl ExecuteWithClient for RelayChainLocalBuilder {
 	type Output = Arc<dyn RelayChainInterface<PBlock> + Sync + Send>;
 
 	fn execute_with_client<Client, Api, Backend>(self, client: Arc<Client>) -> Self::Output
@@ -275,7 +279,7 @@ impl ExecuteWithClient for RelayChainDirectBuilder {
 			+ Send,
 		Client::Api: ParachainHost<PBlock> + BabeApi<PBlock>,
 	{
-		Arc::new(RelayChainDirect {
+		Arc::new(RelayChainLocal {
 			full_client: client,
 			backend: self.backend,
 			network: self.network,
@@ -406,6 +410,7 @@ pub fn build_polkadot_full_node(
 	}
 }
 
+/// Builds a relay chain interface by constructing a full relay chain node
 pub fn build_relay_chain_interface(
 	polkadot_config: Configuration,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
@@ -424,7 +429,7 @@ pub fn build_relay_chain_interface(
 
 	let sync_oracle: Box<dyn SyncOracle + Send + Sync> = Box::new(full_node.network.clone());
 	let network = Arc::new(Mutex::new(sync_oracle));
-	let relay_chain_interface_builder = RelayChainDirectBuilder {
+	let relay_chain_interface_builder = RelayChainLocalBuilder {
 		polkadot_client: full_node.client.clone(),
 		backend: full_node.backend.clone(),
 		network,

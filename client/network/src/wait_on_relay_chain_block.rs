@@ -140,7 +140,7 @@ mod tests {
 
 	use super::*;
 
-	use cumulus_relay_chain_interface::RelayChainDirect;
+	use cumulus_relay_chain_interface::RelayChainLocal;
 	use polkadot_test_client::{
 		construct_transfer_extrinsic, BlockBuilderExt, Client, ClientBlockImportExt,
 		DefaultTestClientBuilderExt, ExecutionStrategy, InitPolkadotBlockBuilder,
@@ -152,7 +152,7 @@ mod tests {
 
 	use futures::{executor::block_on, poll, task::Poll};
 
-	fn build_client_backend_and_block() -> (Arc<Client>, PBlock, RelayChainDirect<Client>) {
+	fn build_client_backend_and_block() -> (Arc<Client>, PBlock, RelayChainLocal<Client>) {
 		let builder =
 			TestClientBuilder::new().set_execution_strategy(ExecutionStrategy::NativeWhenPossible);
 		let backend = builder.backend();
@@ -165,7 +165,7 @@ mod tests {
 		(
 			client.clone(),
 			block,
-			RelayChainDirect {
+			RelayChainLocal {
 				full_client: client,
 				backend: backend.clone(),
 				network: Arc::new(Mutex::new(dummy_network)),
