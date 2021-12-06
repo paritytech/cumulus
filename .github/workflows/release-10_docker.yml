@@ -58,6 +58,7 @@ jobs:
       - name: Build injected image
         run: |
           mkdir -p target/release
+          chmod a+x polkadot-collator
           cp -f polkadot-collator* target/release/
           ./docker/scripts/build-injected-image.sh
 
