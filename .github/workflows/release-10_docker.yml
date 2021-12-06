@@ -2,7 +2,8 @@ name: Release - Docker
 
 # This workflow listens to pubished releases.
 # It includes releases and pre-releases.
-# It fetches the binaries, builds an injected docker
+# It fetches the binaries, checks sha256 and GPG
+# signatures, then builds an injected docker
 # image and publishes it.
 
 on:
@@ -12,6 +13,8 @@ on:
 
 jobs:
   docker_build_publish:
+    env:
+      BINARY: polkadot-collator
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -29,19 +32,18 @@ jobs:
           echo Prerelease: ${{ github.event.release.prerelease }}
           echo Assets: ${{ github.event.release.assets }}
 
-          for f in polkadot-collator polkadot-collator.asc polkadot-collator.sha256; do
+          for f in $BINARY $BINARY.asc $BINARY.sha256; do
             URL="https://github.com/${{ github.event.repository.full_name }}/releases/download/${{ github.event.release.tag_name }}/$f"
             echo " - Fetching $f from $URL"
             wget $URL -O $f
           done
-          chmod a+x polkadot-collator
+          chmod a+x $BINARY
           ls -al
 
       - name: Check files
         run: |
-          echo TODO
           ls -al *collator*
-          shasum -a 256 -c polkadot-collator.sha256
+          shasum -a 256 -c $BINARY.sha256
           sha_result=$?
 
           # Parity Security
@@ -50,12 +52,14 @@ jobs:
           # Chevdor
           gpg --receive-keys 2835EAF92072BC01D188AF2C4A092B93E97CE1E2
 
-          gpg --verify polkadot-collator.asc
+          gpg --verify $BINARY.asc
           gpg_result=$?
 
           echo sha_result: $sha_result
           echo gpg_result: $gpg_result
 
+          # If it fails, it would fail earlier but a second check
+          # does not hurt in case of refactoring...
           if [[ $sha_result -ne 0 || $gpg_result -ne 0 ]]; then
             echo "Check failed, exiting with error"
             exit 1
@@ -67,12 +71,12 @@ jobs:
         run: |
           export OWNER=$(echo ${GITHUB_REPOSITORY} | cut  -f1 -d/)
           mkdir -p target/release
-          cp -f polkadot-collator* target/release/
+          cp -f $BINARY* target/release/
           ./docker/scripts/build-injected-image.sh
 
       - name: Tag and Publish
         env:
-          IMAGE: polkadot-collator
+          IMAGE: $BINARY
         run: |
           OWNER=$(echo ${GITHUB_REPOSITORY} | cut  -f1 -d/)
           TARGET_REPO=$OWNER
@@ -90,16 +94,18 @@ jobs:
           echo "SEMVER=$SEMVER"
           echo "GITREF=$GITREF"
           echo "PRE=$PRE"
-          echo "PRE_STR=$PRE_STR"
 
           # Build a tag such as:
           # 1.2.3-8a1201273 or
           # 1.2.3-pre-8a1201273 for pre-releases
           [[ $PRE == "true" ]] && PRE_STR="-pre"
           TAG=${SEMVER}${PRE_STR}-${GITREF}
+          echo "PRE_STR=$PRE_STR"
+          echo "TAG=$TAG"
 
           docker tag $TARGET_REPO/$IMAGE $TARGET_REPO/$IMAGE:$TAG
           echo docker push $TARGET_REPO/$IMAGE:$TAG
+
           if [[ $PRE != "true" ]]; then
             docker tag $TARGET_REPO/$IMAGE $TARGET_REPO/$IMAGE:latest
             docker tag $TARGET_REPO/$IMAGE $TARGET_REPO/$IMAGE:$SEMVER
