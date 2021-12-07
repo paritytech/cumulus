@@ -3,7 +3,7 @@
   "id": "cha",
   "chainType": "Live",
   "bootNodes": [
-    "/ip4/127.0.0.1/tcp/30333/p2p/12D3KooWA9u5Fr65K75CdU9E5vi5oyJrJLTXp39fGc1oPY3B2pkL"
+    "/ip4/104.248.165.238/tcp/30343/ws/p2p/12D3KooWKaJCA47gjCnMiJo3XQWFxc98da4fto1S8r8WVVJdRyDS"
   ],
   "telemetryEndpoints": null,
   "protocolId": null,
