@@ -1,5 +1,5 @@
 {# This macro convert a priority level into readable output #}
-{%- macro priority(p) -%}
+{%- macro high_priority(p) -%}
 
 {%- if p >= 7 -%}
     {%- set prio = "‼️ HIGH" -%}
@@ -17,5 +17,7 @@
 {%- else -%}
 <!-- No relevant Priority label as been detected -->
 {% endif %}
+
+<!-- here we show the list of changes with prio p -->
 
 {%- endmacro priority -%}
