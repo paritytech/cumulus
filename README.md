@@ -1,4 +1,6 @@
-# Cumulus :cloud:
+# Kabocha is based on Cumulus :cloud:
+
+These docs aren't completed yet, but scroll down for how to run the Docker image. 
 
 A set of tools for writing [Substrate](https://substrate.io/)-based
 [Polkadot](https://wiki.polkadot.network/en/)
@@ -118,7 +120,7 @@ Launch a local setup including a Relay Chain and a Parachain.
 
 ```bash
 # Compile Polkadot with the real overseer feature
-git clone https://github.com/paritytech/polkadot
+git clone https://github.com/Kabocha-Network
 cargo build --release
 
 # Generate a raw chain spec
@@ -159,14 +161,15 @@ cargo build --release
 
 ## Build the docker image
 
-After building `polkadot-collator` with cargo or with Parity docker image as documented in [this chapter](#build--launch-rococo-collators), the following will allow producting a new docker image where the compiled binary is injected:
+After building `parachain-collator` with cargo or with Kabocha's (decentration) docker image as documented in [this chapter](#build--launch-rococo-collators), the following will allow producting a new docker image where the compiled binary is injected:
 
 ```
 ./docker/scripts/build-injected-image.sh
 ```
 
-You may then start a new contaier:
+You may then start a new contaier and run the collator:
 
 ```
-docker run --rm -it $OWNER/$IMAGE_NAME --collator --tmp --parachain-id 1000 --execution wasm --chain /specs/westmint.json
+docker run --rm -it -v /root/cumulus/specs:/specs decentration/kabocha-collator:v0.9.12 /usr/local/bin/parachain-collator  --collator --force-authoring  --base-path /tmp/parachain/kabocha-collator1 --port 40334 --ws-port 8845 --chain /specs/kabocha-raw.json -- --execution wasm --chain  /specs/rococo-chachacha.json --port 30343 --ws-port 9978
 ```
+You will need to register the keys before the collator will produce and finalize blocks (unless you add --alice, --bob, --charlie ... --ferdie on a testnet)

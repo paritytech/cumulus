@@ -8,8 +8,8 @@ services:
       - "0.0.0.0:9944:9944/tcp"
       - "0.0.0.0:30333:30333/tcp"
       - "0.0.0.0:40334:40334/tcp"
-    image: kabocha/collator:v0.9.12
-    command: bash -c "/root/cumulus/specs:/specs kabocha/collator:v0.9.12 /usr/local/bin/parachain-collator --alice --collator --force-authoring  --base-path /tmp/parachain/kabocha-collator1 --port 40334 --ws-port 8845 --chain /specs/kabocha-raw.json -- --execution wasm --chain  /specs/rococo-chachacha.json --port 30343 --ws-port 9978"
+    image: decentration/kabocha-collator:v0.9.12
+    command: bash -c "/root/cumulus/specs:/specs decentration/kabocha-collator:v0.9.12 /usr/local/bin/parachain-collator --collator --force-authoring  --base-path /tmp/parachain/kabocha-collator1 --port 40334 --ws-port 8845 --chain /specs/kabocha-raw.json -- --execution wasm --chain  /specs/rococo-chachacha.json --port 30343 --ws-port 9978"
     volumes:
      - "kabocha-data:/data"
     
