@@ -110,9 +110,17 @@ impl Contains<Call> for BaseFilter {
 		match c {
 			Call::ParachainSystem(cumulus_pallet_parachain_system::Call::set_validation_data {
 				..
-			}) => true,
+			}) |
+			Call::ParachainSystem(
+				cumulus_pallet_parachain_system::Call::enact_authorized_upgrade { .. },
+			) => true,
 			Call::Sudo(pallet_sudo::Call::sudo_unchecked_weight { call: ref x, .. }) => {
-				matches!(x.as_ref(), &Call::System(frame_system::Call::set_code { .. }))
+				matches!(
+					x.as_ref(),
+					&Call::ParachainSystem(
+						cumulus_pallet_parachain_system::Call::authorize_upgrade { .. }
+					)
+				)
 			},
 			_ => false,
 		}
