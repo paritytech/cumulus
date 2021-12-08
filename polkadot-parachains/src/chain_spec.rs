@@ -391,6 +391,7 @@ fn statemint_genesis(
 
 pub fn statemine_development_config() -> StatemineChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("ss58Format".into(), 2.into());
 	properties.insert("tokenSymbol".into(), "KSM".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
@@ -426,6 +427,7 @@ pub fn statemine_development_config() -> StatemineChainSpec {
 
 pub fn statemine_local_config() -> StatemineChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("ss58Format".into(), 2.into());
 	properties.insert("tokenSymbol".into(), "KSM".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
@@ -475,6 +477,7 @@ pub fn statemine_local_config() -> StatemineChainSpec {
 
 pub fn statemine_config() -> StatemineChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("ss58Format".into(), 2.into());
 	properties.insert("tokenSymbol".into(), "KSM".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
