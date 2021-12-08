@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - release-**v[0-9]+.[0-9]+.[0-9]+
+  workflow_dispatch:
+  
 jobs:
   tag_rc:
     runs-on: ubuntu-latest
@@ -53,7 +55,7 @@ jobs:
         uses: s3krit/matrix-message-action@v0.0.3
         if: steps.create-issue.outputs.url != ''
         with:
-          room_id: ${{ secrets.INTERNAL_POLKADOT_MATRIX_ROOM_ID }}
+          room_id: ${{ secrets.INTERNAL_CUMULUS_MATRIX_ROOM_ID }}
           access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
           server: "matrix.parity.io"
           message: |

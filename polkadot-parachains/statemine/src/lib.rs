@@ -43,7 +43,7 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{Everything, InstanceFilter, Nothing},
+	traits::{EnsureOneOf, Everything, InstanceFilter, Nothing},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
 		DispatchClass, IdentityFee, Weight,
@@ -52,7 +52,7 @@ use frame_support::{
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureOneOf, EnsureRoot,
+	EnsureRoot,
 };
 pub use parachains_common as common;
 use parachains_common::{
@@ -226,11 +226,8 @@ parameter_types! {
 }
 
 /// We allow root and the Relay Chain council to execute privileged asset operations.
-pub type AssetsForceOrigin = EnsureOneOf<
-	AccountId,
-	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>,
->;
+pub type AssetsForceOrigin =
+	EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>>;
 
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
@@ -646,11 +643,8 @@ parameter_types! {
 }
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin = EnsureOneOf<
-	AccountId,
-	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>,
->;
+pub type CollatorSelectionUpdateOrigin =
+	EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>>;
 
 impl pallet_collator_selection::Config for Runtime {
 	type Event = Event;
@@ -777,7 +771,7 @@ pub type Executive = frame_executive::Executive<
 	Block,
 	frame_system::ChainContext<Runtime>,
 	Runtime,
-	AllPallets,
+	AllPalletsWithSystem,
 	RemoveCollectiveFlip,
 >;
 
@@ -895,6 +889,19 @@ impl_runtime_apis! {
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
 		fn collect_collation_info() -> cumulus_primitives_core::CollationInfo {
 			ParachainSystem::collect_collation_info()
+		}
+	}
+
+	#[cfg(feature = "try-runtime")]
+	impl frame_try_runtime::TryRuntime<Block> for Runtime {
+		fn on_runtime_upgrade() -> (Weight, Weight) {
+			log::info!("try-runtime::on_runtime_upgrade statemine.");
+			let weight = Executive::try_runtime_upgrade().unwrap();
+			(weight, RuntimeBlockWeights::get().max_block)
+		}
+
+		fn execute_block_no_check(block: Block) -> Weight {
+			Executive::execute_block_no_check(block)
 		}
 	}
 

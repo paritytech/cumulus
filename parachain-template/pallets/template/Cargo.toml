@@ -27,7 +27,7 @@ sp-io = { git = "https://github.com/paritytech/substrate", default-features = fa
 
 [features]
 default = ["std"]
-runtime-benchmarks = ["frame-benchmarking"]
+runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 std = [
 	"codec/std",
 	"scale-info/std",
@@ -35,3 +35,4 @@ std = [
 	"frame-system/std",
 	"frame-benchmarking/std",
 ]
+try-runtime = [ "frame-support/try-runtime" ]
