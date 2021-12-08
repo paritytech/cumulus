@@ -514,9 +514,8 @@ impl<T: Config> Pallet<T> {
 									.saturating_sub(remaining_fragments.len());
 								let overweight_xcm = last_remaining_fragments[..msg_len].to_vec();
 								let index = Self::stash_overweight(sender, sent_at, overweight_xcm);
-								Self::deposit_event(Event::OverweightEnqueued(
-									sender, sent_at, index, required,
-								));
+								let e = Event::OverweightEnqueued(sender, sent_at, index, required);
+								Self::deposit_event(e);
 							},
 							Err(XcmError::WeightLimitReached(required))
 								if required <= max_weight =>
