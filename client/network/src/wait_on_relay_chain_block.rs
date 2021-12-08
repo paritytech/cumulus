@@ -126,11 +126,11 @@ struct DummyNetwork {}
 
 impl SyncOracle for DummyNetwork {
 	fn is_major_syncing(&mut self) -> bool {
-		todo!()
+		unimplemented!("Not needed for test")
 	}
 
 	fn is_offline(&mut self) -> bool {
-		todo!()
+		unimplemented!("Not needed for test")
 	}
 }
 
