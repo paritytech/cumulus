@@ -1675,6 +1675,7 @@ dependencies = [
  "sp-tracing",
  "sp-trie",
  "sp-version",
+ "tracing",
  "xcm",
 ]
 
@@ -1696,6 +1697,19 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-session",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "cumulus-pallet-solo-to-para"
+version = "0.1.0"
+dependencies = [
+ "cumulus-pallet-parachain-system",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
  "sp-runtime",
  "sp-std",
 ]
@@ -9643,6 +9657,7 @@ name = "seedling-runtime"
 version = "0.1.0"
 dependencies = [
  "cumulus-pallet-parachain-system",
+ "cumulus-pallet-solo-to-para",
  "cumulus-primitives-core",
  "frame-executive",
  "frame-support",

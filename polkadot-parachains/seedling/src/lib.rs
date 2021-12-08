@@ -106,13 +106,17 @@ parameter_types! {
 pub struct BaseFilter;
 impl Contains<Call> for BaseFilter {
 	fn contains(c: &Call) -> bool {
-		// Disallow everything that is not set_validation_data or set_code
+		// Disallow everything that is not set_validation_data ,set_code or migrate
 		match c {
 			Call::ParachainSystem(cumulus_pallet_parachain_system::Call::set_validation_data {
 				..
 			}) => true,
 			Call::Sudo(pallet_sudo::Call::sudo_unchecked_weight { call: ref x, .. }) => {
-				matches!(x.as_ref(), &Call::System(frame_system::Call::set_code { .. }))
+				matches!(
+					x.as_ref(),
+					&Call::System(frame_system::Call::set_code { .. }) |
+					&Call::SoloToPara(cumulus_pallet_solo_to_para::Call::schedule_migration { .. })
+				)
 			},
 			_ => false,
 		}
@@ -163,6 +167,10 @@ impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 }
 
+impl cumulus_pallet_solo_to_para::Config for Runtime {
+	type Event = Event;
+}
+
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
 	type OnValidationData = ();
@@ -184,10 +192,12 @@ construct_runtime! {
 	{
 		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>},
+
 		ParachainSystem: cumulus_pallet_parachain_system::{
 			Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
 		},
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
+		SoloToPara: cumulus_pallet_solo_to_para::{Pallet, Call, Event},
 	}
 }
 
