@@ -465,6 +465,7 @@ impl cumulus_ping::Config for Runtime {
 
 parameter_types! {
 	pub const AssetDeposit: Balance = 1 * ROC;
+	pub const AssetAccountDeposit: Balance = 1 * ROC;
 	pub const ApprovalDeposit: Balance = 100 * MILLIROC;
 	pub const AssetsStringLimit: u32 = 50;
 	pub const MetadataDepositBase: Balance = 1 * ROC;
@@ -494,6 +495,7 @@ impl pallet_assets::Config for Runtime {
 	type Freezer = ();
 	type Extra = ();
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+	type AssetAccountDeposit = AssetAccountDeposit;
 }
 
 impl pallet_aura::Config for Runtime {
