@@ -74,10 +74,10 @@ cumulus-primitives-core = { path = "../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../primitives/parachain-inherent" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", tag = "v0.9.13" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", tag = "v0.9.13" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", tag = "v0.9.13" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", tag = "v0.9.13" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }

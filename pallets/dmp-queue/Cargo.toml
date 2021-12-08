@@ -18,8 +18,8 @@ frame-support = { git = "https://github.com/paritytech/substrate", default-featu
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
 
 # Polkadot Dependencies
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.13" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.13" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, tag = "v0.9.13" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, tag = "v0.9.13" }
 
 # Cumulus Dependencies
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }

@@ -15,10 +15,10 @@ sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "pol
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 
 # Polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
-polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", tag = "v0.9.13" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", tag = "v0.9.13" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", tag = "v0.9.13" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", tag = "v0.9.13" }
 
 # Cumulus deps
 cumulus-primitives-core = { path = "../../primitives/core" }
