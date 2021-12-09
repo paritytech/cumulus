@@ -287,7 +287,6 @@ pub mod pallet {
 		/// if the appropriate time has come.
 		#[pallet::weight((0, DispatchClass::Mandatory))]
 		// TODO: This weight should be corrected.
-		// head Data: 0x9a1e81e370165682e36044f0a24c11a92ea1e65525325e801ff7df9ebd6c644c601cd06e19e8f81a328953e9b7088d79d37bf3ecbfc01b5656cd0d9226ba8273d67ee0ae9787ad1572ca004fc1b3962e76050a2d9d5e43c82520404d66da9fe31e00
 		pub fn set_validation_data(
 			origin: OriginFor<T>,
 			data: ParachainInherentData,
@@ -298,16 +297,12 @@ pub mod pallet {
 				"ValidationData must be updated only once in a block",
 			);
 
-			log::debug!(target: "nacho", "SET VALIDATIO DATA {:?}", &data);
-
 			let ParachainInherentData {
 				validation_data: vfp,
 				relay_chain_state,
 				downward_messages,
 				horizontal_messages,
 			} = data;
-
-
 
 			Self::validate_validation_data(&vfp);
 
@@ -335,10 +330,11 @@ pub mod pallet {
 					Self::put_parachain_code(&validation_code);
 
 					if let Some(head_data) = <PendingCustomValidationHeadData<T>>::get() {
-						log::debug!(target: "nacho","ENTRA EN PENDING CUSTOM HEAD DATA");
 						Self::set_custom_validation_head_data(head_data);
 						<PendingCustomValidationHeadData<T>>::kill();
-						Self::deposit_event(Event::CustomValidationHeadDataApplied(vfp.relay_parent_number));
+						Self::deposit_event(Event::CustomValidationHeadDataApplied(
+							vfp.relay_parent_number,
+						));
 					}
 
 					Self::deposit_event(Event::ValidationFunctionApplied(vfp.relay_parent_number));
@@ -593,7 +589,8 @@ pub mod pallet {
 
 	/// In case of a scheduled migration, this storage field contains the custom head data to be applied.
 	#[pallet::storage]
-	pub(super) type PendingCustomValidationHeadData<T: Config> = StorageValue<_, Vec<u8>, OptionQuery>;
+	pub(super) type PendingCustomValidationHeadData<T: Config> =
+		StorageValue<_, Vec<u8>, OptionQuery>;
 
 	#[pallet::inherent]
 	impl<T: Config> ProvideInherent for Pallet<T> {
@@ -954,7 +951,6 @@ impl<T: Config> Pallet<T> {
 	/// This should only be used when you are sure what you are doing as this can brick
 	/// your Parachain.
 	pub fn set_custom_validation_head_data(head_data: Vec<u8>) {
-		log::debug!(target: "nacho","ENTRA EN -------SET--------- PENDING CUSTOM HEAD DATA {:?}", &head_data);
 		CustomValidationHeadData::<T>::put(head_data);
 	}
 

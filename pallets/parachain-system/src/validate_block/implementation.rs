@@ -59,17 +59,9 @@ where
 	let parent_head =
 		B::Header::decode(&mut &params.parent_head.0[..]).expect("Invalid parent head");
 
-	tracing::debug!(target: "nacho","VALIDATE BLOCK -- parent_head {:?}", &parent_head);
-
-
 	let (header, extrinsics, storage_proof) = block_data.deconstruct();
 
-	log::debug!(target: "nacho","VALIDATE BLOCK header: {:?}, extrinsics {:?}, storage_proof {:?}", &header, &extrinsics, &storage_proof);
-
 	let head_data = HeadData(header.encode());
-
-	log::debug!(target: "nacho","VALIDATE BLOCK -- head_data {:?}", &head_data);
-
 
 	let block = B::new(header, extrinsics);
 	assert!(parent_head.hash() == *block.header().parent_hash(), "Invalid parent hash",);
@@ -175,9 +167,6 @@ where
 				} else {
 					head_data
 				};
-
-			log::debug!(target: "nacho", "VALIDATE BLOCK -- head_data UPDATED?? {:?}", &head_data);
-			log::debug!(target: "nacho", "VALIDATE BLOCK -- new_validation_error ?? {:?}", &head_data);
 
 			ValidationResult {
 				head_data,

@@ -18,10 +18,10 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
+	use cumulus_pallet_parachain_system as parachain_system;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
 	use sp_std::prelude::*;
-	use cumulus_pallet_parachain_system as parachain_system;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + cumulus_pallet_parachain_system::Config {
@@ -35,12 +35,11 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event {
-		MigrationScheduled
+		MigrationScheduled,
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-
 		#[pallet::weight(0)]
 		pub fn schedule_migration(
 			origin: OriginFor<T>,
