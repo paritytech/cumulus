@@ -72,6 +72,7 @@ xcm = { git = "https://github.com/paritytech/polkadot", default-features = false
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master", optional = true }
 
 [dev-dependencies]
 hex-literal = "0.3.1"
@@ -99,6 +100,7 @@ runtime-benchmarks = [
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
+	"pallet-xcm-benchmarks",
 ]
 std = [
 	"codec/std",
