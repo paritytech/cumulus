@@ -146,7 +146,7 @@ pub fn generate_extrinsic(
 	let raw_payload = SignedPayload::from_raw(
 		function.clone(),
 		extra.clone(),
-		(VERSION.spec_version, genesis_block, current_block_hash, (), (), ()),
+		((), VERSION.spec_version, genesis_block, current_block_hash, (), (), ()),
 	);
 	let signature = raw_payload.using_encoded(|e| origin.sign(e));
 
