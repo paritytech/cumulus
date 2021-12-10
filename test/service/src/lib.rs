@@ -124,6 +124,7 @@ pub fn new_partial(
 		config.wasm_method,
 		config.default_heap_pages,
 		config.max_runtime_instances,
+		config.runtime_cache_size,
 	);
 
 	let (client, backend, keystore_container, task_manager) =
@@ -639,6 +640,7 @@ pub fn node_config(
 		base_path: Some(base_path),
 		informant_output_format: Default::default(),
 		wasm_runtime_overrides: None,
+		runtime_cache_size: 2,
 	})
 }
 
@@ -701,6 +703,7 @@ pub fn construct_extrinsic(
 		.unwrap_or(2) as u64;
 	let tip = 0;
 	let extra: runtime::SignedExtra = (
+		frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),
 		frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
 		frame_system::CheckGenesis::<runtime::Runtime>::new(),
 		frame_system::CheckEra::<runtime::Runtime>::from(generic::Era::mortal(
@@ -714,7 +717,7 @@ pub fn construct_extrinsic(
 	let raw_payload = runtime::SignedPayload::from_raw(
 		function.clone(),
 		extra.clone(),
-		(runtime::VERSION.spec_version, genesis_block, current_block_hash, (), (), ()),
+		((), runtime::VERSION.spec_version, genesis_block, current_block_hash, (), (), ()),
 	);
 	let signature = raw_payload.using_encoded(|e| caller.sign(e));
 	runtime::UncheckedExtrinsic::new_signed(
