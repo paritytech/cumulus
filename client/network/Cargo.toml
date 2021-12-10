@@ -3,22 +3,22 @@ name = "cumulus-client-network"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 description = "Cumulus-specific networking protocol"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 # Substrate deps
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 
 # Polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.12" }
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.12" }
-polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.12" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.12" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
+polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
 
 # other deps
 codec = { package = "parity-scale-codec", version = "2.3.0", features = [ "derive" ] }
@@ -36,14 +36,14 @@ cumulus-test-service = { path = "../../test/service" }
 cumulus-primitives-core = { path = "../../primitives/core" }
 
 # Polkadot deps
-polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.12" }
+polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
 
 # substrate deps
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }

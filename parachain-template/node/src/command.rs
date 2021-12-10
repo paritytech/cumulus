@@ -18,10 +18,7 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 
-fn load_spec(
-	id: &str,
-	para_id: ParaId,
-) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
 		"dev" => Box::new(chain_spec::development_config(para_id)),
 		"cha" => Box::new(chain_spec::chachacha_config(para_id)),
@@ -41,13 +38,11 @@ impl SubstrateCli for Cli {
 	}
 
 	fn description() -> String {
-		format!(
-			"Parachain Collator Template\n\nThe command-line arguments provided first will be \
+		"Parachain Collator Template\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
-		to the relaychain node.\n\n\
-		{} [parachain-args] -- [relaychain-args]",
-			Self::executable_name()
-		)
+		to the relay chain node.\n\n\
+		parachain-collator <parachain-args> -- <relay-chain-args>"
+			.into()
 	}
 
 	fn author() -> String {
@@ -83,8 +78,8 @@ impl SubstrateCli for RelayChainCli {
 	fn description() -> String {
 		"Parachain Collator Template\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
-		to the relaychain node.\n\n\
-		parachain-collator [parachain-args] -- [relaychain-args]"
+		to the relay chain node.\n\n\
+		parachain-collator <parachain-args> -- <relay-chain-args>"
 			.into()
 	}
 
@@ -172,7 +167,7 @@ pub fn run() -> Result<()> {
 			runner.sync_run(|config| {
 				let polkadot_cli = RelayChainCli::new(
 					&config,
-					[RelayChainCli::executable_name()].iter().chain(cli.relaychain_args.iter()),
+					[RelayChainCli::executable_name()].iter().chain(cli.relay_chain_args.iter()),
 				);
 
 				let polkadot_config = SubstrateCli::create_configuration(
@@ -249,12 +244,13 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 
 			runner.run_node_until_exit(|config| async move {
-				let para_id =
-					chain_spec::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
+				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
+					.map(|e| e.para_id)
+					.ok_or_else(|| "Could not find parachain ID in chain-spec.")?;
 
 				let polkadot_cli = RelayChainCli::new(
 					&config,
-					[RelayChainCli::executable_name()].iter().chain(cli.relaychain_args.iter()),
+					[RelayChainCli::executable_name()].iter().chain(cli.relay_chain_args.iter()),
 				);
 
 				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(2015));

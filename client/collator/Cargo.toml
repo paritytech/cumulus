@@ -2,21 +2,21 @@
 name = "cumulus-client-collator"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 # Substrate dependencies
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 
 # Polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.12" }
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.12" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.12" }
-polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.12" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
 
 # Cumulus dependencies
 cumulus-client-network = { path = "../network" }
@@ -31,15 +31,15 @@ tracing = "0.1.25"
 
 [dev-dependencies]
 # Polkadot dependencies
-polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.12" }
+polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
 
 # Cumulus dependencies
 cumulus-test-runtime = { path = "../../test/runtime" }
 cumulus-test-client = { path = "../../test/client" }
 # Substrate dependencies
 
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 
 # Other dependencies
 async-trait = "0.1.42"

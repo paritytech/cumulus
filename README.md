@@ -43,13 +43,13 @@ Statemint is a common good parachain providing an asset store for the Polkadot e
 To run a Statemine or Westmint node (Statemint is not deployed, yet) you will need to compile the
 `polkadot-collator` binary:
 
-```sh
+```bash
 cargo build --release --locked -p polkadot-collator
 ```
 
 Once the executable is built, launch the parachain node via:
 
-```sh
+```bash
 CHAIN=westmint # or statemine
 ./target/release/polkadot-collator --chain $CHAIN
 ```
@@ -75,7 +75,7 @@ eventually be included by the relay chain for a parachain.
 
 To run a Rococo collator you will need to compile the following binary:
 
-```
+```bash
 cargo build --release --locked -p polkadot-collator
 ```
 
@@ -95,7 +95,7 @@ If you want to reproduce other steps of CI process you can use the following
 Once the executable is built, launch collators for each parachain (repeat once each for chain
 `tick`, `trick`, `track`):
 
-```
+```bash
 ./target/release/polkadot-collator --chain $CHAIN --validator
 ```
 
@@ -104,9 +104,9 @@ Once the executable is built, launch collators for each parachain (repeat once e
 The parachains of Rococo all use the same runtime code. The only difference between them is the
 parachain ID used for registration with the relay chain:
 
--   Tick: 100
--   Trick: 110
--   Track: 120
+- Tick: 100
+- Trick: 110
+- Track: 120
 
 The network uses horizontal message passing (HRMP) to enable communication between parachains and
 the relay chain and, in turn, between parachains. This means that every message is sent to the relay
@@ -156,14 +156,16 @@ cargo build --release
 # Parachain Full Node 1
 ./target/release/polkadot-collator --tmp --parachain-id <parachain_id_u32_type_range> --port 40337 --ws-port 9948 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337
 ```
+
 ### Register the parachain
+
 ![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
 
-## Build the docker image
+## Containerize
 
 After building `parachain-collator` with cargo or with Kabocha's (decentration) docker image as documented in [this chapter](#build--launch-rococo-collators), the following will allow producting a new docker image where the compiled binary is injected:
 
-```
+```bash
 ./docker/scripts/build-injected-image.sh
 ```
 

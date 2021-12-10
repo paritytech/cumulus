@@ -2,11 +2,11 @@
 name = "cumulus-client-cli"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 structopt = "0.3.3"
 
 # Substrate dependencies
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }

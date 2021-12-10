@@ -2,7 +2,7 @@
 name = "cumulus-test-runtime"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive"] }
@@ -10,25 +10,25 @@ scale-info = { version = "1.0.0", default-features = false, features = ["derive"
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 
 # Substrate dependencies
-frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-sp-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
-sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
+frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+sp-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
 
 # Cumulus dependencies
 cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false }
@@ -36,7 +36,7 @@ cumulus-primitives-core = { path = "../../primitives/core", default-features = f
 cumulus-primitives-timestamp = { path = "../../primitives/timestamp", default-features = false }
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 
 [features]
 default = [ "std" ]
@@ -49,8 +49,8 @@ std = [
 	"frame-executive/std",
 	"frame-support/std",
 	"frame-system/std",
+	"frame-system-rpc-runtime-api/std",
 	"pallet-balances/std",
-	"pallet-randomness-collective-flip/std",
 	"pallet-sudo/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment/std",
@@ -67,4 +67,4 @@ std = [
 	"sp-transaction-pool/std",
 	"sp-version/std",
 ]
-upgrade = []
+increment-spec-version = []

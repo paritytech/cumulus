@@ -382,7 +382,9 @@ impl<T: Config> Pallet<T> {
 						let weight = max_weight - weight_used;
 						match Self::handle_xcm_message(sender, sent_at, xcm, weight) {
 							Ok(used) => weight_used = weight_used.saturating_add(used),
-							Err(XcmError::TooMuchWeightRequired) => {
+							Err(XcmError::WeightLimitReached(required))
+								if required <= max_weight =>
+							{
 								// That message didn't get processed this time because of being
 								// too heavy. We leave it around for next time and bail.
 								remaining_fragments = last_remaining_fragments;
@@ -401,23 +403,26 @@ impl<T: Config> Pallet<T> {
 			XcmpMessageFormat::ConcatenatedEncodedBlob => {
 				while !remaining_fragments.is_empty() {
 					last_remaining_fragments = remaining_fragments;
-					if let Ok(blob) = <Vec<u8>>::decode_all(&mut remaining_fragments) {
-						let weight = max_weight - weight_used;
-						match Self::handle_blob_message(sender, sent_at, blob, weight) {
-							Ok(used) => weight_used = weight_used.saturating_add(used),
-							Err(true) => {
-								// That message didn't get processed this time because of being
-								// too heavy. We leave it around for next time and bail.
-								remaining_fragments = last_remaining_fragments;
-								break
-							},
-							Err(false) => {
-								// Message invalid; don't attempt to retry
-							},
-						}
-					} else {
-						debug_assert!(false, "Invalid incoming blob message data");
-						remaining_fragments = &b""[..];
+					match <Vec<u8>>::decode_all(&mut remaining_fragments) {
+						Ok(blob) if remaining_fragments.len() < last_remaining_fragments.len() => {
+							let weight = max_weight - weight_used;
+							match Self::handle_blob_message(sender, sent_at, blob, weight) {
+								Ok(used) => weight_used = weight_used.saturating_add(used),
+								Err(true) => {
+									// That message didn't get processed this time because of being
+									// too heavy. We leave it around for next time and bail.
+									remaining_fragments = last_remaining_fragments;
+									break
+								},
+								Err(false) => {
+									// Message invalid; don't attempt to retry
+								},
+							}
+						},
+						_ => {
+							debug_assert!(false, "Invalid incoming blob message data");
+							remaining_fragments = &b""[..];
+						},
 					}
 				}
 			},

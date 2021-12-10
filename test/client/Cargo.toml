@@ -2,26 +2,26 @@
 name = "cumulus-test-client"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sc-executor-common = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sc-block-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sc-executor-common = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 
 # Cumulus deps
 cumulus-test-runtime = { path = "../runtime" }
@@ -31,8 +31,8 @@ cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent" }
 
 # Polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.12" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.12" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
 
 # Other deps
 codec = { package = "parity-scale-codec", version = "2.3.0", default-features = false, features = [ "derive" ] }

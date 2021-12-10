@@ -33,7 +33,7 @@ use frame_support::{
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureOneOf, EnsureRoot,
+	EnsureRoot,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
@@ -42,7 +42,7 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 pub use sp_runtime::BuildStorage;
 
 // Polkadot Imports
-use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
+use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 
@@ -52,7 +52,8 @@ use xcm_builder::{
 	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
 	EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset, ParentIsDefault,
 	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedAccountId32AsNative, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+	UsingComponents,
 };
 use xcm_executor::{Config, XcmExecutor};
 
@@ -117,17 +118,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPallets,
-	OnRuntimeUpgrade,
 >;
-
-pub struct OnRuntimeUpgrade;
-impl frame_support::traits::OnRuntimeUpgrade for OnRuntimeUpgrade {
-	fn on_runtime_upgrade() -> u64 {
-		frame_support::migrations::migrate_from_pallet_version_to_storage_version::<
-			AllPalletsWithSystem,
-		>(&RocksDbWeight::get())
-	}
-}
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
 /// node's balance type.
@@ -212,11 +203,8 @@ pub const UNIT: Balance = 1_000_000_000_000;
 pub const MILLIUNIT: Balance = 1_000_000_000;
 pub const MICROUNIT: Balance = 1_000_000;
 
-/// The existential deposit. Set to 1/10 of the Rococo Relay Chain.
+/// The existential deposit. Set to 1/10 of the Connected Relay Chain.
 pub const EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
-
-// 1 in 4 blocks (on average, not counting collisions) will be primary babe blocks.
-pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
 
 /// We assume that ~5% of the block weight is consumed by `on_initialize` handlers. This is
 /// used to limit the maximal weight of a single extrinsic.
@@ -389,14 +377,12 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 }
 
-impl pallet_randomness_collective_flip::Config for Runtime {}
-
 impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 parameter_types! {
-	pub const RocLocation: MultiLocation = MultiLocation::parent();
+	pub const RelayLocation: MultiLocation = MultiLocation::parent();
 	pub const RelayNetwork: NetworkId = NetworkId::Any;
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
@@ -419,7 +405,7 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 	// Use this currency:
 	Balances,
 	// Use this currency when it is a fungible asset matching the given location or name:
-	IsConcrete<RocLocation>,
+	IsConcrete<RelayLocation>,
 	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -481,7 +467,7 @@ impl Config for XcmConfig {
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-	type Trader = UsingComponents<IdentityFee<Balance>, RocLocation, AccountId, Balances, ()>;
+	type Trader = UsingComponents<IdentityFee<Balance>, RelayLocation, AccountId, Balances, ()>;
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;
@@ -493,7 +479,7 @@ parameter_types! {
 }
 
 /// No local origins on this chain are allowed to dispatch XCM sends/executions.
-pub type LocalOriginToLocation = ();
+pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, RelayNetwork>;
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
@@ -509,7 +495,9 @@ impl pallet_xcm::Config for Runtime {
 	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
 	type XcmRouter = XcmRouter;
 	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-	type XcmExecuteFilter = Everything;
+	type XcmExecuteFilter = Nothing;
+	// ^ Disable dispatchable execute on the XCM pallet.
+	// Needs to be `Everything` for local testing.
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;
 	type XcmReserveTransferFilter = Nothing;
@@ -519,7 +507,7 @@ impl pallet_xcm::Config for Runtime {
 	type Call = Call;
 
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
-	// Override for AdvertisedXcmVersion default
+	// ^ Override for AdvertisedXcmVersion default
 	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
 }
 
@@ -576,12 +564,8 @@ parameter_types! {
 	pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 
-// We allow root and the Relay Chain council to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin = EnsureOneOf<
-	AccountId,
-	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<RocLocation, ExecutiveBody>>,
->;
+// We allow root only to execute privileged collator selection operations.
+pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
 
 impl pallet_collator_selection::Config for Runtime {
 	type Event = Event;
@@ -616,9 +600,8 @@ construct_runtime!(
 		ParachainSystem: cumulus_pallet_parachain_system::{
 			Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
 		} = 1,
-		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 2,
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
-		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 4,
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
+		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
@@ -805,6 +788,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_session, SessionBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
 			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);
+			add_benchmark!(params, batches, pallet_session, Session);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
