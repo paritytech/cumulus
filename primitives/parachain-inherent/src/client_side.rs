@@ -24,7 +24,6 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_interface::RelayChainInterface;
 use sp_runtime::generic::BlockId;
-use sp_state_machine::Backend as _;
 
 const LOG_TARGET: &str = "parachain-inherent";
 
@@ -37,28 +36,11 @@ fn collect_relay_storage_proof(
 ) -> Option<sp_state_machine::StorageProof> {
 	use relay_chain::well_known_keys as relay_well_known_keys;
 
-	let relay_parent_state_backend = relay_chain_interface
-		.get_state_at(BlockId::Hash(relay_parent))
-		.map_err(|e| {
-			tracing::error!(
-				target: LOG_TARGET,
-				relay_parent = ?relay_parent,
-				error = ?e,
-				"Cannot obtain the state of the relay chain.",
-			)
-		})
-		.ok()?;
-
-	let ingress_channels = relay_parent_state_backend
-		.storage(&relay_well_known_keys::hrmp_ingress_channel_index(para_id))
-		.map_err(|e| {
-			tracing::error!(
-				target: LOG_TARGET,
-				error = ?e,
-				"Cannot obtain the hrmp ingress channel index."
-			)
-		})
-		.ok()?;
+	let relay_parent_block_id = BlockId::Hash(relay_parent);
+	let ingress_channels = relay_chain_interface.get_storage_by_key(
+		&relay_parent_block_id,
+		&relay_well_known_keys::hrmp_ingress_channel_index(para_id),
+	);
 
 	let ingress_channels = ingress_channels
 		.map(|raw| <Vec<ParaId>>::decode(&mut &raw[..]))
@@ -73,16 +55,11 @@ fn collect_relay_storage_proof(
 		.ok()?
 		.unwrap_or_default();
 
-	let egress_channels = relay_parent_state_backend
-		.storage(&relay_well_known_keys::hrmp_egress_channel_index(para_id))
-		.map_err(|e| {
-			tracing::error!(
-				target: LOG_TARGET,
-				error = ?e,
-				"Cannot obtain the hrmp egress channel index.",
-			)
-		})
-		.ok()?;
+	let egress_channels = relay_chain_interface.get_storage_by_key(
+		&relay_parent_block_id,
+		&relay_well_known_keys::hrmp_egress_channel_index(para_id),
+	);
+
 	let egress_channels = egress_channels
 		.map(|raw| <Vec<ParaId>>::decode(&mut &raw[..]))
 		.transpose()
@@ -112,16 +89,7 @@ fn collect_relay_storage_proof(
 		relay_well_known_keys::hrmp_channels(HrmpChannelId { sender: para_id, recipient })
 	}));
 
-	sp_state_machine::prove_read(relay_parent_state_backend, relevant_keys)
-		.map_err(|e| {
-			tracing::error!(
-				target: LOG_TARGET,
-				relay_parent = ?relay_parent,
-				error = ?e,
-				"Failed to collect required relay chain state storage proof.",
-			)
-		})
-		.ok()
+	relay_chain_interface.prove_read(&relay_parent_block_id, &relevant_keys).ok()?
 }
 
 impl ParachainInherentData {

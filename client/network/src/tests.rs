@@ -72,13 +72,6 @@ impl DummyRelayChainInterface {
 }
 
 impl RelayChainInterface<PBlock> for DummyRelayChainInterface {
-	fn get_state_at(
-		&self,
-		_: cumulus_primitives_core::relay_chain::BlockId,
-	) -> Result<<FullBackend as sc_client_api::Backend<PBlock>>::State, sp_blockchain::Error> {
-		unimplemented!("Not needed for test")
-	}
-
 	fn get_import_lock(&self) -> &RwLock<()> {
 		self.relay_backend.get_import_lock()
 	}
@@ -179,6 +172,22 @@ impl RelayChainInterface<PBlock> for DummyRelayChainInterface {
 	}
 
 	fn overseer_handle(&self) -> Option<Handle> {
+		unimplemented!("Not needed for test")
+	}
+
+	fn get_storage_by_key(
+		&self,
+		_: &polkadot_service::BlockId,
+		_: &[u8],
+	) -> Option<sp_state_machine::StorageValue> {
+		unimplemented!("Not needed for test")
+	}
+
+	fn prove_read(
+		&self,
+		_: &polkadot_service::BlockId,
+		_: &Vec<Vec<u8>>,
+	) -> Result<Option<sc_client_api::StorageProof>, Box<dyn sp_state_machine::Error>> {
 		unimplemented!("Not needed for test")
 	}
 }

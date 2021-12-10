@@ -16,22 +16,20 @@ use polkadot_service::{
 	AuxStore, BabeApi, CollatorPair, Configuration, Handle, NewFull, Role, TaskManager,
 };
 use sc_client_api::{
-	blockchain::BlockStatus, Backend, BlockchainEvents, HeaderBackend, UsageProvider,
+	blockchain::BlockStatus, Backend, BlockchainEvents, HeaderBackend, StorageProof, UsageProvider,
 };
 use sc_telemetry::TelemetryWorkerHandle;
 use sp_api::{ApiError, BlockT, ProvideRuntimeApi};
 use sp_consensus::SyncOracle;
 use sp_core::{sp_std::collections::btree_map::BTreeMap, Pair};
+use sp_state_machine::{Backend as StateBackend, StorageValue};
 use std::sync::Mutex;
 
 const LOG_TARGET: &str = "relay-chain-interface";
 
 /// Should be used for all interaction with the relay chain in cumulus.
 pub trait RelayChainInterface<Block: BlockT> {
-	fn get_state_at(
-		&self,
-		block_id: BlockId,
-	) -> Result<<FullBackend as sc_client_api::Backend<PBlock>>::State, sp_blockchain::Error>;
+	fn get_storage_by_key(&self, block_id: &BlockId, key: &[u8]) -> Option<StorageValue>;
 
 	fn get_import_lock(&self) -> &RwLock<()>;
 
@@ -91,6 +89,12 @@ pub trait RelayChainInterface<Block: BlockT> {
 	fn slot_duration(&self) -> Result<Duration, sp_blockchain::Error>;
 
 	fn overseer_handle(&self) -> Option<Handle>;
+
+	fn prove_read(
+		&self,
+		block_id: &BlockId,
+		relevant_keys: &Vec<Vec<u8>>,
+	) -> Result<Option<StorageProof>, Box<dyn sp_state_machine::Error>>;
 }
 
 /// RelayChainLocal is used to interact with a full node that is running locally
@@ -225,13 +229,6 @@ where
 		self.backend.get_import_lock()
 	}
 
-	fn get_state_at(
-		&self,
-		block_id: BlockId,
-	) -> Result<<FullBackend as sc_client_api::Backend<PBlock>>::State, sp_blockchain::Error> {
-		self.backend.state_at(block_id)
-	}
-
 	fn is_major_syncing(&self) -> bool {
 		let mut network = self.network.lock().unwrap();
 		network.is_major_syncing()
@@ -243,6 +240,65 @@ where
 
 	fn overseer_handle(&self) -> Option<Handle> {
 		self.overseer_handle.clone()
+	}
+
+	fn get_storage_by_key(&self, block_id: &BlockId, key: &[u8]) -> Option<StorageValue> {
+		let state = self
+			.backend
+			.state_at(*block_id)
+			.map_err(|e| {
+				tracing::error!(
+					target: LOG_TARGET,
+					relay_parent = ?block_id,
+					error = ?e,
+					"Cannot obtain the state of the relay chain.",
+				)
+			})
+			.ok()?;
+		state
+			.storage(key)
+			.map_err(|e| {
+				tracing::error!(
+					target: LOG_TARGET,
+					error = ?e,
+					"Cannot decode the hrmp ingress channel index.",
+				)
+			})
+			.ok()?
+	}
+
+	fn prove_read(
+		&self,
+		block_id: &BlockId,
+		relevant_keys: &Vec<Vec<u8>>,
+	) -> Result<Option<StorageProof>, Box<dyn sp_state_machine::Error>> {
+		let state_backend = self
+			.backend
+			.state_at(*block_id)
+			.map_err(|e| {
+				tracing::error!(
+					target: LOG_TARGET,
+					relay_parent = ?block_id,
+					error = ?e,
+					"Cannot obtain the state of the relay chain.",
+				);
+			})
+			.ok();
+
+		match state_backend {
+			Some(state) => sp_state_machine::prove_read(state, relevant_keys)
+				.map_err(|e| {
+					tracing::error!(
+						target: LOG_TARGET,
+						relay_parent = ?block_id,
+						error = ?e,
+						"Failed to collect required relay chain state storage proof.",
+					);
+					e
+				})
+				.map(|v| Some(v)),
+			None => Ok(None),
+		}
 	}
 }
 
@@ -364,13 +420,6 @@ where
 		(**self).get_import_lock()
 	}
 
-	fn get_state_at(
-		&self,
-		block_id: BlockId,
-	) -> Result<<FullBackend as sc_client_api::Backend<PBlock>>::State, sp_blockchain::Error> {
-		(**self).get_state_at(block_id)
-	}
-
 	fn is_major_syncing(&self) -> bool {
 		(**self).is_major_syncing()
 	}
@@ -381,6 +430,18 @@ where
 
 	fn overseer_handle(&self) -> Option<Handle> {
 		(**self).overseer_handle()
+	}
+
+	fn get_storage_by_key(&self, block_id: &BlockId, key: &[u8]) -> Option<StorageValue> {
+		(**self).get_storage_by_key(block_id, key)
+	}
+
+	fn prove_read(
+		&self,
+		block_id: &BlockId,
+		relevant_keys: &Vec<Vec<u8>>,
+	) -> Result<Option<StorageProof>, Box<dyn sp_state_machine::Error>> {
+		(**self).prove_read(block_id, relevant_keys)
 	}
 }
 

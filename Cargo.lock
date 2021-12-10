@@ -1566,6 +1566,7 @@ dependencies = [
  "sp-keyring",
  "sp-keystore",
  "sp-runtime",
+ "sp-state-machine",
  "substrate-test-utils",
  "tokio",
  "tracing",
@@ -1865,6 +1866,7 @@ dependencies = [
  "sp-consensus",
  "sp-core",
  "sp-runtime",
+ "sp-state-machine",
  "tracing",
 ]
 
