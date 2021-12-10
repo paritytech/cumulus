@@ -34,6 +34,7 @@ use polkadot_service::NativeExecutionDispatch;
 use crate::rpc;
 pub use parachains_common::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
 
+use core::time::Duration;
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use futures::lock::Mutex;
 use sc_client_api::ExecutorProvider;
@@ -398,6 +399,7 @@ where
 			parachain_consensus,
 			import_queue,
 			collator_key,
+			slot_duration: Duration::from_secs(6),
 		};
 
 		start_collator(params).await?;
@@ -583,6 +585,7 @@ where
 			parachain_consensus,
 			import_queue,
 			collator_key,
+			slot_duration: Duration::from_secs(6),
 		};
 
 		start_collator(params).await?;

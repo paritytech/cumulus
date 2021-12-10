@@ -18,9 +18,10 @@ use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::{relay_chain::v1::Block as PBlock, ParaId};
+use cumulus_relay_chain_interface::{build_relay_chain_interface, RelayChainInterface};
 
 // Substrate Imports
-use cumulus_relay_chain_interface::{build_relay_chain_interface, RelayChainInterface};
+use core::time::Duration;
 use sc_client_api::ExecutorProvider;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
@@ -326,6 +327,7 @@ where
 			parachain_consensus,
 			import_queue,
 			collator_key,
+			slot_duration: Duration::from_secs(6),
 		};
 
 		start_collator(params).await?;

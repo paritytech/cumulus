@@ -18,6 +18,7 @@
 //!
 //! Provides functions for starting a collator node or a normal full node.
 
+use core::time::Duration;
 use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
 use cumulus_relay_chain_interface::RelayChainInterface;
@@ -54,6 +55,7 @@ pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, RCInterface, Spawn
 	pub parachain_consensus: Box<dyn ParachainConsensus<Block>>,
 	pub import_queue: IQ,
 	pub collator_key: CollatorPair,
+	pub slot_duration: Duration,
 }
 
 /// Start a collator node for a parachain.
@@ -73,6 +75,7 @@ pub async fn start_collator<'a, Block, BS, Client, Backend, RCInterface, Spawner
 		parachain_consensus,
 		import_queue,
 		collator_key,
+		slot_duration,
 	}: StartCollatorParams<'a, Block, BS, Client, RCInterface, Spawner, IQ>,
 ) -> sc_service::error::Result<()>
 where
@@ -109,7 +112,7 @@ where
 		relay_chain_interface
 			.overseer_handle()
 			.ok_or_else(|| "Polkadot full node did not provide an `OverseerHandle`!")?,
-		relay_chain_interface.slot_duration()?,
+		slot_duration,
 		client.clone(),
 		import_queue,
 		relay_chain_interface.clone(),

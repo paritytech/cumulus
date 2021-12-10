@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 use cumulus_primitives_core::{
 	relay_chain::{
@@ -85,8 +85,6 @@ pub trait RelayChainInterface<Block: BlockT> {
 	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<Block::Hash>>;
 
 	fn is_major_syncing(&self) -> bool;
-
-	fn slot_duration(&self) -> Result<Duration, sp_blockchain::Error>;
 
 	fn overseer_handle(&self) -> Option<Handle>;
 
@@ -232,10 +230,6 @@ where
 	fn is_major_syncing(&self) -> bool {
 		let mut network = self.network.lock().unwrap();
 		network.is_major_syncing()
-	}
-
-	fn slot_duration(&self) -> Result<Duration, sp_blockchain::Error> {
-		Ok(sc_consensus_babe::Config::get_or_compute(&*self.full_client)?.slot_duration())
 	}
 
 	fn overseer_handle(&self) -> Option<Handle> {
@@ -422,10 +416,6 @@ where
 
 	fn is_major_syncing(&self) -> bool {
 		(**self).is_major_syncing()
-	}
-
-	fn slot_duration(&self) -> Result<Duration, sp_blockchain::Error> {
-		(**self).slot_duration()
 	}
 
 	fn overseer_handle(&self) -> Option<Handle> {

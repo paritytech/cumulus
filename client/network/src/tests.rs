@@ -18,7 +18,6 @@ use super::*;
 use cumulus_test_service::runtime::{Block, Hash, Header};
 use futures::{executor::block_on, poll, task::Poll};
 use parking_lot::{Mutex, RwLock};
-use polkadot_client::FullBackend;
 use polkadot_node_primitives::{SignedFullStatement, Statement};
 use polkadot_primitives::v1::{
 	Block as PBlock, CandidateCommitments, CandidateDescriptor, CommittedCandidateReceipt,
@@ -165,10 +164,6 @@ impl RelayChainInterface<PBlock> for DummyRelayChainInterface {
 
 	fn is_major_syncing(&self) -> bool {
 		false
-	}
-
-	fn slot_duration(&self) -> Result<std::time::Duration, sp_blockchain::Error> {
-		unimplemented!("Not needed for test")
 	}
 
 	fn overseer_handle(&self) -> Option<Handle> {

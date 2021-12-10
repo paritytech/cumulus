@@ -21,7 +21,8 @@
 mod chain_spec;
 mod genesis;
 
-use core::future::Future;
+use core::{future::Future, time::Duration};
+
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
@@ -30,6 +31,7 @@ use cumulus_client_service::{
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_interface::RelayChainLocal;
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
+
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use polkadot_primitives::v1::{CollatorPair, Hash as PHash, PersistedValidationData};
 use polkadot_service::ProvideRuntimeApi;
@@ -321,6 +323,7 @@ where
 			relay_chain_interface,
 			collator_key,
 			import_queue,
+			slot_duration: Duration::from_secs(6),
 		};
 
 		start_collator(params).await?;
