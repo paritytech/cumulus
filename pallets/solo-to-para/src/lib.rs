@@ -16,7 +16,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::{weights::DispatchInfo};
+use frame_support::weights::DispatchInfo;
+pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, SignedExtension},
@@ -25,7 +26,6 @@ use sp_runtime::{
 		TransactionValidityError, ValidTransaction,
 	},
 };
-pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -41,7 +41,6 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {}
 }
-
 
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo, Default)]
 #[scale_info(skip_type_params(T))]

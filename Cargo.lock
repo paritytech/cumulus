@@ -1704,10 +1704,8 @@ dependencies = [
 name = "cumulus-pallet-solo-to-para"
 version = "0.1.0"
 dependencies = [
- "cumulus-pallet-parachain-system",
  "frame-support",
  "frame-system",
- "log",
  "pallet-sudo",
  "parity-scale-codec",
  "scale-info",

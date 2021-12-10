@@ -13,20 +13,15 @@ sp-std = { git = "https://github.com/paritytech/substrate", default-features = f
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
-# Cumulus dependencies
-cumulus-pallet-parachain-system = { default-features = false, path = "../parachain-system" }
-
 # Other Dependencies
 codec = { package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive"]}
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
-log = { version = "0.4.14", default-features = false }
 
 [features]
 default = [ "std" ]
 std = [
 	"codec/std",
 	"scale-info/std",
-	"cumulus-pallet-parachain-system/std",
 	"pallet-sudo/std",
 	"frame-support/std",
 	"sp-runtime/std",
