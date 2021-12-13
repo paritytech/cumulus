@@ -15,14 +15,16 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{ParachainInherentData, INHERENT_IDENTIFIER};
-use cumulus_primitives_core::{InboundDownwardMessage, InboundHrmpMessage, ParaId, PersistedValidationData, relay_chain};
-use sp_inherents::{InherentData, InherentDataProvider};
-use std::collections::BTreeMap;
+use codec::Decode;
+use cumulus_primitives_core::{
+	relay_chain, InboundDownwardMessage, InboundHrmpMessage, ParaId, PersistedValidationData,
+};
+use sc_client_api::{Backend, StorageProvider};
 use sp_api::BlockId;
 use sp_core::twox_128;
-use codec::Decode;
-use sc_client_api::{Backend, StorageProvider};
+use sp_inherents::{InherentData, InherentDataProvider};
 use sp_runtime::traits::Block;
+use std::collections::BTreeMap;
 
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 
@@ -91,21 +93,21 @@ impl MockXcmConfig {
 		para_id: ParaId,
 		parachain_system_name: ParachainSystemName,
 	) -> Self {
-
 		let starting_dmq_mqc_head = client
 			.storage(
 				&BlockId::Hash(parent_block),
 				&sp_storage::StorageKey(
-					[twox_128(parachain_system_name.0), twox_128(b"LastDmqMqcHead")].concat().to_vec(),
+					[twox_128(parachain_system_name.0), twox_128(b"LastDmqMqcHead")]
+						.concat()
+						.to_vec(),
 				),
 			)
 			.expect("We should be able to read storage from the parent block.")
 			.map(|ref mut raw_data| {
-				Decode::decode(&mut &raw_data.0[..])
-					.expect("Stored data should decode correctly")
+				Decode::decode(&mut &raw_data.0[..]).expect("Stored data should decode correctly")
 			})
 			.unwrap_or_default();
-		
+
 		let starting_hrmp_mqc_heads = client
 			.storage(
 				&BlockId::Hash(parent_block),
@@ -115,16 +117,11 @@ impl MockXcmConfig {
 			)
 			.expect("We should be able to read storage from the parent block.")
 			.map(|ref mut raw_data| {
-				Decode::decode(&mut &raw_data.0[..])
-					.expect("Stored data should decode correctly")
+				Decode::decode(&mut &raw_data.0[..]).expect("Stored data should decode correctly")
 			})
 			.unwrap_or_default();
-		
-		Self {
-			para_id,
-			starting_dmq_mqc_head,
-			starting_hrmp_mqc_heads,
-		}
+
+		Self { para_id, starting_dmq_mqc_head, starting_hrmp_mqc_heads }
 	}
 }
 
@@ -134,23 +131,19 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 		&self,
 		inherent_data: &mut InherentData,
 	) -> Result<(), sp_inherents::Error> {
-
 		// Calculate the mocked relay block based on the current para block
 		let relay_parent_number =
 			self.relay_offset + self.relay_blocks_per_para_block * self.current_para_block;
-		
+
 		// Use the "sproof" (spoof proof) builder to build valid mock state root and proof.
 		let mut sproof_builder = RelayStateSproofBuilder::default();
 		sproof_builder.para_id = self.xcm_config.para_id;
-		
+
 		// Process the downward messages and set up the correct head
 		let mut downward_messages = Vec::new();
 		let mut dmq_mqc = crate::MessageQueueChain(self.xcm_config.starting_dmq_mqc_head);
 		for msg in &self.raw_downward_messages {
-			let wrapped = InboundDownwardMessage{
-				sent_at: relay_parent_number,
-				msg: msg.clone(),
-			};
+			let wrapped = InboundDownwardMessage { sent_at: relay_parent_number, msg: msg.clone() };
 
 			dmq_mqc.extend_downward(&wrapped);
 			downward_messages.push(wrapped);
@@ -161,15 +154,12 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 		// Begin by colelcting them into a Map
 		let mut horizontal_messages = BTreeMap::<ParaId, Vec<InboundHrmpMessage>>::new();
 		for (para_id, msg) in &self.raw_horizontal_messages {
-			let wrapped = InboundHrmpMessage {
-				sent_at: relay_parent_number,
-				data: msg.clone(),
-			};
+			let wrapped = InboundHrmpMessage { sent_at: relay_parent_number, data: msg.clone() };
 
 			match horizontal_messages.get_mut(para_id) {
 				Some(msgs) => {
 					msgs.push(wrapped);
-				},
+				}
 				None => {
 					horizontal_messages.insert(*para_id, vec![wrapped]);
 				}
@@ -183,14 +173,14 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 					.xcm_config
 					.starting_hrmp_mqc_heads
 					.get(para_id)
-					.unwrap_or(&relay_chain::Hash::default())
+					.unwrap_or(&relay_chain::Hash::default()),
 			);
 			for message in messages {
 				channel_mqc.extend_hrmp(message);
 			}
 			sproof_builder.upsert_inbound_channel(*para_id).mqc_head = Some(channel_mqc.head());
 		}
-		
+
 		let (relay_parent_storage_root, proof) = sproof_builder.into_state_root_and_proof();
 
 		inherent_data.put_data(
@@ -205,7 +195,7 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 				downward_messages,
 				horizontal_messages,
 				relay_chain_state: proof,
-			}
+			},
 		)
 	}
 

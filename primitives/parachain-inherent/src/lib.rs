@@ -28,7 +28,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use cumulus_primitives_core::{
-	InboundDownwardMessage, InboundHrmpMessage, ParaId, PersistedValidationData, relay_chain::{BlakeTwo256, Hash as RelayHash, HashT as _},
+	relay_chain::{BlakeTwo256, Hash as RelayHash, HashT as _},
+	InboundDownwardMessage, InboundHrmpMessage, ParaId, PersistedValidationData,
 };
 
 use scale_info::TypeInfo;
