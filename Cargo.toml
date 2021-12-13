@@ -200,6 +200,7 @@ beefy-merkle-tree = { git="https://github.com/cheme/substrate", branch="state-up
 beefy-primitives = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
 pallet-asset-tx-payment = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
 sc-offchain = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
+pallet-preimage = { git="https://github.com/cheme/substrate", branch="state-update4-host2" }
 
 [patch.'https://github.com/paritytech/polkadot']
 westend-runtime = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
@@ -224,7 +225,6 @@ polkadot-node-core-candidate-validation = { git="https://github.com/cheme/polkad
 polkadot-node-core-chain-api = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
 polkadot-node-core-chain-selection = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
 polkadot-node-core-dispute-coordinator = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
-polkadot-node-core-dispute-participation = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
 polkadot-node-core-provisioner = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
 polkadot-node-core-pvf = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
 polkadot-node-core-runtime-api = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
@@ -272,3 +272,5 @@ polkadot-dispute-distribution = { git="https://github.com/cheme/polkadot-1", bra
 polkadot-erasure-coding = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
 polkadot-gossip-support = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
 slot-range-helper = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
+polkadot = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
+kusama-runtime-constants = { git="https://github.com/cheme/polkadot-1", branch="state-update4-host2" }
