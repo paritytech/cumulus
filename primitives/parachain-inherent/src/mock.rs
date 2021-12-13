@@ -36,7 +36,10 @@ use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 /// To simulate a parachain that starts in relay block 1000 and gets a block in every other relay
 /// block, use 1000 and 2
 ///
-/// TODO Docs about the XCM injection
+/// Optionally, mock XCM messages can be injected into the runtime. When mocking XCM,
+/// in addition to the messages themselves, you must provide some information about
+/// your parachain's configuration in order to mock the MQC heads properly.
+/// See `MockXcmConfig` for more information
 pub struct MockValidationDataInherentDataProvider {
 	/// The current block number of the local block chain (the parachain)
 	pub current_para_block: u32,
@@ -46,6 +49,7 @@ pub struct MockValidationDataInherentDataProvider {
 	/// The number of relay blocks that elapses between each parablock. Probably set this to 1 or 2
 	/// to simulate optimistic or realistic relay chain behavior.
 	pub relay_blocks_per_para_block: u32,
+	//TODO Make this optional
 	/// XCM messages and associated configuration information.
 	pub xcm_config: MockXcmConfig,
 	/// Inbound downward XCM messages to be injected into the block.
@@ -54,7 +58,10 @@ pub struct MockValidationDataInherentDataProvider {
 	pub raw_horizontal_messages: Vec<(ParaId, Vec<u8>)>,
 }
 
-/// Parameters for how the Mock inherent data provider should inject XCM messages
+/// Parameters for how the Mock inherent data provider should inject XCM messages.
+/// In addition to the messages themselves, some information about the parachain's
+/// configuration is also required so that the MQC heads can be read out of the
+/// parachain's storage, and the corresponding relay data mocked.
 pub struct MockXcmConfig {
 	/// The parachain id of the parachain being mocked.
 	pub para_id: ParaId,
