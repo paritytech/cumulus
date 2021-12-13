@@ -220,7 +220,7 @@ where
 	let relay_chain_interface = Arc::new(RelayChainLocal {
 		full_client: relay_chain_full_node.client.clone(),
 		backend: relay_chain_full_node.backend.clone(),
-		network: Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),
+		sync_oracle: Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),
 		overseer_handle: relay_chain_full_node.overseer_handle.clone(),
 	});
 	task_manager.add_child(relay_chain_full_node.task_manager);

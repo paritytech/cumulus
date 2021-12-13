@@ -417,13 +417,10 @@ where
 }
 
 /// Returns a stream over pending candidates for the parachain corresponding to `para_id`.
-fn pending_candidates<RC>(
-	relay_chain_client: RC,
+fn pending_candidates(
+	relay_chain_client: impl RelayChainInterface<PBlock>,
 	para_id: ParaId,
-) -> impl Stream<Item = (CommittedCandidateReceipt, SessionIndex)>
-where
-	RC: RelayChainInterface<PBlock> + Clone,
-{
+) -> impl Stream<Item = (CommittedCandidateReceipt, SessionIndex)> {
 	relay_chain_client.import_notification_stream().filter_map(move |n| {
 		let res = relay_chain_client
 			.candidate_pending_availability(&BlockId::hash(n.hash), para_id)

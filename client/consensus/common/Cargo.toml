@@ -18,6 +18,7 @@ sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
 # Polkadot deps
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
+# Cumulus deps
 cumulus-relay-chain-interface = { path = "../../relay-chain-interface" }
 
 # Other deps

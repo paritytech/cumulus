@@ -1,9 +1,9 @@
 [package]
+authors = ["Parity Technologies <admin@parity.io>"]
 name = "cumulus-relay-chain-interface"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }

@@ -20,7 +20,6 @@ use cumulus_relay_chain_interface::RelayChainInterface;
 use futures::{future::ready, Future, FutureExt, StreamExt};
 use polkadot_primitives::v1::{Block as PBlock, Hash as PHash};
 use sc_client_api::blockchain::{self};
-use sp_consensus::SyncOracle;
 use sp_runtime::generic::BlockId;
 use std::time::Duration;
 
@@ -116,18 +115,6 @@ where
 	}
 }
 
-struct DummyNetwork {}
-
-impl SyncOracle for DummyNetwork {
-	fn is_major_syncing(&mut self) -> bool {
-		unimplemented!("Not needed for test")
-	}
-
-	fn is_offline(&mut self) -> bool {
-		unimplemented!("Not needed for test")
-	}
-}
-
 #[cfg(test)]
 mod tests {
 	use std::sync::Mutex;
@@ -146,6 +133,18 @@ mod tests {
 
 	use futures::{executor::block_on, poll, task::Poll};
 
+	struct DummyNetwork {}
+
+	impl SyncOracle for DummyNetwork {
+		fn is_major_syncing(&mut self) -> bool {
+			unimplemented!("Not needed for test")
+		}
+
+		fn is_offline(&mut self) -> bool {
+			unimplemented!("Not needed for test")
+		}
+	}
+
 	fn build_client_backend_and_block() -> (Arc<Client>, PBlock, RelayChainLocal<Client>) {
 		let builder =
 			TestClientBuilder::new().set_execution_strategy(ExecutionStrategy::NativeWhenPossible);
@@ -162,7 +161,7 @@ mod tests {
 			RelayChainLocal {
 				full_client: client,
 				backend: backend.clone(),
-				network: Arc::new(Mutex::new(dummy_network)),
+				sync_oracle: Arc::new(Mutex::new(dummy_network)),
 				overseer_handle: None,
 			},
 		)

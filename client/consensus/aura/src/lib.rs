@@ -30,6 +30,8 @@ use cumulus_primitives_core::{
 	relay_chain::v1::{Block as PBlock, Hash as PHash},
 	PersistedValidationData,
 };
+use cumulus_relay_chain_interface::RelayChainInterface;
+
 use futures::lock::Mutex;
 use sc_client_api::{backend::AuxStore, BlockOf};
 use sc_consensus::BlockImport;
@@ -50,7 +52,6 @@ use std::{convert::TryFrom, hash::Hash, sync::Arc};
 
 mod import_queue;
 
-use cumulus_relay_chain_interface::RelayChainInterface;
 pub use import_queue::{build_verifier, import_queue, BuildVerifierParams, ImportQueueParams};
 pub use sc_consensus_aura::{
 	slot_duration, AuraVerifier, BuildAuraWorkerParams, SlotDuration, SlotProportion,

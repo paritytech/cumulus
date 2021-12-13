@@ -26,7 +26,6 @@ substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate
 
 # Cumulus dependencies
 cumulus-client-consensus-common = { path = "../common" }
-cumulus-client-collator = { path = "../../../client/collator" }
 cumulus-primitives-core = { path = "../../../primitives/core" }
 cumulus-relay-chain-interface = { path = "../../relay-chain-interface" }
 

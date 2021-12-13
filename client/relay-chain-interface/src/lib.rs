@@ -1,3 +1,19 @@
+// Copyright 2021 Parity Technologies (UK) Ltd.
+// This file is part of Cumulus.
+
+// Cumulus is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Cumulus is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
+
 use std::sync::Arc;
 
 use cumulus_primitives_core::{
@@ -106,7 +122,7 @@ pub trait RelayChainInterface<Block: BlockT> {
 pub struct RelayChainLocal<Client> {
 	pub full_client: Arc<Client>,
 	pub backend: Arc<FullBackend>,
-	pub network: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
+	pub sync_oracle: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
 	pub overseer_handle: Option<Handle>,
 }
 
@@ -115,7 +131,7 @@ impl<T> Clone for RelayChainLocal<T> {
 		Self {
 			full_client: self.full_client.clone(),
 			backend: self.backend.clone(),
-			network: self.network.clone(),
+			sync_oracle: self.sync_oracle.clone(),
 			overseer_handle: self.overseer_handle.clone(),
 		}
 	}
@@ -230,7 +246,7 @@ where
 	}
 
 	fn is_major_syncing(&self) -> bool {
-		let mut network = self.network.lock().unwrap();
+		let mut network = self.sync_oracle.lock().unwrap();
 		network.is_major_syncing()
 	}
 
@@ -328,7 +344,7 @@ where
 pub struct RelayChainLocalBuilder {
 	polkadot_client: polkadot_client::Client,
 	backend: Arc<FullBackend>,
-	network: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
+	sync_oracle: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
 	overseer_handle: Option<Handle>,
 }
 
@@ -355,7 +371,7 @@ impl ExecuteWithClient for RelayChainLocalBuilder {
 		Arc::new(RelayChainLocal {
 			full_client: client,
 			backend: self.backend,
-			network: self.network,
+			sync_oracle: self.sync_oracle,
 			overseer_handle: self.overseer_handle,
 		})
 	}
@@ -505,11 +521,11 @@ pub fn build_relay_chain_interface(
 		)?;
 
 	let sync_oracle: Box<dyn SyncOracle + Send + Sync> = Box::new(full_node.network.clone());
-	let network = Arc::new(Mutex::new(sync_oracle));
+	let sync_oracle = Arc::new(Mutex::new(sync_oracle));
 	let relay_chain_interface_builder = RelayChainLocalBuilder {
 		polkadot_client: full_node.client.clone(),
 		backend: full_node.backend.clone(),
-		network,
+		sync_oracle,
 		overseer_handle: full_node.overseer_handle.clone(),
 	};
 	task_manager.add_child(full_node.task_manager);
