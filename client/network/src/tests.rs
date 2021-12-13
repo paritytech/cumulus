@@ -17,7 +17,7 @@
 use super::*;
 use cumulus_test_service::runtime::{Block, Hash, Header};
 use futures::{executor::block_on, poll, task::Poll};
-use parking_lot::{Mutex, RwLock};
+use parking_lot::Mutex;
 use polkadot_node_primitives::{SignedFullStatement, Statement};
 use polkadot_primitives::v1::{
 	Block as PBlock, CandidateCommitments, CandidateDescriptor, CommittedCandidateReceipt,
@@ -30,7 +30,7 @@ use polkadot_test_client::{
 	InitPolkadotBlockBuilder, TestClientBuilder, TestClientBuilderExt,
 };
 use sc_client_api::{Backend, BlockchainEvents};
-use sp_blockchain::HeaderBackend;
+use sp_blockchain::{BlockStatus, HeaderBackend};
 use sp_consensus::BlockOrigin;
 use sp_core::H256;
 use sp_keyring::Sr25519Keyring;
@@ -71,10 +71,6 @@ impl DummyRelayChainInterface {
 }
 
 impl RelayChainInterface<PBlock> for DummyRelayChainInterface {
-	fn get_import_lock(&self) -> &RwLock<()> {
-		self.relay_backend.get_import_lock()
-	}
-
 	fn validators(
 		&self,
 		_: &cumulus_primitives_core::relay_chain::BlockId,
@@ -184,6 +180,27 @@ impl RelayChainInterface<PBlock> for DummyRelayChainInterface {
 		_: &Vec<Vec<u8>>,
 	) -> Result<Option<sc_client_api::StorageProof>, Box<dyn sp_state_machine::Error>> {
 		unimplemented!("Not needed for test")
+	}
+
+	fn check_block_in_chain(
+		&self,
+		block_id: polkadot_service::BlockId,
+	) -> Result<Option<sc_client_api::ImportNotifications<PBlock>>, sp_blockchain::Error> {
+		let _lock = self.relay_backend.get_import_lock();
+
+		match self.relay_backend.blockchain().status(block_id) {
+			Ok(BlockStatus::InChain) => return Ok(None),
+			Err(err) => return Err(err),
+			_ => {},
+		}
+
+		let listener = self.relay_client.import_notification_stream();
+
+		// Now it is safe to drop the lock, even when the block is now imported, it should show
+		// up in our registered listener.
+		drop(_lock);
+
+		Ok(Some(listener))
 	}
 }
 

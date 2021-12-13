@@ -1852,6 +1852,7 @@ version = "0.1.0"
 dependencies = [
  "cumulus-primitives-core",
  "enum_dispatch",
+ "futures 0.3.18",
  "parking_lot 0.11.2",
  "polkadot-client",
  "polkadot-service",

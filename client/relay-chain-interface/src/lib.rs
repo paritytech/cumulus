@@ -10,7 +10,6 @@ use cumulus_primitives_core::{
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use parking_lot::RwLock;
 use polkadot_client::{ClientHandle, ExecuteWithClient, FullBackend};
 use polkadot_service::{
 	AuxStore, BabeApi, CollatorPair, Configuration, Handle, NewFull, Role, TaskManager,
@@ -30,8 +29,6 @@ const LOG_TARGET: &str = "relay-chain-interface";
 /// Should be used for all interaction with the relay chain in cumulus.
 pub trait RelayChainInterface<Block: BlockT> {
 	fn get_storage_by_key(&self, block_id: &BlockId, key: &[u8]) -> Option<StorageValue>;
-
-	fn get_import_lock(&self) -> &RwLock<()>;
 
 	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError>;
 
@@ -75,7 +72,16 @@ pub trait RelayChainInterface<Block: BlockT> {
 	fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError>;
 
 	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<Block>;
+
+	/// Check if block is in chain. If it is, we return nothing.
+	/// If it is not in the chain, we return a listener that can be used to wait on the block.
+	fn check_block_in_chain(
+		&self,
+		block_id: BlockId,
+	) -> Result<Option<sc_client_api::ImportNotifications<Block>>, sp_blockchain::Error>;
+
 	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<Block>;
+
 	fn storage_changes_notification_stream(
 		&self,
 		filter_keys: Option<&[sc_client_api::StorageKey]>,
@@ -223,10 +229,6 @@ where
 		self.backend.blockchain().status(block_id)
 	}
 
-	fn get_import_lock(&self) -> &RwLock<()> {
-		self.backend.get_import_lock()
-	}
-
 	fn is_major_syncing(&self) -> bool {
 		let mut network = self.network.lock().unwrap();
 		network.is_major_syncing()
@@ -293,6 +295,27 @@ where
 				.map(|v| Some(v)),
 			None => Ok(None),
 		}
+	}
+
+	fn check_block_in_chain(
+		&self,
+		block_id: BlockId,
+	) -> Result<Option<sc_client_api::ImportNotifications<Block>>, sp_blockchain::Error> {
+		let _lock = self.backend.get_import_lock();
+
+		match self.backend.blockchain().status(block_id) {
+			Ok(BlockStatus::InChain) => return Ok(None),
+			Err(err) => return Err(err),
+			_ => {},
+		}
+
+		let listener = self.full_client.import_notification_stream();
+
+		// Now it is safe to drop the lock, even when the block is now imported, it should show
+		// up in our registered listener.
+		drop(_lock);
+
+		Ok(Some(listener))
 	}
 }
 
@@ -410,10 +433,6 @@ where
 		(**self).block_status(block_id)
 	}
 
-	fn get_import_lock(&self) -> &RwLock<()> {
-		(**self).get_import_lock()
-	}
-
 	fn is_major_syncing(&self) -> bool {
 		(**self).is_major_syncing()
 	}
@@ -432,6 +451,13 @@ where
 		relevant_keys: &Vec<Vec<u8>>,
 	) -> Result<Option<StorageProof>, Box<dyn sp_state_machine::Error>> {
 		(**self).prove_read(block_id, relevant_keys)
+	}
+
+	fn check_block_in_chain(
+		&self,
+		block_id: BlockId,
+	) -> Result<Option<sc_client_api::ImportNotifications<Block>>, sp_blockchain::Error> {
+		(**self).check_block_in_chain(block_id)
 	}
 }
 

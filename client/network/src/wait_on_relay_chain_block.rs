@@ -19,7 +19,7 @@
 use cumulus_relay_chain_interface::RelayChainInterface;
 use futures::{future::ready, Future, FutureExt, StreamExt};
 use polkadot_primitives::v1::{Block as PBlock, Hash as PHash};
-use sc_client_api::blockchain::{self, BlockStatus};
+use sc_client_api::blockchain::{self};
 use sp_consensus::SyncOracle;
 use sp_runtime::generic::BlockId;
 use std::time::Duration;
@@ -90,18 +90,12 @@ where
 		&self,
 		hash: PHash,
 	) -> impl Future<Output = Result<(), Error>> {
-		let _lock = self.relay_chain_interface.get_import_lock().read();
-
-		match self.relay_chain_interface.block_status(BlockId::Hash(hash)) {
-			Ok(BlockStatus::InChain) => return ready(Ok(())).boxed(),
-			Err(err) => return ready(Err(Error::BlockchainError(hash, err))).boxed(),
-			_ => {},
-		}
-
-		let mut listener = self.relay_chain_interface.import_notification_stream();
-		// Now it is safe to drop the lock, even when the block is now imported, it should show
-		// up in our registered listener.
-		drop(_lock);
+		let mut listener =
+			match self.relay_chain_interface.check_block_in_chain(BlockId::Hash(hash)) {
+				Ok(Some(listener)) => listener,
+				Ok(None) => return ready(Ok(())).boxed(),
+				Err(err) => return ready(Err(Error::BlockchainError(hash, err))).boxed(),
+			};
 
 		let mut timeout = futures_timer::Delay::new(Duration::from_secs(TIMEOUT_IN_SECONDS)).fuse();
 
