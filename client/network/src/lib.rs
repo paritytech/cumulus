@@ -328,7 +328,8 @@ where
 	}
 }
 
-impl<Block: BlockT, RCInterface> BlockAnnounceValidatorT<Block> for BlockAnnounceValidator<Block, RCInterface>
+impl<Block: BlockT, RCInterface> BlockAnnounceValidatorT<Block>
+	for BlockAnnounceValidator<Block, RCInterface>
 where
 	RCInterface: RelayChainInterface + Clone + 'static,
 {
