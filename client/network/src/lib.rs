@@ -136,7 +136,7 @@ impl BlockAnnounceData {
 		relay_chain_client: &RCInterface,
 	) -> Result<Validation, BlockAnnounceError>
 	where
-		RCInterface: RelayChainInterface<PBlock> + Send + Sync + 'static,
+		RCInterface: RelayChainInterface + 'static,
 	{
 		let validator_index = self.statement.unchecked_validator_index();
 
@@ -247,13 +247,13 @@ where
 	}
 }
 
-impl<Block: BlockT, R> BlockAnnounceValidator<Block, R>
+impl<Block: BlockT, RCInterface> BlockAnnounceValidator<Block, RCInterface>
 where
-	R: RelayChainInterface<PBlock> + Clone,
+	RCInterface: RelayChainInterface + Clone,
 {
 	/// Get the included block of the given parachain in the relay chain.
 	fn included_block(
-		relay_chain_interface: &R,
+		relay_chain_interface: &RCInterface,
 		block_id: &BlockId<PBlock>,
 		para_id: ParaId,
 	) -> Result<Block::Header, BoxedError> {
@@ -275,7 +275,7 @@ where
 
 	/// Get the backed block hash of the given parachain in the relay chain.
 	fn backed_block_hash(
-		relay_chain_interface: &R,
+		relay_chain_interface: &RCInterface,
 		block_id: &BlockId<PBlock>,
 		para_id: ParaId,
 	) -> Result<Option<PHash>, BoxedError> {
@@ -328,9 +328,9 @@ where
 	}
 }
 
-impl<Block: BlockT, P> BlockAnnounceValidatorT<Block> for BlockAnnounceValidator<Block, P>
+impl<Block: BlockT, RCInterface> BlockAnnounceValidatorT<Block> for BlockAnnounceValidator<Block, RCInterface>
 where
-	P: RelayChainInterface<PBlock> + Clone + Send + Sync + 'static,
+	RCInterface: RelayChainInterface + Clone + 'static,
 {
 	fn validate(
 		&mut self,
@@ -389,7 +389,7 @@ pub fn build_block_announce_validator<Block: BlockT, RCInterface>(
 	para_id: ParaId,
 ) -> Box<dyn BlockAnnounceValidatorT<Block> + Send>
 where
-	RCInterface: RelayChainInterface<PBlock> + Clone + Send + Sync + 'static,
+	RCInterface: RelayChainInterface + Clone + 'static,
 {
 	BlockAnnounceValidatorBuilder::new(relay_chain_interface, para_id).build()
 }
@@ -405,7 +405,7 @@ struct BlockAnnounceValidatorBuilder<Block, RCInterface> {
 
 impl<Block: BlockT, RCInterface> BlockAnnounceValidatorBuilder<Block, RCInterface>
 where
-	RCInterface: RelayChainInterface<PBlock> + Clone + Send + Sync + 'static,
+	RCInterface: RelayChainInterface + Clone + 'static,
 {
 	/// Create a new instance of the builder.
 	fn new(relay_chain_interface: RCInterface, para_id: ParaId) -> Self {

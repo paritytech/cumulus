@@ -18,8 +18,8 @@
 
 use cumulus_relay_chain_interface::RelayChainInterface;
 use futures::{future::ready, Future, FutureExt, StreamExt};
-use polkadot_primitives::v1::{Block as PBlock, Hash as PHash};
-use sc_client_api::blockchain::{self};
+use polkadot_primitives::v1::Hash as PHash;
+use sc_client_api::blockchain;
 use sp_runtime::generic::BlockId;
 use std::time::Duration;
 
@@ -83,7 +83,7 @@ impl<RCInterface> WaitOnRelayChainBlock<RCInterface> {
 
 impl<RCInterface> WaitOnRelayChainBlock<RCInterface>
 where
-	RCInterface: RelayChainInterface<PBlock>,
+	RCInterface: RelayChainInterface,
 {
 	pub fn wait_on_relay_chain_block(
 		&self,
@@ -122,13 +122,14 @@ mod tests {
 	use super::*;
 
 	use cumulus_relay_chain_interface::RelayChainLocal;
+	use polkadot_primitives::v1::Block as PBlock;
 	use polkadot_test_client::{
 		construct_transfer_extrinsic, BlockBuilderExt, Client, ClientBlockImportExt,
 		DefaultTestClientBuilderExt, ExecutionStrategy, InitPolkadotBlockBuilder,
 		TestClientBuilder, TestClientBuilderExt,
 	};
 	use sc_service::Arc;
-	use sp_consensus::BlockOrigin;
+	use sp_consensus::{BlockOrigin, SyncOracle};
 	use sp_runtime::traits::Block as BlockT;
 
 	use futures::{executor::block_on, poll, task::Poll};

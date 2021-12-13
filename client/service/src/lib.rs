@@ -22,7 +22,7 @@ use core::time::Duration;
 use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
 use cumulus_relay_chain_interface::RelayChainInterface;
-use polkadot_primitives::v1::{Block as PBlock, CollatorPair};
+use polkadot_primitives::v1::CollatorPair;
 use sc_client_api::{
 	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, UsageProvider,
 };
@@ -93,7 +93,7 @@ where
 	Client::Api: CollectCollationInfo<Block>,
 	for<'b> &'b Client: BlockImport<Block>,
 	Spawner: SpawnNamed + Clone + Send + Sync + 'static,
-	RCInterface: RelayChainInterface<PBlock> + Send + Sync + Clone + 'static,
+	RCInterface: RelayChainInterface + Clone + 'static,
 	Backend: BackendT<Block> + 'static,
 	IQ: ImportQueue<Block> + 'static,
 {
@@ -173,7 +173,7 @@ where
 		+ 'static,
 	for<'a> &'a Client: BlockImport<Block>,
 	Backend: BackendT<Block> + 'static,
-	RCInterface: RelayChainInterface<PBlock> + Sync + Send + Clone + 'static,
+	RCInterface: RelayChainInterface + Clone + 'static,
 {
 	let consensus = cumulus_client_consensus_common::run_parachain_consensus(
 		para_id,

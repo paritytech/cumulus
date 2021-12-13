@@ -53,7 +53,7 @@ use sp_runtime::{
 use polkadot_node_primitives::{AvailableData, POV_BOMB_LIMIT};
 use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::v1::{
-	Block as PBlock, CandidateReceipt, CommittedCandidateReceipt, Id as ParaId, SessionIndex,
+	CandidateReceipt, CommittedCandidateReceipt, Id as ParaId, SessionIndex,
 };
 
 use cumulus_primitives_core::ParachainBlockData;
@@ -105,10 +105,10 @@ pub struct PoVRecovery<Block: BlockT, PC, IQ, RC> {
 	para_id: ParaId,
 }
 
-impl<Block: BlockT, PC, IQ, RC> PoVRecovery<Block, PC, IQ, RC>
+impl<Block: BlockT, PC, IQ, RCInterface> PoVRecovery<Block, PC, IQ, RCInterface>
 where
 	PC: BlockBackend<Block> + BlockchainEvents<Block> + UsageProvider<Block>,
-	RC: RelayChainInterface<PBlock> + Send + Sync + Clone,
+	RCInterface: RelayChainInterface + Clone,
 	IQ: ImportQueue<Block>,
 {
 	/// Create a new instance.
@@ -117,7 +117,7 @@ where
 		relay_chain_slot_duration: Duration,
 		parachain_client: Arc<PC>,
 		parachain_import_queue: IQ,
-		relay_chain_interface: RC,
+		relay_chain_interface: RCInterface,
 		para_id: ParaId,
 	) -> Self {
 		Self {
@@ -418,7 +418,7 @@ where
 
 /// Returns a stream over pending candidates for the parachain corresponding to `para_id`.
 fn pending_candidates(
-	relay_chain_client: impl RelayChainInterface<PBlock>,
+	relay_chain_client: impl RelayChainInterface,
 	para_id: ParaId,
 ) -> impl Stream<Item = (CommittedCandidateReceipt, SessionIndex)> {
 	relay_chain_client.import_notification_stream().filter_map(move |n| {

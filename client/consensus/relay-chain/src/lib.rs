@@ -37,7 +37,7 @@ use cumulus_client_consensus_common::{
 	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
 use cumulus_primitives_core::{
-	relay_chain::v1::{Block as PBlock, Hash as PHash},
+	relay_chain::v1::Hash as PHash,
 	ParaId, PersistedValidationData,
 };
 use cumulus_relay_chain_interface::RelayChainInterface;
@@ -85,7 +85,7 @@ where
 impl<B, PF, BI, RCInterface, CIDP> RelayChainConsensus<B, PF, BI, RCInterface, CIDP>
 where
 	B: BlockT,
-	RCInterface: RelayChainInterface<PBlock>,
+	RCInterface: RelayChainInterface,
 	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)>,
 {
 	/// Create a new instance of relay-chain provided consensus.
@@ -146,7 +146,7 @@ impl<B, PF, BI, RCInterface, CIDP> ParachainConsensus<B>
 	for RelayChainConsensus<B, PF, BI, RCInterface, CIDP>
 where
 	B: BlockT,
-	RCInterface: RelayChainInterface<PBlock> + Send + Sync + Clone,
+	RCInterface: RelayChainInterface + Clone,
 	BI: BlockImport<B> + Send + Sync,
 	PF: Environment<B> + Send + Sync,
 	PF::Proposer: Proposer<
@@ -252,7 +252,7 @@ where
 	>,
 	BI: BlockImport<Block> + Send + Sync + 'static,
 	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)> + 'static,
-	RCInterface: RelayChainInterface<PBlock> + Clone + Send + Sync + 'static,
+	RCInterface: RelayChainInterface + Clone + 'static,
 {
 	Box::new(RelayChainConsensus::new(
 		para_id,

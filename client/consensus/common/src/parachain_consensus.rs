@@ -368,9 +368,9 @@ where
 	}
 }
 
-impl<T> RelaychainClient for T
+impl<RCInterface> RelaychainClient for RCInterface
 where
-	T: RelayChainInterface<PBlock> + Send + Sync + Clone + 'static,
+	RCInterface: RelayChainInterface + Clone + 'static,
 {
 	type Error = ClientError;
 

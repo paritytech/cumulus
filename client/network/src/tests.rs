@@ -70,7 +70,7 @@ impl DummyRelayChainInterface {
 	}
 }
 
-impl RelayChainInterface<PBlock> for DummyRelayChainInterface {
+impl RelayChainInterface for DummyRelayChainInterface {
 	fn validators(
 		&self,
 		_: &cumulus_primitives_core::relay_chain::BlockId,

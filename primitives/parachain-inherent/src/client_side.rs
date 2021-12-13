@@ -19,7 +19,7 @@
 use crate::ParachainInherentData;
 use codec::Decode;
 use cumulus_primitives_core::{
-	relay_chain::{self, v1::HrmpChannelId, Block as PBlock, Hash as PHash},
+	relay_chain::{self, v1::HrmpChannelId, Hash as PHash},
 	ParaId, PersistedValidationData,
 };
 use cumulus_relay_chain_interface::RelayChainInterface;
@@ -30,7 +30,7 @@ const LOG_TARGET: &str = "parachain-inherent";
 /// Collect the relevant relay chain state in form of a proof for putting it into the validation
 /// data inherent.
 fn collect_relay_storage_proof(
-	relay_chain_interface: &impl RelayChainInterface<PBlock>,
+	relay_chain_interface: &impl RelayChainInterface,
 	para_id: ParaId,
 	relay_parent: PHash,
 ) -> Option<sp_state_machine::StorageProof> {
@@ -96,15 +96,12 @@ impl ParachainInherentData {
 	/// Create the [`ParachainInherentData`] at the given `relay_parent`.
 	///
 	/// Returns `None` if the creation failed.
-	pub fn create_at<RCInterface>(
+	pub fn create_at(
 		relay_parent: PHash,
-		relay_chain_interface: &RCInterface,
+		relay_chain_interface: &impl RelayChainInterface,
 		validation_data: &PersistedValidationData,
 		para_id: ParaId,
-	) -> Option<ParachainInherentData>
-	where
-		RCInterface: RelayChainInterface<PBlock>,
-	{
+	) -> Option<ParachainInherentData> {
 		let relay_chain_state =
 			collect_relay_storage_proof(relay_chain_interface, para_id, relay_parent)?;
 

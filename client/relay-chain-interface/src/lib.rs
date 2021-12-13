@@ -34,7 +34,7 @@ use sc_client_api::{
 	blockchain::BlockStatus, Backend, BlockchainEvents, HeaderBackend, StorageProof, UsageProvider,
 };
 use sc_telemetry::TelemetryWorkerHandle;
-use sp_api::{ApiError, BlockT, ProvideRuntimeApi};
+use sp_api::{ApiError, ProvideRuntimeApi};
 use sp_consensus::SyncOracle;
 use sp_core::{sp_std::collections::btree_map::BTreeMap, Pair};
 use sp_state_machine::{Backend as StateBackend, StorageValue};
@@ -43,7 +43,7 @@ use std::sync::Mutex;
 const LOG_TARGET: &str = "relay-chain-interface";
 
 /// Should be used for all interaction with the relay chain in cumulus.
-pub trait RelayChainInterface<Block: BlockT> {
+pub trait RelayChainInterface: Send + Sync {
 	fn get_storage_by_key(&self, block_id: &BlockId, key: &[u8]) -> Option<StorageValue>;
 
 	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError>;
@@ -87,16 +87,16 @@ pub trait RelayChainInterface<Block: BlockT> {
 
 	fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError>;
 
-	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<Block>;
+	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<PBlock>;
 
 	/// Check if block is in chain. If it is, we return nothing.
 	/// If it is not in the chain, we return a listener that can be used to wait on the block.
 	fn check_block_in_chain(
 		&self,
 		block_id: BlockId,
-	) -> Result<Option<sc_client_api::ImportNotifications<Block>>, sp_blockchain::Error>;
+	) -> Result<Option<sc_client_api::ImportNotifications<PBlock>>, sp_blockchain::Error>;
 
-	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<Block>;
+	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<PBlock>;
 
 	fn storage_changes_notification_stream(
 		&self,
@@ -104,7 +104,7 @@ pub trait RelayChainInterface<Block: BlockT> {
 		child_filter_keys: Option<
 			&[(sc_client_api::StorageKey, Option<Vec<sc_client_api::StorageKey>>)],
 		>,
-	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<Block::Hash>>;
+	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<PHash>>;
 
 	fn is_major_syncing(&self) -> bool;
 
@@ -137,11 +137,15 @@ impl<T> Clone for RelayChainLocal<T> {
 	}
 }
 
-impl<Client, Block> RelayChainInterface<Block> for RelayChainLocal<Client>
+impl<Client> RelayChainInterface for RelayChainLocal<Client>
 where
-	Client: ProvideRuntimeApi<PBlock> + BlockchainEvents<Block> + AuxStore + UsageProvider<PBlock>,
+	Client: ProvideRuntimeApi<PBlock>
+		+ BlockchainEvents<PBlock>
+		+ AuxStore
+		+ UsageProvider<PBlock>
+		+ Sync
+		+ Send,
 	Client::Api: ParachainHost<PBlock> + BabeApi<PBlock>,
-	Block: BlockT,
 {
 	fn retrieve_dmq_contents(
 		&self,
@@ -218,11 +222,11 @@ where
 		self.full_client.runtime_api().validators(block_id)
 	}
 
-	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<Block> {
+	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<PBlock> {
 		self.full_client.import_notification_stream()
 	}
 
-	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<Block> {
+	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<PBlock> {
 		self.full_client.finality_notification_stream()
 	}
 
@@ -232,7 +236,7 @@ where
 		child_filter_keys: Option<
 			&[(sc_client_api::StorageKey, Option<Vec<sc_client_api::StorageKey>>)],
 		>,
-	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<Block::Hash>> {
+	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<PHash>> {
 		self.full_client
 			.storage_changes_notification_stream(filter_keys, child_filter_keys)
 	}
@@ -316,7 +320,7 @@ where
 	fn check_block_in_chain(
 		&self,
 		block_id: BlockId,
-	) -> Result<Option<sc_client_api::ImportNotifications<Block>>, sp_blockchain::Error> {
+	) -> Result<Option<sc_client_api::ImportNotifications<PBlock>>, sp_blockchain::Error> {
 		let _lock = self.backend.get_import_lock();
 
 		match self.backend.blockchain().status(block_id) {
@@ -349,13 +353,13 @@ pub struct RelayChainLocalBuilder {
 }
 
 impl RelayChainLocalBuilder {
-	pub fn build(self) -> Arc<dyn RelayChainInterface<PBlock> + Sync + Send> {
+	pub fn build(self) -> Arc<dyn RelayChainInterface> {
 		self.polkadot_client.clone().execute_with(self)
 	}
 }
 
 impl ExecuteWithClient for RelayChainLocalBuilder {
-	type Output = Arc<dyn RelayChainInterface<PBlock> + Sync + Send>;
+	type Output = Arc<dyn RelayChainInterface>;
 
 	fn execute_with_client<Client, Api, Backend>(self, client: Arc<Client>) -> Self::Output
 	where
@@ -377,10 +381,9 @@ impl ExecuteWithClient for RelayChainLocalBuilder {
 	}
 }
 
-impl<T, Block> RelayChainInterface<Block> for Arc<T>
+impl<T> RelayChainInterface for Arc<T>
 where
-	T: RelayChainInterface<Block> + ?Sized,
-	Block: BlockT,
+	T: RelayChainInterface + ?Sized,
 {
 	fn retrieve_dmq_contents(
 		&self,
@@ -423,11 +426,11 @@ where
 		(**self).validators(block_id)
 	}
 
-	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<Block> {
+	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<PBlock> {
 		(**self).import_notification_stream()
 	}
 
-	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<Block> {
+	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<PBlock> {
 		(**self).finality_notification_stream()
 	}
 
@@ -437,7 +440,7 @@ where
 		child_filter_keys: Option<
 			&[(sc_client_api::StorageKey, Option<Vec<sc_client_api::StorageKey>>)],
 		>,
-	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<Block::Hash>> {
+	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<PHash>> {
 		(**self).storage_changes_notification_stream(filter_keys, child_filter_keys)
 	}
 
@@ -472,7 +475,7 @@ where
 	fn check_block_in_chain(
 		&self,
 		block_id: BlockId,
-	) -> Result<Option<sc_client_api::ImportNotifications<Block>>, sp_blockchain::Error> {
+	) -> Result<Option<sc_client_api::ImportNotifications<PBlock>>, sp_blockchain::Error> {
 		(**self).check_block_in_chain(block_id)
 	}
 }
@@ -508,10 +511,7 @@ pub fn build_relay_chain_interface(
 	polkadot_config: Configuration,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	task_manager: &mut TaskManager,
-) -> Result<
-	(Arc<(dyn RelayChainInterface<PBlock> + Send + Sync + 'static)>, CollatorPair),
-	polkadot_service::Error,
-> {
+) -> Result<(Arc<(dyn RelayChainInterface + 'static)>, CollatorPair), polkadot_service::Error> {
 	let (full_node, collator_key) =
 		build_polkadot_full_node(polkadot_config, telemetry_worker_handle).map_err(
 			|e| match e {

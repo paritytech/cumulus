@@ -25,7 +25,7 @@ use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::{
-	relay_chain::v1::{Block as PBlock, Hash as PHash, PersistedValidationData},
+	relay_chain::v1::{Hash as PHash, PersistedValidationData},
 	ParaId,
 };
 use cumulus_relay_chain_interface::{build_relay_chain_interface, RelayChainInterface};
@@ -300,7 +300,7 @@ where
 		Option<&Registry>,
 		Option<TelemetryHandle>,
 		&TaskManager,
-		Arc<dyn RelayChainInterface<PBlock> + Sync + Send>,
+		Arc<dyn RelayChainInterface>,
 		Arc<
 			sc_transaction_pool::FullPool<
 				Block,
@@ -475,7 +475,7 @@ where
 		Option<&Registry>,
 		Option<TelemetryHandle>,
 		&TaskManager,
-		Arc<dyn RelayChainInterface<PBlock> + Sync + Send>,
+		Arc<dyn RelayChainInterface>,
 		Arc<
 			sc_transaction_pool::FullPool<
 				Block,

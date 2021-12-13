@@ -27,7 +27,7 @@ use cumulus_client_consensus_common::{
 	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
 use cumulus_primitives_core::{
-	relay_chain::v1::{Block as PBlock, Hash as PHash},
+	relay_chain::v1::Hash as PHash,
 	PersistedValidationData,
 };
 use cumulus_relay_chain_interface::RelayChainInterface;
@@ -91,7 +91,7 @@ where
 impl<B, RCInterface, CIDP> AuraConsensus<B, RCInterface, CIDP>
 where
 	B: BlockT,
-	RCInterface: RelayChainInterface<PBlock> + Clone + Send + Sync,
+	RCInterface: RelayChainInterface + Clone,
 	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)>,
 	CIDP::InherentDataProviders: InherentDataProviderExt,
 {
@@ -195,7 +195,7 @@ where
 impl<B, RCInterface, CIDP> ParachainConsensus<B> for AuraConsensus<B, RCInterface, CIDP>
 where
 	B: BlockT,
-	RCInterface: RelayChainInterface<PBlock> + Clone + Send + Sync,
+	RCInterface: RelayChainInterface + Clone,
 	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)> + Send + Sync,
 	CIDP::InherentDataProviders: InherentDataProviderExt + Send,
 {
@@ -297,7 +297,7 @@ where
 	P: Pair + Send + Sync,
 	P::Public: AppPublic + Hash + Member + Encode + Decode,
 	P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
-	RCInterface: RelayChainInterface<PBlock> + Clone + Send + Sync + 'static,
+	RCInterface: RelayChainInterface + Clone + 'static,
 {
 	Box::new(AuraConsensus::new::<P, _, _, _, _, _, _>(
 		para_client,
