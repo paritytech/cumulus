@@ -70,8 +70,8 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-		/// Something to execute an XCM message. We need this to service the XCMoXCMP queue.
-		type XcmExecutor: ExecuteXcm<Self::Call>;
+        /// The actual handler for xcm messages
+        type XcmHandler: XcmMessageHandler<Self::Call, Weight>;
 
 		/// Information on the avaialble XCMP channels.
 		type ChannelInfo: GetChannelInfo;
@@ -466,21 +466,14 @@ impl<T: Config> Pallet<T> {
 	) -> Result<Weight, XcmError> {
 		let hash = Encode::using_encoded(&xcm, T::Hashing::hash);
 		log::debug!("Processing XCMP-XCM: {:?}", &hash);
-		let (result, event) = match Xcm::<T::Call>::try_from(xcm) {
+		match Xcm::<T::Call>::try_from(xcm) {
 			Ok(xcm) => {
 				let location = (1, Parachain(sender.into()));
-				match T::XcmExecutor::execute_xcm(location, xcm, max_weight) {
-					Outcome::Error(e) => (Err(e.clone()), Event::Fail(Some(hash), e)),
-					Outcome::Complete(w) => (Ok(w), Event::Success(Some(hash))),
-					// As far as the caller is concerned, this was dispatched without error, so
-					// we just report the weight used.
-					Outcome::Incomplete(w, e) => (Ok(w), Event::Fail(Some(hash), e)),
-				}
+				let consumed = Self::XcmHandler::handle_message(location, xcm, max_weight);
+				Ok(consumed)
 			},
-			Err(()) => (Err(XcmError::UnhandledXcmVersion), Event::BadVersion(Some(hash))),
-		};
-		Self::deposit_event(event);
-		result
+			Err(()) => Err(XcmError::UnhandledXcmVersion),
+		}
 	}
 
 	fn process_xcmp_message(

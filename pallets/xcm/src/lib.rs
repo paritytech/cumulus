@@ -191,3 +191,15 @@ where
 		_ => Err(BadOrigin),
 	}
 }
+
+/// A sink that takes `VersionedXcm`'s and sends them to the specified `VersionedMultilocation`
+pub trait XcmSink<Call> {
+	fn send(recv: VersionedMultiLocation, msg: VersionedXcm<Call>) -> Result<(), ()>;
+}
+
+/// A handler that processes XCMs provided from the protocol layer. The message handler is allowed to consume at most
+/// `free_weight` Weight.
+pub trait XcmMessageHandler<Call, Weight> {
+	/// Handles the message and returns the Weight consumed by this call.
+	fn handle_message(origin: VersionedMultiLocation, msg: VersionedXcm<Call>, free_weight: Weight) -> Weight;
+}

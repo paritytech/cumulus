@@ -85,7 +85,8 @@ pub mod pallet {
 		/// The overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-		type XcmExecutor: ExecuteXcm<Self::Call>;
+		/// The actual handler for xcm messages
+		type XcmHandler: XcmMessageHandler<Self::Call, Weight>;
 
 		/// Origin which is allowed to execute overweight messages.
 		type ExecuteOverweightOrigin: EnsureOrigin<Self::Origin>;
@@ -240,16 +241,8 @@ pub mod pallet {
 					Ok(0)
 				},
 				Ok(Ok(x)) => {
-					let outcome = T::XcmExecutor::execute_xcm(Parent, x, limit);
-					match outcome {
-						Outcome::Error(XcmError::WeightLimitReached(required)) =>
-							Err((id, required)),
-						outcome => {
-							let weight_used = outcome.weight_used();
-							Self::deposit_event(Event::ExecutedDownward(id, outcome));
-							Ok(weight_used)
-						},
-					}
+					let consumed = T::XcmHandler::handle_message(Parent, x, limit);
+                    Ok(consumed)
 				},
 			}
 		}
