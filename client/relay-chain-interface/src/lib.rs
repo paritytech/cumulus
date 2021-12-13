@@ -120,10 +120,21 @@ pub trait RelayChainInterface: Send + Sync {
 /// RelayChainLocal is used to interact with a full node that is running locally
 /// in the same process.
 pub struct RelayChainLocal<Client> {
-	pub full_client: Arc<Client>,
-	pub backend: Arc<FullBackend>,
-	pub sync_oracle: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
-	pub overseer_handle: Option<Handle>,
+	full_client: Arc<Client>,
+	backend: Arc<FullBackend>,
+	sync_oracle: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
+	overseer_handle: Option<Handle>,
+}
+
+impl<Client> RelayChainLocal<Client> {
+	pub fn new(
+		full_client: Arc<Client>,
+		backend: Arc<FullBackend>,
+		sync_oracle: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
+		overseer_handle: Option<Handle>,
+	) -> Self {
+		Self { full_client, backend, sync_oracle, overseer_handle }
+	}
 }
 
 impl<T> Clone for RelayChainLocal<T> {
@@ -345,7 +356,7 @@ where
 /// The builder takes a [`polkadot_client::Client`]
 /// that wraps a concrete instance. By using [`polkadot_client::ExecuteWithClient`]
 /// the builder gets access to this concrete instance and instantiates a RelayChainLocal with it.
-pub struct RelayChainLocalBuilder {
+struct RelayChainLocalBuilder {
 	polkadot_client: polkadot_client::Client,
 	backend: Arc<FullBackend>,
 	sync_oracle: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
@@ -372,12 +383,7 @@ impl ExecuteWithClient for RelayChainLocalBuilder {
 			+ Send,
 		Client::Api: ParachainHost<PBlock> + BabeApi<PBlock>,
 	{
-		Arc::new(RelayChainLocal {
-			full_client: client,
-			backend: self.backend,
-			sync_oracle: self.sync_oracle,
-			overseer_handle: self.overseer_handle,
-		})
+		Arc::new(RelayChainLocal::new(client, self.backend, self.sync_oracle, self.overseer_handle))
 	}
 }
 
@@ -482,7 +488,7 @@ where
 
 /// Build the Polkadot full node using the given `config`.
 #[sc_tracing::logging::prefix_logs_with("Relaychain")]
-pub fn build_polkadot_full_node(
+fn build_polkadot_full_node(
 	config: Configuration,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 ) -> Result<(NewFull<polkadot_client::Client>, CollatorPair), polkadot_service::Error> {

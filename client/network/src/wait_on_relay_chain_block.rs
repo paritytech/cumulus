@@ -159,12 +159,12 @@ mod tests {
 		(
 			client.clone(),
 			block,
-			RelayChainLocal {
-				full_client: client,
-				backend: backend.clone(),
-				sync_oracle: Arc::new(Mutex::new(dummy_network)),
-				overseer_handle: None,
-			},
+			RelayChainLocal::new(
+				client,
+				backend.clone(),
+				Arc::new(Mutex::new(dummy_network)),
+				None,
+			),
 		)
 	}
 
