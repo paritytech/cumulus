@@ -78,6 +78,7 @@ impl system::Config for Test {
 	type SystemWeightInfo = ();
 	type SS58Prefix = SS58Prefix;
 	type OnSetCode = ();
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -145,7 +146,7 @@ impl From<UintAuthorityId> for MockSessionKeys {
 }
 
 parameter_types! {
-	pub static SessionHandlerCollators: Vec<u64> = vec![];
+	pub static SessionHandlerCollators: Vec<u64> = Vec::new();
 	pub static SessionChangeBlock: u64 = 0;
 }
 
@@ -249,6 +250,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 pub fn initialize_to_block(n: u64) {
 	for i in System::block_number() + 1..=n {
 		System::set_block_number(i);
-		<AllPallets as frame_support::traits::OnInitialize<u64>>::on_initialize(i);
+		<AllPalletsWithSystem as frame_support::traits::OnInitialize<u64>>::on_initialize(i);
 	}
 }

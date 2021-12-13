@@ -1,8 +1,8 @@
 [package]
-name = 'rococo-runtime'
-version = '0.1.0'
+name = "rococo-parachain-runtime"
+version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = '2018'
+edition = "2021"
 description = "Simple runtime used by the rococo parachain(s)"
 
 [dependencies]
@@ -10,7 +10,7 @@ codec = { package = "parity-scale-codec", version = "2.3.0", default-features = 
 log = { version = "0.4.14", default-features = false }
 parachain-info = { path = "../pallets/parachain-info", default-features = false }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
-serde = { version = "1.0.101", optional = true, features = ["derive"] }
+serde = { version = "1.0.131", optional = true, features = ["derive"] }
 
 # Substrate dependencies
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -32,7 +32,6 @@ frame-system = { git = "https://github.com/paritytech/substrate", default-featur
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -85,7 +84,6 @@ std = [
 	"frame-system/std",
 	"pallet-assets/std",
 	"pallet-balances/std",
-	"pallet-randomness-collective-flip/std",
 	"pallet-timestamp/std",
 	"pallet-sudo/std",
 	"pallet-transaction-payment/std",

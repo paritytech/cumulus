@@ -7,7 +7,6 @@ members = [
 	"client/network",
 	"client/pov-recovery",
 	"client/service",
-	"pallets/asset-tx-payment",
 	"pallets/aura-ext",
 	"pallets/collator-selection",
 	"pallets/dmp-queue",
@@ -25,7 +24,7 @@ members = [
 	"polkadot-parachains/",
 	"polkadot-parachains/pallets/parachain-info",
 	"polkadot-parachains/pallets/ping",
-	"polkadot-parachains/rococo",
+	"polkadot-parachains/rococo-parachain",
 	"polkadot-parachains/shell",
 	"polkadot-parachains/parachains-common",
 	"polkadot-parachains/statemint",
@@ -35,7 +34,6 @@ members = [
 	"test/relay-sproof-builder",
 	"test/relay-validation-worker-provider",
 	"test/runtime",
-	"test/runtime-upgrade",
 	"test/service",
 ]
 
