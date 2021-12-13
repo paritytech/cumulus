@@ -38,7 +38,7 @@ use sp_version::RuntimeVersion;
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{Everything, IsInVec, Randomness},
+	traits::{EnsureOneOf, Everything, IsInVec, Randomness},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -47,7 +47,7 @@ pub use frame_support::{
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureOneOf, EnsureRoot,
+	EnsureRoot,
 };
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
@@ -188,13 +188,14 @@ impl frame_system::Config for Runtime {
 	type AccountData = pallet_balances::AccountData<Balance>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
-	type DbWeight = ();
+	type DbWeight = RocksDbWeight;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type SystemWeightInfo = ();
 	type BlockWeights = RuntimeBlockWeights;
 	type BlockLength = RuntimeBlockLength;
 	type SS58Prefix = SS58Prefix;
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -231,8 +232,6 @@ impl pallet_balances::Config for Runtime {
 	type MaxReserves = MaxReserves;
 	type ReserveIdentifier = [u8; 8];
 }
-
-impl pallet_randomness_collective_flip::Config for Runtime {}
 
 parameter_types! {
 	pub const OperationalFeeMultiplier: u8 = 5;
@@ -354,8 +353,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 parameter_types! {
-	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
-	pub UnitWeightCost: Weight = 1_000_000;
+	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
+	pub UnitWeightCost: Weight = 1_000_000_000;
 	// One ROC buys 1 second of weight.
 	pub const WeightPrice: (MultiLocation, u128) = (MultiLocation::parent(), ROC);
 	pub const MaxInstructions: u32 = 100;
@@ -449,6 +448,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = ();
+	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -466,6 +466,7 @@ impl cumulus_ping::Config for Runtime {
 
 parameter_types! {
 	pub const AssetDeposit: Balance = 1 * ROC;
+	pub const AssetAccountDeposit: Balance = 1 * ROC;
 	pub const ApprovalDeposit: Balance = 100 * MILLIROC;
 	pub const AssetsStringLimit: u32 = 50;
 	pub const MetadataDepositBase: Balance = 1 * ROC;
@@ -475,11 +476,8 @@ parameter_types! {
 }
 
 /// A majority of the Unit body from Rococo over XCM is our required administration origin.
-pub type AdminOrigin = EnsureOneOf<
-	AccountId,
-	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<RocLocation, UnitBody>>,
->;
+pub type AdminOrigin =
+	EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<RocLocation, UnitBody>>>;
 
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
@@ -495,6 +493,7 @@ impl pallet_assets::Config for Runtime {
 	type Freezer = ();
 	type Extra = ();
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+	type AssetAccountDeposit = AssetAccountDeposit;
 }
 
 impl pallet_aura::Config for Runtime {
@@ -512,7 +511,6 @@ construct_runtime! {
 		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>},
-		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 
 		ParachainSystem: cumulus_pallet_parachain_system::{
@@ -561,6 +559,7 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
+	frame_system::CheckNonZeroSender<Runtime>,
 	frame_system::CheckSpecVersion<Runtime>,
 	frame_system::CheckGenesis<Runtime>,
 	frame_system::CheckEra<Runtime>,
@@ -578,8 +577,19 @@ pub type Executive = frame_executive::Executive<
 	Block,
 	frame_system::ChainContext<Runtime>,
 	Runtime,
-	AllPallets,
+	AllPalletsWithSystem,
+	RemoveCollectiveFlip,
 >;
+
+pub struct RemoveCollectiveFlip;
+impl frame_support::traits::OnRuntimeUpgrade for RemoveCollectiveFlip {
+	fn on_runtime_upgrade() -> Weight {
+		use frame_support::storage::migration;
+		// Remove the storage value `RandomMaterial` from removed pallet `RandomnessCollectiveFlip`
+		migration::remove_storage_prefix(b"RandomnessCollectiveFlip", b"RandomMaterial", b"");
+		<Runtime as frame_system::Config>::DbWeight::get().writes(1)
+	}
+}
 
 impl_runtime_apis! {
 	impl sp_api::Core<Block> for Runtime {

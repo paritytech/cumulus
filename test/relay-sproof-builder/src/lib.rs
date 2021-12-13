@@ -121,7 +121,7 @@ impl RelayStateSproofBuilder {
 		let state_version = Default::default(); // for test using default.
 		let mut backend = sp_state_machine::TrieBackend::new(db, root);
 
-		let mut relevant_keys = vec![];
+		let mut relevant_keys = Vec::new();
 		{
 			use codec::Encode as _;
 

@@ -16,7 +16,7 @@
 
 use cumulus_primitives_core::ParaId;
 use cumulus_test_service::{initial_head_data, run_relay_chain_validator_node, Keyring::*};
-use futures::{join, StreamExt};
+use futures::StreamExt;
 use sc_client_api::BlockchainEvents;
 use sp_runtime::generic::BlockId;
 
@@ -31,7 +31,7 @@ async fn test_runtime_upgrade() {
 	let tokio_handle = tokio::runtime::Handle::current();
 
 	// start alice
-	let alice = run_relay_chain_validator_node(tokio_handle.clone(), Alice, || {}, vec![]);
+	let alice = run_relay_chain_validator_node(tokio_handle.clone(), Alice, || {}, Vec::new());
 
 	// start bob
 	let bob =
@@ -73,17 +73,11 @@ async fn test_runtime_upgrade() {
 		.expect("Runtime version exists");
 	expected_runtime_version.spec_version += 1;
 
-	// Replace the runtime version in the WASM blob to make it look like a new runtime.
-	let wasm = sp_maybe_compressed_blob::decompress(
-		cumulus_test_runtime_upgrade::WASM_BINARY.unwrap(),
-		sp_maybe_compressed_blob::CODE_BLOB_BOMB_LIMIT,
-	)
-	.expect("Decompressing the WASM blob works");
-	let wasm = sp_version::embed::embed_runtime_version(&wasm, expected_runtime_version.clone())
-		.expect("Embedding the runtime version works");
+	let wasm = cumulus_test_runtime::wasm_spec_version_incremented::WASM_BINARY
+		.expect("Wasm binary with incremented spec version should have been built");
 
 	// schedule runtime upgrade
-	charlie.schedule_upgrade(wasm).await.unwrap();
+	charlie.schedule_upgrade(wasm.into()).await.unwrap();
 
 	let mut import_stream = dave.client.import_notification_stream();
 
@@ -99,11 +93,4 @@ async fn test_runtime_upgrade() {
 			}
 		}
 	}
-
-	join!(
-		alice.task_manager.clean_shutdown(),
-		bob.task_manager.clean_shutdown(),
-		charlie.task_manager.clean_shutdown(),
-		dave.task_manager.clean_shutdown(),
-	);
 }

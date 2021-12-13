@@ -1,8 +1,8 @@
 [package]
-name = 'shell-runtime'
-version = '0.1.0'
+name = "shell-runtime"
+version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = '2018'
+edition = "2021"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive"] }
@@ -27,6 +27,9 @@ sp-inherents = { git = "https://github.com/paritytech/substrate", default-featur
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+
+# try-runtime stuff.
+frame-try-runtime = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false, optional = true }
 
 # Cumulus dependencies
 cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false }
@@ -71,4 +74,8 @@ std = [
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
+]
+try-runtime = [
+	"frame-try-runtime",
+	"frame-executive/try-runtime",
 ]

@@ -30,6 +30,10 @@ pub type ChainSpec =
 /// Specialized `ChainSpec` for the shell parachain runtime.
 pub type ShellChainSpec = sc_service::GenericChainSpec<shell_runtime::GenesisConfig, Extensions>;
 
+/// Specialized `ChainSpec` for the seedling parachain runtime.
+pub type SeedlingChainSpec =
+	sc_service::GenericChainSpec<seedling_runtime::GenesisConfig, Extensions>;
+
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
 	TPublic::Pair::from_string(&format!("//{}", seed), None)
@@ -64,7 +68,7 @@ where
 	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
 
-pub fn get_chain_spec(id: ParaId) -> ChainSpec {
+pub fn get_chain_spec() -> ChainSpec {
 	ChainSpec::from_genesis(
 		"Local Testnet",
 		"local_testnet",
@@ -87,32 +91,51 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				id,
+				1000.into(),
 			)
 		},
-		vec![],
+		Vec::new(),
 		None,
 		None,
 		None,
-		Extensions { relay_chain: "westend".into(), para_id: id.into() },
+		Extensions { relay_chain: "westend".into(), para_id: 1000 },
 	)
 }
 
-pub fn get_shell_chain_spec(id: ParaId) -> ShellChainSpec {
+pub fn get_shell_chain_spec() -> ShellChainSpec {
 	ShellChainSpec::from_genesis(
 		"Shell Local Testnet",
 		"shell_local_testnet",
 		ChainType::Local,
-		move || shell_testnet_genesis(id),
-		vec![],
+		move || shell_testnet_genesis(1000.into()),
+		Vec::new(),
 		None,
 		None,
 		None,
-		Extensions { relay_chain: "westend".into(), para_id: id.into() },
+		Extensions { relay_chain: "westend".into(), para_id: 1000 },
 	)
 }
 
-pub fn staging_test_net(id: ParaId) -> ChainSpec {
+pub fn get_seedling_chain_spec() -> SeedlingChainSpec {
+	SeedlingChainSpec::from_genesis(
+		"Seedling Local Testnet",
+		"seedling_local_testnet",
+		ChainType::Local,
+		move || {
+			seedling_testnet_genesis(
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				2000.into(),
+			)
+		},
+		Vec::new(),
+		None,
+		None,
+		None,
+		Extensions { relay_chain: "westend".into(), para_id: 2000 },
+	)
+}
+
+pub fn staging_test_net() -> ChainSpec {
 	ChainSpec::from_genesis(
 		"Staging Testnet",
 		"staging_testnet",
@@ -131,14 +154,14 @@ pub fn staging_test_net(id: ParaId) -> ChainSpec {
 				vec![
 					hex!["9ed7705e3c7da027ba0583a22a3212042f7e715d3c168ba14f1424e2bc111d00"].into()
 				],
-				id,
+				1000.into(),
 			)
 		},
 		Vec::new(),
 		None,
 		None,
 		None,
-		Extensions { relay_chain: "westend".into(), para_id: id.into() },
+		Extensions { relay_chain: "westend".into(), para_id: 1000 },
 	)
 }
 
@@ -153,7 +176,6 @@ fn testnet_genesis(
 			code: rococo_parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			changes_trie_config: Default::default(),
 		},
 		balances: rococo_parachain_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
@@ -172,9 +194,24 @@ fn shell_testnet_genesis(parachain_id: ParaId) -> shell_runtime::GenesisConfig {
 			code: shell_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			changes_trie_config: Default::default(),
 		},
 		parachain_info: shell_runtime::ParachainInfoConfig { parachain_id },
+		parachain_system: Default::default(),
+	}
+}
+
+fn seedling_testnet_genesis(
+	root_key: AccountId,
+	parachain_id: ParaId,
+) -> seedling_runtime::GenesisConfig {
+	seedling_runtime::GenesisConfig {
+		system: seedling_runtime::SystemConfig {
+			code: seedling_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!")
+				.to_vec(),
+		},
+		sudo: seedling_runtime::SudoConfig { key: root_key },
+		parachain_info: seedling_runtime::ParachainInfoConfig { parachain_id },
 		parachain_system: Default::default(),
 	}
 }
@@ -194,7 +231,7 @@ const STATEMINE_ED: StatemintBalance = statemine_runtime::constants::currency::E
 const WESTMINT_ED: StatemintBalance = westmint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 /// Helper function to generate a crypto pair from seed
-pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
+pub fn get_public_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
 	TPublic::Pair::from_string(&format!("//{}", seed), None)
 		.expect("static values are valid; qed")
 		.public()
@@ -204,7 +241,7 @@ pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair
 ///
 /// This function's return type must always match the session keys of the chain in tuple format.
 pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
-	get_pair_from_seed::<AuraId>(seed)
+	get_public_from_seed::<AuraId>(seed)
 }
 
 /// Generate the session keys from individual elements.
@@ -228,7 +265,7 @@ pub fn westmint_session_keys(keys: AuraId) -> westmint_runtime::SessionKeys {
 	westmint_runtime::SessionKeys { aura: keys }
 }
 
-pub fn statemint_development_config(id: ParaId) -> StatemintChainSpec {
+pub fn statemint_development_config() -> StatemintChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "DOT".into());
 	properties.insert("tokenDecimals".into(), 10.into());
@@ -252,18 +289,18 @@ pub fn statemint_development_config(id: ParaId) -> StatemintChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
-				id,
+				1000.into(),
 			)
 		},
-		vec![],
+		Vec::new(),
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "polkadot-dev".into(), para_id: id.into() },
+		Extensions { relay_chain: "polkadot-dev".into(), para_id: 1000 },
 	)
 }
 
-pub fn statemint_local_config(id: ParaId) -> StatemintChainSpec {
+pub fn statemint_local_config() -> StatemintChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "DOT".into());
 	properties.insert("tokenDecimals".into(), 10.into());
@@ -301,14 +338,14 @@ pub fn statemint_local_config(id: ParaId) -> StatemintChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				id,
+				1000.into(),
 			)
 		},
-		vec![],
+		Vec::new(),
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "polkadot-local".into(), para_id: id.into() },
+		Extensions { relay_chain: "polkadot-local".into(), para_id: 1000 },
 	)
 }
 
@@ -322,7 +359,6 @@ fn statemint_genesis(
 			code: statemint_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			changes_trie_config: Default::default(),
 		},
 		balances: statemint_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, STATEMINT_ED * 4096)).collect(),
@@ -335,12 +371,11 @@ fn statemint_genesis(
 		},
 		session: statemint_runtime::SessionConfig {
 			keys: invulnerables
-				.iter()
-				.cloned()
+				.into_iter()
 				.map(|(acc, aura)| {
 					(
 						acc.clone(),                  // account id
-						acc.clone(),                  // validator id
+						acc,                          // validator id
 						statemint_session_keys(aura), // session keys
 					)
 				})
@@ -354,8 +389,9 @@ fn statemint_genesis(
 	}
 }
 
-pub fn statemine_development_config(id: ParaId) -> StatemineChainSpec {
+pub fn statemine_development_config() -> StatemineChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("ss58Format".into(), 2.into());
 	properties.insert("tokenSymbol".into(), "KSM".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
@@ -378,19 +414,20 @@ pub fn statemine_development_config(id: ParaId) -> StatemineChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
-				id,
+				1000.into(),
 			)
 		},
-		vec![],
+		Vec::new(),
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "kusama-dev".into(), para_id: id.into() },
+		Extensions { relay_chain: "kusama-dev".into(), para_id: 1000 },
 	)
 }
 
-pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
+pub fn statemine_local_config() -> StatemineChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("ss58Format".into(), 2.into());
 	properties.insert("tokenSymbol".into(), "KSM".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
@@ -427,19 +464,20 @@ pub fn statemine_local_config(id: ParaId) -> StatemineChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				id,
+				1000.into(),
 			)
 		},
-		vec![],
+		Vec::new(),
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "kusama-local".into(), para_id: id.into() },
+		Extensions { relay_chain: "kusama-local".into(), para_id: 1000 },
 	)
 }
 
-pub fn statemine_config(id: ParaId) -> StatemineChainSpec {
+pub fn statemine_config() -> StatemineChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("ss58Format".into(), 2.into());
 	properties.insert("tokenSymbol".into(), "KSM".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
@@ -478,15 +516,15 @@ pub fn statemine_config(id: ParaId) -> StatemineChainSpec {
 							.unchecked_into(),
 					),
 				],
-				vec![],
-				id,
+				Vec::new(),
+				1000.into(),
 			)
 		},
-		vec![],
+		Vec::new(),
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "kusama".into(), para_id: id.into() },
+		Extensions { relay_chain: "kusama".into(), para_id: 1000 },
 	)
 }
 
@@ -500,10 +538,13 @@ fn statemine_genesis(
 			code: statemine_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			changes_trie_config: Default::default(),
 		},
 		balances: statemine_runtime::BalancesConfig {
-			balances: endowed_accounts.iter().cloned().map(|k| (k, STATEMINE_ED * 4096)).collect(),
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, STATEMINE_ED * 524_288))
+				.collect(),
 		},
 		parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: statemine_runtime::CollatorSelectionConfig {
@@ -513,12 +554,11 @@ fn statemine_genesis(
 		},
 		session: statemine_runtime::SessionConfig {
 			keys: invulnerables
-				.iter()
-				.cloned()
+				.into_iter()
 				.map(|(acc, aura)| {
 					(
 						acc.clone(),                  // account id
-						acc.clone(),                  // validator id
+						acc,                          // validator id
 						statemine_session_keys(aura), // session keys
 					)
 				})
@@ -530,7 +570,7 @@ fn statemine_genesis(
 	}
 }
 
-pub fn westmint_development_config(id: ParaId) -> WestmintChainSpec {
+pub fn westmint_development_config() -> WestmintChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "WND".into());
 	properties.insert("tokenDecimals".into(), 12.into());
@@ -555,18 +595,18 @@ pub fn westmint_development_config(id: ParaId) -> WestmintChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				id,
+				1000.into(),
 			)
 		},
-		vec![],
+		Vec::new(),
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "westend".into(), para_id: id.into() },
+		Extensions { relay_chain: "westend".into(), para_id: 1000 },
 	)
 }
 
-pub fn westmint_local_config(id: ParaId) -> WestmintChainSpec {
+pub fn westmint_local_config() -> WestmintChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "WND".into());
 	properties.insert("tokenDecimals".into(), 12.into());
@@ -605,18 +645,18 @@ pub fn westmint_local_config(id: ParaId) -> WestmintChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				id,
+				1000.into(),
 			)
 		},
-		vec![],
+		Vec::new(),
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "westend-local".into(), para_id: id.into() },
+		Extensions { relay_chain: "westend-local".into(), para_id: 1000 },
 	)
 }
 
-pub fn westmint_config(id: ParaId) -> WestmintChainSpec {
+pub fn westmint_config() -> WestmintChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "WND".into());
 	properties.insert("tokenDecimals".into(), 12.into());
@@ -656,17 +696,17 @@ pub fn westmint_config(id: ParaId) -> WestmintChainSpec {
 							.unchecked_into(),
 					),
 				],
-				vec![],
+				Vec::new(),
 				// re-use the Westend sudo key
 				hex!("6648d7f3382690650c681aba1b993cd11e54deb4df21a3a18c3e2177de9f7342").into(),
-				id,
+				1000.into(),
 			)
 		},
-		vec![],
+		Vec::new(),
 		None,
 		None,
 		Some(properties),
-		Extensions { relay_chain: "westend".into(), para_id: id.into() },
+		Extensions { relay_chain: "westend".into(), para_id: 1000 },
 	)
 }
 
@@ -681,7 +721,6 @@ fn westmint_genesis(
 			code: westmint_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			changes_trie_config: Default::default(),
 		},
 		balances: westmint_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, WESTMINT_ED * 4096)).collect(),
@@ -695,12 +734,11 @@ fn westmint_genesis(
 		},
 		session: westmint_runtime::SessionConfig {
 			keys: invulnerables
-				.iter()
-				.cloned()
+				.into_iter()
 				.map(|(acc, aura)| {
 					(
 						acc.clone(),                 // account id
-						acc.clone(),                 // validator id
+						acc,                         // validator id
 						westmint_session_keys(aura), // session keys
 					)
 				})

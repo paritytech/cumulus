@@ -13,19 +13,19 @@ use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
 };
-use sc_service::config::{BasePath, PrometheusConfig};
+use sc_service::{
+	config::{BasePath, PrometheusConfig},
+	TaskManager,
+};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 
-fn load_spec(
-	id: &str,
-	para_id: ParaId,
-) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
-		"dev" => Box::new(chain_spec::development_config(para_id)),
-		"template-rococo" => Box::new(chain_spec::local_testnet_config(para_id)),
-		"" | "local" => Box::new(chain_spec::local_testnet_config(para_id)),
+		"dev" => Box::new(chain_spec::development_config()),
+		"template-rococo" => Box::new(chain_spec::local_testnet_config()),
+		"" | "local" => Box::new(chain_spec::local_testnet_config()),
 		path => Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
 	})
 }
@@ -40,13 +40,11 @@ impl SubstrateCli for Cli {
 	}
 
 	fn description() -> String {
-		format!(
-			"Parachain Collator Template\n\nThe command-line arguments provided first will be \
+		"Parachain Collator Template\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
-		to the relaychain node.\n\n\
-		{} [parachain-args] -- [relaychain-args]",
-			Self::executable_name()
-		)
+		to the relay chain node.\n\n\
+		parachain-collator <parachain-args> -- <relay-chain-args>"
+			.into()
 	}
 
 	fn author() -> String {
@@ -62,7 +60,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		load_spec(id, self.run.parachain_id.unwrap_or(2000).into())
+		load_spec(id)
 	}
 
 	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -82,8 +80,8 @@ impl SubstrateCli for RelayChainCli {
 	fn description() -> String {
 		"Parachain Collator Template\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
-		to the relaychain node.\n\n\
-		parachain-collator [parachain-args] -- [relaychain-args]"
+		to the relay chain node.\n\n\
+		parachain-collator <parachain-args> -- <relay-chain-args>"
 			.into()
 	}
 
@@ -171,7 +169,7 @@ pub fn run() -> Result<()> {
 			runner.sync_run(|config| {
 				let polkadot_cli = RelayChainCli::new(
 					&config,
-					[RelayChainCli::executable_name()].iter().chain(cli.relaychain_args.iter()),
+					[RelayChainCli::executable_name()].iter().chain(cli.relay_chain_args.iter()),
 				);
 
 				let polkadot_config = SubstrateCli::create_configuration(
@@ -194,10 +192,8 @@ pub fn run() -> Result<()> {
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
 			let _ = builder.init();
 
-			let block: Block = generate_genesis_block(&load_spec(
-				&params.chain.clone().unwrap_or_default(),
-				params.parachain_id.unwrap_or(2000).into(),
-			)?)?;
+			let block: Block =
+				generate_genesis_block(&load_spec(&params.chain.clone().unwrap_or_default())?)?;
 			let raw_header = block.header().encode();
 			let output_buf = if params.raw {
 				raw_header
@@ -244,19 +240,36 @@ pub fn run() -> Result<()> {
 				You can enable it with `--features runtime-benchmarks`."
 					.into())
 			},
+		Some(Subcommand::TryRuntime(cmd)) =>
+			if cfg!(feature = "try-runtime") {
+				let runner = cli.create_runner(cmd)?;
+
+				// grab the task manager.
+				let registry = &runner.config().prometheus_config.as_ref().map(|cfg| &cfg.registry);
+				let task_manager =
+					TaskManager::new(runner.config().tokio_handle.clone(), *registry)
+						.map_err(|e| format!("Error: {:?}", e))?;
+
+				runner.async_run(|config| {
+					Ok((cmd.run::<Block, TemplateRuntimeExecutor>(config), task_manager))
+				})
+			} else {
+				Err("Try-runtime must be enabled by `--features try-runtime`.".into())
+			},
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 
 			runner.run_node_until_exit(|config| async move {
-				let para_id =
-					chain_spec::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
+				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
+					.map(|e| e.para_id)
+					.ok_or_else(|| "Could not find parachain ID in chain-spec.")?;
 
 				let polkadot_cli = RelayChainCli::new(
 					&config,
-					[RelayChainCli::executable_name()].iter().chain(cli.relaychain_args.iter()),
+					[RelayChainCli::executable_name()].iter().chain(cli.relay_chain_args.iter()),
 				);
 
-				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(2000));
+				let id = ParaId::from(para_id);
 
 				let parachain_account =
 					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
