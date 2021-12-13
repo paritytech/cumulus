@@ -49,7 +49,6 @@ pub struct MockValidationDataInherentDataProvider {
 	/// The number of relay blocks that elapses between each parablock. Probably set this to 1 or 2
 	/// to simulate optimistic or realistic relay chain behavior.
 	pub relay_blocks_per_para_block: u32,
-	//TODO Make this optional
 	/// XCM messages and associated configuration information.
 	pub xcm_config: MockXcmConfig,
 	/// Inbound downward XCM messages to be injected into the block.
@@ -62,6 +61,7 @@ pub struct MockValidationDataInherentDataProvider {
 /// In addition to the messages themselves, some information about the parachain's
 /// configuration is also required so that the MQC heads can be read out of the
 /// parachain's storage, and the corresponding relay data mocked.
+#[derive(Default)]
 pub struct MockXcmConfig {
 	/// The parachain id of the parachain being mocked.
 	pub para_id: ParaId,
