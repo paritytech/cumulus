@@ -159,10 +159,10 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 			match horizontal_messages.get_mut(para_id) {
 				Some(msgs) => {
 					msgs.push(wrapped);
-				}
+				},
 				None => {
 					horizontal_messages.insert(*para_id, vec![wrapped]);
-				}
+				},
 			}
 		}
 
