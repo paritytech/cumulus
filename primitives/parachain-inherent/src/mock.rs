@@ -64,20 +64,32 @@ pub struct MockXcmConfig {
 	pub starting_hrmp_mqc_heads: BTreeMap<ParaId, relay_chain::Hash>,
 }
 
+/// The same string name that is used for the parachain system pallet in the
+/// runtime. The parachain template, and many other popular chains use `ParachainSystem`,
+/// and a corresponding `Default` implementation of this type exists.
+pub struct ParachainSystemName(pub &'static [u8]);
+
+impl Default for ParachainSystemName {
+	fn default() -> Self {
+		Self(b"ParachainSystem")
+	}
+}
+
 impl MockXcmConfig {
-	/// Utility method for creating a MockXcmConfig by reading the mqc_heads directly
-	/// from the storage of a previous block at common storage keys.
-	pub fn from_standard_storage<B: Block, BE: Backend<B>, C: StorageProvider<B, BE>>(
+	/// Create a MockXcmConfig by reading the mqc_heads directly
+	/// from the storage of a previous block.
+	pub fn new<B: Block, BE: Backend<B>, C: StorageProvider<B, BE>>(
 		client: &C,
 		parent_block: B::Hash,
 		para_id: ParaId,
+		parachain_system_name: ParachainSystemName,
 	) -> Self {
 
 		let starting_dmq_mqc_head = client
 			.storage(
 				&BlockId::Hash(parent_block),
 				&sp_storage::StorageKey(
-					[twox_128(b"ParachainSystem"), twox_128(b"LastDmqMqcHead")].concat().to_vec(),
+					[twox_128(parachain_system_name.0), twox_128(b"LastDmqMqcHead")].concat().to_vec(),
 				),
 			)
 			.expect("We should be able to read storage from the parent block.")
