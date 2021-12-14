@@ -1696,6 +1696,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-session",
+ "parity-scale-codec",
  "sp-runtime",
  "sp-std",
 ]
