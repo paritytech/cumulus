@@ -14,13 +14,14 @@ futures = { version = "0.3.1", features = ["compat"] }
 log = "0.4.8"
 codec = { package = "parity-scale-codec", version = "2.3.0" }
 structopt = "0.3.3"
-serde = { version = "1.0.101", features = ["derive"] }
+serde = { version = "1.0.131", features = ["derive"] }
 hex-literal = "0.2.1"
 async-trait = "0.1.42"
 
 # Parachain runtimes
 rococo-parachain-runtime = { path = "rococo-parachain" }
 shell-runtime = { path = "shell" }
+seedling-runtime = { path = "seedling" }
 statemint-runtime = { path = "statemint" }
 statemine-runtime = { path = "statemine" }
 westmint-runtime = { path = "westmint" }
@@ -56,6 +57,9 @@ sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "maste
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
+# try-runtime stuff.
+try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # RPC related dependencies
 jsonrpc-core = "18.0.0"
@@ -94,4 +98,10 @@ runtime-benchmarks = [
 	"statemint-runtime/runtime-benchmarks",
 	"statemine-runtime/runtime-benchmarks",
 	"westmint-runtime/runtime-benchmarks",
+]
+try-runtime = [
+	'statemint-runtime/try-runtime',
+	'statemine-runtime/try-runtime',
+	'westmint-runtime/try-runtime',
+	'shell-runtime/try-runtime',
 ]

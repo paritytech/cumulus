@@ -11,7 +11,7 @@ hex-literal = { version = "0.3.1", optional = true }
 log = { version = "0.4.14", default-features = false }
 parachain-info = { path = "../pallets/parachain-info", default-features = false }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
-serde = { version = "1.0.101", optional = true, features = ["derive"] }
+serde = { version = "1.0.131", optional = true, features = ["derive"] }
 smallvec = "1.6.1"
 
 # Substrate dependencies
@@ -34,7 +34,7 @@ frame-support = { git = "https://github.com/paritytech/substrate", default-featu
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+pallet-asset-tx-payment = { git = 'https://github.com/paritytech/substrate', default-features = false, branch = "master" }
 pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -74,6 +74,9 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", default-feature
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master", optional = true }
 
+# Try-runtime stuff
+frame-try-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true , branch = "master" }
+
 [dev-dependencies]
 hex-literal = "0.3.1"
 
@@ -101,6 +104,10 @@ runtime-benchmarks = [
 	"pallet-xcm/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"pallet-xcm-benchmarks",
+]
+try-runtime = [
+	"frame-try-runtime",
+	"frame-executive/try-runtime",
 ]
 std = [
 	"codec/std",
