@@ -15,15 +15,11 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub use pallet::*;
 use codec::{Decode, Encode};
-use frame_support::{
-    weights::DispatchInfo,
-    dispatch::DispatchResult,
-    pallet_prelude::*
-};
+use cumulus_pallet_parachain_system as parachain_system;
+use frame_support::{dispatch::DispatchResult, pallet_prelude::*, weights::DispatchInfo};
 use frame_system::pallet_prelude::*;
-use sp_std::{prelude::*, vec::Vec};
+pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, SignedExtension},
@@ -32,14 +28,16 @@ use sp_runtime::{
 		TransactionValidityError, ValidTransaction,
 	},
 };
-use cumulus_pallet_parachain_system as parachain_system;
+use sp_std::{prelude::*, vec::Vec};
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + cumulus_pallet_parachain_system::Config + pallet_sudo::Config {
+	pub trait Config:
+		frame_system::Config + cumulus_pallet_parachain_system::Config + pallet_sudo::Config
+	{
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 	}
 
@@ -54,12 +52,12 @@ pub mod pallet {
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event  {
+	pub enum Event {
 		MigrationScheduled,
 		/// The custom validation head data has been scheduled to apply.
 		CustomValidationHeadDataStored,
 		/// The custom validation head data was applied as of the contained relay chain block number.
-		CustomValidationHeadDataApplied,//(RelayChainBlockNumber),
+		CustomValidationHeadDataApplied, //(RelayChainBlockNumber),
 	}
 
 	#[pallet::error]
@@ -100,8 +98,8 @@ pub mod pallet {
 					parachain_system::Pallet::<T>::set_custom_validation_head_data(head_data);
 					<PendingCustomValidationHeadData<T>>::kill();
 					Self::deposit_event(Event::CustomValidationHeadDataApplied);
-				}
-				None => return Err((Error::<T>::NoCustomHeadData).into())
+				},
+				None => return Err((Error::<T>::NoCustomHeadData).into()),
 			}
 			Ok(())
 		}
@@ -160,10 +158,9 @@ pub mod pallet {
 			info: &DispatchInfoOf<Self::Call>,
 			_len: usize,
 		) -> TransactionValidity {
-
 			let root_account = match pallet_sudo::Pallet::<T>::key() {
 				Some(account) => account,
-				None => return Err(InvalidTransaction::Call.into())
+				None => return Err(InvalidTransaction::Call.into()),
 			};
 
 			if *who == root_account {
