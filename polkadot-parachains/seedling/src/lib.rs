@@ -177,7 +177,7 @@ construct_runtime! {
 			Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
 		},
 		ParachainInfo: parachain_info::{Pallet, Storage, Config},
-		SoloToPara: cumulus_pallet_solo_to_para::{Pallet},
+		SoloToPara: cumulus_pallet_solo_to_para::{Pallet, Storage, Event},
 	}
 }
 

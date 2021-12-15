@@ -328,15 +328,6 @@ pub mod pallet {
 					let validation_code = <PendingValidationCode<T>>::take();
 
 					Self::put_parachain_code(&validation_code);
-
-					if let Some(head_data) = <PendingCustomValidationHeadData<T>>::get() {
-						Self::set_custom_validation_head_data(head_data);
-						<PendingCustomValidationHeadData<T>>::kill();
-						Self::deposit_event(Event::CustomValidationHeadDataApplied(
-							vfp.relay_parent_number,
-						));
-					}
-
 					Self::deposit_event(Event::ValidationFunctionApplied(vfp.relay_parent_number));
 				},
 				Some(relay_chain::v1::UpgradeGoAhead::Abort) => {
@@ -418,10 +409,6 @@ pub mod pallet {
 		ValidationFunctionStored,
 		/// The validation function was applied as of the contained relay chain block number.
 		ValidationFunctionApplied(RelayChainBlockNumber),
-		/// The custom validation head data has been scheduled to apply.
-		CustomValidationHeadDataStored,
-		/// The custom validation head data was applied as of the contained relay chain block number.
-		CustomValidationHeadDataApplied(RelayChainBlockNumber),
 		/// The relay-chain aborted the upgrade process.
 		ValidationFunctionDiscarded,
 		/// An upgrade has been authorized.
@@ -586,11 +573,6 @@ pub mod pallet {
 	/// See [`Pallet::set_custom_validation_head_data`] for more information.
 	#[pallet::storage]
 	pub(super) type CustomValidationHeadData<T: Config> = StorageValue<_, Vec<u8>, OptionQuery>;
-
-	/// In case of a scheduled migration, this storage field contains the custom head data to be applied.
-	#[pallet::storage]
-	pub(super) type PendingCustomValidationHeadData<T: Config> =
-		StorageValue<_, Vec<u8>, OptionQuery>;
 
 	#[pallet::inherent]
 	impl<T: Config> ProvideInherent for Pallet<T> {
@@ -952,13 +934,6 @@ impl<T: Config> Pallet<T> {
 	/// your Parachain.
 	pub fn set_custom_validation_head_data(head_data: Vec<u8>) {
 		CustomValidationHeadData::<T>::put(head_data);
-	}
-
-	/// Set a custom head data that should only be applied when upgradeGoAheadSignal from
-	/// the Relay Chain is GoAhead
-	pub fn set_pending_custom_validation_head_data(head_data: Vec<u8>) {
-		PendingCustomValidationHeadData::<T>::put(head_data);
-		Self::deposit_event(Event::CustomValidationHeadDataStored);
 	}
 }
 
