@@ -63,5 +63,6 @@ std = [
 	"pallet-balances/std",
 	"parachain-info/std",
 	"cumulus-pallet-parachain-system/std",
+	"cumulus-pallet-solo-to-para/std",
 	"cumulus-primitives-core/std",
 ]

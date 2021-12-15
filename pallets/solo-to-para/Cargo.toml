@@ -11,6 +11,7 @@ frame-support = { git = "https://github.com/paritytech/substrate", default-featu
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 cumulus-pallet-parachain-system = { default-features = false, path = "../parachain-system" }
 
 # # Polkadot dependecies
@@ -25,6 +26,7 @@ default = [ "std" ]
 std = [
 	"codec/std",
 	"scale-info/std",
+	"pallet-sudo/std",
 	"cumulus-pallet-parachain-system/std",
 	"frame-support/std",
 	"sp-runtime/std",

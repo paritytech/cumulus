@@ -1,27 +1,42 @@
+// Copyright (C) 2021 Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
-/// Edit this file to define custom logic or remove it if it is not needed.
-/// Learn more about FRAME and the core library of Substrate FRAME pallets:
-/// <https://substrate.dev/docs/en/knowledgebase/runtime/frame>
 pub use pallet::*;
-
-// pub use polkadot_primitives::v1::{HeadData, ValidationCode}
-
-// #[cfg(test)]
-// mod mock;
-
-// #[cfg(test)]
-// mod tests;
-
-// #[cfg(feature = "runtime-benchmarks")]
-// mod benchmarking;
+use codec::{Decode, Encode};
+use frame_support::{
+    weights::DispatchInfo,
+    dispatch::DispatchResult,
+    pallet_prelude::*
+}
+use frame_system::pallet_prelude::*;
+use sp_std::prelude::*;
+use scale_info::TypeInfo;
+use sp_runtime::{
+	traits::{DispatchInfoOf, Dispatchable, SignedExtension},
+	transaction_validity::{
+		InvalidTransaction, TransactionLongevity, TransactionPriority, TransactionValidity,
+		TransactionValidityError, ValidTransaction,
+	},
+};
+use cumulus_pallet_parachain_system as parachain_system;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use cumulus_pallet_parachain_system as parachain_system;
-	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
-	use frame_system::pallet_prelude::*;
-	use sp_std::prelude::*;
+	use super::*;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + cumulus_pallet_parachain_system::Config {
@@ -53,6 +68,42 @@ pub mod pallet {
 
 			Self::deposit_event(Event::MigrationScheduled);
 			Ok(())
+		}
+	}
+}
+
+impl<T: Config + Send + Sync> SignedExtension for CheckSudo<T>
+where
+	<T as frame_system::Config>::Call: Dispatchable<Info = DispatchInfo>,
+{
+	type AccountId = T::AccountId;
+	type Call = <T as frame_system::Config>::Call;
+	type AdditionalSigned = ();
+	type Pre = ();
+	const IDENTIFIER: &'static str = "CheckSudo";
+
+	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
+		Ok(())
+	}
+
+	fn validate(
+		&self,
+		who: &Self::AccountId,
+		_call: &Self::Call,
+		info: &DispatchInfoOf<Self::Call>,
+		_len: usize,
+	) -> TransactionValidity {
+		let root = pallet_sudo::Pallet::<T>::key();
+
+		if *who == root {
+			Ok(ValidTransaction {
+				priority: info.weight as TransactionPriority,
+				longevity: TransactionLongevity::max_value(),
+				propagate: true,
+				..Default::default()
+			})
+		} else {
+			Err(InvalidTransaction::Call.into())
 		}
 	}
 }
