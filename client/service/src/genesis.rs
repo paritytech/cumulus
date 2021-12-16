@@ -37,8 +37,10 @@ pub fn generate_genesis_block<Block: BlockT>(
 		genesis_state_version,
 	);
 
-	let extrinsics_root =
-		<<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(Vec::new(), sp_runtime::StateVersion::V0);
+	let extrinsics_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
+		Vec::new(),
+		sp_runtime::StateVersion::V0,
+	);
 
 	Ok(Block::new(
 		<<Block as BlockT>::Header as HeaderT>::new(
