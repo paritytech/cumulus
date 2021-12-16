@@ -221,8 +221,12 @@ fn host_storage_clear(key: &[u8]) {
 	with_externalities(|ext| ext.place_storage(key.to_vec(), None))
 }
 
-fn host_storage_root() -> Vec<u8> {
-	with_externalities(|ext| ext.storage_root(StateVersion::V1))
+fn host_storage_root(state_version: u8) -> Vec<u8> {
+	let state_version = match state_version {
+		0 => StateVersion::V0,
+		_ => StateVersion::V1,
+	};
+	with_externalities(|ext| ext.storage_root(state_version))
 }
 
 fn host_storage_clear_prefix(prefix: &[u8], limit: Option<u32>) -> KillStorageResult {
@@ -327,9 +331,13 @@ fn host_default_child_storage_clear_prefix(
 	})
 }
 
-fn host_default_child_storage_root(storage_key: &[u8]) -> Vec<u8> {
+fn host_default_child_storage_root(storage_key: &[u8], state_version: u8) -> Vec<u8> {
 	let child_info = ChildInfo::new_default(storage_key);
-	with_externalities(|ext| ext.child_storage_root(&child_info, StateVersion::V1))
+	let state_version = match state_version {
+		0 => StateVersion::V0,
+		_ => StateVersion::V1,
+	};
+	with_externalities(|ext| ext.child_storage_root(&child_info, state_version))
 }
 
 fn host_default_child_storage_next_key(storage_key: &[u8], key: &[u8]) -> Option<Vec<u8>> {
