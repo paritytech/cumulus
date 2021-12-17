@@ -41,7 +41,7 @@ use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 /// Optionally, mock XCM messages can be injected into the runtime. When mocking XCM,
 /// in addition to the messages themselves, you must provide some information about
 /// your parachain's configuration in order to mock the MQC heads properly.
-/// See `MockXcmConfig` for more information
+/// See [`MockXcmConfig`] for more information
 pub struct MockValidationDataInherentDataProvider {
 	/// The current block number of the local block chain (the parachain)
 	pub current_para_block: u32,
@@ -151,19 +151,12 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 		sproof_builder.dmq_mqc_head = Some(dmq_mqc.head());
 
 		// Process the hrmp messages and set up the correct heads
-		// Begin by colelcting them into a Map
+		// Begin by collecting them into a Map
 		let mut horizontal_messages = BTreeMap::<ParaId, Vec<InboundHrmpMessage>>::new();
 		for (para_id, msg) in &self.raw_horizontal_messages {
 			let wrapped = InboundHrmpMessage { sent_at: relay_parent_number, data: msg.clone() };
 
-			match horizontal_messages.get_mut(para_id) {
-				Some(msgs) => {
-					msgs.push(wrapped);
-				},
-				None => {
-					horizontal_messages.insert(*para_id, vec![wrapped]);
-				},
-			}
+			horizontal_messages.entry(para_id).or_default().push(wrapped);
 		}
 
 		// Now iterate again, updating the heads as we go
