@@ -156,7 +156,7 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 		for (para_id, msg) in &self.raw_horizontal_messages {
 			let wrapped = InboundHrmpMessage { sent_at: relay_parent_number, data: msg.clone() };
 
-			horizontal_messages.entry(para_id).or_default().push(wrapped);
+			horizontal_messages.entry(*para_id).or_default().push(wrapped);
 		}
 
 		// Now iterate again, updating the heads as we go
