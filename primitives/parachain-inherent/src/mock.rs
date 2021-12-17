@@ -82,7 +82,7 @@ pub struct ParachainSystemName(pub Vec<u8>);
 
 impl Default for ParachainSystemName {
 	fn default() -> Self {
-		Self(b"ParachainSystem")
+		Self(b"ParachainSystem".to_vec())
 	}
 }
 
@@ -99,7 +99,7 @@ impl MockXcmConfig {
 			.storage(
 				&BlockId::Hash(parent_block),
 				&sp_storage::StorageKey(
-					[twox_128(parachain_system_name.0), twox_128(b"LastDmqMqcHead")]
+					[twox_128(&parachain_system_name.0), twox_128(b"LastDmqMqcHead")]
 						.concat()
 						.to_vec(),
 				),
@@ -114,7 +114,7 @@ impl MockXcmConfig {
 			.storage(
 				&BlockId::Hash(parent_block),
 				&sp_storage::StorageKey(
-					[twox_128(parachain_system_name.0), twox_128(b"LastHrmpMqcHeads")]
+					[twox_128(&parachain_system_name.0), twox_128(b"LastHrmpMqcHeads")]
 						.concat()
 						.to_vec(),
 				),
