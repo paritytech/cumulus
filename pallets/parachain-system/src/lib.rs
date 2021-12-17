@@ -33,7 +33,7 @@ use cumulus_primitives_core::{
 	OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage, UpwardMessageSender,
 	XcmpMessageHandler, XcmpMessageSource,
 };
-use cumulus_primitives_parachain_inherent::ParachainInherentData;
+use cumulus_primitives_parachain_inherent::{MessageQueueChain, ParachainInherentData};
 use frame_support::{
 	dispatch::{DispatchError, DispatchResult},
 	ensure,
@@ -914,43 +914,6 @@ pub struct ParachainSetCode<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> frame_system::SetCode<T> for ParachainSetCode<T> {
 	fn set_code(code: Vec<u8>) -> DispatchResult {
 		Pallet::<T>::set_code_impl(code)
-	}
-}
-
-/// This struct provides ability to extend a message queue chain (MQC) and compute a new head.
-///
-/// MQC is an instance of a [hash chain] applied to a message queue. Using a hash chain it's
-/// possible to represent a sequence of messages using only a single hash.
-///
-/// A head for an empty chain is agreed to be a zero hash.
-///
-/// [hash chain]: https://en.wikipedia.org/wiki/Hash_chain
-#[derive(Default, Clone, codec::Encode, codec::Decode, scale_info::TypeInfo)]
-struct MessageQueueChain(relay_chain::Hash);
-
-impl MessageQueueChain {
-	fn extend_hrmp(&mut self, horizontal_message: &InboundHrmpMessage) -> &mut Self {
-		let prev_head = self.0;
-		self.0 = BlakeTwo256::hash_of(&(
-			prev_head,
-			horizontal_message.sent_at,
-			BlakeTwo256::hash_of(&horizontal_message.data),
-		));
-		self
-	}
-
-	fn extend_downward(&mut self, downward_message: &InboundDownwardMessage) -> &mut Self {
-		let prev_head = self.0;
-		self.0 = BlakeTwo256::hash_of(&(
-			prev_head,
-			downward_message.sent_at,
-			BlakeTwo256::hash_of(&downward_message.msg),
-		));
-		self
-	}
-
-	fn head(&self) -> relay_chain::Hash {
-		self.0
 	}
 }
 
