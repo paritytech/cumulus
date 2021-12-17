@@ -112,7 +112,7 @@ impl MockXcmConfig {
 			.storage(
 				&BlockId::Hash(parent_block),
 				&sp_storage::StorageKey(
-					[twox_128(b"ParachainSystem"), twox_128(b"LastHrmpMqcHeads")].concat().to_vec(),
+					[twox_128(parachain_system_name.0), twox_128(b"LastHrmpMqcHeads")].concat().to_vec(),
 				),
 			)
 			.expect("We should be able to read storage from the parent block.")
