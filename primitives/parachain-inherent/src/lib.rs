@@ -76,12 +76,18 @@ pub struct ParachainInherentData {
 /// possible to represent a sequence of messages using only a single hash.
 ///
 /// A head for an empty chain is agreed to be a zero hash.
+/// 
+/// An instance is used to track either DMP from the relay chain or HRMP across a channel.
+/// But a given instance is never used to track both. Therefore, you should call either
+/// `extend_downward` or `extend_hrmp`, but not both methods on a single instance.
 ///
 /// [hash chain]: https://en.wikipedia.org/wiki/Hash_chain
 #[derive(Default, Clone, codec::Encode, codec::Decode, scale_info::TypeInfo)]
 pub struct MessageQueueChain(RelayHash);
 
 impl MessageQueueChain {
+	/// Extend the hash chain with an HRMP message. This method should be used only when
+	/// this chain is tracking HRMP.
 	pub fn extend_hrmp(&mut self, horizontal_message: &InboundHrmpMessage) -> &mut Self {
 		let prev_head = self.0;
 		self.0 = BlakeTwo256::hash_of(&(
@@ -92,6 +98,8 @@ impl MessageQueueChain {
 		self
 	}
 
+	/// Extend the hash chain with a downward message. This method should be used only when
+	/// this chain is tracking DMP.
 	pub fn extend_downward(&mut self, downward_message: &InboundDownwardMessage) -> &mut Self {
 		let prev_head = self.0;
 		self.0 = BlakeTwo256::hash_of(&(
@@ -102,6 +110,8 @@ impl MessageQueueChain {
 		self
 	}
 
+	/// Return the current mead of the message queue hash chain.
+	/// This is agreed to be the zero hash for an empty chain.
 	pub fn head(&self) -> RelayHash {
 		self.0
 	}
