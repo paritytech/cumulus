@@ -73,10 +73,12 @@ pub struct MockXcmConfig {
 	pub starting_hrmp_mqc_heads: BTreeMap<ParaId, relay_chain::Hash>,
 }
 
-/// The same string name that is used for the parachain system pallet in the
-/// runtime. The parachain template, and many other popular chains use `ParachainSystem`,
-/// and a corresponding `Default` implementation of this type exists.
-pub struct ParachainSystemName(pub &'static [u8]);
+/// The name of the parachain system in the runtime.
+///
+/// This name is used by frame to prefix storage items and will be required to read data from the storage.
+///
+/// The `Default` implementation sets the name to `ParachainSystem`.
+pub struct ParachainSystemName(pub Vec<u8>);
 
 impl Default for ParachainSystemName {
 	fn default() -> Self {
