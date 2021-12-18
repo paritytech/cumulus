@@ -50,7 +50,7 @@ mod types {
 	pub type DigestItem = sp_runtime::generic::DigestItem<Hash>;
 
 	// Aura consensus authority.
-	pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;
+	pub type AuraId = sp_consensus_aura::ed25519::AuthorityId;
 
 	// Id used for identifying assets.
 	pub type AssetId = u32;

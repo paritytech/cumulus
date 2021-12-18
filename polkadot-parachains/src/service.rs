@@ -34,6 +34,7 @@ pub use parachains_common::{AccountId, Balance, Block, Hash, Header, Index as No
 
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use futures::lock::Mutex;
+use parachains_common::AuraId;
 use sc_client_api::ExecutorProvider;
 use sc_consensus::{
 	import_queue::{BasicQueue, Verifier as VerifierT},
@@ -45,7 +46,7 @@ use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClie
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::{ApiExt, ConstructRuntimeApi};
 use sp_consensus::{CacheKeyId, SlotData};
-use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
+use sp_consensus_aura::AuraApi;
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::{
 	generic::BlockId,
@@ -996,7 +997,7 @@ where
 		let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
 
 		Box::new(cumulus_client_consensus_aura::build_verifier::<
-			sp_consensus_aura::sr25519::AuthorityPair,
+			sp_consensus_aura::ed25519::AuthorityPair,
 			_,
 			_,
 			_,
@@ -1109,7 +1110,7 @@ where
 				let relay_chain_client2 = relay_chain_client.clone();
 
 				build_aura_consensus::<
-					sp_consensus_aura::sr25519::AuthorityPair,
+					sp_consensus_aura::ed25519::AuthorityPair,
 					_,
 					_,
 					_,
