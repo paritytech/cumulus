@@ -16,13 +16,13 @@
 
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
+use parachains_common::AuraId;
 use rococo_parachain_runtime::{AccountId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use parachains_common::AuraId;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
@@ -76,7 +76,10 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 		move || {
 			testnet_genesis(
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				vec![get_from_seed::<rococo_parachain_runtime::AuraId>("Alice"), get_from_seed::<rococo_parachain_runtime::AuraId>("Bob")],
+				vec![
+					get_from_seed::<rococo_parachain_runtime::AuraId>("Alice"),
+					get_from_seed::<rococo_parachain_runtime::AuraId>("Bob"),
+				],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
