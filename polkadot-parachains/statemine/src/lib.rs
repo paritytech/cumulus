@@ -64,10 +64,10 @@ use parachains_common::{
 pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
+use kusama_runtime_constants::{currency::*, fee::WeightToFee};
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
-use kusama_runtime_constants::{currency::*, fee::WeightToFee};
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
