@@ -201,7 +201,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 	fn check_block_in_chain(
 		&self,
 		block_id: polkadot_service::BlockId,
-	) -> Result<Option<sc_client_api::ImportNotifications<PBlock>>, sp_blockchain::Error> {
+	) -> Result<BlockCheckResult, sp_blockchain::Error> {
 		let _lock = self.relay_backend.get_import_lock();
 
 		match self.relay_backend.blockchain().status(block_id) {
