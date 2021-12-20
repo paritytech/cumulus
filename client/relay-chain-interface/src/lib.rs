@@ -23,12 +23,17 @@ use cumulus_primitives_core::{
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use polkadot_service::Handle;
+use polkadot_overseer::Handle as OverseerHandle;
 use sc_client_api::{blockchain::BlockStatus, StorageProof};
 
 use sp_api::ApiError;
 use sp_core::sp_std::collections::btree_map::BTreeMap;
 use sp_state_machine::StorageValue;
+
+pub enum BlockCheckResult {
+	InChain,
+	NotFound(sc_client_api::ImportNotifications<PBlock>),
+}
 
 /// Should be used for all interaction with the relay chain in cumulus.
 pub trait RelayChainInterface: Send + Sync {
@@ -77,12 +82,12 @@ pub trait RelayChainInterface: Send + Sync {
 
 	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<PBlock>;
 
-	/// Check if block is in chain. If it is, we return nothing.
-	/// If it is not in the chain, we return a listener that can be used to wait on the block.
+	/// Check if block is in chain. If it is, we return BlockCheckResult::InChain.
+	/// If it is not in the chain, we return BlockCheckResult::NotFound with a listener that can be used to wait on the block.
 	fn check_block_in_chain(
 		&self,
 		block_id: BlockId,
-	) -> Result<Option<sc_client_api::ImportNotifications<PBlock>>, sp_blockchain::Error>;
+	) -> Result<BlockCheckResult, sp_blockchain::Error>;
 
 	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<PBlock>;
 
@@ -96,7 +101,7 @@ pub trait RelayChainInterface: Send + Sync {
 
 	fn is_major_syncing(&self) -> bool;
 
-	fn overseer_handle(&self) -> Option<Handle>;
+	fn overseer_handle(&self) -> Option<OverseerHandle>;
 
 	fn prove_read(
 		&self,
@@ -180,7 +185,7 @@ where
 		(**self).is_major_syncing()
 	}
 
-	fn overseer_handle(&self) -> Option<Handle> {
+	fn overseer_handle(&self) -> Option<OverseerHandle> {
 		(**self).overseer_handle()
 	}
 
@@ -199,7 +204,7 @@ where
 	fn check_block_in_chain(
 		&self,
 		block_id: BlockId,
-	) -> Result<Option<sc_client_api::ImportNotifications<PBlock>>, sp_blockchain::Error> {
+	) -> Result<BlockCheckResult, sp_blockchain::Error> {
 		(**self).check_block_in_chain(block_id)
 	}
 }

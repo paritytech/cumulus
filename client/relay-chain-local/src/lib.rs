@@ -26,7 +26,7 @@ use cumulus_primitives_core::{
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use cumulus_relay_chain_interface::RelayChainInterface;
+use cumulus_relay_chain_interface::{BlockCheckResult, RelayChainInterface};
 use polkadot_client::{ClientHandle, ExecuteWithClient, FullBackend};
 use polkadot_service::{
 	AuxStore, BabeApi, CollatorPair, Configuration, Handle, NewFull, Role, TaskManager,
@@ -256,11 +256,11 @@ where
 	fn check_block_in_chain(
 		&self,
 		block_id: BlockId,
-	) -> Result<Option<sc_client_api::ImportNotifications<PBlock>>, sp_blockchain::Error> {
+	) -> Result<BlockCheckResult, sp_blockchain::Error> {
 		let _lock = self.backend.get_import_lock();
 
 		match self.backend.blockchain().status(block_id) {
-			Ok(BlockStatus::InChain) => return Ok(None),
+			Ok(BlockStatus::InChain) => return Ok(BlockCheckResult::InChain),
 			Err(err) => return Err(err),
 			_ => {},
 		}
@@ -271,7 +271,7 @@ where
 		// up in our registered listener.
 		drop(_lock);
 
-		Ok(Some(listener))
+		Ok(BlockCheckResult::NotFound(listener))
 	}
 }
 

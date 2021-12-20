@@ -1837,7 +1837,7 @@ version = "0.1.0"
 dependencies = [
  "cumulus-primitives-core",
  "parking_lot 0.11.2",
- "polkadot-service",
+ "polkadot-overseer",
  "sc-client-api",
  "sp-api",
  "sp-blockchain",

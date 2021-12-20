@@ -16,7 +16,7 @@
 
 //! Provides the [`WaitOnRelayChainBlock`] type.
 
-use cumulus_relay_chain_interface::RelayChainInterface;
+use cumulus_relay_chain_interface::{BlockCheckResult, RelayChainInterface};
 use futures::{future::ready, Future, FutureExt, StreamExt};
 use polkadot_primitives::v1::Hash as PHash;
 use sc_client_api::blockchain;
@@ -91,8 +91,8 @@ where
 	) -> impl Future<Output = Result<(), Error>> {
 		let mut listener =
 			match self.relay_chain_interface.check_block_in_chain(BlockId::Hash(hash)) {
-				Ok(Some(listener)) => listener,
-				Ok(None) => return ready(Ok(())).boxed(),
+				Ok(BlockCheckResult::NotFound(listener)) => listener,
+				Ok(BlockCheckResult::InChain) => return ready(Ok(())).boxed(),
 				Err(err) => return ready(Err(Error::BlockchainError(hash, err))).boxed(),
 			};
 

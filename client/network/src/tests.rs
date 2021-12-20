@@ -15,6 +15,7 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
+use cumulus_relay_chain_interface::BlockCheckResult;
 use cumulus_test_service::runtime::{Block, Hash, Header};
 use futures::{executor::block_on, poll, task::Poll};
 use parking_lot::Mutex;
@@ -204,7 +205,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		let _lock = self.relay_backend.get_import_lock();
 
 		match self.relay_backend.blockchain().status(block_id) {
-			Ok(BlockStatus::InChain) => return Ok(None),
+			Ok(BlockStatus::InChain) => return Ok(BlockCheckResult::InChain),
 			Err(err) => return Err(err),
 			_ => {},
 		}
@@ -215,7 +216,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		// up in our registered listener.
 		drop(_lock);
 
-		Ok(Some(listener))
+		Ok(BlockCheckResult::NotFound(listener))
 	}
 }
 
