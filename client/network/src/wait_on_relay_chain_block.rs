@@ -121,7 +121,7 @@ mod tests {
 
 	use super::*;
 
-	use cumulus_relay_chain_interface::RelayChainLocal;
+	use cumulus_relay_chain_local::RelayChainLocal;
 	use polkadot_primitives::v1::Block as PBlock;
 	use polkadot_test_client::{
 		construct_transfer_extrinsic, BlockBuilderExt, Client, ClientBlockImportExt,

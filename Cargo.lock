@@ -1528,6 +1528,7 @@ version = "0.1.0"
 dependencies = [
  "cumulus-primitives-core",
  "cumulus-relay-chain-interface",
+ "cumulus-relay-chain-local",
  "cumulus-test-service",
  "derive_more",
  "futures 0.3.18",
@@ -1835,6 +1836,22 @@ name = "cumulus-relay-chain-interface"
 version = "0.1.0"
 dependencies = [
  "cumulus-primitives-core",
+ "parking_lot 0.11.2",
+ "polkadot-service",
+ "sc-client-api",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-runtime",
+ "sp-state-machine",
+]
+
+[[package]]
+name = "cumulus-relay-chain-local"
+version = "0.1.0"
+dependencies = [
+ "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
  "enum_dispatch",
  "futures 0.3.18",
  "parking_lot 0.11.2",
@@ -1950,7 +1967,7 @@ dependencies = [
  "cumulus-client-service",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
- "cumulus-relay-chain-interface",
+ "cumulus-relay-chain-local",
  "cumulus-test-relay-validation-worker-provider",
  "cumulus-test-runtime",
  "frame-system",
@@ -6054,6 +6071,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
  "cumulus-relay-chain-interface",
+ "cumulus-relay-chain-local",
  "derive_more",
  "frame-benchmarking",
  "frame-benchmarking-cli",
@@ -6699,6 +6717,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
  "cumulus-relay-chain-interface",
+ "cumulus-relay-chain-local",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "futures 0.3.18",

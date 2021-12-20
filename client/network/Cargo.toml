@@ -21,6 +21,7 @@ polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", bra
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
+cumulus-relay-chain-local = { path = "../relay-chain-local" }
 
 # other deps
 codec = { package = "parity-scale-codec", version = "2.3.0", features = [ "derive" ] }
