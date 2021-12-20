@@ -21,7 +21,6 @@ polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", bra
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
-cumulus-relay-chain-local = { path = "../relay-chain-local" }
 
 # other deps
 codec = { package = "parity-scale-codec", version = "2.3.0", features = [ "derive" ] }
@@ -37,6 +36,8 @@ tokio = { version = "1.10", features = ["macros"] }
 # Cumulus deps
 cumulus-test-service = { path = "../../test/service" }
 cumulus-primitives-core = { path = "../../primitives/core" }
+cumulus-relay-chain-local = { path = "../relay-chain-local" }
+
 # Polkadot deps
 polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
