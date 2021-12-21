@@ -57,7 +57,7 @@ pub mod pallet {
 		/// The custom validation head data has been scheduled to apply.
 		CustomValidationHeadDataStored,
 		/// The custom validation head data was applied as of the contained relay chain block number.
-		CustomValidationHeadDataApplied, //(RelayChainBlockNumber),
+		CustomValidationHeadDataApplied,
 	}
 
 	#[pallet::error]
