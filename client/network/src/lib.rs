@@ -291,7 +291,7 @@ where
 
 		async move {
 			// Check if block is equal or higher than best (this requires a justification)
-			let relay_chain_best_hash = relay_chain_interface.best_block_hash();
+			let relay_chain_best_hash = relay_chain_interface.best_block_hash().await;
 			let runtime_api_block_id = BlockId::Hash(relay_chain_best_hash);
 			let block_number = header.number();
 

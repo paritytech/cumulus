@@ -16,8 +16,7 @@
 
 use super::*;
 use async_trait::async_trait;
-use cumulus_relay_chain_interface::WaitError;
-use cumulus_relay_chain_local::{check_block_in_chain, BlockCheckStatus};
+use cumulus_relay_chain_interface::BlockCheckResult;
 use cumulus_test_service::runtime::{Block, Hash, Header};
 use futures::{executor::block_on, poll, task::Poll, FutureExt, StreamExt};
 use parking_lot::Mutex;
@@ -91,7 +90,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		self.relay_backend.blockchain().status(block_id)
 	}
 
-	fn best_block_hash(&self) -> PHash {
+	async fn best_block_hash(&self) -> PHash {
 		self.relay_backend.blockchain().info().best_hash
 	}
 

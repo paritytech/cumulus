@@ -182,11 +182,11 @@ where
 			.storage_changes_notification_stream(filter_keys, child_filter_keys)
 	}
 
-	fn best_block_hash(&self) -> PHash {
+	async fn best_block_hash(&self) -> PHash {
 		self.backend.blockchain().info().best_hash
 	}
 
-	fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error> {
+	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error> {
 		self.backend.blockchain().status(block_id)
 	}
 

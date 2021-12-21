@@ -48,7 +48,7 @@ pub enum WaitError {
 	BlockchainError(PHash, sp_blockchain::Error),
 }
 
-/// Trait that provides all necessary methods for interaction between collator and relay chain.
+/// Should be used for all interaction with the relay chain in cumulus.
 #[async_trait]
 pub trait RelayChainInterface: Send + Sync {
 	/// Fetch a storage item by key.
@@ -62,10 +62,9 @@ pub trait RelayChainInterface: Send + Sync {
 	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError>;
 
 	/// Get the status of a given block.
-	fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error>;
+	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error>;
 
-	/// Get the hash of the current best block.
-	fn best_block_hash(&self) -> PHash;
+	async fn best_block_hash(&self) -> PHash;
 
 	/// Returns the whole contents of the downward message queue for the parachain we are collating
 	/// for.
@@ -210,12 +209,12 @@ where
 		(**self).storage_changes_notification_stream(filter_keys, child_filter_keys)
 	}
 
-	fn best_block_hash(&self) -> PHash {
-		(**self).best_block_hash()
+	async fn best_block_hash(&self) -> PHash {
+		(**self).best_block_hash().await
 	}
 
-	fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error> {
-		(**self).block_status(block_id)
+	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error> {
+		(**self).block_status(block_id).await
 	}
 
 	fn is_major_syncing(&self) -> bool {

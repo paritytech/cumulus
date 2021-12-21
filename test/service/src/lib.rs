@@ -29,7 +29,7 @@ use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
-use cumulus_relay_chain_local::RelayChainLocal;
+use cumulus_relay_chain_network::RelayChainNetwork;
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 
 use frame_system_rpc_runtime_api::AccountNonceApi;
@@ -219,7 +219,8 @@ where
 	let client = params.client.clone();
 	let backend = params.backend.clone();
 
-	let relay_chain_interface = Arc::new(RelayChainLocal::new(
+	println!("initializing network;");
+	let relay_chain_interface = Arc::new(RelayChainNetwork::new(
 		relay_chain_full_node.client.clone(),
 		relay_chain_full_node.backend.clone(),
 		Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),
