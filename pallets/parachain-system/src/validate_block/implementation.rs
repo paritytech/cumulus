@@ -26,7 +26,7 @@ use polkadot_parachain::primitives::{HeadData, ValidationParams, ValidationResul
 
 use codec::{Decode, Encode};
 
-use sp_core::{storage::ChildInfo, StateVersion};
+use sp_core::storage::{ChildInfo, StateVersion};
 use sp_externalities::{set_and_run_with_externalities, Externalities};
 use sp_trie::MemoryDB;
 
