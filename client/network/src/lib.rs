@@ -46,11 +46,8 @@ use futures::{
 
 use std::{convert::TryFrom, fmt, marker::PhantomData, pin::Pin, sync::Arc};
 
-use wait_on_relay_chain_block::WaitOnRelayChainBlock;
-
 #[cfg(test)]
 mod tests;
-mod wait_on_relay_chain_block;
 
 const LOG_TARGET: &str = "sync::cumulus";
 
@@ -229,7 +226,6 @@ pub struct BlockAnnounceValidator<Block, RCInterface> {
 	phantom: PhantomData<Block>,
 	relay_chain_interface: RCInterface,
 	para_id: ParaId,
-	wait_on_relay_chain_block: WaitOnRelayChainBlock<RCInterface>,
 }
 
 impl<Block, RCInterface> BlockAnnounceValidator<Block, RCInterface>
@@ -242,7 +238,6 @@ where
 			phantom: Default::default(),
 			relay_chain_interface: relay_chain_interface.clone(),
 			para_id,
-			wait_on_relay_chain_block: WaitOnRelayChainBlock::new(relay_chain_interface),
 		}
 	}
 }
@@ -360,7 +355,6 @@ where
 
 		let relay_chain_interface = self.relay_chain_interface.clone();
 		let header_encoded = header.encode();
-		let wait_on_relay_chain_block = self.wait_on_relay_chain_block.clone();
 
 		async move {
 			if let Err(e) = block_announce_data.validate(header_encoded) {
@@ -369,8 +363,8 @@ where
 
 			let relay_parent = block_announce_data.receipt.descriptor.relay_parent;
 
-			wait_on_relay_chain_block
-				.wait_on_relay_chain_block(relay_parent)
+			relay_chain_interface
+				.wait_for_block(relay_parent)
 				.await
 				.map_err(|e| Box::new(BlockAnnounceError(e.to_string())) as Box<_>)?;
 

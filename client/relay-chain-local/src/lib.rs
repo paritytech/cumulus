@@ -28,7 +28,7 @@ use cumulus_primitives_core::{
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use cumulus_relay_chain_interface::{BlockCheckResult, RelayChainInterface, WaitError};
+use cumulus_relay_chain_interface::{RelayChainInterface, WaitError};
 use futures::{FutureExt, StreamExt};
 use parking_lot::Mutex;
 use polkadot_client::{ClientHandle, ExecuteWithClient, FullBackend};
@@ -244,27 +244,23 @@ where
 		}
 	}
 
-	fn check_block_in_chain(
-		&self,
-		block_id: BlockId,
-	) -> Result<BlockCheckResult, sp_blockchain::Error> {
-		let _lock = self.backend.get_import_lock();
-
-		match self.backend.blockchain().status(block_id) {
-			Ok(BlockStatus::InChain) => return Ok(BlockCheckResult::InChain),
-			Err(err) => return Err(err),
-			_ => {},
-		}
-
-		let listener = self.full_client.import_notification_stream();
-
-		// Now it is safe to drop the lock, even when the block is now imported, it should show
-		// up in our registered listener.
-		drop(_lock);
-
-		Ok(BlockCheckResult::NotFound(listener))
-	}
-
+	/// Wait for a given relay chain block in an async way.
+	///
+	/// The caller needs to pass the hash of a block it waits for and the function will return when the
+	/// block is available or an error occurred.
+	///
+	/// The waiting for the block is implemented as follows:
+	///
+	/// 1. Get a read lock on the import lock from the backend.
+	///
+	/// 2. Check if the block is already imported. If yes, return from the function.
+	///
+	/// 3. If the block isn't imported yet, add an import notification listener.
+	///
+	/// 4. Poll the import notification listener until the block is imported or the timeout is fired.
+	///
+	/// The timeout is set to 6 seconds. This should be enough time to import the block in the current
+	/// round and if not, the new round of the relay chain already started anyway.
 	async fn wait_for_block(&self, hash: PHash) -> Result<(), WaitError> {
 		let block_id = BlockId::Hash(hash);
 		let _lock = self.backend.get_import_lock();
@@ -385,4 +381,141 @@ pub fn build_relay_chain_interface(
 	task_manager.add_child(full_node.task_manager);
 
 	Ok((relay_chain_interface_builder.build(), collator_key))
+}
+
+#[cfg(test)]
+mod tests {
+	use parking_lot::Mutex;
+
+	use super::*;
+
+	use polkadot_primitives::v1::Block as PBlock;
+	use polkadot_test_client::{
+		construct_transfer_extrinsic, BlockBuilderExt, Client, ClientBlockImportExt,
+		DefaultTestClientBuilderExt, ExecutionStrategy, InitPolkadotBlockBuilder,
+		TestClientBuilder, TestClientBuilderExt,
+	};
+	use sc_service::Arc;
+	use sp_consensus::{BlockOrigin, SyncOracle};
+	use sp_runtime::traits::Block as BlockT;
+
+	use futures::{executor::block_on, poll, task::Poll};
+
+	struct DummyNetwork {}
+
+	impl SyncOracle for DummyNetwork {
+		fn is_major_syncing(&mut self) -> bool {
+			unimplemented!("Not needed for test")
+		}
+
+		fn is_offline(&mut self) -> bool {
+			unimplemented!("Not needed for test")
+		}
+	}
+
+	fn build_client_backend_and_block() -> (Arc<Client>, PBlock, RelayChainLocal<Client>) {
+		let builder =
+			TestClientBuilder::new().set_execution_strategy(ExecutionStrategy::NativeWhenPossible);
+		let backend = builder.backend();
+		let client = Arc::new(builder.build());
+
+		let block_builder = client.init_polkadot_block_builder();
+		let block = block_builder.build().expect("Finalizes the block").block;
+		let dummy_network: Box<dyn SyncOracle + Sync + Send> = Box::new(DummyNetwork {});
+
+		(
+			client.clone(),
+			block,
+			RelayChainLocal::new(
+				client,
+				backend.clone(),
+				Arc::new(Mutex::new(dummy_network)),
+				None,
+			),
+		)
+	}
+
+	#[test]
+	fn returns_directly_for_available_block() {
+		let (mut client, block, relay_chain_interface) = build_client_backend_and_block();
+		let hash = block.hash();
+
+		block_on(client.import(BlockOrigin::Own, block)).expect("Imports the block");
+
+		block_on(async move {
+			// Should be ready on the first poll
+			assert!(matches!(
+				poll!(relay_chain_interface.wait_for_block(hash)),
+				Poll::Ready(Ok(()))
+			));
+		});
+	}
+
+	#[test]
+	fn resolve_after_block_import_notification_was_received() {
+		let (mut client, block, relay_chain_interface) = build_client_backend_and_block();
+		let hash = block.hash();
+
+		block_on(async move {
+			let mut future = relay_chain_interface.wait_for_block(hash);
+			// As the block is not yet imported, the first poll should return `Pending`
+			assert!(poll!(&mut future).is_pending());
+
+			// Import the block that should fire the notification
+			client.import(BlockOrigin::Own, block).await.expect("Imports the block");
+
+			// Now it should have received the notification and report that the block was imported
+			assert!(matches!(poll!(future), Poll::Ready(Ok(()))));
+		});
+	}
+
+	#[test]
+	fn wait_for_block_time_out_when_block_is_not_imported() {
+		let (_, block, relay_chain_interface) = build_client_backend_and_block();
+		let hash = block.hash();
+
+		assert!(matches!(
+			block_on(relay_chain_interface.wait_for_block(hash)),
+			Err(WaitError::Timeout(_))
+		));
+	}
+
+	#[test]
+	fn do_not_resolve_after_different_block_import_notification_was_received() {
+		let (mut client, block, relay_chain_interface) = build_client_backend_and_block();
+		let hash = block.hash();
+
+		let ext = construct_transfer_extrinsic(
+			&*client,
+			sp_keyring::Sr25519Keyring::Alice,
+			sp_keyring::Sr25519Keyring::Bob,
+			1000,
+		);
+		let mut block_builder = client.init_polkadot_block_builder();
+		// Push an extrinsic to get a different block hash.
+		block_builder.push_polkadot_extrinsic(ext).expect("Push extrinsic");
+		let block2 = block_builder.build().expect("Build second block").block;
+		let hash2 = block2.hash();
+
+		block_on(async move {
+			let mut future = relay_chain_interface.wait_for_block(hash);
+			let mut future2 = relay_chain_interface.wait_for_block(hash2);
+			// As the block is not yet imported, the first poll should return `Pending`
+			assert!(poll!(&mut future).is_pending());
+			assert!(poll!(&mut future2).is_pending());
+
+			// Import the block that should fire the notification
+			client.import(BlockOrigin::Own, block2).await.expect("Imports the second block");
+
+			// The import notification of the second block should not make this one finish
+			assert!(poll!(&mut future).is_pending());
+			// Now it should have received the notification and report that the block was imported
+			assert!(matches!(poll!(future2), Poll::Ready(Ok(()))));
+
+			client.import(BlockOrigin::Own, block).await.expect("Imports the first block");
+
+			// Now it should be ready
+			assert!(matches!(poll!(future), Poll::Ready(Ok(()))));
+		});
+	}
 }

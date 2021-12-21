@@ -16,7 +16,7 @@
 
 use super::*;
 use async_trait::async_trait;
-use cumulus_relay_chain_interface::{BlockCheckResult, WaitError};
+use cumulus_relay_chain_interface::WaitError;
 use cumulus_test_service::runtime::{Block, Hash, Header};
 use futures::{executor::block_on, poll, task::Poll, FutureExt, StreamExt};
 use parking_lot::Mutex;
@@ -199,27 +199,6 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		_: &Vec<Vec<u8>>,
 	) -> Result<Option<sc_client_api::StorageProof>, Box<dyn sp_state_machine::Error>> {
 		unimplemented!("Not needed for test")
-	}
-
-	fn check_block_in_chain(
-		&self,
-		block_id: polkadot_service::BlockId,
-	) -> Result<BlockCheckResult, sp_blockchain::Error> {
-		let _lock = self.relay_backend.get_import_lock();
-
-		match self.relay_backend.blockchain().status(block_id) {
-			Ok(BlockStatus::InChain) => return Ok(BlockCheckResult::InChain),
-			Err(err) => return Err(err),
-			_ => {},
-		}
-
-		let listener = self.relay_client.import_notification_stream();
-
-		// Now it is safe to drop the lock, even when the block is now imported, it should show
-		// up in our registered listener.
-		drop(_lock);
-
-		Ok(BlockCheckResult::NotFound(listener))
 	}
 
 	async fn wait_for_block(

@@ -32,11 +32,6 @@ use sp_state_machine::StorageValue;
 
 use async_trait::async_trait;
 
-pub enum BlockCheckResult {
-	InChain,
-	NotFound(sc_client_api::ImportNotifications<PBlock>),
-}
-
 #[derive(Debug, derive_more::Display)]
 pub enum WaitError {
 	#[display(fmt = "Timeout while waiting for relay-chain block `{}` to be imported.", _0)]
@@ -54,19 +49,23 @@ pub enum WaitError {
 	BlockchainError(PHash, sp_blockchain::Error),
 }
 
-/// Should be used for all interaction with the relay chain in cumulus.
+/// Trait that provides all necessary methods for interaction between collator and relay chain.
 #[async_trait]
 pub trait RelayChainInterface: Send + Sync {
+	/// Fetch a storage item by key.
 	fn get_storage_by_key(
 		&self,
 		block_id: &BlockId,
 		key: &[u8],
 	) -> Result<Option<StorageValue>, sp_blockchain::Error>;
 
+	/// Fetch a vector of current validators.
 	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError>;
 
+	/// Get the status of a given block.
 	fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error>;
 
+	/// Get the hash of the current best block.
 	fn best_block_hash(&self) -> PHash;
 
 	/// Returns the whole contents of the downward message queue for the parachain we are collating
@@ -89,6 +88,11 @@ pub trait RelayChainInterface: Send + Sync {
 		relay_parent: PHash,
 	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>>;
 
+	/// Yields the persisted validation data for the given `ParaId` along with an assumption that
+	/// should be used if the para currently occupies a core.
+	///
+	/// Returns `None` if either the para is not registered or the assumption is `Freed`
+	/// and the para already occupies a core.
 	fn persisted_validation_data(
 		&self,
 		block_id: &BlockId,
@@ -96,27 +100,30 @@ pub trait RelayChainInterface: Send + Sync {
 		_: OccupiedCoreAssumption,
 	) -> Result<Option<PersistedValidationData>, ApiError>;
 
+	/// Get the receipt of a candidate pending availability. This returns `Some` for any paras
+	/// assigned to occupied cores in `availability_cores` and `None` otherwise.
 	fn candidate_pending_availability(
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
 	) -> Result<Option<CommittedCandidateReceipt>, ApiError>;
 
+	/// Returns the session index expected at a child of the block.
 	fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError>;
 
+	/// Get a stream of import block notifications.
 	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<PBlock>;
 
-	/// Check if block is in chain. If it is, we return BlockCheckResult::InChain.
-	/// If it is not in the chain, we return BlockCheckResult::NotFound with a listener that can be used to wait on the block.
-	fn check_block_in_chain(
-		&self,
-		block_id: BlockId,
-	) -> Result<BlockCheckResult, sp_blockchain::Error>;
-
+	/// Wait for a block with a given hash in the relay chain.
+	///
+	/// This method returns immediately on error or if the block is already
+	/// reported to be in chain. Otherwise, it waits for the block to arrive.
 	async fn wait_for_block(&self, hash: PHash) -> Result<(), WaitError>;
 
+	/// Get a stream of finality notifications.
 	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<PBlock>;
 
+	/// Get a stream of storage change notifications.
 	fn storage_changes_notification_stream(
 		&self,
 		filter_keys: Option<&[sc_client_api::StorageKey]>,
@@ -125,10 +132,14 @@ pub trait RelayChainInterface: Send + Sync {
 		>,
 	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<PHash>>;
 
+	/// Whether the synchronization service is undergoing major sync.
+	/// Returns true if so.
 	fn is_major_syncing(&self) -> bool;
 
+	/// Get a handle to the overseer.
 	fn overseer_handle(&self) -> Option<OverseerHandle>;
 
+	/// Generate a storage read proof.
 	fn prove_read(
 		&self,
 		block_id: &BlockId,
@@ -230,13 +241,6 @@ where
 		relevant_keys: &Vec<Vec<u8>>,
 	) -> Result<Option<StorageProof>, Box<dyn sp_state_machine::Error>> {
 		(**self).prove_read(block_id, relevant_keys)
-	}
-
-	fn check_block_in_chain(
-		&self,
-		block_id: BlockId,
-	) -> Result<BlockCheckResult, sp_blockchain::Error> {
-		(**self).check_block_in_chain(block_id)
 	}
 
 	async fn wait_for_block(&self, hash: PHash) -> Result<(), WaitError> {
