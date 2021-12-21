@@ -33,6 +33,7 @@ use cumulus_relay_chain_local::RelayChainLocal;
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 
 use frame_system_rpc_runtime_api::AccountNonceApi;
+use parking_lot::Mutex;
 use polkadot_primitives::v1::{CollatorPair, Hash as PHash, PersistedValidationData};
 use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
@@ -52,7 +53,7 @@ use sp_keyring::Sr25519Keyring;
 use sp_runtime::{codec::Encode, generic, traits::BlakeTwo256};
 use sp_state_machine::BasicExternalities;
 use sp_trie::PrefixedMemoryDB;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use substrate_test_client::{
 	BlockchainEventsExt, RpcHandlersExt, RpcTransactionError, RpcTransactionOutput,
 };

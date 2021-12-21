@@ -27,6 +27,7 @@ use cumulus_primitives_core::{
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
 use cumulus_relay_chain_interface::{BlockCheckResult, RelayChainInterface};
+use parking_lot::Mutex;
 use polkadot_client::{ClientHandle, ExecuteWithClient, FullBackend};
 use polkadot_service::{
 	AuxStore, BabeApi, CollatorPair, Configuration, Handle, NewFull, Role, TaskManager,
@@ -39,7 +40,6 @@ use sp_api::{ApiError, ProvideRuntimeApi};
 use sp_consensus::SyncOracle;
 use sp_core::{sp_std::collections::btree_map::BTreeMap, Pair};
 use sp_state_machine::{Backend as StateBackend, StorageValue};
-use std::sync::Mutex;
 const LOG_TARGET: &str = "relay-chain-local";
 
 /// RelayChainLocal is used to interact with a full node that is running locally
@@ -186,7 +186,7 @@ where
 	}
 
 	fn is_major_syncing(&self) -> bool {
-		let mut network = self.sync_oracle.lock().unwrap();
+		let mut network = self.sync_oracle.lock();
 		network.is_major_syncing()
 	}
 
@@ -194,29 +194,13 @@ where
 		self.overseer_handle.clone()
 	}
 
-	fn get_storage_by_key(&self, block_id: &BlockId, key: &[u8]) -> Option<StorageValue> {
-		let state = self
-			.backend
-			.state_at(*block_id)
-			.map_err(|e| {
-				tracing::error!(
-					target: LOG_TARGET,
-					relay_parent = ?block_id,
-					error = ?e,
-					"Cannot obtain the state of the relay chain.",
-				)
-			})
-			.ok()?;
-		state
-			.storage(key)
-			.map_err(|e| {
-				tracing::error!(
-					target: LOG_TARGET,
-					error = ?e,
-					"Cannot decode the hrmp ingress channel index.",
-				)
-			})
-			.ok()?
+	fn get_storage_by_key(
+		&self,
+		block_id: &BlockId,
+		key: &[u8],
+	) -> Result<Option<StorageValue>, sp_blockchain::Error> {
+		let state = self.backend.state_at(*block_id)?;
+		state.storage(key).map_err(sp_blockchain::Error::Storage)
 	}
 
 	fn prove_read(

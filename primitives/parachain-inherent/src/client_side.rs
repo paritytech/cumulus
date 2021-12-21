@@ -37,10 +37,19 @@ fn collect_relay_storage_proof(
 	use relay_chain::well_known_keys as relay_well_known_keys;
 
 	let relay_parent_block_id = BlockId::Hash(relay_parent);
-	let ingress_channels = relay_chain_interface.get_storage_by_key(
-		&relay_parent_block_id,
-		&relay_well_known_keys::hrmp_ingress_channel_index(para_id),
-	);
+	let ingress_channels = relay_chain_interface
+		.get_storage_by_key(
+			&relay_parent_block_id,
+			&relay_well_known_keys::hrmp_ingress_channel_index(para_id),
+		)
+		.map_err(|e| {
+			tracing::error!(
+				target: LOG_TARGET,
+				relay_parent = ?relay_parent_block_id,
+				error = ?e, "Cannot obtain the hrmp ingress channel."
+			)
+		})
+		.ok()?;
 
 	let ingress_channels = ingress_channels
 		.map(|raw| <Vec<ParaId>>::decode(&mut &raw[..]))
@@ -55,10 +64,19 @@ fn collect_relay_storage_proof(
 		.ok()?
 		.unwrap_or_default();
 
-	let egress_channels = relay_chain_interface.get_storage_by_key(
-		&relay_parent_block_id,
-		&relay_well_known_keys::hrmp_egress_channel_index(para_id),
-	);
+	let egress_channels = relay_chain_interface
+		.get_storage_by_key(
+			&relay_parent_block_id,
+			&relay_well_known_keys::hrmp_egress_channel_index(para_id),
+		)
+		.map_err(|e| {
+			tracing::error!(
+				target: LOG_TARGET,
+				error = ?e,
+				"Cannot obtain the hrmp egress channel.",
+			)
+		})
+		.ok()?;
 
 	let egress_channels = egress_channels
 		.map(|raw| <Vec<ParaId>>::decode(&mut &raw[..]))

@@ -117,7 +117,7 @@ where
 
 #[cfg(test)]
 mod tests {
-	use std::sync::Mutex;
+	use parking_lot::Mutex;
 
 	use super::*;
 

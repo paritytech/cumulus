@@ -37,7 +37,11 @@ pub enum BlockCheckResult {
 
 /// Should be used for all interaction with the relay chain in cumulus.
 pub trait RelayChainInterface: Send + Sync {
-	fn get_storage_by_key(&self, block_id: &BlockId, key: &[u8]) -> Option<StorageValue>;
+	fn get_storage_by_key(
+		&self,
+		block_id: &BlockId,
+		key: &[u8],
+	) -> Result<Option<StorageValue>, sp_blockchain::Error>;
 
 	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError>;
 
@@ -189,7 +193,11 @@ where
 		(**self).overseer_handle()
 	}
 
-	fn get_storage_by_key(&self, block_id: &BlockId, key: &[u8]) -> Option<StorageValue> {
+	fn get_storage_by_key(
+		&self,
+		block_id: &BlockId,
+		key: &[u8],
+	) -> Result<Option<StorageValue>, sp_blockchain::Error> {
 		(**self).get_storage_by_key(block_id, key)
 	}
 

@@ -719,11 +719,8 @@ pub async fn start_rococo_parachain_node(
 			);
 
 
-			let relay_chain_interface_for_consensus =  relay_chain_interface.clone();
-
 			Ok(build_aura_consensus::<
 				sp_consensus_aura::sr25519::AuthorityPair,
-				_,
 				_,
 				_,
 				_,
@@ -760,7 +757,6 @@ pub async fn start_rococo_parachain_node(
 					}
 				},
 				block_import: client.clone(),
-				relay_chain_interface:  relay_chain_interface_for_consensus,
 				para_client: client.clone(),
 				backoff_authoring_blocks: Option::<()>::None,
 				sync_oracle,
@@ -1141,11 +1137,8 @@ where
 					telemetry2.clone(),
 				);
 
-				let relay_chain_interface2 = relay_chain_for_aura.clone();
-
 				build_aura_consensus::<
 					sp_consensus_aura::sr25519::AuthorityPair,
-					_,
 					_,
 					_,
 					_,
@@ -1182,7 +1175,6 @@ where
 						}
 					},
 					block_import: client2.clone(),
-					relay_chain_interface: relay_chain_interface2,
 					para_client: client2.clone(),
 					backoff_authoring_blocks: Option::<()>::None,
 					sync_oracle,

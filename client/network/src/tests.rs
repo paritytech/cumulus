@@ -38,6 +38,7 @@ use sp_core::{Pair, H256};
 use sp_keyring::Sr25519Keyring;
 use sp_keystore::{testing::KeyStore, SyncCryptoStore, SyncCryptoStorePtr};
 use sp_runtime::RuntimeAppPublic;
+use sp_state_machine::StorageValue;
 use std::collections::BTreeMap;
 
 fn check_error(error: crate::BoxedError, check_error: impl Fn(&BlockAnnounceError) -> bool) {
@@ -186,7 +187,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		&self,
 		_: &polkadot_service::BlockId,
 		_: &[u8],
-	) -> Option<sp_state_machine::StorageValue> {
+	) -> Result<Option<StorageValue>, sp_blockchain::Error> {
 		unimplemented!("Not needed for test")
 	}
 

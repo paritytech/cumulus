@@ -1454,7 +1454,6 @@ dependencies = [
  "async-trait",
  "cumulus-client-consensus-common",
  "cumulus-primitives-core",
- "cumulus-relay-chain-interface",
  "futures 0.3.18",
  "parity-scale-codec",
  "sc-client-api",
@@ -1853,7 +1852,6 @@ version = "0.1.0"
 dependencies = [
  "cumulus-primitives-core",
  "cumulus-relay-chain-interface",
- "futures 0.3.18",
  "parking_lot 0.11.2",
  "polkadot-client",
  "polkadot-service",
@@ -1976,6 +1974,7 @@ dependencies = [
  "jsonrpc-core",
  "pallet-transaction-payment",
  "parity-scale-codec",
+ "parking_lot 0.11.2",
  "polkadot-primitives",
  "polkadot-service",
  "polkadot-test-service",

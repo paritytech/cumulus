@@ -430,10 +430,8 @@ pub async fn start_parachain_node(
 				telemetry.clone(),
 			);
 
-			let relay_chain_interface2 = relay_chain_interface.clone();
 			Ok(build_aura_consensus::<
 				sp_consensus_aura::sr25519::AuthorityPair,
-				_,
 				_,
 				_,
 				_,
@@ -470,7 +468,6 @@ pub async fn start_parachain_node(
 					}
 				},
 				block_import: client.clone(),
-				relay_chain_interface: relay_chain_interface2,
 				para_client: client,
 				backoff_authoring_blocks: Option::<()>::None,
 				sync_oracle,
