@@ -30,12 +30,32 @@ use sp_api::ApiError;
 use sp_core::sp_std::collections::btree_map::BTreeMap;
 use sp_state_machine::StorageValue;
 
+use async_trait::async_trait;
+
 pub enum BlockCheckResult {
 	InChain,
 	NotFound(sc_client_api::ImportNotifications<PBlock>),
 }
 
+#[derive(Debug, derive_more::Display)]
+pub enum WaitError {
+	#[display(fmt = "Timeout while waiting for relay-chain block `{}` to be imported.", _0)]
+	Timeout(PHash),
+	#[display(
+		fmt = "Import listener closed while waiting for relay-chain block `{}` to be imported.",
+		_0
+	)]
+	ImportListenerClosed(PHash),
+	#[display(
+		fmt = "Blockchain returned an error while waiting for relay-chain block `{}` to be imported: {:?}",
+		_0,
+		_1
+	)]
+	BlockchainError(PHash, sp_blockchain::Error),
+}
+
 /// Should be used for all interaction with the relay chain in cumulus.
+#[async_trait]
 pub trait RelayChainInterface: Send + Sync {
 	fn get_storage_by_key(
 		&self,
@@ -93,6 +113,8 @@ pub trait RelayChainInterface: Send + Sync {
 		block_id: BlockId,
 	) -> Result<BlockCheckResult, sp_blockchain::Error>;
 
+	async fn wait_for_block(&self, hash: PHash) -> Result<(), WaitError>;
+
 	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<PBlock>;
 
 	fn storage_changes_notification_stream(
@@ -114,6 +136,7 @@ pub trait RelayChainInterface: Send + Sync {
 	) -> Result<Option<StorageProof>, Box<dyn sp_state_machine::Error>>;
 }
 
+#[async_trait]
 impl<T> RelayChainInterface for Arc<T>
 where
 	T: RelayChainInterface + ?Sized,
@@ -214,5 +237,9 @@ where
 		block_id: BlockId,
 	) -> Result<BlockCheckResult, sp_blockchain::Error> {
 		(**self).check_block_in_chain(block_id)
+	}
+
+	async fn wait_for_block(&self, hash: PHash) -> Result<(), WaitError> {
+		(**self).wait_for_block(hash).await
 	}
 }

@@ -16,33 +16,9 @@
 
 //! Provides the [`WaitOnRelayChainBlock`] type.
 
-use cumulus_relay_chain_interface::{BlockCheckResult, RelayChainInterface};
-use futures::{future::ready, Future, FutureExt, StreamExt};
+use cumulus_relay_chain_interface::{RelayChainInterface, WaitError};
+use futures::Future;
 use polkadot_primitives::v1::Hash as PHash;
-use sc_client_api::blockchain;
-use sp_runtime::generic::BlockId;
-use std::time::Duration;
-
-/// The timeout in seconds after that the waiting for a block should be aborted.
-const TIMEOUT_IN_SECONDS: u64 = 6;
-
-/// Custom error type used by [`WaitOnRelayChainBlock`].
-#[derive(Debug, derive_more::Display)]
-pub enum Error {
-	#[display(fmt = "Timeout while waiting for relay-chain block `{}` to be imported.", _0)]
-	Timeout(PHash),
-	#[display(
-		fmt = "Import listener closed while waiting for relay-chain block `{}` to be imported.",
-		_0
-	)]
-	ImportListenerClosed(PHash),
-	#[display(
-		fmt = "Blockchain returned an error while waiting for relay-chain block `{}` to be imported: {:?}",
-		_0,
-		_1
-	)]
-	BlockchainError(PHash, blockchain::Error),
-}
 
 /// A helper to wait for a given relay chain block in an async way.
 ///
@@ -88,30 +64,8 @@ where
 	pub fn wait_on_relay_chain_block(
 		&self,
 		hash: PHash,
-	) -> impl Future<Output = Result<(), Error>> {
-		let mut listener =
-			match self.relay_chain_interface.check_block_in_chain(BlockId::Hash(hash)) {
-				Ok(BlockCheckResult::NotFound(listener)) => listener,
-				Ok(BlockCheckResult::InChain) => return ready(Ok(())).boxed(),
-				Err(err) => return ready(Err(Error::BlockchainError(hash, err))).boxed(),
-			};
-
-		let mut timeout = futures_timer::Delay::new(Duration::from_secs(TIMEOUT_IN_SECONDS)).fuse();
-
-		async move {
-			loop {
-				futures::select! {
-					_ = timeout => return Err(Error::Timeout(hash)),
-					evt = listener.next() => match evt {
-						Some(evt) if evt.hash == hash => return Ok(()),
-						// Not the event we waited on.
-						Some(_) => continue,
-						None => return Err(Error::ImportListenerClosed(hash)),
-					}
-				}
-			}
-		}
-		.boxed()
+	) -> impl Future<Output = Result<(), WaitError>> + '_ {
+		self.relay_chain_interface.wait_for_block(hash)
 	}
 }
 
@@ -210,7 +164,10 @@ mod tests {
 
 		let wait = WaitOnRelayChainBlock::new(relay_chain_interface);
 
-		assert!(matches!(block_on(wait.wait_on_relay_chain_block(hash)), Err(Error::Timeout(_))));
+		assert!(matches!(
+			block_on(wait.wait_on_relay_chain_block(hash)),
+			Err(WaitError::Timeout(_))
+		));
 	}
 
 	#[test]

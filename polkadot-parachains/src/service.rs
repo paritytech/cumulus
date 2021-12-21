@@ -14,9 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use cumulus_client_consensus_aura::{
-	build_aura_consensus, BuildAuraConsensusParams, SlotProportion,
-};
+use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 use cumulus_client_consensus_common::{
 	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
@@ -719,10 +717,8 @@ pub async fn start_rococo_parachain_node(
 			);
 
 
-			Ok(build_aura_consensus::<
+			Ok(AuraConsensus::build::<
 				sp_consensus_aura::sr25519::AuthorityPair,
-				_,
-				_,
 				_,
 				_,
 				_,
@@ -1137,56 +1133,51 @@ where
 					telemetry2.clone(),
 				);
 
-				build_aura_consensus::<
-					sp_consensus_aura::sr25519::AuthorityPair,
-					_,
-					_,
-					_,
-					_,
-					_,
-					_,
-					_,
-					_,
-				>(BuildAuraConsensusParams {
-					proposer_factory,
-					create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
-						let parachain_inherent =
+				AuraConsensus::build::<sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _>(
+					BuildAuraConsensusParams {
+						proposer_factory,
+						create_inherent_data_providers:
+							move |_, (relay_parent, validation_data)| {
+								let parachain_inherent =
 							cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 								relay_parent,
 								&relay_chain_for_aura,
 								&validation_data,
 								id,
 							);
-						async move {
-							let time = sp_timestamp::InherentDataProvider::from_system_time();
+								async move {
+									let time =
+										sp_timestamp::InherentDataProvider::from_system_time();
 
-							let slot =
+									let slot =
 									sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
 										*time,
 										slot_duration.slot_duration(),
 									);
 
-							let parachain_inherent = parachain_inherent.ok_or_else(|| {
-								Box::<dyn std::error::Error + Send + Sync>::from(
-									"Failed to create parachain inherent",
-								)
-							})?;
-							Ok((time, slot, parachain_inherent))
-						}
+									let parachain_inherent =
+										parachain_inherent.ok_or_else(|| {
+											Box::<dyn std::error::Error + Send + Sync>::from(
+												"Failed to create parachain inherent",
+											)
+										})?;
+									Ok((time, slot, parachain_inherent))
+								}
+							},
+						block_import: client2.clone(),
+						para_client: client2.clone(),
+						backoff_authoring_blocks: Option::<()>::None,
+						sync_oracle,
+						keystore,
+						force_authoring,
+						slot_duration,
+						// We got around 500ms for proposing
+						block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
+						// And a maximum of 750ms if slots are skipped
+						max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
+						telemetry: telemetry2,
 					},
-					block_import: client2.clone(),
-					para_client: client2.clone(),
-					backoff_authoring_blocks: Option::<()>::None,
-					sync_oracle,
-					keystore,
-					force_authoring,
-					slot_duration,
-					// We got around 500ms for proposing
-					block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
-					// And a maximum of 750ms if slots are skipped
-					max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
-					telemetry: telemetry2,
-				})
+				)
 			})));
 
 			let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(

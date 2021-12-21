@@ -1525,6 +1525,7 @@ dependencies = [
 name = "cumulus-client-network"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "cumulus-primitives-core",
  "cumulus-relay-chain-interface",
  "cumulus-relay-chain-local",
@@ -1835,7 +1836,9 @@ dependencies = [
 name = "cumulus-relay-chain-interface"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "cumulus-primitives-core",
+ "derive_more",
  "parking_lot 0.11.2",
  "polkadot-overseer",
  "sc-client-api",
@@ -1850,8 +1853,11 @@ dependencies = [
 name = "cumulus-relay-chain-local"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "cumulus-primitives-core",
  "cumulus-relay-chain-interface",
+ "futures 0.3.18",
+ "futures-timer 3.0.2",
  "parking_lot 0.11.2",
  "polkadot-client",
  "polkadot-service",

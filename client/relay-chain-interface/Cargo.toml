@@ -18,3 +18,5 @@ sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 parking_lot = "0.11.1"
+derive_more = "0.99.2"
+async-trait = "0.1.52"

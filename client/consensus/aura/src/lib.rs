@@ -82,24 +82,26 @@ impl<B, CIDP> Clone for AuraConsensus<B, CIDP> {
 impl<B, CIDP> AuraConsensus<B, CIDP>
 where
 	B: BlockT,
-	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)>,
+	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)> + 'static,
 	CIDP::InherentDataProviders: InherentDataProviderExt,
 {
-	/// Create a new instance of AURA consensus.
-	pub fn new<P, Client, BI, SO, PF, BS, Error>(
-		para_client: Arc<Client>,
-		block_import: BI,
-		sync_oracle: SO,
-		proposer_factory: PF,
-		force_authoring: bool,
-		backoff_authoring_blocks: Option<BS>,
-		keystore: SyncCryptoStorePtr,
-		create_inherent_data_providers: CIDP,
-		slot_duration: SlotDuration,
-		telemetry: Option<TelemetryHandle>,
-		block_proposal_slot_portion: SlotProportion,
-		max_block_proposal_slot_portion: Option<SlotProportion>,
-	) -> Self
+	/// Create a new boxed instance of AURA consensus.
+	pub fn build<P, Client, BI, SO, PF, BS, Error>(
+		BuildAuraConsensusParams {
+			proposer_factory,
+			create_inherent_data_providers,
+			block_import,
+			para_client,
+			backoff_authoring_blocks,
+			sync_oracle,
+			keystore,
+			force_authoring,
+			slot_duration,
+			telemetry,
+			block_proposal_slot_portion,
+			max_block_proposal_slot_portion,
+		}: BuildAuraConsensusParams<PF, BI, CIDP, Client, BS, SO>,
+	) -> Box<dyn ParachainConsensus<B>>
 	where
 		Client:
 			ProvideRuntimeApi<B> + BlockOf + AuxStore + HeaderBackend<B> + Send + Sync + 'static,
@@ -136,11 +138,11 @@ where
 			},
 		);
 
-		Self {
+		Box::new(Self {
 			create_inherent_data_providers: Arc::new(create_inherent_data_providers),
 			aura_worker: Arc::new(Mutex::new(worker)),
 			slot_duration,
-		}
+		})
 	}
 
 	/// Create the inherent data.
@@ -183,7 +185,7 @@ where
 impl<B, CIDP> ParachainConsensus<B> for AuraConsensus<B, CIDP>
 where
 	B: BlockT,
-	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)> + Send + Sync,
+	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)> + Send + Sync + 'static,
 	CIDP::InherentDataProviders: InherentDataProviderExt + Send,
 {
 	async fn produce_candidate(
@@ -228,73 +230,4 @@ pub struct BuildAuraConsensusParams<PF, BI, CIDP, Client, BS, SO> {
 	pub telemetry: Option<TelemetryHandle>,
 	pub block_proposal_slot_portion: SlotProportion,
 	pub max_block_proposal_slot_portion: Option<SlotProportion>,
-}
-
-/// Build the [`AuraConsensus`].
-///
-/// Returns a boxed [`ParachainConsensus`].
-pub fn build_aura_consensus<P, Block, PF, BI, CIDP, Client, SO, BS, Error>(
-	BuildAuraConsensusParams {
-		proposer_factory,
-		create_inherent_data_providers,
-		block_import,
-		para_client,
-		backoff_authoring_blocks,
-		sync_oracle,
-		keystore,
-		force_authoring,
-		slot_duration,
-		telemetry,
-		block_proposal_slot_portion,
-		max_block_proposal_slot_portion,
-	}: BuildAuraConsensusParams<PF, BI, CIDP, Client, BS, SO>,
-) -> Box<dyn ParachainConsensus<Block>>
-where
-	Block: BlockT,
-	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)>
-		+ Send
-		+ Sync
-		+ 'static,
-	CIDP::InherentDataProviders: InherentDataProviderExt + Send,
-	Client: ProvideRuntimeApi<Block>
-		+ BlockOf
-		+ AuxStore
-		+ HeaderBackend<Block>
-		+ Send
-		+ Sync
-		+ 'static,
-	Client::Api: AuraApi<Block, P::Public>,
-	BI: BlockImport<Block, Transaction = sp_api::TransactionFor<Client, Block>>
-		+ Send
-		+ Sync
-		+ 'static,
-	SO: SyncOracle + Send + Sync + Clone + 'static,
-	BS: BackoffAuthoringBlocksStrategy<NumberFor<Block>> + Send + Sync + 'static,
-	PF: Environment<Block, Error = Error> + Send + Sync + 'static,
-	PF::Proposer: Proposer<
-		Block,
-		Error = Error,
-		Transaction = sp_api::TransactionFor<Client, Block>,
-		ProofRecording = EnableProofRecording,
-		Proof = <EnableProofRecording as ProofRecording>::Proof,
-	>,
-	Error: std::error::Error + Send + From<sp_consensus::Error> + 'static,
-	P: Pair + Send + Sync,
-	P::Public: AppPublic + Hash + Member + Encode + Decode,
-	P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
-{
-	Box::new(AuraConsensus::new::<P, _, _, _, _, _, _>(
-		para_client,
-		block_import,
-		sync_oracle,
-		proposer_factory,
-		force_authoring,
-		backoff_authoring_blocks,
-		keystore,
-		create_inherent_data_providers,
-		slot_duration,
-		telemetry,
-		block_proposal_slot_portion,
-		max_block_proposal_slot_portion,
-	))
 }

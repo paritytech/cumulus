@@ -16,6 +16,8 @@
 
 use std::sync::Arc;
 
+use async_trait::async_trait;
+use core::time::Duration;
 use cumulus_primitives_core::{
 	relay_chain::{
 		v1::{
@@ -26,7 +28,8 @@ use cumulus_primitives_core::{
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use cumulus_relay_chain_interface::{BlockCheckResult, RelayChainInterface};
+use cumulus_relay_chain_interface::{BlockCheckResult, RelayChainInterface, WaitError};
+use futures::{FutureExt, StreamExt};
 use parking_lot::Mutex;
 use polkadot_client::{ClientHandle, ExecuteWithClient, FullBackend};
 use polkadot_service::{
@@ -40,7 +43,10 @@ use sp_api::{ApiError, ProvideRuntimeApi};
 use sp_consensus::SyncOracle;
 use sp_core::{sp_std::collections::btree_map::BTreeMap, Pair};
 use sp_state_machine::{Backend as StateBackend, StorageValue};
+
 const LOG_TARGET: &str = "relay-chain-local";
+/// The timeout in seconds after that the waiting for a block should be aborted.
+const TIMEOUT_IN_SECONDS: u64 = 6;
 
 /// RelayChainLocal is used to interact with a full node that is running locally
 /// in the same process.
@@ -73,6 +79,7 @@ impl<T> Clone for RelayChainLocal<T> {
 	}
 }
 
+#[async_trait]
 impl<Client> RelayChainInterface for RelayChainLocal<Client>
 where
 	Client: ProvideRuntimeApi<PBlock>
@@ -256,6 +263,37 @@ where
 		drop(_lock);
 
 		Ok(BlockCheckResult::NotFound(listener))
+	}
+
+	async fn wait_for_block(&self, hash: PHash) -> Result<(), WaitError> {
+		let block_id = BlockId::Hash(hash);
+		let _lock = self.backend.get_import_lock();
+
+		match self.backend.blockchain().status(block_id) {
+			Ok(BlockStatus::InChain) => return Ok(()),
+			Err(err) => return Err(WaitError::BlockchainError(hash, err)),
+			_ => {},
+		}
+
+		let mut listener = self.full_client.import_notification_stream();
+
+		// Now it is safe to drop the lock, even when the block is now imported, it should show
+		// up in our registered listener.
+		drop(_lock);
+
+		let mut timeout = futures_timer::Delay::new(Duration::from_secs(TIMEOUT_IN_SECONDS)).fuse();
+
+		loop {
+			futures::select! {
+				_ = timeout => return Err(WaitError::Timeout(hash)),
+				evt = listener.next() => match evt {
+					Some(evt) if evt.hash == hash => return Ok(()),
+					// Not the event we waited on.
+					Some(_) => continue,
+					None => return Err(WaitError::ImportListenerClosed(hash)),
+				}
+			}
+		}
 	}
 }
 

@@ -15,9 +15,10 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use cumulus_relay_chain_interface::BlockCheckResult;
+use async_trait::async_trait;
+use cumulus_relay_chain_interface::{BlockCheckResult, WaitError};
 use cumulus_test_service::runtime::{Block, Hash, Header};
-use futures::{executor::block_on, poll, task::Poll};
+use futures::{executor::block_on, poll, task::Poll, FutureExt, StreamExt};
 use parking_lot::Mutex;
 use polkadot_node_primitives::{SignedFullStatement, Statement};
 use polkadot_primitives::v1::{
@@ -39,7 +40,7 @@ use sp_keyring::Sr25519Keyring;
 use sp_keystore::{testing::KeyStore, SyncCryptoStore, SyncCryptoStorePtr};
 use sp_runtime::RuntimeAppPublic;
 use sp_state_machine::StorageValue;
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, time::Duration};
 
 fn check_error(error: crate::BoxedError, check_error: impl Fn(&BlockAnnounceError) -> bool) {
 	let error = *error
@@ -73,6 +74,7 @@ impl DummyRelayChainInterface {
 	}
 }
 
+#[async_trait]
 impl RelayChainInterface for DummyRelayChainInterface {
 	fn validators(
 		&self,
@@ -218,6 +220,40 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		drop(_lock);
 
 		Ok(BlockCheckResult::NotFound(listener))
+	}
+
+	async fn wait_for_block(
+		&self,
+		hash: PHash,
+	) -> Result<(), cumulus_relay_chain_interface::WaitError> {
+		let block_id = BlockId::Hash(hash);
+		let _lock = self.relay_backend.get_import_lock();
+
+		match self.relay_backend.blockchain().status(block_id) {
+			Ok(BlockStatus::InChain) => return Ok(()),
+			Err(err) => return Err(WaitError::BlockchainError(hash, err)),
+			_ => {},
+		}
+
+		let mut listener = self.relay_client.import_notification_stream();
+
+		// Now it is safe to drop the lock, even when the block is now imported, it should show
+		// up in our registered listener.
+		drop(_lock);
+
+		let mut timeout = futures_timer::Delay::new(Duration::from_secs(10)).fuse();
+
+		loop {
+			futures::select! {
+				_ = timeout => return Err(WaitError::Timeout(hash)),
+				evt = listener.next() => match evt {
+					Some(evt) if evt.hash == hash => return Ok(()),
+					// Not the event we waited on.
+					Some(_) => continue,
+					None => return Err(WaitError::ImportListenerClosed(hash)),
+				}
+			}
+		}
 	}
 }
 

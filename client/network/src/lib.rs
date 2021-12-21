@@ -392,31 +392,7 @@ pub fn build_block_announce_validator<Block: BlockT, RCInterface>(
 where
 	RCInterface: RelayChainInterface + Clone + 'static,
 {
-	BlockAnnounceValidatorBuilder::new(relay_chain_interface, para_id).build()
-}
-
-/// Block announce validator builder.
-///
-/// Builds a [`BlockAnnounceValidator`] for a parachain.
-struct BlockAnnounceValidatorBuilder<Block, RCInterface> {
-	phantom: PhantomData<Block>,
-	relay_chain_interface: RCInterface,
-	para_id: ParaId,
-}
-
-impl<Block: BlockT, RCInterface> BlockAnnounceValidatorBuilder<Block, RCInterface>
-where
-	RCInterface: RelayChainInterface + Clone + 'static,
-{
-	/// Create a new instance of the builder.
-	fn new(relay_chain_interface: RCInterface, para_id: ParaId) -> Self {
-		Self { relay_chain_interface, para_id, phantom: PhantomData }
-	}
-
-	/// Build the block announce validator.
-	fn build(self) -> Box<dyn BlockAnnounceValidatorT<Block> + Send> {
-		Box::new(BlockAnnounceValidator::new(self.relay_chain_interface.clone(), self.para_id))
-	}
+	Box::new(BlockAnnounceValidator::new(relay_chain_interface, para_id))
 }
 
 /// Wait before announcing a block that a candidate message has been received for this block, then
