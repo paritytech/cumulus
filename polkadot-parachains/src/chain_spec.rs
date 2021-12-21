@@ -226,9 +226,12 @@ pub type StatemineChainSpec =
 pub type WestmintChainSpec =
 	sc_service::GenericChainSpec<westmint_runtime::GenesisConfig, Extensions>;
 
-const STATEMINT_ED: StatemintBalance = statemint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
-const STATEMINE_ED: StatemintBalance = statemine_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
-const WESTMINT_ED: StatemintBalance = westmint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const STATEMINT_ED: StatemintBalance =
+	statemint_runtime::constants::currency::EXISTENTIAL_DEPOSIT / 10;
+const STATEMINE_ED: StatemintBalance =
+	statemine_runtime::constants::currency::EXISTENTIAL_DEPOSIT / 10;
+const WESTMINT_ED: StatemintBalance =
+	westmint_runtime::constants::currency::EXISTENTIAL_DEPOSIT / 10;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_public_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {

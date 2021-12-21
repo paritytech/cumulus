@@ -179,7 +179,7 @@ impl pallet_authorship::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT;
+	pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT / 10;
 	pub const MaxLocks: u32 = 50;
 	pub const MaxReserves: u32 = 50;
 }
@@ -216,7 +216,7 @@ impl pallet_transaction_payment::Config for Runtime {
 parameter_types! {
 	pub const AssetDeposit: Balance = UNITS; // 1 UNIT deposit to create asset
 	pub const AssetAccountDeposit: Balance = deposit(1, 16);
-	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
+	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT / 10;
 	pub const AssetsStringLimit: u32 = 50;
 	/// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
 	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
