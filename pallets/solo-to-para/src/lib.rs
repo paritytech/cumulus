@@ -160,7 +160,7 @@ pub mod pallet {
 		) -> TransactionValidity {
 			let root_account = match pallet_sudo::Pallet::<T>::key() {
 				Some(account) => account,
-				None => return Err(InvalidTransaction::Call.into()),
+				None => return Err(InvalidTransaction::BadSigner.into()),
 			};
 
 			if *who == root_account {
