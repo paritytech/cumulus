@@ -171,7 +171,7 @@ pub mod pallet {
 					..Default::default()
 				})
 			} else {
-				Err(InvalidTransaction::Call.into())
+				Err(InvalidTransaction::BadSigner.into())
 			}
 		}
 	}
