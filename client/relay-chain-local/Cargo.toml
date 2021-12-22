@@ -4,7 +4,6 @@ name = "cumulus-relay-chain-local"
 version = "0.1.0"
 edition = "2021"
 
-
 [dependencies]
 polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }

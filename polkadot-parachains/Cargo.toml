@@ -74,7 +74,6 @@ cumulus-client-consensus-relay-chain = { path = "../client/consensus/relay-chain
 cumulus-client-consensus-common = { path = "../client/consensus/common" }
 cumulus-client-service = { path = "../client/service" }
 cumulus-client-network = { path = "../client/network" }
-cumulus-client-collator = { path = "../client/collator" }
 cumulus-primitives-core = { path = "../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../primitives/parachain-inherent" }
 cumulus-relay-chain-interface = { path = "../client/relay-chain-interface" }

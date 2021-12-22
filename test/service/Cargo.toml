@@ -29,7 +29,6 @@ sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch 
 sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -48,7 +47,6 @@ polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch
 cumulus-client-consensus-relay-chain = { path = "../../client/consensus/relay-chain" }
 cumulus-client-network = { path = "../../client/network" }
 cumulus-client-service = { path = "../../client/service" }
-cumulus-client-collator = { path = "../../client/collator" }
 cumulus-client-consensus-common = { path = "../../client/consensus/common" }
 cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent" }

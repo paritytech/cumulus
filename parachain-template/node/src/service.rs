@@ -1,7 +1,7 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 // std
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 // Local Runtime Types
 use parachain_template_runtime::{
@@ -20,7 +20,6 @@ use cumulus_relay_chain_interface::RelayChainInterface;
 use cumulus_relay_chain_local::build_relay_chain_interface;
 
 // Substrate Imports
-use core::time::Duration;
 use sc_client_api::ExecutorProvider;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;

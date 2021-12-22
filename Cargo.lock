@@ -1968,7 +1968,6 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "criterion",
- "cumulus-client-collator",
  "cumulus-client-consensus-common",
  "cumulus-client-consensus-relay-chain",
  "cumulus-client-network",
@@ -2002,7 +2001,6 @@ dependencies = [
  "sc-transaction-pool",
  "sc-transaction-pool-api",
  "serde",
- "sp-api",
  "sp-arithmetic",
  "sp-blockchain",
  "sp-core",
@@ -6724,7 +6722,6 @@ dependencies = [
  "assert_cmd",
  "async-trait",
  "cumulus-client-cli",
- "cumulus-client-collator",
  "cumulus-client-consensus-aura",
  "cumulus-client-consensus-common",
  "cumulus-client-consensus-relay-chain",

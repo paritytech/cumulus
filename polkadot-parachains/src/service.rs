@@ -33,7 +33,6 @@ use polkadot_service::NativeExecutionDispatch;
 use crate::rpc;
 pub use parachains_common::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
 
-use core::time::Duration;
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use futures::lock::Mutex;
 use sc_client_api::ExecutorProvider;
@@ -53,7 +52,7 @@ use sp_runtime::{
 	generic::BlockId,
 	traits::{BlakeTwo256, Header as HeaderT},
 };
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 use substrate_prometheus_endpoint::Registry;
 
 /// Native executor instance.
@@ -131,9 +130,7 @@ impl sc_executor::NativeExecutionDispatch for StatemineRuntimeExecutor {
 	}
 }
 
-/**
-Native Westmint executor instance.
-*/
+/// Native Westmint executor instance.
 pub struct WestmintRuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for WestmintRuntimeExecutor {

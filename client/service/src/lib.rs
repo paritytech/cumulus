@@ -18,7 +18,6 @@
 //!
 //! Provides functions for starting a collator node or a normal full node.
 
-use core::time::Duration;
 use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_primitives_core::{CollectCollationInfo, ParaId};
 use cumulus_relay_chain_interface::RelayChainInterface;
@@ -39,7 +38,7 @@ use sp_runtime::{
 	traits::{Block as BlockT, NumberFor},
 	Justifications,
 };
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 pub mod genesis;
 

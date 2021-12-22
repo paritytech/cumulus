@@ -17,6 +17,7 @@
 use super::*;
 use async_trait::async_trait;
 use cumulus_relay_chain_interface::WaitError;
+use cumulus_relay_chain_local::{check_block_in_chain, BlockCheckStatus};
 use cumulus_test_service::runtime::{Block, Hash, Header};
 use futures::{executor::block_on, poll, task::Poll, FutureExt, StreamExt};
 use parking_lot::Mutex;
@@ -33,7 +34,7 @@ use polkadot_test_client::{
 	InitPolkadotBlockBuilder, TestClientBuilder, TestClientBuilderExt,
 };
 use sc_client_api::{Backend, BlockchainEvents};
-use sp_blockchain::{BlockStatus, HeaderBackend};
+use sp_blockchain::HeaderBackend;
 use sp_consensus::BlockOrigin;
 use sp_core::{Pair, H256};
 use sp_keyring::Sr25519Keyring;
@@ -205,20 +206,14 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		&self,
 		hash: PHash,
 	) -> Result<(), cumulus_relay_chain_interface::WaitError> {
-		let block_id = BlockId::Hash(hash);
-		let _lock = self.relay_backend.get_import_lock();
-
-		match self.relay_backend.blockchain().status(block_id) {
-			Ok(BlockStatus::InChain) => return Ok(()),
-			Err(err) => return Err(WaitError::BlockchainError(hash, err)),
-			_ => {},
-		}
-
-		let mut listener = self.relay_client.import_notification_stream();
-
-		// Now it is safe to drop the lock, even when the block is now imported, it should show
-		// up in our registered listener.
-		drop(_lock);
+		let mut listener = match check_block_in_chain(
+			self.relay_backend.clone(),
+			self.relay_client.clone(),
+			hash,
+		)? {
+			BlockCheckStatus::InChain => return Ok(()),
+			BlockCheckStatus::Unknown(listener) => listener,
+		};
 
 		let mut timeout = futures_timer::Delay::new(Duration::from_secs(10)).fuse();
 

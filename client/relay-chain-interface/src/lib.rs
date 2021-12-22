@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::sync::Arc;
+use std::{collections::BTreeMap, sync::Arc};
 
 use cumulus_primitives_core::{
 	relay_chain::{
@@ -27,7 +27,6 @@ use polkadot_overseer::Handle as OverseerHandle;
 use sc_client_api::{blockchain::BlockStatus, StorageProof};
 
 use sp_api::ApiError;
-use sp_core::sp_std::collections::btree_map::BTreeMap;
 use sp_state_machine::StorageValue;
 
 use async_trait::async_trait;

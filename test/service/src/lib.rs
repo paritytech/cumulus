@@ -21,7 +21,7 @@
 mod chain_spec;
 mod genesis;
 
-use core::{future::Future, time::Duration};
+use std::{future::Future, time::Duration};
 
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_client_network::BlockAnnounceValidator;

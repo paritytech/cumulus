@@ -14,10 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use async_trait::async_trait;
-use core::time::Duration;
 use cumulus_primitives_core::{
 	relay_chain::{
 		v1::{
@@ -36,7 +35,8 @@ use polkadot_service::{
 	AuxStore, BabeApi, CollatorPair, Configuration, Handle, NewFull, Role, TaskManager,
 };
 use sc_client_api::{
-	blockchain::BlockStatus, Backend, BlockchainEvents, HeaderBackend, StorageProof, UsageProvider,
+	blockchain::BlockStatus, Backend, BlockchainEvents, HeaderBackend, ImportNotifications,
+	StorageProof, UsageProvider,
 };
 use sc_telemetry::TelemetryWorkerHandle;
 use sp_api::{ApiError, ProvideRuntimeApi};
@@ -48,8 +48,7 @@ const LOG_TARGET: &str = "relay-chain-local";
 /// The timeout in seconds after that the waiting for a block should be aborted.
 const TIMEOUT_IN_SECONDS: u64 = 6;
 
-/// RelayChainLocal is used to interact with a full node that is running locally
-/// in the same process.
+/// Provides an implementation of the [`RelayChainInterface`] using a local in-process relay chain node.
 pub struct RelayChainLocal<Client> {
 	full_client: Arc<Client>,
 	backend: Arc<FullBackend>,
@@ -58,6 +57,7 @@ pub struct RelayChainLocal<Client> {
 }
 
 impl<Client> RelayChainLocal<Client> {
+	/// Create a new instance of [`RelayChainLocal`]
 	pub fn new(
 		full_client: Arc<Client>,
 		backend: Arc<FullBackend>,
@@ -239,7 +239,7 @@ where
 					);
 					e
 				})
-				.map(|v| Some(v)),
+				.map(Some),
 			None => Ok(None),
 		}
 	}
@@ -262,20 +262,11 @@ where
 	/// The timeout is set to 6 seconds. This should be enough time to import the block in the current
 	/// round and if not, the new round of the relay chain already started anyway.
 	async fn wait_for_block(&self, hash: PHash) -> Result<(), WaitError> {
-		let block_id = BlockId::Hash(hash);
-		let _lock = self.backend.get_import_lock();
-
-		match self.backend.blockchain().status(block_id) {
-			Ok(BlockStatus::InChain) => return Ok(()),
-			Err(err) => return Err(WaitError::BlockchainError(hash, err)),
-			_ => {},
-		}
-
-		let mut listener = self.full_client.import_notification_stream();
-
-		// Now it is safe to drop the lock, even when the block is now imported, it should show
-		// up in our registered listener.
-		drop(_lock);
+		let mut listener =
+			match check_block_in_chain(self.backend.clone(), self.full_client.clone(), hash)? {
+				BlockCheckStatus::InChain => return Ok(()),
+				BlockCheckStatus::Unknown(listener) => listener,
+			};
 
 		let mut timeout = futures_timer::Delay::new(Duration::from_secs(TIMEOUT_IN_SECONDS)).fuse();
 
@@ -293,12 +284,42 @@ where
 	}
 }
 
-/// Builder for a concrete relay chain interface, creatd from a full node. Builds
+pub enum BlockCheckStatus {
+	/// Block is in chain
+	InChain,
+	/// Block status is unknown, listener can be used to wait for notification
+	Unknown(ImportNotifications<PBlock>),
+}
+
+// Helper function to check if a block is in chain.
+pub fn check_block_in_chain<Client>(
+	backend: Arc<FullBackend>,
+	client: Arc<Client>,
+	hash: PHash,
+) -> Result<BlockCheckStatus, WaitError>
+where
+	Client: BlockchainEvents<PBlock>,
+{
+	let _lock = backend.get_import_lock().read();
+
+	let block_id = BlockId::Hash(hash);
+	match backend.blockchain().status(block_id) {
+		Ok(BlockStatus::InChain) => return Ok(BlockCheckStatus::InChain),
+		Err(err) => return Err(WaitError::BlockchainError(hash, err)),
+		_ => {},
+	}
+
+	let listener = client.import_notification_stream();
+
+	Ok(BlockCheckStatus::Unknown(listener))
+}
+
+/// Builder for a concrete relay chain interface, created from a full node. Builds
 /// a [`RelayChainLocal`] to access relay chain data necessary for parachain operation.
 ///
 /// The builder takes a [`polkadot_client::Client`]
 /// that wraps a concrete instance. By using [`polkadot_client::ExecuteWithClient`]
-/// the builder gets access to this concrete instance and instantiates a RelayChainLocal with it.
+/// the builder gets access to this concrete instance and instantiates a [`RelayChainLocal`] with it.
 struct RelayChainLocalBuilder {
 	polkadot_client: polkadot_client::Client,
 	backend: Arc<FullBackend>,
