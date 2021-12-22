@@ -37,7 +37,10 @@ use cumulus_client_consensus_common::{
 	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
 use cumulus_primitives_core::{
-	relay_chain::v1::{Block as PBlock, Hash as PHash, ParachainHost},
+	relay_chain::{
+		v1::{Block as PBlock, Hash as PHash},
+		v2::ParachainHost,
+	},
 	ParaId, PersistedValidationData,
 };
 use parking_lot::Mutex;

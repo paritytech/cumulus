@@ -36,9 +36,12 @@ use sp_runtime::{
 use polkadot_client::ClientHandle;
 use polkadot_node_primitives::{CollationSecondedSignal, Statement};
 use polkadot_parachain::primitives::HeadData;
-use polkadot_primitives::v1::{
-	Block as PBlock, CandidateReceipt, CompactStatement, Hash as PHash, Id as ParaId,
-	OccupiedCoreAssumption, ParachainHost, SigningContext, UncheckedSigned,
+use polkadot_primitives::{
+	v1::{
+		Block as PBlock, CandidateReceipt, CompactStatement, Hash as PHash, Id as ParaId,
+		OccupiedCoreAssumption, SigningContext, UncheckedSigned,
+	},
+	v2::ParachainHost,
 };
 
 use codec::{Decode, DecodeAll, Encode};

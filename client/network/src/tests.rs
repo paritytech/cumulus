@@ -19,12 +19,15 @@ use cumulus_test_service::runtime::{Block, Hash, Header};
 use futures::{executor::block_on, poll, task::Poll};
 use parking_lot::Mutex;
 use polkadot_node_primitives::{SignedFullStatement, Statement};
-use polkadot_primitives::v1::{
-	Block as PBlock, BlockNumber, CandidateCommitments, CandidateDescriptor, CandidateEvent,
-	CollatorPair, CommittedCandidateReceipt, CoreState, GroupRotationInfo, Hash as PHash, HeadData,
-	Id as ParaId, InboundDownwardMessage, InboundHrmpMessage, OccupiedCoreAssumption,
-	ParachainHost, PersistedValidationData, ScrapedOnChainVotes, SessionIndex, SessionInfo,
-	SigningContext, ValidationCode, ValidationCodeHash, ValidatorId, ValidatorIndex,
+use polkadot_primitives::{
+	v1::{
+		Block as PBlock, BlockNumber, CandidateCommitments, CandidateDescriptor, CandidateEvent,
+		CollatorPair, CommittedCandidateReceipt, CoreState, GroupRotationInfo, Hash as PHash,
+		HeadData, Id as ParaId, InboundDownwardMessage, InboundHrmpMessage, OccupiedCoreAssumption,
+		PersistedValidationData, ScrapedOnChainVotes, SessionIndex, SigningContext, ValidationCode,
+		ValidationCodeHash, ValidatorId, ValidatorIndex, ValidatorSignature,
+	},
+	v2::{ParachainHost, PvfCheckStatement, SessionInfo},
 };
 use polkadot_test_client::{
 	Client as PClient, ClientBlockImportExt, DefaultTestClientBuilderExt, FullBackend as PBackend,
@@ -530,6 +533,12 @@ sp_api::mock_impl_runtime_apis! {
 
 		fn on_chain_votes() -> Option<ScrapedOnChainVotes<Hash>> {
 			None
+		}
+
+		fn submit_pvf_check_statement(_: PvfCheckStatement, _: ValidatorSignature) {}
+
+		fn pvfs_require_precheck() -> Vec<ValidationCodeHash> {
+			Vec::new()
 		}
 	}
 }

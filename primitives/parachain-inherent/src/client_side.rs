@@ -19,11 +19,7 @@
 use crate::ParachainInherentData;
 use codec::Decode;
 use cumulus_primitives_core::{
-	relay_chain::{
-		self,
-		v1::{HrmpChannelId, ParachainHost},
-		Block as PBlock, Hash as PHash,
-	},
+	relay_chain::{self, v1::HrmpChannelId, v2::ParachainHost, Block as PBlock, Hash as PHash},
 	InboundDownwardMessage, InboundHrmpMessage, ParaId, PersistedValidationData,
 };
 use polkadot_client::{Client, ClientHandle, ExecuteWithClient};

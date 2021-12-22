@@ -26,8 +26,9 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT},
 };
 
-use polkadot_primitives::v1::{
-	Block as PBlock, Id as ParaId, OccupiedCoreAssumption, ParachainHost,
+use polkadot_primitives::{
+	v1::{Block as PBlock, Id as ParaId, OccupiedCoreAssumption},
+	v2::ParachainHost,
 };
 
 use codec::Decode;
