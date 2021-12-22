@@ -376,19 +376,6 @@ where
 	}
 }
 
-/// Build a block announce validator instance.
-///
-/// Returns a boxed [`BlockAnnounceValidator`].
-pub fn build_block_announce_validator<Block: BlockT, RCInterface>(
-	relay_chain_interface: RCInterface,
-	para_id: ParaId,
-) -> Box<dyn BlockAnnounceValidatorT<Block> + Send>
-where
-	RCInterface: RelayChainInterface + Clone + 'static,
-{
-	Box::new(BlockAnnounceValidator::new(relay_chain_interface, para_id))
-}
-
 /// Wait before announcing a block that a candidate message has been received for this block, then
 /// add this message as justification for the block announcement.
 ///

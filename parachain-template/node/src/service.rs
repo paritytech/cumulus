@@ -11,7 +11,7 @@ use parachain_template_runtime::{
 // Cumulus Imports
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 use cumulus_client_consensus_common::ParachainConsensus;
-use cumulus_client_network::build_block_announce_validator;
+use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
@@ -248,8 +248,7 @@ where
 				s => format!("{}", s).into(),
 			})?;
 
-	let block_announce_validator =
-		build_block_announce_validator(relay_chain_interface.clone(), id);
+	let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
 
 	let force_authoring = parachain_config.force_authoring;
 	let validator = parachain_config.role.is_authority();
@@ -263,7 +262,9 @@ where
 			transaction_pool: transaction_pool.clone(),
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue: import_queue.clone(),
-			block_announce_validator_builder: Some(Box::new(|_| block_announce_validator)),
+			block_announce_validator_builder: Some(Box::new(|_| {
+				Box::new(block_announce_validator)
+			})),
 			warp_sync: None,
 		})?;
 
