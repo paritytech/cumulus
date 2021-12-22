@@ -45,8 +45,9 @@ fn collect_relay_storage_proof(
 		.map_err(|e| {
 			tracing::error!(
 				target: LOG_TARGET,
-				relay_parent = ?relay_parent_block_id,
-				error = ?e, "Cannot obtain the hrmp ingress channel."
+				relay_parent = ?relay_parent,
+				error = ?e,
+				"Cannot obtain the hrmp ingress channel."
 			)
 		})
 		.ok()?;
