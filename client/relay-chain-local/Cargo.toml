@@ -42,4 +42,3 @@ polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch =
 
 # substrate deps
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
