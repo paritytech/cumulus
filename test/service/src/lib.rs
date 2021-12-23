@@ -21,15 +21,19 @@
 mod chain_spec;
 mod genesis;
 
-use core::future::Future;
+use std::{future::Future, time::Duration};
+
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
+use cumulus_relay_chain_local::RelayChainLocal;
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
+
 use frame_system_rpc_runtime_api::AccountNonceApi;
+use parking_lot::Mutex;
 use polkadot_primitives::v1::{CollatorPair, Hash as PHash, PersistedValidationData};
 use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
@@ -124,6 +128,7 @@ pub fn new_partial(
 		config.wasm_method,
 		config.default_heap_pages,
 		config.max_runtime_instances,
+		config.runtime_cache_size,
 	);
 
 	let (client, backend, keystore_container, task_manager) =
@@ -213,13 +218,17 @@ where
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
-	let block_announce_validator = BlockAnnounceValidator::new(
+
+	let relay_chain_interface = Arc::new(RelayChainLocal::new(
 		relay_chain_full_node.client.clone(),
-		para_id,
-		Box::new(relay_chain_full_node.network.clone()),
 		relay_chain_full_node.backend.clone(),
-		relay_chain_full_node.client.clone(),
-	);
+		Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),
+		relay_chain_full_node.overseer_handle.clone(),
+	));
+	task_manager.add_child(relay_chain_full_node.task_manager);
+
+	let block_announce_validator =
+		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
 	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
 
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
@@ -263,6 +272,7 @@ where
 		.map(|w| (w)(announce_block.clone()))
 		.unwrap_or_else(|| announce_block);
 
+	let relay_chain_interface_for_closure = relay_chain_interface.clone();
 	if let Some(collator_key) = collator_key {
 		let parachain_consensus: Box<dyn ParachainConsensus<Block>> = match consensus {
 			Consensus::RelayChain => {
@@ -273,10 +283,7 @@ where
 					prometheus_registry.as_ref(),
 					None,
 				);
-
-				let relay_chain_client = relay_chain_full_node.client.clone();
-				let relay_chain_backend = relay_chain_full_node.backend.clone();
-
+				let relay_chain_interface2 = relay_chain_interface_for_closure.clone();
 				Box::new(cumulus_client_consensus_relay_chain::RelayChainConsensus::new(
 					para_id,
 					proposer_factory,
@@ -284,8 +291,7 @@ where
 						let parachain_inherent =
 							cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 								relay_parent,
-								&*relay_chain_client,
-								&*relay_chain_backend,
+								&relay_chain_interface_for_closure,
 								&validation_data,
 								para_id,
 							);
@@ -302,15 +308,11 @@ where
 						}
 					},
 					client.clone(),
-					relay_chain_full_node.client.clone(),
-					relay_chain_full_node.backend.clone(),
+					relay_chain_interface2,
 				))
 			},
 			Consensus::Null => Box::new(NullConsensus),
 		};
-
-		let relay_chain_full_node =
-			relay_chain_full_node.with_client(polkadot_test_service::TestClient);
 
 		let params = StartCollatorParams {
 			block_status: client.clone(),
@@ -320,27 +322,20 @@ where
 			task_manager: &mut task_manager,
 			para_id,
 			parachain_consensus,
-			relay_chain_full_node: cumulus_client_service::RFullNode {
-				relay_chain_full_node,
-				collator_key,
-			},
+			relay_chain_interface,
+			collator_key,
 			import_queue,
+			slot_duration: Duration::from_secs(6),
 		};
 
 		start_collator(params).await?;
 	} else {
-		let relay_chain_full_node =
-			relay_chain_full_node.with_client(polkadot_test_service::TestClient);
-
 		let params = StartFullNodeParams {
 			client: client.clone(),
 			announce_block,
 			task_manager: &mut task_manager,
 			para_id,
-			relay_chain_full_node: cumulus_client_service::RFullNode {
-				relay_chain_full_node,
-				collator_key: CollatorPair::generate().0,
-			},
+			relay_chain_interface,
 		};
 
 		start_full_node(params)?;
@@ -639,6 +634,7 @@ pub fn node_config(
 		base_path: Some(base_path),
 		informant_output_format: Default::default(),
 		wasm_runtime_overrides: None,
+		runtime_cache_size: 2,
 	})
 }
 
@@ -701,6 +697,7 @@ pub fn construct_extrinsic(
 		.unwrap_or(2) as u64;
 	let tip = 0;
 	let extra: runtime::SignedExtra = (
+		frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),
 		frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
 		frame_system::CheckGenesis::<runtime::Runtime>::new(),
 		frame_system::CheckEra::<runtime::Runtime>::from(generic::Era::mortal(
@@ -714,7 +711,7 @@ pub fn construct_extrinsic(
 	let raw_payload = runtime::SignedPayload::from_raw(
 		function.clone(),
 		extra.clone(),
-		(runtime::VERSION.spec_version, genesis_block, current_block_hash, (), (), ()),
+		((), runtime::VERSION.spec_version, genesis_block, current_block_hash, (), (), ()),
 	);
 	let signature = raw_payload.using_encoded(|e| caller.sign(e));
 	runtime::UncheckedExtrinsic::new_signed(
