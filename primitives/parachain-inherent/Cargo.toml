@@ -43,9 +43,8 @@ std = [
 	"sp-runtime",
 	"sc-client-api",
 	"sp-api",
-	"polkadot-client",
-	"cumulus-test-relay-sproof-builder",
 	"sp-storage",
+	"cumulus-test-relay-sproof-builder",
 	"cumulus-relay-chain-interface",
 	"cumulus-test-relay-sproof-builder"
 ]
