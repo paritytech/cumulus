@@ -396,7 +396,7 @@ pub mod pallet {
 			code: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			Self::validate_authorized_upgrade(&code[..])?;
-			Self::set_code_impl(code)?;
+			Self::schedule_code_upgrade(code)?;
 			AuthorizedUpgrade::<T>::kill();
 			Ok(Pays::No.into())
 		}
@@ -882,7 +882,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// The implementation of the runtime upgrade functionality for parachains.
-	pub fn set_code_impl(validation_function: Vec<u8>) -> DispatchResult {
+	pub fn schedule_code_upgrade(validation_function: Vec<u8>) -> DispatchResult {
 		// Ensure that `ValidationData` exists. We do not care about the validation data per se,
 		// but we do care about the [`UpgradeRestrictionSignal`] which arrives with the same inherent.
 		ensure!(<ValidationData<T>>::exists(), Error::<T>::ValidationDataNotAvailable,);
@@ -941,7 +941,7 @@ pub struct ParachainSetCode<T>(sp_std::marker::PhantomData<T>);
 
 impl<T: Config> frame_system::SetCode<T> for ParachainSetCode<T> {
 	fn set_code(code: Vec<u8>) -> DispatchResult {
-		Pallet::<T>::set_code_impl(code)
+		Pallet::<T>::schedule_code_upgrade(code)
 	}
 }
 
