@@ -33,7 +33,10 @@ use frame_system::{InitKind, RawOrigin};
 use hex_literal::hex;
 use relay_chain::v1::HrmpChannelId;
 use sp_core::H256;
-use sp_runtime::{testing::Header, traits::IdentityLookup};
+use sp_runtime::{
+	testing::Header,
+	traits::{BlakeTwo256, IdentityLookup},
+};
 use sp_version::RuntimeVersion;
 use std::cell::RefCell;
 
@@ -63,6 +66,7 @@ parameter_types! {
 		impl_version: 1,
 		apis: sp_version::create_apis_vec!([]),
 		transaction_version: 1,
+		state_version: 1,
 	};
 	pub const ParachainId: ParaId = ParaId::new(200);
 	pub const ReservedXcmpWeight: Weight = 0;
