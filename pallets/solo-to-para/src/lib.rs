@@ -18,9 +18,11 @@
 
 use codec::{Decode, Encode};
 use cumulus_pallet_parachain_system as parachain_system;
+use cumulus_primitives_core::OnValidationData;
 use frame_support::{dispatch::DispatchResult, pallet_prelude::*, weights::DispatchInfo};
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
+use polkadot_primitives::v1::PersistedValidationData;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, SignedExtension},
@@ -90,16 +92,21 @@ pub mod pallet {
 			Self::deposit_event(Event::CustomValidationHeadDataStored);
 		}
 
-		pub fn set_pending_custom_validation_head_data() -> Result<(), Error<T>> {
-			match <PendingCustomValidationHeadData<T>>::get() {
-				Some(head_data) => {
-					parachain_system::Pallet::<T>::set_custom_validation_head_data(head_data);
-					<PendingCustomValidationHeadData<T>>::kill();
-					Self::deposit_event(Event::CustomValidationHeadDataApplied);
-				},
-				None => return Err((Error::<T>::NoCustomHeadData).into()),
+		/// Apply the peding custom head data that the Relay Chain should expect next
+		pub fn set_pending_custom_validation_head_data() {
+			if let Some(head_data) = <PendingCustomValidationHeadData<T>>::get() {
+				parachain_system::Pallet::<T>::set_custom_validation_head_data(head_data);
+				<PendingCustomValidationHeadData<T>>::kill();
+				Self::deposit_event(Event::CustomValidationHeadDataApplied);
 			}
-			Ok(())
+		}
+	}
+
+	pub struct ValidationData<T: Config>(sp_std::marker::PhantomData<T>);
+	impl<T: Config> OnValidationData for ValidationData<T> {
+		fn on_validation_data(_data: &PersistedValidationData) {}
+		fn on_validation_code_applied() {
+			crate::Pallet::<T>::set_pending_custom_validation_head_data();
 		}
 	}
 

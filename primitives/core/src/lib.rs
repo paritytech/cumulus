@@ -142,6 +142,7 @@ pub enum ServiceQuality {
 #[impl_trait_for_tuples::impl_for_tuples(30)]
 pub trait OnValidationData {
 	fn on_validation_data(data: &PersistedValidationData);
+	fn on_validation_code_applied();
 }
 
 /// The parachain block that is created by a collator.

@@ -328,6 +328,7 @@ pub mod pallet {
 					let validation_code = <PendingValidationCode<T>>::take();
 
 					Self::put_parachain_code(&validation_code);
+					<T::OnValidationData as OnValidationData>::on_validation_code_applied();
 					Self::deposit_event(Event::ValidationFunctionApplied(vfp.relay_parent_number));
 				},
 				Some(relay_chain::v1::UpgradeGoAhead::Abort) => {

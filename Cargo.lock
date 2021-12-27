@@ -1706,10 +1706,12 @@ name = "cumulus-pallet-solo-to-para"
 version = "0.1.0"
 dependencies = [
  "cumulus-pallet-parachain-system",
+ "cumulus-primitives-core",
  "frame-support",
  "frame-system",
  "pallet-sudo",
  "parity-scale-codec",
+ "polkadot-primitives",
  "scale-info",
  "sp-runtime",
  "sp-std",
