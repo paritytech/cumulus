@@ -17,7 +17,9 @@
 //! Cumulus Collator implementation for Substrate.
 
 use cumulus_client_network::WaitToAnnounce;
-use cumulus_primitives_core::{CollectCollationInfo, ParachainBlockData, PersistedValidationData};
+use cumulus_primitives_core::{
+	relay_chain::Hash as PHash, CollectCollationInfo, ParachainBlockData, PersistedValidationData,
+};
 
 use sc_client_api::BlockBackend;
 use sp_api::ProvideRuntimeApi;
@@ -34,7 +36,7 @@ use polkadot_node_primitives::{
 };
 use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
 use polkadot_overseer::Handle as OverseerHandle;
-use polkadot_primitives::v1::{CollatorPair, Hash as PHash, HeadData, Id as ParaId};
+use polkadot_primitives::v1::{CollatorPair, HeadData, Id as ParaId};
 
 use codec::{Decode, Encode};
 use futures::{channel::oneshot, FutureExt};
@@ -428,8 +430,8 @@ mod tests {
 		assert_eq!(1, *block.header().number());
 
 		// Ensure that we did not include `:code` in the proof.
-		let db = block
-			.storage_proof()
+		let proof = block.storage_proof();
+		let db = proof
 			.to_storage_proof::<BlakeTwo256>(Some(header.state_root()))
 			.unwrap()
 			.0
