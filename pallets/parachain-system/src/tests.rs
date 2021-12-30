@@ -744,8 +744,12 @@ fn receive_dmp_after_pause() {
 					Some(MessageQueueChain::default().extend_downward(&MSG_1).head());
 			},
 			3 => {
-				sproof.dmq_mqc_head =
-					Some(MessageQueueChain::default().extend_downward(&MSG_1).extend_downward(&MSG_2).head());
+				sproof.dmq_mqc_head = Some(
+					MessageQueueChain::default()
+						.extend_downward(&MSG_1)
+						.extend_downward(&MSG_2)
+						.head(),
+				);
 			},
 			_ => unreachable!(),
 		})
