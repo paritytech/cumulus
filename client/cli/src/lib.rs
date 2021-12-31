@@ -30,7 +30,7 @@ use std::{
 };
 use structopt::StructOpt;
 
-/// The `purge-chain` command used to remove the whole chain: the parachain and the relaychain.
+/// The `purge-chain` command used to remove the whole chain: the parachain and the relay chain.
 #[derive(Debug, StructOpt)]
 pub struct PurgeChainCmd {
 	/// The base struct of the purge-chain command.
@@ -125,10 +125,6 @@ pub struct RunCmd {
 	#[structopt(flatten)]
 	pub base: sc_cli::RunCmd,
 
-	/// Id of the parachain this collator collates for.
-	#[structopt(long)]
-	pub parachain_id: Option<u32>,
-
 	/// Run node as collator.
 	///
 	/// Note that this is the same as running with `--validator`.
@@ -137,13 +133,11 @@ pub struct RunCmd {
 }
 
 /// A non-redundant version of the `RunCmd` that sets the `validator` field when the
-/// original `RunCmd` had the `colaltor` field.
+/// original `RunCmd` had the `collator` field.
 /// This is how we make `--collator` imply `--validator`.
 pub struct NormalizedRunCmd {
 	/// The cumulus RunCmd inherents from sc_cli's
 	pub base: sc_cli::RunCmd,
-	/// Id of the parachain this collator collates for.
-	pub parachain_id: Option<u32>,
 }
 
 impl RunCmd {
@@ -153,7 +147,7 @@ impl RunCmd {
 
 		new_base.validator = self.base.validator || self.collator;
 
-		NormalizedRunCmd { base: new_base, parachain_id: self.parachain_id }
+		NormalizedRunCmd { base: new_base }
 	}
 }
 
@@ -204,8 +198,9 @@ impl sc_cli::CliConfiguration for NormalizedRunCmd {
 	fn prometheus_config(
 		&self,
 		default_listen_port: u16,
+		chain_spec: &Box<dyn sc_cli::ChainSpec>,
 	) -> sc_cli::Result<Option<PrometheusConfig>> {
-		self.base.prometheus_config(default_listen_port)
+		self.base.prometheus_config(default_listen_port, chain_spec)
 	}
 
 	fn disable_grandpa(&self) -> sc_cli::Result<bool> {

@@ -21,15 +21,21 @@
 mod chain_spec;
 mod genesis;
 
-use core::future::Future;
+use std::{future::Future, time::Duration};
+
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
+use cumulus_relay_chain_local::RelayChainLocal;
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
+
+use frame_system_rpc_runtime_api::AccountNonceApi;
+use parking_lot::Mutex;
 use polkadot_primitives::v1::{CollatorPair, Hash as PHash, PersistedValidationData};
+use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_network::{config::TransportConfig, multiaddr, NetworkService};
 use sc_service::{
@@ -98,6 +104,9 @@ pub type Client = TFullClient<
 	sc_executor::NativeElseWasmExecutor<RuntimeExecutor>,
 >;
 
+/// Transaction pool type used by the test service
+pub type TransactionPool = Arc<sc_transaction_pool::FullPool<Block, Client>>;
+
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
@@ -119,6 +128,7 @@ pub fn new_partial(
 		config.wasm_method,
 		config.default_heap_pages,
 		config.max_runtime_instances,
+		config.runtime_cache_size,
 	);
 
 	let (client, backend, keystore_container, task_manager) =
@@ -174,6 +184,7 @@ async fn start_node_impl<RB>(
 	Arc<Client>,
 	Arc<NetworkService<Block, H256>>,
 	RpcHandlers,
+	TransactionPool,
 )>
 where
 	RB: Fn(Arc<Client>) -> Result<jsonrpc_core::IoHandler<sc_rpc::Metadata>, sc_service::Error>
@@ -207,13 +218,17 @@ where
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
-	let block_announce_validator = BlockAnnounceValidator::new(
+
+	let relay_chain_interface = Arc::new(RelayChainLocal::new(
 		relay_chain_full_node.client.clone(),
-		para_id,
-		Box::new(relay_chain_full_node.network.clone()),
 		relay_chain_full_node.backend.clone(),
-		relay_chain_full_node.client.clone(),
-	);
+		Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),
+		relay_chain_full_node.overseer_handle.clone(),
+	));
+	task_manager.add_child(relay_chain_full_node.task_manager);
+
+	let block_announce_validator =
+		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);
 	let block_announce_validator_builder = move |_| Box::new(block_announce_validator) as Box<_>;
 
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
@@ -225,7 +240,6 @@ where
 			transaction_pool: transaction_pool.clone(),
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue: import_queue.clone(),
-			on_demand: None,
 			block_announce_validator_builder: Some(Box::new(block_announce_validator_builder)),
 			warp_sync: None,
 		})?;
@@ -237,8 +251,6 @@ where
 	};
 
 	let rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
-		on_demand: None,
-		remote_blockchain: None,
 		rpc_extensions_builder,
 		client: client.clone(),
 		transaction_pool: transaction_pool.clone(),
@@ -260,20 +272,18 @@ where
 		.map(|w| (w)(announce_block.clone()))
 		.unwrap_or_else(|| announce_block);
 
+	let relay_chain_interface_for_closure = relay_chain_interface.clone();
 	if let Some(collator_key) = collator_key {
 		let parachain_consensus: Box<dyn ParachainConsensus<Block>> = match consensus {
 			Consensus::RelayChain => {
 				let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
 					task_manager.spawn_handle(),
 					client.clone(),
-					transaction_pool,
+					transaction_pool.clone(),
 					prometheus_registry.as_ref(),
 					None,
 				);
-
-				let relay_chain_client = relay_chain_full_node.client.clone();
-				let relay_chain_backend = relay_chain_full_node.backend.clone();
-
+				let relay_chain_interface2 = relay_chain_interface_for_closure.clone();
 				Box::new(cumulus_client_consensus_relay_chain::RelayChainConsensus::new(
 					para_id,
 					proposer_factory,
@@ -281,8 +291,7 @@ where
 						let parachain_inherent =
 							cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 								relay_parent,
-								&*relay_chain_client,
-								&*relay_chain_backend,
+								&relay_chain_interface_for_closure,
 								&validation_data,
 								para_id,
 							);
@@ -299,15 +308,11 @@ where
 						}
 					},
 					client.clone(),
-					relay_chain_full_node.client.clone(),
-					relay_chain_full_node.backend.clone(),
+					relay_chain_interface2,
 				))
 			},
 			Consensus::Null => Box::new(NullConsensus),
 		};
-
-		let relay_chain_full_node =
-			relay_chain_full_node.with_client(polkadot_test_service::TestClient);
 
 		let params = StartCollatorParams {
 			block_status: client.clone(),
@@ -317,27 +322,20 @@ where
 			task_manager: &mut task_manager,
 			para_id,
 			parachain_consensus,
-			relay_chain_full_node: cumulus_client_service::RFullNode {
-				relay_chain_full_node,
-				collator_key,
-			},
+			relay_chain_interface,
+			collator_key,
 			import_queue,
+			slot_duration: Duration::from_secs(6),
 		};
 
 		start_collator(params).await?;
 	} else {
-		let relay_chain_full_node =
-			relay_chain_full_node.with_client(polkadot_test_service::TestClient);
-
 		let params = StartFullNodeParams {
 			client: client.clone(),
 			announce_block,
 			task_manager: &mut task_manager,
 			para_id,
-			relay_chain_full_node: cumulus_client_service::RFullNode {
-				relay_chain_full_node,
-				collator_key: CollatorPair::generate().0,
-			},
+			relay_chain_interface,
 		};
 
 		start_full_node(params)?;
@@ -345,7 +343,7 @@ where
 
 	start_network.start_network();
 
-	Ok((task_manager, client, network, rpc_handlers))
+	Ok((task_manager, client, network, rpc_handlers, transaction_pool))
 }
 
 /// A Cumulus test node instance used for testing.
@@ -361,6 +359,8 @@ pub struct TestNode {
 	pub addr: MultiaddrWithPeerId,
 	/// RPCHandlers to make RPC queries.
 	pub rpc_handlers: RpcHandlers,
+	/// Node's transaction pool
+	pub transaction_pool: TransactionPool,
 }
 
 enum Consensus {
@@ -519,7 +519,7 @@ impl TestNodeBuilder {
 			format!("{} (relay chain)", relay_chain_config.network.node_name);
 
 		let multiaddr = parachain_config.network.listen_addresses[0].clone();
-		let (task_manager, client, network, rpc_handlers) = start_node_impl(
+		let (task_manager, client, network, rpc_handlers, transaction_pool) = start_node_impl(
 			parachain_config,
 			self.collator_key,
 			relay_chain_config,
@@ -534,7 +534,7 @@ impl TestNodeBuilder {
 		let peer_id = network.local_peer_id().clone();
 		let addr = MultiaddrWithPeerId { multiaddr, peer_id };
 
-		TestNode { task_manager, client, network, addr, rpc_handlers }
+		TestNode { task_manager, client, network, addr, rpc_handlers, transaction_pool }
 	}
 }
 
@@ -634,6 +634,7 @@ pub fn node_config(
 		base_path: Some(base_path),
 		informant_output_format: Default::default(),
 		wasm_runtime_overrides: None,
+		runtime_cache_size: 2,
 	})
 }
 
@@ -651,7 +652,7 @@ impl TestNode {
 		function: impl Into<runtime::Call>,
 		caller: Sr25519Keyring,
 	) -> Result<RpcTransactionOutput, RpcTransactionError> {
-		let extrinsic = construct_extrinsic(&*self.client, function, caller);
+		let extrinsic = construct_extrinsic(&*self.client, function, caller.pair(), Some(0));
 
 		self.rpc_handlers.send_transaction(extrinsic.into()).await
 	}
@@ -669,23 +670,34 @@ impl TestNode {
 	}
 }
 
+/// Fetch account nonce for key pair
+pub fn fetch_nonce(client: &Client, account: sp_core::sr25519::Public) -> u32 {
+	let best_hash = client.chain_info().best_hash;
+	client
+		.runtime_api()
+		.account_nonce(&generic::BlockId::Hash(best_hash), account.into())
+		.expect("Fetching account nonce works; qed")
+}
+
 /// Construct an extrinsic that can be applied to the test runtime.
 pub fn construct_extrinsic(
 	client: &Client,
 	function: impl Into<runtime::Call>,
-	caller: Sr25519Keyring,
+	caller: sp_core::sr25519::Pair,
+	nonce: Option<u32>,
 ) -> runtime::UncheckedExtrinsic {
 	let function = function.into();
 	let current_block_hash = client.info().best_hash;
 	let current_block = client.info().best_number.saturated_into();
 	let genesis_block = client.hash(0).unwrap().unwrap();
-	let nonce = 0;
+	let nonce = nonce.unwrap_or_else(|| fetch_nonce(client, caller.public()));
 	let period = runtime::BlockHashCount::get()
 		.checked_next_power_of_two()
 		.map(|c| c / 2)
 		.unwrap_or(2) as u64;
 	let tip = 0;
 	let extra: runtime::SignedExtra = (
+		frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),
 		frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
 		frame_system::CheckGenesis::<runtime::Runtime>::new(),
 		frame_system::CheckEra::<runtime::Runtime>::from(generic::Era::mortal(
@@ -699,7 +711,7 @@ pub fn construct_extrinsic(
 	let raw_payload = runtime::SignedPayload::from_raw(
 		function.clone(),
 		extra.clone(),
-		(runtime::VERSION.spec_version, genesis_block, current_block_hash, (), (), ()),
+		((), runtime::VERSION.spec_version, genesis_block, current_block_hash, (), (), ()),
 	);
 	let signature = raw_payload.using_encoded(|e| caller.sign(e));
 	runtime::UncheckedExtrinsic::new_signed(

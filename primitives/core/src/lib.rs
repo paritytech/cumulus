@@ -34,7 +34,7 @@ pub use polkadot_primitives::v1::{
 /// A module that re-exports relevant relay chain definitions.
 pub mod relay_chain {
 	pub use polkadot_core_primitives::*;
-	pub use polkadot_primitives::{v1, v1::well_known_keys};
+	pub use polkadot_primitives::{v1, v1::well_known_keys, v2};
 }
 
 /// An inbound HRMP message.
@@ -122,7 +122,7 @@ pub trait XcmpMessageSource {
 
 impl XcmpMessageSource for () {
 	fn take_outbound_messages(_maximum_channels: usize) -> Vec<(ParaId, Vec<u8>)> {
-		vec![]
+		Vec::new()
 	}
 }
 

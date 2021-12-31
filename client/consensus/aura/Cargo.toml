@@ -3,7 +3,7 @@ name = "cumulus-client-consensus-aura"
 description = "AURA consensus algorithm for parachains"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 # Substrate dependencies
@@ -23,9 +23,6 @@ sc-consensus-slots = { git = "https://github.com/paritytech/substrate", branch =
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
-
-# Polkadot dependencies
-polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus dependencies
 cumulus-client-consensus-common = { path = "../common" }

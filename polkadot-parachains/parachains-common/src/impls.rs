@@ -47,10 +47,10 @@ where
 		let numeric_amount = amount.peek();
 		let staking_pot = <pallet_collator_selection::Pallet<R>>::account_id();
 		<pallet_balances::Pallet<R>>::resolve_creating(&staking_pot, amount);
-		<frame_system::Pallet<R>>::deposit_event(pallet_balances::Event::Deposit(
-			staking_pot,
-			numeric_amount,
-		));
+		<frame_system::Pallet<R>>::deposit_event(pallet_balances::Event::Deposit {
+			who: staking_pot,
+			amount: numeric_amount,
+		});
 	}
 }
 
@@ -84,9 +84,10 @@ where
 		From<polkadot_primitives::v1::AccountId> + Into<polkadot_primitives::v1::AccountId>,
 {
 	fn handle_credit(credit: CreditOf<AccountIdOf<R>, pallet_assets::Pallet<R>>) {
-		let author = pallet_authorship::Pallet::<R>::author();
-		// In case of error: Will drop the result triggering the `OnDrop` of the imbalance.
-		let _ = pallet_assets::Pallet::<R>::resolve(&author, credit);
+		if let Some(author) = pallet_authorship::Pallet::<R>::author() {
+			// In case of error: Will drop the result triggering the `OnDrop` of the imbalance.
+			let _ = pallet_assets::Pallet::<R>::resolve(&author, credit);
+		}
 	}
 }
 
@@ -178,6 +179,7 @@ mod tests {
 		type SystemWeightInfo = ();
 		type SS58Prefix = ();
 		type OnSetCode = ();
+		type MaxConsumers = frame_support::traits::ConstU32<16>;
 	}
 
 	impl pallet_balances::Config for Test {

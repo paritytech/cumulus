@@ -1,7 +1,7 @@
 name: Srtool build
 
 env:
-  SUBWASM_VERSION: 0.14.1
+  SUBWASM_VERSION: 0.15.0
 
 on:
   push:
@@ -14,6 +14,10 @@ on:
       - "scripts"
       - "test"
 
+    branches:
+      - "release*"
+      - "master"
+
   schedule:
     - cron: "00 02 * * 1" # 2AM weekly on monday
 
@@ -24,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        chain: ["statemine", "westmint", "statemint", "rococo", "shell"]
+        chain: ["statemine", "westmint", "statemint", "rococo-parachain", "shell"]
     steps:
       - uses: actions/checkout@v2
         with:

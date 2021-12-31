@@ -78,6 +78,7 @@ impl system::Config for Test {
 	type SystemWeightInfo = ();
 	type SS58Prefix = SS58Prefix;
 	type OnSetCode = ();
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -145,7 +146,7 @@ impl From<UintAuthorityId> for MockSessionKeys {
 }
 
 parameter_types! {
-	pub static SessionHandlerCollators: Vec<u64> = vec![];
+	pub static SessionHandlerCollators: Vec<u64> = Vec::new();
 	pub static SessionChangeBlock: u64 = 0;
 }
 
@@ -224,21 +225,21 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	sp_tracing::try_init_simple();
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let invulnerables = vec![1, 2];
-	let keys = invulnerables
-		.iter()
-		.map(|i| (*i, *i, MockSessionKeys { aura: UintAuthorityId(*i) }))
-		.collect::<Vec<_>>();
 
-	let balances = pallet_balances::GenesisConfig::<Test> {
-		balances: vec![(1, 100), (2, 100), (3, 100), (4, 100), (5, 100)],
-	};
+	let balances = vec![(1, 100), (2, 100), (3, 100), (4, 100), (5, 100)];
+	let keys = balances
+		.iter()
+		.map(|&(i, _)| (i, i, MockSessionKeys { aura: UintAuthorityId(i) }))
+		.collect::<Vec<_>>();
 	let collator_selection = collator_selection::GenesisConfig::<Test> {
 		desired_candidates: 2,
 		candidacy_bond: 10,
 		invulnerables,
 	};
 	let session = pallet_session::GenesisConfig::<Test> { keys };
-	balances.assimilate_storage(&mut t).unwrap();
+	pallet_balances::GenesisConfig::<Test> { balances }
+		.assimilate_storage(&mut t)
+		.unwrap();
 	// collator selection must be initialized before session.
 	collator_selection.assimilate_storage(&mut t).unwrap();
 	session.assimilate_storage(&mut t).unwrap();
@@ -249,6 +250,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 pub fn initialize_to_block(n: u64) {
 	for i in System::block_number() + 1..=n {
 		System::set_block_number(i);
-		<AllPallets as frame_support::traits::OnInitialize<u64>>::on_initialize(i);
+		<AllPalletsWithSystem as frame_support::traits::OnInitialize<u64>>::on_initialize(i);
 	}
 }

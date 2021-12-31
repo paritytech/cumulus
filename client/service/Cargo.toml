@@ -2,13 +2,14 @@
 name = "cumulus-client-service"
 version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 # Cumulus dependencies
 cumulus-client-consensus-common = { path = "../consensus/common" }
 cumulus-client-collator = { path = "../collator" }
 cumulus-client-pov-recovery = { path = "../pov-recovery" }
+cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 cumulus-primitives-core = { path = "../../primitives/core" }
 
 # Substrate dependencies
@@ -27,7 +28,6 @@ sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "mas
 
 # Polkadot dependencies
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Other deps

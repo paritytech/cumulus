@@ -16,7 +16,6 @@
 
 use cumulus_primitives_core::ParaId;
 use cumulus_test_service::{initial_head_data, run_relay_chain_validator_node, Keyring::*};
-use futures::join;
 
 #[substrate_test_utils::test]
 #[ignore]
@@ -29,7 +28,7 @@ async fn sync_blocks_from_tip_without_being_connected_to_a_collator() {
 	let tokio_handle = tokio::runtime::Handle::current();
 
 	// start alice
-	let alice = run_relay_chain_validator_node(tokio_handle.clone(), Alice, || {}, vec![]);
+	let alice = run_relay_chain_validator_node(tokio_handle.clone(), Alice, || {}, Vec::new());
 
 	// start bob
 	let bob =
@@ -71,12 +70,4 @@ async fn sync_blocks_from_tip_without_being_connected_to_a_collator() {
 		.await;
 
 	eve.wait_for_blocks(7).await;
-
-	join!(
-		alice.task_manager.clean_shutdown(),
-		bob.task_manager.clean_shutdown(),
-		charlie.task_manager.clean_shutdown(),
-		dave.task_manager.clean_shutdown(),
-		eve.task_manager.clean_shutdown(),
-	);
 }

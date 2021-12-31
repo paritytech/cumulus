@@ -16,6 +16,7 @@
 use super::*;
 use crate as xcmp_queue;
 use frame_support::parameter_types;
+use frame_system::EnsureRoot;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
@@ -75,6 +76,7 @@ impl frame_system::Config for Test {
 	type SystemWeightInfo = ();
 	type SS58Prefix = SS58Prefix;
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Test>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -160,6 +162,7 @@ impl Config for Test {
 	type XcmExecutor = xcm_executor::XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = ();
+	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

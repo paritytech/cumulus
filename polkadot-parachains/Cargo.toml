@@ -1,9 +1,9 @@
 [package]
 name = "polkadot-collator"
-version = "4.0.0"
+version = "5.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 build = "build.rs"
-edition = "2018"
+edition = "2021"
 
 [[bin]]
 name = "polkadot-collator"
@@ -14,21 +14,22 @@ futures = { version = "0.3.1", features = ["compat"] }
 log = "0.4.8"
 codec = { package = "parity-scale-codec", version = "2.3.0" }
 structopt = "0.3.3"
-serde = { version = "1.0.101", features = ["derive"] }
+serde = { version = "1.0.132", features = ["derive"] }
 hex-literal = "0.2.1"
 async-trait = "0.1.42"
 
 # Parachain runtimes
-rococo-parachain-runtime = { package = "rococo-runtime", path = "rococo" }
+rococo-parachain-runtime = { path = "rococo-parachain" }
 shell-runtime = { path = "shell" }
+seedling-runtime = { path = "seedling" }
 statemint-runtime = { path = "statemint" }
 statemine-runtime = { path = "statemine" }
 westmint-runtime = { path = "westmint" }
 parachains-common = { path = "parachains-common" }
 
 # Substrate dependencies
-frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = "master" }
-frame-benchmarking-cli = { git = 'https://github.com/paritytech/substrate', branch = "master" }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -57,6 +58,9 @@ sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
+# try-runtime stuff.
+try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
 # RPC related dependencies
 jsonrpc-core = "18.0.0"
 sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -72,6 +76,8 @@ cumulus-client-service = { path = "../client/service" }
 cumulus-client-network = { path = "../client/network" }
 cumulus-primitives-core = { path = "../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../primitives/parachain-inherent" }
+cumulus-relay-chain-interface = { path = "../client/relay-chain-interface" }
+cumulus-relay-chain-local = { path = "../client/relay-chain-local" }
 
 # Polkadot dependencies
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
@@ -90,8 +96,14 @@ tempfile = "3.2.0"
 [features]
 default = []
 runtime-benchmarks = [
-	'polkadot-service/runtime-benchmarks',
-	'statemint-runtime/runtime-benchmarks',
-	'statemine-runtime/runtime-benchmarks',
-	'westmint-runtime/runtime-benchmarks',
+	"polkadot-service/runtime-benchmarks",
+	"statemint-runtime/runtime-benchmarks",
+	"statemine-runtime/runtime-benchmarks",
+	"westmint-runtime/runtime-benchmarks",
+]
+try-runtime = [
+	'statemint-runtime/try-runtime',
+	'statemine-runtime/try-runtime',
+	'westmint-runtime/try-runtime',
+	'shell-runtime/try-runtime',
 ]

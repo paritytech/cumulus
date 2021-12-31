@@ -56,7 +56,7 @@ impl Default for RelayStateSproofBuilder {
 				max_upward_message_size: 256,
 				max_upward_message_num_per_candidate: 5,
 				hrmp_max_message_num_per_candidate: 5,
-				validation_upgrade_frequency: 6,
+				validation_upgrade_cooldown: 6,
 				validation_upgrade_delay: 6,
 			},
 			dmq_mqc_head: None,
@@ -118,15 +118,16 @@ impl RelayStateSproofBuilder {
 		self,
 	) -> (polkadot_primitives::v1::Hash, sp_state_machine::StorageProof) {
 		let (db, root) = MemoryDB::<HashFor<polkadot_primitives::v1::Block>>::default_with_root();
+		let state_version = Default::default(); // for test using default.
 		let mut backend = sp_state_machine::TrieBackend::new(db, root);
 
-		let mut relevant_keys = vec![];
+		let mut relevant_keys = Vec::new();
 		{
 			use codec::Encode as _;
 
 			let mut insert = |key: Vec<u8>, value: Vec<u8>| {
 				relevant_keys.push(key.clone());
-				backend.insert(vec![(None, vec![(key, Some(value))])]);
+				backend.insert(vec![(None, vec![(key, Some(value))])], state_version);
 			};
 
 			insert(relay_chain::well_known_keys::ACTIVE_CONFIG.to_vec(), self.host_config.encode());

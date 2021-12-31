@@ -41,13 +41,13 @@ Statemint is a common good parachain providing an asset store for the Polkadot e
 To run a Statemine or Westmint node (Statemint is not deployed, yet) you will need to compile the
 `polkadot-collator` binary:
 
-```sh
+```bash
 cargo build --release --locked -p polkadot-collator
 ```
 
 Once the executable is built, launch the parachain node via:
 
-```sh
+```bash
 CHAIN=westmint # or statemine
 ./target/release/polkadot-collator --chain $CHAIN
 ```
@@ -56,15 +56,10 @@ Refer to the [setup instructions below](#local-setup) to run a local network for
 
 # Rococo :crown:
 
-[Rococo](https://polkadot.js.org/apps/?rpc=wss://rococo-rpc.polkadot.io) is the testnet for
-parachains. It currently runs the parachains
-[Tick](https://polkadot.js.org/apps/?rpc=wss://tick-rpc.polkadot.io),
-[Trick](https://polkadot.js.org/apps/?rpc=wss://trick-rpc.polkadot.io) and
-[Track](https://polkadot.js.org/apps/?rpc=wss://track-rpc.polkadot.io).
+[Rococo](https://polkadot.js.org/apps/?rpc=wss://rococo-rpc.polkadot.io) is becoming a [Community Parachain Testbed](https://polkadot.network/blog/rococo-revamp-becoming-a-community-parachain-testbed/) for parachain teams in the Polkadot ecosystem. It supports multiple parachains with the differentiation of long-term connections and recurring short-term connections, to see which parachains are currently connected and how long they will be connected for [see here](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-rpc.polkadot.io#/parachains).
 
 Rococo is an elaborate style of design and the name describes the painstaking effort that has gone
-into this project. Tick, Trick and Track are the German names for the cartoon ducks known to English
-speakers as Huey, Dewey and Louie.
+into this project.
 
 ## Build & Launch Rococo Collators
 
@@ -73,7 +68,7 @@ eventually be included by the relay chain for a parachain.
 
 To run a Rococo collator you will need to compile the following binary:
 
-```
+```bash
 cargo build --release --locked -p polkadot-collator
 ```
 
@@ -93,18 +88,13 @@ If you want to reproduce other steps of CI process you can use the following
 Once the executable is built, launch collators for each parachain (repeat once each for chain
 `tick`, `trick`, `track`):
 
-```
+```bash
 ./target/release/polkadot-collator --chain $CHAIN --validator
 ```
 
 ## Parachains
 
-The parachains of Rococo all use the same runtime code. The only difference between them is the
-parachain ID used for registration with the relay chain:
-
--   Tick: 100
--   Trick: 110
--   Track: 120
+- [Canvas - WASM Smart Contract](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-canvas-rpc.polkadot.io#/explorer)
 
 The network uses horizontal message passing (HRMP) to enable communication between parachains and
 the relay chain and, in turn, between parachains. This means that every message is sent to the relay
@@ -154,19 +144,27 @@ cargo build --release
 # Parachain Full Node 1
 ./target/release/polkadot-collator --tmp --parachain-id <parachain_id_u32_type_range> --port 40337 --ws-port 9948 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337
 ```
+
 ### Register the parachain
+
 ![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
 
-## Build the docker image
+## Containerize
 
-After building `polkadot-collator` with cargo or with Parity docker image as documented in [this chapter](#build--launch-rococo-collators), the following will allow producting a new docker image where the compiled binary is injected:
+After building `polkadot-collator` with cargo or with Parity CI image as documented in [this chapter](#build--launch-rococo-collators),
+the following will allow producing a new docker image where the compiled binary is injected:
 
-```
+```bash
 ./docker/scripts/build-injected-image.sh
 ```
 
-You may then start a new contaier:
+Alternatively, you can build an image with a builder pattern:
 
-```
+```bash
+docker build --tag $OWNER/$IMAGE_NAME --file ./docker/polkadot-collator_builder.Containerfile .
+
+You may then run your new container:
+
+```bash
 docker run --rm -it $OWNER/$IMAGE_NAME --collator --tmp --parachain-id 1000 --execution wasm --chain /specs/westmint.json
 ```
