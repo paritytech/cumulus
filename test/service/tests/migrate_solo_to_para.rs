@@ -24,11 +24,11 @@
 //! stop to produce new blocks. However, the old solo chain can now produce blocks using the parachain slot.
 //! (Be aware, that this is just a highlevel description and some parts are omitted.)
 
+use codec::Encode;
 use cumulus_primitives_core::ParaId;
 use cumulus_test_service::{initial_head_data, run_relay_chain_validator_node, Keyring::*};
 use sc_client_api::{BlockBackend, UsageProvider};
 use sp_runtime::generic::BlockId;
-use codec::Encode;
 
 #[substrate_test_utils::test]
 #[ignore]
@@ -70,6 +70,7 @@ async fn test_migrate_solo_to_para() {
 
 	// run the solo chain (in our case this is also already a parachain, but as it has a different genesis it will not produce any blocks.)
 	let solo = cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle, Dave)
+		.enable_collator()
 		.connect_to_relay_chain_nodes(vec![&alice, &bob])
 		// Set some random value in the genesis state to create a different genesis hash.
 		.update_storage_parachain(|| {
@@ -95,7 +96,8 @@ async fn test_migrate_solo_to_para() {
 				custom_header: solo_chain_header.encode(),
 			},
 			Alice,
-		).await
+		)
+		.await
 		.unwrap();
 
 	// Wait until the solo chain produced a block now as a parachain.
