@@ -23,6 +23,7 @@ use sp_state_machine::MemoryDB;
 use sp_std::collections::btree_map::BTreeMap;
 
 /// Builds a sproof (portmanteau of 'spoof' and 'proof') of the relay chain state.
+#[derive(Clone)]
 pub struct RelayStateSproofBuilder {
 	/// The para id of the current parachain.
 	///
@@ -56,7 +57,7 @@ impl Default for RelayStateSproofBuilder {
 				max_upward_message_size: 256,
 				max_upward_message_num_per_candidate: 5,
 				hrmp_max_message_num_per_candidate: 5,
-				validation_upgrade_frequency: 6,
+				validation_upgrade_cooldown: 6,
 				validation_upgrade_delay: 6,
 			},
 			dmq_mqc_head: None,
@@ -66,26 +67,6 @@ impl Default for RelayStateSproofBuilder {
 			hrmp_egress_channel_index: None,
 			hrmp_channels: BTreeMap::new(),
 			current_slot: 0.into(),
-		}
-	}
-}
-
-// TODO: derive `Copy` and `Clone` for `UpgradeGoAhead` to avoid manual implementation.
-impl Clone for RelayStateSproofBuilder {
-	fn clone(&self) -> Self {
-		RelayStateSproofBuilder {
-			para_id: self.para_id,
-			host_config: self.host_config.clone(),
-			dmq_mqc_head: self.dmq_mqc_head.clone(),
-			upgrade_go_ahead: self.upgrade_go_ahead.as_ref().map(|u| match u {
-				UpgradeGoAhead::Abort => UpgradeGoAhead::Abort,
-				UpgradeGoAhead::GoAhead => UpgradeGoAhead::GoAhead,
-			}),
-			relay_dispatch_queue_size: self.relay_dispatch_queue_size,
-			hrmp_ingress_channel_index: self.hrmp_ingress_channel_index.clone(),
-			hrmp_egress_channel_index: self.hrmp_egress_channel_index.clone(),
-			hrmp_channels: self.hrmp_channels.clone(),
-			current_slot: self.current_slot.clone(),
 		}
 	}
 }
@@ -118,6 +99,7 @@ impl RelayStateSproofBuilder {
 		self,
 	) -> (polkadot_primitives::v1::Hash, sp_state_machine::StorageProof) {
 		let (db, root) = MemoryDB::<HashFor<polkadot_primitives::v1::Block>>::default_with_root();
+		let state_version = Default::default(); // for test using default.
 		let mut backend = sp_state_machine::TrieBackend::new(db, root);
 
 		let mut relevant_keys = Vec::new();
@@ -126,7 +108,7 @@ impl RelayStateSproofBuilder {
 
 			let mut insert = |key: Vec<u8>, value: Vec<u8>| {
 				relevant_keys.push(key.clone());
-				backend.insert(vec![(None, vec![(key, Some(value))])]);
+				backend.insert(vec![(None, vec![(key, Some(value))])], state_version);
 			};
 
 			insert(relay_chain::well_known_keys::ACTIVE_CONFIG.to_vec(), self.host_config.encode());

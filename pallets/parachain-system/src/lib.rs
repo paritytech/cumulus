@@ -27,13 +27,14 @@
 //!
 //! Users must ensure that they register this pallet as an inherent provider.
 
+use codec::Encode;
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
 	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError, OnValidationData,
 	OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage, UpwardMessageSender,
 	XcmpMessageHandler, XcmpMessageSource,
 };
-use cumulus_primitives_parachain_inherent::ParachainInherentData;
+use cumulus_primitives_parachain_inherent::{MessageQueueChain, ParachainInherentData};
 use frame_support::{
 	dispatch::{DispatchError, DispatchResult},
 	ensure,
@@ -46,7 +47,7 @@ use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
 use relay_state_snapshot::MessagingStateSnapshot;
 use sp_runtime::{
-	traits::{BlakeTwo256, Block as BlockT, BlockNumberProvider, Hash},
+	traits::{Block as BlockT, BlockNumberProvider, Hash},
 	transaction_validity::{
 		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidity,
 		ValidTransaction,
@@ -750,7 +751,7 @@ impl<T: Config> Pallet<T> {
 			weight_used += T::DmpMessageHandler::handle_dmp_messages(message_iter, max_weight);
 			<LastDmqMqcHead<T>>::put(&dmq_head);
 
-			Self::deposit_event(Event::DownwardMessagesProcessed(weight_used, dmq_head.0));
+			Self::deposit_event(Event::DownwardMessagesProcessed(weight_used, dmq_head.head()));
 		}
 
 		// After hashing each message in the message queue chain submitted by the collator, we
@@ -758,7 +759,7 @@ impl<T: Config> Pallet<T> {
 		//
 		// A mismatch means that at least some of the submitted messages were altered, omitted or
 		// added improperly.
-		assert_eq!(dmq_head.0, expected_dmq_mqc_head);
+		assert_eq!(dmq_head.head(), expected_dmq_mqc_head);
 
 		ProcessedDownwardMessages::<T>::put(dm_count);
 
@@ -908,15 +909,22 @@ impl<T: Config> Pallet<T> {
 
 	/// Returns the [`CollationInfo`] of the current active block.
 	///
+	/// The given `header` is the header of the built block we are collecting the collation info for.
+	///
 	/// This is expected to be used by the
 	/// [`CollectCollationInfo`](cumulus_primitives_core::CollectCollationInfo) runtime api.
-	pub fn collect_collation_info() -> CollationInfo {
+	pub fn collect_collation_info(header: &T::Header) -> CollationInfo {
 		CollationInfo {
 			hrmp_watermark: HrmpWatermark::<T>::get(),
 			horizontal_messages: HrmpOutboundMessages::<T>::get(),
 			upward_messages: UpwardMessages::<T>::get(),
 			processed_downward_messages: ProcessedDownwardMessages::<T>::get(),
 			new_validation_code: NewValidationCode::<T>::get().map(Into::into),
+			// Check if there is a custom header that will also be returned by the validation phase.
+			// If so, we need to also return it here.
+			head_data: CustomValidationHeadData::<T>::get()
+				.map_or_else(|| header.encode(), |v| v)
+				.into(),
 		}
 	}
 
@@ -942,43 +950,6 @@ pub struct ParachainSetCode<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> frame_system::SetCode<T> for ParachainSetCode<T> {
 	fn set_code(code: Vec<u8>) -> DispatchResult {
 		Pallet::<T>::set_code_impl(code)
-	}
-}
-
-/// This struct provides ability to extend a message queue chain (MQC) and compute a new head.
-///
-/// MQC is an instance of a [hash chain] applied to a message queue. Using a hash chain it's
-/// possible to represent a sequence of messages using only a single hash.
-///
-/// A head for an empty chain is agreed to be a zero hash.
-///
-/// [hash chain]: https://en.wikipedia.org/wiki/Hash_chain
-#[derive(Default, Clone, codec::Encode, codec::Decode, scale_info::TypeInfo)]
-struct MessageQueueChain(relay_chain::Hash);
-
-impl MessageQueueChain {
-	fn extend_hrmp(&mut self, horizontal_message: &InboundHrmpMessage) -> &mut Self {
-		let prev_head = self.0;
-		self.0 = BlakeTwo256::hash_of(&(
-			prev_head,
-			horizontal_message.sent_at,
-			BlakeTwo256::hash_of(&horizontal_message.data),
-		));
-		self
-	}
-
-	fn extend_downward(&mut self, downward_message: &InboundDownwardMessage) -> &mut Self {
-		let prev_head = self.0;
-		self.0 = BlakeTwo256::hash_of(&(
-			prev_head,
-			downward_message.sent_at,
-			BlakeTwo256::hash_of(&downward_message.msg),
-		));
-		self
-	}
-
-	fn head(&self) -> relay_chain::Hash {
-		self.0
 	}
 }
 
