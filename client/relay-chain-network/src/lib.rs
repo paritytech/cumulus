@@ -38,7 +38,8 @@ use polkadot_service::{
 	AuxStore, BabeApi, CollatorPair, Configuration, Handle, NewFull, Role, TaskManager,
 };
 use sc_client_api::{
-	blockchain::BlockStatus, Backend, BlockchainEvents, HeaderBackend, StorageProof, UsageProvider,
+	blockchain::BlockStatus, Backend, BlockchainEvents, HeaderBackend, StorageData, StorageProof,
+	UsageProvider,
 };
 use sc_telemetry::TelemetryWorkerHandle;
 use sp_api::{ApiError, ProvideRuntimeApi};
@@ -154,15 +155,19 @@ where
 	}
 
 	async fn best_block_hash(&self) -> PHash {
-		let params = rpc_params!();
 		let response: Option<PHash> =
-			self.http_client.request("chain_getHead", params).await.expect("yo again");
+			self.http_client.request("chain_getHead", None).await.expect("yo again");
 		tracing::info!(target: LOG_TARGET, response = ?response);
 		response.unwrap()
 	}
 
 	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error> {
-		let params = rpc_params!(block_id);
+		let hash = match block_id {
+			sp_api::BlockId::Hash(hash) => hash,
+			sp_api::BlockId::Number(_) => todo!(),
+		};
+
+		let params = rpc_params!(hash);
 		let response: Option<SignedBlock<PBlock>> =
 			self.http_client.request("chain_getBlock", params).await.expect("yo again");
 		tracing::info!(target: LOG_TARGET, response = ?response);
@@ -180,12 +185,21 @@ where
 		todo!("overseer_handle");
 	}
 
-	fn get_storage_by_key(
+	async fn get_storage_by_key(
 		&self,
 		block_id: &BlockId,
 		key: &[u8],
 	) -> Result<Option<StorageValue>, sp_blockchain::Error> {
-		todo!("storage_by_key");
+		let storage_key = sp_storage::StorageKey(key.to_vec());
+		let hash = match block_id {
+			sp_api::BlockId::Hash(hash) => hash,
+			sp_api::BlockId::Number(_) => todo!(),
+		};
+		let params = rpc_params!(storage_key, hash);
+		let response: Option<StorageData> =
+			self.http_client.request("state_getStorage", params).await.expect("yo again");
+		tracing::info!(target: LOG_TARGET, response = ?response);
+		Ok(response.map(|v| v.0))
 	}
 
 	fn prove_read(

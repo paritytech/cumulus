@@ -289,15 +289,16 @@ where
 					para_id,
 					proposer_factory,
 					move |_, (relay_parent, validation_data)| {
-						let parachain_inherent =
+						let relay_chain_interface = relay_chain_interface_for_closure.clone();
+						async move {
+							let parachain_inherent =
 							cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 								relay_parent,
-								&relay_chain_interface_for_closure,
+								relay_chain_interface,
 								&validation_data,
 								para_id,
-							);
+							).await;
 
-						async move {
 							let time = sp_timestamp::InherentDataProvider::from_system_time();
 
 							let parachain_inherent = parachain_inherent.ok_or_else(|| {

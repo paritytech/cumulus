@@ -199,7 +199,7 @@ where
 		self.overseer_handle.clone()
 	}
 
-	fn get_storage_by_key(
+	async fn get_storage_by_key(
 		&self,
 		block_id: &BlockId,
 		key: &[u8],

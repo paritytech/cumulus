@@ -52,7 +52,7 @@ pub enum WaitError {
 #[async_trait]
 pub trait RelayChainInterface: Send + Sync {
 	/// Fetch a storage item by key.
-	fn get_storage_by_key(
+	async fn get_storage_by_key(
 		&self,
 		block_id: &BlockId,
 		key: &[u8],
@@ -225,12 +225,12 @@ where
 		(**self).overseer_handle()
 	}
 
-	fn get_storage_by_key(
+	async fn get_storage_by_key(
 		&self,
 		block_id: &BlockId,
 		key: &[u8],
 	) -> Result<Option<StorageValue>, sp_blockchain::Error> {
-		(**self).get_storage_by_key(block_id, key)
+		(**self).get_storage_by_key(block_id, key).await
 	}
 
 	fn prove_read(

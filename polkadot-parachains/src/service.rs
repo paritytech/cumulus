@@ -727,14 +727,15 @@ pub async fn start_rococo_parachain_node(
 			>(BuildAuraConsensusParams {
 				proposer_factory,
 				create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
+						let relay_chain_interface = relay_chain_interface.clone();
+					async move {
 					let parachain_inherent =
 					cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 						relay_parent,
-						&relay_chain_interface,
+						relay_chain_interface.clone(),
 						&validation_data,
 						id,
-					);
-					async move {
+					).await;
 						let time = sp_timestamp::InherentDataProvider::from_system_time();
 
 						let slot =
@@ -864,14 +865,15 @@ where
 					block_import: client.clone(),
 					relay_chain_interface: relay_chain_interface.clone(),
 					create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
-						let parachain_inherent =
+						let relay_chain_interface = relay_chain_interface.clone();
+						async move {
+							let parachain_inherent =
 							cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 								relay_parent,
-								&relay_chain_interface,
+								relay_chain_interface.clone(),
 								&validation_data,
 								id,
-							);
-						async move {
+							).await;
 							let parachain_inherent = parachain_inherent.ok_or_else(|| {
 								Box::<dyn std::error::Error + Send + Sync>::from(
 									"Failed to create parachain inherent",
@@ -1137,14 +1139,15 @@ where
 						proposer_factory,
 						create_inherent_data_providers:
 							move |_, (relay_parent, validation_data)| {
-								let parachain_inherent =
+								let relay_chain_for_aura = relay_chain_for_aura.clone();
+								async move {
+									let parachain_inherent =
 							cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 								relay_parent,
-								&relay_chain_for_aura,
+								relay_chain_for_aura.clone(),
 								&validation_data,
 								id,
-							);
-								async move {
+							).await;
 									let time =
 										sp_timestamp::InherentDataProvider::from_system_time();
 
@@ -1196,14 +1199,15 @@ where
 						relay_chain_interface: relay_chain_interface.clone(),
 						create_inherent_data_providers:
 							move |_, (relay_parent, validation_data)| {
-								let parachain_inherent =
+								let relay_chain_interface = relay_chain_interface.clone();
+								async move {
+									let parachain_inherent =
 									cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 										relay_parent,
-										&relay_chain_interface,
+										relay_chain_interface.clone(),
 										&validation_data,
 										id,
-									);
-								async move {
+									).await;
 									let parachain_inherent =
 										parachain_inherent.ok_or_else(|| {
 											Box::<dyn std::error::Error + Send + Sync>::from(

@@ -29,7 +29,7 @@ const LOG_TARGET: &str = "parachain-inherent";
 
 /// Collect the relevant relay chain state in form of a proof for putting it into the validation
 /// data inherent.
-fn collect_relay_storage_proof(
+async fn collect_relay_storage_proof(
 	relay_chain_interface: &impl RelayChainInterface,
 	para_id: ParaId,
 	relay_parent: PHash,
@@ -42,6 +42,7 @@ fn collect_relay_storage_proof(
 			&relay_parent_block_id,
 			&relay_well_known_keys::hrmp_ingress_channel_index(para_id),
 		)
+		.await
 		.map_err(|e| {
 			tracing::error!(
 				target: LOG_TARGET,
@@ -70,6 +71,7 @@ fn collect_relay_storage_proof(
 			&relay_parent_block_id,
 			&relay_well_known_keys::hrmp_egress_channel_index(para_id),
 		)
+		.await
 		.map_err(|e| {
 			tracing::error!(
 				target: LOG_TARGET,
@@ -115,14 +117,14 @@ impl ParachainInherentData {
 	/// Create the [`ParachainInherentData`] at the given `relay_parent`.
 	///
 	/// Returns `None` if the creation failed.
-	pub fn create_at(
+	pub async fn create_at(
 		relay_parent: PHash,
-		relay_chain_interface: &impl RelayChainInterface,
+		relay_chain_interface: impl RelayChainInterface,
 		validation_data: &PersistedValidationData,
 		para_id: ParaId,
 	) -> Option<ParachainInherentData> {
 		let relay_chain_state =
-			collect_relay_storage_proof(relay_chain_interface, para_id, relay_parent)?;
+			collect_relay_storage_proof(&relay_chain_interface, para_id, relay_parent).await?;
 
 		let downward_messages =
 			relay_chain_interface.retrieve_dmq_contents(para_id, relay_parent)?;
