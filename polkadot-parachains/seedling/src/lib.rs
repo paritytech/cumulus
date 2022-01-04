@@ -154,7 +154,7 @@ impl cumulus_pallet_solo_to_para::Config for Runtime {
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
-	type OnValidationData = cumulus_pallet_solo_to_para::ValidationData<Runtime>;
+	type OnValidationData = cumulus_pallet_solo_to_para::Pallet<Runtime>;
 	type SelfParaId = parachain_info::Pallet<Runtime>;
 	type OutboundXcmpMessageSource = ();
 	type DmpMessageHandler = ();

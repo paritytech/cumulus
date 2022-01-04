@@ -102,8 +102,7 @@ pub mod pallet {
 		}
 	}
 
-	pub struct ValidationData<T: Config>(sp_std::marker::PhantomData<T>);
-	impl<T: Config> OnValidationData for ValidationData<T> {
+	impl<T: Config> OnValidationData for Pallet<T> {
 		fn on_validation_data(_data: &PersistedValidationData) {}
 		fn on_validation_code_applied() {
 			crate::Pallet::<T>::set_pending_custom_validation_head_data();

@@ -142,7 +142,9 @@ pub enum ServiceQuality {
 /// A trait which is called when the validation data is set.
 #[impl_trait_for_tuples::impl_for_tuples(30)]
 pub trait OnValidationData {
+	/// Called everytime the validation data is set.
 	fn on_validation_data(data: &PersistedValidationData);
+	/// Called only when the parachain code is upgraded.
 	fn on_validation_code_applied();
 }
 
