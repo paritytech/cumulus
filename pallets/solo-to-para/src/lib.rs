@@ -94,9 +94,8 @@ pub mod pallet {
 
 		/// Set pending custom head data as head data that will be returned by `validate_block`. on the relay chain.
 		fn set_pending_custom_validation_head_data() {
-			if let Some(head_data) = <PendingCustomValidationHeadData<T>>::get() {
+			if let Some(head_data) = <PendingCustomValidationHeadData<T>>::take() {
 				parachain_system::Pallet::<T>::set_custom_validation_head_data(head_data);
-				<PendingCustomValidationHeadData<T>>::kill();
 				Self::deposit_event(Event::CustomValidationHeadDataApplied);
 			}
 		}
