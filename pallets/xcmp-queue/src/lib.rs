@@ -497,41 +497,47 @@ impl<T: Config> Pallet<T> {
 			XcmpMessageFormat::ConcatenatedVersionedXcm => {
 				while !remaining_fragments.is_empty() {
 					last_remaining_fragments = remaining_fragments;
-					if let Ok(xcm) = VersionedXcm::<T::Call>::decode_and_advance_with_depth_limit(
+					match VersionedXcm::<T::Call>::decode_and_advance_with_depth_limit(
 						MAX_XCM_DECODE_DEPTH,
 						&mut remaining_fragments,
 					) {
-						let weight = max_weight - weight_used;
-						match Self::handle_xcm_message(sender, sent_at, xcm, weight) {
-							Ok(used) => weight_used = weight_used.saturating_add(used),
-							Err(XcmError::WeightLimitReached(required))
-								if required > max_individual_weight =>
-							{
-								// overweight - add to overweight queue and continue with message
-								// execution consuming the message.
-								let msg_len = last_remaining_fragments
-									.len()
-									.saturating_sub(remaining_fragments.len());
-								let overweight_xcm = last_remaining_fragments[..msg_len].to_vec();
-								let index = Self::stash_overweight(sender, sent_at, overweight_xcm);
-								let e = Event::OverweightEnqueued(sender, sent_at, index, required);
-								Self::deposit_event(e);
-							},
-							Err(XcmError::WeightLimitReached(required))
-								if required <= max_weight =>
-							{
-								// That message didn't get processed this time because of being
-								// too heavy. We leave it around for next time and bail.
-								remaining_fragments = last_remaining_fragments;
-								break
-							},
-							Err(_) => {
-								// Message looks invalid; don't attempt to retry
-							},
-						}
-					} else {
-						debug_assert!(false, "Invalid incoming XCMP message data");
-						remaining_fragments = &b""[..];
+						Ok(xcm) if remaining_fragments.len() < last_remaining_fragments.len() => {
+							let weight = max_weight - weight_used;
+							match Self::handle_xcm_message(sender, sent_at, xcm, weight) {
+								Ok(used) => weight_used = weight_used.saturating_add(used),
+								Err(XcmError::WeightLimitReached(required))
+									if required > max_individual_weight =>
+								{
+									// overweight - add to overweight queue and continue with message
+									// execution consuming the message.
+									let msg_len = last_remaining_fragments
+										.len()
+										.saturating_sub(remaining_fragments.len());
+									let overweight_xcm =
+										last_remaining_fragments[..msg_len].to_vec();
+									let index =
+										Self::stash_overweight(sender, sent_at, overweight_xcm);
+									let e =
+										Event::OverweightEnqueued(sender, sent_at, index, required);
+									Self::deposit_event(e);
+								}
+								Err(XcmError::WeightLimitReached(required))
+									if required <= max_weight =>
+								{
+									// That message didn't get processed this time because of being
+									// too heavy. We leave it around for next time and bail.
+									remaining_fragments = last_remaining_fragments;
+									break
+								}
+								Err(_) => {
+									// Message looks invalid; don't attempt to retry
+								},
+							}
+						},
+						_ => {
+							debug_assert!(false, "Invalid incoming XCMP message data");
+							remaining_fragments = &b""[..];
+						},
 					}
 				}
 			},
