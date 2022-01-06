@@ -98,6 +98,7 @@ pub fn get_chain_spec() -> ChainSpec {
 		None,
 		None,
 		None,
+		None,
 		Extensions { relay_chain: "westend".into(), para_id: 1000 },
 	)
 }
@@ -109,6 +110,7 @@ pub fn get_shell_chain_spec() -> ShellChainSpec {
 		ChainType::Local,
 		move || shell_testnet_genesis(1000.into()),
 		Vec::new(),
+		None,
 		None,
 		None,
 		None,
@@ -128,6 +130,7 @@ pub fn get_seedling_chain_spec() -> SeedlingChainSpec {
 			)
 		},
 		Vec::new(),
+		None,
 		None,
 		None,
 		None,
@@ -158,6 +161,7 @@ pub fn staging_test_net() -> ChainSpec {
 			)
 		},
 		Vec::new(),
+		None,
 		None,
 		None,
 		None,
@@ -226,12 +230,9 @@ pub type StatemineChainSpec =
 pub type WestmintChainSpec =
 	sc_service::GenericChainSpec<westmint_runtime::GenesisConfig, Extensions>;
 
-const STATEMINT_ED: StatemintBalance =
-	statemint_runtime::constants::currency::EXISTENTIAL_DEPOSIT / 10;
-const STATEMINE_ED: StatemintBalance =
-	statemine_runtime::constants::currency::EXISTENTIAL_DEPOSIT / 10;
-const WESTMINT_ED: StatemintBalance =
-	westmint_runtime::constants::currency::EXISTENTIAL_DEPOSIT / 10;
+const STATEMINT_ED: StatemintBalance = statemint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const STATEMINE_ED: StatemintBalance = statemine_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const WESTMINT_ED: StatemintBalance = westmint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_public_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -298,6 +299,7 @@ pub fn statemint_development_config() -> StatemintChainSpec {
 		Vec::new(),
 		None,
 		None,
+		None,
 		Some(properties),
 		Extensions { relay_chain: "polkadot-dev".into(), para_id: 1000 },
 	)
@@ -345,6 +347,7 @@ pub fn statemint_local_config() -> StatemintChainSpec {
 			)
 		},
 		Vec::new(),
+		None,
 		None,
 		None,
 		Some(properties),
@@ -423,6 +426,7 @@ pub fn statemine_development_config() -> StatemineChainSpec {
 		Vec::new(),
 		None,
 		None,
+		None,
 		Some(properties),
 		Extensions { relay_chain: "kusama-dev".into(), para_id: 1000 },
 	)
@@ -471,6 +475,7 @@ pub fn statemine_local_config() -> StatemineChainSpec {
 			)
 		},
 		Vec::new(),
+		None,
 		None,
 		None,
 		Some(properties),
@@ -524,6 +529,7 @@ pub fn statemine_config() -> StatemineChainSpec {
 			)
 		},
 		Vec::new(),
+		None,
 		None,
 		None,
 		Some(properties),
@@ -604,6 +610,7 @@ pub fn westmint_development_config() -> WestmintChainSpec {
 		Vec::new(),
 		None,
 		None,
+		None,
 		Some(properties),
 		Extensions { relay_chain: "westend".into(), para_id: 1000 },
 	)
@@ -652,6 +659,7 @@ pub fn westmint_local_config() -> WestmintChainSpec {
 			)
 		},
 		Vec::new(),
+		None,
 		None,
 		None,
 		Some(properties),
@@ -706,6 +714,7 @@ pub fn westmint_config() -> WestmintChainSpec {
 			)
 		},
 		Vec::new(),
+		None,
 		None,
 		None,
 		Some(properties),
