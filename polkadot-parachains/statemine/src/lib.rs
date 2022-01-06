@@ -22,7 +22,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-pub use kusama_runtime_constants as constants;
+pub mod constants;
 mod weights;
 
 use sp_api::impl_runtime_apis;
@@ -40,6 +40,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use codec::{Decode, Encode, MaxEncodedLen};
+use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
 	traits::{EnsureOneOf, Everything, InstanceFilter, Nothing, PalletInfoAccess},
@@ -64,7 +65,6 @@ use parachains_common::{
 pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
-use kusama_runtime_constants::{currency::*, fee::WeightToFee};
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
@@ -180,7 +180,7 @@ impl pallet_authorship::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT / 10;
+	pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT;
 	pub const MaxLocks: u32 = 50;
 	pub const MaxReserves: u32 = 50;
 }
@@ -217,7 +217,7 @@ impl pallet_transaction_payment::Config for Runtime {
 parameter_types! {
 	pub const AssetDeposit: Balance = UNITS; // 1 UNIT deposit to create asset
 	pub const AssetAccountDeposit: Balance = deposit(1, 16);
-	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT / 10;
+	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
 	pub const AssetsStringLimit: u32 = 50;
 	/// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
 	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271

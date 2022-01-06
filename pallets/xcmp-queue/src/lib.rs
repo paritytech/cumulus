@@ -516,7 +516,7 @@ impl<T: Config> Pallet<T> {
 								let index = Self::stash_overweight(sender, sent_at, overweight_xcm);
 								let e = Event::OverweightEnqueued(sender, sent_at, index, required);
 								Self::deposit_event(e);
-							},
+							}
 							Err(XcmError::WeightLimitReached(required))
 								if required <= max_weight =>
 							{
@@ -524,7 +524,7 @@ impl<T: Config> Pallet<T> {
 								// too heavy. We leave it around for next time and bail.
 								remaining_fragments = last_remaining_fragments;
 								break
-							},
+							}
 							Err(_) => {
 								// Message looks invalid; don't attempt to retry
 							},
