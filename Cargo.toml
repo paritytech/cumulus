@@ -4,6 +4,7 @@ members = [
 	"client/consensus/aura",
 	"client/consensus/common",
 	"client/consensus/relay-chain",
+	"client/relay-chain-local",
 	"client/network",
 	"client/pov-recovery",
 	"client/service",
