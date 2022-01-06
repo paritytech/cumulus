@@ -536,14 +536,10 @@ impl<T: Config> Pallet<T> {
 				}
 			},
 			XcmpMessageFormat::ConcatenatedEncodedBlob => {
-				if !remaining_fragments.is_empty() {
-					// `decode_all` doesn't consume the input. Thus, we directly reset
-					// `remaining_fragments` to an empty slice and only reset it when
-					// the message didn't get processed because of being too heavy.
+				while !remaining_fragments.is_empty() {
 					last_remaining_fragments = remaining_fragments;
-					remaining_fragments = &b""[..];
 
-					if let Ok(blob) = <Vec<u8>>::decode_all(last_remaining_fragments) {
+					if let Ok(blob) = <Vec<u8>>::decode(&mut remaining_fragments) {
 						let weight = max_weight - weight_used;
 						match Self::handle_blob_message(sender, sent_at, blob, weight) {
 							Ok(used) => weight_used = weight_used.saturating_add(used),
@@ -551,6 +547,7 @@ impl<T: Config> Pallet<T> {
 								// That message didn't get processed this time because of being
 								// too heavy. We leave it around for next time and bail.
 								remaining_fragments = last_remaining_fragments;
+								break
 							},
 							Err(false) => {
 								// Message invalid; don't attempt to retry
@@ -558,6 +555,7 @@ impl<T: Config> Pallet<T> {
 						}
 					} else {
 						debug_assert!(false, "Invalid incoming blob message data");
+						remaining_fragments = &b""[..];
 					}
 				}
 			},
