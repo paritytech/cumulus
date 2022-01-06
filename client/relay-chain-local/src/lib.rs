@@ -155,11 +155,11 @@ where
 		self.full_client.runtime_api().candidate_pending_availability(block_id, para_id)
 	}
 
-	fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError> {
+	async fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError> {
 		self.full_client.runtime_api().session_index_for_child(block_id)
 	}
 
-	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
+	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
 		self.full_client.runtime_api().validators(block_id)
 	}
 

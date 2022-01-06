@@ -59,7 +59,7 @@ pub trait RelayChainInterface: Send + Sync {
 	) -> Result<Option<StorageValue>, sp_blockchain::Error>;
 
 	/// Fetch a vector of current validators.
-	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError>;
+	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError>;
 
 	/// Get the status of a given block.
 	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error>;
@@ -107,7 +107,7 @@ pub trait RelayChainInterface: Send + Sync {
 	) -> Result<Option<CommittedCandidateReceipt>, ApiError>;
 
 	/// Returns the session index expected at a child of the block.
-	fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError>;
+	async fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError>;
 
 	/// Get a stream of import block notifications.
 	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<PBlock>;
@@ -183,12 +183,12 @@ where
 		(**self).candidate_pending_availability(block_id, para_id)
 	}
 
-	fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError> {
-		(**self).session_index_for_child(block_id)
+	async fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError> {
+		(**self).session_index_for_child(block_id).await
 	}
 
-	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
-		(**self).validators(block_id)
+	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
+		(**self).validators(block_id).await
 	}
 
 	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<PBlock> {

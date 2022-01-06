@@ -26,6 +26,7 @@ use cumulus_primitives_core::{
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
 use cumulus_relay_chain_interface::RelayChainInterface;
+use parity_scale_codec::{Decode, Encode};
 
 use jsonrpsee::{
 	http_client::{HttpClient, HttpClientBuilder},
@@ -128,12 +129,26 @@ where
 		todo!("candidate_pending_availability");
 	}
 
-	fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError> {
-		todo!("session_index_for_child");
+	async fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError> {
+		let params = rpc_params!("ParachainHost_session_index_for_child", block_id);
+		let response: Result<sp_core::Bytes, _> =
+			self.http_client.request("state_call", params).await;
+		let bytes = response.expect("Should not explode");
+
+		let decoded = SessionIndex::decode(&mut &*bytes.0);
+
+		Ok(decoded.unwrap())
 	}
 
-	fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
-		todo!("validators");
+	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
+		let params = rpc_params!("ParachainHost_validators", block_id);
+		let response: Result<sp_core::Bytes, _> =
+			self.http_client.request("state_call", params).await;
+		tracing::info!(target: LOG_TARGET, response = ?response);
+		let bytes = response.expect("Should not explode");
+
+		let decoded = Vec::<ValidatorId>::decode(&mut &*bytes.0);
+		Ok(decoded.unwrap())
 	}
 
 	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<PBlock> {

@@ -16,7 +16,8 @@
 
 use super::*;
 use async_trait::async_trait;
-use cumulus_relay_chain_interface::BlockCheckResult;
+use cumulus_relay_chain_interface::WaitError;
+use cumulus_relay_chain_local::{check_block_in_chain, BlockCheckStatus};
 use cumulus_test_service::runtime::{Block, Hash, Header};
 use futures::{executor::block_on, poll, task::Poll, FutureExt, StreamExt};
 use parking_lot::Mutex;
@@ -76,14 +77,14 @@ impl DummyRelayChainInterface {
 
 #[async_trait]
 impl RelayChainInterface for DummyRelayChainInterface {
-	fn validators(
+	async fn validators(
 		&self,
 		_: &cumulus_primitives_core::relay_chain::BlockId,
 	) -> Result<Vec<ValidatorId>, sp_api::ApiError> {
 		Ok(self.data.lock().validators.clone())
 	}
 
-	fn block_status(
+	async fn block_status(
 		&self,
 		block_id: cumulus_primitives_core::relay_chain::BlockId,
 	) -> Result<sp_blockchain::BlockStatus, sp_blockchain::Error> {
@@ -151,7 +152,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		}
 	}
 
-	fn session_index_for_child(
+	async fn session_index_for_child(
 		&self,
 		_: &cumulus_primitives_core::relay_chain::BlockId,
 	) -> Result<SessionIndex, sp_api::ApiError> {
@@ -185,7 +186,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		unimplemented!("Not needed for test")
 	}
 
-	fn get_storage_by_key(
+	async fn get_storage_by_key(
 		&self,
 		_: &polkadot_service::BlockId,
 		_: &[u8],
@@ -273,6 +274,7 @@ async fn make_gossip_message_and_header(
 	.unwrap();
 	let session_index = relay_chain_interface
 		.session_index_for_child(&BlockId::Hash(relay_parent))
+		.await
 		.unwrap();
 	let signing_context = SigningContext { parent_hash: relay_parent, session_index };
 
@@ -441,9 +443,9 @@ fn check_statement_is_correctly_signed() {
 	assert_eq!(Validation::Failure { disconnect: true }, res.unwrap());
 }
 
-#[test]
-fn check_statement_seconded() {
-	let (mut validator, api) = make_validator_and_api();
+#[tokio::test]
+async fn check_statement_seconded() {
+	let (mut validator, relay_chain_interface) = make_validator_and_api();
 	let header = default_header();
 	let relay_parent = H256::from_low_u64_be(1);
 
@@ -454,7 +456,10 @@ fn check_statement_seconded() {
 		Some(&Sr25519Keyring::Alice.to_seed()),
 	)
 	.unwrap();
-	let session_index = api.session_index_for_child(&BlockId::Hash(relay_parent)).unwrap();
+	let session_index = relay_chain_interface
+		.session_index_for_child(&BlockId::Hash(relay_parent))
+		.await
+		.unwrap();
 	let signing_context = SigningContext { parent_hash: relay_parent, session_index };
 
 	let statement = Statement::Valid(Default::default());

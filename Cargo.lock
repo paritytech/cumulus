@@ -1890,6 +1890,7 @@ dependencies = [
  "cumulus-relay-chain-interface",
  "futures 0.3.19",
  "jsonrpsee 0.6.1",
+ "parity-scale-codec",
  "parking_lot 0.11.2",
  "polkadot-client",
  "polkadot-service",

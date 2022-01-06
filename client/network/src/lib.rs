@@ -128,7 +128,7 @@ impl BlockAnnounceData {
 	/// Check the signature of the statement.
 	///
 	/// Returns an `Err(_)` if it failed.
-	fn check_signature<RCInterface>(
+	async fn check_signature<RCInterface>(
 		self,
 		relay_chain_client: &RCInterface,
 	) -> Result<Validation, BlockAnnounceError>
@@ -138,16 +138,16 @@ impl BlockAnnounceData {
 		let validator_index = self.statement.unchecked_validator_index();
 
 		let runtime_api_block_id = BlockId::Hash(self.relay_parent);
-		let session_index = match relay_chain_client.session_index_for_child(&runtime_api_block_id)
-		{
-			Ok(r) => r,
-			Err(e) => return Err(BlockAnnounceError(format!("{:?}", e))),
-		};
+		let session_index =
+			match relay_chain_client.session_index_for_child(&runtime_api_block_id).await {
+				Ok(r) => r,
+				Err(e) => return Err(BlockAnnounceError(format!("{:?}", e))),
+			};
 
 		let signing_context = SigningContext { parent_hash: self.relay_parent, session_index };
 
 		// Check that the signer is a legit validator.
-		let authorities = match relay_chain_client.validators(&runtime_api_block_id) {
+		let authorities = match relay_chain_client.validators(&runtime_api_block_id).await {
 			Ok(r) => r,
 			Err(e) => return Err(BlockAnnounceError(format!("{:?}", e))),
 		};
@@ -370,6 +370,7 @@ where
 
 			block_announce_data
 				.check_signature(&relay_chain_interface)
+				.await
 				.map_err(|e| Box::new(e) as Box<_>)
 		}
 		.boxed()

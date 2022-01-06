@@ -363,7 +363,9 @@ where
 		let mut imported_blocks = self.parachain_client.import_notification_stream().fuse();
 		let mut finalized_blocks = self.parachain_client.finality_notification_stream().fuse();
 		let pending_candidates =
-			pending_candidates(self.relay_chain_interface.clone(), self.para_id).fuse();
+			pending_candidates(self.relay_chain_interface.clone(), self.para_id)
+				.await
+				.fuse();
 		futures::pin_mut!(pending_candidates);
 
 		loop {
@@ -417,28 +419,28 @@ where
 }
 
 /// Returns a stream over pending candidates for the parachain corresponding to `para_id`.
-fn pending_candidates(
-	relay_chain_client: impl RelayChainInterface,
+async fn pending_candidates(
+	relay_chain_client: impl RelayChainInterface + Clone,
 	para_id: ParaId,
 ) -> impl Stream<Item = (CommittedCandidateReceipt, SessionIndex)> {
 	relay_chain_client.import_notification_stream().filter_map(move |n| {
-		let res = relay_chain_client
-			.candidate_pending_availability(&BlockId::hash(n.hash), para_id)
-			.and_then(|pa| {
-				relay_chain_client
-					.session_index_for_child(&BlockId::hash(n.hash))
-					.map(|v| pa.map(|pa| (pa, v)))
-			})
-			.map_err(|e| {
-				tracing::error!(
-					target: LOG_TARGET,
-					error = ?e,
-					"Failed fetch pending candidates.",
-				)
-			})
-			.ok()
-			.flatten();
-
-		async move { res }
+		let client_for_closure = relay_chain_client.clone();
+		async move {
+			let pending_availability_result =
+				client_for_closure.candidate_pending_availability(&BlockId::hash(n.hash), para_id);
+			let session_index_result =
+				client_for_closure.session_index_for_child(&BlockId::hash(n.hash)).await;
+			session_index_result
+				.map(|v| pending_availability_result.ok().flatten().map(|pa| (pa, v)))
+				.map_err(|e| {
+					tracing::error!(
+						target: LOG_TARGET,
+						error = ?e,
+						"Failed fetch pending candidates.",
+					)
+				})
+				.ok()
+				.flatten()
+		}
 	})
 }
