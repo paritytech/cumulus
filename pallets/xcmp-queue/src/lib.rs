@@ -33,7 +33,7 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-use codec::{Decode, DecodeAll, DecodeLimit, Encode};
+use codec::{Decode, DecodeLimit, Encode};
 use cumulus_primitives_core::{
 	relay_chain::BlockNumber as RelayBlockNumber, ChannelStatus, GetChannelInfo, MessageSendError,
 	ParaId, XcmpMessageFormat, XcmpMessageHandler, XcmpMessageSource,
