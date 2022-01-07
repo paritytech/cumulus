@@ -139,9 +139,9 @@ where
 	) -> Result<Option<PersistedValidationData>, ApiError> {
 		let bytes = self
 			.call_remote_runtime_function(
-				"ParachainHost_candidate_pending_availability",
+				"ParachainHost_persisted_validation_data",
 				block_id,
-				Some(para_id.encode()),
+				Some((para_id, occupied_core_assumption).encode()),
 			)
 			.await;
 
