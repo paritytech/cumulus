@@ -27,7 +27,7 @@ pub mod currency {
 
 	pub const fn deposit(items: u32, bytes: u32) -> Balance {
 		// 1/10 of Westend testnet
-		(items as Balance * 100 * CENTS + (bytes as Balance) * 5 * MILLICENTS) / 10
+		constants::currency::deposit(items, bytes) / 10
 	}
 }
 

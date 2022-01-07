@@ -27,7 +27,7 @@ pub mod currency {
 
 	pub const fn deposit(items: u32, bytes: u32) -> Balance {
 		// 1/10 of Polkadot v9010
-		(items as Balance * 20 * DOLLARS + (bytes as Balance) * 100 * MILLICENTS) / 10
+		constants::currency::deposit(items, bytes) / 10
 	}
 }
 
