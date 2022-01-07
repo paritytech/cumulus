@@ -134,7 +134,7 @@ where
 			.ok()
 	}
 
-	fn persisted_validation_data(
+	async fn persisted_validation_data(
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
@@ -147,7 +147,7 @@ where
 		)
 	}
 
-	fn candidate_pending_availability(
+	async fn candidate_pending_availability(
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,

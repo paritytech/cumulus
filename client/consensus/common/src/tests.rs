@@ -66,6 +66,7 @@ impl Relaychain {
 	}
 }
 
+#[async_trait]
 impl crate::parachain_consensus::RelaychainClient for Relaychain {
 	type Error = ClientError;
 
@@ -95,7 +96,11 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 		Box::new(stream.map(|v| v.encode()))
 	}
 
-	fn parachain_head_at(&self, _: &BlockId<PBlock>, _: ParaId) -> ClientResult<Option<Vec<u8>>> {
+	async fn parachain_head_at(
+		&self,
+		_: &BlockId<PBlock>,
+		_: ParaId,
+	) -> ClientResult<Option<Vec<u8>>> {
 		unimplemented!("Not required for tests")
 	}
 }

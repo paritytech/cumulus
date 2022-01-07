@@ -85,6 +85,25 @@ impl<T> Clone for RelayChainNetwork<T> {
 	}
 }
 
+impl<Client> RelayChainNetwork<Client> {
+	async fn call_remote_runtime_function(
+		&self,
+		method_name: &str,
+		block_id: &BlockId,
+		payload: Option<Vec<u8>>,
+	) -> sp_core::Bytes {
+		let payload_bytes =
+			payload.map_or(sp_core::Bytes(Vec::new()), |pl| sp_core::Bytes(pl.encode().to_vec()));
+		let params = rpc_params! {
+			method_name,
+			payload_bytes,
+			block_id
+		};
+		let response: Result<sp_core::Bytes, _> =
+			self.http_client.request("state_call", params).await;
+		response.expect("Should not explode")
+	}
+}
 #[async_trait]
 impl<Client> RelayChainInterface for RelayChainNetwork<Client>
 where
@@ -112,28 +131,47 @@ where
 		todo!("retrieve_all_inbound_hrmp_channel_contents");
 	}
 
-	fn persisted_validation_data(
+	async fn persisted_validation_data(
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> Result<Option<PersistedValidationData>, ApiError> {
-		todo!("persisted_validation_data");
+		let bytes = self
+			.call_remote_runtime_function(
+				"ParachainHost_candidate_pending_availability",
+				block_id,
+				Some(para_id.encode()),
+			)
+			.await;
+
+		let decoded = Option::<PersistedValidationData>::decode(&mut &*bytes.0);
+
+		Ok(decoded.unwrap())
 	}
 
-	fn candidate_pending_availability(
+	async fn candidate_pending_availability(
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
 	) -> Result<Option<CommittedCandidateReceipt>, ApiError> {
-		todo!("candidate_pending_availability");
+		let bytes = self
+			.call_remote_runtime_function(
+				"ParachainHost_candidate_pending_availability",
+				block_id,
+				Some(para_id.encode()),
+			)
+			.await;
+
+		let decoded = Option::<CommittedCandidateReceipt<PHash>>::decode(&mut &*bytes.0);
+
+		Ok(decoded.unwrap())
 	}
 
 	async fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError> {
-		let params = rpc_params!("ParachainHost_session_index_for_child", block_id);
-		let response: Result<sp_core::Bytes, _> =
-			self.http_client.request("state_call", params).await;
-		let bytes = response.expect("Should not explode");
+		let bytes = self
+			.call_remote_runtime_function("ParachainHost_session_index_for_child", block_id, None)
+			.await;
 
 		let decoded = SessionIndex::decode(&mut &*bytes.0);
 
@@ -141,13 +179,12 @@ where
 	}
 
 	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
-		let params = rpc_params!("ParachainHost_validators", block_id);
-		let response: Result<sp_core::Bytes, _> =
-			self.http_client.request("state_call", params).await;
-		tracing::info!(target: LOG_TARGET, response = ?response);
-		let bytes = response.expect("Should not explode");
+		let bytes = self
+			.call_remote_runtime_function("ParachainHost_validators", block_id, None)
+			.await;
 
 		let decoded = Vec::<ValidatorId>::decode(&mut &*bytes.0);
+
 		Ok(decoded.unwrap())
 	}
 

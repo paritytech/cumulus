@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+use async_trait::async_trait;
 use cumulus_relay_chain_interface::RelayChainInterface;
 use sc_client_api::{
 	Backend, BlockBackend, BlockImportNotification, BlockchainEvents, Finalizer, UsageProvider,
@@ -34,6 +35,7 @@ use futures::{future, select, FutureExt, Stream, StreamExt};
 use std::{pin::Pin, sync::Arc};
 
 /// Helper for the relay chain client. This is expected to be a lightweight handle like an `Arc`.
+#[async_trait]
 pub trait RelaychainClient: Clone + 'static {
 	/// The error type for interacting with the Polkadot client.
 	type Error: std::fmt::Debug + Send;
@@ -42,13 +44,13 @@ pub trait RelaychainClient: Clone + 'static {
 	type HeadStream: Stream<Item = Vec<u8>> + Send + Unpin;
 
 	/// Get a stream of new best heads for the given parachain.
-	fn new_best_heads(&self, para_id: ParaId) -> Self::HeadStream;
+	async fn new_best_heads(&self, para_id: ParaId) -> Self::HeadStream;
 
 	/// Get a stream of finalized heads for the given parachain.
-	fn finalized_heads(&self, para_id: ParaId) -> Self::HeadStream;
+	async fn finalized_heads(&self, para_id: ParaId) -> Self::HeadStream;
 
 	/// Returns the parachain head for the given `para_id` at the given block id.
-	fn parachain_head_at(
+	async fn parachain_head_at(
 		&self,
 		at: &BlockId<PBlock>,
 		para_id: ParaId,
@@ -66,7 +68,7 @@ where
 	R: RelaychainClient,
 	B: Backend<Block>,
 {
-	let mut finalized_heads = relay_chain.finalized_heads(para_id);
+	let mut finalized_heads = relay_chain.finalized_heads(para_id).await;
 
 	loop {
 		let finalized_head = if let Some(h) = finalized_heads.next().await {
@@ -165,7 +167,7 @@ async fn follow_new_best<P, R, Block, B>(
 	R: RelaychainClient,
 	B: Backend<Block>,
 {
-	let mut new_best_heads = relay_chain.new_best_heads(para_id).fuse();
+	let mut new_best_heads = relay_chain.new_best_heads(para_id).await.fuse();
 	let mut imported_blocks = parachain.import_notification_stream().fuse();
 	// The unset best header of the parachain. Will be `Some(_)` when we have imported a relay chain
 	// block before the parachain block it included. In this case we need to wait for this block to
@@ -368,6 +370,7 @@ where
 	}
 }
 
+#[async_trait]
 impl<RCInterface> RelaychainClient for RCInterface
 where
 	RCInterface: RelayChainInterface + Clone + 'static,
@@ -376,38 +379,51 @@ where
 
 	type HeadStream = Pin<Box<dyn Stream<Item = Vec<u8>> + Send>>;
 
-	fn new_best_heads(&self, para_id: ParaId) -> Self::HeadStream {
+	async fn new_best_heads(&self, para_id: ParaId) -> Self::HeadStream {
 		let relay_chain = self.clone();
 
 		self.import_notification_stream()
 			.filter_map(move |n| {
-				future::ready(if n.is_new_best {
-					relay_chain.parachain_head_at(&BlockId::hash(n.hash), para_id).ok().flatten()
-				} else {
-					None
-				})
+				let relay_chain = relay_chain.clone();
+				async move {
+					if n.is_new_best {
+						relay_chain
+							.parachain_head_at(&BlockId::hash(n.hash), para_id)
+							.await
+							.ok()
+							.flatten()
+					} else {
+						None
+					}
+				}
 			})
 			.boxed()
 	}
 
-	fn finalized_heads(&self, para_id: ParaId) -> Self::HeadStream {
+	async fn finalized_heads(&self, para_id: ParaId) -> Self::HeadStream {
 		let relay_chain = self.clone();
 
 		self.finality_notification_stream()
 			.filter_map(move |n| {
-				future::ready(
-					relay_chain.parachain_head_at(&BlockId::hash(n.hash), para_id).ok().flatten(),
-				)
+				let relay_chain = relay_chain.clone();
+				async move {
+					relay_chain
+						.parachain_head_at(&BlockId::hash(n.hash), para_id)
+						.await
+						.ok()
+						.flatten()
+				}
 			})
 			.boxed()
 	}
 
-	fn parachain_head_at(
+	async fn parachain_head_at(
 		&self,
 		at: &BlockId<PBlock>,
 		para_id: ParaId,
 	) -> ClientResult<Option<Vec<u8>>> {
 		self.persisted_validation_data(at, para_id, OccupiedCoreAssumption::TimedOut)
+			.await
 			.map(|s| s.map(|s| s.parent_head.0))
 			.map_err(Into::into)
 	}

@@ -91,7 +91,7 @@ pub trait RelayChainInterface: Send + Sync {
 	///
 	/// Returns `None` if either the para is not registered or the assumption is `Freed`
 	/// and the para already occupies a core.
-	fn persisted_validation_data(
+	async fn persisted_validation_data(
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
@@ -100,7 +100,7 @@ pub trait RelayChainInterface: Send + Sync {
 
 	/// Get the receipt of a candidate pending availability. This returns `Some` for any paras
 	/// assigned to occupied cores in `availability_cores` and `None` otherwise.
-	fn candidate_pending_availability(
+	async fn candidate_pending_availability(
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
@@ -166,21 +166,23 @@ where
 		(**self).retrieve_all_inbound_hrmp_channel_contents(para_id, relay_parent)
 	}
 
-	fn persisted_validation_data(
+	async fn persisted_validation_data(
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> Result<Option<PersistedValidationData>, ApiError> {
-		(**self).persisted_validation_data(block_id, para_id, occupied_core_assumption)
+		(**self)
+			.persisted_validation_data(block_id, para_id, occupied_core_assumption)
+			.await
 	}
 
-	fn candidate_pending_availability(
+	async fn candidate_pending_availability(
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
 	) -> Result<Option<CommittedCandidateReceipt>, ApiError> {
-		(**self).candidate_pending_availability(block_id, para_id)
+		(**self).candidate_pending_availability(block_id, para_id).await
 	}
 
 	async fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError> {

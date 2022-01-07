@@ -107,7 +107,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		Some(BTreeMap::new())
 	}
 
-	fn persisted_validation_data(
+	async fn persisted_validation_data(
 		&self,
 		_: &cumulus_primitives_core::relay_chain::BlockId,
 		_: ParaId,
@@ -119,7 +119,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		}))
 	}
 
-	fn candidate_pending_availability(
+	async fn candidate_pending_availability(
 		&self,
 		_: &cumulus_primitives_core::relay_chain::BlockId,
 		_: ParaId,

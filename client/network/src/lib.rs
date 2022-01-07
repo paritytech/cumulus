@@ -247,13 +247,14 @@ where
 	RCInterface: RelayChainInterface + Clone,
 {
 	/// Get the included block of the given parachain in the relay chain.
-	fn included_block(
+	async fn included_block(
 		relay_chain_interface: &RCInterface,
 		block_id: &BlockId<PBlock>,
 		para_id: ParaId,
 	) -> Result<Block::Header, BoxedError> {
 		let validation_data = relay_chain_interface
 			.persisted_validation_data(block_id, para_id, OccupiedCoreAssumption::TimedOut)
+			.await
 			.map_err(|e| Box::new(BlockAnnounceError(format!("{:?}", e))) as Box<_>)?
 			.ok_or_else(|| {
 				Box::new(BlockAnnounceError("Could not find parachain head in relay chain".into()))
@@ -269,13 +270,14 @@ where
 	}
 
 	/// Get the backed block hash of the given parachain in the relay chain.
-	fn backed_block_hash(
+	async fn backed_block_hash(
 		relay_chain_interface: &RCInterface,
 		block_id: &BlockId<PBlock>,
 		para_id: ParaId,
 	) -> Result<Option<PHash>, BoxedError> {
 		let candidate_receipt = relay_chain_interface
 			.candidate_pending_availability(block_id, para_id)
+			.await
 			.map_err(|e| Box::new(BlockAnnounceError(format!("{:?}", e))) as Box<_>)?;
 
 		Ok(candidate_receipt.map(|cr| cr.descriptor.para_head))
@@ -296,16 +298,19 @@ where
 			let block_number = header.number();
 
 			let best_head =
-				Self::included_block(&relay_chain_interface, &runtime_api_block_id, para_id)?;
+				Self::included_block(&relay_chain_interface, &runtime_api_block_id, para_id)
+					.await?;
 			let known_best_number = best_head.number();
-			let backed_block =
-				|| Self::backed_block_hash(&relay_chain_interface, &runtime_api_block_id, para_id);
+			let backed_block = || async {
+				Self::backed_block_hash(&relay_chain_interface, &runtime_api_block_id, para_id)
+					.await
+			};
 
 			if best_head == header {
 				tracing::debug!(target: LOG_TARGET, "Announced block matches best block.",);
 
 				Ok(Validation::Success { is_new_best: true })
-			} else if Some(HeadData(header.encode()).hash()) == backed_block()? {
+			} else if Some(HeadData(header.encode()).hash()) == backed_block().await? {
 				tracing::debug!(target: LOG_TARGET, "Announced block matches latest backed block.",);
 
 				Ok(Validation::Success { is_new_best: true })
