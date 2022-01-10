@@ -48,15 +48,16 @@ struct RelayChainRPCClient {
 	http_client: HttpClient,
 }
 
+/// Client that calls RPC endpoints and deserializes call results
 impl RelayChainRPCClient {
+	/// Call a runtime function via rpc
 	async fn call_remote_runtime_function(
 		&self,
 		method_name: &str,
 		block_id: &BlockId,
 		payload: Option<Vec<u8>>,
 	) -> Result<sp_core::Bytes, JsonRPSeeError> {
-		let payload_bytes =
-			payload.map_or(sp_core::Bytes(Vec::new()), |pl| sp_core::Bytes(pl.encode().to_vec()));
+		let payload_bytes = payload.map_or(sp_core::Bytes(Vec::new()), sp_core::Bytes);
 		let params = rpc_params! {
 			method_name,
 			payload_bytes,
