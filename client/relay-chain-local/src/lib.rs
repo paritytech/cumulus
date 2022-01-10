@@ -88,7 +88,7 @@ where
 		+ Send,
 	Client::Api: ParachainHost<PBlock> + BabeApi<PBlock>,
 {
-	fn retrieve_dmq_contents(
+	async fn retrieve_dmq_contents(
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
@@ -111,7 +111,7 @@ where
 			.ok()
 	}
 
-	fn retrieve_all_inbound_hrmp_channel_contents(
+	async fn retrieve_all_inbound_hrmp_channel_contents(
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,

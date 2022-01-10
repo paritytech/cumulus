@@ -115,20 +115,42 @@ where
 		+ Send,
 	Client::Api: ParachainHost<PBlock> + BabeApi<PBlock>,
 {
-	fn retrieve_dmq_contents(
+	async fn retrieve_dmq_contents(
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> Option<Vec<InboundDownwardMessage>> {
-		todo!("retreive_dmq_contents_not_implemented");
+		let block_id = BlockId::hash(relay_parent);
+		let bytes = self
+			.call_remote_runtime_function(
+				"ParachainHost_dmq_contents",
+				&block_id,
+				Some(para_id.encode()),
+			)
+			.await;
+
+		let decoded = Option::<Vec<InboundDownwardMessage>>::decode(&mut &*bytes.0);
+
+		decoded.unwrap()
 	}
 
-	fn retrieve_all_inbound_hrmp_channel_contents(
+	async fn retrieve_all_inbound_hrmp_channel_contents(
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
-		todo!("retrieve_all_inbound_hrmp_channel_contents");
+		let block_id = BlockId::hash(relay_parent);
+		let bytes = self
+			.call_remote_runtime_function(
+				"ParachainHost_inbound_hrmp_channels_contents",
+				&block_id,
+				Some(para_id.encode()),
+			)
+			.await;
+
+		let decoded = Option::<BTreeMap<ParaId, Vec<InboundHrmpMessage>>>::decode(&mut &*bytes.0);
+
+		decoded.unwrap()
 	}
 
 	async fn persisted_validation_data(

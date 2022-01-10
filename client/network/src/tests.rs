@@ -95,11 +95,11 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		self.relay_backend.blockchain().info().best_hash
 	}
 
-	fn retrieve_dmq_contents(&self, _: ParaId, _: PHash) -> Option<Vec<InboundDownwardMessage>> {
+	async fn retrieve_dmq_contents(&self, _: ParaId, _: PHash) -> Option<Vec<InboundDownwardMessage>> {
 		unimplemented!("Not needed for test")
 	}
 
-	fn retrieve_all_inbound_hrmp_channel_contents(
+	async fn retrieve_all_inbound_hrmp_channel_contents(
 		&self,
 		_: ParaId,
 		_: PHash,

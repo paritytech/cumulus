@@ -70,7 +70,7 @@ pub trait RelayChainInterface: Send + Sync {
 	/// for.
 	///
 	/// Returns `None` in case of an error.
-	fn retrieve_dmq_contents(
+	async fn retrieve_dmq_contents(
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
@@ -80,7 +80,7 @@ pub trait RelayChainInterface: Send + Sync {
 	/// collating for.
 	///
 	/// Empty channels are also included.
-	fn retrieve_all_inbound_hrmp_channel_contents(
+	async fn retrieve_all_inbound_hrmp_channel_contents(
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
@@ -150,20 +150,20 @@ impl<T> RelayChainInterface for Arc<T>
 where
 	T: RelayChainInterface + ?Sized,
 {
-	fn retrieve_dmq_contents(
+	async fn retrieve_dmq_contents(
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> Option<Vec<InboundDownwardMessage>> {
-		(**self).retrieve_dmq_contents(para_id, relay_parent)
+		(**self).retrieve_dmq_contents(para_id, relay_parent).await
 	}
 
-	fn retrieve_all_inbound_hrmp_channel_contents(
+	async fn retrieve_all_inbound_hrmp_channel_contents(
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
-		(**self).retrieve_all_inbound_hrmp_channel_contents(para_id, relay_parent)
+		(**self).retrieve_all_inbound_hrmp_channel_contents(para_id, relay_parent).await
 	}
 
 	async fn persisted_validation_data(
