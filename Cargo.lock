@@ -1897,6 +1897,7 @@ dependencies = [
  "sc-client-api",
  "sc-consensus-babe",
  "sc-network",
+ "sc-rpc-api",
  "sc-service",
  "sc-telemetry",
  "sc-tracing",

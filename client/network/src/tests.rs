@@ -194,7 +194,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		unimplemented!("Not needed for test")
 	}
 
-	fn prove_read(
+	async fn prove_read(
 		&self,
 		_: &polkadot_service::BlockId,
 		_: &Vec<Vec<u8>>,

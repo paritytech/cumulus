@@ -138,7 +138,7 @@ pub trait RelayChainInterface: Send + Sync {
 	fn overseer_handle(&self) -> Option<OverseerHandle>;
 
 	/// Generate a storage read proof.
-	fn prove_read(
+	async fn prove_read(
 		&self,
 		block_id: &BlockId,
 		relevant_keys: &Vec<Vec<u8>>,
@@ -235,12 +235,12 @@ where
 		(**self).get_storage_by_key(block_id, key).await
 	}
 
-	fn prove_read(
+	async fn prove_read(
 		&self,
 		block_id: &BlockId,
 		relevant_keys: &Vec<Vec<u8>>,
 	) -> Result<Option<StorageProof>, Box<dyn sp_state_machine::Error>> {
-		(**self).prove_read(block_id, relevant_keys)
+		(**self).prove_read(block_id, relevant_keys).await
 	}
 
 	async fn wait_for_block(&self, hash: PHash) -> Result<(), WaitError> {

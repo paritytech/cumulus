@@ -110,7 +110,10 @@ async fn collect_relay_storage_proof(
 		relay_well_known_keys::hrmp_channels(HrmpChannelId { sender: para_id, recipient })
 	}));
 
-	relay_chain_interface.prove_read(&relay_parent_block_id, &relevant_keys).ok()?
+	relay_chain_interface
+		.prove_read(&relay_parent_block_id, &relevant_keys)
+		.await
+		.ok()?
 }
 
 impl ParachainInherentData {

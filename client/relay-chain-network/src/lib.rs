@@ -42,12 +42,14 @@ use sc_client_api::{
 	blockchain::BlockStatus, Backend, BlockchainEvents, HeaderBackend, StorageData, StorageProof,
 	UsageProvider,
 };
+use sc_rpc_api::state::ReadProof;
 use sc_telemetry::TelemetryWorkerHandle;
 use sp_api::{ApiError, ProvideRuntimeApi};
 use sp_consensus::SyncOracle;
 use sp_core::{sp_std::collections::btree_map::BTreeMap, Pair};
 use sp_runtime::generic::SignedBlock;
 use sp_state_machine::{Backend as StateBackend, StorageValue};
+use sp_storage::StorageKey;
 const LOG_TARGET: &str = "relay-chain-local";
 
 /// RelayChainNetwork is used to interact with a full node that is running locally
@@ -264,7 +266,7 @@ where
 		block_id: &BlockId,
 		key: &[u8],
 	) -> Result<Option<StorageValue>, sp_blockchain::Error> {
-		let storage_key = sp_storage::StorageKey(key.to_vec());
+		let storage_key = StorageKey(key.to_vec());
 		let hash = match block_id {
 			sp_api::BlockId::Hash(hash) => hash,
 			sp_api::BlockId::Number(_) => todo!(),
@@ -276,12 +278,29 @@ where
 		Ok(response.map(|v| v.0))
 	}
 
-	fn prove_read(
+	async fn prove_read(
 		&self,
 		block_id: &BlockId,
 		relevant_keys: &Vec<Vec<u8>>,
 	) -> Result<Option<StorageProof>, Box<dyn sp_state_machine::Error>> {
-		todo!("wait_for_block_not_implemented");
+		let cloned = relevant_keys.clone();
+		let storage_keys: Vec<StorageKey> = cloned.into_iter().map(StorageKey).collect();
+
+		let hash = match block_id {
+			sp_api::BlockId::Hash(hash) => hash,
+			sp_api::BlockId::Number(_) => todo!(),
+		};
+
+		let params = rpc_params!(storage_keys, hash);
+		let response: Option<ReadProof<PHash>> =
+			self.http_client.request("state_getReadProof", params).await.expect("yo again");
+
+		Ok(response.map(|read_proof| {
+			let bytes: Vec<Vec<u8>> =
+				read_proof.proof.into_iter().map(|bytes| (*bytes).to_vec()).collect();
+
+			StorageProof::new(bytes.to_vec())
+		}))
 	}
 
 	async fn wait_for_block(

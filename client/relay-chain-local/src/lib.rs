@@ -208,7 +208,7 @@ where
 		state.storage(key).map_err(sp_blockchain::Error::Storage)
 	}
 
-	fn prove_read(
+	async fn prove_read(
 		&self,
 		block_id: &BlockId,
 		relevant_keys: &Vec<Vec<u8>>,
