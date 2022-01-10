@@ -14,13 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::sync::Arc;
-
 use async_trait::async_trait;
 use cumulus_primitives_core::{
 	relay_chain::{
 		v1::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
-		v2::ParachainHost,
 		Block as PBlock, BlockId, Hash as PHash, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
@@ -31,69 +28,33 @@ use parity_scale_codec::{Decode, Encode};
 use jsonrpsee::{
 	http_client::{HttpClient, HttpClientBuilder},
 	rpc_params,
-	types::traits::Client,
+	types::{error::Error as JsonRPSeeError, traits::Client, v2::ParamsSer},
 };
-use parking_lot::Mutex;
-use polkadot_client::{ClientHandle, ExecuteWithClient, FullBackend};
-use polkadot_service::{
-	AuxStore, BabeApi, CollatorPair, Configuration, Handle, NewFull, Role, TaskManager,
-};
-use sc_client_api::{
-	blockchain::BlockStatus, Backend, BlockchainEvents, HeaderBackend, StorageData, StorageProof,
-	UsageProvider,
-};
+use polkadot_service::Handle;
+use sc_client_api::{blockchain::BlockStatus, StorageData, StorageProof};
 use sc_rpc_api::state::ReadProof;
-use sc_telemetry::TelemetryWorkerHandle;
-use sp_api::{ApiError, ProvideRuntimeApi};
-use sp_consensus::SyncOracle;
-use sp_core::{sp_std::collections::btree_map::BTreeMap, Pair};
-use sp_runtime::generic::SignedBlock;
-use sp_state_machine::{Backend as StateBackend, StorageValue};
+use sp_api::ApiError;
+use sp_core::sp_std::collections::btree_map::BTreeMap;
+use sp_runtime::{generic::SignedBlock, DeserializeOwned};
+use sp_state_machine::StorageValue;
 use sp_storage::StorageKey;
-const LOG_TARGET: &str = "relay-chain-local";
 
-/// RelayChainNetwork is used to interact with a full node that is running locally
-/// in the same process.
-pub struct RelayChainNetwork<Client> {
-	full_client: Arc<Client>,
-	backend: Arc<FullBackend>,
-	sync_oracle: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
-	overseer_handle: Option<Handle>,
+pub use url::Url;
+
+const LOG_TARGET: &str = "relay_chain_network";
+
+#[derive(Clone)]
+struct RelayChainRPCClient {
 	http_client: HttpClient,
 }
 
-impl<Client> RelayChainNetwork<Client> {
-	pub fn new(
-		full_client: Arc<Client>,
-		backend: Arc<FullBackend>,
-		sync_oracle: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
-		overseer_handle: Option<Handle>,
-	) -> Self {
-		let url = "http://localhost:9933";
-		let http_client = HttpClientBuilder::default().build(url).expect("yo");
-		Self { full_client, backend, sync_oracle, overseer_handle, http_client }
-	}
-}
-
-impl<T> Clone for RelayChainNetwork<T> {
-	fn clone(&self) -> Self {
-		Self {
-			http_client: self.http_client.clone(),
-			full_client: self.full_client.clone(),
-			backend: self.backend.clone(),
-			sync_oracle: self.sync_oracle.clone(),
-			overseer_handle: self.overseer_handle.clone(),
-		}
-	}
-}
-
-impl<Client> RelayChainNetwork<Client> {
+impl RelayChainRPCClient {
 	async fn call_remote_runtime_function(
 		&self,
 		method_name: &str,
 		block_id: &BlockId,
 		payload: Option<Vec<u8>>,
-	) -> sp_core::Bytes {
+	) -> Result<sp_core::Bytes, JsonRPSeeError> {
 		let payload_bytes =
 			payload.map_or(sp_core::Bytes(Vec::new()), |pl| sp_core::Bytes(pl.encode().to_vec()));
 		let params = rpc_params! {
@@ -101,39 +62,164 @@ impl<Client> RelayChainNetwork<Client> {
 			payload_bytes,
 			block_id
 		};
-		let response: Result<sp_core::Bytes, _> =
-			self.http_client.request("state_call", params).await;
-		response.expect("Should not explode")
+		self.request("state_call", params).await
+	}
+
+	async fn request<'a, R>(
+		&self,
+		method: &'a str,
+		params: Option<ParamsSer<'a>>,
+	) -> Result<R, JsonRPSeeError>
+	where
+		R: DeserializeOwned,
+	{
+		tracing::trace!(target: LOG_TARGET, method = ?method);
+		self.http_client.request(method, params).await
+	}
+
+	async fn state_get_read_proof(
+		&self,
+		storage_keys: Vec<StorageKey>,
+		at: Option<PHash>,
+	) -> Result<Option<ReadProof<PHash>>, JsonRPSeeError> {
+		let params = rpc_params!(storage_keys, at);
+		self.request("state_getReadProof", params).await
+	}
+
+	async fn state_get_storage(
+		&self,
+		storage_key: StorageKey,
+		at: Option<PHash>,
+	) -> Result<Option<StorageData>, JsonRPSeeError> {
+		let params = rpc_params!(storage_key, at);
+		self.request("state_getStorage", params).await
+	}
+
+	async fn chain_get_block(
+		&self,
+		at: Option<PHash>,
+	) -> Result<Option<SignedBlock<PBlock>>, JsonRPSeeError> {
+		let params = rpc_params!(at);
+		self.request("chain_getBlock", params).await
+	}
+
+	async fn chain_get_head(&self) -> Result<PHash, JsonRPSeeError> {
+		self.request("chain_getHead", None).await
+	}
+
+	async fn parachain_host_candidate_pending_availability(
+		&self,
+		at: &BlockId,
+		para_id: ParaId,
+	) -> Result<Option<CommittedCandidateReceipt>, JsonRPSeeError> {
+		let response_bytes = self
+			.call_remote_runtime_function(
+				"ParachainHost_candidate_pending_availability",
+				at,
+				Some(para_id.encode()),
+			)
+			.await?;
+
+		Ok(Option::<CommittedCandidateReceipt<PHash>>::decode(&mut &*response_bytes.0)
+			.expect("should deserialize"))
+	}
+
+	async fn parachain_host_session_index_for_child(
+		&self,
+		at: &BlockId,
+	) -> Result<SessionIndex, JsonRPSeeError> {
+		let response_bytes = self
+			.call_remote_runtime_function("ParachainHost_session_index_for_child", at, None)
+			.await?;
+
+		Ok(SessionIndex::decode(&mut &*response_bytes.0).expect("should deserialize"))
+	}
+
+	async fn parachain_host_validators(
+		&self,
+		at: &BlockId,
+	) -> Result<Vec<ValidatorId>, JsonRPSeeError> {
+		let response_bytes =
+			self.call_remote_runtime_function("ParachainHost_validators", at, None).await?;
+
+		Ok(Vec::<ValidatorId>::decode(&mut &*response_bytes.0).expect("should deserialize"))
+	}
+
+	async fn parachain_host_persisted_validation_data(
+		&self,
+		block_id: &BlockId,
+		para_id: ParaId,
+		occupied_core_assumption: OccupiedCoreAssumption,
+	) -> Result<Option<PersistedValidationData>, JsonRPSeeError> {
+		let response_bytes = self
+			.call_remote_runtime_function(
+				"ParachainHost_persisted_validation_data",
+				block_id,
+				Some((para_id, occupied_core_assumption).encode()),
+			)
+			.await?;
+
+		Ok(Option::<PersistedValidationData>::decode(&mut &*response_bytes.0)
+			.expect("should deserialize"))
+	}
+
+	async fn parachain_host_inbound_hrmp_channels_contents(
+		&self,
+		para_id: ParaId,
+		at: &BlockId,
+	) -> Result<Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>>, JsonRPSeeError> {
+		let response_bytes = self
+			.call_remote_runtime_function(
+				"ParachainHost_inbound_hrmp_channels_contents",
+				&at,
+				Some(para_id.encode()),
+			)
+			.await?;
+
+		Ok(Option::<BTreeMap<ParaId, Vec<InboundHrmpMessage>>>::decode(&mut &*response_bytes.0)
+			.expect("should deserialize"))
+	}
+
+	async fn parachain_host_dmq_contents(
+		&self,
+		para_id: ParaId,
+		at: &BlockId,
+	) -> Result<Option<Vec<InboundDownwardMessage>>, JsonRPSeeError> {
+		let response_bytes = self
+			.call_remote_runtime_function("ParachainHost_dmq_contents", &at, Some(para_id.encode()))
+			.await?;
+
+		Ok(Option::<Vec<InboundDownwardMessage>>::decode(&mut &*response_bytes.0)
+			.expect("should deserialize"))
 	}
 }
+
+/// RelayChainNetwork is used to interact with a full node that is running locally
+/// in the same process.
+#[derive(Clone)]
+pub struct RelayChainNetwork {
+	rpc_client: RelayChainRPCClient,
+}
+
+impl RelayChainNetwork {
+	pub fn new(url: Url) -> Self {
+		let http_client = HttpClientBuilder::default().build(url.as_str()).expect("yo");
+
+		Self { rpc_client: RelayChainRPCClient { http_client } }
+	}
+}
+
 #[async_trait]
-impl<Client> RelayChainInterface for RelayChainNetwork<Client>
-where
-	Client: ProvideRuntimeApi<PBlock>
-		+ BlockchainEvents<PBlock>
-		+ AuxStore
-		+ UsageProvider<PBlock>
-		+ Sync
-		+ Send,
-	Client::Api: ParachainHost<PBlock> + BabeApi<PBlock>,
-{
+impl RelayChainInterface for RelayChainNetwork {
 	async fn retrieve_dmq_contents(
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> Option<Vec<InboundDownwardMessage>> {
 		let block_id = BlockId::hash(relay_parent);
-		let bytes = self
-			.call_remote_runtime_function(
-				"ParachainHost_dmq_contents",
-				&block_id,
-				Some(para_id.encode()),
-			)
-			.await;
+		let response = self.rpc_client.parachain_host_dmq_contents(para_id, &block_id).await;
 
-		let decoded = Option::<Vec<InboundDownwardMessage>>::decode(&mut &*bytes.0);
-
-		decoded.unwrap()
+		response.expect("nope")
 	}
 
 	async fn retrieve_all_inbound_hrmp_channel_contents(
@@ -142,17 +228,12 @@ where
 		relay_parent: PHash,
 	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
 		let block_id = BlockId::hash(relay_parent);
-		let bytes = self
-			.call_remote_runtime_function(
-				"ParachainHost_inbound_hrmp_channels_contents",
-				&block_id,
-				Some(para_id.encode()),
-			)
+		let response = self
+			.rpc_client
+			.parachain_host_inbound_hrmp_channels_contents(para_id, &block_id)
 			.await;
 
-		let decoded = Option::<BTreeMap<ParaId, Vec<InboundHrmpMessage>>>::decode(&mut &*bytes.0);
-
-		decoded.unwrap()
+		response.expect("nope")
 	}
 
 	async fn persisted_validation_data(
@@ -161,17 +242,12 @@ where
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> Result<Option<PersistedValidationData>, ApiError> {
-		let bytes = self
-			.call_remote_runtime_function(
-				"ParachainHost_persisted_validation_data",
-				block_id,
-				Some((para_id, occupied_core_assumption).encode()),
-			)
+		let response = self
+			.rpc_client
+			.parachain_host_persisted_validation_data(block_id, para_id, occupied_core_assumption)
 			.await;
 
-		let decoded = Option::<PersistedValidationData>::decode(&mut &*bytes.0);
-
-		Ok(decoded.unwrap())
+		Ok(response.expect("nope"))
 	}
 
 	async fn candidate_pending_availability(
@@ -179,37 +255,24 @@ where
 		block_id: &BlockId,
 		para_id: ParaId,
 	) -> Result<Option<CommittedCandidateReceipt>, ApiError> {
-		let bytes = self
-			.call_remote_runtime_function(
-				"ParachainHost_candidate_pending_availability",
-				block_id,
-				Some(para_id.encode()),
-			)
+		let response = self
+			.rpc_client
+			.parachain_host_candidate_pending_availability(block_id, para_id)
 			.await;
 
-		let decoded = Option::<CommittedCandidateReceipt<PHash>>::decode(&mut &*bytes.0);
-
-		Ok(decoded.unwrap())
+		Ok(response.expect("nope"))
 	}
 
 	async fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError> {
-		let bytes = self
-			.call_remote_runtime_function("ParachainHost_session_index_for_child", block_id, None)
-			.await;
+		let response = self.rpc_client.parachain_host_session_index_for_child(block_id).await;
 
-		let decoded = SessionIndex::decode(&mut &*bytes.0);
-
-		Ok(decoded.unwrap())
+		Ok(response.expect("nope"))
 	}
 
 	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
-		let bytes = self
-			.call_remote_runtime_function("ParachainHost_validators", block_id, None)
-			.await;
+		let response = self.rpc_client.parachain_host_validators(block_id).await;
 
-		let decoded = Vec::<ValidatorId>::decode(&mut &*bytes.0);
-
-		Ok(decoded.unwrap())
+		Ok(response.expect("nope"))
 	}
 
 	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<PBlock> {
@@ -231,10 +294,8 @@ where
 	}
 
 	async fn best_block_hash(&self) -> PHash {
-		let response: Option<PHash> =
-			self.http_client.request("chain_getHead", None).await.expect("yo again");
-		tracing::info!(target: LOG_TARGET, response = ?response);
-		response.unwrap()
+		let response = self.rpc_client.chain_get_head().await;
+		response.expect("nope")
 	}
 
 	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error> {
@@ -243,11 +304,8 @@ where
 			sp_api::BlockId::Number(_) => todo!(),
 		};
 
-		let params = rpc_params!(hash);
-		let response: Option<SignedBlock<PBlock>> =
-			self.http_client.request("chain_getBlock", params).await.expect("yo again");
-		tracing::info!(target: LOG_TARGET, response = ?response);
-		match response {
+		let response = self.rpc_client.chain_get_block(Some(hash.clone())).await;
+		match response.expect("nope") {
 			Some(_) => Ok(BlockStatus::InChain),
 			None => Ok(BlockStatus::Unknown),
 		}
@@ -271,11 +329,9 @@ where
 			sp_api::BlockId::Hash(hash) => hash,
 			sp_api::BlockId::Number(_) => todo!(),
 		};
-		let params = rpc_params!(storage_key, hash);
-		let response: Option<StorageData> =
-			self.http_client.request("state_getStorage", params).await.expect("yo again");
-		tracing::info!(target: LOG_TARGET, response = ?response);
-		Ok(response.map(|v| v.0))
+
+		let response = self.rpc_client.state_get_storage(storage_key, Some(*hash)).await;
+		Ok(response.expect("nope").map(|v| v.0))
 	}
 
 	async fn prove_read(
@@ -291,11 +347,9 @@ where
 			sp_api::BlockId::Number(_) => todo!(),
 		};
 
-		let params = rpc_params!(storage_keys, hash);
-		let response: Option<ReadProof<PHash>> =
-			self.http_client.request("state_getReadProof", params).await.expect("yo again");
+		let result = self.rpc_client.state_get_read_proof(storage_keys, Some(*hash)).await;
 
-		Ok(response.map(|read_proof| {
+		Ok(result.expect("nope").map(|read_proof| {
 			let bytes: Vec<Vec<u8>> =
 				read_proof.proof.into_iter().map(|bytes| (*bytes).to_vec()).collect();
 
@@ -309,99 +363,4 @@ where
 	) -> Result<(), cumulus_relay_chain_interface::WaitError> {
 		todo!("wait_for_block_not_implemented");
 	}
-}
-
-/// Builder for a concrete relay chain interface, creatd from a full node. Builds
-/// a [`RelayChainNetwork`] to access relay chain data necessary for parachain operation.
-///
-/// The builder takes a [`polkadot_client::Client`]
-/// that wraps a concrete instance. By using [`polkadot_client::ExecuteWithClient`]
-/// the builder gets access to this concrete instance and instantiates a RelayChainNetwork with it.
-struct RelayChainNetworkBuilder {
-	polkadot_client: polkadot_client::Client,
-	backend: Arc<FullBackend>,
-	sync_oracle: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
-	overseer_handle: Option<Handle>,
-}
-
-impl RelayChainNetworkBuilder {
-	pub fn build(self) -> Arc<dyn RelayChainInterface> {
-		self.polkadot_client.clone().execute_with(self)
-	}
-}
-
-impl ExecuteWithClient for RelayChainNetworkBuilder {
-	type Output = Arc<dyn RelayChainInterface>;
-
-	fn execute_with_client<Client, Api, Backend>(self, client: Arc<Client>) -> Self::Output
-	where
-		Client: ProvideRuntimeApi<PBlock>
-			+ BlockchainEvents<PBlock>
-			+ AuxStore
-			+ UsageProvider<PBlock>
-			+ 'static
-			+ Sync
-			+ Send,
-		Client::Api: ParachainHost<PBlock> + BabeApi<PBlock>,
-	{
-		Arc::new(RelayChainNetwork::new(
-			client,
-			self.backend,
-			self.sync_oracle,
-			self.overseer_handle,
-		))
-	}
-}
-
-/// Build the Polkadot full node using the given `config`.
-#[sc_tracing::logging::prefix_logs_with("Relaychain")]
-fn build_polkadot_full_node(
-	config: Configuration,
-	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
-) -> Result<(NewFull<polkadot_client::Client>, CollatorPair), polkadot_service::Error> {
-	let is_light = matches!(config.role, Role::Light);
-	if is_light {
-		Err(polkadot_service::Error::Sub("Light client not supported.".into()))
-	} else {
-		let collator_key = CollatorPair::generate().0;
-
-		let relay_chain_full_node = polkadot_service::build_full(
-			config,
-			polkadot_service::IsCollator::Yes(collator_key.clone()),
-			None,
-			true,
-			None,
-			telemetry_worker_handle,
-			polkadot_service::RealOverseerGen,
-		)?;
-
-		Ok((relay_chain_full_node, collator_key))
-	}
-}
-
-/// Builds a relay chain interface by constructing a full relay chain node
-pub fn build_relay_chain_network(
-	polkadot_config: Configuration,
-	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
-	task_manager: &mut TaskManager,
-) -> Result<(Arc<(dyn RelayChainInterface + 'static)>, CollatorPair), polkadot_service::Error> {
-	let (full_node, collator_key) =
-		build_polkadot_full_node(polkadot_config, telemetry_worker_handle).map_err(
-			|e| match e {
-				polkadot_service::Error::Sub(x) => x,
-				s => format!("{}", s).into(),
-			},
-		)?;
-
-	let sync_oracle: Box<dyn SyncOracle + Send + Sync> = Box::new(full_node.network.clone());
-	let sync_oracle = Arc::new(Mutex::new(sync_oracle));
-	let relay_chain_interface_builder = RelayChainNetworkBuilder {
-		polkadot_client: full_node.client.clone(),
-		backend: full_node.backend.clone(),
-		sync_oracle,
-		overseer_handle: full_node.overseer_handle.clone(),
-	};
-	task_manager.add_child(full_node.task_manager);
-
-	Ok((relay_chain_interface_builder.build(), collator_key))
 }

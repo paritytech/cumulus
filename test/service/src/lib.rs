@@ -33,7 +33,6 @@ use cumulus_relay_chain_network::RelayChainNetwork;
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 
 use frame_system_rpc_runtime_api::AccountNonceApi;
-use parking_lot::Mutex;
 use polkadot_primitives::v1::{CollatorPair, Hash as PHash, PersistedValidationData};
 use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
@@ -219,13 +218,8 @@ where
 	let client = params.client.clone();
 	let backend = params.backend.clone();
 
-	println!("initializing network;");
-	let relay_chain_interface = Arc::new(RelayChainNetwork::new(
-		relay_chain_full_node.client.clone(),
-		relay_chain_full_node.backend.clone(),
-		Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),
-		relay_chain_full_node.overseer_handle.clone(),
-	));
+	let relay_chain_url = url::Url::parse("http://localhost:9333").expect("should be valid url");
+	let relay_chain_interface = Arc::new(RelayChainNetwork::new(relay_chain_url));
 	task_manager.add_child(relay_chain_full_node.task_manager);
 
 	let block_announce_validator =

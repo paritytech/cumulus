@@ -1909,6 +1909,7 @@ dependencies = [
  "sp-state-machine",
  "sp-storage",
  "tracing",
+ "url 2.2.2",
 ]
 
 [[package]]
@@ -2045,6 +2046,7 @@ dependencies = [
  "substrate-test-client",
  "substrate-test-utils",
  "tokio",
+ "url 2.2.2",
 ]
 
 [[package]]

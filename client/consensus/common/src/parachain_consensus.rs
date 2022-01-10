@@ -30,7 +30,7 @@ use sp_runtime::{
 use polkadot_primitives::v1::{Block as PBlock, Id as ParaId, OccupiedCoreAssumption};
 
 use codec::Decode;
-use futures::{future, select, FutureExt, Stream, StreamExt};
+use futures::{select, FutureExt, Stream, StreamExt};
 
 use std::{pin::Pin, sync::Arc};
 
