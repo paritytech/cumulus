@@ -1,4 +1,4 @@
-// Copyright 2020 Parity Technologies (UK) Ltd.
+// Copyright 2022 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -91,11 +91,10 @@ pub mod pallet {
 			Self::deposit_event(Event::CustomValidationHeadDataStored);
 		}
 
-		/// Apply the peding custom head data that the Relay Chain should expect next
-		pub fn set_pending_custom_validation_head_data() {
-			if let Some(head_data) = <PendingCustomValidationHeadData<T>>::get() {
+		/// Set pending custom head data as head data that will be returned by `validate_block`. on the relay chain.
+		fn set_pending_custom_validation_head_data() {
+			if let Some(head_data) = <PendingCustomValidationHeadData<T>>::take() {
 				parachain_system::Pallet::<T>::set_custom_validation_head_data(head_data);
-				<PendingCustomValidationHeadData<T>>::kill();
 				Self::deposit_event(Event::CustomValidationHeadDataApplied);
 			}
 		}
