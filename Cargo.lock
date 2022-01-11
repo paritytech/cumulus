@@ -1686,6 +1686,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex-literal 0.2.1",
+ "impl-trait-for-tuples",
  "lazy_static",
  "log",
  "pallet-balances",
@@ -1806,7 +1807,6 @@ name = "cumulus-primitives-core"
 version = "0.1.0"
 dependencies = [
  "frame-support",
- "impl-trait-for-tuples",
  "parity-scale-codec",
  "polkadot-core-primitives",
  "polkadot-parachain",

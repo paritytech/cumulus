@@ -1016,11 +1016,11 @@ pub trait CheckInherents<Block: BlockT> {
 /// when the new validation is written to the state. This means that
 /// from the next block the runtime is being using this new code.
 #[impl_trait_for_tuples::impl_for_tuples(30)]
-trait OnSystemEvent {
+pub trait OnSystemEvent {
 	/// Called in each blocks once when the validation data is set by the inherent.
-	fn on_validation_data(data: &PersistedValidationData) {}
+	fn on_validation_data(data: &PersistedValidationData);
 	/// Called when the validation code is being applied, aka from the next block on this is the new runtime.
-	fn on_validation_code_applied()  {}
+	fn on_validation_code_applied();
 }
 
 /// Implements [`BlockNumberProvider`] that returns relay chain block number fetched from
