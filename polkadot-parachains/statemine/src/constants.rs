@@ -17,7 +17,7 @@ pub mod currency {
 	use kusama_runtime_constants as constants;
 	use node_primitives::Balance;
 
-	/// The existential deposit. Set to 1/10 of its parent Relay Chain (v9020).
+	/// The existential deposit. Set to 1/10 of its parent Relay Chain.
 	pub const EXISTENTIAL_DEPOSIT: Balance = constants::currency::EXISTENTIAL_DEPOSIT / 10;
 
 	pub const UNITS: Balance = constants::currency::UNITS;
