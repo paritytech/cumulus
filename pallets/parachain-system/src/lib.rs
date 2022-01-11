@@ -30,7 +30,7 @@
 use codec::Encode;
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
-	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError, OnValidationData,
+	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError,
 	OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage, UpwardMessageSender,
 	XcmpMessageHandler, XcmpMessageSource,
 };
@@ -105,7 +105,7 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		/// Something which can be notified when the validation data is set.
-		type OnValidationData: OnValidationData;
+		type OnSystemEvent: OnSystemEvent;
 
 		/// Returns the parachain ID we are running with.
 		type SelfParaId: Get<ParaId>;
@@ -329,7 +329,7 @@ pub mod pallet {
 					let validation_code = <PendingValidationCode<T>>::take();
 
 					Self::put_parachain_code(&validation_code);
-					<T::OnValidationData as OnValidationData>::on_validation_code_applied();
+					<T::OnSystemEvent as OnSystemEvent>::on_validation_code_applied();
 					Self::deposit_event(Event::ValidationFunctionApplied(vfp.relay_parent_number));
 				},
 				Some(relay_chain::v1::UpgradeGoAhead::Abort) => {
@@ -355,7 +355,7 @@ pub mod pallet {
 			<RelevantMessagingState<T>>::put(relevant_messaging_state.clone());
 			<HostConfiguration<T>>::put(host_config);
 
-			<T::OnValidationData as OnValidationData>::on_validation_data(&vfp);
+			<T::OnSystemEvent as OnSystemEvent>::on_validation_data(&vfp);
 
 			// TODO: This is more than zero, but will need benchmarking to figure out what.
 			let mut total_weight = 0;
@@ -1006,6 +1006,21 @@ pub trait CheckInherents<Block: BlockT> {
 		block: &Block,
 		validation_data: &RelayChainStateProof,
 	) -> frame_support::inherent::CheckInherentsResult;
+}
+
+/// Something that should be informed about system related events.
+///
+/// This includes events like [`on_validation_data`](Self::on_validation_data) that is being
+/// called when the parachain inherent is executed that contains the validation data.
+/// Or like [`on_validation_code_applied`](Self::on_validation_code_applied) that is called
+/// when the new validation is written to the state. This means that
+/// from the next block the runtime is being using this new code.
+#[impl_trait_for_tuples::impl_for_tuples(30)]
+trait OnSystemEvent {
+	/// Called in each blocks once when the validation data is set by the inherent.
+	fn on_validation_data(data: &PersistedValidationData) {}
+	/// Called when the validation code is being applied, aka from the next block on this is the new runtime.
+	fn on_validation_code_applied()  {}
 }
 
 /// Implements [`BlockNumberProvider`] that returns relay chain block number fetched from

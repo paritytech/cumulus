@@ -18,7 +18,6 @@
 
 use codec::{Decode, Encode};
 use cumulus_pallet_parachain_system as parachain_system;
-use cumulus_primitives_core::OnValidationData;
 use frame_support::{dispatch::DispatchResult, pallet_prelude::*, weights::DispatchInfo};
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
@@ -39,7 +38,7 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config + cumulus_pallet_parachain_system::Config + pallet_sudo::Config
+		frame_system::Config + parachain_system::Config + pallet_sudo::Config
 	{
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 	}
@@ -102,7 +101,7 @@ pub mod pallet {
 		}
 	}
 
-	impl<T: Config> OnValidationData for Pallet<T> {
+	impl<T: Config> parachain_system::OnSystemEvent for Pallet<T> {
 		fn on_validation_data(_data: &PersistedValidationData) {}
 		fn on_validation_code_applied() {
 			crate::Pallet::<T>::set_pending_custom_validation_head_data();
