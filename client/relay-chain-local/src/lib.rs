@@ -14,27 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::{sync::Arc, time::Duration};
+use std::{pin::Pin, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
 use cumulus_primitives_core::{
 	relay_chain::{
 		v1::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
 		v2::ParachainHost,
-		Block as PBlock, BlockId, Hash as PHash, InboundHrmpMessage,
+		Block as PBlock, BlockId, Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
 use cumulus_relay_chain_interface::{RelayChainInterface, WaitError};
-use futures::{FutureExt, StreamExt};
+use futures::{stream::BoxStream, FutureExt, Stream, StreamExt};
 use parking_lot::Mutex;
 use polkadot_client::{ClientHandle, ExecuteWithClient, FullBackend};
 use polkadot_service::{
 	AuxStore, BabeApi, CollatorPair, Configuration, Handle, NewFull, Role, TaskManager,
 };
 use sc_client_api::{
-	blockchain::BlockStatus, Backend, BlockchainEvents, HeaderBackend, ImportNotifications,
-	StorageProof, UsageProvider,
+	blockchain::BlockStatus, Backend, BlockImportNotification, BlockchainEvents, HeaderBackend,
+	ImportNotifications, StorageProof, UsageProvider,
 };
 use sc_telemetry::TelemetryWorkerHandle;
 use sp_api::{ApiError, ProvideRuntimeApi};
@@ -163,8 +163,12 @@ where
 		self.full_client.runtime_api().validators(block_id)
 	}
 
-	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<PBlock> {
-		self.full_client.import_notification_stream()
+	async fn import_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+		let notifications_stream = self
+			.full_client
+			.import_notification_stream()
+			.map(|notification| notification.header);
+		Box::pin(notifications_stream)
 	}
 
 	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<PBlock> {
@@ -279,6 +283,20 @@ where
 				}
 			}
 		}
+	}
+
+	async fn new_best_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+		let notifications_stream =
+			self.full_client
+				.import_notification_stream()
+				.filter_map(|notification| async move {
+					if notification.is_new_best {
+						Some(notification.header)
+					} else {
+						None
+					}
+				});
+		Box::pin(notifications_stream)
 	}
 }
 

@@ -14,30 +14,38 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+use std::pin::Pin;
+
 use async_trait::async_trait;
 use cumulus_primitives_core::{
 	relay_chain::{
 		v1::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
-		Block as PBlock, BlockId, Hash as PHash, InboundHrmpMessage,
+		Block as PBlock, BlockId, Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
 use cumulus_relay_chain_interface::RelayChainInterface;
+use futures::{Stream, StreamExt, TryStreamExt};
 use parity_scale_codec::{Decode, Encode};
 
 use jsonrpsee::{
-	http_client::{HttpClient, HttpClientBuilder},
+	core::{
+		client::{Client as JsonRPCClient, ClientT, Subscription, SubscriptionClientT},
+		Error as JsonRPSeeError,
+	},
 	rpc_params,
-	types::{error::Error as JsonRPSeeError, traits::Client, v2::ParamsSer},
+	types::ParamsSer,
+	ws_client::WsClientBuilder,
 };
 use polkadot_service::Handle;
-use sc_client_api::{blockchain::BlockStatus, StorageData, StorageProof};
+use sc_client_api::{blockchain::BlockStatus, BlockImportNotification, StorageData, StorageProof};
 use sc_rpc_api::state::ReadProof;
 use sp_api::ApiError;
 use sp_core::sp_std::collections::btree_map::BTreeMap;
 use sp_runtime::{generic::SignedBlock, DeserializeOwned};
 use sp_state_machine::StorageValue;
 use sp_storage::StorageKey;
+use std::sync::Arc;
 
 pub use url::Url;
 
@@ -45,7 +53,7 @@ const LOG_TARGET: &str = "relay_chain_network";
 
 #[derive(Clone)]
 struct RelayChainRPCClient {
-	http_client: HttpClient,
+	ws_client: Arc<JsonRPCClient>,
 }
 
 /// Client that calls RPC endpoints and deserializes call results
@@ -66,6 +74,19 @@ impl RelayChainRPCClient {
 		self.request("state_call", params).await
 	}
 
+	async fn subscribe<'a, R>(
+		&self,
+		sub_name: &'a str,
+		unsub_name: &'a str,
+		params: Option<ParamsSer<'a>>,
+	) -> Result<Subscription<R>, JsonRPSeeError>
+	where
+		R: DeserializeOwned,
+	{
+		tracing::trace!(target: LOG_TARGET, "Subscribing to stream: {}", sub_name);
+		self.ws_client.subscribe::<R>(sub_name, params, unsub_name).await
+	}
+
 	async fn request<'a, R>(
 		&self,
 		method: &'a str,
@@ -74,8 +95,8 @@ impl RelayChainRPCClient {
 	where
 		R: DeserializeOwned,
 	{
-		tracing::trace!(target: LOG_TARGET, method = ?method);
-		self.http_client.request(method, params).await
+		tracing::trace!(target: LOG_TARGET, "Calling rpc endpoint: {}", method);
+		self.ws_client.request(method, params).await
 	}
 
 	async fn state_get_read_proof(
@@ -193,6 +214,16 @@ impl RelayChainRPCClient {
 		Ok(Option::<Vec<InboundDownwardMessage>>::decode(&mut &*response_bytes.0)
 			.expect("should deserialize"))
 	}
+
+	async fn subscribe_all_heads(&self) -> Result<Subscription<PHeader>, JsonRPSeeError> {
+		self.subscribe::<PHeader>("chain_subscribeAllHeads", "chain_unsubscribeAllHeads", None)
+			.await
+	}
+
+	async fn subscribe_new_best_heads(&self) -> Result<Subscription<PHeader>, JsonRPSeeError> {
+		self.subscribe::<PHeader>("subscribe_newHead", "unsubscribe_newHead", None)
+			.await
+	}
 }
 
 /// RelayChainNetwork is used to interact with a full node that is running locally
@@ -203,10 +234,13 @@ pub struct RelayChainNetwork {
 }
 
 impl RelayChainNetwork {
-	pub fn new(url: Url) -> Self {
-		let http_client = HttpClientBuilder::default().build(url.as_str()).expect("yo");
+	pub async fn new(url: Url) -> Self {
+		let ws_client = WsClientBuilder::default()
+			.build(url.as_str())
+			.await
+			.expect("Should be able to initialize websocket client.");
 
-		Self { rpc_client: RelayChainRPCClient { http_client } }
+		Self { rpc_client: RelayChainRPCClient { ws_client: Arc::new(ws_client) } }
 	}
 }
 
@@ -276,8 +310,19 @@ impl RelayChainInterface for RelayChainNetwork {
 		Ok(response.expect("nope"))
 	}
 
-	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<PBlock> {
-		todo!("import_notification_stream");
+	async fn import_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+		let imported_headers_stream = self
+			.rpc_client
+			.subscribe_all_heads()
+			.await
+			.expect("Should be able to subscribe");
+
+		Box::pin(imported_headers_stream.filter_map(|item| async move {
+			item.map_err(|err| {
+				tracing::error!(target: LOG_TARGET, "Error occured in stream: {}", err)
+			})
+			.ok()
+		}))
 	}
 
 	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<PBlock> {
@@ -363,5 +408,20 @@ impl RelayChainInterface for RelayChainNetwork {
 		hash: PHash,
 	) -> Result<(), cumulus_relay_chain_interface::WaitError> {
 		todo!("wait_for_block_not_implemented");
+	}
+
+	async fn new_best_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+		let imported_headers_stream = self
+			.rpc_client
+			.subscribe_new_best_heads()
+			.await
+			.expect("Should be able to subscribe");
+
+		Box::pin(imported_headers_stream.filter_map(|item| async move {
+			item.map_err(|err| {
+				tracing::error!(target: LOG_TARGET, "Error occured in stream: {}", err)
+			})
+			.ok()
+		}))
 	}
 }

@@ -24,9 +24,9 @@ use parking_lot::Mutex;
 use polkadot_node_primitives::{SignedFullStatement, Statement};
 use polkadot_primitives::v1::{
 	Block as PBlock, CandidateCommitments, CandidateDescriptor, CollatorPair,
-	CommittedCandidateReceipt, Hash as PHash, HeadData, Id as ParaId, InboundDownwardMessage,
-	InboundHrmpMessage, OccupiedCoreAssumption, PersistedValidationData, SessionIndex,
-	SigningContext, ValidationCodeHash, ValidatorId,
+	CommittedCandidateReceipt, Hash as PHash, HeadData, Header as PHeader, Id as ParaId,
+	InboundDownwardMessage, InboundHrmpMessage, OccupiedCoreAssumption, PersistedValidationData,
+	SessionIndex, SigningContext, ValidationCodeHash, ValidatorId,
 };
 use polkadot_service::Handle;
 use polkadot_test_client::{
@@ -95,7 +95,11 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		self.relay_backend.blockchain().info().best_hash
 	}
 
-	async fn retrieve_dmq_contents(&self, _: ParaId, _: PHash) -> Option<Vec<InboundDownwardMessage>> {
+	async fn retrieve_dmq_contents(
+		&self,
+		_: ParaId,
+		_: PHash,
+	) -> Option<Vec<InboundDownwardMessage>> {
 		unimplemented!("Not needed for test")
 	}
 
@@ -159,7 +163,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		Ok(0)
 	}
 
-	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<PBlock> {
+	async fn import_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
 		self.relay_client.import_notification_stream()
 	}
 

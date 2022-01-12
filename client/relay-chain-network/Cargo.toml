@@ -30,7 +30,7 @@ futures = { version = "0.3.1", features = ["compat"] }
 
 parity-scale-codec = "2.3.1"
 parking_lot = "0.11.1"
-jsonrpsee = {version = "0.6.1", features = ["client"]}
+jsonrpsee = {version = "0.7.0", features = ["client"]}
 tracing = "0.1.25"
 async-trait = "0.1.52"
 url = "2.2.2"

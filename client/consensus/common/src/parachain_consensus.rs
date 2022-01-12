@@ -27,7 +27,9 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT},
 };
 
-use polkadot_primitives::v1::{Block as PBlock, Id as ParaId, OccupiedCoreAssumption};
+use polkadot_primitives::v1::{
+	Block as PBlock, Header as PHeader, Id as ParaId, OccupiedCoreAssumption,
+};
 
 use codec::Decode;
 use futures::{select, FutureExt, Stream, StreamExt};
@@ -382,19 +384,16 @@ where
 	async fn new_best_heads(&self, para_id: ParaId) -> Self::HeadStream {
 		let relay_chain = self.clone();
 
-		self.import_notification_stream()
+		self.new_best_notification_stream()
+			.await
 			.filter_map(move |n| {
 				let relay_chain = relay_chain.clone();
 				async move {
-					if n.is_new_best {
-						relay_chain
-							.parachain_head_at(&BlockId::hash(n.hash), para_id)
-							.await
-							.ok()
-							.flatten()
-					} else {
-						None
-					}
+					relay_chain
+						.parachain_head_at(&BlockId::hash(n.hash()), para_id)
+						.await
+						.ok()
+						.flatten()
 				}
 			})
 			.boxed()

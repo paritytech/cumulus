@@ -85,7 +85,7 @@ async fn test_runtime_upgrade() {
 		if notification.is_new_best {
 			let runtime_version = dave
 				.client
-				.runtime_version_at(&BlockId::Hash(notification.hash))
+				.runtime_version_at(&BlockId::Hash(notification.hash()))
 				.expect("Runtime version exists");
 
 			if expected_runtime_version == runtime_version {

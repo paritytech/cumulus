@@ -29,8 +29,10 @@ use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
+use cumulus_relay_chain_local::RelayChainLocal;
 use cumulus_relay_chain_network::RelayChainNetwork;
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
+use parking_lot::Mutex;
 
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use polkadot_primitives::v1::{CollatorPair, Hash as PHash, PersistedValidationData};
@@ -219,7 +221,13 @@ where
 	let backend = params.backend.clone();
 
 	let relay_chain_url = url::Url::parse("http://localhost:9333").expect("should be valid url");
-	let relay_chain_interface = Arc::new(RelayChainNetwork::new(relay_chain_url));
+	// let relay_chain_interface = Arc::new(RelayChainNetwork::new(relay_chain_url));
+	let relay_chain_interface = Arc::new(RelayChainLocal::new(
+		relay_chain_full_node.client.clone(),
+		relay_chain_full_node.backend.clone(),
+		Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),
+		relay_chain_full_node.overseer_handle.clone(),
+	));
 	task_manager.add_child(relay_chain_full_node.task_manager);
 
 	let block_announce_validator =

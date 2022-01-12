@@ -42,7 +42,7 @@
 //! If we need to recover multiple PoV blocks (which should hopefully not happen in real life), we
 //! make sure that the blocks are imported in the correct order.
 
-use sc_client_api::{BlockBackend, BlockchainEvents, UsageProvider};
+use sc_client_api::{BlockBackend, BlockImportNotification, BlockchainEvents, UsageProvider};
 use sc_consensus::import_queue::{ImportQueue, IncomingBlock};
 use sp_consensus::{BlockOrigin, BlockStatus};
 use sp_runtime::{
@@ -53,7 +53,7 @@ use sp_runtime::{
 use polkadot_node_primitives::{AvailableData, POV_BOMB_LIMIT};
 use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::v1::{
-	CandidateReceipt, CommittedCandidateReceipt, Id as ParaId, SessionIndex,
+	Block as PBlock, CandidateReceipt, CommittedCandidateReceipt, Id as ParaId, SessionIndex,
 };
 
 use cumulus_primitives_core::ParachainBlockData;
@@ -423,14 +423,14 @@ async fn pending_candidates(
 	relay_chain_client: impl RelayChainInterface + Clone,
 	para_id: ParaId,
 ) -> impl Stream<Item = (CommittedCandidateReceipt, SessionIndex)> {
-	relay_chain_client.import_notification_stream().filter_map(move |n| {
+	let stream = relay_chain_client.import_notification_stream().await;
+	stream.filter_map(move |n| {
 		let client_for_closure = relay_chain_client.clone();
 		async move {
-			let pending_availability_result = client_for_closure
-				.candidate_pending_availability(&BlockId::hash(n.hash), para_id)
-				.await;
-			let session_index_result =
-				client_for_closure.session_index_for_child(&BlockId::hash(n.hash)).await;
+			let block_id = BlockId::hash(n.hash());
+			let pending_availability_result =
+				client_for_closure.candidate_pending_availability(&block_id, para_id).await;
+			let session_index_result = client_for_closure.session_index_for_child(&block_id).await;
 			session_index_result
 				.map(|v| pending_availability_result.ok().flatten().map(|pa| (pa, v)))
 				.map_err(|e| {

@@ -14,17 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::{collections::BTreeMap, sync::Arc};
+use std::{collections::BTreeMap, pin::Pin, sync::Arc};
 
 use cumulus_primitives_core::{
 	relay_chain::{
 		v1::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
-		Block as PBlock, BlockId, Hash as PHash, InboundHrmpMessage,
+		Block as PBlock, BlockId, Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
 use polkadot_overseer::Handle as OverseerHandle;
-use sc_client_api::{blockchain::BlockStatus, StorageProof};
+use sc_client_api::{blockchain::BlockStatus, BlockImportNotification, StorageProof};
+
+use futures::Stream;
 
 use sp_api::ApiError;
 use sp_state_machine::StorageValue;
@@ -110,7 +112,10 @@ pub trait RelayChainInterface: Send + Sync {
 	async fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError>;
 
 	/// Get a stream of import block notifications.
-	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<PBlock>;
+	async fn import_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>>;
+
+	/// Get a stream of new best block notifications.
+	async fn new_best_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>>;
 
 	/// Wait for a block with a given hash in the relay chain.
 	///
@@ -193,8 +198,8 @@ where
 		(**self).validators(block_id).await
 	}
 
-	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<PBlock> {
-		(**self).import_notification_stream()
+	async fn import_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+		(**self).import_notification_stream().await
 	}
 
 	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<PBlock> {
@@ -245,5 +250,9 @@ where
 
 	async fn wait_for_block(&self, hash: PHash) -> Result<(), WaitError> {
 		(**self).wait_for_block(hash).await
+	}
+
+	async fn new_best_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+		(**self).new_best_notification_stream().await
 	}
 }
