@@ -124,7 +124,7 @@ pub trait RelayChainInterface: Send + Sync {
 	async fn wait_for_block(&self, hash: PHash) -> Result<(), WaitError>;
 
 	/// Get a stream of finality notifications.
-	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<PBlock>;
+	async fn finality_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>>;
 
 	/// Get a stream of storage change notifications.
 	fn storage_changes_notification_stream(
@@ -202,8 +202,8 @@ where
 		(**self).import_notification_stream().await
 	}
 
-	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<PBlock> {
-		(**self).finality_notification_stream()
+	async fn finality_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+		(**self).finality_notification_stream().await
 	}
 
 	fn storage_changes_notification_stream(

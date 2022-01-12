@@ -403,11 +403,12 @@ where
 		let relay_chain = self.clone();
 
 		self.finality_notification_stream()
+			.await
 			.filter_map(move |n| {
 				let relay_chain = relay_chain.clone();
 				async move {
 					relay_chain
-						.parachain_head_at(&BlockId::hash(n.hash), para_id)
+						.parachain_head_at(&BlockId::hash(n.hash()), para_id)
 						.await
 						.ok()
 						.flatten()

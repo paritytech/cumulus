@@ -221,8 +221,17 @@ impl RelayChainRPCClient {
 	}
 
 	async fn subscribe_new_best_heads(&self) -> Result<Subscription<PHeader>, JsonRPSeeError> {
-		self.subscribe::<PHeader>("subscribe_newHead", "unsubscribe_newHead", None)
+		self.subscribe::<PHeader>("chain_subscribeNewHeads", "chain_unsubscribeNewHeads", None)
 			.await
+	}
+
+	async fn subscribe_finalized_heads(&self) -> Result<Subscription<PHeader>, JsonRPSeeError> {
+		self.subscribe::<PHeader>(
+			"chain_subscribeFinalizedHeads",
+			"chain_unsubscribeFinalizedHeads",
+			None,
+		)
+		.await
 	}
 }
 
@@ -325,8 +334,19 @@ impl RelayChainInterface for RelayChainNetwork {
 		}))
 	}
 
-	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<PBlock> {
-		todo!("finality_notification_stream");
+	async fn finality_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+		let imported_headers_stream = self
+			.rpc_client
+			.subscribe_finalized_heads()
+			.await
+			.expect("Should be able to subscribe");
+
+		Box::pin(imported_headers_stream.filter_map(|item| async move {
+			item.map_err(|err| {
+				tracing::error!(target: LOG_TARGET, "Error occured in stream: {}", err)
+			})
+			.ok()
+		}))
 	}
 
 	fn storage_changes_notification_stream(

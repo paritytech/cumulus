@@ -164,15 +164,19 @@ where
 	}
 
 	async fn import_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
-		let notifications_stream = self
+		let notification_stream = self
 			.full_client
 			.import_notification_stream()
 			.map(|notification| notification.header);
-		Box::pin(notifications_stream)
+		Box::pin(notification_stream)
 	}
 
-	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<PBlock> {
-		self.full_client.finality_notification_stream()
+	async fn finality_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+		let notification_stream = self
+			.full_client
+			.finality_notification_stream()
+			.map(|notification| notification.header);
+		Box::pin(notification_stream)
 	}
 
 	fn storage_changes_notification_stream(

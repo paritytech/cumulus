@@ -167,7 +167,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		self.relay_client.import_notification_stream()
 	}
 
-	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<PBlock> {
+	async fn finality_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
 		self.relay_client.finality_notification_stream()
 	}
 
