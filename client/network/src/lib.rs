@@ -222,6 +222,7 @@ impl TryFrom<&'_ CollationSecondedSignal> for BlockAnnounceData {
 /// chain. If it is at the tip, it is required to provide a justification or otherwise we reject
 /// it. However, if the announcement is for a block below the tip the announcement is accepted
 /// as it probably comes from a node that is currently syncing the chain.
+#[derive(Clone)]
 pub struct BlockAnnounceValidator<Block, RCInterface> {
 	phantom: PhantomData<Block>,
 	relay_chain_interface: RCInterface,
@@ -338,30 +339,30 @@ where
 		header: &Block::Header,
 		mut data: &[u8],
 	) -> Pin<Box<dyn Future<Output = Result<Validation, BoxedError>> + Send>> {
-		if self.relay_chain_interface.is_major_syncing() {
-			return ready(Ok(Validation::Success { is_new_best: false })).boxed()
-		}
-
-		if data.is_empty() {
-			return self.handle_empty_block_announce_data(header.clone()).boxed()
-		}
-
-		let block_announce_data = match BlockAnnounceData::decode_all(&mut data) {
-			Ok(r) => r,
-			Err(err) =>
-				return async move {
-					Err(Box::new(BlockAnnounceError(format!(
-						"Can not decode the `BlockAnnounceData`: {:?}",
-						err
-					))) as Box<_>)
-				}
-				.boxed(),
-		};
-
 		let relay_chain_interface = self.relay_chain_interface.clone();
+		let mut data = data.to_vec();
+		let header = header.clone();
 		let header_encoded = header.encode();
+		let block_announce_validator = self.clone();
 
 		async move {
+			if relay_chain_interface.is_major_syncing().await {
+				return Ok(Validation::Success { is_new_best: false })
+			}
+
+			if data.is_empty() {
+				return block_announce_validator.handle_empty_block_announce_data(header).await
+			}
+
+			let block_announce_data = match BlockAnnounceData::decode_all(&mut data) {
+				Ok(r) => r,
+				Err(err) =>
+					return Err(Box::new(BlockAnnounceError(format!(
+						"Can not decode the `BlockAnnounceData`: {:?}",
+						err
+					))) as Box<_>),
+			};
+
 			if let Err(e) = block_announce_data.validate(header_encoded) {
 				return Ok(e)
 			}

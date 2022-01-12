@@ -187,7 +187,7 @@ where
 		self.backend.blockchain().status(block_id)
 	}
 
-	fn is_major_syncing(&self) -> bool {
+	async fn is_major_syncing(&self) -> bool {
 		let mut network = self.sync_oracle.lock();
 		network.is_major_syncing()
 	}

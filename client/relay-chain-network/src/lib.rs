@@ -39,7 +39,7 @@ use jsonrpsee::{
 };
 use polkadot_service::Handle;
 use sc_client_api::{blockchain::BlockStatus, StorageData, StorageProof};
-use sc_rpc_api::state::ReadProof;
+use sc_rpc_api::{state::ReadProof, system::Health};
 use sp_api::ApiError;
 use sp_core::sp_std::collections::btree_map::BTreeMap;
 use sp_runtime::{generic::SignedBlock, DeserializeOwned};
@@ -97,6 +97,10 @@ impl RelayChainRPCClient {
 	{
 		tracing::trace!(target: LOG_TARGET, "Calling rpc endpoint: {}", method);
 		self.ws_client.request(method, params).await
+	}
+
+	async fn system_health(&self) -> Result<Health, JsonRPSeeError> {
+		self.request("system_health", None).await
 	}
 
 	async fn state_get_read_proof(
@@ -367,8 +371,9 @@ impl RelayChainInterface for RelayChainNetwork {
 		}
 	}
 
-	fn is_major_syncing(&self) -> bool {
-		todo!("major_syncing");
+	async fn is_major_syncing(&self) -> bool {
+		let health = self.rpc_client.system_health().await.expect("Should be able to fetch health");
+		health.is_syncing
 	}
 
 	fn overseer_handle(&self) -> Option<Handle> {

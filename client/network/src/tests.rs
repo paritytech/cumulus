@@ -171,7 +171,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		self.relay_client.finality_notification_stream()
 	}
 
-	fn is_major_syncing(&self) -> bool {
+	async fn is_major_syncing(&self) -> bool {
 		false
 	}
 

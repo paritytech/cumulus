@@ -128,7 +128,7 @@ pub trait RelayChainInterface: Send + Sync {
 
 	/// Whether the synchronization service is undergoing major sync.
 	/// Returns true if so.
-	fn is_major_syncing(&self) -> bool;
+	async fn is_major_syncing(&self) -> bool;
 
 	/// Get a handle to the overseer.
 	fn overseer_handle(&self) -> Option<OverseerHandle>;
@@ -205,8 +205,8 @@ where
 		(**self).block_status(block_id).await
 	}
 
-	fn is_major_syncing(&self) -> bool {
-		(**self).is_major_syncing()
+	async fn is_major_syncing(&self) -> bool {
+		(**self).is_major_syncing().await
 	}
 
 	fn overseer_handle(&self) -> Option<OverseerHandle> {
