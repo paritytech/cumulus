@@ -603,7 +603,6 @@ pub fn westmint_development_config() -> WestmintChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				1000.into(),
 			)
 		},
@@ -654,7 +653,6 @@ pub fn westmint_local_config() -> WestmintChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				1000.into(),
 			)
 		},
