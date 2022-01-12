@@ -81,6 +81,9 @@ pub mod pallet {
 
 		/// The origin that is allowed to execute overweight messages.
 		type ExecuteOverweightOrigin: EnsureOrigin<Self::Origin>;
+
+		/// The origin that is allowed to resume or suspend the XCMP queue.
+		type ControllerOrigin: EnsureOrigin<Self::Origin>;
 	}
 
 	#[pallet::hooks]
@@ -128,6 +131,32 @@ pub mod pallet {
 			Overweight::<T>::remove(index);
 			Self::deposit_event(Event::OverweightServiced(index, used));
 			Ok(Some(used.saturating_add(1_000_000)).into())
+		}
+
+		/// Suspends all XCM executions for the XCMP queue, regardless of the sender's origin.
+		///
+		/// - `origin`: Must pass `ControllerOrigin`.
+		#[pallet::weight(T::DbWeight::get().writes(1))]
+		pub fn suspend_xcm_execution(origin: OriginFor<T>) -> DispatchResult {
+			T::ControllerOrigin::ensure_origin(origin)?;
+
+			QueueActive::<T>::put(false);
+
+			Ok(())
+		}
+
+		/// Resumes all XCM executions for the XCMP queue.
+		///
+		/// Note that this function doesn't change the status of the in/out bound channels.
+		///
+		/// - `origin`: Must pass `ControllerOrigin`.
+		#[pallet::weight(T::DbWeight::get().writes(1))]
+		pub fn resume_xcm_execution(origin: OriginFor<T>) -> DispatchResult {
+			T::ControllerOrigin::ensure_origin(origin)?;
+
+			QueueActive::<T>::put(true);
+
+			Ok(())
 		}
 	}
 
@@ -220,6 +249,10 @@ pub mod pallet {
 	/// available free overweight index.
 	#[pallet::storage]
 	pub(super) type OverweightCount<T: Config> = StorageValue<_, OverweightIndex, ValueQuery>;
+
+	/// Whether or not the XCMP queue is active in executing incoming XCMs or not.
+	#[pallet::storage]
+	pub(super) type QueueActive<T: Config> = StorageValue<_, bool, ValueQuery>;
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
@@ -619,6 +652,11 @@ impl<T: Config> Pallet<T> {
 	/// for the second &c. though empirical and or practical factors may give rise to adjusting it
 	/// further.
 	fn service_xcmp_queue(max_weight: Weight) -> Weight {
+		let active = QueueActive::<T>::get();
+		if !active {
+			return 0
+		}
+
 		let mut status = <InboundXcmpStatus<T>>::get(); // <- sorted.
 		if status.len() == 0 {
 			return 0

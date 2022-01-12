@@ -160,6 +160,7 @@ impl Config for Test {
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = ();
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+	type ControllerOrigin = EnsureRoot<AccountId>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
