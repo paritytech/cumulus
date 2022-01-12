@@ -25,7 +25,7 @@ use cumulus_primitives_core::{
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
 use cumulus_relay_chain_interface::RelayChainInterface;
-use futures::{Stream, StreamExt, TryStreamExt};
+use futures::{Stream, StreamExt};
 use parity_scale_codec::{Decode, Encode};
 
 use jsonrpsee::{
@@ -38,7 +38,7 @@ use jsonrpsee::{
 	ws_client::WsClientBuilder,
 };
 use polkadot_service::Handle;
-use sc_client_api::{blockchain::BlockStatus, BlockImportNotification, StorageData, StorageProof};
+use sc_client_api::{blockchain::BlockStatus, StorageData, StorageProof};
 use sc_rpc_api::state::ReadProof;
 use sp_api::ApiError;
 use sp_core::sp_std::collections::btree_map::BTreeMap;
@@ -347,16 +347,6 @@ impl RelayChainInterface for RelayChainNetwork {
 			})
 			.ok()
 		}))
-	}
-
-	fn storage_changes_notification_stream(
-		&self,
-		filter_keys: Option<&[sc_client_api::StorageKey]>,
-		child_filter_keys: Option<
-			&[(sc_client_api::StorageKey, Option<Vec<sc_client_api::StorageKey>>)],
-		>,
-	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<PHash>> {
-		todo!("storage_changes_notification_stream");
 	}
 
 	async fn best_block_hash(&self) -> PHash {

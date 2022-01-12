@@ -126,15 +126,6 @@ pub trait RelayChainInterface: Send + Sync {
 	/// Get a stream of finality notifications.
 	async fn finality_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>>;
 
-	/// Get a stream of storage change notifications.
-	fn storage_changes_notification_stream(
-		&self,
-		filter_keys: Option<&[sc_client_api::StorageKey]>,
-		child_filter_keys: Option<
-			&[(sc_client_api::StorageKey, Option<Vec<sc_client_api::StorageKey>>)],
-		>,
-	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<PHash>>;
-
 	/// Whether the synchronization service is undergoing major sync.
 	/// Returns true if so.
 	fn is_major_syncing(&self) -> bool;
@@ -204,16 +195,6 @@ where
 
 	async fn finality_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
 		(**self).finality_notification_stream().await
-	}
-
-	fn storage_changes_notification_stream(
-		&self,
-		filter_keys: Option<&[sc_client_api::StorageKey]>,
-		child_filter_keys: Option<
-			&[(sc_client_api::StorageKey, Option<Vec<sc_client_api::StorageKey>>)],
-		>,
-	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<PHash>> {
-		(**self).storage_changes_notification_stream(filter_keys, child_filter_keys)
 	}
 
 	async fn best_block_hash(&self) -> PHash {

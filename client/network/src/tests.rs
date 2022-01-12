@@ -171,17 +171,6 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		self.relay_client.finality_notification_stream()
 	}
 
-	fn storage_changes_notification_stream(
-		&self,
-		filter_keys: Option<&[sc_client_api::StorageKey]>,
-		child_filter_keys: Option<
-			&[(sc_client_api::StorageKey, Option<Vec<sc_client_api::StorageKey>>)],
-		>,
-	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<PHash>> {
-		self.relay_client
-			.storage_changes_notification_stream(filter_keys, child_filter_keys)
-	}
-
 	fn is_major_syncing(&self) -> bool {
 		false
 	}

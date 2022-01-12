@@ -179,17 +179,6 @@ where
 		Box::pin(notification_stream)
 	}
 
-	fn storage_changes_notification_stream(
-		&self,
-		filter_keys: Option<&[sc_client_api::StorageKey]>,
-		child_filter_keys: Option<
-			&[(sc_client_api::StorageKey, Option<Vec<sc_client_api::StorageKey>>)],
-		>,
-	) -> sc_client_api::blockchain::Result<sc_client_api::StorageEventStream<PHash>> {
-		self.full_client
-			.storage_changes_notification_stream(filter_keys, child_filter_keys)
-	}
-
 	async fn best_block_hash(&self) -> PHash {
 		self.backend.blockchain().info().best_hash
 	}
