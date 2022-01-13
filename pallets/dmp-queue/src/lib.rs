@@ -112,7 +112,7 @@ pub mod pallet {
 	pub(super) type Overweight<T> =
 		StorageMap<_, Blake2_128Concat, OverweightIndex, (RelayBlockNumber, Vec<u8>), OptionQuery>;
 
-	/// Whether or not the XCMP queue is suspended from executing incoming XCMs or not.
+	/// Whether or not the DMP queue is suspended from executing incoming XCMs or not.
 	#[pallet::storage]
 	pub(super) type QueueSuspended<T: Config> = StorageValue<_, bool, ValueQuery>;
 
@@ -162,7 +162,7 @@ pub mod pallet {
 			Ok(Some(used.saturating_add(1_000_000)).into())
 		}
 
-		/// Suspends all XCM executions for the XCMP queue, regardless of the sender's origin.
+		/// Suspends all XCM executions for the DMP queue, regardless of the sender's origin.
 		///
 		/// - `origin`: Must pass `ControllerOrigin`.
 		#[pallet::weight(T::DbWeight::get().writes(1))]
@@ -174,7 +174,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Resumes all XCM executions for the XCMP queue.
+		/// Resumes all XCM executions for the DMP queue.
 		///
 		/// Note that this function doesn't change the status of the in/out bound channels.
 		///
