@@ -333,7 +333,7 @@ where
 	fn validate(
 		&mut self,
 		header: &Block::Header,
-		mut data: &[u8],
+		data: &[u8],
 	) -> Pin<Box<dyn Future<Output = Result<Validation, BoxedError>> + Send>> {
 		let relay_chain_interface = self.relay_chain_interface.clone();
 		let mut data = data.to_vec();

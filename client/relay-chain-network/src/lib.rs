@@ -25,7 +25,7 @@ use cumulus_primitives_core::{
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, WaitError};
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
 use futures::{FutureExt, Stream, StreamExt};
 use jsonrpsee::{
 	core::{
@@ -438,10 +438,7 @@ impl RelayChainInterface for RelayChainNetwork {
 	/// 2. Check if the block is already in chain. If yes, succeed early.
 	/// 3. Wait for the block to be imported via subscription.
 	/// 4. If timeout is reached, we return an error.
-	async fn wait_for_block(
-		&self,
-		wait_for_hash: PHash,
-	) -> Result<(), cumulus_relay_chain_interface::WaitError> {
+	async fn wait_for_block(&self, wait_for_hash: PHash) -> Result<(), RelayChainError> {
 		let mut head_stream = self
 			.rpc_client
 			.subscribe_all_heads()
@@ -457,12 +454,12 @@ impl RelayChainInterface for RelayChainNetwork {
 
 		loop {
 			futures::select! {
-				_ = timeout => return Err(WaitError::Timeout(wait_for_hash)),
+				_ = timeout => return Err(RelayChainError::WaitTimeout(wait_for_hash)),
 				evt = head_stream.next().fuse() => match evt {
 					Some(Ok(evt)) if evt.hash() == wait_for_hash => return Ok(()),
 					// Not the event we waited on.
 					Some(_) => continue,
-					None => return Err(WaitError::ImportListenerClosed(wait_for_hash)),
+					None => return Err(RelayChainError::ImportListenerClosed(wait_for_hash)),
 				}
 			}
 		}

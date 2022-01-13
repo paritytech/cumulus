@@ -16,7 +16,7 @@
 
 use super::*;
 use async_trait::async_trait;
-use cumulus_relay_chain_interface::{RelayChainError, WaitError};
+use cumulus_relay_chain_interface::RelayChainError;
 use cumulus_relay_chain_local::{check_block_in_chain, BlockCheckStatus};
 use cumulus_test_service::runtime::{Block, Hash, Header};
 use futures::{executor::block_on, poll, task::Poll, FutureExt, Stream, StreamExt};
@@ -80,7 +80,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 	async fn validators(
 		&self,
 		_: &cumulus_primitives_core::relay_chain::BlockId,
-	) -> Result<Vec<ValidatorId>, sp_api::RelayChainError> {
+	) -> Result<Vec<ValidatorId>, RelayChainError> {
 		Ok(self.data.lock().validators.clone())
 	}
 
@@ -203,10 +203,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		unimplemented!("Not needed for test")
 	}
 
-	async fn wait_for_block(
-		&self,
-		hash: PHash,
-	) -> Result<(), cumulus_relay_chain_interface::WaitError> {
+	async fn wait_for_block(&self, hash: PHash) -> Result<(), RelayChainError> {
 		let mut listener = match check_block_in_chain(
 			self.relay_backend.clone(),
 			self.relay_client.clone(),
@@ -220,12 +217,12 @@ impl RelayChainInterface for DummyRelayChainInterface {
 
 		loop {
 			futures::select! {
-				_ = timeout => return Err(WaitError::Timeout(hash)),
+				_ = timeout => return Err(RelayChainError::WaitTimeout(hash)),
 				evt = listener.next() => match evt {
 					Some(evt) if evt.hash == hash => return Ok(()),
 					// Not the event we waited on.
 					Some(_) => continue,
-					None => return Err(WaitError::ImportListenerClosed(hash)),
+					None => return Err(RelayChainError::ImportListenerClosed(hash)),
 				}
 			}
 		}

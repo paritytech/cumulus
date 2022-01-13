@@ -25,8 +25,8 @@ use cumulus_primitives_core::{
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, WaitError};
-use futures::{FutureExt, Stream, StreamExt, TryFutureExt};
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
+use futures::{FutureExt, Stream, StreamExt};
 use parking_lot::Mutex;
 use polkadot_client::{ClientHandle, ExecuteWithClient, FullBackend};
 use polkadot_service::{
@@ -37,7 +37,7 @@ use sc_client_api::{
 	StorageProof, UsageProvider,
 };
 use sc_telemetry::TelemetryWorkerHandle;
-use sp_api::{ApiError, ProvideRuntimeApi};
+use sp_api::ProvideRuntimeApi;
 use sp_consensus::SyncOracle;
 use sp_core::{sp_std::collections::btree_map::BTreeMap, Pair};
 use sp_state_machine::{Backend as StateBackend, StorageValue};
@@ -267,7 +267,7 @@ where
 	///
 	/// The timeout is set to 6 seconds. This should be enough time to import the block in the current
 	/// round and if not, the new round of the relay chain already started anyway.
-	async fn wait_for_block(&self, hash: PHash) -> Result<(), WaitError> {
+	async fn wait_for_block(&self, hash: PHash) -> Result<(), RelayChainError> {
 		let mut listener =
 			match check_block_in_chain(self.backend.clone(), self.full_client.clone(), hash)? {
 				BlockCheckStatus::InChain => return Ok(()),
@@ -278,12 +278,12 @@ where
 
 		loop {
 			futures::select! {
-				_ = timeout => return Err(WaitError::Timeout(hash)),
+				_ = timeout => return Err(RelayChainError::WaitTimeout(hash)),
 				evt = listener.next() => match evt {
 					Some(evt) if evt.hash == hash => return Ok(()),
 					// Not the event we waited on.
 					Some(_) => continue,
-					None => return Err(WaitError::ImportListenerClosed(hash)),
+					None => return Err(RelayChainError::ImportListenerClosed(hash)),
 				}
 			}
 		}
@@ -316,7 +316,7 @@ pub fn check_block_in_chain<Client>(
 	backend: Arc<FullBackend>,
 	client: Arc<Client>,
 	hash: PHash,
-) -> Result<BlockCheckStatus, WaitError>
+) -> Result<BlockCheckStatus, RelayChainError>
 where
 	Client: BlockchainEvents<PBlock>,
 {
@@ -325,7 +325,7 @@ where
 	let block_id = BlockId::Hash(hash);
 	match backend.blockchain().status(block_id) {
 		Ok(BlockStatus::InChain) => return Ok(BlockCheckStatus::InChain),
-		Err(err) => return Err(WaitError::BlockchainError(hash, err)),
+		Err(err) => return Err(RelayChainError::BlockchainError(hash, err)),
 		_ => {},
 	}
 
@@ -517,7 +517,7 @@ mod tests {
 
 		assert!(matches!(
 			block_on(relay_chain_interface.wait_for_block(hash)),
-			Err(WaitError::Timeout(_))
+			Err(RelayChainError::WaitTimeout(_))
 		));
 	}
 

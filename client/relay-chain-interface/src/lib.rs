@@ -40,6 +40,11 @@ pub enum RelayChainError {
 	#[display(fmt = "Timeout while waiting for relay-chain block `{}` to be imported.", _0)]
 	WaitTimeout(PHash),
 	#[display(
+		fmt = "Import listener closed while waiting for relay-chain block `{}` to be imported.",
+		_0
+	)]
+	ImportListenerClosed(PHash),
+	#[display(
 		fmt = "Blockchain returned an error while waiting for relay-chain block `{}` to be imported: {:?}",
 		_0,
 		_1
@@ -47,17 +52,6 @@ pub enum RelayChainError {
 	WaitBlockchainError(PHash, sp_blockchain::Error),
 	#[display(fmt = "Error occures while calling relay chain method '{}' over the network ", _0)]
 	NetworkError(String),
-}
-
-#[derive(Debug, derive_more::Display)]
-pub enum WaitError {
-	#[display(fmt = "Timeout while waiting for relay-chain block `{}` to be imported.", _0)]
-	Timeout(PHash),
-	#[display(
-		fmt = "Import listener closed while waiting for relay-chain block `{}` to be imported.",
-		_0
-	)]
-	ImportListenerClosed(PHash),
 	#[display(
 		fmt = "Blockchain returned an error while waiting for relay-chain block `{}` to be imported: {:?}",
 		_0,
@@ -140,7 +134,7 @@ pub trait RelayChainInterface: Send + Sync {
 	///
 	/// This method returns immediately on error or if the block is already
 	/// reported to be in chain. Otherwise, it waits for the block to arrive.
-	async fn wait_for_block(&self, hash: PHash) -> Result<(), WaitError>;
+	async fn wait_for_block(&self, hash: PHash) -> Result<(), RelayChainError>;
 
 	/// Get a stream of finality notifications.
 	async fn finality_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>>;
@@ -251,7 +245,7 @@ where
 		(**self).prove_read(block_id, relevant_keys).await
 	}
 
-	async fn wait_for_block(&self, hash: PHash) -> Result<(), WaitError> {
+	async fn wait_for_block(&self, hash: PHash) -> Result<(), RelayChainError> {
 		(**self).wait_for_block(hash).await
 	}
 
