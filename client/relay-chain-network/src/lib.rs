@@ -369,7 +369,7 @@ impl RelayChainInterface for RelayChainNetwork {
 		response.expect("nope")
 	}
 
-	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error> {
+	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, RelayChainError> {
 		let hash = match block_id {
 			sp_api::BlockId::Hash(hash) => hash,
 			sp_api::BlockId::Number(_) => todo!(),
@@ -395,7 +395,7 @@ impl RelayChainInterface for RelayChainNetwork {
 		&self,
 		block_id: &BlockId,
 		key: &[u8],
-	) -> Result<Option<StorageValue>, sp_blockchain::Error> {
+	) -> Result<Option<StorageValue>, RelayChainError> {
 		let storage_key = StorageKey(key.to_vec());
 		let hash = match block_id {
 			sp_api::BlockId::Hash(hash) => hash,

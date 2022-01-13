@@ -52,12 +52,8 @@ pub enum RelayChainError {
 	WaitBlockchainError(PHash, sp_blockchain::Error),
 	#[display(fmt = "Error occures while calling relay chain method '{}' over the network ", _0)]
 	NetworkError(String),
-	#[display(
-		fmt = "Blockchain returned an error while waiting for relay-chain block `{}` to be imported: {:?}",
-		_0,
-		_1
-	)]
-	BlockchainError(PHash, sp_blockchain::Error),
+	#[display(fmt = "Blockchain returned an error: {:?}", _0)]
+	BlockchainError(String),
 }
 
 /// Should be used for all interaction with the relay chain in cumulus.
@@ -68,13 +64,13 @@ pub trait RelayChainInterface: Send + Sync {
 		&self,
 		block_id: &BlockId,
 		key: &[u8],
-	) -> Result<Option<StorageValue>, sp_blockchain::Error>;
+	) -> Result<Option<StorageValue>, RelayChainError>;
 
 	/// Fetch a vector of current validators.
 	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, RelayChainError>;
 
 	/// Get the status of a given block.
-	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error>;
+	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, RelayChainError>;
 
 	async fn best_block_hash(&self) -> PHash;
 
@@ -217,7 +213,7 @@ where
 		(**self).best_block_hash().await
 	}
 
-	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error> {
+	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, RelayChainError> {
 		(**self).block_status(block_id).await
 	}
 
@@ -233,7 +229,7 @@ where
 		&self,
 		block_id: &BlockId,
 		key: &[u8],
-	) -> Result<Option<StorageValue>, sp_blockchain::Error> {
+	) -> Result<Option<StorageValue>, RelayChainError> {
 		(**self).get_storage_by_key(block_id, key).await
 	}
 

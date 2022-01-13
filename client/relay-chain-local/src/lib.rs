@@ -194,8 +194,11 @@ where
 		self.backend.blockchain().info().best_hash
 	}
 
-	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error> {
-		self.backend.blockchain().status(block_id)
+	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, RelayChainError> {
+		self.backend
+			.blockchain()
+			.status(block_id)
+			.map_err(|err| RelayChainError::BlockchainError(err.to_string()))
 	}
 
 	async fn is_major_syncing(&self) -> bool {
@@ -211,9 +214,12 @@ where
 		&self,
 		block_id: &BlockId,
 		key: &[u8],
-	) -> Result<Option<StorageValue>, sp_blockchain::Error> {
-		let state = self.backend.state_at(*block_id)?;
-		state.storage(key).map_err(sp_blockchain::Error::Storage)
+	) -> Result<Option<StorageValue>, RelayChainError> {
+		let state = self
+			.backend
+			.state_at(*block_id)
+			.map_err(|err| RelayChainError::BlockchainError(err.to_string()))?;
+		state.storage(key).map_err(RelayChainError::BlockchainError)
 	}
 
 	async fn prove_read(
@@ -325,7 +331,7 @@ where
 	let block_id = BlockId::Hash(hash);
 	match backend.blockchain().status(block_id) {
 		Ok(BlockStatus::InChain) => return Ok(BlockCheckStatus::InChain),
-		Err(err) => return Err(RelayChainError::BlockchainError(hash, err)),
+		Err(err) => return Err(RelayChainError::BlockchainError(err.to_string())),
 		_ => {},
 	}
 

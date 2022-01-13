@@ -87,8 +87,11 @@ impl RelayChainInterface for DummyRelayChainInterface {
 	async fn block_status(
 		&self,
 		block_id: cumulus_primitives_core::relay_chain::BlockId,
-	) -> Result<sp_blockchain::BlockStatus, sp_blockchain::Error> {
-		self.relay_backend.blockchain().status(block_id)
+	) -> Result<sp_blockchain::BlockStatus, RelayChainError> {
+		self.relay_backend
+			.blockchain()
+			.status(block_id)
+			.map_err(|err| RelayChainError::BlockchainError(err.to_string()))
 	}
 
 	async fn best_block_hash(&self) -> PHash {
@@ -116,7 +119,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		_: &cumulus_primitives_core::relay_chain::BlockId,
 		_: ParaId,
 		_: OccupiedCoreAssumption,
-	) -> Result<Option<PersistedValidationData>, sp_api::RelayChainError> {
+	) -> Result<Option<PersistedValidationData>, RelayChainError> {
 		Ok(Some(PersistedValidationData {
 			parent_head: HeadData(default_header().encode()),
 			..Default::default()
@@ -191,7 +194,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		&self,
 		_: &polkadot_service::BlockId,
 		_: &[u8],
-	) -> Result<Option<StorageValue>, sp_blockchain::Error> {
+	) -> Result<Option<StorageValue>, RelayChainError> {
 		unimplemented!("Not needed for test")
 	}
 
