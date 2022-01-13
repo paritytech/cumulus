@@ -86,7 +86,7 @@ fn service_overweight_bad_xcm_format() {
 #[test]
 fn suspend_xcm_execution_works() {
 	new_test_ext().execute_with(|| {
-		QueueActive::<Test>::put(false);
+		QueueSuspended::<Test>::put(true);
 
 		let xcm = Instruction::<()>::ClearOrigin.encode();
 		let mut message_format = XcmpMessageFormat::ConcatenatedVersionedXcm.encode();

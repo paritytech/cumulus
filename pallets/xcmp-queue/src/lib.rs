@@ -140,7 +140,7 @@ pub mod pallet {
 		pub fn suspend_xcm_execution(origin: OriginFor<T>) -> DispatchResult {
 			T::ControllerOrigin::ensure_origin(origin)?;
 
-			QueueActive::<T>::put(false);
+			QueueSuspended::<T>::put(true);
 
 			Ok(())
 		}
@@ -154,7 +154,7 @@ pub mod pallet {
 		pub fn resume_xcm_execution(origin: OriginFor<T>) -> DispatchResult {
 			T::ControllerOrigin::ensure_origin(origin)?;
 
-			QueueActive::<T>::put(true);
+			QueueSuspended::<T>::put(false);
 
 			Ok(())
 		}
@@ -250,9 +250,9 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type OverweightCount<T: Config> = StorageValue<_, OverweightIndex, ValueQuery>;
 
-	/// Whether or not the XCMP queue is active in executing incoming XCMs or not.
+	/// Whether or not the XCMP queue is suspended from executing incoming XCMs or not.
 	#[pallet::storage]
-	pub(super) type QueueActive<T: Config> = StorageValue<_, bool, ValueQuery>;
+	pub(super) type QueueSuspended<T: Config> = StorageValue<_, bool, ValueQuery>;
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
@@ -652,8 +652,8 @@ impl<T: Config> Pallet<T> {
 	/// for the second &c. though empirical and or practical factors may give rise to adjusting it
 	/// further.
 	fn service_xcmp_queue(max_weight: Weight) -> Weight {
-		let active = QueueActive::<T>::get();
-		if !active {
+		let suspended = QueueSuspended::<T>::get();
+		if suspended {
 			return 0
 		}
 
