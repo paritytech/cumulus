@@ -19,14 +19,14 @@ use async_trait::async_trait;
 use cumulus_relay_chain_interface::WaitError;
 use cumulus_relay_chain_local::{check_block_in_chain, BlockCheckStatus};
 use cumulus_test_service::runtime::{Block, Hash, Header};
-use futures::{executor::block_on, poll, task::Poll, FutureExt, StreamExt};
+use futures::{executor::block_on, poll, task::Poll, FutureExt, Stream, StreamExt};
 use parking_lot::Mutex;
 use polkadot_node_primitives::{SignedFullStatement, Statement};
 use polkadot_primitives::v1::{
-	Block as PBlock, CandidateCommitments, CandidateDescriptor, CollatorPair,
-	CommittedCandidateReceipt, Hash as PHash, HeadData, Header as PHeader, Id as ParaId,
-	InboundDownwardMessage, InboundHrmpMessage, OccupiedCoreAssumption, PersistedValidationData,
-	SessionIndex, SigningContext, ValidationCodeHash, ValidatorId,
+	CandidateCommitments, CandidateDescriptor, CollatorPair, CommittedCandidateReceipt,
+	Hash as PHash, HeadData, Header as PHeader, Id as ParaId, InboundDownwardMessage,
+	InboundHrmpMessage, OccupiedCoreAssumption, PersistedValidationData, SessionIndex,
+	SigningContext, ValidationCodeHash, ValidatorId,
 };
 use polkadot_service::Handle;
 use polkadot_test_client::{
@@ -164,11 +164,19 @@ impl RelayChainInterface for DummyRelayChainInterface {
 	}
 
 	async fn import_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
-		self.relay_client.import_notification_stream()
+		Box::pin(
+			self.relay_client
+				.import_notification_stream()
+				.map(|notification| notification.header),
+		)
 	}
 
 	async fn finality_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
-		self.relay_client.finality_notification_stream()
+		Box::pin(
+			self.relay_client
+				.finality_notification_stream()
+				.map(|notification| notification.header),
+		)
 	}
 
 	async fn is_major_syncing(&self) -> bool {
@@ -221,6 +229,20 @@ impl RelayChainInterface for DummyRelayChainInterface {
 				}
 			}
 		}
+	}
+
+	async fn new_best_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+		let notifications_stream =
+			self.relay_client
+				.import_notification_stream()
+				.filter_map(|notification| async move {
+					if notification.is_new_best {
+						Some(notification.header)
+					} else {
+						None
+					}
+				});
+		Box::pin(notifications_stream)
 	}
 }
 

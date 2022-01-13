@@ -16,6 +16,7 @@
 
 use crate::*;
 
+use async_trait::async_trait;
 use codec::Encode;
 use cumulus_test_client::{
 	runtime::{Block, Header},
@@ -72,7 +73,7 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 
 	type HeadStream = Box<dyn Stream<Item = Vec<u8>> + Send + Unpin>;
 
-	fn new_best_heads(&self, _: ParaId) -> Self::HeadStream {
+	async fn new_best_heads(&self, _: ParaId) -> Self::HeadStream {
 		let stream = self
 			.inner
 			.lock()
@@ -84,7 +85,7 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 		Box::new(stream.map(|v| v.encode()))
 	}
 
-	fn finalized_heads(&self, _: ParaId) -> Self::HeadStream {
+	async fn finalized_heads(&self, _: ParaId) -> Self::HeadStream {
 		let stream = self
 			.inner
 			.lock()
