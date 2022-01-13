@@ -281,6 +281,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(T::WeightInfo::set_invulnerables(new.len() as u32))]
+		/// Sets the list of invulnerable (fixed) collators
 		pub fn set_invulnerables(
 			origin: OriginFor<T>,
 			new: Vec<T::AccountId>,
@@ -297,6 +298,9 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		/// Set the ideal number of collators (not including the invulnerables).
+		/// If lowering this number, then the number of running collators could be higher than this figure.
+		/// Aside from that edge case, there should be no other way to have more collators than the desired number.
 		#[pallet::weight(T::WeightInfo::set_desired_candidates())]
 		pub fn set_desired_candidates(
 			origin: OriginFor<T>,
@@ -312,6 +316,8 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		/// Set the amount to deposit for becoming a collator.
+		/// When a collator calls `leave_intent` they receive the deposit back.
 		#[pallet::weight(T::WeightInfo::set_candidacy_bond())]
 		pub fn set_candidacy_bond(
 			origin: OriginFor<T>,
@@ -323,6 +329,10 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		/// Ask for this account to become a collator candidate.
+		/// The account must already have called session set_keys (linking the account to a running validator).
+		/// The candidacy bond will be reserved from this account.
+		/// (This call is not available to invulnerable collators.)
 		#[pallet::weight(T::WeightInfo::register_as_candidate(T::MaxCandidates::get()))]
 		pub fn register_as_candidate(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
@@ -362,6 +372,11 @@ pub mod pallet {
 			Ok(Some(T::WeightInfo::register_as_candidate(current_count as u32)).into())
 		}
 
+		/// Notifies that the collator attached to this account will be leaving
+		/// once the session has finished. The candidacy bond is refunded to the account immediately.
+		/// This call will fail if the number of candidate collators would drop below
+		/// the minimun candidates.
+		/// (This call is not available to invulnerable collators.)
 		#[pallet::weight(T::WeightInfo::leave_intent(T::MaxCandidates::get()))]
 		pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
