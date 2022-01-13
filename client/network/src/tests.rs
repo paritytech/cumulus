@@ -16,7 +16,7 @@
 
 use super::*;
 use async_trait::async_trait;
-use cumulus_relay_chain_interface::WaitError;
+use cumulus_relay_chain_interface::{RelayChainError, WaitError};
 use cumulus_relay_chain_local::{check_block_in_chain, BlockCheckStatus};
 use cumulus_test_service::runtime::{Block, Hash, Header};
 use futures::{executor::block_on, poll, task::Poll, FutureExt, Stream, StreamExt};
@@ -80,7 +80,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 	async fn validators(
 		&self,
 		_: &cumulus_primitives_core::relay_chain::BlockId,
-	) -> Result<Vec<ValidatorId>, sp_api::ApiError> {
+	) -> Result<Vec<ValidatorId>, sp_api::RelayChainError> {
 		Ok(self.data.lock().validators.clone())
 	}
 
@@ -116,7 +116,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		_: &cumulus_primitives_core::relay_chain::BlockId,
 		_: ParaId,
 		_: OccupiedCoreAssumption,
-	) -> Result<Option<PersistedValidationData>, sp_api::ApiError> {
+	) -> Result<Option<PersistedValidationData>, sp_api::RelayChainError> {
 		Ok(Some(PersistedValidationData {
 			parent_head: HeadData(default_header().encode()),
 			..Default::default()
@@ -127,7 +127,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		&self,
 		_: &cumulus_primitives_core::relay_chain::BlockId,
 		_: ParaId,
-	) -> Result<Option<CommittedCandidateReceipt>, sp_api::ApiError> {
+	) -> Result<Option<CommittedCandidateReceipt>, RelayChainError> {
 		if self.data.lock().has_pending_availability {
 			Ok(Some(CommittedCandidateReceipt {
 				descriptor: CandidateDescriptor {
@@ -159,7 +159,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 	async fn session_index_for_child(
 		&self,
 		_: &cumulus_primitives_core::relay_chain::BlockId,
-	) -> Result<SessionIndex, sp_api::ApiError> {
+	) -> Result<SessionIndex, RelayChainError> {
 		Ok(0)
 	}
 

@@ -18,6 +18,7 @@ use crate::*;
 
 use async_trait::async_trait;
 use codec::Encode;
+use cumulus_relay_chain_interface::RelayChainError;
 use cumulus_test_client::{
 	runtime::{Block, Header},
 	Backend, Client, InitBlockBuilder, TestClientBuilder, TestClientBuilderExt,
@@ -101,7 +102,7 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 		&self,
 		_: &BlockId<PBlock>,
 		_: ParaId,
-	) -> ClientResult<Option<Vec<u8>>> {
+	) -> Result<Option<Vec<u8>>, RelayChainError> {
 		unimplemented!("Not required for tests")
 	}
 }

@@ -25,8 +25,8 @@ use cumulus_primitives_core::{
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use cumulus_relay_chain_interface::{RelayChainInterface, WaitError};
-use futures::{FutureExt, Stream, StreamExt};
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, WaitError};
+use futures::{FutureExt, Stream, StreamExt, TryFutureExt};
 use parking_lot::Mutex;
 use polkadot_client::{ClientHandle, ExecuteWithClient, FullBackend};
 use polkadot_service::{
@@ -139,28 +139,39 @@ where
 		block_id: &BlockId,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
-	) -> Result<Option<PersistedValidationData>, ApiError> {
-		self.full_client.runtime_api().persisted_validation_data(
-			block_id,
-			para_id,
-			occupied_core_assumption,
-		)
+	) -> Result<Option<PersistedValidationData>, RelayChainError> {
+		self.full_client
+			.runtime_api()
+			.persisted_validation_data(block_id, para_id, occupied_core_assumption)
+			.map_err(RelayChainError::ApiError)
 	}
 
 	async fn candidate_pending_availability(
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
-	) -> Result<Option<CommittedCandidateReceipt>, ApiError> {
-		self.full_client.runtime_api().candidate_pending_availability(block_id, para_id)
+	) -> Result<Option<CommittedCandidateReceipt>, RelayChainError> {
+		self.full_client
+			.runtime_api()
+			.candidate_pending_availability(block_id, para_id)
+			.map_err(RelayChainError::ApiError)
 	}
 
-	async fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError> {
-		self.full_client.runtime_api().session_index_for_child(block_id)
+	async fn session_index_for_child(
+		&self,
+		block_id: &BlockId,
+	) -> Result<SessionIndex, RelayChainError> {
+		self.full_client
+			.runtime_api()
+			.session_index_for_child(block_id)
+			.map_err(RelayChainError::ApiError)
 	}
 
-	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
-		self.full_client.runtime_api().validators(block_id)
+	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, RelayChainError> {
+		self.full_client
+			.runtime_api()
+			.validators(block_id)
+			.map_err(RelayChainError::ApiError)
 	}
 
 	async fn import_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {

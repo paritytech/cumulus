@@ -25,7 +25,7 @@ use cumulus_primitives_core::{
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use cumulus_relay_chain_interface::{RelayChainInterface, WaitError};
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, WaitError};
 use futures::{FutureExt, Stream, StreamExt};
 use jsonrpsee::{
 	core::{
@@ -40,7 +40,6 @@ use parity_scale_codec::{Decode, Encode};
 use polkadot_service::Handle;
 use sc_client_api::{blockchain::BlockStatus, StorageData, StorageProof};
 use sc_rpc_api::{state::ReadProof, system::Health};
-use sp_api::ApiError;
 use sp_core::sp_std::collections::btree_map::BTreeMap;
 use sp_runtime::{generic::SignedBlock, DeserializeOwned};
 use sp_state_machine::StorageValue;
@@ -298,7 +297,7 @@ impl RelayChainInterface for RelayChainNetwork {
 		block_id: &BlockId,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
-	) -> Result<Option<PersistedValidationData>, ApiError> {
+	) -> Result<Option<PersistedValidationData>, RelayChainError> {
 		let response = self
 			.rpc_client
 			.parachain_host_persisted_validation_data(block_id, para_id, occupied_core_assumption)
@@ -311,7 +310,7 @@ impl RelayChainInterface for RelayChainNetwork {
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
-	) -> Result<Option<CommittedCandidateReceipt>, ApiError> {
+	) -> Result<Option<CommittedCandidateReceipt>, RelayChainError> {
 		let response = self
 			.rpc_client
 			.parachain_host_candidate_pending_availability(block_id, para_id)
@@ -320,13 +319,16 @@ impl RelayChainInterface for RelayChainNetwork {
 		Ok(response.expect("nope"))
 	}
 
-	async fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError> {
+	async fn session_index_for_child(
+		&self,
+		block_id: &BlockId,
+	) -> Result<SessionIndex, RelayChainError> {
 		let response = self.rpc_client.parachain_host_session_index_for_child(block_id).await;
 
 		Ok(response.expect("nope"))
 	}
 
-	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
+	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, RelayChainError> {
 		let response = self.rpc_client.parachain_host_validators(block_id).await;
 
 		Ok(response.expect("nope"))

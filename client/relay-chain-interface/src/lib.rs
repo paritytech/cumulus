@@ -34,6 +34,22 @@ use sp_state_machine::StorageValue;
 use async_trait::async_trait;
 
 #[derive(Debug, derive_more::Display)]
+pub enum RelayChainError {
+	#[display(fmt = "Error occured while calling relay chain runtime: {:?}", _0)]
+	ApiError(ApiError),
+	#[display(fmt = "Timeout while waiting for relay-chain block `{}` to be imported.", _0)]
+	WaitTimeout(PHash),
+	#[display(
+		fmt = "Blockchain returned an error while waiting for relay-chain block `{}` to be imported: {:?}",
+		_0,
+		_1
+	)]
+	WaitBlockchainError(PHash, sp_blockchain::Error),
+	#[display(fmt = "Error occures while calling relay chain method '{}' over the network ", _0)]
+	NetworkError(String),
+}
+
+#[derive(Debug, derive_more::Display)]
 pub enum WaitError {
 	#[display(fmt = "Timeout while waiting for relay-chain block `{}` to be imported.", _0)]
 	Timeout(PHash),
@@ -61,7 +77,7 @@ pub trait RelayChainInterface: Send + Sync {
 	) -> Result<Option<StorageValue>, sp_blockchain::Error>;
 
 	/// Fetch a vector of current validators.
-	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError>;
+	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, RelayChainError>;
 
 	/// Get the status of a given block.
 	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, sp_blockchain::Error>;
@@ -98,7 +114,7 @@ pub trait RelayChainInterface: Send + Sync {
 		block_id: &BlockId,
 		para_id: ParaId,
 		_: OccupiedCoreAssumption,
-	) -> Result<Option<PersistedValidationData>, ApiError>;
+	) -> Result<Option<PersistedValidationData>, RelayChainError>;
 
 	/// Get the receipt of a candidate pending availability. This returns `Some` for any paras
 	/// assigned to occupied cores in `availability_cores` and `None` otherwise.
@@ -106,10 +122,13 @@ pub trait RelayChainInterface: Send + Sync {
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
-	) -> Result<Option<CommittedCandidateReceipt>, ApiError>;
+	) -> Result<Option<CommittedCandidateReceipt>, RelayChainError>;
 
 	/// Returns the session index expected at a child of the block.
-	async fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError>;
+	async fn session_index_for_child(
+		&self,
+		block_id: &BlockId,
+	) -> Result<SessionIndex, RelayChainError>;
 
 	/// Get a stream of import block notifications.
 	async fn import_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>>;
@@ -167,7 +186,7 @@ where
 		block_id: &BlockId,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
-	) -> Result<Option<PersistedValidationData>, ApiError> {
+	) -> Result<Option<PersistedValidationData>, RelayChainError> {
 		(**self)
 			.persisted_validation_data(block_id, para_id, occupied_core_assumption)
 			.await
@@ -177,15 +196,18 @@ where
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
-	) -> Result<Option<CommittedCandidateReceipt>, ApiError> {
+	) -> Result<Option<CommittedCandidateReceipt>, RelayChainError> {
 		(**self).candidate_pending_availability(block_id, para_id).await
 	}
 
-	async fn session_index_for_child(&self, block_id: &BlockId) -> Result<SessionIndex, ApiError> {
+	async fn session_index_for_child(
+		&self,
+		block_id: &BlockId,
+	) -> Result<SessionIndex, RelayChainError> {
 		(**self).session_index_for_child(block_id).await
 	}
 
-	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, ApiError> {
+	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, RelayChainError> {
 		(**self).validators(block_id).await
 	}
 
