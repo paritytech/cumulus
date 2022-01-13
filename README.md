@@ -16,7 +16,7 @@ beautiful and functional.
 
 ## Consensus
 
-[`cumulus-consensus`](consensus) is a
+[`cumulus-consensus`](https://github.com/paritytech/cumulus/tree/master/client/consensus) is a
 [consensus engine](https://docs.substrate.io/v3/advanced/consensus) for Substrate
 that follows a Polkadot
 [relay chain](https://wiki.polkadot.network/docs/en/learn-architecture#relay-chain). This will run
@@ -28,7 +28,7 @@ and treat as best.
 ## Collator
 
 A Polkadot [collator](https://wiki.polkadot.network/docs/en/learn-collator) for the parachain is
-implemented by [`cumulus-collator`](collator).
+implemented by [`cumulus-collator`](https://github.com/paritytech/cumulus/tree/master/client/collator).
 
 # Statemint 🪙
 
