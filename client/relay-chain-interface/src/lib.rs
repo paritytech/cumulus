@@ -19,12 +19,12 @@ use std::{collections::BTreeMap, pin::Pin, sync::Arc};
 use cumulus_primitives_core::{
 	relay_chain::{
 		v1::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
-		Block as PBlock, BlockId, Hash as PHash, Header as PHeader, InboundHrmpMessage,
+		BlockId, Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
 use polkadot_overseer::Handle as OverseerHandle;
-use sc_client_api::{blockchain::BlockStatus, BlockImportNotification, StorageProof};
+use sc_client_api::{blockchain::BlockStatus, StorageProof};
 
 use futures::Stream;
 

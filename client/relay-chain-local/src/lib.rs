@@ -26,15 +26,15 @@ use cumulus_primitives_core::{
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
 use cumulus_relay_chain_interface::{RelayChainInterface, WaitError};
-use futures::{stream::BoxStream, FutureExt, Stream, StreamExt};
+use futures::{FutureExt, Stream, StreamExt};
 use parking_lot::Mutex;
 use polkadot_client::{ClientHandle, ExecuteWithClient, FullBackend};
 use polkadot_service::{
 	AuxStore, BabeApi, CollatorPair, Configuration, Handle, NewFull, Role, TaskManager,
 };
 use sc_client_api::{
-	blockchain::BlockStatus, Backend, BlockImportNotification, BlockchainEvents, HeaderBackend,
-	ImportNotifications, StorageProof, UsageProvider,
+	blockchain::BlockStatus, Backend, BlockchainEvents, HeaderBackend, ImportNotifications,
+	StorageProof, UsageProvider,
 };
 use sc_telemetry::TelemetryWorkerHandle;
 use sp_api::{ApiError, ProvideRuntimeApi};

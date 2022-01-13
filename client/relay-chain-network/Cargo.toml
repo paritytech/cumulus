@@ -26,8 +26,9 @@ sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "mast
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-storage = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-futures = { version = "0.3.1", features = ["compat"] }
 
+futures = { version = "0.3.1", features = ["compat"] }
+futures-timer = "3.0.2"
 parity-scale-codec = "2.3.1"
 parking_lot = "0.11.1"
 jsonrpsee = {version = "0.7.0", features = ["client"]}

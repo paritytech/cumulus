@@ -17,6 +17,7 @@
 use std::pin::Pin;
 
 use async_trait::async_trait;
+use core::time::Duration;
 use cumulus_primitives_core::{
 	relay_chain::{
 		v1::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
@@ -24,10 +25,8 @@ use cumulus_primitives_core::{
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use cumulus_relay_chain_interface::RelayChainInterface;
-use futures::{Stream, StreamExt};
-use parity_scale_codec::{Decode, Encode};
-
+use cumulus_relay_chain_interface::{RelayChainInterface, WaitError};
+use futures::{FutureExt, Stream, StreamExt};
 use jsonrpsee::{
 	core::{
 		client::{Client as JsonRPCClient, ClientT, Subscription, SubscriptionClientT},
@@ -37,6 +36,7 @@ use jsonrpsee::{
 	types::ParamsSer,
 	ws_client::WsClientBuilder,
 };
+use parity_scale_codec::{Decode, Encode};
 use polkadot_service::Handle;
 use sc_client_api::{blockchain::BlockStatus, StorageData, StorageProof};
 use sc_rpc_api::{state::ReadProof, system::Health};
@@ -49,7 +49,8 @@ use std::sync::Arc;
 
 pub use url::Url;
 
-const LOG_TARGET: &str = "relay_chain_network";
+const LOG_TARGET: &str = "relay-chain-network";
+const TIMEOUT_IN_SECONDS: u64 = 6;
 
 #[derive(Clone)]
 struct RelayChainRPCClient {
@@ -131,6 +132,14 @@ impl RelayChainRPCClient {
 
 	async fn chain_get_head(&self) -> Result<PHash, JsonRPSeeError> {
 		self.request("chain_getHead", None).await
+	}
+
+	async fn chain_get_header(
+		&self,
+		hash: Option<PHash>,
+	) -> Result<Option<PHeader>, JsonRPSeeError> {
+		let params = hash.map(|hash| rpc_params!(hash)).flatten();
+		self.request("chain_getHeader", params).await
 	}
 
 	async fn parachain_host_candidate_pending_availability(
@@ -418,11 +427,43 @@ impl RelayChainInterface for RelayChainNetwork {
 		}))
 	}
 
+	/// Wait for a given relay chain block
+	///
+	/// The hash of the block to wait for is passed. We wait for the block to arrive or return after a timeout.
+	///
+	/// Implementation:
+	/// 1. Register a listener to all new blocks.
+	/// 2. Check if the block is already in chain. If yes, succeed early.
+	/// 3. Wait for the block to be imported via subscription.
+	/// 4. If timeout is reached, we return an error.
 	async fn wait_for_block(
 		&self,
-		hash: PHash,
+		wait_for_hash: PHash,
 	) -> Result<(), cumulus_relay_chain_interface::WaitError> {
-		todo!("wait_for_block_not_implemented");
+		let mut head_stream = self
+			.rpc_client
+			.subscribe_all_heads()
+			.await
+			.expect("Should be able to subscribe");
+
+		let block_header = self.rpc_client.chain_get_header(Some(wait_for_hash)).await;
+		if block_header.ok().is_some() {
+			return Ok(())
+		}
+
+		let mut timeout = futures_timer::Delay::new(Duration::from_secs(TIMEOUT_IN_SECONDS)).fuse();
+
+		loop {
+			futures::select! {
+				_ = timeout => return Err(WaitError::Timeout(wait_for_hash)),
+				evt = head_stream.next().fuse() => match evt {
+					Some(Ok(evt)) if evt.hash() == wait_for_hash => return Ok(()),
+					// Not the event we waited on.
+					Some(_) => continue,
+					None => return Err(WaitError::ImportListenerClosed(wait_for_hash)),
+				}
+			}
+		}
 	}
 
 	async fn new_best_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {

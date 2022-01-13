@@ -38,11 +38,7 @@ use polkadot_primitives::v1::{
 };
 
 use codec::{Decode, DecodeAll, Encode};
-use futures::{
-	channel::oneshot,
-	future::{ready, FutureExt},
-	Future,
-};
+use futures::{channel::oneshot, future::FutureExt, Future};
 
 use std::{convert::TryFrom, fmt, marker::PhantomData, pin::Pin, sync::Arc};
 

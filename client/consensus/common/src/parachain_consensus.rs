@@ -27,9 +27,7 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT},
 };
 
-use polkadot_primitives::v1::{
-	Block as PBlock, Header as PHeader, Id as ParaId, OccupiedCoreAssumption,
-};
+use polkadot_primitives::v1::{Block as PBlock, Id as ParaId, OccupiedCoreAssumption};
 
 use codec::Decode;
 use futures::{select, FutureExt, Stream, StreamExt};
