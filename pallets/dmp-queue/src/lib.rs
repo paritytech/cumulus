@@ -89,6 +89,9 @@ pub mod pallet {
 
 		/// Origin which is allowed to execute overweight messages.
 		type ExecuteOverweightOrigin: EnsureOrigin<Self::Origin>;
+
+		/// The origin that is allowed to resume or suspend the XCMP queue.
+		type ControllerOrigin: EnsureOrigin<Self::Origin>;
 	}
 
 	/// The configuration.
@@ -108,6 +111,10 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type Overweight<T> =
 		StorageMap<_, Blake2_128Concat, OverweightIndex, (RelayBlockNumber, Vec<u8>), OptionQuery>;
+
+	/// Whether or not the XCMP queue is suspended from executing incoming XCMs or not.
+	#[pallet::storage]
+	pub(super) type QueueSuspended<T: Config> = StorageValue<_, bool, ValueQuery>;
 
 	#[pallet::error]
 	pub enum Error<T> {
@@ -154,6 +161,32 @@ pub mod pallet {
 			Self::deposit_event(Event::OverweightServiced(index, used));
 			Ok(Some(used.saturating_add(1_000_000)).into())
 		}
+
+		/// Suspends all XCM executions for the XCMP queue, regardless of the sender's origin.
+		///
+		/// - `origin`: Must pass `ControllerOrigin`.
+		#[pallet::weight(T::DbWeight::get().writes(1))]
+		pub fn suspend_xcm_execution(origin: OriginFor<T>) -> DispatchResult {
+			T::ControllerOrigin::ensure_origin(origin)?;
+
+			QueueSuspended::<T>::put(true);
+
+			Ok(())
+		}
+
+		/// Resumes all XCM executions for the XCMP queue.
+		///
+		/// Note that this function doesn't change the status of the in/out bound channels.
+		///
+		/// - `origin`: Must pass `ControllerOrigin`.
+		#[pallet::weight(T::DbWeight::get().writes(1))]
+		pub fn resume_xcm_execution(origin: OriginFor<T>) -> DispatchResult {
+			T::ControllerOrigin::ensure_origin(origin)?;
+
+			QueueSuspended::<T>::put(false);
+
+			Ok(())
+		}
 	}
 
 	#[pallet::event]
@@ -184,6 +217,11 @@ pub mod pallet {
 		///
 		/// Returns the weight consumed by executing messages in the queue.
 		fn service_queue(limit: Weight) -> Weight {
+			let suspended = QueueSuspended::<T>::get();
+			if suspended {
+				return 0
+			}
+
 			PageIndex::<T>::mutate(|page_index| Self::do_service_queue(limit, page_index))
 		}
 
@@ -263,6 +301,11 @@ pub mod pallet {
 			iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
 			limit: Weight,
 		) -> Weight {
+			let suspended = QueueSuspended::<T>::get();
+			if suspended {
+				return 0
+			}
+
 			let mut page_index = PageIndex::<T>::get();
 			let config = Configuration::<T>::get();
 
@@ -447,6 +490,7 @@ mod tests {
 		type Event = Event;
 		type XcmExecutor = MockExec;
 		type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
+		type ControllerOrigin = frame_system::EnsureRoot<AccountId>;
 	}
 
 	pub(crate) fn new_test_ext() -> sp_io::TestExternalities {
@@ -783,6 +827,22 @@ mod tests {
 					msg_limit_reached(1005),
 				]
 			);
+			assert_eq!(pages_queued(), 1);
+		});
+	}
+
+	#[test]
+	fn suspend_xcm_execution_works() {
+		new_test_ext().execute_with(|| {
+			QueueSuspended::<Test>::put(true);
+
+			let incoming = [msg(1000), msg(1001)];
+			enqueue(&incoming[..]);
+
+			let weight_used = handle_messages(&incoming, 5000);
+
+			assert_eq!(weight_used, 0);
+			assert_eq!(take_trace(), Vec::new());
 			assert_eq!(pages_queued(), 1);
 		});
 	}
