@@ -282,8 +282,8 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// Set the list of invulnerable (fixed) collators.
 		#[pallet::weight(T::WeightInfo::set_invulnerables(new.len() as u32))]
-		/// Sets the list of invulnerable (fixed) collators
 		pub fn set_invulnerables(
 			origin: OriginFor<T>,
 			new: Vec<T::AccountId>,
@@ -330,10 +330,10 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		/// Ask for this account to become a collator candidate.
-		/// The account must already have called session set_keys (linking the account to a running validator).
-		/// The candidacy bond will be reserved from this account.
-		/// (This call is not available to invulnerable collators.)
+		/// Register this account as a collator candidate. The account must (a) already have
+		/// registered session keys and (b) be able to reserve the `CandidacyBond`.
+		///
+		/// This call is not available to `Invulnerable` collators.
 		#[pallet::weight(T::WeightInfo::register_as_candidate(T::MaxCandidates::get()))]
 		pub fn register_as_candidate(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
@@ -373,11 +373,12 @@ pub mod pallet {
 			Ok(Some(T::WeightInfo::register_as_candidate(current_count as u32)).into())
 		}
 
-		/// Notifies that the collator attached to this account will be leaving
-		/// once the session has finished. The candidacy bond is refunded to the account immediately.
-		/// This call will fail if the number of candidate collators would drop below
-		/// the minimun candidates.
-		/// (This call is not available to invulnerable collators.)
+		/// Deregister `origin` as a collator candidate. Note that the collator can only leave on
+		/// session change. The `CandidacyBond` will be unreserved immediately.
+		///
+		/// This call will fail if the total number of candidates would drop below `MinCandidates`.
+		///
+		/// This call is not available to `Invulnerable` collators.
 		#[pallet::weight(T::WeightInfo::leave_intent(T::MaxCandidates::get()))]
 		pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
