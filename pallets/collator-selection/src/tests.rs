@@ -85,6 +85,30 @@ fn set_candidacy_bond() {
 }
 
 #[test]
+fn set_candidacy_bond_higher_when_existing_candidates_then_existing_candidates_get_grandfathered() {
+	new_test_ext().execute_with(|| {
+		// given 3 is a registered collator
+		assert_ok!(CollatorSelection::set_candidacy_bond(Origin::signed(RootAccount::get()), 7));
+		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
+		assert_eq!(CollatorSelection::candidates().len(), 1);
+		assert_eq!(Balances::free_balance(3), 93);
+		
+		// when we raise bond size
+		assert_ok!(CollatorSelection::set_candidacy_bond(Origin::signed(RootAccount::get()), 10));
+		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
+		
+		// then existing collator 3 should still be valid
+		assert_eq!(CollatorSelection::candidates().len(), 2);
+		assert_eq!(Balances::free_balance(3), 93);
+		assert_eq!(Balances::free_balance(4), 90);
+
+		// and when 3 leaves it should not get back more money than it put in:
+		assert_ok!(CollatorSelection::leave_intent(Origin::signed(3)));
+		assert_eq!(Balances::free_balance(3), 100);
+	});
+}
+
+#[test]
 fn cannot_register_candidate_if_too_many() {
 	new_test_ext().execute_with(|| {
 		// reset desired candidates:
