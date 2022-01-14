@@ -372,11 +372,12 @@ pub mod pallet {
 			Ok(Some(T::WeightInfo::register_as_candidate(current_count as u32)).into())
 		}
 
-		/// Notifies that the collator attached to this account will be leaving
-		/// once the session has finished. The candidacy bond is refunded to the account immediately.
-		/// This call will fail if the number of candidate collators would drop below
-		/// the minimun candidates.
-		/// (This call is not available to invulnerable collators.)
+		/// Deregister `origin` as a collator candidate. Note that the collator can only leave on
+		/// session change. The `CandidacyBond` will be unreserved immediately.
+		///
+		/// This call will fail if the total number of candidates would drop below `MinCandidates`.
+		///
+		/// This call is not available to `Invulnerable` collators.
 		#[pallet::weight(T::WeightInfo::leave_intent(T::MaxCandidates::get()))]
 		pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
