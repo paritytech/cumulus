@@ -23,7 +23,7 @@ path = "src/main.rs"
 runtime-benchmarks = ["parachain-template-runtime/runtime-benchmarks"]
 
 [dependencies]
-derive_more = "0.99.2"
+derive_more = "0.99.16"
 log = "0.4.14"
 codec = { package = "parity-scale-codec", version = "2.0.0" }
 structopt = "0.3.8"
