@@ -66,9 +66,5 @@ async fn test_collating_and_non_collator_mode_catching_up() {
 	dave.wait_for_blocks(7).await;
 
 	join!(
-		alice.task_manager.clean_shutdown(),
-		bob.task_manager.clean_shutdown(),
-		charlie.task_manager.clean_shutdown(),
-		dave.task_manager.clean_shutdown(),
 	);
 }

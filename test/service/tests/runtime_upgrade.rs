@@ -95,9 +95,5 @@ async fn test_runtime_upgrade() {
 	}
 
 	join!(
-		alice.task_manager.clean_shutdown(),
-		bob.task_manager.clean_shutdown(),
-		charlie.task_manager.clean_shutdown(),
-		dave.task_manager.clean_shutdown(),
 	);
 }

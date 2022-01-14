@@ -73,10 +73,5 @@ async fn sync_blocks_from_tip_without_being_connected_to_a_collator() {
 	eve.wait_for_blocks(7).await;
 
 	join!(
-		alice.task_manager.clean_shutdown(),
-		bob.task_manager.clean_shutdown(),
-		charlie.task_manager.clean_shutdown(),
-		dave.task_manager.clean_shutdown(),
-		eve.task_manager.clean_shutdown(),
 	);
 }
