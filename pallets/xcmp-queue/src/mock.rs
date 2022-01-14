@@ -23,7 +23,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 };
 use xcm_builder::{
-	CurrencyAdapter, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset, ParentIsDefault,
+	CurrencyAdapter, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset, ParentIsAllZeroes,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -128,7 +128,7 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 	(),
 >;
 
-pub type LocationToAccountId = (ParentIsDefault<AccountId>,);
+pub type LocationToAccountId = (ParentIsAllZeroes<AccountId>,);
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
