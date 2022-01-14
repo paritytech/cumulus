@@ -95,12 +95,12 @@ fn set_candidacy_bond_higher_when_existing_candidates_then_existing_candidates_g
 		assert_eq!(Balances::free_balance(3), 93);
 		initialize_to_block(20);
 		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 3, 4]);
-		
+
 		// when we raise bond size
 		assert_ok!(CollatorSelection::set_candidacy_bond(Origin::signed(RootAccount::get()), 10));
 		initialize_to_block(40);
-		
-		// then existing collator 3 is discarded but 4 is saved as otherwise 
+
+		// then existing collator 3 is discarded but 4 is saved as otherwise
 		// num of collators would drop below min
 		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 4]);
 		assert_eq!(CollatorSelection::candidates().len(), 1);
