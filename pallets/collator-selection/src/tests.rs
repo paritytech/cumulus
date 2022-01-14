@@ -85,26 +85,28 @@ fn set_candidacy_bond() {
 }
 
 #[test]
-fn set_candidacy_bond_higher_when_existing_candidates_then_existing_candidates_get_grandfathered() {
+fn set_candidacy_bond_higher_when_existing_candidates_then_existing_candidates_get_kicked() {
 	new_test_ext().execute_with(|| {
-		// given 3 is a registered collator
+		// given 3 and 4 are collators
 		assert_ok!(CollatorSelection::set_candidacy_bond(Origin::signed(RootAccount::get()), 7));
 		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
-		assert_eq!(CollatorSelection::candidates().len(), 1);
+		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
+		assert_eq!(CollatorSelection::candidates().len(), 2);
 		assert_eq!(Balances::free_balance(3), 93);
+		initialize_to_block(20);
+		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 3, 4]);
 		
 		// when we raise bond size
 		assert_ok!(CollatorSelection::set_candidacy_bond(Origin::signed(RootAccount::get()), 10));
-		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
+		initialize_to_block(40);
 		
-		// then existing collator 3 should still be valid
-		assert_eq!(CollatorSelection::candidates().len(), 2);
-		assert_eq!(Balances::free_balance(3), 93);
-		assert_eq!(Balances::free_balance(4), 90);
-
-		// and when 3 leaves it should not get back more money than it put in:
-		assert_ok!(CollatorSelection::leave_intent(Origin::signed(3)));
+		// then existing collator 3 is discarded but 4 is saved as otherwise 
+		// num of collators would drop below min
+		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 4]);
+		assert_eq!(CollatorSelection::candidates().len(), 1);
+		// when 3 is kicked it should not get back more money than it put in:
 		assert_eq!(Balances::free_balance(3), 100);
+		assert_eq!(Balances::free_balance(4), 93);
 	});
 }
 
