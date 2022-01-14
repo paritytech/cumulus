@@ -106,7 +106,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		// the shell-based chain spec as used for syncing
 		"statemint" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../res/statemint.json")[..],
-		)?),		
+		)?),
 		// -- Statemine
 		"statemine-dev" => Box::new(chain_spec::statemine_development_config()),
 		"statemine-local" => Box::new(chain_spec::statemine_local_config()),
