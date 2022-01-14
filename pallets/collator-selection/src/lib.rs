@@ -329,10 +329,10 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		/// Ask for this account to become a collator candidate.
-		/// The account must already have called session set_keys (linking the account to a running validator).
-		/// The candidacy bond will be reserved from this account.
-		/// (This call is not available to invulnerable collators.)
+		/// Register this account as a collator candidate. The account must (a) already have
+		/// registered session keys and (b) be able to reserve the `CandidacyBond`.
+		///
+		/// This call is not available to `Invulnerable` collators.
 		#[pallet::weight(T::WeightInfo::register_as_candidate(T::MaxCandidates::get()))]
 		pub fn register_as_candidate(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
