@@ -194,7 +194,9 @@ pub mod pallet {
 	#[pallet::getter(fn desired_candidates)]
 	pub type DesiredCandidates<T> = StorageValue<_, u32, ValueQuery>;
 
-	/// Fixed deposit bond for each candidate.
+	/// Fixed amount to deposit to become a collator.
+	///
+	/// When a collator calls `leave_intent` they immediately receive the deposit back.
 	#[pallet::storage]
 	#[pallet::getter(fn candidacy_bond)]
 	pub type CandidacyBond<T> = StorageValue<_, BalanceOf<T>, ValueQuery>;
@@ -316,8 +318,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		/// Set the amount to deposit for becoming a collator.
-		/// When a collator calls `leave_intent` they receive the deposit back.
+		/// Set the candidacy bond amount.
 		#[pallet::weight(T::WeightInfo::set_candidacy_bond())]
 		pub fn set_candidacy_bond(
 			origin: OriginFor<T>,
