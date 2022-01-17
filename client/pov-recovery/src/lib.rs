@@ -57,7 +57,7 @@ use polkadot_primitives::v1::{
 };
 
 use cumulus_primitives_core::ParachainBlockData;
-use cumulus_relay_chain_interface::RelayChainInterface;
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
 
 use codec::Decode;
 use futures::{select, stream::FuturesUnordered, Future, FutureExt, Stream, StreamExt};
@@ -363,9 +363,14 @@ where
 		let mut imported_blocks = self.parachain_client.import_notification_stream().fuse();
 		let mut finalized_blocks = self.parachain_client.finality_notification_stream().fuse();
 		let pending_candidates =
-			pending_candidates(self.relay_chain_interface.clone(), self.para_id)
-				.await
-				.fuse();
+			match pending_candidates(self.relay_chain_interface.clone(), self.para_id).await {
+				Ok(pending_candidate_stream) => pending_candidate_stream.fuse(),
+				Err(err) => {
+					tracing::error!(target: LOG_TARGET, error = ?err, "Unable to retrieve pending candidate stream.");
+					return
+				},
+			};
+
 		futures::pin_mut!(pending_candidates);
 
 		loop {
@@ -422,10 +427,9 @@ where
 async fn pending_candidates(
 	relay_chain_client: impl RelayChainInterface + Clone,
 	para_id: ParaId,
-) -> impl Stream<Item = (CommittedCandidateReceipt, SessionIndex)> {
-	// TODO: error handling
-	let stream = relay_chain_client.import_notification_stream().await.expect("should work");
-	stream.filter_map(move |n| {
+) -> Result<impl Stream<Item = (CommittedCandidateReceipt, SessionIndex)>, RelayChainError> {
+	let stream = relay_chain_client.import_notification_stream().await?;
+	Ok(stream.filter_map(move |n| {
 		let client_for_closure = relay_chain_client.clone();
 		async move {
 			let block_id = BlockId::hash(n.hash());
@@ -444,5 +448,5 @@ async fn pending_candidates(
 				.ok()
 				.flatten()
 		}
-	})
+	}))
 }

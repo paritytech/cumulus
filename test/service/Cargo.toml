@@ -52,7 +52,6 @@ cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent" }
 cumulus-test-runtime = { path = "../runtime" }
 cumulus-test-relay-validation-worker-provider = { path = "../relay-validation-worker-provider" }
-cumulus-relay-chain-network = { path = "../../client/relay-chain-network" }
 cumulus-relay-chain-local = { path = "../../client/relay-chain-local" }
 
 url = "2.2.2"

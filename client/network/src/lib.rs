@@ -290,8 +290,10 @@ where
 
 		async move {
 			// Check if block is equal or higher than best (this requires a justification)
-			// TODO: error handling
-			let relay_chain_best_hash = relay_chain_interface.best_block_hash().await.expect("");
+			let relay_chain_best_hash = relay_chain_interface
+				.best_block_hash()
+				.await
+				.map_err(|e| Box::new(e) as Box<_>)?;
 			let runtime_api_block_id = BlockId::Hash(relay_chain_best_hash);
 			let block_number = header.number();
 
@@ -343,8 +345,15 @@ where
 		let block_announce_validator = self.clone();
 
 		async move {
-			// TODO: Error handling
-			if relay_chain_interface.is_major_syncing().await.expect("") {
+			let relay_chain_is_syncing = relay_chain_interface
+				.is_major_syncing()
+				.await
+				.map_err(|e| {
+					tracing::error!(target: LOG_TARGET, "Unable to determine sync status. {}", e)
+				})
+				.unwrap_or(false);
+
+			if relay_chain_is_syncing {
 				return Ok(Validation::Success { is_new_best: false })
 			}
 

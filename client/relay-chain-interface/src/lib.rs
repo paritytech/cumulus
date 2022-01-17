@@ -29,7 +29,6 @@ use sc_client_api::{blockchain::BlockStatus, StorageProof};
 use futures::Stream;
 
 use async_trait::async_trait;
-use jsonrpsee_core::Error as JsonRPSeeError;
 use sp_api::ApiError;
 use sp_state_machine::StorageValue;
 
@@ -52,16 +51,11 @@ pub enum RelayChainError {
 		_1
 	)]
 	WaitBlockchainError(PHash, sp_blockchain::Error),
-	#[display(
-		fmt = "Error occures while calling relay chain method '{}' over the network: {:?}",
-		_0,
-		_1
-	)]
-	NetworkError(String, String),
 	#[display(fmt = "Blockchain returned an error: {:?}", _0)]
 	BlockchainError(String),
 	StateMachineError(String),
 }
+impl std::error::Error for RelayChainError {}
 
 impl From<ApiError> for RelayChainError {
 	fn from(error: ApiError) -> Self {
