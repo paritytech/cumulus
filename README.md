@@ -16,7 +16,7 @@ beautiful and functional.
 
 ## Consensus
 
-[`cumulus-consensus`](https://github.com/paritytech/cumulus/tree/master/client/consensus) is a
+[`parachain-consensus`](https://github.com/paritytech/cumulus/blob/master/client/consensus/common/src/parachain_consensus.rs) is a
 [consensus engine](https://docs.substrate.io/v3/advanced/consensus) for Substrate
 that follows a Polkadot
 [relay chain](https://wiki.polkadot.network/docs/en/learn-architecture#relay-chain). This will run
