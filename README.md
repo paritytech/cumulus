@@ -28,7 +28,7 @@ and treat as best.
 ## Collator
 
 A Polkadot [collator](https://wiki.polkadot.network/docs/en/learn-collator) for the parachain is
-implemented by [`cumulus-collator`](https://github.com/paritytech/cumulus/tree/master/client/collator).
+implemented by the `polkadot-collator` binary.
 
 # Statemint 🪙
 
