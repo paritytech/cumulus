@@ -382,8 +382,10 @@ where
 	async fn new_best_heads(&self, para_id: ParaId) -> Self::HeadStream {
 		let relay_chain = self.clone();
 
+		//TODO: Error handling
 		self.new_best_notification_stream()
 			.await
+			.expect("")
 			.filter_map(move |n| {
 				let relay_chain = relay_chain.clone();
 				async move {
@@ -402,6 +404,7 @@ where
 
 		self.finality_notification_stream()
 			.await
+			.expect("")
 			.filter_map(move |n| {
 				let relay_chain = relay_chain.clone();
 				async move {

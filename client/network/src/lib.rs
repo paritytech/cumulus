@@ -290,7 +290,8 @@ where
 
 		async move {
 			// Check if block is equal or higher than best (this requires a justification)
-			let relay_chain_best_hash = relay_chain_interface.best_block_hash().await;
+			// TODO: error handling
+			let relay_chain_best_hash = relay_chain_interface.best_block_hash().await.expect("");
 			let runtime_api_block_id = BlockId::Hash(relay_chain_best_hash);
 			let block_number = header.number();
 
@@ -342,7 +343,8 @@ where
 		let block_announce_validator = self.clone();
 
 		async move {
-			if relay_chain_interface.is_major_syncing().await {
+			// TODO: Error handling
+			if relay_chain_interface.is_major_syncing().await.expect("") {
 				return Ok(Validation::Success { is_new_best: false })
 			}
 

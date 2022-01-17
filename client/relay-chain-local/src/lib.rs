@@ -25,7 +25,7 @@ use cumulus_primitives_core::{
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use futures::{FutureExt, Stream, StreamExt};
 use parking_lot::Mutex;
 use polkadot_client::{ClientHandle, ExecuteWithClient, FullBackend};
@@ -92,7 +92,7 @@ where
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
-	) -> Option<Vec<InboundDownwardMessage>> {
+	) -> RelayChainResult<Vec<InboundDownwardMessage>> {
 		self.full_client
 			.runtime_api()
 			.dmq_contents_with_context(
@@ -107,15 +107,15 @@ where
 					error = ?e,
 					"An error occured during requesting the downward messages.",
 				);
+				RelayChainError::ApiError(e)
 			})
-			.ok()
 	}
 
 	async fn retrieve_all_inbound_hrmp_channel_contents(
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
-	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
+	) -> RelayChainResult<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
 		self.full_client
 			.runtime_api()
 			.inbound_hrmp_channels_contents_with_context(
@@ -130,8 +130,8 @@ where
 					error = ?e,
 					"An error occured during requesting the inbound HRMP messages.",
 				);
+				RelayChainError::ApiError(e)
 			})
-			.ok()
 	}
 
 	async fn persisted_validation_data(
@@ -174,24 +174,28 @@ where
 			.map_err(RelayChainError::ApiError)
 	}
 
-	async fn import_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+	async fn import_notification_stream(
+		&self,
+	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
 		let notification_stream = self
 			.full_client
 			.import_notification_stream()
 			.map(|notification| notification.header);
-		Box::pin(notification_stream)
+		Ok(Box::pin(notification_stream))
 	}
 
-	async fn finality_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+	async fn finality_notification_stream(
+		&self,
+	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
 		let notification_stream = self
 			.full_client
 			.finality_notification_stream()
 			.map(|notification| notification.header);
-		Box::pin(notification_stream)
+		Ok(Box::pin(notification_stream))
 	}
 
-	async fn best_block_hash(&self) -> PHash {
-		self.backend.blockchain().info().best_hash
+	async fn best_block_hash(&self) -> RelayChainResult<PHash> {
+		Ok(self.backend.blockchain().info().best_hash)
 	}
 
 	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, RelayChainError> {
@@ -201,13 +205,13 @@ where
 			.map_err(|err| RelayChainError::BlockchainError(err.to_string()))
 	}
 
-	async fn is_major_syncing(&self) -> bool {
+	async fn is_major_syncing(&self) -> RelayChainResult<bool> {
 		let mut network = self.sync_oracle.lock();
-		network.is_major_syncing()
+		Ok(network.is_major_syncing())
 	}
 
-	fn overseer_handle(&self) -> Option<Handle> {
-		self.overseer_handle.clone()
+	fn overseer_handle(&self) -> RelayChainResult<Option<Handle>> {
+		Ok(self.overseer_handle.clone())
 	}
 
 	async fn get_storage_by_key(
@@ -226,7 +230,7 @@ where
 		&self,
 		block_id: &BlockId,
 		relevant_keys: &Vec<Vec<u8>>,
-	) -> Result<Option<StorageProof>, Box<dyn sp_state_machine::Error>> {
+	) -> Result<Option<StorageProof>, RelayChainError> {
 		let state_backend = self
 			.backend
 			.state_at(*block_id)
@@ -249,7 +253,7 @@ where
 						error = ?e,
 						"Failed to collect required relay chain state storage proof.",
 					);
-					e
+					RelayChainError::StateMachineError(e.to_string())
 				})
 				.map(Some),
 			None => Ok(None),
@@ -295,7 +299,9 @@ where
 		}
 	}
 
-	async fn new_best_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+	async fn new_best_notification_stream(
+		&self,
+	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
 		let notifications_stream =
 			self.full_client
 				.import_notification_stream()
@@ -306,7 +312,7 @@ where
 						None
 					}
 				});
-		Box::pin(notifications_stream)
+		Ok(Box::pin(notifications_stream))
 	}
 }
 

@@ -16,7 +16,7 @@
 
 use super::*;
 use async_trait::async_trait;
-use cumulus_relay_chain_interface::RelayChainError;
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use cumulus_relay_chain_local::{check_block_in_chain, BlockCheckStatus};
 use cumulus_test_service::runtime::{Block, Hash, Header};
 use futures::{executor::block_on, poll, task::Poll, FutureExt, Stream, StreamExt};
@@ -94,15 +94,15 @@ impl RelayChainInterface for DummyRelayChainInterface {
 			.map_err(|err| RelayChainError::BlockchainError(err.to_string()))
 	}
 
-	async fn best_block_hash(&self) -> PHash {
-		self.relay_backend.blockchain().info().best_hash
+	async fn best_block_hash(&self) -> RelayChainResult<PHash> {
+		Ok(self.relay_backend.blockchain().info().best_hash)
 	}
 
 	async fn retrieve_dmq_contents(
 		&self,
 		_: ParaId,
 		_: PHash,
-	) -> Option<Vec<InboundDownwardMessage>> {
+	) -> RelayChainResult<Vec<InboundDownwardMessage>> {
 		unimplemented!("Not needed for test")
 	}
 
@@ -110,8 +110,8 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		&self,
 		_: ParaId,
 		_: PHash,
-	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
-		Some(BTreeMap::new())
+	) -> RelayChainResult<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
+		Ok(BTreeMap::new())
 	}
 
 	async fn persisted_validation_data(
@@ -166,27 +166,31 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		Ok(0)
 	}
 
-	async fn import_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
-		Box::pin(
+	async fn import_notification_stream(
+		&self,
+	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
+		Ok(Box::pin(
 			self.relay_client
 				.import_notification_stream()
 				.map(|notification| notification.header),
-		)
+		))
 	}
 
-	async fn finality_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
-		Box::pin(
+	async fn finality_notification_stream(
+		&self,
+	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
+		Ok(Box::pin(
 			self.relay_client
 				.finality_notification_stream()
 				.map(|notification| notification.header),
-		)
+		))
 	}
 
-	async fn is_major_syncing(&self) -> bool {
-		false
+	async fn is_major_syncing(&self) -> RelayChainResult<bool> {
+		Ok(false)
 	}
 
-	fn overseer_handle(&self) -> Option<Handle> {
+	fn overseer_handle(&self) -> RelayChainResult<Option<Handle>> {
 		unimplemented!("Not needed for test")
 	}
 
@@ -202,7 +206,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		&self,
 		_: &polkadot_service::BlockId,
 		_: &Vec<Vec<u8>>,
-	) -> Result<Option<sc_client_api::StorageProof>, Box<dyn sp_state_machine::Error>> {
+	) -> Result<Option<sc_client_api::StorageProof>, RelayChainError> {
 		unimplemented!("Not needed for test")
 	}
 
@@ -231,7 +235,9 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		}
 	}
 
-	async fn new_best_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+	async fn new_best_notification_stream(
+		&self,
+	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
 		let notifications_stream =
 			self.relay_client
 				.import_notification_stream()
@@ -242,7 +248,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 						None
 					}
 				});
-		Box::pin(notifications_stream)
+		Ok(Box::pin(notifications_stream))
 	}
 }
 

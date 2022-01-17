@@ -28,10 +28,12 @@ use sc_client_api::{blockchain::BlockStatus, StorageProof};
 
 use futures::Stream;
 
+use async_trait::async_trait;
+use jsonrpsee_core::Error as JsonRPSeeError;
 use sp_api::ApiError;
 use sp_state_machine::StorageValue;
 
-use async_trait::async_trait;
+pub type RelayChainResult<T> = Result<T, RelayChainError>;
 
 #[derive(Debug, derive_more::Display)]
 pub enum RelayChainError {
@@ -50,10 +52,21 @@ pub enum RelayChainError {
 		_1
 	)]
 	WaitBlockchainError(PHash, sp_blockchain::Error),
-	#[display(fmt = "Error occures while calling relay chain method '{}' over the network ", _0)]
-	NetworkError(String),
+	#[display(
+		fmt = "Error occures while calling relay chain method '{}' over the network: {:?}",
+		_0,
+		_1
+	)]
+	NetworkError(String, String),
 	#[display(fmt = "Blockchain returned an error: {:?}", _0)]
 	BlockchainError(String),
+	StateMachineError(String),
+}
+
+impl From<ApiError> for RelayChainError {
+	fn from(error: ApiError) -> Self {
+		RelayChainError::ApiError(error)
+	}
 }
 
 /// Should be used for all interaction with the relay chain in cumulus.
@@ -72,7 +85,7 @@ pub trait RelayChainInterface: Send + Sync {
 	/// Get the status of a given block.
 	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, RelayChainError>;
 
-	async fn best_block_hash(&self) -> PHash;
+	async fn best_block_hash(&self) -> Result<PHash, RelayChainError>;
 
 	/// Returns the whole contents of the downward message queue for the parachain we are collating
 	/// for.
@@ -82,7 +95,7 @@ pub trait RelayChainInterface: Send + Sync {
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
-	) -> Option<Vec<InboundDownwardMessage>>;
+	) -> Result<Vec<InboundDownwardMessage>, RelayChainError>;
 
 	/// Returns channels contents for each inbound HRMP channel addressed to the parachain we are
 	/// collating for.
@@ -92,7 +105,7 @@ pub trait RelayChainInterface: Send + Sync {
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
-	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>>;
+	) -> Result<BTreeMap<ParaId, Vec<InboundHrmpMessage>>, RelayChainError>;
 
 	/// Yields the persisted validation data for the given `ParaId` along with an assumption that
 	/// should be used if the para currently occupies a core.
@@ -121,10 +134,14 @@ pub trait RelayChainInterface: Send + Sync {
 	) -> Result<SessionIndex, RelayChainError>;
 
 	/// Get a stream of import block notifications.
-	async fn import_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>>;
+	async fn import_notification_stream(
+		&self,
+	) -> Result<Pin<Box<dyn Stream<Item = PHeader> + Send>>, RelayChainError>;
 
 	/// Get a stream of new best block notifications.
-	async fn new_best_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>>;
+	async fn new_best_notification_stream(
+		&self,
+	) -> Result<Pin<Box<dyn Stream<Item = PHeader> + Send>>, RelayChainError>;
 
 	/// Wait for a block with a given hash in the relay chain.
 	///
@@ -133,21 +150,23 @@ pub trait RelayChainInterface: Send + Sync {
 	async fn wait_for_block(&self, hash: PHash) -> Result<(), RelayChainError>;
 
 	/// Get a stream of finality notifications.
-	async fn finality_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>>;
+	async fn finality_notification_stream(
+		&self,
+	) -> Result<Pin<Box<dyn Stream<Item = PHeader> + Send>>, RelayChainError>;
 
 	/// Whether the synchronization service is undergoing major sync.
 	/// Returns true if so.
-	async fn is_major_syncing(&self) -> bool;
+	async fn is_major_syncing(&self) -> Result<bool, RelayChainError>;
 
 	/// Get a handle to the overseer.
-	fn overseer_handle(&self) -> Option<OverseerHandle>;
+	fn overseer_handle(&self) -> Result<Option<OverseerHandle>, RelayChainError>;
 
 	/// Generate a storage read proof.
 	async fn prove_read(
 		&self,
 		block_id: &BlockId,
 		relevant_keys: &Vec<Vec<u8>>,
-	) -> Result<Option<StorageProof>, Box<dyn sp_state_machine::Error>>;
+	) -> Result<Option<StorageProof>, RelayChainError>;
 }
 
 #[async_trait]
@@ -159,7 +178,7 @@ where
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
-	) -> Option<Vec<InboundDownwardMessage>> {
+	) -> RelayChainResult<Vec<InboundDownwardMessage>> {
 		(**self).retrieve_dmq_contents(para_id, relay_parent).await
 	}
 
@@ -167,7 +186,7 @@ where
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
-	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
+	) -> RelayChainResult<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
 		(**self).retrieve_all_inbound_hrmp_channel_contents(para_id, relay_parent).await
 	}
 
@@ -176,7 +195,7 @@ where
 		block_id: &BlockId,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
-	) -> Result<Option<PersistedValidationData>, RelayChainError> {
+	) -> RelayChainResult<Option<PersistedValidationData>> {
 		(**self)
 			.persisted_validation_data(block_id, para_id, occupied_core_assumption)
 			.await
@@ -201,15 +220,19 @@ where
 		(**self).validators(block_id).await
 	}
 
-	async fn import_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+	async fn import_notification_stream(
+		&self,
+	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
 		(**self).import_notification_stream().await
 	}
 
-	async fn finality_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+	async fn finality_notification_stream(
+		&self,
+	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
 		(**self).finality_notification_stream().await
 	}
 
-	async fn best_block_hash(&self) -> PHash {
+	async fn best_block_hash(&self) -> RelayChainResult<PHash> {
 		(**self).best_block_hash().await
 	}
 
@@ -217,11 +240,11 @@ where
 		(**self).block_status(block_id).await
 	}
 
-	async fn is_major_syncing(&self) -> bool {
+	async fn is_major_syncing(&self) -> RelayChainResult<bool> {
 		(**self).is_major_syncing().await
 	}
 
-	fn overseer_handle(&self) -> Option<OverseerHandle> {
+	fn overseer_handle(&self) -> RelayChainResult<Option<OverseerHandle>> {
 		(**self).overseer_handle()
 	}
 
@@ -237,15 +260,17 @@ where
 		&self,
 		block_id: &BlockId,
 		relevant_keys: &Vec<Vec<u8>>,
-	) -> Result<Option<StorageProof>, Box<dyn sp_state_machine::Error>> {
+	) -> RelayChainResult<Option<StorageProof>> {
 		(**self).prove_read(block_id, relevant_keys).await
 	}
 
-	async fn wait_for_block(&self, hash: PHash) -> Result<(), RelayChainError> {
+	async fn wait_for_block(&self, hash: PHash) -> RelayChainResult<()> {
 		(**self).wait_for_block(hash).await
 	}
 
-	async fn new_best_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+	async fn new_best_notification_stream(
+		&self,
+	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
 		(**self).new_best_notification_stream().await
 	}
 }

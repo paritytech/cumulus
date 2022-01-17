@@ -423,7 +423,8 @@ async fn pending_candidates(
 	relay_chain_client: impl RelayChainInterface + Clone,
 	para_id: ParaId,
 ) -> impl Stream<Item = (CommittedCandidateReceipt, SessionIndex)> {
-	let stream = relay_chain_client.import_notification_stream().await;
+	// TODO: error handling
+	let stream = relay_chain_client.import_notification_stream().await.expect("should work");
 	stream.filter_map(move |n| {
 		let client_for_closure = relay_chain_client.clone();
 		async move {

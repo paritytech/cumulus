@@ -25,7 +25,7 @@ use cumulus_primitives_core::{
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use futures::{FutureExt, Stream, StreamExt};
 use jsonrpsee::{
 	core::{
@@ -64,14 +64,16 @@ impl RelayChainRPCClient {
 		method_name: &str,
 		block_id: &BlockId,
 		payload: Option<Vec<u8>>,
-	) -> Result<sp_core::Bytes, JsonRPSeeError> {
+	) -> Result<sp_core::Bytes, RelayChainError> {
 		let payload_bytes = payload.map_or(sp_core::Bytes(Vec::new()), sp_core::Bytes);
 		let params = rpc_params! {
 			method_name,
 			payload_bytes,
 			block_id
 		};
-		self.request("state_call", params).await
+		self.request("state_call", params)
+			.await
+			.map_err(|err| RelayChainError::NetworkError(method_name.to_string(), err.to_string()))
 	}
 
 	async fn subscribe<'a, R>(
@@ -79,27 +81,33 @@ impl RelayChainRPCClient {
 		sub_name: &'a str,
 		unsub_name: &'a str,
 		params: Option<ParamsSer<'a>>,
-	) -> Result<Subscription<R>, JsonRPSeeError>
+	) -> Result<Subscription<R>, RelayChainError>
 	where
 		R: DeserializeOwned,
 	{
 		tracing::trace!(target: LOG_TARGET, "Subscribing to stream: {}", sub_name);
-		self.ws_client.subscribe::<R>(sub_name, params, unsub_name).await
+		self.ws_client
+			.subscribe::<R>(sub_name, params, unsub_name)
+			.await
+			.map_err(|err| RelayChainError::NetworkError(sub_name.to_string(), err.to_string()))
 	}
 
 	async fn request<'a, R>(
 		&self,
 		method: &'a str,
 		params: Option<ParamsSer<'a>>,
-	) -> Result<R, JsonRPSeeError>
+	) -> Result<R, RelayChainError>
 	where
 		R: DeserializeOwned,
 	{
 		tracing::trace!(target: LOG_TARGET, "Calling rpc endpoint: {}", method);
-		self.ws_client.request(method, params).await
+		self.ws_client
+			.request(method, params)
+			.await
+			.map_err(|err| RelayChainError::NetworkError(method.to_string(), err.to_string()))
 	}
 
-	async fn system_health(&self) -> Result<Health, JsonRPSeeError> {
+	async fn system_health(&self) -> Result<Health, RelayChainError> {
 		self.request("system_health", None).await
 	}
 
@@ -107,7 +115,7 @@ impl RelayChainRPCClient {
 		&self,
 		storage_keys: Vec<StorageKey>,
 		at: Option<PHash>,
-	) -> Result<Option<ReadProof<PHash>>, JsonRPSeeError> {
+	) -> Result<Option<ReadProof<PHash>>, RelayChainError> {
 		let params = rpc_params!(storage_keys, at);
 		self.request("state_getReadProof", params).await
 	}
@@ -116,7 +124,7 @@ impl RelayChainRPCClient {
 		&self,
 		storage_key: StorageKey,
 		at: Option<PHash>,
-	) -> Result<Option<StorageData>, JsonRPSeeError> {
+	) -> Result<Option<StorageData>, RelayChainError> {
 		let params = rpc_params!(storage_key, at);
 		self.request("state_getStorage", params).await
 	}
@@ -124,19 +132,19 @@ impl RelayChainRPCClient {
 	async fn chain_get_block(
 		&self,
 		at: Option<PHash>,
-	) -> Result<Option<SignedBlock<PBlock>>, JsonRPSeeError> {
+	) -> Result<Option<SignedBlock<PBlock>>, RelayChainError> {
 		let params = rpc_params!(at);
 		self.request("chain_getBlock", params).await
 	}
 
-	async fn chain_get_head(&self) -> Result<PHash, JsonRPSeeError> {
+	async fn chain_get_head(&self) -> Result<PHash, RelayChainError> {
 		self.request("chain_getHead", None).await
 	}
 
 	async fn chain_get_header(
 		&self,
 		hash: Option<PHash>,
-	) -> Result<Option<PHeader>, JsonRPSeeError> {
+	) -> Result<Option<PHeader>, RelayChainError> {
 		let params = hash.map(|hash| rpc_params!(hash)).flatten();
 		self.request("chain_getHeader", params).await
 	}
@@ -145,7 +153,7 @@ impl RelayChainRPCClient {
 		&self,
 		at: &BlockId,
 		para_id: ParaId,
-	) -> Result<Option<CommittedCandidateReceipt>, JsonRPSeeError> {
+	) -> Result<Option<CommittedCandidateReceipt>, RelayChainError> {
 		let response_bytes = self
 			.call_remote_runtime_function(
 				"ParachainHost_candidate_pending_availability",
@@ -161,7 +169,7 @@ impl RelayChainRPCClient {
 	async fn parachain_host_session_index_for_child(
 		&self,
 		at: &BlockId,
-	) -> Result<SessionIndex, JsonRPSeeError> {
+	) -> Result<SessionIndex, RelayChainError> {
 		let response_bytes = self
 			.call_remote_runtime_function("ParachainHost_session_index_for_child", at, None)
 			.await?;
@@ -172,7 +180,7 @@ impl RelayChainRPCClient {
 	async fn parachain_host_validators(
 		&self,
 		at: &BlockId,
-	) -> Result<Vec<ValidatorId>, JsonRPSeeError> {
+	) -> Result<Vec<ValidatorId>, RelayChainError> {
 		let response_bytes =
 			self.call_remote_runtime_function("ParachainHost_validators", at, None).await?;
 
@@ -184,7 +192,7 @@ impl RelayChainRPCClient {
 		block_id: &BlockId,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
-	) -> Result<Option<PersistedValidationData>, JsonRPSeeError> {
+	) -> Result<Option<PersistedValidationData>, RelayChainError> {
 		let response_bytes = self
 			.call_remote_runtime_function(
 				"ParachainHost_persisted_validation_data",
@@ -201,7 +209,7 @@ impl RelayChainRPCClient {
 		&self,
 		para_id: ParaId,
 		at: &BlockId,
-	) -> Result<Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>>, JsonRPSeeError> {
+	) -> Result<BTreeMap<ParaId, Vec<InboundHrmpMessage>>, RelayChainError> {
 		let response_bytes = self
 			.call_remote_runtime_function(
 				"ParachainHost_inbound_hrmp_channels_contents",
@@ -210,7 +218,7 @@ impl RelayChainRPCClient {
 			)
 			.await?;
 
-		Ok(Option::<BTreeMap<ParaId, Vec<InboundHrmpMessage>>>::decode(&mut &*response_bytes.0)
+		Ok(BTreeMap::<ParaId, Vec<InboundHrmpMessage>>::decode(&mut &*response_bytes.0)
 			.expect("should deserialize"))
 	}
 
@@ -218,26 +226,26 @@ impl RelayChainRPCClient {
 		&self,
 		para_id: ParaId,
 		at: &BlockId,
-	) -> Result<Option<Vec<InboundDownwardMessage>>, JsonRPSeeError> {
+	) -> Result<Vec<InboundDownwardMessage>, RelayChainError> {
 		let response_bytes = self
 			.call_remote_runtime_function("ParachainHost_dmq_contents", &at, Some(para_id.encode()))
 			.await?;
 
-		Ok(Option::<Vec<InboundDownwardMessage>>::decode(&mut &*response_bytes.0)
+		Ok(Vec::<InboundDownwardMessage>::decode(&mut &*response_bytes.0)
 			.expect("should deserialize"))
 	}
 
-	async fn subscribe_all_heads(&self) -> Result<Subscription<PHeader>, JsonRPSeeError> {
+	async fn subscribe_all_heads(&self) -> Result<Subscription<PHeader>, RelayChainError> {
 		self.subscribe::<PHeader>("chain_subscribeAllHeads", "chain_unsubscribeAllHeads", None)
 			.await
 	}
 
-	async fn subscribe_new_best_heads(&self) -> Result<Subscription<PHeader>, JsonRPSeeError> {
+	async fn subscribe_new_best_heads(&self) -> Result<Subscription<PHeader>, RelayChainError> {
 		self.subscribe::<PHeader>("chain_subscribeNewHeads", "chain_unsubscribeNewHeads", None)
 			.await
 	}
 
-	async fn subscribe_finalized_heads(&self) -> Result<Subscription<PHeader>, JsonRPSeeError> {
+	async fn subscribe_finalized_heads(&self) -> Result<Subscription<PHeader>, RelayChainError> {
 		self.subscribe::<PHeader>(
 			"chain_subscribeFinalizedHeads",
 			"chain_unsubscribeFinalizedHeads",
@@ -271,25 +279,25 @@ impl RelayChainInterface for RelayChainNetwork {
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
-	) -> Option<Vec<InboundDownwardMessage>> {
+	) -> RelayChainResult<Vec<InboundDownwardMessage>> {
 		let block_id = BlockId::hash(relay_parent);
 		let response = self.rpc_client.parachain_host_dmq_contents(para_id, &block_id).await;
 
-		response.expect("nope")
+		response
 	}
 
 	async fn retrieve_all_inbound_hrmp_channel_contents(
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
-	) -> Option<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
+	) -> RelayChainResult<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
 		let block_id = BlockId::hash(relay_parent);
 		let response = self
 			.rpc_client
 			.parachain_host_inbound_hrmp_channels_contents(para_id, &block_id)
 			.await;
 
-		response.expect("nope")
+		response
 	}
 
 	async fn persisted_validation_data(
@@ -303,7 +311,7 @@ impl RelayChainInterface for RelayChainNetwork {
 			.parachain_host_persisted_validation_data(block_id, para_id, occupied_core_assumption)
 			.await;
 
-		Ok(response.expect("nope"))
+		response
 	}
 
 	async fn candidate_pending_availability(
@@ -316,7 +324,7 @@ impl RelayChainInterface for RelayChainNetwork {
 			.parachain_host_candidate_pending_availability(block_id, para_id)
 			.await;
 
-		Ok(response.expect("nope"))
+		response
 	}
 
 	async fn session_index_for_child(
@@ -325,48 +333,47 @@ impl RelayChainInterface for RelayChainNetwork {
 	) -> Result<SessionIndex, RelayChainError> {
 		let response = self.rpc_client.parachain_host_session_index_for_child(block_id).await;
 
-		Ok(response.expect("nope"))
+		response
 	}
 
 	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, RelayChainError> {
 		let response = self.rpc_client.parachain_host_validators(block_id).await;
 
-		Ok(response.expect("nope"))
+		response
 	}
 
-	async fn import_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
-		let imported_headers_stream = self
-			.rpc_client
-			.subscribe_all_heads()
-			.await
-			.expect("Should be able to subscribe");
-
-		Box::pin(imported_headers_stream.filter_map(|item| async move {
+	async fn import_notification_stream(
+		&self,
+	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
+		let imported_headers_stream = self.rpc_client.subscribe_all_heads().await?;
+		Ok(Box::pin(imported_headers_stream.filter_map(|item| async move {
 			item.map_err(|err| {
 				tracing::error!(target: LOG_TARGET, "Error occured in stream: {}", err)
 			})
 			.ok()
-		}))
+		})))
 	}
 
-	async fn finality_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+	async fn finality_notification_stream(
+		&self,
+	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
 		let imported_headers_stream = self
 			.rpc_client
 			.subscribe_finalized_heads()
 			.await
 			.expect("Should be able to subscribe");
 
-		Box::pin(imported_headers_stream.filter_map(|item| async move {
+		Ok(Box::pin(imported_headers_stream.filter_map(|item| async move {
 			item.map_err(|err| {
 				tracing::error!(target: LOG_TARGET, "Error occured in stream: {}", err)
 			})
 			.ok()
-		}))
+		})))
 	}
 
-	async fn best_block_hash(&self) -> PHash {
+	async fn best_block_hash(&self) -> RelayChainResult<PHash> {
 		let response = self.rpc_client.chain_get_head().await;
-		response.expect("nope")
+		response
 	}
 
 	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, RelayChainError> {
@@ -376,18 +383,17 @@ impl RelayChainInterface for RelayChainNetwork {
 		};
 
 		let response = self.rpc_client.chain_get_block(Some(hash.clone())).await;
-		match response.expect("nope") {
-			Some(_) => Ok(BlockStatus::InChain),
-			None => Ok(BlockStatus::Unknown),
+		match response {
+			Ok(Some(_)) => Ok(BlockStatus::InChain),
+			_ => Ok(BlockStatus::Unknown),
 		}
 	}
 
-	async fn is_major_syncing(&self) -> bool {
-		let health = self.rpc_client.system_health().await.expect("Should be able to fetch health");
-		health.is_syncing
+	async fn is_major_syncing(&self) -> RelayChainResult<bool> {
+		self.rpc_client.system_health().await.map(|h| h.is_syncing)
 	}
 
-	fn overseer_handle(&self) -> Option<Handle> {
+	fn overseer_handle(&self) -> RelayChainResult<Option<Handle>> {
 		todo!("overseer_handle");
 	}
 
@@ -403,14 +409,14 @@ impl RelayChainInterface for RelayChainNetwork {
 		};
 
 		let response = self.rpc_client.state_get_storage(storage_key, Some(*hash)).await;
-		Ok(response.expect("nope").map(|v| v.0))
+		response.map(|v| v.map(|sv| sv.0))
 	}
 
 	async fn prove_read(
 		&self,
 		block_id: &BlockId,
 		relevant_keys: &Vec<Vec<u8>>,
-	) -> Result<Option<StorageProof>, Box<dyn sp_state_machine::Error>> {
+	) -> RelayChainResult<Option<StorageProof>> {
 		let cloned = relevant_keys.clone();
 		let storage_keys: Vec<StorageKey> = cloned.into_iter().map(StorageKey).collect();
 
@@ -421,12 +427,14 @@ impl RelayChainInterface for RelayChainNetwork {
 
 		let result = self.rpc_client.state_get_read_proof(storage_keys, Some(*hash)).await;
 
-		Ok(result.expect("nope").map(|read_proof| {
-			let bytes: Vec<Vec<u8>> =
-				read_proof.proof.into_iter().map(|bytes| (*bytes).to_vec()).collect();
+		result.map(|value| {
+			value.map(|read_proof| {
+				let bytes: Vec<Vec<u8>> =
+					read_proof.proof.into_iter().map(|bytes| (*bytes).to_vec()).collect();
 
-			StorageProof::new(bytes.to_vec())
-		}))
+				StorageProof::new(bytes.to_vec())
+			})
+		})
 	}
 
 	/// Wait for a given relay chain block
@@ -439,11 +447,7 @@ impl RelayChainInterface for RelayChainNetwork {
 	/// 3. Wait for the block to be imported via subscription.
 	/// 4. If timeout is reached, we return an error.
 	async fn wait_for_block(&self, wait_for_hash: PHash) -> Result<(), RelayChainError> {
-		let mut head_stream = self
-			.rpc_client
-			.subscribe_all_heads()
-			.await
-			.expect("Should be able to subscribe");
+		let mut head_stream = self.rpc_client.subscribe_all_heads().await?;
 
 		let block_header = self.rpc_client.chain_get_header(Some(wait_for_hash)).await;
 		if block_header.ok().is_some() {
@@ -465,18 +469,20 @@ impl RelayChainInterface for RelayChainNetwork {
 		}
 	}
 
-	async fn new_best_notification_stream(&self) -> Pin<Box<dyn Stream<Item = PHeader> + Send>> {
+	async fn new_best_notification_stream(
+		&self,
+	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
 		let imported_headers_stream = self
 			.rpc_client
 			.subscribe_new_best_heads()
 			.await
 			.expect("Should be able to subscribe");
 
-		Box::pin(imported_headers_stream.filter_map(|item| async move {
+		Ok(Box::pin(imported_headers_stream.filter_map(|item| async move {
 			item.map_err(|err| {
 				tracing::error!(target: LOG_TARGET, "Error occured in stream: {}", err)
 			})
 			.ok()
-		}))
+		})))
 	}
 }

@@ -129,11 +129,13 @@ impl ParachainInherentData {
 		let relay_chain_state =
 			collect_relay_storage_proof(&relay_chain_interface, para_id, relay_parent).await?;
 
+		//TODO: error handling
 		let downward_messages =
-			relay_chain_interface.retrieve_dmq_contents(para_id, relay_parent).await?;
+			relay_chain_interface.retrieve_dmq_contents(para_id, relay_parent).await.ok()?;
 		let horizontal_messages = relay_chain_interface
 			.retrieve_all_inbound_hrmp_channel_contents(para_id, relay_parent)
-			.await?;
+			.await
+			.ok()?;
 
 		Some(ParachainInherentData {
 			downward_messages,
