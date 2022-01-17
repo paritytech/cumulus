@@ -115,7 +115,7 @@ impl RelayChainRPCClient {
 		&self,
 		storage_keys: Vec<StorageKey>,
 		at: Option<PHash>,
-	) -> Result<Option<ReadProof<PHash>>, RelayChainError> {
+	) -> Result<ReadProof<PHash>, RelayChainError> {
 		let params = rpc_params!(storage_keys, at);
 		self.request("state_getReadProof", params).await
 	}
@@ -145,7 +145,7 @@ impl RelayChainRPCClient {
 		&self,
 		hash: Option<PHash>,
 	) -> Result<Option<PHeader>, RelayChainError> {
-		let params = hash.map(|hash| rpc_params!(hash)).flatten();
+		let params = rpc_params!(hash);
 		self.request("chain_getHeader", params).await
 	}
 
@@ -427,13 +427,11 @@ impl RelayChainInterface for RelayChainNetwork {
 
 		let result = self.rpc_client.state_get_read_proof(storage_keys, Some(*hash)).await;
 
-		result.map(|value| {
-			value.map(|read_proof| {
-				let bytes: Vec<Vec<u8>> =
-					read_proof.proof.into_iter().map(|bytes| (*bytes).to_vec()).collect();
+		result.map(|read_proof| {
+			let bytes: Vec<Vec<u8>> =
+				read_proof.proof.into_iter().map(|bytes| (*bytes).to_vec()).collect();
 
-				StorageProof::new(bytes.to_vec())
-			})
+			Some(StorageProof::new(bytes.to_vec()))
 		})
 	}
 
