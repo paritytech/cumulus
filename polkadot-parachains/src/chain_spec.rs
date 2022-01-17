@@ -17,7 +17,7 @@
 #![allow(clippy::inconsistent_digit_grouping)]
 
 use cumulus_primitives_core::ParaId;
-use rococo_parachain_runtime::{AccountId, AuraId};
+use parachain_runtime::{AccountId, AuraId};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::{ChainType, GenericChainSpec};
 use serde::{Deserialize, Serialize};
@@ -27,7 +27,7 @@ use std::str::FromStr;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type IntegriteeChainSpec =
-	sc_service::GenericChainSpec<rococo_parachain_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<parachain_runtime::GenesisConfig, Extensions>;
 
 /// Specialized `ChainSpec` for the shell parachain runtime.
 pub type ShellChainSpec = sc_service::GenericChainSpec<shell_runtime::GenesisConfig, Extensions>;
@@ -201,25 +201,24 @@ fn integritee_genesis_config(
 	endowed_accounts: Vec<AccountId>,
 	initial_authorities: Vec<AuraId>,
 	id: ParaId,
-) -> rococo_parachain_runtime::GenesisConfig {
-	rococo_parachain_runtime::GenesisConfig {
-		system: rococo_parachain_runtime::SystemConfig {
-			code: rococo_parachain_runtime::WASM_BINARY
+) -> parachain_runtime::GenesisConfig {
+	parachain_runtime::GenesisConfig {
+		system: parachain_runtime::SystemConfig {
+			code: parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			changes_trie_config: Default::default(),
 		},
-		balances: rococo_parachain_runtime::BalancesConfig {
+		balances: parachain_runtime::BalancesConfig {
 			balances: endowed_accounts
 				.iter()
 				.cloned()
 				.map(|k| (k, 10_000_000__000_000_000_000))
 				.collect(),
 		},
-		sudo: rococo_parachain_runtime::SudoConfig { key: root_key },
+		sudo: parachain_runtime::SudoConfig { key: root_key },
 		vesting: Default::default(),
-		parachain_info: rococo_parachain_runtime::ParachainInfoConfig { parachain_id: id },
-		aura: rococo_parachain_runtime::AuraConfig {
+		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },
+		aura: parachain_runtime::AuraConfig {
 			authorities: initial_authorities,
 		},
 		aura_ext: Default::default(),
@@ -238,7 +237,6 @@ fn shell_genesis_config(
 			code: shell_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			changes_trie_config: Default::default(),
 		},
 		balances: shell_runtime::BalancesConfig {
 			balances: endowed_accounts
@@ -281,6 +279,14 @@ pub fn shell_kusama_config() -> Result<ShellChainSpec, String> {
 
 pub fn integritee_kusama_config() -> Result<IntegriteeChainSpec, String> {
 	IntegriteeChainSpec::from_json_bytes(&include_bytes!("../res/integritee-kusama.json")[..])
+}
+
+pub fn shell_rococo_config() -> Result<ShellChainSpec, String> {
+	ShellChainSpec::from_json_bytes(&include_bytes!("../res/shell-rococo.json")[..])
+}
+
+pub fn integritee_rococo_config() -> Result<IntegriteeChainSpec, String> {
+	IntegriteeChainSpec::from_json_bytes(&include_bytes!("../res/integritee-rococo.json")[..])
 }
 
 impl ToString for RelayChain {

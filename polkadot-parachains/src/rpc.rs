@@ -1,8 +1,7 @@
-// Copyright 2021 Integritee AG and Supercomputing Systems AG
-// This file is part of the "Integritee parachain" and is
-// based on Cumulus from Parity Technologies (UK) Ltd.
+// Copyright 2021 Parity Technologies (UK) Ltd.
+// This file is part of Cumulus.
 
-// Integritee parachain is free software: you can redistribute it and/or modify
+// Cumulus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
@@ -13,7 +12,9 @@
 // GNU General Public License for more details.
 
 // You should have received a copy of the GNU General Public License
-// along with Integritee parachain.  If not, see <http://www.gnu.org/licenses/>.
+// along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
+
+//! Parachain-specific RPCs implementation.
 
 #![warn(missing_docs)]
 
@@ -72,7 +73,7 @@ where
 		deny_unsafe,
 	)));
 	io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(
-		client,
+		client.clone(),
 	)));
 
 	io

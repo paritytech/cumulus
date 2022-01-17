@@ -6,7 +6,7 @@
     "/ip4/164.90.161.113/tcp/30333/p2p/12D3KooWKFHqHqNtvFRF8g3WuAb9U46AkZKRoCEnHaFERvJY4MCd"
   ],
   "telemetryEndpoints": null,
-  "protocolId": "teer",
+  "protocolId": "teer-w",
   "properties": {
     "ss58Format": 13,
     "tokenDecimals": 12,

@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../../bin/polkadot-0.9.11",
+		"bin": "../../../bin/polkadot-0.9.13",
 		"chain": "kusama-local",
 		"nodes": [
 			{
@@ -26,6 +26,5 @@
 	],
 	"hrmpChannels": [
 	],
-	"types": "./polkadot-launch/type-registry.json",
 	"finalization": false
 }

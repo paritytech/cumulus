@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../../bin/polkadot-0.9.11",
+		"bin": "../../../bin/polkadot-0.9.13",
 		"chain": "rococo-local",
 		"nodes": [
 			{
@@ -24,7 +24,6 @@
 		{
 			"bin": "./../target/release/integritee-collator",
 			"chain": "integritee-rococo-local-dev",
-			"id": "2000",
 			"nodes": [
 				{
 					"wsPort": 9944,
@@ -39,24 +38,11 @@
 					"flags": ["--", "--execution=wasm"]
 				}
 			]
-		},
-		{
-			"bin": "./../target/release/integritee-collator",
-			"chain": "integritee-rococo-local",
-			"id": "2015",
-			"nodes": [
-				{
-					"wsPort": 9915,
-					"port": 31200,
-					"flags": ["--", "--execution=wasm"]
-				}
-			]
 		}
 	],
 	"simpleParachains": [
 	],
 	"hrmpChannels": [
 	],
-	"types": "./polkadot-launch/type-registry.json",
 	"finalization": false
 }

@@ -4,6 +4,7 @@ members = [
 	"polkadot-parachains",
     "polkadot-parachains/integritee-runtime",
 	"polkadot-parachains/shell-runtime",
+	"polkadot-parachains/parachains-common",
 ]
 
 [profile.release]

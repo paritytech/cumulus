@@ -18,12 +18,14 @@
 use crate::{
 	chain_spec,
 	chain_spec::{
-		integritee_chain_spec, integritee_kusama_config, integritee_westend_config,
-		shell_chain_spec, shell_kusama_config, shell_westend_config, Extensions, GenesisKeys,
-		RelayChain, ShellChainSpec,
+		integritee_chain_spec, integritee_kusama_config, integritee_rococo_config,
+		integritee_westend_config, shell_chain_spec, shell_kusama_config, shell_rococo_config,
+		shell_westend_config, GenesisKeys, RelayChain, ShellChainSpec,
 	},
 	cli::{Cli, RelayChainCli, Subcommand},
-	service::{new_partial, RococoParachainRuntimeExecutor},
+	service::{
+		new_partial, Block, IntegriteeParachainRuntimeExecutor, ShellParachainRuntimeExecutor,
+	},
 };
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
@@ -61,12 +63,14 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 #[rustfmt::skip]
 fn load_spec(
 	id: &str,
-	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+	// FIXME distinguish paraid by relaychain
+	let para_id: ParaId = DEFAULT_PARA_ID.into();
 	Ok(match id {
 		"integritee-rococo-local" => Box::new(integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::RococoLocal)),
 		"integritee-rococo-local-dev" => Box::new(integritee_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::RococoLocal)),
-		"integritee-rococo" => Box::new(integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Rococo)),
+		"integritee-rococo-fresh" => Box::new(integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Rococo)),
+		"integritee-rococo" => Box::new(integritee_rococo_config()?),
 
 		"integritee-kusama-local" => Box::new(integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::KusamaLocal)),
 		"integritee-kusama-local-dev" => Box::new(integritee_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::KusamaLocal)),
@@ -81,7 +85,8 @@ fn load_spec(
 
 		"shell-rococo-local" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::RococoLocal)),
 		"shell-rococo-local-dev" => Box::new(shell_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::RococoLocal)),
-		"shell-rococo" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Rococo)),
+		"shell-rococo-fresh" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Rococo)),
+		"shell-rococo" => Box::new(shell_rococo_config()?),
 
 		"shell-kusama-local" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::KusamaLocal)),
 		"shell-kusama-local-dev" => Box::new(shell_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::KusamaLocal)),
@@ -138,14 +143,14 @@ impl SubstrateCli for Cli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		load_spec(id, self.run.parachain_id.unwrap_or(DEFAULT_PARA_ID).into())
+		load_spec(id)
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
 		if chain_spec.is_shell() {
 			&shell_runtime::VERSION
 		} else {
-			&rococo_parachain_runtime::VERSION
+			&parachain_runtime::VERSION
 		}
 	}
 }
@@ -190,8 +195,6 @@ impl SubstrateCli for RelayChainCli {
 	}
 }
 
-// false clippy assumption. In the case of `Box<dyn T>` this is not the same.
-#[allow(clippy::borrowed_box)]
 fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<Vec<u8>> {
 	let mut storage = chain_spec.build_storage()?;
 
@@ -204,18 +207,29 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
-		runner.async_run(|$config| {
+		if runner.config().chain_spec.is_shell() {
+			runner.async_run(|$config| {
+				let $components = new_partial::<shell_runtime::RuntimeApi, ShellParachainRuntimeExecutor, _>(
+					&$config,
+					crate::service::shell_parachain_build_import_queue,
+				)?;
+				let task_manager = $components.task_manager;
+				{ $( $code )* }.map(|v| (v, task_manager))
+			})
+		} else {
+			runner.async_run(|$config| {
 			let $components = new_partial::<
-				rococo_parachain_runtime::RuntimeApi,
-				RococoParachainRuntimeExecutor,
+				parachain_runtime::RuntimeApi,
+				IntegriteeParachainRuntimeExecutor,
 				_
 			>(
 				&$config,
-				crate::service::rococo_parachain_build_import_queue,
+				crate::service::integritee_parachain_build_import_queue,
 			)?;
 			let task_manager = $components.task_manager;
 			{ $( $code )* }.map(|v| (v, task_manager))
 		})
+		}
 	}}
 }
 
@@ -254,7 +268,7 @@ pub fn run() -> Result<()> {
 			runner.sync_run(|config| {
 				let polkadot_cli = RelayChainCli::new(
 					&config,
-					[RelayChainCli::executable_name()]
+					[RelayChainCli::executable_name().to_string()]
 						.iter()
 						.chain(cli.relaychain_args.iter()),
 				);
@@ -277,10 +291,8 @@ pub fn run() -> Result<()> {
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
 			let _ = builder.init();
 
-			let block: crate::service::Block = generate_genesis_block(&load_spec(
-				&params.chain.clone().unwrap_or_default(),
-				params.parachain_id.unwrap_or(DEFAULT_PARA_ID).into(),
-			)?)?;
+			let block: crate::service::Block =
+				generate_genesis_block(&load_spec(&params.chain.clone().unwrap_or_default())?)?;
 			let raw_header = block.header().encode();
 			let output_buf = if params.raw {
 				raw_header
@@ -320,36 +332,37 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::Benchmark(cmd)) => {
 			if cfg!(feature = "runtime-benchmarks") {
 				let runner = cli.create_runner(cmd)?;
-
 				if runner.config().chain_spec.is_shell() {
-					return Err("Benchmarking is not enabled in shell".into());
-				};
-
-				Ok(runner.sync_run(|config| {
-					cmd.run::<rococo_parachain_runtime::Block, RococoParachainRuntimeExecutor>(
-						config,
-					)
-				})?)
+					runner
+						.sync_run(|config| cmd.run::<Block, ShellParachainRuntimeExecutor>(config))
+				} else {
+					runner.sync_run(|config| {
+						cmd.run::<Block, IntegriteeParachainRuntimeExecutor>(config)
+					})
+				}
 			} else {
 				Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
 					.into())
 			}
 		}
+		Some(Subcommand::Key(cmd)) => Ok(cmd.run(&cli)?),
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 
 			runner.run_node_until_exit(|config| async move {
-				let para_id = Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
+				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
+					.map(|e| e.para_id)
+					.ok_or_else(|| "Could not find parachain extension in chain-spec.")?;
 
 				let polkadot_cli = RelayChainCli::new(
 					&config,
-					[RelayChainCli::executable_name()]
+					[RelayChainCli::executable_name().to_string()]
 						.iter()
 						.chain(cli.relaychain_args.iter()),
 				);
 
-				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(DEFAULT_PARA_ID));
+				let id = ParaId::from(para_id);
 
 				let parachain_account =
 					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
@@ -358,9 +371,9 @@ pub fn run() -> Result<()> {
 					generate_genesis_block(&config.chain_spec).map_err(|e| format!("{:?}", e))?;
 				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
-				let task_executor = config.tokio_handle.clone();
+				let tokio_handle = config.tokio_handle.clone();
 				let polkadot_config =
-					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, task_executor)
+					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
 						.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
 				info!("Parachain id: {:?}", id);
@@ -374,10 +387,18 @@ pub fn run() -> Result<()> {
 						"no"
 					}
 				);
-				crate::service::start_rococo_parachain_node(config, polkadot_config, id)
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into)
+
+				if config.chain_spec.is_shell() {
+					crate::service::start_shell_parachain_node(config, polkadot_config, id)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into)
+				} else {
+					crate::service::start_integritee_parachain_node(config, polkadot_config, id)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into)
+				}
 			})
 		}
 	}

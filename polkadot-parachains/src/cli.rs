@@ -1,8 +1,7 @@
-// Copyright 2021 Integritee AG and Supercomputing Systems AG
-// This file is part of the "Integritee parachain" and is
-// based on Cumulus from Parity Technologies (UK) Ltd.
+// Copyright 2019-2021 Parity Technologies (UK) Ltd.
+// This file is part of Cumulus.
 
-// Integritee parachain is free software: you can redistribute it and/or modify
+// Cumulus is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
@@ -13,9 +12,10 @@
 // GNU General Public License for more details.
 
 // You should have received a copy of the GNU General Public License
-// along with Integritee parachain.  If not, see <http://www.gnu.org/licenses/>.
+// along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::chain_spec;
+use sc_cli;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -54,6 +54,9 @@ pub enum Subcommand {
 	/// The custom benchmark subcommmand benchmarking runtime pallets.
 	#[structopt(name = "benchmark", about = "Benchmark runtime pallets.")]
 	Benchmark(frame_benchmarking_cli::BenchmarkCmd),
+
+	/// Key management CLI utilities
+	Key(sc_cli::KeySubcommand),
 }
 
 /// Command for exporting the genesis state of the parachain
@@ -107,7 +110,7 @@ pub struct Cli {
 	#[structopt(flatten)]
 	pub run: cumulus_client_cli::RunCmd,
 
-	/// Relaychain arguments
+	/// Relay chain arguments
 	#[structopt(raw = true)]
 	pub relaychain_args: Vec<String>,
 }

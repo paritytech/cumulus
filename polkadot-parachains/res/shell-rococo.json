@@ -1,21 +1,20 @@
 {
-  "name": "Integritee Network",
-  "id": "integritee-westend",
+  "name": "Integritee Shell",
+  "id": "integritee-rococo",
   "chainType": "Live",
   "bootNodes": [
-    "/ip4/164.90.161.113/tcp/30333/p2p/12D3KooWKFHqHqNtvFRF8g3WuAb9U46AkZKRoCEnHaFERvJY4MCd"
+    "/ip4/159.89.98.37/tcp/30333/p2p/12D3KooWT2dtwAeFxkPa7csfvYZJgUvVxYTZHWE5fFb4fxcz39Gp"
   ],
   "telemetryEndpoints": null,
-  "protocolId": "teer-w",
+  "protocolId": "teer-r",
   "properties": {
     "ss58Format": 13,
     "tokenDecimals": 12,
     "tokenSymbol": "TEER"
   },
-  "relay_chain": "westend",
-  "para_id": 2081,
+  "relay_chain": "rococo",
+  "para_id": 2015,
   "consensusEngine": null,
-  "lightSyncState": null,
   "codeSubstitutes": {},
   "genesis": {
     "raw": {
