@@ -428,25 +428,36 @@ async fn pending_candidates(
 	relay_chain_client: impl RelayChainInterface + Clone,
 	para_id: ParaId,
 ) -> RelayChainResult<impl Stream<Item = (CommittedCandidateReceipt, SessionIndex)>> {
-	let stream = relay_chain_client.import_notification_stream().await?;
-	Ok(stream.filter_map(move |n| {
+	let import_notification_stream = relay_chain_client.import_notification_stream().await?;
+
+	let filtered_stream = import_notification_stream.filter_map(move |n| {
 		let client_for_closure = relay_chain_client.clone();
 		async move {
 			let block_id = BlockId::hash(n.hash());
-			let pending_availability_result =
-				client_for_closure.candidate_pending_availability(&block_id, para_id).await;
-			let session_index_result = client_for_closure.session_index_for_child(&block_id).await;
-			session_index_result
-				.map(|v| pending_availability_result.ok().flatten().map(|pa| (pa, v)))
+			let pending_availability_result = client_for_closure
+				.candidate_pending_availability(&block_id, para_id)
+				.await
 				.map_err(|e| {
 					tracing::error!(
 						target: LOG_TARGET,
 						error = ?e,
-						"Failed fetch pending candidates.",
+						"Failed to fetch pending candidates.",
 					)
-				})
+				});
+			let session_index_result =
+				client_for_closure.session_index_for_child(&block_id).await.map_err(|e| {
+					tracing::error!(
+						target: LOG_TARGET,
+						error = ?e,
+						"Failed to fetch session index.",
+					)
+				});
+
+			session_index_result
+				.and_then(|v| Ok(pending_availability_result?.map(|pa| (pa, v))))
 				.ok()
 				.flatten()
 		}
-	}))
+	});
+	Ok(filtered_stream)
 }

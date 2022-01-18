@@ -65,7 +65,7 @@ impl From<ApiError> for RelayChainError {
 	}
 }
 
-/// Should be used for all interaction with the relay chain in cumulus.
+/// Trait that provides all necessary methods for interaction between collator and relay chain.
 #[async_trait]
 pub trait RelayChainInterface: Send + Sync {
 	/// Fetch a storage item by key.
@@ -81,6 +81,7 @@ pub trait RelayChainInterface: Send + Sync {
 	/// Get the status of a given block.
 	async fn block_status(&self, block_id: BlockId) -> RelayChainResult<BlockStatus>;
 
+	/// Get the hash of the current best block.
 	async fn best_block_hash(&self) -> RelayChainResult<PHash>;
 
 	/// Returns the whole contents of the downward message queue for the parachain we are collating

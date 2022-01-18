@@ -2039,7 +2039,6 @@ dependencies = [
  "substrate-test-client",
  "substrate-test-utils",
  "tokio",
- "url 2.2.2",
 ]
 
 [[package]]
