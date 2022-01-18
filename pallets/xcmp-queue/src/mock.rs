@@ -23,7 +23,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 };
 use xcm_builder::{
-	CurrencyAdapter, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset, ParentIsAllZeroes,
+	CurrencyAdapter, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset, ParentIs,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -112,6 +112,7 @@ parameter_types! {
 	pub Ancestry: MultiLocation = X1(Parachain(1u32.into())).into();
 	pub UnitWeightCost: Weight = 1_000_000;
 	pub const MaxInstructions: u32 = 100;
+	pub ParentAccount: AccountId = 0u64;
 }
 
 /// Means for transacting assets on this chain.
@@ -128,7 +129,7 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 	(),
 >;
 
-pub type LocationToAccountId = (ParentIsAllZeroes<AccountId>,);
+pub type LocationToAccountId = (ParentIs<ParentAccount, AccountId>,);
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
