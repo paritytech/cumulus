@@ -15,7 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use async_trait::async_trait;
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use sc_client_api::{
 	Backend, BlockBackend, BlockImportNotification, BlockchainEvents, Finalizer, UsageProvider,
 };
@@ -34,6 +34,8 @@ use futures::{select, FutureExt, Stream, StreamExt};
 
 use std::{pin::Pin, sync::Arc};
 
+const LOG_TARGET: &str = "cumulus-consensus";
+
 /// Helper for the relay chain client. This is expected to be a lightweight handle like an `Arc`.
 #[async_trait]
 pub trait RelaychainClient: Clone + 'static {
@@ -44,10 +46,10 @@ pub trait RelaychainClient: Clone + 'static {
 	type HeadStream: Stream<Item = Vec<u8>> + Send + Unpin;
 
 	/// Get a stream of new best heads for the given parachain.
-	async fn new_best_heads(&self, para_id: ParaId) -> Self::HeadStream;
+	async fn new_best_heads(&self, para_id: ParaId) -> RelayChainResult<Self::HeadStream>;
 
 	/// Get a stream of finalized heads for the given parachain.
-	async fn finalized_heads(&self, para_id: ParaId) -> Self::HeadStream;
+	async fn finalized_heads(&self, para_id: ParaId) -> RelayChainResult<Self::HeadStream>;
 
 	/// Returns the parachain head for the given `para_id` at the given block id.
 	async fn parachain_head_at(
@@ -68,7 +70,13 @@ where
 	R: RelaychainClient,
 	B: Backend<Block>,
 {
-	let mut finalized_heads = relay_chain.finalized_heads(para_id).await;
+	let mut finalized_heads = match relay_chain.finalized_heads(para_id).await {
+		Ok(finalized_heads_stream) => finalized_heads_stream,
+		Err(err) => {
+			tracing::error!(target: LOG_TARGET, error = ?err, "Unable to retrieve finalized heads stream.");
+			return
+		},
+	};
 
 	loop {
 		let finalized_head = if let Some(h) = finalized_heads.next().await {
@@ -167,7 +175,14 @@ async fn follow_new_best<P, R, Block, B>(
 	R: RelaychainClient,
 	B: Backend<Block>,
 {
-	let mut new_best_heads = relay_chain.new_best_heads(para_id).await.fuse();
+	let mut new_best_heads = match relay_chain.new_best_heads(para_id).await {
+		Ok(best_heads_stream) => best_heads_stream.fuse(),
+		Err(err) => {
+			tracing::error!(target: LOG_TARGET, error = ?err, "Unable to retrieve best heads stream.");
+			return
+		},
+	};
+
 	let mut imported_blocks = parachain.import_notification_stream().fuse();
 	// The unset best header of the parachain. Will be `Some(_)` when we have imported a relay chain
 	// block before the parachain block it included. In this case we need to wait for this block to
@@ -379,13 +394,12 @@ where
 
 	type HeadStream = Pin<Box<dyn Stream<Item = Vec<u8>> + Send>>;
 
-	async fn new_best_heads(&self, para_id: ParaId) -> Self::HeadStream {
+	async fn new_best_heads(&self, para_id: ParaId) -> RelayChainResult<Self::HeadStream> {
 		let relay_chain = self.clone();
 
-		//TODO: Error handling
-		self.new_best_notification_stream()
-			.await
-			.expect("")
+		let new_best_notification_stream = self
+			.new_best_notification_stream()
+			.await?
 			.filter_map(move |n| {
 				let relay_chain = relay_chain.clone();
 				async move {
@@ -396,15 +410,16 @@ where
 						.flatten()
 				}
 			})
-			.boxed()
+			.boxed();
+		Ok(new_best_notification_stream)
 	}
 
-	async fn finalized_heads(&self, para_id: ParaId) -> Self::HeadStream {
+	async fn finalized_heads(&self, para_id: ParaId) -> RelayChainResult<Self::HeadStream> {
 		let relay_chain = self.clone();
 
-		self.finality_notification_stream()
-			.await
-			.expect("")
+		let finality_notification_stream = self
+			.finality_notification_stream()
+			.await?
 			.filter_map(move |n| {
 				let relay_chain = relay_chain.clone();
 				async move {
@@ -415,7 +430,8 @@ where
 						.flatten()
 				}
 			})
-			.boxed()
+			.boxed();
+		Ok(finality_notification_stream)
 	}
 
 	async fn parachain_head_at(

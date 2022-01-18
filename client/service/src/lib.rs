@@ -107,7 +107,6 @@ where
 		.spawn_essential_handle()
 		.spawn("cumulus-consensus", None, consensus);
 
-	//TODO: error handling
 	let pov_recovery = cumulus_client_pov_recovery::PoVRecovery::new(
 		relay_chain_interface
 			.overseer_handle()
@@ -125,7 +124,6 @@ where
 		.spawn_essential_handle()
 		.spawn("cumulus-pov-recovery", None, pov_recovery.run());
 
-	//TODO: error handling
 	cumulus_client_collator::start_collator(cumulus_client_collator::StartCollatorParams {
 		runtime_api: client.clone(),
 		block_status,

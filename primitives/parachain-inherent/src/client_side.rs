@@ -113,7 +113,15 @@ async fn collect_relay_storage_proof(
 	relay_chain_interface
 		.prove_read(&relay_parent_block_id, &relevant_keys)
 		.await
-		.ok()?
+		.map_err(|e| {
+			tracing::error!(
+				target: LOG_TARGET,
+				relay_parent = ?relay_parent_block_id,
+				error = ?e,
+				"Cannot obtain read proof from relay chain.",
+			);
+		})
+		.ok()
 }
 
 impl ParachainInherentData {
@@ -129,12 +137,29 @@ impl ParachainInherentData {
 		let relay_chain_state =
 			collect_relay_storage_proof(&relay_chain_interface, para_id, relay_parent).await?;
 
-		//TODO: error handling
-		let downward_messages =
-			relay_chain_interface.retrieve_dmq_contents(para_id, relay_parent).await.ok()?;
+		let downward_messages = relay_chain_interface
+			.retrieve_dmq_contents(para_id, relay_parent)
+			.await
+			.map_err(|e| {
+				tracing::error!(
+					target: LOG_TARGET,
+					relay_parent = ?relay_parent,
+					error = ?e,
+					"An error occured during requesting the downward messages.",
+				);
+			})
+			.ok()?;
 		let horizontal_messages = relay_chain_interface
 			.retrieve_all_inbound_hrmp_channel_contents(para_id, relay_parent)
 			.await
+			.map_err(|e| {
+				tracing::error!(
+					target: LOG_TARGET,
+					relay_parent = ?relay_parent,
+					error = ?e,
+					"An error occured during requesting the inbound HRMP messages.",
+				);
+			})
 			.ok()?;
 
 		Some(ParachainInherentData {

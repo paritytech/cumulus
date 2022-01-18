@@ -18,7 +18,7 @@ use crate::*;
 
 use async_trait::async_trait;
 use codec::Encode;
-use cumulus_relay_chain_interface::RelayChainError;
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use cumulus_test_client::{
 	runtime::{Block, Header},
 	Backend, Client, InitBlockBuilder, TestClientBuilder, TestClientBuilderExt,
@@ -74,7 +74,7 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 
 	type HeadStream = Box<dyn Stream<Item = Vec<u8>> + Send + Unpin>;
 
-	async fn new_best_heads(&self, _: ParaId) -> Self::HeadStream {
+	async fn new_best_heads(&self, _: ParaId) -> RelayChainResult<Self::HeadStream> {
 		let stream = self
 			.inner
 			.lock()
@@ -83,10 +83,10 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 			.take()
 			.expect("Should only be called once");
 
-		Box::new(stream.map(|v| v.encode()))
+		Ok(Box::new(stream.map(|v| v.encode())))
 	}
 
-	async fn finalized_heads(&self, _: ParaId) -> Self::HeadStream {
+	async fn finalized_heads(&self, _: ParaId) -> RelayChainResult<Self::HeadStream> {
 		let stream = self
 			.inner
 			.lock()
@@ -95,7 +95,7 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 			.take()
 			.expect("Should only be called once");
 
-		Box::new(stream.map(|v| v.encode()))
+		Ok(Box::new(stream.map(|v| v.encode())))
 	}
 
 	async fn parachain_head_at(

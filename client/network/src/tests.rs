@@ -91,7 +91,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		self.relay_backend
 			.blockchain()
 			.status(block_id)
-			.map_err(|err| RelayChainError::BlockchainError(err.to_string()))
+			.map_err(RelayChainError::BlockchainError)
 	}
 
 	async fn best_block_hash(&self) -> RelayChainResult<PHash> {
@@ -206,7 +206,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		&self,
 		_: &polkadot_service::BlockId,
 		_: &Vec<Vec<u8>>,
-	) -> Result<Option<sc_client_api::StorageProof>, RelayChainError> {
+	) -> Result<sc_client_api::StorageProof, RelayChainError> {
 		unimplemented!("Not needed for test")
 	}
 

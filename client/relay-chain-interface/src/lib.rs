@@ -52,8 +52,10 @@ pub enum RelayChainError {
 	)]
 	WaitBlockchainError(PHash, sp_blockchain::Error),
 	#[display(fmt = "Blockchain returned an error: {:?}", _0)]
-	BlockchainError(String),
+	BlockchainError(sp_blockchain::Error),
 	StateMachineError(String),
+	#[display(fmt = "Unspecified error occured: {:?}", _0)]
+	GenericError(String),
 }
 impl std::error::Error for RelayChainError {}
 
@@ -160,7 +162,7 @@ pub trait RelayChainInterface: Send + Sync {
 		&self,
 		block_id: &BlockId,
 		relevant_keys: &Vec<Vec<u8>>,
-	) -> Result<Option<StorageProof>, RelayChainError>;
+	) -> Result<StorageProof, RelayChainError>;
 }
 
 #[async_trait]
@@ -254,7 +256,7 @@ where
 		&self,
 		block_id: &BlockId,
 		relevant_keys: &Vec<Vec<u8>>,
-	) -> RelayChainResult<Option<StorageProof>> {
+	) -> RelayChainResult<StorageProof> {
 		(**self).prove_read(block_id, relevant_keys).await
 	}
 

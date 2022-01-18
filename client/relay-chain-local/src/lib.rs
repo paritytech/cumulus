@@ -42,7 +42,6 @@ use sp_consensus::SyncOracle;
 use sp_core::{sp_std::collections::btree_map::BTreeMap, Pair};
 use sp_state_machine::{Backend as StateBackend, StorageValue};
 
-const LOG_TARGET: &str = "relay-chain-local";
 /// The timeout in seconds after that the waiting for a block should be aborted.
 const TIMEOUT_IN_SECONDS: u64 = 6;
 
@@ -100,15 +99,7 @@ where
 				sp_core::ExecutionContext::Importing,
 				para_id,
 			)
-			.map_err(|e| {
-				tracing::error!(
-					target: LOG_TARGET,
-					relay_parent = ?relay_parent,
-					error = ?e,
-					"An error occured during requesting the downward messages.",
-				);
-				RelayChainError::ApiError(e)
-			})
+			.map_err(RelayChainError::ApiError)
 	}
 
 	async fn retrieve_all_inbound_hrmp_channel_contents(
@@ -123,15 +114,7 @@ where
 				sp_core::ExecutionContext::Importing,
 				para_id,
 			)
-			.map_err(|e| {
-				tracing::error!(
-					target: LOG_TARGET,
-					relay_parent = ?relay_parent,
-					error = ?e,
-					"An error occured during requesting the inbound HRMP messages.",
-				);
-				RelayChainError::ApiError(e)
-			})
+			.map_err(RelayChainError::ApiError)
 	}
 
 	async fn persisted_validation_data(
@@ -202,7 +185,7 @@ where
 		self.backend
 			.blockchain()
 			.status(block_id)
-			.map_err(|err| RelayChainError::BlockchainError(err.to_string()))
+			.map_err(RelayChainError::BlockchainError)
 	}
 
 	async fn is_major_syncing(&self) -> RelayChainResult<bool> {
@@ -219,45 +202,20 @@ where
 		block_id: &BlockId,
 		key: &[u8],
 	) -> Result<Option<StorageValue>, RelayChainError> {
-		let state = self
-			.backend
-			.state_at(*block_id)
-			.map_err(|err| RelayChainError::BlockchainError(err.to_string()))?;
-		state.storage(key).map_err(RelayChainError::BlockchainError)
+		let state = self.backend.state_at(*block_id).map_err(RelayChainError::BlockchainError)?;
+		state.storage(key).map_err(RelayChainError::GenericError)
 	}
 
 	async fn prove_read(
 		&self,
 		block_id: &BlockId,
 		relevant_keys: &Vec<Vec<u8>>,
-	) -> Result<Option<StorageProof>, RelayChainError> {
-		let state_backend = self
-			.backend
-			.state_at(*block_id)
-			.map_err(|e| {
-				tracing::error!(
-					target: LOG_TARGET,
-					relay_parent = ?block_id,
-					error = ?e,
-					"Cannot obtain the state of the relay chain.",
-				);
-			})
-			.ok();
+	) -> Result<StorageProof, RelayChainError> {
+		let state_backend =
+			self.backend.state_at(*block_id).map_err(RelayChainError::BlockchainError)?;
 
-		match state_backend {
-			Some(state) => sp_state_machine::prove_read(state, relevant_keys)
-				.map_err(|e| {
-					tracing::error!(
-						target: LOG_TARGET,
-						relay_parent = ?block_id,
-						error = ?e,
-						"Failed to collect required relay chain state storage proof.",
-					);
-					RelayChainError::StateMachineError(e.to_string())
-				})
-				.map(Some),
-			None => Ok(None),
-		}
+		sp_state_machine::prove_read(state_backend, relevant_keys)
+			.map_err(|e| RelayChainError::StateMachineError(e.to_string()))
 	}
 
 	/// Wait for a given relay chain block in an async way.
@@ -337,7 +295,7 @@ where
 	let block_id = BlockId::Hash(hash);
 	match backend.blockchain().status(block_id) {
 		Ok(BlockStatus::InChain) => return Ok(BlockCheckStatus::InChain),
-		Err(err) => return Err(RelayChainError::BlockchainError(err.to_string())),
+		Err(err) => return Err(RelayChainError::BlockchainError(err)),
 		_ => {},
 	}
 
