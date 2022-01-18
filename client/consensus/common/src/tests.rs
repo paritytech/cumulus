@@ -18,7 +18,7 @@ use crate::*;
 
 use async_trait::async_trait;
 use codec::Encode;
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
+use cumulus_relay_chain_interface::RelayChainResult;
 use cumulus_test_client::{
 	runtime::{Block, Header},
 	Backend, Client, InitBlockBuilder, TestClientBuilder, TestClientBuilderExt,
