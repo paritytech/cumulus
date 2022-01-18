@@ -177,7 +177,7 @@ parameter_types! {
 	pub const RococoLocation: MultiLocation = MultiLocation::parent();
 	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-	pub ParentAccount: AccountId = PalletId(*b"shell").into_account();
+	pub ParentAccount: AccountId = PalletId(*b"pa/shell").into_account();
 }
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,

@@ -436,7 +436,7 @@ parameter_types! {
 	pub AssetsPalletLocation: MultiLocation =
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
-	pub ParentAccount: AccountId = PalletId(*b"statemine").into_account();
+	pub ParentAccount: AccountId = PalletId(*b"p-kusama").into_account();
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
