@@ -57,7 +57,7 @@ use polkadot_primitives::v1::{
 };
 
 use cumulus_primitives_core::ParachainBlockData;
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
+use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 
 use codec::Decode;
 use futures::{select, stream::FuturesUnordered, Future, FutureExt, Stream, StreamExt};
@@ -427,7 +427,7 @@ where
 async fn pending_candidates(
 	relay_chain_client: impl RelayChainInterface + Clone,
 	para_id: ParaId,
-) -> Result<impl Stream<Item = (CommittedCandidateReceipt, SessionIndex)>, RelayChainError> {
+) -> RelayChainResult<impl Stream<Item = (CommittedCandidateReceipt, SessionIndex)>> {
 	let stream = relay_chain_client.import_notification_stream().await?;
 	Ok(stream.filter_map(move |n| {
 		let client_for_closure = relay_chain_client.clone();

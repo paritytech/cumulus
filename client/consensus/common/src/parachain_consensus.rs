@@ -15,7 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use async_trait::async_trait;
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
+use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 use sc_client_api::{
 	Backend, BlockBackend, BlockImportNotification, BlockchainEvents, Finalizer, UsageProvider,
 };
@@ -56,7 +56,7 @@ pub trait RelaychainClient: Clone + 'static {
 		&self,
 		at: &BlockId<PBlock>,
 		para_id: ParaId,
-	) -> Result<Option<Vec<u8>>, RelayChainError>;
+	) -> RelayChainResult<Option<Vec<u8>>>;
 }
 
 /// Follow the finalized head of the given parachain.
@@ -438,7 +438,7 @@ where
 		&self,
 		at: &BlockId<PBlock>,
 		para_id: ParaId,
-	) -> Result<Option<Vec<u8>>, RelayChainError> {
+	) -> RelayChainResult<Option<Vec<u8>>> {
 		self.persisted_validation_data(at, para_id, OccupiedCoreAssumption::TimedOut)
 			.await
 			.map(|s| s.map(|s| s.parent_head.0))

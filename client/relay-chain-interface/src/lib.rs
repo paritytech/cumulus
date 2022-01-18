@@ -73,15 +73,15 @@ pub trait RelayChainInterface: Send + Sync {
 		&self,
 		block_id: &BlockId,
 		key: &[u8],
-	) -> Result<Option<StorageValue>, RelayChainError>;
+	) -> RelayChainResult<Option<StorageValue>>;
 
 	/// Fetch a vector of current validators.
-	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, RelayChainError>;
+	async fn validators(&self, block_id: &BlockId) -> RelayChainResult<Vec<ValidatorId>>;
 
 	/// Get the status of a given block.
-	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, RelayChainError>;
+	async fn block_status(&self, block_id: BlockId) -> RelayChainResult<BlockStatus>;
 
-	async fn best_block_hash(&self) -> Result<PHash, RelayChainError>;
+	async fn best_block_hash(&self) -> RelayChainResult<PHash>;
 
 	/// Returns the whole contents of the downward message queue for the parachain we are collating
 	/// for.
@@ -91,7 +91,7 @@ pub trait RelayChainInterface: Send + Sync {
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
-	) -> Result<Vec<InboundDownwardMessage>, RelayChainError>;
+	) -> RelayChainResult<Vec<InboundDownwardMessage>>;
 
 	/// Returns channels contents for each inbound HRMP channel addressed to the parachain we are
 	/// collating for.
@@ -101,7 +101,7 @@ pub trait RelayChainInterface: Send + Sync {
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
-	) -> Result<BTreeMap<ParaId, Vec<InboundHrmpMessage>>, RelayChainError>;
+	) -> RelayChainResult<BTreeMap<ParaId, Vec<InboundHrmpMessage>>>;
 
 	/// Yields the persisted validation data for the given `ParaId` along with an assumption that
 	/// should be used if the para currently occupies a core.
@@ -113,7 +113,7 @@ pub trait RelayChainInterface: Send + Sync {
 		block_id: &BlockId,
 		para_id: ParaId,
 		_: OccupiedCoreAssumption,
-	) -> Result<Option<PersistedValidationData>, RelayChainError>;
+	) -> RelayChainResult<Option<PersistedValidationData>>;
 
 	/// Get the receipt of a candidate pending availability. This returns `Some` for any paras
 	/// assigned to occupied cores in `availability_cores` and `None` otherwise.
@@ -121,48 +121,45 @@ pub trait RelayChainInterface: Send + Sync {
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
-	) -> Result<Option<CommittedCandidateReceipt>, RelayChainError>;
+	) -> RelayChainResult<Option<CommittedCandidateReceipt>>;
 
 	/// Returns the session index expected at a child of the block.
-	async fn session_index_for_child(
-		&self,
-		block_id: &BlockId,
-	) -> Result<SessionIndex, RelayChainError>;
+	async fn session_index_for_child(&self, block_id: &BlockId) -> RelayChainResult<SessionIndex>;
 
 	/// Get a stream of import block notifications.
 	async fn import_notification_stream(
 		&self,
-	) -> Result<Pin<Box<dyn Stream<Item = PHeader> + Send>>, RelayChainError>;
+	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>>;
 
 	/// Get a stream of new best block notifications.
 	async fn new_best_notification_stream(
 		&self,
-	) -> Result<Pin<Box<dyn Stream<Item = PHeader> + Send>>, RelayChainError>;
+	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>>;
 
 	/// Wait for a block with a given hash in the relay chain.
 	///
 	/// This method returns immediately on error or if the block is already
 	/// reported to be in chain. Otherwise, it waits for the block to arrive.
-	async fn wait_for_block(&self, hash: PHash) -> Result<(), RelayChainError>;
+	async fn wait_for_block(&self, hash: PHash) -> RelayChainResult<()>;
 
 	/// Get a stream of finality notifications.
 	async fn finality_notification_stream(
 		&self,
-	) -> Result<Pin<Box<dyn Stream<Item = PHeader> + Send>>, RelayChainError>;
+	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>>;
 
 	/// Whether the synchronization service is undergoing major sync.
 	/// Returns true if so.
-	async fn is_major_syncing(&self) -> Result<bool, RelayChainError>;
+	async fn is_major_syncing(&self) -> RelayChainResult<bool>;
 
 	/// Get a handle to the overseer.
-	fn overseer_handle(&self) -> Result<Option<OverseerHandle>, RelayChainError>;
+	fn overseer_handle(&self) -> RelayChainResult<Option<OverseerHandle>>;
 
 	/// Generate a storage read proof.
 	async fn prove_read(
 		&self,
 		block_id: &BlockId,
 		relevant_keys: &Vec<Vec<u8>>,
-	) -> Result<StorageProof, RelayChainError>;
+	) -> RelayChainResult<StorageProof>;
 }
 
 #[async_trait]
@@ -201,18 +198,15 @@ where
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
-	) -> Result<Option<CommittedCandidateReceipt>, RelayChainError> {
+	) -> RelayChainResult<Option<CommittedCandidateReceipt>> {
 		(**self).candidate_pending_availability(block_id, para_id).await
 	}
 
-	async fn session_index_for_child(
-		&self,
-		block_id: &BlockId,
-	) -> Result<SessionIndex, RelayChainError> {
+	async fn session_index_for_child(&self, block_id: &BlockId) -> RelayChainResult<SessionIndex> {
 		(**self).session_index_for_child(block_id).await
 	}
 
-	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, RelayChainError> {
+	async fn validators(&self, block_id: &BlockId) -> RelayChainResult<Vec<ValidatorId>> {
 		(**self).validators(block_id).await
 	}
 
@@ -232,7 +226,7 @@ where
 		(**self).best_block_hash().await
 	}
 
-	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, RelayChainError> {
+	async fn block_status(&self, block_id: BlockId) -> RelayChainResult<BlockStatus> {
 		(**self).block_status(block_id).await
 	}
 
@@ -248,7 +242,7 @@ where
 		&self,
 		block_id: &BlockId,
 		key: &[u8],
-	) -> Result<Option<StorageValue>, RelayChainError> {
+	) -> RelayChainResult<Option<StorageValue>> {
 		(**self).get_storage_by_key(block_id, key).await
 	}
 

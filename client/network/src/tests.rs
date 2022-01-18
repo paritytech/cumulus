@@ -80,14 +80,14 @@ impl RelayChainInterface for DummyRelayChainInterface {
 	async fn validators(
 		&self,
 		_: &cumulus_primitives_core::relay_chain::BlockId,
-	) -> Result<Vec<ValidatorId>, RelayChainError> {
+	) -> RelayChainResult<Vec<ValidatorId>> {
 		Ok(self.data.lock().validators.clone())
 	}
 
 	async fn block_status(
 		&self,
 		block_id: cumulus_primitives_core::relay_chain::BlockId,
-	) -> Result<sp_blockchain::BlockStatus, RelayChainError> {
+	) -> RelayChainResult<sp_blockchain::BlockStatus> {
 		self.relay_backend
 			.blockchain()
 			.status(block_id)
@@ -119,7 +119,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		_: &cumulus_primitives_core::relay_chain::BlockId,
 		_: ParaId,
 		_: OccupiedCoreAssumption,
-	) -> Result<Option<PersistedValidationData>, RelayChainError> {
+	) -> RelayChainResult<Option<PersistedValidationData>> {
 		Ok(Some(PersistedValidationData {
 			parent_head: HeadData(default_header().encode()),
 			..Default::default()
@@ -130,7 +130,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		&self,
 		_: &cumulus_primitives_core::relay_chain::BlockId,
 		_: ParaId,
-	) -> Result<Option<CommittedCandidateReceipt>, RelayChainError> {
+	) -> RelayChainResult<Option<CommittedCandidateReceipt>> {
 		if self.data.lock().has_pending_availability {
 			Ok(Some(CommittedCandidateReceipt {
 				descriptor: CandidateDescriptor {
@@ -162,7 +162,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 	async fn session_index_for_child(
 		&self,
 		_: &cumulus_primitives_core::relay_chain::BlockId,
-	) -> Result<SessionIndex, RelayChainError> {
+	) -> RelayChainResult<SessionIndex> {
 		Ok(0)
 	}
 
@@ -198,7 +198,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		&self,
 		_: &polkadot_service::BlockId,
 		_: &[u8],
-	) -> Result<Option<StorageValue>, RelayChainError> {
+	) -> RelayChainResult<Option<StorageValue>> {
 		unimplemented!("Not needed for test")
 	}
 
@@ -206,11 +206,11 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		&self,
 		_: &polkadot_service::BlockId,
 		_: &Vec<Vec<u8>>,
-	) -> Result<sc_client_api::StorageProof, RelayChainError> {
+	) -> RelayChainResult<sc_client_api::StorageProof> {
 		unimplemented!("Not needed for test")
 	}
 
-	async fn wait_for_block(&self, hash: PHash) -> Result<(), RelayChainError> {
+	async fn wait_for_block(&self, hash: PHash) -> RelayChainResult<()> {
 		let mut listener = match check_block_in_chain(
 			self.relay_backend.clone(),
 			self.relay_client.clone(),

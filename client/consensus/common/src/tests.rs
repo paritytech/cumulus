@@ -102,7 +102,7 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 		&self,
 		_: &BlockId<PBlock>,
 		_: ParaId,
-	) -> Result<Option<Vec<u8>>, RelayChainError> {
+	) -> RelayChainResult<Option<Vec<u8>>> {
 		unimplemented!("Not required for tests")
 	}
 }

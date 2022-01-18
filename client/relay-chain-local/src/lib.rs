@@ -122,7 +122,7 @@ where
 		block_id: &BlockId,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
-	) -> Result<Option<PersistedValidationData>, RelayChainError> {
+	) -> RelayChainResult<Option<PersistedValidationData>> {
 		self.full_client
 			.runtime_api()
 			.persisted_validation_data(block_id, para_id, occupied_core_assumption)
@@ -133,24 +133,21 @@ where
 		&self,
 		block_id: &BlockId,
 		para_id: ParaId,
-	) -> Result<Option<CommittedCandidateReceipt>, RelayChainError> {
+	) -> RelayChainResult<Option<CommittedCandidateReceipt>> {
 		self.full_client
 			.runtime_api()
 			.candidate_pending_availability(block_id, para_id)
 			.map_err(RelayChainError::ApiError)
 	}
 
-	async fn session_index_for_child(
-		&self,
-		block_id: &BlockId,
-	) -> Result<SessionIndex, RelayChainError> {
+	async fn session_index_for_child(&self, block_id: &BlockId) -> RelayChainResult<SessionIndex> {
 		self.full_client
 			.runtime_api()
 			.session_index_for_child(block_id)
 			.map_err(RelayChainError::ApiError)
 	}
 
-	async fn validators(&self, block_id: &BlockId) -> Result<Vec<ValidatorId>, RelayChainError> {
+	async fn validators(&self, block_id: &BlockId) -> RelayChainResult<Vec<ValidatorId>> {
 		self.full_client
 			.runtime_api()
 			.validators(block_id)
@@ -181,7 +178,7 @@ where
 		Ok(self.backend.blockchain().info().best_hash)
 	}
 
-	async fn block_status(&self, block_id: BlockId) -> Result<BlockStatus, RelayChainError> {
+	async fn block_status(&self, block_id: BlockId) -> RelayChainResult<BlockStatus> {
 		self.backend
 			.blockchain()
 			.status(block_id)
@@ -201,7 +198,7 @@ where
 		&self,
 		block_id: &BlockId,
 		key: &[u8],
-	) -> Result<Option<StorageValue>, RelayChainError> {
+	) -> RelayChainResult<Option<StorageValue>> {
 		let state = self.backend.state_at(*block_id).map_err(RelayChainError::BlockchainError)?;
 		state.storage(key).map_err(RelayChainError::GenericError)
 	}
@@ -210,7 +207,7 @@ where
 		&self,
 		block_id: &BlockId,
 		relevant_keys: &Vec<Vec<u8>>,
-	) -> Result<StorageProof, RelayChainError> {
+	) -> RelayChainResult<StorageProof> {
 		let state_backend =
 			self.backend.state_at(*block_id).map_err(RelayChainError::BlockchainError)?;
 
@@ -235,7 +232,7 @@ where
 	///
 	/// The timeout is set to 6 seconds. This should be enough time to import the block in the current
 	/// round and if not, the new round of the relay chain already started anyway.
-	async fn wait_for_block(&self, hash: PHash) -> Result<(), RelayChainError> {
+	async fn wait_for_block(&self, hash: PHash) -> RelayChainResult<()> {
 		let mut listener =
 			match check_block_in_chain(self.backend.clone(), self.full_client.clone(), hash)? {
 				BlockCheckStatus::InChain => return Ok(()),
@@ -286,7 +283,7 @@ pub fn check_block_in_chain<Client>(
 	backend: Arc<FullBackend>,
 	client: Arc<Client>,
 	hash: PHash,
-) -> Result<BlockCheckStatus, RelayChainError>
+) -> RelayChainResult<BlockCheckStatus>
 where
 	Client: BlockchainEvents<PBlock>,
 {
