@@ -91,7 +91,7 @@ pub fn get_chain_spec() -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				1000.into(),
+				2000.into(),
 			)
 		},
 		Vec::new(),
@@ -99,7 +99,7 @@ pub fn get_chain_spec() -> ChainSpec {
 		None,
 		None,
 		None,
-		Extensions { relay_chain: "westend".into(), para_id: 1000 },
+		Extensions { relay_chain: "westend".into(), para_id: 2000 },
 	)
 }
 
