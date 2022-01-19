@@ -35,7 +35,7 @@ pub type SeedlingChainSpec =
 	sc_service::GenericChainSpec<seedling_runtime::GenesisConfig, Extensions>;
 
 /// The default XCM version to set in genesis config.
-const SAFE_XCM_VERSION: u32 = 2;
+const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -192,6 +192,9 @@ fn testnet_genesis(
 		aura: rococo_parachain_runtime::AuraConfig { authorities: initial_authorities },
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		polkadot_xcm: rococo_parachain_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
+		},
 	}
 }
 

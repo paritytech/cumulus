@@ -6173,6 +6173,7 @@ dependencies = [
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
  "try-runtime-cli",
+ "xcm",
 ]
 
 [[package]]
@@ -6826,6 +6827,7 @@ dependencies = [
  "tempfile",
  "try-runtime-cli",
  "westmint-runtime",
+ "xcm",
 ]
 
 [[package]]
