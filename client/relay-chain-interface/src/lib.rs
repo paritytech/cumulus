@@ -53,17 +53,13 @@ pub enum RelayChainError {
 	WaitBlockchainError(PHash, sp_blockchain::Error),
 	#[display(fmt = "Blockchain returned an error: {:?}", _0)]
 	BlockchainError(sp_blockchain::Error),
+	#[display(fmt = "State machine error occured: {:?}", _0)]
 	StateMachineError(String),
 	#[display(fmt = "Unspecified error occured: {:?}", _0)]
 	GenericError(String),
 }
-impl std::error::Error for RelayChainError {}
 
-impl From<ApiError> for RelayChainError {
-	fn from(error: ApiError) -> Self {
-		RelayChainError::ApiError(error)
-	}
-}
+impl std::error::Error for RelayChainError {}
 
 /// Trait that provides all necessary methods for interaction between collator and relay chain.
 #[async_trait]
