@@ -9,6 +9,7 @@ members = [
 	"client/service",
 	"client/relay-chain-interface",
 	"client/relay-chain-local",
+	"client/relay-chain-network",
 	"pallets/aura-ext",
 	"pallets/collator-selection",
 	"pallets/dmp-queue",

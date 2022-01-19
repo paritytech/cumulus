@@ -29,6 +29,7 @@ use sc_client_api::{blockchain::BlockStatus, StorageProof};
 use futures::Stream;
 
 use async_trait::async_trait;
+use jsonrpsee_core::Error as JsonRPSeeError;
 use sp_api::ApiError;
 use sp_state_machine::StorageValue;
 
@@ -48,6 +49,8 @@ pub enum RelayChainError {
 	BlockchainError(#[from] sp_blockchain::Error),
 	#[error("State machine error occured: {0:?}")]
 	StateMachineError(Box<dyn sp_state_machine::Error>),
+	#[error("Unable to call RPC method '{0}' due to error: {1:?}")]
+	NetworkError(String, JsonRPSeeError),
 	#[error("Unspecified error occured: {0:?}")]
 	GenericError(String),
 }
