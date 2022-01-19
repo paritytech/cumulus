@@ -588,6 +588,24 @@ impl pallet_template::Config for Runtime {
 	type Event = Event;
 }
 
+impl pallet_elections_phragmen::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type ChangeMembers = Council;
+	type InitializeMembers = Council;
+	type CurrencyToVote = frame_support::traits::U128CurrencyToVote;
+	type CandidacyBond = CandidacyBond;
+	type VotingBondBase = VotingBondBase;
+	type VotingBondFactor = VotingBondFactor;
+	type LoserCandidate = Treasury;
+	type KickedMember = Treasury;
+	type DesiredMembers = DesiredMembers;
+	type DesiredRunnersUp = DesiredRunnersUp;
+	type TermDuration = TermDuration;
+	type PalletId = PhragmenElectionPalletId;
+	type WeightInfo = weights::pallet_elections_phragmen::WeightInfo<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -606,6 +624,9 @@ construct_runtime!(
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+
+		// Governance stuff; uncallable initially.
+		PhragmenElection: pallet_elections_phragmen::{Pallet, Call, Storage, Event<T>, Config<T>} = 16,
 
 		// Collator support. The order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
@@ -750,6 +771,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_balances, Balances);
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
 			list_benchmark!(list, extra, pallet_collator_selection, CollatorSelection);
+			list_benchmark!(list, extra, pallet_elections_phragmen, PhragmenElection);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -789,6 +811,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
 			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);
 			add_benchmark!(params, batches, pallet_session, Session);
+			add_benchmark!(params, batches, pallet_elections_phragmen, PhragmenElection);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
