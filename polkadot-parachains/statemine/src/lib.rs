@@ -793,7 +793,7 @@ impl frame_support::traits::OnRuntimeUpgrade for RemoveCollectiveFlip {
 pub struct UniquesV1Migration;
 impl frame_support::traits::OnRuntimeUpgrade for UniquesV1Migration {
 	fn on_runtime_upgrade() -> Weight {
-		pallet_uniques::migration::migrate_to_v1::<Runtime, _, Uniques>();
+		pallet_uniques::migration::migrate_to_v1::<Runtime, _, Uniques>()
 	}
 }
 
