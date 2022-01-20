@@ -4937,7 +4937,7 @@ dependencies = [
 [[package]]
 name = "node-primitives"
 version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#33c518ebbe43d38228ac47e793e4d1c76738a56d"
+source = "git+https://github.com/paritytech/substrate?branch=master#f318350b6410ef47e438aae24c0b4779373d0a7b"
 dependencies = [
  "frame-system",
  "parity-scale-codec",
@@ -5137,7 +5137,7 @@ dependencies = [
 [[package]]
 name = "pallet-asset-tx-payment"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#33c518ebbe43d38228ac47e793e4d1c76738a56d"
+source = "git+https://github.com/paritytech/substrate?branch=master#f318350b6410ef47e438aae24c0b4779373d0a7b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5154,7 +5154,7 @@ dependencies = [
 [[package]]
 name = "pallet-assets"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#33c518ebbe43d38228ac47e793e4d1c76738a56d"
+source = "git+https://github.com/paritytech/substrate?branch=master#f318350b6410ef47e438aae24c0b4779373d0a7b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5168,7 +5168,7 @@ dependencies = [
 [[package]]
 name = "pallet-aura"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#33c518ebbe43d38228ac47e793e4d1c76738a56d"
+source = "git+https://github.com/paritytech/substrate?branch=master#f318350b6410ef47e438aae24c0b4779373d0a7b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6005,7 +6005,7 @@ dependencies = [
 [[package]]
 name = "pallet-uniques"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#33c518ebbe43d38228ac47e793e4d1c76738a56d"
+source = "git+https://github.com/paritytech/substrate?branch=master#f318350b6410ef47e438aae24c0b4779373d0a7b"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -9003,7 +9003,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-aura"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#33c518ebbe43d38228ac47e793e4d1c76738a56d"
+source = "git+https://github.com/paritytech/substrate?branch=master#f318350b6410ef47e438aae24c0b4779373d0a7b"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -10332,7 +10332,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-aura"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#33c518ebbe43d38228ac47e793e4d1c76738a56d"
+source = "git+https://github.com/paritytech/substrate?branch=master#f318350b6410ef47e438aae24c0b4779373d0a7b"
 dependencies = [
  "async-trait",
  "parity-scale-codec",
@@ -11255,7 +11255,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-utils"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#33c518ebbe43d38228ac47e793e4d1c76738a56d"
+source = "git+https://github.com/paritytech/substrate?branch=master#f318350b6410ef47e438aae24c0b4779373d0a7b"
 dependencies = [
  "futures 0.3.19",
  "substrate-test-utils-derive",
@@ -11265,7 +11265,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-utils-derive"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#33c518ebbe43d38228ac47e793e4d1c76738a56d"
+source = "git+https://github.com/paritytech/substrate?branch=master#f318350b6410ef47e438aae24c0b4779373d0a7b"
 dependencies = [
  "proc-macro-crate 1.1.0",
  "proc-macro2",
@@ -11648,7 +11648,7 @@ dependencies = [
  "chrono",
  "lazy_static",
  "matchers",
- "parking_lot 0.10.2",
+ "parking_lot 0.11.2",
  "regex",
  "serde",
  "serde_json",
