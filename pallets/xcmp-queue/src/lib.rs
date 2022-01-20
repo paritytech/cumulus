@@ -938,7 +938,7 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 
 /// Xcm sender for sending to a sibling parachain.
 impl<T: Config> SendXcm for Pallet<T> {
-	fn send_xcm(dest: impl Into<MultiLocation>, msg: Xcm<()>) -> Result<(), SendError> {
+	fn send_xcm(dest: impl Into<MultiLocation>, msg: Xcm<()>) -> SendResult {
 		let dest = dest.into();
 
 		match &dest {
@@ -954,7 +954,7 @@ impl<T: Config> SendXcm for Pallet<T> {
 				)
 				.map_err(|e| SendError::Transport(<&'static str>::from(e)))?;
 				Self::deposit_event(Event::XcmpMessageSent(Some(hash)));
-				Ok(())
+				Ok(hash)
 			},
 			// Anything else is unhandled. This includes a message this is meant for us.
 			_ => Err(SendError::CannotReachDestination(dest, msg)),

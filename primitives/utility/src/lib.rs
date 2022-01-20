@@ -33,7 +33,7 @@ use xcm::{latest::prelude::*, WrapVersion};
 /// for the `SendXcm` implementation.
 pub struct ParentAsUmp<T, W>(PhantomData<(T, W)>);
 impl<T: UpwardMessageSender, W: WrapVersion> SendXcm for ParentAsUmp<T, W> {
-	fn send_xcm(dest: impl Into<MultiLocation>, msg: Xcm<()>) -> Result<(), SendError> {
+	fn send_xcm(dest: impl Into<MultiLocation>, msg: Xcm<()>) -> SendResult {
 		let dest = dest.into();
 
 		if dest.contains_parents_only(1) {
@@ -41,10 +41,11 @@ impl<T: UpwardMessageSender, W: WrapVersion> SendXcm for ParentAsUmp<T, W> {
 			let versioned_xcm =
 				W::wrap_version(&dest, msg).map_err(|()| SendError::DestinationUnsupported)?;
 			let data = versioned_xcm.encode();
+			let hash = data.using_encoded(sp_io::hashing::blake2_256);
 
 			T::send_upward_message(data).map_err(|e| SendError::Transport(e.into()))?;
 
-			Ok(())
+			Ok(hash)
 		} else {
 			// Anything else is unhandled. This includes a message this is meant for us.
 			Err(SendError::CannotReachDestination(dest, msg))
