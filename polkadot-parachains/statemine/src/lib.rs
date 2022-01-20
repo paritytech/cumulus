@@ -29,7 +29,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, TrailingZeroInput},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -436,7 +436,9 @@ parameter_types! {
 	pub AssetsPalletLocation: MultiLocation =
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
-	pub ParentAccount: AccountId = PalletId(*b"p-kusama").into_account();
+	pub ParentAccount: AccountId = b"Parent"
+		.using_encoded(|b| AccountId::decode(&mut TrailingZeroInput(b)))
+		.expect("infinite length input; no invalid inputs for type; qed");
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used

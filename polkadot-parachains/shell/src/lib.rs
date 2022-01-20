@@ -29,7 +29,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
 	create_runtime_str, generic,
-	traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, DispatchInfoOf},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, DispatchInfoOf, TrailingZeroInput},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -46,7 +46,7 @@ pub use frame_support::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
 	},
-	PalletId, StorageValue,
+	StorageValue,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
 #[cfg(any(feature = "std", test))]
@@ -177,7 +177,9 @@ parameter_types! {
 	pub const RococoLocation: MultiLocation = MultiLocation::parent();
 	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-	pub ParentAccount: AccountId = PalletId(*b"pa/shell").into_account();
+	pub ParentAccount: AccountId = b"Parent"
+		.using_encoded(|b| AccountId::decode(&mut TrailingZeroInput(b)))
+		.expect("infinite length input; no invalid inputs for type; qed");
 }
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,

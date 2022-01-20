@@ -12,7 +12,7 @@ use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
-		AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify,
+		AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, TrailingZeroInput, Verify,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
@@ -391,7 +391,9 @@ parameter_types! {
 	pub const RelayNetwork: NetworkId = NetworkId::Any;
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-	pub ParentAccount: AccountId = PalletId(*b"template").into_account();
+	pub ParentAccount: AccountId = b"Parent"
+		.using_encoded(|b| AccountId::decode(&mut TrailingZeroInput(b)))
+		.expect("infinite length input; no invalid inputs for type; qed");
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used

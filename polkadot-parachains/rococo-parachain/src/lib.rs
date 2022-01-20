@@ -26,7 +26,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, TrailingZeroInput},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -43,7 +43,7 @@ pub use frame_support::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
 	},
-	PalletId, StorageValue,
+	StorageValue,
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
@@ -277,7 +277,9 @@ parameter_types! {
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
-	pub ParentAccount: AccountId = PalletId(*b"p-rococo").into_account();
+	pub ParentAccount: AccountId = b"Parent"
+		.using_encoded(|b| AccountId::decode(&mut TrailingZeroInput(b)))
+		.expect("infinite length input; no invalid inputs for type; qed");
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
