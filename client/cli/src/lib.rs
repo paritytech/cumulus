@@ -29,6 +29,7 @@ use std::{
 	net::SocketAddr,
 };
 use structopt::StructOpt;
+use url::Url;
 
 /// The `purge-chain` command used to remove the whole chain: the parachain and the relay chain.
 #[derive(Debug, StructOpt)]
@@ -131,6 +132,21 @@ pub struct RunCmd {
 	/// Note that this is the same as running with `--validator`.
 	#[structopt(long, conflicts_with = "validator")]
 	pub collator: bool,
+
+	/// Specify relay chain full node to communicate
+	#[structopt(
+		long,
+		parse(try_from_str),
+		conflicts_with = "collator",
+		conflicts_with = "validator"
+	)]
+	pub relay_address: Option<Url>,
+}
+
+/// Options only relevant for collator nodes
+#[derive(Clone, Debug)]
+pub struct CollatorOptions {
+	pub relay_chain_address: Option<Url>,
 }
 
 /// A non-redundant version of the `RunCmd` that sets the `validator` field when the
@@ -149,6 +165,11 @@ impl RunCmd {
 		new_base.validator = self.base.validator || self.collator;
 
 		NormalizedRunCmd { base: new_base }
+	}
+
+	/// Create [`CollatorOptions`] representing options only relevant to parachain collator nodes
+	pub fn collator_options(&self) -> CollatorOptions {
+		CollatorOptions { relay_chain_address: self.relay_address.clone() }
 	}
 }
 

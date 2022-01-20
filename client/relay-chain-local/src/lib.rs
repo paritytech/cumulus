@@ -346,7 +346,7 @@ fn build_polkadot_full_node(
 }
 
 /// Builds a relay chain interface by constructing a full relay chain node
-pub fn build_relay_chain_interface(
+pub fn build_relay_chain_local(
 	polkadot_config: Configuration,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	task_manager: &mut TaskManager,

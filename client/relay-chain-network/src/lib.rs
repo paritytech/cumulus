@@ -259,6 +259,7 @@ pub struct RelayChainNetwork {
 
 impl RelayChainNetwork {
 	pub async fn new(url: Url) -> Self {
+		tracing::trace!(target: LOG_TARGET, "Initializing RPC Client. Relay Chain Url: {}", url);
 		let ws_client = WsClientBuilder::default()
 			.build(url.as_str())
 			.await

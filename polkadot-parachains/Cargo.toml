@@ -78,6 +78,7 @@ cumulus-primitives-core = { path = "../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../primitives/parachain-inherent" }
 cumulus-relay-chain-interface = { path = "../client/relay-chain-interface" }
 cumulus-relay-chain-local = { path = "../client/relay-chain-local" }
+cumulus-relay-chain-network = { path = "../client/relay-chain-network" }
 
 # Polkadot dependencies
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }

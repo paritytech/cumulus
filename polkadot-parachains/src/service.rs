@@ -15,6 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::Codec;
+use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 use cumulus_client_consensus_common::{
 	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
@@ -28,8 +29,10 @@ use cumulus_primitives_core::{
 	ParaId,
 };
 use cumulus_relay_chain_interface::RelayChainInterface;
-use cumulus_relay_chain_local::build_relay_chain_interface;
-use polkadot_service::NativeExecutionDispatch;
+use cumulus_relay_chain_local::build_relay_chain_local;
+use cumulus_relay_chain_network::RelayChainNetwork;
+use polkadot_service::{CollatorPair, NativeExecutionDispatch};
+use sp_core::Pair;
 
 use crate::rpc;
 pub use parachains_common::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
@@ -48,7 +51,6 @@ use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerH
 use sp_api::{ApiExt, ConstructRuntimeApi};
 use sp_consensus::{CacheKeyId, SlotData};
 use sp_consensus_aura::AuraApi;
-use sp_core::crypto::Pair;
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::{
 	app_crypto::AppKey,
@@ -262,6 +264,21 @@ where
 	Ok(params)
 }
 
+async fn build_relay_chain_interface(
+	polkadot_config: Configuration,
+	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
+	task_manager: &mut TaskManager,
+	collator_options: CollatorOptions,
+) -> Result<(Arc<(dyn RelayChainInterface + 'static)>, CollatorPair), polkadot_service::Error> {
+	match collator_options.relay_chain_address {
+		Some(relay_chain_url) => Ok((
+			Arc::new(RelayChainNetwork::new(relay_chain_url).await) as Arc<_>,
+			CollatorPair::generate().0,
+		)),
+		None => build_relay_chain_local(polkadot_config, telemetry_worker_handle, task_manager),
+	}
+}
+
 /// Start a shell node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api for shell nodes.
@@ -269,6 +286,7 @@ where
 async fn start_shell_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
+	collator_options: CollatorOptions,
 	id: ParaId,
 	rpc_ext_builder: RB,
 	build_import_queue: BIQ,
@@ -341,12 +359,17 @@ where
 
 	let mut task_manager = params.task_manager;
 
-	let (relay_chain_interface, collator_key) =
-		build_relay_chain_interface(polkadot_config, telemetry_worker_handle, &mut task_manager)
-			.map_err(|e| match e {
-				polkadot_service::Error::Sub(x) => x,
-				s => format!("{}", s).into(),
-			})?;
+	let (relay_chain_interface, collator_key) = build_relay_chain_interface(
+		polkadot_config,
+		telemetry_worker_handle,
+		&mut task_manager,
+		collator_options,
+	)
+	.await
+	.map_err(|e| match e {
+		polkadot_service::Error::Sub(x) => x,
+		s => format!("{}", s).into(),
+	})?;
 
 	let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
 
@@ -447,6 +470,7 @@ where
 async fn start_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
+	collator_options: CollatorOptions,
 	id: ParaId,
 	_rpc_ext_builder: RB,
 	build_import_queue: BIQ,
@@ -520,12 +544,17 @@ where
 	let backend = params.backend.clone();
 
 	let mut task_manager = params.task_manager;
-	let (relay_chain_interface, collator_key) =
-		build_relay_chain_interface(polkadot_config, telemetry_worker_handle, &mut task_manager)
-			.map_err(|e| match e {
-				polkadot_service::Error::Sub(x) => x,
-				s => format!("{}", s).into(),
-			})?;
+	let (relay_chain_interface, collator_key) = build_relay_chain_interface(
+		polkadot_config,
+		telemetry_worker_handle,
+		&mut task_manager,
+		collator_options,
+	)
+	.await
+	.map_err(|e| match e {
+		polkadot_service::Error::Sub(x) => x,
+		s => format!("{}", s).into(),
+	})?;
 
 	let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
 
@@ -690,6 +719,7 @@ pub fn rococo_parachain_build_import_queue(
 pub async fn start_rococo_parachain_node(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
+	collator_options: CollatorOptions,
 	id: ParaId,
 ) -> sc_service::error::Result<(
 	TaskManager,
@@ -704,6 +734,7 @@ pub async fn start_rococo_parachain_node(
 	start_node_impl::<rococo_parachain_runtime::RuntimeApi, RococoParachainRuntimeExecutor, _, _, _>(
 		parachain_config,
 		polkadot_config,
+		collator_options,
 		id,
 		|_| Ok(Default::default()),
 		rococo_parachain_build_import_queue,
@@ -824,6 +855,7 @@ where
 pub async fn start_shell_node<RuntimeApi, Executor>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
+	collator_options: CollatorOptions,
 	id: ParaId,
 ) -> sc_service::error::Result<(
 	TaskManager,
@@ -849,6 +881,7 @@ where
 	start_shell_node_impl::<RuntimeApi, Executor, _, _, _>(
 		parachain_config,
 		polkadot_config,
+		collator_options,
 		id,
 		|_| Ok(Default::default()),
 		shell_build_import_queue,
@@ -1094,6 +1127,7 @@ where
 pub async fn start_statemint_node<RuntimeApi, Executor, AuraId: AppKey>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
+	collator_options: CollatorOptions,
 	id: ParaId,
 ) -> sc_service::error::Result<(
 	TaskManager,
@@ -1124,6 +1158,7 @@ where
 	start_node_impl::<RuntimeApi, Executor, _, _, _>(
 		parachain_config,
 		polkadot_config,
+		collator_options,
 		id,
 		|_| Ok(Default::default()),
 		statemint_build_import_queue::<_, _, AuraId>,

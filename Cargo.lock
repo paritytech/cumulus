@@ -1429,6 +1429,7 @@ dependencies = [
  "sc-cli",
  "sc-service",
  "structopt",
+ "url 2.2.2",
 ]
 
 [[package]]
@@ -6904,6 +6905,7 @@ dependencies = [
  "cumulus-primitives-parachain-inherent",
  "cumulus-relay-chain-interface",
  "cumulus-relay-chain-local",
+ "cumulus-relay-chain-network",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "futures 0.3.19",
