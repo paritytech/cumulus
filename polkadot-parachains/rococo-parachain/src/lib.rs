@@ -75,7 +75,7 @@ use xcm_builder::{
 	EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset,
 	ParentAsSuperuser, ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, Case,
 };
 use xcm_executor::{Config, XcmExecutor};
 
@@ -391,9 +391,17 @@ parameter_types! {
 	// Statemint's Assets pallet index
 	pub StatemintAssetsPalletLocation: MultiLocation =
 		MultiLocation::new(1, X2(Parachain(1000), PalletInstance(50)));
+	pub KsmFilter: MultiAssetFilter = MultiAssetFilter::Wild(WildMultiAsset::AllOf{ id: (1, Here).into(), fun: WildFungibility::Fungible });
+	pub KsmFromStatemint: (MultiAssetFilter, MultiLocation) = (
+		KsmFilter::get(), StatemintLocation::get()
+	);
 }
 
-pub type Reserves = (NativeAsset, AssetsFrom<StatemintLocation>);
+pub type Reserves = (
+	NativeAsset,
+	AssetsFrom<StatemintLocation>,
+	Case<KsmFromStatemint>,
+);
 
 pub struct XcmConfig;
 impl Config for XcmConfig {
