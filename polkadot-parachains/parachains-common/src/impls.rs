@@ -108,9 +108,16 @@ pub struct AssetsFrom<T>(PhantomData<T>);
 impl<T: Get<MultiLocation>> FilterAssetLocation for AssetsFrom<T> {
 	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
 		let loc = T::get();
+		log::trace!(target: "xcm::AssetsFrom", "loc: {:?}, origin: {:?}", loc, origin);
 		&loc == origin &&
-			matches!(asset, MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) }
-			if asset_loc.match_and_split(&loc).is_some())
+			match asset {
+				MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) } => {
+					loc.parent_count() == asset_loc.parent_count() &&
+						loc.interior().iter().zip(asset_loc.interior().iter())
+						.all(|(prefix_junction, asset_junction)| prefix_junction == asset_junction)
+				},
+				_ => false,
+			}
 	}
 }
 
@@ -272,6 +279,22 @@ mod tests {
 
 		let asset_location = SomeSiblingParachain::get()
 			.clone()
+			.pushed_with_interior(GeneralIndex(42))
+			.expect("multilocation will only have 2 junctions; qed");
+		let asset = MultiAsset { id: Concrete(asset_location), fun: 1_000_000.into() };
+		assert!(
+			AssetsFrom::<SomeSiblingParachain>::filter_asset_location(
+				&asset,
+				&SomeSiblingParachain::get()
+			),
+			"AssetsFrom should allow assets from any of its interior locations"
+		);
+
+		// make sure assets can have more than one junction inside the prefix location
+		let asset_location = SomeSiblingParachain::get()
+			.clone()
+			.pushed_with_interior(PalletInstance(50))
+			.unwrap()
 			.pushed_with_interior(GeneralIndex(42))
 			.expect("multilocation will only have 2 junctions; qed");
 		let asset = MultiAsset { id: Concrete(asset_location), fun: 1_000_000.into() };
