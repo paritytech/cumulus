@@ -29,7 +29,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
 	create_runtime_str, generic,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, DispatchInfoOf, TrailingZeroInput},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, DispatchInfoOf},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -56,8 +56,8 @@ pub use sp_runtime::{Perbill, Permill};
 // XCM imports
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AllowUnpaidExecutionFrom, FixedWeightBounds, LocationInverter, ParentAsSuperuser, ParentIs,
-	SovereignSignedViaLocation,
+	AllowUnpaidExecutionFrom, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
+	ParentIsPreset, SovereignSignedViaLocation,
 };
 use xcm_executor::{Config, XcmExecutor};
 
@@ -177,9 +177,6 @@ parameter_types! {
 	pub const RococoLocation: MultiLocation = MultiLocation::parent();
 	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-	pub ParentAccount: AccountId = b"Parent"
-		.using_encoded(|b| AccountId::decode(&mut TrailingZeroInput::new(b)))
-		.expect("infinite length input; no invalid inputs for type; qed");
 }
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
@@ -189,7 +186,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	// Sovereign account converter; this attempts to derive an `AccountId` from the origin location
 	// using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
 	// foreign chains who want to have a local sovereign account on this chain which they control.
-	SovereignSignedViaLocation<ParentIs<ParentAccount, AccountId>, Origin>,
+	SovereignSignedViaLocation<ParentIsPreset<AccountId>, Origin>,
 	// Superuser converter for the Relay-chain (Parent) location. This will allow it to issue a
 	// transaction from the Root origin.
 	ParentAsSuperuser<Origin>,
