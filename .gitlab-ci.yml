@@ -17,7 +17,7 @@ variables:                         &default-vars
   CI_IMAGE:                        "paritytech/ci-linux:production"
   DOCKER_OS:                       "debian:stretch"
   ARCH:                            "x86_64"
-  WASM_BUILD_WORKSPACE_HINT:       "${CI_BUILD_DIR}"
+  WASM_BUILD_WORKSPACE_HINT:       "/builds/parity/cumulus/"
 
 .rust-info-script:                 &rust-info-script
   - rustup show
@@ -92,10 +92,7 @@ test-linux-stable:
     # but still want to have debug assertions.
     RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
   script:
-    - echo "Hello";
-    - echo "${WASM_BUILD_WORKSPACE_HINT}";
-    - exit 1;
-    #- time cargo test --all --release --locked -- --include-ignored
+    - time cargo test --all --release --locked -- --include-ignored
     # It's almost free to produce a binary here, please refrain from using it in production since
     # it goes with the debug assertions.
     - if [ "${ARE_WE_RELEASING_YET}" ]; then
