@@ -34,7 +34,7 @@ use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use parking_lot::Mutex;
-use polkadot_primitives::v1::{CollatorId, CollatorPair, Hash as PHash, PersistedValidationData};
+use polkadot_primitives::v1::{CollatorPair, Hash as PHash, PersistedValidationData};
 use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_network::{config::TransportConfig, multiaddr, NetworkService};
