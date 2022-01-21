@@ -23,8 +23,7 @@
 //! several reasons, either a malicious collator that managed to include its own PoV and doesn't want
 //! to share it with the rest of the network or maybe a collator went down before it could distribute
 //! the block in the network. When something like this happens we can use the PoV recovery algorithm
-//! implemented in this crate to recover a PoV and to propagate it with the rest of the network. This
-//! protocol is only executed by the collators, to not overwhelm the relay chain validators.
+//! implemented in this crate to recover a PoV and to propagate it with the rest of the network.
 //!
 //! It works in the following way:
 //!
