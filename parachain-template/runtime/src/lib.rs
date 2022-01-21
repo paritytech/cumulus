@@ -392,7 +392,7 @@ parameter_types! {
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	pub ParentAccount: AccountId = b"Parent"
-		.using_encoded(|b| AccountId::decode(&mut TrailingZeroInput(b)))
+		.using_encoded(|b| AccountId::decode(&mut TrailingZeroInput::new(b)))
 		.expect("infinite length input; no invalid inputs for type; qed");
 }
 

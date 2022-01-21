@@ -178,7 +178,7 @@ parameter_types! {
 	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	pub ParentAccount: AccountId = b"Parent"
-		.using_encoded(|b| AccountId::decode(&mut TrailingZeroInput(b)))
+		.using_encoded(|b| AccountId::decode(&mut TrailingZeroInput::new(b)))
 		.expect("infinite length input; no invalid inputs for type; qed");
 }
 

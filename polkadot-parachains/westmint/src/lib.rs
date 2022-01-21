@@ -435,7 +435,7 @@ parameter_types! {
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 	pub ParentAccount: AccountId = b"Parent"
-		.using_encoded(|b| AccountId::decode(&mut TrailingZeroInput(b)))
+		.using_encoded(|b| AccountId::decode(&mut TrailingZeroInput::new(b)))
 		.expect("infinite length input; no invalid inputs for type; qed");
 }
 
