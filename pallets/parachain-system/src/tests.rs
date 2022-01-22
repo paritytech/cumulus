@@ -29,7 +29,7 @@ use frame_support::{
 	traits::{OnFinalize, OnInitialize},
 	weights::Weight,
 };
-use frame_system::{InitKind, RawOrigin};
+use frame_system::RawOrigin;
 use hex_literal::hex;
 use relay_chain::v1::HrmpChannelId;
 use sp_core::H256;
@@ -100,7 +100,7 @@ impl frame_system::Config for Test {
 }
 impl Config for Test {
 	type Event = Event;
-	type OnValidationData = ();
+	type OnSystemEvent = ();
 	type SelfParaId = ParachainId;
 	type OutboundXcmpMessageSource = FromThreadLocal;
 	type DmpMessageHandler = SaveIntoThreadLocal;
@@ -303,7 +303,8 @@ impl BlockTests {
 				}
 
 				// begin initialization
-				System::initialize(&n, &Default::default(), &Default::default(), InitKind::Full);
+				System::reset_events();
+				System::initialize(&n, &Default::default(), &Default::default());
 
 				// now mess with the storage the way validate_block does
 				let mut sproof_builder = RelayStateSproofBuilder::default();
