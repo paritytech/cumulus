@@ -38,7 +38,10 @@ use cumulus_primitives_core::{
 	relay_chain::BlockNumber as RelayBlockNumber, ChannelStatus, GetChannelInfo, MessageSendError,
 	ParaId, XcmpMessageFormat, XcmpMessageHandler, XcmpMessageSource,
 };
-use frame_support::weights::{constants::WEIGHT_PER_MILLIS, Weight};
+use frame_support::{
+	traits::EnsureOrigin,
+	weights::{constants::WEIGHT_PER_MILLIS, Weight},
+};
 use rand_chacha::{
 	rand_core::{RngCore, SeedableRng},
 	ChaChaRng,
@@ -47,6 +50,7 @@ use scale_info::TypeInfo;
 use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::{convert::TryFrom, prelude::*};
 use xcm::{latest::prelude::*, VersionedXcm, WrapVersion, MAX_XCM_DECODE_DEPTH};
+use xcm_executor::traits::ConvertOrigin;
 
 pub use pallet::*;
 
@@ -79,6 +83,8 @@ pub mod pallet {
 
 		/// Means of converting an `Xcm` into a `VersionedXcm`.
 		type VersionWrapper: WrapVersion;
+
+		type OriginConverter: ConvertOrigin<Self::Origin>;
 
 		/// The origin that is allowed to execute overweight messages.
 		type ExecuteOverweightOrigin: EnsureOrigin<Self::Origin>;
@@ -652,9 +658,6 @@ impl<T: Config> Pallet<T> {
 	/// further.
 	fn service_xcmp_queue(max_weight: Weight) -> Weight {
 		let suspended = QueueSuspended::<T>::get();
-		if suspended {
-			return 0
-		}
 
 		let mut status = <InboundXcmpStatus<T>>::get(); // <- sorted.
 		if status.len() == 0 {
@@ -687,6 +690,17 @@ impl<T: Config> Pallet<T> {
 		{
 			let index = shuffled[shuffle_index];
 			let sender = status[index].sender;
+			let sender_origin = T::OriginConverter::convert_origin(
+				(1, Parachain(sender.into())),
+				OriginKind::Superuser,
+			);
+			let is_controller = sender_origin
+				.map_or(false, |origin| T::ControllerOrigin::try_origin(origin).is_ok());
+
+			if suspended && !is_controller {
+				shuffle_index += 1;
+				continue
+			}
 
 			if weight_available != max_weight {
 				// Get incrementally closer to freeing up max_weight for message execution over the

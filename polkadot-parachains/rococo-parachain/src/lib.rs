@@ -453,6 +453,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = ();
+	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 	type ControllerOrigin = EnsureRoot<AccountId>;
 }
