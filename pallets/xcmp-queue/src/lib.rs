@@ -130,6 +130,35 @@ pub mod pallet {
 			Self::deposit_event(Event::OverweightServiced(index, used));
 			Ok(Some(used.saturating_add(1_000_000)).into())
 		}
+
+		#[pallet::weight(100)]
+		pub fn update_config(
+			origin: OriginFor<T>,
+			suspend_threshold: u32,
+			drop_threshold: u32,
+			resume_threshold: u32,
+			threshold_weight: Weight,
+			weight_restrict_decay: Weight,
+			xcmp_max_individual_weight: Weight,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+			let data = QueueConfigData {
+				suspend_threshold,
+				drop_threshold,
+				resume_threshold,
+				threshold_weight,
+				weight_restrict_decay,
+				xcmp_max_individual_weight,
+			};
+
+			if <QueueConfig<T>>::exists() {
+				<QueueConfig<T>>::kill();
+			}
+
+			<QueueConfig<T>>::put(data);
+
+			Ok(())
+		}
 	}
 
 	#[pallet::event]
