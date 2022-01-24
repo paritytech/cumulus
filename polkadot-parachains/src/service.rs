@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+use codec::Codec;
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 use cumulus_client_consensus_common::{
 	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
@@ -46,13 +47,15 @@ use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClie
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::{ApiExt, ConstructRuntimeApi};
 use sp_consensus::{CacheKeyId, SlotData};
-use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
+use sp_consensus_aura::AuraApi;
+use sp_core::crypto::Pair;
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::{
+	app_crypto::AppKey,
 	generic::BlockId,
 	traits::{BlakeTwo256, Header as HeaderT},
 };
-use std::{sync::Arc, time::Duration};
+use std::{marker::PhantomData, sync::Arc, time::Duration};
 use substrate_prometheus_endpoint::Registry;
 
 /// Native executor instance.
@@ -386,6 +389,8 @@ where
 		Arc::new(move |hash, data| network.announce_block(hash, data))
 	};
 
+	let relay_chain_slot_duration = Duration::from_secs(6);
+
 	if validator {
 		let parachain_consensus = build_consensus(
 			client.clone(),
@@ -412,7 +417,7 @@ where
 			parachain_consensus,
 			import_queue,
 			collator_key,
-			slot_duration: Duration::from_secs(6),
+			relay_chain_slot_duration,
 		};
 
 		start_collator(params).await?;
@@ -423,6 +428,8 @@ where
 			task_manager: &mut task_manager,
 			para_id: id,
 			relay_chain_interface,
+			relay_chain_slot_duration,
+			import_queue,
 		};
 
 		start_full_node(params)?;
@@ -573,6 +580,8 @@ where
 		Arc::new(move |hash, data| network.announce_block(hash, data))
 	};
 
+	let relay_chain_slot_duration = Duration::from_secs(6);
+
 	if validator {
 		let parachain_consensus = build_consensus(
 			client.clone(),
@@ -599,7 +608,7 @@ where
 			parachain_consensus,
 			import_queue,
 			collator_key,
-			slot_duration: Duration::from_secs(6),
+			relay_chain_slot_duration,
 		};
 
 		start_collator(params).await?;
@@ -610,6 +619,8 @@ where
 			task_manager: &mut task_manager,
 			para_id: id,
 			relay_chain_interface,
+			relay_chain_slot_duration,
+			import_queue,
 		};
 
 		start_full_node(params)?;
@@ -909,27 +920,30 @@ impl<R> BuildOnAccess<R> {
 
 /// Special [`ParachainConsensus`] implementation that waits for the upgrade from
 /// shell to a parachain runtime that implements Aura.
-struct WaitForAuraConsensus<Client> {
+struct WaitForAuraConsensus<Client, AuraId> {
 	client: Arc<Client>,
 	aura_consensus: Arc<Mutex<BuildOnAccess<Box<dyn ParachainConsensus<Block>>>>>,
 	relay_chain_consensus: Arc<Mutex<Box<dyn ParachainConsensus<Block>>>>,
+	_phantom: PhantomData<AuraId>,
 }
 
-impl<Client> Clone for WaitForAuraConsensus<Client> {
+impl<Client, AuraId> Clone for WaitForAuraConsensus<Client, AuraId> {
 	fn clone(&self) -> Self {
 		Self {
 			client: self.client.clone(),
 			aura_consensus: self.aura_consensus.clone(),
 			relay_chain_consensus: self.relay_chain_consensus.clone(),
+			_phantom: PhantomData,
 		}
 	}
 }
 
 #[async_trait::async_trait]
-impl<Client> ParachainConsensus<Block> for WaitForAuraConsensus<Client>
+impl<Client, AuraId> ParachainConsensus<Block> for WaitForAuraConsensus<Client, AuraId>
 where
 	Client: sp_api::ProvideRuntimeApi<Block> + Send + Sync,
 	Client::Api: AuraApi<Block, AuraId>,
+	AuraId: Send + Codec + Sync,
 {
 	async fn produce_candidate(
 		&mut self,
@@ -960,17 +974,19 @@ where
 	}
 }
 
-struct Verifier<Client> {
+struct Verifier<Client, AuraId> {
 	client: Arc<Client>,
 	aura_verifier: BuildOnAccess<Box<dyn VerifierT<Block>>>,
 	relay_chain_verifier: Box<dyn VerifierT<Block>>,
+	_phantom: PhantomData<AuraId>,
 }
 
 #[async_trait::async_trait]
-impl<Client> VerifierT<Block> for Verifier<Client>
+impl<Client, AuraId> VerifierT<Block> for Verifier<Client, AuraId>
 where
 	Client: sp_api::ProvideRuntimeApi<Block> + Send + Sync,
 	Client::Api: AuraApi<Block, AuraId>,
+	AuraId: Send + Sync + Codec,
 {
 	async fn verify(
 		&mut self,
@@ -992,7 +1008,7 @@ where
 }
 
 /// Build the import queue for the statemint/statemine/westmine runtime.
-pub fn statemint_build_import_queue<RuntimeApi, Executor>(
+pub fn statemint_build_import_queue<RuntimeApi, Executor, AuraId: AppKey>(
 	client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
 	config: &Configuration,
 	telemetry_handle: Option<TelemetryHandle>,
@@ -1017,38 +1033,39 @@ where
 			StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
 		> + sp_offchain::OffchainWorkerApi<Block>
 		+ sp_block_builder::BlockBuilder<Block>
-		+ sp_consensus_aura::AuraApi<Block, AuraId>,
+		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>,
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
+	<<AuraId as AppKey>::Pair as Pair>::Signature:
+		TryFrom<Vec<u8>> + std::hash::Hash + sp_runtime::traits::Member + Codec,
 {
 	let client2 = client.clone();
 
 	let aura_verifier = move || {
 		let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
 
-		Box::new(cumulus_client_consensus_aura::build_verifier::<
-			sp_consensus_aura::sr25519::AuthorityPair,
-			_,
-			_,
-			_,
-		>(cumulus_client_consensus_aura::BuildVerifierParams {
-			client: client2.clone(),
-			create_inherent_data_providers: move |_, _| async move {
-				let time = sp_timestamp::InherentDataProvider::from_system_time();
+		Box::new(
+			cumulus_client_consensus_aura::build_verifier::<<AuraId as AppKey>::Pair, _, _, _>(
+				cumulus_client_consensus_aura::BuildVerifierParams {
+					client: client2.clone(),
+					create_inherent_data_providers: move |_, _| async move {
+						let time = sp_timestamp::InherentDataProvider::from_system_time();
 
-				let slot =
+						let slot =
 					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
 						*time,
 						slot_duration.slot_duration(),
 					);
 
-				Ok((time, slot))
-			},
-			can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(
-				client2.executor().clone(),
+						Ok((time, slot))
+					},
+					can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(
+						client2.executor().clone(),
+					),
+					telemetry: telemetry_handle,
+				},
 			),
-			telemetry: telemetry_handle,
-		})) as Box<_>
+		) as Box<_>
 	};
 
 	let relay_chain_verifier =
@@ -1058,6 +1075,7 @@ where
 		client: client.clone(),
 		relay_chain_verifier,
 		aura_verifier: BuildOnAccess::Uninitialized(Some(Box::new(aura_verifier))),
+		_phantom: PhantomData,
 	};
 
 	let registry = config.prometheus_registry().clone();
@@ -1073,7 +1091,7 @@ where
 }
 
 /// Start a statemint/statemine/westmint parachain node.
-pub async fn start_statemint_node<RuntimeApi, Executor>(
+pub async fn start_statemint_node<RuntimeApi, Executor, AuraId: AppKey>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	id: ParaId,
@@ -1095,18 +1113,20 @@ where
 		> + sp_offchain::OffchainWorkerApi<Block>
 		+ sp_block_builder::BlockBuilder<Block>
 		+ cumulus_primitives_core::CollectCollationInfo<Block>
-		+ sp_consensus_aura::AuraApi<Block, AuraId>
+		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>
 		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
 		+ frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
+	<<AuraId as AppKey>::Pair as Pair>::Signature:
+		TryFrom<Vec<u8>> + std::hash::Hash + sp_runtime::traits::Member + Codec,
 {
 	start_node_impl::<RuntimeApi, Executor, _, _, _>(
 		parachain_config,
 		polkadot_config,
 		id,
 		|_| Ok(Default::default()),
-		statemint_build_import_queue,
+		statemint_build_import_queue::<_, _, AuraId>,
 		|client,
 		 prometheus_registry,
 		 telemetry,
@@ -1134,7 +1154,7 @@ where
 					telemetry2.clone(),
 				);
 
-				AuraConsensus::build::<sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _>(
+				AuraConsensus::build::<<AuraId as AppKey>::Pair, _, _, _, _, _, _>(
 					BuildAuraConsensusParams {
 						proposer_factory,
 						create_inherent_data_providers:
@@ -1224,6 +1244,7 @@ where
 				client: client.clone(),
 				aura_consensus: Arc::new(Mutex::new(aura_consensus)),
 				relay_chain_consensus: Arc::new(Mutex::new(relay_chain_consensus)),
+				_phantom: PhantomData,
 			});
 
 			Ok(parachain_consensus)

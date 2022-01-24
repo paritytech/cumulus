@@ -54,8 +54,9 @@ impl PurgeChainCmd {
 		relay_config: sc_service::Configuration,
 	) -> sc_cli::Result<()> {
 		let databases = match (self.parachain, self.relaychain) {
-			(true, true) | (false, false) =>
-				vec![("parachain", para_config.database), ("relaychain", relay_config.database)],
+			(true, true) | (false, false) => {
+				vec![("parachain", para_config.database), ("relaychain", relay_config.database)]
+			},
 			(true, false) => vec![("parachain", para_config.database)],
 			(false, true) => vec![("relaychain", relay_config.database)],
 		};
@@ -229,6 +230,14 @@ impl sc_cli::CliConfiguration for NormalizedRunCmd {
 
 	fn rpc_methods(&self) -> sc_cli::Result<sc_service::config::RpcMethods> {
 		self.base.rpc_methods()
+	}
+
+	fn rpc_max_payload(&self) -> sc_cli::Result<Option<usize>> {
+		self.base.rpc_max_payload()
+	}
+
+	fn ws_max_out_buffer_capacity(&self) -> sc_cli::Result<Option<usize>> {
+		self.base.ws_max_out_buffer_capacity()
 	}
 
 	fn transaction_pool(&self) -> sc_cli::Result<TransactionPoolOptions> {
