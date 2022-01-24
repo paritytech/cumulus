@@ -86,10 +86,18 @@ fn service_overweight_bad_xcm_format() {
 
 #[test]
 fn update_queue_config_data_works() {
-    new_test_ext().execute_with(|| {
-        assert_ok!(XcmpQueue::update_config(Origin::root(), 3, 6, 4, 100_00, 5, 20 * WEIGHT_PER_MILLIS));
-        let data: QueueConfigData = <QueueConfig<Test>>::get();
+	new_test_ext().execute_with(|| {
+		assert_ok!(XcmpQueue::update_config(
+			Origin::root(),
+			3,
+			6,
+			4,
+			100_00,
+			5,
+			20 * WEIGHT_PER_MILLIS
+		));
+		let data: QueueConfigData = <QueueConfig<Test>>::get();
 
-        assert_eq!(data.suspend_threshold, 3);
-    });
+		assert_eq!(data.suspend_threshold, 3);
+	});
 }

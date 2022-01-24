@@ -152,7 +152,7 @@ pub mod pallet {
 			};
 
 			<QueueConfig<T>>::put(data);
-            Self::deposit_event(Event::UpdatedConfig(data));
+			Self::deposit_event(Event::UpdatedConfig(data));
 			Ok(())
 		}
 	}
@@ -172,8 +172,8 @@ pub mod pallet {
 		UpwardMessageSent(Option<T::Hash>),
 		/// An HRMP message was sent to a sibling parachain.
 		XcmpMessageSent(Option<T::Hash>),
-        /// Config data updated
-        UpdatedConfig(QueueConfigData),
+		/// Config data updated
+		UpdatedConfig(QueueConfigData),
 		/// An XCM exceeded the individual message weight budget.
 		OverweightEnqueued(ParaId, RelayBlockNumber, OverweightIndex, Weight),
 		/// An XCM from the overweight queue was executed with the given actual weight used.
