@@ -197,7 +197,7 @@ where
 		let state_backend = self.backend.state_at(*block_id)?;
 
 		sp_state_machine::prove_read(state_backend, relevant_keys)
-			.map_err(|e| RelayChainError::StateMachineError(e.to_string()))
+			.map_err(RelayChainError::StateMachineError)
 	}
 
 	/// Wait for a given relay chain block in an async way.
@@ -246,11 +246,7 @@ where
 			self.full_client
 				.import_notification_stream()
 				.filter_map(|notification| async move {
-					if notification.is_new_best {
-						Some(notification.header)
-					} else {
-						None
-					}
+					notification.is_new_best.then(|| notification.header)
 				});
 		Ok(Box::pin(notifications_stream))
 	}

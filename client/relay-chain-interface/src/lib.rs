@@ -47,7 +47,7 @@ pub enum RelayChainError {
 	#[error("Blockchain returned an error: {0:?}")]
 	BlockchainError(#[from] sp_blockchain::Error),
 	#[error("State machine error occured: {0:?}")]
-	StateMachineError(String),
+	StateMachineError(Box<dyn sp_state_machine::Error>),
 	#[error("Unspecified error occured: {0:?}")]
 	GenericError(String),
 }

@@ -437,7 +437,7 @@ pub async fn start_parachain_node(
 							let parachain_inherent =
 							cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 								relay_parent,
-								relay_chain_interface.clone(),
+								&relay_chain_interface,
 								&validation_data,
 								id,
 							).await;

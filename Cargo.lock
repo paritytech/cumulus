@@ -1867,6 +1867,7 @@ dependencies = [
  "parking_lot 0.11.2",
  "polkadot-overseer",
  "sc-client-api",
+ "sc-service",
  "sp-api",
  "sp-blockchain",
  "sp-core",

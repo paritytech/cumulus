@@ -107,12 +107,13 @@ where
 		.spawn_essential_handle()
 		.spawn("cumulus-consensus", None, consensus);
 
+	let overseer_handle = relay_chain_interface
+		.overseer_handle()
+		.map_err(|e| sc_service::Error::Other(e.to_string()))?
+		.ok_or_else(|| "Polkadot full node did not provide an `OverseerHandle`!")?;
+
 	let pov_recovery = cumulus_client_pov_recovery::PoVRecovery::new(
-		relay_chain_interface
-			.overseer_handle()
-			.ok()
-			.flatten()
-			.ok_or_else(|| "Polkadot full node did not provide an `OverseerHandle`!")?,
+		overseer_handle.clone(),
 		slot_duration,
 		client.clone(),
 		import_queue,
@@ -128,11 +129,7 @@ where
 		runtime_api: client.clone(),
 		block_status,
 		announce_block,
-		overseer_handle: relay_chain_interface
-			.overseer_handle()
-			.ok()
-			.flatten()
-			.ok_or_else(|| "Polkadot full node did not provide an `OverseerHandle`!")?,
+		overseer_handle,
 		spawner,
 		para_id,
 		key: collator_key,

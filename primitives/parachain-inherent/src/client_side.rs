@@ -130,12 +130,12 @@ impl ParachainInherentData {
 	/// Returns `None` if the creation failed.
 	pub async fn create_at(
 		relay_parent: PHash,
-		relay_chain_interface: impl RelayChainInterface,
+		relay_chain_interface: &impl RelayChainInterface,
 		validation_data: &PersistedValidationData,
 		para_id: ParaId,
 	) -> Option<ParachainInherentData> {
 		let relay_chain_state =
-			collect_relay_storage_proof(&relay_chain_interface, para_id, relay_parent).await?;
+			collect_relay_storage_proof(relay_chain_interface, para_id, relay_parent).await?;
 
 		let downward_messages = relay_chain_interface
 			.retrieve_dmq_contents(para_id, relay_parent)

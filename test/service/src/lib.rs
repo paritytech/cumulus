@@ -293,7 +293,7 @@ where
 							let parachain_inherent =
 							cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
 								relay_parent,
-								relay_chain_interface,
+								&relay_chain_interface,
 								&validation_data,
 								para_id,
 							).await;
