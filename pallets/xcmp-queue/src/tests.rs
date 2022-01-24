@@ -83,3 +83,13 @@ fn service_overweight_bad_xcm_format() {
 		assert_noop!(XcmpQueue::service_overweight(Origin::root(), 0, 1000), Error::<Test>::BadXcm);
 	});
 }
+
+#[test]
+fn update_queue_config_data_works() {
+    new_test_ext().execute_with(|| {
+        XcmpQueue::update_config(Origin::root(), 3, 6, 4, 100_00, 5, 20 * WEIGHT_PER_MILLIS);
+        let data: QueueConfigData = <QueueConfig<Test>>::get();
+
+        assert_eq!(data.suspend_threshold, 3);
+    });
+}
