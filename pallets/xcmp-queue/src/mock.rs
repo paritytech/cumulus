@@ -185,9 +185,9 @@ impl Config for Test {
 	type XcmExecutor = xcm_executor::XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = ();
-	type OriginConverter = SystemParachainAsSuperuser<Origin>;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 	type ControllerOrigin = EnsureRoot<AccountId>;
+	type ControllerOriginConverter = SystemParachainAsSuperuser<Origin>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

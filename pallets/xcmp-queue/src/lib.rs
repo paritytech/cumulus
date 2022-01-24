@@ -84,13 +84,15 @@ pub mod pallet {
 		/// Means of converting an `Xcm` into a `VersionedXcm`.
 		type VersionWrapper: WrapVersion;
 
-		type OriginConverter: ConvertOrigin<Self::Origin>;
-
 		/// The origin that is allowed to execute overweight messages.
 		type ExecuteOverweightOrigin: EnsureOrigin<Self::Origin>;
 
 		/// The origin that is allowed to resume or suspend the XCMP queue.
 		type ControllerOrigin: EnsureOrigin<Self::Origin>;
+
+		/// The conversion function used to attempt to convert an XCM `MultiLocation` origin to a
+		/// superuser origin.
+		type ControllerOriginConverter: ConvertOrigin<Self::Origin>;
 	}
 
 	#[pallet::hooks]
@@ -690,7 +692,7 @@ impl<T: Config> Pallet<T> {
 		{
 			let index = shuffled[shuffle_index];
 			let sender = status[index].sender;
-			let sender_origin = T::OriginConverter::convert_origin(
+			let sender_origin = T::ControllerOriginConverter::convert_origin(
 				(1, Parachain(sender.into())),
 				OriginKind::Superuser,
 			);
