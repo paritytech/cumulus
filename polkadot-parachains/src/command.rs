@@ -476,8 +476,6 @@ pub fn run() -> Result<()> {
 						.iter()
 						.chain(cli.relaychain_args.iter()),
 				);
-				let relay_address = cli.run.relay_address;
-				println!("Got relay address: {:?}", relay_address);
 
 				let id = ParaId::from(para_id);
 

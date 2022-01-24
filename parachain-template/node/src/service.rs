@@ -19,6 +19,7 @@ use cumulus_client_service::{
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_interface::RelayChainInterface;
 use cumulus_relay_chain_local::build_relay_chain_local;
+use cumulus_relay_chain_network::RelayChainNetwork;
 
 // Substrate Imports
 use sc_client_api::ExecutorProvider;
@@ -28,9 +29,12 @@ use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClie
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::ConstructRuntimeApi;
 use sp_consensus::SlotData;
+use sp_core::Pair;
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::BlakeTwo256;
 use substrate_prometheus_endpoint::Registry;
+
+use polkadot_service::CollatorPair;
 
 /// Native executor instance.
 pub struct TemplateRuntimeExecutor;

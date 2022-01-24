@@ -42,6 +42,7 @@ use sp_runtime::{generic::SignedBlock, DeserializeOwned};
 use sp_state_machine::StorageValue;
 use sp_storage::StorageKey;
 use std::sync::Arc;
+use tracing::{debug_span, info_span, span, Instrument, Level};
 
 pub use url::Url;
 
@@ -63,12 +64,36 @@ impl RelayChainRPCClient {
 		payload: Option<Vec<u8>>,
 	) -> RelayChainResult<sp_core::Bytes> {
 		let payload_bytes = payload.map_or(sp_core::Bytes(Vec::new()), sp_core::Bytes);
-		let params = rpc_params! {
-			method_name,
-			payload_bytes,
-			block_id
-		};
-		self.request("state_call", params).await
+		if let BlockId::Hash(hash) = block_id {
+			let params = rpc_params! {
+				method_name,
+				payload_bytes,
+				hash
+			};
+			tracing::debug!(target: LOG_TARGET, "Calling rpc endpoint: {}", method_name);
+			self.ws_client
+				.request("state_call", params)
+				.await
+				.map_err(|err| {
+					tracing::error!(
+						"Unable to complete 'state_call' to '{}', {:?}",
+						method_name,
+						err
+					);
+					RelayChainError::NetworkError("state_call".to_string(), err)
+				})
+				.map(|value| {
+					tracing::debug!(
+						target: LOG_TARGET,
+						"Got response for call '{}': {:?}",
+						method_name,
+						value
+					);
+					value
+				})
+		} else {
+			panic!("Only hash can be accepted")
+		}
 	}
 
 	async fn subscribe<'a, R>(
@@ -80,11 +105,19 @@ impl RelayChainRPCClient {
 	where
 		R: DeserializeOwned,
 	{
-		tracing::trace!(target: LOG_TARGET, "Subscribing to stream: {}", sub_name);
+		// tracing::debug!(target: LOG_TARGET, "Subscribing to stream: {}", sub_name);
 		self.ws_client
 			.subscribe::<R>(sub_name, params, unsub_name)
 			.await
-			.map_err(|err| RelayChainError::NetworkError(sub_name.to_string(), err))
+			.map_err(|err| {
+				tracing::error!(
+					target: LOG_TARGET,
+					"Networking Error for method '{}': {:?}",
+					sub_name,
+					err
+				);
+				RelayChainError::NetworkError(sub_name.to_string(), err)
+			})
 	}
 
 	async fn request<'a, R>(
@@ -93,13 +126,31 @@ impl RelayChainRPCClient {
 		params: Option<ParamsSer<'a>>,
 	) -> Result<R, RelayChainError>
 	where
-		R: DeserializeOwned,
+		R: DeserializeOwned + std::fmt::Debug,
 	{
-		tracing::trace!(target: LOG_TARGET, "Calling rpc endpoint: {}", method);
-		self.ws_client
-			.request(method, params)
-			.await
-			.map_err(|err| RelayChainError::NetworkError(method.to_string(), err))
+		let span = info_span!("Request to relay chain", method);
+		async move {
+			tracing::event!(target: LOG_TARGET, Level::DEBUG, method);
+			self.ws_client
+				.request(method, params)
+				.await
+				.map_err(|err| {
+					tracing::event!(
+						target: LOG_TARGET,
+						Level::DEBUG,
+						method,
+						"Encountered error: {}",
+						err.to_string().as_str()
+					);
+					RelayChainError::NetworkError(method.to_string(), err)
+				})
+				.map(|value| {
+					tracing::event!(target: LOG_TARGET, Level::DEBUG, method, "{:?}", value);
+					value
+				})
+		}
+		.instrument(span)
+		.await
 	}
 
 	async fn system_health(&self) -> Result<Health, RelayChainError> {
@@ -259,7 +310,7 @@ pub struct RelayChainNetwork {
 
 impl RelayChainNetwork {
 	pub async fn new(url: Url) -> Self {
-		tracing::trace!(target: LOG_TARGET, "Initializing RPC Client. Relay Chain Url: {}", url);
+		tracing::info!(target: LOG_TARGET, "Initializing RPC Client. Relay Chain Url: {}", url);
 		let ws_client = WsClientBuilder::default()
 			.build(url.as_str())
 			.await
@@ -340,6 +391,7 @@ impl RelayChainInterface for RelayChainNetwork {
 	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
 		let imported_headers_stream = self.rpc_client.subscribe_all_heads().await?;
 		Ok(Box::pin(imported_headers_stream.filter_map(|item| async move {
+			// tracing::trace!(target: LOG_TARGET, "Got an item: {:?}", item);
 			item.map_err(|err| {
 				tracing::error!(target: LOG_TARGET, "Error occured in stream: {}", err)
 			})
@@ -357,6 +409,7 @@ impl RelayChainInterface for RelayChainNetwork {
 			.expect("Should be able to subscribe");
 
 		Ok(Box::pin(imported_headers_stream.filter_map(|item| async move {
+			// tracing::trace!(target: LOG_TARGET, "Got an item: {:?}", item);
 			item.map_err(|err| {
 				tracing::error!(target: LOG_TARGET, "Error occured in stream: {}", err)
 			})
