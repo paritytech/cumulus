@@ -92,14 +92,11 @@ where
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> RelayChainResult<Vec<InboundDownwardMessage>> {
-		self.full_client
-			.runtime_api()
-			.dmq_contents_with_context(
-				&BlockId::hash(relay_parent),
-				sp_core::ExecutionContext::Importing,
-				para_id,
-			)
-			.map_err(RelayChainError::ApiError)
+		Ok(self.full_client.runtime_api().dmq_contents_with_context(
+			&BlockId::hash(relay_parent),
+			sp_core::ExecutionContext::Importing,
+			para_id,
+		)?)
 	}
 
 	async fn retrieve_all_inbound_hrmp_channel_contents(
@@ -107,14 +104,11 @@ where
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> RelayChainResult<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
-		self.full_client
-			.runtime_api()
-			.inbound_hrmp_channels_contents_with_context(
-				&BlockId::hash(relay_parent),
-				sp_core::ExecutionContext::Importing,
-				para_id,
-			)
-			.map_err(RelayChainError::ApiError)
+		Ok(self.full_client.runtime_api().inbound_hrmp_channels_contents_with_context(
+			&BlockId::hash(relay_parent),
+			sp_core::ExecutionContext::Importing,
+			para_id,
+		)?)
 	}
 
 	async fn persisted_validation_data(
@@ -123,10 +117,11 @@ where
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> RelayChainResult<Option<PersistedValidationData>> {
-		self.full_client
-			.runtime_api()
-			.persisted_validation_data(block_id, para_id, occupied_core_assumption)
-			.map_err(RelayChainError::ApiError)
+		Ok(self.full_client.runtime_api().persisted_validation_data(
+			block_id,
+			para_id,
+			occupied_core_assumption,
+		)?)
 	}
 
 	async fn candidate_pending_availability(
@@ -134,24 +129,18 @@ where
 		block_id: &BlockId,
 		para_id: ParaId,
 	) -> RelayChainResult<Option<CommittedCandidateReceipt>> {
-		self.full_client
+		Ok(self
+			.full_client
 			.runtime_api()
-			.candidate_pending_availability(block_id, para_id)
-			.map_err(RelayChainError::ApiError)
+			.candidate_pending_availability(block_id, para_id)?)
 	}
 
 	async fn session_index_for_child(&self, block_id: &BlockId) -> RelayChainResult<SessionIndex> {
-		self.full_client
-			.runtime_api()
-			.session_index_for_child(block_id)
-			.map_err(RelayChainError::ApiError)
+		Ok(self.full_client.runtime_api().session_index_for_child(block_id)?)
 	}
 
 	async fn validators(&self, block_id: &BlockId) -> RelayChainResult<Vec<ValidatorId>> {
-		self.full_client
-			.runtime_api()
-			.validators(block_id)
-			.map_err(RelayChainError::ApiError)
+		Ok(self.full_client.runtime_api().validators(block_id)?)
 	}
 
 	async fn import_notification_stream(
@@ -179,10 +168,7 @@ where
 	}
 
 	async fn block_status(&self, block_id: BlockId) -> RelayChainResult<BlockStatus> {
-		self.backend
-			.blockchain()
-			.status(block_id)
-			.map_err(RelayChainError::BlockchainError)
+		Ok(self.backend.blockchain().status(block_id)?)
 	}
 
 	async fn is_major_syncing(&self) -> RelayChainResult<bool> {
@@ -199,7 +185,7 @@ where
 		block_id: &BlockId,
 		key: &[u8],
 	) -> RelayChainResult<Option<StorageValue>> {
-		let state = self.backend.state_at(*block_id).map_err(RelayChainError::BlockchainError)?;
+		let state = self.backend.state_at(*block_id)?;
 		state.storage(key).map_err(RelayChainError::GenericError)
 	}
 
@@ -208,8 +194,7 @@ where
 		block_id: &BlockId,
 		relevant_keys: &Vec<Vec<u8>>,
 	) -> RelayChainResult<StorageProof> {
-		let state_backend =
-			self.backend.state_at(*block_id).map_err(RelayChainError::BlockchainError)?;
+		let state_backend = self.backend.state_at(*block_id)?;
 
 		sp_state_machine::prove_read(state_backend, relevant_keys)
 			.map_err(|e| RelayChainError::StateMachineError(e.to_string()))

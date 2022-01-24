@@ -34,32 +34,23 @@ use sp_state_machine::StorageValue;
 
 pub type RelayChainResult<T> = Result<T, RelayChainError>;
 
-#[derive(Debug, derive_more::Display)]
+#[derive(thiserror::Error, Debug)]
 pub enum RelayChainError {
-	#[display(fmt = "Error occured while calling relay chain runtime: {:?}", _0)]
-	ApiError(ApiError),
-	#[display(fmt = "Timeout while waiting for relay-chain block `{}` to be imported.", _0)]
+	#[error("Error occured while calling relay chain runtime: {0:?}")]
+	ApiError(#[from] ApiError),
+	#[error("Timeout while waiting for relay-chain block `{0}` to be imported.")]
 	WaitTimeout(PHash),
-	#[display(
-		fmt = "Import listener closed while waiting for relay-chain block `{}` to be imported.",
-		_0
-	)]
+	#[error("Import listener closed while waiting for relay-chain block `{0}` to be imported.")]
 	ImportListenerClosed(PHash),
-	#[display(
-		fmt = "Blockchain returned an error while waiting for relay-chain block `{}` to be imported: {:?}",
-		_0,
-		_1
-	)]
+	#[error("Blockchain returned an error while waiting for relay-chain block `{0}` to be imported: {1:?}")]
 	WaitBlockchainError(PHash, sp_blockchain::Error),
-	#[display(fmt = "Blockchain returned an error: {:?}", _0)]
-	BlockchainError(sp_blockchain::Error),
-	#[display(fmt = "State machine error occured: {:?}", _0)]
+	#[error("Blockchain returned an error: {0:?}")]
+	BlockchainError(#[from] sp_blockchain::Error),
+	#[error("State machine error occured: {0:?}")]
 	StateMachineError(String),
-	#[display(fmt = "Unspecified error occured: {:?}", _0)]
+	#[error("Unspecified error occured: {0:?}")]
 	GenericError(String),
 }
-
-impl std::error::Error for RelayChainError {}
 
 /// Trait that provides all necessary methods for interaction between collator and relay chain.
 #[async_trait]
