@@ -41,9 +41,9 @@ members = [
 
 [profile.release]
 panic = "unwind"
+opt-level = 3
 
 [profile.production]
 inherits = "release"
 lto = true
-opt-level = 3
 codegen-units = 1
