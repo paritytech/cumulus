@@ -111,11 +111,11 @@ impl<T: Get<MultiLocation>> FilterAssetLocation for AssetsFrom<T> {
 		log::trace!(target: "xcm::AssetsFrom", "loc: {:?}, origin: {:?}", loc, origin);
 		&loc == origin &&
 			match asset {
-				MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) } => {
+				MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) } =>
 					loc.parent_count() == asset_loc.parent_count() &&
-						loc.interior().iter().zip(asset_loc.interior().iter())
-						.all(|(prefix_junction, asset_junction)| prefix_junction == asset_junction)
-				},
+						loc.interior().iter().zip(asset_loc.interior().iter()).all(
+							|(prefix_junction, asset_junction)| prefix_junction == asset_junction,
+						),
 				_ => false,
 			}
 	}
