@@ -109,7 +109,7 @@ where
 
 	let overseer_handle = relay_chain_interface
 		.overseer_handle()
-		.map_err(|e| sc_service::Error::Other(e.to_string()))?
+		.map_err(|e| sc_service::Error::Application(Box::new(e)))?
 		.ok_or_else(|| "Polkadot full node did not provide an `OverseerHandle`!")?;
 
 	let pov_recovery = cumulus_client_pov_recovery::PoVRecovery::new(
@@ -195,7 +195,7 @@ where
 
 	let overseer_handle = relay_chain_interface
 		.overseer_handle()
-		.map_err(|e| sc_service::Error::Other(e.to_string()))?
+		.map_err(|e| sc_service::Error::Application(Box::new(e)))?
 		.ok_or_else(|| "Polkadot full node did not provide an `OverseerHandle`!")?;
 
 	let pov_recovery = cumulus_client_pov_recovery::PoVRecovery::new(
