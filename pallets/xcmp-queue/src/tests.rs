@@ -17,6 +17,7 @@ use super::*;
 use cumulus_primitives_core::XcmpMessageHandler;
 use frame_support::{assert_noop, assert_ok};
 use mock::{new_test_ext, Origin, Test, XcmpQueue};
+use sp_runtime::traits::BadOrigin;
 
 #[test]
 fn one_message_does_not_panic() {
@@ -96,6 +97,10 @@ fn update_queue_config_data_works() {
 			5,
 			20 * WEIGHT_PER_MILLIS
 		));
+		assert_noop!(
+			XcmpQueue::update_config(Origin::signed(1), 4, 5, 3, 10_000, 6, 20 * WEIGHT_PER_MILLIS),
+			BadOrigin
+		);
 		let data: QueueConfigData = <QueueConfig<Test>>::get();
 
 		assert_eq!(data.suspend_threshold, 3);
