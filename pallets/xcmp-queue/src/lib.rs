@@ -131,7 +131,7 @@ pub mod pallet {
 			Ok(Some(used.saturating_add(1_000_000)).into())
 		}
 
-		#[pallet::weight(T::DbWeight::get().writes(1))]
+		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().writes(1))]
 		pub fn update_config(
 			origin: OriginFor<T>,
 			suspend_threshold: u32,

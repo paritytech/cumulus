@@ -92,7 +92,7 @@ fn update_queue_config_data_works() {
 			3,
 			6,
 			4,
-			100_00,
+			10_000,
 			5,
 			20 * WEIGHT_PER_MILLIS
 		));
