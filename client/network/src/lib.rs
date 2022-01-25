@@ -281,49 +281,45 @@ where
 	}
 
 	/// Handle a block announcement with empty data (no statement) attached to it.
-	fn handle_empty_block_announce_data(
+	async fn handle_empty_block_announce_data(
 		&self,
 		header: Block::Header,
-	) -> impl Future<Output = Result<Validation, BoxedError>> {
+	) -> Result<Validation, BoxedError> {
 		let relay_chain_interface = self.relay_chain_interface.clone();
 		let para_id = self.para_id;
 
-		async move {
-			// Check if block is equal or higher than best (this requires a justification)
-			let relay_chain_best_hash = relay_chain_interface
-				.best_block_hash()
-				.await
-				.map_err(|e| Box::new(e) as Box<_>)?;
-			let runtime_api_block_id = BlockId::Hash(relay_chain_best_hash);
-			let block_number = header.number();
+		// Check if block is equal or higher than best (this requires a justification)
+		let relay_chain_best_hash = relay_chain_interface
+			.best_block_hash()
+			.await
+			.map_err(|e| Box::new(e) as Box<_>)?;
+		let runtime_api_block_id = BlockId::Hash(relay_chain_best_hash);
+		let block_number = header.number();
 
-			let best_head =
-				Self::included_block(&relay_chain_interface, &runtime_api_block_id, para_id)
-					.await?;
-			let known_best_number = best_head.number();
-			let backed_block = || async {
-				Self::backed_block_hash(&relay_chain_interface, &runtime_api_block_id, para_id)
-					.await
-			};
+		let best_head =
+			Self::included_block(&relay_chain_interface, &runtime_api_block_id, para_id).await?;
+		let known_best_number = best_head.number();
+		let backed_block = || async {
+			Self::backed_block_hash(&relay_chain_interface, &runtime_api_block_id, para_id).await
+		};
 
-			if best_head == header {
-				tracing::debug!(target: LOG_TARGET, "Announced block matches best block.",);
+		if best_head == header {
+			tracing::debug!(target: LOG_TARGET, "Announced block matches best block.",);
 
-				Ok(Validation::Success { is_new_best: true })
-			} else if Some(HeadData(header.encode()).hash()) == backed_block().await? {
-				tracing::debug!(target: LOG_TARGET, "Announced block matches latest backed block.",);
+			Ok(Validation::Success { is_new_best: true })
+		} else if Some(HeadData(header.encode()).hash()) == backed_block().await? {
+			tracing::debug!(target: LOG_TARGET, "Announced block matches latest backed block.",);
 
-				Ok(Validation::Success { is_new_best: true })
-			} else if block_number >= known_best_number {
-				tracing::debug!(
+			Ok(Validation::Success { is_new_best: true })
+		} else if block_number >= known_best_number {
+			tracing::debug!(
 					target: LOG_TARGET,
 					"Validation failed because a justification is needed if the block at the top of the chain."
 				);
 
-				Ok(Validation::Failure { disconnect: false })
-			} else {
-				Ok(Validation::Success { is_new_best: false })
-			}
+			Ok(Validation::Failure { disconnect: false })
+		} else {
+			Ok(Validation::Success { is_new_best: false })
 		}
 	}
 }
