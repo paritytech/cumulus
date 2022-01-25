@@ -40,7 +40,6 @@ members = [
 ]
 
 [profile.release]
-# Polkadot runtime requires unwinding.
 panic = "unwind"
 
 [profile.production]
