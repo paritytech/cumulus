@@ -98,20 +98,37 @@ where
 	}
 }
 
+/// Tests `loc` whether it contains `prefix`.
+/// Similar to `MultiLocation::match_and_split` but allows arbitrary suffixes (instead of just one
+/// junction).
+///
+/// ```
+/// # use xcm::prelude::*;
+/// # use parachains_common::impls::match_prefix;
+/// let prefix =  MultiLocation::new(1, X1(Parachain(1234)));
+/// let loc =  MultiLocation::new(1, X2(Parachain(1234), GeneralIndex(5)));
+/// assert!(match_prefix(&prefix, &loc));
+/// let failing =  MultiLocation::new(1, Here);
+/// assert!(!match_prefix(&prefix, &failing));
+/// ```
+pub fn match_prefix(prefix: &MultiLocation, loc: &MultiLocation) -> bool {
+	prefix.parent_count() == loc.parent_count() &&
+		loc.len() >= prefix.len() &&
+		prefix.interior().iter().zip(loc.interior().iter()).all(
+			|(prefix_junction, junction)| prefix_junction == junction,
+		)
+}
+
 /// Asset filter that allows all assets from a certain location.
 pub struct AssetsFrom<T>(PhantomData<T>);
 impl<T: Get<MultiLocation>> FilterAssetLocation for AssetsFrom<T> {
 	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
-		let loc = T::get();
-		log::trace!(target: "xcm::AssetsFrom", "loc: {:?}, origin: {:?}", loc, origin);
-		&loc == origin &&
+		let prefix = T::get();
+		log::trace!(target: "xcm::AssetsFrom", "prefix: {:?}, origin: {:?}", prefix, origin);
+		&prefix == origin &&
 			match asset {
 				MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) } =>
-					loc.parent_count() == asset_loc.parent_count() &&
-						asset_loc.len() >= loc.len() &&
-						loc.interior().iter().zip(asset_loc.interior().iter()).all(
-							|(prefix_junction, asset_junction)| prefix_junction == asset_junction,
-						),
+					match_prefix(&prefix, asset_loc),
 				_ => false,
 			}
 	}
