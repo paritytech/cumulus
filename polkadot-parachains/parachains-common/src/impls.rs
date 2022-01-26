@@ -108,6 +108,7 @@ impl<T: Get<MultiLocation>> FilterAssetLocation for AssetsFrom<T> {
 			match asset {
 				MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) } =>
 					loc.parent_count() == asset_loc.parent_count() &&
+						asset_loc.len() >= loc.len() &&
 						loc.interior().iter().zip(asset_loc.interior().iter()).all(
 							|(prefix_junction, asset_junction)| prefix_junction == asset_junction,
 						),
@@ -267,39 +268,73 @@ mod tests {
 		});
 	}
 
-	#[test]
-	fn assets_from_filters_correctly() {
+	mod assets_from {
+		use super::*;
+
 		parameter_types! {
 			pub SomeSiblingParachain: MultiLocation = MultiLocation::new(1, X1(Parachain(1234)));
 		}
 
-		let asset_location = SomeSiblingParachain::get()
-			.clone()
-			.pushed_with_interior(GeneralIndex(42))
-			.expect("multilocation will only have 2 junctions; qed");
-		let asset = MultiAsset { id: Concrete(asset_location), fun: 1_000_000.into() };
-		assert!(
-			AssetsFrom::<SomeSiblingParachain>::filter_asset_location(
-				&asset,
-				&SomeSiblingParachain::get()
-			),
-			"AssetsFrom should allow assets from any of its interior locations"
-		);
+		#[test]
+		fn accepts_native_asset() {
+			let asset_location = SomeSiblingParachain::get();
+			let asset = MultiAsset { id: Concrete(asset_location), fun: 1_000_000.into() };
+			assert!(
+				AssetsFrom::<SomeSiblingParachain>::filter_asset_location(
+					&asset,
+					&SomeSiblingParachain::get()
+				),
+				"AssetsFrom should allow the native asset"
+			);
+		}
 
-		// make sure assets can have more than one junction inside the prefix location
-		let asset_location = SomeSiblingParachain::get()
-			.clone()
-			.pushed_with_interior(PalletInstance(50))
-			.unwrap()
-			.pushed_with_interior(GeneralIndex(42))
-			.expect("multilocation will only have 2 junctions; qed");
-		let asset = MultiAsset { id: Concrete(asset_location), fun: 1_000_000.into() };
-		assert!(
-			AssetsFrom::<SomeSiblingParachain>::filter_asset_location(
-				&asset,
-				&SomeSiblingParachain::get()
-			),
-			"AssetsFrom should allow assets from any of its interior locations"
-		);
+		#[test]
+		fn filters_correctly() {
+			let asset_location = SomeSiblingParachain::get()
+				.clone()
+				.pushed_with_interior(GeneralIndex(42))
+				.expect("multilocation will only have 2 junctions; qed");
+			let asset = MultiAsset { id: Concrete(asset_location), fun: 1_000_000.into() };
+			assert!(
+				AssetsFrom::<SomeSiblingParachain>::filter_asset_location(
+					&asset,
+					&SomeSiblingParachain::get()
+				),
+				"AssetsFrom should allow assets from any of its interior locations"
+			);
+		}
+
+		#[test]
+		fn accepts_long_suffix() {
+			// make sure assets can have more than one junction inside the prefix location
+			let asset_location = SomeSiblingParachain::get()
+				.clone()
+				.pushed_with_interior(PalletInstance(50))
+				.unwrap()
+				.pushed_with_interior(GeneralIndex(42))
+				.expect("multilocation will only have 3 junctions; qed");
+			let asset = MultiAsset { id: Concrete(asset_location), fun: 1_000_000.into() };
+			assert!(
+				AssetsFrom::<SomeSiblingParachain>::filter_asset_location(
+					&asset,
+					&SomeSiblingParachain::get()
+				),
+				"AssetsFrom should allow assets from any of its interior locations"
+			);
+		}
+
+		#[test]
+		fn rejects_short_location() {
+			let asset_location = MultiLocation::parent();
+			// make sure assets can have more than one junction inside the prefix location
+			let asset = MultiAsset { id: Concrete(asset_location), fun: 1_000_000.into() };
+			assert!(
+				!AssetsFrom::<SomeSiblingParachain>::filter_asset_location(
+					&asset,
+					&SomeSiblingParachain::get()
+				),
+				"AssetsFrom should filter assets not from the origin"
+			);
+		}
 	}
 }
