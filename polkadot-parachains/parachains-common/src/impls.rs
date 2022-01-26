@@ -114,9 +114,11 @@ where
 pub fn match_prefix(prefix: &MultiLocation, loc: &MultiLocation) -> bool {
 	prefix.parent_count() == loc.parent_count() &&
 		loc.len() >= prefix.len() &&
-		prefix.interior().iter().zip(loc.interior().iter()).all(
-			|(prefix_junction, junction)| prefix_junction == junction,
-		)
+		prefix
+			.interior()
+			.iter()
+			.zip(loc.interior().iter())
+			.all(|(prefix_junction, junction)| prefix_junction == junction)
 }
 
 /// Asset filter that allows all assets from a certain location.
