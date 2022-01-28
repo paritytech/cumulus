@@ -271,9 +271,8 @@ where
 	let _lock = backend.get_import_lock().read();
 
 	let block_id = BlockId::Hash(hash);
-	match backend.blockchain().status(block_id) {
-		Ok(BlockStatus::InChain) => return Ok(BlockCheckStatus::InChain),
-		Err(err) => return Err(RelayChainError::BlockchainError(err)),
+	match backend.blockchain().status(block_id)? {
+		BlockStatus::InChain => return Ok(BlockCheckStatus::InChain),
 		_ => {},
 	}
 

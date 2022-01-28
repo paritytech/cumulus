@@ -471,10 +471,11 @@ async fn pending_candidates(
 					)
 				});
 
-			session_index_result
-				.and_then(|v| Ok(pending_availability_result?.map(|pa| (pa, v))))
-				.ok()
-				.flatten()
+			if let Ok(Some(candidate)) = pending_availability_result {
+				session_index_result.map(|session_index| (candidate, session_index)).ok()
+			} else {
+				None
+			}
 		}
 	});
 	Ok(filtered_stream)
