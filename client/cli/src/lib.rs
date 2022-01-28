@@ -18,7 +18,6 @@
 
 #![warn(missing_docs)]
 
-use clap::Parser;
 use sc_cli;
 use sc_service::{
 	config::{PrometheusConfig, TelemetryEndpoints},
@@ -29,20 +28,21 @@ use std::{
 	io::{self, Write},
 	net::SocketAddr,
 };
+use structopt::StructOpt;
 
 /// The `purge-chain` command used to remove the whole chain: the parachain and the relay chain.
-#[derive(Debug, Parser)]
+#[derive(Debug, StructOpt)]
 pub struct PurgeChainCmd {
 	/// The base struct of the purge-chain command.
-	#[clap(flatten)]
+	#[structopt(flatten)]
 	pub base: sc_cli::PurgeChainCmd,
 
 	/// Only delete the para chain database
-	#[clap(long, aliases = &["para"])]
+	#[structopt(long, aliases = &["para"])]
 	pub parachain: bool,
 
 	/// Only delete the relay chain database
-	#[clap(long, aliases = &["relay"])]
+	#[structopt(long, aliases = &["relay"])]
 	pub relaychain: bool,
 }
 
@@ -120,16 +120,16 @@ impl sc_cli::CliConfiguration for PurgeChainCmd {
 }
 
 /// The `run` command used to run a node.
-#[derive(Debug, Parser)]
+#[derive(Debug, StructOpt)]
 pub struct RunCmd {
 	/// The cumulus RunCmd inherents from sc_cli's
-	#[clap(flatten)]
+	#[structopt(flatten)]
 	pub base: sc_cli::RunCmd,
 
 	/// Run node as collator.
 	///
 	/// Note that this is the same as running with `--validator`.
-	#[clap(long, conflicts_with = "validator")]
+	#[structopt(long, conflicts_with = "validator")]
 	pub collator: bool,
 }
 
