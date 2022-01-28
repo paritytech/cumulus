@@ -266,7 +266,7 @@ where
 		polkadot_config,
 		telemetry_worker_handle,
 		&mut task_manager,
-		collator_options,
+		collator_options.clone(),
 	)
 	.await
 	.map_err(|e| match e {
@@ -368,6 +368,7 @@ where
 			relay_chain_interface,
 			relay_chain_slot_duration,
 			import_queue,
+			collator_options,
 		};
 
 		start_full_node(params)?;

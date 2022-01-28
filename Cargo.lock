@@ -1629,6 +1629,7 @@ dependencies = [
 name = "cumulus-client-service"
 version = "0.1.0"
 dependencies = [
+ "cumulus-client-cli",
  "cumulus-client-collator",
  "cumulus-client-consensus-common",
  "cumulus-client-pov-recovery",
@@ -2061,6 +2062,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "criterion",
+ "cumulus-client-cli",
  "cumulus-client-consensus-common",
  "cumulus-client-consensus-relay-chain",
  "cumulus-client-network",

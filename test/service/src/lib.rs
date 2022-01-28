@@ -23,6 +23,7 @@ mod genesis;
 
 use std::{future::Future, time::Duration};
 
+use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
@@ -342,6 +343,7 @@ where
 			// the recovery delay of pov-recovery. We don't want to wait for too
 			// long on the full node to recover, so we reduce this time here.
 			relay_chain_slot_duration: Duration::from_millis(6),
+			collator_options: CollatorOptions { relay_chain_address: None },
 		};
 
 		start_full_node(params)?;
