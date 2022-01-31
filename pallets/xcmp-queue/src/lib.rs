@@ -141,8 +141,8 @@ pub mod pallet {
 			Self::deposit_event(Event::OverweightServiced(index, used));
 			Ok(Some(used.saturating_add(1_000_000)).into())
 		}
-    
-    /// Suspends all XCM executions for the XCMP queue, regardless of the sender's origin.
+
+		/// Suspends all XCM executions for the XCMP queue, regardless of the sender's origin.
 		///
 		/// - `origin`: Must pass `ControllerOrigin`.
 		#[pallet::weight(T::DbWeight::get().writes(1))]
@@ -153,8 +153,8 @@ pub mod pallet {
 
 			Ok(())
 		}
-    
-    /// Resumes all XCM executions for the XCMP queue.
+
+		/// Resumes all XCM executions for the XCMP queue.
 		///
 		/// Note that this function doesn't change the status of the in/out bound channels.
 		///
@@ -263,9 +263,9 @@ pub mod pallet {
 
 			<QueueConfig<T>>::put(current_config);
 			Self::deposit_event(Event::UpdatedConfig(current_config));
-      
-      Ok(())
-    }
+
+			Ok(())
+		}
 
 		/// Overwrite the maximum amount of weight any individual message may consume.
 		/// Messages above this weight go into the overweight queue and may only be serviced explicitly.
@@ -286,9 +286,9 @@ pub mod pallet {
 
 			<QueueConfig<T>>::put(current_config);
 			Self::deposit_event(Event::UpdatedConfig(current_config));
-      
-      Ok(())
-    }	
+
+			Ok(())
+		}
 	}
 
 	#[pallet::event]

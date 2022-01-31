@@ -190,5 +190,5 @@ fn update_xcmp_max_individual_weight() {
 		);
 		let data: QueueConfigData = <QueueConfig<Test>>::get();
 		assert_eq!(data.xcmp_max_individual_weight, 30 * WEIGHT_PER_MILLIS);
-  });
+	});
 }
