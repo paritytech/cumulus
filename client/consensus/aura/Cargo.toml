@@ -7,22 +7,22 @@ edition = "2021"
 
 [dependencies]
 # Substrate dependencies
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-application-crypto = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-consensus-slots = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sp-application-crypto = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sc-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sc-consensus-slots = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
 
 # Cumulus dependencies
 cumulus-client-consensus-common = { path = "../common" }
