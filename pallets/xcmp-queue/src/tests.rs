@@ -171,7 +171,8 @@ fn update_weight_restrict_decay_works() {
 		assert_ok!(XcmpQueue::update_weight_restrict_decay(Origin::root(), 5));
 		assert_noop!(XcmpQueue::update_weight_restrict_decay(Origin::signed(6), 4), BadOrigin);
 		let data: QueueConfigData = <QueueConfig<Test>>::get();
-		assert_eq!(data.weight_restrict_decay, 5);
+		
+        assert_eq!(data.weight_restrict_decay, 5);
 	});
 }
 
@@ -189,6 +190,7 @@ fn update_xcmp_max_individual_weight() {
 			BadOrigin
 		);
 		let data: QueueConfigData = <QueueConfig<Test>>::get();
-		assert_eq!(data.xcmp_max_individual_weight, 30 * WEIGHT_PER_MILLIS);
+		
+        assert_eq!(data.xcmp_max_individual_weight, 30 * WEIGHT_PER_MILLIS);
 	});
 }

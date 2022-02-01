@@ -173,17 +173,10 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.suspend_value`
-		///
-		/// - Events:
-		/// - `UpdatedConfig`: On Success.
 		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
 		pub fn update_suspend_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
-			let mut current_config: QueueConfigData = <QueueConfig<T>>::get();
-			current_config.suspend_threshold = new;
-
-			<QueueConfig<T>>::put(current_config);
-			Self::deposit_event(Event::UpdatedConfig(current_config));
+            QueueConfig::<T>::mutate(|data| data.suspend_threshold = new);
 
 			Ok(())
 		}
@@ -193,19 +186,12 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.drop_threshold`
-		///
-		/// - Events:
-		/// - `UpdatedConfig`: On Success.
 		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
 		pub fn update_drop_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
-			let mut current_config: QueueConfigData = <QueueConfig<T>>::get();
-			current_config.drop_threshold = new;
-
-			<QueueConfig<T>>::put(current_config);
-			Self::deposit_event(Event::UpdatedConfig(current_config));
-
-			Ok(())
+            QueueConfig::<T>::mutate(|data| data.drop_threshold = new);
+			
+            Ok(())
 		}
 
 		/// Overwrites the number of pages of messages which the queue must be reduced to before it signals that
@@ -213,38 +199,24 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.resume_threshold`                                
-		///
-		/// - Events:
-		/// - `UpdatedConfig`: On Success.
 		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
 		pub fn update_resume_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
-			let mut current_config: QueueConfigData = <QueueConfig<T>>::get();
-			current_config.resume_threshold = new;
-
-			<QueueConfig<T>>::put(current_config);
-			Self::deposit_event(Event::UpdatedConfig(current_config));
-
-			Ok(())
+            QueueConfig::<T>::mutate(|data| data.resume_threshold = new);
+			
+            Ok(())
 		}
 
 		/// Overwrites the amount of remaining weight under which we stop processing messages.
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.threshold_weight`                                
-		///
-		/// - Events:
-		/// - `UpdatedConfig`: On Success.
 		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
 		pub fn update_threshold_weight(origin: OriginFor<T>, new: Weight) -> DispatchResult {
 			ensure_root(origin)?;
-			let mut current_config: QueueConfigData = <QueueConfig<T>>::get();
-			current_config.threshold_weight = new;
-
-			<QueueConfig<T>>::put(current_config);
-			Self::deposit_event(Event::UpdatedConfig(current_config));
-
-			Ok(())
+            QueueConfig::<T>::mutate(|data| data.threshold_weight = new);
+			
+            Ok(())
 		}
 
 		/// Overwrites the speed to which the available weight approaches the maximum weight.
@@ -252,19 +224,12 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.weight_restrict_decay`.                                
-		///
-		/// - Events:
-		/// - `UpdatedConfig`: On Success.
 		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
 		pub fn update_weight_restrict_decay(origin: OriginFor<T>, new: Weight) -> DispatchResult {
 			ensure_root(origin)?;
-			let mut current_config: QueueConfigData = <QueueConfig<T>>::get();
-			current_config.weight_restrict_decay = new;
-
-			<QueueConfig<T>>::put(current_config);
-			Self::deposit_event(Event::UpdatedConfig(current_config));
-
-			Ok(())
+            QueueConfig::<T>::mutate(|data| data.weight_restrict_decay = new);
+			
+            Ok(())
 		}
 
 		/// Overwrite the maximum amount of weight any individual message may consume.
@@ -272,22 +237,15 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.xcmp_max_individual_weight`.                                
-		///
-		/// - Events:
-		/// - `UpdatedConfig`: On Success.
 		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
 		pub fn update_xcmp_max_individual_weight(
 			origin: OriginFor<T>,
 			new: Weight,
 		) -> DispatchResult {
 			ensure_root(origin)?;
-			let mut current_config: QueueConfigData = <QueueConfig<T>>::get();
-			current_config.xcmp_max_individual_weight = new;
-
-			<QueueConfig<T>>::put(current_config);
-			Self::deposit_event(Event::UpdatedConfig(current_config));
-
-			Ok(())
+            QueueConfig::<T>::mutate(|data| data.xcmp_max_individual_weight = new);
+			
+            Ok(())
 		}
 	}
 
@@ -306,8 +264,6 @@ pub mod pallet {
 		UpwardMessageSent(Option<T::Hash>),
 		/// An HRMP message was sent to a sibling parachain.
 		XcmpMessageSent(Option<T::Hash>),
-		/// Config data updated
-		UpdatedConfig(QueueConfigData),
 		/// An XCM exceeded the individual message weight budget.
 		OverweightEnqueued(ParaId, RelayBlockNumber, OverweightIndex, Weight),
 		/// An XCM from the overweight queue was executed with the given actual weight used.
