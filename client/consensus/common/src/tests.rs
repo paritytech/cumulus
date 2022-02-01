@@ -25,7 +25,7 @@ use cumulus_test_client::{
 };
 use futures::{channel::mpsc, executor::block_on, select, FutureExt, Stream, StreamExt};
 use futures_timer::Delay;
-use polkadot_primitives::v1::{Block as PBlock, Id as ParaId};
+use polkadot_primitives::v1::{Id as ParaId};
 use sc_client_api::UsageProvider;
 use sc_consensus::{BlockImport, BlockImportParams, ForkChoiceStrategy};
 use sp_blockchain::Error as ClientError;
@@ -100,7 +100,7 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 
 	async fn parachain_head_at(
 		&self,
-		_: &BlockId<PBlock>,
+		_: &PHash,
 		_: ParaId,
 	) -> RelayChainResult<Option<Vec<u8>>> {
 		unimplemented!("Not required for tests")

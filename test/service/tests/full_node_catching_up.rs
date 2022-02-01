@@ -29,7 +29,7 @@ async fn test_full_node_catching_up() {
 
 	let tokio_handle = tokio::runtime::Handle::current();
 
-	let ws_port = portpicker::pick_unused_port().expect("No ports free");
+	let ws_port = portpicker::pick_unused_port().expect("No free ports");
 	// start alice
 	let alice = run_relay_chain_validator_node(
 		tokio_handle.clone(),

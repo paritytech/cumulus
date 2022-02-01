@@ -60,40 +60,32 @@ impl RelayChainRPCClient {
 	async fn call_remote_runtime_function(
 		&self,
 		method_name: &str,
-		block_id: &BlockId,
+		hash: &PHash,
 		payload: Option<Vec<u8>>,
 	) -> RelayChainResult<sp_core::Bytes> {
 		let payload_bytes = payload.map_or(sp_core::Bytes(Vec::new()), sp_core::Bytes);
-		if let BlockId::Hash(hash) = block_id {
-			let params = rpc_params! {
-				method_name,
-				payload_bytes,
-				hash
-			};
-			tracing::debug!(target: LOG_TARGET, "Calling rpc endpoint: {}", method_name);
-			self.ws_client
-				.request("state_call", params)
-				.await
-				.map_err(|err| {
-					tracing::error!(
-						"Unable to complete 'state_call' to '{}', {:?}",
-						method_name,
-						err
-					);
-					RelayChainError::NetworkError("state_call".to_string(), err)
-				})
-				.map(|value| {
-					tracing::debug!(
-						target: LOG_TARGET,
-						"Got response for call '{}': {:?}",
-						method_name,
-						value
-					);
+		let params = rpc_params! {
+			method_name,
+			payload_bytes,
+			hash
+		};
+		tracing::debug!(target: LOG_TARGET, "Calling rpc endpoint: {}", method_name);
+		self.ws_client
+			.request("state_call", params)
+			.await
+			.map_err(|err| {
+				tracing::error!("Unable to complete 'state_call' to '{}', {:?}", method_name, err);
+				RelayChainError::NetworkError("state_call".to_string(), err)
+			})
+			.map(|value| {
+				tracing::debug!(
+					target: LOG_TARGET,
+					"Got response for call '{}': {:?}",
+					method_name,
 					value
-				})
-		} else {
-			panic!("Only hash can be accepted")
-		}
+				);
+				value
+			})
 	}
 
 	async fn subscribe<'a, R>(
@@ -197,7 +189,7 @@ impl RelayChainRPCClient {
 
 	async fn parachain_host_candidate_pending_availability(
 		&self,
-		at: &BlockId,
+		at: &PHash,
 		para_id: ParaId,
 	) -> Result<Option<CommittedCandidateReceipt>, RelayChainError> {
 		let response_bytes = self
@@ -214,7 +206,7 @@ impl RelayChainRPCClient {
 
 	async fn parachain_host_session_index_for_child(
 		&self,
-		at: &BlockId,
+		at: &PHash,
 	) -> Result<SessionIndex, RelayChainError> {
 		let response_bytes = self
 			.call_remote_runtime_function("ParachainHost_session_index_for_child", at, None)
@@ -225,7 +217,7 @@ impl RelayChainRPCClient {
 
 	async fn parachain_host_validators(
 		&self,
-		at: &BlockId,
+		at: &PHash,
 	) -> Result<Vec<ValidatorId>, RelayChainError> {
 		let response_bytes =
 			self.call_remote_runtime_function("ParachainHost_validators", at, None).await?;
@@ -235,7 +227,7 @@ impl RelayChainRPCClient {
 
 	async fn parachain_host_persisted_validation_data(
 		&self,
-		block_id: &BlockId,
+		block_id: &PHash,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> Result<Option<PersistedValidationData>, RelayChainError> {
@@ -254,7 +246,7 @@ impl RelayChainRPCClient {
 	async fn parachain_host_inbound_hrmp_channels_contents(
 		&self,
 		para_id: ParaId,
-		at: &BlockId,
+		at: &PHash,
 	) -> Result<BTreeMap<ParaId, Vec<InboundHrmpMessage>>, RelayChainError> {
 		let response_bytes = self
 			.call_remote_runtime_function(
@@ -271,7 +263,7 @@ impl RelayChainRPCClient {
 	async fn parachain_host_dmq_contents(
 		&self,
 		para_id: ParaId,
-		at: &BlockId,
+		at: &PHash,
 	) -> Result<Vec<InboundDownwardMessage>, RelayChainError> {
 		let response_bytes = self
 			.call_remote_runtime_function("ParachainHost_dmq_contents", &at, Some(para_id.encode()))
@@ -326,8 +318,7 @@ impl RelayChainInterface for RelayChainNetwork {
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> RelayChainResult<Vec<InboundDownwardMessage>> {
-		let block_id = BlockId::hash(relay_parent);
-		self.rpc_client.parachain_host_dmq_contents(para_id, &block_id).await
+		self.rpc_client.parachain_host_dmq_contents(para_id, &relay_parent).await
 	}
 
 	async fn retrieve_all_inbound_hrmp_channel_contents(
@@ -335,38 +326,37 @@ impl RelayChainInterface for RelayChainNetwork {
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> RelayChainResult<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
-		let block_id = BlockId::hash(relay_parent);
 		self.rpc_client
-			.parachain_host_inbound_hrmp_channels_contents(para_id, &block_id)
+			.parachain_host_inbound_hrmp_channels_contents(para_id, &relay_parent)
 			.await
 	}
 
 	async fn persisted_validation_data(
 		&self,
-		block_id: &BlockId,
+		hash: &PHash,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> RelayChainResult<Option<PersistedValidationData>> {
 		self.rpc_client
-			.parachain_host_persisted_validation_data(block_id, para_id, occupied_core_assumption)
+			.parachain_host_persisted_validation_data(hash, para_id, occupied_core_assumption)
 			.await
 	}
 
 	async fn candidate_pending_availability(
 		&self,
-		block_id: &BlockId,
+		hash: &PHash,
 		para_id: ParaId,
 	) -> RelayChainResult<Option<CommittedCandidateReceipt>> {
 		self.rpc_client
-			.parachain_host_candidate_pending_availability(block_id, para_id)
+			.parachain_host_candidate_pending_availability(hash, para_id)
 			.await
 	}
 
-	async fn session_index_for_child(&self, block_id: &BlockId) -> RelayChainResult<SessionIndex> {
-		self.rpc_client.parachain_host_session_index_for_child(block_id).await
+	async fn session_index_for_child(&self, hash: &PHash) -> RelayChainResult<SessionIndex> {
+		self.rpc_client.parachain_host_session_index_for_child(hash).await
 	}
 
-	async fn validators(&self, block_id: &BlockId) -> RelayChainResult<Vec<ValidatorId>> {
+	async fn validators(&self, block_id: &PHash) -> RelayChainResult<Vec<ValidatorId>> {
 		self.rpc_client.parachain_host_validators(block_id).await
 	}
 

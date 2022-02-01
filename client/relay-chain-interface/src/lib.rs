@@ -66,7 +66,7 @@ pub trait RelayChainInterface: Send + Sync {
 	) -> RelayChainResult<Option<StorageValue>>;
 
 	/// Fetch a vector of current validators.
-	async fn validators(&self, block_id: &BlockId) -> RelayChainResult<Vec<ValidatorId>>;
+	async fn validators(&self, block_id: &PHash) -> RelayChainResult<Vec<ValidatorId>>;
 
 	/// Get the status of a given block.
 	async fn block_status(&self, block_id: BlockId) -> RelayChainResult<BlockStatus>;
@@ -101,7 +101,7 @@ pub trait RelayChainInterface: Send + Sync {
 	/// and the para already occupies a core.
 	async fn persisted_validation_data(
 		&self,
-		block_id: &BlockId,
+		block_id: &PHash,
 		para_id: ParaId,
 		_: OccupiedCoreAssumption,
 	) -> RelayChainResult<Option<PersistedValidationData>>;
@@ -110,12 +110,12 @@ pub trait RelayChainInterface: Send + Sync {
 	/// assigned to occupied cores in `availability_cores` and `None` otherwise.
 	async fn candidate_pending_availability(
 		&self,
-		block_id: &BlockId,
+		block_id: &PHash,
 		para_id: ParaId,
 	) -> RelayChainResult<Option<CommittedCandidateReceipt>>;
 
 	/// Returns the session index expected at a child of the block.
-	async fn session_index_for_child(&self, block_id: &BlockId) -> RelayChainResult<SessionIndex>;
+	async fn session_index_for_child(&self, block_id: &PHash) -> RelayChainResult<SessionIndex>;
 
 	/// Get a stream of import block notifications.
 	async fn import_notification_stream(
@@ -176,7 +176,7 @@ where
 
 	async fn persisted_validation_data(
 		&self,
-		block_id: &BlockId,
+		block_id: &PHash,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> RelayChainResult<Option<PersistedValidationData>> {
@@ -187,17 +187,17 @@ where
 
 	async fn candidate_pending_availability(
 		&self,
-		block_id: &BlockId,
+		block_id: &PHash,
 		para_id: ParaId,
 	) -> RelayChainResult<Option<CommittedCandidateReceipt>> {
 		(**self).candidate_pending_availability(block_id, para_id).await
 	}
 
-	async fn session_index_for_child(&self, block_id: &BlockId) -> RelayChainResult<SessionIndex> {
+	async fn session_index_for_child(&self, block_id: &PHash) -> RelayChainResult<SessionIndex> {
 		(**self).session_index_for_child(block_id).await
 	}
 
-	async fn validators(&self, block_id: &BlockId) -> RelayChainResult<Vec<ValidatorId>> {
+	async fn validators(&self, block_id: &PHash) -> RelayChainResult<Vec<ValidatorId>> {
 		(**self).validators(block_id).await
 	}
 

@@ -25,7 +25,6 @@ use sp_consensus::block_validation::{
 };
 use sp_core::traits::SpawnNamed;
 use sp_runtime::{
-	generic::BlockId,
 	traits::{Block as BlockT, Header as HeaderT},
 };
 
@@ -133,9 +132,8 @@ impl BlockAnnounceData {
 	{
 		let validator_index = self.statement.unchecked_validator_index();
 
-		let runtime_api_block_id = BlockId::Hash(self.relay_parent);
 		let session_index =
-			match relay_chain_client.session_index_for_child(&runtime_api_block_id).await {
+			match relay_chain_client.session_index_for_child(&self.relay_parent).await {
 				Ok(r) => r,
 				Err(e) => return Err(BlockAnnounceError(format!("{:?}", e))),
 			};
@@ -143,7 +141,7 @@ impl BlockAnnounceData {
 		let signing_context = SigningContext { parent_hash: self.relay_parent, session_index };
 
 		// Check that the signer is a legit validator.
-		let authorities = match relay_chain_client.validators(&runtime_api_block_id).await {
+		let authorities = match relay_chain_client.validators(&self.relay_parent).await {
 			Ok(r) => r,
 			Err(e) => return Err(BlockAnnounceError(format!("{:?}", e))),
 		};
@@ -246,11 +244,11 @@ where
 	/// Get the included block of the given parachain in the relay chain.
 	async fn included_block(
 		relay_chain_interface: &RCInterface,
-		block_id: &BlockId<PBlock>,
+		hash: &PHash,
 		para_id: ParaId,
 	) -> Result<Block::Header, BoxedError> {
 		let validation_data = relay_chain_interface
-			.persisted_validation_data(block_id, para_id, OccupiedCoreAssumption::TimedOut)
+			.persisted_validation_data(hash, para_id, OccupiedCoreAssumption::TimedOut)
 			.await
 			.map_err(|e| Box::new(BlockAnnounceError(format!("{:?}", e))) as Box<_>)?
 			.ok_or_else(|| {
@@ -269,11 +267,11 @@ where
 	/// Get the backed block hash of the given parachain in the relay chain.
 	async fn backed_block_hash(
 		relay_chain_interface: &RCInterface,
-		block_id: &BlockId<PBlock>,
+		hash: &PHash,
 		para_id: ParaId,
 	) -> Result<Option<PHash>, BoxedError> {
 		let candidate_receipt = relay_chain_interface
-			.candidate_pending_availability(block_id, para_id)
+			.candidate_pending_availability(hash, para_id)
 			.await
 			.map_err(|e| Box::new(BlockAnnounceError(format!("{:?}", e))) as Box<_>)?;
 
@@ -293,14 +291,13 @@ where
 			.best_block_hash()
 			.await
 			.map_err(|e| Box::new(e) as Box<_>)?;
-		let runtime_api_block_id = BlockId::Hash(relay_chain_best_hash);
 		let block_number = header.number();
 
 		let best_head =
-			Self::included_block(&relay_chain_interface, &runtime_api_block_id, para_id).await?;
+			Self::included_block(&relay_chain_interface, &relay_chain_best_hash, para_id).await?;
 		let known_best_number = best_head.number();
 		let backed_block = || async {
-			Self::backed_block_hash(&relay_chain_interface, &runtime_api_block_id, para_id).await
+			Self::backed_block_hash(&relay_chain_interface, &relay_chain_best_hash, para_id).await
 		};
 
 		if best_head == header {

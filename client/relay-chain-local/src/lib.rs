@@ -113,12 +113,12 @@ where
 
 	async fn persisted_validation_data(
 		&self,
-		block_id: &BlockId,
+		hash: &PHash,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> RelayChainResult<Option<PersistedValidationData>> {
 		Ok(self.full_client.runtime_api().persisted_validation_data(
-			block_id,
+			&BlockId::Hash(*hash),
 			para_id,
 			occupied_core_assumption,
 		)?)
@@ -126,21 +126,21 @@ where
 
 	async fn candidate_pending_availability(
 		&self,
-		block_id: &BlockId,
+		hash: &PHash,
 		para_id: ParaId,
 	) -> RelayChainResult<Option<CommittedCandidateReceipt>> {
 		Ok(self
 			.full_client
 			.runtime_api()
-			.candidate_pending_availability(block_id, para_id)?)
+			.candidate_pending_availability(&BlockId::Hash(*hash), para_id)?)
 	}
 
-	async fn session_index_for_child(&self, block_id: &BlockId) -> RelayChainResult<SessionIndex> {
-		Ok(self.full_client.runtime_api().session_index_for_child(block_id)?)
+	async fn session_index_for_child(&self, hash: &PHash) -> RelayChainResult<SessionIndex> {
+		Ok(self.full_client.runtime_api().session_index_for_child(&BlockId::Hash(*hash))?)
 	}
 
-	async fn validators(&self, block_id: &BlockId) -> RelayChainResult<Vec<ValidatorId>> {
-		Ok(self.full_client.runtime_api().validators(block_id)?)
+	async fn validators(&self, hash: &PHash) -> RelayChainResult<Vec<ValidatorId>> {
+		Ok(self.full_client.runtime_api().validators(&BlockId::Hash(*hash))?)
 	}
 
 	async fn import_notification_stream(
