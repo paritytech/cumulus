@@ -98,20 +98,12 @@ where
 	}
 }
 
-/// Tests `loc` whether it contains `prefix`.
+/// Tests `loc` whether it starts with `prefix`.
 /// Similar to `MultiLocation::match_and_split` but allows arbitrary suffixes (instead of just one
 /// junction).
-///
-/// ```
-/// # use xcm::prelude::*;
-/// # use parachains_common::impls::match_prefix;
-/// let prefix =  MultiLocation::new(1, X1(Parachain(1234)));
-/// let loc =  MultiLocation::new(1, X2(Parachain(1234), GeneralIndex(5)));
-/// assert!(match_prefix(&prefix, &loc));
-/// let failing =  MultiLocation::new(1, Here);
-/// assert!(!match_prefix(&prefix, &failing));
-/// ```
-pub fn match_prefix(prefix: &MultiLocation, loc: &MultiLocation) -> bool {
+// TODO: Replace with version implemented on MultiLocation here:
+// https://github.com/paritytech/polkadot/pull/4827
+fn matches_prefix(prefix: &MultiLocation, loc: &MultiLocation) -> bool {
 	prefix.parent_count() == loc.parent_count() &&
 		loc.len() >= prefix.len() &&
 		prefix
@@ -130,7 +122,7 @@ impl<T: Get<MultiLocation>> FilterAssetLocation for AssetsFrom<T> {
 		&prefix == origin &&
 			match asset {
 				MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) } =>
-					match_prefix(&prefix, asset_loc),
+					matches_prefix(&prefix, asset_loc),
 				_ => false,
 			}
 	}
@@ -285,6 +277,15 @@ mod tests {
 			// Author gets 100% of tip and 100% of fee = 30
 			assert_eq!(Balances::free_balance(CollatorSelection::account_id()), 30);
 		});
+	}
+
+	#[test]
+	fn test_matches_prefix_works() {
+		let prefix =  MultiLocation::new(1, X1(Parachain(1234)));
+		let loc =  MultiLocation::new(1, X2(Parachain(1234), GeneralIndex(5)));
+		assert!(matches_prefix(&prefix, &loc));
+		let failing =  MultiLocation::new(1, Here);
+		assert!(!matches_prefix(&prefix, &failing));
 	}
 
 	mod assets_from {
