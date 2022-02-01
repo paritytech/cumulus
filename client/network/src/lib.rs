@@ -24,16 +24,14 @@ use sp_consensus::block_validation::{
 	BlockAnnounceValidator as BlockAnnounceValidatorT, Validation,
 };
 use sp_core::traits::SpawnNamed;
-use sp_runtime::{
-	traits::{Block as BlockT, Header as HeaderT},
-};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 
 use cumulus_relay_chain_interface::RelayChainInterface;
 use polkadot_node_primitives::{CollationSecondedSignal, Statement};
 use polkadot_parachain::primitives::HeadData;
 use polkadot_primitives::v1::{
-	Block as PBlock, CandidateReceipt, CompactStatement, Hash as PHash, Id as ParaId,
-	OccupiedCoreAssumption, SigningContext, UncheckedSigned,
+	CandidateReceipt, CompactStatement, Hash as PHash, Id as ParaId, OccupiedCoreAssumption,
+	SigningContext, UncheckedSigned,
 };
 
 use codec::{Decode, DecodeAll, Encode};
