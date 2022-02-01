@@ -33,7 +33,7 @@ use sp_runtime::{
 
 use cumulus_client_consensus_common::ParachainConsensus;
 use polkadot_node_primitives::{
-	BlockData, Collation, CollationGenerationConfig, CollationResult, PoV, MaybeCompressedPoV,
+	BlockData, Collation, CollationGenerationConfig, CollationResult, MaybeCompressedPoV, PoV,
 };
 use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
 use polkadot_overseer::Handle as OverseerHandle;
@@ -273,9 +273,8 @@ where
 			b.storage_proof().encode().len() as f64 / 1024f64,
 		);
 
-		let pov = polkadot_node_primitives::maybe_compress_pov(PoV {
-			block_data: BlockData(b.encode()),
-		});
+		let pov =
+			polkadot_node_primitives::maybe_compress_pov(PoV { block_data: BlockData(b.encode()) });
 
 		tracing::info!(
 			target: LOG_TARGET,
