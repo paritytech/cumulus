@@ -33,7 +33,7 @@ use sp_runtime::{
 
 use cumulus_client_consensus_common::ParachainConsensus;
 use polkadot_node_primitives::{
-	BlockData, Collation, CollationGenerationConfig, CollationResult, PoV,
+	BlockData, Collation, CollationGenerationConfig, CollationResult, PoV, MaybeCompressedPoV,
 };
 use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
 use polkadot_overseer::Handle as OverseerHandle;
@@ -184,9 +184,8 @@ where
 		&self,
 		block: ParachainBlockData<Block>,
 		block_hash: Block::Hash,
+		pov: PoV,
 	) -> Option<Collation> {
-		let block_data = BlockData(block.encode());
-
 		let collation_info = self
 			.fetch_collation_info(block_hash, block.header())
 			.map_err(|e| {
@@ -206,7 +205,7 @@ where
 			horizontal_messages: collation_info.horizontal_messages,
 			hrmp_watermark: collation_info.hrmp_watermark,
 			head_data: collation_info.head_data,
-			proof_of_validity: PoV { block_data },
+			proof_of_validity: MaybeCompressedPoV::Compressed(pov),
 		})
 	}
 
@@ -274,8 +273,18 @@ where
 			b.storage_proof().encode().len() as f64 / 1024f64,
 		);
 
+		let pov = polkadot_node_primitives::maybe_compress_pov(PoV {
+			block_data: BlockData(b.encode()),
+		});
+
+		tracing::info!(
+			target: LOG_TARGET,
+			"Compressed PoV size: {}kb",
+			pov.block_data.0.len() as f64 / 1024f64,
+		);
+
 		let block_hash = b.header().hash();
-		let collation = self.build_collation(b, block_hash)?;
+		let collation = self.build_collation(b, block_hash, pov)?;
 
 		let (result_sender, signed_stmt_recv) = oneshot::channel();
 
