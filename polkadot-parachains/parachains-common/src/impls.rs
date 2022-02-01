@@ -281,10 +281,10 @@ mod tests {
 
 	#[test]
 	fn test_matches_prefix_works() {
-		let prefix =  MultiLocation::new(1, X1(Parachain(1234)));
-		let loc =  MultiLocation::new(1, X2(Parachain(1234), GeneralIndex(5)));
+		let prefix = MultiLocation::new(1, X1(Parachain(1234)));
+		let loc = MultiLocation::new(1, X2(Parachain(1234), GeneralIndex(5)));
 		assert!(matches_prefix(&prefix, &loc));
-		let failing =  MultiLocation::new(1, Here);
+		let failing = MultiLocation::new(1, Here);
 		assert!(!matches_prefix(&prefix, &failing));
 	}
 
