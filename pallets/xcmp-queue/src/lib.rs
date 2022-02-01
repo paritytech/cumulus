@@ -176,7 +176,7 @@ pub mod pallet {
 		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
 		pub fn update_suspend_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
-            QueueConfig::<T>::mutate(|data| data.suspend_threshold = new);
+			QueueConfig::<T>::mutate(|data| data.suspend_threshold = new);
 
 			Ok(())
 		}
@@ -189,9 +189,9 @@ pub mod pallet {
 		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
 		pub fn update_drop_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
-            QueueConfig::<T>::mutate(|data| data.drop_threshold = new);
-			
-            Ok(())
+			QueueConfig::<T>::mutate(|data| data.drop_threshold = new);
+
+			Ok(())
 		}
 
 		/// Overwrites the number of pages of messages which the queue must be reduced to before it signals that
@@ -202,9 +202,9 @@ pub mod pallet {
 		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
 		pub fn update_resume_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
-            QueueConfig::<T>::mutate(|data| data.resume_threshold = new);
-			
-            Ok(())
+			QueueConfig::<T>::mutate(|data| data.resume_threshold = new);
+
+			Ok(())
 		}
 
 		/// Overwrites the amount of remaining weight under which we stop processing messages.
@@ -214,9 +214,9 @@ pub mod pallet {
 		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
 		pub fn update_threshold_weight(origin: OriginFor<T>, new: Weight) -> DispatchResult {
 			ensure_root(origin)?;
-            QueueConfig::<T>::mutate(|data| data.threshold_weight = new);
-			
-            Ok(())
+			QueueConfig::<T>::mutate(|data| data.threshold_weight = new);
+
+			Ok(())
 		}
 
 		/// Overwrites the speed to which the available weight approaches the maximum weight.
@@ -227,9 +227,9 @@ pub mod pallet {
 		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
 		pub fn update_weight_restrict_decay(origin: OriginFor<T>, new: Weight) -> DispatchResult {
 			ensure_root(origin)?;
-            QueueConfig::<T>::mutate(|data| data.weight_restrict_decay = new);
-			
-            Ok(())
+			QueueConfig::<T>::mutate(|data| data.weight_restrict_decay = new);
+
+			Ok(())
 		}
 
 		/// Overwrite the maximum amount of weight any individual message may consume.
@@ -243,9 +243,9 @@ pub mod pallet {
 			new: Weight,
 		) -> DispatchResult {
 			ensure_root(origin)?;
-            QueueConfig::<T>::mutate(|data| data.xcmp_max_individual_weight = new);
-			
-            Ok(())
+			QueueConfig::<T>::mutate(|data| data.xcmp_max_individual_weight = new);
+
+			Ok(())
 		}
 	}
 
