@@ -146,6 +146,8 @@ pub struct RunCmd {
 /// Options only relevant for collator nodes
 #[derive(Clone, Debug)]
 pub struct CollatorOptions {
+
+	/// Location of relay chain full node
 	pub relay_chain_address: Option<Url>,
 }
 

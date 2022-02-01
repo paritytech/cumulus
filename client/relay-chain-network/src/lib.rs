@@ -42,7 +42,7 @@ use sp_runtime::{generic::SignedBlock, DeserializeOwned};
 use sp_state_machine::StorageValue;
 use sp_storage::StorageKey;
 use std::sync::Arc;
-use tracing::{debug_span, info_span, span, Instrument, Level};
+use tracing::{info_span, Instrument, Level};
 
 pub use url::Url;
 
@@ -315,7 +315,6 @@ impl RelayChainNetwork {
 			.build(url.as_str())
 			.await
 			.expect("Should be able to initialize websocket client.");
-
 		Self { rpc_client: RelayChainRPCClient { ws_client: Arc::new(ws_client) } }
 	}
 }
@@ -328,9 +327,7 @@ impl RelayChainInterface for RelayChainNetwork {
 		relay_parent: PHash,
 	) -> RelayChainResult<Vec<InboundDownwardMessage>> {
 		let block_id = BlockId::hash(relay_parent);
-		let response = self.rpc_client.parachain_host_dmq_contents(para_id, &block_id).await;
-
-		response
+		self.rpc_client.parachain_host_dmq_contents(para_id, &block_id).await
 	}
 
 	async fn retrieve_all_inbound_hrmp_channel_contents(
@@ -339,12 +336,9 @@ impl RelayChainInterface for RelayChainNetwork {
 		relay_parent: PHash,
 	) -> RelayChainResult<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
 		let block_id = BlockId::hash(relay_parent);
-		let response = self
-			.rpc_client
+		self.rpc_client
 			.parachain_host_inbound_hrmp_channels_contents(para_id, &block_id)
-			.await;
-
-		response
+			.await
 	}
 
 	async fn persisted_validation_data(
@@ -353,12 +347,9 @@ impl RelayChainInterface for RelayChainNetwork {
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> RelayChainResult<Option<PersistedValidationData>> {
-		let response = self
-			.rpc_client
+		self.rpc_client
 			.parachain_host_persisted_validation_data(block_id, para_id, occupied_core_assumption)
-			.await;
-
-		response
+			.await
 	}
 
 	async fn candidate_pending_availability(
@@ -366,24 +357,17 @@ impl RelayChainInterface for RelayChainNetwork {
 		block_id: &BlockId,
 		para_id: ParaId,
 	) -> RelayChainResult<Option<CommittedCandidateReceipt>> {
-		let response = self
-			.rpc_client
+		self.rpc_client
 			.parachain_host_candidate_pending_availability(block_id, para_id)
-			.await;
-
-		response
+			.await
 	}
 
 	async fn session_index_for_child(&self, block_id: &BlockId) -> RelayChainResult<SessionIndex> {
-		let response = self.rpc_client.parachain_host_session_index_for_child(block_id).await;
-
-		response
+		self.rpc_client.parachain_host_session_index_for_child(block_id).await
 	}
 
 	async fn validators(&self, block_id: &BlockId) -> RelayChainResult<Vec<ValidatorId>> {
-		let response = self.rpc_client.parachain_host_validators(block_id).await;
-
-		response
+		self.rpc_client.parachain_host_validators(block_id).await
 	}
 
 	async fn import_notification_stream(
@@ -418,8 +402,7 @@ impl RelayChainInterface for RelayChainNetwork {
 	}
 
 	async fn best_block_hash(&self) -> RelayChainResult<PHash> {
-		let response = self.rpc_client.chain_get_head().await;
-		response
+		self.rpc_client.chain_get_head().await
 	}
 
 	async fn block_status(&self, block_id: BlockId) -> RelayChainResult<BlockStatus> {
@@ -440,7 +423,7 @@ impl RelayChainInterface for RelayChainNetwork {
 	}
 
 	fn overseer_handle(&self) -> RelayChainResult<Option<Handle>> {
-		todo!("overseer_handle");
+		unimplemented!("Overseer handle is not available on relay-chain-network");
 	}
 
 	async fn get_storage_by_key(
@@ -454,8 +437,10 @@ impl RelayChainInterface for RelayChainNetwork {
 			sp_api::BlockId::Number(_) => todo!(),
 		};
 
-		let response = self.rpc_client.state_get_storage(storage_key, Some(*hash)).await;
-		response.map(|v| v.map(|sv| sv.0))
+		self.rpc_client
+			.state_get_storage(storage_key, Some(*hash))
+			.await
+			.map(|v| v.map(|sv| sv.0))
 	}
 
 	async fn prove_read(

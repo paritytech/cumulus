@@ -54,6 +54,8 @@ cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inh
 cumulus-test-runtime = { path = "../runtime" }
 cumulus-test-relay-validation-worker-provider = { path = "../relay-validation-worker-provider" }
 cumulus-relay-chain-local = { path = "../../client/relay-chain-local" }
+cumulus-relay-chain-interface = { path = "../../client/relay-chain-interface" }
+cumulus-relay-chain-network = { path = "../../client/relay-chain-network" }
 
 criterion = { version = "0.3.5", features = [ "async_tokio" ] }
 
@@ -61,6 +63,8 @@ parking_lot = "0.11.1"
 
 # RPC related dependencies
 jsonrpc-core = "18.0.0"
+url = "2.2.2"
+portpicker = "0.1.1"
 
 [dev-dependencies]
 futures = "0.3.5"

@@ -16,6 +16,7 @@
 
 use cumulus_primitives_core::ParaId;
 use cumulus_test_service::{initial_head_data, run_relay_chain_validator_node, Keyring::*};
+use futures::join;
 
 #[substrate_test_utils::test]
 #[ignore]
@@ -28,12 +29,24 @@ async fn test_full_node_catching_up() {
 
 	let tokio_handle = tokio::runtime::Handle::current();
 
+	let ws_port = portpicker::pick_unused_port().expect("No ports free");
 	// start alice
-	let alice = run_relay_chain_validator_node(tokio_handle.clone(), Alice, || {}, Vec::new());
+	let alice = run_relay_chain_validator_node(
+		tokio_handle.clone(),
+		Alice,
+		|| {},
+		Vec::new(),
+		Some(ws_port),
+	);
 
 	// start bob
-	let bob =
-		run_relay_chain_validator_node(tokio_handle.clone(), Bob, || {}, vec![alice.addr.clone()]);
+	let bob = run_relay_chain_validator_node(
+		tokio_handle.clone(),
+		Bob,
+		|| {},
+		vec![alice.addr.clone()],
+		None,
+	);
 
 	// register parachain
 	alice
@@ -57,10 +70,22 @@ async fn test_full_node_catching_up() {
 	charlie.wait_for_blocks(5).await;
 
 	// run cumulus dave (a parachain full node) and wait for it to sync some blocks
-	let dave = cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle, Dave)
+	let dave = cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle.clone(), Dave)
 		.connect_to_parachain_node(&charlie)
 		.connect_to_relay_chain_nodes(vec![&alice, &bob])
 		.build()
 		.await;
-	dave.wait_for_blocks(7).await;
+
+	let mut url = url::Url::parse("ws://127.0.0.1").expect("should be a valid Url");
+	url.set_port(Some(ws_port));
+
+	// run cumulus dave (a parachain full node) and wait for it to sync some blocks
+	let eve = cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle, Eve)
+		.connect_to_parachain_node(&charlie)
+		.connect_to_relay_chain_nodes(vec![&alice, &bob])
+		.use_relay_chain_network(url)
+		.build()
+		.await;
+
+	join!(dave.wait_for_blocks(7), eve.wait_for_blocks(7));
 }
