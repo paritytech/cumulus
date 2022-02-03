@@ -35,3 +35,4 @@ jsonrpsee = {version = "0.7.0", features = ["client"]}
 tracing = "0.1.25"
 async-trait = "0.1.52"
 url = "2.2.2"
+backoff = {version = "0.4.0", features = ["tokio"]}

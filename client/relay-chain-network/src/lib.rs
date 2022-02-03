@@ -17,6 +17,7 @@
 use std::pin::Pin;
 
 use async_trait::async_trait;
+use backoff::{future::retry_notify, ExponentialBackoff};
 use core::time::Duration;
 use cumulus_primitives_core::{
 	relay_chain::{
@@ -42,7 +43,6 @@ use sp_runtime::{generic::SignedBlock, DeserializeOwned};
 use sp_state_machine::StorageValue;
 use sp_storage::StorageKey;
 use std::sync::Arc;
-use tracing::{info_span, Instrument, Level};
 
 pub use url::Url;
 
@@ -52,6 +52,7 @@ const TIMEOUT_IN_SECONDS: u64 = 6;
 #[derive(Clone)]
 struct RelayChainRPCClient {
 	ws_client: Arc<JsonRPCClient>,
+	retry_strategy: ExponentialBackoff,
 }
 
 /// Client that calls RPC endpoints and deserializes call results
@@ -69,25 +70,23 @@ impl RelayChainRPCClient {
 			payload_bytes,
 			hash
 		};
-		tracing::debug!(target: LOG_TARGET, "Calling rpc endpoint: {}", method_name);
-		self.ws_client
-			.request("state_call", params)
-			.await
-			.map_err(|err| {
-				tracing::error!("Unable to complete 'state_call' to '{}', {:?}", method_name, err);
-				RelayChainError::NetworkError("state_call".to_string(), err)
-			})
-			.map(|value| {
-				tracing::debug!(
-					target: LOG_TARGET,
-					"Got response for call '{}': {:?}",
-					method_name,
-					value
-				);
-				value
-			})
+		retry_notify(
+			self.retry_strategy.clone(),
+			|| async {
+				self.ws_client
+					.request("state_call", params.clone())
+					.await
+					.map_err(|err| backoff::Error::Transient { err, retry_after: None })
+			},
+			|e, _| {
+				tracing::warn!("Unable to complete RPC request 'state_call', retrying. Error {}", e)
+			},
+		)
+		.await
+		.map_err(|err| RelayChainError::NetworkError("state_call".to_string(), err))
 	}
 
+	/// Subscribe to a notification stream via RPC
 	async fn subscribe<'a, R>(
 		&self,
 		sub_name: &'a str,
@@ -97,7 +96,6 @@ impl RelayChainRPCClient {
 	where
 		R: DeserializeOwned,
 	{
-		// tracing::debug!(target: LOG_TARGET, "Subscribing to stream: {}", sub_name);
 		self.ws_client
 			.subscribe::<R>(sub_name, params, unsub_name)
 			.await
@@ -120,29 +118,20 @@ impl RelayChainRPCClient {
 	where
 		R: DeserializeOwned + std::fmt::Debug,
 	{
-		let span = info_span!("Request to relay chain", method);
-		async move {
-			tracing::event!(target: LOG_TARGET, Level::DEBUG, method);
-			self.ws_client
-				.request(method, params)
-				.await
-				.map_err(|err| {
-					tracing::event!(
-						target: LOG_TARGET,
-						Level::DEBUG,
-						method,
-						"Encountered error: {}",
-						err.to_string().as_str()
-					);
-					RelayChainError::NetworkError(method.to_string(), err)
-				})
-				.map(|value| {
-					tracing::event!(target: LOG_TARGET, Level::DEBUG, method, "{:?}", value);
-					value
-				})
-		}
-		.instrument(span)
+		retry_notify(
+			self.retry_strategy.clone(),
+			|| async {
+				self.ws_client
+					.request(method, params.clone())
+					.await
+					.map_err(|err| backoff::Error::Transient { err, retry_after: None })
+			},
+			|e, _| {
+				tracing::warn!("Unable to complete RPC request '{}', retrying. Error {}", method, e)
+			},
+		)
 		.await
+		.map_err(|err| RelayChainError::NetworkError(method.to_string(), err))
 	}
 
 	async fn system_health(&self) -> Result<Health, RelayChainError> {
@@ -307,7 +296,12 @@ impl RelayChainNetwork {
 			.build(url.as_str())
 			.await
 			.expect("Should be able to initialize websocket client.");
-		Self { rpc_client: RelayChainRPCClient { ws_client: Arc::new(ws_client) } }
+		Self {
+			rpc_client: RelayChainRPCClient {
+				ws_client: Arc::new(ws_client),
+				retry_strategy: ExponentialBackoff::default(),
+			},
+		}
 	}
 }
 
