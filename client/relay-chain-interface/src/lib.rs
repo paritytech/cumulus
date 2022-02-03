@@ -30,6 +30,7 @@ use futures::Stream;
 
 use async_trait::async_trait;
 use jsonrpsee_core::Error as JsonRPSeeError;
+use parity_scale_codec::Error as CodecError;
 use sp_api::ApiError;
 use sp_state_machine::StorageValue;
 
@@ -51,8 +52,16 @@ pub enum RelayChainError {
 	StateMachineError(Box<dyn sp_state_machine::Error>),
 	#[error("Unable to call RPC method '{0}' due to error: {1:?}")]
 	NetworkError(String, JsonRPSeeError),
+	#[error("Scale codec deserialization error: {0:?}")]
+	DeserializationError(CodecError),
 	#[error("Unspecified error occured: {0:?}")]
 	GenericError(String),
+}
+
+impl From<CodecError> for RelayChainError {
+	fn from(e: CodecError) -> Self {
+		RelayChainError::DeserializationError(e)
+	}
 }
 
 /// Trait that provides all necessary methods for interaction between collator and relay chain.
