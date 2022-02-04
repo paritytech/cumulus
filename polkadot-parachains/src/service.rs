@@ -269,13 +269,16 @@ async fn build_relay_chain_interface(
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	task_manager: &mut TaskManager,
 	collator_options: CollatorOptions,
-) -> Result<(Arc<(dyn RelayChainInterface + 'static)>, CollatorPair), polkadot_service::Error> {
+) -> Result<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>), polkadot_service::Error>
+{
 	match collator_options.relay_chain_address {
-		Some(relay_chain_url) => Ok((
-			Arc::new(RelayChainNetwork::new(relay_chain_url).await) as Arc<_>,
-			CollatorPair::generate().0,
-		)),
-		None => build_relay_chain_local(polkadot_config, telemetry_worker_handle, task_manager),
+		Some(relay_chain_url) =>
+			Ok((Arc::new(RelayChainNetwork::new(relay_chain_url).await) as Arc<_>, None)),
+		None => {
+			let relay_chain_local =
+				build_relay_chain_local(polkadot_config, telemetry_worker_handle, task_manager);
+			relay_chain_local.map(|rcl| (rcl.0, Some(rcl.1)))
+		},
 	}
 }
 
@@ -439,7 +442,7 @@ where
 			spawner,
 			parachain_consensus,
 			import_queue,
-			collator_key,
+			collator_key: collator_key.expect("Unable to start collator without collator key"),
 			relay_chain_slot_duration,
 		};
 
@@ -637,7 +640,7 @@ where
 			spawner,
 			parachain_consensus,
 			import_queue,
-			collator_key,
+			collator_key: collator_key.expect("Can not start collator without collator key"),
 			relay_chain_slot_duration,
 		};
 

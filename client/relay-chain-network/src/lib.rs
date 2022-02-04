@@ -353,17 +353,19 @@ impl RelayChainInterface for RelayChainNetwork {
 	async fn import_notification_stream(
 		&self,
 	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
-		let imported_headers_stream = self.rpc_client.subscribe_all_heads().await?;
-		Ok(Box::pin(imported_headers_stream.filter_map(|item| async move {
-			item.map_err(|err| {
-				tracing::error!(
-					target: LOG_TARGET,
-					"Encountered error in import notification stream: {}",
-					err
-				)
-			})
-			.ok()
-		})))
+		let imported_headers_stream =
+			self.rpc_client.subscribe_all_heads().await?.filter_map(|item| async move {
+				item.map_err(|err| {
+					tracing::error!(
+						target: LOG_TARGET,
+						"Encountered error in import notification stream: {}",
+						err
+					)
+				})
+				.ok()
+			});
+
+		Ok(Box::pin(imported_headers_stream))
 	}
 
 	async fn finality_notification_stream(
