@@ -22,7 +22,7 @@ use core::time::Duration;
 use cumulus_primitives_core::{
 	relay_chain::{
 		v1::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
-		Block as PBlock, BlockId, Hash as PHash, Header as PHeader, InboundHrmpMessage,
+		BlockId, Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
@@ -36,10 +36,10 @@ use jsonrpsee::{
 };
 use parity_scale_codec::{Decode, Encode};
 use polkadot_service::Handle;
-use sc_client_api::{blockchain::BlockStatus, StorageData, StorageProof};
+use sc_client_api::{StorageData, StorageProof};
 use sc_rpc_api::{state::ReadProof, system::Health};
 use sp_core::sp_std::collections::btree_map::BTreeMap;
-use sp_runtime::{generic::SignedBlock, DeserializeOwned};
+use sp_runtime::DeserializeOwned;
 use sp_state_machine::StorageValue;
 use sp_storage::StorageKey;
 use std::sync::Arc;
@@ -154,14 +154,6 @@ impl RelayChainRPCClient {
 	) -> Result<Option<StorageData>, RelayChainError> {
 		let params = rpc_params!(storage_key, at);
 		self.request("state_getStorage", params).await
-	}
-
-	async fn chain_get_block(
-		&self,
-		at: Option<PHash>,
-	) -> Result<Option<SignedBlock<PBlock>>, RelayChainError> {
-		let params = rpc_params!(at);
-		self.request("chain_getBlock", params).await
 	}
 
 	async fn chain_get_head(&self) -> Result<PHash, RelayChainError> {
@@ -387,19 +379,6 @@ impl RelayChainInterface for RelayChainNetwork {
 
 	async fn best_block_hash(&self) -> RelayChainResult<PHash> {
 		self.rpc_client.chain_get_head().await
-	}
-
-	async fn block_status(&self, block_id: BlockId) -> RelayChainResult<BlockStatus> {
-		let hash = match block_id {
-			sp_api::BlockId::Hash(hash) => hash,
-			sp_api::BlockId::Number(_) => todo!(),
-		};
-
-		let response = self.rpc_client.chain_get_block(Some(hash.clone())).await;
-		match response {
-			Ok(Some(_)) => Ok(BlockStatus::InChain),
-			_ => Ok(BlockStatus::Unknown),
-		}
 	}
 
 	async fn is_major_syncing(&self) -> RelayChainResult<bool> {

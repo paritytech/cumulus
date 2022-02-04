@@ -167,10 +167,6 @@ where
 		Ok(self.backend.blockchain().info().best_hash)
 	}
 
-	async fn block_status(&self, block_id: BlockId) -> RelayChainResult<BlockStatus> {
-		Ok(self.backend.blockchain().status(block_id)?)
-	}
-
 	async fn is_major_syncing(&self) -> RelayChainResult<bool> {
 		let mut network = self.sync_oracle.lock();
 		Ok(network.is_major_syncing())

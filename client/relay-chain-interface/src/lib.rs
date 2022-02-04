@@ -24,7 +24,7 @@ use cumulus_primitives_core::{
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
 use polkadot_overseer::Handle as OverseerHandle;
-use sc_client_api::{blockchain::BlockStatus, StorageProof};
+use sc_client_api::StorageProof;
 
 use futures::Stream;
 
@@ -76,9 +76,6 @@ pub trait RelayChainInterface: Send + Sync {
 
 	/// Fetch a vector of current validators.
 	async fn validators(&self, block_id: &PHash) -> RelayChainResult<Vec<ValidatorId>>;
-
-	/// Get the status of a given block.
-	async fn block_status(&self, block_id: BlockId) -> RelayChainResult<BlockStatus>;
 
 	/// Get the hash of the current best block.
 	async fn best_block_hash(&self) -> RelayChainResult<PHash>;
@@ -224,10 +221,6 @@ where
 
 	async fn best_block_hash(&self) -> RelayChainResult<PHash> {
 		(**self).best_block_hash().await
-	}
-
-	async fn block_status(&self, block_id: BlockId) -> RelayChainResult<BlockStatus> {
-		(**self).block_status(block_id).await
 	}
 
 	async fn is_major_syncing(&self) -> RelayChainResult<bool> {

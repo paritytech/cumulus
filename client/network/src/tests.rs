@@ -81,16 +81,6 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		Ok(self.data.lock().validators.clone())
 	}
 
-	async fn block_status(
-		&self,
-		block_id: cumulus_primitives_core::relay_chain::BlockId,
-	) -> RelayChainResult<sp_blockchain::BlockStatus> {
-		self.relay_backend
-			.blockchain()
-			.status(block_id)
-			.map_err(RelayChainError::BlockchainError)
-	}
-
 	async fn best_block_hash(&self) -> RelayChainResult<PHash> {
 		Ok(self.relay_backend.blockchain().info().best_hash)
 	}
