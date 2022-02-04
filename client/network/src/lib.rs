@@ -156,7 +156,7 @@ impl BlockAnnounceData {
 		};
 
 		// Check statement is correctly signed.
-		if self.statement.try_into_checked(&signing_context, &signer).is_err() {
+		if self.statement.try_into_checked(&signing_context, signer).is_err() {
 			tracing::debug!(
 				target: LOG_TARGET,
 				"Block announcement justification signature is invalid.",
@@ -227,11 +227,7 @@ where
 {
 	/// Create a new [`BlockAnnounceValidator`].
 	pub fn new(relay_chain_interface: RCInterface, para_id: ParaId) -> Self {
-		Self {
-			phantom: Default::default(),
-			relay_chain_interface: relay_chain_interface.clone(),
-			para_id,
-		}
+		Self { phantom: Default::default(), relay_chain_interface, para_id }
 	}
 }
 
@@ -330,7 +326,7 @@ where
 		data: &[u8],
 	) -> Pin<Box<dyn Future<Output = Result<Validation, BoxedError>> + Send>> {
 		let relay_chain_interface = self.relay_chain_interface.clone();
-		let mut data = data.to_vec();
+		let data = data.to_vec();
 		let header = header.clone();
 		let header_encoded = header.encode();
 		let block_announce_validator = self.clone();
@@ -352,7 +348,7 @@ where
 				return block_announce_validator.handle_empty_block_announce_data(header).await
 			}
 
-			let block_announce_data = match BlockAnnounceData::decode_all(&mut data) {
+			let block_announce_data = match BlockAnnounceData::decode_all(&data) {
 				Ok(r) => r,
 				Err(err) =>
 					return Err(Box::new(BlockAnnounceError(format!(

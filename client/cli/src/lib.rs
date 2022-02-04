@@ -19,7 +19,6 @@
 #![warn(missing_docs)]
 
 use clap::Parser;
-use sc_cli;
 use sc_service::{
 	config::{PrometheusConfig, TelemetryEndpoints},
 	BasePath, TransactionPoolOptions,
@@ -146,7 +145,6 @@ pub struct RunCmd {
 /// Options only relevant for collator nodes
 #[derive(Clone, Debug)]
 pub struct CollatorOptions {
-
 	/// Location of relay chain full node
 	pub relay_chain_address: Option<Url>,
 }

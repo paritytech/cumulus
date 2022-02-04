@@ -267,9 +267,9 @@ where
 	let _lock = backend.get_import_lock().read();
 
 	let block_id = BlockId::Hash(hash);
-	match backend.blockchain().status(block_id)? {
-		BlockStatus::InChain => return Ok(BlockCheckStatus::InChain),
-		_ => {},
+
+	if backend.blockchain().status(block_id)? == BlockStatus::InChain {
+		return Ok(BlockCheckStatus::InChain)
 	}
 
 	let listener = client.import_notification_stream();
