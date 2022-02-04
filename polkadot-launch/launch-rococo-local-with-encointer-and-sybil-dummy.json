@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../../bin/polkadot-v0.9.13-rc1-trusted-encointer",
+		"bin": "../../bin/polkadot-v0.9.16-rc9",
 		"chain": "rococo-local",
 		"nodes": [
 			{
@@ -30,7 +30,7 @@
 					"wsPort": 9944,
 					"port": 31200,
 					"name": "alice",
-					"flags": ["-lencointer=debug", "--force-authoring", "--", "--execution=wasm"]
+					"flags": ["-lencointer=debug", "--", "--execution=wasm"]
 				}
 			]
 		},

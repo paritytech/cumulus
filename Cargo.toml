@@ -17,6 +17,7 @@ panic = "unwind"
 #pallet-encointer-scheduler = { path = "../encointer-pallets/scheduler" }
 #pallet-encointer-bazaar = { path = "../encointer-pallets/bazaar" }
 #encointer-primitives = { path = "../encointer-pallets/primitives" }
+#ep-core = { path = "../encointer-pallets/primitives/core" }
 #pallet-encointer-sybil-gate-template = { path = "../encointer-pallets/sybil-gate-template" }
 #pallet-encointer-personhood-oracle = { path = "../encointer-pallets/personhood-oracle" }
 

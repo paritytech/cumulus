@@ -1,6 +1,7 @@
 # Encointer Parachain:
 
-This is the repository to run encointer as a parachain in the rococo-v1 testnet. It is forked from the [Cumulus](https://github.com/paritytech/cumulus) repository and only adds the encointer-pallets and configuration.
+This is the repository for the encointer collator to operate a parachain. 
+It is forked from the [Cumulus](https://github.com/paritytech/cumulus) repository.
 
 ## Demos
 

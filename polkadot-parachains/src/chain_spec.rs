@@ -15,7 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use cumulus_primitives_core::ParaId;
-use parachain_runtime::{AccountId, AuraId, BalanceType, CeremonyPhaseType, Demurrage};
+use parachain_runtime::{AccountId, AuraId, BalanceType, CeremonyPhaseType};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::{ChainType, GenericChainSpec};
 use serde::{Deserialize, Serialize};
@@ -141,6 +141,7 @@ fn chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
 		// protocol id
 		Some(&format!("nctr-{}", relay_chain.to_string().chars().nth(0).unwrap())),
 		// properties
+		None,
 		Some(relay_chain.properties()),
 		Extensions { relay_chain: relay_chain.to_string(), para_id: para_id.into() },
 	)
@@ -166,6 +167,7 @@ pub fn sybil_dummy_spec(id: ParaId, relay_chain: RelayChain) -> EncointerChainSp
 		// telemetry endpoints
 		None,
 		// protocol id
+		None,
 		None,
 		// properties
 		Some(
@@ -212,7 +214,7 @@ fn encointer_genesis(
 		encointer_scheduler: parachain_runtime::EncointerSchedulerConfig {
 			current_phase: CeremonyPhaseType::REGISTERING,
 			current_ceremony_index: 1,
-			ceremony_master: root_key.clone(),
+			ceremony_master: Some(root_key.clone()),
 			phase_durations: vec![
 				(CeremonyPhaseType::REGISTERING, 600_000),
 				(CeremonyPhaseType::ASSIGNING, 600_000),
@@ -225,12 +227,7 @@ fn encointer_genesis(
 			location_tolerance: 1_000, // [m]
 		},
 		encointer_communities: parachain_runtime::EncointerCommunitiesConfig {
-			community_master: root_key,
-		},
-		encointer_balances: parachain_runtime::EncointerBalancesConfig {
-			demurrage_per_block_default: Demurrage::from_bits(
-				0x0000000000000000000001E3F0A8A973_i128,
-			),
+			community_master: Some(root_key),
 		},
 	}
 }

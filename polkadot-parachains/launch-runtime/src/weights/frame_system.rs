@@ -47,16 +47,6 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
 
-	// Storage: System Digest (r:1 w:1)
-	// Storage: unknown [0x3a6368616e6765735f74726965] (r:0 w:1)
-	// Fixme: This function is only a place holder. Substrate has removed this call, but it's
-	// still existing in the weight trait. So we need it here.
-	fn set_changes_trie_config() -> Weight {
-		(24_311_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
-	}
-
 	// Storage: Skipped Metadata (r:0 w:0)
 	fn set_storage(i: u32, ) -> Weight {
 		(200_194_000 as Weight)
