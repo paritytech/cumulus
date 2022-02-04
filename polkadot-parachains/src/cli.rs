@@ -115,7 +115,7 @@ pub struct Cli {
 	pub run: cumulus_client_cli::RunCmd,
 
 	/// Relay chain arguments
-	#[clap(raw = true)]
+	#[clap(raw = true, conflicts_with = "relay-address")]
 	pub relaychain_args: Vec<String>,
 }
 

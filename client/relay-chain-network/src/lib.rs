@@ -238,7 +238,7 @@ impl RelayChainRPCClient {
 		let response_bytes = self
 			.call_remote_runtime_function(
 				"ParachainHost_inbound_hrmp_channels_contents",
-				&at,
+				at,
 				Some(para_id.encode()),
 			)
 			.await?;
@@ -252,7 +252,7 @@ impl RelayChainRPCClient {
 		at: &PHash,
 	) -> Result<Vec<InboundDownwardMessage>, RelayChainError> {
 		let response_bytes = self
-			.call_remote_runtime_function("ParachainHost_dmq_contents", &at, Some(para_id.encode()))
+			.call_remote_runtime_function("ParachainHost_dmq_contents", at, Some(para_id.encode()))
 			.await?;
 
 		Ok(Vec::<InboundDownwardMessage>::decode(&mut &*response_bytes.0)?)
