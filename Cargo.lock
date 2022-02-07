@@ -1479,6 +1479,7 @@ dependencies = [
  "sp-api",
  "sp-consensus",
  "sp-core",
+ "sp-maybe-compressed-blob",
  "sp-runtime",
  "sp-state-machine",
  "sp-tracing",
