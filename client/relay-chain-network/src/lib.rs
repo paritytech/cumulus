@@ -99,15 +99,7 @@ impl RelayChainRPCClient {
 		self.ws_client
 			.subscribe::<R>(sub_name, params, unsub_name)
 			.await
-			.map_err(|err| {
-				tracing::error!(
-					target: LOG_TARGET,
-					"Networking Error for method '{}': {:?}",
-					sub_name,
-					err
-				);
-				RelayChainError::NetworkError(sub_name.to_string(), err)
-			})
+			.map_err(|err| RelayChainError::NetworkError(sub_name.to_string(), err))
 	}
 
 	async fn request<'a, R>(
@@ -463,17 +455,18 @@ impl RelayChainInterface for RelayChainNetwork {
 	async fn new_best_notification_stream(
 		&self,
 	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
-		let imported_headers_stream = self.rpc_client.subscribe_new_best_heads().await?;
+		let imported_headers_stream =
+			self.rpc_client.subscribe_new_best_heads().await?.filter_map(|item| async move {
+				item.map_err(|err| {
+					tracing::error!(
+						target: LOG_TARGET,
+						"Error in best block notification stream: {}",
+						err
+					)
+				})
+				.ok()
+			});
 
-		Ok(Box::pin(imported_headers_stream.filter_map(|item| async move {
-			item.map_err(|err| {
-				tracing::error!(
-					target: LOG_TARGET,
-					"Encountered error in best block notification stream stream: {}",
-					err
-				)
-			})
-			.ok()
-		})))
+		Ok(Box::pin(imported_headers_stream))
 	}
 }
