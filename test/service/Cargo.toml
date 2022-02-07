@@ -64,10 +64,10 @@ parking_lot = "0.11.1"
 # RPC related dependencies
 jsonrpc-core = "18.0.0"
 url = "2.2.2"
-portpicker = "0.1.1"
 
 [dev-dependencies]
 futures = "0.3.5"
+portpicker = "0.1.1"
 
 # Polkadot dependencies
 polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }

@@ -440,8 +440,8 @@ impl RelayChainInterface for RelayChainNetwork {
 	async fn wait_for_block(&self, wait_for_hash: PHash) -> RelayChainResult<()> {
 		let mut head_stream = self.rpc_client.subscribe_all_heads().await?;
 
-		let block_header = self.rpc_client.chain_get_header(Some(wait_for_hash)).await;
-		if block_header.ok().is_some() {
+		let block_header = self.rpc_client.chain_get_header(Some(wait_for_hash)).await?;
+		if block_header.is_some() {
 			return Ok(())
 		}
 

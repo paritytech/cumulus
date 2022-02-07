@@ -33,6 +33,8 @@ async-trait = "0.1.52"
 
 [dev-dependencies]
 tokio = { version = "1.10", features = ["macros"] }
+portpicker = "0.1.1"
+url = "2.2.2"
 
 # Cumulus deps
 cumulus-test-service = { path = "../../test/service" }

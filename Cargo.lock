@@ -1595,6 +1595,7 @@ dependencies = [
  "polkadot-primitives",
  "polkadot-service",
  "polkadot-test-client",
+ "portpicker",
  "sc-cli",
  "sc-client-api",
  "sc-service",
@@ -1609,6 +1610,7 @@ dependencies = [
  "substrate-test-utils",
  "tokio",
  "tracing",
+ "url 2.2.2",
 ]
 
 [[package]]
