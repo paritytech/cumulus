@@ -531,7 +531,7 @@ impl TestNodeBuilder {
 		self
 	}
 
-	/// Use the null consensus that will never author any block.
+	/// Connect to full node via RPC.
 	pub fn use_relay_chain_network(mut self, network_address: Url) -> Self {
 		self.use_relay_chain_network = Some(network_address);
 		self

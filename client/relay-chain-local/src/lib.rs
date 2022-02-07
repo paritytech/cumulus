@@ -178,19 +178,21 @@ where
 
 	async fn get_storage_by_key(
 		&self,
-		block_id: &BlockId,
+		relay_parent: &PHash,
 		key: &[u8],
 	) -> RelayChainResult<Option<StorageValue>> {
-		let state = self.backend.state_at(*block_id)?;
+		let block_id = BlockId::Hash(*relay_parent);
+		let state = self.backend.state_at(block_id)?;
 		state.storage(key).map_err(RelayChainError::GenericError)
 	}
 
 	async fn prove_read(
 		&self,
-		block_id: &BlockId,
+		relay_parent: &PHash,
 		relevant_keys: &Vec<Vec<u8>>,
 	) -> RelayChainResult<StorageProof> {
-		let state_backend = self.backend.state_at(*block_id)?;
+		let block_id = BlockId::Hash(*relay_parent);
+		let state_backend = self.backend.state_at(block_id)?;
 
 		sp_state_machine::prove_read(state_backend, relevant_keys)
 			.map_err(RelayChainError::StateMachineError)

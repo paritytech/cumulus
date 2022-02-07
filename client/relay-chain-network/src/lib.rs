@@ -22,7 +22,7 @@ use core::time::Duration;
 use cumulus_primitives_core::{
 	relay_chain::{
 		v1::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
-		BlockId, Hash as PHash, Header as PHeader, InboundHrmpMessage,
+		Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
@@ -52,12 +52,15 @@ const TIMEOUT_IN_SECONDS: u64 = 6;
 /// Client that maps RPC methods and deserializes results
 #[derive(Clone)]
 struct RelayChainRPCClient {
+	/// Websocket client to make calls
 	ws_client: Arc<JsonRPCClient>,
+
+	/// Retry strategy that should be used for requests and subscriptions
 	retry_strategy: ExponentialBackoff,
 }
 
 impl RelayChainRPCClient {
-	/// Call a runtime function via rpc
+	/// Call a call to `state_call` rpc method.
 	async fn call_remote_runtime_function(
 		&self,
 		method_name: &str,
@@ -70,20 +73,7 @@ impl RelayChainRPCClient {
 			payload_bytes,
 			hash
 		};
-		retry_notify(
-			self.retry_strategy.clone(),
-			|| async {
-				self.ws_client
-					.request("state_call", params.clone())
-					.await
-					.map_err(|err| backoff::Error::Transient { err, retry_after: None })
-			},
-			|e, _| {
-				tracing::warn!("Unable to complete RPC request 'state_call', retrying. Error {}", e)
-			},
-		)
-		.await
-		.map_err(|err| RelayChainError::NetworkError("state_call".to_string(), err))
+		self.request("state_call", params).await
 	}
 
 	/// Subscribe to a notification stream via RPC
@@ -356,18 +346,22 @@ impl RelayChainInterface for RelayChainNetwork {
 	async fn finality_notification_stream(
 		&self,
 	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
-		let imported_headers_stream = self.rpc_client.subscribe_finalized_heads().await?;
+		let imported_headers_stream = self
+			.rpc_client
+			.subscribe_finalized_heads()
+			.await?
+			.filter_map(|item| async move {
+				item.map_err(|err| {
+					tracing::error!(
+						target: LOG_TARGET,
+						"Encountered error in finality notification stream: {}",
+						err
+					)
+				})
+				.ok()
+			});
 
-		Ok(Box::pin(imported_headers_stream.filter_map(|item| async move {
-			item.map_err(|err| {
-				tracing::error!(
-					target: LOG_TARGET,
-					"Encountered error in finality notification stream: {}",
-					err
-				)
-			})
-			.ok()
-		})))
+		Ok(Box::pin(imported_headers_stream))
 	}
 
 	async fn best_block_hash(&self) -> RelayChainResult<PHash> {
@@ -384,36 +378,26 @@ impl RelayChainInterface for RelayChainNetwork {
 
 	async fn get_storage_by_key(
 		&self,
-		block_id: &BlockId,
+		relay_parent: &PHash,
 		key: &[u8],
 	) -> RelayChainResult<Option<StorageValue>> {
 		let storage_key = StorageKey(key.to_vec());
-		let hash = match block_id {
-			sp_api::BlockId::Hash(hash) => hash,
-			sp_api::BlockId::Number(_) => todo!(),
-		};
-
 		self.rpc_client
-			.state_get_storage(storage_key, Some(*hash))
+			.state_get_storage(storage_key, Some(*relay_parent))
 			.await
 			.map(|storage_data| storage_data.map(|sv| sv.0))
 	}
 
 	async fn prove_read(
 		&self,
-		block_id: &BlockId,
+		relay_parent: &PHash,
 		relevant_keys: &Vec<Vec<u8>>,
 	) -> RelayChainResult<StorageProof> {
 		let cloned = relevant_keys.clone();
 		let storage_keys: Vec<StorageKey> = cloned.into_iter().map(StorageKey).collect();
 
-		let hash = match block_id {
-			sp_api::BlockId::Hash(hash) => hash,
-			sp_api::BlockId::Number(_) => todo!(),
-		};
-
 		self.rpc_client
-			.state_get_read_proof(storage_keys, Some(*hash))
+			.state_get_read_proof(storage_keys, Some(*relay_parent))
 			.await
 			.map(|read_proof| {
 				let bytes = read_proof.proof.into_iter().map(|bytes| bytes.to_vec()).collect();

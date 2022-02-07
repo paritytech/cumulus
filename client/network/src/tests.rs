@@ -180,7 +180,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 
 	async fn get_storage_by_key(
 		&self,
-		_: &polkadot_service::BlockId,
+		_: &PHash,
 		_: &[u8],
 	) -> RelayChainResult<Option<StorageValue>> {
 		unimplemented!("Not needed for test")
@@ -188,7 +188,7 @@ impl RelayChainInterface for DummyRelayChainInterface {
 
 	async fn prove_read(
 		&self,
-		_: &polkadot_service::BlockId,
+		_: &PHash,
 		_: &Vec<Vec<u8>>,
 	) -> RelayChainResult<sc_client_api::StorageProof> {
 		unimplemented!("Not needed for test")

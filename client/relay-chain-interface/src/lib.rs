@@ -19,7 +19,7 @@ use std::{collections::BTreeMap, pin::Pin, sync::Arc};
 use cumulus_primitives_core::{
 	relay_chain::{
 		v1::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
-		BlockId, Hash as PHash, Header as PHeader, InboundHrmpMessage,
+		Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
@@ -70,7 +70,7 @@ pub trait RelayChainInterface: Send + Sync {
 	/// Fetch a storage item by key.
 	async fn get_storage_by_key(
 		&self,
-		block_id: &BlockId,
+		relay_parent: &PHash,
 		key: &[u8],
 	) -> RelayChainResult<Option<StorageValue>>;
 
@@ -154,7 +154,7 @@ pub trait RelayChainInterface: Send + Sync {
 	/// Generate a storage read proof.
 	async fn prove_read(
 		&self,
-		block_id: &BlockId,
+		relay_parent: &PHash,
 		relevant_keys: &Vec<Vec<u8>>,
 	) -> RelayChainResult<StorageProof>;
 }
@@ -233,18 +233,18 @@ where
 
 	async fn get_storage_by_key(
 		&self,
-		block_id: &BlockId,
+		relay_parent: &PHash,
 		key: &[u8],
 	) -> RelayChainResult<Option<StorageValue>> {
-		(**self).get_storage_by_key(block_id, key).await
+		(**self).get_storage_by_key(relay_parent, key).await
 	}
 
 	async fn prove_read(
 		&self,
-		block_id: &BlockId,
+		relay_parent: &PHash,
 		relevant_keys: &Vec<Vec<u8>>,
 	) -> RelayChainResult<StorageProof> {
-		(**self).prove_read(block_id, relevant_keys).await
+		(**self).prove_read(relay_parent, relevant_keys).await
 	}
 
 	async fn wait_for_block(&self, hash: PHash) -> RelayChainResult<()> {
