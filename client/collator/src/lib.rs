@@ -465,8 +465,8 @@ mod tests {
 		let decompressed =
 			sp_maybe_compressed_blob::decompress(&pov.block_data.0, 1024 * 1024 * 10).unwrap();
 
-		let block = ParachainBlockData::<Block>::decode(&mut &decompressed[..])
-			.expect("Is a valid block");
+		let block =
+			ParachainBlockData::<Block>::decode(&mut &decompressed[..]).expect("Is a valid block");
 
 		assert_eq!(1, *block.header().number());
 
