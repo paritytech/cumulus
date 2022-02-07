@@ -271,7 +271,7 @@ async fn build_relay_chain_interface(
 	collator_options: CollatorOptions,
 ) -> Result<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>), polkadot_service::Error>
 {
-	match collator_options.relay_chain_address {
+	match collator_options.relay_chain_rpc_url {
 		Some(relay_chain_url) =>
 			Ok((Arc::new(RelayChainNetwork::new(relay_chain_url).await) as Arc<_>, None)),
 		None => {

@@ -198,7 +198,7 @@ where
 
 	// PoV Recovery is currently not supported when we connect to the
 	// relay chain via RPC, so we return early.
-	if collator_options.relay_chain_address.is_some() {
+	if collator_options.relay_chain_rpc_url.is_some() {
 		return Ok(())
 	}
 

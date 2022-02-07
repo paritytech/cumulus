@@ -180,7 +180,7 @@ async fn build_relay_chain_interface(
 	collator_options: CollatorOptions,
 	task_manager: &mut TaskManager,
 ) -> Result<Arc<dyn RelayChainInterface + 'static>, polkadot_service::Error> {
-	if let Some(relay_chain_url) = collator_options.relay_chain_address {
+	if let Some(relay_chain_url) = collator_options.relay_chain_rpc_url {
 		return Ok(Arc::new(RelayChainNetwork::new(relay_chain_url).await) as Arc<_>)
 	}
 
@@ -559,7 +559,7 @@ impl TestNodeBuilder {
 		);
 
 		let collator_options =
-			CollatorOptions { relay_chain_address: self.use_relay_chain_network };
+			CollatorOptions { relay_chain_rpc_url: self.use_relay_chain_network };
 
 		relay_chain_config.network.node_name =
 			format!("{} (relay chain)", relay_chain_config.network.node_name);

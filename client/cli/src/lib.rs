@@ -119,6 +119,16 @@ impl sc_cli::CliConfiguration for PurgeChainCmd {
 	}
 }
 
+fn validate_relay_chain_url(arg: &str) -> Result<(), String> {
+	let url = Url::parse(arg).map_err(|e| e.to_string())?;
+
+	if url.scheme() == "ws" {
+		Ok(())
+	} else {
+		Err("Only websocket RPC currently supported".to_string())
+	}
+}
+
 /// The `run` command used to run a node.
 #[derive(Debug, Parser)]
 pub struct RunCmd {
@@ -136,17 +146,18 @@ pub struct RunCmd {
 	#[structopt(
 		long,
 		parse(try_from_str),
+		validator = validate_relay_chain_url,
 		conflicts_with = "collator",
 		conflicts_with = "validator"
 	)]
-	pub relay_address: Option<Url>,
+	pub relay_chain_rpc_url: Option<Url>,
 }
 
 /// Options only relevant for collator nodes
 #[derive(Clone, Debug)]
 pub struct CollatorOptions {
 	/// Location of relay chain full node
-	pub relay_chain_address: Option<Url>,
+	pub relay_chain_rpc_url: Option<Url>,
 }
 
 /// A non-redundant version of the `RunCmd` that sets the `validator` field when the
@@ -169,7 +180,7 @@ impl RunCmd {
 
 	/// Create [`CollatorOptions`] representing options only relevant to parachain collator nodes
 	pub fn collator_options(&self) -> CollatorOptions {
-		CollatorOptions { relay_chain_address: self.relay_address.clone() }
+		CollatorOptions { relay_chain_rpc_url: self.relay_chain_rpc_url.clone() }
 	}
 }
 
