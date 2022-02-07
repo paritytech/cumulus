@@ -49,13 +49,13 @@ pub use url::Url;
 const LOG_TARGET: &str = "relay-chain-network";
 const TIMEOUT_IN_SECONDS: u64 = 6;
 
+/// Client that maps RPC methods and deserializes results
 #[derive(Clone)]
 struct RelayChainRPCClient {
 	ws_client: Arc<JsonRPCClient>,
 	retry_strategy: ExponentialBackoff,
 }
 
-/// Client that calls RPC endpoints and deserializes call results
 impl RelayChainRPCClient {
 	/// Call a runtime function via rpc
 	async fn call_remote_runtime_function(
@@ -102,6 +102,7 @@ impl RelayChainRPCClient {
 			.map_err(|err| RelayChainError::NetworkError(sub_name.to_string(), err))
 	}
 
+	/// Perform RPC request
 	async fn request<'a, R>(
 		&self,
 		method: &'a str,

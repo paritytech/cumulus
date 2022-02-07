@@ -143,7 +143,7 @@ pub struct RunCmd {
 	pub collator: bool,
 
 	/// Specify relay chain full node to communicate
-	#[structopt(
+	#[clap(
 		long,
 		parse(try_from_str),
 		validator = validate_relay_chain_url,
