@@ -77,7 +77,7 @@ async fn test_full_node_catching_up() {
 		.await;
 
 	let mut url = url::Url::parse("ws://127.0.0.1").expect("should be a valid Url");
-	url.set_port(Some(ws_port));
+	url.set_port(Some(ws_port)).expect("should be able to set port");
 
 	// run cumulus dave (a parachain full node) and wait for it to sync some blocks
 	let eve = cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle, Eve)

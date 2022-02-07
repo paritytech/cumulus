@@ -83,7 +83,7 @@ async fn sync_blocks_from_tip_without_being_connected_to_a_collator() {
 		.await;
 
 	let mut url = url::Url::parse("ws://127.0.0.1").expect("should be a valid Url");
-	url.set_port(Some(ws_port));
+	url.set_port(Some(ws_port)).expect("should be able to set port");
 
 	// run eve as parachain full node that is only connected to dave
 	let ferdie = cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle, Ferdie)
