@@ -32,8 +32,13 @@ async fn sync_blocks_from_tip_without_being_connected_to_a_collator() {
 		run_relay_chain_validator_node(tokio_handle.clone(), Alice, || {}, Vec::new(), None);
 
 	// start bob
-	let bob =
-		run_relay_chain_validator_node(tokio_handle.clone(), Bob, || {}, vec![alice.addr.clone()], None);
+	let bob = run_relay_chain_validator_node(
+		tokio_handle.clone(),
+		Bob,
+		|| {},
+		vec![alice.addr.clone()],
+		None,
+	);
 
 	// register parachain
 	alice
