@@ -1,4 +1,4 @@
-name: Publish draft release
+name: Release - Create draft
 
 on:
   workflow_dispatch:
@@ -100,7 +100,7 @@ jobs:
       - name: Prepare tooling
         run: |
           cd cumulus/scripts/changelog
-          gem install bundler changelogerator
+          gem install bundler changelogerator:0.9.1
           bundle install
           changelogerator --help
 
@@ -120,7 +120,7 @@ jobs:
           WESTMINT_DIGEST: ${{ github.workspace}}/westmint-srtool-json/westmint_srtool_output.json
           STATEMINE_DIGEST: ${{ github.workspace}}/statemine-srtool-json/statemine_srtool_output.json
           STATEMINT_DIGEST: ${{ github.workspace}}/statemint-srtool-json/statemint_srtool_output.json
-          ROCOCO_DIGEST: ${{ github.workspace}}/rococo-parachain-srtool-json/rococo-parachain_srtool_output.json
+          ROCOCO_PARA_DIGEST: ${{ github.workspace}}/rococo-parachain-srtool-json/rococo-parachain_srtool_output.json
           REF1: ${{ github.event.inputs.ref1 }}
           REF2: ${{ github.event.inputs.ref2 }}
           PRE_RELEASE: ${{ github.event.inputs.pre_release }}
@@ -132,12 +132,21 @@ jobs:
           ls -al $WESTMINT_DIGEST
           ls -al $STATEMINE_DIGEST
           ls -al $STATEMINT_DIGEST
-          ls -al $ROCOCO_DIGEST
+          ls -al $ROCOCO_PARA_DIGEST
 
           echo "The diff will be computed from $REF1 to $REF2"
           cd cumulus/scripts/changelog
           ./bin/changelog $REF1 $REF2 release-notes.md
           ls -al release-notes.md
+          ls -al context.json
+
+      - name: Archive artifact context.json
+        uses: actions/upload-artifact@v2
+        with:
+          name: release-notes-context
+          path: |
+            context.json
+            **/*_srtool_output.json
 
       - name: Create draft release
         id: create-release
@@ -183,6 +192,12 @@ jobs:
           echo "Found version: >$runtime_ver<"
           echo "::set-output name=runtime_ver::$runtime_ver"
 
+      - name: Fix parachain runtime name
+        id: fix-runtime-path
+        run: |
+          cd "${{ matrix.runtime }}-runtime/"
+          mv "$(sed 's/-parachain/_parachain/' <<< ${{ matrix.runtime }})_runtime.compact.compressed.wasm" "${{ matrix.runtime }}_runtime.compact.compressed.wasm" || true
+
       - name: Upload compressed ${{ matrix.runtime }} wasm
         uses: actions/upload-release-asset@v1
         env:
@@ -200,7 +215,7 @@ jobs:
       - name: Internal polkadot channel
         uses: s3krit/matrix-message-action@v0.0.3
         with:
-          room_id: ${{ secrets.INTERNAL_POLKADOT_MATRIX_ROOM_ID }}
+          room_id: ${{ secrets.INTERNAL_CUMULUS_MATRIX_ROOM_ID }}
           access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
           message: |
             **New draft for ${{ github.repository }}**: ${{ github.ref }}<br/>

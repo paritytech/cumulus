@@ -44,13 +44,8 @@ where
 	<R as frame_system::Config>::Event: From<pallet_balances::Event<R>>,
 {
 	fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
-		let numeric_amount = amount.peek();
 		let staking_pot = <pallet_collator_selection::Pallet<R>>::account_id();
 		<pallet_balances::Pallet<R>>::resolve_creating(&staking_pot, amount);
-		<frame_system::Pallet<R>>::deposit_event(pallet_balances::Event::Deposit {
-			who: staking_pot,
-			amount: numeric_amount,
-		});
 	}
 }
 
@@ -84,9 +79,10 @@ where
 		From<polkadot_primitives::v1::AccountId> + Into<polkadot_primitives::v1::AccountId>,
 {
 	fn handle_credit(credit: CreditOf<AccountIdOf<R>, pallet_assets::Pallet<R>>) {
-		let author = pallet_authorship::Pallet::<R>::author();
-		// In case of error: Will drop the result triggering the `OnDrop` of the imbalance.
-		let _ = pallet_assets::Pallet::<R>::resolve(&author, credit);
+		if let Some(author) = pallet_authorship::Pallet::<R>::author() {
+			// In case of error: Will drop the result triggering the `OnDrop` of the imbalance.
+			let _ = pallet_assets::Pallet::<R>::resolve(&author, credit);
+		}
 	}
 }
 
@@ -134,6 +130,7 @@ mod tests {
 
 	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 	type Block = frame_system::mocking::MockBlock<Test>;
+	const TEST_ACCOUNT: AccountId = AccountId::new([1; 32]);
 
 	frame_support::construct_runtime!(
 		pub enum Test where
@@ -178,6 +175,7 @@ mod tests {
 		type SystemWeightInfo = ();
 		type SS58Prefix = ();
 		type OnSetCode = ();
+		type MaxConsumers = frame_support::traits::ConstU32<16>;
 	}
 
 	impl pallet_balances::Config for Test {
@@ -198,7 +196,7 @@ mod tests {
 		where
 			I: 'a,
 		{
-			Some(Default::default())
+			Some(TEST_ACCOUNT)
 		}
 	}
 
@@ -253,7 +251,7 @@ mod tests {
 			let fee = Balances::issue(10);
 			let tip = Balances::issue(20);
 
-			assert_eq!(Balances::free_balance(AccountId::default()), 0);
+			assert_eq!(Balances::free_balance(TEST_ACCOUNT), 0);
 
 			DealWithFees::on_unbalanceds(vec![fee, tip].into_iter());
 

@@ -27,6 +27,8 @@ pub mod wasm_spec_version_incremented {
 	include!(concat!(env!("OUT_DIR"), "/wasm_binary_spec_version_incremented.rs"));
 }
 
+mod test_pallet;
+
 use frame_support::traits::OnRuntimeUpgrade;
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
 use sp_core::OpaqueMetadata;
@@ -58,6 +60,7 @@ pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
+pub use test_pallet::Call as TestPalletCall;
 
 pub type SessionHandlers = ();
 
@@ -91,6 +94,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
+	state_version: 1,
 };
 
 #[cfg(feature = "increment-spec-version")]
@@ -104,6 +108,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
+	state_version: 1,
 };
 
 pub const MILLISECS_PER_BLOCK: u64 = 12000;
@@ -197,6 +202,7 @@ impl frame_system::Config for Runtime {
 	type BlockLength = RuntimeBlockLength;
 	type SS58Prefix = SS58Prefix;
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -253,7 +259,7 @@ impl pallet_sudo::Config for Runtime {
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type SelfParaId = ParachainId;
 	type Event = Event;
-	type OnValidationData = ();
+	type OnSystemEvent = ();
 	type OutboundXcmpMessageSource = ();
 	type DmpMessageHandler = ();
 	type ReservedDmpWeight = ();
@@ -265,20 +271,21 @@ parameter_types! {
 	pub storage ParachainId: cumulus_primitives_core::ParaId = 100.into();
 }
 
+impl test_pallet::Config for Runtime {}
+
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
 		NodeBlock = NodeBlock,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
-		ParachainSystem: cumulus_pallet_parachain_system::{
-			Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
-		},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>},
-		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
+		System: frame_system,
+		ParachainSystem: cumulus_pallet_parachain_system,
+		Timestamp: pallet_timestamp,
+		Balances: pallet_balances,
+		Sudo: pallet_sudo,
+		TransactionPayment: pallet_transaction_payment,
+		TestPallet: test_pallet,
 	}
 }
 
@@ -310,6 +317,7 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
+	frame_system::CheckNonZeroSender<Runtime>,
 	frame_system::CheckSpecVersion<Runtime>,
 	frame_system::CheckGenesis<Runtime>,
 	frame_system::CheckEra<Runtime>,
@@ -327,7 +335,7 @@ pub type Executive = frame_executive::Executive<
 	Block,
 	frame_system::ChainContext<Runtime>,
 	Runtime,
-	AllPallets,
+	AllPalletsWithSystem,
 	TestOnRuntimeUpgrade,
 >;
 /// The payload being signed in transactions.
@@ -432,8 +440,8 @@ impl_runtime_apis! {
 	}
 
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
-		fn collect_collation_info() -> cumulus_primitives_core::CollationInfo {
-			ParachainSystem::collect_collation_info()
+		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
+			ParachainSystem::collect_collation_info(header)
 		}
 	}
 }

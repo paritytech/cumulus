@@ -21,13 +21,14 @@ path = "src/main.rs"
 
 [features]
 runtime-benchmarks = ["parachain-template-runtime/runtime-benchmarks"]
+try-runtime = ["parachain-template-runtime/try-runtime"]
 
 [dependencies]
+clap = { version = "3.0", features = ["derive"] }
 derive_more = "0.99.2"
 log = "0.4.14"
 codec = { package = "parity-scale-codec", version = "2.0.0" }
-structopt = "0.3.8"
-serde = { version = "1.0.119", features = ["derive"] }
+serde = { version = "1.0.132", features = ["derive"] }
 hex-literal = "0.3.1"
 
 # RPC related Dependencies
@@ -39,6 +40,7 @@ parachain-template-runtime = { path = "../runtime" }
 # Substrate Dependencies
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "master" }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
@@ -56,7 +58,7 @@ sc-network = { git = "https://github.com/paritytech/substrate", branch = "master
 sc-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] , branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"], branch = "master" }
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -86,9 +88,12 @@ cumulus-client-network = { path = "../../client/network" }
 cumulus-client-service = { path = "../../client/service" }
 cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent" }
+cumulus-relay-chain-interface = { path = "../../client/relay-chain-interface" }
+cumulus-relay-chain-local = { path = "../../client/relay-chain-local" }
 
 # Polkadot dependencies
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }

@@ -1,6 +1,6 @@
 [package]
-name = 'rococo-parachain-runtime'
-version = '0.1.0'
+name = "rococo-parachain-runtime"
+version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 description = "Simple runtime used by the rococo parachain(s)"
@@ -10,7 +10,7 @@ codec = { package = "parity-scale-codec", version = "2.3.0", default-features = 
 log = { version = "0.4.14", default-features = false }
 parachain-info = { path = "../pallets/parachain-info", default-features = false }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
-serde = { version = "1.0.101", optional = true, features = ["derive"] }
+serde = { version = "1.0.132", optional = true, features = ["derive"] }
 
 # Substrate dependencies
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -82,11 +82,14 @@ std = [
 	"frame-support/std",
 	"frame-executive/std",
 	"frame-system/std",
+	"frame-system-rpc-runtime-api/std",
 	"pallet-assets/std",
 	"pallet-balances/std",
 	"pallet-timestamp/std",
 	"pallet-sudo/std",
 	"pallet-transaction-payment/std",
+	"pallet-transaction-payment-rpc-runtime-api/std",
+	"pallet-xcm/std",
 	"parachain-info/std",
 	"parachains-common/std",
 	"cumulus-pallet-aura-ext/std",

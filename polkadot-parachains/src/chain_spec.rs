@@ -30,6 +30,13 @@ pub type ChainSpec =
 /// Specialized `ChainSpec` for the shell parachain runtime.
 pub type ShellChainSpec = sc_service::GenericChainSpec<shell_runtime::GenesisConfig, Extensions>;
 
+/// Specialized `ChainSpec` for the seedling parachain runtime.
+pub type SeedlingChainSpec =
+	sc_service::GenericChainSpec<seedling_runtime::GenesisConfig, Extensions>;
+
+/// The default XCM version to set in genesis config.
+const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
+
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
 	TPublic::Pair::from_string(&format!("//{}", seed), None)
@@ -94,6 +101,7 @@ pub fn get_chain_spec() -> ChainSpec {
 		None,
 		None,
 		None,
+		None,
 		Extensions { relay_chain: "westend".into(), para_id: 1000 },
 	)
 }
@@ -108,7 +116,28 @@ pub fn get_shell_chain_spec() -> ShellChainSpec {
 		None,
 		None,
 		None,
+		None,
 		Extensions { relay_chain: "westend".into(), para_id: 1000 },
+	)
+}
+
+pub fn get_seedling_chain_spec() -> SeedlingChainSpec {
+	SeedlingChainSpec::from_genesis(
+		"Seedling Local Testnet",
+		"seedling_local_testnet",
+		ChainType::Local,
+		move || {
+			seedling_testnet_genesis(
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				2000.into(),
+			)
+		},
+		Vec::new(),
+		None,
+		None,
+		None,
+		None,
+		Extensions { relay_chain: "westend".into(), para_id: 2000 },
 	)
 }
 
@@ -138,6 +167,7 @@ pub fn staging_test_net() -> ChainSpec {
 		None,
 		None,
 		None,
+		None,
 		Extensions { relay_chain: "westend".into(), para_id: 1000 },
 	)
 }
@@ -157,11 +187,14 @@ fn testnet_genesis(
 		balances: rococo_parachain_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
-		sudo: rococo_parachain_runtime::SudoConfig { key: root_key },
+		sudo: rococo_parachain_runtime::SudoConfig { key: Some(root_key) },
 		parachain_info: rococo_parachain_runtime::ParachainInfoConfig { parachain_id: id },
 		aura: rococo_parachain_runtime::AuraConfig { authorities: initial_authorities },
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		polkadot_xcm: rococo_parachain_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
+		},
 	}
 }
 
@@ -177,7 +210,23 @@ fn shell_testnet_genesis(parachain_id: ParaId) -> shell_runtime::GenesisConfig {
 	}
 }
 
-use parachains_common::Balance as StatemintBalance;
+fn seedling_testnet_genesis(
+	root_key: AccountId,
+	parachain_id: ParaId,
+) -> seedling_runtime::GenesisConfig {
+	seedling_runtime::GenesisConfig {
+		system: seedling_runtime::SystemConfig {
+			code: seedling_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!")
+				.to_vec(),
+		},
+		sudo: seedling_runtime::SudoConfig { key: Some(root_key) },
+		parachain_info: seedling_runtime::ParachainInfoConfig { parachain_id },
+		parachain_system: Default::default(),
+	}
+}
+
+use parachains_common::{Balance as StatemintBalance, StatemintAuraId};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type StatemintChainSpec =
@@ -201,14 +250,14 @@ pub fn get_public_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pa
 /// Generate collator keys from seed.
 ///
 /// This function's return type must always match the session keys of the chain in tuple format.
-pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
+pub fn get_collator_keys_from_seed<AuraId: Public>(seed: &str) -> <AuraId::Pair as Pair>::Public {
 	get_public_from_seed::<AuraId>(seed)
 }
 
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn statemint_session_keys(keys: AuraId) -> statemint_runtime::SessionKeys {
+pub fn statemint_session_keys(keys: StatemintAuraId) -> statemint_runtime::SessionKeys {
 	statemint_runtime::SessionKeys { aura: keys }
 }
 
@@ -228,6 +277,7 @@ pub fn westmint_session_keys(keys: AuraId) -> westmint_runtime::SessionKeys {
 
 pub fn statemint_development_config() -> StatemintChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("ss58Format".into(), 0.into());
 	properties.insert("tokenSymbol".into(), "DOT".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
@@ -242,7 +292,7 @@ pub fn statemint_development_config() -> StatemintChainSpec {
 				// initial collators.
 				vec![(
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_collator_keys_from_seed("Alice"),
+					get_collator_keys_from_seed::<StatemintAuraId>("Alice"),
 				)],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -256,6 +306,7 @@ pub fn statemint_development_config() -> StatemintChainSpec {
 		Vec::new(),
 		None,
 		None,
+		None,
 		Some(properties),
 		Extensions { relay_chain: "polkadot-dev".into(), para_id: 1000 },
 	)
@@ -263,6 +314,7 @@ pub fn statemint_development_config() -> StatemintChainSpec {
 
 pub fn statemint_local_config() -> StatemintChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("ss58Format".into(), 0.into());
 	properties.insert("tokenSymbol".into(), "DOT".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
@@ -278,11 +330,11 @@ pub fn statemint_local_config() -> StatemintChainSpec {
 				vec![
 					(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed("Alice"),
+						get_collator_keys_from_seed::<StatemintAuraId>("Alice"),
 					),
 					(
 						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed("Bob"),
+						get_collator_keys_from_seed::<StatemintAuraId>("Bob"),
 					),
 				],
 				vec![
@@ -305,13 +357,74 @@ pub fn statemint_local_config() -> StatemintChainSpec {
 		Vec::new(),
 		None,
 		None,
+		None,
 		Some(properties),
 		Extensions { relay_chain: "polkadot-local".into(), para_id: 1000 },
 	)
 }
 
+// Not used for syncing, but just to determine the genesis values set for the upgrade from shell.
+pub fn statemint_config() -> StatemintChainSpec {
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("ss58Format".into(), 0.into());
+	properties.insert("tokenSymbol".into(), "DOT".into());
+	properties.insert("tokenDecimals".into(), 10.into());
+
+	StatemintChainSpec::from_genesis(
+		// Name
+		"Statemint",
+		// ID
+		"statemint",
+		ChainType::Live,
+		move || {
+			statemint_genesis(
+				// initial collators.
+				vec![
+					(
+						hex!("4c3d674d2a01060f0ded218e5dcc6f90c1726f43df79885eb3e22d97a20d5421")
+							.into(),
+						hex!("4c3d674d2a01060f0ded218e5dcc6f90c1726f43df79885eb3e22d97a20d5421")
+							.unchecked_into(),
+					),
+					(
+						hex!("c7d7d38d16bc23c6321152c50306212dc22c0efc04a2e52b5cccfc31ab3d7811")
+							.into(),
+						hex!("c7d7d38d16bc23c6321152c50306212dc22c0efc04a2e52b5cccfc31ab3d7811")
+							.unchecked_into(),
+					),
+					(
+						hex!("c5c07ba203d7375675f5c1ebe70f0a5bb729ae57b48bcc877fcc2ab21309b762")
+							.into(),
+						hex!("c5c07ba203d7375675f5c1ebe70f0a5bb729ae57b48bcc877fcc2ab21309b762")
+							.unchecked_into(),
+					),
+					(
+						hex!("0b2d0013fb974794bd7aa452465b567d48ef70373fe231a637c1fb7c547e85b3")
+							.into(),
+						hex!("0b2d0013fb974794bd7aa452465b567d48ef70373fe231a637c1fb7c547e85b3")
+							.unchecked_into(),
+					),
+				],
+				vec![],
+				1000u32.into(),
+			)
+		},
+		vec![
+			"/ip4/34.65.251.121/tcp/30334/p2p/12D3KooWG3GrM6XKMM4gp3cvemdwUvu96ziYoJmqmetLZBXE8bSa".parse().unwrap(),
+			"/ip4/34.65.35.228/tcp/30334/p2p/12D3KooWMRyTLrCEPcAQD6c4EnudL3vVzg9zji3whvsMYPUYevpq".parse().unwrap(),
+			"/ip4/34.83.247.146/tcp/30334/p2p/12D3KooWE4jFh5FpJDkWVZhnWtFnbSqRhdjvC7Dp9b8b3FTuubQC".parse().unwrap(),
+			"/ip4/104.199.117.230/tcp/30334/p2p/12D3KooWG9R8pVXKumVo2rdkeVD4j5PVhRTqmYgLHY3a4yPYgLqM".parse().unwrap(),
+		],
+		None,
+		None,
+		None,
+		Some(properties),
+		Extensions { relay_chain: "polkadot".into(), para_id: 1000 },
+	)
+}
+
 fn statemint_genesis(
-	invulnerables: Vec<(AccountId, AuraId)>,
+	invulnerables: Vec<(AccountId, StatemintAuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> statemint_runtime::GenesisConfig {
@@ -347,11 +460,15 @@ fn statemint_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		polkadot_xcm: statemint_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
+		},
 	}
 }
 
 pub fn statemine_development_config() -> StatemineChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("ss58Format".into(), 2.into());
 	properties.insert("tokenSymbol".into(), "KSM".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
@@ -366,7 +483,7 @@ pub fn statemine_development_config() -> StatemineChainSpec {
 				// initial collators.
 				vec![(
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_collator_keys_from_seed("Alice"),
+					get_collator_keys_from_seed::<AuraId>("Alice"),
 				)],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -380,6 +497,7 @@ pub fn statemine_development_config() -> StatemineChainSpec {
 		Vec::new(),
 		None,
 		None,
+		None,
 		Some(properties),
 		Extensions { relay_chain: "kusama-dev".into(), para_id: 1000 },
 	)
@@ -387,6 +505,7 @@ pub fn statemine_development_config() -> StatemineChainSpec {
 
 pub fn statemine_local_config() -> StatemineChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("ss58Format".into(), 2.into());
 	properties.insert("tokenSymbol".into(), "KSM".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
@@ -402,11 +521,11 @@ pub fn statemine_local_config() -> StatemineChainSpec {
 				vec![
 					(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed("Alice"),
+						get_collator_keys_from_seed::<AuraId>("Alice"),
 					),
 					(
 						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed("Bob"),
+						get_collator_keys_from_seed::<AuraId>("Bob"),
 					),
 				],
 				vec![
@@ -429,6 +548,7 @@ pub fn statemine_local_config() -> StatemineChainSpec {
 		Vec::new(),
 		None,
 		None,
+		None,
 		Some(properties),
 		Extensions { relay_chain: "kusama-local".into(), para_id: 1000 },
 	)
@@ -436,6 +556,7 @@ pub fn statemine_local_config() -> StatemineChainSpec {
 
 pub fn statemine_config() -> StatemineChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("ss58Format".into(), 2.into());
 	properties.insert("tokenSymbol".into(), "KSM".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
@@ -481,6 +602,7 @@ pub fn statemine_config() -> StatemineChainSpec {
 		Vec::new(),
 		None,
 		None,
+		None,
 		Some(properties),
 		Extensions { relay_chain: "kusama".into(), para_id: 1000 },
 	)
@@ -498,7 +620,11 @@ fn statemine_genesis(
 				.to_vec(),
 		},
 		balances: statemine_runtime::BalancesConfig {
-			balances: endowed_accounts.iter().cloned().map(|k| (k, STATEMINE_ED * 4096)).collect(),
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, STATEMINE_ED * 524_288))
+				.collect(),
 		},
 		parachain_info: statemine_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: statemine_runtime::CollatorSelectionConfig {
@@ -521,6 +647,9 @@ fn statemine_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		polkadot_xcm: statemine_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
+		},
 	}
 }
 
@@ -540,7 +669,7 @@ pub fn westmint_development_config() -> WestmintChainSpec {
 				// initial collators.
 				vec![(
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_collator_keys_from_seed("Alice"),
+					get_collator_keys_from_seed::<AuraId>("Alice"),
 				)],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -548,11 +677,11 @@ pub fn westmint_development_config() -> WestmintChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				1000.into(),
 			)
 		},
 		Vec::new(),
+		None,
 		None,
 		None,
 		Some(properties),
@@ -577,11 +706,11 @@ pub fn westmint_local_config() -> WestmintChainSpec {
 				vec![
 					(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed("Alice"),
+						get_collator_keys_from_seed::<AuraId>("Alice"),
 					),
 					(
 						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed("Bob"),
+						get_collator_keys_from_seed::<AuraId>("Bob"),
 					),
 				],
 				vec![
@@ -598,11 +727,11 @@ pub fn westmint_local_config() -> WestmintChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				1000.into(),
 			)
 		},
 		Vec::new(),
+		None,
 		None,
 		None,
 		Some(properties),
@@ -651,12 +780,11 @@ pub fn westmint_config() -> WestmintChainSpec {
 					),
 				],
 				Vec::new(),
-				// re-use the Westend sudo key
-				hex!("6648d7f3382690650c681aba1b993cd11e54deb4df21a3a18c3e2177de9f7342").into(),
 				1000.into(),
 			)
 		},
 		Vec::new(),
+		None,
 		None,
 		None,
 		Some(properties),
@@ -667,7 +795,6 @@ pub fn westmint_config() -> WestmintChainSpec {
 fn westmint_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
-	root_key: AccountId,
 	id: ParaId,
 ) -> westmint_runtime::GenesisConfig {
 	westmint_runtime::GenesisConfig {
@@ -679,7 +806,6 @@ fn westmint_genesis(
 		balances: westmint_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, WESTMINT_ED * 4096)).collect(),
 		},
-		sudo: westmint_runtime::SudoConfig { key: root_key },
 		parachain_info: westmint_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: westmint_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
@@ -703,5 +829,8 @@ fn westmint_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		polkadot_xcm: westmint_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
+		},
 	}
 }

@@ -18,26 +18,32 @@ use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{
-		new_partial, Block, RococoParachainRuntimeExecutor, ShellRuntimeExecutor,
-		StatemineRuntimeExecutor, StatemintRuntimeExecutor, WestmintRuntimeExecutor,
+		new_partial, Block, RococoParachainRuntimeExecutor, SeedlingRuntimeExecutor,
+		ShellRuntimeExecutor, StatemineRuntimeExecutor, StatemintRuntimeExecutor,
+		WestmintRuntimeExecutor,
 	},
 };
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use log::info;
+use parachains_common::{AuraId, StatemintAuraId};
 use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
 };
-use sc_service::config::{BasePath, PrometheusConfig};
+use sc_service::{
+	config::{BasePath, PrometheusConfig},
+	TaskManager,
+};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 
 trait IdentifyChain {
 	fn is_shell(&self) -> bool;
+	fn is_seedling(&self) -> bool;
 	fn is_statemint(&self) -> bool;
 	fn is_statemine(&self) -> bool;
 	fn is_westmint(&self) -> bool;
@@ -46,6 +52,9 @@ trait IdentifyChain {
 impl IdentifyChain for dyn sc_service::ChainSpec {
 	fn is_shell(&self) -> bool {
 		self.id().starts_with("shell")
+	}
+	fn is_seedling(&self) -> bool {
+		self.id().starts_with("seedling")
 	}
 	fn is_statemint(&self) -> bool {
 		self.id().starts_with("statemint")
@@ -61,6 +70,9 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 	fn is_shell(&self) -> bool {
 		<dyn sc_service::ChainSpec>::is_shell(self)
+	}
+	fn is_seedling(&self) -> bool {
+		<dyn sc_service::ChainSpec>::is_seedling(self)
 	}
 	fn is_statemint(&self) -> bool {
 		<dyn sc_service::ChainSpec>::is_statemint(self)
@@ -86,8 +98,17 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 			&include_bytes!("../res/track.json")[..],
 		)?),
 		"shell" => Box::new(chain_spec::get_shell_chain_spec()),
+		// -- Statemint
+		"seedling" => Box::new(chain_spec::get_seedling_chain_spec()),
 		"statemint-dev" => Box::new(chain_spec::statemint_development_config()),
 		"statemint-local" => Box::new(chain_spec::statemint_local_config()),
+		// the chain spec as used for generating the upgrade genesis values
+		"statemint-genesis" => Box::new(chain_spec::statemint_config()),
+		// the shell-based chain spec as used for syncing
+		"statemint" => Box::new(chain_spec::ChainSpec::from_json_bytes(
+			&include_bytes!("../res/statemint.json")[..],
+		)?),
+		// -- Statemine
 		"statemine-dev" => Box::new(chain_spec::statemine_development_config()),
 		"statemine-local" => Box::new(chain_spec::statemine_local_config()),
 		// the chain spec as used for generating the upgrade genesis values
@@ -96,6 +117,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		"statemine" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../res/statemine.json")[..],
 		)?),
+		// -- Westmint
 		"westmint-dev" => Box::new(chain_spec::westmint_development_config()),
 		"westmint-local" => Box::new(chain_spec::westmint_local_config()),
 		// the chain spec as used for generating the upgrade genesis values
@@ -115,6 +137,8 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 				Box::new(chain_spec::WestmintChainSpec::from_json_file(path.into())?)
 			} else if chain_spec.is_shell() {
 				Box::new(chain_spec::ShellChainSpec::from_json_file(path.into())?)
+			} else if chain_spec.is_seedling() {
+				Box::new(chain_spec::SeedlingChainSpec::from_json_file(path.into())?)
 			} else {
 				Box::new(chain_spec)
 			}
@@ -166,6 +190,8 @@ impl SubstrateCli for Cli {
 			&westmint_runtime::VERSION
 		} else if chain_spec.is_shell() {
 			&shell_runtime::VERSION
+		} else if chain_spec.is_seedling() {
+			&seedling_runtime::VERSION
 		} else {
 			&rococo_parachain_runtime::VERSION
 		}
@@ -229,7 +255,7 @@ macro_rules! construct_async_run {
 			runner.async_run(|$config| {
 				let $components = new_partial::<westmint_runtime::RuntimeApi, WestmintRuntimeExecutor, _>(
 					&$config,
-					crate::service::statemint_build_import_queue,
+					crate::service::statemint_build_import_queue::<_, _, AuraId>,
 				)?;
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
@@ -238,7 +264,7 @@ macro_rules! construct_async_run {
 			runner.async_run(|$config| {
 				let $components = new_partial::<statemine_runtime::RuntimeApi, StatemineRuntimeExecutor, _>(
 					&$config,
-					crate::service::statemint_build_import_queue,
+					crate::service::statemint_build_import_queue::<_, _, AuraId>,
 				)?;
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
@@ -247,7 +273,7 @@ macro_rules! construct_async_run {
 			runner.async_run(|$config| {
 				let $components = new_partial::<statemint_runtime::RuntimeApi, StatemintRuntimeExecutor, _>(
 					&$config,
-					crate::service::statemint_build_import_queue,
+					crate::service::statemint_build_import_queue::<_, _, StatemintAuraId>,
 				)?;
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
@@ -255,6 +281,15 @@ macro_rules! construct_async_run {
 		} else if runner.config().chain_spec.is_shell() {
 			runner.async_run(|$config| {
 				let $components = new_partial::<shell_runtime::RuntimeApi, ShellRuntimeExecutor, _>(
+					&$config,
+					crate::service::shell_build_import_queue,
+				)?;
+				let task_manager = $components.task_manager;
+				{ $( $code )* }.map(|v| (v, task_manager))
+			})
+		} else if runner.config().chain_spec.is_seedling() {
+			runner.async_run(|$config| {
+				let $components = new_partial::<seedling_runtime::RuntimeApi, SeedlingRuntimeExecutor, _>(
 					&$config,
 					crate::service::shell_build_import_queue,
 				)?;
@@ -336,8 +371,10 @@ pub fn run() -> Result<()> {
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
 			let _ = builder.init();
 
-			let block: crate::service::Block =
-				generate_genesis_block(&load_spec(&params.chain.clone().unwrap_or_default())?)?;
+			let spec = load_spec(&params.chain.clone().unwrap_or_default())?;
+			let state_version = Cli::native_runtime_version(&spec).state_version();
+
+			let block: crate::service::Block = generate_genesis_block(&spec, state_version)?;
 			let raw_header = block.header().encode();
 			let output_buf = if params.raw {
 				raw_header
@@ -391,6 +428,38 @@ pub fn run() -> Result<()> {
 				You can enable it with `--features runtime-benchmarks`."
 					.into())
 			},
+		Some(Subcommand::TryRuntime(cmd)) => {
+			if cfg!(feature = "try-runtime") {
+				// grab the task manager.
+				let runner = cli.create_runner(cmd)?;
+				let registry = &runner.config().prometheus_config.as_ref().map(|cfg| &cfg.registry);
+				let task_manager =
+					TaskManager::new(runner.config().tokio_handle.clone(), *registry)
+						.map_err(|e| format!("Error: {:?}", e))?;
+
+				if runner.config().chain_spec.is_statemine() {
+					runner.async_run(|config| {
+						Ok((cmd.run::<Block, StatemineRuntimeExecutor>(config), task_manager))
+					})
+				} else if runner.config().chain_spec.is_westmint() {
+					runner.async_run(|config| {
+						Ok((cmd.run::<Block, WestmintRuntimeExecutor>(config), task_manager))
+					})
+				} else if runner.config().chain_spec.is_statemint() {
+					runner.async_run(|config| {
+						Ok((cmd.run::<Block, StatemintRuntimeExecutor>(config), task_manager))
+					})
+				} else if runner.config().chain_spec.is_shell() {
+					runner.async_run(|config| {
+						Ok((cmd.run::<Block, ShellRuntimeExecutor>(config), task_manager))
+					})
+				} else {
+					Err("Chain doesn't support try-runtime".into())
+				}
+			} else {
+				Err("Try-runtime must be enabled by `--features try-runtime`.".into())
+			}
+		},
 		Some(Subcommand::Key(cmd)) => Ok(cmd.run(&cli)?),
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
@@ -412,8 +481,12 @@ pub fn run() -> Result<()> {
 				let parachain_account =
 					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
 
+				let state_version =
+					RelayChainCli::native_runtime_version(&config.chain_spec).state_version();
+
 				let block: crate::service::Block =
-					generate_genesis_block(&config.chain_spec).map_err(|e| format!("{:?}", e))?;
+					generate_genesis_block(&config.chain_spec, state_version)
+						.map_err(|e| format!("{:?}", e))?;
 				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
 				let tokio_handle = config.tokio_handle.clone();
@@ -430,6 +503,7 @@ pub fn run() -> Result<()> {
 					crate::service::start_statemint_node::<
 						statemint_runtime::RuntimeApi,
 						StatemintRuntimeExecutor,
+						StatemintAuraId,
 					>(config, polkadot_config, id)
 					.await
 					.map(|r| r.0)
@@ -438,6 +512,7 @@ pub fn run() -> Result<()> {
 					crate::service::start_statemint_node::<
 						statemine_runtime::RuntimeApi,
 						StatemineRuntimeExecutor,
+						AuraId,
 					>(config, polkadot_config, id)
 					.await
 					.map(|r| r.0)
@@ -446,15 +521,27 @@ pub fn run() -> Result<()> {
 					crate::service::start_statemint_node::<
 						westmint_runtime::RuntimeApi,
 						WestmintRuntimeExecutor,
+						AuraId,
 					>(config, polkadot_config, id)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
 				} else if config.chain_spec.is_shell() {
-					crate::service::start_shell_node(config, polkadot_config, id)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
+					crate::service::start_shell_node::<
+						shell_runtime::RuntimeApi,
+						ShellRuntimeExecutor,
+					>(config, polkadot_config, id)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
+				} else if config.chain_spec.is_seedling() {
+					crate::service::start_shell_node::<
+						seedling_runtime::RuntimeApi,
+						SeedlingRuntimeExecutor,
+					>(config, polkadot_config, id)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
 				} else {
 					crate::service::start_rococo_parachain_node(config, polkadot_config, id)
 						.await
@@ -520,11 +607,24 @@ impl CliConfiguration<Self> for RelayChainCli {
 		self.base.base.rpc_ws(default_listen_port)
 	}
 
-	fn prometheus_config(&self, default_listen_port: u16) -> Result<Option<PrometheusConfig>> {
-		self.base.base.prometheus_config(default_listen_port)
+	fn prometheus_config(
+		&self,
+		default_listen_port: u16,
+		chain_spec: &Box<dyn ChainSpec>,
+	) -> Result<Option<PrometheusConfig>> {
+		self.base.base.prometheus_config(default_listen_port, chain_spec)
 	}
 
-	fn init<C: SubstrateCli>(&self) -> Result<()> {
+	fn init<F>(
+		&self,
+		_support_url: &String,
+		_impl_version: &String,
+		_logger_hook: F,
+		_config: &sc_service::Configuration,
+	) -> Result<()>
+	where
+		F: FnOnce(&mut sc_cli::LoggerBuilder, &sc_service::Configuration),
+	{
 		unreachable!("PolkadotCli is never initialized; qed");
 	}
 

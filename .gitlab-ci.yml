@@ -17,6 +17,7 @@ variables:                         &default-vars
   CI_IMAGE:                        "paritytech/ci-linux:production"
   DOCKER_OS:                       "debian:stretch"
   ARCH:                            "x86_64"
+  WASM_BUILD_WORKSPACE_HINT:       "/builds/parity/cumulus/"
 
 .rust-info-script:                 &rust-info-script
   - rustup show
@@ -105,6 +106,29 @@ test-linux-stable:
       else
         exit 0;
       fi
+    - sccache -s
+
+check-runtime-benchmarks:
+  stage:                           test
+  <<:                              *docker-env
+  script:
+    # Check that the node will compile with `runtime-benchmarks` feature flag.
+    - time cargo check --all --features runtime-benchmarks
+    - sccache -s
+
+cargo-check-try-runtime:
+  stage:                           test
+  <<:                              *docker-env
+  script:
+    # Check that the node will compile with `try-runtime` feature flag.
+    - time cargo check --all --features try-runtime
+    - sccache -s
+
+cargo-check-benches:
+  stage:                           test
+  <<:                              *docker-env
+  script:
+    - time cargo check --all --benches
     - sccache -s
 
 #### stage:                        publish

@@ -23,8 +23,7 @@
 //! several reasons, either a malicious collator that managed to include its own PoV and doesn't want
 //! to share it with the rest of the network or maybe a collator went down before it could distribute
 //! the block in the network. When something like this happens we can use the PoV recovery algorithm
-//! implemented in this crate to recover a PoV and to propagate it with the rest of the network. This
-//! protocol is only executed by the collators, to not overwhelm the relay chain validators.
+//! implemented in this crate to recover a PoV and to propagate it with the rest of the network.
 //!
 //! It works in the following way:
 //!
@@ -44,7 +43,6 @@
 
 use sc_client_api::{BlockBackend, BlockchainEvents, UsageProvider};
 use sc_consensus::import_queue::{ImportQueue, IncomingBlock};
-use sp_api::ProvideRuntimeApi;
 use sp_consensus::{BlockOrigin, BlockStatus};
 use sp_runtime::{
 	generic::BlockId,
@@ -54,11 +52,11 @@ use sp_runtime::{
 use polkadot_node_primitives::{AvailableData, POV_BOMB_LIMIT};
 use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::v1::{
-	Block as PBlock, CandidateReceipt, CommittedCandidateReceipt, Id as ParaId, ParachainHost,
-	SessionIndex,
+	CandidateReceipt, CommittedCandidateReceipt, Id as ParaId, SessionIndex,
 };
 
 use cumulus_primitives_core::ParachainBlockData;
+use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 
 use codec::Decode;
 use futures::{select, stream::FuturesUnordered, Future, FutureExt, Stream, StreamExt};
@@ -84,6 +82,26 @@ struct PendingCandidate<Block: BlockT> {
 	block_number: NumberFor<Block>,
 }
 
+/// The delay between observing an unknown block and recovering this block.
+#[derive(Clone, Copy)]
+pub enum RecoveryDelay {
+	/// Start recovering the block in maximum of the given delay.
+	WithMax { max: Duration },
+	/// Start recovering the block after at least `min` delay and in maximum `max` delay.
+	WithMinAndMax { min: Duration, max: Duration },
+}
+
+impl RecoveryDelay {
+	/// Return as [`Delay`].
+	fn as_delay(self) -> Delay {
+		match self {
+			Self::WithMax { max } => Delay::new(max.mul_f64(thread_rng().gen())),
+			Self::WithMinAndMax { min, max } =>
+				Delay::new(min + max.saturating_sub(min).mul_f64(thread_rng().gen())),
+		}
+	}
+}
+
 /// Encapsulates the logic of the pov recovery.
 pub struct PoVRecovery<Block: BlockT, PC, IQ, RC> {
 	/// All the pending candidates that we are waiting for to be imported or that need to be
@@ -99,38 +117,37 @@ pub struct PoVRecovery<Block: BlockT, PC, IQ, RC> {
 	///
 	/// Uses parent -> blocks mapping.
 	waiting_for_parent: HashMap<Block::Hash, Vec<Block>>,
-	relay_chain_slot_duration: Duration,
+	recovery_delay: RecoveryDelay,
 	parachain_client: Arc<PC>,
 	parachain_import_queue: IQ,
-	relay_chain_client: Arc<RC>,
+	relay_chain_interface: RC,
 	para_id: ParaId,
 }
 
-impl<Block: BlockT, PC, IQ, RC> PoVRecovery<Block, PC, IQ, RC>
+impl<Block: BlockT, PC, IQ, RCInterface> PoVRecovery<Block, PC, IQ, RCInterface>
 where
 	PC: BlockBackend<Block> + BlockchainEvents<Block> + UsageProvider<Block>,
-	RC: ProvideRuntimeApi<PBlock> + BlockchainEvents<PBlock>,
-	RC::Api: ParachainHost<PBlock>,
+	RCInterface: RelayChainInterface + Clone,
 	IQ: ImportQueue<Block>,
 {
 	/// Create a new instance.
 	pub fn new(
 		overseer_handle: OverseerHandle,
-		relay_chain_slot_duration: Duration,
+		recovery_delay: RecoveryDelay,
 		parachain_client: Arc<PC>,
 		parachain_import_queue: IQ,
-		relay_chain_client: Arc<RC>,
+		relay_chain_interface: RCInterface,
 		para_id: ParaId,
 	) -> Self {
 		Self {
 			pending_candidates: HashMap::new(),
 			next_candidate_to_recover: Default::default(),
 			active_candidate_recovery: ActiveCandidateRecovery::new(overseer_handle),
-			relay_chain_slot_duration,
+			recovery_delay,
 			waiting_for_parent: HashMap::new(),
 			parachain_client,
 			parachain_import_queue,
-			relay_chain_client,
+			relay_chain_interface,
 			para_id,
 		}
 	}
@@ -188,9 +205,8 @@ where
 			return
 		}
 
-		// Wait some random time, with the maximum being the slot duration of the relay chain
-		// before we start to recover the candidate.
-		let delay = Delay::new(self.relay_chain_slot_duration.mul_f64(thread_rng().gen()));
+		// Delay the recovery by some random time to not spam the relay chain.
+		let delay = self.recovery_delay.as_delay();
 		self.next_candidate_to_recover.push(
 			async move {
 				delay.await;
@@ -365,7 +381,14 @@ where
 		let mut imported_blocks = self.parachain_client.import_notification_stream().fuse();
 		let mut finalized_blocks = self.parachain_client.finality_notification_stream().fuse();
 		let pending_candidates =
-			pending_candidates(self.relay_chain_client.clone(), self.para_id).fuse();
+			match pending_candidates(self.relay_chain_interface.clone(), self.para_id).await {
+				Ok(pending_candidate_stream) => pending_candidate_stream.fuse(),
+				Err(err) => {
+					tracing::error!(target: LOG_TARGET, error = ?err, "Unable to retrieve pending candidate stream.");
+					return
+				},
+			};
+
 		futures::pin_mut!(pending_candidates);
 
 		loop {
@@ -419,33 +442,41 @@ where
 }
 
 /// Returns a stream over pending candidates for the parachain corresponding to `para_id`.
-fn pending_candidates<RC>(
-	relay_chain_client: Arc<RC>,
+async fn pending_candidates(
+	relay_chain_client: impl RelayChainInterface + Clone,
 	para_id: ParaId,
-) -> impl Stream<Item = (CommittedCandidateReceipt, SessionIndex)>
-where
-	RC: ProvideRuntimeApi<PBlock> + BlockchainEvents<PBlock>,
-	RC::Api: ParachainHost<PBlock>,
-{
-	relay_chain_client.import_notification_stream().filter_map(move |n| {
-		let runtime_api = relay_chain_client.runtime_api();
-		let res = runtime_api
-			.candidate_pending_availability(&BlockId::hash(n.hash), para_id)
-			.and_then(|pa| {
-				runtime_api
-					.session_index_for_child(&BlockId::hash(n.hash))
-					.map(|v| pa.map(|pa| (pa, v)))
-			})
-			.map_err(|e| {
-				tracing::error!(
-					target: LOG_TARGET,
-					error = ?e,
-					"Failed fetch pending candidates.",
-				)
-			})
-			.ok()
-			.flatten();
+) -> RelayChainResult<impl Stream<Item = (CommittedCandidateReceipt, SessionIndex)>> {
+	let import_notification_stream = relay_chain_client.import_notification_stream().await?;
 
-		async move { res }
-	})
+	let filtered_stream = import_notification_stream.filter_map(move |n| {
+		let client_for_closure = relay_chain_client.clone();
+		async move {
+			let block_id = BlockId::hash(n.hash());
+			let pending_availability_result = client_for_closure
+				.candidate_pending_availability(&block_id, para_id)
+				.await
+				.map_err(|e| {
+					tracing::error!(
+						target: LOG_TARGET,
+						error = ?e,
+						"Failed to fetch pending candidates.",
+					)
+				});
+			let session_index_result =
+				client_for_closure.session_index_for_child(&block_id).await.map_err(|e| {
+					tracing::error!(
+						target: LOG_TARGET,
+						error = ?e,
+						"Failed to fetch session index.",
+					)
+				});
+
+			if let Ok(Some(candidate)) = pending_availability_result {
+				session_index_result.map(|session_index| (candidate, session_index)).ok()
+			} else {
+				None
+			}
+		}
+	});
+	Ok(filtered_stream)
 }

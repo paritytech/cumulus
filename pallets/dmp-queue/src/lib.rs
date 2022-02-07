@@ -77,6 +77,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	/// The module configuration trait.
@@ -371,6 +372,7 @@ mod tests {
 			impl_version: 1,
 			apis: sp_version::create_apis_vec!([]),
 			transaction_version: 1,
+			state_version: 1,
 		};
 		pub const ParachainId: ParaId = ParaId::new(200);
 		pub const ReservedXcmpWeight: Weight = 0;
@@ -403,6 +405,7 @@ mod tests {
 		type SystemWeightInfo = ();
 		type SS58Prefix = ();
 		type OnSetCode = ();
+		type MaxConsumers = frame_support::traits::ConstU32<16>;
 	}
 
 	thread_local! {
