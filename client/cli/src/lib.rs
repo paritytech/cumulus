@@ -126,7 +126,7 @@ fn validate_relay_chain_url(arg: &str) -> Result<(), String> {
 		Ok(())
 	} else {
 		Err(format!(
-			"'{}' URL scheme not supported. Only websocket RPC currently supported",
+			"'{}' URL scheme not supported. Only websocket RPC is currently supported",
 			url.scheme()
 		))
 	}
@@ -145,7 +145,7 @@ pub struct RunCmd {
 	#[clap(long, conflicts_with = "validator")]
 	pub collator: bool,
 
-	/// Specify an URL to a relay chain full node to communicate with.
+	/// EXPERIMENTAL: Specify an URL to a relay chain full node to communicate with.
 	#[clap(
 		long,
 		parse(try_from_str),

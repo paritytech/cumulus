@@ -60,6 +60,19 @@ struct RelayChainRPCClient {
 }
 
 impl RelayChainRPCClient {
+	pub async fn new(url: Url) -> Self {
+		tracing::info!(target: LOG_TARGET, "Initializing RPC Client. Relay Chain Url: {}", url);
+		let ws_client = WsClientBuilder::default()
+			.build(url.as_str())
+			.await
+			.expect("Should be able to initialize websocket client.");
+
+		RelayChainRPCClient {
+			ws_client: Arc::new(ws_client),
+			retry_strategy: ExponentialBackoff::default(),
+		}
+	}
+
 	/// Call a call to `state_call` rpc method.
 	async fn call_remote_runtime_function(
 		&self,
@@ -262,17 +275,7 @@ pub struct RelayChainNetwork {
 
 impl RelayChainNetwork {
 	pub async fn new(url: Url) -> Self {
-		tracing::info!(target: LOG_TARGET, "Initializing RPC Client. Relay Chain Url: {}", url);
-		let ws_client = WsClientBuilder::default()
-			.build(url.as_str())
-			.await
-			.expect("Should be able to initialize websocket client.");
-		Self {
-			rpc_client: RelayChainRPCClient {
-				ws_client: Arc::new(ws_client),
-				retry_strategy: ExponentialBackoff::default(),
-			},
-		}
+		Self { rpc_client: RelayChainRPCClient::new(url).await }
 	}
 }
 
