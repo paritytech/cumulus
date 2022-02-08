@@ -125,7 +125,10 @@ fn validate_relay_chain_url(arg: &str) -> Result<(), String> {
 	if url.scheme() == "ws" {
 		Ok(())
 	} else {
-		Err("Only websocket RPC currently supported".to_string())
+		Err(format!(
+			"'{}' URL scheme not supported. Only websocket RPC currently supported",
+			url.scheme()
+		))
 	}
 }
 
