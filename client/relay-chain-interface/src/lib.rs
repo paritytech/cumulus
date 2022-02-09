@@ -38,23 +38,23 @@ pub type RelayChainResult<T> = Result<T, RelayChainError>;
 
 #[derive(thiserror::Error, Debug)]
 pub enum RelayChainError {
-	#[error("Error occured while calling relay chain runtime: {0:?}")]
+	#[error("Error occured while calling relay chain runtime: {0}")]
 	ApiError(#[from] ApiError),
 	#[error("Timeout while waiting for relay-chain block `{0}` to be imported.")]
 	WaitTimeout(PHash),
 	#[error("Import listener closed while waiting for relay-chain block `{0}` to be imported.")]
 	ImportListenerClosed(PHash),
-	#[error("Blockchain returned an error while waiting for relay-chain block `{0}` to be imported: {1:?}")]
+	#[error("Blockchain returned an error while waiting for relay-chain block `{0}` to be imported: {1}")]
 	WaitBlockchainError(PHash, sp_blockchain::Error),
-	#[error("Blockchain returned an error: {0:?}")]
+	#[error("Blockchain returned an error: {0}")]
 	BlockchainError(#[from] sp_blockchain::Error),
-	#[error("State machine error occured: {0:?}")]
+	#[error("State machine error occured: {0}")]
 	StateMachineError(Box<dyn sp_state_machine::Error>),
-	#[error("Unable to call RPC method '{0}' due to error: {1:?}")]
+	#[error("Unable to call RPC method '{0}' due to error: {1}")]
 	NetworkError(String, JsonRPSeeError),
-	#[error("Scale codec deserialization error: {0:?}")]
+	#[error("Scale codec deserialization error: {0}")]
 	DeserializationError(CodecError),
-	#[error("Unspecified error occured: {0:?}")]
+	#[error("Unspecified error occured: {0}")]
 	GenericError(String),
 }
 
