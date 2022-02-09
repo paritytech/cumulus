@@ -6,15 +6,15 @@ edition = "2021"
 
 [dependencies]
 # Substrate dependencies
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", optional = true , branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", optional = true , branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", optional = true , branch = "master" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", optional = true , branch = "master" }
-sp-storage = { git = "https://github.com/paritytech/substrate", optional = true , branch = "master" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-inner-hashing-test" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-inner-hashing-test" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", optional = true , branch = "kiz-inner-hashing-test" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", optional = true , branch = "kiz-inner-hashing-test" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-inner-hashing-test" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", optional = true , branch = "kiz-inner-hashing-test" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-inner-hashing-test" }
+sp-api = { git = "https://github.com/paritytech/substrate", optional = true , branch = "kiz-inner-hashing-test" }
+sp-storage = { git = "https://github.com/paritytech/substrate", optional = true , branch = "kiz-inner-hashing-test" }
 
 # Cumulus dependencies
 cumulus-primitives-core = { path = "../core", default-features = false }

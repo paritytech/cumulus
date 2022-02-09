@@ -12,7 +12,7 @@ edition = "2021"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
 
 [dependencies]
 hex-literal = { version = "0.3.1", optional = true }
@@ -27,37 +27,37 @@ pallet-template = { path = "../pallets/template", default-features = false }
 
 # Substrate Dependencies
 ## Substrate Primitive Dependencies
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-sp-session = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-sp-version = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+sp-session = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+sp-version = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
 
 ## Substrate FRAME Dependencies
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true , branch = "master" }
-frame-try-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true , branch = "master" }
-frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true , branch = "master" }
-frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true , branch = "kiz-inner-hashing-test" }
+frame-try-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true , branch = "kiz-inner-hashing-test" }
+frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-inner-hashing-test" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true , branch = "kiz-inner-hashing-test" }
+frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
 
 ## Substrate Pallet Dependencies
-pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
-pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "master" }
+pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+pallet-session = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
+pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kiz-inner-hashing-test" }
 
 # Cumulus dependencies
 cumulus-pallet-aura-ext = { path = "../../pallets/aura-ext", default-features = false }
@@ -73,12 +73,12 @@ parachain-info = { path = "../../polkadot-parachains/pallets/parachain-info", de
 cumulus-pallet-session-benchmarking = {path = "../../pallets/session-benchmarking", default-features = false, version = "3.0.0"}
 
 # Polkadot Dependencies
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "kiz-inner-hashing-test" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "kiz-inner-hashing-test" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kiz-inner-hashing-test" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "kiz-inner-hashing-test" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "kiz-inner-hashing-test" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "kiz-inner-hashing-test" }
 
 [features]
 default = [

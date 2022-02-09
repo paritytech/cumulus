@@ -13,7 +13,7 @@ build = "build.rs"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
 
 [[bin]]
 name = "parachain-collator"
@@ -38,46 +38,46 @@ jsonrpc-core = "18.0.0"
 parachain-template-runtime = { path = "../runtime" }
 
 # Substrate Dependencies
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "master" }
-frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
-try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
 
-pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
 
-substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
 
 ## Substrate Client Dependencies
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"], branch = "master" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sc-network = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sc-keystore = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sc-service = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"], branch = "kiz-inner-hashing-test" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
 
 ## Substrate Primitive Dependencies
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-session = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-session = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
 
 # Cumulus dependencies
 cumulus-client-cli = { path = "../../client/cli" }
@@ -92,8 +92,8 @@ cumulus-relay-chain-interface = { path = "../../client/relay-chain-interface" }
 cumulus-relay-chain-local = { path = "../../client/relay-chain-local" }
 
 # Polkadot dependencies
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "kiz-inner-hashing-test" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "kiz-inner-hashing-test" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "kiz-inner-hashing-test" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "kiz-inner-hashing-test" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kiz-inner-hashing-test" }

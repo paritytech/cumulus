@@ -8,5 +8,5 @@ edition = "2021"
 clap = { version = "3.0", features = ["derive"] }
 
 # Substrate dependencies
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }

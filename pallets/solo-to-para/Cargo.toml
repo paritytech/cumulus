@@ -7,18 +7,18 @@ description = "Adds functionality to migrate from a Solo to a Parachain"
 
 [dependencies]
 # Substrate dependencies
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-inner-hashing-test" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-inner-hashing-test" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-inner-hashing-test" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-inner-hashing-test" }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-inner-hashing-test" }
 
 # Cumulus dependencies
 cumulus-pallet-parachain-system = { default-features = false, path = "../parachain-system" }
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 
 # Polkadot dependecies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kiz-inner-hashing-test" }
 
 # Other Dependencies
 codec = { package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive"]}

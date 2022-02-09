@@ -7,16 +7,16 @@ edition = "2021"
 
 [dependencies]
 # Substrate deps
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
 
 # Polkadot dependencies
 

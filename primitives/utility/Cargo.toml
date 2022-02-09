@@ -6,16 +6,16 @@ edition = "2021"
 
 [dependencies]
 # Substrate dependencies
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-inner-hashing-test" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-inner-hashing-test" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-inner-hashing-test" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kiz-inner-hashing-test" }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kiz-inner-hashing-test" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kiz-inner-hashing-test" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kiz-inner-hashing-test" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kiz-inner-hashing-test" }
 
 cumulus-primitives-core = { path = "../core", default-features = false }
 

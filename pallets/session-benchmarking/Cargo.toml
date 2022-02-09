@@ -14,12 +14,12 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 parity-scale-codec = { version = "2.3.1", default-features = false }
-sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-session = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
+pallet-session = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "kiz-inner-hashing-test" }
 
 [features]
 default = ["std"]
