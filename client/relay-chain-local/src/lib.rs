@@ -335,6 +335,7 @@ fn build_polkadot_full_node(
 			true,
 			None,
 			telemetry_worker_handle,
+			false,
 			polkadot_service::RealOverseerGen,
 		)?;
 
