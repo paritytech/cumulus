@@ -181,9 +181,7 @@ where
 	let telemetry_worker_handle = telemetry.as_ref().map(|(worker, _)| worker.handle());
 
 	let telemetry = telemetry.map(|(worker, telemetry)| {
-		task_manager
-			.spawn_handle()
-			.spawn("telemetry", None, worker.run());
+		task_manager.spawn_handle().spawn("telemetry", None, worker.run());
 		telemetry
 	});
 
@@ -215,6 +213,7 @@ where
 
 	Ok(params)
 }
+
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
@@ -283,7 +282,7 @@ where
 	) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
 {
 	if matches!(parachain_config.role, Role::Light) {
-		return Err("Light client not supported!".into());
+		return Err("Light client not supported!".into())
 	}
 
 	let parachain_config = prepare_node_config(parachain_config);
@@ -417,7 +416,7 @@ impl<R> BuildOnAccess<R> {
 			match self {
 				Self::Uninitialized(f) => {
 					*self = Self::Initialized((f.take().unwrap())());
-				}
+				},
 				Self::Initialized(ref mut r) => return r,
 			}
 		}
@@ -497,13 +496,7 @@ where
 	async fn verify(
 		&mut self,
 		block_import: BlockImportParams<Block, ()>,
-	) -> Result<
-		(
-			BlockImportParams<Block, ()>,
-			Option<Vec<(CacheKeyId, Vec<u8>)>>,
-		),
-		String,
-	> {
+	) -> Result<(BlockImportParams<Block, ()>, Option<Vec<(CacheKeyId, Vec<u8>)>>), String> {
 		let block_id = BlockId::hash(*block_import.header.parent_hash());
 
 		if self
@@ -557,34 +550,32 @@ where
 	let aura_verifier = move || {
 		let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
 
-		Box::new(cumulus_client_consensus_aura::build_verifier::<
-			<AuraId as AppKey>::Pair,
-			_,
-			_,
-			_,
-		>(cumulus_client_consensus_aura::BuildVerifierParams {
-			client: client2.clone(),
-			create_inherent_data_providers: move |_, _| async move {
-				let time = sp_timestamp::InherentDataProvider::from_system_time();
+		Box::new(
+			cumulus_client_consensus_aura::build_verifier::<<AuraId as AppKey>::Pair, _, _, _>(
+				cumulus_client_consensus_aura::BuildVerifierParams {
+					client: client2.clone(),
+					create_inherent_data_providers: move |_, _| async move {
+						let time = sp_timestamp::InherentDataProvider::from_system_time();
 
-				let slot =
+						let slot =
 					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
 						*time,
 						slot_duration.slot_duration(),
 					);
 
-				Ok((time, slot))
-			},
-			can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(
-				client2.executor().clone(),
+						Ok((time, slot))
+					},
+					can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(
+						client2.executor().clone(),
+					),
+					telemetry: telemetry_handle,
+				},
 			),
-			telemetry: telemetry_handle,
-		})) as Box<_>
+		) as Box<_>
 	};
 
-	let relay_chain_verifier = Box::new(RelayChainVerifier::new(client.clone(), |_, _| async {
-		Ok(())
-	})) as Box<_>;
+	let relay_chain_verifier =
+		Box::new(RelayChainVerifier::new(client.clone(), |_, _| async { Ok(()) })) as Box<_>;
 
 	let verifier = Verifier {
 		client: client.clone(),
@@ -657,7 +648,6 @@ where
 			let transaction_pool2 = transaction_pool.clone();
 			let telemetry2 = telemetry.clone();
 			let prometheus_registry2 = prometheus_registry.map(|r| (*r).clone());
-
 			let relay_chain_for_aura = relay_chain_interface.clone();
 			let aura_consensus = BuildOnAccess::Uninitialized(Some(Box::new(move || {
 				let slot_duration =
@@ -689,10 +679,10 @@ where
 										sp_timestamp::InherentDataProvider::from_system_time();
 
 									let slot =
-								sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
-									*time,
-									slot_duration.slot_duration(),
-								);
+									sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+										*time,
+										slot_duration.slot_duration(),
+									);
 
 									let parachain_inherent =
 										parachain_inherent.ok_or_else(|| {
@@ -740,11 +730,11 @@ where
 								async move {
 									let parachain_inherent =
 									cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
-									relay_parent,
-									&relay_chain_interface,
-									&validation_data,
-									id,
-								).await;
+										relay_parent,
+										&relay_chain_interface,
+										&validation_data,
+										id,
+									).await;
 									let parachain_inherent =
 										parachain_inherent.ok_or_else(|| {
 											Box::<dyn std::error::Error + Send + Sync>::from(

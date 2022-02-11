@@ -109,16 +109,10 @@ pub fn shell_chain_spec(
 	relay_chain: RelayChain,
 ) -> ShellChainSpec {
 	let (root, endowed, authorities) = match genesis_keys {
-		GenesisKeys::Integritee => (
-			IntegriteeKeys::root(),
-			vec![IntegriteeKeys::root()],
-			IntegriteeKeys::authorities(),
-		),
-		GenesisKeys::WellKnown => (
-			WellKnownKeys::root(),
-			WellKnownKeys::endowed(),
-			WellKnownKeys::authorities(),
-		),
+		GenesisKeys::Integritee =>
+			(IntegriteeKeys::root(), vec![IntegriteeKeys::root()], IntegriteeKeys::authorities()),
+		GenesisKeys::WellKnown =>
+			(WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities()),
 	};
 
 	let chain_name = "Integritee Shell".to_string();
@@ -138,16 +132,10 @@ pub fn integritee_chain_spec(
 	relay_chain: RelayChain,
 ) -> IntegriteeChainSpec {
 	let (root, endowed, authorities) = match genesis_keys {
-		GenesisKeys::Integritee => (
-			IntegriteeKeys::root(),
-			vec![IntegriteeKeys::root()],
-			IntegriteeKeys::authorities(),
-		),
-		GenesisKeys::WellKnown => (
-			WellKnownKeys::root(),
-			WellKnownKeys::endowed(),
-			WellKnownKeys::authorities(),
-		),
+		GenesisKeys::Integritee =>
+			(IntegriteeKeys::root(), vec![IntegriteeKeys::root()], IntegriteeKeys::authorities()),
+		GenesisKeys::WellKnown =>
+			(WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities()),
 	};
 
 	let chain_name = "Integritee Network".to_string();
@@ -191,10 +179,7 @@ fn chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
 			)
 			.unwrap(),
 		),
-		Extensions {
-			relay_chain: relay_chain.into(),
-			para_id: para_id.into(),
-		},
+		Extensions { relay_chain: relay_chain.into(), para_id: para_id.into() },
 	)
 }
 
@@ -217,14 +202,10 @@ fn integritee_genesis_config(
 				.map(|k| (k, 10_000_000__000_000_000_000))
 				.collect(),
 		},
-		sudo: parachain_runtime::SudoConfig {
-			key: Some(root_key),
-		},
+		sudo: parachain_runtime::SudoConfig { key: Some(root_key) },
 		vesting: Default::default(),
 		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },
-		aura: parachain_runtime::AuraConfig {
-			authorities: initial_authorities,
-		},
+		aura: parachain_runtime::AuraConfig { authorities: initial_authorities },
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
 	}
@@ -249,15 +230,11 @@ fn shell_genesis_config(
 				.map(|k| (k, 10_000_000__000_000_000_000))
 				.collect(),
 		},
-		sudo: shell_runtime::SudoConfig {
-			key: Some(root_key),
-		},
+		sudo: shell_runtime::SudoConfig { key: Some(root_key) },
 		vesting: Default::default(),
 		parachain_info: shell_runtime::ParachainInfoConfig { parachain_id },
 		parachain_system: Default::default(),
-		aura: shell_runtime::AuraConfig {
-			authorities: initial_authorities,
-		},
+		aura: shell_runtime::AuraConfig { authorities: initial_authorities },
 		aura_ext: Default::default(),
 	}
 }
