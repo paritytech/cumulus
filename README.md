@@ -1,4 +1,9 @@
-# Cumulus :cloud:
+# Cumulus ☁️
+
+This repository contains both the Cumulus SDK and also specific chains implemented
+on top of this SDK.
+
+## Cumulus SDK
 
 A set of tools for writing [Substrate](https://substrate.io/)-based
 [Polkadot](https://wiki.polkadot.network/en/)
@@ -14,7 +19,7 @@ make it easy to write parachains for Polkadot by leveraging the power of Substra
 Cumulus clouds are shaped sort of like dots; together they form a system that is intricate,
 beautiful and functional.
 
-## Consensus
+### Consensus
 
 [`parachain-consensus`](https://github.com/paritytech/cumulus/blob/master/client/consensus/common/src/parachain_consensus.rs) is a
 [consensus engine](https://docs.substrate.io/v3/advanced/consensus) for Substrate
@@ -25,18 +30,18 @@ to follow,
 [finalize](https://wiki.polkadot.network/docs/en/learn-consensus#probabilistic-vs-provable-finality),
 and treat as best.
 
-## Collator
+### Collator
 
 A Polkadot [collator](https://wiki.polkadot.network/docs/en/learn-collator) for the parachain is
 implemented by the `polkadot-collator` binary.
 
-# Statemint 🪙
+## Statemint 🪙
 
 This repository also contains the Statemint runtime (as well as the canary runtime Statemine and the
 test runtime Westmint).
 Statemint is a common good parachain providing an asset store for the Polkadot ecosystem.
 
-## Build & Launch a Node
+### Build & Launch a Node
 
 To run a Statemine or Westmint node (Statemint is not deployed, yet) you will need to compile the
 `polkadot-collator` binary:
@@ -54,14 +59,14 @@ CHAIN=westmint # or statemine
 
 Refer to the [setup instructions below](#local-setup) to run a local network for development.
 
-# Rococo :crown:
+## Rococo 👑
 
 [Rococo](https://polkadot.js.org/apps/?rpc=wss://rococo-rpc.polkadot.io) is becoming a [Community Parachain Testbed](https://polkadot.network/blog/rococo-revamp-becoming-a-community-parachain-testbed/) for parachain teams in the Polkadot ecosystem. It supports multiple parachains with the differentiation of long-term connections and recurring short-term connections, to see which parachains are currently connected and how long they will be connected for [see here](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-rpc.polkadot.io#/parachains).
 
 Rococo is an elaborate style of design and the name describes the painstaking effort that has gone
 into this project.
 
-## Build & Launch Rococo Collators
+### Build & Launch Rococo Collators
 
 Collators are similar to validators in the relay chain. These nodes build the blocks that will
 eventually be included by the relay chain for a parachain.
@@ -92,7 +97,7 @@ Once the executable is built, launch collators for each parachain (repeat once e
 ./target/release/polkadot-collator --chain $CHAIN --validator
 ```
 
-## Parachains
+### Parachains
 
 - [Canvas - WASM Smart Contract](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-canvas-rpc.polkadot.io#/explorer)
 
@@ -100,11 +105,11 @@ The network uses horizontal message passing (HRMP) to enable communication betwe
 the relay chain and, in turn, between parachains. This means that every message is sent to the relay
 chain, and from the relay chain to its destination parachain.
 
-## Local Setup
+### Local Setup
 
 Launch a local setup including a Relay Chain and a Parachain.
 
-### Launch the Relay Chain
+#### Launch the Relay Chain
 
 ```bash
 # Compile Polkadot with the real overseer feature
@@ -121,7 +126,7 @@ cargo build --release
 ./target/release/polkadot --chain rococo-local-cfde.json --bob --tmp --port 30334
 ```
 
-### Launch the Parachain
+#### Launch the Parachain
 
 ```bash
 # Compile
@@ -144,11 +149,11 @@ cargo build --release
 ./target/release/polkadot-collator --tmp --port 40337 --ws-port 9948 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337
 ```
 
-### Register the parachain
+#### Register the parachain
 
 ![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
 
-## Containerize
+### Containerize
 
 After building `polkadot-collator` with cargo or with Parity CI image as documented in [this chapter](#build--launch-rococo-collators),
 the following will allow producing a new docker image where the compiled binary is injected:
