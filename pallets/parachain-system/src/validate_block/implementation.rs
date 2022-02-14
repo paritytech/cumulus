@@ -17,7 +17,7 @@
 //! The actual implementation of the validate block functionality.
 
 use frame_support::traits::{ExecuteBlock, ExtrinsicCall, Get, IsSubType};
-use sp_runtime::traits::{Block as BlockT, Extrinsic, HashFor, Header as HeaderT};
+use sp_runtime::traits::{Block as BlockT, Extrinsic, HashingFor, Header as HeaderT};
 
 use sp_io::KillStorageResult;
 use sp_std::prelude::*;
@@ -30,9 +30,9 @@ use sp_core::storage::{ChildInfo, StateVersion};
 use sp_externalities::{set_and_run_with_externalities, Externalities};
 use sp_trie::MemoryDB;
 
-type TrieBackend<B> = sp_state_machine::TrieBackend<MemoryDB<HashFor<B>>, HashFor<B>>;
+type TrieBackend<B> = sp_state_machine::TrieBackend<MemoryDB<HashingFor<B>>, HashingFor<B>>;
 
-type Ext<'a, B> = sp_state_machine::Ext<'a, HashFor<B>, TrieBackend<B>>;
+type Ext<'a, B> = sp_state_machine::Ext<'a, HashingFor<B>, TrieBackend<B>>;
 
 fn with_externalities<F: FnOnce(&mut dyn Externalities) -> R, R>(f: F) -> R {
 	sp_externalities::with_externalities(f).expect("Environmental externalities not set.")
@@ -68,7 +68,7 @@ where
 
 	// Uncompress
 	let mut db = MemoryDB::default();
-	let root = match sp_trie::decode_compact::<sp_trie::LayoutV1<HashFor<B>>, _, _>(
+	let root = match sp_trie::decode_compact::<sp_trie::LayoutV1<HashingFor<B>>, _, _>(
 		&mut db,
 		storage_proof.iter_compact_encoded_nodes(),
 		Some(parent_head.state_root()),

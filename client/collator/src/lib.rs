@@ -28,7 +28,7 @@ use sp_consensus::BlockStatus;
 use sp_core::traits::SpawnNamed;
 use sp_runtime::{
 	generic::BlockId,
-	traits::{Block as BlockT, HashFor, Header as HeaderT, Zero},
+	traits::{Block as BlockT, HashingFor, Header as HeaderT, Zero},
 };
 
 use cumulus_client_consensus_common::ParachainConsensus;
@@ -253,7 +253,7 @@ where
 
 		let compact_proof = match candidate
 			.proof
-			.into_compact_proof::<HashFor<Block>>(last_head.state_root().clone())
+			.into_compact_proof::<HashingFor<Block>>(last_head.state_root().clone())
 		{
 			Ok(proof) => proof,
 			Err(e) => {
