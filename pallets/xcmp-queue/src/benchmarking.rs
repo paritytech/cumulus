@@ -20,8 +20,6 @@ use crate::*;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
 
-
-
 benchmarks! {
 	// This will measure the execution time of `set_dummy` for b in [1..1000] range.
 	set_config_with_u32 {}: update_resume_threshold(RawOrigin::Root, 100)
