@@ -643,6 +643,7 @@ mod benches {
 		[pallet_session, SessionBench::<Runtime>]
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
+		[cumulus_pallet_xcmp_queue, XcmpQueue]
 	);
 }
 

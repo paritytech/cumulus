@@ -33,6 +33,10 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+// pub mod weights;
+
 use codec::{Decode, DecodeLimit, Encode};
 use cumulus_primitives_core::{
 	relay_chain::BlockNumber as RelayBlockNumber, ChannelStatus, GetChannelInfo, MessageSendError,
@@ -198,7 +202,7 @@ pub mod pallet {
 		/// message sending may recommence after it has been suspended.
 		///
 		/// - `origin`: Must pass `Root`.
-		/// - `new`: Desired value for `QueueConfigData.resume_threshold`                                
+		/// - `new`: Desired value for `QueueConfigData.resume_threshold`
 		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
 		pub fn update_resume_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
@@ -210,7 +214,7 @@ pub mod pallet {
 		/// Overwrites the amount of remaining weight under which we stop processing messages.
 		///
 		/// - `origin`: Must pass `Root`.
-		/// - `new`: Desired value for `QueueConfigData.threshold_weight`                                
+		/// - `new`: Desired value for `QueueConfigData.threshold_weight`
 		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
 		pub fn update_threshold_weight(origin: OriginFor<T>, new: Weight) -> DispatchResult {
 			ensure_root(origin)?;
@@ -223,7 +227,7 @@ pub mod pallet {
 		/// A lower number results in a faster progression. A value of 1 makes the entire weight available initially.
 		///
 		/// - `origin`: Must pass `Root`.
-		/// - `new`: Desired value for `QueueConfigData.weight_restrict_decay`.                                
+		/// - `new`: Desired value for `QueueConfigData.weight_restrict_decay`.
 		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
 		pub fn update_weight_restrict_decay(origin: OriginFor<T>, new: Weight) -> DispatchResult {
 			ensure_root(origin)?;
@@ -236,7 +240,7 @@ pub mod pallet {
 		/// Messages above this weight go into the overweight queue and may only be serviced explicitly.
 		///
 		/// - `origin`: Must pass `Root`.
-		/// - `new`: Desired value for `QueueConfigData.xcmp_max_individual_weight`.                                
+		/// - `new`: Desired value for `QueueConfigData.xcmp_max_individual_weight`.
 		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
 		pub fn update_xcmp_max_individual_weight(
 			origin: OriginFor<T>,

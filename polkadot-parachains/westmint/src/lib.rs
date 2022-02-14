@@ -799,6 +799,7 @@ mod benches {
 		[pallet_utility, Utility]
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
+		[cumulus_pallet_dmp_queue, XcmpQueue]
 	);
 }
 

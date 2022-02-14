@@ -103,6 +103,7 @@ runtime-benchmarks = [
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
+	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-try-runtime",
