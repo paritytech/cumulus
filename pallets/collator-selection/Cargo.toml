@@ -15,7 +15,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 log = { version = "0.4.0", default-features = false }
 codec = { default-features = false, features = ["derive"], package = "parity-scale-codec", version = "2.3.0" }
-rand = { version = "0.8.5", features = ["std_rng"], default-features = false }
+rand = { version = "0.8.5", default-features = false }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 serde = { version = "1.0.132", default-features = false }
 
@@ -51,6 +51,7 @@ std = [
 	"log/std",
 	"scale-info/std",
 	"rand/std",
+	"rand/std_rng",
 	"sp-runtime/std",
 	"sp-staking/std",
 	"sp-std/std",
