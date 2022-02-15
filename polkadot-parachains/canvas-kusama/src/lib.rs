@@ -121,14 +121,14 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("kanvas"),
-	impl_name: create_runtime_str!("kanvas"),
+	spec_name: create_runtime_str!("canvas-kusama"),
+	impl_name: create_runtime_str!("canvas-kusama"),
 	authoring_version: 1,
 	spec_version: 15,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
-	// Since Kanvas is a "live" chain (on Rococo anyways), we need to set this to `0` until a
+	// Since Canvas is a "live" chain (on Rococo anyways), we need to set this to `0` until a
 	// migration path to `state_version = 1` is ready.
 	//
 	// See the following PRs for more details:

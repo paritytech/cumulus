@@ -69,8 +69,8 @@ where
 	io
 }
 
-/// Instantiate all RPCs we want at the kanvas chain.
-pub fn create_kanvas<C, P>(deps: FullDeps<C, P>) -> RpcExtension
+/// Instantiate all RPCs we want at the canvas-kusama chain.
+pub fn create_canvas_kusama<C, P>(deps: FullDeps<C, P>) -> RpcExtension
 where
 	C: ProvideRuntimeApi<Block>
 		+ HeaderBackend<Block>

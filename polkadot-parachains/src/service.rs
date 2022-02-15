@@ -148,18 +148,18 @@ impl sc_executor::NativeExecutionDispatch for WestmintRuntimeExecutor {
 	}
 }
 
-/// Native Kanvas executor instance.
-pub struct KanvasRuntimeExecutor;
+/// Native Canvas on Kusama executor instance.
+pub struct CanvasKusamaRuntimeExecutor;
 
-impl sc_executor::NativeExecutionDispatch for KanvasRuntimeExecutor {
+impl sc_executor::NativeExecutionDispatch for CanvasKusamaRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		kanvas_runtime::api::dispatch(method, data)
+		canvas_kusama_runtime::api::dispatch(method, data)
 	}
 
 	fn native_version() -> sc_executor::NativeVersion {
-		kanvas_runtime::native_version()
+		canvas_kusama_runtime::native_version()
 	}
 }
 
@@ -1269,7 +1269,7 @@ where
 }
 
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
-async fn start_kanvas_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
+async fn start_canvas_kusama_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	id: ParaId,
@@ -1384,7 +1384,7 @@ where
 				deny_unsafe,
 			};
 
-			Ok(crate::rpc::create_kanvas(deps))
+			Ok(crate::rpc::create_canvas_kusama(deps))
 		})
 	};
 
@@ -1458,12 +1458,12 @@ where
 }
 
 #[allow(clippy::type_complexity)]
-pub fn kanvas_build_import_queue(
+pub fn canvas_kusama_build_import_queue(
 	client: Arc<
 		TFullClient<
 			Block,
-			kanvas_runtime::RuntimeApi,
-			NativeElseWasmExecutor<KanvasRuntimeExecutor>,
+			canvas_kusama_runtime::RuntimeApi,
+			NativeElseWasmExecutor<CanvasKusamaRuntimeExecutor>,
 		>,
 	>,
 	config: &Configuration,
@@ -1474,8 +1474,8 @@ pub fn kanvas_build_import_queue(
 		Block,
 		TFullClient<
 			Block,
-			kanvas_runtime::RuntimeApi,
-			NativeElseWasmExecutor<KanvasRuntimeExecutor>,
+			canvas_kusama_runtime::RuntimeApi,
+			NativeElseWasmExecutor<CanvasKusamaRuntimeExecutor>,
 		>,
 	>,
 	sc_service::Error,
@@ -1513,7 +1513,7 @@ pub fn kanvas_build_import_queue(
 }
 
 /// Start a parachain node.
-pub async fn start_kanvas_node(
+pub async fn start_canvas_kusama_node(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	id: ParaId,
@@ -1522,17 +1522,23 @@ pub async fn start_kanvas_node(
 	Arc<
 		TFullClient<
 			Block,
-			kanvas_runtime::RuntimeApi,
-			NativeElseWasmExecutor<KanvasRuntimeExecutor>,
+			canvas_kusama_runtime::RuntimeApi,
+			NativeElseWasmExecutor<CanvasKusamaRuntimeExecutor>,
 		>,
 	>,
 )> {
-	start_kanvas_node_impl::<kanvas_runtime::RuntimeApi, KanvasRuntimeExecutor, _, _, _>(
+	start_canvas_kusama_node_impl::<
+		canvas_kusama_runtime::RuntimeApi,
+		CanvasKusamaRuntimeExecutor,
+		_,
+		_,
+		_,
+	>(
 		parachain_config,
 		polkadot_config,
 		id,
 		|_| Ok(Default::default()),
-		kanvas_build_import_queue,
+		canvas_kusama_build_import_queue,
 		|client,
 		 prometheus_registry,
 		 telemetry,

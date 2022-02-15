@@ -25,7 +25,7 @@ seedling-runtime = { path = "seedling" }
 statemint-runtime = { path = "statemint" }
 statemine-runtime = { path = "statemine" }
 westmint-runtime = { path = "westmint" }
-kanvas-runtime = { path = "kanvas" }
+canvas-kusama-runtime = { path = "canvas-kusama" }
 parachains-common = { path = "parachains-common" }
 
 # Substrate dependencies

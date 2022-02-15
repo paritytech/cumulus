@@ -835,37 +835,39 @@ fn westmint_genesis(
 	}
 }
 
-/// We use the Kanvas runtime for Rokanvas hence the chain spec.
-pub type KanvasChainSpec = sc_service::GenericChainSpec<kanvas_runtime::GenesisConfig, Extensions>;
+/// We use the same runtime on kusama and rococo.
+pub type CanvasKusamaChainSpec =
+	sc_service::GenericChainSpec<canvas_kusama_runtime::GenesisConfig, Extensions>;
 
-/// Naming it after the polkadot parachain because the id is the same over all relay chains.
+/// No relay chain suffix because the id is the same over all relay chains.
 const CANVAS_PARACHAIN_ID: u32 = 1002;
 
-/// The existential deposit is determined by the runtime "kanvas".
-const KANVAS_ED: kanvas_runtime::Balance = kanvas_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+/// The existential deposit is determined by the runtime "canvas-kusama".
+const CANVAS_KUSAMA_ED: canvas_kusama_runtime::Balance =
+	canvas_kusama_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
-pub fn rocanvas_development_config() -> KanvasChainSpec {
+pub fn canvas_rococo_development_config() -> CanvasKusamaChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "ROC".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
-	KanvasChainSpec::from_genesis(
+	CanvasKusamaChainSpec::from_genesis(
 		// Name
-		"Rokanvas Development",
+		"Canvas on Rococo Development",
 		// ID
-		"rocanvas_dev",
+		"canvas-rococo-dev",
 		ChainType::Development,
 		move || {
-			kanvas_genesis(
+			canvas_kusama_genesis(
 				// initial collators.
 				vec![
 					(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed::<kanvas_runtime::AuraId>("Alice"),
+						get_collator_keys_from_seed::<canvas_kusama_runtime::AuraId>("Alice"),
 					),
 					(
 						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed::<kanvas_runtime::AuraId>("Bob"),
+						get_collator_keys_from_seed::<canvas_kusama_runtime::AuraId>("Bob"),
 					),
 				],
 				vec![
@@ -897,28 +899,28 @@ pub fn rocanvas_development_config() -> KanvasChainSpec {
 	)
 }
 
-pub fn rocanvas_local_config() -> KanvasChainSpec {
+pub fn canvas_rococo_local_config() -> CanvasKusamaChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "ROC".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
-	KanvasChainSpec::from_genesis(
+	CanvasKusamaChainSpec::from_genesis(
 		// Name
-		"Rokanvas",
+		"Canvas on Rococo",
 		// ID
-		"canvas_local",
+		"canvas-rococo-local",
 		ChainType::Local,
 		move || {
-			kanvas_genesis(
+			canvas_kusama_genesis(
 				// initial collators.
 				vec![
 					(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed::<kanvas_runtime::AuraId>("Alice"),
+						get_collator_keys_from_seed::<canvas_kusama_runtime::AuraId>("Alice"),
 					),
 					(
 						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed::<kanvas_runtime::AuraId>("Bob"),
+						get_collator_keys_from_seed::<canvas_kusama_runtime::AuraId>("Bob"),
 					),
 				],
 				vec![
@@ -943,7 +945,7 @@ pub fn rocanvas_local_config() -> KanvasChainSpec {
 		// Telemetry
 		None,
 		// Protocol ID
-		Some("canvas-local"),
+		None,
 		// Fork ID
 		None,
 		// Properties
@@ -956,20 +958,20 @@ pub fn rocanvas_local_config() -> KanvasChainSpec {
 	)
 }
 
-pub fn rocanvas_config() -> KanvasChainSpec {
+pub fn canvas_rococo_config() -> CanvasKusamaChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "ROC".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
-	KanvasChainSpec::from_genesis(
+	CanvasKusamaChainSpec::from_genesis(
 		// Name
-		"Rokanvas",
+		"Canvas on Rococo",
 		// ID
-		"rokanvas",
+		"canvas-rococo",
 		ChainType::Live,
 		move || {
-			kanvas_genesis(
+			canvas_kusama_genesis(
 				vec![
 					// 5GKFbTTgrVS4Vz1UWWHPqMZQNFWZtqo7H2KpCDyYhEL3aS26
 					(
@@ -1031,7 +1033,7 @@ pub fn rocanvas_config() -> KanvasChainSpec {
 		// Telemetry
 		None,
 		// Protocol ID
-		Some("canvas-rococo"),
+		None,
 		// Fork ID
 		None,
 		// Properties
@@ -1041,34 +1043,34 @@ pub fn rocanvas_config() -> KanvasChainSpec {
 	)
 }
 
-fn kanvas_genesis(
+fn canvas_kusama_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> kanvas_runtime::GenesisConfig {
-	kanvas_runtime::GenesisConfig {
-		system: kanvas_runtime::SystemConfig {
-			code: kanvas_runtime::WASM_BINARY
+) -> canvas_kusama_runtime::GenesisConfig {
+	canvas_kusama_runtime::GenesisConfig {
+		system: canvas_kusama_runtime::SystemConfig {
+			code: canvas_kusama_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 		},
-		balances: kanvas_runtime::BalancesConfig {
+		balances: canvas_kusama_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
-		parachain_info: kanvas_runtime::ParachainInfoConfig { parachain_id: id },
-		collator_selection: kanvas_runtime::CollatorSelectionConfig {
+		parachain_info: canvas_kusama_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: canvas_kusama_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: KANVAS_ED * 16,
+			candidacy_bond: CANVAS_KUSAMA_ED * 16,
 			..Default::default()
 		},
-		session: kanvas_runtime::SessionConfig {
+		session: canvas_kusama_runtime::SessionConfig {
 			keys: invulnerables
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                          // account id
-						acc,                                  // validator id
-						kanvas_runtime::SessionKeys { aura }, // session keys
+						acc.clone(),                                 // account id
+						acc,                                         // validator id
+						canvas_kusama_runtime::SessionKeys { aura }, // session keys
 					)
 				})
 				.collect(),
@@ -1078,7 +1080,7 @@ fn kanvas_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
-		polkadot_xcm: kanvas_runtime::PolkadotXcmConfig {
+		polkadot_xcm: canvas_kusama_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 	}

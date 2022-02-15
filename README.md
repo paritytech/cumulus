@@ -69,9 +69,8 @@ Refer to the [setup instructions below](#local-setup) to run a local network for
 [l2]: https://discord.com/invite/wGUDt2p
 
 This is a node implementation of `Canvas`, a common good parachain for `pallet-contracts`
-based wasm smart contracts. Right now this repository only contains `Kanvas`, the runtime
-planned to be used as a kusama parachain (`Canvas` is the Polkadot name). Our rococo deployment
-of that runtime is called `Rocanvas`.
+based wasm smart contracts. Right now this repository only contains the `canvas-kusama` runtime
+which we plan to use for both Rococo and Kusama.
 
 If you have any questions, feel free to talk to us on [Element][k2] or on [Discord][l2]
 (in the [`ink_smart-contracts`](https://discord.com/channels/722223075629727774/765280480609828864) channel).
@@ -105,8 +104,8 @@ If you are looking for a quickstart, we can recommend
 
 ### Build & Launch a Node
 
-To run a Rocanvas node (Kanvas and Canvas are not deployed, yet) you will need to compile the
-`polkadot-collator` binary:
+To run a Canvas node that connects to Rococo (Kusama and Polkadot parachains are not deployed, yet)
+you will need to compile the `polkadot-collator` binary:
 
 ```bash
 cargo build --release --locked -p polkadot-collator
