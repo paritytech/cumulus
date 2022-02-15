@@ -39,9 +39,9 @@ sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkad
 substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.16" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.16" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.16" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "trial-revert4640" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "trial-revert4640" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "trial-revert4640" }
 
 # Cumulus
 cumulus-client-consensus-relay-chain = { path = "../../client/consensus/relay-chain" }
@@ -65,7 +65,7 @@ jsonrpc-core = "18.0.0"
 futures = "0.3.5"
 
 # Polkadot dependencies
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.16" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "trial-revert4640" }
 
 # Substrate dependencies
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }

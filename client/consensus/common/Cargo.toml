@@ -16,7 +16,7 @@ sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v
 sp-trie = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
 
 # Polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.16" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "trial-revert4640" }
 
 # Cumulus deps
 cumulus-relay-chain-interface = { path = "../../relay-chain-interface" }

@@ -5,7 +5,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.16" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "trial-revert4640" }
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 
