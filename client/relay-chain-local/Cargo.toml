@@ -5,8 +5,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "trial-revert4640" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "trial-revert4640" }
+polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.16-without-short-term-collator-fixes" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.16-without-short-term-collator-fixes" }
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
@@ -36,8 +36,8 @@ futures-timer = "3.0.2"
 cumulus-test-service = { path = "../../test/service" }
 
 # Polkadot deps
-polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "trial-revert4640" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "trial-revert4640" }
+polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.16-without-short-term-collator-fixes" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.16-without-short-term-collator-fixes" }
 
 # substrate deps
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }

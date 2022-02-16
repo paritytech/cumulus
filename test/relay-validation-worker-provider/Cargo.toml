@@ -6,4 +6,4 @@ edition = "2021"
 build = "build.rs"
 
 [dependencies]
-polkadot-node-core-pvf = { git = "https://github.com/paritytech/polkadot", branch = "trial-revert4640" }
+polkadot-node-core-pvf = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.16-without-short-term-collator-fixes" }

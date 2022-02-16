@@ -66,13 +66,13 @@ pallet-collator-selection = { path = "../../pallets/collator-selection", default
 parachains-common = { path = "../parachains-common", default-features = false }
 
 # Polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "trial-revert4640" }
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "trial-revert4640" }
-kusama-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "trial-revert4640" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "trial-revert4640" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "trial-revert4640" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "trial-revert4640" }
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "trial-revert4640" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.16-without-short-term-collator-fixes" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.16-without-short-term-collator-fixes" }
+kusama-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.16-without-short-term-collator-fixes" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.16-without-short-term-collator-fixes" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.16-without-short-term-collator-fixes" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.16-without-short-term-collator-fixes" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.16-without-short-term-collator-fixes" }
 
 # Try-runtime stuff
 frame-try-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true , branch = "polkadot-v0.9.16" }

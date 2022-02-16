@@ -16,9 +16,9 @@ sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "pol
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
 
 # Polkadot deps
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "trial-revert4640" }
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "trial-revert4640" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "trial-revert4640" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.16-without-short-term-collator-fixes" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.16-without-short-term-collator-fixes" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.16-without-short-term-collator-fixes" }
 
 cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 
@@ -40,9 +40,9 @@ cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-relay-chain-local = { path = "../relay-chain-local" }
 
 # Polkadot deps
-polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "trial-revert4640" }
-polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "trial-revert4640" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "trial-revert4640" }
+polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.16-without-short-term-collator-fixes" }
+polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.16-without-short-term-collator-fixes" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.16-without-short-term-collator-fixes" }
 
 # substrate deps
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
