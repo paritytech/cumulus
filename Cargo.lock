@@ -6745,7 +6745,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-collator"
-version = "5.2.0"
+version = "5.2.1"
 dependencies = [
  "assert_cmd",
  "async-trait",
