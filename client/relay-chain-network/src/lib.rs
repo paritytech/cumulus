@@ -86,7 +86,16 @@ impl RelayChainRPCClient {
 			payload_bytes,
 			hash
 		};
-		self.request("state_call", params).await
+		self.request_tracing("state_call", params, |err, dur| {
+			tracing::warn!(
+				"Error during call to 'state_call:{}' for hash {} after {:?}. Error: {}",
+				method_name,
+				hash,
+				dur,
+				err
+			)
+		})
+		.await
 	}
 
 	/// Subscribe to a notification stream via RPC
@@ -114,6 +123,23 @@ impl RelayChainRPCClient {
 	where
 		R: DeserializeOwned + std::fmt::Debug,
 	{
+		self.request_tracing(method, params, |e, _| {
+			tracing::warn!("Unable to complete RPC request '{}', retrying. Error {}", method, e)
+		})
+		.await
+	}
+
+	/// Perform RPC request
+	async fn request_tracing<'a, R, OR>(
+		&self,
+		method: &'a str,
+		params: Option<ParamsSer<'a>>,
+		on_retry: OR,
+	) -> Result<R, RelayChainError>
+	where
+		R: DeserializeOwned + std::fmt::Debug,
+		OR: FnMut(jsonrpsee::core::Error, Duration) -> (),
+	{
 		retry_notify(
 			self.retry_strategy.clone(),
 			|| async {
@@ -122,9 +148,7 @@ impl RelayChainRPCClient {
 					.await
 					.map_err(|err| backoff::Error::Transient { err, retry_after: None })
 			},
-			|e, _| {
-				tracing::warn!("Unable to complete RPC request '{}', retrying. Error {}", method, e)
-			},
+			on_retry,
 		)
 		.await
 		.map_err(|err| RelayChainError::NetworkError(method.to_string(), err))
