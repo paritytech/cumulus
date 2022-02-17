@@ -190,7 +190,7 @@ Once the executable is built, launch collators for each parachain (repeat once e
 ### Parachains
 
 * [Statemint](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-statemint-rpc.polkadot.io#/explorer)
-* [Rocanvas](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-canvas-rpc.polkadot.io#/explorer)
+* [Canvas on Rococo](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-canvas-rpc.polkadot.io#/explorer)
 * [RILT](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo.kilt.io#/explorer)
 
 The network uses horizontal message passing (HRMP) to enable communication between parachains and
