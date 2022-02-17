@@ -46,7 +46,7 @@ use sc_network::NetworkService;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::{ApiExt, ConstructRuntimeApi};
-use sp_consensus::{CacheKeyId, SlotData};
+use sp_consensus::CacheKeyId;
 use sp_consensus_aura::AuraApi;
 use sp_core::crypto::Pair;
 use sp_keystore::SyncCryptoStorePtr;
@@ -671,9 +671,9 @@ pub fn rococo_parachain_build_import_queue(
 			let time = sp_timestamp::InherentDataProvider::from_system_time();
 
 			let slot =
-				sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+				sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
 					*time,
-					slot_duration.slot_duration(),
+					slot_duration,
 				);
 
 			Ok((time, slot))
@@ -750,9 +750,9 @@ pub async fn start_rococo_parachain_node(
 						let time = sp_timestamp::InherentDataProvider::from_system_time();
 
 						let slot =
-						sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+						sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
 							*time,
-							slot_duration.slot_duration(),
+							slot_duration,
 						);
 
 						let parachain_inherent = parachain_inherent.ok_or_else(|| {
@@ -1052,9 +1052,9 @@ where
 						let time = sp_timestamp::InherentDataProvider::from_system_time();
 
 						let slot =
-					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
 						*time,
-						slot_duration.slot_duration(),
+						slot_duration,
 					);
 
 						Ok((time, slot))
@@ -1172,9 +1172,9 @@ where
 										sp_timestamp::InherentDataProvider::from_system_time();
 
 									let slot =
-									sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+									sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
 										*time,
-										slot_duration.slot_duration(),
+										slot_duration,
 									);
 
 									let parachain_inherent =
