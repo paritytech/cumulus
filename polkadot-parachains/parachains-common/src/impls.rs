@@ -101,8 +101,8 @@ where
 /// Tests `loc` whether it starts with `prefix`.
 /// Similar to `MultiLocation::match_and_split` but allows arbitrary suffixes (instead of just one
 /// junction).
-// TODO: Replace with version implemented on MultiLocation here:
-// https://github.com/paritytech/polkadot/pull/4827
+// TODO: Replace usage with `starts_with` implemented on MultiLocation here once XCM v3 is merged:
+// https://github.com/paritytech/polkadot/pull/4835
 fn matches_prefix(prefix: &MultiLocation, loc: &MultiLocation) -> bool {
 	prefix.parent_count() == loc.parent_count() &&
 		loc.len() >= prefix.len() &&
