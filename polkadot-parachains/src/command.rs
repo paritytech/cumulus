@@ -515,9 +515,16 @@ pub fn run() -> Result<()> {
 				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
 				let tokio_handle = config.tokio_handle.clone();
-				let polkadot_config =
+				let mut polkadot_config =
 					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
 						.map_err(|err| format!("Relay chain argument error: {}", err))?;
+
+				// Fix missing node name
+				let tokio_handle = config.tokio_handle.clone();
+				let polkadot_config_node_name =
+					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli.base.base, tokio_handle)
+						.map_err(|err| format!("Relay chain argument error: {}", err))?;
+				polkadot_config.network.node_name = polkadot_config_node_name.network.node_name;
 
 				info!("Parachain id: {:?}", id);
 				info!("Parachain Account: {}", parachain_account);
