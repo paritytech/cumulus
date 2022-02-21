@@ -29,7 +29,10 @@ use cumulus_primitives_core::{
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use futures::{FutureExt, Stream, StreamExt};
 use jsonrpsee::{
-	core::client::{Client as JsonRPCClient, ClientT, Subscription, SubscriptionClientT},
+	core::{
+		client::{Client as JsonRPCClient, ClientT, Subscription, SubscriptionClientT},
+		Error as JsonRpseeError,
+	},
 	rpc_params,
 	types::ParamsSer,
 	ws_client::WsClientBuilder,
@@ -87,7 +90,7 @@ impl RelayChainRPCClient {
 			hash
 		};
 		self.request_tracing("state_call", params, |err, dur| {
-			tracing::warn!(
+			tracing::trace!(
 				"Error during call to 'state_call:{}' for hash {} after {:?}. Error: {}",
 				method_name,
 				hash,
@@ -124,7 +127,7 @@ impl RelayChainRPCClient {
 		R: DeserializeOwned + std::fmt::Debug,
 	{
 		self.request_tracing(method, params, |e, _| {
-			tracing::warn!("Unable to complete RPC request '{}', retrying. Error {}", method, e)
+			tracing::trace!("Unable to complete RPC request '{}', retrying. Error {}", method, e)
 		})
 		.await
 	}
@@ -143,10 +146,11 @@ impl RelayChainRPCClient {
 		retry_notify(
 			self.retry_strategy.clone(),
 			|| async {
-				self.ws_client
-					.request(method, params.clone())
-					.await
-					.map_err(|err| backoff::Error::Transient { err, retry_after: None })
+				self.ws_client.request(method, params.clone()).await.map_err(|err| match err {
+					JsonRpseeError::Transport(_) =>
+						backoff::Error::Transient { err, retry_after: None },
+					_ => backoff::Error::Permanent(err),
+				})
 			},
 			on_retry,
 		)

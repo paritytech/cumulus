@@ -398,7 +398,7 @@ dependencies = [
  "getrandom 0.2.3",
  "instant",
  "pin-project-lite 0.2.7",
- "rand 0.8.4",
+ "rand 0.8.5",
  "tokio",
 ]
 
@@ -1967,7 +1967,7 @@ dependencies = [
  "backoff",
  "cumulus-primitives-core",
  "cumulus-relay-chain-interface",
- "futures 0.3.19",
+ "futures 0.3.21",
  "futures-timer",
  "jsonrpsee 0.8.0",
  "parity-scale-codec",
@@ -8189,7 +8189,7 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be97d76faf1bfab666e1375477b23fde79eccf0276e9b63b92a39d676a889ba9"
 dependencies = [
- "rand 0.8.4",
+ "rand 0.8.5",
 ]
 
 [[package]]
