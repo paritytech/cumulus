@@ -16,8 +16,8 @@
 
 use super::*;
 use async_trait::async_trait;
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use cumulus_relay_chain_inprocess_interface::{check_block_in_chain, BlockCheckStatus};
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use cumulus_test_service::runtime::{Block, Hash, Header};
 use futures::{executor::block_on, poll, task::Poll, FutureExt, Stream, StreamExt};
 use parking_lot::Mutex;
