@@ -2,7 +2,11 @@ use crate::{
 	constants::currency::deposit, Balance, Balances, Call, Event, RandomnessCollectiveFlip,
 	Runtime, RuntimeBlockWeights, Timestamp,
 };
-use frame_support::{parameter_types, traits::{Nothing, OnRuntimeUpgrade}, weights::Weight};
+use frame_support::{
+	parameter_types,
+	traits::{Nothing, OnRuntimeUpgrade},
+	weights::Weight,
+};
 use pallet_contracts::{
 	weights::{SubstrateWeight, WeightInfo},
 	Config, DefaultAddressGenerator, Frame, Schedule,
