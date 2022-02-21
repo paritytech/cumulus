@@ -72,28 +72,30 @@ impl RelayChainRPCClient {
 	}
 
 	/// Call a call to `state_call` rpc method.
-	async fn call_remote_runtime_function(
+	async fn call_remote_runtime_function<R: Decode>(
 		&self,
 		method_name: &str,
 		hash: PHash,
 		payload: Option<Vec<u8>>,
-	) -> RelayChainResult<sp_core::Bytes> {
+	) -> RelayChainResult<R> {
 		let payload_bytes = payload.map_or(sp_core::Bytes(Vec::new()), sp_core::Bytes);
 		let params = rpc_params! {
 			method_name,
 			payload_bytes,
 			hash
 		};
-		self.request_tracing("state_call", params, |err| {
-			tracing::trace!(
-				target: LOG_TARGET,
-				%method_name,
-				%hash,
-				error = %err,
-				"Error during call to 'state_call'.",
-			);
-		})
-		.await
+		let res = self
+			.request_tracing::<sp_core::Bytes, _>("state_call", params, |err| {
+				tracing::trace!(
+					target: LOG_TARGET,
+					%method_name,
+					%hash,
+					error = %err,
+					"Error during call to 'state_call'.",
+				);
+			})
+			.await?;
+		Decode::decode(&mut &*res.0).map_err(Into::into)
 	}
 
 	/// Subscribe to a notification stream via RPC
@@ -196,53 +198,42 @@ impl RelayChainRPCClient {
 		at: PHash,
 		para_id: ParaId,
 	) -> Result<Option<CommittedCandidateReceipt>, RelayChainError> {
-		let response_bytes = self
-			.call_remote_runtime_function(
-				"ParachainHost_candidate_pending_availability",
-				at,
-				Some(para_id.encode()),
-			)
-			.await?;
-
-		Ok(Option::<CommittedCandidateReceipt<PHash>>::decode(&mut &*response_bytes.0)?)
+		self.call_remote_runtime_function(
+			"ParachainHost_candidate_pending_availability",
+			at,
+			Some(para_id.encode()),
+		)
+		.await
 	}
 
 	async fn parachain_host_session_index_for_child(
 		&self,
 		at: PHash,
 	) -> Result<SessionIndex, RelayChainError> {
-		let response_bytes = self
-			.call_remote_runtime_function("ParachainHost_session_index_for_child", at, None)
-			.await?;
-
-		Ok(SessionIndex::decode(&mut &*response_bytes.0)?)
+		self.call_remote_runtime_function("ParachainHost_session_index_for_child", at, None)
+			.await
+		// Ok(SessionIndex::decode(&mut &*response_bytes.0)?)
 	}
 
 	async fn parachain_host_validators(
 		&self,
 		at: PHash,
 	) -> Result<Vec<ValidatorId>, RelayChainError> {
-		let response_bytes =
-			self.call_remote_runtime_function("ParachainHost_validators", at, None).await?;
-
-		Ok(Vec::<ValidatorId>::decode(&mut &*response_bytes.0)?)
+		self.call_remote_runtime_function("ParachainHost_validators", at, None).await
 	}
 
 	async fn parachain_host_persisted_validation_data(
 		&self,
-		block_id: PHash,
+		at: PHash,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> Result<Option<PersistedValidationData>, RelayChainError> {
-		let response_bytes = self
-			.call_remote_runtime_function(
-				"ParachainHost_persisted_validation_data",
-				block_id,
-				Some((para_id, occupied_core_assumption).encode()),
-			)
-			.await?;
-
-		Ok(Option::<PersistedValidationData>::decode(&mut &*response_bytes.0)?)
+		self.call_remote_runtime_function(
+			"ParachainHost_persisted_validation_data",
+			at,
+			Some((para_id, occupied_core_assumption).encode()),
+		)
+		.await
 	}
 
 	async fn parachain_host_inbound_hrmp_channels_contents(
@@ -250,15 +241,12 @@ impl RelayChainRPCClient {
 		para_id: ParaId,
 		at: PHash,
 	) -> Result<BTreeMap<ParaId, Vec<InboundHrmpMessage>>, RelayChainError> {
-		let response_bytes = self
-			.call_remote_runtime_function(
-				"ParachainHost_inbound_hrmp_channels_contents",
-				at,
-				Some(para_id.encode()),
-			)
-			.await?;
-
-		Ok(BTreeMap::<ParaId, Vec<InboundHrmpMessage>>::decode(&mut &*response_bytes.0)?)
+		self.call_remote_runtime_function(
+			"ParachainHost_inbound_hrmp_channels_contents",
+			at,
+			Some(para_id.encode()),
+		)
+		.await
 	}
 
 	async fn parachain_host_dmq_contents(
@@ -266,11 +254,8 @@ impl RelayChainRPCClient {
 		para_id: ParaId,
 		at: PHash,
 	) -> Result<Vec<InboundDownwardMessage>, RelayChainError> {
-		let response_bytes = self
-			.call_remote_runtime_function("ParachainHost_dmq_contents", at, Some(para_id.encode()))
-			.await?;
-
-		Ok(Vec::<InboundDownwardMessage>::decode(&mut &*response_bytes.0)?)
+		self.call_remote_runtime_function("ParachainHost_dmq_contents", at, Some(para_id.encode()))
+			.await
 	}
 
 	async fn subscribe_all_heads(&self) -> Result<Subscription<PHeader>, RelayChainError> {
