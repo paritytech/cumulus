@@ -98,7 +98,7 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 		Ok(Box::new(stream.map(|v| v.encode())))
 	}
 
-	async fn parachain_head_at(&self, _: &PHash, _: ParaId) -> RelayChainResult<Option<Vec<u8>>> {
+	async fn parachain_head_at(&self, _: PHash, _: ParaId) -> RelayChainResult<Option<Vec<u8>>> {
 		unimplemented!("Not required for tests")
 	}
 }

@@ -28,7 +28,7 @@ use cumulus_primitives_core::{
 	relay_chain::v1::{Hash as PHash, PersistedValidationData},
 	ParaId,
 };
-use cumulus_relay_chain_interface::RelayChainInterface;
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_local::build_relay_chain_local;
 use cumulus_relay_chain_network::RelayChainNetwork;
 use polkadot_service::{CollatorPair, NativeExecutionDispatch};
@@ -269,15 +269,14 @@ async fn build_relay_chain_interface(
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	task_manager: &mut TaskManager,
 	collator_options: CollatorOptions,
-) -> Result<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>), polkadot_service::Error>
-{
+) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
 	match collator_options.relay_chain_rpc_url {
 		Some(relay_chain_url) =>
-			Ok((Arc::new(RelayChainNetwork::new(relay_chain_url).await) as Arc<_>, None)),
+			Ok((Arc::new(RelayChainNetwork::new(relay_chain_url).await?) as Arc<_>, None)),
 		None => {
 			let relay_chain_local =
-				build_relay_chain_local(polkadot_config, telemetry_worker_handle, task_manager);
-			relay_chain_local.map(|rcl| (rcl.0, Some(rcl.1)))
+				build_relay_chain_local(polkadot_config, telemetry_worker_handle, task_manager)?;
+			Ok((relay_chain_local.0, Some(relay_chain_local.1)))
 		},
 	}
 }
@@ -370,7 +369,7 @@ where
 	)
 	.await
 	.map_err(|e| match e {
-		polkadot_service::Error::Sub(x) => x,
+		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
 		s => format!("{}", s).into(),
 	})?;
 
@@ -556,7 +555,7 @@ where
 	)
 	.await
 	.map_err(|e| match e {
-		polkadot_service::Error::Sub(x) => x,
+		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
 		s => format!("{}", s).into(),
 	})?;
 

@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::pin::Pin;
 use async_trait::async_trait;
 use backoff::{future::retry_notify, ExponentialBackoff};
 use core::time::Duration;
@@ -44,7 +43,7 @@ use sp_core::sp_std::collections::btree_map::BTreeMap;
 use sp_runtime::DeserializeOwned;
 use sp_state_machine::StorageValue;
 use sp_storage::StorageKey;
-use std::sync::Arc;
+use std::{pin::Pin, sync::Arc};
 
 pub use url::Url;
 
@@ -62,17 +61,14 @@ struct RelayChainRPCClient {
 }
 
 impl RelayChainRPCClient {
-	pub async fn new(url: Url) -> Self {
-		tracing::info!(target: LOG_TARGET, "Initializing RPC Client. Relay Chain Url: {}", url);
-		let ws_client = WsClientBuilder::default()
-			.build(url.as_str())
-			.await
-			.expect("Should be able to initialize websocket client.");
+	pub async fn new(url: Url) -> RelayChainResult<Self> {
+		tracing::info!(target: LOG_TARGET, url = %url.to_string(), "Initializing RPC Client");
+		let ws_client = WsClientBuilder::default().build(url.as_str()).await?;
 
-		RelayChainRPCClient {
+		Ok(RelayChainRPCClient {
 			ws_client: Arc::new(ws_client),
 			retry_strategy: ExponentialBackoff::default(),
-		}
+		})
 	}
 
 	/// Call a call to `state_call` rpc method.
@@ -88,14 +84,14 @@ impl RelayChainRPCClient {
 			payload_bytes,
 			hash
 		};
-		self.request_tracing("state_call", params, |err, dur| {
+		self.request_tracing("state_call", params, |err| {
 			tracing::trace!(
-				"Error during call to 'state_call:{}' for hash {} after {:?}. Error: {}",
-				method_name,
-				hash,
-				dur,
-				err
-			)
+				target: LOG_TARGET,
+				%method_name,
+				%hash,
+				error = %err,
+				"Error during call to 'state_call'.",
+			);
 		})
 		.await
 	}
@@ -113,7 +109,7 @@ impl RelayChainRPCClient {
 		self.ws_client
 			.subscribe::<R>(sub_name, params, unsub_name)
 			.await
-			.map_err(|err| RelayChainError::NetworkError(sub_name.to_string(), err))
+			.map_err(|err| RelayChainError::RPCCallError(sub_name.to_string(), err))
 	}
 
 	/// Perform RPC request
@@ -125,9 +121,11 @@ impl RelayChainRPCClient {
 	where
 		R: DeserializeOwned + std::fmt::Debug,
 	{
-		self.request_tracing(method, params, |e, _| {
-			tracing::trace!("Unable to complete RPC request '{}', retrying. Error {}", method, e)
-		})
+		self.request_tracing(
+			method,
+			params,
+			|e| tracing::trace!(target:LOG_TARGET, error = %e, %method, "Unable to complete RPC request"),
+		)
 		.await
 	}
 
@@ -136,11 +134,11 @@ impl RelayChainRPCClient {
 		&self,
 		method: &'a str,
 		params: Option<ParamsSer<'a>>,
-		on_retry: OR,
+		trace_error: OR,
 	) -> Result<R, RelayChainError>
 	where
 		R: DeserializeOwned + std::fmt::Debug,
-		OR: FnMut(jsonrpsee::core::Error, Duration) -> (),
+		OR: Fn(&jsonrpsee::core::Error) -> (),
 	{
 		retry_notify(
 			self.retry_strategy.clone(),
@@ -151,10 +149,12 @@ impl RelayChainRPCClient {
 					_ => backoff::Error::Permanent(err),
 				})
 			},
-			on_retry,
+			|error, dur| tracing::trace!(target: LOG_TARGET, %error, ?dur, "Encountered transport error, retrying."),
 		)
 		.await
-		.map_err(|err| RelayChainError::NetworkError(method.to_string(), err))
+		.map_err(|err| {
+			trace_error(&err);
+			RelayChainError::RPCCallError(method.to_string(), err)})
 	}
 
 	async fn system_health(&self) -> Result<Health, RelayChainError> {
@@ -301,8 +301,8 @@ pub struct RelayChainNetwork {
 }
 
 impl RelayChainNetwork {
-	pub async fn new(url: Url) -> Self {
-		Self { rpc_client: RelayChainRPCClient::new(url).await }
+	pub async fn new(url: Url) -> RelayChainResult<Self> {
+		Ok(Self { rpc_client: RelayChainRPCClient::new(url).await? })
 	}
 }
 

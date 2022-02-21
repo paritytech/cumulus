@@ -35,7 +35,7 @@ use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
-use cumulus_relay_chain_interface::RelayChainInterface;
+use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_local::RelayChainLocal;
 use cumulus_relay_chain_network::RelayChainNetwork;
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
@@ -179,9 +179,9 @@ async fn build_relay_chain_interface(
 	relay_chain_full_node: NewFull<Arc<polkadot_test_service::Client>>,
 	collator_options: CollatorOptions,
 	task_manager: &mut TaskManager,
-) -> Result<Arc<dyn RelayChainInterface + 'static>, polkadot_service::Error> {
+) -> RelayChainResult<Arc<dyn RelayChainInterface + 'static>> {
 	if let Some(relay_chain_url) = collator_options.relay_chain_rpc_url {
-		return Ok(Arc::new(RelayChainNetwork::new(relay_chain_url).await) as Arc<_>)
+		return Ok(Arc::new(RelayChainNetwork::new(relay_chain_url).await?) as Arc<_>)
 	}
 
 	task_manager.add_child(relay_chain_full_node.task_manager);
@@ -417,7 +417,7 @@ pub struct TestNodeBuilder {
 	storage_update_func_parachain: Option<Box<dyn Fn()>>,
 	storage_update_func_relay_chain: Option<Box<dyn Fn()>>,
 	consensus: Consensus,
-	use_relay_chain_network: Option<Url>,
+	relay_chain_full_node_url: Option<Url>,
 }
 
 impl TestNodeBuilder {
@@ -439,7 +439,7 @@ impl TestNodeBuilder {
 			storage_update_func_parachain: None,
 			storage_update_func_relay_chain: None,
 			consensus: Consensus::RelayChain,
-			use_relay_chain_network: None,
+			relay_chain_full_node_url: None,
 		}
 	}
 
@@ -532,8 +532,17 @@ impl TestNodeBuilder {
 	}
 
 	/// Connect to full node via RPC.
-	pub fn use_relay_chain_network(mut self, network_address: Url) -> Self {
-		self.use_relay_chain_network = Some(network_address);
+	pub fn use_external_relay_chain_node_at_url(mut self, network_address: Url) -> Self {
+		self.relay_chain_full_node_url = Some(network_address);
+		self
+	}
+
+	/// Connect to full node via RPC.
+	pub fn use_external_relay_chain_node_at_port(mut self, port: u16) -> Self {
+		let mut localhost_url =
+			Url::parse("ws://localhost").expect("Should be able to parse localhost Url");
+		localhost_url.set_port(Some(port)).expect("Should be able to set port");
+		self.relay_chain_full_node_url = Some(localhost_url);
 		self
 	}
 
@@ -559,7 +568,7 @@ impl TestNodeBuilder {
 		);
 
 		let collator_options =
-			CollatorOptions { relay_chain_rpc_url: self.use_relay_chain_network };
+			CollatorOptions { relay_chain_rpc_url: self.relay_chain_full_node_url };
 
 		relay_chain_config.network.node_name =
 			format!("{} (relay chain)", relay_chain_config.network.node_name);

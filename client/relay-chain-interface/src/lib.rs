@@ -51,9 +51,13 @@ pub enum RelayChainError {
 	#[error("State machine error occured: {0}")]
 	StateMachineError(Box<dyn sp_state_machine::Error>),
 	#[error("Unable to call RPC method '{0}' due to error: {1}")]
-	NetworkError(String, JsonRPSeeError),
+	RPCCallError(String, JsonRPSeeError),
+	#[error("RPC Error: '{0}'")]
+	JsonRPCError(#[from] JsonRPSeeError),
 	#[error("Scale codec deserialization error: {0}")]
 	DeserializationError(CodecError),
+	#[error("Scale codec deserialization error: {0}")]
+	ServiceError(#[from] polkadot_service::Error),
 	#[error("Unspecified error occured: {0}")]
 	GenericError(String),
 }

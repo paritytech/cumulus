@@ -82,15 +82,12 @@ async fn sync_blocks_from_tip_without_being_connected_to_a_collator() {
 		.build()
 		.await;
 
-	let mut url = url::Url::parse("ws://127.0.0.1").expect("should be a valid Url");
-	url.set_port(Some(ws_port)).expect("should be able to set port");
-
 	// run eve as parachain full node that is only connected to dave
 	let ferdie = cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle, Ferdie)
 		.connect_to_parachain_node(&dave)
 		.exclusively_connect_to_registered_parachain_nodes()
 		.connect_to_relay_chain_nodes(vec![&alice, &bob])
-		.use_relay_chain_network(url)
+		.use_external_relay_chain_node_at_port(ws_port)
 		.build()
 		.await;
 
