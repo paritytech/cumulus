@@ -453,7 +453,7 @@ async fn pending_candidates(
 		async move {
 			let hash = n.hash();
 			let pending_availability_result = client_for_closure
-				.candidate_pending_availability(&hash, para_id)
+				.candidate_pending_availability(hash, para_id)
 				.await
 				.map_err(|e| {
 					tracing::error!(
@@ -463,7 +463,7 @@ async fn pending_candidates(
 					)
 				});
 			let session_index_result =
-				client_for_closure.session_index_for_child(&hash).await.map_err(|e| {
+				client_for_closure.session_index_for_child(hash).await.map_err(|e| {
 					tracing::error!(
 						target: LOG_TARGET,
 						error = ?e,

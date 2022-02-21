@@ -19,12 +19,12 @@ sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "mas
 sp-storage = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
-futures = { version = "0.3.1", features = ["compat"] }
+futures = "0.3.21"
 futures-timer = "3.0.2"
 parity-scale-codec = "2.3.1"
 parking_lot = "0.11.1"
-jsonrpsee = {version = "0.8.0", features = ["client"]}
+jsonrpsee = { version = "0.8.0", features = ["client"] }
 tracing = "0.1.25"
 async-trait = "0.1.52"
 url = "2.2.2"
-backoff = {version = "0.4.0", features = ["tokio"]}
+backoff = { version = "0.4.0", features = ["tokio"] }

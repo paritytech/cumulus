@@ -113,12 +113,12 @@ where
 
 	async fn persisted_validation_data(
 		&self,
-		hash: &PHash,
+		hash: PHash,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> RelayChainResult<Option<PersistedValidationData>> {
 		Ok(self.full_client.runtime_api().persisted_validation_data(
-			&BlockId::Hash(*hash),
+			&BlockId::Hash(hash),
 			para_id,
 			occupied_core_assumption,
 		)?)
@@ -126,21 +126,21 @@ where
 
 	async fn candidate_pending_availability(
 		&self,
-		hash: &PHash,
+		hash: PHash,
 		para_id: ParaId,
 	) -> RelayChainResult<Option<CommittedCandidateReceipt>> {
 		Ok(self
 			.full_client
 			.runtime_api()
-			.candidate_pending_availability(&BlockId::Hash(*hash), para_id)?)
+			.candidate_pending_availability(&BlockId::Hash(hash), para_id)?)
 	}
 
-	async fn session_index_for_child(&self, hash: &PHash) -> RelayChainResult<SessionIndex> {
-		Ok(self.full_client.runtime_api().session_index_for_child(&BlockId::Hash(*hash))?)
+	async fn session_index_for_child(&self, hash: PHash) -> RelayChainResult<SessionIndex> {
+		Ok(self.full_client.runtime_api().session_index_for_child(&BlockId::Hash(hash))?)
 	}
 
-	async fn validators(&self, hash: &PHash) -> RelayChainResult<Vec<ValidatorId>> {
-		Ok(self.full_client.runtime_api().validators(&BlockId::Hash(*hash))?)
+	async fn validators(&self, hash: PHash) -> RelayChainResult<Vec<ValidatorId>> {
+		Ok(self.full_client.runtime_api().validators(&BlockId::Hash(hash))?)
 	}
 
 	async fn import_notification_stream(
@@ -178,20 +178,20 @@ where
 
 	async fn get_storage_by_key(
 		&self,
-		relay_parent: &PHash,
+		relay_parent: PHash,
 		key: &[u8],
 	) -> RelayChainResult<Option<StorageValue>> {
-		let block_id = BlockId::Hash(*relay_parent);
+		let block_id = BlockId::Hash(relay_parent);
 		let state = self.backend.state_at(block_id)?;
 		state.storage(key).map_err(RelayChainError::GenericError)
 	}
 
 	async fn prove_read(
 		&self,
-		relay_parent: &PHash,
+		relay_parent: PHash,
 		relevant_keys: &Vec<Vec<u8>>,
 	) -> RelayChainResult<StorageProof> {
-		let block_id = BlockId::Hash(*relay_parent);
+		let block_id = BlockId::Hash(relay_parent);
 		let state_backend = self.backend.state_at(block_id)?;
 
 		sp_state_machine::prove_read(state_backend, relevant_keys)

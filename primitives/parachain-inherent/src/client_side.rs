@@ -37,7 +37,7 @@ async fn collect_relay_storage_proof(
 
 	let ingress_channels = relay_chain_interface
 		.get_storage_by_key(
-			&relay_parent,
+			relay_parent,
 			&relay_well_known_keys::hrmp_ingress_channel_index(para_id),
 		)
 		.await
@@ -66,7 +66,7 @@ async fn collect_relay_storage_proof(
 
 	let egress_channels = relay_chain_interface
 		.get_storage_by_key(
-			&relay_parent,
+			relay_parent,
 			&relay_well_known_keys::hrmp_egress_channel_index(para_id),
 		)
 		.await
@@ -109,7 +109,7 @@ async fn collect_relay_storage_proof(
 	}));
 
 	relay_chain_interface
-		.prove_read(&relay_parent, &relevant_keys)
+		.prove_read(relay_parent, &relevant_keys)
 		.await
 		.map_err(|e| {
 			tracing::error!(

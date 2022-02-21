@@ -70,12 +70,12 @@ pub trait RelayChainInterface: Send + Sync {
 	/// Fetch a storage item by key.
 	async fn get_storage_by_key(
 		&self,
-		relay_parent: &PHash,
+		relay_parent: PHash,
 		key: &[u8],
 	) -> RelayChainResult<Option<StorageValue>>;
 
 	/// Fetch a vector of current validators.
-	async fn validators(&self, block_id: &PHash) -> RelayChainResult<Vec<ValidatorId>>;
+	async fn validators(&self, block_id: PHash) -> RelayChainResult<Vec<ValidatorId>>;
 
 	/// Get the hash of the current best block.
 	async fn best_block_hash(&self) -> RelayChainResult<PHash>;
@@ -107,7 +107,7 @@ pub trait RelayChainInterface: Send + Sync {
 	/// and the para already occupies a core.
 	async fn persisted_validation_data(
 		&self,
-		block_id: &PHash,
+		block_id: PHash,
 		para_id: ParaId,
 		_: OccupiedCoreAssumption,
 	) -> RelayChainResult<Option<PersistedValidationData>>;
@@ -116,12 +116,12 @@ pub trait RelayChainInterface: Send + Sync {
 	/// assigned to occupied cores in `availability_cores` and `None` otherwise.
 	async fn candidate_pending_availability(
 		&self,
-		block_id: &PHash,
+		block_id: PHash,
 		para_id: ParaId,
 	) -> RelayChainResult<Option<CommittedCandidateReceipt>>;
 
 	/// Returns the session index expected at a child of the block.
-	async fn session_index_for_child(&self, block_id: &PHash) -> RelayChainResult<SessionIndex>;
+	async fn session_index_for_child(&self, block_id: PHash) -> RelayChainResult<SessionIndex>;
 
 	/// Get a stream of import block notifications.
 	async fn import_notification_stream(
@@ -154,7 +154,7 @@ pub trait RelayChainInterface: Send + Sync {
 	/// Generate a storage read proof.
 	async fn prove_read(
 		&self,
-		relay_parent: &PHash,
+		relay_parent: PHash,
 		relevant_keys: &Vec<Vec<u8>>,
 	) -> RelayChainResult<StorageProof>;
 }
@@ -182,7 +182,7 @@ where
 
 	async fn persisted_validation_data(
 		&self,
-		block_id: &PHash,
+		block_id: PHash,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> RelayChainResult<Option<PersistedValidationData>> {
@@ -193,17 +193,17 @@ where
 
 	async fn candidate_pending_availability(
 		&self,
-		block_id: &PHash,
+		block_id: PHash,
 		para_id: ParaId,
 	) -> RelayChainResult<Option<CommittedCandidateReceipt>> {
 		(**self).candidate_pending_availability(block_id, para_id).await
 	}
 
-	async fn session_index_for_child(&self, block_id: &PHash) -> RelayChainResult<SessionIndex> {
+	async fn session_index_for_child(&self, block_id: PHash) -> RelayChainResult<SessionIndex> {
 		(**self).session_index_for_child(block_id).await
 	}
 
-	async fn validators(&self, block_id: &PHash) -> RelayChainResult<Vec<ValidatorId>> {
+	async fn validators(&self, block_id: PHash) -> RelayChainResult<Vec<ValidatorId>> {
 		(**self).validators(block_id).await
 	}
 
@@ -233,7 +233,7 @@ where
 
 	async fn get_storage_by_key(
 		&self,
-		relay_parent: &PHash,
+		relay_parent: PHash,
 		key: &[u8],
 	) -> RelayChainResult<Option<StorageValue>> {
 		(**self).get_storage_by_key(relay_parent, key).await
@@ -241,7 +241,7 @@ where
 
 	async fn prove_read(
 		&self,
-		relay_parent: &PHash,
+		relay_parent: PHash,
 		relevant_keys: &Vec<Vec<u8>>,
 	) -> RelayChainResult<StorageProof> {
 		(**self).prove_read(relay_parent, relevant_keys).await

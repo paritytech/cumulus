@@ -15,7 +15,6 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::pin::Pin;
-
 use async_trait::async_trait;
 use backoff::{future::retry_notify, ExponentialBackoff};
 use core::time::Duration;
@@ -80,7 +79,7 @@ impl RelayChainRPCClient {
 	async fn call_remote_runtime_function(
 		&self,
 		method_name: &str,
-		hash: &PHash,
+		hash: PHash,
 		payload: Option<Vec<u8>>,
 	) -> RelayChainResult<sp_core::Bytes> {
 		let payload_bytes = payload.map_or(sp_core::Bytes(Vec::new()), sp_core::Bytes);
@@ -194,7 +193,7 @@ impl RelayChainRPCClient {
 
 	async fn parachain_host_candidate_pending_availability(
 		&self,
-		at: &PHash,
+		at: PHash,
 		para_id: ParaId,
 	) -> Result<Option<CommittedCandidateReceipt>, RelayChainError> {
 		let response_bytes = self
@@ -210,7 +209,7 @@ impl RelayChainRPCClient {
 
 	async fn parachain_host_session_index_for_child(
 		&self,
-		at: &PHash,
+		at: PHash,
 	) -> Result<SessionIndex, RelayChainError> {
 		let response_bytes = self
 			.call_remote_runtime_function("ParachainHost_session_index_for_child", at, None)
@@ -221,7 +220,7 @@ impl RelayChainRPCClient {
 
 	async fn parachain_host_validators(
 		&self,
-		at: &PHash,
+		at: PHash,
 	) -> Result<Vec<ValidatorId>, RelayChainError> {
 		let response_bytes =
 			self.call_remote_runtime_function("ParachainHost_validators", at, None).await?;
@@ -231,7 +230,7 @@ impl RelayChainRPCClient {
 
 	async fn parachain_host_persisted_validation_data(
 		&self,
-		block_id: &PHash,
+		block_id: PHash,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> Result<Option<PersistedValidationData>, RelayChainError> {
@@ -249,7 +248,7 @@ impl RelayChainRPCClient {
 	async fn parachain_host_inbound_hrmp_channels_contents(
 		&self,
 		para_id: ParaId,
-		at: &PHash,
+		at: PHash,
 	) -> Result<BTreeMap<ParaId, Vec<InboundHrmpMessage>>, RelayChainError> {
 		let response_bytes = self
 			.call_remote_runtime_function(
@@ -265,7 +264,7 @@ impl RelayChainRPCClient {
 	async fn parachain_host_dmq_contents(
 		&self,
 		para_id: ParaId,
-		at: &PHash,
+		at: PHash,
 	) -> Result<Vec<InboundDownwardMessage>, RelayChainError> {
 		let response_bytes = self
 			.call_remote_runtime_function("ParachainHost_dmq_contents", at, Some(para_id.encode()))
@@ -314,7 +313,7 @@ impl RelayChainInterface for RelayChainNetwork {
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> RelayChainResult<Vec<InboundDownwardMessage>> {
-		self.rpc_client.parachain_host_dmq_contents(para_id, &relay_parent).await
+		self.rpc_client.parachain_host_dmq_contents(para_id, relay_parent).await
 	}
 
 	async fn retrieve_all_inbound_hrmp_channel_contents(
@@ -323,13 +322,13 @@ impl RelayChainInterface for RelayChainNetwork {
 		relay_parent: PHash,
 	) -> RelayChainResult<BTreeMap<ParaId, Vec<InboundHrmpMessage>>> {
 		self.rpc_client
-			.parachain_host_inbound_hrmp_channels_contents(para_id, &relay_parent)
+			.parachain_host_inbound_hrmp_channels_contents(para_id, relay_parent)
 			.await
 	}
 
 	async fn persisted_validation_data(
 		&self,
-		hash: &PHash,
+		hash: PHash,
 		para_id: ParaId,
 		occupied_core_assumption: OccupiedCoreAssumption,
 	) -> RelayChainResult<Option<PersistedValidationData>> {
@@ -340,7 +339,7 @@ impl RelayChainInterface for RelayChainNetwork {
 
 	async fn candidate_pending_availability(
 		&self,
-		hash: &PHash,
+		hash: PHash,
 		para_id: ParaId,
 	) -> RelayChainResult<Option<CommittedCandidateReceipt>> {
 		self.rpc_client
@@ -348,11 +347,11 @@ impl RelayChainInterface for RelayChainNetwork {
 			.await
 	}
 
-	async fn session_index_for_child(&self, hash: &PHash) -> RelayChainResult<SessionIndex> {
+	async fn session_index_for_child(&self, hash: PHash) -> RelayChainResult<SessionIndex> {
 		self.rpc_client.parachain_host_session_index_for_child(hash).await
 	}
 
-	async fn validators(&self, block_id: &PHash) -> RelayChainResult<Vec<ValidatorId>> {
+	async fn validators(&self, block_id: PHash) -> RelayChainResult<Vec<ValidatorId>> {
 		self.rpc_client.parachain_host_validators(block_id).await
 	}
 
@@ -371,7 +370,7 @@ impl RelayChainInterface for RelayChainNetwork {
 				.ok()
 			});
 
-		Ok(Box::pin(imported_headers_stream))
+		Ok(imported_headers_stream.boxed())
 	}
 
 	async fn finality_notification_stream(
@@ -392,7 +391,7 @@ impl RelayChainInterface for RelayChainNetwork {
 				.ok()
 			});
 
-		Ok(Box::pin(imported_headers_stream))
+		Ok(imported_headers_stream.boxed())
 	}
 
 	async fn best_block_hash(&self) -> RelayChainResult<PHash> {
@@ -409,26 +408,26 @@ impl RelayChainInterface for RelayChainNetwork {
 
 	async fn get_storage_by_key(
 		&self,
-		relay_parent: &PHash,
+		relay_parent: PHash,
 		key: &[u8],
 	) -> RelayChainResult<Option<StorageValue>> {
 		let storage_key = StorageKey(key.to_vec());
 		self.rpc_client
-			.state_get_storage(storage_key, Some(*relay_parent))
+			.state_get_storage(storage_key, Some(relay_parent))
 			.await
 			.map(|storage_data| storage_data.map(|sv| sv.0))
 	}
 
 	async fn prove_read(
 		&self,
-		relay_parent: &PHash,
+		relay_parent: PHash,
 		relevant_keys: &Vec<Vec<u8>>,
 	) -> RelayChainResult<StorageProof> {
 		let cloned = relevant_keys.clone();
 		let storage_keys: Vec<StorageKey> = cloned.into_iter().map(StorageKey).collect();
 
 		self.rpc_client
-			.state_get_read_proof(storage_keys, Some(*relay_parent))
+			.state_get_read_proof(storage_keys, Some(relay_parent))
 			.await
 			.map(|read_proof| {
 				let bytes = read_proof.proof.into_iter().map(|bytes| bytes.to_vec()).collect();
@@ -448,8 +447,7 @@ impl RelayChainInterface for RelayChainNetwork {
 	async fn wait_for_block(&self, wait_for_hash: PHash) -> RelayChainResult<()> {
 		let mut head_stream = self.rpc_client.subscribe_all_heads().await?;
 
-		let block_header = self.rpc_client.chain_get_header(Some(wait_for_hash)).await?;
-		if block_header.is_some() {
+		if self.rpc_client.chain_get_header(Some(wait_for_hash)).await?.is_some() {
 			return Ok(())
 		}
 
@@ -483,6 +481,6 @@ impl RelayChainInterface for RelayChainNetwork {
 				.ok()
 			});
 
-		Ok(Box::pin(imported_headers_stream))
+		Ok(imported_headers_stream.boxed())
 	}
 }

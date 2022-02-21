@@ -131,7 +131,7 @@ impl BlockAnnounceData {
 		let validator_index = self.statement.unchecked_validator_index();
 
 		let session_index =
-			match relay_chain_client.session_index_for_child(&self.relay_parent).await {
+			match relay_chain_client.session_index_for_child(self.relay_parent).await {
 				Ok(r) => r,
 				Err(e) => return Err(BlockAnnounceError(format!("{:?}", e))),
 			};
@@ -139,7 +139,7 @@ impl BlockAnnounceData {
 		let signing_context = SigningContext { parent_hash: self.relay_parent, session_index };
 
 		// Check that the signer is a legit validator.
-		let authorities = match relay_chain_client.validators(&self.relay_parent).await {
+		let authorities = match relay_chain_client.validators(self.relay_parent).await {
 			Ok(r) => r,
 			Err(e) => return Err(BlockAnnounceError(format!("{:?}", e))),
 		};
@@ -238,7 +238,7 @@ where
 	/// Get the included block of the given parachain in the relay chain.
 	async fn included_block(
 		relay_chain_interface: &RCInterface,
-		hash: &PHash,
+		hash: PHash,
 		para_id: ParaId,
 	) -> Result<Block::Header, BoxedError> {
 		let validation_data = relay_chain_interface
@@ -261,7 +261,7 @@ where
 	/// Get the backed block hash of the given parachain in the relay chain.
 	async fn backed_block_hash(
 		relay_chain_interface: &RCInterface,
-		hash: &PHash,
+		hash: PHash,
 		para_id: ParaId,
 	) -> Result<Option<PHash>, BoxedError> {
 		let candidate_receipt = relay_chain_interface
@@ -288,10 +288,10 @@ where
 		let block_number = header.number();
 
 		let best_head =
-			Self::included_block(&relay_chain_interface, &relay_chain_best_hash, para_id).await?;
+			Self::included_block(&relay_chain_interface, relay_chain_best_hash, para_id).await?;
 		let known_best_number = best_head.number();
 		let backed_block = || async {
-			Self::backed_block_hash(&relay_chain_interface, &relay_chain_best_hash, para_id).await
+			Self::backed_block_hash(&relay_chain_interface, relay_chain_best_hash, para_id).await
 		};
 
 		if best_head == header {
