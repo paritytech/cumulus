@@ -46,15 +46,15 @@ use sp_state_machine::{Backend as StateBackend, StorageValue};
 const TIMEOUT_IN_SECONDS: u64 = 6;
 
 /// Provides an implementation of the [`RelayChainInterface`] using a local in-process relay chain node.
-pub struct RelayChainLocal<Client> {
+pub struct RelayChainInProcessInterface<Client> {
 	full_client: Arc<Client>,
 	backend: Arc<FullBackend>,
 	sync_oracle: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
 	overseer_handle: Option<Handle>,
 }
 
-impl<Client> RelayChainLocal<Client> {
-	/// Create a new instance of [`RelayChainLocal`]
+impl<Client> RelayChainInProcessInterface<Client> {
+	/// Create a new instance of [`RelayChainInProcessInterface`]
 	pub fn new(
 		full_client: Arc<Client>,
 		backend: Arc<FullBackend>,
@@ -65,7 +65,7 @@ impl<Client> RelayChainLocal<Client> {
 	}
 }
 
-impl<T> Clone for RelayChainLocal<T> {
+impl<T> Clone for RelayChainInProcessInterface<T> {
 	fn clone(&self) -> Self {
 		Self {
 			full_client: self.full_client.clone(),
@@ -77,7 +77,7 @@ impl<T> Clone for RelayChainLocal<T> {
 }
 
 #[async_trait]
-impl<Client> RelayChainInterface for RelayChainLocal<Client>
+impl<Client> RelayChainInterface for RelayChainInProcessInterface<Client>
 where
 	Client: ProvideRuntimeApi<PBlock>
 		+ BlockchainEvents<PBlock>
@@ -280,25 +280,25 @@ where
 }
 
 /// Builder for a concrete relay chain interface, created from a full node. Builds
-/// a [`RelayChainLocal`] to access relay chain data necessary for parachain operation.
+/// a [`RelayChainInProcessInterface`] to access relay chain data necessary for parachain operation.
 ///
 /// The builder takes a [`polkadot_client::Client`]
 /// that wraps a concrete instance. By using [`polkadot_client::ExecuteWithClient`]
-/// the builder gets access to this concrete instance and instantiates a [`RelayChainLocal`] with it.
-struct RelayChainLocalBuilder {
+/// the builder gets access to this concrete instance and instantiates a [`RelayChainInProcessInterface`] with it.
+struct RelayChainInProcessInterfaceBuilder {
 	polkadot_client: polkadot_client::Client,
 	backend: Arc<FullBackend>,
 	sync_oracle: Arc<Mutex<Box<dyn SyncOracle + Send + Sync>>>,
 	overseer_handle: Option<Handle>,
 }
 
-impl RelayChainLocalBuilder {
+impl RelayChainInProcessInterfaceBuilder {
 	pub fn build(self) -> Arc<dyn RelayChainInterface> {
 		self.polkadot_client.clone().execute_with(self)
 	}
 }
 
-impl ExecuteWithClient for RelayChainLocalBuilder {
+impl ExecuteWithClient for RelayChainInProcessInterfaceBuilder {
 	type Output = Arc<dyn RelayChainInterface>;
 
 	fn execute_with_client<Client, Api, Backend>(self, client: Arc<Client>) -> Self::Output
@@ -312,7 +312,12 @@ impl ExecuteWithClient for RelayChainLocalBuilder {
 			+ Send,
 		Client::Api: ParachainHost<PBlock> + BabeApi<PBlock>,
 	{
-		Arc::new(RelayChainLocal::new(client, self.backend, self.sync_oracle, self.overseer_handle))
+		Arc::new(RelayChainInProcessInterface::new(
+			client,
+			self.backend,
+			self.sync_oracle,
+			self.overseer_handle,
+		))
 	}
 }
 
@@ -344,7 +349,7 @@ fn build_polkadot_full_node(
 }
 
 /// Builds a relay chain interface by constructing a full relay chain node
-pub fn build_relay_chain_local(
+pub fn build_inprocess_relay_chain(
 	polkadot_config: Configuration,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	task_manager: &mut TaskManager,
@@ -359,7 +364,7 @@ pub fn build_relay_chain_local(
 
 	let sync_oracle: Box<dyn SyncOracle + Send + Sync> = Box::new(full_node.network.clone());
 	let sync_oracle = Arc::new(Mutex::new(sync_oracle));
-	let relay_chain_interface_builder = RelayChainLocalBuilder {
+	let relay_chain_interface_builder = RelayChainInProcessInterfaceBuilder {
 		polkadot_client: full_node.client.clone(),
 		backend: full_node.backend.clone(),
 		sync_oracle,
@@ -400,7 +405,8 @@ mod tests {
 		}
 	}
 
-	fn build_client_backend_and_block() -> (Arc<Client>, PBlock, RelayChainLocal<Client>) {
+	fn build_client_backend_and_block(
+	) -> (Arc<Client>, PBlock, RelayChainInProcessInterface<Client>) {
 		let builder =
 			TestClientBuilder::new().set_execution_strategy(ExecutionStrategy::NativeWhenPossible);
 		let backend = builder.backend();
@@ -413,7 +419,7 @@ mod tests {
 		(
 			client.clone(),
 			block,
-			RelayChainLocal::new(
+			RelayChainInProcessInterface::new(
 				client,
 				backend.clone(),
 				Arc::new(Mutex::new(dummy_network)),

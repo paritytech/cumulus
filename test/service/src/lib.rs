@@ -36,8 +36,8 @@ use cumulus_client_service::{
 };
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_local::RelayChainLocal;
-use cumulus_relay_chain_network::RelayChainNetwork;
+use cumulus_relay_chain_inprocess_interface::RelayChainInProcessInterface;
+use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 use parking_lot::Mutex;
 
@@ -181,11 +181,11 @@ async fn build_relay_chain_interface(
 	task_manager: &mut TaskManager,
 ) -> RelayChainResult<Arc<dyn RelayChainInterface + 'static>> {
 	if let Some(relay_chain_url) = collator_options.relay_chain_rpc_url {
-		return Ok(Arc::new(RelayChainNetwork::new(relay_chain_url).await?) as Arc<_>)
+		return Ok(Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>)
 	}
 
 	task_manager.add_child(relay_chain_full_node.task_manager);
-	Ok(Arc::new(RelayChainLocal::new(
+	Ok(Arc::new(RelayChainInProcessInterface::new(
 		relay_chain_full_node.client.clone(),
 		relay_chain_full_node.backend.clone(),
 		Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),

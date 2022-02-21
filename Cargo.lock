@@ -1581,8 +1581,8 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "cumulus-primitives-core",
+ "cumulus-relay-chain-inprocess-interface",
  "cumulus-relay-chain-interface",
- "cumulus-relay-chain-local",
  "cumulus-test-service",
  "derive_more",
  "futures 0.3.21",
@@ -1907,30 +1907,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-relay-chain-interface"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "cumulus-primitives-core",
- "derive_more",
- "futures 0.3.21",
- "jsonrpsee-core",
- "parity-scale-codec",
- "parking_lot 0.11.2",
- "polkadot-overseer",
- "polkadot-service",
- "sc-client-api",
- "sc-service",
- "sp-api",
- "sp-blockchain",
- "sp-core",
- "sp-runtime",
- "sp-state-machine",
- "thiserror",
-]
-
-[[package]]
-name = "cumulus-relay-chain-local"
+name = "cumulus-relay-chain-inprocess-interface"
 version = "0.1.0"
 dependencies = [
  "async-trait",
@@ -1961,7 +1938,30 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-relay-chain-network"
+name = "cumulus-relay-chain-interface"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "cumulus-primitives-core",
+ "derive_more",
+ "futures 0.3.21",
+ "jsonrpsee-core",
+ "parity-scale-codec",
+ "parking_lot 0.11.2",
+ "polkadot-overseer",
+ "polkadot-service",
+ "sc-client-api",
+ "sc-service",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-runtime",
+ "sp-state-machine",
+ "thiserror",
+]
+
+[[package]]
+name = "cumulus-relay-chain-rpc-interface"
 version = "0.1.0"
 dependencies = [
  "async-trait",
@@ -2080,9 +2080,9 @@ dependencies = [
  "cumulus-client-service",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
+ "cumulus-relay-chain-inprocess-interface",
  "cumulus-relay-chain-interface",
- "cumulus-relay-chain-local",
- "cumulus-relay-chain-network",
+ "cumulus-relay-chain-rpc-interface",
  "cumulus-test-relay-validation-worker-provider",
  "cumulus-test-runtime",
  "frame-system",
@@ -6283,9 +6283,9 @@ dependencies = [
  "cumulus-client-service",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
+ "cumulus-relay-chain-inprocess-interface",
  "cumulus-relay-chain-interface",
- "cumulus-relay-chain-local",
- "cumulus-relay-chain-network",
+ "cumulus-relay-chain-rpc-interface",
  "derive_more",
  "frame-benchmarking",
  "frame-benchmarking-cli",
@@ -6952,9 +6952,9 @@ dependencies = [
  "cumulus-client-service",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
+ "cumulus-relay-chain-inprocess-interface",
  "cumulus-relay-chain-interface",
- "cumulus-relay-chain-local",
- "cumulus-relay-chain-network",
+ "cumulus-relay-chain-rpc-interface",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "futures 0.3.21",

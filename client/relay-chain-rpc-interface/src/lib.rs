@@ -47,7 +47,7 @@ use std::{pin::Pin, sync::Arc};
 
 pub use url::Url;
 
-const LOG_TARGET: &str = "relay-chain-network";
+const LOG_TARGET: &str = "relay-chain-external-interface";
 const TIMEOUT_IN_SECONDS: u64 = 6;
 
 /// Client that maps RPC methods and deserializes results
@@ -278,21 +278,21 @@ impl RelayChainRPCClient {
 	}
 }
 
-/// RelayChainNetwork is used to interact with a full node that is running locally
+/// RelayChainRPCInterface is used to interact with a full node that is running locally
 /// in the same process.
 #[derive(Clone)]
-pub struct RelayChainNetwork {
+pub struct RelayChainRPCInterface {
 	rpc_client: RelayChainRPCClient,
 }
 
-impl RelayChainNetwork {
+impl RelayChainRPCInterface {
 	pub async fn new(url: Url) -> RelayChainResult<Self> {
 		Ok(Self { rpc_client: RelayChainRPCClient::new(url).await? })
 	}
 }
 
 #[async_trait]
-impl RelayChainInterface for RelayChainNetwork {
+impl RelayChainInterface for RelayChainRPCInterface {
 	async fn retrieve_dmq_contents(
 		&self,
 		para_id: ParaId,
@@ -388,7 +388,7 @@ impl RelayChainInterface for RelayChainNetwork {
 	}
 
 	fn overseer_handle(&self) -> RelayChainResult<Option<Handle>> {
-		unimplemented!("Overseer handle is not available on relay-chain-network");
+		unimplemented!("Overseer handle is not available on relay-chain-rpc-interface");
 	}
 
 	async fn get_storage_by_key(

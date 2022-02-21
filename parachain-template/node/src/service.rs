@@ -17,9 +17,9 @@ use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
+use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_local::build_relay_chain_local;
-use cumulus_relay_chain_network::RelayChainNetwork;
+use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
 
 // Substrate Imports
 use sc_client_api::ExecutorProvider;
@@ -173,10 +173,13 @@ async fn build_relay_chain_interface(
 ) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
 	match collator_options.relay_chain_rpc_url {
 		Some(relay_chain_url) =>
-			Ok((Arc::new(RelayChainNetwork::new(relay_chain_url).await?) as Arc<_>, None)),
+			Ok((Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>, None)),
 		None => {
-			let relay_chain_local =
-				build_relay_chain_local(polkadot_config, telemetry_worker_handle, task_manager)?;
+			let relay_chain_local = build_inprocess_relay_chain(
+				polkadot_config,
+				telemetry_worker_handle,
+				task_manager,
+			)?;
 			Ok((relay_chain_local.0, Some(relay_chain_local.1)))
 		},
 	}

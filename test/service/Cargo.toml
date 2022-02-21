@@ -53,9 +53,9 @@ cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent" }
 cumulus-test-runtime = { path = "../runtime" }
 cumulus-test-relay-validation-worker-provider = { path = "../relay-validation-worker-provider" }
-cumulus-relay-chain-local = { path = "../../client/relay-chain-local" }
+cumulus-relay-chain-inprocess-interface = { path = "../../client/relay-chain-inprocess-interface" }
 cumulus-relay-chain-interface = { path = "../../client/relay-chain-interface" }
-cumulus-relay-chain-network = { path = "../../client/relay-chain-network" }
+cumulus-relay-chain-rpc-interface = { path = "../../client/relay-chain-rpc-interface" }
 
 criterion = { version = "0.3.5", features = [ "async_tokio" ] }
 
