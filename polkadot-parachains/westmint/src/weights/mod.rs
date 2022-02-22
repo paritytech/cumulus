@@ -8,3 +8,4 @@ pub mod pallet_session;
 pub mod pallet_timestamp;
 pub mod pallet_uniques;
 pub mod pallet_utility;
+pub mod cumulus_pallet_dmp_queue;
