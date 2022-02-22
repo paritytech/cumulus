@@ -27,7 +27,7 @@ pallets=(
 
 for p in ${pallets[@]}
 do
-	./target/release/polkadot-collator benchmark \
+	./target/production/polkadot-collator benchmark \
 		--chain=$statemineChain \
 		--execution=wasm \
 		--wasm-execution=compiled \
@@ -35,11 +35,11 @@ do
 		--extrinsic='*' \
 		--steps=$steps  \
 		--repeat=$repeat \
-		--raw  \
+		--json \
         --header=./file_header.txt \
 		--output=$statemineOutput
 
-	./target/release/polkadot-collator benchmark \
+	./target/production/polkadot-collator benchmark \
 		--chain=$statemintChain \
 		--execution=wasm \
 		--wasm-execution=compiled \
@@ -47,11 +47,11 @@ do
 		--extrinsic='*' \
 		--steps=$steps  \
 		--repeat=$repeat \
-		--raw  \
+		--json \
         --header=./file_header.txt \
 		--output=$statemintOutput
 
-	./target/release/polkadot-collator benchmark \
+	./target/production/polkadot-collator benchmark \
 		--chain=$westmintChain \
 		--execution=wasm \
 		--wasm-execution=compiled \
@@ -59,7 +59,7 @@ do
 		--extrinsic='*' \
 		--steps=$steps  \
 		--repeat=$repeat \
-		--raw  \
+		--json \
         --header=./file_header.txt \
 		--output=$westmintOutput
 done

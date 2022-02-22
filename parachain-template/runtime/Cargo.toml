@@ -15,7 +15,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [dependencies]
-hex-literal = { version = "0.3.1", optional = true }
+hex-literal = { version = "0.3.4", optional = true }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"]}
 log = { version = "0.4.14", default-features = false }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
@@ -104,6 +104,7 @@ std = [
 	"frame-executive/std",
 	"frame-support/std",
 	"frame-system/std",
+	"frame-system-rpc-runtime-api/std",
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
@@ -114,6 +115,7 @@ std = [
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
+	"pallet-xcm/std",
 	"cumulus-pallet-aura-ext/std",
 	"cumulus-pallet-parachain-system/std",
 	"cumulus-pallet-xcm/std",
