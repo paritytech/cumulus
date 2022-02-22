@@ -132,9 +132,11 @@ pub mod pallet {
 
 			let (sender, sent_at, data) =
 				Overweight::<T>::get(index).ok_or(Error::<T>::BadOverweightIndex)?;
-			let xcm =
-				VersionedXcm::<T::Call>::decode_all_with_depth_limit(MAX_XCM_DECODE_DEPTH, &mut data.as_slice())
-					.map_err(|_| Error::<T>::BadXcm)?;
+			let xcm = VersionedXcm::<T::Call>::decode_all_with_depth_limit(
+				MAX_XCM_DECODE_DEPTH,
+				&mut data.as_slice(),
+			)
+			.map_err(|_| Error::<T>::BadXcm)?;
 			let used = Self::handle_xcm_message(sender, sent_at, xcm, weight_limit)
 				.map_err(|_| Error::<T>::WeightOverLimit)?;
 			Overweight::<T>::remove(index);
@@ -492,10 +494,8 @@ impl<T: Config> Pallet<T> {
 		let have_active = s[index].last_index > s[index].first_index;
 		let appended = have_active &&
 			<OutboundXcmpMessages<T>>::mutate(recipient, s[index].last_index - 1, |s| {
-				if XcmpMessageFormat::decode_with_depth_limit(
-					MAX_XCM_DECODE_DEPTH,
-					&mut &s[..],
-				) != Ok(format)
+				if XcmpMessageFormat::decode_with_depth_limit(MAX_XCM_DECODE_DEPTH, &mut &s[..]) !=
+					Ok(format)
 				{
 					return false
 				}
