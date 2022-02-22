@@ -32,6 +32,9 @@ use sp_runtime::RuntimeDebug;
 use sp_std::{convert::TryFrom, prelude::*};
 use xcm::{latest::prelude::*, VersionedXcm, MAX_XCM_DECODE_DEPTH};
 
+pub mod weights;
+pub use weights::WeightInfo;
+
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct ConfigData {
 	/// The maximum amount of weight any individual message may consume. Messages above this weight
@@ -90,6 +93,9 @@ pub mod pallet {
 
 		/// Origin which is allowed to execute overweight messages.
 		type ExecuteOverweightOrigin: EnsureOrigin<Self::Origin>;
+
+		/// Information on runtime weights.
+		type WeightInfo: weights::WeightInfo;
 	}
 
 	/// The configuration.
@@ -329,6 +335,7 @@ pub mod pallet {
 	}
 }
 
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -406,6 +413,7 @@ mod tests {
 		type SS58Prefix = ();
 		type OnSetCode = ();
 		type MaxConsumers = frame_support::traits::ConstU32<16>;
+		type WeightInfo = ();
 	}
 
 	thread_local! {
