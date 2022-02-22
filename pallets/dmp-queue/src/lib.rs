@@ -228,7 +228,7 @@ pub mod pallet {
 			let id = sp_io::hashing::blake2_256(&data[..]);
 			let maybe_msg = VersionedXcm::<T::Call>::decode_all_with_depth_limit(
 				MAX_XCM_DECODE_DEPTH,
-				&mut &data[..],
+				&mut data.as_slice(),
 			)
 			.map(Xcm::<T::Call>::try_from);
 			match maybe_msg {
