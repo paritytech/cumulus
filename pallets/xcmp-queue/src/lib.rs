@@ -35,7 +35,8 @@ mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-// pub mod weights;
+pub mod weights;
+pub use weights::WeightInfo;
 
 use codec::{Decode, DecodeLimit, Encode};
 use cumulus_primitives_core::{
@@ -97,6 +98,8 @@ pub mod pallet {
 		/// The conversion function used to attempt to convert an XCM `MultiLocation` origin to a
 		/// superuser origin.
 		type ControllerOriginConverter: ConvertOrigin<Self::Origin>;
+
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::hooks]

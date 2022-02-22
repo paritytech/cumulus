@@ -32,8 +32,6 @@ use sp_runtime::RuntimeDebug;
 use sp_std::{convert::TryFrom, prelude::*};
 use xcm::{latest::prelude::*, VersionedXcm, MAX_XCM_DECODE_DEPTH};
 
-pub mod weights;
-pub use weights::WeightInfo;
 
 #[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct ConfigData {
@@ -93,9 +91,6 @@ pub mod pallet {
 
 		/// Origin which is allowed to execute overweight messages.
 		type ExecuteOverweightOrigin: EnsureOrigin<Self::Origin>;
-
-		/// Information on runtime weights.
-		type WeightInfo: weights::WeightInfo;
 	}
 
 	/// The configuration.
@@ -334,7 +329,6 @@ pub mod pallet {
 		}
 	}
 }
-
 
 #[cfg(test)]
 mod tests {

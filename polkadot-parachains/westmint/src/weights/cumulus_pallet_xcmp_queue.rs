@@ -42,7 +42,7 @@ use sp_std::marker::PhantomData;
 
 /// Weight functions for `cumulus_pallet_dmp_queue`.
 pub struct WeightInfo<T>(PhantomData<T>);
-impl<T: frame_system::Config> cumulus_pallet_dmp_queue::WeightInfo for WeightInfo<T> {
+impl<T: frame_system::Config> cumulus_pallet_xcmp_queue::WeightInfo for WeightInfo<T> {
 	// Storage: XcmpQueue QueueConfig (r:1 w:1)
 	fn set_config_with_u32() -> Weight {
 		(2_760_000 as Weight)
