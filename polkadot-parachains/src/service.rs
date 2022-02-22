@@ -680,18 +680,12 @@ pub fn rococo_parachain_build_import_queue(
 		_,
 		_,
 	>(cumulus_client_consensus_aura::ImportQueueParams {
+		slot_duration,
 		block_import: client.clone(),
 		client: client.clone(),
 		create_inherent_data_providers: move |_, _| async move {
 			let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-
-			let slot =
-				sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-					*timestamp,
-					slot_duration,
-				);
-
-			Ok((timestamp, slot))
+			Ok((timestamp,))
 		},
 		registry: config.prometheus_registry().clone(),
 		can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
@@ -741,7 +735,6 @@ pub async fn start_rococo_parachain_node(
 				telemetry.clone(),
 			);
 
-
 			Ok(AuraConsensus::build::<
 				sp_consensus_aura::sr25519::AuthorityPair,
 				_,
@@ -766,19 +759,13 @@ pub async fn start_rococo_parachain_node(
 
 						let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
-						let slot =
-							sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-								*timestamp,
-								slot_duration,
-							);
-
 						let parachain_inherent = parachain_inherent.ok_or_else(|| {
 							Box::<dyn std::error::Error + Send + Sync>::from(
 								"Failed to create parachain inherent",
 							)
 						})?;
 
-						Ok((timestamp, slot, parachain_inherent))
+						Ok((timestamp, parachain_inherent))
 					}
 				},
 				block_import: client.clone(),
@@ -1065,17 +1052,11 @@ where
 		Box::new(
 			cumulus_client_consensus_aura::build_verifier::<<AuraId as AppKey>::Pair, _, _, _>(
 				cumulus_client_consensus_aura::BuildVerifierParams {
+					slot_duration,
 					client: client2.clone(),
 					create_inherent_data_providers: move |_, _| async move {
 						let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-
-						let slot =
-							sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-								*timestamp,
-								slot_duration,
-							);
-
-						Ok((timestamp, slot))
+						Ok((timestamp,))
 					},
 					can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(
 						client2.executor().clone(),
@@ -1190,12 +1171,6 @@ where
 									let timestamp =
 										sp_timestamp::InherentDataProvider::from_system_time();
 
-									let slot =
-										sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-											*timestamp,
-											slot_duration,
-										);
-
 									let parachain_inherent =
 										parachain_inherent.ok_or_else(|| {
 											Box::<dyn std::error::Error + Send + Sync>::from(
@@ -1203,7 +1178,7 @@ where
 											)
 										})?;
 
-									Ok((timestamp, slot, parachain_inherent))
+									Ok((timestamp, parachain_inherent))
 								}
 							},
 						block_import: client2.clone(),
@@ -1496,18 +1471,12 @@ pub fn canvas_kusama_build_import_queue(
 		_,
 		_,
 	>(cumulus_client_consensus_aura::ImportQueueParams {
+		slot_duration,
 		block_import: client.clone(),
 		client: client.clone(),
 		create_inherent_data_providers: move |_, _| async move {
 			let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-
-			let slot =
-				sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-					*timestamp,
-					slot_duration,
-				);
-
-			Ok((timestamp, slot))
+			Ok((timestamp,))
 		},
 		registry: config.prometheus_registry(),
 		can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
@@ -1579,19 +1548,13 @@ pub async fn start_canvas_kusama_node(
 
 							let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
-							let slot =
-								sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-									*timestamp,
-									slot_duration,
-								);
-
 							let parachain_inherent = parachain_inherent.ok_or_else(|| {
 								Box::<dyn std::error::Error + Send + Sync>::from(
 									"Failed to create parachain inherent",
 								)
 							})?;
 
-							Ok((timestamp, slot, parachain_inherent))
+							Ok((timestamp, parachain_inherent))
 						}
 					},
 					block_import: client.clone(),

@@ -26,7 +26,7 @@ use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{CanAuthorWith, Error as ConsensusError};
-use sp_consensus_aura::AuraApi;
+use sp_consensus_aura::{AuraApi, SlotDuration};
 use sp_core::crypto::Pair;
 use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::traits::Block as BlockT;
@@ -35,6 +35,8 @@ use substrate_prometheus_endpoint::Registry;
 
 /// Parameters of [`import_queue`].
 pub struct ImportQueueParams<'a, I, C, CIDP, S, CAW> {
+	/// The duration of a slot.
+	pub slot_duration: SlotDuration,
 	/// The block import to use.
 	pub block_import: I,
 	/// The client to interact with the chain.
@@ -54,6 +56,7 @@ pub struct ImportQueueParams<'a, I, C, CIDP, S, CAW> {
 /// Start an import queue for the Aura consensus algorithm.
 pub fn import_queue<'a, P, Block, I, C, S, CAW, CIDP>(
 	ImportQueueParams {
+		slot_duration,
 		block_import,
 		client,
 		create_inherent_data_providers,
@@ -87,6 +90,7 @@ where
 	CIDP::InherentDataProviders: InherentDataProviderExt + Send + Sync,
 {
 	sc_consensus_aura::import_queue::<P, _, _, _, _, _, _>(sc_consensus_aura::ImportQueueParams {
+		slot_duration,
 		block_import: cumulus_client_consensus_common::ParachainBlockImport::new(block_import),
 		justification_import: None,
 		client,
@@ -101,6 +105,8 @@ where
 
 /// Parameters of [`build_verifier`].
 pub struct BuildVerifierParams<C, CIDP, CAW> {
+	/// The duration of a slot.
+	pub slot_duration: SlotDuration,
 	/// The client to interact with the chain.
 	pub client: Arc<C>,
 	/// The inherent data providers, to create the inherent data.
@@ -114,6 +120,7 @@ pub struct BuildVerifierParams<C, CIDP, CAW> {
 /// Build the [`AuraVerifier`].
 pub fn build_verifier<P, C, CIDP, CAW>(
 	BuildVerifierParams {
+		slot_duration,
 		client,
 		create_inherent_data_providers,
 		can_author_with,
@@ -121,6 +128,7 @@ pub fn build_verifier<P, C, CIDP, CAW>(
 	}: BuildVerifierParams<C, CIDP, CAW>,
 ) -> AuraVerifier<C, P, CAW, CIDP> {
 	sc_consensus_aura::build_verifier(sc_consensus_aura::BuildVerifierParams {
+		slot_duration,
 		client,
 		create_inherent_data_providers,
 		can_author_with,

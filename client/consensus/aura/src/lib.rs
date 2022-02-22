@@ -37,7 +37,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_application_crypto::AppPublic;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{EnableProofRecording, Environment, ProofRecording, Proposer, SyncOracle};
-use sp_consensus_aura::{AuraApi, SlotDuration};
+use sp_consensus_aura::{AuraApi, Slot, SlotDuration};
 use sp_core::crypto::Pair;
 use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvider};
 use sp_keystore::SyncCryptoStorePtr;
@@ -193,9 +193,12 @@ where
 		let (inherent_data, inherent_data_providers) =
 			self.inherent_data(parent.hash(), validation_data, relay_parent).await?;
 
+		let timestamp = inherent_data_providers.timestamp();
+		let slot = Slot::from_timestamp(timestamp, self.slot_duration);
+
 		let info = SlotInfo::new(
-			inherent_data_providers.slot(),
-			inherent_data_providers.timestamp(),
+			slot,
+			timestamp,
 			inherent_data,
 			self.slot_duration.as_duration(),
 			parent.clone(),
