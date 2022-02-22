@@ -30,6 +30,7 @@
 // --extrinsic=*
 // --steps=50
 // --repeat=20
+// --json
 // --header=./file_header.txt
 // --output=./polkadot-parachains/statemine/src/weights
 
@@ -45,13 +46,13 @@ pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> cumulus_pallet_xcmp_queue::WeightInfo for WeightInfo<T> {
 	// Storage: XcmpQueue QueueConfig (r:1 w:1)
 	fn set_config_with_u32() -> Weight {
-		(2_657_000 as Weight)
+		(2_746_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: XcmpQueue QueueConfig (r:1 w:1)
 	fn set_config_with_weights() -> Weight {
-		(2_663_000 as Weight)
+		(2_651_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
