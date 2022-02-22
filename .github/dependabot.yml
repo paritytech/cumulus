@@ -17,5 +17,6 @@ updates:
       - dependency-name: "test-runner"
       - dependency-name: "generate-bags"
       - dependency-name: "sub-tokens"
+      - dependency-name: "polkadot-*"
     schedule:
       interval: "daily"
