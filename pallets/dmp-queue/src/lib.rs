@@ -406,7 +406,6 @@ mod tests {
 		type SS58Prefix = ();
 		type OnSetCode = ();
 		type MaxConsumers = frame_support::traits::ConstU32<16>;
-		type WeightInfo = ();
 	}
 
 	thread_local! {
