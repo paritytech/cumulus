@@ -21,7 +21,7 @@ pallets=(
 	pallet_timestamp
 	pallet_utility
     pallet_uniques
-	cumulus_pallet_dmp_queue
+	cumulus_pallet_xcmp_queue
     frame_system
 )
 
