@@ -45,13 +45,37 @@ use sp_std::marker::PhantomData;
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> cumulus_pallet_xcmp_queue::WeightInfo for WeightInfo<T> {
 	// Storage: XcmpQueue QueueConfig (r:1 w:1)
-	fn set_config_with_u32() -> Weight {
-		(2_542_000 as Weight)
+	fn set_config_with_weights() -> Weight {
+		(2_607_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
-	// Storage: XcmpQueue QueueConfig (r:1 w:1)
-	fn set_config_with_weights() -> Weight {
+		// Storage: XcmpQueue QueueConfig (r:1 w:1)
+	fn set_config_with_resume_threshold() -> Weight {
+		(2_607_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(1 as Weight))
+			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+	}
+		// Storage: XcmpQueue QueueConfig (r:1 w:1)
+	fn set_config_with_restrict_decay() -> Weight {
+		(2_607_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(1 as Weight))
+			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+	}
+		// Storage: XcmpQueue QueueConfig (r:1 w:1)
+	fn set_config_with_threshold_weight() -> Weight {
+		(2_607_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(1 as Weight))
+			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+	}
+		// Storage: XcmpQueue QueueConfig (r:1 w:1)
+	fn set_config_with_drop_threshold() -> Weight {
+		(2_607_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(1 as Weight))
+			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+	}
+		// Storage: XcmpQueue QueueConfig (r:1 w:1)
+	fn set_config_with_suspend_threshold() -> Weight {
 		(2_607_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
