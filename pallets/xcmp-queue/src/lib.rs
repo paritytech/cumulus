@@ -180,7 +180,7 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.suspend_value`
-		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
+		#[pallet::weight(T::WeightInfo::set_config_with_u32())]
 		pub fn update_suspend_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
 			QueueConfig::<T>::mutate(|data| data.suspend_threshold = new);
@@ -193,7 +193,7 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.drop_threshold`
-		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
+		#[pallet::weight(T::WeightInfo::set_config_with_u32())]
 		pub fn update_drop_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
 			QueueConfig::<T>::mutate(|data| data.drop_threshold = new);
@@ -206,7 +206,7 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.resume_threshold`
-		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
+		#[pallet::weight(T::WeightInfo::set_config_with_u32())]
 		pub fn update_resume_threshold(origin: OriginFor<T>, new: u32) -> DispatchResult {
 			ensure_root(origin)?;
 			QueueConfig::<T>::mutate(|data| data.resume_threshold = new);
@@ -218,7 +218,7 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.threshold_weight`
-		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
+		#[pallet::weight(T::WeightInfo::set_config_with_u32())]
 		pub fn update_threshold_weight(origin: OriginFor<T>, new: Weight) -> DispatchResult {
 			ensure_root(origin)?;
 			QueueConfig::<T>::mutate(|data| data.threshold_weight = new);
@@ -231,7 +231,7 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.weight_restrict_decay`.
-		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
+		#[pallet::weight(T::WeightInfo::set_config_with_u32())]
 		pub fn update_weight_restrict_decay(origin: OriginFor<T>, new: Weight) -> DispatchResult {
 			ensure_root(origin)?;
 			QueueConfig::<T>::mutate(|data| data.weight_restrict_decay = new);
@@ -244,7 +244,7 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.xcmp_max_individual_weight`.
-		#[pallet::weight(10_000_000 as Weight + T::DbWeight::get().reads_writes(1, 1))]
+		#[pallet::weight(T::WeightInfo::set_config_with_u32())]
 		pub fn update_xcmp_max_individual_weight(
 			origin: OriginFor<T>,
 			new: Weight,

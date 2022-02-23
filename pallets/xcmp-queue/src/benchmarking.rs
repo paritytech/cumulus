@@ -21,17 +21,7 @@ use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
 
 benchmarks! {
-	set_config_with_resume_threshold {}: update_resume_threshold(RawOrigin::Root, 100)
-
-	set_config_with_weights {}: update_xcmp_max_individual_weight(RawOrigin::Root, 3_000_000)
-
-	set_config_with_restrict_decay {}: update_weight_restrict_decay(RawOrigin::Root, 3_000_000)
-
-	set_config_with_threshold_weight {}: update_threshold_weight(RawOrigin::Root, 3_000_000)
-
-	set_config_with_drop_threshold {}: update_drop_threshold(RawOrigin::Root, 3_000_000)
-
-	set_config_with_suspend_threshold {}: update_suspend_threshold(RawOrigin::Root, 3_000_000)
+	set_config_with_u32 {}: update_resume_threshold(RawOrigin::Root, 3_000_000)
 }
 
 impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
