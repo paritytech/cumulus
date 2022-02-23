@@ -11,8 +11,8 @@ targets = ["x86_64-unknown-linux-gnu"]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [dependencies]
-hex-literal = { version = '0.3.1', optional = true }
 codec = { package = 'parity-scale-codec', version = "3.0.0", default-features = false, features = ['derive'] }
+hex-literal = { version = '0.3.4', optional = true }
 log = { version = "0.4.14", default-features = false }
 scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
 serde = { version = '1.0.119', optional = true, features = ['derive'] }
@@ -73,6 +73,7 @@ parachain-info = { path = "../pallets/parachain-info", default-features = false 
 # Polkadot Dependencies
 polkadot-parachain = { git = 'https://github.com/paritytech/polkadot', default-features = false , branch = "master" }
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 kusama-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm = { git = 'https://github.com/paritytech/polkadot', default-features = false , branch = "master" }
 xcm-builder = { git = 'https://github.com/paritytech/polkadot', default-features = false , branch = "master" }
@@ -142,6 +143,7 @@ std = [
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
+	"polkadot-core-primitives/std",
 ]
 
 # Make contract callable functions marked as __unstable__ available. Do not enable
