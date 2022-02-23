@@ -99,7 +99,7 @@ pub struct ExportGenesisWasmCommand {
 #[clap(
 	propagate_version = true,
 	args_conflicts_with_subcommands = true,
-	subcommand_negates_reqs = true,
+	subcommand_negates_reqs = true
 )]
 pub struct Cli {
 	#[clap(subcommand)]
