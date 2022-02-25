@@ -335,7 +335,7 @@ where
 		data: &[u8],
 	) -> Pin<Box<dyn Future<Output = Result<Validation, BoxedError>> + Send>> {
 		let relay_chain_interface = self.relay_chain_interface.clone();
-		let mut data = data.to_vec();
+		let data = data.to_vec();
 		let header = header.clone();
 		let header_encoded = header.encode();
 		let block_announce_validator = self.clone();
