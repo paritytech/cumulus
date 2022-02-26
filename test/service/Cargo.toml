@@ -23,7 +23,7 @@ sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "polk
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
 sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
-sc-service = { git = "https://github.com/paritytech/substrate", features = [ "wasmtime" ] , branch = "polkadot-v0.9.17" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", features = [ "wasmtime" ] }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
 sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }

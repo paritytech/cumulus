@@ -38,10 +38,10 @@ sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "polk
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
 sp-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", features = ["wasmtime"] }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", features = ["wasmtime"] }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", features = ["wasmtime"] }
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
