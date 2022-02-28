@@ -47,7 +47,7 @@ use std::{pin::Pin, sync::Arc};
 
 pub use url::Url;
 
-const LOG_TARGET: &str = "relay-chain-external-interface";
+const LOG_TARGET: &str = "relay-chain-rpc-interface";
 const TIMEOUT_IN_SECONDS: u64 = 6;
 
 /// Client that maps RPC methods and deserializes results
@@ -76,9 +76,10 @@ impl RelayChainRPCClient {
 		&self,
 		method_name: &str,
 		hash: PHash,
-		payload: Option<Vec<u8>>,
+		payload: Option<impl Encode>,
 	) -> RelayChainResult<R> {
-		let payload_bytes = payload.map_or(sp_core::Bytes(Vec::new()), sp_core::Bytes);
+		let payload_bytes =
+			payload.map_or(sp_core::Bytes(Vec::new()), |v| sp_core::Bytes(v.encode()));
 		let params = rpc_params! {
 			method_name,
 			payload_bytes,
@@ -140,7 +141,7 @@ impl RelayChainRPCClient {
 	) -> Result<R, RelayChainError>
 	where
 		R: DeserializeOwned + std::fmt::Debug,
-		OR: Fn(&jsonrpsee::core::Error) -> (),
+		OR: Fn(&jsonrpsee::core::Error),
 	{
 		retry_notify(
 			self.retry_strategy.clone(),
@@ -201,7 +202,7 @@ impl RelayChainRPCClient {
 		self.call_remote_runtime_function(
 			"ParachainHost_candidate_pending_availability",
 			at,
-			Some(para_id.encode()),
+			Some(para_id),
 		)
 		.await
 	}
@@ -210,16 +211,16 @@ impl RelayChainRPCClient {
 		&self,
 		at: PHash,
 	) -> Result<SessionIndex, RelayChainError> {
-		self.call_remote_runtime_function("ParachainHost_session_index_for_child", at, None)
+		self.call_remote_runtime_function("ParachainHost_session_index_for_child", at, None::<()>)
 			.await
-		// Ok(SessionIndex::decode(&mut &*response_bytes.0)?)
 	}
 
 	async fn parachain_host_validators(
 		&self,
 		at: PHash,
 	) -> Result<Vec<ValidatorId>, RelayChainError> {
-		self.call_remote_runtime_function("ParachainHost_validators", at, None).await
+		self.call_remote_runtime_function("ParachainHost_validators", at, None::<()>)
+			.await
 	}
 
 	async fn parachain_host_persisted_validation_data(
@@ -231,7 +232,7 @@ impl RelayChainRPCClient {
 		self.call_remote_runtime_function(
 			"ParachainHost_persisted_validation_data",
 			at,
-			Some((para_id, occupied_core_assumption).encode()),
+			Some((para_id, occupied_core_assumption)),
 		)
 		.await
 	}
@@ -244,7 +245,7 @@ impl RelayChainRPCClient {
 		self.call_remote_runtime_function(
 			"ParachainHost_inbound_hrmp_channels_contents",
 			at,
-			Some(para_id.encode()),
+			Some(para_id),
 		)
 		.await
 	}
@@ -254,7 +255,7 @@ impl RelayChainRPCClient {
 		para_id: ParaId,
 		at: PHash,
 	) -> Result<Vec<InboundDownwardMessage>, RelayChainError> {
-		self.call_remote_runtime_function("ParachainHost_dmq_contents", at, Some(para_id.encode()))
+		self.call_remote_runtime_function("ParachainHost_dmq_contents", at, Some(para_id))
 			.await
 	}
 
