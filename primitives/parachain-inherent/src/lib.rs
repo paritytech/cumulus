@@ -49,7 +49,7 @@ pub use mock::{MockValidationDataInherentDataProvider, MockXcmConfig};
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"sysi1337";
 
 /// The inherent data that is passed by the collator to the parachain runtime.
-#[derive(codec::Encode, codec::Decode, sp_core::RuntimeDebug, Clone, PartialEq, TypeInfo)]
+#[derive(codec::Encode, codec::Decode, sp_core::RuntimeDebug, Clone, TypeInfo)]
 pub struct ParachainInherentData {
 	pub validation_data: PersistedValidationData,
 	/// A storage proof of a predefined set of keys from the relay-chain.
@@ -68,6 +68,15 @@ pub struct ParachainInherentData {
 	/// were sent. In combination with the rule of no more than one message in a channel per block,
 	/// this means `sent_at` is **strictly** greater than the previous one (if any).
 	pub horizontal_messages: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
+}
+
+impl PartialEq for ParachainInherentData {
+	fn eq(&self, other: &Self) -> bool {
+		self.validation_data == other.validation_data &&
+			self.relay_chain_state.compare(other.relay_chain_state) &&
+			self.downward_messages == other.downward_messages &&
+			self.horizontal_messages == other.horizontal_messages
+	}
 }
 
 /// This struct provides ability to extend a message queue chain (MQC) and compute a new head.
