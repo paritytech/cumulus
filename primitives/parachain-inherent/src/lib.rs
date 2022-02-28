@@ -73,7 +73,7 @@ pub struct ParachainInherentData {
 impl PartialEq for ParachainInherentData {
 	fn eq(&self, other: &Self) -> bool {
 		self.validation_data == other.validation_data &&
-			self.relay_chain_state.compare(other.relay_chain_state) &&
+			self.relay_chain_state.compare(&other.relay_chain_state) &&
 			self.downward_messages == other.downward_messages &&
 			self.horizontal_messages == other.horizontal_messages
 	}
