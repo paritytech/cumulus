@@ -6,12 +6,12 @@ edition = "2021"
 description = "Statemint parachain runtime"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive", "max-encoded-len"] }
-hex-literal = { version = "0.3.1", optional = true }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
+hex-literal = { version = "0.3.4", optional = true }
 log = { version = "0.4.14", default-features = false }
 parachain-info = { path = "../pallets/parachain-info", default-features = false }
 serde = { version = "1.0.132", optional = true, features = ["derive"] }
-scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
 smallvec = "1.6.1"
 
 # Substrate dependencies
@@ -49,8 +49,6 @@ pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/parityt
 pallet-uniques = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
-node-primitives = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-
 # Cumulus dependencies
 cumulus-pallet-aura-ext = { path = "../../pallets/aura-ext", default-features = false }
 cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false }
@@ -69,6 +67,7 @@ parachains-common = { path = "../parachains-common", default-features = false }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -78,7 +77,7 @@ pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features 
 frame-try-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true , branch = "master" }
 
 [dev-dependencies]
-hex-literal = "0.3.1"
+hex-literal = "0.3.4"
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -158,6 +157,9 @@ std = [
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"sp-consensus-aura/std",
-	"node-primitives/std",
 	"parachains-common/std",
+	"polkadot-parachain/std",
+	"polkadot-runtime-common/std",
+	"polkadot-core-primitives/std",
+	"polkadot-runtime-constants/std",
 ]
