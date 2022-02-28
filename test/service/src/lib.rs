@@ -36,14 +36,14 @@ use cumulus_client_service::{
 };
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::RelayChainInProcessInterface;
-use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 use parking_lot::Mutex;
 
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use polkadot_primitives::v1::{CollatorPair, Hash as PHash, PersistedValidationData};
-use polkadot_service::{NewFull, ProvideRuntimeApi};
+use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_network::{config::TransportConfig, multiaddr, NetworkService};
 use sc_service::{
@@ -176,13 +176,24 @@ pub fn new_partial(
 }
 
 async fn build_relay_chain_interface(
-	relay_chain_full_node: NewFull<Arc<polkadot_test_service::Client>>,
+	relay_chain_config: Configuration,
+	collator_key: Option<CollatorPair>,
 	collator_options: CollatorOptions,
 	task_manager: &mut TaskManager,
 ) -> RelayChainResult<Arc<dyn RelayChainInterface + 'static>> {
 	if let Some(relay_chain_url) = collator_options.relay_chain_rpc_url {
 		return Ok(Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>)
 	}
+
+	let relay_chain_full_node = polkadot_test_service::new_full(
+		relay_chain_config,
+		if let Some(ref key) = collator_key {
+			polkadot_service::IsCollator::Yes(key.clone())
+		} else {
+			polkadot_service::IsCollator::Yes(CollatorPair::generate().0)
+		},
+		None,
+	)?;
 
 	task_manager.add_child(relay_chain_full_node.task_manager);
 	Ok(Arc::new(RelayChainInProcessInterface::new(
@@ -229,30 +240,20 @@ where
 	let transaction_pool = params.transaction_pool.clone();
 	let mut task_manager = params.task_manager;
 
-	let relay_chain_full_node = polkadot_test_service::new_full(
-		relay_chain_config,
-		if let Some(ref key) = collator_key {
-			polkadot_service::IsCollator::Yes(key.clone())
-		} else {
-			polkadot_service::IsCollator::Yes(CollatorPair::generate().0)
-		},
-		None,
-	)
-	.map_err(|e| match e {
-		polkadot_service::Error::Sub(x) => x,
-		s => s.to_string().into(),
-	})?;
-
 	let client = params.client.clone();
 	let backend = params.backend.clone();
 
 	let relay_chain_interface = build_relay_chain_interface(
-		relay_chain_full_node,
+		relay_chain_config,
+		collator_key.clone(),
 		collator_options.clone(),
 		&mut task_manager,
 	)
 	.await
-	.expect("should work");
+	.map_err(|e| match e {
+		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
+		s => s.to_string().into(),
+	})?;
 
 	let block_announce_validator =
 		BlockAnnounceValidator::new(relay_chain_interface.clone(), para_id);

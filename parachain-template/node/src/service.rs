@@ -275,7 +275,7 @@ where
 	.await
 	.map_err(|e| match e {
 		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
-		s => format!("{}", s).into(),
+		s => s.to_string().into(),
 	})?;
 
 	let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
@@ -358,7 +358,7 @@ where
 			spawner,
 			parachain_consensus,
 			import_queue,
-			collator_key: collator_key.expect("Unable to start collator without collator key."),
+			collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
 			relay_chain_slot_duration,
 		};
 

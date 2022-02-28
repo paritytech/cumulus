@@ -388,7 +388,7 @@ where
 	.await
 	.map_err(|e| match e {
 		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
-		s => format!("{}", s).into(),
+		s => s.to_string().into(),
 	})?;
 
 	let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
@@ -574,7 +574,7 @@ where
 	.await
 	.map_err(|e| match e {
 		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
-		s => format!("{}", s).into(),
+		s => s.to_string().into(),
 	})?;
 
 	let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
@@ -1398,7 +1398,7 @@ where
 	.await
 	.map_err(|e| match e {
 		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
-		s => format!("{}", s).into(),
+		s => s.to_string().into(),
 	})?;
 
 	let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
