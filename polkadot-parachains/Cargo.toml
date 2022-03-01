@@ -31,17 +31,17 @@ parachains-common = { path = "parachains-common" }
 # Substrate dependencies
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "master" }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master", features = ["wasmtime"] }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-session = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
