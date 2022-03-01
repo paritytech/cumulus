@@ -1,6 +1,6 @@
 use super::{
-	AccountId, Balances, Call, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm,
-	Runtime, WeightToFee, XcmpQueue,
+	AccountId, Balances, Call, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime,
+	WeightToFee, XcmpQueue,
 };
 use frame_support::{
 	match_type, parameter_types,
