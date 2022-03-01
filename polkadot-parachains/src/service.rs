@@ -459,7 +459,7 @@ where
 			spawner,
 			parachain_consensus,
 			import_queue,
-			collator_key: collator_key.expect("Unable to start collator without collator key"),
+			collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
 			relay_chain_slot_duration,
 		};
 
@@ -657,7 +657,7 @@ where
 			spawner,
 			parachain_consensus,
 			import_queue,
-			collator_key: collator_key.expect("Can not start collator without collator key"),
+			collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
 			relay_chain_slot_duration,
 		};
 
@@ -1486,7 +1486,7 @@ where
 			spawner,
 			parachain_consensus,
 			import_queue,
-			collator_key: collator_key.expect("Can not start collator without collator key"),
+			collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
 			relay_chain_slot_duration,
 		};
 
