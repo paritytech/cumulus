@@ -15,12 +15,12 @@
 
 use super::{
 	AccountId, AssetId, Assets, Balance, Balances, Call, Event, Origin, ParachainInfo,
-	ParachainSystem, PolkadotXcm, Runtime, XcmpQueue,
+	ParachainSystem, PolkadotXcm, Runtime, WeightToFee, XcmpQueue,
 };
 use frame_support::{
 	match_type, parameter_types,
 	traits::{Everything, PalletInfoAccess},
-	weights::{IdentityFee, Weight},
+	weights::Weight,
 };
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
@@ -156,7 +156,7 @@ impl xcm_executor::Config for XcmConfig {
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-	type Trader = UsingComponents<IdentityFee<Balance>, WestendLocation, AccountId, Balances, ()>;
+	type Trader = UsingComponents<WeightToFee, WestendLocation, AccountId, Balances, ()>;
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;
