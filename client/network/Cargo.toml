@@ -32,7 +32,9 @@ polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch =
 cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 
 [dev-dependencies]
+portpicker = "0.1.1"
 tokio = { version = "1.17.0", features = ["macros"] }
+url = "2.2.2"
 
 # Substrate
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -51,5 +53,5 @@ polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch 
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core" }
-cumulus-relay-chain-local = { path = "../relay-chain-local" }
+cumulus-relay-chain-inprocess-interface = { path = "../relay-chain-inprocess-interface" }
 cumulus-test-service = { path = "../../test/service" }

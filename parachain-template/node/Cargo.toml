@@ -9,31 +9,18 @@ repository = "https://github.com/paritytech/cumulus/"
 edition = "2021"
 build = "build.rs"
 
-[package.metadata.docs.rs]
-targets = ["x86_64-unknown-linux-gnu"]
-
-[build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
-
 [[bin]]
 name = "parachain-collator"
 path = "src/main.rs"
 
-[features]
-runtime-benchmarks = [
-	"parachain-template-runtime/runtime-benchmarks",
-	"polkadot-cli/runtime-benchmarks",
-]
-try-runtime = ["parachain-template-runtime/try-runtime"]
-
 [dependencies]
 clap = { version = "3.1", features = ["derive"] }
-codec = { package = "parity-scale-codec", version = "3.0.0" }
 derive_more = "0.99.2"
+log = "0.4.14"
+codec = { package = "parity-scale-codec", version = "3.0.0" }
+serde = { version = "1.0.132", features = ["derive"] }
 hex-literal = "0.3.4"
 jsonrpc-core = "18.0.0"
-log = "0.4.14"
-serde = { version = "1.0.132", features = ["derive"] }
 
 # Local
 parachain-template-runtime = { path = "../runtime" }
@@ -44,15 +31,15 @@ frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", bran
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
 sc-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"], branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -90,6 +77,17 @@ cumulus-client-network = { path = "../../client/network" }
 cumulus-client-service = { path = "../../client/service" }
 cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent" }
+cumulus-relay-chain-inprocess-interface = { path = "../../client/relay-chain-inprocess-interface" }
 cumulus-relay-chain-interface = { path = "../../client/relay-chain-interface" }
-cumulus-relay-chain-local = { path = "../../client/relay-chain-local" }
+cumulus-relay-chain-rpc-interface = { path = "../../client/relay-chain-rpc-interface" }
 
+[build-dependencies]
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
+[features]
+default = []
+runtime-benchmarks = [
+	"parachain-template-runtime/runtime-benchmarks",
+	"polkadot-cli/runtime-benchmarks",
+]
+try-runtime = ["parachain-template-runtime/try-runtime"]

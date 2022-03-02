@@ -24,12 +24,13 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus
-cumulus-client-consensus-common = { path = "../consensus/common" }
+cumulus-client-cli = { path = "../cli" }
 cumulus-client-collator = { path = "../collator" }
+cumulus-client-consensus-common = { path = "../consensus/common" }
 cumulus-client-pov-recovery = { path = "../pov-recovery" }
-cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 cumulus-primitives-core = { path = "../../primitives/core" }
+cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
