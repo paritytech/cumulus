@@ -91,7 +91,7 @@ fn register_validators<T: Config + session::Config>(count: u32) -> Vec<T::Accoun
 		<session::Pallet<T>>::set_keys(RawOrigin::Signed(who).into(), keys, Vec::new()).unwrap();
 	}
 
-	return validators.into_iter().map(|(who, _)| who).collect()
+	validators.into_iter().map(|(who, _)| who).collect()
 }
 
 fn register_candidates<T: Config>(count: u32) {
@@ -152,7 +152,7 @@ benchmarks! {
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c + 1);
 
-		let _ = register_validators::<T>(c);
+		register_validators::<T>(c);
 		register_candidates::<T>(c);
 
 		let caller: T::AccountId = whitelisted_caller();
@@ -176,7 +176,7 @@ benchmarks! {
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c);
 
-		let _ = register_validators::<T>(c);
+		register_validators::<T>(c);
 		register_candidates::<T>(c);
 
 		let leaving = <Candidates<T>>::get().last().unwrap().who.clone();
@@ -214,7 +214,7 @@ benchmarks! {
 		<DesiredCandidates<T>>::put(c);
 		frame_system::Pallet::<T>::set_block_number(0u32.into());
 
-		let _ = register_validators::<T>(c);
+		register_validators::<T>(c);
 		register_candidates::<T>(c);
 
 		let new_block: T::BlockNumber = 1800u32.into();
