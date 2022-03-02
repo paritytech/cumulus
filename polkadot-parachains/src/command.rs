@@ -537,32 +537,42 @@ pub fn run() -> Result<()> {
 					.map(|r| r.0)
 					.map_err(Into::into)
 				} else if config.chain_spec.is_statemine() {
-					crate::service::start_statemint_node::<
-						statemine_runtime::RuntimeApi,
-						AuraId,
-					>(config, polkadot_config, collator_options, id)
+					crate::service::start_statemint_node::<statemine_runtime::RuntimeApi, AuraId>(
+						config,
+						polkadot_config,
+						collator_options,
+						id,
+					)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
 				} else if config.chain_spec.is_westmint() {
-					crate::service::start_statemint_node::<
-						westmint_runtime::RuntimeApi,						
-						AuraId,
-					>(config, polkadot_config, collator_options, id)
+					crate::service::start_statemint_node::<westmint_runtime::RuntimeApi, AuraId>(
+						config,
+						polkadot_config,
+						collator_options,
+						id,
+					)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
 				} else if config.chain_spec.is_shell() {
-					crate::service::start_shell_node::<
-						shell_runtime::RuntimeApi,
-					>(config, polkadot_config, collator_options, id)
+					crate::service::start_shell_node::<shell_runtime::RuntimeApi>(
+						config,
+						polkadot_config,
+						collator_options,
+						id,
+					)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
 				} else if config.chain_spec.is_seedling() {
-					crate::service::start_shell_node::<
-						seedling_runtime::RuntimeApi,
-					>(config, polkadot_config, collator_options, id)
+					crate::service::start_shell_node::<seedling_runtime::RuntimeApi>(
+						config,
+						polkadot_config,
+						collator_options,
+						id,
+					)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
