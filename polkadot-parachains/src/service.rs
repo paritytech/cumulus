@@ -31,7 +31,7 @@ use cumulus_primitives_core::{
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
-use polkadot_service::{CollatorPair, NativeExecutionDispatch};
+use polkadot_service::CollatorPair;
 use sp_core::Pair;
 
 use crate::rpc;
