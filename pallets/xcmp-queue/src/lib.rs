@@ -98,7 +98,7 @@ pub mod pallet {
 		/// The conversion function used to attempt to convert an XCM `MultiLocation` origin to a
 		/// superuser origin.
 		type ControllerOriginConverter: ConvertOrigin<Self::Origin>;
-
+/// The weight information of this pallet.
 		type WeightInfo: WeightInfo;
 	}
 
