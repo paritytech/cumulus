@@ -2082,6 +2082,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-relay-chain-mini"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "cumulus-test-service",
+ "futures 0.3.21",
+ "futures-timer",
+ "lru 0.7.2",
+ "parking_lot 0.11.2",
+ "polkadot-core-primitives",
+ "polkadot-node-network-protocol",
+ "polkadot-node-subsystem-util",
+ "polkadot-overseer",
+ "polkadot-primitives",
+ "polkadot-service",
+ "polkadot-test-client",
+ "sc-authority-discovery",
+ "sc-client-api",
+ "sc-keystore",
+ "sc-network",
+ "sp-api",
+ "sp-blockchain",
+ "sp-consensus-babe",
+ "sp-keyring",
+ "tracing",
+]
+
+[[package]]
 name = "cumulus-relay-chain-rpc-interface"
 version = "0.1.0"
 dependencies = [
