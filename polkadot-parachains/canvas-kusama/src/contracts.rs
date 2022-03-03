@@ -58,7 +58,7 @@ impl Config for Runtime {
 }
 
 pub struct Migrations;
-impl OnRuntimeUpgrade for Migrations {
+impl OnRuntimeUpgrade<Weight> for Migrations {
 	fn on_runtime_upgrade() -> Weight {
 		pallet_contracts::migration::migrate::<Runtime>()
 	}

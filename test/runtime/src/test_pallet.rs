@@ -29,9 +29,6 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config + cumulus_pallet_parachain_system::Config {}
 
-	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
-
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// A test dispatchable for setting a custom head data in `validate_block`.

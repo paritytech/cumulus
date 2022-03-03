@@ -29,7 +29,7 @@ pub mod wasm_spec_version_incremented {
 
 mod test_pallet;
 
-use frame_support::traits::OnRuntimeUpgrade;
+use frame_support::{traits::OnRuntimeUpgrade, weight::Weight};
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
@@ -343,8 +343,8 @@ pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
 
 pub struct TestOnRuntimeUpgrade;
 
-impl OnRuntimeUpgrade for TestOnRuntimeUpgrade {
-	fn on_runtime_upgrade() -> frame_support::weights::Weight {
+impl OnRuntimeUpgrade<Weight> for TestOnRuntimeUpgrade {
+	fn on_runtime_upgrade() -> Weight {
 		assert_eq!(sp_io::storage::get(TEST_RUNTIME_UPGRADE_KEY), Some(vec![1, 2, 3, 4]));
 
 		1

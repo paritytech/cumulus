@@ -589,7 +589,7 @@ pub type Executive = frame_executive::Executive<
 >;
 
 pub struct RemoveCollectiveFlip;
-impl frame_support::traits::OnRuntimeUpgrade for RemoveCollectiveFlip {
+impl frame_support::traits::OnRuntimeUpgrade<Weight> for RemoveCollectiveFlip {
 	fn on_runtime_upgrade() -> Weight {
 		use frame_support::storage::migration;
 		// Remove the storage value `RandomMaterial` from removed pallet `RandomnessCollectiveFlip`

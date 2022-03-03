@@ -20,6 +20,7 @@
 
 use cumulus_pallet_xcm::{ensure_sibling_para, Origin as CumulusOrigin};
 use cumulus_primitives_core::ParaId;
+use frame_support::weights::Weight;
 use frame_system::Config as SystemConfig;
 use sp_runtime::traits::Saturating;
 use sp_std::prelude::*;
@@ -78,11 +79,8 @@ pub mod pallet {
 		UnknownPong(ParaId, u32, Vec<u8>),
 	}
 
-	#[pallet::error]
-	pub enum Error<T> {}
-
 	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+	impl<T: Config> Hooks<BlockNumberFor<T>, Weight> for Pallet<T> {
 		fn on_finalize(n: T::BlockNumber) {
 			for (para, payload) in Targets::<T>::get().into_iter() {
 				let seq = PingCount::<T>::mutate(|seq| {

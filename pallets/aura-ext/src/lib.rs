@@ -60,7 +60,7 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+	impl<T: Config> Hooks<BlockNumberFor<T>, Weight> for Pallet<T> {
 		fn on_finalize(_: BlockNumberFor<T>) {
 			// Update to the latest AuRa authorities.
 			Authorities::<T>::put(Aura::<T>::authorities().into_inner());
@@ -73,9 +73,6 @@ pub mod pallet {
 			T::DbWeight::get().reads_writes(2, 1)
 		}
 	}
-
-	#[pallet::call]
-	impl<T: Config> Pallet<T> {}
 
 	/// Serves as cache for the authorities.
 	///

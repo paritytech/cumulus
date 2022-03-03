@@ -53,15 +53,6 @@ pub mod pallet {
 		type XcmExecutor: ExecuteXcm<Self::Call>;
 	}
 
-	#[pallet::error]
-	pub enum Error<T> {}
-
-	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
-
-	#[pallet::call]
-	impl<T: Config> Pallet<T> {}
-
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {

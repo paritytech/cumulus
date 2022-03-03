@@ -278,9 +278,6 @@ pub mod pallet {
 		ValidatorNotRegistered,
 	}
 
-	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
-
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Set the list of invulnerable (fixed) collators.
