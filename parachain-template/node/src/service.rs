@@ -166,6 +166,7 @@ where
 
 async fn build_relay_chain_interface(
 	polkadot_config: Configuration,
+	parachain_config: &Configuration,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	task_manager: &mut TaskManager,
 	collator_options: CollatorOptions,
@@ -176,10 +177,11 @@ async fn build_relay_chain_interface(
 		None => {
 			let relay_chain_local = build_inprocess_relay_chain(
 				polkadot_config,
+				parachain_config,
 				telemetry_worker_handle,
 				task_manager,
 			)?;
-			Ok((relay_chain_local.0, Some(relay_chain_local.1)))
+			Ok((relay_chain_local.0, relay_chain_local.1))
 		},
 	}
 }
@@ -267,6 +269,7 @@ where
 
 	let (relay_chain_interface, collator_key) = build_relay_chain_interface(
 		polkadot_config,
+		&parachain_config,
 		telemetry_worker_handle,
 		&mut task_manager,
 		collator_options.clone(),
