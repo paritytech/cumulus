@@ -360,14 +360,9 @@ pub fn build_inprocess_relay_chain(
 	parachain_config: &Configuration,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	task_manager: &mut TaskManager,
-) -> Result<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>), polkadot_service::Error>
-{
+) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
 	let (full_node, collator_key) =
-		build_polkadot_full_node(polkadot_config, parachain_config, telemetry_worker_handle)
-			.map_err(|e| match e {
-				polkadot_service::Error::Sub(x) => x,
-				s => format!("{}", s).into(),
-			})?;
+		build_polkadot_full_node(polkadot_config, parachain_config, telemetry_worker_handle)?;
 
 	let sync_oracle: Box<dyn SyncOracle + Send + Sync> = Box::new(full_node.network.clone());
 	let sync_oracle = Arc::new(Mutex::new(sync_oracle));

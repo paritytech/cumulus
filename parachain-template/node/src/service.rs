@@ -174,15 +174,12 @@ async fn build_relay_chain_interface(
 	match collator_options.relay_chain_rpc_url {
 		Some(relay_chain_url) =>
 			Ok((Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>, None)),
-		None => {
-			let relay_chain_local = build_inprocess_relay_chain(
-				polkadot_config,
-				parachain_config,
-				telemetry_worker_handle,
-				task_manager,
-			)?;
-			Ok((relay_chain_local.0, relay_chain_local.1))
-		},
+		None => build_inprocess_relay_chain(
+			polkadot_config,
+			parachain_config,
+			telemetry_worker_handle,
+			task_manager,
+		),
 	}
 }
 
