@@ -2086,12 +2086,16 @@ name = "cumulus-relay-chain-mini"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
  "cumulus-test-service",
  "futures 0.3.21",
  "futures-timer",
  "lru 0.7.2",
  "parking_lot 0.11.2",
+ "polkadot-client",
  "polkadot-core-primitives",
+ "polkadot-network-bridge",
  "polkadot-node-network-protocol",
  "polkadot-node-subsystem-util",
  "polkadot-overseer",
@@ -2102,10 +2106,16 @@ dependencies = [
  "sc-client-api",
  "sc-keystore",
  "sc-network",
+ "sc-service",
+ "sc-telemetry",
  "sp-api",
  "sp-blockchain",
+ "sp-consensus",
  "sp-consensus-babe",
+ "sp-core",
  "sp-keyring",
+ "sp-runtime",
+ "sp-state-machine",
  "tracing",
 ]
 
