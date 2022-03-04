@@ -98,7 +98,8 @@ pub mod pallet {
 		/// The conversion function used to attempt to convert an XCM `MultiLocation` origin to a
 		/// superuser origin.
 		type ControllerOriginConverter: ConvertOrigin<Self::Origin>;
-/// The weight information of this pallet.
+
+		/// The weight information of this pallet.
 		type WeightInfo: WeightInfo;
 	}
 
@@ -218,7 +219,7 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.threshold_weight`
-		#[pallet::weight(T::WeightInfo::set_config_with_u32())]
+		#[pallet::weight(T::WeightInfo::set_config_with_weight())]
 		pub fn update_threshold_weight(origin: OriginFor<T>, new: Weight) -> DispatchResult {
 			ensure_root(origin)?;
 			QueueConfig::<T>::mutate(|data| data.threshold_weight = new);
@@ -231,7 +232,7 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.weight_restrict_decay`.
-		#[pallet::weight(T::WeightInfo::set_config_with_u32())]
+		#[pallet::weight(T::WeightInfo::set_config_with_weight())]
 		pub fn update_weight_restrict_decay(origin: OriginFor<T>, new: Weight) -> DispatchResult {
 			ensure_root(origin)?;
 			QueueConfig::<T>::mutate(|data| data.weight_restrict_decay = new);
@@ -244,7 +245,7 @@ pub mod pallet {
 		///
 		/// - `origin`: Must pass `Root`.
 		/// - `new`: Desired value for `QueueConfigData.xcmp_max_individual_weight`.
-		#[pallet::weight(T::WeightInfo::set_config_with_u32())]
+		#[pallet::weight(T::WeightInfo::set_config_with_weight())]
 		pub fn update_xcmp_max_individual_weight(
 			origin: OriginFor<T>,
 			new: Weight,
