@@ -24,17 +24,14 @@ use sp_consensus::block_validation::{
 	BlockAnnounceValidator as BlockAnnounceValidatorT, Validation,
 };
 use sp_core::traits::SpawnNamed;
-use sp_runtime::{
-	generic::BlockId,
-	traits::{Block as BlockT, Header as HeaderT},
-};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 
 use cumulus_relay_chain_interface::RelayChainInterface;
 use polkadot_node_primitives::{CollationSecondedSignal, Statement};
 use polkadot_parachain::primitives::HeadData;
 use polkadot_primitives::v1::{
-	Block as PBlock, CandidateReceipt, CompactStatement, Hash as PHash, Id as ParaId,
-	OccupiedCoreAssumption, SigningContext, UncheckedSigned,
+	CandidateReceipt, CompactStatement, Hash as PHash, Id as ParaId, OccupiedCoreAssumption,
+	SigningContext, UncheckedSigned,
 };
 
 use codec::{Decode, DecodeAll, Encode};
@@ -133,9 +130,8 @@ impl BlockAnnounceData {
 	{
 		let validator_index = self.statement.unchecked_validator_index();
 
-		let runtime_api_block_id = BlockId::Hash(self.relay_parent);
 		let session_index =
-			match relay_chain_client.session_index_for_child(&runtime_api_block_id).await {
+			match relay_chain_client.session_index_for_child(self.relay_parent).await {
 				Ok(r) => r,
 				Err(e) => return Err(BlockAnnounceError(format!("{:?}", e))),
 			};
@@ -143,7 +139,7 @@ impl BlockAnnounceData {
 		let signing_context = SigningContext { parent_hash: self.relay_parent, session_index };
 
 		// Check that the signer is a legit validator.
-		let authorities = match relay_chain_client.validators(&runtime_api_block_id).await {
+		let authorities = match relay_chain_client.validators(self.relay_parent).await {
 			Ok(r) => r,
 			Err(e) => return Err(BlockAnnounceError(format!("{:?}", e))),
 		};
@@ -160,7 +156,7 @@ impl BlockAnnounceData {
 		};
 
 		// Check statement is correctly signed.
-		if self.statement.try_into_checked(&signing_context, &signer).is_err() {
+		if self.statement.try_into_checked(&signing_context, signer).is_err() {
 			tracing::debug!(
 				target: LOG_TARGET,
 				"Block announcement justification signature is invalid.",
@@ -211,7 +207,7 @@ impl TryFrom<&'_ CollationSecondedSignal> for BlockAnnounceData {
 /// will call this validator and provides the extra data that was attached to the announcement.
 /// We call this extra data `justification`.
 /// It is expected that the attached data is a SCALE encoded [`BlockAnnounceData`]. The
-/// statement is checked to be a [`CompactStatement::Candidate`] and that it is signed by an active
+/// statement is checked to be a [`CompactStatement::Seconded`] and that it is signed by an active
 /// parachain validator.
 ///
 /// If no justification was provided we check if the block announcement is at the tip of the known
@@ -231,11 +227,7 @@ where
 {
 	/// Create a new [`BlockAnnounceValidator`].
 	pub fn new(relay_chain_interface: RCInterface, para_id: ParaId) -> Self {
-		Self {
-			phantom: Default::default(),
-			relay_chain_interface: relay_chain_interface.clone(),
-			para_id,
-		}
+		Self { phantom: Default::default(), relay_chain_interface, para_id }
 	}
 }
 
@@ -246,11 +238,11 @@ where
 	/// Get the included block of the given parachain in the relay chain.
 	async fn included_block(
 		relay_chain_interface: &RCInterface,
-		block_id: &BlockId<PBlock>,
+		hash: PHash,
 		para_id: ParaId,
 	) -> Result<Block::Header, BoxedError> {
 		let validation_data = relay_chain_interface
-			.persisted_validation_data(block_id, para_id, OccupiedCoreAssumption::TimedOut)
+			.persisted_validation_data(hash, para_id, OccupiedCoreAssumption::TimedOut)
 			.await
 			.map_err(|e| Box::new(BlockAnnounceError(format!("{:?}", e))) as Box<_>)?
 			.ok_or_else(|| {
@@ -269,11 +261,11 @@ where
 	/// Get the backed block hash of the given parachain in the relay chain.
 	async fn backed_block_hash(
 		relay_chain_interface: &RCInterface,
-		block_id: &BlockId<PBlock>,
+		hash: PHash,
 		para_id: ParaId,
 	) -> Result<Option<PHash>, BoxedError> {
 		let candidate_receipt = relay_chain_interface
-			.candidate_pending_availability(block_id, para_id)
+			.candidate_pending_availability(hash, para_id)
 			.await
 			.map_err(|e| Box::new(BlockAnnounceError(format!("{:?}", e))) as Box<_>)?;
 
@@ -293,14 +285,13 @@ where
 			.best_block_hash()
 			.await
 			.map_err(|e| Box::new(e) as Box<_>)?;
-		let runtime_api_block_id = BlockId::Hash(relay_chain_best_hash);
 		let block_number = header.number();
 
 		let best_head =
-			Self::included_block(&relay_chain_interface, &runtime_api_block_id, para_id).await?;
+			Self::included_block(&relay_chain_interface, relay_chain_best_hash, para_id).await?;
 		let known_best_number = best_head.number();
 		let backed_block = || async {
-			Self::backed_block_hash(&relay_chain_interface, &runtime_api_block_id, para_id).await
+			Self::backed_block_hash(&relay_chain_interface, relay_chain_best_hash, para_id).await
 		};
 
 		if best_head == header {
@@ -335,7 +326,7 @@ where
 		data: &[u8],
 	) -> Pin<Box<dyn Future<Output = Result<Validation, BoxedError>> + Send>> {
 		let relay_chain_interface = self.relay_chain_interface.clone();
-		let mut data = data.to_vec();
+		let data = data.to_vec();
 		let header = header.clone();
 		let header_encoded = header.encode();
 		let block_announce_validator = self.clone();
@@ -357,7 +348,7 @@ where
 				return block_announce_validator.handle_empty_block_announce_data(header).await
 			}
 
-			let block_announce_data = match BlockAnnounceData::decode_all(&mut data) {
+			let block_announce_data = match BlockAnnounceData::decode_all(&mut data.as_slice()) {
 				Ok(r) => r,
 				Err(err) =>
 					return Err(Box::new(BlockAnnounceError(format!(
