@@ -173,7 +173,7 @@ pub fn sybil_dummy_spec(id: ParaId, relay_chain: RelayChain) -> EncointerChainSp
 		Some(
 			serde_json::from_str(
 				r#"{
-			"ss58Format": 42,
+			"ss58Format": 2,
 			"tokenDecimals": 12,
 			"tokenSymbol": "DUM"
 		  }"#,

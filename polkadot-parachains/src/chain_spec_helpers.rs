@@ -146,7 +146,7 @@ impl RelayChain {
 pub fn rococo_properties() -> Properties {
 	serde_json::from_str(
 		r#"{
-				"ss58Format": 42,
+				"ss58Format": 2,
 				"tokenDecimals": 12,
 				"tokenSymbol": "ROC"
 				}"#,
@@ -168,7 +168,7 @@ pub fn kusama_properties() -> Properties {
 pub fn westend_properties() -> Properties {
 	serde_json::from_str(
 		r#"{
-				"ss58Format": 42,
+				"ss58Format": 2,
 				"tokenDecimals": 12,
 				"tokenSymbol": "WND"
 				}"#,
