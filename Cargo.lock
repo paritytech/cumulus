@@ -5894,7 +5894,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-primitives"
 version = "6.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#e4633560680f8ce077c896815cf23a9d7f04967e"
+source = "git+https://github.com/paritytech/substrate?branch=master#32a4fe01f110a755bf22eb8f803cdfd7052d4f8b"
 dependencies = [
  "bitflags",
  "parity-scale-codec",
@@ -11176,7 +11176,7 @@ dependencies = [
 [[package]]
 name = "sp-keyring"
 version = "6.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#e4633560680f8ce077c896815cf23a9d7f04967e"
+source = "git+https://github.com/paritytech/substrate?branch=master#32a4fe01f110a755bf22eb8f803cdfd7052d4f8b"
 dependencies = [
  "lazy_static",
  "sp-core 6.0.0",
@@ -11279,7 +11279,7 @@ dependencies = [
 [[package]]
 name = "sp-rpc"
 version = "6.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#e4633560680f8ce077c896815cf23a9d7f04967e"
+source = "git+https://github.com/paritytech/substrate?branch=master#32a4fe01f110a755bf22eb8f803cdfd7052d4f8b"
 dependencies = [
  "rustc-hash",
  "serde",
@@ -13542,74 +13542,6 @@ dependencies = [
 ]
 
 [[patch.unused]]
-name = "polkadot"
-version = "0.9.17"
-
-[[patch.unused]]
-name = "polkadot-primitives-test-helpers"
-version = "0.9.17"
-
-[[patch.unused]]
-name = "polkadot-test-malus"
-version = "0.9.17"
-
-[[patch.unused]]
-name = "polkadot-voter-bags"
-version = "0.9.17"
-
-[[patch.unused]]
-name = "remote-ext-tests-bags-list"
-version = "0.9.17"
-
-[[patch.unused]]
-name = "staking-miner"
-version = "0.9.17"
-
-[[patch.unused]]
-name = "test-parachain-adder"
-version = "0.9.17"
-
-[[patch.unused]]
-name = "test-parachain-adder-collator"
-version = "0.9.17"
-
-[[patch.unused]]
-name = "test-parachain-halt"
-version = "0.9.17"
-
-[[patch.unused]]
-name = "test-parachain-undying"
-version = "0.9.17"
-
-[[patch.unused]]
-name = "test-parachain-undying-collator"
-version = "0.9.17"
-
-[[patch.unused]]
-name = "test-parachains"
-version = "0.9.17"
-
-[[patch.unused]]
-name = "xcm-executor-integration-tests"
-version = "0.9.17"
-
-[[patch.unused]]
-name = "xcm-simulator"
-version = "0.9.17"
-
-[[patch.unused]]
-name = "xcm-simulator-example"
-version = "0.9.17"
-
-[[patch.unused]]
-name = "xcm-simulator-fuzzer"
-version = "0.9.17"
-
-[[patch.unused]]
-name = "zombienet-backchannel"
-version = "0.9.17"
-
-[[patch.unused]]
 name = "chain-spec-builder"
 version = "2.0.0"
 
@@ -13812,3 +13744,71 @@ version = "2.0.0"
 [[patch.unused]]
 name = "substrate-test-utils-test-crate"
 version = "0.1.0"
+
+[[patch.unused]]
+name = "polkadot"
+version = "0.9.17"
+
+[[patch.unused]]
+name = "polkadot-primitives-test-helpers"
+version = "0.9.17"
+
+[[patch.unused]]
+name = "polkadot-test-malus"
+version = "0.9.17"
+
+[[patch.unused]]
+name = "polkadot-voter-bags"
+version = "0.9.17"
+
+[[patch.unused]]
+name = "remote-ext-tests-bags-list"
+version = "0.9.17"
+
+[[patch.unused]]
+name = "staking-miner"
+version = "0.9.17"
+
+[[patch.unused]]
+name = "test-parachain-adder"
+version = "0.9.17"
+
+[[patch.unused]]
+name = "test-parachain-adder-collator"
+version = "0.9.17"
+
+[[patch.unused]]
+name = "test-parachain-halt"
+version = "0.9.17"
+
+[[patch.unused]]
+name = "test-parachain-undying"
+version = "0.9.17"
+
+[[patch.unused]]
+name = "test-parachain-undying-collator"
+version = "0.9.17"
+
+[[patch.unused]]
+name = "test-parachains"
+version = "0.9.17"
+
+[[patch.unused]]
+name = "xcm-executor-integration-tests"
+version = "0.9.17"
+
+[[patch.unused]]
+name = "xcm-simulator"
+version = "0.9.17"
+
+[[patch.unused]]
+name = "xcm-simulator-example"
+version = "0.9.17"
+
+[[patch.unused]]
+name = "xcm-simulator-fuzzer"
+version = "0.9.17"
+
+[[patch.unused]]
+name = "zombienet-backchannel"
+version = "0.9.17"
