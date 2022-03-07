@@ -5,8 +5,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "rh-finish-v2-primitives" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rh-finish-v2-primitives" }
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 

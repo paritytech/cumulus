@@ -18,10 +18,10 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-finish-v2-primitives" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "rh-finish-v2-primitives" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "rh-finish-v2-primitives" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rh-finish-v2-primitives" }
 
 # Cumulus
 cumulus-client-consensus-common = { path = "../consensus/common" }
@@ -38,7 +38,7 @@ sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "
 sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "rh-finish-v2-primitives" }
 
 # Cumulus
 cumulus-test-client = { path = "../../test/client" }
