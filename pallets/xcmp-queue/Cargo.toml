@@ -34,7 +34,7 @@ sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "rh-finish-v2-primitives" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus
 cumulus-pallet-parachain-system = { path = "../parachain-system" }
