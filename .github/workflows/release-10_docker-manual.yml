@@ -1,15 +1,20 @@
-name: Release - Docker
+name: Release - Docker (Manual)
 
-# This workflow listens to pubished releases.
-# It includes releases and pre-releases.
-# It fetches the binaries, checks sha256 and GPG
+# This workflow fetches the binaries, checks sha256 and GPG
 # signatures, then builds an injected docker
 # image and publishes it.
 
 on:
-  release:
-    types:
-      - published
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: release tag to build image for
+        default: polkadot-v0.9.17
+        required: true
+      prerelease:
+        description: is prerelease
+        default: false
+        required: true
 
 jobs:
   docker_build_publish:
@@ -26,14 +31,8 @@ jobs:
         run: |
           echo "Repo: ${{ github.event.repository.full_name }}"
 
-          echo "Name: ${{ github.event.release.name }}"
-          echo "Tag: ${{ github.event.release.tag_name }}"
-          echo "Draft: ${{ github.event.release.draft }}"
-          echo "Prerelease: ${{ github.event.release.prerelease }}"
-          echo "Assets: ${{ github.event.release.assets }}"
-
           for f in $BINARY $BINARY.asc $BINARY.sha256; do
-            URL="https://github.com/${{ github.event.repository.full_name }}/releases/download/${{ github.event.release.tag_name }}/$f"
+            URL="https://github.com/${{ github.event.repository.full_name }}/releases/download/${{ github.event.inputs.tag }}/$f"
             echo " - Fetching $f from $URL"
             wget "$URL" -O "$f"
           done
@@ -51,7 +50,7 @@ jobs:
           KEYSERVER=keyserver.ubuntu.com
 
           gpg --keyserver $KEYSERVER --receive-keys $KEY_PARITY_SEC
-          if [[ ${{ github.event.release.prerelease }} == "true" ]]; then
+          if [[ ${{ github.event.inputs.prerelease }} == "true" ]]; then
               gpg --keyserver $KEYSERVER --receive-keys $KEY_CHEVDOR
           fi
 
@@ -93,7 +92,7 @@ jobs:
           VERSION=$(docker run --pull never --rm $DOCKERHUB_USERNAME/$BINARY --version | awk '{ print $2 }' )
           SEMVER=$( echo $VERSION | cut -f1 -d- )
           GITREF=$( echo $VERSION | cut -f2 -d- )
-          PRE=${{ github.event.release.prerelease }}
+          PRE=${{ github.event.inputs.prerelease }}
           PRE_STR=""
 
           echo "SEMVER=$SEMVER"
