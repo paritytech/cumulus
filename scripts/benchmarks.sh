@@ -1,5 +1,7 @@
 #!/bin/bash
 
+PALLET=$1
+
 steps=50
 repeat=20
 
@@ -25,41 +27,39 @@ pallets=(
 	frame_system
 )
 
-for p in ${pallets[@]}
-do
-	./target/production/polkadot-collator benchmark \
-		--chain=$statemineChain \
-		--execution=wasm \
-		--wasm-execution=compiled \
-		--pallet=$p  \
-		--extrinsic='*' \
-		--steps=$steps  \
-		--repeat=$repeat \
-		--json \
-        --header=./file_header.txt \
-		--output=$statemineOutput
 
-	./target/production/polkadot-collator benchmark \
-		--chain=$statemintChain \
-		--execution=wasm \
-		--wasm-execution=compiled \
-		--pallet=$p  \
-		--extrinsic='*' \
-		--steps=$steps  \
-		--repeat=$repeat \
-		--json \
-        --header=./file_header.txt \
-		--output=$statemintOutput
+./target/production/polkadot-collator benchmark \
+	--chain=$statemineChain \
+	--execution=wasm \
+	--wasm-execution=compiled \
+	--pallet=$PALLET \
+	--extrinsic='*' \
+	--steps=$steps  \
+	--repeat=$repeat \
+	--json \
+    --header=./file_header.txt \
+	--output=$statemineOutput
 
-	./target/production/polkadot-collator benchmark \
-		--chain=$westmintChain \
-		--execution=wasm \
-		--wasm-execution=compiled \
-		--pallet=$p  \
-		--extrinsic='*' \
-		--steps=$steps  \
-		--repeat=$repeat \
-		--json \
-        --header=./file_header.txt \
-		--output=$westmintOutput
-done
+./target/production/polkadot-collator benchmark \
+	--chain=$statemintChain \
+	--execution=wasm \
+	--wasm-execution=compiled \
+	--pallet=$PALLET  \
+	--extrinsic='*' \
+	--steps=$steps  \
+	--repeat=$repeat \
+	--json \
+    --header=./file_header.txt \
+	--output=$statemintOutput
+
+./target/production/polkadot-collator benchmark \
+	--chain=$westmintChain \
+	--execution=wasm \
+	--wasm-execution=compiled \
+	--pallet=$PALLET  \
+	--extrinsic='*' \
+	--steps=$steps  \
+	--repeat=$repeat \
+	--json \
+    --header=./file_header.txt \
+	--output=$westmintOutput
