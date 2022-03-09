@@ -114,7 +114,7 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 	) -> Weight {
 		let mut used = 0;
 		for (_sent_at, data) in iter {
-			let id = sp_io::hashing::twox_64(&data[..]);
+			let id = sp_io::hashing::blake2_256(&data[..]);
 			let msg = VersionedXcm::<T::Call>::decode_all_with_depth_limit(
 				MAX_XCM_DECODE_DEPTH,
 				&mut data.as_slice(),
@@ -124,7 +124,7 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
 				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
-					let outcome = T::XcmExecutor::execute_xcm(Parent, x, limit);
+					let outcome = T::XcmExecutor::execute_xcm(Parent, x, id, limit);
 					used += outcome.weight_used();
 					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
 				},
@@ -147,7 +147,7 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 	) -> Weight {
 		let mut used = 0;
 		for (_sent_at, data) in iter {
-			let id = sp_io::hashing::twox_64(&data[..]);
+			let id = sp_io::hashing::blake2_256(&data[..]);
 			let msg = VersionedXcm::<T::Call>::decode_all_with_depth_limit(
 				MAX_XCM_DECODE_DEPTH,
 				&mut data.as_slice(),
@@ -158,7 +158,7 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
 					let weight_limit = limit.saturating_sub(used);
-					let outcome = T::XcmExecutor::execute_xcm(Parent, x, weight_limit);
+					let outcome = T::XcmExecutor::execute_xcm(Parent, x, id, weight_limit);
 					used += outcome.weight_used();
 					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
 				},
