@@ -34,6 +34,9 @@ pub type ShellChainSpec = sc_service::GenericChainSpec<shell_runtime::GenesisCon
 pub type SeedlingChainSpec =
 	sc_service::GenericChainSpec<seedling_runtime::GenesisConfig, Extensions>;
 
+/// The default XCM version to set in genesis config.
+const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
+
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
 	TPublic::Pair::from_string(&format!("//{}", seed), None)
@@ -98,6 +101,7 @@ pub fn get_chain_spec() -> ChainSpec {
 		None,
 		None,
 		None,
+		None,
 		Extensions { relay_chain: "westend".into(), para_id: 1000 },
 	)
 }
@@ -109,6 +113,7 @@ pub fn get_shell_chain_spec() -> ShellChainSpec {
 		ChainType::Local,
 		move || shell_testnet_genesis(1000.into()),
 		Vec::new(),
+		None,
 		None,
 		None,
 		None,
@@ -128,6 +133,7 @@ pub fn get_seedling_chain_spec() -> SeedlingChainSpec {
 			)
 		},
 		Vec::new(),
+		None,
 		None,
 		None,
 		None,
@@ -161,6 +167,7 @@ pub fn staging_test_net() -> ChainSpec {
 		None,
 		None,
 		None,
+		None,
 		Extensions { relay_chain: "westend".into(), para_id: 1000 },
 	)
 }
@@ -185,6 +192,9 @@ fn testnet_genesis(
 		aura: rococo_parachain_runtime::AuraConfig { authorities: initial_authorities },
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		polkadot_xcm: rococo_parachain_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
+		},
 	}
 }
 
@@ -216,7 +226,7 @@ fn seedling_testnet_genesis(
 	}
 }
 
-use parachains_common::Balance as StatemintBalance;
+use parachains_common::{Balance as StatemintBalance, StatemintAuraId};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type StatemintChainSpec =
@@ -240,14 +250,14 @@ pub fn get_public_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pa
 /// Generate collator keys from seed.
 ///
 /// This function's return type must always match the session keys of the chain in tuple format.
-pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
+pub fn get_collator_keys_from_seed<AuraId: Public>(seed: &str) -> <AuraId::Pair as Pair>::Public {
 	get_public_from_seed::<AuraId>(seed)
 }
 
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn statemint_session_keys(keys: AuraId) -> statemint_runtime::SessionKeys {
+pub fn statemint_session_keys(keys: StatemintAuraId) -> statemint_runtime::SessionKeys {
 	statemint_runtime::SessionKeys { aura: keys }
 }
 
@@ -267,6 +277,7 @@ pub fn westmint_session_keys(keys: AuraId) -> westmint_runtime::SessionKeys {
 
 pub fn statemint_development_config() -> StatemintChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("ss58Format".into(), 0.into());
 	properties.insert("tokenSymbol".into(), "DOT".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
@@ -281,7 +292,7 @@ pub fn statemint_development_config() -> StatemintChainSpec {
 				// initial collators.
 				vec![(
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_collator_keys_from_seed("Alice"),
+					get_collator_keys_from_seed::<StatemintAuraId>("Alice"),
 				)],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -295,6 +306,7 @@ pub fn statemint_development_config() -> StatemintChainSpec {
 		Vec::new(),
 		None,
 		None,
+		None,
 		Some(properties),
 		Extensions { relay_chain: "polkadot-dev".into(), para_id: 1000 },
 	)
@@ -302,6 +314,7 @@ pub fn statemint_development_config() -> StatemintChainSpec {
 
 pub fn statemint_local_config() -> StatemintChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("ss58Format".into(), 0.into());
 	properties.insert("tokenSymbol".into(), "DOT".into());
 	properties.insert("tokenDecimals".into(), 10.into());
 
@@ -317,11 +330,11 @@ pub fn statemint_local_config() -> StatemintChainSpec {
 				vec![
 					(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed("Alice"),
+						get_collator_keys_from_seed::<StatemintAuraId>("Alice"),
 					),
 					(
 						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed("Bob"),
+						get_collator_keys_from_seed::<StatemintAuraId>("Bob"),
 					),
 				],
 				vec![
@@ -344,13 +357,74 @@ pub fn statemint_local_config() -> StatemintChainSpec {
 		Vec::new(),
 		None,
 		None,
+		None,
 		Some(properties),
 		Extensions { relay_chain: "polkadot-local".into(), para_id: 1000 },
 	)
 }
 
+// Not used for syncing, but just to determine the genesis values set for the upgrade from shell.
+pub fn statemint_config() -> StatemintChainSpec {
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("ss58Format".into(), 0.into());
+	properties.insert("tokenSymbol".into(), "DOT".into());
+	properties.insert("tokenDecimals".into(), 10.into());
+
+	StatemintChainSpec::from_genesis(
+		// Name
+		"Statemint",
+		// ID
+		"statemint",
+		ChainType::Live,
+		move || {
+			statemint_genesis(
+				// initial collators.
+				vec![
+					(
+						hex!("4c3d674d2a01060f0ded218e5dcc6f90c1726f43df79885eb3e22d97a20d5421")
+							.into(),
+						hex!("4c3d674d2a01060f0ded218e5dcc6f90c1726f43df79885eb3e22d97a20d5421")
+							.unchecked_into(),
+					),
+					(
+						hex!("c7d7d38d16bc23c6321152c50306212dc22c0efc04a2e52b5cccfc31ab3d7811")
+							.into(),
+						hex!("c7d7d38d16bc23c6321152c50306212dc22c0efc04a2e52b5cccfc31ab3d7811")
+							.unchecked_into(),
+					),
+					(
+						hex!("c5c07ba203d7375675f5c1ebe70f0a5bb729ae57b48bcc877fcc2ab21309b762")
+							.into(),
+						hex!("c5c07ba203d7375675f5c1ebe70f0a5bb729ae57b48bcc877fcc2ab21309b762")
+							.unchecked_into(),
+					),
+					(
+						hex!("0b2d0013fb974794bd7aa452465b567d48ef70373fe231a637c1fb7c547e85b3")
+							.into(),
+						hex!("0b2d0013fb974794bd7aa452465b567d48ef70373fe231a637c1fb7c547e85b3")
+							.unchecked_into(),
+					),
+				],
+				vec![],
+				1000u32.into(),
+			)
+		},
+		vec![
+			"/ip4/34.65.251.121/tcp/30334/p2p/12D3KooWG3GrM6XKMM4gp3cvemdwUvu96ziYoJmqmetLZBXE8bSa".parse().unwrap(),
+			"/ip4/34.65.35.228/tcp/30334/p2p/12D3KooWMRyTLrCEPcAQD6c4EnudL3vVzg9zji3whvsMYPUYevpq".parse().unwrap(),
+			"/ip4/34.83.247.146/tcp/30334/p2p/12D3KooWE4jFh5FpJDkWVZhnWtFnbSqRhdjvC7Dp9b8b3FTuubQC".parse().unwrap(),
+			"/ip4/104.199.117.230/tcp/30334/p2p/12D3KooWG9R8pVXKumVo2rdkeVD4j5PVhRTqmYgLHY3a4yPYgLqM".parse().unwrap(),
+		],
+		None,
+		None,
+		None,
+		Some(properties),
+		Extensions { relay_chain: "polkadot".into(), para_id: 1000 },
+	)
+}
+
 fn statemint_genesis(
-	invulnerables: Vec<(AccountId, AuraId)>,
+	invulnerables: Vec<(AccountId, StatemintAuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> statemint_runtime::GenesisConfig {
@@ -386,6 +460,9 @@ fn statemint_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		polkadot_xcm: statemint_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
+		},
 	}
 }
 
@@ -406,7 +483,7 @@ pub fn statemine_development_config() -> StatemineChainSpec {
 				// initial collators.
 				vec![(
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_collator_keys_from_seed("Alice"),
+					get_collator_keys_from_seed::<AuraId>("Alice"),
 				)],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -418,6 +495,7 @@ pub fn statemine_development_config() -> StatemineChainSpec {
 			)
 		},
 		Vec::new(),
+		None,
 		None,
 		None,
 		Some(properties),
@@ -443,11 +521,11 @@ pub fn statemine_local_config() -> StatemineChainSpec {
 				vec![
 					(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed("Alice"),
+						get_collator_keys_from_seed::<AuraId>("Alice"),
 					),
 					(
 						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed("Bob"),
+						get_collator_keys_from_seed::<AuraId>("Bob"),
 					),
 				],
 				vec![
@@ -468,6 +546,7 @@ pub fn statemine_local_config() -> StatemineChainSpec {
 			)
 		},
 		Vec::new(),
+		None,
 		None,
 		None,
 		Some(properties),
@@ -523,6 +602,7 @@ pub fn statemine_config() -> StatemineChainSpec {
 		Vec::new(),
 		None,
 		None,
+		None,
 		Some(properties),
 		Extensions { relay_chain: "kusama".into(), para_id: 1000 },
 	)
@@ -567,6 +647,9 @@ fn statemine_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		polkadot_xcm: statemine_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
+		},
 	}
 }
 
@@ -586,7 +669,7 @@ pub fn westmint_development_config() -> WestmintChainSpec {
 				// initial collators.
 				vec![(
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_collator_keys_from_seed("Alice"),
+					get_collator_keys_from_seed::<AuraId>("Alice"),
 				)],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -594,11 +677,11 @@ pub fn westmint_development_config() -> WestmintChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				1000.into(),
 			)
 		},
 		Vec::new(),
+		None,
 		None,
 		None,
 		Some(properties),
@@ -623,11 +706,11 @@ pub fn westmint_local_config() -> WestmintChainSpec {
 				vec![
 					(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed("Alice"),
+						get_collator_keys_from_seed::<AuraId>("Alice"),
 					),
 					(
 						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed("Bob"),
+						get_collator_keys_from_seed::<AuraId>("Bob"),
 					),
 				],
 				vec![
@@ -644,11 +727,11 @@ pub fn westmint_local_config() -> WestmintChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				1000.into(),
 			)
 		},
 		Vec::new(),
+		None,
 		None,
 		None,
 		Some(properties),
@@ -697,12 +780,11 @@ pub fn westmint_config() -> WestmintChainSpec {
 					),
 				],
 				Vec::new(),
-				// re-use the Westend sudo key
-				hex!("6648d7f3382690650c681aba1b993cd11e54deb4df21a3a18c3e2177de9f7342").into(),
 				1000.into(),
 			)
 		},
 		Vec::new(),
+		None,
 		None,
 		None,
 		Some(properties),
@@ -713,7 +795,6 @@ pub fn westmint_config() -> WestmintChainSpec {
 fn westmint_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
-	root_key: AccountId,
 	id: ParaId,
 ) -> westmint_runtime::GenesisConfig {
 	westmint_runtime::GenesisConfig {
@@ -725,7 +806,6 @@ fn westmint_genesis(
 		balances: westmint_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, WESTMINT_ED * 4096)).collect(),
 		},
-		sudo: westmint_runtime::SudoConfig { key: Some(root_key) },
 		parachain_info: westmint_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: westmint_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
@@ -749,5 +829,264 @@ fn westmint_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		polkadot_xcm: westmint_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
+		},
+	}
+}
+
+/// We use the same runtime on kusama and rococo.
+pub type CanvasKusamaChainSpec =
+	sc_service::GenericChainSpec<canvas_kusama_runtime::GenesisConfig, Extensions>;
+
+/// No relay chain suffix because the id is the same over all relay chains.
+const CANVAS_PARACHAIN_ID: u32 = 1002;
+
+/// The existential deposit is determined by the runtime "canvas-kusama".
+const CANVAS_KUSAMA_ED: canvas_kusama_runtime::Balance =
+	canvas_kusama_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+
+pub fn canvas_rococo_development_config() -> CanvasKusamaChainSpec {
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("tokenSymbol".into(), "ROC".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
+	CanvasKusamaChainSpec::from_genesis(
+		// Name
+		"Canvas on Rococo Development",
+		// ID
+		"canvas-rococo-dev",
+		ChainType::Development,
+		move || {
+			canvas_kusama_genesis(
+				// initial collators.
+				vec![
+					(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed::<canvas_kusama_runtime::AuraId>("Alice"),
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed::<canvas_kusama_runtime::AuraId>("Bob"),
+					),
+				],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+				],
+				CANVAS_PARACHAIN_ID.into(),
+			)
+		},
+		Vec::new(),
+		None,
+		None,
+		None,
+		None,
+		Extensions {
+			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
+			para_id: CANVAS_PARACHAIN_ID,
+		},
+	)
+}
+
+pub fn canvas_rococo_local_config() -> CanvasKusamaChainSpec {
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("tokenSymbol".into(), "ROC".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
+	CanvasKusamaChainSpec::from_genesis(
+		// Name
+		"Canvas on Rococo",
+		// ID
+		"canvas-rococo-local",
+		ChainType::Local,
+		move || {
+			canvas_kusama_genesis(
+				// initial collators.
+				vec![
+					(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed::<canvas_kusama_runtime::AuraId>("Alice"),
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed::<canvas_kusama_runtime::AuraId>("Bob"),
+					),
+				],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+				],
+				CANVAS_PARACHAIN_ID.into(),
+			)
+		},
+		// Bootnodes
+		Vec::new(),
+		// Telemetry
+		None,
+		// Protocol ID
+		None,
+		// Fork ID
+		None,
+		// Properties
+		Some(properties),
+		// Extensions
+		Extensions {
+			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
+			para_id: CANVAS_PARACHAIN_ID,
+		},
+	)
+}
+
+pub fn canvas_rococo_config() -> CanvasKusamaChainSpec {
+	// Give your base currency a unit name and decimal places
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("tokenSymbol".into(), "ROC".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+
+	CanvasKusamaChainSpec::from_genesis(
+		// Name
+		"Canvas on Rococo",
+		// ID
+		"canvas-rococo",
+		ChainType::Live,
+		move || {
+			canvas_kusama_genesis(
+				vec![
+					// 5GKFbTTgrVS4Vz1UWWHPqMZQNFWZtqo7H2KpCDyYhEL3aS26
+					(
+						hex!["bc09354c12c054c8f6b3da208485eacec4ac648bad348895273b37bab5a0937c"]
+							.into(),
+						hex!["bc09354c12c054c8f6b3da208485eacec4ac648bad348895273b37bab5a0937c"]
+							.unchecked_into(),
+					),
+					// 5EPRJHm2GpABVWcwnAujcrhnrjFZyDGd5TwKFzkBoGgdRyv2
+					(
+						hex!["66be63b7bcbfb91040e5248e2d1ceb822cf219c57848c5924ffa3a1f8e67ba72"]
+							.into(),
+						hex!["66be63b7bcbfb91040e5248e2d1ceb822cf219c57848c5924ffa3a1f8e67ba72"]
+							.unchecked_into(),
+					),
+					// 5GH62vrJrVZxLREcHzm2PR5uTLAT5RQMJitoztCGyaP4o3uM
+					(
+						hex!["ba62886472a0a9f66b5e39f1469ce1c5b3d8cad6be39078daf16f111e89d1e44"]
+							.into(),
+						hex!["ba62886472a0a9f66b5e39f1469ce1c5b3d8cad6be39078daf16f111e89d1e44"]
+							.unchecked_into(),
+					),
+					// 5FHfoJDLdjRYX5KXLRqMDYBbWrwHLMtti21uK4QByUoUAbJF
+					(
+						hex!["8e97f65cda001976311df9bed39e8d0c956089093e94a75ef76fe9347a0eda7b"]
+							.into(),
+						hex!["8e97f65cda001976311df9bed39e8d0c956089093e94a75ef76fe9347a0eda7b"]
+							.unchecked_into(),
+					),
+				],
+				// Warning: The configuration for a production chain should not contain
+				// any endowed accounts here, otherwise it'll be minting extra native tokens
+				// from the relay chain on the parachain.
+				vec![
+					// NOTE: Remove endowed accounts if deployed on other relay chains.
+					// Endowed accounts
+					hex!["baa78c7154c7f82d6d377177e20bcab65d327eca0086513f9964f5a0f6bdad56"].into(),
+					// AccountId of an account which `ink-waterfall` uses for automated testing
+					hex!["0e47e2344d523c3cc5c34394b0d58b9a4200e813a038e6c5a6163cc07d70b069"].into(),
+				],
+				CANVAS_PARACHAIN_ID.into(),
+			)
+		},
+		// Bootnodes
+		vec![
+			"/ip4/34.90.191.237/tcp/30333/p2p/12D3KooWKg3Rpxcr9oJ8n6khoxpGKWztCZydtUZk2cojHqnfLrpj"
+				.parse()
+				.expect("MultiaddrWithPeerId"),
+			"/ip4/35.204.68.28/tcp/30333/p2p/12D3KooWPEXYrz8tHU3nDtPoPw4V7ou5dzMEWSTuUj7vaWiYVAVh"
+				.parse()
+				.expect("MultiaddrWithPeerId"),
+			"/ip4/34.90.139.15/tcp/30333/p2p/12D3KooWEVU8AFNary4nP4qEnEcwJaRuy59Wefekzdu9pKbnVEhk"
+				.parse()
+				.expect("MultiaddrWithPeerId"),
+			"/ip4/35.204.99.97/tcp/30333/p2p/12D3KooWP6pV3ZmcXzGDjv8ZMgA6nZxfAKDxSz4VNiLx6vVCQgJX"
+				.parse()
+				.expect("MultiaddrWithPeerId"),
+		],
+		// Telemetry
+		None,
+		// Protocol ID
+		None,
+		// Fork ID
+		None,
+		// Properties
+		Some(properties),
+		// Extensions
+		Extensions { relay_chain: "rococo".into(), para_id: CANVAS_PARACHAIN_ID },
+	)
+}
+
+fn canvas_kusama_genesis(
+	invulnerables: Vec<(AccountId, AuraId)>,
+	endowed_accounts: Vec<AccountId>,
+	id: ParaId,
+) -> canvas_kusama_runtime::GenesisConfig {
+	canvas_kusama_runtime::GenesisConfig {
+		system: canvas_kusama_runtime::SystemConfig {
+			code: canvas_kusama_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!")
+				.to_vec(),
+		},
+		balances: canvas_kusama_runtime::BalancesConfig {
+			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
+		},
+		parachain_info: canvas_kusama_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: canvas_kusama_runtime::CollatorSelectionConfig {
+			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
+			candidacy_bond: CANVAS_KUSAMA_ED * 16,
+			..Default::default()
+		},
+		session: canvas_kusama_runtime::SessionConfig {
+			keys: invulnerables
+				.into_iter()
+				.map(|(acc, aura)| {
+					(
+						acc.clone(),                                 // account id
+						acc,                                         // validator id
+						canvas_kusama_runtime::SessionKeys { aura }, // session keys
+					)
+				})
+				.collect(),
+		},
+		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
+		// of this.
+		aura: Default::default(),
+		aura_ext: Default::default(),
+		parachain_system: Default::default(),
+		polkadot_xcm: canvas_kusama_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
+		},
+		sudo: canvas_kusama_runtime::SudoConfig {
+			key: Some(
+				hex!["2681a28014e7d3a5bfb32a003b3571f53c408acbc28d351d6bf58f5028c4ef14"].into(),
+			),
+		},
 	}
 }

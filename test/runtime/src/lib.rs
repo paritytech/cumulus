@@ -68,7 +68,7 @@ impl_opaque_keys! {
 	pub struct SessionKeys {}
 }
 
-/// Some key that we set in genesis and only read in [`TestRuntimeUpgrade`] to ensure that
+/// Some key that we set in genesis and only read in [`TestOnRuntimeUpgrade`] to ensure that
 /// [`OnRuntimeUpgrade`] works as expected.
 pub const TEST_RUNTIME_UPGRADE_KEY: &[u8] = b"+test_runtime_upgrade_key+";
 
@@ -259,7 +259,7 @@ impl pallet_sudo::Config for Runtime {
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type SelfParaId = ParachainId;
 	type Event = Event;
-	type OnValidationData = ();
+	type OnSystemEvent = ();
 	type OutboundXcmpMessageSource = ();
 	type DmpMessageHandler = ();
 	type ReservedDmpWeight = ();
@@ -440,8 +440,8 @@ impl_runtime_apis! {
 	}
 
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
-		fn collect_collation_info() -> cumulus_primitives_core::CollationInfo {
-			ParachainSystem::collect_collation_info()
+		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
+			ParachainSystem::collect_collation_info(header)
 		}
 	}
 }

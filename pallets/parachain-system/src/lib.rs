@@ -27,9 +27,10 @@
 //!
 //! Users must ensure that they register this pallet as an inherent provider.
 
+use codec::Encode;
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
-	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError, OnValidationData,
+	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError,
 	OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage, UpwardMessageSender,
 	XcmpMessageHandler, XcmpMessageSource,
 };
@@ -44,7 +45,6 @@ use frame_support::{
 };
 use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
-use relay_state_snapshot::MessagingStateSnapshot;
 use sp_runtime::{
 	traits::{Block as BlockT, BlockNumberProvider, Hash},
 	transaction_validity::{
@@ -84,7 +84,7 @@ mod tests;
 /// # fn main() {}
 /// ```
 pub use cumulus_pallet_parachain_system_proc_macro::register_validate_block;
-pub use relay_state_snapshot::RelayChainStateProof;
+pub use relay_state_snapshot::{MessagingStateSnapshot, RelayChainStateProof};
 
 pub use pallet::*;
 
@@ -96,6 +96,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::storage_version(migration::STORAGE_VERSION)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
@@ -104,7 +105,7 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		/// Something which can be notified when the validation data is set.
-		type OnValidationData: OnValidationData;
+		type OnSystemEvent: OnSystemEvent;
 
 		/// Returns the parachain ID we are running with.
 		type SelfParaId: Get<ParaId>;
@@ -328,6 +329,7 @@ pub mod pallet {
 					let validation_code = <PendingValidationCode<T>>::take();
 
 					Self::put_parachain_code(&validation_code);
+					<T::OnSystemEvent as OnSystemEvent>::on_validation_code_applied();
 					Self::deposit_event(Event::ValidationFunctionApplied(vfp.relay_parent_number));
 				},
 				Some(relay_chain::v1::UpgradeGoAhead::Abort) => {
@@ -353,7 +355,7 @@ pub mod pallet {
 			<RelevantMessagingState<T>>::put(relevant_messaging_state.clone());
 			<HostConfiguration<T>>::put(host_config);
 
-			<T::OnValidationData as OnValidationData>::on_validation_data(&vfp);
+			<T::OnSystemEvent as OnSystemEvent>::on_validation_data(&vfp);
 
 			// TODO: This is more than zero, but will need benchmarking to figure out what.
 			let mut total_weight = 0;
@@ -396,7 +398,7 @@ pub mod pallet {
 			code: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			Self::validate_authorized_upgrade(&code[..])?;
-			Self::set_code_impl(code)?;
+			Self::schedule_code_upgrade(code)?;
 			AuthorizedUpgrade::<T>::kill();
 			Ok(Pays::No.into())
 		}
@@ -602,7 +604,7 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
-			//TODO: Remove after https://github.com/paritytech/cumulus/issues/479
+			// TODO: Remove after https://github.com/paritytech/cumulus/issues/479
 			sp_io::storage::set(b":c", &[]);
 		}
 	}
@@ -882,7 +884,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// The implementation of the runtime upgrade functionality for parachains.
-	fn set_code_impl(validation_function: Vec<u8>) -> DispatchResult {
+	pub fn schedule_code_upgrade(validation_function: Vec<u8>) -> DispatchResult {
 		// Ensure that `ValidationData` exists. We do not care about the validation data per se,
 		// but we do care about the [`UpgradeRestrictionSignal`] which arrives with the same inherent.
 		ensure!(<ValidationData<T>>::exists(), Error::<T>::ValidationDataNotAvailable,);
@@ -908,15 +910,22 @@ impl<T: Config> Pallet<T> {
 
 	/// Returns the [`CollationInfo`] of the current active block.
 	///
+	/// The given `header` is the header of the built block we are collecting the collation info for.
+	///
 	/// This is expected to be used by the
 	/// [`CollectCollationInfo`](cumulus_primitives_core::CollectCollationInfo) runtime api.
-	pub fn collect_collation_info() -> CollationInfo {
+	pub fn collect_collation_info(header: &T::Header) -> CollationInfo {
 		CollationInfo {
 			hrmp_watermark: HrmpWatermark::<T>::get(),
 			horizontal_messages: HrmpOutboundMessages::<T>::get(),
 			upward_messages: UpwardMessages::<T>::get(),
 			processed_downward_messages: ProcessedDownwardMessages::<T>::get(),
 			new_validation_code: NewValidationCode::<T>::get().map(Into::into),
+			// Check if there is a custom header that will also be returned by the validation phase.
+			// If so, we need to also return it here.
+			head_data: CustomValidationHeadData::<T>::get()
+				.map_or_else(|| header.encode(), |v| v)
+				.into(),
 		}
 	}
 
@@ -941,7 +950,7 @@ pub struct ParachainSetCode<T>(sp_std::marker::PhantomData<T>);
 
 impl<T: Config> frame_system::SetCode<T> for ParachainSetCode<T> {
 	fn set_code(code: Vec<u8>) -> DispatchResult {
-		Pallet::<T>::set_code_impl(code)
+		Pallet::<T>::schedule_code_upgrade(code)
 	}
 }
 
@@ -997,6 +1006,21 @@ pub trait CheckInherents<Block: BlockT> {
 		block: &Block,
 		validation_data: &RelayChainStateProof,
 	) -> frame_support::inherent::CheckInherentsResult;
+}
+
+/// Something that should be informed about system related events.
+///
+/// This includes events like [`on_validation_data`](Self::on_validation_data) that is being
+/// called when the parachain inherent is executed that contains the validation data.
+/// Or like [`on_validation_code_applied`](Self::on_validation_code_applied) that is called
+/// when the new validation is written to the state. This means that
+/// from the next block the runtime is being using this new code.
+#[impl_trait_for_tuples::impl_for_tuples(30)]
+pub trait OnSystemEvent {
+	/// Called in each blocks once when the validation data is set by the inherent.
+	fn on_validation_data(data: &PersistedValidationData);
+	/// Called when the validation code is being applied, aka from the next block on this is the new runtime.
+	fn on_validation_code_applied();
 }
 
 /// Implements [`BlockNumberProvider`] that returns relay chain block number fetched from

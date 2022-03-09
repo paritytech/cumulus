@@ -14,19 +14,20 @@
 // limitations under the License.
 
 pub mod currency {
-	use node_primitives::Balance;
+	use polkadot_core_primitives::Balance;
+	use westend_runtime_constants as constants;
 
 	/// The existential deposit. Set to 1/10 of its parent Relay Chain.
-	pub const EXISTENTIAL_DEPOSIT: Balance = 100 * MILLICENTS;
+	pub const EXISTENTIAL_DEPOSIT: Balance = constants::currency::EXISTENTIAL_DEPOSIT / 10;
 
-	pub const UNITS: Balance = 1_000_000_000_000;
-	pub const CENTS: Balance = UNITS / 100;
-	pub const MILLICENTS: Balance = CENTS / 1_000;
-	pub const GRAND: Balance = CENTS * 100_000;
+	pub const UNITS: Balance = constants::currency::UNITS;
+	pub const CENTS: Balance = constants::currency::CENTS;
+	pub const MILLICENTS: Balance = constants::currency::MILLICENTS;
+	pub const GRAND: Balance = constants::currency::GRAND;
 
 	pub const fn deposit(items: u32, bytes: u32) -> Balance {
 		// 1/10 of Westend testnet
-		(items as Balance * 100 * CENTS + (bytes as Balance) * 5 * MILLICENTS) / 10
+		constants::currency::deposit(items, bytes) / 10
 	}
 }
 
@@ -36,7 +37,7 @@ pub mod fee {
 		constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
 		WeightToFeePolynomial,
 	};
-	use node_primitives::Balance;
+	use polkadot_core_primitives::Balance;
 	use smallvec::smallvec;
 	pub use sp_runtime::Perbill;
 

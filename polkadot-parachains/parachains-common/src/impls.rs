@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Auxillary struct/enums for parachain runtimes.
+//! Auxiliary struct/enums for parachain runtimes.
 //! Taken from polkadot/runtime/common (at a21cd64) and adapted for parachains.
 
 use frame_support::traits::{
@@ -44,13 +44,8 @@ where
 	<R as frame_system::Config>::Event: From<pallet_balances::Event<R>>,
 {
 	fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
-		let numeric_amount = amount.peek();
 		let staking_pot = <pallet_collator_selection::Pallet<R>>::account_id();
 		<pallet_balances::Pallet<R>>::resolve_creating(&staking_pot, amount);
-		<frame_system::Pallet<R>>::deposit_event(pallet_balances::Event::Deposit {
-			who: staking_pot,
-			amount: numeric_amount,
-		});
 	}
 }
 
@@ -135,6 +130,7 @@ mod tests {
 
 	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 	type Block = frame_system::mocking::MockBlock<Test>;
+	const TEST_ACCOUNT: AccountId = AccountId::new([1; 32]);
 
 	frame_support::construct_runtime!(
 		pub enum Test where
@@ -200,7 +196,7 @@ mod tests {
 		where
 			I: 'a,
 		{
-			Some(Default::default())
+			Some(TEST_ACCOUNT)
 		}
 	}
 
@@ -255,7 +251,7 @@ mod tests {
 			let fee = Balances::issue(10);
 			let tip = Balances::issue(20);
 
-			assert_eq!(Balances::free_balance(AccountId::default()), 0);
+			assert_eq!(Balances::free_balance(TEST_ACCOUNT), 0);
 
 			DealWithFees::on_unbalanceds(vec![fee, tip].into_iter());
 

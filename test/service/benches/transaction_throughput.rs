@@ -71,7 +71,7 @@ fn create_account_extrinsics(client: &Client, accounts: &[sr25519::Pair]) -> Vec
 						call: Box::new(
 							BalancesCall::set_balance {
 								who: AccountId::from(a.public()).into(),
-								new_free: 1_000_000 * ExistentialDeposit::get(),
+								new_free: 1_000_000_000_000 * ExistentialDeposit::get(),
 								new_reserved: 0,
 							}
 							.into(),
@@ -151,6 +151,7 @@ fn transaction_throughput_benchmarks(c: &mut Criterion) {
 		Alice,
 		|| {},
 		vec![],
+		None,
 	);
 
 	// Start bob
@@ -159,6 +160,7 @@ fn transaction_throughput_benchmarks(c: &mut Criterion) {
 		Bob,
 		|| {},
 		vec![alice.addr.clone()],
+		None,
 	);
 
 	// Register parachain

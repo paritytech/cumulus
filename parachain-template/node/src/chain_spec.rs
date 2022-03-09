@@ -10,6 +10,9 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 pub type ChainSpec =
 	sc_service::GenericChainSpec<parachain_template_runtime::GenesisConfig, Extensions>;
 
+/// The default XCM version to set in genesis config.
+const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
+
 /// Helper function to generate a crypto pair from seed
 pub fn get_public_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
 	TPublic::Pair::from_string(&format!("//{}", seed), None)
@@ -105,6 +108,7 @@ pub fn development_config() -> ChainSpec {
 		None,
 		None,
 		None,
+		None,
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
 			para_id: 1000,
@@ -161,6 +165,8 @@ pub fn local_testnet_config() -> ChainSpec {
 		None,
 		// Protocol ID
 		Some("template-local"),
+		// Fork ID
+		None,
 		// Properties
 		Some(properties),
 		// Extensions
@@ -208,5 +214,8 @@ fn testnet_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		polkadot_xcm: parachain_template_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
+		},
 	}
 }

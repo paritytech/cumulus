@@ -17,6 +17,7 @@ variables:                         &default-vars
   CI_IMAGE:                        "paritytech/ci-linux:production"
   DOCKER_OS:                       "debian:stretch"
   ARCH:                            "x86_64"
+  WASM_BUILD_WORKSPACE_HINT:       "/builds/parity/cumulus/"
 
 .rust-info-script:                 &rust-info-script
   - rustup show
@@ -113,6 +114,8 @@ check-runtime-benchmarks:
   script:
     # Check that the node will compile with `runtime-benchmarks` feature flag.
     - time cargo check --all --features runtime-benchmarks
+    # Check that parachain-template will compile with `runtime-benchmarks` feature flag.
+    - time cargo check -p parachain-template-node --features runtime-benchmarks
     - sccache -s
 
 cargo-check-try-runtime:
@@ -121,6 +124,8 @@ cargo-check-try-runtime:
   script:
     # Check that the node will compile with `try-runtime` feature flag.
     - time cargo check --all --features try-runtime
+    # Check that parachain-template will compile with `try-runtime` feature flag.
+    - time cargo check -p parachain-template-node --features try-runtime
     - sccache -s
 
 cargo-check-benches:
@@ -128,6 +133,17 @@ cargo-check-benches:
   <<:                              *docker-env
   script:
     - time cargo check --all --benches
+    - sccache -s
+
+check-rustdoc:
+  stage:                           test
+  <<:                              *docker-env
+  variables:
+    <<:                            *default-vars
+    SKIP_WASM_BUILD:               1
+    RUSTDOCFLAGS:                  "-Dwarnings"
+  script:
+    - time cargo +nightly doc --workspace --all-features --verbose --no-deps
     - sccache -s
 
 #### stage:                        publish

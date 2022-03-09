@@ -23,25 +23,24 @@ use cumulus_primitives_core::{
 	ParaId, PersistedValidationData,
 };
 use cumulus_relay_chain_interface::RelayChainInterface;
-use sp_runtime::generic::BlockId;
 
 const LOG_TARGET: &str = "parachain-inherent";
 
 /// Collect the relevant relay chain state in form of a proof for putting it into the validation
 /// data inherent.
-fn collect_relay_storage_proof(
+async fn collect_relay_storage_proof(
 	relay_chain_interface: &impl RelayChainInterface,
 	para_id: ParaId,
 	relay_parent: PHash,
 ) -> Option<sp_state_machine::StorageProof> {
 	use relay_chain::well_known_keys as relay_well_known_keys;
 
-	let relay_parent_block_id = BlockId::Hash(relay_parent);
 	let ingress_channels = relay_chain_interface
 		.get_storage_by_key(
-			&relay_parent_block_id,
+			relay_parent,
 			&relay_well_known_keys::hrmp_ingress_channel_index(para_id),
 		)
+		.await
 		.map_err(|e| {
 			tracing::error!(
 				target: LOG_TARGET,
@@ -67,9 +66,10 @@ fn collect_relay_storage_proof(
 
 	let egress_channels = relay_chain_interface
 		.get_storage_by_key(
-			&relay_parent_block_id,
+			relay_parent,
 			&relay_well_known_keys::hrmp_egress_channel_index(para_id),
 		)
+		.await
 		.map_err(|e| {
 			tracing::error!(
 				target: LOG_TARGET,
@@ -108,26 +108,57 @@ fn collect_relay_storage_proof(
 		relay_well_known_keys::hrmp_channels(HrmpChannelId { sender: para_id, recipient })
 	}));
 
-	relay_chain_interface.prove_read(&relay_parent_block_id, &relevant_keys).ok()?
+	relay_chain_interface
+		.prove_read(relay_parent, &relevant_keys)
+		.await
+		.map_err(|e| {
+			tracing::error!(
+				target: LOG_TARGET,
+				relay_parent = ?relay_parent,
+				error = ?e,
+				"Cannot obtain read proof from relay chain.",
+			);
+		})
+		.ok()
 }
 
 impl ParachainInherentData {
 	/// Create the [`ParachainInherentData`] at the given `relay_parent`.
 	///
 	/// Returns `None` if the creation failed.
-	pub fn create_at(
+	pub async fn create_at(
 		relay_parent: PHash,
 		relay_chain_interface: &impl RelayChainInterface,
 		validation_data: &PersistedValidationData,
 		para_id: ParaId,
 	) -> Option<ParachainInherentData> {
 		let relay_chain_state =
-			collect_relay_storage_proof(relay_chain_interface, para_id, relay_parent)?;
+			collect_relay_storage_proof(relay_chain_interface, para_id, relay_parent).await?;
 
-		let downward_messages =
-			relay_chain_interface.retrieve_dmq_contents(para_id, relay_parent)?;
+		let downward_messages = relay_chain_interface
+			.retrieve_dmq_contents(para_id, relay_parent)
+			.await
+			.map_err(|e| {
+				tracing::error!(
+					target: LOG_TARGET,
+					relay_parent = ?relay_parent,
+					error = ?e,
+					"An error occured during requesting the downward messages.",
+				);
+			})
+			.ok()?;
 		let horizontal_messages = relay_chain_interface
-			.retrieve_all_inbound_hrmp_channel_contents(para_id, relay_parent)?;
+			.retrieve_all_inbound_hrmp_channel_contents(para_id, relay_parent)
+			.await
+			.map_err(|e| {
+				tracing::error!(
+					target: LOG_TARGET,
+					relay_parent = ?relay_parent,
+					error = ?e,
+					"An error occured during requesting the inbound HRMP messages.",
+				);
+			})
+			.ok()?;
 
 		Some(ParachainInherentData {
 			downward_messages,

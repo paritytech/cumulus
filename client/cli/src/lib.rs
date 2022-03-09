@@ -18,7 +18,7 @@
 
 #![warn(missing_docs)]
 
-use sc_cli;
+use clap::Parser;
 use sc_service::{
 	config::{PrometheusConfig, TelemetryEndpoints},
 	BasePath, TransactionPoolOptions,
@@ -28,21 +28,21 @@ use std::{
 	io::{self, Write},
 	net::SocketAddr,
 };
-use structopt::StructOpt;
+use url::Url;
 
 /// The `purge-chain` command used to remove the whole chain: the parachain and the relay chain.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct PurgeChainCmd {
 	/// The base struct of the purge-chain command.
-	#[structopt(flatten)]
+	#[clap(flatten)]
 	pub base: sc_cli::PurgeChainCmd,
 
 	/// Only delete the para chain database
-	#[structopt(long, aliases = &["para"])]
+	#[clap(long, aliases = &["para"])]
 	pub parachain: bool,
 
 	/// Only delete the relay chain database
-	#[structopt(long, aliases = &["relay"])]
+	#[clap(long, aliases = &["relay"])]
 	pub relaychain: bool,
 }
 
@@ -54,8 +54,9 @@ impl PurgeChainCmd {
 		relay_config: sc_service::Configuration,
 	) -> sc_cli::Result<()> {
 		let databases = match (self.parachain, self.relaychain) {
-			(true, true) | (false, false) =>
-				vec![("parachain", para_config.database), ("relaychain", relay_config.database)],
+			(true, true) | (false, false) => {
+				vec![("parachain", para_config.database), ("relaychain", relay_config.database)]
+			},
 			(true, false) => vec![("parachain", para_config.database)],
 			(false, true) => vec![("relaychain", relay_config.database)],
 		};
@@ -118,18 +119,54 @@ impl sc_cli::CliConfiguration for PurgeChainCmd {
 	}
 }
 
+fn validate_relay_chain_url(arg: &str) -> Result<(), String> {
+	let url = Url::parse(arg).map_err(|e| e.to_string())?;
+
+	if url.scheme() == "ws" {
+		Ok(())
+	} else {
+		Err(format!(
+			"'{}' URL scheme not supported. Only websocket RPC is currently supported",
+			url.scheme()
+		))
+	}
+}
+
 /// The `run` command used to run a node.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct RunCmd {
 	/// The cumulus RunCmd inherents from sc_cli's
-	#[structopt(flatten)]
+	#[clap(flatten)]
 	pub base: sc_cli::RunCmd,
 
 	/// Run node as collator.
 	///
 	/// Note that this is the same as running with `--validator`.
-	#[structopt(long, conflicts_with = "validator")]
+	#[clap(long, conflicts_with = "validator")]
 	pub collator: bool,
+
+	/// EXPERIMENTAL: Specify an URL to a relay chain full node to communicate with.
+	#[clap(
+		long,
+		parse(try_from_str),
+		validator = validate_relay_chain_url,
+		conflicts_with = "collator",
+		conflicts_with = "validator",
+		conflicts_with = "alice",
+		conflicts_with = "bob",
+		conflicts_with = "charlie",
+		conflicts_with = "dave",
+		conflicts_with = "eve",
+		conflicts_with = "ferdie"
+	)]
+	pub relay_chain_rpc_url: Option<Url>,
+}
+
+/// Options only relevant for collator nodes
+#[derive(Clone, Debug)]
+pub struct CollatorOptions {
+	/// Location of relay chain full node
+	pub relay_chain_rpc_url: Option<Url>,
 }
 
 /// A non-redundant version of the `RunCmd` that sets the `validator` field when the
@@ -148,6 +185,11 @@ impl RunCmd {
 		new_base.validator = self.base.validator || self.collator;
 
 		NormalizedRunCmd { base: new_base }
+	}
+
+	/// Create [`CollatorOptions`] representing options only relevant to parachain collator nodes
+	pub fn collator_options(&self) -> CollatorOptions {
+		CollatorOptions { relay_chain_rpc_url: self.relay_chain_rpc_url.clone() }
 	}
 }
 
@@ -231,12 +273,24 @@ impl sc_cli::CliConfiguration for NormalizedRunCmd {
 		self.base.rpc_methods()
 	}
 
+	fn rpc_max_payload(&self) -> sc_cli::Result<Option<usize>> {
+		self.base.rpc_max_payload()
+	}
+
+	fn ws_max_out_buffer_capacity(&self) -> sc_cli::Result<Option<usize>> {
+		self.base.ws_max_out_buffer_capacity()
+	}
+
 	fn transaction_pool(&self) -> sc_cli::Result<TransactionPoolOptions> {
 		self.base.transaction_pool()
 	}
 
 	fn max_runtime_instances(&self) -> sc_cli::Result<Option<usize>> {
 		self.base.max_runtime_instances()
+	}
+
+	fn runtime_cache_size(&self) -> sc_cli::Result<u8> {
+		self.base.runtime_cache_size()
 	}
 
 	fn base_path(&self) -> sc_cli::Result<Option<BasePath>> {
