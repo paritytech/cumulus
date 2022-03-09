@@ -65,7 +65,7 @@ variables:                         &default-vars
 
 #### stage:                        test
 
-test-linux-stable:
+.test-linux-stable:
   stage:                           test
   <<:                              *docker-env
   rules:
@@ -103,7 +103,7 @@ test-linux-stable:
       fi
     - sccache -s
 
-check-runtime-benchmarks:
+.check-runtime-benchmarks:
   stage:                           test
   <<:                              *docker-env
   script:
@@ -113,7 +113,7 @@ check-runtime-benchmarks:
     - time cargo check -p parachain-template-node --features runtime-benchmarks
     - sccache -s
 
-cargo-check-try-runtime:
+.cargo-check-try-runtime:
   stage:                           test
   <<:                              *docker-env
   script:
@@ -123,14 +123,14 @@ cargo-check-try-runtime:
     - time cargo check -p parachain-template-node --features try-runtime
     - sccache -s
 
-cargo-check-benches:
+.cargo-check-benches:
   stage:                           test
   <<:                              *docker-env
   script:
     - time cargo check --all --benches
     - sccache -s
 
-check-rustdoc:
+.check-rustdoc:
   stage:                           test
   <<:                              *docker-env
   variables:
