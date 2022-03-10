@@ -14,10 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
-use core::future::Future;
-use futures::future;
 use lru::LruCache;
-use polkadot_core_primitives::HashT;
 use polkadot_node_network_protocol::request_response::{
 	v1::{AvailableDataFetchingRequest, CollationFetchingRequest},
 	IncomingRequest, IncomingRequestReceiver,
@@ -36,16 +33,11 @@ use polkadot_service::{
 	AuthorityDiscoveryApi, Error, OverseerConnector,
 };
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
-use sc_transaction_pool::PolledIterator;
-use sc_transaction_pool_api::{
-	ImportNotificationStream, MaintainedTransactionPool, PoolFuture, PoolStatus, TransactionFor,
-	TransactionSource, TransactionStatusStreamFor, TxHash,
-};
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{Error as ConsensusError, SelectChain};
 use sp_runtime::traits::NumberFor;
 
-use std::{collections::HashMap, pin::Pin, sync::Arc};
+use std::sync::Arc;
 
 use cumulus_primitives_core::relay_chain::{v2::ParachainHost, Block, BlockId, Hash as PHash};
 use cumulus_relay_chain_rpc_interface::RelayChainRPCClient;
@@ -53,7 +45,7 @@ use cumulus_relay_chain_rpc_interface::RelayChainRPCClient;
 use polkadot_client::FullBackend;
 use polkadot_service::{
 	AuxStore, BabeApi, Configuration, ConstructRuntimeApi, FullClient, Handle, IdentifyVariant,
-	NativeExecutionDispatch, OverseerGen, RuntimeApiCollection, SelectRelayChain, TaskManager,
+	NativeExecutionDispatch, OverseerGen, RuntimeApiCollection, TaskManager,
 };
 
 use sc_telemetry::TelemetryWorkerHandle;
