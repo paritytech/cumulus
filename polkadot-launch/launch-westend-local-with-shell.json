@@ -1,7 +1,7 @@
 {
 	"relaychain": {
 		"bin": "../../../bin/polkadot-0.9.17",
-		"chain": "kusama-local",
+		"chain": "westend-local",
 		"nodes": [
 			{
 				"name": "alice",
@@ -21,6 +21,24 @@
 		]
 	},
 	"parachains": [
+		{
+			"bin": "./../target/release/integritee-collator",
+			"chain": "shell-westend-local-dev",
+			"nodes": [
+				{
+					"wsPort": 9944,
+					"port": 31200,
+					"name": "dave",
+					"flags": ["--", "--execution=wasm"]
+				},
+				{
+					"wsPort": 9945,
+					"port": 31201,
+					"name": "eve",
+					"flags": ["--", "--execution=wasm"]
+				}
+			]
+		}
 	],
 	"simpleParachains": [
 	],

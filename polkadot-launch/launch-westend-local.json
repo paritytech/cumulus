@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../../../bin/polkadot-0.9.13",
+		"bin": "../../../bin/polkadot-0.9.17",
 		"chain": "westend-local",
 		"nodes": [
 			{

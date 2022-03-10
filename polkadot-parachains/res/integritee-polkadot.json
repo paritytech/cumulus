@@ -1,5 +1,6 @@
 {
-  "bootNodes": [],
+  "bootNodes": [
+  ],
   "chainType": "Live",
   "codeSubstitutes": {},
   "consensusEngine": null,
@@ -8,7 +9,7 @@
     "raw": {
       "childrenDefault": {},
       "top": {
-        "0x0d715f2646c8f85767b5d2764bb2782604a74d81251e398fd8a0a4d55023bb3f": "0x19080000",
+        "0x0d715f2646c8f85767b5d2764bb2782604a74d81251e398fd8a0a4d55023bb3f": "0xf7070000",
         "0x0d715f2646c8f85767b5d2764bb278264e7b9012096b41c4eb3aaf947f6ea429": "0x0000",
         "0x26aa394eea5630e07c48ae0c9558cef74e7b9012096b41c4eb3aaf947f6ea429": "0x0000",
         "0x26aa394eea5630e07c48ae0c9558cef75684a022a34dd8bfa2baaf44f172b710": "0x01",
@@ -38,15 +39,15 @@
       }
     }
   },
-  "id": "integritee-rococo",
+  "id": "integritee-polkadot",
   "name": "Integritee Shell",
-  "para_id": 2073,
+  "para_id": 2039,
   "properties": {
     "ss58Format": 13,
     "tokenDecimals": 12,
     "tokenSymbol": "TEER"
   },
-  "protocolId": "teer-r",
-  "relay_chain": "rococo",
+  "protocolId": "teer-p",
+  "relay_chain": "polkadot",
   "telemetryEndpoints": null
 }

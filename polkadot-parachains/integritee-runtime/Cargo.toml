@@ -2,7 +2,7 @@
 name = 'integritee-runtime'
 description = "The Integritee parachain runtime"
 # patch revision must match runtime spec_version
-version = '1.4.12'
+version = '1.5.13'
 authors = ["Integritee AG <hello@integritee.network>"]
 homepage = "https://integritee.network/"
 repository = "https://github.com/integritee-network/parachain"

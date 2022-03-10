@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../../../bin/polkadot-0.9.13",
+		"bin": "../../../bin/polkadot-0.9.17",
 		"chain": "rococo-local",
 		"nodes": [
 			{
@@ -33,7 +33,7 @@
 				},
 				{
 					"wsPort": 9945,
-					"port": 31200,
+					"port": 31201,
 					"name": "eve",
 					"flags": ["--", "--execution=wasm"]
 				}

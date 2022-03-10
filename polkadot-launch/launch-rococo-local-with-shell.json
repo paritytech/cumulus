@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../../../bin/polkadot-0.9.13",
+		"bin": "../../../bin/polkadot-0.9.17",
 		"chain": "rococo-local",
 		"nodes": [
 			{
@@ -24,7 +24,6 @@
 		{
 			"bin": "./../target/release/integritee-collator",
 			"chain": "shell-rococo-local-dev",
-			"balance": "10_000_000__000_000_000_000",
 			"nodes": [
 				{
 					"wsPort": 9944,
@@ -34,7 +33,7 @@
 				},
 				{
 					"wsPort": 9945,
-					"port": 31200,
+					"port": 31201,
 					"name": "eve",
 					"flags": ["--", "--execution=wasm"]
 				}

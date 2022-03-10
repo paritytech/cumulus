@@ -18,9 +18,8 @@
 use crate::{
 	chain_spec,
 	chain_spec::{
-		integritee_chain_spec, integritee_kusama_config, integritee_rococo_config,
-		integritee_westend_config, shell_chain_spec, shell_kusama_config, shell_rococo_config,
-		shell_westend_config, GenesisKeys, RelayChain, ShellChainSpec,
+		integritee_chain_spec, shell_chain_spec, shell_kusama_config, shell_polkadot_config,
+		shell_rococo_config, shell_westend_config, GenesisKeys, RelayChain, ShellChainSpec,
 	},
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{
@@ -42,7 +41,11 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 
-const DEFAULT_PARA_ID: u32 = 2015;
+const LOCAL_PARA_ID: u32 = 2000;
+const ROCOCO_PARA_ID: u32 = 2073;
+const WESTEND_PARA_ID: u32 = 2081;
+const KUSAMA_PARA_ID: u32 = 2015;
+const POLKADOT_PARA_ID: u32 = 2039;
 
 trait IdentifyChain {
 	fn is_shell(&self) -> bool;
@@ -65,40 +68,43 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 fn load_spec(
 	id: &str,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-	// FIXME distinguish paraid by relaychain
-	let para_id: ParaId = DEFAULT_PARA_ID.into();
 	Ok(match id {
-		"integritee-rococo-local" => Box::new(integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::RococoLocal)),
-		"integritee-rococo-local-dev" => Box::new(integritee_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::RococoLocal)),
-		"integritee-rococo-fresh" => Box::new(integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Rococo)),
-		"integritee-rococo" => Box::new(integritee_rococo_config()?),
+		// live configs (hard coded genesis state. genesis will always be shell for a live system)
+		"integritee-rococo" => Box::new(shell_rococo_config()?),
+		"integritee-westend" => Box::new(shell_westend_config()?),
+		"integritee-kusama" => Box::new(shell_kusama_config()?),
+		"integritee-polkadot" => Box::new(shell_polkadot_config()?),
 
-		"integritee-kusama-local" => Box::new(integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::KusamaLocal)),
-		"integritee-kusama-local-dev" => Box::new(integritee_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::KusamaLocal)),
-		"integritee-kusama-fresh" => Box::new(integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Kusama)),
-		"integritee-kusama" => Box::new(integritee_kusama_config()?),
+		// live config initialize
+		"integritee-rococo-fresh" => Box::new(shell_chain_spec(ROCOCO_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::Rococo)),
+		"integritee-westend-fresh" => Box::new(shell_chain_spec(WESTEND_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::Westend)),
+		"integritee-kusama-fresh" => Box::new(shell_chain_spec(KUSAMA_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::Kusama)),
+		"integritee-polkadot-fresh" => Box::new(shell_chain_spec(POLKADOT_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::Polkadot)),
 
-		"integritee-westend" => Box::new(integritee_westend_config()?),
+		// on-the-spot specs
+		"integritee-rococo-local" => Box::new(integritee_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::RococoLocal)),
+		"integritee-rococo-local-dev" => Box::new(integritee_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::WellKnown, RelayChain::RococoLocal)),
 
-		"integritee-polkadot-local" => Box::new(integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::PolkadotLocal)),
-		"integritee-polkadot-local-dev" => Box::new(integritee_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::PolkadotLocal)),
-		"integritee-polkadot" => Box::new(integritee_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Polkadot)),
+		"integritee-westend-local" => Box::new(integritee_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::WestendLocal)),
+		"integritee-westend-local-dev" => Box::new(integritee_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::WellKnown, RelayChain::WestendLocal)),
 
-		"shell-rococo-local" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::RococoLocal)),
-		"shell-rococo-local-dev" => Box::new(shell_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::RococoLocal)),
-		"shell-rococo-fresh" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Rococo)),
-		"shell-rococo" => Box::new(shell_rococo_config()?),
+		"integritee-kusama-local" => Box::new(integritee_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::KusamaLocal)),
+		"integritee-kusama-local-dev" => Box::new(integritee_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::WellKnown, RelayChain::KusamaLocal)),
 
-		"shell-kusama-local" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::KusamaLocal)),
-		"shell-kusama-local-dev" => Box::new(shell_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::KusamaLocal)),
-		"shell-kusama-fresh" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Kusama)),
-		"shell-kusama" => Box::new(shell_kusama_config()?),
+		"integritee-polkadot-local" => Box::new(integritee_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::PolkadotLocal)),
+		"integritee-polkadot-local-dev" => Box::new(integritee_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::WellKnown, RelayChain::PolkadotLocal)),
 
-		"shell-polkadot-local" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::PolkadotLocal)),
-		"shell-polkadot-local-dev" => Box::new(shell_chain_spec(para_id, GenesisKeys::WellKnown, RelayChain::PolkadotLocal)),
-		"shell-polkadot" => Box::new(shell_chain_spec(para_id, GenesisKeys::Integritee, RelayChain::Polkadot)),
+		"shell-rococo-local" => Box::new(shell_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::RococoLocal)),
+		"shell-rococo-local-dev" => Box::new(shell_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::WellKnown, RelayChain::RococoLocal)),
 
-		"shell-westend" => Box::new(shell_westend_config()?),
+		"shell-westend-local" => Box::new(shell_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::WestendLocal)),
+		"shell-westend-local-dev" => Box::new(shell_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::WellKnown, RelayChain::WestendLocal)),
+
+		"shell-kusama-local" => Box::new(shell_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::KusamaLocal)),
+		"shell-kusama-local-dev" => Box::new(shell_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::WellKnown, RelayChain::KusamaLocal)),
+
+		"shell-polkadot-local" => Box::new(shell_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::PolkadotLocal)),
+		"shell-polkadot-local-dev" => Box::new(shell_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::WellKnown, RelayChain::PolkadotLocal)),
 
 		"" => panic!("Please supply chain_spec to be loaded."),
 		path => {

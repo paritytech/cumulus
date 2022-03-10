@@ -1,7 +1,7 @@
 {
 	"relaychain": {
 		"bin": "../../../bin/polkadot-0.9.17",
-		"chain": "kusama-local",
+		"chain": "rococo-local",
 		"nodes": [
 			{
 				"name": "alice",
@@ -21,6 +21,19 @@
 		]
 	},
 	"parachains": [
+		{
+			"bin": "../../../bin/integritee-collator-1.4.12",
+			"chain": "shell-rococo-local-dev",
+			"nodes": [
+				{
+					"wsPort": 9944,
+					"rpcPort": 9933,
+					"port": 31200,
+					"name": "dave",
+					"flags": ["--", "--execution=wasm"]
+				}
+			]
+		}
 	],
 	"simpleParachains": [
 	],

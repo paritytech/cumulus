@@ -227,8 +227,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        chain: [shell]
-        config: [kusama]
+        chain: [integritee]
+        config: [rococo, westend, kusama, polkadot]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -238,11 +238,9 @@ jobs:
           name: integritee-collator-${{ github.sha }}
 
       - name: 'Create binaries for artifacts'
-        # Note: there is no way to pass the parachain-id to the `build-spec` cmd, which which imposes to set
-        # `DEFAULT_PARA_ID=2015` in the `polkadot-parachains/command`.
         run: |
           chmod +x ./integritee-collator
-          ./integritee-collator export-genesis-state --chain ${{ env.CHAIN_SPEC }} --parachain-id 2015 >  ${{ env.CHAIN_SPEC }}.state
+          ./integritee-collator export-genesis-state --chain ${{ env.CHAIN_SPEC }} >  ${{ env.CHAIN_SPEC }}.state
           ./integritee-collator build-spec --chain ${{ env.CHAIN_SPEC }} --disable-default-bootnode --raw > ${{ env.CHAIN_SPEC }}.json
 
 

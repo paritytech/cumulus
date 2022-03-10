@@ -92,13 +92,14 @@ impl IntegriteeKeys {
 		vec![
 			public_from_ss58::<sr25519::Public>("5GZJjbPPD9u6NDgK1ApYmbyGs7EBX4HeEz2y2CD38YJxjvQH")
 				.into(),
-			/*
-			public_from_ss58::<sr25519::Public>("5CcSd1GZus6Jw7rP47LLqMMmtr2KeXCH6W11ZKk1LbCQ9dPY").into(),
-			public_from_ss58::<sr25519::Public>("5FsECrDjBXrh5hXmN4PhQfNPbjYYwwW7edu2UQ8G5LR1JFuH").into(),
-			public_from_ss58::<sr25519::Public>("5HBdSEnswkqm6eoHzzX5PCeKoC15CCy88vARrT8XMaRRuyaE").into(),
-			public_from_ss58::<sr25519::Public>("5GGxVLYTXS7JZAwVzisdXbsugHSD6gtDb3AT3MVzih9jTLQT").into(),
-
-			 */
+			public_from_ss58::<sr25519::Public>("5CcSd1GZus6Jw7rP47LLqMMmtr2KeXCH6W11ZKk1LbCQ9dPY")
+				.into(),
+			public_from_ss58::<sr25519::Public>("5FsECrDjBXrh5hXmN4PhQfNPbjYYwwW7edu2UQ8G5LR1JFuH")
+				.into(),
+			public_from_ss58::<sr25519::Public>("5HBdSEnswkqm6eoHzzX5PCeKoC15CCy88vARrT8XMaRRuyaE")
+				.into(),
+			public_from_ss58::<sr25519::Public>("5GGxVLYTXS7JZAwVzisdXbsugHSD6gtDb3AT3MVzih9jTLQT")
+				.into(),
 		]
 	}
 }
@@ -120,9 +121,8 @@ pub fn shell_chain_spec(
 	chain_spec(
 		&chain_name,
 		move || shell_genesis_config(root.clone(), endowed.clone(), authorities.clone(), id),
-		relay_chain.chain_type(),
 		id,
-		&relay_chain.to_string(),
+		relay_chain,
 	)
 }
 
@@ -143,29 +143,27 @@ pub fn integritee_chain_spec(
 	chain_spec(
 		&chain_name,
 		move || integritee_genesis_config(root.clone(), endowed.clone(), authorities.clone(), id),
-		relay_chain.chain_type(),
 		id,
-		&relay_chain.to_string(),
+		relay_chain,
 	)
 }
 
 fn chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
 	chain_name: &str,
 	testnet_constructor: F,
-	chain_type: ChainType,
 	para_id: ParaId,
-	relay_chain: &str,
+	relay_chain: RelayChain,
 ) -> GenericChainSpec<GenesisConfig, Extensions> {
 	GenericChainSpec::<GenesisConfig, Extensions>::from_genesis(
 		chain_name,
-		&format!("integritee-{}", relay_chain),
-		chain_type,
+		&format!("integritee-{}", relay_chain.to_string()),
+		relay_chain.chain_type(),
 		testnet_constructor,
 		Vec::new(),
 		// telemetry endpoints
 		None,
 		// protocol id
-		Some("teer"),
+		Some(relay_chain.protocol_id()),
 		// fork id
 		None,
 		// properties
@@ -179,7 +177,7 @@ fn chain_spec<F: Fn() -> GenesisConfig + 'static + Send + Sync, GenesisConfig>(
 			)
 			.unwrap(),
 		),
-		Extensions { relay_chain: relay_chain.into(), para_id: para_id.into() },
+		Extensions { relay_chain: relay_chain.to_string(), para_id: para_id.into() },
 	)
 }
 
@@ -196,11 +194,7 @@ fn integritee_genesis_config(
 				.to_vec(),
 		},
 		balances: parachain_runtime::BalancesConfig {
-			balances: endowed_accounts
-				.iter()
-				.cloned()
-				.map(|k| (k, 10_000_000__000_000_000_000))
-				.collect(),
+			balances: endowed_accounts.iter().cloned().map(|k| (k, 10__000_000_000_000)).collect(),
 		},
 		sudo: parachain_runtime::SudoConfig { key: Some(root_key) },
 		vesting: Default::default(),
@@ -224,11 +218,7 @@ fn shell_genesis_config(
 				.to_vec(),
 		},
 		balances: shell_runtime::BalancesConfig {
-			balances: endowed_accounts
-				.iter()
-				.cloned()
-				.map(|k| (k, 10_000_000__000_000_000_000))
-				.collect(),
+			balances: endowed_accounts.iter().cloned().map(|k| (k, 10__000_000_000_000)).collect(),
 		},
 		sudo: shell_runtime::SudoConfig { key: Some(root_key) },
 		vesting: Default::default(),
@@ -241,45 +231,41 @@ fn shell_genesis_config(
 
 pub enum RelayChain {
 	RococoLocal,
-	Kusama,
+	WestendLocal,
 	KusamaLocal,
 	PolkadotLocal,
 	Rococo,
+	Westend,
+	Kusama,
 	Polkadot,
 }
 
-pub fn shell_westend_config() -> Result<ShellChainSpec, String> {
-	ShellChainSpec::from_json_bytes(&include_bytes!("../res/shell-westend.json")[..])
+pub fn shell_rococo_config() -> Result<ShellChainSpec, String> {
+	ShellChainSpec::from_json_bytes(&include_bytes!("../res/integritee-rococo.json")[..])
 }
 
-pub fn integritee_westend_config() -> Result<IntegriteeChainSpec, String> {
-	IntegriteeChainSpec::from_json_bytes(&include_bytes!("../res/integritee-westend.json")[..])
+pub fn shell_westend_config() -> Result<ShellChainSpec, String> {
+	ShellChainSpec::from_json_bytes(&include_bytes!("../res/integritee-westend.json")[..])
 }
 
 pub fn shell_kusama_config() -> Result<ShellChainSpec, String> {
-	ShellChainSpec::from_json_bytes(&include_bytes!("../res/shell-kusama.json")[..])
+	ShellChainSpec::from_json_bytes(&include_bytes!("../res/integritee-kusama.json")[..])
 }
 
-pub fn integritee_kusama_config() -> Result<IntegriteeChainSpec, String> {
-	IntegriteeChainSpec::from_json_bytes(&include_bytes!("../res/integritee-kusama.json")[..])
-}
-
-pub fn shell_rococo_config() -> Result<ShellChainSpec, String> {
-	ShellChainSpec::from_json_bytes(&include_bytes!("../res/shell-rococo.json")[..])
-}
-
-pub fn integritee_rococo_config() -> Result<IntegriteeChainSpec, String> {
-	IntegriteeChainSpec::from_json_bytes(&include_bytes!("../res/integritee-rococo.json")[..])
+pub fn shell_polkadot_config() -> Result<ShellChainSpec, String> {
+	ShellChainSpec::from_json_bytes(&include_bytes!("../res/integritee-polkadot.json")[..])
 }
 
 impl ToString for RelayChain {
 	fn to_string(&self) -> String {
 		match self {
 			RelayChain::RococoLocal => "rococo-local".into(),
-			RelayChain::Kusama => "kusama".into(),
+			RelayChain::WestendLocal => "westend-local".into(),
 			RelayChain::KusamaLocal => "kusama-local".into(),
 			RelayChain::PolkadotLocal => "polkadot-local".into(),
 			RelayChain::Rococo => "rococo".into(),
+			RelayChain::Westend => "westend".into(),
+			RelayChain::Kusama => "kusama".into(),
 			RelayChain::Polkadot => "polkadot".into(),
 		}
 	}
@@ -289,11 +275,25 @@ impl RelayChain {
 	fn chain_type(&self) -> ChainType {
 		match self {
 			RelayChain::RococoLocal => ChainType::Local,
+			RelayChain::WestendLocal => ChainType::Local,
 			RelayChain::KusamaLocal => ChainType::Local,
 			RelayChain::PolkadotLocal => ChainType::Local,
-			RelayChain::Kusama => ChainType::Live,
 			RelayChain::Rococo => ChainType::Live,
+			RelayChain::Westend => ChainType::Live,
+			RelayChain::Kusama => ChainType::Live,
 			RelayChain::Polkadot => ChainType::Live,
+		}
+	}
+	fn protocol_id(&self) -> &str {
+		match self {
+			RelayChain::RococoLocal => "teer-rl",
+			RelayChain::WestendLocal => "teer-wl",
+			RelayChain::KusamaLocal => "teer-kl",
+			RelayChain::PolkadotLocal => "teer-pl",
+			RelayChain::Rococo => "teer-r",
+			RelayChain::Westend => "teer-w",
+			RelayChain::Kusama => "teer-k",
+			RelayChain::Polkadot => "teer-p",
 		}
 	}
 }

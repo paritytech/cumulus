@@ -21,26 +21,20 @@ import os
 import subprocess
 
 SPECS = [
-    {
-        "chain_id": "shell-kusama",
-        "para_id": 2015,
-    },
-    {
-        "chain_id": "integritee-kusama",
-        "para_id": 2015,
-    }
+    "integritee-rococo",
+    "integritee-westend",
+    "integritee-kusama",
+    "integritee-polkadot",
 ]
 COLLATOR = "target/release/integritee-collator"
 RES_DIR = "polkadot-parachains/res"
 
 
-def main(migrate_genesis: bool):
-    for s in SPECS:
-        chain_spec = s["chain_id"]
-        para_id = s["para_id"]
+def main(regenesis: bool):
+    for chain_spec in SPECS:
 
         ret = subprocess.call(
-            f'scripts/dump_wasm_state_and_spec.sh {chain_spec}-fresh {para_id} {COLLATOR} {RES_DIR}',
+            f'scripts/dump_wasm_state_and_spec.sh {chain_spec}-fresh {COLLATOR} {RES_DIR}',
             stdout=subprocess.PIPE,
             shell=True
         )
@@ -59,7 +53,7 @@ def main(migrate_genesis: bool):
 
                 new_json["bootNodes"] = orig_json["bootNodes"]
 
-                if migrate_genesis:
+                if not regenesis:
                     new_json["genesis"] = orig_json["genesis"]
 
                 # go to beginning of the file to overwrite
@@ -70,15 +64,16 @@ def main(migrate_genesis: bool):
         # remove side-products
         os.remove(f'{new_file_base}.json')
         os.remove(f'{new_file_base}-raw.json')
+        os.remove(f'{new_file_base}-raw-unsorted.json')
         os.remove(f'{new_file_base}.state')
         os.remove(f'{new_file_base}.wasm')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--migrate-genesis', help='Create entirely new chain spec, not preserving previous genesis state', action='store_true')
+    parser.add_argument('--regenesis', help='Overwrite genesis state in chain spec. Use this for resetting chains entirely', action='store_true')
 
     args = parser.parse_args()
-    print(f'Updating chain specs migrating-genesis == {args.migrate_genesis}')
+    print(f'Updating chain specs. Preserving bootnodes. (re-genesis == {args.regenesis})')
 
-    main(args.migrate_genesis)
+    main(args.regenesis)
