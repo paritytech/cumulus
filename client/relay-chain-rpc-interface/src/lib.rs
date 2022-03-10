@@ -52,7 +52,7 @@ const TIMEOUT_IN_SECONDS: u64 = 6;
 
 /// Client that maps RPC methods and deserializes results
 #[derive(Clone)]
-struct RelayChainRPCClient {
+pub struct RelayChainRPCClient {
 	/// Websocket client to make calls
 	ws_client: Arc<JsonRPCClient>,
 

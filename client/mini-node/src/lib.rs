@@ -14,7 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
+use core::future::Future;
+use futures::future;
 use lru::LruCache;
+use polkadot_core_primitives::HashT;
 use polkadot_node_network_protocol::request_response::{
 	v1::{AvailableDataFetchingRequest, CollationFetchingRequest},
 	IncomingRequest, IncomingRequestReceiver,
@@ -33,12 +36,19 @@ use polkadot_service::{
 	AuthorityDiscoveryApi, Error, OverseerConnector,
 };
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
-use sc_keystore::LocalKeystore;
+use sc_transaction_pool::PolledIterator;
+use sc_transaction_pool_api::{
+	ImportNotificationStream, MaintainedTransactionPool, PoolFuture, PoolStatus, TransactionFor,
+	TransactionSource, TransactionStatusStreamFor, TxHash,
+};
 use sp_blockchain::HeaderBackend;
-pub struct CollatorOverseerGen;
-use std::sync::Arc;
+use sp_consensus::{Error as ConsensusError, SelectChain};
+use sp_runtime::traits::NumberFor;
 
-use cumulus_primitives_core::relay_chain::{v2::ParachainHost, Block, Hash as PHash};
+use std::{collections::HashMap, pin::Pin, sync::Arc};
+
+use cumulus_primitives_core::relay_chain::{v2::ParachainHost, Block, BlockId, Hash as PHash};
+use cumulus_relay_chain_rpc_interface::RelayChainRPCClient;
 
 use polkadot_client::FullBackend;
 use polkadot_service::{
@@ -47,16 +57,16 @@ use polkadot_service::{
 };
 
 use sc_telemetry::TelemetryWorkerHandle;
-use sp_api::ProvideRuntimeApi;
+use sp_api::{HeaderT, ProvideRuntimeApi};
 use sp_runtime::traits::Block as BlockT;
 
+pub struct CollatorOverseerGen;
 impl CollatorOverseerGen {
 	pub fn generate<'a, Spawner, RuntimeClient>(
 		&self,
 		connector: OverseerConnector,
 		CollatorOverseerGenArgs {
 			leaves,
-			keystore,
 			runtime_client,
 			network_service,
 			authority_discovery_service,
@@ -142,8 +152,6 @@ where
 {
 	/// Set of initial relay chain leaves to track.
 	pub leaves: Vec<BlockInfo>,
-	/// The keystore to use for i.e. validator keys.
-	pub keystore: Arc<LocalKeystore>,
 	/// Runtime client generic, providing the `ProvieRuntimeApi` trait besides others.
 	pub runtime_client: Arc<RuntimeClient>,
 	/// Underlying network service implementation.
@@ -165,6 +173,90 @@ pub struct NewCollator {
 	pub overseer_handle: Option<Handle>,
 	pub network: Arc<sc_network::NetworkService<Block, <Block as BlockT>::Hash>>,
 }
+/// TODO This is just copied from polkadot_service
+/// Returns the active leaves the overseer should start with.
+async fn active_leaves<RuntimeApi, ExecutorDispatch>(
+	select_chain: &impl SelectChain<Block>,
+	client: &FullClient<RuntimeApi, ExecutorDispatch>,
+) -> Result<Vec<BlockInfo>, Error>
+where
+	RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi, ExecutorDispatch>>
+		+ Send
+		+ Sync
+		+ 'static,
+	RuntimeApi::RuntimeApi:
+		RuntimeApiCollection<StateBackend = sc_client_api::StateBackendFor<FullBackend, Block>>,
+	ExecutorDispatch: NativeExecutionDispatch + 'static,
+{
+	let best_block = select_chain.best_chain().await?;
+
+	let mut leaves = select_chain
+		.leaves()
+		.await
+		.unwrap_or_default()
+		.into_iter()
+		.filter_map(|hash| {
+			let number = HeaderBackend::number(client, hash).ok()??;
+
+			// Only consider leaves that are in maximum an uncle of the best block.
+			if number < best_block.number().saturating_sub(1) {
+				return None
+			} else if hash == best_block.hash() {
+				return None
+			};
+
+			let parent_hash = client.header(&BlockId::Hash(hash)).ok()??.parent_hash;
+
+			Some(BlockInfo { hash, parent_hash, number })
+		})
+		.collect::<Vec<_>>();
+
+	// Sort by block number and get the maximum number of leaves
+	leaves.sort_by_key(|b| b.number);
+
+	leaves.push(BlockInfo {
+		hash: best_block.hash(),
+		parent_hash: *best_block.parent_hash(),
+		number: *best_block.number(),
+	});
+
+	// TODO Move the 4 into a constant
+	Ok(leaves.into_iter().rev().take(4).collect())
+}
+
+#[derive(Clone)]
+struct RPCSelectChain {
+	rpc_client: Arc<RelayChainRPCClient>,
+}
+
+impl RPCSelectChain {
+	pub fn new(rpc_client: Arc<RelayChainRPCClient>) -> Self {
+		RPCSelectChain { rpc_client }
+	}
+}
+
+#[async_trait::async_trait]
+impl SelectChain<Block> for RPCSelectChain {
+	async fn leaves(&self) -> Result<Vec<<Block as BlockT>::Hash>, ConsensusError> {
+		todo!("SelectChain::leaves")
+	}
+
+	async fn best_chain(&self) -> Result<<Block as BlockT>::Header, ConsensusError> {
+		todo!("SelectChain::best_chain")
+	}
+
+	/// Get the best descendent of `target_hash` that we should attempt to
+	/// finalize next, if any. It is valid to return the given `target_hash`
+	/// itself if no better descendent exists.
+	async fn finality_target(
+		&self,
+		target_hash: <Block as BlockT>::Hash,
+		_maybe_max_number: Option<NumberFor<Block>>,
+	) -> Result<<Block as BlockT>::Hash, ConsensusError> {
+		// TODO We may use the default implementation for this
+		todo!("SelectChain::finality_target")
+	}
+}
 
 pub fn new_mini<RuntimeApi, ExecutorDispatch, OverseerGenerator>(
 	mut config: Configuration,
@@ -172,6 +264,7 @@ pub fn new_mini<RuntimeApi, ExecutorDispatch, OverseerGenerator>(
 	jaeger_agent: Option<std::net::SocketAddr>,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	overseer_enable_anyways: bool,
+	relay_chain_rpc_client: Arc<RelayChainRPCClient>,
 ) -> Result<NewCollator, Error>
 where
 	RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi, ExecutorDispatch>>
@@ -214,18 +307,21 @@ where
 		chain_spec.is_versi() ||
 		chain_spec.is_wococo();
 
-	let select_chain = if requires_overseer_for_chain_sel {
-		let metrics = Metrics::register(prometheus_registry.as_ref())?;
+	// TODO Shortcut, we ignore the chain-selection-subsystem for now
+	// let select_chain = if requires_overseer_for_chain_sel {
+	// 	let metrics = Metrics::register(prometheus_registry.as_ref())?;
 
-		SelectRelayChain::new_disputes_aware(
-			basics.backend.clone(),
-			overseer_handle.clone(),
-			metrics,
-			disputes_enabled,
-		)
-	} else {
-		SelectRelayChain::new_longest_chain(basics.backend.clone())
-	};
+	// 	SelectRelayChain::new_disputes_aware(
+	// 		basics.backend.clone(),
+	// 		overseer_handle.clone(),
+	// 		metrics,
+	// 		disputes_enabled,
+	// 	)
+	// } else {
+	// 	SelectRelayChain::new_longest_chain(basics.backend.clone())
+	// };
+
+	let select_chain = RPCSelectChain::new(relay_chain_rpc_client.clone());
 
 	let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
 	{
@@ -239,6 +335,7 @@ where
 	let (available_data_req_receiver, cfg) = IncomingRequest::get_config_receiver();
 	config.network.request_response_protocols.push(cfg);
 
+	let transaction_pool = Arc::new(sc_network::config::EmptyTransactionPool);
 	let (network, _, network_starter) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &config,
@@ -254,8 +351,7 @@ where
 	let spawner = task_manager.spawn_handle();
 	// Cannot use the `RelayChainSelection`, since that'd require a setup _and running_ overseer
 	// which we are about to setup.
-	let active_leaves =
-		futures::executor::block_on(active_leaves(select_chain.as_longest_chain(), &*client))?;
+	let active_leaves = futures::executor::block_on(active_leaves(&select_chain, &*client))?;
 
 	let authority_discovery_service = {
 		use futures::StreamExt;
@@ -289,21 +385,13 @@ where
 		Some(service)
 	};
 
-	if local_keystore.is_none() {
-		tracing::info!("Cannot run as validator without local keystore.");
-	}
-
-	let maybe_params =
-		local_keystore.and_then(move |k| authority_discovery_service.map(|a| (a, k)));
-
-	let overseer_handle = if let Some((authority_discovery_service, keystore)) = maybe_params {
+	let overseer_handle = if let Some(authority_discovery_service) = authority_discovery_service {
 		let overseer_gen = CollatorOverseerGen;
 		let (overseer, overseer_handle) = overseer_gen
 			.generate::<sc_service::SpawnTaskHandle, FullClient<RuntimeApi, ExecutorDispatch>>(
 				overseer_connector,
 				CollatorOverseerGenArgs {
 					leaves: active_leaves,
-					keystore,
 					runtime_client: overseer_client.clone(),
 					network_service: network.clone(),
 					authority_discovery_service,
