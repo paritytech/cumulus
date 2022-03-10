@@ -67,13 +67,13 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// Downward message is invalid XCM.
 		/// \[ id \]
-		InvalidFormat([u8; 8]),
+		InvalidFormat([u8; 32]),
 		/// Downward message is unsupported version of XCM.
 		/// \[ id \]
-		UnsupportedVersion([u8; 8]),
+		UnsupportedVersion([u8; 32]),
 		/// Downward message executed with the given outcome.
 		/// \[ id, outcome \]
-		ExecutedDownward([u8; 8], Outcome),
+		ExecutedDownward([u8; 32], Outcome),
 	}
 
 	/// Origin for the parachains module.
