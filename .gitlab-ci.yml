@@ -8,6 +8,7 @@
 stages:
   - test
   - publish
+  - benchmarks
 
 variables:                         &default-vars
   GIT_STRATEGY:                    fetch
