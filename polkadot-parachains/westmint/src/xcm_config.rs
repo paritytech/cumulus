@@ -19,7 +19,7 @@ use super::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{Everything, PalletInfoAccess},
+	traits::{Everything, PalletInfoAccess, ConstU32, Nothing},
 	weights::Weight,
 };
 use pallet_xcm::XcmPassthrough;
@@ -29,8 +29,8 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
-	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter,
-	IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsPreset,
+	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
+	FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsPreset,
 	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
 	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 	UsingComponents,
@@ -39,10 +39,10 @@ use xcm_executor::{traits::JustTry, XcmExecutor};
 
 parameter_types! {
 	pub const WestendLocation: MultiLocation = MultiLocation::parent();
-	pub RelayNetwork: NetworkId = NetworkId::Named(b"Westend".to_vec());
+	pub RelayNetwork: NetworkId = NetworkId::Westend;
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-	pub const Local: MultiLocation = Here.into();
+	pub const Local: MultiLocation = Here.into_location();
 	pub AssetsPalletLocation: MultiLocation =
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();

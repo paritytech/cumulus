@@ -19,7 +19,7 @@ use super::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{EnsureOneOf, Everything, Nothing},
+	traits::{EnsureOneOf, Everything, Nothing, ConstU32},
 	weights::Weight,
 };
 use frame_system::EnsureRoot;
@@ -38,10 +38,10 @@ use xcm_executor::XcmExecutor;
 
 parameter_types! {
 	pub const RelayLocation: MultiLocation = MultiLocation::parent();
-	pub const RelayNetwork: NetworkId = NetworkId::Any;
+	pub const RelayNetwork: Option<NetworkId> = None;
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-	pub const Local: MultiLocation = Here.into();
+	pub const Local: MultiLocation = Here.into_location();
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 	pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
@@ -144,6 +144,8 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;
 	type SubscriptionService = PolkadotXcm;
+	type PalletInstancesInfo = super::AllPalletsWithSystem;
+	type MaxAssetsIntoHolding = ConstU32<8>;
 	type AssetLocker = ();
 	type AssetExchanger = ();
 	type FeeManager = ();
