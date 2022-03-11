@@ -17,7 +17,10 @@ use super::*;
 use crate as xcmp_queue;
 use core::marker::PhantomData;
 use cumulus_primitives_core::{IsSystem, ParaId};
-use frame_support::{parameter_types, traits::{OriginTrait, Nothing}};
+use frame_support::{
+	parameter_types,
+	traits::{Nothing, OriginTrait},
+};
 use frame_system::EnsureRoot;
 use sp_core::H256;
 use sp_runtime::{
