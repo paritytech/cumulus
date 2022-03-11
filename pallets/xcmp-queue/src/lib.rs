@@ -130,7 +130,7 @@ pub mod pallet {
 		///
 		/// Events:
 		/// - `OverweightServiced`: On success.
-		#[pallet::weight((weight_limit.saturating_add(1_000_000), DispatchClass::Operational,))]
+		#[pallet::weight(weight_limit.saturating_add(1_000_000))]
 		pub fn service_overweight(
 			origin: OriginFor<T>,
 			index: OverweightIndex,
