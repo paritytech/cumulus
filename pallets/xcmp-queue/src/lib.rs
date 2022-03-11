@@ -52,7 +52,7 @@ use rand_chacha::{
 	ChaChaRng,
 };
 use scale_info::TypeInfo;
-use sp_runtime::{traits::Hash, RuntimeDebug};
+use sp_runtime::RuntimeDebug;
 use sp_std::{convert::TryFrom, prelude::*};
 use xcm::{latest::prelude::*, VersionedXcm, WrapVersion, MAX_XCM_DECODE_DEPTH};
 use xcm_executor::traits::ConvertOrigin;
@@ -598,7 +598,7 @@ impl<T: Config> Pallet<T> {
 		log::debug!("Processing XCMP-XCM: {:?}", &hash);
 		let (result, event) = match Xcm::<T::Call>::try_from(xcm) {
 			Ok(xcm) => {
-				let location = (1, Parachain(sender.into()));
+				let location = (Parent, Parachain(sender.into()));
 				match T::XcmExecutor::execute_xcm(location, xcm, hash, max_weight) {
 					Outcome::Error(e) => (Err(e.clone()), Event::Fail(Some(hash), e)),
 					Outcome::Complete(w) => (Ok(w), Event::Success(Some(hash))),
@@ -1099,7 +1099,7 @@ impl<T: Config> SendXcm for Pallet<T> {
 			_ => {
 				*dest = Some(d);
 				Err(SendError::NotApplicable)
-			}
+			},
 		}
 	}
 
@@ -1110,10 +1110,8 @@ impl<T: Config> SendXcm for Pallet<T> {
 			Ok(_) => {
 				Self::deposit_event(Event::XcmpMessageSent(Some(hash)));
 				Ok(hash)
-			}
-			Err(e) => {
-				Err(SendError::Transport(<&'static str>::from(e)))
-			}
+			},
+			Err(e) => Err(SendError::Transport(<&'static str>::from(e))),
 		}
 	}
 }

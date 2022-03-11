@@ -345,7 +345,10 @@ mod tests {
 	};
 	use sp_version::RuntimeVersion;
 	use std::cell::RefCell;
-	use xcm::latest::{MultiLocation, OriginKind, Weightless};
+	use xcm::{
+		latest::{MultiLocation, OriginKind},
+		v3::traits::Weightless,
+	};
 
 	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 	type Block = frame_system::mocking::MockBlock<Test>;
@@ -428,12 +431,11 @@ mod tests {
 			Err(message)
 		}
 
-		fn execute_xcm_in_credit(
+		fn execute(
 			_origin: impl Into<MultiLocation>,
 			message: Xcm,
 			_hash: XcmHash,
 			weight_limit: Weight,
-			_credit: Weight,
 		) -> Outcome {
 			let o = match (message.0.len(), &message.0.first()) {
 				(1, Some(Transact { require_weight_at_most, .. })) => {

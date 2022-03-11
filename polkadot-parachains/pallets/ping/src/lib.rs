@@ -89,8 +89,8 @@ pub mod pallet {
 					*seq += 1;
 					*seq
 				});
-				match T::XcmSender::send_xcm(
-					(1, Junction::Parachain(para.into())),
+				match send_xcm::<T::XcmSender>(
+					(Parent, Junction::Parachain(para.into())),
 					Xcm(vec![Transact {
 						origin_kind: OriginKind::Native,
 						require_weight_at_most: 1_000,
@@ -165,8 +165,8 @@ pub mod pallet {
 			let para = ensure_sibling_para(<T as Config>::Origin::from(origin))?;
 
 			Self::deposit_event(Event::Pinged(para, seq, payload.clone()));
-			match T::XcmSender::send_xcm(
-				(1, Junction::Parachain(para.into())),
+			match send_xcm::<T::XcmSender>(
+				(Parent, Junction::Parachain(para.into())),
 				Xcm(vec![Transact {
 					origin_kind: OriginKind::Native,
 					require_weight_at_most: 1_000,
