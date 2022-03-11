@@ -179,12 +179,9 @@ publish-s3:
 benchmarks:
   stage:                           benchmarks
   <<:                              *docker-env
-  before_script:
-  variables:
-    PALLET:                        "pallet_assets"
   script:
     - time cargo build --profile production --locked --features runtime-benchmarks
     - ./scripts/benchmarks.sh
     - git status
   tags:
-    - weights
+    - ci6
