@@ -176,9 +176,10 @@ publish-s3:
 
 #### stage:                        benchmarks
 
-benchmark-pallet-assets:
+benchmarks:
   stage:                           benchmarks
   <<:                              *docker-env
+  before_script:
   variables:
     PALLET:                        "pallet_assets"
   script:
