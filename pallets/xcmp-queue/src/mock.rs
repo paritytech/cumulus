@@ -17,7 +17,7 @@ use super::*;
 use crate as xcmp_queue;
 use core::marker::PhantomData;
 use cumulus_primitives_core::{IsSystem, ParaId};
-use frame_support::{parameter_types, traits::OriginTrait};
+use frame_support::{parameter_types, traits::{OriginTrait, Nothing}};
 use frame_system::EnsureRoot;
 use sp_core::H256;
 use sp_runtime::{
@@ -152,8 +152,13 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetTrap = ();
 	type AssetClaims = ();
 	type SubscriptionService = ();
-	type PalletInstancesInfo = AllPallets;
+	type PalletInstancesInfo = AllPalletsWithSystem;
 	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
+	type AssetLocker = ();
+	type AssetExchanger = ();
+	type FeeManager = ();
+	type MessageExporter = ();
+	type UniversalAliases = Nothing;
 }
 
 pub type XcmRouter = (
