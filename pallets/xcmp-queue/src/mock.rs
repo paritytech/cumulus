@@ -113,7 +113,7 @@ impl cumulus_pallet_parachain_system::Config for Test {
 
 parameter_types! {
 	pub const RelayChain: MultiLocation = MultiLocation::parent();
-	pub Ancestry: MultiLocation = X1(Parachain(1u32.into())).into();
+	pub UniversalLocation: InteriorMultiLocation = X1(Parachain(1u32.into())).into();
 	pub UnitWeightCost: Weight = 1_000_000;
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
@@ -144,7 +144,7 @@ impl xcm_executor::Config for XcmConfig {
 	type OriginConverter = ();
 	type IsReserve = NativeAsset;
 	type IsTeleporter = NativeAsset;
-	type LocationInverter = LocationInverter<Ancestry>;
+	type LocationInverter = LocationInverter<UniversalLocation>;
 	type Barrier = ();
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type Trader = ();

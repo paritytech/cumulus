@@ -21,7 +21,7 @@
 
 use codec::Encode;
 use cumulus_primitives_core::{MessageSendError, UpwardMessageSender};
-use sp_std::marker::PhantomData;
+use sp_std::{prelude::*, marker::PhantomData};
 use xcm::{latest::prelude::*, WrapVersion};
 
 /// Xcm router which recognises the `Parent` destination and handles it by sending the message into

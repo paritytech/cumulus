@@ -14,7 +14,7 @@
 // limitations under the License.
 
 use super::{AccountId, Call, Event, Origin, ParachainInfo, Runtime};
-use frame_support::{match_types, parameter_types, weights::Weight};
+use frame_support::{match_types, parameter_types, weights::Weight, traits::Nothing};
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AllowUnpaidExecutionFrom, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
@@ -24,7 +24,7 @@ use xcm_builder::{
 parameter_types! {
 	pub const RococoLocation: MultiLocation = MultiLocation::parent();
 	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
-	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
+	pub UniversalLocation: InteriorMultiLocation = X1(Parachain(ParachainInfo::parachain_id().into()));
 }
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
@@ -59,7 +59,7 @@ impl xcm_executor::Config for XcmConfig {
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type IsReserve = (); // balances not supported
 	type IsTeleporter = (); // balances not supported
-	type LocationInverter = LocationInverter<Ancestry>;
+	type LocationInverter = LocationInverter<UniversalLocation>;
 	type Barrier = AllowUnpaidExecutionFrom<JustTheParent>;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>; // balances not supported
 	type Trader = (); // balances not supported
@@ -67,8 +67,13 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetTrap = (); // don't trap for now
 	type AssetClaims = (); // don't claim for now
 	type SubscriptionService = (); // don't handle subscriptions for now
-	type PalletInstanceInfo = ();
+	type PalletInstancesInfo = ();
 	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
+	type AssetLocker = ();
+	type AssetExchanger = ();
+	type FeeManager = ();
+	type MessageExporter = ();
+	type UniversalAliases = Nothing;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {

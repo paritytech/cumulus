@@ -69,9 +69,9 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		PingSent(ParaId, u32, Vec<u8>),
+		PingSent(ParaId, u32, Vec<u8>, XcmHash, MultiAssets),
 		Pinged(ParaId, u32, Vec<u8>),
-		PongSent(ParaId, u32, Vec<u8>),
+		PongSent(ParaId, u32, Vec<u8>, XcmHash, MultiAssets),
 		Ponged(ParaId, u32, Vec<u8>, T::BlockNumber),
 		ErrorSendingPing(SendError, ParaId, u32, Vec<u8>),
 		ErrorSendingPong(SendError, ParaId, u32, Vec<u8>),
@@ -90,7 +90,7 @@ pub mod pallet {
 					*seq
 				});
 				match send_xcm::<T::XcmSender>(
-					(Parent, Junction::Parachain(para.into())),
+					(Parent, Junction::Parachain(para.into())).into(),
 					Xcm(vec![Transact {
 						origin_kind: OriginKind::Native,
 						require_weight_at_most: 1_000,
@@ -102,9 +102,9 @@ pub mod pallet {
 						.into(),
 					}]),
 				) {
-					Ok(()) => {
+					Ok((hash, cost)) => {
 						Pings::<T>::insert(seq, n);
-						Self::deposit_event(Event::PingSent(para, seq, payload));
+						Self::deposit_event(Event::PingSent(para, seq, payload, hash, cost));
 					},
 					Err(e) => {
 						Self::deposit_event(Event::ErrorSendingPing(e, para, seq, payload));
@@ -166,7 +166,7 @@ pub mod pallet {
 
 			Self::deposit_event(Event::Pinged(para, seq, payload.clone()));
 			match send_xcm::<T::XcmSender>(
-				(Parent, Junction::Parachain(para.into())),
+				(Parent, Junction::Parachain(para.into())).into(),
 				Xcm(vec![Transact {
 					origin_kind: OriginKind::Native,
 					require_weight_at_most: 1_000,
@@ -178,7 +178,7 @@ pub mod pallet {
 					.into(),
 				}]),
 			) {
-				Ok(()) => Self::deposit_event(Event::PongSent(para, seq, payload)),
+				Ok((hash, cost)) => Self::deposit_event(Event::PongSent(para, seq, payload, hash, cost)),
 				Err(e) => Self::deposit_event(Event::ErrorSendingPong(e, para, seq, payload)),
 			}
 			Ok(())
