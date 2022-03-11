@@ -241,7 +241,7 @@ pub mod pallet {
 					Ok(0)
 				},
 				Ok(Ok(x)) => {
-					let outcome = T::XcmExecutor::execute_xcm(Parent, x, limit);
+					let outcome = T::XcmExecutor::execute_xcm(Parent, x, id, limit);
 					match outcome {
 						Outcome::Error(XcmError::WeightLimitReached(required)) =>
 							Err((id, required)),

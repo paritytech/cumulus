@@ -45,18 +45,18 @@ impl<T: UpwardMessageSender, W: WrapVersion> SendXcm for ParentAsUmp<T, W> {
 		if d.contains_parents_only(1) {
 			// An upward message for the relay chain.
 			let versioned_xcm =
-				W::wrap_version(&d, msg).map_err(|()| SendError::DestinationUnsupported)?;
+				W::wrap_version(&d, xcm).map_err(|()| SendError::DestinationUnsupported)?;
 			let data = versioned_xcm.encode();
 
-			Ok(data, MultiAssets::new())
+			Ok((data, MultiAssets::new()))
 		} else {
-			*dest = Some(d.clone());
+			*dest = Some(d);
 			// Anything else is unhandled. This includes a message this is meant for us.
-			Err(SendError::NotApplicable(d, xcm))
+			Err(SendError::NotApplicable)
 		}
 	}
 
-	fn deliver(blob: Vec<u8>) -> Result<XcmHash, SendError> {
+	fn deliver(data: Vec<u8>) -> Result<XcmHash, SendError> {
 		let hash = data.using_encoded(sp_io::hashing::blake2_256);
 
 		T::send_upward_message(data).map_err(|e| match e {
