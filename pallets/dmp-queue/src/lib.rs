@@ -345,7 +345,7 @@ mod tests {
 	};
 	use sp_version::RuntimeVersion;
 	use std::cell::RefCell;
-	use xcm::latest::{MultiLocation, OriginKind};
+	use xcm::latest::{MultiLocation, OriginKind, Weightless};
 
 	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 	type Block = frame_system::mocking::MockBlock<Test>;
@@ -424,7 +424,7 @@ mod tests {
 	impl ExecuteXcm<Call> for MockExec {
 		type Prepared = Weightless;
 
-		fn prepare(message: Xcm<()>) -> Result<Self::Prepared, Xcm<Call>> {
+		fn prepare(message: Xcm) -> Result<Self::Prepared, Xcm> {
 			Err(message)
 		}
 

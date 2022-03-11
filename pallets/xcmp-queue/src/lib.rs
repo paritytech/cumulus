@@ -263,17 +263,17 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Some XCM was executed ok.
-		Success(Option<T::Hash>),
+		Success(Option<XcmHash>),
 		/// Some XCM failed.
-		Fail(Option<T::Hash>, XcmError),
+		Fail(Option<XcmHash>, XcmError),
 		/// Bad XCM version used.
-		BadVersion(Option<T::Hash>),
+		BadVersion(Option<XcmHash>),
 		/// Bad XCM format used.
-		BadFormat(Option<T::Hash>),
+		BadFormat(Option<XcmHash>),
 		/// An upward message was sent to the relay chain.
-		UpwardMessageSent(Option<T::Hash>),
+		UpwardMessageSent(Option<XcmHash>),
 		/// An HRMP message was sent to a sibling parachain.
-		XcmpMessageSent(Option<T::Hash>),
+		XcmpMessageSent(Option<XcmHash>),
 		/// An XCM exceeded the individual message weight budget.
 		OverweightEnqueued(ParaId, RelayBlockNumber, OverweightIndex, Weight),
 		/// An XCM from the overweight queue was executed with the given actual weight used.
@@ -594,12 +594,12 @@ impl<T: Config> Pallet<T> {
 		xcm: VersionedXcm<T::Call>,
 		max_weight: Weight,
 	) -> Result<Weight, XcmError> {
-		let hash = Encode::using_encoded(&xcm, T::Hashing::hash);
+		let hash = xcm.using_encoded(sp_io::hashing::blake2_256);
 		log::debug!("Processing XCMP-XCM: {:?}", &hash);
 		let (result, event) = match Xcm::<T::Call>::try_from(xcm) {
 			Ok(xcm) => {
 				let location = (1, Parachain(sender.into()));
-				match T::XcmExecutor::execute_xcm(location, xcm, max_weight) {
+				match T::XcmExecutor::execute_xcm(location, xcm, hash, max_weight) {
 					Outcome::Error(e) => (Err(e.clone()), Event::Fail(Some(hash), e)),
 					Outcome::Complete(w) => (Ok(w), Event::Success(Some(hash))),
 					// As far as the caller is concerned, this was dispatched without error, so
@@ -781,7 +781,7 @@ impl<T: Config> Pallet<T> {
 			let index = shuffled[shuffle_index];
 			let sender = status[index].sender;
 			let sender_origin = T::ControllerOriginConverter::convert_origin(
-				(1, Parachain(sender.into())),
+				(Parent, Parachain(sender.into())),
 				OriginKind::Superuser,
 			);
 			let is_controller = sender_origin
@@ -1093,7 +1093,7 @@ impl<T: Config> SendXcm for Pallet<T> {
 			MultiLocation { parents: 1, interior: X1(Parachain(id)) } => {
 				let versioned_xcm = T::VersionWrapper::wrap_version(&d, xcm)
 					.map_err(|()| SendError::DestinationUnsupported)?;
-				Ok(((*id).into(), versioned_xcm))
+				Ok((((*id).into(), versioned_xcm), MultiAssets::new()))
 			},
 			// Anything else is unhandled. This includes a message this is meant for us.
 			_ => {
