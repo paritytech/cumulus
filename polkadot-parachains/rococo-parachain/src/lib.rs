@@ -22,7 +22,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use frame_support::traits::{Nothing, ConstU32};
+use frame_support::traits::{ConstU32, Nothing};
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
@@ -62,8 +62,8 @@ use parachains_common::{
 	AssetId,
 };
 use xcm_builder::{
-	AllowKnownQueryResponses, AllowSubscriptionsFrom, AsPrefixedGeneralIndex,
-	ConvertedConcreteId, FungiblesAdapter,
+	AllowKnownQueryResponses, AllowSubscriptionsFrom, AsPrefixedGeneralIndex, ConvertedConcreteId,
+	FungiblesAdapter,
 };
 use xcm_executor::traits::JustTry;
 

@@ -14,7 +14,7 @@
 // limitations under the License.
 
 use super::{AccountId, Call, Event, Origin, ParachainInfo, Runtime};
-use frame_support::{match_types, parameter_types, weights::Weight, traits::Nothing};
+use frame_support::{match_types, parameter_types, traits::Nothing, weights::Weight};
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AllowUnpaidExecutionFrom, FixedWeightBounds, LocationInverter, ParentAsSuperuser,

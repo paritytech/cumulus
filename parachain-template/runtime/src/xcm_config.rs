@@ -4,7 +4,7 @@ use super::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{Everything, Nothing, ConstU32},
+	traits::{ConstU32, Everything, Nothing},
 	weights::Weight,
 };
 use pallet_xcm::XcmPassthrough;

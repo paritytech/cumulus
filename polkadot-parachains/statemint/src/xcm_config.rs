@@ -19,7 +19,7 @@ use super::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{Everything, Nothing, PalletInfoAccess, ConstU32},
+	traits::{ConstU32, Everything, Nothing, PalletInfoAccess},
 	weights::Weight,
 };
 use pallet_xcm::XcmPassthrough;
@@ -29,8 +29,8 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
-	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
-	FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsPreset,
+	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter,
+	IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsPreset,
 	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
 	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 	UsingComponents,
@@ -212,7 +212,8 @@ impl pallet_xcm::Config for Runtime {
 	type CurrencyMatcher = ();
 	type TrustedLockers = ();
 	type SovereignAccountOf = LocationToAccountId;
-	type MaxLockers = ConstU32<8>;}
+	type MaxLockers = ConstU32<8>;
+}
 
 impl cumulus_pallet_xcm::Config for Runtime {
 	type Event = Event;
