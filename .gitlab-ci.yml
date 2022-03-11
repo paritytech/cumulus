@@ -172,3 +172,17 @@ publish-s3:
   after_script:
     - aws s3 ls s3://${BUCKET}/${PREFIX}/latest/
         --recursive --human-readable --summarize
+
+#### stage:                        benchmarks
+
+benchmark-pallet-assets:
+  stage:                           benchmarks
+  <<:                              *docker-env
+  variables:
+    PALLET:                        "pallet_assets"
+  script:
+    - time cargo build --profile production --locked --features runtime-benchmarks
+    - ./scripts/benchmarks.sh
+    - git status
+  tags:
+    - weights
