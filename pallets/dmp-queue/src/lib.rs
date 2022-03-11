@@ -437,7 +437,8 @@ mod tests {
 
 		fn execute(
 			_origin: impl Into<MultiLocation>,
-			message: Xcm,
+			_: Weightless,
+			message: &Xcm,
 			_hash: XcmHash,
 			weight_limit: Weight,
 		) -> Outcome {
