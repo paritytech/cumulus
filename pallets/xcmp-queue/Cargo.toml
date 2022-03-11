@@ -13,6 +13,7 @@ scale-info = { version = "2.0.0", default-features = false, features = ["derive"
 # Substrate
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
@@ -30,7 +31,6 @@ frame-benchmarking = { default-features = false, optional = true, git = "https:/
 
 # Substrate
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
@@ -48,6 +48,7 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"log/std",
+	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
 	"xcm-executor/std",

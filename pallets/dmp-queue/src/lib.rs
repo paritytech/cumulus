@@ -422,9 +422,16 @@ mod tests {
 
 	pub struct MockExec;
 	impl ExecuteXcm<Call> for MockExec {
+		type Prepared = Weightless;
+
+		fn prepare(message: Xcm<()>) -> Result<Self::Prepared, Xcm<Call>> {
+			Err(message)
+		}
+
 		fn execute_xcm_in_credit(
 			_origin: impl Into<MultiLocation>,
 			message: Xcm,
+			_hash: XcmHash,
 			weight_limit: Weight,
 			_credit: Weight,
 		) -> Outcome {
@@ -441,6 +448,10 @@ mod tests {
 			};
 			TRACE.with(|q| q.borrow_mut().push((message, o.clone())));
 			o
+		}
+
+		fn charge_fees(_location: impl Into<MultiLocation>, _fees: MultiAssets) -> XcmResult {
+			Err(XcmError::Unimplemented)
 		}
 	}
 
