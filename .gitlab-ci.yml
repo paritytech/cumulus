@@ -179,6 +179,8 @@ publish-s3:
 benchmarks:
   stage:                           benchmarks
   <<:                              *docker-env
+  variables:
+    CARGO_TARGET_DIR:              ""
   script:
     - time cargo build --profile production --locked --features runtime-benchmarks
     - ./scripts/benchmarks.sh
