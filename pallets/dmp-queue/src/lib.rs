@@ -345,10 +345,7 @@ mod tests {
 	};
 	use sp_version::RuntimeVersion;
 	use std::cell::RefCell;
-	use xcm::{
-		latest::{MultiLocation, OriginKind},
-		v3::traits::Weightless,
-	};
+	use xcm::latest::{MultiLocation, OriginKind};
 
 	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 	type Block = frame_system::mocking::MockBlock<Test>;
@@ -421,6 +418,13 @@ mod tests {
 			q.clear();
 			r
 		})
+	}
+
+	pub enum Weightless {}
+	impl PreparedMessage for Weightless {
+		fn weight_of(&self) -> Weight {
+			unreachable!()
+		}
 	}
 
 	pub struct MockExec;
