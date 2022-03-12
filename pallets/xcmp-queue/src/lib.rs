@@ -99,6 +99,9 @@ pub mod pallet {
 		/// superuser origin.
 		type ControllerOriginConverter: ConvertOrigin<Self::Origin>;
 
+		/// The price for delivering an XCM to a sibling parachain destination.
+		type PriceForSiblingDelivery: PriceForSiblingDelivery;
+
 		/// The weight information of this pallet.
 		type WeightInfo: WeightInfo;
 	}
@@ -1077,6 +1080,23 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 	}
 }
 
+pub trait PriceForSiblingDelivery {
+	fn price_for_sibling_delivery(id: ParaId, message: &Xcm<()>) -> MultiAssets;
+}
+
+impl PriceForSiblingDelivery for () {
+	fn price_for_sibling_delivery(_: ParaId, _: &Xcm<()>) -> MultiAssets {
+	    MultiAssets::new()
+	}
+}
+
+pub struct ConstantPrice<T>(sp_std::marker::PhantomData<T>);
+impl<T: Get<MultiAssets>> PriceForSiblingDelivery for ConstantPrice<T> {
+	fn price_for_sibling_delivery(_: ParaId, _: &Xcm<()>) -> MultiAssets {
+	    T::get()
+	}
+}
+
 /// Xcm sender for sending to a sibling parachain.
 impl<T: Config> SendXcm for Pallet<T> {
 	type Ticket = (ParaId, VersionedXcm<()>);
@@ -1091,9 +1111,11 @@ impl<T: Config> SendXcm for Pallet<T> {
 		match &d {
 			// An HRMP message for a sibling parachain.
 			MultiLocation { parents: 1, interior: X1(Parachain(id)) } => {
+				let id = ParaId::from(*id);
+				let price = T::PriceForSiblingDelivery::price_for_sibling_delivery(id, &xcm);
 				let versioned_xcm = T::VersionWrapper::wrap_version(&d, xcm)
 					.map_err(|()| SendError::DestinationUnsupported)?;
-				Ok((((*id).into(), versioned_xcm), MultiAssets::new()))
+				Ok(((id, versioned_xcm), price))
 			},
 			// Anything else is unhandled. This includes a message this is meant for us.
 			_ => {

@@ -21,8 +21,26 @@
 
 use codec::Encode;
 use cumulus_primitives_core::{MessageSendError, UpwardMessageSender};
+use frame_support::traits::Get;
 use sp_std::{marker::PhantomData, prelude::*};
 use xcm::{latest::prelude::*, WrapVersion};
+
+pub trait PriceForParentDelivery {
+	fn price_for_parent_delivery(message: &Xcm<()>) -> MultiAssets;
+}
+
+impl PriceForParentDelivery for () {
+	fn price_for_parent_delivery(_: &Xcm<()>) -> MultiAssets {
+	    MultiAssets::new()
+	}
+}
+
+pub struct ConstantPrice<T>(PhantomData<T>);
+impl<T: Get<MultiAssets>> PriceForParentDelivery for ConstantPrice<T> {
+	fn price_for_parent_delivery(_: &Xcm<()>) -> MultiAssets {
+	    T::get()
+	}
+}
 
 /// Xcm router which recognises the `Parent` destination and handles it by sending the message into
 /// the given UMP `UpwardMessageSender` implementation. Thus this essentially adapts an
@@ -31,8 +49,13 @@ use xcm::{latest::prelude::*, WrapVersion};
 /// NOTE: This is a pretty dumb "just send it" router; we will probably want to introduce queuing
 /// to UMP eventually and when we do, the pallet which implements the queuing will be responsible
 /// for the `SendXcm` implementation.
-pub struct ParentAsUmp<T, W>(PhantomData<(T, W)>);
-impl<T: UpwardMessageSender, W: WrapVersion> SendXcm for ParentAsUmp<T, W> {
+pub struct ParentAsUmp<T, W, P>(PhantomData<(T, W, P)>);
+impl<T, W, P> SendXcm for ParentAsUmp<T, W, P>
+where
+	T: UpwardMessageSender,
+	W: WrapVersion,
+	P: PriceForParentDelivery,
+{
 	type Ticket = Vec<u8>;
 
 	fn validate(
@@ -44,11 +67,12 @@ impl<T: UpwardMessageSender, W: WrapVersion> SendXcm for ParentAsUmp<T, W> {
 
 		if d.contains_parents_only(1) {
 			// An upward message for the relay chain.
+			let price = P::price_for_parent_delivery(&xcm);
 			let versioned_xcm =
 				W::wrap_version(&d, xcm).map_err(|()| SendError::DestinationUnsupported)?;
 			let data = versioned_xcm.encode();
 
-			Ok((data, MultiAssets::new()))
+			Ok((data, price))
 		} else {
 			*dest = Some(d);
 			// Anything else is unhandled. This includes a message this is meant for us.
