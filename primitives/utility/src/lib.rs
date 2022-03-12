@@ -31,14 +31,14 @@ pub trait PriceForParentDelivery {
 
 impl PriceForParentDelivery for () {
 	fn price_for_parent_delivery(_: &Xcm<()>) -> MultiAssets {
-	    MultiAssets::new()
+		MultiAssets::new()
 	}
 }
 
 pub struct ConstantPrice<T>(PhantomData<T>);
 impl<T: Get<MultiAssets>> PriceForParentDelivery for ConstantPrice<T> {
 	fn price_for_parent_delivery(_: &Xcm<()>) -> MultiAssets {
-	    T::get()
+		T::get()
 	}
 }
 

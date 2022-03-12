@@ -1086,14 +1086,14 @@ pub trait PriceForSiblingDelivery {
 
 impl PriceForSiblingDelivery for () {
 	fn price_for_sibling_delivery(_: ParaId, _: &Xcm<()>) -> MultiAssets {
-	    MultiAssets::new()
+		MultiAssets::new()
 	}
 }
 
 pub struct ConstantPrice<T>(sp_std::marker::PhantomData<T>);
 impl<T: Get<MultiAssets>> PriceForSiblingDelivery for ConstantPrice<T> {
 	fn price_for_sibling_delivery(_: ParaId, _: &Xcm<()>) -> MultiAssets {
-	    T::get()
+		T::get()
 	}
 }
 
