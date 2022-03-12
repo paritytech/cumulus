@@ -28,9 +28,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 };
 use xcm::prelude::*;
-use xcm_builder::{
-	CurrencyAdapter, FixedWeightBounds, IsConcrete, NativeAsset, ParentIsPreset,
-};
+use xcm_builder::{CurrencyAdapter, FixedWeightBounds, IsConcrete, NativeAsset, ParentIsPreset};
 use xcm_executor::traits::ConvertOrigin;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;

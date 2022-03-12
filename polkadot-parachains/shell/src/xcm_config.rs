@@ -17,8 +17,8 @@ use super::{AccountId, Call, Event, Origin, ParachainInfo, Runtime};
 use frame_support::{match_types, parameter_types, traits::Nothing, weights::Weight};
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AllowUnpaidExecutionFrom, FixedWeightBounds, ParentAsSuperuser,
-	ParentIsPreset, SovereignSignedViaLocation,
+	AllowUnpaidExecutionFrom, FixedWeightBounds, ParentAsSuperuser, ParentIsPreset,
+	SovereignSignedViaLocation,
 };
 
 parameter_types! {
