@@ -67,7 +67,7 @@ where
 	assert!(parent_head.hash() == *block.header().parent_hash(), "Invalid parent hash",);
 
 	// Create the db
-	let (db, root) = match storage_proof.to_memory_db(Some(parent_head.state_root())) {
+	let (db, _root) = match storage_proof.to_memory_db(Some(parent_head.state_root())) {
 		Ok((db, root)) => (db, root),
 		Err(_) => panic!("Compact proof decoding failure."),
 	};

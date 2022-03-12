@@ -29,7 +29,7 @@ use sp_runtime::{
 };
 use xcm::prelude::*;
 use xcm_builder::{
-	CurrencyAdapter, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset, ParentIsPreset,
+	CurrencyAdapter, FixedWeightBounds, IsConcrete, NativeAsset, ParentIsPreset,
 };
 use xcm_executor::traits::ConvertOrigin;
 
@@ -147,7 +147,7 @@ impl xcm_executor::Config for XcmConfig {
 	type OriginConverter = ();
 	type IsReserve = NativeAsset;
 	type IsTeleporter = NativeAsset;
-	type LocationInverter = LocationInverter<UniversalLocation>;
+	type UniversalLocation = UniversalLocation;
 	type Barrier = ();
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type Trader = ();
@@ -200,6 +200,7 @@ impl Config for Test {
 	type ControllerOrigin = EnsureRoot<AccountId>;
 	type ControllerOriginConverter = SystemParachainAsSuperuser<Origin>;
 	type WeightInfo = ();
+	type PriceForSiblingDelivery = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

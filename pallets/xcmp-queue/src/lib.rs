@@ -44,7 +44,7 @@ use cumulus_primitives_core::{
 	ParaId, XcmpMessageFormat, XcmpMessageHandler, XcmpMessageSource,
 };
 use frame_support::{
-	traits::EnsureOrigin,
+	traits::{EnsureOrigin, Get},
 	weights::{constants::WEIGHT_PER_MILLIS, Weight},
 };
 use rand_chacha::{

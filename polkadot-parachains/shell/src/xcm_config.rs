@@ -17,7 +17,7 @@ use super::{AccountId, Call, Event, Origin, ParachainInfo, Runtime};
 use frame_support::{match_types, parameter_types, traits::Nothing, weights::Weight};
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AllowUnpaidExecutionFrom, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
+	AllowUnpaidExecutionFrom, FixedWeightBounds, ParentAsSuperuser,
 	ParentIsPreset, SovereignSignedViaLocation,
 };
 
@@ -59,7 +59,7 @@ impl xcm_executor::Config for XcmConfig {
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type IsReserve = (); // balances not supported
 	type IsTeleporter = (); // balances not supported
-	type LocationInverter = LocationInverter<UniversalLocation>;
+	type UniversalLocation = UniversalLocation;
 	type Barrier = AllowUnpaidExecutionFrom<JustTheParent>;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>; // balances not supported
 	type Trader = (); // balances not supported
