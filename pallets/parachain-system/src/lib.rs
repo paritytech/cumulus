@@ -494,7 +494,7 @@ pub mod pallet {
 	/// This data is also absent from the genesis.
 	#[pallet::storage]
 	#[pallet::getter(fn relay_state_proof)]
-	pub(super) type RelayStateProof<T: Config> = StorageValue<_, sp_state_machine::StorageProof>;
+	pub(super) type RelayStateProof<T: Config> = StorageValue<_, sp_trie::StorageProof>;
 
 	/// The snapshot of some state related to messaging relevant to the current parachain as per
 	/// the relay parent.
