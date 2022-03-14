@@ -1,7 +1,7 @@
 [package]
 name = "encointer-collator"
 # align major.minor revision with the runtimes. bump patch revision ad lib. make this the github release tag
-version = "0.6.8"
+version = "0.6.9"
 authors = ["Encointer <info@encointer.org>"]
 build = "build.rs"
 edition = "2021"

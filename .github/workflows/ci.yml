@@ -209,7 +209,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        chain: [launch]
+        chain: [encointer]
         config: [rococo, westend, kusama]
     steps:
       - name: Checkout
