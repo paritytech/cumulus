@@ -18,6 +18,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", default-features
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
@@ -48,6 +49,7 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"log/std",
+	"polkadot-runtime-common/std",
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",

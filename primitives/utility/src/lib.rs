@@ -22,6 +22,7 @@
 use codec::Encode;
 use cumulus_primitives_core::{MessageSendError, UpwardMessageSender};
 use frame_support::traits::Get;
+use polkadot_runtime_common::xcm_sender::ConstantPrice;
 use sp_std::{marker::PhantomData, prelude::*};
 use xcm::{latest::prelude::*, WrapVersion};
 
@@ -35,7 +36,6 @@ impl PriceForParentDelivery for () {
 	}
 }
 
-pub struct ConstantPrice<T>(PhantomData<T>);
 impl<T: Get<MultiAssets>> PriceForParentDelivery for ConstantPrice<T> {
 	fn price_for_parent_delivery(_: &Xcm<()>) -> MultiAssets {
 		T::get()

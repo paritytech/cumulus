@@ -47,6 +47,7 @@ use frame_support::{
 	traits::{EnsureOrigin, Get},
 	weights::{constants::WEIGHT_PER_MILLIS, Weight},
 };
+use polkadot_runtime_common::xcm_sender::ConstantPrice;
 use rand_chacha::{
 	rand_core::{RngCore, SeedableRng},
 	ChaChaRng,
@@ -1090,7 +1091,6 @@ impl PriceForSiblingDelivery for () {
 	}
 }
 
-pub struct ConstantPrice<T>(sp_std::marker::PhantomData<T>);
 impl<T: Get<MultiAssets>> PriceForSiblingDelivery for ConstantPrice<T> {
 	fn price_for_sibling_delivery(_: ParaId, _: &Xcm<()>) -> MultiAssets {
 		T::get()

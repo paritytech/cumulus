@@ -16,6 +16,7 @@ sp-trie = { git = "https://github.com/paritytech/substrate", default-features = 
 
 # Polkadot
 polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -32,6 +33,7 @@ std = [
 	"sp-std/std",
 	"sp-trie/std",
 	"polkadot-core-primitives/std",
+	"polkadot-runtime-common/std",
 	"polkadot-parachain/std",
 	"polkadot-primitives/std",
 	"cumulus-primitives-core/std",
