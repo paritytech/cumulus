@@ -2,6 +2,7 @@ use cumulus_relay_chain_rpc_interface::RelayChainRPCClient;
 use polkadot_core_primitives::Block;
 use polkadot_node_network_protocol::Arc;
 use polkadot_service::{runtime_traits::BlockIdTo, HeaderBackend};
+use sc_authority_discovery::AuthorityDiscoveryWrapper;
 use sc_client_api::{BlockBackend, BlockchainEvents, ProofProvider};
 use sp_blockchain::HeaderMetadata;
 
@@ -13,6 +14,15 @@ pub struct BlockChainRPCClient {
 impl BlockChainRPCClient {
 	pub fn new(rpc_client: Arc<RelayChainRPCClient>) -> Self {
 		Self { rpc_client }
+	}
+}
+
+impl AuthorityDiscoveryWrapper<Block> for BlockChainRPCClient {
+	fn authorities(
+		&self,
+		at: &sp_api::BlockId<Block>,
+	) -> std::result::Result<Vec<polkadot_primitives::v1::AuthorityDiscoveryId>, sp_api::ApiError> {
+		todo!("AuthorityDiscoveryWrapper")
 	}
 }
 
