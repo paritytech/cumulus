@@ -485,7 +485,6 @@ pub mod pallet {
 	pub(super) type UpgradeRestrictionSignal<T: Config> =
 		StorageValue<_, Option<relay_chain::v2::UpgradeRestriction>, ValueQuery>;
 
-
 	/// The state proof for the last relay parent block.
 	///
 	/// This field is meant to be updated each block with the validation data inherent. Therefore,
