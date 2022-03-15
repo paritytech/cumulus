@@ -34,13 +34,12 @@ use polkadot_service::{
 };
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
 use sp_blockchain::HeaderBackend;
-use sp_consensus::{Error as ConsensusError, SelectChain};
-use sp_runtime::traits::NumberFor;
+use sp_consensus::{BlockOrigin, Error as ConsensusError, SelectChain};
+use sp_runtime::{traits::NumberFor, Justifications};
 
 use std::sync::Arc;
 
 use cumulus_primitives_core::relay_chain::{v2::ParachainHost, Block, BlockId, Hash as PHash};
-use cumulus_relay_chain_rpc_interface::RelayChainRPCClient;
 
 use polkadot_client::FullBackend;
 use polkadot_service::{
@@ -51,6 +50,9 @@ use polkadot_service::{
 use sc_telemetry::TelemetryWorkerHandle;
 use sp_api::{HeaderT, ProvideRuntimeApi};
 use sp_runtime::traits::Block as BlockT;
+
+mod blockchain_rpc_client;
+use blockchain_rpc_client::BlockChainRPCClient;
 
 pub struct CollatorOverseerGen;
 impl CollatorOverseerGen {
@@ -165,20 +167,15 @@ pub struct NewCollator {
 	pub overseer_handle: Option<Handle>,
 	pub network: Arc<sc_network::NetworkService<Block, <Block as BlockT>::Hash>>,
 }
+
 /// TODO This is just copied from polkadot_service
 /// Returns the active leaves the overseer should start with.
-async fn active_leaves<RuntimeApi, ExecutorDispatch>(
+async fn active_leaves<Client>(
 	select_chain: &impl SelectChain<Block>,
-	client: &FullClient<RuntimeApi, ExecutorDispatch>,
+	client: &Client,
 ) -> Result<Vec<BlockInfo>, Error>
 where
-	RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi, ExecutorDispatch>>
-		+ Send
-		+ Sync
-		+ 'static,
-	RuntimeApi::RuntimeApi:
-		RuntimeApiCollection<StateBackend = sc_client_api::StateBackendFor<FullBackend, Block>>,
-	ExecutorDispatch: NativeExecutionDispatch + 'static,
+	Client: HeaderBackend<Block>,
 {
 	let best_block = select_chain.best_chain().await?;
 
@@ -188,7 +185,7 @@ where
 		.unwrap_or_default()
 		.into_iter()
 		.filter_map(|hash| {
-			let number = HeaderBackend::number(client, hash).ok()??;
+			let number = client.number(hash).ok()??;
 
 			// Only consider leaves that are in maximum an uncle of the best block.
 			if number < best_block.number().saturating_sub(1) {
@@ -197,7 +194,7 @@ where
 				return None
 			};
 
-			let parent_hash = client.header(&BlockId::Hash(hash)).ok()??.parent_hash;
+			let parent_hash = client.header(BlockId::Hash(hash)).ok()??.parent_hash;
 
 			Some(BlockInfo { hash, parent_hash, number })
 		})
@@ -218,11 +215,11 @@ where
 
 #[derive(Clone)]
 struct RPCSelectChain {
-	rpc_client: Arc<RelayChainRPCClient>,
+	rpc_client: Arc<BlockChainRPCClient>,
 }
 
 impl RPCSelectChain {
-	pub fn new(rpc_client: Arc<RelayChainRPCClient>) -> Self {
+	pub fn new(rpc_client: Arc<BlockChainRPCClient>) -> Self {
 		RPCSelectChain { rpc_client }
 	}
 }
@@ -250,13 +247,48 @@ impl SelectChain<Block> for RPCSelectChain {
 	}
 }
 
+pub struct FakeImportQueue {}
+
+impl sc_service::ImportQueue<Block> for FakeImportQueue {
+	/// Import bunch of blocks.
+	fn import_blocks(
+		&mut self,
+		origin: BlockOrigin,
+		blocks: Vec<sc_consensus::IncomingBlock<Block>>,
+	) {
+		todo!("ImportQueue::import_blocks")
+	}
+	/// Import block justifications.
+	fn import_justifications(
+		&mut self,
+		who: libp2p::PeerId,
+		hash: PHash,
+		number: NumberFor<Block>,
+		justifications: Justifications,
+	) {
+		todo!("ImportQueue::import_blocks")
+	}
+	/// Polls for actions to perform on the network.
+	///
+	/// This method should behave in a way similar to `Future::poll`. It can register the current
+	/// task and notify later when more actions are ready to be polled. To continue the comparison,
+	/// it is as if this method always returned `Poll::Pending`.
+	fn poll_actions(
+		&mut self,
+		cx: &mut futures::task::Context,
+		link: &mut dyn sc_consensus::import_queue::Link<Block>,
+	) {
+		todo!("ImportQueue::import_blocks")
+	}
+}
+
 pub fn new_mini<RuntimeApi, ExecutorDispatch, OverseerGenerator>(
 	mut config: Configuration,
 	collator_pair: CollatorPair,
 	jaeger_agent: Option<std::net::SocketAddr>,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	overseer_enable_anyways: bool,
-	relay_chain_rpc_client: Arc<RelayChainRPCClient>,
+	relay_chain_rpc_client: Arc<BlockChainRPCClient>,
 ) -> Result<NewCollator, Error>
 where
 	RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi, ExecutorDispatch>>
@@ -327,23 +359,22 @@ where
 	let (available_data_req_receiver, cfg) = IncomingRequest::get_config_receiver();
 	config.network.request_response_protocols.push(cfg);
 
+	let import_queue = FakeImportQueue {};
 	let transaction_pool = Arc::new(sc_network::config::EmptyTransactionPool);
 	let (network, _, network_starter) =
-		sc_service::build_network(sc_service::BuildNetworkParams {
+		sc_service::build_collator_network(sc_service::BuildCollatorNetworkParams {
 			config: &config,
-			client: client.clone(),
-			transaction_pool: transaction_pool.clone(),
+			client: relay_chain_rpc_client.clone(),
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue,
-			block_announce_validator_builder: None,
-			warp_sync: None,
 		})?;
 
-	let overseer_client = client.clone();
+	let overseer_client = relay_chain_rpc_client.clone();
 	let spawner = task_manager.spawn_handle();
 	// Cannot use the `RelayChainSelection`, since that'd require a setup _and running_ overseer
 	// which we are about to setup.
-	let active_leaves = futures::executor::block_on(active_leaves(&select_chain, &*client))?;
+	let active_leaves =
+		futures::executor::block_on(active_leaves(&select_chain, &*relay_chain_rpc_client))?;
 
 	let authority_discovery_service = {
 		use futures::StreamExt;
@@ -362,7 +393,7 @@ where
 				publish_non_global_ips: auth_disc_publish_non_global_ips,
 				..Default::default()
 			},
-			client.clone(),
+			relay_chain_rpc_client.clone(),
 			network.clone(),
 			Box::pin(dht_event_stream),
 			authority_discovery_role,

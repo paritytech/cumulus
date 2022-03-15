@@ -25,6 +25,7 @@ sc-service = { git = "https://github.com/paritytech/substrate", branch = "master
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -37,6 +38,7 @@ cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 cumulus-relay-chain-rpc-interface = { path = "../relay-chain-rpc-interface" }
 cumulus-primitives-core = { path = "../../primitives/core" }
 
+libp2p = { version = "0.40.0", default-features = false }
 lru = "0.7"
 parking_lot = "0.11.1"
 tracing = "0.1.25"
