@@ -11,30 +11,30 @@ rand_chacha = { version = "0.3.0", default-features = false }
 scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kpp-libp2p-0.43" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kpp-libp2p-0.43" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kpp-libp2p-0.43" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kpp-libp2p-0.43" }
 
 # Polkadot
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kpp-libp2p-0.43" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kpp-libp2p-0.43" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 
 # Optional import for benchmarking
-frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
 
 [dev-dependencies]
 
 # Substrate
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
 
 # Polkadot
-xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "kpp-libp2p-0.43" }
 
 # Cumulus
 cumulus-pallet-parachain-system = { path = "../parachain-system" }

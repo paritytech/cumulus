@@ -13,34 +13,34 @@ codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive
 scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
 
 # Substrate
-frame-executive = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-frame-support = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-assets = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-authorship = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kpp-libp2p-0.43" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kpp-libp2p-0.43" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kpp-libp2p-0.43" }
+pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kpp-libp2p-0.43" }
+pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kpp-libp2p-0.43" }
+pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kpp-libp2p-0.43" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kpp-libp2p-0.43" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kpp-libp2p-0.43" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kpp-libp2p-0.43" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kpp-libp2p-0.43" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kpp-libp2p-0.43" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "kpp-libp2p-0.43" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kpp-libp2p-0.43" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kpp-libp2p-0.43" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kpp-libp2p-0.43" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "kpp-libp2p-0.43" }
 
 # Cumulus
 pallet-collator-selection = { path = "../../pallets/collator-selection", default-features = false }
 
 [dev-dependencies]
-pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kpp-libp2p-0.43" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kpp-libp2p-0.43" }
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
 
 [features]
 default = ["std"]

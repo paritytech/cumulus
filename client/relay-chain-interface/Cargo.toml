@@ -5,18 +5,18 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "kpp-libp2p-0.43" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "kpp-libp2p-0.43" }
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
 
 futures = "0.3.21"
 parking_lot = "0.12.0"

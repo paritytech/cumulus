@@ -16,36 +16,36 @@ tokio = { version = "1.17.0", features = ["macros"] }
 url = "2.2.2"
 
 # Substrate
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "master" }
-frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
-sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "master", features = [ "wasmtime" ] }
-sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sc-executor = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] , branch = "kpp-libp2p-0.43" }
+sc-network = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sc-service = { git = "https://github.com/paritytech/substrate", features = [ "wasmtime" ] , branch = "kpp-libp2p-0.43" }
+sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "kpp-libp2p-0.43" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+sp-trie = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "kpp-libp2p-0.43" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "kpp-libp2p-0.43" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "kpp-libp2p-0.43" }
 
 # Cumulus
 cumulus-client-cli = { path = "../../client/cli" }
@@ -66,11 +66,11 @@ futures = "0.3.5"
 portpicker = "0.1.1"
 
 # Polkadot dependencies
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "kpp-libp2p-0.43" }
 
 # Substrate dependencies
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
+substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "kpp-libp2p-0.43" }
 
 [[bench]]
 name = "transaction_throughput"
