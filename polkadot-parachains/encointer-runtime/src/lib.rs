@@ -59,7 +59,7 @@ pub mod weights;
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{Contains, Everything, Nothing},
+	traits::{Contains, EqualPrivilegeOnly, Everything, Nothing},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -89,14 +89,14 @@ pub use encointer_primitives::{
 };
 
 // XCM imports
-use pallet_xcm::XcmPassthrough;
+use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin,
 	FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser,
-	ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+	ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
 	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 	UsingComponents,
 };
@@ -378,6 +378,26 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
+	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
+		RuntimeBlockWeights::get().max_block;
+	pub const MaxScheduledPerBlock: u32 = 50;
+}
+
+impl pallet_scheduler::Config for Runtime {
+	type Event = Event;
+	type Origin = Origin;
+	type PalletsOrigin = OriginCaller;
+	type Call = Call;
+	type MaximumWeight = MaximumSchedulerWeight;
+	type ScheduleOrigin = EnsureRoot<AccountId>;
+	type MaxScheduledPerBlock = MaxScheduledPerBlock;
+	type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
+	type OriginPrivilegeCmp = EqualPrivilegeOnly;
+	type PreimageProvider = ();
+	type NoPreimagePostponement = ();
+}
+
+parameter_types! {
 	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
 	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
 }
@@ -413,7 +433,7 @@ parameter_types! {
 /// `Transact` in order to determine the dispatch Origin.
 pub type LocationToAccountId = (
 	// The parent (Relay-chain) origin converts to the default `AccountId`.
-	ParentIsDefault<AccountId>,
+	ParentIsPreset<AccountId>,
 	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
@@ -551,12 +571,20 @@ impl cumulus_pallet_xcm::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
+parameter_types! {
+	pub const KsmLocation: MultiLocation = MultiLocation::parent();
+	pub const ExecutiveBody: BodyId = BodyId::Executive;
+}
+
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type Event = Event;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+	type ControllerOrigin =
+		EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>>;
+	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -573,18 +601,17 @@ parameter_types! {
 
 parameter_types! {
 	pub const MomentsPerDay: Moment = 86_400_000; // [ms/d]
-	pub const ReputationLifetime: u32 = 1;
-	pub const AmountNewbieTickets: u8 = 50;
-	pub const MinSolarTripTimeS: u32 = 1;
-	pub const MaxSpeedMps: u32 = 83;
 	pub const DefaultDemurrage: Demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
-	pub const InactivityTimeout: u32 = 50;
+	pub const MeetupSizeTarget: u64 = 10;
+	pub const MeetupMinSize: u64 = 3;
+	pub const MeetupNewbieLimitDivider: u64 = 2; // 2 means 1/3 of participants may be newbies
 }
 
 impl pallet_encointer_scheduler::Config for Runtime {
 	type Event = Event;
 	type OnCeremonyPhaseChange = EncointerCeremonies;
 	type MomentsPerDay = MomentsPerDay;
+	type CeremonyMaster = MoreThanHalfCouncil;
 }
 
 impl pallet_encointer_ceremonies::Config for Runtime {
@@ -592,15 +619,15 @@ impl pallet_encointer_ceremonies::Config for Runtime {
 	type Public = <Signature as Verify>::Signer;
 	type Signature = Signature;
 	type RandomnessSource = RandomnessCollectiveFlip;
-	type ReputationLifetime = ReputationLifetime;
-	type AmountNewbieTickets = AmountNewbieTickets;
-	type InactivityTimeout = InactivityTimeout;
+	type MeetupSizeTarget = MeetupSizeTarget;
+	type MeetupMinSize = MeetupMinSize;
+	type MeetupNewbieLimitDivider = MeetupNewbieLimitDivider;
+	type CeremonyMaster = MoreThanHalfCouncil;
 }
 
 impl pallet_encointer_communities::Config for Runtime {
 	type Event = Event;
-	type MinSolarTripTimeS = MinSolarTripTimeS;
-	type MaxSpeedMps = MaxSpeedMps;
+	type CommunityMaster = MoreThanHalfCouncil;
 }
 
 impl pallet_encointer_balances::Config for Runtime {
@@ -701,6 +728,7 @@ construct_runtime! {
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
 		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>} = 43,
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 44,
+		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 48,
 
 		// Encointer council.
 		Collective: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Config<T>, Event<T> } = 50,
@@ -708,7 +736,7 @@ construct_runtime! {
 
 		EncointerScheduler: pallet_encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event} = 60,
 		EncointerCeremonies: pallet_encointer_ceremonies::{Pallet, Call, Storage, Config<T>, Event<T>} = 61,
-		EncointerCommunities: pallet_encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>} = 62,
+		EncointerCommunities: pallet_encointer_communities::{Pallet, Call, Storage, Config, Event<T>} = 62,
 		EncointerBalances: pallet_encointer_balances::{Pallet, Call, Storage, Event<T>} = 63,
 		EncointerBazaar: pallet_encointer_bazaar::{Pallet, Call, Storage, Event<T>} = 64,
 		//

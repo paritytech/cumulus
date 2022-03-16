@@ -214,20 +214,24 @@ fn encointer_genesis(
 		encointer_scheduler: parachain_runtime::EncointerSchedulerConfig {
 			current_phase: CeremonyPhaseType::REGISTERING,
 			current_ceremony_index: 1,
-			ceremony_master: Some(root_key.clone()),
 			phase_durations: vec![
-				(CeremonyPhaseType::REGISTERING, 600_000),
-				(CeremonyPhaseType::ASSIGNING, 600_000),
-				(CeremonyPhaseType::ATTESTING, 600_000),
+				(CeremonyPhaseType::REGISTERING, 604800000), // 7d
+				(CeremonyPhaseType::ASSIGNING, 86400000),    // 1d
+				(CeremonyPhaseType::ATTESTING, 172800000),   // 2d
 			],
 		},
 		encointer_ceremonies: parachain_runtime::EncointerCeremoniesConfig {
 			ceremony_reward: BalanceType::from_num(1),
 			time_tolerance: 600_000,   // +-10min
 			location_tolerance: 1_000, // [m]
+			endorsement_tickets_per_bootstrapper: 10,
+			reputation_lifetime: 5,
+			inactivity_timeout: 5, // idle ceremonies before purging community
+			meetup_time_offset: 0,
 		},
 		encointer_communities: parachain_runtime::EncointerCommunitiesConfig {
-			community_master: Some(root_key),
+			min_solar_trip_time_s: 1, // [s]
+			max_speed_mps: 1,         // [m/s] suggested would be 83m/s for security,
 		},
 	}
 }

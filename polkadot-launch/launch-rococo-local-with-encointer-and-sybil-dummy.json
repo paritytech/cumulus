@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../../bin/polkadot-v0.9.16-rc9",
+		"bin": "../../../bin/polkadot-0.9.17",
 		"chain": "rococo-local",
 		"nodes": [
 			{
@@ -23,7 +23,7 @@
 	"parachains": [
 		{
 			"bin": "../target/release/encointer-collator",
-			"chain": "encointer-rococo-local",
+			"chain": "encointer-rococo-local-dev",
 			"balance": "1000000000000000000000",
 			"nodes": [
 				{
