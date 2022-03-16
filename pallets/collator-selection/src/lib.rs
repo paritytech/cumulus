@@ -368,7 +368,7 @@ pub mod pallet {
 
 			let current_count =
 				<Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
-					if candidates.into_iter().any(|candidate| candidate.who == who) {
+					if candidates.iter().any(|candidate| candidate.who == who) {
 						Err(Error::<T>::AlreadyCandidate)?
 					} else {
 						T::Currency::reserve(&who, deposit)?;
@@ -417,7 +417,7 @@ pub mod pallet {
 						.iter()
 						.position(|candidate| candidate.who == *who)
 						.ok_or(Error::<T>::NotCandidate)?;
-					T::Currency::unreserve(&who, candidates[index].deposit);
+					T::Currency::unreserve(who, candidates[index].deposit);
 					candidates.remove(index);
 					<LastAuthoredBlock<T>>::remove(who.clone());
 					Ok(candidates.len())
@@ -431,7 +431,7 @@ pub mod pallet {
 		/// This is done on the fly, as frequent as we are told to do so, as the session manager.
 		pub fn assemble_collators(candidates: Vec<T::AccountId>) -> Vec<T::AccountId> {
 			let mut collators = Self::invulnerables();
-			collators.extend(candidates.into_iter().collect::<Vec<_>>());
+			collators.extend(candidates.into_iter());
 			collators
 		}
 		/// Kicks out and candidates that did not produce a block in the kick threshold.
@@ -440,7 +440,7 @@ pub mod pallet {
 		) -> Vec<T::AccountId> {
 			let now = frame_system::Pallet::<T>::block_number();
 			let kick_threshold = T::KickThreshold::get();
-			let new_candidates = candidates
+			candidates
 				.into_iter()
 				.filter_map(|c| {
 					let last_block = <LastAuthoredBlock<T>>::get(c.who.clone());
@@ -458,8 +458,7 @@ pub mod pallet {
 						None
 					}
 				})
-				.collect::<Vec<_>>();
-			new_candidates
+				.collect()
 		}
 	}
 
