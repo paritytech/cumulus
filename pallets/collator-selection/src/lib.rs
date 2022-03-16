@@ -432,7 +432,7 @@ pub mod pallet {
 		/// This is done on the fly, as frequent as we are told to do so, as the session manager.
 		pub fn assemble_collators(candidates: Vec<T::AccountId>) -> Vec<T::AccountId> {
 			let mut collators = Self::invulnerables();
-			collators.extend(candidates.into_iter());
+			collators.extend(candidates);
 			collators
 		}
 
