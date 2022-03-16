@@ -409,6 +409,7 @@ pub mod pallet {
 		pub fn account_id() -> T::AccountId {
 			T::PotId::get().into_account()
 		}
+
 		/// Removes a candidate if they exist and sends them back their deposit
 		fn try_remove_candidate(who: &T::AccountId) -> Result<usize, DispatchError> {
 			let current_count =
@@ -417,8 +418,8 @@ pub mod pallet {
 						.iter()
 						.position(|candidate| candidate.who == *who)
 						.ok_or(Error::<T>::NotCandidate)?;
-					T::Currency::unreserve(who, candidates[index].deposit);
-					candidates.remove(index);
+					let candidate = candidates.remove(index);
+					T::Currency::unreserve(who, candidate.deposit);
 					<LastAuthoredBlock<T>>::remove(who.clone());
 					Ok(candidates.len())
 				})?;
@@ -434,7 +435,9 @@ pub mod pallet {
 			collators.extend(candidates.into_iter());
 			collators
 		}
-		/// Kicks out and candidates that did not produce a block in the kick threshold.
+
+		/// Kicks out candidates that did not produce a block in the kick threshold
+		/// and refund their deposits.
 		pub fn kick_stale_candidates(
 			candidates: Vec<CandidateInfo<T::AccountId, BalanceOf<T>>>,
 		) -> Vec<T::AccountId> {
@@ -502,9 +505,8 @@ pub mod pallet {
 			let candidates = Self::candidates();
 			let candidates_len_before = candidates.len();
 			let active_candidates = Self::kick_stale_candidates(candidates);
-			let active_candidates_len = active_candidates.len();
+			let removed = candidates_len_before - active_candidates.len();
 			let result = Self::assemble_collators(active_candidates);
-			let removed = candidates_len_before - active_candidates_len;
 
 			frame_system::Pallet::<T>::register_extra_weight_unchecked(
 				T::WeightInfo::new_session(candidates_len_before as u32, removed as u32),
