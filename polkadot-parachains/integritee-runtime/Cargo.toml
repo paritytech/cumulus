@@ -47,7 +47,7 @@ pallet-multisig = { git = "https://github.com/paritytech/substrate.git", default
 pallet-proxy = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.16" }
 pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.16" }
 
-# local pallets
+# integritee pallets
 pallet-claims = { git = "https://github.com/integritee-network/pallets.git", default-features = false, branch = "polkadot-v0.9.16" }
 pallet-teerex = { git = "https://github.com/integritee-network/pallets.git", default-features = false, branch = "polkadot-v0.9.16" }
 pallet-teeracle = { git = "https://github.com/integritee-network/pallets.git", default-features = false, branch = "polkadot-v0.9.16" }
@@ -76,7 +76,6 @@ pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features 
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.16" }
 frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.16" }
 hex-literal = { version = "0.3.2", optional = true }
-
 
 [dev-dependencies]
 hex-literal = "0.3.1"
@@ -158,5 +157,4 @@ runtime-benchmarks = [
 	"pallet-teerex/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-vesting/runtime-benchmarks",
-
 ]
