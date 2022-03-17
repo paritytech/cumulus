@@ -25,6 +25,9 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use crate::opaque::SessionKeys;
 use codec::{Decode, Encode, MaxEncodedLen};
+use frame_support::traits::{
+	Contains, EqualPrivilegeOnly, Imbalance, InstanceFilter, OnUnbalanced,
+};
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
@@ -37,7 +40,6 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
-use frame_support::traits::{Contains, EqualPrivilegeOnly, Imbalance, InstanceFilter, OnUnbalanced};
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, match_type, parameter_types,
@@ -209,13 +211,19 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 13;
 }
 
-/// Allow everything.
+/// Only allow runtime upgrades and base filtering as well as storage calls
 /// A more varied polkadot runtime example be found here:
 /// https://github.com/paritytech/polkadot/blob/f0b2bf3c20a7fae381685c7f6bb3c36fbce65722/runtime/polkadot/src/lib.rs#L130-L175
 pub struct BaseFilter;
 impl Contains<Call> for BaseFilter {
-	fn contains(_: &Call) -> bool {
-		true
+	fn contains(c: &Call) -> bool {
+		match call {
+			// These modules are all allowed to be called by transactions:
+			Call::System(frame_system::Call::set_code { .. }) |
+			Call::System(frame_system::Call::set_code_without_checks { .. }) => true,
+			// Disable everything before / during migration
+			_ => false,
+		}
 	}
 }
 
@@ -738,9 +746,11 @@ impl pallet_migration::Config for Runtime {
 	type MigrationMaxProxies = MigrationMaxProxies;
 	type Event = Event;
 	type WeightInfo = weights::pallet_migration::WeightInfo<Runtime>;
-	type FinalizedFilter = Everything;
-	type InactiveFilter = Everything;
-	type OngoingFilter = Everything;
+	type FinalizedFilter = Everything; // Allow all calls again after finishing the migration
+	// After this runtime upgrade, we do not allow any transactions except for migration purposes
+	type InactiveFilter = BaseFilter;
+	// During migration we do not allow any transactions except for migration purposes
+	type OngoingFilter = BaseFilter;
 }
 
 construct_runtime! {
