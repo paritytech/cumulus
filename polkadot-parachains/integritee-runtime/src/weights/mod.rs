@@ -5,6 +5,12 @@
 
 pub mod frame_system;
 pub mod pallet_balances;
+pub mod pallet_claims;
+pub mod pallet_migration;
+pub mod pallet_multisig;
+pub mod pallet_proxy;
+pub mod pallet_scheduler;
+pub mod pallet_teeracle;
 pub mod pallet_teerex;
 pub mod pallet_timestamp;
 pub mod pallet_vesting;

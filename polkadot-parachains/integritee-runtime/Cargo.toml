@@ -33,6 +33,8 @@ frame-support = { git = "https://github.com/paritytech/substrate", default-featu
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.16" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.16" }
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.16" }
+
+# pallets
 pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.16" }
 pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.16" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.16" }
@@ -41,6 +43,17 @@ pallet-vesting = { git = "https://github.com/paritytech/substrate", default-feat
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.16" }
 pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.16" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.16" }
+pallet-multisig = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.16" }
+pallet-proxy = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.16" }
+pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.16" }
+
+# local pallets
+pallet-claims = { git = "https://github.com/integritee-network/pallets.git", default-features = false, branch = "polkadot-v0.9.16" }
+pallet-teerex = { git = "https://github.com/integritee-network/pallets.git", default-features = false, branch = "polkadot-v0.9.16" }
+pallet-teeracle = { git = "https://github.com/integritee-network/pallets.git", default-features = false, branch = "polkadot-v0.9.16" }
+
+# migration
+pallet-migration = { git = "https://github.com/integritee-network/pallet-migration", default-features = false, branch = "polkadot-v0.9.16" }
 
 # Cumulus dependencies
 cumulus-pallet-aura-ext = { git = "https://github.com/paritytech/cumulus",  branch = "polkadot-v0.9.16", default-features = false }
@@ -64,19 +77,13 @@ frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-
 frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.16" }
 hex-literal = { version = "0.3.2", optional = true }
 
+
 [dev-dependencies]
 hex-literal = "0.3.1"
 hex = "0.4.3"
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
-
-# TEE
-[dependencies.pallet-teerex]
-default-features = false
-git = "https://github.com/integritee-network/pallets.git"
-branch = "polkadot-v0.9.16"
-package = 'pallet-teerex'
 
 [features]
 default = [ "std" ]
@@ -100,6 +107,7 @@ std = [
 	"frame-executive/std",
 	"frame-system/std",
 	"frame-system-rpc-runtime-api/std",
+	"pallet-aura/std",
 	"pallet-balances/std",
 	"pallet-randomness-collective-flip/std",
 	"pallet-timestamp/std",
@@ -107,6 +115,9 @@ std = [
 	"pallet-transaction-payment/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-vesting/std",
+	"pallet-multisig/std",
+	"pallet-proxy/std",
+	"pallet-scheduler/std",
 	"parachain-info/std",
 	"cumulus-pallet-aura-ext/std",
 	"cumulus-pallet-dmp-queue/std",
@@ -119,22 +130,33 @@ std = [
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
-	"pallet-aura/std",
 	"sp-consensus-aura/std",
-	# TEE
-	"pallet-teerex/std"
+	# Integritee
+	"pallet-claims/std",
+	"pallet-teeracle/std",
+	"pallet-teerex/std",
+	# Migration
+	"pallet-migration/std"
 ]
 runtime-benchmarks = [
 	# support stuff
 	"frame-benchmarking",
 	"frame-system-benchmarking",
 	"hex-literal",
+	"sp-runtime/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	"xcm-builder/runtime-benchmarks",
 	# actual pallets to be benchmarked
 	"frame-system/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
+	"pallet-claims/runtime-benchmarks",
+	"pallet-migration/runtime-benchmarks",
+	"pallet-multisig/runtime-benchmarks",
+	"pallet-proxy/runtime-benchmarks",
+	"pallet-scheduler/runtime-benchmarks",
+	"pallet-teeracle/runtime-benchmarks",
+	"pallet-teerex/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-vesting/runtime-benchmarks",
-	"pallet-teerex/runtime-benchmarks",
+
 ]
