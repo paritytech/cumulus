@@ -1,6 +1,7 @@
 use cumulus_relay_chain_rpc_interface::RelayChainRPCClient;
 use polkadot_core_primitives::Block;
 use polkadot_node_network_protocol::Arc;
+use polkadot_overseer::OverseerRuntimeClient;
 use polkadot_service::{runtime_traits::BlockIdTo, HeaderBackend};
 use sc_authority_discovery::AuthorityDiscoveryWrapper;
 use sc_client_api::{BlockBackend, BlockchainEvents, ProofProvider};
@@ -14,6 +15,270 @@ pub struct BlockChainRPCClient {
 impl BlockChainRPCClient {
 	pub fn new(rpc_client: Arc<RelayChainRPCClient>) -> Self {
 		Self { rpc_client }
+	}
+}
+
+impl OverseerRuntimeClient for BlockChainRPCClient {
+	fn validators(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+	) -> Result<Vec<polkadot_primitives::v1::ValidatorId>, sp_api::ApiError> {
+		todo!()
+	}
+
+	fn validator_groups(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+	) -> Result<
+		(
+			Vec<Vec<polkadot_primitives::v1::ValidatorIndex>>,
+			polkadot_primitives::v1::GroupRotationInfo<polkadot_core_primitives::BlockNumber>,
+		),
+		sp_api::ApiError,
+	> {
+		todo!()
+	}
+
+	fn availability_cores(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+	) -> Result<
+		Vec<
+			polkadot_primitives::v1::CoreState<
+				polkadot_core_primitives::Hash,
+				polkadot_core_primitives::BlockNumber,
+			>,
+		>,
+		sp_api::ApiError,
+	> {
+		todo!()
+	}
+
+	fn persisted_validation_data(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+		para_id: cumulus_primitives_core::ParaId,
+		assumption: polkadot_primitives::v1::OccupiedCoreAssumption,
+	) -> Result<
+		Option<
+			cumulus_primitives_core::PersistedValidationData<
+				polkadot_core_primitives::Hash,
+				polkadot_core_primitives::BlockNumber,
+			>,
+		>,
+		sp_api::ApiError,
+	> {
+		todo!()
+	}
+
+	fn assumed_validation_data(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+		para_id: cumulus_primitives_core::ParaId,
+		expected_persisted_validation_data_hash: polkadot_core_primitives::Hash,
+	) -> Result<
+		Option<(
+			cumulus_primitives_core::PersistedValidationData<
+				polkadot_core_primitives::Hash,
+				polkadot_core_primitives::BlockNumber,
+			>,
+			polkadot_primitives::v1::ValidationCodeHash,
+		)>,
+		sp_api::ApiError,
+	> {
+		todo!()
+	}
+
+	fn check_validation_outputs(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+		para_id: cumulus_primitives_core::ParaId,
+		outputs: polkadot_primitives::v1::CandidateCommitments,
+	) -> Result<bool, sp_api::ApiError> {
+		todo!()
+	}
+
+	fn session_index_for_child(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+	) -> Result<polkadot_primitives::v1::SessionIndex, sp_api::ApiError> {
+		todo!()
+	}
+
+	fn validation_code(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+		para_id: cumulus_primitives_core::ParaId,
+		assumption: polkadot_primitives::v1::OccupiedCoreAssumption,
+	) -> Result<Option<polkadot_primitives::v1::ValidationCode>, sp_api::ApiError> {
+		todo!()
+	}
+
+	fn candidate_pending_availability(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+		para_id: cumulus_primitives_core::ParaId,
+	) -> Result<
+		Option<polkadot_primitives::v1::CommittedCandidateReceipt<polkadot_core_primitives::Hash>>,
+		sp_api::ApiError,
+	> {
+		todo!()
+	}
+
+	fn candidate_events(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+	) -> Result<
+		Vec<polkadot_primitives::v1::CandidateEvent<polkadot_core_primitives::Hash>>,
+		sp_api::ApiError,
+	> {
+		todo!()
+	}
+
+	fn dmq_contents(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+		recipient: cumulus_primitives_core::ParaId,
+	) -> Result<
+		Vec<cumulus_primitives_core::InboundDownwardMessage<polkadot_core_primitives::BlockNumber>>,
+		sp_api::ApiError,
+	> {
+		todo!()
+	}
+
+	fn inbound_hrmp_channels_contents(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+		recipient: cumulus_primitives_core::ParaId,
+	) -> Result<
+		std::collections::BTreeMap<
+			cumulus_primitives_core::ParaId,
+			Vec<
+				polkadot_core_primitives::InboundHrmpMessage<polkadot_core_primitives::BlockNumber>,
+			>,
+		>,
+		sp_api::ApiError,
+	> {
+		todo!()
+	}
+
+	fn validation_code_by_hash(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+		hash: polkadot_primitives::v1::ValidationCodeHash,
+	) -> Result<Option<polkadot_primitives::v1::ValidationCode>, sp_api::ApiError> {
+		todo!()
+	}
+
+	fn on_chain_votes(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+	) -> Result<
+		Option<polkadot_primitives::v1::ScrapedOnChainVotes<polkadot_core_primitives::Hash>>,
+		sp_api::ApiError,
+	> {
+		todo!()
+	}
+
+	fn session_info(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+		index: polkadot_primitives::v1::SessionIndex,
+	) -> Result<Option<polkadot_primitives::v2::SessionInfo>, sp_api::ApiError> {
+		todo!()
+	}
+
+	fn session_info_before_version_2(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+		index: polkadot_primitives::v1::SessionIndex,
+	) -> Result<Option<polkadot_primitives::v1::SessionInfo>, sp_api::ApiError> {
+		todo!()
+	}
+
+	fn submit_pvf_check_statement(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+		stmt: polkadot_primitives::v2::PvfCheckStatement,
+		signature: polkadot_primitives::v1::ValidatorSignature,
+	) -> Result<(), sp_api::ApiError> {
+		todo!()
+	}
+
+	fn pvfs_require_precheck(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+	) -> Result<Vec<polkadot_primitives::v1::ValidationCodeHash>, sp_api::ApiError> {
+		todo!()
+	}
+
+	fn validation_code_hash(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+		para_id: cumulus_primitives_core::ParaId,
+		assumption: polkadot_primitives::v1::OccupiedCoreAssumption,
+	) -> Result<Option<polkadot_primitives::v1::ValidationCodeHash>, sp_api::ApiError> {
+		todo!()
+	}
+
+	fn configuration(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+	) -> Result<sp_consensus_babe::BabeGenesisConfiguration, sp_api::ApiError> {
+		todo!()
+	}
+
+	fn current_epoch_start(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+	) -> Result<sp_consensus_babe::Slot, sp_api::ApiError> {
+		todo!()
+	}
+
+	fn current_epoch(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+	) -> Result<sp_consensus_babe::Epoch, sp_api::ApiError> {
+		todo!()
+	}
+
+	fn next_epoch(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+	) -> Result<sp_consensus_babe::Epoch, sp_api::ApiError> {
+		todo!()
+	}
+
+	fn generate_key_ownership_proof(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+		slot: sp_consensus_babe::Slot,
+		authority_id: sp_consensus_babe::AuthorityId,
+	) -> Result<Option<sp_consensus_babe::OpaqueKeyOwnershipProof>, sp_api::ApiError> {
+		todo!()
+	}
+
+	fn submit_report_equivocation_unsigned_extrinsic(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+		equivocation_proof: sp_consensus_babe::EquivocationProof<polkadot_core_primitives::Header>,
+		key_owner_proof: sp_consensus_babe::OpaqueKeyOwnershipProof,
+	) -> Result<Option<()>, sp_api::ApiError> {
+		todo!()
+	}
+
+	fn authorities(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+	) -> std::result::Result<Vec<polkadot_primitives::v1::AuthorityDiscoveryId>, sp_api::ApiError> {
+		todo!()
+	}
+
+	fn api_version_parachain_host(
+		&self,
+		at: &polkadot_core_primitives::BlockId,
+	) -> Result<Option<u32>, sp_api::ApiError> {
+		todo!()
 	}
 }
 

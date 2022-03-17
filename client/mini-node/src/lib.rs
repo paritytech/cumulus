@@ -21,8 +21,8 @@ use polkadot_node_network_protocol::request_response::{
 };
 use polkadot_node_subsystem_util::metrics::{prometheus::Registry, Metrics};
 use polkadot_overseer::{
-	BlockInfo, DummySubsystem, MetricsTrait, Overseer, OverseerHandle, OverseerMetrics, SpawnNamed,
-	KNOWN_LEAVES_CACHE_SIZE,
+	BlockInfo, DummySubsystem, MetricsTrait, Overseer, OverseerHandle, OverseerMetrics,
+	OverseerRuntimeClient, SpawnNamed, KNOWN_LEAVES_CACHE_SIZE,
 };
 use polkadot_primitives::v1::CollatorPair;
 use polkadot_service::{
@@ -43,7 +43,7 @@ use cumulus_primitives_core::relay_chain::{v2::ParachainHost, Block, BlockId, Ha
 
 use polkadot_client::FullBackend;
 use polkadot_service::{
-	AuxStore, BabeApi, Configuration, ConstructRuntimeApi, FullClient, Handle, IdentifyVariant,
+	BabeApi, Configuration, ConstructRuntimeApi, FullClient, Handle, IdentifyVariant,
 	NativeExecutionDispatch, OverseerGen, RuntimeApiCollection, TaskManager,
 };
 
@@ -72,8 +72,7 @@ impl CollatorOverseerGen {
 		}: CollatorOverseerGenArgs<'a, Spawner, RuntimeClient>,
 	) -> Result<(Overseer<Spawner, Arc<RuntimeClient>>, OverseerHandle), Error>
 	where
-		RuntimeClient: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block> + AuxStore,
-		RuntimeClient::Api: ParachainHost<Block> + BabeApi<Block> + AuthorityDiscoveryApi<Block>,
+		RuntimeClient: 'static + OverseerRuntimeClient + Sync + Send,
 		Spawner: 'static + SpawnNamed + Clone + Unpin,
 	{
 		let metrics = <OverseerMetrics as MetricsTrait>::register(registry)?;
@@ -140,8 +139,7 @@ impl CollatorOverseerGen {
 /// Arguments passed for overseer construction.
 pub struct CollatorOverseerGenArgs<'a, Spawner, RuntimeClient>
 where
-	RuntimeClient: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block> + AuxStore,
-	RuntimeClient::Api: ParachainHost<Block> + BabeApi<Block> + AuthorityDiscoveryApi<Block>,
+	RuntimeClient: 'static + polkadot_overseer::OverseerRuntimeClient + Sync + Send,
 	Spawner: 'static + SpawnNamed + Clone + Unpin,
 {
 	/// Set of initial relay chain leaves to track.
@@ -322,8 +320,7 @@ where
 
 	let chain_spec = config.chain_spec.cloned_box();
 
-	let local_keystore = None;
-	let requires_overseer_for_chain_sel = local_keystore.is_some();
+	let requires_overseer_for_chain_sel = false;
 
 	let disputes_enabled = chain_spec.is_rococo() ||
 		chain_spec.is_kusama() ||
@@ -360,7 +357,7 @@ where
 	config.network.request_response_protocols.push(cfg);
 
 	let import_queue = FakeImportQueue {};
-	let transaction_pool = Arc::new(sc_network::config::EmptyTransactionPool);
+	// let transaction_pool = Arc::new(sc_network::config::EmptyTransactionPool);
 	let (network, _, network_starter) =
 		sc_service::build_collator_network(sc_service::BuildCollatorNetworkParams {
 			config: &config,
@@ -411,7 +408,7 @@ where
 	let overseer_handle = if let Some(authority_discovery_service) = authority_discovery_service {
 		let overseer_gen = CollatorOverseerGen;
 		let (overseer, overseer_handle) = overseer_gen
-			.generate::<sc_service::SpawnTaskHandle, FullClient<RuntimeApi, ExecutorDispatch>>(
+			.generate::<sc_service::SpawnTaskHandle, BlockChainRPCClient>(
 				overseer_connector,
 				CollatorOverseerGenArgs {
 					leaves: active_leaves,
