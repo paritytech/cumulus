@@ -747,7 +747,7 @@ impl pallet_migration::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = weights::pallet_migration::WeightInfo<Runtime>;
 	type FinalizedFilter = Everything; // Allow all calls again after finishing the migration
-	// After this runtime upgrade, we do not allow any transactions except for migration purposes
+								   // After this runtime upgrade, we do not allow any transactions except for migration purposes
 	type InactiveFilter = BaseFilter;
 	// During migration we do not allow any transactions except for migration purposes
 	type OngoingFilter = BaseFilter;
