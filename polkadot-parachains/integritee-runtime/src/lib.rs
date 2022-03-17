@@ -23,6 +23,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use crate::opaque::SessionKeys;
 use codec::{Decode, Encode, MaxEncodedLen};
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
@@ -36,9 +37,8 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
-
+use frame_support::traits::{Contains, EqualPrivilegeOnly, Imbalance, InstanceFilter, OnUnbalanced};
 // A few exports that help ease life for downstream crates.
-use frame_support::traits::{Contains, EqualPrivilegeOnly, InstanceFilter};
 pub use frame_support::{
 	construct_runtime, match_type, parameter_types,
 	traits::{IsInVec, Randomness},
@@ -150,27 +150,25 @@ pub fn native_version() -> NativeVersion {
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
-// FIXME: Will we use treaury in parachain?
-// https://github.com/integritee-network/integritee-node/blob/master/runtime/src/lib.rs#L190-L208
-// pub struct DealWithFees;
-// impl OnUnbalanced<pallet_balances::NegativeImbalance<Runtime>> for DealWithFees {
-// 	fn on_unbalanceds<B>(
-// 		mut fees_then_tips: impl Iterator<Item = pallet_balances::NegativeImbalance<Runtime>>,
-// 	) {
-// 		if let Some(fees) = fees_then_tips.next() {
-// 			// for fees, 1% to treasury, 99% burned
-// 			// TODO: apply burning function based on cumulative number of extrinsics (#32)
-// 			let mut split = fees.ration(1, 99);
-//
-// 			// tips (voluntary extra fees) go to the treasury entirely. no burning
-// 			if let Some(tips) = fees_then_tips.next() {
-// 				tips.merge_into(&mut split.0);
-// 			}
-// 			Treasury::on_unbalanced(split.0);
-// 			// burn remainder by not assigning imbalance to someone
-// 		}
-// 	}
-// }
+pub struct DealWithFees;
+impl OnUnbalanced<pallet_balances::NegativeImbalance<Runtime>> for DealWithFees {
+	fn on_unbalanceds<B>(
+		mut fees_then_tips: impl Iterator<Item = pallet_balances::NegativeImbalance<Runtime>>,
+	) {
+		if let Some(fees) = fees_then_tips.next() {
+			// for fees, 1% to treasury, 99% burned
+			// TODO: apply burning function based on cumulative number of extrinsics (#32)
+			let mut split = fees.ration(1, 99);
+
+			// tips (voluntary extra fees) go to the treasury entirely. no burning
+			if let Some(tips) = fees_then_tips.next() {
+				tips.merge_into(&mut split.0);
+			}
+			Treasury::on_unbalanced(split.0);
+			// burn remainder by not assigning imbalance to someone
+		}
+	}
+}
 
 /// FIXME: which version should we take here? Solo- or Parachain? Both seem to have been adapted by Integritee
 /// https://github.com/integritee-network/integritee-node/blob/master/runtime/src/lib.rs#L210-L221
@@ -211,16 +209,13 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 13;
 }
 
-/// Disable all but sudo calls during migration.
+/// Allow everything.
 /// A more varied polkadot runtime example be found here:
 /// https://github.com/paritytech/polkadot/blob/f0b2bf3c20a7fae381685c7f6bb3c36fbce65722/runtime/polkadot/src/lib.rs#L130-L175
 pub struct BaseFilter;
 impl Contains<Call> for BaseFilter {
 	fn contains(_: &Call) -> bool {
-		match call {
-			Call::Sudo(_) => true,
-			_ => false,
-		}
+		true
 	}
 }
 
@@ -261,7 +256,10 @@ impl frame_system::Config for Runtime {
 	type OnKilledAccount = ();
 	/// The weight of database operations that the runtime can invoke.
 	type DbWeight = RocksDbWeight;
-	type BaseCallFilter = BaseFilter;
+	/// Use the call filter from Migration pallet for now to shorten migration downtime
+	/// With this, no runtime upgrade is necessary to reenable calls.
+	/// Should be removed with the next runtime upgrade.
+	type BaseCallFilter = Migration;
 	/// Weight information for the extrinsics of this pallet.
 	type SystemWeightInfo = weights::frame_system::WeightInfo<Runtime>;
 	/// Block & extrinsics weights: base values and limits.
@@ -294,7 +292,7 @@ parameter_types! {
 	pub const TransactionByteFee: u128 = MICROTEER;
 	pub const MaxLocks: u32 = 50;
 	pub const MaxReserves: u32 = 50;
-	// pub const OperationalFeeMultiplier: u8 = 5; // needed? https://github.com/integritee-network/integritee-node/blob/master/runtime/src/lib.rs#L328
+	pub const OperationalFeeMultiplier: u8 = 5;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -314,11 +312,11 @@ impl pallet_balances::Config for Runtime {
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
 impl pallet_transaction_payment::Config for Runtime {
-	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>; // Solochain : CurrencyAdapter<Balances, DealWithFees>;
+	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
 	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = IdentityFee<Balance>;
 	type FeeMultiplierUpdate = ();
-	type OperationalFeeMultiplier = (); // Solochain: type OperationalFeeMultiplier = OperationalFeeMultiplier;
+	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -393,7 +391,7 @@ impl InstanceFilter<Call> for ProxyType {
 				Call::Timestamp {..} |
 				// Specifically omitting Indices `transfer`, `force_transfer`
 				// Specifically omitting the entire Balances pallet
-				//Call::Treasury {..} |
+				Call::Treasury {..} |
 //				Call::Vesting(pallet_vesting::Call::vest {..}) |
 //				Call::Vesting(pallet_vesting::Call::vest_other {..}) |
 				// Specifically omitting Vesting `vested_transfer`, and `force_vested_transfer`
@@ -401,8 +399,7 @@ impl InstanceFilter<Call> for ProxyType {
 				Call::Multisig {..}
 			),
 			ProxyType::Governance => {
-				false
-				// matches!(c, Call::Treasury { .. }) // Solochain
+				matches!(c, Call::Treasury { .. })
 			},
 			ProxyType::CancelProxy => {
 				matches!(c, Call::Proxy(pallet_proxy::Call::reject_announcement { .. }))
@@ -436,7 +433,7 @@ impl pallet_proxy::Config for Runtime {
 }
 
 parameter_types! {
-	pub const MinVestedTransfer: Balance = 1 * TEER; // Solochain: https://github.com/integritee-network/integritee-node/blob/master/runtime/src/lib.rs#L535
+	pub const MinVestedTransfer: Balance = 1 * TEER;
 }
 
 impl pallet_vesting::Config for Runtime {
@@ -466,6 +463,13 @@ impl pallet_scheduler::Config for Runtime {
 	type OriginPrivilegeCmp = EqualPrivilegeOnly;
 	type PreimageProvider = ();
 	type NoPreimagePostponement = ();
+}
+
+impl pallet_utility::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type PalletsOrigin = OriginCaller;
+	type WeightInfo = weights::pallet_utility::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -691,36 +695,35 @@ impl pallet_teeracle::Config for Runtime {
 	type MaxWhitelistedReleases = MaxWhitelistedReleases;
 }
 
-// Treasury pallet: https://github.com/integritee-network/integritee-node/blob/master/runtime/src/lib.rs#L395-L423
-// parameter_types! {
-// 	pub const ProposalBond: Permill = Permill::from_percent(5);
-// 	pub const ProposalBondMinimum: Balance = 100 * MILLITEER;
-// 	pub const ProposalBondMaximum: Balance = 500 * TEER;
-// 	pub const SpendPeriod: BlockNumber = 6 * DAYS;
-// 	pub const Burn: Permill = Permill::from_percent(1);
-// 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
-// 	pub const MaxApprovals: u32 = 10;
-// }
-//
-// type RootOrigin = EnsureRoot<AccountId>;
-//
-// impl pallet_treasury::Config for Runtime {
-// 	type PalletId = TreasuryPalletId;
-// 	type Currency = pallet_balances::Pallet<Runtime>;
-// 	type ApproveOrigin = RootOrigin;
-// 	type RejectOrigin = RootOrigin;
-// 	type Event = Event;
-// 	type OnSlash = (); //No proposal
-// 	type ProposalBond = ProposalBond; //No proposal
-// 	type ProposalBondMinimum = ProposalBondMinimum; //No proposal
-// 	type ProposalBondMaximum = ProposalBondMaximum;
-// 	type SpendPeriod = SpendPeriod; //Cannot be 0: Error: Thread 'tokio-runtime-worker' panicked at 'attempt to calculate the remainder with a divisor of zero
-// 	type Burn = (); //No burn
-// 	type BurnDestination = (); //No burn
-// 	type SpendFunds = (); //No spend, no bounty
-// 	type MaxApprovals = MaxApprovals; //0:cannot approve any proposal
-// 	type WeightInfo = weights::pallet_treasury::WeightInfo<Runtime>;
-// }
+parameter_types! {
+	pub const ProposalBond: Permill = Permill::from_percent(5);
+	pub const ProposalBondMinimum: Balance = 100 * MILLITEER;
+	pub const ProposalBondMaximum: Balance = 500 * TEER;
+	pub const SpendPeriod: BlockNumber = 6 * DAYS;
+	pub const Burn: Permill = Permill::from_percent(1);
+	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+	pub const MaxApprovals: u32 = 10;
+}
+
+type RootOrigin = EnsureRoot<AccountId>;
+
+impl pallet_treasury::Config for Runtime {
+	type PalletId = TreasuryPalletId;
+	type Currency = pallet_balances::Pallet<Runtime>;
+	type ApproveOrigin = RootOrigin;
+	type RejectOrigin = RootOrigin;
+	type Event = Event;
+	type OnSlash = (); //No proposal
+	type ProposalBond = ProposalBond; //No proposal
+	type ProposalBondMinimum = ProposalBondMinimum; //No proposal
+	type ProposalBondMaximum = ProposalBondMaximum;
+	type SpendPeriod = SpendPeriod; //Cannot be 0: Error: Thread 'tokio-runtime-worker' panicked at 'attempt to calculate the remainder with a divisor of zero
+	type Burn = (); //No burn
+	type BurnDestination = (); //No burn
+	type SpendFunds = (); //No spend, no bounty
+	type MaxApprovals = MaxApprovals; //0:cannot approve any proposal
+	type WeightInfo = weights::pallet_treasury::WeightInfo<Runtime>;
+}
 
 // Migration pallet
 parameter_types! {
@@ -756,6 +759,7 @@ construct_runtime! {
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 6,
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 7,
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 8,
+		Utility: pallet_utility::{Pallet, Call, Event} = 9,
 
 		// Funds and fees.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
@@ -766,11 +770,14 @@ construct_runtime! {
 		Aura: pallet_aura::{Pallet, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Config} = 24,
 
+		// Governance
+		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>} = 30,
+
 		// XCM helpers.
-		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin} = 31,
-		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 32,
-		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
+		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 40,
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin} = 41,
+		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 42,
+		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 43,
 
 		// Integritee pallets.
 		Teerex: pallet_teerex::{Pallet, Call, Config, Storage, Event<T>} = 50,
@@ -825,7 +832,7 @@ pub type Executive = frame_executive::Executive<
 	Block,
 	frame_system::ChainContext<Runtime>,
 	Runtime,
-	AllPalletsWithSystem, // Solochain : AllPalletsReversedWithSystemFirst
+	AllPalletsReversedWithSystemFirst,
 >;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -845,7 +852,9 @@ mod benches {
 		[pallet_teeracle, Teeracle]
 		[pallet_teerex, Teerex]
 		[pallet_timestamp, Timestamp]
+		[pallet_treasury, Treasury]
 		[pallet_vesting, Vesting]
+		[pallet_utility, Utility]
 	);
 }
 

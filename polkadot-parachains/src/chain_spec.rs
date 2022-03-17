@@ -204,6 +204,7 @@ fn integritee_genesis_config(
 		parachain_system: Default::default(),
 		teerex: TeerexConfig { allow_sgx_debug_mode: true },
 		claims: Default::default(),
+		treasury: Default::default(),
 	}
 }
 
