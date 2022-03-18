@@ -86,7 +86,6 @@ pub type SessionHandlers = ();
 
 mod weights;
 
-/// FIXME: this defines some types twice, might result inconsistency. Is that not a problem?
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
 /// of data like extrinsics, allowing for them to continue syncing the network through upgrades
@@ -302,7 +301,7 @@ parameter_types! {
 }
 
 impl pallet_balances::Config for Runtime {
-	/// The type for recording an account's balance.
+	/// The type for recording an account's balance
 	type Balance = Balance;
 	/// The ubiquitous event type.
 	type Event = Event;
