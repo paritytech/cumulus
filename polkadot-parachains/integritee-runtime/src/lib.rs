@@ -217,9 +217,27 @@ impl Contains<Call> for BaseFilter {
 		match call {
 			// These modules are all allowed to be called by transactions:
 			Call::System(_) |
-			Call::Timestamp(_) => true,
+			Call::ParachainSystem(_) |
+			Call::Timestamp(_) |
+			Call::Sudo(_) |
+			Call::XcmpQueue(_) |
+			Call::PolkadotXcm(_) |
+			Call::CumulusXcm(_) |
+			Call::DmpQueue(_) |
+			Call::Migration(_)
+			 => true,
 			// Disable everything before / during migration
-			_ => false,
+			Call::Multisig(_) |
+			Call::Proxy(_) |
+			Call::Scheduler(_) |
+			Call::Utility(_) |
+			Call::Balances(_) |
+			Call::Vesting(_) |
+			Call::Treasury(_) |
+			Call::Teerex(_) |
+			Call::Claims(_) |
+			Call::Teeracle(_)
+			=> false,
 		}
 	}
 }
