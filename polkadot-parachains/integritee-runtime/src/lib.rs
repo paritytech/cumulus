@@ -286,7 +286,7 @@ parameter_types! {
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = Moment;
-	type OnTimestampSet = Teerex; // aura needed? https://github.com/integritee-network/integritee-node/blob/master/runtime/src/lib.rs#L316
+	type OnTimestampSet = Teerex;
 	type MinimumPeriod = MinimumPeriod;
 	type WeightInfo = weights::pallet_timestamp::WeightInfo<Runtime>;
 }
