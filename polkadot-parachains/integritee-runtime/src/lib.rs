@@ -172,8 +172,6 @@ impl OnUnbalanced<pallet_balances::NegativeImbalance<Runtime>> for DealWithFees 
 	}
 }
 
-/// FIXME: which version should we take here? Solo- or Parachain? Both seem to have been adapted by Integritee
-/// https://github.com/integritee-network/integritee-node/blob/master/runtime/src/lib.rs#L210-L221
 /// We assume that ~5% of the block weight is consumed by `on_initialize` handlers.
 /// This is used to limit the maximal weight of a single extrinsic.
 // **This value has been adjusted by integritee**.
