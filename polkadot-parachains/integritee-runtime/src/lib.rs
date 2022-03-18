@@ -216,8 +216,7 @@ impl Contains<Call> for BaseFilter {
 	fn contains(call: &Call) -> bool {
 		match call {
 			// These modules are all allowed to be called by transactions:
-			Call::System(frame_system::Call::set_code { .. }) |
-			Call::System(frame_system::Call::set_code_without_checks { .. }) => true,
+			Call::System(_) => true,
 			// Disable everything before / during migration
 			_ => false,
 		}
