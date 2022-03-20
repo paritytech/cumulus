@@ -190,7 +190,6 @@ fn encointer_genesis(
 	endowance_allocation: Vec<(AccountId, u128)>,
 	id: ParaId,
 ) -> parachain_runtime::GenesisConfig {
-	let root_key = encointer_council.clone().get(0).unwrap().clone(); //TODO fix this hack
 	parachain_runtime::GenesisConfig {
 		system: parachain_runtime::SystemConfig {
 			code: parachain_runtime::WASM_BINARY

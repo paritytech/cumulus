@@ -350,13 +350,11 @@ parameter_types! {
 	pub const MaxApprovals: u32 = 10;
 }
 
-type RootOrigin = EnsureRoot<AccountId>;
-
 impl pallet_treasury::Config for Runtime {
 	type PalletId = TreasuryPalletId;
 	type Currency = pallet_balances::Pallet<Runtime>;
-	type ApproveOrigin = RootOrigin;
-	type RejectOrigin = RootOrigin;
+	type ApproveOrigin = MoreThanHalfCouncil;
+	type RejectOrigin = MoreThanHalfCouncil;
 	type Event = Event;
 	type OnSlash = (); //No proposal
 	type ProposalBond = ProposalBond;
