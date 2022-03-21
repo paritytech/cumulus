@@ -19,10 +19,8 @@ use std::{pin::Pin, sync::Arc, time::Duration};
 use async_trait::async_trait;
 use cumulus_primitives_core::{
 	relay_chain::{
-		v2::{
-			CommittedCandidateReceipt, OccupiedCoreAssumption, ParachainHost, SessionIndex,
-			ValidatorId,
-		},
+		v1::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
+		v2::ParachainHost,
 		Block as PBlock, BlockId, Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
@@ -386,7 +384,7 @@ mod tests {
 
 	use super::*;
 
-	use polkadot_primitives::v2::Block as PBlock;
+	use polkadot_primitives::v1::Block as PBlock;
 	use polkadot_test_client::{
 		construct_transfer_extrinsic, BlockBuilderExt, Client, ClientBlockImportExt,
 		DefaultTestClientBuilderExt, ExecutionStrategy, InitPolkadotBlockBuilder,
