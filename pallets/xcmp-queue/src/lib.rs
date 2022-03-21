@@ -600,7 +600,7 @@ impl<T: Config> Pallet<T> {
 			Ok(xcm) => {
 				let location = (1, Parachain(sender.into()));
 				match T::XcmExecutor::execute_xcm(location, xcm, max_weight) {
-					Outcome::Error(e) => (Err(e.clone()), Event::Fail(Some(hash), e)),
+					Outcome::Error(e) => (Err(e), Event::Fail(Some(hash), e)),
 					Outcome::Complete(w) => (Ok(w), Event::Success(Some(hash))),
 					// As far as the caller is concerned, this was dispatched without error, so
 					// we just report the weight used.
@@ -750,7 +750,7 @@ impl<T: Config> Pallet<T> {
 		let suspended = QueueSuspended::<T>::get();
 
 		let mut status = <InboundXcmpStatus<T>>::get(); // <- sorted.
-		if status.len() == 0 {
+		if status.is_empty() {
 			return 0
 		}
 
