@@ -44,13 +44,16 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{AsEnsureOriginWithArg, Contains, EnsureOneOf, InstanceFilter},
-	weights::{DispatchClass, Weight},
+	traits::{Contains, EnsureOneOf, InstanceFilter},
+	weights::{
+		constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
+		DispatchClass, Weight,
+	},
 	PalletId, RuntimeDebug,
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureRoot, EnsureSigned,
+	EnsureRoot,
 };
 pub use parachains_common as common;
 use parachains_common::{
@@ -538,9 +541,6 @@ impl pallet_uniques::Config for Runtime {
 	type KeyLimit = KeyLimit;
 	type ValueLimit = ValueLimit;
 	type WeightInfo = weights::pallet_uniques::WeightInfo<Runtime>;
-	#[cfg(feature = "runtime-benchmarks")]
-	type Helper = ();
-	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
