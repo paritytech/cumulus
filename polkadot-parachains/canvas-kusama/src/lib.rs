@@ -23,7 +23,6 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod constants;
 mod contracts;
-mod weights;
 mod xcm_config;
 
 use sp_api::impl_runtime_apis;
@@ -44,7 +43,10 @@ use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{ConstU128, ConstU16, ConstU32, ConstU64, ConstU8, Everything},
-	weights::DispatchClass,
+	weights::{
+		constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
+		DispatchClass,
+	},
 	PalletId,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
@@ -63,9 +65,7 @@ pub use sp_runtime::BuildStorage;
 use frame_support::weights::Weight;
 
 // Polkadot imports
-use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
-
-use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
+use polkadot_runtime::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 
 /// The address format for describing accounts.
 pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
