@@ -180,6 +180,7 @@ benchmarks:
   <<:                              *docker-env
   script:
     - time cargo build --profile production --locked --features runtime-benchmarks
+    - apt-get update && apt-get install tree
     - cd $CARGO_TARGET_DIR && tree
     - ./scripts/benchmarks.sh
     - git status
