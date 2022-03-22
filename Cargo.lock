@@ -2056,7 +2056,7 @@ checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 [[package]]
 name = "encointer-ceremonies-assignment"
 version = "0.1.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#523f03e6b31eb410d96f663c3a500b86ecb8616e"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#51f3daedbf251b9b34ffdc1753f9fa0d04cf5f12"
 dependencies = [
  "encointer-primitives",
  "sp-runtime",
@@ -2137,7 +2137,7 @@ dependencies = [
 [[package]]
 name = "encointer-primitives"
 version = "0.8.1"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#523f03e6b31eb410d96f663c3a500b86ecb8616e"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#51f3daedbf251b9b34ffdc1753f9fa0d04cf5f12"
 dependencies = [
  "bs58",
  "concat-arrays",
@@ -2282,7 +2282,7 @@ checksum = "68b91989ae21441195d7d9b9993a2f9295c7e1a8c96255d8b729accddc124797"
 [[package]]
 name = "ep-core"
 version = "0.1.0"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#523f03e6b31eb410d96f663c3a500b86ecb8616e"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#51f3daedbf251b9b34ffdc1753f9fa0d04cf5f12"
 dependencies = [
  "impl-serde",
  "parity-scale-codec",
@@ -5482,9 +5482,11 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-balances"
 version = "0.8.1"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#523f03e6b31eb410d96f663c3a500b86ecb8616e"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#51f3daedbf251b9b34ffdc1753f9fa0d04cf5f12"
 dependencies = [
+ "approx",
  "encointer-primitives",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -5497,9 +5499,10 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-bazaar"
 version = "0.8.1"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#523f03e6b31eb410d96f663c3a500b86ecb8616e"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#51f3daedbf251b9b34ffdc1753f9fa0d04cf5f12"
 dependencies = [
  "encointer-primitives",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -5513,10 +5516,11 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-ceremonies"
 version = "0.8.1"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#523f03e6b31eb410d96f663c3a500b86ecb8616e"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#51f3daedbf251b9b34ffdc1753f9fa0d04cf5f12"
 dependencies = [
  "encointer-ceremonies-assignment",
  "encointer-primitives",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -5526,6 +5530,8 @@ dependencies = [
  "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
+ "sp-application-crypto",
+ "sp-core",
  "sp-runtime",
  "sp-std",
 ]
@@ -5533,9 +5539,10 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-communities"
 version = "0.8.1"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#523f03e6b31eb410d96f663c3a500b86ecb8616e"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#51f3daedbf251b9b34ffdc1753f9fa0d04cf5f12"
 dependencies = [
  "encointer-primitives",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -5551,9 +5558,10 @@ dependencies = [
 [[package]]
 name = "pallet-encointer-scheduler"
 version = "0.8.1"
-source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#523f03e6b31eb410d96f663c3a500b86ecb8616e"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#51f3daedbf251b9b34ffdc1753f9fa0d04cf5f12"
 dependencies = [
  "encointer-primitives",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",

@@ -158,4 +158,9 @@ runtime-benchmarks = [
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
+	"pallet-encointer-balances/runtime-benchmarks",
+	"pallet-encointer-bazaar/runtime-benchmarks",
+	"pallet-encointer-ceremonies/runtime-benchmarks",
+	"pallet-encointer-communities/runtime-benchmarks",
+	"pallet-encointer-scheduler/runtime-benchmarks",
 ]

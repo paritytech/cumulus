@@ -610,6 +610,7 @@ impl pallet_encointer_scheduler::Config for Runtime {
 	type OnCeremonyPhaseChange = EncointerCeremonies;
 	type MomentsPerDay = MomentsPerDay;
 	type CeremonyMaster = MoreThanHalfCouncil;
+	type WeightInfo = weights::pallet_encointer_scheduler::WeightInfo<Runtime>;
 }
 
 impl pallet_encointer_ceremonies::Config for Runtime {
@@ -621,20 +622,24 @@ impl pallet_encointer_ceremonies::Config for Runtime {
 	type MeetupMinSize = MeetupMinSize;
 	type MeetupNewbieLimitDivider = MeetupNewbieLimitDivider;
 	type CeremonyMaster = MoreThanHalfCouncil;
+	type WeightInfo = weights::pallet_encointer_ceremonies::WeightInfo<Runtime>;
 }
 
 impl pallet_encointer_communities::Config for Runtime {
 	type Event = Event;
 	type CommunityMaster = MoreThanHalfCouncil;
+	type WeightInfo = weights::pallet_encointer_communities::WeightInfo<Runtime>;
 }
 
 impl pallet_encointer_balances::Config for Runtime {
 	type Event = Event;
 	type DefaultDemurrage = DefaultDemurrage;
+	type WeightInfo = weights::pallet_encointer_balances::WeightInfo<Runtime>;
 }
 
 impl pallet_encointer_bazaar::Config for Runtime {
 	type Event = Event;
+	type WeightInfo = weights::pallet_encointer_bazaar::WeightInfo<Runtime>;
 }
 
 // impl pallet_encointer_personhood_oracle::Config for Runtime {
@@ -677,7 +682,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type MaxProposals = CouncilMaxProposals;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type MaxMembers = CouncilMaxMembers;
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_collective::WeightInfo<Runtime>;
 }
 
 // support for collective pallet
@@ -691,7 +696,7 @@ impl pallet_membership::Config<pallet_membership::Instance1> for Runtime {
 	type MembershipInitialized = Collective;
 	type MembershipChanged = Collective;
 	type MaxMembers = CouncilMaxMembers;
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_membership::WeightInfo<Runtime>;
 }
 
 construct_runtime! {
@@ -819,6 +824,11 @@ mod benches {
 		[pallet_timestamp, Timestamp]
 		[pallet_treasury, Treasury]
 		[pallet_utility, Utility]
+		[pallet_encointer_balances, EncointerBalances]
+		[pallet_encointer_bazaar, EncointerBazaar]
+		[pallet_encointer_ceremonies, EncointerCeremonies]
+		[pallet_encointer_communities, EncointerCommunities]
+		[pallet_encointer_scheduler, EncointerScheduler]
 	);
 }
 

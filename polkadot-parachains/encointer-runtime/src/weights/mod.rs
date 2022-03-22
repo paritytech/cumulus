@@ -21,6 +21,13 @@
 
 pub mod frame_system;
 pub mod pallet_balances;
+pub mod pallet_collective;
+pub mod pallet_encointer_balances;
+pub mod pallet_encointer_bazaar;
+pub mod pallet_encointer_ceremonies;
+pub mod pallet_encointer_communities;
+pub mod pallet_encointer_scheduler;
+pub mod pallet_membership;
 pub mod pallet_timestamp;
 pub mod pallet_treasury;
 pub mod pallet_utility;

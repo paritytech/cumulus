@@ -125,24 +125,19 @@ In `./scripts` we have two scripts for benchmarking the runtimes.
 ### Current benchmark
 The current weights have been benchmarked with the following reference hardware:
 
-    Core(TM) i7-10875H
-    32GB of RAM
-    NVMe SSD
+    2.3 GHz 8-Core Intel Core i9
+    16 GB 2400 MHz DDR4
 
 ### Running benchmark
 1. Compile the node with: `cargo build --release --features runtime-benchmarks`
 2. run: `./scripts/benchmark_launch_runtime.sh` and `./scripts/benchmark_encointer_runtime.sh`.
 3. If changed, update the reference hardware above.
 
-**Note**: With the current substrate version, we brick the `frame_system::Weight` file because the `set_changes_trie_config`
-has been removed from the pallet, but it still exists in the trait definition. So after running the benchmark, we need 
-to add the function manually again.
-
 ### Adding new pallets to be benchmarked
 Every pallet with a `type WeightInfo` parameter in its config must be benchmarked.
 
 1. [Cargo.toml] add `<new_pallet>/runtime-benchmarks` in the `runtime-benchmarks` feature section.
-2. [runtime] add the new pallet to the `list_benchmark!` and `add_benchmark!` list.
+2. [runtime] Add the new pallet to be benchmarked to the `define_benchmarks!` macro in the runtime.
 3. Run the benchmark as advised above.
 4. [runtime/src/weights] add the new file to the modules
 4. [runtime] replace the placeholder `type WeightInfo = ()` with `type WeightInfo = weights::<new_pallet>::WeightInfo<Runtime>`
