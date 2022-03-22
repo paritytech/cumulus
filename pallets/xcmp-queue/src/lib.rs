@@ -499,7 +499,7 @@ impl<T: Config> Pallet<T> {
 			details
 		} else {
 			s.push(OutboundChannelDetails::new(recipient));
-			s.last_mut().expect("can't be empty as just pushed")
+			s.last_mut().expect("can't be empty; a new element was just pushed; qed")
 		};
 		let have_active = details.last_index > details.first_index;
 		let appended = have_active &&
