@@ -190,6 +190,7 @@ benchmarks-build:
   <<:                              *collect-artifacts
   script:
     - time cargo build --profile production --locked --features runtime-benchmarks
+    - mkdir artifacts
     - cp $CARGO_TARGET_DIR/production/polkadot-collator ./artifacts/
   tags:
     - ci6
