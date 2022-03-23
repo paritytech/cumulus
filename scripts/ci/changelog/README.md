@@ -16,7 +16,7 @@ Run:
 
 For instance:
 ```
-./bin/changelog statemine-v5.0.0
+./bin/changelog parachains-v7.0.0-rc8
 ```
 
 A file called `release-notes.md` will be generated and can be used for the release.
