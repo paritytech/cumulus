@@ -35,7 +35,7 @@ variables:                         &default-vars
   - rustup +nightly show
   - cargo +nightly --version
   - bash --version
-  - sccache -s
+  # - sccache -s
 
 .publish-refs:                     &publish-refs
   rules:
