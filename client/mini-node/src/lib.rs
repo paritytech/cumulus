@@ -52,7 +52,7 @@ use sp_api::{HeaderT, ProvideRuntimeApi};
 use sp_runtime::traits::Block as BlockT;
 
 mod blockchain_rpc_client;
-use blockchain_rpc_client::BlockChainRPCClient;
+pub use blockchain_rpc_client::BlockChainRPCClient;
 
 pub struct CollatorOverseerGen;
 impl CollatorOverseerGen {
@@ -229,6 +229,11 @@ impl SelectChain<Block> for RPCSelectChain {
 	}
 
 	async fn best_chain(&self) -> Result<<Block as BlockT>::Header, ConsensusError> {
+		// TODO proper error handling
+		// self.rpc_client
+		// 	.chain_get_header(None)
+		// 	.await
+		// 	.map_err(|err| ConsensusError::Other(Box::new(err)))
 		todo!("SelectChain::best_chain")
 	}
 
@@ -280,24 +285,14 @@ impl sc_service::ImportQueue<Block> for FakeImportQueue {
 	}
 }
 
-pub fn new_mini<RuntimeApi, ExecutorDispatch, OverseerGenerator>(
+pub fn new_mini(
 	mut config: Configuration,
 	collator_pair: CollatorPair,
 	jaeger_agent: Option<std::net::SocketAddr>,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	overseer_enable_anyways: bool,
 	relay_chain_rpc_client: Arc<BlockChainRPCClient>,
-) -> Result<NewCollator, Error>
-where
-	RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi, ExecutorDispatch>>
-		+ Send
-		+ Sync
-		+ 'static,
-	RuntimeApi::RuntimeApi:
-		RuntimeApiCollection<StateBackend = sc_client_api::StateBackendFor<FullBackend, Block>>,
-	ExecutorDispatch: NativeExecutionDispatch + 'static,
-	OverseerGenerator: OverseerGen,
-{
+) -> Result<NewCollator, Error> {
 	// use sc_network::config::IncomingRequest;
 
 	let role = config.role.clone();
@@ -322,11 +317,11 @@ where
 
 	let requires_overseer_for_chain_sel = false;
 
-	let disputes_enabled = chain_spec.is_rococo() ||
-		chain_spec.is_kusama() ||
-		chain_spec.is_westend() ||
-		chain_spec.is_versi() ||
-		chain_spec.is_wococo();
+	// let disputes_enabled = chain_spec.is_rococo() ||
+	// 	chain_spec.is_kusama() ||
+	// 	chain_spec.is_westend() ||
+	// 	chain_spec.is_versi() ||
+	// 	chain_spec.is_wococo();
 
 	// TODO Shortcut, we ignore the chain-selection-subsystem for now
 	// let select_chain = if requires_overseer_for_chain_sel {
@@ -370,8 +365,9 @@ where
 	let spawner = task_manager.spawn_handle();
 	// Cannot use the `RelayChainSelection`, since that'd require a setup _and running_ overseer
 	// which we are about to setup.
-	let active_leaves =
-		futures::executor::block_on(active_leaves(&select_chain, &*relay_chain_rpc_client))?;
+	// let active_leaves =
+	// 	futures::executor::block_on(active_leaves(&select_chain, &*relay_chain_rpc_client))?;
+	let active_leaves = Vec::new();
 
 	let authority_discovery_service = {
 		use futures::StreamExt;
@@ -412,7 +408,7 @@ where
 				overseer_connector,
 				CollatorOverseerGenArgs {
 					leaves: active_leaves,
-					runtime_client: overseer_client.clone(),
+					runtime_client: relay_chain_rpc_client.clone(),
 					network_service: network.clone(),
 					authority_discovery_service,
 					collation_req_receiver,
@@ -436,7 +432,8 @@ where
 				Box::pin(async move {
 					use futures::{pin_mut, select, FutureExt};
 
-					let forward = polkadot_overseer::forward_events(overseer_client, handle);
+					let forward =
+						polkadot_overseer::forward_collator_events(relay_chain_rpc_client, handle);
 
 					let forward = forward.fuse();
 					let overseer_fut = overseer.run().fuse();

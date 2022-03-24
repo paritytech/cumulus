@@ -19,7 +19,10 @@ use backoff::{future::retry_notify, ExponentialBackoff};
 use core::time::Duration;
 use cumulus_primitives_core::{
 	relay_chain::{
-		v1::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
+		v1::{
+			AuthorityDiscoveryId, CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex,
+			ValidatorId,
+		},
 		Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
@@ -72,7 +75,7 @@ impl RelayChainRPCClient {
 	}
 
 	/// Call a call to `state_call` rpc method.
-	async fn call_remote_runtime_function<R: Decode>(
+	pub async fn call_remote_runtime_function<R: Decode>(
 		&self,
 		method_name: &str,
 		hash: PHash,
@@ -100,7 +103,7 @@ impl RelayChainRPCClient {
 	}
 
 	/// Subscribe to a notification stream via RPC
-	async fn subscribe<'a, R>(
+	pub async fn subscribe<'a, R>(
 		&self,
 		sub_name: &'a str,
 		unsub_name: &'a str,
@@ -116,7 +119,7 @@ impl RelayChainRPCClient {
 	}
 
 	/// Perform RPC request
-	async fn request<'a, R>(
+	pub async fn request<'a, R>(
 		&self,
 		method: &'a str,
 		params: Option<ParamsSer<'a>>,
@@ -124,6 +127,7 @@ impl RelayChainRPCClient {
 	where
 		R: DeserializeOwned + std::fmt::Debug,
 	{
+		tracing::trace!(target:LOG_TARGET, method = %method);
 		self.request_tracing(
 			method,
 			params,
@@ -133,7 +137,7 @@ impl RelayChainRPCClient {
 	}
 
 	/// Perform RPC request
-	async fn request_tracing<'a, R, OR>(
+	pub async fn request_tracing<'a, R, OR>(
 		&self,
 		method: &'a str,
 		params: Option<ParamsSer<'a>>,
@@ -160,11 +164,11 @@ impl RelayChainRPCClient {
 			RelayChainError::RPCCallError(method.to_string(), err)})
 	}
 
-	async fn system_health(&self) -> Result<Health, RelayChainError> {
+	pub async fn system_health(&self) -> Result<Health, RelayChainError> {
 		self.request("system_health", None).await
 	}
 
-	async fn state_get_read_proof(
+	pub async fn state_get_read_proof(
 		&self,
 		storage_keys: Vec<StorageKey>,
 		at: Option<PHash>,
@@ -173,7 +177,7 @@ impl RelayChainRPCClient {
 		self.request("state_getReadProof", params).await
 	}
 
-	async fn state_get_storage(
+	pub async fn state_get_storage(
 		&self,
 		storage_key: StorageKey,
 		at: Option<PHash>,
@@ -182,11 +186,12 @@ impl RelayChainRPCClient {
 		self.request("state_getStorage", params).await
 	}
 
-	async fn chain_get_head(&self) -> Result<PHash, RelayChainError> {
-		self.request("chain_getHead", None).await
+	pub async fn chain_get_head(&self, at: Option<u64>) -> Result<PHash, RelayChainError> {
+		let params = rpc_params!(at);
+		self.request("chain_getHead", params).await
 	}
 
-	async fn chain_get_header(
+	pub async fn chain_get_header(
 		&self,
 		hash: Option<PHash>,
 	) -> Result<Option<PHeader>, RelayChainError> {
@@ -194,7 +199,11 @@ impl RelayChainRPCClient {
 		self.request("chain_getHeader", params).await
 	}
 
-	async fn parachain_host_candidate_pending_availability(
+	pub async fn chain_get_finalized_head(&self) -> Result<PHash, RelayChainError> {
+		self.request("chain_getFinalizedHead", None).await
+	}
+
+	pub async fn parachain_host_candidate_pending_availability(
 		&self,
 		at: PHash,
 		para_id: ParaId,
@@ -207,7 +216,15 @@ impl RelayChainRPCClient {
 		.await
 	}
 
-	async fn parachain_host_session_index_for_child(
+	pub async fn authority_discovery_authorities(
+		&self,
+		at: PHash,
+	) -> Result<Vec<sp_authority_discovery::AuthorityId>, RelayChainError> {
+		self.call_remote_runtime_function("AuthorityDiscoveryApi_authorities", at, None::<()>)
+			.await
+	}
+
+	pub async fn parachain_host_session_index_for_child(
 		&self,
 		at: PHash,
 	) -> Result<SessionIndex, RelayChainError> {
@@ -215,7 +232,7 @@ impl RelayChainRPCClient {
 			.await
 	}
 
-	async fn parachain_host_validators(
+	pub async fn parachain_host_validators(
 		&self,
 		at: PHash,
 	) -> Result<Vec<ValidatorId>, RelayChainError> {
@@ -223,7 +240,7 @@ impl RelayChainRPCClient {
 			.await
 	}
 
-	async fn parachain_host_persisted_validation_data(
+	pub async fn parachain_host_persisted_validation_data(
 		&self,
 		at: PHash,
 		para_id: ParaId,
@@ -237,7 +254,7 @@ impl RelayChainRPCClient {
 		.await
 	}
 
-	async fn parachain_host_inbound_hrmp_channels_contents(
+	pub async fn parachain_host_inbound_hrmp_channels_contents(
 		&self,
 		para_id: ParaId,
 		at: PHash,
@@ -250,7 +267,7 @@ impl RelayChainRPCClient {
 		.await
 	}
 
-	async fn parachain_host_dmq_contents(
+	pub async fn parachain_host_dmq_contents(
 		&self,
 		para_id: ParaId,
 		at: PHash,
@@ -259,17 +276,19 @@ impl RelayChainRPCClient {
 			.await
 	}
 
-	async fn subscribe_all_heads(&self) -> Result<Subscription<PHeader>, RelayChainError> {
+	pub async fn subscribe_all_heads(&self) -> Result<Subscription<PHeader>, RelayChainError> {
 		self.subscribe::<PHeader>("chain_subscribeAllHeads", "chain_unsubscribeAllHeads", None)
 			.await
 	}
 
-	async fn subscribe_new_best_heads(&self) -> Result<Subscription<PHeader>, RelayChainError> {
+	pub async fn subscribe_new_best_heads(&self) -> Result<Subscription<PHeader>, RelayChainError> {
 		self.subscribe::<PHeader>("chain_subscribeNewHeads", "chain_unsubscribeNewHeads", None)
 			.await
 	}
 
-	async fn subscribe_finalized_heads(&self) -> Result<Subscription<PHeader>, RelayChainError> {
+	pub async fn subscribe_finalized_heads(
+		&self,
+	) -> Result<Subscription<PHeader>, RelayChainError> {
 		self.subscribe::<PHeader>(
 			"chain_subscribeFinalizedHeads",
 			"chain_unsubscribeFinalizedHeads",
@@ -381,7 +400,7 @@ impl RelayChainInterface for RelayChainRPCInterface {
 	}
 
 	async fn best_block_hash(&self) -> RelayChainResult<PHash> {
-		self.rpc_client.chain_get_head().await
+		self.rpc_client.chain_get_head(None).await
 	}
 
 	async fn is_major_syncing(&self) -> RelayChainResult<bool> {

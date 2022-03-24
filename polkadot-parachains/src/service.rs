@@ -30,6 +30,7 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
+use cumulus_relay_chain_mini::BlockChainRPCClient;
 use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
 use polkadot_service::CollatorPair;
 use sp_core::Pair;
@@ -292,8 +293,18 @@ async fn build_relay_chain_interface(
 	collator_options: CollatorOptions,
 ) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
 	match collator_options.relay_chain_rpc_url {
-		Some(relay_chain_url) =>
-			Ok((Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>, None)),
+		Some(relay_chain_url) => {
+			let collator_pair = CollatorPair::generate().0;
+			let collator_node = cumulus_relay_chain_mini::new_mini(
+				polkadot_config,
+				collator_pair,
+				None,
+				None,
+				true,
+				Arc::new(BlockChainRPCClient::new(relay_chain_url.clone()).await),
+			);
+			Ok((Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>, None))
+		},
 		None => {
 			let relay_chain_local = build_inprocess_relay_chain(
 				polkadot_config,
