@@ -36,6 +36,13 @@ REF2=HEAD
 DEBUG=1
 NO_CACHE=1
 ```
+
+By default, the template will include all the information, including the runtime data.
+For clients releases, we don't need those and they can be skipped by setting the following env:
+```
+RELEASE_TYPE=client
+```
+
 ## Considered labels
 
 The following list will likely evolve over time and it will be hard to keep it in sync.
