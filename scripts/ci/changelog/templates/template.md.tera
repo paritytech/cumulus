@@ -16,10 +16,11 @@ This release contains the changes from `{{ env.REF1 }}` to `{{ env.REF2 }}`.
 {%- set DOT = "[P]" -%}
 {%- set SUB = "[S]" -%}
 
+{# We check for host function first because no matter what the priority is, #}
+{# we will force it to HIGH if at least one host function was detected. #}
+{% include "host_functions.md.tera" -%}
 
 {% include "global_priority.md.tera" -%}
-
-{% include "host_functions.md.tera" -%}
 
 {% include "compiler.md.tera" -%}
 
