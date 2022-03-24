@@ -81,6 +81,7 @@ WESTMINT_DIGEST = ENV['WESTMINT_DIGEST'] || 'digests/westmint-srtool-digest.json
 STATEMINE_DIGEST = ENV['STATEMINE_DIGEST'] || 'digests/statemine-srtool-digest.json'
 STATEMINT_DIGEST = ENV['STATEMINT_DIGEST'] || 'digests/statemint-srtool-digest.json'
 ROCOCO_PARA_DIGEST = ENV['ROCOCO_PARA_DIGEST'] || 'digests/rococo-parachain-srtool-digest.json'
+CANVAS_KUSAMA_DIGEST = ENV['CANVAS_KUSAMA_DIGEST'] || 'digests/canvas-kusama-srtool-digest.json'
 
 # Here we compose all the pieces together into one
 # single big json file.
@@ -93,6 +94,7 @@ cmd = format('jq \
     --slurpfile srtool_statemine %s \
     --slurpfile srtool_statemint %s \
     --slurpfile srtool_rococo_parachain %s \
+    --slurpfile canvas_kusama %s \
     -n \'{
             cumulus: $cumulus[0],
             substrate: $substrate[0],
@@ -102,13 +104,15 @@ cmd = format('jq \
         { name: "shell", data: $srtool_shell[0] },
         { name: "westmint", data: $srtool_westmint[0] },
         { name: "statemint", data: $srtool_statemint[0] },
-        { name: "statemine", data: $srtool_statemine[0] }
+        { name: "statemine", data: $srtool_statemine[0] },
+        { name: "canvas", data: $canvas_kusama[0] }
     ] }\' > context.json', cumulus_data, substrate_data, polkadot_data,
              SHELL_DIGEST,
              WESTMINT_DIGEST,
              STATEMINE_DIGEST,
              STATEMINT_DIGEST,
-             ROCOCO_PARA_DIGEST)
+             ROCOCO_PARA_DIGEST,
+             CANVAS_KUSAMA_DIGEST)
 system(cmd)
 
 cmd = format('tera --env --env-key env --include-path templates \
