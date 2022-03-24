@@ -69,13 +69,13 @@ jobs:
       - name: Store srtool digest to disk
         run: |
           echo '${{ steps.srtool_build.outputs.json }}' | \
-            jq > ${{ matrix.runtime }}_srtool_output.json
+            jq > ${{ matrix.runtime }}-srtool-digest.json
 
       - name: Upload ${{ matrix.runtime }} srtool json
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.runtime }}-srtool-json
-          path: ${{ matrix.runtime }}_srtool_output.json
+          path: ${{ matrix.runtime }}-srtool-digest.json
 
       - name: Upload ${{ matrix.runtime }} runtime
         uses: actions/upload-artifact@v3
@@ -124,18 +124,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NO_CACHE: 1
           DEBUG: 1
-          SHELL_DIGEST: ${{ github.workspace}}/shell-srtool-json/shell_srtool_output.json
-          WESTMINT_DIGEST: ${{ github.workspace}}/westmint-srtool-json/westmint_srtool_output.json
-          STATEMINE_DIGEST: ${{ github.workspace}}/statemine-srtool-json/statemine_srtool_output.json
-          STATEMINT_DIGEST: ${{ github.workspace}}/statemint-srtool-json/statemint_srtool_output.json
-          ROCOCO_PARA_DIGEST: ${{ github.workspace}}/rococo-parachain-srtool-json/rococo-parachain_srtool_output.json
-          CANVAS_KUSAMA_DIGEST: ${{ github.workspace}}/canvas-kusama-srtool-json/canvas-kusama_srtool_output.json
+          SHELL_DIGEST: ${{ github.workspace}}/shell-srtool-json/shell-srtool-digest.json
+          WESTMINT_DIGEST: ${{ github.workspace}}/westmint-srtool-json/westmint-srtool-digest.json
+          STATEMINE_DIGEST: ${{ github.workspace}}/statemine-srtool-json/statemine-srtool-digest.json
+          STATEMINT_DIGEST: ${{ github.workspace}}/statemint-srtool-json/statemint-srtool-digest.json
+          ROCOCO_PARA_DIGEST: ${{ github.workspace}}/rococo-parachain-srtool-json/rococo-parachain-srtool-digest.json
+          CANVAS_KUSAMA_DIGEST: ${{ github.workspace}}/canvas-kusama-srtool-json/canvas-kusama-srtool-digest.json
           REF1: ${{ github.event.inputs.ref1 }}
           REF2: ${{ github.event.inputs.ref2 }}
           PRE_RELEASE: ${{ github.event.inputs.pre_release }}
           RELEASE_TYPE: ${{ github.event.inputs.release_type }}
         run: |
-          find ${{env.GITHUB_WORKSPACE}} -type f -name "*_srtool_output.json"
+          find ${{env.GITHUB_WORKSPACE}} -type f -name "*-srtool-digest.json"
           ls -al $SHELL_DIGEST
           ls -al $WESTMINT_DIGEST
           ls -al $STATEMINE_DIGEST
@@ -153,7 +153,7 @@ jobs:
         with:
           name: srtool-json
           path: |
-            **/*_srtool_output.json
+            **/*-srtool-digest.json
 
       - name: Archive context artifact
         uses: actions/upload-artifact@v3
