@@ -142,12 +142,12 @@ jobs:
           RELEASE_TYPE: ${{ github.event.inputs.release_type }}
         run: |
           find ${{env.GITHUB_WORKSPACE}} -type f -name "*-srtool-digest.json"
-          ls -al $SHELL_DIGEST
-          ls -al $WESTMINT_DIGEST
-          ls -al $STATEMINE_DIGEST
-          ls -al $STATEMINT_DIGEST
-          ls -al $ROCOCO_PARA_DIGEST
-          ls -al $CANVAS_KUSAMA_DIGEST
+          ls -al $SHELL_DIGEST || true 
+          ls -al $WESTMINT_DIGEST || true
+          ls -al $STATEMINE_DIGEST || true
+          ls -al $STATEMINT_DIGEST || true
+          ls -al $ROCOCO_PARA_DIGEST || true
+          ls -al $CANVAS_KUSAMA_DIGEST || true
 
           echo "The diff will be computed from $REF1 to $REF2"
           cd cumulus/scripts/ci/changelog
@@ -155,6 +155,7 @@ jobs:
           ls -al {release-notes.md,context.json}
 
       - name: Archive srtool json
+        if: ${{ github.event.inputs.release_type != 'client' }}
         uses: actions/upload-artifact@v3
         with:
           name: srtool-json
