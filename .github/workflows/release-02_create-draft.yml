@@ -72,13 +72,13 @@ jobs:
             jq > ${{ matrix.runtime }}_srtool_output.json
 
       - name: Upload ${{ matrix.runtime }} srtool json
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.runtime }}-srtool-json
           path: ${{ matrix.runtime }}_srtool_output.json
 
       - name: Upload ${{ matrix.runtime }} runtime
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.runtime }}-runtime
           path: |
@@ -146,16 +146,21 @@ jobs:
           echo "The diff will be computed from $REF1 to $REF2"
           cd cumulus/scripts/ci/changelog
           ./bin/changelog $REF1 $REF2 release-notes.md
-          ls -al release-notes.md
-          ls -al context.json
+          ls -al {release-notes.md,context.json}
 
-      - name: Archive artifact context.json
-        uses: actions/upload-artifact@v2
+      - name: Archive srtool json
+        uses: actions/upload-artifact@v3
+        with:
+          name: srtool-json
+          path: |
+            **/*_srtool_output.json
+
+      - name: Archive context artifact
+        uses: actions/upload-artifact@v3
         with:
           name: release-notes-context
           path: |
             context.json
-            **/*_srtool_output.json
 
       - name: Create draft release
         id: create-release
