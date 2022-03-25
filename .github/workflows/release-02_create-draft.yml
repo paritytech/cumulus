@@ -142,7 +142,7 @@ jobs:
           RELEASE_TYPE: ${{ github.event.inputs.release_type }}
         run: |
           find ${{env.GITHUB_WORKSPACE}} -type f -name "*-srtool-digest.json"
-          ls -al $SHELL_DIGEST || true 
+          ls -al $SHELL_DIGEST || true
           ls -al $WESTMINT_DIGEST || true
           ls -al $STATEMINE_DIGEST || true
           ls -al $STATEMINT_DIGEST || true
@@ -152,7 +152,7 @@ jobs:
           echo "The diff will be computed from $REF1 to $REF2"
           cd cumulus/scripts/ci/changelog
           ./bin/changelog $REF1 $REF2 release-notes.md
-          ls -al {release-notes.md,context.json}
+          ls -al {release-notes.md,context.json} || true
 
       - name: Archive srtool json
         if: ${{ github.event.inputs.release_type != 'client' }}
@@ -177,7 +177,7 @@ jobs:
         with:
           body_path: ./cumulus/scripts/ci/changelog/release-notes.md
           tag_name: ${{ github.event.inputs.ref2 }}
-          release_name: Parachains ${{ github.event.inputs.ref2 }}
+          release_name: ${{ github.event.inputs.ref2 }}
           draft: true
 
   publish-runtimes:
