@@ -245,7 +245,7 @@ jobs:
           room_id: ${{ secrets.INTERNAL_CUMULUS_MATRIX_ROOM_ID }}
           access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
           message: |
-            **New draft for ${{ github.repository }}**: ${{ github.ref }}<br/>
+            **New draft for ${{ github.repository }}**: ${{ github.event.inputs.ref2 }}<br/>
 
             Draft release created: [draft](${{ needs.publish-draft-release.outputs.release_url }})
 
