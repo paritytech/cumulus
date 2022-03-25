@@ -737,4 +737,8 @@ impl CliConfiguration<Self> for RelayChainCli {
 	fn node_name(&self) -> Result<String> {
 		self.base.base.node_name()
 	}
+
+	fn disable_hardware_benchmarks(&self) -> Result<bool> {
+		self.base.base.disable_hardware_benchmarks()
+	}
 }
