@@ -46,7 +46,7 @@ jobs:
         runtime: ["shell", "statemine", "statemint", "westmint", "rococo-parachain", "canvas-kusama"]
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: ${{ github.event.inputs.ref2 }}
 
@@ -98,7 +98,7 @@ jobs:
       asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
           path: cumulus
@@ -142,12 +142,15 @@ jobs:
           RELEASE_TYPE: ${{ github.event.inputs.release_type }}
         run: |
           find ${{env.GITHUB_WORKSPACE}} -type f -name "*-srtool-digest.json"
-          ls -al $SHELL_DIGEST || true
-          ls -al $WESTMINT_DIGEST || true
-          ls -al $STATEMINE_DIGEST || true
-          ls -al $STATEMINT_DIGEST || true
-          ls -al $ROCOCO_PARA_DIGEST || true
-          ls -al $CANVAS_KUSAMA_DIGEST || true
+
+          if [ "$RELEASE_TYPE" == "client" ]; then
+            ls -al $SHELL_DIGEST || true
+            ls -al $WESTMINT_DIGEST || true
+            ls -al $STATEMINE_DIGEST || true
+            ls -al $STATEMINT_DIGEST || true
+            ls -al $ROCOCO_PARA_DIGEST || true
+            ls -al $CANVAS_KUSAMA_DIGEST || true
+          fi
 
           echo "The diff will be computed from $REF1 to $REF2"
           cd cumulus/scripts/ci/changelog
@@ -191,7 +194,7 @@ jobs:
         runtime: ["shell", "statemine", "statemint", "westmint", "rococo-parachain", "canvas-kusama"]
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: ${{ github.event.inputs.ref2 }}
 
