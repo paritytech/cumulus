@@ -6,13 +6,13 @@ Simple script to upgrade the hardcoded chain-spec.json files.
 This the main purpose is that to automate migration of values from the old files to the new files that can not
 be inserted by the rust code, e.g., the `bootNodes`.
 
-Usage: ./scripts/update_hardcoded_specs.py <--migrate-genesis>
+Usage: ./scripts/update_hardcoded_specs.py [--regenesis]
 
 Optionally define if the `genesis` field of the chain-spec should also be migrated. This field should be set as follows:
-*   True, if a completely new chain-spec shall be created. This will create a new genesis state, which is not compatible
+*   --regenesis: if a completely new chain-spec shall be created. This will create a new genesis state, which is not compatible
     with chains running on the old chain-spec.
-*   False, if we only want to change other fields that are relevant to the node (i.e., the client) only, but not
-    the runtime. For instance if we update the substrate/polkadot.
+*   otherwise: if we only want to change other fields that are relevant to the node (i.e., the client) only, but not
+    the genesis. For instance if we update the substrate/polkadot.
 """
 
 import argparse
@@ -22,22 +22,13 @@ import subprocess
 
 SPECS = [
     {
-        "chain_id": "encointer-kusama",
+        "relay": "kusama",
     },
     {
-        "chain_id": "encointer-rococo",
+        "relay": "rococo",
     },
     {
-        "chain_id": "encointer-westend",
-    },
-    {
-        "chain_id": "launch-kusama",
-    },
-    {
-        "chain_id": "launch-rococo",
-    },
-    {
-        "chain_id": "launch-westend",
+        "relay": "westend",
     }
 ]
 COLLATOR = "target/release/encointer-collator"
@@ -46,18 +37,18 @@ RES_DIR = "polkadot-parachains/res"
 
 def main(regenesis: bool):
     for s in SPECS:
-        chain_spec = s["chain_id"]
+        relay = s["relay"]
 
         ret = subprocess.call(
-            f'scripts/dump_wasm_state_and_spec.sh {chain_spec}-fresh {COLLATOR} {RES_DIR}',
+            f'scripts/dump_wasm_state_and_spec.sh {relay}-fresh {COLLATOR} {RES_DIR}',
             stdout=subprocess.PIPE,
             shell=True
         )
 
         print(ret)
 
-        orig_file = f'{RES_DIR}/{chain_spec}.json'
-        new_file_base = f'{RES_DIR}/{chain_spec}-fresh'
+        orig_file = f'{RES_DIR}/encointer-{relay}.json'
+        new_file_base = f'{RES_DIR}/{relay}-fresh'
 
         with open(orig_file, 'r+') as spec_orig_file:
             orig_json = json.load(spec_orig_file)

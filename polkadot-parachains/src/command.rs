@@ -68,11 +68,11 @@ fn load_spec(
 		"encointer-kusama" 			=> Box::new(chain_spec::launch_kusama()?),
 
 		// live config initialize
-		"encointer-rococo-fresh" 		=> Box::new(chain_spec::launch_spec(
+		"rococo-fresh" 		=> Box::new(chain_spec::launch_spec(
 			1003.into(), GenesisKeys::Encointer, RelayChain::Rococo)),
-		"encointer-westend-fresh" 		=> Box::new(chain_spec::launch_spec(
+		"westend-fresh" 		=> Box::new(chain_spec::launch_spec(
 			1001.into(), GenesisKeys::Encointer, RelayChain::Westend)),
-		"encointer-kusama-fresh" 		=> Box::new(chain_spec::launch_spec(
+		"kusama-fresh" 		=> Box::new(chain_spec::launch_spec(
 			1001.into(), GenesisKeys::Encointer, RelayChain::Kusama)),
 
 		// on-the-spot specs
