@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../../bin/polkadot-v0.9.16-rc9",
+		"bin": "../../../bin/polkadot-0.9.18",
 		"chain": "rococo",
 		"nodes": [
 			{
@@ -23,13 +23,18 @@
 	"parachains": [
 		{
 			"bin": "../target/release/encointer-collator",
-			"chain": "launch-rococo",
-			"balance": "1000000000000000000000",
+			"chain": "encointer-rococo-fresh",
 			"nodes": [
 				{
 					"wsPort": 9944,
+					"rpcPort": 9933,
 					"port": 31200,
-					"name": "alice",
+					"flags": ["--", "--execution=wasm"]
+				},
+				{
+					"wsPort": 9945,
+					"rpcPort": 9934,
+					"port": 31201,
 					"flags": ["--", "--execution=wasm"]
 				}
 			]
