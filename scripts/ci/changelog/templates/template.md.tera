@@ -1,4 +1,4 @@
-{# This is the entry point of the template -#}
+{# This is the entry point of the template for the parachains-* releases-#}
 <!-- repository: {{ cumulus.repository.name }} -->
 {% include "pre_release.md.tera" -%}
 
@@ -16,17 +16,21 @@ This release contains the changes from `{{ env.REF1 }}` to `{{ env.REF2 }}`.
 {%- set DOT = "[P]" -%}
 {%- set SUB = "[S]" -%}
 
-
-{% include "global_priority.md.tera" -%}
+{# We check for host function first because no matter what the priority is, #}
+{# we will force it to HIGH if at least one host function was detected. #}
 
 {% include "host_functions.md.tera" -%}
-
+{% include "global_priority.md.tera" -%}
 {% include "compiler.md.tera" -%}
+{% include "migrations-db.md.tera" -%}
 
-{% include "migrations.md.tera" -%}
+{% if env.RELEASE_TYPE and env.RELEASE_TYPE == "client" %}
+<!-- skipping runtime data for RELEASE_TYPE = {{ env.RELEASE_TYPE }} -->
+{% else %}
+{% include "migrations-runtime.md.tera" -%}
 
 {% include "runtimes.md.tera" -%}
+{% endif %}
 
 {% include "changes.md.tera" -%}
-
 {% include "docker_image.md.tera" -%}

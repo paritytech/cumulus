@@ -7,7 +7,7 @@ For now, a bit of preparation is required before you can run the script:
 - store them under the `digests` folder as `<chain>-srtool-digest.json`
 - ensure the `.env` file is up to date with correct information
 
-The content of the release notes is generated from the template files under the `scripts/changelog/templates` folder. For readability and maintenance, the template is split into several small snippets.
+The content of the release notes is generated from the template files under the `scripts/ci/changelog/templates` folder. For readability and maintenance, the template is split into several small snippets.
 
 Run:
 ```
@@ -16,7 +16,7 @@ Run:
 
 For instance:
 ```
-./bin/changelog statemine-v5.0.0
+./bin/changelog parachains-v7.0.0-rc8
 ```
 
 A file called `release-notes.md` will be generated and can be used for the release.
@@ -36,6 +36,13 @@ REF2=HEAD
 DEBUG=1
 NO_CACHE=1
 ```
+
+By default, the template will include all the information, including the runtime data.
+For clients releases, we don't need those and they can be skipped by setting the following env:
+```
+RELEASE_TYPE=client
+```
+
 ## Considered labels
 
 The following list will likely evolve over time and it will be hard to keep it in sync.
