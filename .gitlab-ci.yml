@@ -11,6 +11,15 @@ stages:
   - benchmarks-build
   - benchmarks
 
+default:
+  interruptible:                   true
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - unknown_failure
+      - api_failure
+
 variables:                         &default-vars
   GIT_STRATEGY:                    fetch
   GIT_DEPTH:                       100
@@ -48,24 +57,11 @@ variables:                         &default-vars
   before_script:
     - *rust-info-script
     # - ./scripts/ci/pre_cache.sh
-  retry:
-    max: 2
-    when:
-      - runner_system_failure
-      - unknown_failure
-      - api_failure
-  interruptible:                   true
   tags:
     - linux-docker
 
 .kubernetes-env:                   &kubernetes-env
-  retry:
-    max: 2
-    when:
-      - runner_system_failure
-      - unknown_failure
-      - api_failure
-  interruptible:                   true
+  image:                           "${CI_IMAGE}"
   tags:
     - kubernetes-parity-build
 
@@ -192,14 +188,30 @@ benchmarks-build:
     - time cargo build --profile production --locked --features runtime-benchmarks
     - mkdir artifacts
     - cp $CARGO_TARGET_DIR/production/polkadot-collator ./artifacts/
-  tags:
-    - ci6
+
 
 benchmarks-statemine:
   stage:                           benchmarks
-  <<:                              *docker-env
+  before_script:
+    - *rust-info-script
   script:
     - ./scripts/benchmarks-test.sh statemine > ./artifacts/bench-statemine.log
     - git status
+    # setup ssh
+    - eval $(ssh-agent)
+    - ssh-add - <<< ${GITHUB_SSH_PRIV_KEY}
+    - mkdir ~/.ssh && touch ~/.ssh/known_hosts
+    - ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+    # Set git config
+    - rm -rf .git/config
+    - git config user.email "${GITHUB_EMAIL}"
+    - git config user.name "${GITHUB_USER}"
+    - git config remote.origin.url "git@github.com:/paritytech/${CI_PROJECT_NAME}.git"
+    - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+    # push results to github
+    - git checkout -b "benchmarks-$(date +%d-%m-%Y)"
+    - git add polkadot-parachains/*
+    - git commit -m "[delete me] test pr with benchmarks"
+    - git push origin "benchmarks-$(date +%d-%m-%Y)"
   tags:
     - weights
