@@ -213,6 +213,8 @@ benchmarks-statemine:
     - curl -i ${GITHUB_USER}:${GITHUB_TOKEN}
       -d '{"head":"'$BRANCHNAME'","base":"master"}'
       -X POST https://api.github.com/repos/paritytech/${CI_PROJECT_NAME}/pulls
+    after_script:
+      - rm -rf .git/config
 
   tags:
     - weights
