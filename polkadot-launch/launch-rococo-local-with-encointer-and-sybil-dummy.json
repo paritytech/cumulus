@@ -30,7 +30,14 @@
 					"wsPort": 9944,
 					"port": 31200,
 					"name": "alice",
-					"flags": ["-lencointer=debug", "--", "--execution=wasm"]
+					"flags": [
+						"--force-authoring",
+						"--enable-offchain-indexing=true",
+						"--rpc-methods=unsafe",
+						"-lencointer=debug",
+						"--",
+						"--execution=wasm"
+					]
 				}
 			]
 		},

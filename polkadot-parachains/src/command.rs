@@ -26,7 +26,6 @@ use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use log::info;
-use parachains_common::AuraId;
 use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
@@ -425,23 +424,15 @@ pub fn run() -> Result<()> {
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
 				if config.chain_spec.is_launch() {
-					crate::service::start_parachain_node::<
-						launch_runtime::RuntimeApi,
-						LaunchParachainRuntimeExecutor,
-						AuraId,
-					>(config, polkadot_config, id)
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into)
+					crate::service::start_launch_node(config, polkadot_config, id)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into)
 				} else {
-					crate::service::start_parachain_node::<
-						parachain_runtime::RuntimeApi,
-						EncointerParachainRuntimeExecutor,
-						AuraId,
-					>(config, polkadot_config, id)
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into)
+					crate::service::start_encointer_node(config, polkadot_config, id)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into)
 				}
 			})
 		},

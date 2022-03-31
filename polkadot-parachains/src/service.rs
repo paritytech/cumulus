@@ -220,7 +220,7 @@ async fn start_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	id: ParaId,
-	_rpc_ext_builder: RB,
+	rpc_extensions: RB,
 	build_import_queue: BIQ,
 	build_consensus: BIC,
 ) -> sc_service::error::Result<(
@@ -246,7 +246,14 @@ where
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
 	RB: Fn(
-			Arc<TFullClient<Block, RuntimeApi, Executor>>,
+			crate::rpc::FullDeps<
+				TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+				sc_transaction_pool::FullPool<
+					Block,
+					TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+				>,
+				TFullBackend<Block>,
+			>,
 		) -> Result<jsonrpc_core::IoHandler<sc_rpc::Metadata>, sc_service::Error>
 		+ Send
 		+ 'static,
@@ -322,15 +329,20 @@ where
 	let rpc_extensions_builder = {
 		let client = client.clone();
 		let transaction_pool = transaction_pool.clone();
+		let backend = backend.clone();
+		let offchain_indexing_enabled = parachain_config.offchain_worker.indexing_enabled;
 
+		// `backend` and offchain_indexing_enabled` are encointer customizations.
 		Box::new(move |deny_unsafe, _| {
 			let deps = rpc::FullDeps {
 				client: client.clone(),
 				pool: transaction_pool.clone(),
+				backend: backend.clone(),
+				offchain_indexing_enabled,
 				deny_unsafe,
 			};
 
-			Ok(rpc::create_full(deps))
+			rpc_extensions(deps)
 		})
 	};
 
@@ -600,10 +612,11 @@ where
 ///
 /// The trait bounds of the generic parameters are copied from the above `start_node_impl` except
 /// for the one mentioned below.
-pub async fn start_parachain_node<RuntimeApi, Executor, AuraId: AppKey>(
+pub async fn start_parachain_node<RuntimeApi, Executor, AuraId: AppKey, RpcBuilder>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	id: ParaId,
+	rpc_extension_builder: RpcBuilder,
 ) -> sc_service::error::Result<(
 	TaskManager,
 	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
@@ -629,12 +642,24 @@ where
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
 	<<AuraId as AppKey>::Pair as Pair>::Signature:
 		TryFrom<Vec<u8>> + std::hash::Hash + sp_runtime::traits::Member + Codec,
+	RpcBuilder: Fn(
+			crate::rpc::FullDeps<
+				TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+				sc_transaction_pool::FullPool<
+					Block,
+					TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+				>,
+				TFullBackend<Block>,
+			>,
+		) -> Result<jsonrpc_core::IoHandler<sc_rpc::Metadata>, sc_service::Error>
+		+ Send
+		+ 'static,
 {
 	start_node_impl::<RuntimeApi, Executor, _, _, _>(
 		parachain_config,
 		polkadot_config,
 		id,
-		|_| Ok(Default::default()),
+		rpc_extension_builder,
 		parachain_build_import_queue::<_, _, AuraId>,
 		|client,
 		 prometheus_registry,
@@ -759,5 +784,53 @@ where
 			Ok(parachain_consensus)
 		},
 	)
+	.await
+}
+
+/// Start a node containing the launch runtime
+pub async fn start_launch_node(
+	config: Configuration,
+	polkadot_config: Configuration,
+	id: ParaId,
+) -> sc_service::error::Result<(
+	TaskManager,
+	Arc<
+		TFullClient<
+			Block,
+			launch_runtime::RuntimeApi,
+			NativeElseWasmExecutor<LaunchParachainRuntimeExecutor>,
+		>,
+	>,
+)> {
+	start_parachain_node::<
+		launch_runtime::RuntimeApi,
+		LaunchParachainRuntimeExecutor,
+		parachains_common::AuraId,
+		_,
+	>(config, polkadot_config, id, |deps| Ok(rpc::create_launch_ext(deps)))
+	.await
+}
+
+/// Start a node containing the encointer runtime.
+pub async fn start_encointer_node(
+	config: Configuration,
+	polkadot_config: Configuration,
+	id: ParaId,
+) -> sc_service::error::Result<(
+	TaskManager,
+	Arc<
+		TFullClient<
+			Block,
+			parachain_runtime::RuntimeApi,
+			NativeElseWasmExecutor<EncointerParachainRuntimeExecutor>,
+		>,
+	>,
+)> {
+	start_parachain_node::<
+		parachain_runtime::RuntimeApi,
+		EncointerParachainRuntimeExecutor,
+		parachains_common::AuraId,
+		_,
+	>(config, polkadot_config, id, |deps| Ok(rpc::create_full(deps)))
 	.await
 }

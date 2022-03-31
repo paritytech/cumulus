@@ -27,6 +27,14 @@ parachain-runtime = { package = "encointer-runtime", path = "encointer-runtime" 
 launch-runtime = { package = "launch-runtime", path = "launch-runtime" }
 parachains-common = { path = "parachains-common" }
 
+# encointer dependencies
+pallet-encointer-ceremonies-rpc = { git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17"}
+pallet-encointer-ceremonies-rpc-runtime-api = { git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17"}
+pallet-encointer-communities-rpc = { git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17"}
+pallet-encointer-communities-rpc-runtime-api = { git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17"}
+pallet-encointer-bazaar-rpc = {git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17"}
+pallet-encointer-bazaar-rpc-runtime-api = {git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17"}
+
 # Substrate dependencies
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }

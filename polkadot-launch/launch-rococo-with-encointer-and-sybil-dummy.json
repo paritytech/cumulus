@@ -29,7 +29,13 @@
 				{
 					"wsPort": 9944,
 					"port": 31200,
-					"flags": ["-lencointer=debug", "--", "--execution=wasm"]
+					"flags": [
+						"--enable-offchain-indexing=true",
+						"--rpc-methods=unsafe",
+						"-lencointer=debug",
+						"--",
+						"--execution=wasm"
+					]
 				}
 			]
 		},

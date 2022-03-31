@@ -2089,6 +2089,12 @@ dependencies = [
  "launch-runtime",
  "log",
  "nix",
+ "pallet-encointer-bazaar-rpc",
+ "pallet-encointer-bazaar-rpc-runtime-api",
+ "pallet-encointer-ceremonies-rpc",
+ "pallet-encointer-ceremonies-rpc-runtime-api",
+ "pallet-encointer-communities-rpc",
+ "pallet-encointer-communities-rpc-runtime-api",
  "pallet-transaction-payment-rpc",
  "parachains-common",
  "parity-scale-codec",
@@ -2180,8 +2186,11 @@ dependencies = [
  "pallet-collective",
  "pallet-encointer-balances",
  "pallet-encointer-bazaar",
+ "pallet-encointer-bazaar-rpc-runtime-api",
  "pallet-encointer-ceremonies",
+ "pallet-encointer-ceremonies-rpc-runtime-api",
  "pallet-encointer-communities",
+ "pallet-encointer-communities-rpc-runtime-api",
  "pallet-encointer-scheduler",
  "pallet-membership",
  "pallet-proxy",
@@ -5514,6 +5523,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-encointer-bazaar-rpc"
+version = "0.1.0"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#51f3daedbf251b9b34ffdc1753f9fa0d04cf5f12"
+dependencies = [
+ "encointer-primitives",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "log",
+ "pallet-encointer-bazaar-rpc-runtime-api",
+ "parking_lot 0.12.0",
+ "sc-rpc",
+ "sc-rpc-api",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-encointer-bazaar-rpc-runtime-api"
+version = "0.1.0"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#51f3daedbf251b9b34ffdc1753f9fa0d04cf5f12"
+dependencies = [
+ "encointer-primitives",
+ "frame-support",
+ "sp-api",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-encointer-ceremonies"
 version = "0.8.1"
 source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#51f3daedbf251b9b34ffdc1753f9fa0d04cf5f12"
@@ -5537,6 +5576,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-encointer-ceremonies-rpc"
+version = "0.1.0"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#51f3daedbf251b9b34ffdc1753f9fa0d04cf5f12"
+dependencies = [
+ "encointer-primitives",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "log",
+ "pallet-encointer-ceremonies-rpc-runtime-api",
+ "parking_lot 0.12.0",
+ "sc-rpc",
+ "sc-rpc-api",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-encointer-ceremonies-rpc-runtime-api"
+version = "0.1.0"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#51f3daedbf251b9b34ffdc1753f9fa0d04cf5f12"
+dependencies = [
+ "encointer-primitives",
+ "frame-support",
+ "sp-api",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-encointer-communities"
 version = "0.8.1"
 source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#51f3daedbf251b9b34ffdc1753f9fa0d04cf5f12"
@@ -5552,6 +5621,35 @@ dependencies = [
  "scale-info",
  "sp-io",
  "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-encointer-communities-rpc"
+version = "0.1.0"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#51f3daedbf251b9b34ffdc1753f9fa0d04cf5f12"
+dependencies = [
+ "encointer-primitives",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "log",
+ "pallet-encointer-communities-rpc-runtime-api",
+ "parking_lot 0.12.0",
+ "sc-rpc",
+ "sc-rpc-api",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-encointer-communities-rpc-runtime-api"
+version = "0.1.0"
+source = "git+https://github.com/encointer/pallets?branch=polkadot-v0.9.17#51f3daedbf251b9b34ffdc1753f9fa0d04cf5f12"
+dependencies = [
+ "encointer-primitives",
+ "sp-api",
  "sp-std",
 ]
 
@@ -11045,7 +11143,7 @@ dependencies = [
  "chrono",
  "lazy_static",
  "matchers",
- "parking_lot 0.11.2",
+ "parking_lot 0.10.2",
  "regex",
  "serde",
  "serde_json",
@@ -11166,7 +11264,7 @@ version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ee73e6e4924fe940354b8d4d98cad5231175d615cd855b758adc658c0aac6a0"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "rand 0.8.5",
  "static_assertions",
 ]

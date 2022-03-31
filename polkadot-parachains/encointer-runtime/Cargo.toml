@@ -15,12 +15,15 @@ scale-info = { version = "1.0.0", default-features = false, features = ["derive"
 serde = { version = "1.0.132", default-features = false, optional = true, features = ["derive"] }
 
 # encointer deps
-encointer-primitives = { default-features = false, features = ['serde_derive'], git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17" }
-pallet-encointer-scheduler = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17" }
-pallet-encointer-ceremonies = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17" }
-pallet-encointer-communities = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17" }
+encointer-primitives = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17" }
 pallet-encointer-balances = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17" }
 pallet-encointer-bazaar = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17" }
+pallet-encointer-bazaar-rpc-runtime-api = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17" }
+pallet-encointer-ceremonies = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17" }
+pallet-encointer-ceremonies-rpc-runtime-api = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17" }
+pallet-encointer-communities = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17" }
+pallet-encointer-communities-rpc-runtime-api = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17" }
+pallet-encointer-scheduler = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17" }
 #pallet-encointer-personhood-oracle = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17" }
 #pallet-encointer-sybil-gate-template = { default-features = false, git = "https://github.com/encointer/pallets", branch = "polkadot-v0.9.17" }
 
@@ -133,11 +136,14 @@ std = [
 	"serde/std",
 	"encointer-primitives/std",
 	"encointer-primitives/serde_derive",
-	"pallet-encointer-scheduler/std",
-	"pallet-encointer-ceremonies/std",
 	"pallet-encointer-balances/std",
-	"pallet-encointer-communities/std",
 	"pallet-encointer-bazaar/std",
+	"pallet-encointer-bazaar-rpc-runtime-api/std",
+	"pallet-encointer-ceremonies/std",
+	"pallet-encointer-ceremonies-rpc-runtime-api/std",
+	"pallet-encointer-communities/std",
+	"pallet-encointer-communities-rpc-runtime-api/std",
+	"pallet-encointer-scheduler/std",
 #	"pallet-encointer-personhood-oracle/std",
 #	"pallet-encointer-sybil-gate-template/std",
 ]

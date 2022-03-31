@@ -85,6 +85,10 @@ pub use pallet_encointer_scheduler::Call as EncointerSchedulerCall;
 
 pub use encointer_primitives::{
 	balances::{BalanceEntry, BalanceType, Demurrage},
+	bazaar::{BusinessData, BusinessIdentifier, OfferingData},
+	ceremonies::{CeremonyIndexType, CommunityReputation},
+	common::PalletString,
+	communities::{CommunityIdentifier, Location},
 	scheduler::CeremonyPhaseType,
 };
 
@@ -936,6 +940,40 @@ impl_runtime_apis! {
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
 		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
 			ParachainSystem::collect_collation_info(header)
+		}
+	}
+
+	impl pallet_encointer_ceremonies_rpc_runtime_api::CeremoniesApi<Block, AccountId> for Runtime {
+		fn get_reputations(account: &AccountId) -> Vec<(CeremonyIndexType, CommunityReputation)> {
+			EncointerCeremonies::get_reputations(&account)
+		}
+	}
+
+	impl pallet_encointer_communities_rpc_runtime_api::CommunitiesApi<Block, AccountId, BlockNumber> for Runtime {
+		fn get_all_balances(account: &AccountId) -> Vec<(CommunityIdentifier, BalanceEntry<BlockNumber>)> {
+			EncointerCommunities::get_all_balances(account)
+		}
+
+		fn get_cids() -> Vec<CommunityIdentifier> {
+			EncointerCommunities::get_cids()
+		}
+
+		fn get_name(cid: &CommunityIdentifier) -> Option<PalletString> {
+			EncointerCommunities::get_name(cid)
+		}
+
+		fn get_locations(cid: &CommunityIdentifier) -> Vec<Location> {
+			EncointerCommunities::get_locations(cid)
+		}
+	}
+
+	impl pallet_encointer_bazaar_rpc_runtime_api::BazaarApi<Block, AccountId> for Runtime {
+		fn get_offerings(business: &BusinessIdentifier<AccountId>) -> Vec<OfferingData>{
+			EncointerBazaar::get_offerings(business)
+		}
+
+		fn get_businesses(community: &CommunityIdentifier) -> Vec<(AccountId, BusinessData)>{
+			EncointerBazaar::get_businesses(community)
 		}
 	}
 
