@@ -200,8 +200,8 @@ benchmarks-statemine:
     - export BRANCHNAME="benchmarks-$(date +%d-%m-%Y)-${CI_COMMIT_SHORT_SHA}"
     # Set git config
     - rm -rf .git/config
-    - git config user.email "${GITHUB_EMAIL}"
-    - git config user.name "${GITHUB_USER}"
+    - git config --global user.email "${GITHUB_EMAIL}"
+    - git config --global user.name "${GITHUB_USER}"
     - git config remote.origin.url "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com:/paritytech/${CI_PROJECT_NAME}.git"
     - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
     # push results to github
