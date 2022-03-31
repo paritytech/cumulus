@@ -2,7 +2,7 @@
 name = "integritee-collator"
 description = "The Integritee parachain collator binary"
 # align major.minor revision with the runtimes. bump patch revision ad lib. make this the github release tag
-version = "1.5.13"
+version = "1.5.14"
 authors = ["Integritee AG <hello@integritee.network>"]
 homepage = "https://integritee.network/"
 repository = "https://github.com/integritee-network/parachain"

@@ -42,7 +42,7 @@ use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 
 const LOCAL_PARA_ID: u32 = 2000;
-const ROCOCO_PARA_ID: u32 = 2073;
+const ROCOCO_PARA_ID: u32 = 3002;
 const WESTEND_PARA_ID: u32 = 2081;
 const KUSAMA_PARA_ID: u32 = 2015;
 const POLKADOT_PARA_ID: u32 = 2039;
