@@ -197,21 +197,22 @@ benchmarks-statemine:
   script:
     - ./scripts/benchmarks-test.sh statemine > ./artifacts/bench-statemine.log
     - git status
-    # setup ssh
-    - eval $(ssh-agent)
-    - ssh-add - <<< ${GITHUB_SSH_PRIV_KEY}
-    - mkdir ~/.ssh && touch ~/.ssh/known_hosts
-    - ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+    - export BRANCHNAME="benchmarks-$(date +%d-%m-%Y)-${CI_COMMIT_SHORT_SHA}"
     # Set git config
     - rm -rf .git/config
     - git config user.email "${GITHUB_EMAIL}"
     - git config user.name "${GITHUB_USER}"
-    - git config remote.origin.url "git@github.com:/paritytech/${CI_PROJECT_NAME}.git"
+    - git config remote.origin.url "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com:/paritytech/${CI_PROJECT_NAME}.git"
     - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
     # push results to github
-    - git checkout -b "benchmarks-$(date +%d-%m-%Y)"
+    - git checkout -b $BRANCHNAME
     - git add polkadot-parachains/*
     - git commit -m "[delete me] test pr with benchmarks"
-    - git push origin "benchmarks-$(date +%d-%m-%Y)"
+    - git push origin $BRANCHNAME
+    # create PR
+    - curl -i ${GITHUB_USER}:${GITHUB_TOKEN}
+      -d '{"head":"'$BRANCHNAME'","base":"master"}'
+      -X POST https://api.github.com/repos/paritytech/${CI_PROJECT_NAME}/pulls
+
   tags:
     - weights
