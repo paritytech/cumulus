@@ -214,7 +214,7 @@ benchmarks-statemine:
       -d '{"head":"'$BRANCHNAME'","base":"master"}'
       -X POST https://api.github.com/repos/paritytech/${CI_PROJECT_NAME}/pulls
     after_script:
-      - rm -rf .git/config
+    - rm -rf .git/config
 
   tags:
     - weights
