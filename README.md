@@ -8,17 +8,48 @@ It is forked from the [Cumulus](https://github.com/paritytech/cumulus) repositor
 * [Sybil Defense Demo](docs/sybil-demo)
 * [Native Downward-/ Upward Token Tx Demo](docs/downward-upward-native-token-tx)
 
-## Launch a local setup including a Relay Chain and a Parachain
+## Launch a local setup with polkadot-launch
 
-### Launch the Relay Chain (Local Rococo Testnet)
-
+Build sudo-patched polkadot binary
 ```bash
-# Compile Polkadot
 git clone https://github.com/paritytech/polkadot
 git fetch
-git checkout v0.9.12
+git checkout v0.9.18
+# add sudo to all types of relaychain to simplify and accelerate testing
+git cherry-pick 755a4b69c94ba75618080c76d25133b11c1d58db
+# use `cargo install diener` if not done already
+diener update --substrate --branch polkadot-v0.9.18
 cargo build --release
+```
 
+Place the binary into `../../bin/polkadot-0.9.18-sudo`
+
+
+### Setup local testnet with polkadot-launch
+[polkadot-launch](https://github.com/paritytech/polkadot-launch) lets you easily setup a local testnet. The following procedure will setup a local testnet with three relay chain nodes and two encointer parachains. It will also setup up a XCM (cross chain messaging) channel between the two chains.
+
+**Note 2:** The `polkadot-launch-config.json` and the commands below assume that the polkadot-launch directory is on the same level as this repo's directory.
+
+**Preliminaries:** you need to have yarn and node installed
+
+```bash
+# We need to build it from source. The one from the yarn registry does not work with our code.
+git clone https://github.com/paritytech/polkadot-launch
+cd polkadot-launch
+yarn install
+yarn build
+
+# In the root directory of this repository simply execute
+node ../polkadot-launch/dist/cli.js ./polkadot-launch/launch-rococo-local-with-launch.json
+```
+
+This launches the local testnet and creates 5 log files: `alice.log`, `bob.log`, `charlie.log`, which are the logs of the relay chain nodes and `9944.log`, `9955.log`, which are the logs of the two parachains.
+
+Executing the `./tmux_setup.sh` script at the project root will set up tmux with three panes that tailing the logs of `alice.log`, `9944.log` and `9955.log`.
+
+## manual test setup step by step
+
+```
 # Generate a raw chain spec
 ./target/release/polkadot build-spec --chain rococo-local --disable-default-bootnode --raw > rococo-local-cfde.json
 
@@ -97,27 +128,6 @@ encointer-collator \
 * Don't forget to add the argument `--chain encointer-rococo` for the custom chain config. This argument is omitted in the [Cumulus Workshop](https://substrate.dev/cumulus-workshop/).
 * The relay chain and the collator need to be about equally recent. This might require frequent rebasing of this repository on the `rococo-v1` branch.
 * Sanity check: The genesis state is printed when starting the collator. Make sure it matches the one from the `genesis.state` file.
-
-### Setup local testnet with polkadot-launch
-[polkadot-launch](https://github.com/paritytech/polkadot-launch) lets you easily setup a local testnet. The following procedure will setup a local testnet with three relay chain nodes and two encointer parachains. It will also setup up a XCM (cross chain messaging) channel between the two chains.
-
-**Note 2:** The `polkadot-launch-config.json` and the commands below assume that the polkadot-launch directory is on the same level as this repo's directory.
-
-**Preliminaries:** you need to have yarn and node installed
-
-```bash
-# We need to build it from source. The one from the yarn registry does not work with our code.
-git clone https://github.com/paritytech/polkadot-launch
-cd polkadot-launch
-yarn install
-yarn build
-
-# In the root directory of this repository simply execute
-node ../polkadot-launch/dist/cli.js ./polkadot-launch/launch-rococo-local-with-launch.json
-```
-
-This launches the local testnet and creates 5 log files: `alice.log`, `bob.log`, `charlie.log`, which are the logs of the relay chain nodes and `9944.log`, `9955.log`, which are the logs of the two parachains.
-
 
 ## Benchmark the runtimes
 In `./scripts` we have two scripts for benchmarking the runtimes.
