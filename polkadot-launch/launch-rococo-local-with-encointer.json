@@ -1,0 +1,48 @@
+{
+	"relaychain": {
+		"bin": "../../../bin/polkadot-0.9.18",
+		"chain": "rococo-local",
+		"nodes": [
+			{
+				"name": "alice",
+				"wsPort": 9999,
+				"port": 30444
+			},
+			{
+				"name": "bob",
+				"wsPort": 9988,
+				"port": 30555
+			},
+			{
+				"name": "charlie",
+				"wsPort": 9977,
+				"port": 30666
+			}
+		]
+	},
+	"parachains": [
+		{
+			"bin": "../target/release/encointer-collator",
+			"chain": "encointer-rococo-local-dev",
+			"nodes": [
+				{
+					"wsPort": 9944,
+					"port": 31200,
+					"name": "alice",
+					"flags": [
+						"--enable-offchain-indexing=true",
+						"--rpc-methods=unsafe",
+						"-lencointer=debug",
+						"--",
+						"--execution=wasm"
+					]
+				}
+			]
+		}
+	],
+	"simpleParachains": [
+	],
+	"hrmpChannels": [
+	],
+	"finalization": false
+}
