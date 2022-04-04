@@ -23,7 +23,7 @@ use parachain_runtime::{AccountId, AuraId};
 use sc_chain_spec::Properties;
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Public};
-use sp_keyring::AccountKeyring::{Alice, Bob, Charlie, Dave, Eve};
+use sp_keyring::AccountKeyring::{Alice, Bob, Charlie};
 use std::str::FromStr;
 
 pub fn public_from_ss58<TPublic: Public + FromStr>(ss58: &str) -> TPublic
@@ -48,7 +48,7 @@ pub struct WellKnownKeys;
 
 impl WellKnownKeys {
 	pub fn endowed() -> Vec<AccountId> {
-		Self::council()
+		vec![Alice.to_account_id(), Bob.to_account_id(), Charlie.to_account_id()]
 	}
 
 	pub fn authorities() -> Vec<AuraId> {
@@ -56,13 +56,7 @@ impl WellKnownKeys {
 	}
 
 	pub fn council() -> Vec<AccountId> {
-		vec![
-			Alice.to_account_id(),
-			Bob.to_account_id(),
-			Charlie.to_account_id(),
-			Dave.to_account_id(),
-			Eve.to_account_id(),
-		]
+		vec![Alice.to_account_id()]
 	}
 }
 
