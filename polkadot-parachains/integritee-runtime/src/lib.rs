@@ -224,8 +224,7 @@ impl Contains<Call> for BaseFilter {
 			Call::PolkadotXcm(_) |
 			Call::CumulusXcm(_) |
 			Call::DmpQueue(_) |
-			Call::Migration(_)
-			 => true,
+			Call::Migration(_) => true,
 			// Disable everything before / during migration
 			Call::Multisig(_) |
 			Call::Proxy(_) |
@@ -236,8 +235,7 @@ impl Contains<Call> for BaseFilter {
 			Call::Treasury(_) |
 			Call::Teerex(_) |
 			Call::Claims(_) |
-			Call::Teeracle(_)
-			=> false,
+			Call::Teeracle(_) => false,
 		}
 	}
 }
