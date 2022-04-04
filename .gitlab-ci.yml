@@ -44,7 +44,6 @@ variables:
   - rustup +nightly show
   - cargo +nightly --version
   - bash --version
-  # - sccache -s
 
 .publish-refs:                     &publish-refs
   rules:
@@ -52,11 +51,30 @@ variables:
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+.*$/              # i.e. v1.0, v2.1rc1
 
+# run benchmarks manually
+.benchmarks-refs:                  &benchmarks-refs
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: manual
+    - if: $CI_COMMIT_REF_NAME == "master"
+      when: manual
+    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+.*$/              # i.e. v1.0, v2.1rc1
+      when: manual
+
+.master-refs:                      &master-refs
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_COMMIT_REF_NAME == "master"
+    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+.*$/              # i.e. v1.0, v2.1rc1
+
 .docker-env:                       &docker-env
   image:                           "${CI_IMAGE}"
   before_script:
     - *rust-info-script
-    # - ./scripts/ci/pre_cache.sh
+    - ./scripts/ci/pre_cache.sh
   tags:
     - linux-docker
 
@@ -75,9 +93,10 @@ variables:
 
 #### stage:                        test
 
-.test-linux-stable:
+test-linux-stable:
   stage:                           test
   <<:                              *docker-env
+  <<:                              *common-refs
   rules:
     - if: $CI_COMMIT_REF_NAME == "master"
     - if: $CI_COMMIT_REF_NAME == "tags"
@@ -112,7 +131,7 @@ variables:
       fi
     - sccache -s
 
-.check-runtime-benchmarks:
+check-runtime-benchmarks:
   stage:                           test
   <<:                              *docker-env
   script:
@@ -122,7 +141,7 @@ variables:
     - time cargo check -p parachain-template-node --features runtime-benchmarks
     - sccache -s
 
-.cargo-check-try-runtime:
+cargo-check-try-runtime:
   stage:                           test
   <<:                              *docker-env
   script:
@@ -132,14 +151,14 @@ variables:
     - time cargo check -p parachain-template-node --features try-runtime
     - sccache -s
 
-.cargo-check-benches:
+cargo-check-benches:
   stage:                           test
   <<:                              *docker-env
   script:
     - time cargo check --all --benches
     - sccache -s
 
-.check-rustdoc:
+check-rustdoc:
   stage:                           test
   <<:                              *docker-env
   variables:
@@ -182,17 +201,18 @@ benchmarks-build:
   stage:                           benchmarks-build
   <<:                              *docker-env
   <<:                              *collect-artifacts
+  <<:                              *benchmarks-refs
   script:
     - time cargo build --profile production --locked --features runtime-benchmarks
     - mkdir artifacts
     - cp $CARGO_TARGET_DIR/production/polkadot-collator ./artifacts/
-
 
 benchmarks-statemine:
   stage:                           benchmarks
   before_script:
     - *rust-info-script
   <<:                              *collect-artifacts
+  <<:                              *master-refs
   script:
     - ./scripts/benchmarks-ci.sh statemine > ./artifacts/bench-statemine.log
     - ./scripts/benchmarks-ci.sh statemint > ./artifacts/bench-statemint.log
