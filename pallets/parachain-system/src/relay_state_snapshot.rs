@@ -63,6 +63,10 @@ pub struct MessagingStateSnapshot {
 pub enum Error {
 	/// The provided proof was created against unexpected storage root.
 	RootMismatch,
+	/// The entry cannot be read.
+	ReadEntry(ReadEntryErr),
+	/// The optional entry cannot be read.
+	ReadOptionalEntry(ReadEntryErr),
 	/// The slot cannot be extracted.
 	Slot(ReadEntryErr),
 	/// The upgrade go-ahead signal cannot be read.
@@ -272,5 +276,19 @@ impl RelayChainStateProof {
 			&relay_chain::well_known_keys::upgrade_restriction_signal(self.para_id),
 		)
 		.map_err(Error::UpgradeRestriction)
+	}
+
+	pub fn read_entry<T>(&self, key: &[u8], fallback: Option<T>) -> Result<T, Error>
+	where
+		T: Decode,
+	{
+		read_entry(&self.trie_backend, key, fallback).map_err(Error::ReadEntry)
+	}
+
+	pub fn read_optional_entry<T>(&self, key: &[u8]) -> Result<Option<T>, Error>
+	where
+		T: Decode,
+	{
+		read_optional_entry(&self.trie_backend, key).map_err(Error::ReadOptionalEntry)
 	}
 }
