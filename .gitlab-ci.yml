@@ -206,7 +206,7 @@ benchmarks-build:
     - mkdir artifacts
     - cp $CARGO_TARGET_DIR/production/polkadot-collator ./artifacts/
 
-benchmarks-statemine:
+benchmarks:
   stage:                           benchmarks-run
   before_script:
     - *rust-info-script
