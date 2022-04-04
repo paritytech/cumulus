@@ -20,7 +20,7 @@ default:
       - unknown_failure
       - api_failure
 
-variables:                         &default-vars
+variables:
   GIT_STRATEGY:                    fetch
   GIT_DEPTH:                       100
   CARGO_INCREMENTAL:               0
@@ -92,7 +92,6 @@ variables:                         &default-vars
     - if: $CI_PIPELINE_SOURCE == "schedule"
   <<:                              *collect-artifacts
   variables:
-    <<:                            *default-vars
     # Enable debug assertions since we are running optimized builds for testing
     # but still want to have debug assertions.
     RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
@@ -144,7 +143,6 @@ variables:                         &default-vars
   stage:                           test
   <<:                              *docker-env
   variables:
-    <<:                            *default-vars
     SKIP_WASM_BUILD:               1
     RUSTDOCFLAGS:                  "-Dwarnings"
   script:
@@ -194,8 +192,11 @@ benchmarks-statemine:
   stage:                           benchmarks
   before_script:
     - *rust-info-script
+  <<:                              *collect-artifacts
   script:
-    - ./scripts/benchmarks-test.sh statemine > ./artifacts/bench-statemine.log
+    - ./scripts/benchmarks-ci.sh statemine > ./artifacts/bench-statemine.log
+    - ./scripts/benchmarks-ci.sh statemint > ./artifacts/bench-statemint.log
+    - ./scripts/benchmarks-ci.sh westmint > ./artifacts/bench-westmint.log
     - git status
     - export BRANCHNAME="benchmarks-$(date +%d-%m-%Y)-${CI_COMMIT_SHORT_SHA}"
     # Set git config
@@ -215,6 +216,5 @@ benchmarks-statemine:
       -X POST https://api.github.com/repos/paritytech/${CI_PROJECT_NAME}/pulls
   after_script:
     - rm -rf .git/config
-
   tags:
     - weights
