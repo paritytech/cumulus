@@ -2065,7 +2065,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-collator"
-version = "0.6.10"
+version = "0.6.11"
 dependencies = [
  "assert_cmd",
  "async-trait",
@@ -2162,7 +2162,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-runtime"
-version = "0.6.4"
+version = "0.6.5"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
