@@ -96,7 +96,6 @@ variables:
 test-linux-stable:
   stage:                           test
   <<:                              *docker-env
-  <<:                              *common-refs
   rules:
     - if: $CI_COMMIT_REF_NAME == "master"
     - if: $CI_COMMIT_REF_NAME == "tags"
