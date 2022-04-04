@@ -281,7 +281,7 @@ impl sc_service::ImportQueue<Block> for FakeImportQueue {
 		cx: &mut futures::task::Context,
 		link: &mut dyn sc_consensus::import_queue::Link<Block>,
 	) {
-		todo!("ImportQueue::import_blocks")
+		// tracing::info!("poll_actions is being called");
 	}
 }
 

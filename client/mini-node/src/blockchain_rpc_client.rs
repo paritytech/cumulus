@@ -279,7 +279,8 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		&self,
 		at: &polkadot_core_primitives::BlockId,
 	) -> Result<Option<u32>, sp_api::ApiError> {
-		todo!()
+		tracing::info!("api_version_parachain_host");
+		Ok(Some(2))
 	}
 }
 
@@ -371,6 +372,7 @@ impl HeaderBackend<Block> for BlockChainRPCClient {
 		tracing::info!("BlockBackend::block_status");
 		let best_header =
 			block_on(self.rpc_client.chain_get_header(None)).expect("get_header").unwrap();
+		tracing::info!("BlockBackend::block_status - succeeded to get header {:?}", best_header);
 		let genesis_hash = block_on(self.rpc_client.chain_get_head(Some(0))).expect("get_head");
 		let finalized_head =
 			block_on(self.rpc_client.chain_get_finalized_head()).expect("get_head");

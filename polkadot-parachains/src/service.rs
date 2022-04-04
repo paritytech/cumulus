@@ -297,13 +297,18 @@ async fn build_relay_chain_interface(
 			let collator_pair = CollatorPair::generate().0;
 			let collator_node = cumulus_relay_chain_mini::new_mini(
 				polkadot_config,
-				collator_pair,
+				collator_pair.clone(),
 				None,
 				None,
 				true,
 				Arc::new(BlockChainRPCClient::new(relay_chain_url.clone()).await),
-			);
-			Ok((Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>, None))
+			)
+			.expect("nope");
+			task_manager.add_child(collator_node.task_manager);
+			Ok((
+				Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>,
+				Some(collator_pair),
+			))
 		},
 		None => {
 			let relay_chain_local = build_inprocess_relay_chain(
