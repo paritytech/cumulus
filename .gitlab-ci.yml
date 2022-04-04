@@ -208,11 +208,11 @@ benchmarks-statemine:
     # push results to github
     - git checkout -b $BRANCHNAME
     - git add polkadot-parachains/*
-    - git commit -m "[delete me] test pr with benchmarks"
+    - git commit -m "[benchmarks] pr with wieghts"
     - git push origin $BRANCHNAME
     # create PR
     - curl -u ${GITHUB_USER}:${GITHUB_TOKEN}
-      -d '{"title":"[benchmarks] Update weights","body":"Test PR, not intended to merge","head":"'$BRANCHNAME'","base":"master"}'
+      -d '{"title":"[benchmarks] Update weights","body":"This PR is generated automatically by CI.","head":"'$BRANCHNAME'","base":"master"}'
       -X POST https://api.github.com/repos/paritytech/${CI_PROJECT_NAME}/pulls
   after_script:
     - rm -rf .git/config
