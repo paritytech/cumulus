@@ -9,7 +9,7 @@ stages:
   - test
   - publish
   - benchmarks-build
-  - benchmarks
+  - benchmarks-run
 
 default:
   interruptible:                   true
@@ -207,7 +207,7 @@ benchmarks-build:
     - cp $CARGO_TARGET_DIR/production/polkadot-collator ./artifacts/
 
 benchmarks-statemine:
-  stage:                           benchmarks
+  stage:                           benchmarks-run
   before_script:
     - *rust-info-script
   <<:                              *collect-artifacts
