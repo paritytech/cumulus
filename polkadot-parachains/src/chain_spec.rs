@@ -232,6 +232,12 @@ fn encointer_genesis(
 			min_solar_trip_time_s: 1, // [s]
 			max_speed_mps: 1,         // [m/s] suggested would be 83m/s for security,
 		},
+		encointer_balances: parachain_runtime::EncointerBalancesConfig {
+			// for relative adjustment.
+			// 100_000 translates 5uKSM to 0.01 CC if ceremony reward is 20 CC
+			// lower values lead to lower fees in CC proportionally
+			fee_conversion_factor: 100_000,
+		},
 	}
 }
 

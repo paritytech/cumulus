@@ -131,6 +131,14 @@ impl<T: frame_system::Config> pallet_encointer_ceremonies::WeightInfo for Weight
 		(22_000_000 as Weight)
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
+	// Storage: EncointerCeremonies TimeTolerance (r:0 w:1)
+	fn set_time_tolerance() -> Weight {
+		(16_559_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
+	}
+	// Storage: EncointerCeremonies LocationTolerance (r:0 w:1)
+	fn set_location_tolerance() -> Weight {
+		(15_876_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
+	}
 	// Storage: EncointerCeremonies Assignments (r:0 w:1)
 	// Storage: EncointerCeremonies ParticipantReputation (r:0 w:1)
 	// Storage: EncointerCeremonies MeetupCount (r:0 w:1)

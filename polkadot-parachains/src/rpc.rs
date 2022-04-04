@@ -80,15 +80,22 @@ where
 	io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(client.clone())));
 
 	io.extend_with(BazaarApi::to_delegate(Bazaar::new(client.clone(), deny_unsafe)));
-	io.extend_with(CeremoniesApi::to_delegate(Ceremonies::new(client.clone(), deny_unsafe)));
 
 	match backend.offchain_storage() {
-		Some(storage) => io.extend_with(CommunitiesApi::to_delegate(Communities::new(
-			client.clone(),
-			storage,
-			offchain_indexing_enabled,
-			deny_unsafe,
-		))),
+		Some(storage) => {
+			io.extend_with(CommunitiesApi::to_delegate(Communities::new(
+				client.clone(),
+				storage.clone(),
+				offchain_indexing_enabled,
+				deny_unsafe,
+			)));
+			io.extend_with(CeremoniesApi::to_delegate(Ceremonies::new(
+				client.clone(),
+				deny_unsafe,
+				storage,
+				offchain_indexing_enabled,
+			)))
+		},
 		None => log::warn!(
 			"Offchain caching disabled, due to lack of offchain storage support in backend."
 		),
