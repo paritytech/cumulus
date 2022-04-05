@@ -139,6 +139,12 @@ match_types! {
 	};
 }
 
+match_types! {
+	pub type IsParent: impl Contains<(MultiLocation, crate::Vec<MultiAsset>)> = {
+		(MultiLocation { parents: 1, interior: Here }, _)
+	};
+}
+
 pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<Everything>,
