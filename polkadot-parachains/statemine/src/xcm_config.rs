@@ -199,6 +199,8 @@ impl pallet_xcm::Config for Runtime {
 	type XcmExecuteFilter = Nothing;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;
+	/// Statemine acts as a `NativeAsset` reserve to all chains except the Relay Chain, which
+	/// recognizes no reserves.
 	type XcmReserveTransferFilter = EverythingBut<IsParent>;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type LocationInverter = LocationInverter<Ancestry>;

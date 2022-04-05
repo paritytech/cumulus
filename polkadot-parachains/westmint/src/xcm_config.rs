@@ -191,6 +191,8 @@ impl pallet_xcm::Config for Runtime {
 	type XcmExecuteFilter = Everything;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;
+	/// Westmint acts as a `NativeAsset` reserve to all chains except the Relay Chain, which
+	/// recognizes no reserves.
 	type XcmReserveTransferFilter = EverythingBut<IsParent>;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type LocationInverter = LocationInverter<Ancestry>;
