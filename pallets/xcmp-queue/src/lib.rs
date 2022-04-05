@@ -655,7 +655,8 @@ impl<T: Config> Pallet<T> {
 								remaining_fragments = last_remaining_fragments;
 								break
 							},
-							Err(_) => {
+							Err(err) => {
+								log::info!("{:?}", err);
 								// Message looks invalid; don't attempt to retry
 							},
 						}
