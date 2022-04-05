@@ -46,6 +46,7 @@ async-trait = "0.1.52"
 futures = { version = "0.3.1", features = ["compat"] }
 futures-timer = "3.0.2"
 url = "2.2.2"
+tokio = { version = "1.17.0", features = ["macros"] }
 
 [dev-dependencies]
 # Cumulus deps

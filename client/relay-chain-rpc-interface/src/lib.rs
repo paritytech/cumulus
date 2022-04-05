@@ -195,6 +195,7 @@ impl RelayChainRPCClient {
 		&self,
 		hash: Option<PHash>,
 	) -> Result<Option<PHeader>, RelayChainError> {
+		tracing::info!("Requesting header for hash {:?}", hash);
 		let params = rpc_params!(hash);
 		self.request("chain_getHeader", params).await
 	}

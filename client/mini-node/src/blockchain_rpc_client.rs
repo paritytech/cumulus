@@ -2,7 +2,7 @@ use std::pin::Pin;
 
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::RelayChainRPCClient;
-use futures::{executor::block_on, Stream, StreamExt};
+use futures::{executor::block_on, Future, Stream, StreamExt};
 use polkadot_core_primitives::{Block, Hash, Header};
 use polkadot_node_network_protocol::Arc;
 use polkadot_overseer::OverseerRuntimeClient;
@@ -10,6 +10,7 @@ use polkadot_service::{runtime_traits::BlockIdTo, HeaderBackend};
 use sc_authority_discovery::AuthorityDiscoveryWrapper;
 use sc_client_api::{BlockBackend, BlockchainEvents, ProofProvider};
 use sp_blockchain::HeaderMetadata;
+use tokio::runtime::Handle;
 use url::Url;
 
 const LOG_TARGET: &'static str = "blockchain-rpc-client";
@@ -354,6 +355,11 @@ impl sc_client_api::BlockchainRPCEvents<Block> for BlockChainRPCClient {
 	}
 }
 
+fn block_local<T>(fut: impl Future<Output = T>) -> T {
+	let tokio_handle = tokio::runtime::Handle::current();
+	tokio::task::block_in_place(|| tokio_handle.block_on(fut))
+}
+
 impl HeaderBackend<Block> for BlockChainRPCClient {
 	fn header(
 		&self,
@@ -370,13 +376,20 @@ impl HeaderBackend<Block> for BlockChainRPCClient {
 
 	fn info(&self) -> sp_blockchain::Info<Block> {
 		tracing::info!("BlockBackend::block_status");
-		let best_header =
-			block_on(self.rpc_client.chain_get_header(None)).expect("get_header").unwrap();
-		tracing::info!("BlockBackend::block_status - succeeded to get header {:?}", best_header);
-		let genesis_hash = block_on(self.rpc_client.chain_get_head(Some(0))).expect("get_head");
+
+		let tokio_handle = tokio::runtime::Handle::current();
+		let best_header = block_local(self.rpc_client.chain_get_header(None))
+			.expect("get_header")
+			.unwrap();
+		tracing::info!(
+			"BlockBackend::block_status - succeeded to get header parent: {:?}, number: {:?}",
+			best_header.parent_hash,
+			best_header.number
+		);
+		let genesis_hash = block_local(self.rpc_client.chain_get_head(Some(0))).expect("get_head");
 		let finalized_head =
-			block_on(self.rpc_client.chain_get_finalized_head()).expect("get_head");
-		let finalized_header = block_on(self.rpc_client.chain_get_header(Some(finalized_head)))
+			block_local(self.rpc_client.chain_get_finalized_head()).expect("get_head");
+		let finalized_header = block_local(self.rpc_client.chain_get_header(Some(finalized_head)))
 			.expect("get_head")
 			.unwrap();
 		sp_blockchain::Info {
@@ -405,7 +418,7 @@ impl HeaderBackend<Block> for BlockChainRPCClient {
 		Option<<<Block as polkadot_service::BlockT>::Header as polkadot_service::HeaderT>::Number>,
 	> {
 		tracing::info!("BlockBackend::block_status");
-		block_on(self.rpc_client.chain_get_header(Some(hash)))
+		block_local(self.rpc_client.chain_get_header(Some(hash)))
 			.map_err(|err| sp_blockchain::Error::Backend(err.to_string()))
 			.map(|maybe_header| maybe_header.map(|header| header.number))
 	}
@@ -497,7 +510,7 @@ impl polkadot_service::Chain<Block> for BlockChainRPCClient {
 		tracing::info!("Chain::block_status");
 		if let sp_api::BlockId::Hash(hash) = id {
 			let maybe_header =
-				block_on(self.rpc_client.chain_get_header(None)).expect("get_header");
+				block_local(self.rpc_client.chain_get_header(None)).expect("get_header");
 			if let Some(header) = maybe_header {
 				// TODO we need to check for pruned blocks here
 				return Ok(sp_consensus::BlockStatus::InChainWithState)
@@ -539,7 +552,7 @@ impl BlockBackend<Block> for BlockChainRPCClient {
 		tracing::info!("BlockBackend::block_status");
 		if let sp_api::BlockId::Hash(hash) = id {
 			let maybe_header =
-				block_on(self.rpc_client.chain_get_header(None)).expect("get_header");
+				block_local(self.rpc_client.chain_get_header(None)).expect("get_header");
 			if let Some(header) = maybe_header {
 				// TODO we need to check for pruned blocks here
 				return Ok(sp_consensus::BlockStatus::InChainWithState)
