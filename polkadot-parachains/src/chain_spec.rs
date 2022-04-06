@@ -17,7 +17,7 @@
 #![allow(clippy::inconsistent_digit_grouping)]
 
 use cumulus_primitives_core::ParaId;
-use parachain_runtime::{AccountId, AuraId};
+use parachain_runtime::{AccountId, AuraId, TeerexConfig};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::{ChainType, GenericChainSpec};
 use serde::{Deserialize, Serialize};
@@ -202,6 +202,9 @@ fn integritee_genesis_config(
 		aura: parachain_runtime::AuraConfig { authorities: initial_authorities },
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		teerex: TeerexConfig { allow_sgx_debug_mode: true },
+		claims: Default::default(),
+		treasury: Default::default(),
 	}
 }
 

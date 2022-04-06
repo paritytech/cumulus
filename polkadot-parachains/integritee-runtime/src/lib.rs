@@ -23,6 +23,11 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use crate::opaque::SessionKeys;
+use codec::{Decode, Encode, MaxEncodedLen};
+use frame_support::traits::{
+	Contains, EqualPrivilegeOnly, Imbalance, InstanceFilter, OnUnbalanced,
+};
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
@@ -35,17 +40,15 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
-
 // A few exports that help ease life for downstream crates.
-use frame_support::traits::Contains;
 pub use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{IsInVec, Randomness},
+	traits::{EnsureOneOf, IsInVec, Randomness},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
 	},
-	StorageValue,
+	PalletId, RuntimeDebug, StorageValue,
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
@@ -53,12 +56,15 @@ use frame_system::{
 };
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
+use scale_info::TypeInfo;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
 // TEE
+pub use pallet_claims;
+pub use pallet_teeracle;
 pub use pallet_teerex::Call as TeerexCall;
 
 // XCM imports
@@ -70,7 +76,7 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
 	EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset,
-	ParentAsSuperuser, ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative,
+	ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
 	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
@@ -78,13 +84,30 @@ use xcm_executor::{Config, XcmExecutor};
 
 pub type SessionHandlers = ();
 
-impl_opaque_keys! {
-	pub struct SessionKeys {
-		pub aura: Aura,
+mod weights;
+
+/// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
+/// the specifics of the runtime. They can then be made to be agnostic over specific formats
+/// of data like extrinsics, allowing for them to continue syncing the network through upgrades
+/// to even the core data structures.
+pub mod opaque {
+	use super::*;
+
+	pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
+
+	/// Opaque block header type.
+	pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
+	/// Opaque block type.
+	pub type Block = generic::Block<Header, UncheckedExtrinsic>;
+	/// Opaque block identifier type.
+	pub type BlockId = generic::BlockId<Block>;
+
+	impl_opaque_keys! {
+		pub struct SessionKeys {
+			pub aura: Aura,
+		}
 	}
 }
-
-mod weights;
 
 /// This runtime version.
 #[sp_version::runtime_version]
@@ -92,10 +115,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("integritee-parachain"),
 	impl_name: create_runtime_str!("integritee-full"),
 	authoring_version: 2,
-	spec_version: 13,
+	spec_version: 14,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 2,
+	transaction_version: 3,
 	state_version: 0,
 };
 
@@ -110,20 +133,42 @@ pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
 
-/// A timestamp: milliseconds since the unix epoch.
-pub type Moment = u64;
-
 pub const TEER: Balance = 1_000_000_000_000;
 pub const MILLITEER: Balance = 1_000_000_000;
 pub const MICROTEER: Balance = 1_000_000;
 
-// 1 in 4 blocks (on average, not counting collisions) will be primary babe blocks.
-pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
+// Logic from Polkadot/Kusama.
+pub const fn deposit(items: u32, bytes: u32) -> Balance {
+	items as Balance * 20 * TEER + (bytes as Balance) * 1_000 * MICROTEER
+}
+
+/// A timestamp: milliseconds since the unix epoch.
+pub type Moment = u64;
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
+}
+
+pub struct DealWithFees;
+impl OnUnbalanced<pallet_balances::NegativeImbalance<Runtime>> for DealWithFees {
+	fn on_unbalanceds<B>(
+		mut fees_then_tips: impl Iterator<Item = pallet_balances::NegativeImbalance<Runtime>>,
+	) {
+		if let Some(fees) = fees_then_tips.next() {
+			// for fees, 1% to treasury, 99% burned
+			// TODO: apply burning function based on cumulative number of extrinsics (#32)
+			let mut split = fees.ration(1, 99);
+
+			// tips (voluntary extra fees) go to the treasury entirely. no burning
+			if let Some(tips) = fees_then_tips.next() {
+				tips.merge_into(&mut split.0);
+			}
+			Treasury::on_unbalanced(split.0);
+			// burn remainder by not assigning imbalance to someone
+		}
+	}
 }
 
 /// We assume that ~5% of the block weight is consumed by `on_initialize` handlers.
@@ -163,13 +208,35 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 13;
 }
 
-/// Allow everything.
-/// A more restrictive polkadot runtime example be found here:
+/// Only allow runtime upgrades and sudo calls during migration.
+/// A polkadot runtime example be found here:
 /// https://github.com/paritytech/polkadot/blob/f0b2bf3c20a7fae381685c7f6bb3c36fbce65722/runtime/polkadot/src/lib.rs#L130-L175
 pub struct BaseFilter;
 impl Contains<Call> for BaseFilter {
-	fn contains(_: &Call) -> bool {
-		true
+	fn contains(call: &Call) -> bool {
+		match call {
+			// These modules are all allowed to be called by transactions:
+			Call::System(_) |
+			Call::ParachainSystem(_) |
+			Call::Timestamp(_) |
+			Call::Sudo(_) |
+			Call::XcmpQueue(_) |
+			Call::PolkadotXcm(_) |
+			Call::CumulusXcm(_) |
+			Call::DmpQueue(_) |
+			Call::Migration(_) => true,
+			// Disable everything before / during migration
+			Call::Multisig(_) |
+			Call::Proxy(_) |
+			Call::Scheduler(_) |
+			Call::Utility(_) |
+			Call::Balances(_) |
+			Call::Vesting(_) |
+			Call::Treasury(_) |
+			Call::Teerex(_) |
+			Call::Claims(_) |
+			Call::Teeracle(_) => false,
+		}
 	}
 }
 
@@ -198,17 +265,31 @@ impl frame_system::Config for Runtime {
 	type BlockHashCount = BlockHashCount;
 	/// Runtime version.
 	type Version = Version;
-	/// Converts a module to an index of this module in the runtime.
+	/// Converts a module to the index of the module in `construct_runtime!`.
+	///
+	/// This type is being generated by `construct_runtime!`.
 	type PalletInfo = PalletInfo;
+	/// The data to be stored in an account.
 	type AccountData = pallet_balances::AccountData<Balance>;
+	/// What to do if a new account is created.
 	type OnNewAccount = ();
+	/// What to do if an account is fully reaped from the system.
 	type OnKilledAccount = ();
+	/// The weight of database operations that the runtime can invoke.
 	type DbWeight = RocksDbWeight;
-	type BaseCallFilter = BaseFilter;
+	/// Use the call filter from Migration pallet for now to shorten migration downtime
+	/// With this, no runtime upgrade is necessary to reenable calls.
+	/// Should be removed with the next runtime upgrade.
+	type BaseCallFilter = Migration;
+	/// Weight information for the extrinsics of this pallet.
 	type SystemWeightInfo = weights::frame_system::WeightInfo<Runtime>;
+	/// Block & extrinsics weights: base values and limits.
 	type BlockWeights = RuntimeBlockWeights;
+	/// The maximum length of a block (in bytes).
 	type BlockLength = RuntimeBlockLength;
+	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = SS58Prefix;
+	/// The set code logic, needed for parachains.
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
@@ -219,8 +300,8 @@ parameter_types! {
 
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
-	type Moment = u64;
-	type OnTimestampSet = ();
+	type Moment = Moment;
+	type OnTimestampSet = Teerex;
 	type MinimumPeriod = MinimumPeriod;
 	type WeightInfo = weights::pallet_timestamp::WeightInfo<Runtime>;
 }
@@ -232,10 +313,11 @@ parameter_types! {
 	pub const TransactionByteFee: u128 = MICROTEER;
 	pub const MaxLocks: u32 = 50;
 	pub const MaxReserves: u32 = 50;
+	pub const OperationalFeeMultiplier: u8 = 5;
 }
 
 impl pallet_balances::Config for Runtime {
-	/// The type for recording an account's balance.
+	/// The type for recording an account's balance
 	type Balance = Balance;
 	/// The ubiquitous event type.
 	type Event = Event;
@@ -251,11 +333,11 @@ impl pallet_balances::Config for Runtime {
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
 impl pallet_transaction_payment::Config for Runtime {
-	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
 	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = IdentityFee<Balance>;
 	type FeeMultiplierUpdate = ();
-	type OperationalFeeMultiplier = ();
+	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -264,7 +346,115 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
-	pub const MinVestedTransfer: Balance = 100 * TEER;
+	// One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
+	pub const DepositBase: Balance = deposit(1, 88);
+	// Additional storage item size of 32 bytes.
+	pub const DepositFactor: Balance = deposit(0, 32);
+	pub const MaxSignatories: u16 = 10; //100
+}
+
+impl pallet_multisig::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type Currency = Balances;
+	type DepositBase = DepositBase;
+	type DepositFactor = DepositFactor;
+	type MaxSignatories = MaxSignatories;
+	type WeightInfo = weights::pallet_multisig::WeightInfo<Runtime>;
+}
+
+parameter_types! {
+	// One storage item; key size 32, value size 8; .
+	pub const ProxyDepositBase: Balance = deposit(1, 8);
+	// Additional storage item size of 33 bytes.
+	pub const ProxyDepositFactor: Balance = deposit(0, 33);
+	pub const MaxProxies: u16 = 32;
+	pub const AnnouncementDepositBase: Balance = deposit(1, 8);
+	pub const AnnouncementDepositFactor: Balance = deposit(0, 66);
+	pub const MaxPending: u16 = 32;
+}
+
+/// The type used to represent the kinds of proxying allowed.
+#[derive(
+	Copy,
+	Clone,
+	Eq,
+	PartialEq,
+	Ord,
+	PartialOrd,
+	Encode,
+	Decode,
+	RuntimeDebug,
+	MaxEncodedLen,
+	TypeInfo,
+)]
+pub enum ProxyType {
+	Any,         // Any transactions.
+	NonTransfer, // Any type of transaction except balance transfers (including vested transfers)
+	Governance,
+	// Staking = 3,
+	// IdentityJudgement = 4,
+	CancelProxy,
+	// Auction,
+}
+impl Default for ProxyType {
+	fn default() -> Self {
+		Self::Any
+	}
+}
+impl InstanceFilter<Call> for ProxyType {
+	fn filter(&self, c: &Call) -> bool {
+		match self {
+			ProxyType::Any => true,
+			ProxyType::NonTransfer => matches!(
+				c,
+				Call::System {..} |
+				Call::Timestamp {..} |
+				// Specifically omitting Indices `transfer`, `force_transfer`
+				// Specifically omitting the entire Balances pallet
+				Call::Treasury {..} |
+//				Call::Vesting(pallet_vesting::Call::vest {..}) |
+//				Call::Vesting(pallet_vesting::Call::vest_other {..}) |
+				// Specifically omitting Vesting `vested_transfer`, and `force_vested_transfer`
+				Call::Proxy {..} |
+				Call::Multisig {..}
+			),
+			ProxyType::Governance => {
+				matches!(c, Call::Treasury { .. })
+			},
+			ProxyType::CancelProxy => {
+				matches!(c, Call::Proxy(pallet_proxy::Call::reject_announcement { .. }))
+			},
+		}
+	}
+	fn is_superset(&self, o: &Self) -> bool {
+		match (self, o) {
+			(x, y) if x == y => true,
+			(ProxyType::Any, _) => true,
+			(_, ProxyType::Any) => false,
+			(ProxyType::NonTransfer, _) => true,
+			_ => false,
+		}
+	}
+}
+
+impl pallet_proxy::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type Currency = Balances;
+	type ProxyType = ProxyType;
+	type ProxyDepositBase = ProxyDepositBase;
+	type ProxyDepositFactor = ProxyDepositFactor;
+	type MaxProxies = MaxProxies;
+	type WeightInfo = weights::pallet_proxy::WeightInfo<Runtime>;
+	type MaxPending = MaxPending;
+	type CallHasher = BlakeTwo256;
+	type AnnouncementDepositBase = AnnouncementDepositBase;
+	type AnnouncementDepositFactor = AnnouncementDepositFactor;
+}
+
+parameter_types! {
+	pub const MinVestedTransfer: Balance = 1 * TEER;
 }
 
 impl pallet_vesting::Config for Runtime {
@@ -274,6 +464,33 @@ impl pallet_vesting::Config for Runtime {
 	type MinVestedTransfer = MinVestedTransfer;
 	type WeightInfo = weights::pallet_vesting::WeightInfo<Runtime>;
 	const MAX_VESTING_SCHEDULES: u32 = 28;
+}
+
+parameter_types! {
+	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
+		RuntimeBlockWeights::get().max_block;
+	pub const MaxScheduledPerBlock: u32 = 50;
+}
+
+impl pallet_scheduler::Config for Runtime {
+	type Event = Event;
+	type Origin = Origin;
+	type PalletsOrigin = OriginCaller;
+	type Call = Call;
+	type MaximumWeight = MaximumSchedulerWeight;
+	type ScheduleOrigin = EnsureRoot<AccountId>;
+	type MaxScheduledPerBlock = MaxScheduledPerBlock;
+	type WeightInfo = weights::pallet_scheduler::WeightInfo<Runtime>;
+	type OriginPrivilegeCmp = EqualPrivilegeOnly;
+	type PreimageProvider = ();
+	type NoPreimagePostponement = ();
+}
+
+impl pallet_utility::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type PalletsOrigin = OriginCaller;
+	type WeightInfo = weights::pallet_utility::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -308,7 +525,7 @@ parameter_types! {
 /// `Transact` in order to determine the dispatch Origin.
 pub type LocationToAccountId = (
 	// The parent (Relay-chain) origin converts to the default `AccountId`.
-	ParentIsDefault<AccountId>,
+	ParentIsPreset<AccountId>,
 	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
@@ -434,6 +651,9 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = ();
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+	type ControllerOrigin = EnsureRoot<AccountId>;
+	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
+	type WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight<Runtime>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -462,17 +682,91 @@ impl pallet_aura::Config for Runtime {
 	type MaxAuthorities = MaxAuthorities;
 }
 
-// TEE
+// Integritee pallet
 parameter_types! {
 	pub const MomentsPerDay: Moment = 86_400_000; // [ms/d]
+	pub const MaxSilenceTime: Moment = 172_800_000; // 48h
 }
 
 impl pallet_teerex::Config for Runtime {
 	type Event = Event;
 	type Currency = pallet_balances::Pallet<Runtime>;
 	type MomentsPerDay = MomentsPerDay;
+	type MaxSilenceTime = MaxSilenceTime;
 	type WeightInfo = weights::pallet_teerex::WeightInfo<Runtime>;
-	type MaxSilenceTime = ();
+}
+
+parameter_types! {
+	pub Prefix: &'static [u8] = b"Pay TEERs to the integriTEE account:";
+}
+
+// Integritee pallet
+impl pallet_claims::Config for Runtime {
+	type Event = Event;
+	type VestingSchedule = Vesting;
+	type Prefix = Prefix;
+	type MoveClaimOrigin = frame_system::EnsureRoot<AccountId>;
+	type WeightInfo = weights::pallet_claims::WeightInfo<Runtime>;
+}
+parameter_types! {
+	pub const MaxWhitelistedReleases: u32 = 10;
+}
+
+// Integritee pallet
+impl pallet_teeracle::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = weights::pallet_teeracle::WeightInfo<Runtime>;
+	type MaxWhitelistedReleases = MaxWhitelistedReleases;
+}
+
+parameter_types! {
+	pub const ProposalBond: Permill = Permill::from_percent(5);
+	pub const ProposalBondMinimum: Balance = 100 * MILLITEER;
+	pub const ProposalBondMaximum: Balance = 500 * TEER;
+	pub const SpendPeriod: BlockNumber = 6 * DAYS;
+	pub const Burn: Permill = Permill::from_percent(1);
+	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+	pub const MaxApprovals: u32 = 10;
+}
+
+type RootOrigin = EnsureRoot<AccountId>;
+
+impl pallet_treasury::Config for Runtime {
+	type PalletId = TreasuryPalletId;
+	type Currency = pallet_balances::Pallet<Runtime>;
+	type ApproveOrigin = RootOrigin;
+	type RejectOrigin = RootOrigin;
+	type Event = Event;
+	type OnSlash = (); //No proposal
+	type ProposalBond = ProposalBond; //No proposal
+	type ProposalBondMinimum = ProposalBondMinimum; //No proposal
+	type ProposalBondMaximum = ProposalBondMaximum;
+	type SpendPeriod = SpendPeriod; //Cannot be 0: Error: Thread 'tokio-runtime-worker' panicked at 'attempt to calculate the remainder with a divisor of zero
+	type Burn = (); //No burn
+	type BurnDestination = (); //No burn
+	type SpendFunds = (); //No spend, no bounty
+	type MaxApprovals = MaxApprovals; //0:cannot approve any proposal
+	type WeightInfo = weights::pallet_treasury::WeightInfo<Runtime>;
+}
+
+// Migration pallet
+parameter_types! {
+	pub const MigrationMaxAccounts: u32 = 100;
+	pub const MigrationMaxVestings: u32 = 10;
+	pub const MigrationMaxProxies: u32 = 10;
+}
+
+impl pallet_migration::Config for Runtime {
+	type MigrationMaxAccounts = MigrationMaxAccounts;
+	type MigrationMaxVestings = MigrationMaxVestings;
+	type MigrationMaxProxies = MigrationMaxProxies;
+	type Event = Event;
+	type WeightInfo = weights::pallet_migration::WeightInfo<Runtime>;
+	type FinalizedFilter = Everything; // Allow all calls again after finishing the migration
+								   // After this runtime upgrade, we do not allow any transactions except for migration purposes
+	type InactiveFilter = BaseFilter;
+	// During migration we do not allow any transactions except for migration purposes
+	type OngoingFilter = BaseFilter;
 }
 
 construct_runtime! {
@@ -481,19 +775,30 @@ construct_runtime! {
 		NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
+		// Basic.
 		System: frame_system::{Pallet, Call, Storage, Config, Event<T>} = 0,
 		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Config, Storage, Inherent, Event<T>} = 1,
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 2,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 4,
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
+		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 6,
+		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 7,
+		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 8,
+		Utility: pallet_utility::{Pallet, Call, Event} = 9,
 
+		// Funds and fees.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
 		Vesting: pallet_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 12,
 
+		// Governance
+		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>} = 13,
+
+		// Consensus.
 		Aura: pallet_aura::{Pallet, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Config} = 24,
+
 
 		// XCM helpers.
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
@@ -501,7 +806,13 @@ construct_runtime! {
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-		Teerex: pallet_teerex::{Pallet, Call, Storage, Event<T>} = 50,
+		// Integritee pallets.
+		Teerex: pallet_teerex::{Pallet, Call, Config, Storage, Event<T>} = 50,
+		Claims: pallet_claims::{Pallet, Call, Storage, Config<T>, Event<T>, ValidateUnsigned} = 51,
+		Teeracle: pallet_teeracle::{Pallet, Call, Storage, Event<T>} = 52,
+
+		// Migration.
+		Migration: pallet_migration::{Pallet, Call, Storage, Event<T>} = 99,
 	}
 }
 
@@ -548,7 +859,7 @@ pub type Executive = frame_executive::Executive<
 	Block,
 	frame_system::ChainContext<Runtime>,
 	Runtime,
-	AllPalletsWithSystem,
+	AllPalletsWithSystem, // Solochain: AllPalletsReversedWithSystemFirst, Statemint: AllPallets. Which one to take?
 >;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -560,9 +871,17 @@ mod benches {
 	define_benchmarks!(
 		[frame_system, SystemBench::<Runtime>]
 		[pallet_balances, Balances]
+		[pallet_claims, Claims]
+		[pallet_migration, Migration]
+		[pallet_multisig, Multisig]
+		[pallet_proxy, Proxy]
+		[pallet_scheduler, Scheduler]
+		[pallet_teeracle, Teeracle]
 		[pallet_teerex, Teerex]
 		[pallet_timestamp, Timestamp]
+		[pallet_treasury, Treasury]
 		[pallet_vesting, Vesting]
+		[pallet_utility, Utility]
 	);
 }
 

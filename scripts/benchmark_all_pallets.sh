@@ -13,6 +13,14 @@ pallets=(
   "pallet_timestamp" \
   "pallet_vesting" \
   "pallet_teerex" \
+  "pallet_claims" \
+  "pallet_migration" \
+  "pallet_multisig" \
+  "pallet_proxy" \
+  "pallet_scheduler" \
+  "pallet_teeracle" \
+  "pallet_treasury" \
+  "pallet_utility" \
 )
 
 for pallet in ${pallets[*]}; do

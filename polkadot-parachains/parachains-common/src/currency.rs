@@ -2,7 +2,7 @@
 //!
 //! Copied from statemine/src/constants but removed some parts.
 
-use node_primitives::Balance;
+use polkadot_core_primitives::Balance;
 
 /// The existential deposit. Set to 1/10 of its parent Relay Chain (v9020).
 pub const EXISTENTIAL_DEPOSIT: Balance = CENTS / 10;

@@ -6,7 +6,7 @@ use frame_support::weights::{
 	constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
 	WeightToFeePolynomial,
 };
-use node_primitives::Balance;
+use polkadot_core_primitives::Balance;
 use smallvec::smallvec;
 
 // not existing upstream
