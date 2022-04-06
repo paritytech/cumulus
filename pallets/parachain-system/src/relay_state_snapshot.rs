@@ -278,6 +278,12 @@ impl RelayChainStateProof {
 		.map_err(Error::UpgradeRestriction)
 	}
 
+	/// Read an entry given by the key and try to decode it. If the value specified by the key according
+	/// to the proof is empty, the `fallback` value will be returned.
+	///
+	/// Returns `Err` in case the backend can't return the value under the specific key (likely due to
+	/// a malformed proof), in case the decoding fails, or in case where the value is empty in the relay
+	/// chain state and no fallback was provided.
 	pub fn read_entry<T>(&self, key: &[u8], fallback: Option<T>) -> Result<T, Error>
 	where
 		T: Decode,
@@ -285,6 +291,11 @@ impl RelayChainStateProof {
 		read_entry(&self.trie_backend, key, fallback).map_err(Error::ReadEntry)
 	}
 
+	/// Read an optional entry given by the key and try to decode it.
+	/// Returns `None` if the value specified by the key according to the proof is empty.
+	///
+	/// Returns `Err` in case the backend can't return the value under the specific key (likely due to
+	/// a malformed proof) or if the value couldn't be decoded.
 	pub fn read_optional_entry<T>(&self, key: &[u8]) -> Result<Option<T>, Error>
 	where
 		T: Decode,
