@@ -264,3 +264,4 @@ You may then run your new container:
 ```bash
 docker run --rm -it $OWNER/$IMAGE_NAME --collator --tmp --execution wasm --chain /specs/westmint.json
 ```
+
