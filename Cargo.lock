@@ -94,7 +94,7 @@ version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2"
 dependencies = [
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -232,7 +232,7 @@ dependencies = [
  "slab",
  "socket2 0.4.4",
  "waker-fn",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -267,7 +267,7 @@ dependencies = [
  "libc",
  "once_cell",
  "signal-hook",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -335,7 +335,7 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fb4401f0a3622dad2e0763fa79e0eb328bc70fb7dccfdd645341f00d671247d6"
 dependencies = [
- "bytes 1.1.0",
+ "bytes",
  "futures-sink",
  "futures-util",
  "memchr",
@@ -348,7 +348,7 @@ version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0de5164e5edbf51c45fb8c2d9664ae1c095cce1b265ecf7569093c0d66ef690"
 dependencies = [
- "bytes 1.1.0",
+ "bytes",
  "futures-sink",
  "futures-util",
  "memchr",
@@ -378,7 +378,7 @@ checksum = "d9b39be18770d11421cdb1b9947a45dd3f37e93092cbf377614828a319d5fee8"
 dependencies = [
  "hermit-abi",
  "libc",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -403,9 +403,9 @@ dependencies = [
 
 [[package]]
 name = "backtrace"
-version = "0.3.63"
+version = "0.3.64"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "321629d8ba6513061f26707241fa9bc89524ff1cd7a915a97ef0c62c666ce1b6"
+checksum = "5e121dee8023ce33ab248d9ce1493df03c3b38a659b240096fcbd7048ff9c31f"
 dependencies = [
  "addr2line",
  "cc",
@@ -458,17 +458,19 @@ dependencies = [
 [[package]]
 name = "beefy-gadget"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "beefy-primitives",
  "fnv",
  "futures 0.3.21",
+ "futures-timer",
  "hex",
  "log",
  "parity-scale-codec",
  "parking_lot 0.12.0",
  "sc-chain-spec",
  "sc-client-api",
+ "sc-finality-grandpa",
  "sc-keystore",
  "sc-network",
  "sc-network-gossip",
@@ -477,6 +479,7 @@ dependencies = [
  "sp-application-crypto",
  "sp-arithmetic",
  "sp-blockchain",
+ "sp-consensus",
  "sp-core",
  "sp-keystore",
  "sp-runtime",
@@ -488,15 +491,12 @@ dependencies = [
 [[package]]
 name = "beefy-gadget-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "beefy-gadget",
  "beefy-primitives",
  "futures 0.3.21",
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
- "jsonrpc-pubsub",
+ "jsonrpsee",
  "log",
  "parity-scale-codec",
  "parking_lot 0.12.0",
@@ -511,12 +511,12 @@ dependencies = [
 [[package]]
 name = "beefy-merkle-tree"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 
 [[package]]
 name = "beefy-primitives"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -732,7 +732,7 @@ dependencies = [
 [[package]]
 name = "bp-header-chain"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bp-runtime",
  "finality-grandpa",
@@ -749,7 +749,7 @@ dependencies = [
 [[package]]
 name = "bp-message-dispatch"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bp-runtime",
  "frame-support",
@@ -761,7 +761,7 @@ dependencies = [
 [[package]]
 name = "bp-messages"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bitvec",
  "bp-runtime",
@@ -778,7 +778,7 @@ dependencies = [
 [[package]]
 name = "bp-polkadot-core"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bp-messages",
  "bp-runtime",
@@ -796,7 +796,7 @@ dependencies = [
 [[package]]
 name = "bp-rococo"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bp-messages",
  "bp-polkadot-core",
@@ -813,7 +813,7 @@ dependencies = [
 [[package]]
 name = "bp-runtime"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "frame-support",
  "hash-db",
@@ -831,7 +831,7 @@ dependencies = [
 [[package]]
 name = "bp-test-utils"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bp-header-chain",
  "ed25519-dalek",
@@ -846,7 +846,7 @@ dependencies = [
 [[package]]
 name = "bp-wococo"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bp-messages",
  "bp-polkadot-core",
@@ -861,7 +861,7 @@ dependencies = [
 [[package]]
 name = "bridge-runtime-common"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bp-message-dispatch",
  "bp-messages",
@@ -933,16 +933,6 @@ name = "byteorder"
 version = "1.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
-
-[[package]]
-name = "bytes"
-version = "0.4.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "206fdffcfa2df7cbe15601ef46c813fce0965eb3286db6b56c583b814b51c81c"
-dependencies = [
- "byteorder",
- "iovec",
-]
 
 [[package]]
 name = "bytes"
@@ -1144,7 +1134,7 @@ dependencies = [
  "num-integer",
  "num-traits",
  "time",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -1312,18 +1302,18 @@ dependencies = [
 
 [[package]]
 name = "cranelift-bforest"
-version = "0.80.0"
+version = "0.80.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9516ba6b2ba47b4cbf63b713f75b432fafa0a0e0464ec8381ec76e6efe931ab3"
+checksum = "62fc68cdb867b7d27b5f33cd65eb11376dfb41a2d09568a1a2c2bc1dc204f4ef"
 dependencies = [
  "cranelift-entity",
 ]
 
 [[package]]
 name = "cranelift-codegen"
-version = "0.80.0"
+version = "0.80.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "489e5d0081f7edff6be12d71282a8bf387b5df64d5592454b75d662397f2d642"
+checksum = "31253a44ab62588f8235a996cc9b0636d98a299190069ced9628b8547329b47a"
 dependencies = [
  "cranelift-bforest",
  "cranelift-codegen-meta",
@@ -1338,33 +1328,33 @@ dependencies = [
 
 [[package]]
 name = "cranelift-codegen-meta"
-version = "0.80.0"
+version = "0.80.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d36ee1140371bb0f69100e734b30400157a4adf7b86148dee8b0a438763ead48"
+checksum = "7a20ab4627d30b702fb1b8a399882726d216b8164d3b3fa6189e3bf901506afe"
 dependencies = [
  "cranelift-codegen-shared",
 ]
 
 [[package]]
 name = "cranelift-codegen-shared"
-version = "0.80.0"
+version = "0.80.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "981da52d8f746af1feb96290c83977ff8d41071a7499e991d8abae0d4869f564"
+checksum = "6687d9668dacfed4468361f7578d86bded8ca4db978f734d9b631494bebbb5b8"
 
 [[package]]
 name = "cranelift-entity"
-version = "0.80.0"
+version = "0.80.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2906740053dd3bcf95ce53df0fd9b5649c68ae4bd9adada92b406f059eae461"
+checksum = "c77c5d72db97ba2cb36f69037a709edbae0d29cb25503775891e7151c5c874bf"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "cranelift-frontend"
-version = "0.80.0"
+version = "0.80.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7cb156de1097f567d46bf57a0cd720a72c3e15e1a2bd8b1041ba2fc894471b7"
+checksum = "426dca83f63c7c64ea459eb569aadc5e0c66536c0042ed5d693f91830e8750d0"
 dependencies = [
  "cranelift-codegen",
  "log",
@@ -1374,9 +1364,9 @@ dependencies = [
 
 [[package]]
 name = "cranelift-native"
-version = "0.80.0"
+version = "0.80.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "166028ca0343a6ee7bddac0e70084e142b23f99c701bd6f6ea9123afac1a7a46"
+checksum = "8007864b5d0c49b026c861a15761785a2871124e401630c03ef1426e6d0d559e"
 dependencies = [
  "cranelift-codegen",
  "libc",
@@ -1385,9 +1375,9 @@ dependencies = [
 
 [[package]]
 name = "cranelift-wasm"
-version = "0.80.0"
+version = "0.80.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5012a1cde0c8b3898770b711490d803018ae9bec2d60674ba0e5b2058a874f80"
+checksum = "94cf12c071415ba261d897387ae5350c4d83c238376c8c5a96514ecfa2ea66a3"
 dependencies = [
  "cranelift-codegen",
  "cranelift-entity",
@@ -1616,7 +1606,7 @@ dependencies = [
  "clap 3.1.8",
  "sc-cli",
  "sc-service",
- "url 2.2.2",
+ "url",
 ]
 
 [[package]]
@@ -1758,7 +1748,7 @@ dependencies = [
  "substrate-test-utils",
  "tokio",
  "tracing",
- "url 2.2.2",
+ "url",
 ]
 
 [[package]]
@@ -1895,7 +1885,7 @@ dependencies = [
 name = "cumulus-pallet-parachain-system-proc-macro"
 version = "0.1.0"
 dependencies = [
- "proc-macro-crate 1.1.3",
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn",
@@ -2094,7 +2084,7 @@ dependencies = [
  "cumulus-primitives-core",
  "derive_more",
  "futures 0.3.21",
- "jsonrpsee-core 0.9.0",
+ "jsonrpsee-core",
  "parity-scale-codec",
  "parking_lot 0.12.0",
  "polkadot-overseer",
@@ -2119,7 +2109,7 @@ dependencies = [
  "cumulus-relay-chain-interface",
  "futures 0.3.21",
  "futures-timer",
- "jsonrpsee 0.9.0",
+ "jsonrpsee",
  "parity-scale-codec",
  "parking_lot 0.12.0",
  "polkadot-service",
@@ -2131,7 +2121,7 @@ dependencies = [
  "sp-state-machine",
  "sp-storage",
  "tracing",
- "url 2.2.2",
+ "url",
 ]
 
 [[package]]
@@ -2272,7 +2262,7 @@ dependencies = [
  "substrate-test-client",
  "substrate-test-utils",
  "tokio",
- "url 2.2.2",
+ "url",
 ]
 
 [[package]]
@@ -2422,7 +2412,7 @@ checksum = "03d86534ed367a67548dc68113a0f5db55432fdfbb6e6f9d77704397d95d5780"
 dependencies = [
  "libc",
  "redox_users",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -2433,7 +2423,7 @@ checksum = "4ebda144c4fe02d1f7ea1a7d9641b6fc6b580adcfa024ae48797ecdeb6825b4d"
 dependencies = [
  "libc",
  "redox_users",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -2563,18 +2553,18 @@ dependencies = [
 
 [[package]]
 name = "enumflags2"
-version = "0.6.4"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83c8d82922337cd23a15f88b70d8e4ef5f11da38dd7cdb55e84dd5de99695da0"
+checksum = "1b3ab37dc79652c9d85f1f7b6070d77d321d2467f5fe7b00d6b7a86c57b092ae"
 dependencies = [
  "enumflags2_derive",
 ]
 
 [[package]]
 name = "enumflags2_derive"
-version = "0.6.4"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "946ee94e3dbf58fdd324f9ce245c7b238d46a66f00e86a020b71996349e46cce"
+checksum = "f58dc3c5e468259f19f2d46304a6b28f1c3d034442e14b322d2b850e36f6d5ae"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2632,7 +2622,7 @@ checksum = "f639046355ee4f37944e44f60642c6f3a7efa3cf6b78c78a0d989a8ce6c396a1"
 dependencies = [
  "errno-dragonfly",
  "libc",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -2724,7 +2714,7 @@ checksum = "f5aa1e3ae159e592ad222dc90c5acbad632b527779ba88486abe92782ab268bd"
 dependencies = [
  "expander 0.0.4",
  "indexmap",
- "proc-macro-crate 1.1.3",
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn",
@@ -2816,7 +2806,7 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 [[package]]
 name = "fork-tree"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "parity-scale-codec",
 ]
@@ -2828,13 +2818,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5fc25a87fa4fd2094bffb06925852034d90a17f0d1e05197d4956d3555752191"
 dependencies = [
  "matches",
- "percent-encoding 2.1.0",
+ "percent-encoding",
 ]
 
 [[package]]
 name = "frame-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -2856,13 +2846,14 @@ dependencies = [
 [[package]]
 name = "frame-benchmarking-cli"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "Inflector",
  "chrono",
  "clap 3.1.8",
  "frame-benchmarking",
  "frame-support",
+ "frame-system",
  "handlebars",
  "hash-db",
  "hex",
@@ -2894,14 +2885,15 @@ dependencies = [
  "sp-std",
  "sp-storage",
  "sp-trie",
+ "thousands",
 ]
 
 [[package]]
 name = "frame-election-provider-solution-type"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
- "proc-macro-crate 1.1.3",
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn",
@@ -2910,7 +2902,7 @@ dependencies = [
 [[package]]
 name = "frame-election-provider-support"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-election-provider-solution-type",
  "frame-support",
@@ -2926,7 +2918,7 @@ dependencies = [
 [[package]]
 name = "frame-executive"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -2954,7 +2946,7 @@ dependencies = [
 [[package]]
 name = "frame-support"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "bitflags",
  "frame-metadata",
@@ -2983,7 +2975,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "Inflector",
  "frame-support-procedural-tools",
@@ -2995,10 +2987,10 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural-tools"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-support-procedural-tools-derive",
- "proc-macro-crate 1.1.3",
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn",
@@ -3007,7 +2999,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural-tools-derive"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3017,7 +3009,7 @@ dependencies = [
 [[package]]
 name = "frame-system"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-support",
  "log",
@@ -3034,7 +3026,7 @@ dependencies = [
 [[package]]
 name = "frame-system-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -3049,7 +3041,7 @@ dependencies = [
 [[package]]
 name = "frame-system-rpc-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -3058,7 +3050,7 @@ dependencies = [
 [[package]]
 name = "frame-try-runtime"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-support",
  "sp-api",
@@ -3081,7 +3073,7 @@ dependencies = [
  "lazy_static",
  "libc",
  "libloading 0.5.2",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -3091,7 +3083,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9564fc758e15025b46aa6643b1b77d047d1a56a1aea6e01002ac0c7026876213"
 dependencies = [
  "libc",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -3099,22 +3091,6 @@ name = "fs_extra"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2022715d62ab30faffd124d40b76f4134a550a87792276512b18d63272333394"
-
-[[package]]
-name = "fuchsia-zircon"
-version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e9763c69ebaae630ba35f74888db465e49e259ba1bc0eda7d06f4a067615d82"
-dependencies = [
- "bitflags",
- "fuchsia-zircon-sys",
-]
-
-[[package]]
-name = "fuchsia-zircon-sys"
-version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3dcaa9ae7725d12cdb85b3ad99a434db70b468c09ded17e012d86b5c1010f7a7"
 
 [[package]]
 name = "funty"
@@ -3364,7 +3340,7 @@ version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f072413d126e57991455e0a922b31e4c8ba7c2ffbebf6b78b4f8521397d65cd"
 dependencies = [
- "bytes 1.1.0",
+ "bytes",
  "fnv",
  "futures-core",
  "futures-sink",
@@ -3385,9 +3361,9 @@ checksum = "eabb4a44450da02c90444cf74558da904edde8fb4e9035a9a6a4e15445af0bd7"
 
 [[package]]
 name = "handlebars"
-version = "4.1.6"
+version = "4.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "167fa173496c9eadd8749cca6f8339ac88e248f3ad2442791d0b743318a94fc0"
+checksum = "99d6a30320f094710245150395bc763ad23128d6a1ebbad7594dc4164b62c56b"
 dependencies = [
  "log",
  "pest",
@@ -3511,7 +3487,7 @@ checksum = "3c731c3e10504cc8ed35cfe2f1db4c9274c3d35fa486e3b31df46f068ef3e867"
 dependencies = [
  "libc",
  "match_cfg",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -3520,7 +3496,7 @@ version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1323096b05d41827dadeaee54c9981958c0f94e670bc94ed80037d1a7b8b186b"
 dependencies = [
- "bytes 1.1.0",
+ "bytes",
  "fnv",
  "itoa 0.4.8",
 ]
@@ -3531,7 +3507,7 @@ version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ff4f84919677303da5f147645dbea6b1881f368d03ac84e1dc09031ebd7b2c6"
 dependencies = [
- "bytes 1.1.0",
+ "bytes",
  "http",
  "pin-project-lite 0.2.7",
 ]
@@ -3569,7 +3545,7 @@ version = "0.14.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b7ec3e62bdc98a2f0393a5048e4c30ef659440ea6e0e572965103e72bd836f55"
 dependencies = [
- "bytes 1.1.0",
+ "bytes",
  "futures-channel",
  "futures-core",
  "futures-util",
@@ -3622,17 +3598,6 @@ dependencies = [
 
 [[package]]
 name = "idna"
-version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38f09e0f0b1fb55fdee1f17470ad800da77af5186a1a76c026b679358b7e844e"
-dependencies = [
- "matches",
- "unicode-bidi",
- "unicode-normalization",
-]
-
-[[package]]
-name = "idna"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "418a0a6fab821475f634efe3ccc45c013f742efe03d853e8d3355d5cb850ecf8"
@@ -3650,7 +3615,7 @@ checksum = "2273e421f7c4f0fc99e1934fe4776f59d8df2972f4199d703fc0da9f2a9f73de"
 dependencies = [
  "if-addrs-sys",
  "libc",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -3676,7 +3641,7 @@ dependencies = [
  "ipnet",
  "libc",
  "log",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -3710,9 +3675,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "1.8.0"
+version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "282a6247722caba404c065016bbfa522806e51714c34f5dfc3e4a3a46fcb4223"
+checksum = "0f647032dfaa1f8b6dc29bd3edb7bbef4861b8b8007ebb118d6db284fd59f6ee"
 dependencies = [
  "autocfg",
  "hashbrown 0.11.2",
@@ -3749,16 +3714,7 @@ version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f6ef6787e7f0faedc040f95716bdd0e62bcfcf4ba93da053b62dea2691c13864"
 dependencies = [
- "winapi 0.3.9",
-]
-
-[[package]]
-name = "iovec"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b2b3ea6ff95e175473f8ffe6a7eb7c00d054240321b84c57051175fe3c1e075e"
-dependencies = [
- "libc",
+ "winapi",
 ]
 
 [[package]]
@@ -3775,7 +3731,7 @@ checksum = "f7e2f18aece9709094573a9f24f483c4f65caa4298e2f7ae1b71cc65d853fad7"
 dependencies = [
  "socket2 0.3.19",
  "widestring",
- "winapi 0.3.9",
+ "winapi",
  "winreg",
 ]
 
@@ -3825,22 +3781,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "jsonrpc-client-transports"
-version = "18.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2b99d4207e2a04fb4581746903c2bb7eb376f88de9c699d0f3e10feeac0cd3a"
-dependencies = [
- "derive_more",
- "futures 0.3.21",
- "jsonrpc-core",
- "jsonrpc-pubsub",
- "log",
- "serde",
- "serde_json",
- "url 1.7.2",
-]
-
-[[package]]
 name = "jsonrpc-core"
 version = "18.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3856,160 +3796,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "jsonrpc-core-client"
-version = "18.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b51da17abecbdab3e3d4f26b01c5ec075e88d3abe3ab3b05dc9aa69392764ec0"
-dependencies = [
- "futures 0.3.21",
- "jsonrpc-client-transports",
-]
-
-[[package]]
-name = "jsonrpc-derive"
-version = "18.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b939a78fa820cdfcb7ee7484466746a7377760970f6f9c6fe19f9edcc8a38d2"
-dependencies = [
- "proc-macro-crate 0.1.5",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "jsonrpc-http-server"
-version = "18.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1dea6e07251d9ce6a552abfb5d7ad6bc290a4596c8dcc3d795fae2bbdc1f3ff"
-dependencies = [
- "futures 0.3.21",
- "hyper",
- "jsonrpc-core",
- "jsonrpc-server-utils",
- "log",
- "net2",
- "parking_lot 0.11.2",
- "unicase",
-]
-
-[[package]]
-name = "jsonrpc-ipc-server"
-version = "18.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "382bb0206323ca7cda3dcd7e245cea86d37d02457a02a975e3378fb149a48845"
-dependencies = [
- "futures 0.3.21",
- "jsonrpc-core",
- "jsonrpc-server-utils",
- "log",
- "parity-tokio-ipc",
- "parking_lot 0.11.2",
- "tower-service",
-]
-
-[[package]]
-name = "jsonrpc-pubsub"
-version = "18.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "240f87695e6c6f62fb37f05c02c04953cf68d6408b8c1c89de85c7a0125b1011"
-dependencies = [
- "futures 0.3.21",
- "jsonrpc-core",
- "lazy_static",
- "log",
- "parking_lot 0.11.2",
- "rand 0.7.3",
- "serde",
-]
-
-[[package]]
-name = "jsonrpc-server-utils"
-version = "18.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa4fdea130485b572c39a460d50888beb00afb3e35de23ccd7fad8ff19f0e0d4"
-dependencies = [
- "bytes 1.1.0",
- "futures 0.3.21",
- "globset",
- "jsonrpc-core",
- "lazy_static",
- "log",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "unicase",
-]
-
-[[package]]
-name = "jsonrpc-ws-server"
-version = "18.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f892c7d766369475ab7b0669f417906302d7c0fb521285c0a0c92e52e7c8e946"
-dependencies = [
- "futures 0.3.21",
- "jsonrpc-core",
- "jsonrpc-server-utils",
- "log",
- "parity-ws",
- "parking_lot 0.11.2",
- "slab",
-]
-
-[[package]]
-name = "jsonrpsee"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6373a33d987866ccfe1af4bc11b089dce941764313f9fd8b7cf13fcb51b72dc5"
-dependencies = [
- "jsonrpsee-types 0.4.1",
- "jsonrpsee-utils",
- "jsonrpsee-ws-client 0.4.1",
-]
-
-[[package]]
-name = "jsonrpsee"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05fd8cd6c6b1bbd06881d2cf88f1fc83cc36c98f2219090f839115fb4a956cb9"
-dependencies = [
- "jsonrpsee-core 0.8.0",
- "jsonrpsee-proc-macros",
- "jsonrpsee-types 0.8.0",
- "jsonrpsee-ws-client 0.8.0",
-]
-
-[[package]]
 name = "jsonrpsee"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0d0b8cc1959f8c05256ace093b2317482da9127f1d9227564f47e7e6bf9bda8"
 dependencies = [
- "jsonrpsee-core 0.9.0",
+ "jsonrpsee-core",
  "jsonrpsee-http-client",
- "jsonrpsee-types 0.9.0",
- "jsonrpsee-ws-client 0.9.0",
-]
-
-[[package]]
-name = "jsonrpsee-client-transport"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3303cdf246e6ab76e2866fb3d9acb6c76a068b1b28bd923a1b7a8122257ad7b5"
-dependencies = [
- "futures 0.3.21",
- "http",
- "jsonrpsee-core 0.8.0",
- "jsonrpsee-types 0.8.0",
- "pin-project 1.0.10",
- "rustls-native-certs 0.6.1",
- "soketto",
- "thiserror",
- "tokio",
- "tokio-rustls 0.23.2",
- "tokio-util",
- "tracing",
- "webpki-roots 0.22.2",
+ "jsonrpsee-http-server",
+ "jsonrpsee-proc-macros",
+ "jsonrpsee-types",
+ "jsonrpsee-ws-client",
+ "jsonrpsee-ws-server",
 ]
 
 [[package]]
@@ -4020,8 +3818,8 @@ checksum = "fa370c2c717d798c3c0a315ae3f0a707a388c6963c11f9da7dbbe1d3f7392f5f"
 dependencies = [
  "futures 0.3.21",
  "http",
- "jsonrpsee-core 0.9.0",
- "jsonrpsee-types 0.9.0",
+ "jsonrpsee-core",
+ "jsonrpsee-types",
  "pin-project 1.0.10",
  "rustls-native-certs 0.6.1",
  "soketto",
@@ -4035,41 +3833,21 @@ dependencies = [
 
 [[package]]
 name = "jsonrpsee-core"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f220b5a238dc7992b90f1144fbf6eaa585872c9376afe6fe6863ffead6191bf3"
-dependencies = [
- "anyhow",
- "arrayvec 0.7.2",
- "async-trait",
- "beef",
- "futures-channel",
- "futures-util",
- "hyper",
- "jsonrpsee-types 0.8.0",
- "rustc-hash",
- "serde",
- "serde_json",
- "soketto",
- "thiserror",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "jsonrpsee-core"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22abc3274b265dcefe2e26c4beecf9fda4fffa48cf94930443a6c73678f020d5"
 dependencies = [
  "anyhow",
  "arrayvec 0.7.2",
+ "async-channel",
  "async-trait",
  "beef",
  "futures-channel",
  "futures-util",
  "hyper",
- "jsonrpsee-types 0.9.0",
+ "jsonrpsee-types",
+ "parking_lot 0.12.0",
+ "rand 0.8.5",
  "rustc-hash",
  "serde",
  "serde_json",
@@ -4088,8 +3866,8 @@ dependencies = [
  "async-trait",
  "hyper",
  "hyper-rustls 0.23.0",
- "jsonrpsee-core 0.9.0",
- "jsonrpsee-types 0.9.0",
+ "jsonrpsee-core",
+ "jsonrpsee-types",
  "rustc-hash",
  "serde",
  "serde_json",
@@ -4099,48 +3877,35 @@ dependencies = [
 ]
 
 [[package]]
-name = "jsonrpsee-proc-macros"
-version = "0.8.0"
+name = "jsonrpsee-http-server"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4299ebf790ea9de1cb72e73ff2ae44c723ef264299e5e2d5ef46a371eb3ac3d8"
+checksum = "8dd99cccd549e3c3bb9dc6a490d7e5cf507f4d2b0177abd16f9c63b3ee1c2d67"
 dependencies = [
- "proc-macro-crate 1.1.3",
+ "futures-channel",
+ "futures-util",
+ "globset",
+ "hyper",
+ "jsonrpsee-core",
+ "jsonrpsee-types",
+ "lazy_static",
+ "serde_json",
+ "socket2 0.4.4",
+ "tokio",
+ "tracing",
+ "unicase",
+]
+
+[[package]]
+name = "jsonrpsee-proc-macros"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63e171d8071079c8ccdce1b4ab34411c5afa6158d57db7963311ad3c6d073cb1"
+dependencies = [
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "jsonrpsee-types"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62f778cf245158fbd8f5d50823a2e9e4c708a40be164766bd35e9fb1d86715b2"
-dependencies = [
- "anyhow",
- "async-trait",
- "beef",
- "futures-channel",
- "futures-util",
- "hyper",
- "log",
- "serde",
- "serde_json",
- "soketto",
- "thiserror",
-]
-
-[[package]]
-name = "jsonrpsee-types"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1b3f601bbbe45cd63f5407b6f7d7950e08a7d4f82aa699ff41a4a5e9e54df58"
-dependencies = [
- "anyhow",
- "beef",
- "serde",
- "serde_json",
- "thiserror",
- "tracing",
 ]
 
 [[package]]
@@ -4158,60 +3923,32 @@ dependencies = [
 ]
 
 [[package]]
-name = "jsonrpsee-utils"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0109c4f972058f3b1925b73a17210aff7b63b65967264d0045d15ee88fe84f0c"
-dependencies = [
- "arrayvec 0.7.2",
- "beef",
- "jsonrpsee-types 0.4.1",
-]
-
-[[package]]
-name = "jsonrpsee-ws-client"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "559aa56fc402af206c00fc913dc2be1d9d788dcde045d14df141a535245d35ef"
-dependencies = [
- "arrayvec 0.7.2",
- "async-trait",
- "fnv",
- "futures 0.3.21",
- "http",
- "jsonrpsee-types 0.4.1",
- "log",
- "pin-project 1.0.10",
- "rustls-native-certs 0.5.0",
- "serde",
- "serde_json",
- "soketto",
- "thiserror",
- "tokio",
- "tokio-rustls 0.22.0",
- "tokio-util",
-]
-
-[[package]]
-name = "jsonrpsee-ws-client"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aff425cee7c779e33920913bc695447416078ee6d119f443f3060feffa4e86b5"
-dependencies = [
- "jsonrpsee-client-transport 0.8.0",
- "jsonrpsee-core 0.8.0",
- "jsonrpsee-types 0.8.0",
-]
-
-[[package]]
 name = "jsonrpsee-ws-client"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "31b58983485b2b626c276f1eb367d62dae82132451b281072a7bfa536a33ddf3"
 dependencies = [
- "jsonrpsee-client-transport 0.9.0",
- "jsonrpsee-core 0.9.0",
- "jsonrpsee-types 0.9.0",
+ "jsonrpsee-client-transport",
+ "jsonrpsee-core",
+ "jsonrpsee-types",
+]
+
+[[package]]
+name = "jsonrpsee-ws-server"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "84fbcab8488704be093f682540b0b80c623e1683a1d832d67b63bf52de9dceac"
+dependencies = [
+ "async-channel",
+ "futures-channel",
+ "futures-util",
+ "jsonrpsee-core",
+ "jsonrpsee-types",
+ "serde_json",
+ "soketto",
+ "tokio",
+ "tokio-util",
+ "tracing",
 ]
 
 [[package]]
@@ -4233,19 +3970,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67c21572b4949434e4fc1e1978b99c5f77064153c59d998bf13ecd96fb5ecba7"
 
 [[package]]
-name = "kernel32-sys"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7507624b29483431c0ba2d82aece8ca6cdba9382bff4ddd0f7490560c056098d"
-dependencies = [
- "winapi 0.2.8",
- "winapi-build",
-]
-
-[[package]]
 name = "kusama-runtime"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "beefy-primitives",
  "bitvec",
@@ -4334,7 +4061,7 @@ dependencies = [
 [[package]]
 name = "kusama-runtime-constants"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -4375,9 +4102,9 @@ dependencies = [
 
 [[package]]
 name = "kvdb-rocksdb"
-version = "0.15.1"
+version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1e72a631a32527fafe22d0751c002e67d28173c49dcaecf79d1aaa323c520e9"
+checksum = "ca7fbdfd71cd663dceb0faf3367a99f8cf724514933e9867cec4995b6027cbc1"
 dependencies = [
  "fs-swap",
  "kvdb",
@@ -4405,9 +4132,9 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "libc"
-version = "0.2.119"
+version = "0.2.121"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1bf2e165bb3457c8e098ea76f3e3bc9db55f87aa90d52d0e6be741470916aaa4"
+checksum = "efaa7b300f3b5fe8eb6bf21ce3895e1751d9665086af2d64b42f19701015ff4f"
 
 [[package]]
 name = "libloading"
@@ -4416,7 +4143,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2b111a074963af1d37a139918ac6d49ad1d0d5e47f72fd55388619691a7d753"
 dependencies = [
  "cc",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -4426,7 +4153,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "afe203d669ec979b7128619bae5a63b7b42e9203c1b29146079ee05e2f604b52"
 dependencies = [
  "cfg-if 1.0.0",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -4442,7 +4169,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3bec54343492ba5940a6c555e512c6721139835d28c59bc22febece72dfd0d9d"
 dependencies = [
  "atomic",
- "bytes 1.1.0",
+ "bytes",
  "futures 0.3.21",
  "lazy_static",
  "libp2p-core",
@@ -4562,7 +4289,7 @@ dependencies = [
  "asynchronous-codec 0.6.0",
  "base64",
  "byteorder",
- "bytes 1.1.0",
+ "bytes",
  "fnv",
  "futures 0.3.21",
  "hex_fmt",
@@ -4604,7 +4331,7 @@ checksum = "a2297dc0ca285f3a09d1368bde02449e539b46f94d32d53233f53f6625bcd3ba"
 dependencies = [
  "arrayvec 0.5.2",
  "asynchronous-codec 0.6.0",
- "bytes 1.1.0",
+ "bytes",
  "either",
  "fnv",
  "futures 0.3.21",
@@ -4664,7 +4391,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f2cd64ef597f40e14bfce0497f50ecb63dd6d201c61796daeb4227078834fbf"
 dependencies = [
  "asynchronous-codec 0.6.0",
- "bytes 1.1.0",
+ "bytes",
  "futures 0.3.21",
  "libp2p-core",
  "log",
@@ -4681,7 +4408,7 @@ version = "0.33.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8772c7a99088221bb7ca9c5c0574bf55046a7ab4c319f3619b275f28c8fb87a"
 dependencies = [
- "bytes 1.1.0",
+ "bytes",
  "curve25519-dalek 3.2.0",
  "futures 0.3.21",
  "lazy_static",
@@ -4719,7 +4446,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5fba1a6ff33e4a274c89a3b1d78b9f34f32af13265cc5c46c16938262d4e945a"
 dependencies = [
  "asynchronous-codec 0.6.0",
- "bytes 1.1.0",
+ "bytes",
  "futures 0.3.21",
  "libp2p-core",
  "log",
@@ -4750,7 +4477,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2852b61c90fa8ce3c8fcc2aba76e6cefc20d648f9df29157d6b3a916278ef3e3"
 dependencies = [
  "asynchronous-codec 0.6.0",
- "bytes 1.1.0",
+ "bytes",
  "futures 0.3.21",
  "futures-timer",
  "libp2p-core",
@@ -4795,7 +4522,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a877a4ced6d46bf84677e1974e8cf61fb434af73b2e96fb48d6cb6223a4634d8"
 dependencies = [
  "async-trait",
- "bytes 1.1.0",
+ "bytes",
  "futures 0.3.21",
  "libp2p-core",
  "libp2p-swarm",
@@ -4890,7 +4617,7 @@ dependencies = [
  "quicksink",
  "rw-stream-sink",
  "soketto",
- "url 2.2.2",
+ "url",
  "webpki-roots 0.21.1",
 ]
 
@@ -5197,7 +4924,7 @@ dependencies = [
 [[package]]
 name = "metered-channel"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "coarsetime",
  "crossbeam-queue",
@@ -5238,58 +4965,15 @@ dependencies = [
 
 [[package]]
 name = "mio"
-version = "0.6.23"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4afd66f5b91bf2a3bc13fad0e21caedac168ca4c707504e75585648ae80e4cc4"
-dependencies = [
- "cfg-if 0.1.10",
- "fuchsia-zircon",
- "fuchsia-zircon-sys",
- "iovec",
- "kernel32-sys",
- "libc",
- "log",
- "miow 0.2.2",
- "net2",
- "slab",
- "winapi 0.2.8",
-]
-
-[[package]]
-name = "mio"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba272f85fa0b41fc91872be579b3bbe0f56b792aa361a380eb669469f68dafb2"
 dependencies = [
  "libc",
  "log",
- "miow 0.3.7",
+ "miow",
  "ntapi",
- "winapi 0.3.9",
-]
-
-[[package]]
-name = "mio-extras"
-version = "2.0.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52403fe290012ce777c4626790c8951324a2b9e3316b3143779c72b029742f19"
-dependencies = [
- "lazycell",
- "log",
- "mio 0.6.23",
- "slab",
-]
-
-[[package]]
-name = "miow"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ebd808424166322d4a38da87083bfddd3ac4c131334ed55856112eb06d46944d"
-dependencies = [
- "kernel32-sys",
- "net2",
- "winapi 0.2.8",
- "ws2_32-sys",
+ "winapi",
 ]
 
 [[package]]
@@ -5298,7 +4982,7 @@ version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b9f1c5b025cda876f66ef43a113f91ebc9f4ccef34843000e0adf6ebbab84e21"
 dependencies = [
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -5318,11 +5002,11 @@ dependencies = [
  "byteorder",
  "data-encoding",
  "multihash 0.14.0",
- "percent-encoding 2.1.0",
+ "percent-encoding",
  "serde",
  "static_assertions",
  "unsigned-varint 0.7.1",
- "url 2.2.2",
+ "url",
 ]
 
 [[package]]
@@ -5372,7 +5056,7 @@ version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "424f6e86263cd5294cbd7f1e95746b95aca0e0d66bff31e5a40d6baa87b4aa99"
 dependencies = [
- "proc-macro-crate 1.1.3",
+ "proc-macro-crate",
  "proc-macro-error",
  "proc-macro2",
  "quote",
@@ -5392,7 +5076,7 @@ version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56a336acba8bc87c8876f6425407dbbe6c417bf478b22015f8fb0994ef3bc0ab"
 dependencies = [
- "bytes 1.1.0",
+ "bytes",
  "futures 0.3.21",
  "log",
  "pin-project 1.0.10",
@@ -5445,17 +5129,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a51313c5820b0b02bd422f4b44776fbf47961755c74ce64afc73bfad10226c3"
 
 [[package]]
-name = "net2"
-version = "0.2.37"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "391630d12b68002ae1e25e8f974306474966550ad82dac6886fb8910c19568ae"
-dependencies = [
- "cfg-if 0.1.10",
- "libc",
- "winapi 0.3.9",
-]
-
-[[package]]
 name = "nix"
 version = "0.23.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5497,7 +5170,7 @@ version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f6bb902e437b6d86e03cce10a7e2af662292c5dfef23b65899ea3ac9354ad44"
 dependencies = [
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -5667,7 +5340,7 @@ dependencies = [
 [[package]]
 name = "pallet-asset-tx-payment"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5684,7 +5357,7 @@ dependencies = [
 [[package]]
 name = "pallet-assets"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5698,7 +5371,7 @@ dependencies = [
 [[package]]
 name = "pallet-aura"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5714,7 +5387,7 @@ dependencies = [
 [[package]]
 name = "pallet-authority-discovery"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5730,7 +5403,7 @@ dependencies = [
 [[package]]
 name = "pallet-authorship"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5745,7 +5418,7 @@ dependencies = [
 [[package]]
 name = "pallet-babe"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5769,7 +5442,7 @@ dependencies = [
 [[package]]
 name = "pallet-bags-list"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -5789,7 +5462,7 @@ dependencies = [
 [[package]]
 name = "pallet-balances"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5804,7 +5477,7 @@ dependencies = [
 [[package]]
 name = "pallet-beefy"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "beefy-primitives",
  "frame-support",
@@ -5820,7 +5493,7 @@ dependencies = [
 [[package]]
 name = "pallet-beefy-mmr"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "beefy-merkle-tree",
  "beefy-primitives",
@@ -5845,7 +5518,7 @@ dependencies = [
 [[package]]
 name = "pallet-bounties"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5863,7 +5536,7 @@ dependencies = [
 [[package]]
 name = "pallet-bridge-dispatch"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bp-message-dispatch",
  "bp-runtime",
@@ -5880,7 +5553,7 @@ dependencies = [
 [[package]]
 name = "pallet-bridge-grandpa"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bp-header-chain",
  "bp-runtime",
@@ -5902,7 +5575,7 @@ dependencies = [
 [[package]]
 name = "pallet-bridge-messages"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bitvec",
  "bp-message-dispatch",
@@ -5923,7 +5596,7 @@ dependencies = [
 [[package]]
 name = "pallet-child-bounties"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5968,7 +5641,7 @@ dependencies = [
 [[package]]
 name = "pallet-collective"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5985,7 +5658,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "bitflags",
  "frame-benchmarking",
@@ -6012,7 +5685,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-primitives"
 version = "6.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "bitflags",
  "parity-scale-codec",
@@ -6027,7 +5700,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6037,11 +5710,10 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
+ "anyhow",
+ "jsonrpsee",
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "parity-scale-codec",
@@ -6056,7 +5728,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-rpc-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "pallet-contracts-primitives",
  "parity-scale-codec",
@@ -6069,7 +5741,7 @@ dependencies = [
 [[package]]
 name = "pallet-democracy"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6085,7 +5757,7 @@ dependencies = [
 [[package]]
 name = "pallet-election-provider-multi-phase"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -6108,7 +5780,7 @@ dependencies = [
 [[package]]
 name = "pallet-elections-phragmen"
 version = "5.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6126,7 +5798,7 @@ dependencies = [
 [[package]]
 name = "pallet-gilt"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6141,7 +5813,7 @@ dependencies = [
 [[package]]
 name = "pallet-grandpa"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6164,7 +5836,7 @@ dependencies = [
 [[package]]
 name = "pallet-identity"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "enumflags2",
  "frame-benchmarking",
@@ -6180,7 +5852,7 @@ dependencies = [
 [[package]]
 name = "pallet-im-online"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6200,7 +5872,7 @@ dependencies = [
 [[package]]
 name = "pallet-indices"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6217,7 +5889,7 @@ dependencies = [
 [[package]]
 name = "pallet-membership"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6234,7 +5906,7 @@ dependencies = [
 [[package]]
 name = "pallet-mmr"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "ckb-merkle-mountain-range",
  "frame-benchmarking",
@@ -6252,7 +5924,7 @@ dependencies = [
 [[package]]
 name = "pallet-mmr-primitives"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6268,14 +5940,13 @@ dependencies = [
 [[package]]
 name = "pallet-mmr-rpc"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
+ "jsonrpsee",
  "pallet-mmr-primitives",
  "parity-scale-codec",
  "serde",
+ "serde_json",
  "sp-api",
  "sp-blockchain",
  "sp-core",
@@ -6285,7 +5956,7 @@ dependencies = [
 [[package]]
 name = "pallet-multisig"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6300,7 +5971,7 @@ dependencies = [
 [[package]]
 name = "pallet-nicks"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6314,7 +5985,7 @@ dependencies = [
 [[package]]
 name = "pallet-offences"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6331,7 +6002,7 @@ dependencies = [
 [[package]]
 name = "pallet-offences-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -6354,7 +6025,7 @@ dependencies = [
 [[package]]
 name = "pallet-preimage"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6370,7 +6041,7 @@ dependencies = [
 [[package]]
 name = "pallet-proxy"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6385,7 +6056,7 @@ dependencies = [
 [[package]]
 name = "pallet-randomness-collective-flip"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6399,7 +6070,7 @@ dependencies = [
 [[package]]
 name = "pallet-recovery"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6413,7 +6084,7 @@ dependencies = [
 [[package]]
 name = "pallet-scheduler"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6429,7 +6100,7 @@ dependencies = [
 [[package]]
 name = "pallet-session"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6450,7 +6121,7 @@ dependencies = [
 [[package]]
 name = "pallet-session-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6466,7 +6137,7 @@ dependencies = [
 [[package]]
 name = "pallet-society"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6480,7 +6151,7 @@ dependencies = [
 [[package]]
 name = "pallet-staking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -6503,9 +6174,9 @@ dependencies = [
 [[package]]
 name = "pallet-staking-reward-curve"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
- "proc-macro-crate 1.1.3",
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn",
@@ -6514,7 +6185,7 @@ dependencies = [
 [[package]]
 name = "pallet-staking-reward-fn"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "log",
  "sp-arithmetic",
@@ -6523,7 +6194,7 @@ dependencies = [
 [[package]]
 name = "pallet-sudo"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6552,7 +6223,7 @@ dependencies = [
 [[package]]
 name = "pallet-timestamp"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6570,7 +6241,7 @@ dependencies = [
 [[package]]
 name = "pallet-tips"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6589,7 +6260,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6606,11 +6277,10 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
+ "anyhow",
+ "jsonrpsee",
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
  "sp-api",
@@ -6623,7 +6293,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment-rpc-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "pallet-transaction-payment",
  "parity-scale-codec",
@@ -6634,7 +6304,7 @@ dependencies = [
 [[package]]
 name = "pallet-treasury"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6651,7 +6321,7 @@ dependencies = [
 [[package]]
 name = "pallet-uniques"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6666,7 +6336,7 @@ dependencies = [
 [[package]]
 name = "pallet-utility"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6682,7 +6352,7 @@ dependencies = [
 [[package]]
 name = "pallet-vesting"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6697,7 +6367,7 @@ dependencies = [
 [[package]]
 name = "pallet-xcm"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6715,7 +6385,7 @@ dependencies = [
 [[package]]
 name = "pallet-xcm-benchmarks"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6929,7 +6599,7 @@ version = "3.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c45ed1f39709f5a89338fab50e59816b2e8815f5bb58276e7ddf9afd495f73f8"
 dependencies = [
- "proc-macro-crate 1.1.3",
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn",
@@ -6940,20 +6610,6 @@ name = "parity-send-wrapper"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa9777aa91b8ad9dd5aaa04a9b6bcb02c7f1deb952fca5a66034d5e63afc5c6f"
-
-[[package]]
-name = "parity-tokio-ipc"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9981e32fb75e004cc148f5fb70342f393830e0a4aa62e3cc93b50976218d42b6"
-dependencies = [
- "futures 0.3.21",
- "libc",
- "log",
- "rand 0.7.3",
- "tokio",
- "winapi 0.3.9",
-]
 
 [[package]]
 name = "parity-util-mem"
@@ -6968,7 +6624,7 @@ dependencies = [
  "parking_lot 0.12.0",
  "primitive-types",
  "smallvec",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -6996,24 +6652,6 @@ name = "parity-wasm"
 version = "0.42.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be5e13c266502aadf83426d87d81a0f5d1ef45b8027f5a471c360abfe4bfae92"
-
-[[package]]
-name = "parity-ws"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5983d3929ad50f12c3eb9a6743f19d691866ecd44da74c0a3308c3f8a56df0c6"
-dependencies = [
- "byteorder",
- "bytes 0.4.12",
- "httparse",
- "log",
- "mio 0.6.23",
- "mio-extras",
- "rand 0.7.3",
- "sha-1 0.8.2",
- "slab",
- "url 2.2.2",
-]
 
 [[package]]
 name = "parking"
@@ -7053,7 +6691,7 @@ dependencies = [
  "libc",
  "redox_syscall",
  "smallvec",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -7098,12 +6736,6 @@ name = "peeking_take_while"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
-
-[[package]]
-name = "percent-encoding"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31010dd2e1ac33d5b46a5b413495239882813e0369f8ed8a5e266f173602f831"
 
 [[package]]
 name = "percent-encoding"
@@ -7276,7 +6908,7 @@ dependencies = [
 [[package]]
 name = "polkadot-approval-distribution"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "futures 0.3.21",
  "polkadot-node-network-protocol",
@@ -7290,7 +6922,7 @@ dependencies = [
 [[package]]
 name = "polkadot-availability-bitfield-distribution"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "futures 0.3.21",
  "polkadot-node-network-protocol",
@@ -7303,7 +6935,7 @@ dependencies = [
 [[package]]
 name = "polkadot-availability-distribution"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "derive_more",
  "fatality",
@@ -7326,7 +6958,7 @@ dependencies = [
 [[package]]
 name = "polkadot-availability-recovery"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "fatality",
  "futures 0.3.21",
@@ -7347,12 +6979,13 @@ dependencies = [
 [[package]]
 name = "polkadot-cli"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "clap 3.1.8",
  "frame-benchmarking-cli",
  "futures 0.3.21",
  "log",
+ "polkadot-client",
  "polkadot-node-core-pvf",
  "polkadot-node-metrics",
  "polkadot-performance-test",
@@ -7370,15 +7003,21 @@ dependencies = [
 [[package]]
 name = "polkadot-client"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "beefy-primitives",
  "frame-benchmarking",
+ "frame-benchmarking-cli",
+ "frame-system",
  "frame-system-rpc-runtime-api",
  "pallet-mmr-primitives",
+ "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "polkadot-core-primitives",
+ "polkadot-node-core-parachains-inherent",
  "polkadot-primitives",
  "polkadot-runtime",
+ "polkadot-runtime-common",
  "sc-client-api",
  "sc-consensus",
  "sc-executor",
@@ -7389,11 +7028,15 @@ dependencies = [
  "sp-blockchain",
  "sp-consensus",
  "sp-consensus-babe",
+ "sp-core",
  "sp-finality-grandpa",
+ "sp-inherents",
+ "sp-keyring",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
  "sp-storage",
+ "sp-timestamp",
  "sp-transaction-pool",
 ]
 
@@ -7476,7 +7119,7 @@ dependencies = [
 [[package]]
 name = "polkadot-collator-protocol"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "always-assert",
  "fatality",
@@ -7497,7 +7140,7 @@ dependencies = [
 [[package]]
 name = "polkadot-core-primitives"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "parity-scale-codec",
  "parity-util-mem",
@@ -7510,7 +7153,7 @@ dependencies = [
 [[package]]
 name = "polkadot-dispute-distribution"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "derive_more",
  "fatality",
@@ -7533,7 +7176,7 @@ dependencies = [
 [[package]]
 name = "polkadot-erasure-coding"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "parity-scale-codec",
  "polkadot-node-primitives",
@@ -7547,7 +7190,7 @@ dependencies = [
 [[package]]
 name = "polkadot-gossip-support"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "futures 0.3.21",
  "futures-timer",
@@ -7567,7 +7210,7 @@ dependencies = [
 [[package]]
 name = "polkadot-network-bridge"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "async-trait",
  "futures 0.3.21",
@@ -7586,7 +7229,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-collation-generation"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "futures 0.3.21",
  "parity-scale-codec",
@@ -7604,7 +7247,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-approval-voting"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bitvec",
  "derive_more",
@@ -7632,7 +7275,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-av-store"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bitvec",
  "futures 0.3.21",
@@ -7652,7 +7295,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-backing"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bitvec",
  "futures 0.3.21",
@@ -7670,7 +7313,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-bitfield-signing"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "futures 0.3.21",
  "polkadot-node-subsystem",
@@ -7685,7 +7328,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-candidate-validation"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "async-trait",
  "futures 0.3.21",
@@ -7703,7 +7346,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-chain-api"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "futures 0.3.21",
  "polkadot-node-subsystem",
@@ -7718,7 +7361,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-chain-selection"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "futures 0.3.21",
  "futures-timer",
@@ -7735,7 +7378,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-dispute-coordinator"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "fatality",
  "futures 0.3.21",
@@ -7754,7 +7397,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-parachains-inherent"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "async-trait",
  "futures 0.3.21",
@@ -7771,7 +7414,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-provisioner"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bitvec",
  "futures 0.3.21",
@@ -7788,7 +7431,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-pvf"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "always-assert",
  "assert_matches",
@@ -7818,7 +7461,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-pvf-checker"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "futures 0.3.21",
  "polkadot-node-primitives",
@@ -7834,7 +7477,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-core-runtime-api"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "futures 0.3.21",
  "memory-lru",
@@ -7852,7 +7495,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-jaeger"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "async-std",
  "lazy_static",
@@ -7870,7 +7513,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-metrics"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bs58",
  "futures 0.3.21",
@@ -7889,7 +7532,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-network-protocol"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "async-trait",
  "fatality",
@@ -7907,7 +7550,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-primitives"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bounded-vec",
  "futures 0.3.21",
@@ -7929,7 +7572,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-subsystem"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "polkadot-node-jaeger",
  "polkadot-node-subsystem-types",
@@ -7939,7 +7582,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-subsystem-test-helpers"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "async-trait",
  "futures 0.3.21",
@@ -7957,7 +7600,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-subsystem-types"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "derive_more",
  "futures 0.3.21",
@@ -7976,7 +7619,7 @@ dependencies = [
 [[package]]
 name = "polkadot-node-subsystem-util"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -8009,7 +7652,7 @@ dependencies = [
 [[package]]
 name = "polkadot-overseer"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "futures 0.3.21",
  "futures-timer",
@@ -8030,7 +7673,7 @@ dependencies = [
 [[package]]
 name = "polkadot-overseer-gen"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "async-trait",
  "futures 0.3.21",
@@ -8047,10 +7690,10 @@ dependencies = [
 [[package]]
 name = "polkadot-overseer-gen-proc-macro"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "expander 0.0.6",
- "proc-macro-crate 1.1.3",
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn",
@@ -8059,7 +7702,7 @@ dependencies = [
 [[package]]
 name = "polkadot-parachain"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "derive_more",
  "frame-support",
@@ -8076,7 +7719,7 @@ dependencies = [
 [[package]]
 name = "polkadot-performance-test"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "env_logger 0.9.0",
  "kusama-runtime",
@@ -8091,7 +7734,7 @@ dependencies = [
 [[package]]
 name = "polkadot-primitives"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bitvec",
  "frame-system",
@@ -8121,11 +7764,11 @@ dependencies = [
 [[package]]
 name = "polkadot-rpc"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "beefy-gadget",
  "beefy-gadget-rpc",
- "jsonrpc-core",
+ "jsonrpsee",
  "pallet-mmr-rpc",
  "pallet-transaction-payment-rpc",
  "polkadot-primitives",
@@ -8147,12 +7790,13 @@ dependencies = [
  "sp-keystore",
  "sp-runtime",
  "substrate-frame-rpc-system",
+ "substrate-state-trie-migration-rpc",
 ]
 
 [[package]]
 name = "polkadot-runtime"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "beefy-primitives",
  "bitvec",
@@ -8237,7 +7881,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-common"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "beefy-primitives",
  "bitvec",
@@ -8284,7 +7928,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-constants"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -8296,7 +7940,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-metrics"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bs58",
  "parity-scale-codec",
@@ -8308,7 +7952,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-parachains"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "bitflags",
  "bitvec",
@@ -8351,7 +7995,7 @@ dependencies = [
 [[package]]
 name = "polkadot-service"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "async-trait",
  "beefy-gadget",
@@ -8452,7 +8096,7 @@ dependencies = [
 [[package]]
 name = "polkadot-statement-distribution"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "arrayvec 0.5.2",
  "fatality",
@@ -8473,7 +8117,7 @@ dependencies = [
 [[package]]
 name = "polkadot-statement-table"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "parity-scale-codec",
  "polkadot-primitives",
@@ -8483,7 +8127,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-client"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "parity-scale-codec",
  "polkadot-node-subsystem",
@@ -8508,7 +8152,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-runtime"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "beefy-primitives",
  "bitvec",
@@ -8570,7 +8214,7 @@ dependencies = [
 [[package]]
 name = "polkadot-test-service"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "frame-benchmarking",
  "frame-system",
@@ -8631,7 +8275,7 @@ dependencies = [
  "libc",
  "log",
  "wepoll-ffi",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -8714,15 +8358,6 @@ dependencies = [
 
 [[package]]
 name = "proc-macro-crate"
-version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d6ea3c4595b96363c13943497db34af4460fb474a95c43f4446ad341b8c9785"
-dependencies = [
- "toml",
-]
-
-[[package]]
-name = "proc-macro-crate"
 version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e17d47ce914bf4de440332250b0edd23ce48c005f59fab39d3335866b114f11a"
@@ -8784,7 +8419,7 @@ version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "444879275cb4fd84958b1a1d5420d15e6fcf7c235fe47f053c9c2a80aceb6001"
 dependencies = [
- "bytes 1.1.0",
+ "bytes",
  "prost-derive",
 ]
 
@@ -8794,7 +8429,7 @@ version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62941722fb675d463659e49c4f3fe1fe792ff24fe5bbaa9c08cd3b98a1c354f5"
 dependencies = [
- "bytes 1.1.0",
+ "bytes",
  "heck 0.3.3",
  "itertools",
  "lazy_static",
@@ -8827,7 +8462,7 @@ version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "534b7a0e836e3c482d2693070f982e39e7611da9695d4d1f5a4b186b51faef0a"
 dependencies = [
- "bytes 1.1.0",
+ "bytes",
  "prost",
 ]
 
@@ -9074,9 +8709,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.5.4"
+version = "1.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d07a8629359eb56f1e2fb1652bb04212c072a87ba68546a04065d525673ac461"
+checksum = "1a11647b6b25ff05a515cb92c365cec08801e83423a235b51e231e1808747286"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -9107,16 +8742,16 @@ dependencies = [
  "bitflags",
  "libc",
  "mach",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
 name = "remote-externalities"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "env_logger 0.9.0",
- "jsonrpsee 0.8.0",
+ "jsonrpsee",
  "log",
  "parity-scale-codec",
  "serde",
@@ -9133,7 +8768,7 @@ version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3acd125665422973a33ac9d3dd2df85edad0f4ae9b00dafb1a05e43a9f5ef8e7"
 dependencies = [
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -9164,7 +8799,7 @@ dependencies = [
  "spin",
  "untrusted",
  "web-sys",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -9230,8 +8865,9 @@ dependencies = [
 [[package]]
 name = "rococo-runtime"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
+ "beefy-merkle-tree",
  "beefy-primitives",
  "bp-messages",
  "bp-rococo",
@@ -9306,7 +8942,7 @@ dependencies = [
 [[package]]
 name = "rococo-runtime-constants"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -9322,7 +8958,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ffc936cf8a7ea60c58f030fd36a612a48f440610214dc54bc36431f9ea0c3efb"
 dependencies = [
  "libc",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -9381,7 +9017,7 @@ dependencies = [
  "io-lifetimes",
  "libc",
  "linux-raw-sys",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -9495,7 +9131,7 @@ dependencies = [
 [[package]]
 name = "sc-allocator"
 version = "4.1.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "log",
  "sp-core",
@@ -9506,7 +9142,7 @@ dependencies = [
 [[package]]
 name = "sc-authority-discovery"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "async-trait",
  "futures 0.3.21",
@@ -9533,7 +9169,7 @@ dependencies = [
 [[package]]
 name = "sc-basic-authorship"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "futures 0.3.21",
  "futures-timer",
@@ -9556,7 +9192,7 @@ dependencies = [
 [[package]]
 name = "sc-block-builder"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "parity-scale-codec",
  "sc-client-api",
@@ -9572,7 +9208,7 @@ dependencies = [
 [[package]]
 name = "sc-chain-spec"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "impl-trait-for-tuples",
  "memmap2 0.5.0",
@@ -9589,9 +9225,9 @@ dependencies = [
 [[package]]
 name = "sc-chain-spec-derive"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
- "proc-macro-crate 1.1.3",
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn",
@@ -9600,7 +9236,7 @@ dependencies = [
 [[package]]
 name = "sc-cli"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "chrono",
  "clap 3.1.8",
@@ -9638,7 +9274,7 @@ dependencies = [
 [[package]]
 name = "sc-client-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "fnv",
  "futures 0.3.21",
@@ -9666,7 +9302,7 @@ dependencies = [
 [[package]]
 name = "sc-client-db"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "hash-db",
  "kvdb",
@@ -9691,7 +9327,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "async-trait",
  "futures 0.3.21",
@@ -9715,7 +9351,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-aura"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "async-trait",
  "futures 0.3.21",
@@ -9744,7 +9380,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-babe"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "async-trait",
  "fork-tree",
@@ -9787,12 +9423,10 @@ dependencies = [
 [[package]]
 name = "sc-consensus-babe-rpc"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "futures 0.3.21",
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
+ "jsonrpsee",
  "sc-consensus-babe",
  "sc-consensus-epochs",
  "sc-rpc-api",
@@ -9811,7 +9445,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-epochs"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "fork-tree",
  "parity-scale-codec",
@@ -9824,7 +9458,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-slots"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "async-trait",
  "futures 0.3.21",
@@ -9849,7 +9483,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-uncles"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "sc-client-api",
  "sp-authorship",
@@ -9860,10 +9494,10 @@ dependencies = [
 [[package]]
 name = "sc-executor"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "lazy_static",
- "lru 0.6.6",
+ "lru 0.7.4",
  "parity-scale-codec",
  "parking_lot 0.12.0",
  "sc-executor-common",
@@ -9887,7 +9521,7 @@ dependencies = [
 [[package]]
 name = "sc-executor-common"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "environmental",
  "parity-scale-codec",
@@ -9904,7 +9538,7 @@ dependencies = [
 [[package]]
 name = "sc-executor-wasmi"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "log",
  "parity-scale-codec",
@@ -9920,7 +9554,7 @@ dependencies = [
 [[package]]
 name = "sc-executor-wasmtime"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "cfg-if 1.0.0",
  "libc",
@@ -9938,7 +9572,7 @@ dependencies = [
 [[package]]
 name = "sc-finality-grandpa"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "ahash",
  "async-trait",
@@ -9978,14 +9612,11 @@ dependencies = [
 [[package]]
 name = "sc-finality-grandpa-rpc"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "finality-grandpa",
  "futures 0.3.21",
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
- "jsonrpc-pubsub",
+ "jsonrpsee",
  "log",
  "parity-scale-codec",
  "sc-client-api",
@@ -10002,7 +9633,7 @@ dependencies = [
 [[package]]
 name = "sc-informant"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "ansi_term",
  "futures 0.3.21",
@@ -10019,7 +9650,7 @@ dependencies = [
 [[package]]
 name = "sc-keystore"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "async-trait",
  "hex",
@@ -10034,12 +9665,12 @@ dependencies = [
 [[package]]
 name = "sc-network"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "async-trait",
  "asynchronous-codec 0.5.0",
  "bitflags",
- "bytes 1.1.0",
+ "bytes",
  "cid",
  "either",
  "fnv",
@@ -10083,7 +9714,7 @@ dependencies = [
 [[package]]
 name = "sc-network-gossip"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "ahash",
  "futures 0.3.21",
@@ -10100,9 +9731,9 @@ dependencies = [
 [[package]]
 name = "sc-offchain"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
- "bytes 1.1.0",
+ "bytes",
  "fnv",
  "futures 0.3.21",
  "futures-timer",
@@ -10128,7 +9759,7 @@ dependencies = [
 [[package]]
 name = "sc-peerset"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "futures 0.3.21",
  "libp2p",
@@ -10141,7 +9772,7 @@ dependencies = [
 [[package]]
 name = "sc-proposer-metrics"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "log",
  "substrate-prometheus-endpoint",
@@ -10150,16 +9781,17 @@ dependencies = [
 [[package]]
 name = "sc-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
+ "anyhow",
+ "async-trait",
  "futures 0.3.21",
  "hash-db",
  "jsonrpc-core",
- "jsonrpc-pubsub",
+ "jsonrpsee",
  "log",
  "parity-scale-codec",
  "parking_lot 0.12.0",
- "sc-block-builder",
  "sc-chain-spec",
  "sc-client-api",
  "sc-rpc-api",
@@ -10181,13 +9813,11 @@ dependencies = [
 [[package]]
 name = "sc-rpc-api"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
+ "anyhow",
  "futures 0.3.21",
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
- "jsonrpc-pubsub",
+ "jsonrpsee",
  "log",
  "parity-scale-codec",
  "parking_lot 0.12.0",
@@ -10207,14 +9837,10 @@ dependencies = [
 [[package]]
 name = "sc-rpc-server"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
- "futures 0.3.21",
- "jsonrpc-core",
- "jsonrpc-http-server",
- "jsonrpc-ipc-server",
- "jsonrpc-pubsub",
- "jsonrpc-ws-server",
+ "anyhow",
+ "jsonrpsee",
  "log",
  "serde_json",
  "substrate-prometheus-endpoint",
@@ -10224,7 +9850,7 @@ dependencies = [
 [[package]]
 name = "sc-service"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "async-trait",
  "directories",
@@ -10232,8 +9858,7 @@ dependencies = [
  "futures 0.3.21",
  "futures-timer",
  "hash-db",
- "jsonrpc-core",
- "jsonrpc-pubsub",
+ "jsonrpsee",
  "log",
  "parity-scale-codec",
  "parity-util-mem",
@@ -10288,7 +9913,7 @@ dependencies = [
 [[package]]
 name = "sc-state-db"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "log",
  "parity-scale-codec",
@@ -10302,11 +9927,10 @@ dependencies = [
 [[package]]
 name = "sc-sync-state-rpc"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
+ "anyhow",
+ "jsonrpsee",
  "parity-scale-codec",
  "sc-chain-spec",
  "sc-client-api",
@@ -10323,7 +9947,7 @@ dependencies = [
 [[package]]
 name = "sc-telemetry"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "chrono",
  "futures 0.3.21",
@@ -10341,7 +9965,7 @@ dependencies = [
 [[package]]
 name = "sc-tracing"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "ansi_term",
  "atty",
@@ -10372,9 +9996,9 @@ dependencies = [
 [[package]]
 name = "sc-tracing-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
- "proc-macro-crate 1.1.3",
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn",
@@ -10383,7 +10007,7 @@ dependencies = [
 [[package]]
 name = "sc-transaction-pool"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "futures 0.3.21",
  "futures-timer",
@@ -10410,7 +10034,7 @@ dependencies = [
 [[package]]
 name = "sc-transaction-pool-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "futures 0.3.21",
  "log",
@@ -10423,7 +10047,7 @@ dependencies = [
 [[package]]
 name = "sc-utils"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "futures 0.3.21",
  "futures-timer",
@@ -10453,7 +10077,7 @@ version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b7805950c36512db9e3251c970bb7ac425f326716941862205d612ab3b5e46e2"
 dependencies = [
- "proc-macro-crate 1.1.3",
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn",
@@ -10466,7 +10090,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f05ba609c234e60bee0d547fe94a4c7e9da733d1c962cf6e59efa4cd9c8bc75"
 dependencies = [
  "lazy_static",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -10896,7 +10520,7 @@ checksum = "9def91fd1e018fe007022791f865d0ccc9b3a0d5001e01aabb8b40e46000afb5"
 [[package]]
 name = "slot-range-helper"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "enumn",
  "parity-scale-codec",
@@ -10952,7 +10576,7 @@ checksum = "122e570113d28d773067fab24266b66753f6ea915758651696b6e35e49f88d6e"
 dependencies = [
  "cfg-if 1.0.0",
  "libc",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -10962,7 +10586,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "66d72b759436ae32898a2af0a14218dbf55efde3feeb170eb623637db85ee1e0"
 dependencies = [
  "libc",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -10972,7 +10596,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "41d1c5305e39e09653383c2c7244f2f78b3bcae37cf50c64cb4789c9f5096ec2"
 dependencies = [
  "base64",
- "bytes 1.1.0",
+ "bytes",
  "flate2",
  "futures 0.3.21",
  "httparse",
@@ -10984,7 +10608,7 @@ dependencies = [
 [[package]]
 name = "sp-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "hash-db",
  "log",
@@ -11001,10 +10625,10 @@ dependencies = [
 [[package]]
 name = "sp-api-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "blake2 0.10.2",
- "proc-macro-crate 1.1.3",
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn",
@@ -11013,7 +10637,7 @@ dependencies = [
 [[package]]
 name = "sp-application-crypto"
 version = "6.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -11026,7 +10650,7 @@ dependencies = [
 [[package]]
 name = "sp-arithmetic"
 version = "5.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "integer-sqrt",
  "num-traits",
@@ -11041,7 +10665,7 @@ dependencies = [
 [[package]]
 name = "sp-authority-discovery"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -11054,7 +10678,7 @@ dependencies = [
 [[package]]
 name = "sp-authorship"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "async-trait",
  "parity-scale-codec",
@@ -11066,7 +10690,7 @@ dependencies = [
 [[package]]
 name = "sp-block-builder"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -11078,7 +10702,7 @@ dependencies = [
 [[package]]
 name = "sp-blockchain"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "futures 0.3.21",
  "log",
@@ -11096,7 +10720,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "async-trait",
  "futures 0.3.21",
@@ -11115,7 +10739,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-aura"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "async-trait",
  "parity-scale-codec",
@@ -11133,7 +10757,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-babe"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "async-trait",
  "merlin",
@@ -11156,7 +10780,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-slots"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -11170,7 +10794,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-vrf"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "parity-scale-codec",
  "schnorrkel",
@@ -11182,7 +10806,7 @@ dependencies = [
 [[package]]
 name = "sp-core"
 version = "6.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "base58",
  "bitflags",
@@ -11228,7 +10852,7 @@ dependencies = [
 [[package]]
 name = "sp-core-hashing"
 version = "4.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "blake2 0.10.2",
  "byteorder",
@@ -11242,7 +10866,7 @@ dependencies = [
 [[package]]
 name = "sp-core-hashing-proc-macro"
 version = "5.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -11253,7 +10877,7 @@ dependencies = [
 [[package]]
 name = "sp-database"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "kvdb",
  "parking_lot 0.12.0",
@@ -11262,7 +10886,7 @@ dependencies = [
 [[package]]
 name = "sp-debug-derive"
 version = "4.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -11272,7 +10896,7 @@ dependencies = [
 [[package]]
 name = "sp-externalities"
 version = "0.12.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "environmental",
  "parity-scale-codec",
@@ -11283,7 +10907,7 @@ dependencies = [
 [[package]]
 name = "sp-finality-grandpa"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "finality-grandpa",
  "log",
@@ -11301,7 +10925,7 @@ dependencies = [
 [[package]]
 name = "sp-inherents"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "async-trait",
  "impl-trait-for-tuples",
@@ -11315,7 +10939,7 @@ dependencies = [
 [[package]]
 name = "sp-io"
 version = "6.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "futures 0.3.21",
  "hash-db",
@@ -11340,7 +10964,7 @@ dependencies = [
 [[package]]
 name = "sp-keyring"
 version = "6.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "lazy_static",
  "sp-core",
@@ -11351,7 +10975,7 @@ dependencies = [
 [[package]]
 name = "sp-keystore"
 version = "0.12.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "async-trait",
  "futures 0.3.21",
@@ -11368,7 +10992,7 @@ dependencies = [
 [[package]]
 name = "sp-maybe-compressed-blob"
 version = "4.1.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "thiserror",
  "zstd",
@@ -11377,7 +11001,7 @@ dependencies = [
 [[package]]
 name = "sp-npos-elections"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -11391,7 +11015,7 @@ dependencies = [
 [[package]]
 name = "sp-offchain"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "sp-api",
  "sp-core",
@@ -11401,7 +11025,7 @@ dependencies = [
 [[package]]
 name = "sp-panic-handler"
 version = "4.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "backtrace",
  "lazy_static",
@@ -11411,7 +11035,7 @@ dependencies = [
 [[package]]
 name = "sp-rpc"
 version = "6.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "rustc-hash",
  "serde",
@@ -11421,7 +11045,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime"
 version = "6.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "either",
  "hash256-std-hasher",
@@ -11443,7 +11067,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface"
 version = "6.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "impl-trait-for-tuples",
  "parity-scale-codec",
@@ -11460,10 +11084,10 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface-proc-macro"
 version = "5.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "Inflector",
- "proc-macro-crate 1.1.3",
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn",
@@ -11472,7 +11096,7 @@ dependencies = [
 [[package]]
 name = "sp-sandbox"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "log",
  "parity-scale-codec",
@@ -11486,7 +11110,7 @@ dependencies = [
 [[package]]
 name = "sp-serializer"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "serde",
  "serde_json",
@@ -11495,7 +11119,7 @@ dependencies = [
 [[package]]
 name = "sp-session"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -11509,7 +11133,7 @@ dependencies = [
 [[package]]
 name = "sp-staking"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -11520,7 +11144,7 @@ dependencies = [
 [[package]]
 name = "sp-state-machine"
 version = "0.12.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "hash-db",
  "log",
@@ -11542,12 +11166,12 @@ dependencies = [
 [[package]]
 name = "sp-std"
 version = "4.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 
 [[package]]
 name = "sp-storage"
 version = "6.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "impl-serde",
  "parity-scale-codec",
@@ -11560,7 +11184,7 @@ dependencies = [
 [[package]]
 name = "sp-tasks"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "log",
  "sp-core",
@@ -11573,7 +11197,7 @@ dependencies = [
 [[package]]
 name = "sp-timestamp"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "async-trait",
  "futures-timer",
@@ -11589,7 +11213,7 @@ dependencies = [
 [[package]]
 name = "sp-tracing"
 version = "5.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "parity-scale-codec",
  "sp-std",
@@ -11601,7 +11225,7 @@ dependencies = [
 [[package]]
 name = "sp-transaction-pool"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "sp-api",
  "sp-runtime",
@@ -11610,7 +11234,7 @@ dependencies = [
 [[package]]
 name = "sp-transaction-storage-proof"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "async-trait",
  "log",
@@ -11626,7 +11250,7 @@ dependencies = [
 [[package]]
 name = "sp-trie"
 version = "6.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "hash-db",
  "memory-db",
@@ -11642,7 +11266,7 @@ dependencies = [
 [[package]]
 name = "sp-version"
 version = "5.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "impl-serde",
  "parity-scale-codec",
@@ -11659,7 +11283,7 @@ dependencies = [
 [[package]]
 name = "sp-version-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "parity-scale-codec",
  "proc-macro2",
@@ -11670,7 +11294,7 @@ dependencies = [
 [[package]]
 name = "sp-wasm-interface"
 version = "6.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "impl-trait-for-tuples",
  "log",
@@ -11960,7 +11584,7 @@ dependencies = [
 [[package]]
 name = "substrate-build-script-utils"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "platforms",
 ]
@@ -11968,18 +11592,17 @@ dependencies = [
 [[package]]
 name = "substrate-frame-rpc-system"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "frame-system-rpc-runtime-api",
  "futures 0.3.21",
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
+ "jsonrpsee",
  "log",
  "parity-scale-codec",
  "sc-client-api",
  "sc-rpc-api",
  "sc-transaction-pool-api",
+ "serde_json",
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",
@@ -11990,7 +11613,7 @@ dependencies = [
 [[package]]
 name = "substrate-prometheus-endpoint"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "futures-util",
  "hyper",
@@ -12001,9 +11624,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "substrate-state-trie-migration-rpc"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
+dependencies = [
+ "anyhow",
+ "jsonrpsee",
+ "log",
+ "parity-scale-codec",
+ "sc-client-api",
+ "sc-rpc-api",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
+ "sp-trie",
+ "trie-db",
+]
+
+[[package]]
 name = "substrate-test-client"
 version = "2.0.1"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "async-trait",
  "futures 0.3.21",
@@ -12029,7 +11674,7 @@ dependencies = [
 [[package]]
 name = "substrate-test-utils"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "futures 0.3.21",
  "substrate-test-utils-derive",
@@ -12039,9 +11684,9 @@ dependencies = [
 [[package]]
 name = "substrate-test-utils-derive"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
- "proc-macro-crate 1.1.3",
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn",
@@ -12050,7 +11695,7 @@ dependencies = [
 [[package]]
 name = "substrate-wasm-builder"
 version = "5.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "ansi_term",
  "build-helper",
@@ -12115,7 +11760,7 @@ dependencies = [
  "rand 0.8.5",
  "redox_syscall",
  "remove_dir_all",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -12136,7 +11781,7 @@ checksum = "13a4ec180a2de59b57434704ccfad967f789b12737738798fa08798cd5824c16"
 [[package]]
 name = "test-runtime-constants"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -12179,6 +11824,12 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "thousands"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3bf63baf9f5039dadc247375c29eb13706706cfde997d0330d05aa63a77d8820"
 
 [[package]]
 name = "thread_local"
@@ -12230,7 +11881,7 @@ checksum = "6db9e6914ab8b1ae1c260a4ae7a49b6c5611b40328a735b21862567685e73255"
 dependencies = [
  "libc",
  "wasi 0.10.0+wasi-snapshot-preview1",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -12283,10 +11934,10 @@ version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2af73ac49756f3f7c01172e34a23e5d0216f6c32333757c2c61feb2bbff5a5ee"
 dependencies = [
- "bytes 1.1.0",
+ "bytes",
  "libc",
  "memchr",
- "mio 0.8.0",
+ "mio",
  "num_cpus",
  "once_cell",
  "parking_lot 0.12.0",
@@ -12294,7 +11945,7 @@ dependencies = [
  "signal-hook-registry",
  "socket2 0.4.4",
  "tokio-macros",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -12331,23 +11982,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "tokio-stream"
-version = "0.1.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50145484efff8818b5ccd256697f36863f587da82cf8b409c53adf1e840798e3"
-dependencies = [
- "futures-core",
- "pin-project-lite 0.2.7",
- "tokio",
-]
-
-[[package]]
 name = "tokio-util"
 version = "0.6.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e99e1983e5d376cd8eb4b66604d2e99e79f5bd988c3055891dcd8c9e2604cc0"
 dependencies = [
- "bytes 1.1.0",
+ "bytes",
  "futures-core",
  "futures-io",
  "futures-sink",
@@ -12417,7 +12057,7 @@ dependencies = [
 [[package]]
 name = "tracing-gum"
 version = "0.9.17"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "polkadot-node-jaeger",
  "polkadot-primitives",
@@ -12428,10 +12068,10 @@ dependencies = [
 [[package]]
 name = "tracing-gum-proc-macro"
 version = "0.9.17"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "expander 0.0.6",
- "proc-macro-crate 1.1.3",
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn",
@@ -12516,7 +12156,7 @@ dependencies = [
  "futures-channel",
  "futures-io",
  "futures-util",
- "idna 0.2.3",
+ "idna",
  "ipnet",
  "lazy_static",
  "log",
@@ -12524,7 +12164,7 @@ dependencies = [
  "smallvec",
  "thiserror",
  "tinyvec",
- "url 2.2.2",
+ "url",
 ]
 
 [[package]]
@@ -12555,10 +12195,10 @@ checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
 [[package]]
 name = "try-runtime-cli"
 version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#666f39b8a22108f57732215de006518738034ba2"
+source = "git+https://github.com/paritytech/substrate?branch=dp-jsonrpsee-integration-2#c1e51c1244074ecd4f2a2604ba62114dab4bafca"
 dependencies = [
  "clap 3.1.8",
- "jsonrpsee 0.4.1",
+ "jsonrpsee",
  "log",
  "parity-scale-codec",
  "remote-externalities",
@@ -12589,9 +12229,9 @@ version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ee73e6e4924fe940354b8d4d98cad5231175d615cd855b758adc658c0aac6a0"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.3",
- "rand 0.8.5",
+ "rand 0.7.3",
  "static_assertions",
 ]
 
@@ -12684,7 +12324,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "35581ff83d4101e58b582e607120c7f5ffb17e632a980b1f38334d76b36908b2"
 dependencies = [
  "asynchronous-codec 0.5.0",
- "bytes 1.1.0",
+ "bytes",
  "futures-io",
  "futures-util",
 ]
@@ -12696,7 +12336,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d86a8dc7f45e4c1b0d30e43038c38f274e77af056aa5f74b93c2cf9eb3c1c836"
 dependencies = [
  "asynchronous-codec 0.6.0",
- "bytes 1.1.0",
+ "bytes",
  "futures-io",
  "futures-util",
 ]
@@ -12709,25 +12349,14 @@ checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
 
 [[package]]
 name = "url"
-version = "1.7.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd4e7c0d531266369519a4aa4f399d748bd37043b00bde1e4ff1f60a120b355a"
-dependencies = [
- "idna 0.1.5",
- "matches",
- "percent-encoding 1.0.1",
-]
-
-[[package]]
-name = "url"
 version = "2.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a507c383b2d33b5fc35d1861e77e6b383d158b2da5e14fe51b83dfedf6fd578c"
 dependencies = [
  "form_urlencoded",
- "idna 0.2.3",
+ "idna",
  "matches",
- "percent-encoding 2.1.0",
+ "percent-encoding",
 ]
 
 [[package]]
@@ -12786,7 +12415,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "808cf2735cd4b6866113f648b791c6adc5714537bc222d9347bb203386ffda56"
 dependencies = [
  "same-file",
- "winapi 0.3.9",
+ "winapi",
  "winapi-util",
 ]
 
@@ -12952,9 +12581,9 @@ checksum = "98930446519f63d00a836efdc22f67766ceae8dbcc1571379f2bcabc6b2b9abc"
 
 [[package]]
 name = "wasmtime"
-version = "0.33.0"
+version = "0.33.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "414be1bc5ca12e755ffd3ff7acc3a6d1979922f8237fc34068b2156cebcc3270"
+checksum = "4c9c724da92e39a85d2231d4c2a942c8be295211441dbca581c6c3f3f45a9f00"
 dependencies = [
  "anyhow",
  "backtrace",
@@ -12979,14 +12608,14 @@ dependencies = [
  "wasmtime-environ",
  "wasmtime-jit",
  "wasmtime-runtime",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
 name = "wasmtime-cache"
-version = "0.33.0"
+version = "0.33.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b9b4cd1949206fda9241faf8c460a7d797aa1692594d3dd6bc1cbfa57ee20d0"
+checksum = "da4439d99100298344567c0eb6916ad5864e99e54760b8177c427e529077fb30"
 dependencies = [
  "anyhow",
  "base64",
@@ -12998,15 +12627,15 @@ dependencies = [
  "serde",
  "sha2 0.9.8",
  "toml",
- "winapi 0.3.9",
+ "winapi",
  "zstd",
 ]
 
 [[package]]
 name = "wasmtime-cranelift"
-version = "0.33.0"
+version = "0.33.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4693d33725773615a4c9957e4aa731af57b27dca579702d1d8ed5750760f1a9"
+checksum = "1762765dd69245f00e5d9783b695039e449a7be0f9c5383e4c78465dd6131aeb"
 dependencies = [
  "anyhow",
  "cranelift-codegen",
@@ -13026,9 +12655,9 @@ dependencies = [
 
 [[package]]
 name = "wasmtime-environ"
-version = "0.33.0"
+version = "0.33.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b17e47116a078b9770e6fb86cff8b9a660826623cebcfff251b047c8d8993ef"
+checksum = "c4468301d95ec71710bb6261382efe27d1296447711645e3dbabaea6e4de3504"
 dependencies = [
  "anyhow",
  "cranelift-entity",
@@ -13046,9 +12675,9 @@ dependencies = [
 
 [[package]]
 name = "wasmtime-jit"
-version = "0.33.0"
+version = "0.33.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60ea5b380bdf92e32911400375aeefb900ac9d3f8e350bb6ba555a39315f2ee7"
+checksum = "ab0ae6e581ff014b470ec35847ea3c0b4c3ace89a55df5a04c802a11f4574e7d"
 dependencies = [
  "addr2line",
  "anyhow",
@@ -13063,14 +12692,14 @@ dependencies = [
  "thiserror",
  "wasmtime-environ",
  "wasmtime-runtime",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
 name = "wasmtime-runtime"
-version = "0.33.0"
+version = "0.33.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "abc7cd79937edd6e238b337608ebbcaf9c086a8457f01dfd598324f7fa56d81a"
+checksum = "6d9c28877ae37a367cda7b52b8887589816152e95dde9b7c80cc686f52761961"
 dependencies = [
  "anyhow",
  "backtrace",
@@ -13088,14 +12717,14 @@ dependencies = [
  "rustix",
  "thiserror",
  "wasmtime-environ",
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
 name = "wasmtime-types"
-version = "0.33.0"
+version = "0.33.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9e5e51a461a2cf2b69e1fc48f325b17d78a8582816e18479e8ead58844b23f8"
+checksum = "395726e8f5dd8c57cb0db445627b842343f7e29ed7489467fdf7953ed9d3cd4f"
 dependencies = [
  "cranelift-entity",
  "serde",
@@ -13163,7 +12792,7 @@ dependencies = [
 [[package]]
 name = "westend-runtime"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "beefy-primitives",
  "bitvec",
@@ -13249,7 +12878,7 @@ dependencies = [
 [[package]]
 name = "westend-runtime-constants"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -13343,12 +12972,6 @@ checksum = "c168940144dd21fd8046987c16a46a33d5fc84eec29ef9dcddc2ac9e31526b7c"
 
 [[package]]
 name = "winapi"
-version = "0.2.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "167dc9d6949a9b857f3451275e911c3f44255842c1f7a76f33c55103a909087a"
-
-[[package]]
-name = "winapi"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c839a674fcd7a98952e593242ea400abe93992746761e38641405d28b00f419"
@@ -13356,12 +12979,6 @@ dependencies = [
  "winapi-i686-pc-windows-gnu",
  "winapi-x86_64-pc-windows-gnu",
 ]
-
-[[package]]
-name = "winapi-build"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d315eee3b34aca4797b2da6b13ed88266e6d612562a0c46390af8299fc699bc"
 
 [[package]]
 name = "winapi-i686-pc-windows-gnu"
@@ -13375,7 +12992,7 @@ version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "70ec6ce85bb158151cae5e5c87f95a8e97d2c0c4b001223f33a334e3ce5de178"
 dependencies = [
- "winapi 0.3.9",
+ "winapi",
 ]
 
 [[package]]
@@ -13433,17 +13050,7 @@ version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b2986deb581c4fe11b621998a5e53361efe6b48a151178d0cd9eeffa4dc6acc9"
 dependencies = [
- "winapi 0.3.9",
-]
-
-[[package]]
-name = "ws2_32-sys"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d59cefebd0c892fa2dd6de581e937301d8552cb44489cdff035c6187cb63fa5e"
-dependencies = [
- "winapi 0.2.8",
- "winapi-build",
+ "winapi",
 ]
 
 [[package]]
@@ -13469,7 +13076,7 @@ dependencies = [
 [[package]]
 name = "xcm"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "derivative",
  "impl-trait-for-tuples",
@@ -13482,7 +13089,7 @@ dependencies = [
 [[package]]
 name = "xcm-builder"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -13502,7 +13109,7 @@ dependencies = [
 [[package]]
 name = "xcm-executor"
 version = "0.9.18"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -13520,7 +13127,7 @@ dependencies = [
 [[package]]
 name = "xcm-procedural"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot?branch=master#827792ca833396c82c726eda0bc2ad32ecddba73"
+source = "git+https://github.com/paritytech/polkadot?branch=dp-jsonrpsee-integration-companion#95e8078b09a10ee6e73dcc763b9eb68869dd994a"
 dependencies = [
  "Inflector",
  "proc-macro2",
@@ -13544,18 +13151,18 @@ dependencies = [
 
 [[package]]
 name = "zeroize"
-version = "1.4.3"
+version = "1.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d68d9dcec5f9b43a30d38c49f91dfedfaac384cb8f085faca366c26207dd1619"
+checksum = "7eb5728b8afd3f280a869ce1d4c554ffaed35f45c231fc41bfbd0381bef50317"
 dependencies = [
  "zeroize_derive",
 ]
 
 [[package]]
 name = "zeroize_derive"
-version = "1.2.2"
+version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65f1a51723ec88c66d5d1fe80c841f17f63587d6691901d66be9bec6c3b51f73"
+checksum = "3f8f187641dad4f680d25c4bfc4225b418165984179f26ca76ec4fb6441d3a17"
 dependencies = [
  "proc-macro2",
  "quote",
