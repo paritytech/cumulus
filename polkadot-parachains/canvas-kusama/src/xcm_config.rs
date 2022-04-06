@@ -19,7 +19,7 @@ use super::{
 };
 use frame_support::{
 	match_types, parameter_types,
-	traits::{EnsureOneOf, Everything, EverythingBut, Nothing},
+	traits::{EnsureOneOf, Everything, Nothing},
 	weights::Weight,
 };
 use frame_system::EnsureRoot;
