@@ -2074,6 +2074,7 @@ dependencies = [
  "sc-consensus-babe",
  "sc-network",
  "sc-service",
+ "sc-sysinfo",
  "sc-telemetry",
  "sc-tracing",
  "sp-api",
@@ -7359,6 +7360,7 @@ dependencies = [
  "polkadot-service",
  "sc-cli",
  "sc-service",
+ "sc-sysinfo",
  "sc-tracing",
  "sp-core",
  "sp-trie",
@@ -7441,6 +7443,7 @@ dependencies = [
  "sc-network",
  "sc-rpc",
  "sc-service",
+ "sc-sysinfo",
  "sc-telemetry",
  "sc-tracing",
  "sc-transaction-pool",
@@ -8421,6 +8424,7 @@ dependencies = [
  "sc-offchain",
  "sc-service",
  "sc-sync-state-rpc",
+ "sc-sysinfo",
  "sc-telemetry",
  "sc-transaction-pool",
  "serde",
@@ -10252,6 +10256,7 @@ dependencies = [
  "sc-offchain",
  "sc-rpc",
  "sc-rpc-server",
+ "sc-sysinfo",
  "sc-telemetry",
  "sc-tracing",
  "sc-transaction-pool",
@@ -10318,6 +10323,22 @@ dependencies = [
  "sp-blockchain",
  "sp-runtime",
  "thiserror",
+]
+
+[[package]]
+name = "sc-sysinfo"
+version = "6.0.0-dev"
+dependencies = [
+ "futures 0.3.21",
+ "libc",
+ "log",
+ "rand 0.7.3",
+ "rand_pcg 0.2.1",
+ "regex",
+ "sc-telemetry",
+ "serde",
+ "serde_json",
+ "sp-core",
 ]
 
 [[package]]

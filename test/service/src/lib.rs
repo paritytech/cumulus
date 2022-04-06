@@ -691,7 +691,6 @@ pub fn node_config(
 		informant_output_format: Default::default(),
 		wasm_runtime_overrides: None,
 		runtime_cache_size: 2,
-		disable_hardware_benchmarks: true,
 	})
 }
 
