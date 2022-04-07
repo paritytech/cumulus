@@ -47,6 +47,9 @@ mod types {
 	/// Index of a transaction in the chain.
 	pub type Index = u32;
 
+	/// A type to hold UTC unix epoch [ms]
+	pub type Moment = u64;
+
 	/// A hash of some data used by the chain.
 	pub type Hash = sp_core::H256;
 

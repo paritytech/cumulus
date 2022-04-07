@@ -35,4 +35,8 @@ impl<T: frame_system::Config> pallet_encointer_balances::WeightInfo for WeightIn
 			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
+	fn set_fee_conversion_factor() -> Weight {
+		(6_000_000 as Weight)
+			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+	}
 }

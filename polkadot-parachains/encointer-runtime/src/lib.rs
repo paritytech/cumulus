@@ -34,14 +34,11 @@ use frame_system::{
 use parachains_common::{
 	currency::{CENTS, EXISTENTIAL_DEPOSIT, MILLICENTS},
 	fee::{SlowAdjustingFeeUpdate, WeightToFee},
+	Moment,
 };
 use scale_info::TypeInfo;
 use sp_api::impl_runtime_apis;
-use sp_core::{
-	crypto::KeyTypeId,
-	u32_trait::{_1, _2},
-	OpaqueMetadata,
-};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, Verify},
@@ -86,7 +83,7 @@ pub use pallet_encointer_scheduler::Call as EncointerSchedulerCall;
 pub use encointer_primitives::{
 	balances::{BalanceEntry, BalanceType, Demurrage},
 	bazaar::{BusinessData, BusinessIdentifier, OfferingData},
-	ceremonies::{CeremonyIndexType, CommunityReputation},
+	ceremonies::{AggregatedAccountData, CeremonyIndexType, CommunityReputation},
 	common::PalletString,
 	communities::{CommunityIdentifier, Location},
 	scheduler::CeremonyPhaseType,
@@ -120,15 +117,12 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("encointer-parachain"),
 	impl_name: create_runtime_str!("encointer-parachain"),
 	authoring_version: 1,
-	spec_version: 5,
+	spec_version: 6,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
 	state_version: 0,
 };
-
-/// A type to hold UTC unix epoch [ms]
-pub type Moment = u64;
 
 pub const ONE_DAY: Moment = 86_400_000;
 
@@ -303,7 +297,7 @@ parameter_types! {
 
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
-	type Moment = u64;
+	type Moment = Moment;
 	type OnTimestampSet = EncointerScheduler;
 	type MinimumPeriod = MinimumPeriod;
 	type WeightInfo = weights::pallet_timestamp::WeightInfo<Runtime>;
@@ -586,6 +580,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ControllerOrigin =
 		EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
+	type WeightInfo = ();
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -603,6 +598,7 @@ parameter_types! {
 parameter_types! {
 	pub const MomentsPerDay: Moment = 86_400_000; // [ms/d]
 	pub const DefaultDemurrage: Demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
+	pub const EncointerExistentialDeposit: BalanceType = BalanceType::from_bits(0x0000000000000000000053e2d6238da4_i128);
 	pub const MeetupSizeTarget: u64 = 10;
 	pub const MeetupMinSize: u64 = 3;
 	pub const MeetupNewbieLimitDivider: u64 = 2; // 2 means 1/3 of participants may be newbies
@@ -637,6 +633,7 @@ impl pallet_encointer_communities::Config for Runtime {
 impl pallet_encointer_balances::Config for Runtime {
 	type Event = Event;
 	type DefaultDemurrage = DefaultDemurrage;
+	type ExistentialDeposit = EncointerExistentialDeposit;
 	type CeremonyMaster = MoreThanHalfCouncil;
 	type WeightInfo = weights::pallet_encointer_balances::WeightInfo<Runtime>;
 }
@@ -674,7 +671,7 @@ parameter_types! {
 
 type MoreThanHalfCouncil = EnsureOneOf<
 	EnsureRoot<AccountId>,
-	pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>,
+	pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
 >;
 
 pub type CouncilCollective = pallet_collective::Instance1;
@@ -703,6 +700,15 @@ impl pallet_membership::Config<pallet_membership::Instance1> for Runtime {
 	type WeightInfo = weights::pallet_membership::WeightInfo<Runtime>;
 }
 
+// for fee payment in comunity currency
+impl pallet_asset_tx_payment::Config for Runtime {
+	type Fungibles = pallet_encointer_balances::Pallet<Runtime>;
+	type OnChargeAssetTransaction = pallet_asset_tx_payment::FungiblesAdapter<
+		encointer_balances_tx_payment::BalanceToCommunityBalance<Runtime>,
+		encointer_balances_tx_payment::BurnCredit,
+	>;
+}
+
 construct_runtime! {
 	pub enum Runtime where
 		Block = Block,
@@ -721,6 +727,7 @@ construct_runtime! {
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+		AssetTxPayment: pallet_asset_tx_payment::{Pallet, Storage} = 12,
 
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
@@ -783,7 +790,7 @@ pub type SignedExtra = (
 	frame_system::CheckEra<Runtime>,
 	frame_system::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
-	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+	pallet_asset_tx_payment::ChargeAssetTxPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
@@ -943,9 +950,12 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl pallet_encointer_ceremonies_rpc_runtime_api::CeremoniesApi<Block, AccountId> for Runtime {
+	impl pallet_encointer_ceremonies_rpc_runtime_api::CeremoniesApi<Block, AccountId, Moment> for Runtime {
 		fn get_reputations(account: &AccountId) -> Vec<(CeremonyIndexType, CommunityReputation)> {
 			EncointerCeremonies::get_reputations(&account)
+		}
+		fn get_aggregated_account_data(cid:CommunityIdentifier, account: &AccountId) -> AggregatedAccountData<AccountId, Moment> {
+			EncointerCeremonies::get_aggregated_account_data(cid, &account)
 		}
 	}
 

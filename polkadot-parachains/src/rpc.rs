@@ -30,7 +30,7 @@ use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use pallet_encointer_bazaar_rpc::{Bazaar, BazaarApi};
 use pallet_encointer_ceremonies_rpc::{Ceremonies, CeremoniesApi};
 use pallet_encointer_communities_rpc::{Communities, CommunitiesApi};
-use parachains_common::{AccountId, Balance, Block, BlockNumber, Index as Nonce};
+use parachains_common::{AccountId, Balance, Block, BlockNumber, Index as Nonce, Moment};
 
 /// A type representing all RPC extensions.
 pub type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
@@ -63,7 +63,7 @@ where
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: BlockBuilder<Block>,
 	P: TransactionPool + Sync + Send + 'static,
-	C::Api: pallet_encointer_ceremonies_rpc_runtime_api::CeremoniesApi<Block, AccountId>,
+	C::Api: pallet_encointer_ceremonies_rpc_runtime_api::CeremoniesApi<Block, AccountId, Moment>,
 	C::Api:
 		pallet_encointer_communities_rpc_runtime_api::CommunitiesApi<Block, AccountId, BlockNumber>,
 	C::Api: pallet_encointer_bazaar_rpc_runtime_api::BazaarApi<Block, AccountId>,

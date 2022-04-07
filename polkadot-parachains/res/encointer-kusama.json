@@ -48,7 +48,7 @@
     }
   },
   "id": "encointer-kusama",
-  "name": "Encointer Launch",
+  "name": "Encointer on Kusama",
   "para_id": 1001,
   "properties": {
     "ss58Format": 2,

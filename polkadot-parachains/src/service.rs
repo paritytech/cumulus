@@ -15,6 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::Codec;
+use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 use cumulus_client_consensus_common::{
 	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
@@ -27,9 +28,10 @@ use cumulus_primitives_core::{
 	relay_chain::v1::{Hash as PHash, PersistedValidationData},
 	ParaId,
 };
-use cumulus_relay_chain_interface::RelayChainInterface;
-use cumulus_relay_chain_local::build_relay_chain_interface;
-use polkadot_service::NativeExecutionDispatch;
+use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
+use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
+use polkadot_service::{CollatorPair, NativeExecutionDispatch};
 
 use crate::rpc;
 pub use parachains_common::{AccountId, Balance, Block, BlockNumber, Hash, Header, Index as Nonce};
@@ -46,7 +48,7 @@ use sc_network::NetworkService;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::{ApiExt, ConstructRuntimeApi};
-use sp_consensus::{CacheKeyId, SlotData};
+use sp_consensus::CacheKeyId;
 use sp_consensus_aura::AuraApi;
 use sp_core::crypto::Pair;
 use sp_keystore::SyncCryptoStorePtr;
@@ -212,6 +214,25 @@ where
 	Ok(params)
 }
 
+async fn build_relay_chain_interface(
+	polkadot_config: Configuration,
+	parachain_config: &Configuration,
+	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
+	task_manager: &mut TaskManager,
+	collator_options: CollatorOptions,
+) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
+	match collator_options.relay_chain_rpc_url {
+		Some(relay_chain_url) =>
+			Ok((Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>, None)),
+		None => build_inprocess_relay_chain(
+			polkadot_config,
+			parachain_config,
+			telemetry_worker_handle,
+			task_manager,
+		),
+	}
+}
+
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
@@ -219,6 +240,7 @@ where
 async fn start_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
+	collator_options: CollatorOptions,
 	id: ParaId,
 	rpc_extensions: RB,
 	build_import_queue: BIQ,
@@ -299,12 +321,18 @@ where
 	let backend = params.backend.clone();
 
 	let mut task_manager = params.task_manager;
-	let (relay_chain_interface, collator_key) =
-		build_relay_chain_interface(polkadot_config, telemetry_worker_handle, &mut task_manager)
-			.map_err(|e| match e {
-				polkadot_service::Error::Sub(x) => x,
-				s => format!("{}", s).into(),
-			})?;
+	let (relay_chain_interface, collator_key) = build_relay_chain_interface(
+		polkadot_config,
+		&parachain_config,
+		telemetry_worker_handle,
+		&mut task_manager,
+		collator_options.clone(),
+	)
+	.await
+	.map_err(|e| match e {
+		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
+		s => s.to_string().into(),
+	})?;
 
 	let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
 
@@ -391,7 +419,7 @@ where
 			spawner,
 			parachain_consensus,
 			import_queue,
-			collator_key,
+			collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
 			relay_chain_slot_duration,
 		};
 
@@ -405,6 +433,7 @@ where
 			relay_chain_interface,
 			relay_chain_slot_duration,
 			import_queue,
+			collator_options,
 		};
 
 		start_full_node(params)?;
@@ -570,9 +599,9 @@ where
 						let time = sp_timestamp::InherentDataProvider::from_system_time();
 
 						let slot =
-					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
 						*time,
-						slot_duration.slot_duration(),
+						slot_duration,
 					);
 
 						Ok((time, slot))
@@ -615,6 +644,7 @@ where
 pub async fn start_parachain_node<RuntimeApi, Executor, AuraId: AppKey, RpcBuilder>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
+	collator_options: CollatorOptions,
 	id: ParaId,
 	rpc_extension_builder: RpcBuilder,
 ) -> sc_service::error::Result<(
@@ -658,6 +688,7 @@ where
 	start_node_impl::<RuntimeApi, Executor, _, _, _>(
 		parachain_config,
 		polkadot_config,
+		collator_options,
 		id,
 		rpc_extension_builder,
 		parachain_build_import_queue::<_, _, AuraId>,
@@ -706,9 +737,9 @@ where
 										sp_timestamp::InherentDataProvider::from_system_time();
 
 									let slot =
-									sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+									sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
 										*time,
-										slot_duration.slot_duration(),
+										slot_duration,
 									);
 
 									let parachain_inherent =
@@ -791,6 +822,7 @@ where
 pub async fn start_launch_node(
 	config: Configuration,
 	polkadot_config: Configuration,
+	collator_options: CollatorOptions,
 	id: ParaId,
 ) -> sc_service::error::Result<(
 	TaskManager,
@@ -807,7 +839,7 @@ pub async fn start_launch_node(
 		LaunchParachainRuntimeExecutor,
 		parachains_common::AuraId,
 		_,
-	>(config, polkadot_config, id, |deps| Ok(rpc::create_launch_ext(deps)))
+	>(config, polkadot_config, collator_options, id, |deps| Ok(rpc::create_launch_ext(deps)))
 	.await
 }
 
@@ -815,6 +847,7 @@ pub async fn start_launch_node(
 pub async fn start_encointer_node(
 	config: Configuration,
 	polkadot_config: Configuration,
+	collator_options: CollatorOptions,
 	id: ParaId,
 ) -> sc_service::error::Result<(
 	TaskManager,
@@ -831,6 +864,6 @@ pub async fn start_encointer_node(
 		EncointerParachainRuntimeExecutor,
 		parachains_common::AuraId,
 		_,
-	>(config, polkadot_config, id, |deps| Ok(rpc::create_full(deps)))
+	>(config, polkadot_config, collator_options, id, |deps| Ok(rpc::create_full(deps)))
 	.await
 }
