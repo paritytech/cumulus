@@ -1,6 +1,7 @@
 {
   "bootNodes": [
-    "/ip4/159.89.98.37/tcp/30333/p2p/12D3KooWT2dtwAeFxkPa7csfvYZJgUvVxYTZHWE5fFb4fxcz39Gp"
+    "/ip4/206.189.59.95/tcp/30333/p2p/12D3KooW9yxCm9MoTTtmH1cEQHwnTKhv3bCoiFwbRhRJU7sae4Yd",
+    "/ip4/167.172.167.196/tcp/30333/p2p/12D3KooWBR4UmiGadvQ77m6iwWuoEUwgRkFMMhzhecXn2Hc9QUhC"
   ],
   "chainType": "Live",
   "codeSubstitutes": {},
@@ -41,7 +42,7 @@
     }
   },
   "id": "integritee-kusama",
-  "name": "Integritee Shell",
+  "name": "Integritee Network (Kusama)",
   "para_id": 2015,
   "properties": {
     "ss58Format": 13,
