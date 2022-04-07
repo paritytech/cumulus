@@ -45,7 +45,7 @@ use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{AsEnsureOriginWithArg, InstanceFilter},
-	weights::{DispatchClass, Weight, ConstantMultiplier},
+	weights::{ConstantMultiplier, DispatchClass, Weight},
 	PalletId, RuntimeDebug,
 };
 use frame_system::{

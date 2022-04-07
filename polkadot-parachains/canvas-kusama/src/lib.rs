@@ -44,7 +44,7 @@ use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{ConstU128, ConstU16, ConstU32, ConstU64, ConstU8, Everything},
-	weights::{DispatchClass, ConstantMultiplier},
+	weights::{ConstantMultiplier, DispatchClass},
 	PalletId,
 };
 use frame_system::limits::{BlockLength, BlockWeights};

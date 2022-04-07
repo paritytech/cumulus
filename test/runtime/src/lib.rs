@@ -49,7 +49,7 @@ pub use frame_support::{
 	traits::Randomness,
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-		DispatchClass, IdentityFee, Weight, ConstantMultiplier,
+		ConstantMultiplier, DispatchClass, IdentityFee, Weight,
 	},
 	StorageValue,
 };
