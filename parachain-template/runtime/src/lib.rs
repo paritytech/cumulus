@@ -29,7 +29,7 @@ use frame_support::{
 	traits::Everything,
 	weights::{
 		constants::WEIGHT_PER_SECOND, DispatchClass, Weight, WeightToFeeCoefficient,
-		WeightToFeeCoefficients, WeightToFeePolynomial,
+		WeightToFeeCoefficients, WeightToFeePolynomial, ConstantMultiplier,
 	},
 	PalletId,
 };
@@ -354,8 +354,8 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
-	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = WeightToFee;
+	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 }
