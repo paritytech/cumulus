@@ -261,7 +261,6 @@ pub fn run() -> Result<()> {
 
 					cmd.run(config, partials.client.clone(), db, storage)
 				}),
-				// TODO add issue
 				BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
 			}
 		},

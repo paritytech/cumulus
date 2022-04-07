@@ -269,6 +269,7 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 		.ok_or_else(|| "Could not find wasm file in genesis state!".into())
 }
 
+/// Creates partial components for the runtimes that are supported by the benchmarks.
 macro_rules! construct_benchmark_partials {
 	($config:expr, |$partials:ident| $code:expr) => {
 		if $config.chain_spec.is_statemine() {
@@ -500,7 +501,6 @@ pub fn run() -> Result<()> {
 						cmd.run(config, partials.client.clone(), db, storage)
 					})
 				}),
-				// TODO add issue
 				BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
 			}
 		},
