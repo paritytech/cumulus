@@ -2221,6 +2221,7 @@ name = "cumulus-test-service"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "clap 3.1.8",
  "criterion",
  "cumulus-client-cli",
  "cumulus-client-consensus-common",

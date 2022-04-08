@@ -45,7 +45,11 @@ use frame_system_rpc_runtime_api::AccountNonceApi;
 use polkadot_primitives::v2::{CollatorPair, Hash as PHash, PersistedValidationData};
 use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
-use sc_network::{config::TransportConfig, multiaddr, NetworkService};
+use sc_network::{
+	config::{NodeKeyConfig, TransportConfig},
+	multiaddr::{self, Protocol},
+	Multiaddr, NetworkService,
+};
 use sc_service::{
 	config::{
 		DatabaseSource, KeepBlocks, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
@@ -412,6 +416,7 @@ pub struct TestNodeBuilder {
 	key: Sr25519Keyring,
 	collator_key: Option<CollatorPair>,
 	parachain_nodes: Vec<MultiaddrWithPeerId>,
+	bootnodes: Vec<MultiaddrWithPeerId>,
 	parachain_nodes_exclusive: bool,
 	relay_chain_nodes: Vec<MultiaddrWithPeerId>,
 	wrap_announce_block: Option<Box<dyn FnOnce(AnnounceBlockFn) -> AnnounceBlockFn>>,
@@ -419,6 +424,9 @@ pub struct TestNodeBuilder {
 	storage_update_func_relay_chain: Option<Box<dyn Fn()>>,
 	consensus: Consensus,
 	relay_chain_full_node_url: Option<Url>,
+	network_only_memory: bool,
+	node_key_config: NodeKeyConfig,
+	port: u16,
 }
 
 impl TestNodeBuilder {
@@ -434,6 +442,7 @@ impl TestNodeBuilder {
 			tokio_handle,
 			collator_key: None,
 			parachain_nodes: Vec::new(),
+			bootnodes: Vec::new(),
 			parachain_nodes_exclusive: false,
 			relay_chain_nodes: Vec::new(),
 			wrap_announce_block: None,
@@ -441,6 +450,9 @@ impl TestNodeBuilder {
 			storage_update_func_relay_chain: None,
 			consensus: Consensus::RelayChain,
 			relay_chain_full_node_url: None,
+			network_only_memory: true,
+			node_key_config: Default::default(),
+			port: 30333,
 		}
 	}
 
@@ -481,6 +493,30 @@ impl TestNodeBuilder {
 		self
 	}
 
+	/// Specify bootnodes to connect to.
+	pub fn with_bootnodes<'a>(
+		mut self,
+		addresses: impl IntoIterator<Item = &'a MultiaddrWithPeerId>,
+	) -> Self {
+		self.bootnodes.extend(addresses.map(|a| a.clone()));
+		self
+	}
+
+	/// Make the node connect to the given relay chain node.
+	pub fn connect_to_parachain_nodes_address<'a>(
+		mut self,
+		addresses: impl IntoIterator<Item = &'a MultiaddrWithPeerId>,
+	) -> Self {
+		self.parachain_nodes.extend(addresses.map(|a| a.clone()));
+		self
+	}
+
+	/// Make the node use a real network address, not a p2p in-memory one
+	pub fn no_memory_address(mut self) -> Self {
+		self.network_only_memory = false;
+		self
+	}
+
 	/// Make the node connect to the given relay chain node.
 	///
 	/// By default the node will not be connected to any node or will be able to discover any other
@@ -502,6 +538,18 @@ impl TestNodeBuilder {
 		nodes: impl IntoIterator<Item = &'a polkadot_test_service::PolkadotTestNode>,
 	) -> Self {
 		self.relay_chain_nodes.extend(nodes.into_iter().map(|n| n.addr.clone()));
+		self
+	}
+
+	/// Make the node connect to the given relay chain nodes.
+	///
+	/// By default the node will not be connected to any node or will be able to discover any other
+	/// node.
+	pub fn connect_to_relay_chain_node_addresses<'a>(
+		mut self,
+		addresses: impl IntoIterator<Item = &'a MultiaddrWithPeerId>,
+	) -> Self {
+		self.relay_chain_nodes.extend(addresses.into_iter().map(|addr| addr.clone()));
 		self
 	}
 
@@ -547,6 +595,18 @@ impl TestNodeBuilder {
 		self
 	}
 
+	/// Connect to full node via RPC.
+	pub fn use_node_key_config(mut self, node_key_config: NodeKeyConfig) -> Self {
+		self.node_key_config = node_key_config;
+		self
+	}
+
+	/// Use port for libp2p connection (only when in-memory networking is disabled)
+	pub fn use_port(mut self, port: u16) -> Self {
+		self.port = port;
+		self
+	}
+
 	/// Build the [`TestNode`].
 	pub async fn build(self) -> TestNode {
 		let parachain_config = node_config(
@@ -554,9 +614,13 @@ impl TestNodeBuilder {
 			self.tokio_handle.clone(),
 			self.key.clone(),
 			self.parachain_nodes,
+			self.bootnodes,
 			self.parachain_nodes_exclusive,
 			self.para_id,
 			self.collator_key.is_some(),
+			self.network_only_memory,
+			self.node_key_config,
+			self.port,
 		)
 		.expect("could not generate Configuration");
 
@@ -606,9 +670,13 @@ pub fn node_config(
 	tokio_handle: tokio::runtime::Handle,
 	key: Sr25519Keyring,
 	nodes: Vec<MultiaddrWithPeerId>,
+	bootnodes: Vec<MultiaddrWithPeerId>,
 	nodes_exlusive: bool,
 	para_id: ParaId,
 	is_collator: bool,
+	network_only_memory: bool,
+	node_key_config: NodeKeyConfig,
+	port: u16,
 ) -> Result<Configuration, ServiceError> {
 	let base_path = BasePath::new_temp_dir()?;
 	let root = base_path.path().to_path_buf();
@@ -624,7 +692,7 @@ pub fn node_config(
 	let mut network_config = NetworkConfiguration::new(
 		format!("{} (parachain)", key_seed.to_string()),
 		"network/test/0.1",
-		Default::default(),
+		node_key_config,
 		None,
 	);
 
@@ -633,16 +701,26 @@ pub fn node_config(
 		network_config.default_peers_set.non_reserved_mode =
 			sc_network::config::NonReservedPeerMode::Deny;
 	} else {
-		network_config.boot_nodes = nodes;
+		if network_only_memory {
+			network_config.boot_nodes = nodes;
+		}
 	}
 
 	network_config.allow_non_globals_in_dht = true;
 
-	network_config
-		.listen_addresses
-		.push(multiaddr::Protocol::Memory(rand::random()).into());
-
-	network_config.transport = TransportConfig::MemoryOnly;
+	if network_only_memory {
+		network_config
+			.listen_addresses
+			.push(multiaddr::Protocol::Memory(rand::random()).into());
+		network_config.transport = TransportConfig::MemoryOnly;
+	} else {
+		network_config.boot_nodes = bootnodes;
+		network_config.transport =
+			TransportConfig::Normal { enable_mdns: true, allow_private_ipv4: true };
+		network_config.listen_addresses = vec![Multiaddr::empty()
+			.with(Protocol::Ip4([0, 0, 0, 0].into()))
+			.with(Protocol::Tcp(port))];
+	}
 
 	Ok(Configuration {
 		impl_name: "cumulus-test-node".to_string(),
