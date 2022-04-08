@@ -656,7 +656,10 @@ impl<T: Config> Pallet<T> {
 								break
 							},
 							Err(error) => {
-								log::info!("Failed to process XCMP-XCM message, caused by {:?}", error);
+								log::info!(
+									"Failed to process XCMP-XCM message, caused by {:?}",
+									error
+								);
 								// Message looks invalid; don't attempt to retry
 							},
 						}
