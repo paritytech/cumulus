@@ -87,7 +87,7 @@ async fn main() -> Result<(), sc_service::Error> {
 		keyring.unwrap_or(Alice),
 	)
 	.no_memory_address()
-	.connect_to_parachain_nodes_address(args.relay_chain_bootnodes)
+	.connect_to_relay_chain_node_addresses(args.relay_chain_bootnodes)
 	.with_bootnodes(args.base.network_params.bootnodes);
 
 	if args.base.network_params.node_key_params.node_key.is_some() {
