@@ -494,20 +494,20 @@ impl TestNodeBuilder {
 	}
 
 	/// Specify bootnodes to connect to.
-	pub fn with_bootnodes<'a>(
+	pub fn with_bootnodes(
 		mut self,
-		addresses: impl IntoIterator<Item = &'a MultiaddrWithPeerId>,
+		addresses: impl IntoIterator<Item = MultiaddrWithPeerId>,
 	) -> Self {
-		self.bootnodes.extend(addresses.map(|a| a.clone()));
+		self.bootnodes.extend(addresses.into_iter().map(|a| a.clone()));
 		self
 	}
 
 	/// Make the node connect to the given relay chain node.
-	pub fn connect_to_parachain_nodes_address<'a>(
+	pub fn connect_to_parachain_nodes_address(
 		mut self,
-		addresses: impl IntoIterator<Item = &'a MultiaddrWithPeerId>,
+		addresses: impl IntoIterator<Item = MultiaddrWithPeerId>,
 	) -> Self {
-		self.parachain_nodes.extend(addresses.map(|a| a.clone()));
+		self.parachain_nodes.extend(addresses.into_iter().map(|a| a.clone()));
 		self
 	}
 
@@ -547,7 +547,7 @@ impl TestNodeBuilder {
 	/// node.
 	pub fn connect_to_relay_chain_node_addresses<'a>(
 		mut self,
-		addresses: impl IntoIterator<Item = &'a MultiaddrWithPeerId>,
+		addresses: impl IntoIterator<Item = MultiaddrWithPeerId>,
 	) -> Self {
 		self.relay_chain_nodes.extend(addresses.into_iter().map(|addr| addr.clone()));
 		self
