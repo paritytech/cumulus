@@ -482,6 +482,7 @@ dependencies = [
  "sp-consensus",
  "sp-core",
  "sp-keystore",
+ "sp-mmr-primitives",
  "sp-runtime",
  "substrate-prometheus-endpoint",
  "thiserror",
@@ -5771,7 +5772,6 @@ dependencies = [
  "log",
  "pallet-beefy",
  "pallet-mmr",
- "pallet-mmr-primitives",
  "pallet-session",
  "parity-scale-codec",
  "scale-info",
@@ -6180,11 +6180,11 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "pallet-mmr-primitives",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
  "sp-io",
+ "sp-mmr-primitives",
  "sp-runtime",
  "sp-std",
 ]
@@ -6213,12 +6213,12 @@ dependencies = [
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
- "pallet-mmr-primitives",
  "parity-scale-codec",
  "serde",
  "sp-api",
  "sp-blockchain",
  "sp-core",
+ "sp-mmr-primitives",
  "sp-runtime",
 ]
 
@@ -11325,6 +11325,20 @@ source = "git+https://github.com/paritytech/substrate?branch=master#174735ea1bb5
 dependencies = [
  "thiserror",
  "zstd",
+]
+
+[[package]]
+name = "sp-mmr-primitives"
+version = "4.0.0-dev"
+dependencies = [
+ "log",
+ "parity-scale-codec",
+ "serde",
+ "sp-api",
+ "sp-core",
+ "sp-debug-derive",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
