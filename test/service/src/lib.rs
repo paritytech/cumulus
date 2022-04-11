@@ -425,8 +425,10 @@ pub struct TestNodeBuilder {
 	consensus: Consensus,
 	relay_chain_full_node_url: Option<Url>,
 	network_only_memory: bool,
+	relay_chain_network_only_memory: bool,
 	node_key_config: NodeKeyConfig,
 	port: u16,
+	relay_chain_port: u16,
 }
 
 impl TestNodeBuilder {
@@ -451,8 +453,10 @@ impl TestNodeBuilder {
 			consensus: Consensus::RelayChain,
 			relay_chain_full_node_url: None,
 			network_only_memory: true,
+			relay_chain_network_only_memory: true,
 			node_key_config: Default::default(),
 			port: 30333,
+			relay_chain_port: 30433,
 		}
 	}
 
@@ -514,6 +518,12 @@ impl TestNodeBuilder {
 	/// Make the node use a real network address, not a p2p in-memory one
 	pub fn no_memory_address(mut self) -> Self {
 		self.network_only_memory = false;
+		self
+	}
+
+	/// Make the node use a real network address, not a p2p in-memory one
+	pub fn relay_chain_no_memory_address(mut self) -> Self {
+		self.relay_chain_network_only_memory = false;
 		self
 	}
 
@@ -607,6 +617,12 @@ impl TestNodeBuilder {
 		self
 	}
 
+	/// Use relay chain port for libp2p connection (only when in-memory networking is disabled)
+	pub fn use_relay_chain_port(mut self, port: u16) -> Self {
+		self.relay_chain_port = port;
+		self
+	}
+
 	/// Build the [`TestNode`].
 	pub async fn build(self) -> TestNode {
 		let parachain_config = node_config(
@@ -637,6 +653,21 @@ impl TestNodeBuilder {
 
 		relay_chain_config.network.node_name =
 			format!("{} (relay chain)", relay_chain_config.network.node_name);
+
+		if !self.relay_chain_network_only_memory {
+			relay_chain_config.network.transport =
+				TransportConfig::Normal { enable_mdns: true, allow_private_ipv4: true };
+			relay_chain_config.network.listen_addresses = vec![Multiaddr::empty()
+				.with(Protocol::Ip4([0, 0, 0, 0].into()))
+				.with(Protocol::Tcp(self.relay_chain_port))];
+			relay_chain_config.network.public_addresses = vec![Multiaddr::empty()
+				.with(Protocol::Ip4([0, 0, 0, 0].into()))
+				.with(Protocol::Tcp(self.relay_chain_port))];
+			println!(
+				"Using real network!\nListen address of relay chain: {:?}",
+				relay_chain_config.network
+			);
+		}
 
 		let multiaddr = parachain_config.network.listen_addresses[0].clone();
 		let (task_manager, client, network, rpc_handlers, transaction_pool) = start_node_impl(

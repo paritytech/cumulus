@@ -67,13 +67,16 @@ pub struct RunCmd {
 
 	#[clap(long)]
 	relay_chain_bootnodes: Vec<MultiaddrWithPeerId>,
+
+	#[clap(long)]
+	relay_chain_port: Option<u16>,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), sc_service::Error> {
 	let args = RunCmd::parse();
 
-	let mut builder = sc_cli::LoggerBuilder::new("");
+	let mut builder = sc_cli::LoggerBuilder::new("sub-libp2p=trace,info");
 	builder.with_colors(true);
 	let _ = builder.init();
 
@@ -88,7 +91,8 @@ async fn main() -> Result<(), sc_service::Error> {
 	)
 	.no_memory_address()
 	.connect_to_relay_chain_node_addresses(args.relay_chain_bootnodes)
-	.with_bootnodes(args.base.network_params.bootnodes);
+	.with_bootnodes(args.base.network_params.bootnodes)
+	.relay_chain_no_memory_address();
 
 	if args.base.network_params.node_key_params.node_key.is_some() {
 		let node_key = args
@@ -102,6 +106,10 @@ async fn main() -> Result<(), sc_service::Error> {
 
 	if let Some(port) = args.base.network_params.port {
 		parachain_node_builder = parachain_node_builder.use_port(port);
+	}
+
+	if let Some(port) = args.relay_chain_port {
+		parachain_node_builder = parachain_node_builder.use_relay_chain_port(port);
 	}
 
 	if args.disable_block_announcements {
