@@ -4218,7 +4218,6 @@ dependencies = [
  "pallet-im-online",
  "pallet-indices",
  "pallet-membership",
- "pallet-mmr-primitives",
  "pallet-multisig",
  "pallet-nicks",
  "pallet-offences",
@@ -4257,6 +4256,7 @@ dependencies = [
  "sp-core",
  "sp-inherents",
  "sp-io",
+ "sp-mmr-primitives",
  "sp-npos-elections",
  "sp-offchain",
  "sp-runtime",
@@ -6190,22 +6190,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-mmr-primitives"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#174735ea1bb5fc4513519c45181d8df63d86f613"
-dependencies = [
- "frame-support",
- "frame-system",
- "log",
- "parity-scale-codec",
- "serde",
- "sp-api",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-mmr-rpc"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=master#174735ea1bb5fc4513519c45181d8df63d86f613"
@@ -7318,7 +7302,6 @@ dependencies = [
  "frame-benchmarking-cli",
  "frame-system",
  "frame-system-rpc-runtime-api",
- "pallet-mmr-primitives",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "polkadot-core-primitives",
@@ -7340,6 +7323,7 @@ dependencies = [
  "sp-finality-grandpa",
  "sp-inherents",
  "sp-keyring",
+ "sp-mmr-primitives",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -8134,7 +8118,6 @@ dependencies = [
  "pallet-im-online",
  "pallet-indices",
  "pallet-membership",
- "pallet-mmr-primitives",
  "pallet-multisig",
  "pallet-nicks",
  "pallet-offences",
@@ -8171,6 +8154,7 @@ dependencies = [
  "sp-core",
  "sp-inherents",
  "sp-io",
+ "sp-mmr-primitives",
  "sp-npos-elections",
  "sp-offchain",
  "sp-runtime",
@@ -8317,7 +8301,6 @@ dependencies = [
  "lru 0.7.5",
  "pallet-babe",
  "pallet-im-online",
- "pallet-mmr-primitives",
  "pallet-staking",
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-db",
@@ -8476,7 +8459,6 @@ dependencies = [
  "pallet-balances",
  "pallet-grandpa",
  "pallet-indices",
- "pallet-mmr-primitives",
  "pallet-nicks",
  "pallet-offences",
  "pallet-session",
@@ -8505,6 +8487,7 @@ dependencies = [
  "sp-core",
  "sp-inherents",
  "sp-io",
+ "sp-mmr-primitives",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -9214,7 +9197,6 @@ dependencies = [
  "pallet-indices",
  "pallet-membership",
  "pallet-mmr",
- "pallet-mmr-primitives",
  "pallet-multisig",
  "pallet-offences",
  "pallet-proxy",
@@ -9243,6 +9225,7 @@ dependencies = [
  "sp-core",
  "sp-inherents",
  "sp-io",
+ "sp-mmr-primitives",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -12599,7 +12582,7 @@ version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ee73e6e4924fe940354b8d4d98cad5231175d615cd855b758adc658c0aac6a0"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.3",
  "rand 0.8.5",
  "static_assertions",
@@ -13201,7 +13184,6 @@ dependencies = [
  "pallet-im-online",
  "pallet-indices",
  "pallet-membership",
- "pallet-mmr-primitives",
  "pallet-multisig",
  "pallet-nicks",
  "pallet-offences",
@@ -13241,6 +13223,7 @@ dependencies = [
  "sp-core",
  "sp-inherents",
  "sp-io",
+ "sp-mmr-primitives",
  "sp-npos-elections",
  "sp-offchain",
  "sp-runtime",
