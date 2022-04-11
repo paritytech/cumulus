@@ -61,13 +61,6 @@ variables:
     - if: $CI_COMMIT_REF_NAME =~ /^release-parachains-v[0-9]+\.[0-9]+.*$/              # i.e. release-parachains-v1.0, release-parachains-v2.1rc1
       when: manual
 
-.master-refs:                      &master-refs
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "web"
-    - if: $CI_PIPELINE_SOURCE == "schedule"
-    - if: $CI_COMMIT_REF_NAME == "master"
-    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+.*$/              # i.e. v1.0, v2.1rc1
-
 .docker-env:                       &docker-env
   image:                           "${CI_IMAGE}"
   before_script:
