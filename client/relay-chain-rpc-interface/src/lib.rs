@@ -19,10 +19,7 @@ use backoff::{future::retry_notify, ExponentialBackoff};
 use core::time::Duration;
 use cumulus_primitives_core::{
 	relay_chain::{
-		v1::{
-			AuthorityDiscoveryId, CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex,
-			ValidatorId,
-		},
+		v2::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
 		Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
@@ -436,8 +433,7 @@ impl RelayChainInterface for RelayChainRPCInterface {
 			.state_get_read_proof(storage_keys, Some(relay_parent))
 			.await
 			.map(|read_proof| {
-				let bytes = read_proof.proof.into_iter().map(|bytes| bytes.to_vec()).collect();
-				StorageProof::new(bytes)
+				StorageProof::new(read_proof.proof.into_iter().map(|bytes| bytes.to_vec()))
 			})
 	}
 

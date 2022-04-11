@@ -20,8 +20,9 @@ pallets=(
 	pallet_session
 	pallet_timestamp
 	pallet_utility
-    pallet_uniques
-    frame_system
+	pallet_uniques
+	cumulus_pallet_xcmp_queue
+	frame_system
 )
 
 for p in ${pallets[@]}
@@ -34,7 +35,7 @@ do
 		--extrinsic='*' \
 		--steps=$steps  \
 		--repeat=$repeat \
-		--json \
+		--json-file=./bench-statemine.json \
         --header=./file_header.txt \
 		--output=$statemineOutput
 
@@ -46,7 +47,7 @@ do
 		--extrinsic='*' \
 		--steps=$steps  \
 		--repeat=$repeat \
-		--json \
+		--json-file=./bench-statemint.json \
         --header=./file_header.txt \
 		--output=$statemintOutput
 
@@ -58,7 +59,7 @@ do
 		--extrinsic='*' \
 		--steps=$steps  \
 		--repeat=$repeat \
-		--json \
+		--json-file=./bench-westmint.json \
         --header=./file_header.txt \
 		--output=$westmintOutput
 done

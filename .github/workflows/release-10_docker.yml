@@ -27,7 +27,7 @@ jobs:
           echo "Repo: ${{ github.event.repository.full_name }}"
 
           echo "Name: ${{ github.event.release.name }}"
-          echo "Tag: ${{ github.event.release.tag_name }}
+          echo "Tag: ${{ github.event.release.tag_name }}"
           echo "Draft: ${{ github.event.release.draft }}"
           echo "Prerelease: ${{ github.event.release.prerelease }}"
           echo "Assets: ${{ github.event.release.assets }}"
@@ -48,10 +48,11 @@ jobs:
 
           KEY_PARITY_SEC=9D4B2B6EB8F97156D19669A9FF0812D491B96798
           KEY_CHEVDOR=2835EAF92072BC01D188AF2C4A092B93E97CE1E2
+          KEYSERVER=keyserver.ubuntu.com
 
-          gpg --receive-keys $KEY_PARITY_SEC
+          gpg --keyserver $KEYSERVER --receive-keys $KEY_PARITY_SEC
           if [[ ${{ github.event.release.prerelease }} == "true" ]]; then
-              gpg --receive-keys $KEY_CHEVDOR
+              gpg --keyserver $KEYSERVER --receive-keys $KEY_CHEVDOR
           fi
 
           gpg --verify $BINARY.asc
@@ -72,8 +73,9 @@ jobs:
       - name: Build injected image
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_ORG: parity
         run: |
-          export OWNER=$DOCKERHUB_USERNAME
+          export OWNER=$DOCKERHUB_ORG
           mkdir -p target/release
           cp -f $BINARY* target/release/
           ./docker/scripts/build-injected-image.sh
@@ -87,9 +89,10 @@ jobs:
       - name: Tag and Publish
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_ORG: parity
         run: |
-          docker run --pull never --rm $DOCKERHUB_USERNAME/$BINARY --version
-          VERSION=$(docker run --pull never --rm $DOCKERHUB_USERNAME/$BINARY --version | awk '{ print $2 }' )
+          docker run --pull never --rm $DOCKERHUB_ORG/$BINARY --version
+          VERSION=$(docker run --pull never --rm $DOCKERHUB_ORG/$BINARY --version | awk '{ print $2 }' )
           SEMVER=$( echo $VERSION | cut -f1 -d- )
           GITREF=$( echo $VERSION | cut -f2 -d- )
           PRE=${{ github.event.release.prerelease }}
@@ -107,15 +110,15 @@ jobs:
           echo "PRE_STR=$PRE_STR"
           echo "TAG=$TAG"
 
-          docker tag $DOCKERHUB_USERNAME/$BINARY $DOCKERHUB_USERNAME/$BINARY:$TAG
-          docker push $DOCKERHUB_USERNAME/$BINARY:$TAG
+          docker tag $DOCKERHUB_ORG/$BINARY $DOCKERHUB_ORG/$BINARY:$TAG
+          docker push $DOCKERHUB_ORG/$BINARY:$TAG
 
           if [[ $PRE != "true" ]]; then
-            docker tag $DOCKERHUB_USERNAME/$BINARY $DOCKERHUB_USERNAME/$BINARY:latest
-            docker tag $DOCKERHUB_USERNAME/$BINARY $DOCKERHUB_USERNAME/$BINARY:$SEMVER
+            docker tag $DOCKERHUB_ORG/$BINARY $DOCKERHUB_ORG/$BINARY:latest
+            docker tag $DOCKERHUB_ORG/$BINARY $DOCKERHUB_ORG/$BINARY:$SEMVER
 
-            docker push $DOCKERHUB_USERNAME/$BINARY:latest
-            docker push $DOCKERHUB_USERNAME/$BINARY:$SEMVER
+            docker push $DOCKERHUB_ORG/$BINARY:latest
+            docker push $DOCKERHUB_ORG/$BINARY:$SEMVER
           fi
 
-          docker images | grep $DOCKERHUB_USERNAME/$BINARY
+          docker images | grep $DOCKERHUB_ORG/$BINARY

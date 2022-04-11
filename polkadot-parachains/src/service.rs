@@ -25,7 +25,7 @@ use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::{
-	relay_chain::v1::{Hash as PHash, PersistedValidationData},
+	relay_chain::v2::{Hash as PHash, PersistedValidationData},
 	ParaId,
 };
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
@@ -288,6 +288,7 @@ where
 
 async fn build_relay_chain_interface(
 	polkadot_config: Configuration,
+	parachain_config: &Configuration,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	task_manager: &mut TaskManager,
 	collator_options: CollatorOptions,
@@ -310,14 +311,12 @@ async fn build_relay_chain_interface(
 				Some(collator_pair),
 			))
 		},
-		None => {
-			let relay_chain_local = build_inprocess_relay_chain(
-				polkadot_config,
-				telemetry_worker_handle,
-				task_manager,
-			)?;
-			Ok((relay_chain_local.0, Some(relay_chain_local.1)))
-		},
+		None => build_inprocess_relay_chain(
+			polkadot_config,
+			parachain_config,
+			telemetry_worker_handle,
+			task_manager,
+		),
 	}
 }
 
@@ -402,6 +401,7 @@ where
 
 	let (relay_chain_interface, collator_key) = build_relay_chain_interface(
 		polkadot_config,
+		&parachain_config,
 		telemetry_worker_handle,
 		&mut task_manager,
 		collator_options.clone(),
@@ -587,6 +587,7 @@ where
 	let mut task_manager = params.task_manager;
 	let (relay_chain_interface, collator_key) = build_relay_chain_interface(
 		polkadot_config,
+		&parachain_config,
 		telemetry_worker_handle,
 		&mut task_manager,
 		collator_options.clone(),
@@ -1388,6 +1389,7 @@ where
 
 	let (relay_chain_interface, collator_key) = build_relay_chain_interface(
 		polkadot_config,
+		&parachain_config,
 		telemetry_worker_handle,
 		&mut task_manager,
 		collator_options.clone(),

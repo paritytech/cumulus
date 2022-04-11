@@ -44,16 +44,13 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{EnsureOneOf, InstanceFilter},
-	weights::{
-		constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
-		DispatchClass, Weight,
-	},
+	traits::{AsEnsureOriginWithArg, EnsureOneOf, InstanceFilter},
+	weights::{ConstantMultiplier, DispatchClass, Weight},
 	PalletId, RuntimeDebug,
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureRoot,
+	EnsureRoot, EnsureSigned,
 };
 pub use parachains_common as common;
 use parachains_common::{
@@ -68,9 +65,11 @@ pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
-use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
+use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use xcm::latest::BodyId;
 use xcm_executor::XcmExecutor;
+
+use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 impl_opaque_keys! {
 	pub struct SessionKeys {
@@ -83,10 +82,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("statemine"),
 	impl_name: create_runtime_str!("statemine"),
 	authoring_version: 1,
-	spec_version: 700,
+	spec_version: 900,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 5,
+	transaction_version: 6,
 	state_version: 0,
 };
 
@@ -201,8 +200,8 @@ parameter_types! {
 impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction =
 		pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees<Runtime>>;
-	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = WeightToFee;
+	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 }
@@ -429,6 +428,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ControllerOrigin =
 		EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>>;
 	type ControllerOriginConverter = xcm_config::XcmOriginToTransactDispatchOrigin;
+	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -525,6 +525,9 @@ impl pallet_uniques::Config for Runtime {
 	type KeyLimit = KeyLimit;
 	type ValueLimit = ValueLimit;
 	type WeightInfo = weights::pallet_uniques::WeightInfo<Runtime>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type Helper = ();
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -622,6 +625,7 @@ mod benches {
 		[pallet_utility, Utility]
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
+		[cumulus_pallet_xcmp_queue, XcmpQueue]
 	);
 }
 

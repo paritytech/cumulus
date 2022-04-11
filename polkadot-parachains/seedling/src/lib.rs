@@ -37,7 +37,7 @@ use sp_version::RuntimeVersion;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
-	construct_runtime, match_type, parameter_types,
+	construct_runtime, parameter_types,
 	traits::{IsInVec, Randomness},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -56,7 +56,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("seedling"),
 	impl_name: create_runtime_str!("seedling"),
 	authoring_version: 1,
-	spec_version: 1,
+	spec_version: 900,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,

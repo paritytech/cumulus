@@ -14,13 +14,13 @@
 // limitations under the License.
 
 use super::{
-	AccountId, Balance, Balances, Call, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm,
-	Runtime, XcmpQueue,
+	AccountId, Balances, Call, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime,
+	WeightToFee, XcmpQueue,
 };
 use frame_support::{
-	match_type, parameter_types,
+	match_types, parameter_types,
 	traits::{EnsureOneOf, Everything, Nothing},
-	weights::{IdentityFee, Weight},
+	weights::Weight,
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
@@ -106,13 +106,11 @@ parameter_types! {
 	pub const MaxInstructions: u32 = 100;
 }
 
-match_type! {
+match_types! {
 	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
 		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
 	};
-}
-match_type! {
 	pub type ParentOrSiblings: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
 		MultiLocation { parents: 1, interior: X1(_) }
@@ -141,7 +139,7 @@ impl xcm_executor::Config for XcmConfig {
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-	type Trader = UsingComponents<IdentityFee<Balance>, RelayLocation, AccountId, Balances, ()>;
+	type Trader = UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ()>;
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;
@@ -197,6 +195,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 		EnsureXcm<IsMajorityOfBody<RelayLocation, ExecutiveBody>>,
 	>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
+	type WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight<Runtime>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {

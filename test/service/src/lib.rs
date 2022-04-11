@@ -42,14 +42,14 @@ use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 use parking_lot::Mutex;
 
 use frame_system_rpc_runtime_api::AccountNonceApi;
-use polkadot_primitives::v1::{CollatorPair, Hash as PHash, PersistedValidationData};
+use polkadot_primitives::v2::{CollatorPair, Hash as PHash, PersistedValidationData};
 use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_network::{config::TransportConfig, multiaddr, NetworkService};
 use sc_service::{
 	config::{
 		DatabaseSource, KeepBlocks, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
-		OffchainWorkerConfig, PruningMode, TransactionStorageMode, WasmExecutionMethod,
+		OffchainWorkerConfig, PruningMode, WasmExecutionMethod,
 	},
 	BasePath, ChainSpec, Configuration, Error as ServiceError, PartialComponents, Role,
 	RpcHandlers, TFullBackend, TFullClient, TaskManager,
@@ -658,7 +658,6 @@ pub fn node_config(
 		state_cache_child_ratio: None,
 		state_pruning: PruningMode::ArchiveAll,
 		keep_blocks: KeepBlocks::All,
-		transaction_storage: TransactionStorageMode::BlockBody,
 		chain_spec: spec,
 		wasm_method: WasmExecutionMethod::Interpreted,
 		// NOTE: we enforce the use of the native runtime to make the errors more debuggable

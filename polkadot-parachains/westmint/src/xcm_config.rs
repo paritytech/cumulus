@@ -15,14 +15,15 @@
 
 use super::{
 	AccountId, AssetId, Assets, Balance, Balances, Call, Event, Origin, ParachainInfo,
-	ParachainSystem, PolkadotXcm, Runtime, XcmpQueue,
+	ParachainSystem, PolkadotXcm, Runtime, WeightToFee, XcmpQueue,
 };
 use frame_support::{
-	match_type, parameter_types,
+	match_types, parameter_types,
 	traits::{Everything, PalletInfoAccess},
-	weights::{IdentityFee, Weight},
+	weights::Weight,
 };
 use pallet_xcm::XcmPassthrough;
+use parachains_common::impls::ToStakingPot;
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -127,7 +128,7 @@ parameter_types! {
 	pub const MaxInstructions: u32 = 100;
 }
 
-match_type! {
+match_types! {
 	pub type ParentOrParentsPlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
 		MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
@@ -156,7 +157,8 @@ impl xcm_executor::Config for XcmConfig {
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-	type Trader = UsingComponents<IdentityFee<Balance>, WestendLocation, AccountId, Balances, ()>;
+	type Trader =
+		UsingComponents<WeightToFee, WestendLocation, AccountId, Balances, ToStakingPot<Runtime>>;
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;
