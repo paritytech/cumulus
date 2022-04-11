@@ -41,7 +41,7 @@ pub use frame_support::{
 	traits::{EnsureOneOf, Everything, IsInVec, Randomness},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-		DispatchClass, IdentityFee, Weight,
+		ConstantMultiplier, DispatchClass, IdentityFee, Weight,
 	},
 	StorageValue,
 };
@@ -93,7 +93,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("test-parachain"),
 	impl_name: create_runtime_str!("test-parachain"),
 	authoring_version: 1,
-	spec_version: 14,
+	spec_version: 900,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -240,8 +240,8 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
-	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = IdentityFee<Balance>;
+	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type FeeMultiplierUpdate = ();
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 }

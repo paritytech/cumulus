@@ -23,6 +23,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod constants;
 mod contracts;
+mod weights;
 mod xcm_config;
 
 use sp_api::impl_runtime_apis;
@@ -43,10 +44,7 @@ use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{ConstU128, ConstU16, ConstU32, ConstU64, ConstU8, Everything},
-	weights::{
-		constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
-		DispatchClass,
-	},
+	weights::{ConstantMultiplier, DispatchClass},
 	PalletId,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
@@ -65,7 +63,9 @@ pub use sp_runtime::BuildStorage;
 use frame_support::weights::Weight;
 
 // Polkadot imports
-use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
+use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
+
+use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 /// The address format for describing accounts.
 pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
@@ -111,7 +111,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("canvas-kusama"),
 	impl_name: create_runtime_str!("canvas-kusama"),
 	authoring_version: 1,
-	spec_version: 16,
+	spec_version: 900,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -208,9 +208,9 @@ impl pallet_balances::Config for Runtime {
 impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction =
 		pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees<Runtime>>;
-	/// Relay Chain `TransactionByteFee` / 10
-	type TransactionByteFee = ConstU128<MILLICENTS>;
 	type WeightToFee = WeightToFee;
+	/// Relay Chain `TransactionByteFee` / 10
+	type LengthToFee = ConstantMultiplier<Balance, ConstU128<MILLICENTS>>;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 	type OperationalFeeMultiplier = ConstU8<5>;
 }

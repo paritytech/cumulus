@@ -25,6 +25,7 @@ use crate::{
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
+use frame_benchmarking_cli::BenchmarkCmd;
 use log::info;
 use parachains_common::{AuraId, StatemintAuraId};
 use polkadot_parachain::primitives::AccountIdConversion;
@@ -268,6 +269,33 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 		.ok_or_else(|| "Could not find wasm file in genesis state!".into())
 }
 
+/// Creates partial components for the runtimes that are supported by the benchmarks.
+macro_rules! construct_benchmark_partials {
+	($config:expr, |$partials:ident| $code:expr) => {
+		if $config.chain_spec.is_statemine() {
+			let $partials = new_partial::<statemine_runtime::RuntimeApi, _>(
+				&$config,
+				crate::service::statemint_build_import_queue::<_, AuraId>,
+			)?;
+			$code
+		} else if $config.chain_spec.is_westmint() {
+			let $partials = new_partial::<westmint_runtime::RuntimeApi, _>(
+				&$config,
+				crate::service::statemint_build_import_queue::<_, AuraId>,
+			)?;
+			$code
+		} else if $config.chain_spec.is_statemint() {
+			let $partials = new_partial::<statemint_runtime::RuntimeApi, _>(
+				&$config,
+				crate::service::statemint_build_import_queue::<_, StatemintAuraId>,
+			)?;
+			$code
+		} else {
+			Err("The chain is not supported".into())
+		}
+	};
+}
+
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
@@ -392,7 +420,7 @@ pub fn run() -> Result<()> {
 			})
 		},
 		Some(Subcommand::Revert(cmd)) => construct_async_run!(|components, cli, cmd, config| {
-			Ok(cmd.run(components.client, components.backend))
+			Ok(cmd.run(components.client, components.backend, None))
 		}),
 		Some(Subcommand::ExportGenesisState(params)) => {
 			let mut builder = sc_cli::LoggerBuilder::new("");
@@ -439,23 +467,43 @@ pub fn run() -> Result<()> {
 
 			Ok(())
 		},
-		Some(Subcommand::Benchmark(cmd)) =>
-			if cfg!(feature = "runtime-benchmarks") {
-				let runner = cli.create_runner(cmd)?;
-				if runner.config().chain_spec.is_statemine() {
-					runner.sync_run(|config| cmd.run::<Block, StatemineRuntimeExecutor>(config))
-				} else if runner.config().chain_spec.is_westmint() {
-					runner.sync_run(|config| cmd.run::<Block, WestmintRuntimeExecutor>(config))
-				} else if runner.config().chain_spec.is_statemint() {
-					runner.sync_run(|config| cmd.run::<Block, StatemintRuntimeExecutor>(config))
-				} else {
-					Err("Chain doesn't support benchmarking".into())
-				}
-			} else {
-				Err("Benchmarking wasn't enabled when building the node. \
+		Some(Subcommand::Benchmark(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+
+			// Switch on the concrete benchmark sub-command-
+			match cmd {
+				BenchmarkCmd::Pallet(cmd) =>
+					if cfg!(feature = "runtime-benchmarks") {
+						runner.sync_run(|config| {
+							if config.chain_spec.is_statemine() {
+								cmd.run::<Block, StatemineRuntimeExecutor>(config)
+							} else if config.chain_spec.is_westmint() {
+								cmd.run::<Block, WestmintRuntimeExecutor>(config)
+							} else if config.chain_spec.is_statemint() {
+								cmd.run::<Block, StatemintRuntimeExecutor>(config)
+							} else {
+								Err("Chain doesn't support benchmarking".into())
+							}
+						})
+					} else {
+						Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
-					.into())
-			},
+							.into())
+					},
+				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
+					construct_benchmark_partials!(config, |partials| cmd.run(partials.client))
+				}),
+				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
+					construct_benchmark_partials!(config, |partials| {
+						let db = partials.backend.expose_db();
+						let storage = partials.backend.expose_storage();
+
+						cmd.run(config, partials.client.clone(), db, storage)
+					})
+				}),
+				BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
+			}
+		},
 		Some(Subcommand::TryRuntime(cmd)) => {
 			if cfg!(feature = "try-runtime") {
 				// grab the task manager.
@@ -508,7 +556,7 @@ pub fn run() -> Result<()> {
 				let id = ParaId::from(para_id);
 
 				let parachain_account =
-					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
+					AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account(&id);
 
 				let state_version =
 					RelayChainCli::native_runtime_version(&config.chain_spec).state_version();
