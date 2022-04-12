@@ -2243,6 +2243,7 @@ dependencies = [
  "futures 0.3.21",
  "jsonrpc-core",
  "pallet-transaction-payment",
+ "parachains-common",
  "parity-scale-codec",
  "parking_lot 0.12.0",
  "polkadot-primitives",

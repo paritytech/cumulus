@@ -51,6 +51,7 @@ polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch
 
 # Cumulus
 cumulus-client-cli = { path = "../../client/cli" }
+parachains-common = { path = "../../polkadot-parachains/parachains-common" }
 cumulus-client-consensus-common = { path = "../../client/consensus/common" }
 cumulus-client-consensus-relay-chain = { path = "../../client/consensus/relay-chain" }
 cumulus-client-network = { path = "../../client/network" }

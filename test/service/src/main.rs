@@ -15,10 +15,13 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use clap::Parser;
+use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use cumulus_test_service::Keyring::*;
 use sc_network::config::MultiaddrWithPeerId;
-use std::{path::PathBuf, sync::Arc};
+use sp_core::{hexdisplay::HexDisplay, Encode};
+use sp_runtime::traits::Block;
+use std::{io::Write, path::PathBuf, sync::Arc};
 use url::Url;
 
 fn validate_relay_chain_url(arg: &str) -> Result<(), String> {
@@ -34,8 +37,63 @@ fn validate_relay_chain_url(arg: &str) -> Result<(), String> {
 	}
 }
 
+fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<Vec<u8>, String> {
+	let mut storage = chain_spec.build_storage()?;
+
+	storage
+		.top
+		.remove(sp_core::storage::well_known_keys::CODE)
+		.ok_or_else(|| "Could not find wasm file in genesis state!".into())
+}
+
+/// Command for exporting the genesis state of the parachain
+#[derive(Debug, Parser)]
+pub struct ExportGenesisStateCommand {
+	/// Output file name or stdout if unspecified.
+	#[clap(parse(from_os_str))]
+	pub output: Option<PathBuf>,
+
+	/// Write output in binary. Default is to write in hex.
+	#[clap(short, long)]
+	pub raw: bool,
+
+	/// The name of the chain for that the genesis state should be exported.
+	#[clap(long)]
+	pub chain: Option<String>,
+}
+
+/// Command for exporting the genesis wasm file.
+#[derive(Debug, Parser)]
+pub struct ExportGenesisWasmCommand {
+	/// Output file name or stdout if unspecified.
+	#[clap(parse(from_os_str))]
+	pub output: Option<PathBuf>,
+
+	/// Write output in binary. Default is to write in hex.
+	#[clap(short, long)]
+	pub raw: bool,
+
+	/// The name of the chain for that the genesis wasm file should be exported.
+	#[clap(long)]
+	pub chain: Option<String>,
+}
+
+#[derive(Debug, clap::Subcommand)]
+pub enum Subcommand {
+	/// Export the genesis state of the parachain.
+	#[clap(name = "export-genesis-state")]
+	ExportGenesisState(ExportGenesisStateCommand),
+
+	/// Export the genesis wasm of the parachain.
+	#[clap(name = "export-genesis-wasm")]
+	ExportGenesisWasm(ExportGenesisWasmCommand),
+}
+
 #[derive(Debug, Parser)]
 pub struct RunCmd {
+	#[clap(subcommand)]
+	pub subcommand: Option<Subcommand>,
+
 	/// The cumulus RunCmd inherents from sc_cli's
 	#[clap(flatten)]
 	base: sc_cli::RunCmd,
@@ -82,6 +140,49 @@ async fn main() -> Result<(), sc_service::Error> {
 	let mut builder = sc_cli::LoggerBuilder::new("");
 	builder.with_colors(true);
 	let _ = builder.init();
+
+	match args.subcommand {
+		Some(Subcommand::ExportGenesisState(params)) => {
+			let parachain_id = ParaId::from(args.parachain_id);
+			let spec = Box::new(cumulus_test_service::get_chain_spec(parachain_id)) as Box<_>;
+			let state_version = cumulus_test_service::runtime::VERSION.state_version();
+
+			let block: parachains_common::Block = generate_genesis_block(&spec, state_version)?;
+			let raw_header = block.header().encode();
+			let output_buf = if params.raw {
+				raw_header
+			} else {
+				format!("0x{:?}", HexDisplay::from(&block.header().encode())).into_bytes()
+			};
+
+			if let Some(output) = &params.output {
+				std::fs::write(output, output_buf)?;
+			} else {
+				std::io::stdout().write_all(&output_buf)?;
+			}
+
+			return Ok(())
+		},
+		Some(Subcommand::ExportGenesisWasm(params)) => {
+			let parachain_id = ParaId::from(args.parachain_id);
+			let spec = Box::new(cumulus_test_service::get_chain_spec(parachain_id)) as Box<_>;
+			let raw_wasm_blob = extract_genesis_wasm(&spec)?;
+			let output_buf = if params.raw {
+				raw_wasm_blob
+			} else {
+				format!("0x{:?}", HexDisplay::from(&raw_wasm_blob)).into_bytes()
+			};
+
+			if let Some(output) = &params.output {
+				std::fs::write(output, output_buf)?;
+			} else {
+				std::io::stdout().write_all(&output_buf)?;
+			}
+
+			return Ok(())
+		},
+		None => {},
+	}
 
 	let tokio_handle = tokio::runtime::Handle::current();
 	let para_id = ParaId::from(args.parachain_id);
