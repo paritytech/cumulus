@@ -62,7 +62,7 @@ pub struct RunCmd {
 	#[clap(short, long)]
 	disable_block_announcements: bool,
 
-	#[clap(long, default_value_t = 100)]
+	#[clap(long, default_value_t = 2000)]
 	parachain_id: u32,
 
 	#[clap(long)]
@@ -70,13 +70,16 @@ pub struct RunCmd {
 
 	#[clap(long)]
 	relay_chain_port: Option<u16>,
+
+	#[clap(long)]
+	relay_chain_spec: Option<PathBuf>,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), sc_service::Error> {
 	let args = RunCmd::parse();
 
-	let mut builder = sc_cli::LoggerBuilder::new("sub-libp2p=trace,info");
+	let mut builder = sc_cli::LoggerBuilder::new("");
 	builder.with_colors(true);
 	let _ = builder.init();
 
@@ -93,6 +96,10 @@ async fn main() -> Result<(), sc_service::Error> {
 	.connect_to_relay_chain_node_addresses(args.relay_chain_bootnodes)
 	.with_bootnodes(args.base.network_params.bootnodes)
 	.relay_chain_no_memory_address();
+
+	if let Some(path) = args.relay_chain_spec {
+		parachain_node_builder = parachain_node_builder.use_relay_chain_spec(path);
+	}
 
 	if args.base.network_params.node_key_params.node_key.is_some() {
 		let node_key = args

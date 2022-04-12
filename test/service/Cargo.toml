@@ -46,7 +46,7 @@ clap = { version = "3.1", features = ["derive"] }
 
 # Polkadot
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master", features = ["rococo-native", "polkadot-native"] }
 polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus

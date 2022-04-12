@@ -24,6 +24,7 @@ mod genesis;
 use std::{
 	future::Future,
 	net::{IpAddr, Ipv4Addr, SocketAddr},
+	path::PathBuf,
 	time::Duration,
 };
 use url::Url;
@@ -429,6 +430,7 @@ pub struct TestNodeBuilder {
 	node_key_config: NodeKeyConfig,
 	port: u16,
 	relay_chain_port: u16,
+	relay_chain_spec: Option<PathBuf>,
 }
 
 impl TestNodeBuilder {
@@ -457,6 +459,7 @@ impl TestNodeBuilder {
 			node_key_config: Default::default(),
 			port: 30333,
 			relay_chain_port: 30433,
+			relay_chain_spec: None,
 		}
 	}
 
@@ -464,6 +467,12 @@ impl TestNodeBuilder {
 	pub fn enable_collator(mut self) -> Self {
 		let collator_key = CollatorPair::generate().0;
 		self.collator_key = Some(collator_key);
+		self
+	}
+
+	/// Enable collator for this node.
+	pub fn use_relay_chain_spec(mut self, path: PathBuf) -> Self {
+		self.relay_chain_spec = Some(path);
 		self
 	}
 
@@ -650,6 +659,14 @@ impl TestNodeBuilder {
 
 		let collator_options =
 			CollatorOptions { relay_chain_rpc_url: self.relay_chain_full_node_url };
+
+		if let Some(path) = self.relay_chain_spec {
+			let chain_spec = Box::new(
+				polkadot_service::PolkadotChainSpec::from_json_file(path.clone())
+					.expect("Unable to load chainspec"),
+			) as Box<dyn polkadot_service::ChainSpec>;
+			relay_chain_config.chain_spec = chain_spec;
+		}
 
 		relay_chain_config.network.node_name =
 			format!("{} (relay chain)", relay_chain_config.network.node_name);
