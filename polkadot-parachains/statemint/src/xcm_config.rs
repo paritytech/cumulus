@@ -25,7 +25,7 @@ use frame_support::{
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
-	xcm_config::{DenyThenTry, DenyReserveTransferToRelayChain},
+	xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry},
 };
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
