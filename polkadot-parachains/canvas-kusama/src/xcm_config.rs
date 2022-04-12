@@ -24,7 +24,7 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
-use parachains_common::{DenyThenTry, IsReserveTransferToRelayChain};
+use parachains_common::xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry};
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -119,7 +119,7 @@ match_types! {
 }
 
 pub type Barrier = DenyThenTry<
-	IsReserveTransferToRelayChain,
+	DenyReserveTransferToRelayChain,
 	(
 		TakeWeightCredit,
 		AllowTopLevelPaidExecutionFrom<Everything>,

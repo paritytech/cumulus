@@ -16,6 +16,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod impls;
+pub mod xcm_config;
 pub use constants::*;
 use core::marker::PhantomData;
 use frame_support::weights::Weight;
@@ -120,14 +121,10 @@ pub mod opaque {
 //TODO: move DenyThenTry to polkadot's xcm module.
 /// Deny executing the xcm message if it matches any of the Deny filter regardless of anything else.
 /// If it passes the Deny, and matches one of the Allow cases then it is let through.
-pub struct DenyThenTry<Deny, Allow>
+pub struct DenyThenTry<Deny, Allow>(PhantomData<Deny>, PhantomData<Allow>)
 where
 	Deny: ShouldExecute,
-	Allow: ShouldExecute,
-{
-	_deny: PhantomData<Deny>,
-	_allow: PhantomData<Allow>,
-}
+	Allow: ShouldExecute;
 
 impl<Deny, Allow> ShouldExecute for DenyThenTry<Deny, Allow>
 where
@@ -148,8 +145,8 @@ where
 }
 
 // See issue #5233
-pub struct IsReserveTransferToRelayChain;
-impl ShouldExecute for IsReserveTransferToRelayChain {
+pub struct DenyReserveTransferToRelayChain;
+impl ShouldExecute for DenyReserveTransferToRelayChain {
 	fn should_execute<Call>(
 		_origin: &MultiLocation,
 		message: &mut Xcm<Call>,

@@ -23,7 +23,10 @@ use frame_support::{
 	weights::Weight,
 };
 use pallet_xcm::XcmPassthrough;
-use parachains_common::{impls::ToStakingPot, DenyThenTry, IsReserveTransferToRelayChain};
+use parachains_common::{
+	impls::ToStakingPot,
+	xcm_config::{DenyThenTry, DenyReserveTransferToRelayChain},
+};
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -140,7 +143,7 @@ match_types! {
 }
 
 pub type Barrier = DenyThenTry<
-	IsReserveTransferToRelayChain,
+	DenyReserveTransferToRelayChain,
 	(
 		TakeWeightCredit,
 		AllowTopLevelPaidExecutionFrom<Everything>,
