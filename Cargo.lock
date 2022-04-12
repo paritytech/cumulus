@@ -2122,7 +2122,7 @@ dependencies = [
  "cumulus-relay-chain-interface",
  "futures 0.3.21",
  "futures-timer",
- "jsonrpsee 0.9.0",
+ "jsonrpsee",
  "parity-scale-codec",
  "parking_lot 0.12.0",
  "polkadot-service",
@@ -3963,47 +3963,15 @@ dependencies = [
 
 [[package]]
 name = "jsonrpsee"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0d0b8cc1959f8c05256ace093b2317482da9127f1d9227564f47e7e6bf9bda8"
-dependencies = [
- "jsonrpsee-core 0.9.0",
- "jsonrpsee-http-client",
- "jsonrpsee-types 0.9.0",
- "jsonrpsee-ws-client 0.9.0",
-]
-
-[[package]]
-name = "jsonrpsee"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "91dc760c341fa81173f9a434931aaf32baad5552b0230cc6c93e8fb7eaad4c19"
 dependencies = [
  "jsonrpsee-core 0.10.1",
+ "jsonrpsee-http-client",
  "jsonrpsee-proc-macros",
  "jsonrpsee-types 0.10.1",
- "jsonrpsee-ws-client 0.10.1",
-]
-
-[[package]]
-name = "jsonrpsee-client-transport"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa370c2c717d798c3c0a315ae3f0a707a388c6963c11f9da7dbbe1d3f7392f5f"
-dependencies = [
- "futures 0.3.21",
- "http",
- "jsonrpsee-core 0.9.0",
- "jsonrpsee-types 0.9.0",
- "pin-project 1.0.10",
- "rustls-native-certs 0.6.1",
- "soketto",
- "thiserror",
- "tokio",
- "tokio-rustls 0.23.2",
- "tokio-util 0.6.9",
- "tracing",
- "webpki-roots 0.22.2",
+ "jsonrpsee-ws-client",
 ]
 
 [[package]]
@@ -4038,16 +4006,12 @@ dependencies = [
  "async-trait",
  "beef",
  "futures-channel",
- "futures-util",
  "hyper",
  "jsonrpsee-types 0.9.0",
- "rustc-hash",
  "serde",
  "serde_json",
  "soketto",
  "thiserror",
- "tokio",
- "tracing",
 ]
 
 [[package]]
@@ -4075,15 +4039,15 @@ dependencies = [
 
 [[package]]
 name = "jsonrpsee-http-client"
-version = "0.9.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d31b837273d09dd80051eefa57d337769dff6c3266108c43a3544ac7ffed9d68"
+checksum = "92709e0b8255691f4df954a0176b1cbc3312f151e7ed2e643812e8bd121f1d1c"
 dependencies = [
  "async-trait",
  "hyper",
  "hyper-rustls 0.23.0",
- "jsonrpsee-core 0.9.0",
- "jsonrpsee-types 0.9.0",
+ "jsonrpsee-core 0.10.1",
+ "jsonrpsee-types 0.10.1",
  "rustc-hash",
  "serde",
  "serde_json",
@@ -4134,22 +4098,11 @@ dependencies = [
 
 [[package]]
 name = "jsonrpsee-ws-client"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31b58983485b2b626c276f1eb367d62dae82132451b281072a7bfa536a33ddf3"
-dependencies = [
- "jsonrpsee-client-transport 0.9.0",
- "jsonrpsee-core 0.9.0",
- "jsonrpsee-types 0.9.0",
-]
-
-[[package]]
-name = "jsonrpsee-ws-client"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd66d18bab78d956df24dd0d2e41e4c00afbb818fda94a98264bdd12ce8506ac"
 dependencies = [
- "jsonrpsee-client-transport 0.10.1",
+ "jsonrpsee-client-transport",
  "jsonrpsee-core 0.10.1",
  "jsonrpsee-types 0.10.1",
 ]
@@ -9069,7 +9022,7 @@ version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#32af9fc9f18fc7ffff6bd6af08924b1bb0d3f185"
 dependencies = [
  "env_logger 0.9.0",
- "jsonrpsee 0.10.1",
+ "jsonrpsee",
  "log",
  "parity-scale-codec",
  "serde",
@@ -12350,7 +12303,6 @@ checksum = "9e99e1983e5d376cd8eb4b66604d2e99e79f5bd988c3055891dcd8c9e2604cc0"
 dependencies = [
  "bytes 1.1.0",
  "futures-core",
- "futures-io",
  "futures-sink",
  "log",
  "pin-project-lite 0.2.7",
@@ -12573,7 +12525,7 @@ version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#32af9fc9f18fc7ffff6bd6af08924b1bb0d3f185"
 dependencies = [
  "clap 3.1.8",
- "jsonrpsee 0.10.1",
+ "jsonrpsee",
  "log",
  "parity-scale-codec",
  "remote-externalities",
@@ -12604,9 +12556,9 @@ version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ee73e6e4924fe940354b8d4d98cad5231175d615cd855b758adc658c0aac6a0"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.3",
- "rand 0.8.5",
+ "rand 0.7.3",
  "static_assertions",
 ]
 
