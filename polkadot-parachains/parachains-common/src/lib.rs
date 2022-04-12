@@ -23,7 +23,7 @@ pub use opaque::*;
 pub use types::*;
 use xcm::{
 	opaque::v2::prelude::{DepositReserveAsset, TransferReserveAsset},
-	v2::{MultiLocation, Xcm},
+	v2::{Junctions, MultiLocation, Xcm},
 };
 use xcm_executor::traits::ShouldExecute;
 /// Common types of parachains.
@@ -159,8 +159,13 @@ impl ShouldExecute for IsReserveTransferToRelayChain {
 		if message.0.iter().any(|inst| {
 			matches!(
 				inst,
-				DepositReserveAsset { dest: MultiLocation { parents: 1, .. }, .. } |
-					TransferReserveAsset { dest: MultiLocation { parents: 1, .. }, .. }
+				DepositReserveAsset {
+					dest: MultiLocation { parents: 1, interior: Junctions::Here },
+					..
+				} | TransferReserveAsset {
+					dest: MultiLocation { parents: 1, interior: Junctions::Here },
+					..
+				}
 			)
 		}) {
 			Ok(())
