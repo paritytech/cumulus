@@ -23,7 +23,7 @@ use frame_support::{
 	weights::Weight,
 };
 use pallet_xcm::XcmPassthrough;
-use parachains_common::impls::ToStakingPot;
+use parachains_common::{impls::ToStakingPot, DenyThenTry, IsReserveTransferToRelayChain};
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -139,16 +139,19 @@ match_types! {
 	};
 }
 
-pub type Barrier = (
-	TakeWeightCredit,
-	AllowTopLevelPaidExecutionFrom<Everything>,
-	// Parent and its exec plurality get free execution
-	AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
-	// Expected responses are OK.
-	AllowKnownQueryResponses<PolkadotXcm>,
-	// Subscriptions for version tracking are OK.
-	AllowSubscriptionsFrom<ParentOrSiblings>,
-);
+pub type Barrier = DenyThenTry<
+	IsReserveTransferToRelayChain,
+	(
+		TakeWeightCredit,
+		AllowTopLevelPaidExecutionFrom<Everything>,
+		// Parent and its exec plurality get free execution
+		AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+		// Expected responses are OK.
+		AllowKnownQueryResponses<PolkadotXcm>,
+		// Subscriptions for version tracking are OK.
+		AllowSubscriptionsFrom<ParentOrSiblings>,
+	),
+>;
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
