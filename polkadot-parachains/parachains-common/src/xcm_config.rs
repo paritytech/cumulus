@@ -45,7 +45,7 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 					dest: MultiLocation { parents: 1, interior: Junctions::Here },
 					..
 				} | TransferReserveAsset {
-					dest: MultiLocation { parents: 1, interior: Junctions::Here },
+					dest: MultiLocation { parents: 1, interior: Here },
 					..
 				}
 			)
