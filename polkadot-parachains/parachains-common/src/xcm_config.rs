@@ -22,9 +22,7 @@ where
 		max_weight: Weight,
 		weight_credit: &mut Weight,
 	) -> Result<(), ()> {
-		if Deny::should_execute(origin, message, max_weight, weight_credit).is_ok() {
-			return Err(())
-		}
+		Deny::should_execute(origin, message, max_weight, weight_credit)?;
 		Allow::should_execute(origin, message, max_weight, weight_credit)
 	}
 }
@@ -41,18 +39,16 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 		if message.0.iter().any(|inst| {
 			matches!(
 				inst,
-				DepositReserveAsset {
-					dest: MultiLocation { parents: 1, interior: Here },
-					..
-				} | TransferReserveAsset {
-					dest: MultiLocation { parents: 1, interior: Here },
-					..
-				}
+				DepositReserveAsset { dest: MultiLocation { parents: 1, interior: Here }, .. } |
+					TransferReserveAsset {
+						dest: MultiLocation { parents: 1, interior: Here },
+						..
+					}
 			)
 		}) {
-			Ok(())
-		} else {
-			Err(())
+			return Err(()) // Deny
 		}
+		// Permit everything else
+		Ok(())
 	}
 }
