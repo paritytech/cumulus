@@ -38,3 +38,9 @@ jobs:
         with:
           command: fmt
           args: --all -- --check
+
+      - name: Taplo fmt
+        shell: bash
+        run: |
+          cargo install taplo-cli --locked
+          taplo fmt --check
