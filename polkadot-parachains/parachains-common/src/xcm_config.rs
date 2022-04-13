@@ -31,7 +31,7 @@ where
 pub struct DenyReserveTransferToRelayChain;
 impl ShouldExecute for DenyReserveTransferToRelayChain {
 	fn should_execute<Call>(
-		_origin: &MultiLocation,
+		origin: &MultiLocation,
 		message: &mut Xcm<Call>,
 		_max_weight: Weight,
 		_weight_credit: &mut Weight,
@@ -46,6 +46,13 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 					}
 			)
 		}) {
+			return Err(()) // Deny
+		}
+
+		// Don't allow reserve transfers to arrive from relay chain
+		if matches!(origin, MultiLocation { parents: 1, interior: Here }) &&
+			message.0.iter().any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
+		{
 			return Err(()) // Deny
 		}
 		// Permit everything else
