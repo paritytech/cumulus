@@ -39,11 +39,10 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 		if message.0.iter().any(|inst| {
 			matches!(
 				inst,
-				DepositReserveAsset { dest: MultiLocation { parents: 1, interior: Here }, .. } |
-					TransferReserveAsset {
-						dest: MultiLocation { parents: 1, interior: Here },
-						..
-					}
+				InitiateReserveWithdraw {
+					reserve: MultiLocation { parents: 1, interior: Here },
+					..
+				} | TransferReserveAsset { dest: MultiLocation { parents: 1, interior: Here }, .. }
 			)
 		}) {
 			return Err(()) // Deny
