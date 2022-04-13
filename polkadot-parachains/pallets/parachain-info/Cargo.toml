@@ -1,17 +1,19 @@
 [package]
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
 name = "parachain-info"
 version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2021"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.1.0", default-features = false, features = ["derive"] }
-serde = { version = "1.0.132", optional = true, features = ["derive"] }
+serde = { version = "1.0.132", features = ["derive"], optional = true }
 
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+# Substrate
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
+# Cumulus
 cumulus-primitives-core = { path = "../../../primitives/core", default-features = false }
 
 [features]
@@ -20,7 +22,7 @@ std = [
 	"codec/std",
 	"scale-info/std",
 	"serde",
-	"cumulus-primitives-core/std",
 	"frame-support/std",
 	"frame-system/std",
+	"cumulus-primitives-core/std",
 ]

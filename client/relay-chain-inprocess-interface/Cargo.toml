@@ -34,7 +34,6 @@ cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 
 [dev-dependencies]
-
 # Substrate
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
 

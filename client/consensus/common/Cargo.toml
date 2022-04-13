@@ -6,11 +6,11 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 
 [dependencies]
-futures = { version = "0.3.8", features = ["compat"] }
-codec = { package = "parity-scale-codec", version = "3.0.0", features = [ "derive" ] }
-tracing = "0.1.33"
 async-trait = "0.1.53"
+codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive"] }
 dyn-clone = "1.0.5"
+futures = { version = "0.3.8", features = ["compat"] }
+tracing = "0.1.33"
 
 # Substrate
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }

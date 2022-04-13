@@ -1,22 +1,25 @@
 [package]
-authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2021"
 name = "cumulus-pallet-xcm"
 version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2021"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.1.0", default-features = false, features = ["derive"] }
-serde = { version = "1.0.132", optional = true, features = ["derive"] }
+serde = { version = "1.0.132", features = ["derive"], optional = true }
 
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+# Substrate
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+# Polkadot
+xcm = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
 
+# Cumulus
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 
 [features]
@@ -25,9 +28,10 @@ std = [
 	"codec/std",
 	"scale-info/std",
 	"serde",
-	"cumulus-primitives-core/std",
-	"sp-std/std",
-	"sp-runtime/std",
 	"frame-support/std",
 	"frame-system/std",
+	"sp-std/std",
+	"sp-runtime/std",
+	"xcm/std",
+	"cumulus-primitives-core/std",
 ]

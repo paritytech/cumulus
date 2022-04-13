@@ -5,23 +5,26 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+async-trait = "0.1.53"
+codec = { package = "parity-scale-codec", version = "3.1.2" }
+derive_more = "0.99.2"
+futures = "0.3.21"
+jsonrpsee-core = "0.10.1"
+parking_lot = "0.12.0"
+thiserror = "1.0.30"
+
+# Substrate
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
+# Polkadot
 polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
+# Cumulus
 cumulus-primitives-core = { path = "../../primitives/core" }
-
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
-
-futures = "0.3.21"
-parking_lot = "0.12.0"
-derive_more = "0.99.2"
-async-trait = "0.1.53"
-thiserror = "1.0.30"
-jsonrpsee-core = "0.10.1"
-parity-scale-codec = "3.1.2"

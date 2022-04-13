@@ -4,27 +4,29 @@ name = "cumulus-relay-chain-rpc-interface"
 version = "0.1.0"
 edition = "2021"
 
-
 [dependencies]
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-
-cumulus-primitives-core = { path = "../../primitives/core" }
-cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
-
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-storage = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-
+async-trait = "0.1.53"
+backoff = { version = "0.4.0", features = ["tokio"] }
+codec = { package = "parity-scale-codec", version = "3.1.2" }
 futures = "0.3.21"
 futures-timer = "3.0.2"
-parity-scale-codec = "3.1.2"
-parking_lot = "0.12.0"
 jsonrpsee = { version = "0.10.1", features = ["client"] }
+parking_lot = "0.12.0"
 tracing = "0.1.33"
-async-trait = "0.1.53"
 url = "2.2.2"
-backoff = { version = "0.4.0", features = ["tokio"] }
+
+# Substrate
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-storage = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
+# Polkadot
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+
+# Cumulus
+cumulus-primitives-core = { path = "../../primitives/core" }
+cumulus-relay-chain-interface = { path = "../relay-chain-interface" }

@@ -1826,7 +1826,6 @@ name = "cumulus-pallet-aura-ext"
 version = "0.1.0"
 dependencies = [
  "cumulus-pallet-parachain-system",
- "frame-executive",
  "frame-support",
  "frame-system",
  "pallet-aura",
@@ -1855,7 +1854,6 @@ dependencies = [
  "sp-std",
  "sp-version",
  "xcm",
- "xcm-executor",
 ]
 
 [[package]]
@@ -5815,7 +5813,6 @@ dependencies = [
  "parity-scale-codec",
  "rand 0.8.5",
  "scale-info",
- "serde",
  "sp-consensus-aura",
  "sp-core",
  "sp-io",
@@ -6693,7 +6690,6 @@ dependencies = [
  "pallet-balances",
  "pallet-collator-selection",
  "pallet-session",
- "pallet-sudo",
  "pallet-template",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -6728,7 +6724,6 @@ dependencies = [
 name = "parachains-common"
 version = "1.0.0"
 dependencies = [
- "frame-executive",
  "frame-support",
  "frame-system",
  "pallet-asset-tx-payment",
@@ -6738,7 +6733,6 @@ dependencies = [
  "pallet-collator-selection",
  "parity-scale-codec",
  "polkadot-primitives",
- "polkadot-runtime-common",
  "scale-info",
  "sp-consensus-aura",
  "sp-core",
@@ -10702,11 +10696,9 @@ dependencies = [
 name = "shell-runtime"
 version = "0.1.0"
 dependencies = [
- "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-primitives-core",
- "cumulus-primitives-utility",
  "frame-executive",
  "frame-support",
  "frame-system",
@@ -11618,7 +11610,6 @@ dependencies = [
  "cumulus-pallet-session-benchmarking",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
- "cumulus-ping",
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
@@ -11641,7 +11632,6 @@ dependencies = [
  "pallet-multisig",
  "pallet-proxy",
  "pallet-session",
- "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
@@ -11685,7 +11675,6 @@ dependencies = [
  "cumulus-pallet-session-benchmarking",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
- "cumulus-ping",
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
@@ -11707,7 +11696,6 @@ dependencies = [
  "pallet-multisig",
  "pallet-proxy",
  "pallet-session",
- "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
@@ -13202,7 +13190,6 @@ dependencies = [
  "cumulus-pallet-session-benchmarking",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
- "cumulus-ping",
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
