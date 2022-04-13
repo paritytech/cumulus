@@ -87,12 +87,17 @@ match_types! {
 	};
 }
 
-pub type Barrier = (
+#[path = "../../../polkadot-parachains/parachains-common/src/xcm_config.rs"]
+mod xcm_common_config;
+use xcm_common_config::{DenyThenTry,DenyReserveTransferToRelayChain};
+
+pub type Barrier = DenyThenTry<
+	DenyReserveTransferToRelayChain,(
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<Everything>,
 	AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
 	// ^^^ Parent and its exec plurality get free execution
-);
+)>;
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
