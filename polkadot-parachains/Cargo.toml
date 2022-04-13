@@ -15,19 +15,9 @@ clap = { version = "3.1", features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 futures = { version = "0.3.1", features = ["compat"] }
 hex-literal = "0.3.4"
+jsonrpc-core = "18.0.0"
 log = "0.4.16"
 serde = { version = "1.0.132", features = ["derive"] }
-
-# Local
-canvas-kusama-runtime = { path = "canvas-kusama" }
-jsonrpc-core = "18.0.0"
-parachains-common = { path = "parachains-common" }
-rococo-parachain-runtime = { path = "rococo-parachain" }
-seedling-runtime = { path = "seedling" }
-shell-runtime = { path = "shell" }
-statemine-runtime = { path = "statemine" }
-statemint-runtime = { path = "statemint" }
-westmint-runtime = { path = "westmint" }
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -84,6 +74,16 @@ cumulus-primitives-parachain-inherent = { path = "../primitives/parachain-inhere
 cumulus-relay-chain-inprocess-interface = { path = "../client/relay-chain-inprocess-interface" }
 cumulus-relay-chain-interface = { path = "../client/relay-chain-interface" }
 cumulus-relay-chain-rpc-interface = { path = "../client/relay-chain-rpc-interface" }
+
+# Local
+canvas-kusama-runtime = { path = "canvas-kusama" }
+parachains-common = { path = "parachains-common" }
+rococo-parachain-runtime = { path = "rococo-parachain" }
+seedling-runtime = { path = "seedling" }
+shell-runtime = { path = "shell" }
+statemine-runtime = { path = "statemine" }
+statemint-runtime = { path = "statemint" }
+westmint-runtime = { path = "westmint" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
