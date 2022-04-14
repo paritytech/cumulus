@@ -57,9 +57,8 @@ pub struct ExportGenesisStateCommand {
 	#[clap(short, long)]
 	pub raw: bool,
 
-	/// The name of the chain for that the genesis state should be exported.
-	#[clap(long)]
-	pub chain: Option<String>,
+	#[clap(long, default_value_t = 2000)]
+	pub parachain_id: u32,
 }
 
 /// Command for exporting the genesis wasm file.
@@ -73,9 +72,8 @@ pub struct ExportGenesisWasmCommand {
 	#[clap(short, long)]
 	pub raw: bool,
 
-	/// The name of the chain for that the genesis wasm file should be exported.
-	#[clap(long)]
-	pub chain: Option<String>,
+	#[clap(long, default_value_t = 2000)]
+	pub parachain_id: u32,
 }
 
 #[derive(Debug, clap::Subcommand)]
@@ -143,7 +141,7 @@ async fn main() -> Result<(), sc_service::Error> {
 
 	match args.subcommand {
 		Some(Subcommand::ExportGenesisState(params)) => {
-			let parachain_id = ParaId::from(args.parachain_id);
+			let parachain_id = ParaId::from(params.parachain_id);
 			let spec = Box::new(cumulus_test_service::get_chain_spec(parachain_id)) as Box<_>;
 			let state_version = cumulus_test_service::runtime::VERSION.state_version();
 
@@ -164,7 +162,7 @@ async fn main() -> Result<(), sc_service::Error> {
 			return Ok(())
 		},
 		Some(Subcommand::ExportGenesisWasm(params)) => {
-			let parachain_id = ParaId::from(args.parachain_id);
+			let parachain_id = ParaId::from(params.parachain_id);
 			let spec = Box::new(cumulus_test_service::get_chain_spec(parachain_id)) as Box<_>;
 			let raw_wasm_blob = extract_genesis_wasm(&spec)?;
 			let output_buf = if params.raw {
