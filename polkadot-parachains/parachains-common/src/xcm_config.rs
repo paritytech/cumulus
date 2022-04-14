@@ -1,5 +1,5 @@
 use core::marker::PhantomData;
-use frame_support::weights::Weight;
+use frame_support::{log, weights::Weight};
 use xcm::latest::prelude::*;
 use xcm_executor::traits::ShouldExecute;
 
@@ -42,17 +42,24 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 				InitiateReserveWithdraw {
 					reserve: MultiLocation { parents: 1, interior: Here },
 					..
-				} | TransferReserveAsset { dest: MultiLocation { parents: 1, interior: Here }, .. }
+				} | DepositReserveAsset { dest: MultiLocation { parents: 1, interior: Here }, .. } |
+					TransferReserveAsset {
+						dest: MultiLocation { parents: 1, interior: Here },
+						..
+					}
 			)
 		}) {
 			return Err(()) // Deny
 		}
 
-		// Don't allow reserve transfers to arrive from relay chain
+		// allow reserve transfers to arrive from relay chain
 		if matches!(origin, MultiLocation { parents: 1, interior: Here }) &&
 			message.0.iter().any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
 		{
-			return Err(()) // Deny
+			log::info!(
+				target: "runtime::xcm-barier",
+				"Unexpected Reserve Assets Deposited on the relay chain",
+			);
 		}
 		// Permit everything else
 		Ok(())
