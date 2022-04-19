@@ -680,10 +680,6 @@ impl TestNodeBuilder {
 			relay_chain_config.network.public_addresses = vec![Multiaddr::empty()
 				.with(Protocol::Ip4([0, 0, 0, 0].into()))
 				.with(Protocol::Tcp(self.relay_chain_port))];
-			println!(
-				"Using real network!\nListen address of relay chain: {:?}",
-				relay_chain_config.network
-			);
 		}
 
 		let multiaddr = parachain_config.network.listen_addresses[0].clone();

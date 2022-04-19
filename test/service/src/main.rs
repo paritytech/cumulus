@@ -121,7 +121,7 @@ pub struct RunCmd {
 	#[clap(long, default_value_t = 2000)]
 	parachain_id: u32,
 
-	#[clap(long)]
+	#[clap(long, value_name = "ADDR", multiple_values(true))]
 	relay_chain_bootnodes: Vec<MultiaddrWithPeerId>,
 
 	#[clap(long)]
@@ -135,10 +135,12 @@ pub struct RunCmd {
 async fn main() -> Result<(), sc_service::Error> {
 	let args = RunCmd::parse();
 
+	// let mut builder = sc_cli::LoggerBuilder::new("parachain::collation-generation=trace,info");
 	let mut builder = sc_cli::LoggerBuilder::new("");
 	builder.with_colors(true);
 	let _ = builder.init();
 
+	// Check for subcommands
 	match args.subcommand {
 		Some(Subcommand::ExportGenesisState(params)) => {
 			let parachain_id = ParaId::from(params.parachain_id);
@@ -182,6 +184,10 @@ async fn main() -> Result<(), sc_service::Error> {
 		None => {},
 	}
 
+	build_node_and_run(args).await
+}
+
+async fn build_node_and_run(args: RunCmd) -> Result<(), sc_service::Error> {
 	let tokio_handle = tokio::runtime::Handle::current();
 	let para_id = ParaId::from(args.parachain_id);
 
