@@ -71,7 +71,7 @@ impl<B, CIDP, W> Clone for AuraConsensus<B, CIDP, W> {
 	}
 }
 
-impl<B, CIDP, W> AuraConsensus<B, CIDP, W>
+impl<B, CIDP> AuraConsensus<B, CIDP, ()>
 where
 	B: BlockT,
 	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)> + 'static,
@@ -137,7 +137,14 @@ where
 			_phantom: PhantomData,
 		})
 	}
+}
 
+impl<B, CIDP, W> AuraConsensus<B, CIDP, W>
+where
+	B: BlockT,
+	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)> + 'static,
+	CIDP::InherentDataProviders: InherentDataProviderExt,
+{
 	/// Create the inherent data.
 	///
 	/// Returns the created inherent data and the inherent data providers used.
