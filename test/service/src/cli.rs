@@ -7,30 +7,41 @@ use sc_cli::{
 use sc_service::BasePath;
 use std::{net::SocketAddr, path::PathBuf};
 
+#[derive(Debug, Parser)]
+pub struct ExportGenesisStateCommand {
+	/// Output file name or stdout if unspecified.
+	#[clap(parse(from_os_str))]
+	pub output: Option<PathBuf>,
+
+	/// Write output in binary. Default is to write in hex.
+	#[clap(short, long)]
+	pub raw: bool,
+
+	#[clap(default_value_t = 2000u32)]
+	pub parachain_id: u32,
+}
+
+/// Command for exporting the genesis wasm file.
+#[derive(Debug, Parser)]
+pub struct ExportGenesisWasmCommand {
+	/// Output file name or stdout if unspecified.
+	#[clap(parse(from_os_str))]
+	pub output: Option<PathBuf>,
+
+	/// Write output in binary. Default is to write in hex.
+	#[clap(short, long)]
+	pub raw: bool,
+
+	#[clap(default_value_t = 2000u32)]
+	pub parachain_id: u32,
+}
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-	ExportGenesisWasm {
-		#[clap(parse(from_os_str))]
-		output: Option<PathBuf>,
+	#[clap(name = "export-genesis-wasm")]
+	ExportGenesisWasm(ExportGenesisWasmCommand),
 
-		/// Write output in binary. Default is to write in hex.
-		#[clap(short, long)]
-		raw: bool,
-
-		#[clap(default_value_t = 2000u32)]
-		parachain_id: u32,
-	},
-	ExportGenesisState {
-		#[clap(parse(from_os_str))]
-		output: Option<PathBuf>,
-
-		/// Write output in binary. Default is to write in hex.
-		#[clap(short, long)]
-		raw: bool,
-
-		#[clap(default_value_t = 2000u32)]
-		parachain_id: u32,
-	},
+	#[clap(name = "export-genesis-state")]
+	ExportGenesisState(ExportGenesisStateCommand),
 }
 
 #[derive(Debug, Parser)]

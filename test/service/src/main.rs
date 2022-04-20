@@ -46,24 +46,24 @@ fn main() -> Result<(), sc_cli::Error> {
 	let cli = TestCollatorCli::parse();
 
 	match &cli.subcommand {
-		Some(Commands::ExportGenesisState { output, raw, parachain_id }) => {
+		Some(Commands::ExportGenesisState(params)) => {
 			let mut builder = sc_cli::LoggerBuilder::new("");
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
 			let _ = builder.init();
 
-			let parachain_id = ParaId::from(*parachain_id);
+			let parachain_id = ParaId::from(params.parachain_id);
 			let spec = Box::new(cumulus_test_service::get_chain_spec(parachain_id)) as Box<_>;
 			let state_version = cumulus_test_service::runtime::VERSION.state_version();
 
 			let block: parachains_common::Block = generate_genesis_block(&spec, state_version)?;
 			let raw_header = block.header().encode();
-			let output_buf = if *raw {
+			let output_buf = if params.raw {
 				raw_header
 			} else {
 				format!("0x{:?}", HexDisplay::from(&block.header().encode())).into_bytes()
 			};
 
-			if let Some(output) = &output {
+			if let Some(output) = &params.output {
 				std::fs::write(output, output_buf)?;
 			} else {
 				std::io::stdout().write_all(&output_buf)?;
@@ -71,21 +71,21 @@ fn main() -> Result<(), sc_cli::Error> {
 
 			Ok(())
 		},
-		Some(Commands::ExportGenesisWasm { output, raw, parachain_id }) => {
+		Some(Commands::ExportGenesisWasm(params)) => {
 			let mut builder = sc_cli::LoggerBuilder::new("");
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
 			let _ = builder.init();
 
-			let parachain_id = ParaId::from(*parachain_id);
+			let parachain_id = ParaId::from(params.parachain_id);
 			let spec = Box::new(cumulus_test_service::get_chain_spec(parachain_id)) as Box<_>;
 			let raw_wasm_blob = extract_genesis_wasm(&spec)?;
-			let output_buf = if *raw {
+			let output_buf = if params.raw {
 				raw_wasm_blob
 			} else {
 				format!("0x{:?}", HexDisplay::from(&raw_wasm_blob)).into_bytes()
 			};
 
-			if let Some(output) = &output {
+			if let Some(output) = &params.output {
 				std::fs::write(output, output_buf)?;
 			} else {
 				std::io::stdout().write_all(&output_buf)?;
