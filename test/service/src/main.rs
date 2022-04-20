@@ -16,25 +16,18 @@
 
 use clap::Parser;
 use cumulus_client_service::genesis::generate_genesis_block;
-use cumulus_primitives_core::ParaId;
-use cumulus_test_service::Keyring::*;
-use sc_network::config::MultiaddrWithPeerId;
-use sp_core::{hexdisplay::HexDisplay, Encode};
+use cumulus_primitives_core::{relay_chain::v2::CollatorPair, ParaId};
+use polkadot_collator::{Cli, RelayChainCli, Subcommand};
+use polkadot_service::runtime_traits::AccountIdConversion;
+use sc_cli::{CliConfiguration, SubstrateCli};
+use sp_core::{hexdisplay::HexDisplay, Encode, Pair};
 use sp_runtime::traits::Block;
-use std::{io::Write, path::PathBuf, sync::Arc};
-use url::Url;
+use std::io::Write;
 
-fn validate_relay_chain_url(arg: &str) -> Result<(), String> {
-	let url = Url::parse(arg).map_err(|e| e.to_string())?;
-
-	if url.scheme() == "ws" {
-		Ok(())
-	} else {
-		Err(format!(
-			"'{}' URL scheme not supported. Only websocket RPC is currently supported",
-			url.scheme()
-		))
-	}
+#[derive(Debug, Parser)]
+pub struct TestCollatorCli {
+	#[clap(flatten)]
+	pub cli: Cli,
 }
 
 fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<Vec<u8>, String> {
@@ -46,108 +39,23 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 		.ok_or_else(|| "Could not find wasm file in genesis state!".into())
 }
 
-/// Command for exporting the genesis state of the parachain
-#[derive(Debug, Parser)]
-pub struct ExportGenesisStateCommand {
-	/// Output file name or stdout if unspecified.
-	#[clap(parse(from_os_str))]
-	pub output: Option<PathBuf>,
+fn main() -> Result<(), sc_cli::Error> {
+	let args = TestCollatorCli::parse();
 
-	/// Write output in binary. Default is to write in hex.
-	#[clap(short, long)]
-	pub raw: bool,
+	let cli = args.cli;
 
-	#[clap(long, default_value_t = 2000)]
-	pub parachain_id: u32,
-}
-
-/// Command for exporting the genesis wasm file.
-#[derive(Debug, Parser)]
-pub struct ExportGenesisWasmCommand {
-	/// Output file name or stdout if unspecified.
-	#[clap(parse(from_os_str))]
-	pub output: Option<PathBuf>,
-
-	/// Write output in binary. Default is to write in hex.
-	#[clap(short, long)]
-	pub raw: bool,
-
-	#[clap(long, default_value_t = 2000)]
-	pub parachain_id: u32,
-}
-
-#[derive(Debug, clap::Subcommand)]
-pub enum Subcommand {
-	/// Export the genesis state of the parachain.
-	#[clap(name = "export-genesis-state")]
-	ExportGenesisState(ExportGenesisStateCommand),
-
-	/// Export the genesis wasm of the parachain.
-	#[clap(name = "export-genesis-wasm")]
-	ExportGenesisWasm(ExportGenesisWasmCommand),
-}
-
-#[derive(Debug, Parser)]
-pub struct RunCmd {
-	#[clap(subcommand)]
-	pub subcommand: Option<Subcommand>,
-
-	/// The cumulus RunCmd inherents from sc_cli's
-	#[clap(flatten)]
-	base: sc_cli::RunCmd,
-
-	/// Run node as collator.
-	///
-	/// Note that this is the same as running with `--validator`.
-	#[clap(long, conflicts_with = "validator")]
-	collator: bool,
-
-	/// EXPERIMENTAL: Specify an URL to a relay chain full node to communicate with.
-	#[clap(
-		long,
-		parse(try_from_str),
-		validator = validate_relay_chain_url,
-		conflicts_with_all = &["alice", "bob", "charlie", "dave", "eve", "ferdie", "one", "two"])
-	]
-	relay_chain_rpc_url: Option<Url>,
-
-	#[clap(short, long)]
-	use_null_consensus: bool,
-
-	/// Do not announce blocks
-	#[clap(short, long)]
-	disable_block_announcements: bool,
-
-	#[clap(long, default_value_t = 2000)]
-	parachain_id: u32,
-
-	#[clap(long, value_name = "ADDR", multiple_values(true))]
-	relay_chain_bootnodes: Vec<MultiaddrWithPeerId>,
-
-	#[clap(long)]
-	relay_chain_port: Option<u16>,
-
-	#[clap(long)]
-	relay_chain_spec: Option<PathBuf>,
-}
-
-#[tokio::main]
-async fn main() -> Result<(), sc_service::Error> {
-	let args = RunCmd::parse();
-
-	// let mut builder = sc_cli::LoggerBuilder::new("parachain::collation-generation=trace,info");
-	let mut builder = sc_cli::LoggerBuilder::new("");
-	builder.with_colors(true);
-	let _ = builder.init();
-
-	// Check for subcommands
-	match args.subcommand {
+	match &cli.subcommand {
 		Some(Subcommand::ExportGenesisState(params)) => {
-			let parachain_id = ParaId::from(params.parachain_id);
+			let mut builder = sc_cli::LoggerBuilder::new("");
+			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
+			let _ = builder.init();
+
+			let parachain_id = ParaId::from(2000u32);
 			let spec = Box::new(cumulus_test_service::get_chain_spec(parachain_id)) as Box<_>;
 			let state_version = cumulus_test_service::runtime::VERSION.state_version();
 
-			let block: parachains_common::Block = generate_genesis_block(&spec, state_version)?;
+			let block: polkadot_collator::service::Block =
+				generate_genesis_block(&spec, state_version)?;
 			let raw_header = block.header().encode();
 			let output_buf = if params.raw {
 				raw_header
@@ -161,10 +69,14 @@ async fn main() -> Result<(), sc_service::Error> {
 				std::io::stdout().write_all(&output_buf)?;
 			}
 
-			return Ok(())
+			Ok(())
 		},
 		Some(Subcommand::ExportGenesisWasm(params)) => {
-			let parachain_id = ParaId::from(params.parachain_id);
+			let mut builder = sc_cli::LoggerBuilder::new("");
+			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
+			let _ = builder.init();
+
+			let parachain_id = ParaId::from(2000u32);
 			let spec = Box::new(cumulus_test_service::get_chain_spec(parachain_id)) as Box<_>;
 			let raw_wasm_blob = extract_genesis_wasm(&spec)?;
 			let output_buf = if params.raw {
@@ -179,81 +91,79 @@ async fn main() -> Result<(), sc_service::Error> {
 				std::io::stdout().write_all(&output_buf)?;
 			}
 
-			return Ok(())
+			Ok(())
 		},
-		None => {},
+		Some(_) => {
+			panic!("Not supported");
+		},
+		None => {
+			let mut builder = sc_cli::LoggerBuilder::new("");
+			builder.with_colors(true);
+			let _ = builder.init();
+
+			let collator_options = cli.run.collator_options();
+			let tokio_runtime = sc_cli::build_runtime()?;
+			let tokio_handle = tokio_runtime.handle();
+			let mut config = cli
+				.run
+				.normalize()
+				.create_configuration(&cli, tokio_handle.clone())
+				.expect("Should be able to generate config");
+
+			let parachain_id = ParaId::from(2000u32);
+			config.chain_spec =
+				Box::new(cumulus_test_service::get_chain_spec(parachain_id)) as Box<_>;
+
+			let polkadot_cli = RelayChainCli::new(
+				&config,
+				[RelayChainCli::executable_name().to_string()]
+					.iter()
+					.chain(cli.relaychain_args.iter()),
+			);
+
+			let parachain_account =
+				AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account(
+					&parachain_id,
+				);
+
+			let state_version =
+				RelayChainCli::native_runtime_version(&config.chain_spec).state_version();
+
+			let block: polkadot_collator::service::Block =
+				generate_genesis_block(&config.chain_spec, state_version)
+					.map_err(|e| format!("{:?}", e))?;
+			let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
+
+			let tokio_handle = config.tokio_handle.clone();
+			let polkadot_config =
+				SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
+					.map_err(|err| format!("Relay chain argument error: {}", err))?;
+
+			tracing::info!("Parachain id: {:?}", parachain_id);
+			tracing::info!("Parachain Account: {}", parachain_account);
+			tracing::info!("Parachain genesis state: {}", genesis_state);
+			tracing::info!(
+				"Is collating: {}",
+				if config.role.is_authority() { "yes" } else { "no" }
+			);
+
+			let collator_key = Some(CollatorPair::generate().0);
+
+			let (mut task_manager, client, network, rpc_handlers, transaction_pool) = tokio_runtime
+				.block_on(cumulus_test_service::start_node_impl(
+					config,
+					collator_key,
+					polkadot_config,
+					parachain_id,
+					None,
+					|_| Ok(Default::default()),
+					cumulus_test_service::Consensus::RelayChain,
+					collator_options,
+				))
+				.expect("could not create Cumulus test service");
+
+			tokio_runtime.block_on(task_manager.future());
+			Ok(())
+		},
 	}
-
-	build_node_and_run(args).await
-}
-
-async fn build_node_and_run(args: RunCmd) -> Result<(), sc_service::Error> {
-	let tokio_handle = tokio::runtime::Handle::current();
-	let para_id = ParaId::from(args.parachain_id);
-
-	let keyring = args.base.get_keyring();
-	let mut parachain_node_builder = cumulus_test_service::TestNodeBuilder::new(
-		para_id,
-		tokio_handle.clone(),
-		keyring.unwrap_or(Alice),
-	)
-	.no_memory_address()
-	.connect_to_relay_chain_node_addresses(args.relay_chain_bootnodes)
-	.with_bootnodes(args.base.network_params.bootnodes)
-	.relay_chain_no_memory_address();
-
-	if let Some(path) = args.relay_chain_spec {
-		parachain_node_builder = parachain_node_builder.use_relay_chain_spec(path);
-	}
-
-	if args.base.network_params.node_key_params.node_key.is_some() {
-		let node_key = args
-			.base
-			.network_params
-			.node_key_params
-			.node_key(&PathBuf::new())
-			.expect("Invalid node key");
-		parachain_node_builder = parachain_node_builder.use_node_key_config(node_key);
-	}
-
-	if let Some(port) = args.base.network_params.port {
-		parachain_node_builder = parachain_node_builder.use_port(port);
-	}
-
-	if let Some(port) = args.relay_chain_port {
-		parachain_node_builder = parachain_node_builder.use_relay_chain_port(port);
-	}
-
-	if args.disable_block_announcements {
-		parachain_node_builder = parachain_node_builder.wrap_announce_block(|_| {
-			// Never announce any block
-			Arc::new(|_, _| {})
-		});
-	}
-
-	if !args.base.network_params.reserved_nodes.is_empty() {
-		parachain_node_builder = parachain_node_builder
-			.connect_to_parachain_nodes_address(args.base.network_params.reserved_nodes)
-	}
-
-	if args.collator || args.base.validator {
-		parachain_node_builder = parachain_node_builder.enable_collator();
-	}
-
-	if args.use_null_consensus {
-		parachain_node_builder = parachain_node_builder.use_null_consensus();
-	}
-
-	if args.base.network_params.reserved_only {
-		parachain_node_builder =
-			parachain_node_builder.exclusively_connect_to_registered_parachain_nodes();
-	}
-
-	if let Some(url) = args.relay_chain_rpc_url {
-		parachain_node_builder = parachain_node_builder.use_external_relay_chain_node_at_url(url);
-	}
-
-	let mut node = parachain_node_builder.build().await;
-
-	node.task_manager.future().await
 }
