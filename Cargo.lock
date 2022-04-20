@@ -2274,6 +2274,7 @@ dependencies = [
  "sp-runtime",
  "sp-state-machine",
  "sp-timestamp",
+ "sp-tracing",
  "sp-trie",
  "substrate-test-client",
  "substrate-test-utils",
