@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 
+[[bin]]
+name = "test-collator"
+path = "src/main.rs"
+
 [dependencies]
 async-trait = "0.1.53"
 codec = { package = "parity-scale-codec", version = "3.0.0" }
@@ -47,7 +51,7 @@ tracing = "0.1.25"
 
 # Polkadot
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master", features = ["rococo-native", "polkadot-native"] }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
