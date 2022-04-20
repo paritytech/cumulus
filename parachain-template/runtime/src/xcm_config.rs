@@ -141,7 +141,7 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 		if matches!(origin, MultiLocation { parents: 1, interior: Here }) &&
 			message.0.iter().any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
 		{
-			log::info!(
+			log::warn!(
 				target: "xcm::barriers",
 				"Unexpected ReserveAssetDeposited from the relay chain",
 			);
