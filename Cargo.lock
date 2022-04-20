@@ -2246,6 +2246,7 @@ dependencies = [
  "parachains-common",
  "parity-scale-codec",
  "parking_lot 0.12.0",
+ "polkadot-cli",
  "polkadot-primitives",
  "polkadot-service",
  "polkadot-test-service",
@@ -2260,6 +2261,7 @@ dependencies = [
  "sc-network",
  "sc-rpc",
  "sc-service",
+ "sc-telemetry",
  "sc-tracing",
  "sc-transaction-pool",
  "sc-transaction-pool-api",
@@ -2272,11 +2274,11 @@ dependencies = [
  "sp-runtime",
  "sp-state-machine",
  "sp-timestamp",
- "sp-tracing",
  "sp-trie",
  "substrate-test-client",
  "substrate-test-utils",
  "tokio",
+ "tracing",
  "url 2.2.2",
 ]
 
