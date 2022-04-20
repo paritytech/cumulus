@@ -220,12 +220,12 @@ benchmarks:
     - rm -rf .git/config
     - git config --global user.email "${GITHUB_EMAIL}"
     - git config --global user.name "${GITHUB_USER}"
-    - git config remote.origin.url "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com:/paritytech/${CI_PROJECT_NAME}.git"
+    - git config remote.origin.url "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/paritytech/${CI_PROJECT_NAME}.git"
     - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
     # push results to github
     - git checkout -b $BRANCHNAME
     - git add polkadot-parachains/*
-    - git commit -m "[benchmarks] pr with wieghts"
+    - git commit -m "[benchmarks] pr with weights"
     - git push origin $BRANCHNAME
     # create PR
     - curl -u ${GITHUB_USER}:${GITHUB_TOKEN}
