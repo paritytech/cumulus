@@ -60,6 +60,7 @@ variables:
       when: manual
     - if: $CI_COMMIT_REF_NAME =~ /^release-parachains-v[0-9]+\.[0-9]+.*$/              # i.e. release-parachains-v1.0, release-parachains-v2.1rc1
       when: manual
+    - if: $CI_COMMIT_REF_NAME == "as-fix-bench-ci"                                     # TODO: temporary, remove me after test
 
 # run benchmarks only on release-parachains-v* branch
 .benchmarks-refs:                  &benchmarks-refs
@@ -67,6 +68,7 @@ variables:
     - if: $CI_PIPELINE_SOURCE == "web" &&
           $CI_COMMIT_REF_NAME =~ /^release-parachains-v[0-9]+\.[0-9]+.*$/              # run from web and on branch release-parachains-v* (i.e. 1.0, 2.1rc1)
     - if: $CI_COMMIT_REF_NAME =~ /^release-parachains-v[0-9]+\.[0-9]+.*$/              # i.e. release-parachains-v1.0, release-parachains-v2.1rc1
+    - if: $CI_COMMIT_REF_NAME == "as-fix-bench-ci"                                     # TODO: temporary, remove me after test
 
 .docker-env:                       &docker-env
   image:                           "${CI_IMAGE}"
