@@ -542,7 +542,7 @@ pub mod pallet {
 	/// This will be cleared in `on_initialize` of each new block.
 	#[pallet::storage]
 	pub(super) type HrmpWatermark<T: Config> =
-		StorageValue<_, relay_chain::v1::BlockNumber, ValueQuery>;
+		StorageValue<_, relay_chain::v2::BlockNumber, ValueQuery>;
 
 	/// HRMP messages that were sent in a block.
 	///
@@ -790,7 +790,7 @@ impl<T: Config> Pallet<T> {
 	fn process_inbound_horizontal_messages(
 		ingress_channels: &[(ParaId, cumulus_primitives_core::AbridgedHrmpChannel)],
 		horizontal_messages: BTreeMap<ParaId, Vec<InboundHrmpMessage>>,
-		relay_parent_number: relay_chain::v1::BlockNumber,
+		relay_parent_number: relay_chain::v2::BlockNumber,
 	) -> Weight {
 		// First, check that all submitted messages are sent from channels that exist. The
 		// channel exists if its MQC head is present in `vfp.hrmp_mqc_heads`.
