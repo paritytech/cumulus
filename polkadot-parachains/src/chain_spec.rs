@@ -211,12 +211,12 @@ fn encointer_genesis(
 			phantom: Default::default(),
 		},
 		encointer_scheduler: parachain_runtime::EncointerSchedulerConfig {
-			current_phase: CeremonyPhaseType::REGISTERING,
+			current_phase: CeremonyPhaseType::Registering,
 			current_ceremony_index: 1,
 			phase_durations: vec![
-				(CeremonyPhaseType::REGISTERING, 604800000), // 7d
-				(CeremonyPhaseType::ASSIGNING, 86400000),    // 1d
-				(CeremonyPhaseType::ATTESTING, 172800000),   // 2d
+				(CeremonyPhaseType::Registering, 604800000), // 7d
+				(CeremonyPhaseType::Assigning, 86400000),    // 1d
+				(CeremonyPhaseType::Attesting, 172800000),   // 2d
 			],
 		},
 		encointer_ceremonies: parachain_runtime::EncointerCeremoniesConfig {
