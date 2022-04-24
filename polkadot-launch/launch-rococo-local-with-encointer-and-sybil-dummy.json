@@ -34,6 +34,7 @@
 						"--force-authoring",
 						"--enable-offchain-indexing=true",
 						"--rpc-methods=unsafe",
+						"--rpc-cors=all",
 						"-lencointer=debug",
 						"--",
 						"--execution=wasm"
