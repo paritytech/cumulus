@@ -6,7 +6,6 @@
 pub mod frame_system;
 pub mod pallet_balances;
 pub mod pallet_claims;
-pub mod pallet_migration;
 pub mod pallet_multisig;
 pub mod pallet_proxy;
 pub mod pallet_scheduler;

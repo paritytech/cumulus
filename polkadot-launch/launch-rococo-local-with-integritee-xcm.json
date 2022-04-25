@@ -1,0 +1,109 @@
+{
+	"relaychain": {
+		"bin": "../../bin/polkadot-0.9.18",
+		"chain": "rococo-local",
+		"nodes": [
+			{
+				"name": "alice",
+				"wsPort": 9899,
+				"port": 31444
+			},
+			{
+				"name": "bob",
+				"wsPort": 9888,
+				"port": 31555
+			},
+			{
+				"name": "charlie",
+				"wsPort": 9877,
+				"port": 31666
+			},
+			{
+				"name": "dave",
+				"wsPort": 9977,
+				"port": 30777
+			  }
+		]
+	},
+	"parachains": [
+		{
+			"bin": "./../target/release/integritee-collator",
+			"chain": "integritee-rococo-local-dev",
+			"nodes": [
+				{
+					"wsPort": 9994,
+					"port": 31300,
+					"name": "dave",
+					"flags": [
+						"--unsafe-ws-external",
+						"--unsafe-rpc-external",
+						"--rpc-external",
+						"--ws-external",
+						"--rpc-cors=all",
+						"--rpc-methods=Unsafe",
+						"--force-authoring",
+						"--log=xcm=trace",
+						"--",
+						"--execution=wasm"
+					]
+				},
+				{
+					"wsPort": 9995,
+					"port": 31301,
+					"name": "eve",
+					"flags": [
+						"--unsafe-ws-external",
+						"--unsafe-rpc-external",
+						"--rpc-external",
+						"--ws-external",
+						"--rpc-cors=all",
+						"--rpc-methods=Unsafe",
+						"--force-authoring",
+						"--log=xcm=trace",
+						"--",
+						"--execution=wasm"
+					]
+				}
+			]
+		},
+		{
+			"bin": "../../bin/acala",
+			"chain": "karura-dev",
+			"nodes": [
+				{
+					"wsPort": 9984,
+					"port": 31302,
+					"name": "alice",
+					"flags": [
+						"--unsafe-ws-external",
+						"--unsafe-rpc-external",
+						"--rpc-external",
+						"--ws-external",
+						"--rpc-cors=all",
+						"--rpc-methods=Unsafe",
+						"--force-authoring",
+						"--log=xcm=trace",
+						"--",
+						"--execution=wasm"
+					  ]
+				}
+			]
+		}
+	],
+	"simpleParachains": [],
+	"hrmpChannels": [
+		{
+			"sender": 2001,
+			"recipient": 2000,
+			"maxCapacity": 8,
+			"maxMessageSize": 512
+		},
+		{
+			"sender": 2000,
+			"recipient": 2001,
+			"maxCapacity": 8,
+			"maxMessageSize": 512
+		}
+	],
+	"finalization": false
+}

@@ -2,7 +2,7 @@
 name = 'integritee-runtime'
 description = "The Integritee parachain runtime"
 # patch revision must match runtime spec_version
-version = '1.5.14'
+version = '1.5.15'
 authors = ["Integritee AG <hello@integritee.network>"]
 homepage = "https://integritee.network/"
 repository = "https://github.com/integritee-network/parachain"
@@ -54,9 +54,6 @@ pallet-claims = { git = "https://github.com/integritee-network/pallets.git", def
 pallet-teerex = { git = "https://github.com/integritee-network/pallets.git", default-features = false, branch = "polkadot-v0.9.18" }
 pallet-teeracle = { git = "https://github.com/integritee-network/pallets.git", default-features = false, branch = "polkadot-v0.9.18" }
 
-# migration
-pallet-migration = { git = "https://github.com/integritee-network/pallet-migration", default-features = false, branch = "polkadot-v0.9.18" }
-
 # Cumulus dependencies
 cumulus-pallet-aura-ext = { git = "https://github.com/paritytech/cumulus",  branch = "polkadot-v0.9.18", default-features = false }
 cumulus-pallet-parachain-system = { git = "https://github.com/paritytech/cumulus",  branch = "polkadot-v0.9.18", default-features = false }
@@ -73,6 +70,12 @@ xcm = { git = "https://github.com/paritytech/polkadot", default-features = false
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.18" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.18" }
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.18" }
+
+# orml
+orml-xtokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false, rev = "2b5d4ce1d08fb54c0007c2055653892d2c93a92e" }
+orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false, rev = "2b5d4ce1d08fb54c0007c2055653892d2c93a92e" }
+orml-xcm-support = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false, rev = "2b5d4ce1d08fb54c0007c2055653892d2c93a92e" }
+orml-xcm = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false, rev = "2b5d4ce1d08fb54c0007c2055653892d2c93a92e" }
 
 # Benchmarking
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.18" }
@@ -135,12 +138,15 @@ std = [
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"sp-consensus-aura/std",
+	# orml
+	"orml-xtokens/std",
+	"orml-traits/std",
+	"orml-xcm-support/std",
+	"orml-xcm/std",
 	# Integritee
 	"pallet-claims/std",
 	"pallet-teeracle/std",
 	"pallet-teerex/std",
-	# Migration
-	"pallet-migration/std"
 ]
 runtime-benchmarks = [
 	# support stuff
@@ -154,7 +160,6 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-claims/runtime-benchmarks",
-	"pallet-migration/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
 	"pallet-proxy/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
