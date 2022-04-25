@@ -37,7 +37,7 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 	fn validators(
 		&self,
 		at: &polkadot_core_primitives::BlockId,
-	) -> Result<Vec<polkadot_primitives::v1::ValidatorId>, sp_api::ApiError> {
+	) -> Result<Vec<polkadot_primitives::v2::ValidatorId>, sp_api::ApiError> {
 		todo!()
 	}
 
@@ -46,8 +46,8 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		at: &polkadot_core_primitives::BlockId,
 	) -> Result<
 		(
-			Vec<Vec<polkadot_primitives::v1::ValidatorIndex>>,
-			polkadot_primitives::v1::GroupRotationInfo<polkadot_core_primitives::BlockNumber>,
+			Vec<Vec<polkadot_primitives::v2::ValidatorIndex>>,
+			polkadot_primitives::v2::GroupRotationInfo<polkadot_core_primitives::BlockNumber>,
 		),
 		sp_api::ApiError,
 	> {
@@ -58,7 +58,7 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		&self,
 		at: &polkadot_core_primitives::BlockId,
 	) -> Result<
-		Vec<polkadot_primitives::v1::CoreState<Hash, polkadot_core_primitives::BlockNumber>>,
+		Vec<polkadot_primitives::v2::CoreState<Hash, polkadot_core_primitives::BlockNumber>>,
 		sp_api::ApiError,
 	> {
 		todo!()
@@ -68,7 +68,7 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		&self,
 		at: &polkadot_core_primitives::BlockId,
 		para_id: cumulus_primitives_core::ParaId,
-		assumption: polkadot_primitives::v1::OccupiedCoreAssumption,
+		assumption: polkadot_primitives::v2::OccupiedCoreAssumption,
 	) -> Result<
 		Option<
 			cumulus_primitives_core::PersistedValidationData<
@@ -92,7 +92,7 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 				Hash,
 				polkadot_core_primitives::BlockNumber,
 			>,
-			polkadot_primitives::v1::ValidationCodeHash,
+			polkadot_primitives::v2::ValidationCodeHash,
 		)>,
 		sp_api::ApiError,
 	> {
@@ -103,7 +103,7 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		&self,
 		at: &polkadot_core_primitives::BlockId,
 		para_id: cumulus_primitives_core::ParaId,
-		outputs: polkadot_primitives::v1::CandidateCommitments,
+		outputs: polkadot_primitives::v2::CandidateCommitments,
 	) -> Result<bool, sp_api::ApiError> {
 		todo!()
 	}
@@ -111,7 +111,7 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 	fn session_index_for_child(
 		&self,
 		at: &polkadot_core_primitives::BlockId,
-	) -> Result<polkadot_primitives::v1::SessionIndex, sp_api::ApiError> {
+	) -> Result<polkadot_primitives::v2::SessionIndex, sp_api::ApiError> {
 		todo!()
 	}
 
@@ -119,8 +119,8 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		&self,
 		at: &polkadot_core_primitives::BlockId,
 		para_id: cumulus_primitives_core::ParaId,
-		assumption: polkadot_primitives::v1::OccupiedCoreAssumption,
-	) -> Result<Option<polkadot_primitives::v1::ValidationCode>, sp_api::ApiError> {
+		assumption: polkadot_primitives::v2::OccupiedCoreAssumption,
+	) -> Result<Option<polkadot_primitives::v2::ValidationCode>, sp_api::ApiError> {
 		todo!()
 	}
 
@@ -128,7 +128,7 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		&self,
 		at: &polkadot_core_primitives::BlockId,
 		para_id: cumulus_primitives_core::ParaId,
-	) -> Result<Option<polkadot_primitives::v1::CommittedCandidateReceipt<Hash>>, sp_api::ApiError>
+	) -> Result<Option<polkadot_primitives::v2::CommittedCandidateReceipt<Hash>>, sp_api::ApiError>
 	{
 		todo!()
 	}
@@ -136,7 +136,7 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 	fn candidate_events(
 		&self,
 		at: &polkadot_core_primitives::BlockId,
-	) -> Result<Vec<polkadot_primitives::v1::CandidateEvent<Hash>>, sp_api::ApiError> {
+	) -> Result<Vec<polkadot_primitives::v2::CandidateEvent<Hash>>, sp_api::ApiError> {
 		todo!()
 	}
 
@@ -170,22 +170,22 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 	fn validation_code_by_hash(
 		&self,
 		at: &polkadot_core_primitives::BlockId,
-		hash: polkadot_primitives::v1::ValidationCodeHash,
-	) -> Result<Option<polkadot_primitives::v1::ValidationCode>, sp_api::ApiError> {
+		hash: polkadot_primitives::v2::ValidationCodeHash,
+	) -> Result<Option<polkadot_primitives::v2::ValidationCode>, sp_api::ApiError> {
 		todo!()
 	}
 
 	fn on_chain_votes(
 		&self,
 		at: &polkadot_core_primitives::BlockId,
-	) -> Result<Option<polkadot_primitives::v1::ScrapedOnChainVotes<Hash>>, sp_api::ApiError> {
+	) -> Result<Option<polkadot_primitives::v2::ScrapedOnChainVotes<Hash>>, sp_api::ApiError> {
 		todo!()
 	}
 
 	fn session_info(
 		&self,
 		at: &polkadot_core_primitives::BlockId,
-		index: polkadot_primitives::v1::SessionIndex,
+		index: polkadot_primitives::v2::SessionIndex,
 	) -> Result<Option<polkadot_primitives::v2::SessionInfo>, sp_api::ApiError> {
 		todo!()
 	}
@@ -193,8 +193,8 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 	fn session_info_before_version_2(
 		&self,
 		at: &polkadot_core_primitives::BlockId,
-		index: polkadot_primitives::v1::SessionIndex,
-	) -> Result<Option<polkadot_primitives::v1::SessionInfo>, sp_api::ApiError> {
+		index: polkadot_primitives::v2::SessionIndex,
+	) -> Result<Option<polkadot_primitives::v2::SessionInfo>, sp_api::ApiError> {
 		todo!()
 	}
 
@@ -202,7 +202,7 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		&self,
 		at: &polkadot_core_primitives::BlockId,
 		stmt: polkadot_primitives::v2::PvfCheckStatement,
-		signature: polkadot_primitives::v1::ValidatorSignature,
+		signature: polkadot_primitives::v2::ValidatorSignature,
 	) -> Result<(), sp_api::ApiError> {
 		todo!()
 	}
@@ -210,7 +210,7 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 	fn pvfs_require_precheck(
 		&self,
 		at: &polkadot_core_primitives::BlockId,
-	) -> Result<Vec<polkadot_primitives::v1::ValidationCodeHash>, sp_api::ApiError> {
+	) -> Result<Vec<polkadot_primitives::v2::ValidationCodeHash>, sp_api::ApiError> {
 		todo!()
 	}
 
@@ -218,8 +218,8 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		&self,
 		at: &polkadot_core_primitives::BlockId,
 		para_id: cumulus_primitives_core::ParaId,
-		assumption: polkadot_primitives::v1::OccupiedCoreAssumption,
-	) -> Result<Option<polkadot_primitives::v1::ValidationCodeHash>, sp_api::ApiError> {
+		assumption: polkadot_primitives::v2::OccupiedCoreAssumption,
+	) -> Result<Option<polkadot_primitives::v2::ValidationCodeHash>, sp_api::ApiError> {
 		todo!()
 	}
 
@@ -272,7 +272,7 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 	fn authorities(
 		&self,
 		at: &polkadot_core_primitives::BlockId,
-	) -> std::result::Result<Vec<polkadot_primitives::v1::AuthorityDiscoveryId>, sp_api::ApiError> {
+	) -> std::result::Result<Vec<polkadot_primitives::v2::AuthorityDiscoveryId>, sp_api::ApiError> {
 		todo!()
 	}
 
@@ -289,7 +289,7 @@ impl AuthorityDiscoveryWrapper<Block> for BlockChainRPCClient {
 	fn authorities(
 		&self,
 		at: &sp_api::BlockId<Block>,
-	) -> std::result::Result<Vec<polkadot_primitives::v1::AuthorityDiscoveryId>, sp_api::ApiError> {
+	) -> std::result::Result<Vec<polkadot_primitives::v2::AuthorityDiscoveryId>, sp_api::ApiError> {
 		if let sp_api::BlockId::Hash(hash) = at {
 			block_on(self.rpc_client.authority_discovery_authorities(*hash))
 				.map_err(|err| sp_api::ApiError::Application(Box::new(err)))

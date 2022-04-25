@@ -24,7 +24,7 @@ use polkadot_overseer::{
 	BlockInfo, DummySubsystem, MetricsTrait, Overseer, OverseerHandle, OverseerMetrics,
 	OverseerRuntimeClient, SpawnNamed, KNOWN_LEAVES_CACHE_SIZE,
 };
-use polkadot_primitives::v1::CollatorPair;
+use polkadot_primitives::v2::CollatorPair;
 use polkadot_service::{
 	overseer::{
 		AvailabilityRecoverySubsystem, CollationGenerationSubsystem, CollatorProtocolSubsystem,
