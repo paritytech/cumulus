@@ -884,8 +884,8 @@ construct_runtime! {
 		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>} = 13,
 
 		// Consensus.
-		Aura: pallet_aura::{Pallet, Config<T>} = 23,
-		AuraExt: cumulus_pallet_aura_ext::{Pallet, Config} = 24,
+		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
+		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
 
 
 		// XCM helpers.
