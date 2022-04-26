@@ -25,7 +25,7 @@ use crate::{
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
-use frame_benchmarking_cli::{BenchmarkCmd, POLKADOT_REFERENCE_HARDWARE};
+use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::info;
 use parachains_common::{AuraId, StatemintAuraId};
 use polkadot_parachain::primitives::AccountIdConversion;
@@ -503,7 +503,7 @@ pub fn run() -> Result<()> {
 				}),
 				BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
 				BenchmarkCmd::Machine(cmd) =>
-					runner.sync_run(|config| cmd.run(&config, POLKADOT_REFERENCE_HARDWARE.clone())),
+					runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
 			}
 		},
 		Some(Subcommand::TryRuntime(cmd)) => {
