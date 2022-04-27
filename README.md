@@ -10,9 +10,11 @@ It is forked from the [Cumulus](https://github.com/paritytech/cumulus) repositor
 
 ## Launch a local setup with polkadot-launch
 
-Build sudo-patched polkadot binary
+###Build sudo-patched polkadot binary  
+Inside the parent directory of this repo, execute the following commands:
 ```bash
 git clone https://github.com/paritytech/polkadot
+cd polkadot
 git fetch
 git checkout v0.9.18
 # add sudo to all types of relaychain to simplify and accelerate testing
@@ -22,7 +24,10 @@ diener update --substrate --branch polkadot-v0.9.18
 cargo build --release
 ```
 
-Place the binary into `../../bin/polkadot-0.9.18-sudo`
+Run:
+`cp target/release/polkadot ../../bin/polkadot-0.9.18-sudo`  
+It is assumed that the bin directory exists at this relative path.
+Note: When using the `launch-rococo-local-with-encointer` setup it is assumed that the `bin` folder also contains a `polkadot-0.9.18` binary.
 
 
 ### Setup local testnet with polkadot-launch
@@ -32,6 +37,7 @@ Place the binary into `../../bin/polkadot-0.9.18-sudo`
 
 **Preliminaries:** you need to have yarn and node installed
 
+Inside the parent directory of this repo, execute the following commands:
 ```bash
 # We need to build it from source. The one from the yarn registry does not work with our code.
 git clone https://github.com/paritytech/polkadot-launch
@@ -39,7 +45,8 @@ cd polkadot-launch
 yarn install
 yarn build
 
-# In the root directory of this repository simply execute
+cd ../encointer-parachain
+cargo build --release
 node ../polkadot-launch/dist/cli.js ./polkadot-launch/launch-rococo-local-with-launch.json
 ```
 
