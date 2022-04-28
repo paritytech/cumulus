@@ -38,7 +38,7 @@ use frame_system::{
 	EnsureRoot,
 };
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-pub use sp_runtime::{traits::{ConvertInto}, MultiAddress, Perbill, Permill};
+pub use sp_runtime::{traits::ConvertInto, MultiAddress, Perbill, Permill};
 use xcm_config::{AssetsToBlockAuthor, XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 #[cfg(any(feature = "std", test))]

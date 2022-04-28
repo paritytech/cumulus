@@ -1,31 +1,35 @@
 use super::{
-	AccountId, Assets, Balance, Balances, Call, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm,
-	Runtime, WeightToFee, XcmpQueue, AssetId as AssetIdPalletAssets
+	AccountId, AssetId as AssetIdPalletAssets, Assets, Balance, Balances, Call, Event, Origin,
+	ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, WeightToFee, XcmpQueue,
 };
 use core::marker::PhantomData;
-use sp_runtime::traits::Zero;
 use frame_support::{
 	log, match_types, parameter_types,
 	traits::{
 		fungibles::{self, Balanced, CreditOf},
-		Contains, Get,
-		Everything, Nothing
+		Contains, Everything, Get, Nothing,
 	},
 	weights::Weight,
 };
 use pallet_asset_tx_payment::HandleCredit;
-use pallet_xcm::{XcmPassthrough};
+use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::impls::ToAuthor;
+use sp_runtime::traits::Zero;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
-	ConvertedConcreteAssetId, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset,
-	ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
+	ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
+	FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset, ParentIsPreset,
+	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
 	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-	UsingComponents, AllowKnownQueryResponses, AsPrefixedGeneralIndex, AllowSubscriptionsFrom
+	UsingComponents,
 };
-use xcm_executor::{traits::{FilterAssetLocation, JustTry, ShouldExecute}, XcmExecutor};
+use xcm_executor::{
+	traits::{FilterAssetLocation, JustTry, ShouldExecute},
+	XcmExecutor,
+};
 
 parameter_types! {
 	pub const RelayLocation: MultiLocation = MultiLocation::parent();
@@ -274,7 +278,7 @@ impl FilterAssetLocation for MultiNativeAsset {
 	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
 		if let Some(ref reserve) = asset.reserve() {
 			if reserve == origin {
-				return true;
+				return true
 			}
 		}
 		false

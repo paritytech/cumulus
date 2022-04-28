@@ -244,7 +244,11 @@ fn testnet_genesis(
 				.to_vec(),
 		},
 		balances: parachain_template_runtime::BalancesConfig {
-			balances: endowed_accounts.iter().cloned().map(|k| (k, EXISTENTIAL_DEPOSIT * 4096)).collect(),
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, EXISTENTIAL_DEPOSIT * 4096))
+				.collect(),
 		},
 		parachain_info: parachain_template_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: parachain_template_runtime::CollatorSelectionConfig {
