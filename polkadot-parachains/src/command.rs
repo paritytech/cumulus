@@ -214,7 +214,7 @@ impl SubstrateCli for Cli {
 		} else if chain_spec.is_canvas_kusama() {
 			&canvas_kusama_runtime::VERSION
 		} else {
-			&rococo_parachain_runtime::VERSION
+			&pal_parachain_runtime::VERSION
 		}
 	}
 }
@@ -356,11 +356,11 @@ macro_rules! construct_async_run {
 		} else {
 			runner.async_run(|$config| {
 				let $components = new_partial::<
-					rococo_parachain_runtime::RuntimeApi,
+					pal_parachain_runtime::RuntimeApi,
 					_
 				>(
 					&$config,
-					crate::service::rococo_parachain_build_import_queue,
+					crate::service::pal_parachain_build_import_queue,
 				)?;
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
@@ -651,7 +651,7 @@ pub fn run() -> Result<()> {
 					.map(|r| r.0)
 					.map_err(Into::into)
 				} else {
-					crate::service::start_rococo_parachain_node(
+					crate::service::start_pal_parachain_node(
 						config,
 						polkadot_config,
 						collator_options,

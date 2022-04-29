@@ -67,17 +67,17 @@ type HostFunctions =
 	(sp_io::SubstrateHostFunctions, frame_benchmarking::benchmarking::HostFunctions);
 
 /// Native executor instance.
-pub struct RococoParachainRuntimeExecutor;
+pub struct PalParachainRuntimeExecutor;
 
-impl sc_executor::NativeExecutionDispatch for RococoParachainRuntimeExecutor {
+impl sc_executor::NativeExecutionDispatch for PalParachainRuntimeExecutor {
 	type ExtendHostFunctions = ();
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		rococo_parachain_runtime::api::dispatch(method, data)
+		pal_parachain_runtime::api::dispatch(method, data)
 	}
 
 	fn native_version() -> sc_executor::NativeVersion {
-		rococo_parachain_runtime::native_version()
+		pal_parachain_runtime::native_version()
 	}
 }
 
@@ -720,17 +720,15 @@ where
 }
 
 /// Build the import queue for the rococo parachain runtime.
-pub fn rococo_parachain_build_import_queue(
-	client: Arc<
-		TFullClient<Block, rococo_parachain_runtime::RuntimeApi, WasmExecutor<HostFunctions>>,
-	>,
+pub fn pal_parachain_build_import_queue(
+	client: Arc<TFullClient<Block, pal_parachain_runtime::RuntimeApi, WasmExecutor<HostFunctions>>>,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
 ) -> Result<
 	sc_consensus::DefaultImportQueue<
 		Block,
-		TFullClient<Block, rococo_parachain_runtime::RuntimeApi, WasmExecutor<HostFunctions>>,
+		TFullClient<Block, pal_parachain_runtime::RuntimeApi, WasmExecutor<HostFunctions>>,
 	>,
 	sc_service::Error,
 > {
@@ -767,7 +765,7 @@ pub fn rococo_parachain_build_import_queue(
 }
 
 /// Start a rococo parachain node.
-pub async fn start_rococo_parachain_node(
+pub async fn start_pal_parachain_node(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	collator_options: CollatorOptions,
@@ -775,15 +773,15 @@ pub async fn start_rococo_parachain_node(
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> sc_service::error::Result<(
 	TaskManager,
-	Arc<TFullClient<Block, rococo_parachain_runtime::RuntimeApi, WasmExecutor<HostFunctions>>>,
+	Arc<TFullClient<Block, pal_parachain_runtime::RuntimeApi, WasmExecutor<HostFunctions>>>,
 )> {
-	start_node_impl::<rococo_parachain_runtime::RuntimeApi, _, _, _>(
+	start_node_impl::<pal_parachain_runtime::RuntimeApi, _, _, _>(
 		parachain_config,
 		polkadot_config,
 		collator_options,
 		id,
 		|_| Ok(Default::default()),
-		rococo_parachain_build_import_queue,
+		pal_parachain_build_import_queue,
 		|client,
 		 prometheus_registry,
 		 telemetry,

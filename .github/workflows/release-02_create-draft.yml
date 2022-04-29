@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        runtime: ["shell", "statemine", "statemint", "westmint", "rococo-parachain", "canvas-kusama"]
+        runtime: ["shell", "statemine", "statemint", "westmint", "canvas-kusama"]
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
@@ -134,7 +134,6 @@ jobs:
           WESTMINT_DIGEST: ${{ github.workspace}}/westmint-srtool-json/westmint-srtool-digest.json
           STATEMINE_DIGEST: ${{ github.workspace}}/statemine-srtool-json/statemine-srtool-digest.json
           STATEMINT_DIGEST: ${{ github.workspace}}/statemint-srtool-json/statemint-srtool-digest.json
-          ROCOCO_PARA_DIGEST: ${{ github.workspace}}/rococo-parachain-srtool-json/rococo-parachain-srtool-digest.json
           CANVAS_KUSAMA_DIGEST: ${{ github.workspace}}/canvas-kusama-srtool-json/canvas-kusama-srtool-digest.json
           REF1: ${{ github.event.inputs.ref1 }}
           REF2: ${{ github.event.inputs.ref2 }}
@@ -191,7 +190,7 @@ jobs:
       RUNTIME_DIR: polkadot-parachains
     strategy:
       matrix:
-        runtime: ["shell", "statemine", "statemint", "westmint", "rococo-parachain", "canvas-kusama"]
+        runtime: ["shell", "statemine", "statemint", "westmint", "canvas-kusama"]
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3

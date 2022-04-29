@@ -19,7 +19,7 @@ log = "0.4.16"
 serde = { version = "1.0.132", features = ["derive"] }
 
 # Local
-rococo-parachain-runtime = { path = "rococo-parachain" }
+pal-parachain-runtime = { path = "pal-parachain" }
 shell-runtime = { path = "shell" }
 seedling-runtime = { path = "seedling" }
 statemint-runtime = { path = "statemint" }
@@ -96,15 +96,5 @@ tempfile = "3.3.0"
 
 [features]
 default = []
-runtime-benchmarks = [
-	"polkadot-service/runtime-benchmarks",
-	"statemint-runtime/runtime-benchmarks",
-	"statemine-runtime/runtime-benchmarks",
-	"westmint-runtime/runtime-benchmarks",
-]
-try-runtime = [
-	"statemint-runtime/try-runtime",
-	"statemine-runtime/try-runtime",
-	"westmint-runtime/try-runtime",
-	"shell-runtime/try-runtime",
-]
+runtime-benchmarks = ["polkadot-service/runtime-benchmarks", "statemint-runtime/runtime-benchmarks", "statemine-runtime/runtime-benchmarks", "westmint-runtime/runtime-benchmarks"]
+try-runtime = ["statemint-runtime/try-runtime", "statemine-runtime/try-runtime", "westmint-runtime/try-runtime", "shell-runtime/try-runtime"]

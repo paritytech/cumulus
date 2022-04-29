@@ -16,7 +16,7 @@
 
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use rococo_parachain_runtime::{AccountId, AuraId, Signature};
+use pal_parachain_runtime::{AccountId, AuraId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
@@ -25,7 +25,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
-	sc_service::GenericChainSpec<rococo_parachain_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<pal_parachain_runtime::GenesisConfig, Extensions>;
 
 /// Specialized `ChainSpec` for the shell parachain runtime.
 pub type ShellChainSpec = sc_service::GenericChainSpec<shell_runtime::GenesisConfig, Extensions>;
@@ -177,22 +177,22 @@ fn testnet_genesis(
 	initial_authorities: Vec<AuraId>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> rococo_parachain_runtime::GenesisConfig {
-	rococo_parachain_runtime::GenesisConfig {
-		system: rococo_parachain_runtime::SystemConfig {
-			code: rococo_parachain_runtime::WASM_BINARY
+) -> pal_parachain_runtime::GenesisConfig {
+	pal_parachain_runtime::GenesisConfig {
+		system: pal_parachain_runtime::SystemConfig {
+			code: pal_parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 		},
-		balances: rococo_parachain_runtime::BalancesConfig {
+		balances: pal_parachain_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
-		sudo: rococo_parachain_runtime::SudoConfig { key: Some(root_key) },
-		parachain_info: rococo_parachain_runtime::ParachainInfoConfig { parachain_id: id },
-		aura: rococo_parachain_runtime::AuraConfig { authorities: initial_authorities },
+		sudo: pal_parachain_runtime::SudoConfig { key: Some(root_key) },
+		parachain_info: pal_parachain_runtime::ParachainInfoConfig { parachain_id: id },
+		aura: pal_parachain_runtime::AuraConfig { authorities: initial_authorities },
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
-		polkadot_xcm: rococo_parachain_runtime::PolkadotXcmConfig {
+		polkadot_xcm: pal_parachain_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 	}
