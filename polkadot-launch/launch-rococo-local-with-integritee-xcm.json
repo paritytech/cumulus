@@ -22,7 +22,7 @@
 				"name": "dave",
 				"wsPort": 9977,
 				"port": 30777
-			  }
+			}
 		]
 	},
 	"parachains": [
@@ -85,7 +85,7 @@
 						"--log=xcm=trace",
 						"--",
 						"--execution=wasm"
-					  ]
+					]
 				}
 			]
 		}
@@ -93,14 +93,14 @@
 	"simpleParachains": [],
 	"hrmpChannels": [
 		{
-			"sender": 2001,
+			"sender": 2015,
 			"recipient": 2000,
 			"maxCapacity": 8,
 			"maxMessageSize": 512
 		},
 		{
 			"sender": 2000,
-			"recipient": 2001,
+			"recipient": 2015,
 			"maxCapacity": 8,
 			"maxMessageSize": 512
 		}

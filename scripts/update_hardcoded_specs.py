@@ -6,7 +6,7 @@ Simple script to upgrade the hardcoded chain-spec.json files.
 This the main purpose is that to automate migration of values from the old files to the new files that can not
 be inserted by the rust code, e.g., the `bootNodes`.
 
-Usage: ./scripts/update_hardcoded_specs.py <--migrate-genesis>
+Usage: ./scripts/update_hardcoded_specs.py <--regenesis>
 
 Optionally define if the `genesis` field of the chain-spec should also be migrated. This field should be set as follows:
 *   True, if a completely new chain-spec shall be created. This will create a new genesis state, which is not compatible
