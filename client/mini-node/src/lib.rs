@@ -39,7 +39,9 @@ use sp_runtime::{traits::NumberFor, Justifications};
 
 use std::sync::Arc;
 
-use cumulus_primitives_core::relay_chain::{v2::ParachainHost, Block, BlockId, Hash as PHash};
+use cumulus_primitives_core::relay_chain::{
+	runtime_api::ParachainHost, Block, BlockId, Hash as PHash,
+};
 
 use polkadot_client::FullBackend;
 use polkadot_service::{
