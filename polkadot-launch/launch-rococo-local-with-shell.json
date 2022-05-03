@@ -1,10 +1,10 @@
 {
 	"relaychain": {
-		"bin": "./../../polkadot/target/release/polkadot",
+		"bin": "../../bin/polkadot-0.9.19",
 		"chain": "rococo-local",
 		"nodes": [
 			{
-				"name": "alice"
+				"name": "alice",
 				"wsPort": 9999,
 				"port": 30444
 			},
@@ -24,13 +24,18 @@
 		{
 			"bin": "./../target/release/integritee-collator",
 			"chain": "shell-rococo-local-dev",
-			"balance": "10_000_000__000_000_000_000",
 			"nodes": [
 				{
-					"wsPort": 9970,
+					"wsPort": 9944,
 					"port": 31200,
 					"name": "dave",
-					"flags": ["--prometheus-external", "--prometheus-port=19615","--", "--execution=wasm"]
+					"flags": ["--", "--execution=wasm"]
+				},
+				{
+					"wsPort": 9945,
+					"port": 31201,
+					"name": "eve",
+					"flags": ["--", "--execution=wasm"]
 				}
 			]
 		}
