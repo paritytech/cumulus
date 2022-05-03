@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../../../bin/polkadot-0.9.18",
+		"bin": "./../../polkadot/target/release/polkadot",
 		"chain": "rococo-local",
 		"nodes": [
 			{

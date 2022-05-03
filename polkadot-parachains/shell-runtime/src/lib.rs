@@ -37,7 +37,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
-	construct_runtime, match_type, parameter_types,
+	construct_runtime, match_types, parameter_types,
 	traits::{IsInVec, Randomness},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -52,7 +52,7 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 // XCM imports
-use frame_support::traits::Contains;
+use frame_support::{traits::Contains, weights::ConstantMultiplier};
 //use xcm::v0::{Junction::*, MultiLocation, MultiLocation::*, NetworkId};
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -233,9 +233,9 @@ impl pallet_balances::Config for Runtime {
 
 impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
-	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = IdentityFee<Balance>;
 	type FeeMultiplierUpdate = ();
+	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type OperationalFeeMultiplier = ();
 }
 
@@ -296,7 +296,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	ParentAsSuperuser<Origin>,
 );
 
-match_type! {
+match_types! {
 	pub type JustTheParent: impl Contains<MultiLocation> = {
 		//X1(Parent)
 		MultiLocation { parents: 1, interior: Here }
