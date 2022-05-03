@@ -15,6 +15,8 @@ log = { version = "0.4.14", default-features = false }
 parachain-info = { git = "https://github.com/paritytech/cumulus",  branch = "polkadot-v0.9.19", default-features = false }
 scale-info = { version = "2.0.1", default-features = false, features = ["derive"] }
 
+parachains-common = { path = "../parachains-common" , default-features = false  }
+
 # Substrate dependencies
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.19" }
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.19" }
