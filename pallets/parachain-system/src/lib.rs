@@ -1049,9 +1049,15 @@ impl<T: Config> BlockNumberProvider for RelaychainBlockNumberProvider<T> {
 	}
 	#[cfg(feature = "runtime-benchmarks")]
 	fn set_block_number(block: Self::BlockNumber) {
-		if let Some(mut validation_data) = Pallet::<T>::validation_data() {
-			validation_data.relay_parent_number = block;
-			ValidationData::<T>::put(validation_data)
-		}
+		let mut validation_data = Pallet::<T>::validation_data().unwrap_or_else(||
+			// PersistedValidationData does not impl default in non-std
+			PersistedValidationData {
+				parent_head: vec![].into(),
+				relay_parent_number: Default::default(),
+				max_pov_size: Default::default(),
+				relay_parent_storage_root: Default::default(),
+			});
+		validation_data.relay_parent_number = block;
+		ValidationData::<T>::put(validation_data)
 	}
 }
