@@ -1,104 +1,42 @@
-# IntegriTEE Parachain:
+# Integritee Parachain
 
-This is the repository to run integritee as a parachain in the rococo-v1 testnet. It is forked from the [Cumulus](https://github.com/paritytech/cumulus) repository and only adds the SubstraTEE pallet and configuration.
+This is the repository to run Integritee as a parachain on Kusama and Rococo. It is forked from the [Cumulus](https://github.com/paritytech/cumulus) repository.
 
 ## Launch a local setup including a Relay Chain and a Parachain
 
-Quick: see [polkadot-launch](https://github.com/paritytech/polkadot-launch.git)
-```
-node ../polkadot-launch/dist/cli.js launch-kusama-local-with-shell.json
-```
+### Polkadot-launch
 
+Install polkadot-launch according to the instruction in [polkadot-launch](https://github.com/paritytech/polkadot-launch#install)
 
-### Manually Launch Local Rococo Testnet
-
-```bash
-# Compile Polkadot with the real overseer feature
-git clone https://github.com/paritytech/polkadot
-git checkout <release tag>  // release tag that matches the branch id in the polkadot-deps
-cargo build --release
-
-# Generate a raw chain spec
-./target/release/polkadot build-spec --chain rococo-local --disable-default-bootnode --raw > rococo-local-cfde.json
-
-# Alice
-./target/release/polkadot --chain rococo-local-cfde.json --alice --tmp
-
-# Bob (In a separate terminal)
-./target/release/polkadot --chain rococo-local-cfde.json --bob --tmp --port 30334
-```
-
-#### Launch the Parachain
-
-```bash
-# Compile
-git clone https://github.com/scs/integritee-parachain.git
-git checkout master
-cargo build --release
-
-# Export genesis state
-./target/release/integritee-collator export-genesis-state --chain integritee-local-dev > integritee-local-dev.state
-
-# Export genesis wasm
-./target/release/integritee-collator export-genesis-wasm --chain integritee-local-dev > integritee-local.wasm
-
-# Collator
-./target/release/integritee-collator --collator --tmp --chain integritee-rococo-local-dev --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337 --ws-port 9981
-```
-
-#### Register the Parachain
-Go to [Polkadot Apps](https://polkadot.js.org/apps/) connect to the default local port (Alice) and register the parachain via the `paraSudoWrapper` pallet. After registering, the collator should start producing blocks when the next era starts.
-
-**Note:** Change the `ParaId` to 2015 when registering the parachain.
-
-![image](https://user-images.githubusercontent.com/2915325/99548884-1be13580-2987-11eb-9a8b-20be658d34f9.png)
-
-You may need to add custom type overwrites in Settings -> Developer:
-```
-{
-  "Address": "MultiAddress",
-  "LookupSource": "MultiAddress",
-  "ShardIdentifier": "Hash"
-}
-```
-
-### Deploy on rococo
-
-Prepare genesis state and wasm as follows:
-
-```bash
-# Export genesis state
-./target/release/integritee-collator export-genesis-state --chain integritee-rococo-local-dev > integritee-rococo-local-dev.state
-
-# Export genesis wasm
-./target/release/integritee-collator export-genesis-wasm --chain integritee-rococo-local-dev > integritee-rococo-local-dev.wasm
+and use it with
 
 ```
-then propose the parachain on rococo relay-chain
-
-run collator
-```
-integritee-collator \
-        --collator \
-        --chain integritee-rococo-local-dev \
-        --rpc-cors all \
-        --name integritee-rococo-collator-1 \
-        -- --execution wasm --chain rococo 
-
+polkadot-launch launch-rococo-local-with-integritee.json
 ```
 
-### Runtime upgrade
-Two runtimes are contained in this repository. First, the shell-runtime, which has been extended compared to the upstream shell-runtime. It has some additional modules including sudo to facilitate a 
+All polkadot launch scripts can be found in the [polkadot-launch](/polkadot-launch/) folder.
+
+### Manually launch a local Rococo Testnet
+
+Follow the steps provided in https://docs.substrate.io/tutorials/v3/cumulus/start-relay/
+
+But keep the following in mind:
+- Our chain has a paraid of 2015 on Rococo and Kusama (see [polkadot-parachains/src/command.rs#44-49](/polkadot-parachains/src/command.rs#44-49))
+- For testing on rococo-local use the chain spec `integritee-rococo-local-dev`
+- More chain specs can be found in [polkadot-parachains/src/command.rs](/polkadot-parachains/src/command.rs)
+
+## Runtime upgrade
+Two runtimes are contained in this repository. First, the shell-runtime, which has been extended compared to the upstream shell-runtime. It has some additional modules including sudo to facilitate a
 runtime upgrade with the [sudo upgrade](https://substrate.dev/docs/en/tutorials/forkless-upgrade/sudo-upgrade) method. Second, it runs with the same executor instance as the integritee-runtime, such that an eventual upgrade is simpler to perform, i.e., only the runtime
 needs to be upgraded whereas the client can remain the same. Hence, all modules revolving around aura have been included, which provide data the client needs.
 
-#### Upgrade procedure
+### Upgrade procedure
 Prepare a local shell network and generate the `integritee-runtime` wasm blob, which contains the upgraded runtime to be executed after the runtime upgrade.
-```shell
-// launch local setup
+```bash
+# launch local setup
 node ../polkadot-launch/dist/cli.js polkadot-launch/launch-rococo-local-with-shell.json
 
-// generate wasm blob
+# generate wasm blob
  ./target/release/integritee-collator export-genesis-wasm --chain integritee-rococo-local-dev > integritee-rococo-local-dev.wasm
 ```
 
@@ -106,8 +44,7 @@ After the parachain starts producing blocks, a runtime upgrade can be initiated 
 
 ![image](./docs/sudo-set-code.png)
 
-If successful, a `parachainSystem.validationFunctionStored` event is thrown followed by a `parachainSystem.validationFunctionApplied` event some blocks later. After this procedure, the `substrateeRegistry` module should be available in the
-extrinsics tab in polkadot-js/apps.
+If successful, a `parachainSystem.validationFunctionStored` event is thrown followed by a `parachainSystem.validationFunctionApplied` event some blocks later. After this procedure, the `Teerex` module should be available in the extrinsics tab in polkadot-js/apps.
 
 ### Caveats
 * Don't forget to enable file upload if you perform drag and drop for the `genesisHead` and `validationCode`. If it is not enabled, Polkadot-js will interpret the path as a string and won't complain but the registration will fail.
@@ -127,6 +64,7 @@ The benchmarks are run with the following script:
 ```
 
 
-### More Resources
+## More Resources
 * Thorough Readme about Rococo and Collators in general in the original [repository](https://github.com/paritytech/cumulus) of this fork.
-* Parachains on Rococo in the [Polkadot Wiki](https://wiki.polkadot.network/docs/en/build-parachains-rococo#rococo-v1-parachain-requirements)
+* Parachains Development in the [Polkadot Wiki](https://wiki.polkadot.network/docs/build-pdk)
+* encointer parachain readme: https://github.com/encointer/encointer-parachain
