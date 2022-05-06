@@ -19,6 +19,7 @@ rules:
     check_type: changed_files
     condition:
       include: .*
+      # excluding files from 'Runtime files' and 'CI team' rules
       exclude: ^polkadot-parachains/(statemine|statemint)/src/[^/]+\.rs$|^\.gitlab-ci\.yml|^scripts/ci/.*|^\.github/.*
     min_approvals: 2
     teams:
