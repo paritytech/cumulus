@@ -261,7 +261,10 @@ impl sc_service::ImportQueue<Block> for FakeImportQueue {
 		origin: BlockOrigin,
 		blocks: Vec<sc_consensus::IncomingBlock<Block>>,
 	) {
-		todo!("ImportQueue::import_blocks")
+		tracing::debug!("Importing block from {:?}", origin);
+		blocks
+			.iter()
+			.for_each(|b| tracing::debug!("Fake import queue received {}", b.hash));
 	}
 	/// Import block justifications.
 	fn import_justifications(
@@ -271,7 +274,7 @@ impl sc_service::ImportQueue<Block> for FakeImportQueue {
 		number: NumberFor<Block>,
 		justifications: Justifications,
 	) {
-		todo!("ImportQueue::import_blocks")
+		tracing::debug!(?hash, ?who, "ImportQueue::import_justifications",)
 	}
 	/// Polls for actions to perform on the network.
 	///

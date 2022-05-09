@@ -19,7 +19,11 @@ use backoff::{future::retry_notify, ExponentialBackoff};
 use core::time::Duration;
 use cumulus_primitives_core::{
 	relay_chain::{
-		v2::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
+		v2::{
+			BlockNumber, CandidateCommitments, CandidateEvent, CommittedCandidateReceipt,
+			CoreState, GroupRotationInfo, OccupiedCoreAssumption, SessionIndex, SessionInfo,
+			ValidationCode, ValidationCodeHash, ValidatorId, ValidatorIndex,
+		},
 		Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
@@ -62,7 +66,6 @@ pub struct RelayChainRPCClient {
 
 impl RelayChainRPCClient {
 	pub async fn new(url: Url) -> RelayChainResult<Self> {
-		tracing::info!(target: LOG_TARGET, url = %url.to_string(), "Initializing RPC Client");
 		let ws_client = WsClientBuilder::default().build(url.as_str()).await?;
 
 		Ok(RelayChainRPCClient {
@@ -107,11 +110,15 @@ impl RelayChainRPCClient {
 		params: Option<ParamsSer<'a>>,
 	) -> RelayChainResult<Subscription<R>>
 	where
-		R: DeserializeOwned,
+		R: DeserializeOwned + std::fmt::Debug,
 	{
 		self.ws_client
 			.subscribe::<R>(sub_name, params, unsub_name)
 			.await
+			.map(|subscription| {
+				tracing::info!("Opened subscription '{}' with id {:?}", sub_name, subscription);
+				subscription
+			})
 			.map_err(|err| RelayChainError::RPCCallError(sub_name.to_string(), err))
 	}
 
@@ -192,7 +199,6 @@ impl RelayChainRPCClient {
 		&self,
 		hash: Option<PHash>,
 	) -> Result<Option<PHeader>, RelayChainError> {
-		tracing::info!("Requesting header for hash {:?}", hash);
 		let params = rpc_params!(hash);
 		self.request("chain_getHeader", params).await
 	}
@@ -238,6 +244,95 @@ impl RelayChainRPCClient {
 			.await
 	}
 
+	pub async fn parachain_host_availability_cores(
+		&self,
+		at: PHash,
+	) -> Result<Vec<CoreState<PHash, BlockNumber>>, RelayChainError> {
+		self.call_remote_runtime_function("ParachainHost_availability_cores", at, None::<()>)
+			.await
+	}
+
+	pub async fn parachain_host_validation_code(
+		&self,
+		at: PHash,
+		para_id: ParaId,
+		occupied_core_assumption: OccupiedCoreAssumption,
+	) -> Result<Option<ValidationCode>, RelayChainError> {
+		self.call_remote_runtime_function(
+			"ParachainHost_validation_code",
+			at,
+			Some((para_id, occupied_core_assumption)),
+		)
+		.await
+	}
+
+	pub async fn parachain_host_validation_code_hash(
+		&self,
+		at: PHash,
+		para_id: ParaId,
+		occupied_core_assumption: OccupiedCoreAssumption,
+	) -> Result<Option<ValidationCodeHash>, RelayChainError> {
+		self.call_remote_runtime_function(
+			"ParachainHost_validation_code_hash",
+			at,
+			Some((para_id, occupied_core_assumption)),
+		)
+		.await
+	}
+
+	pub async fn parachain_host_session_info(
+		&self,
+		at: PHash,
+		index: SessionIndex,
+	) -> Result<Option<SessionInfo>, RelayChainError> {
+		self.call_remote_runtime_function("ParachainHost_session_info", at, Some(index))
+			.await
+	}
+
+	pub async fn parachain_host_validator_groups(
+		&self,
+		at: PHash,
+	) -> Result<(Vec<Vec<ValidatorIndex>>, GroupRotationInfo), RelayChainError> {
+		self.call_remote_runtime_function("ParachainHost_validator_groups", at, None::<()>)
+			.await
+	}
+
+	pub async fn parachain_host_candidate_events(
+		&self,
+		at: PHash,
+	) -> Result<Vec<CandidateEvent>, RelayChainError> {
+		self.call_remote_runtime_function("ParachainHost_candidate_events", at, None::<()>)
+			.await
+	}
+
+	pub async fn parachain_host_check_validation_outputs(
+		&self,
+		at: PHash,
+		para_id: ParaId,
+		outputs: CandidateCommitments,
+	) -> Result<bool, RelayChainError> {
+		self.call_remote_runtime_function(
+			"ParachainHost_check_validation_outputs",
+			at,
+			Some((para_id, outputs)),
+		)
+		.await
+	}
+
+	pub async fn parachain_host_assumed_validation_data(
+		&self,
+		at: PHash,
+		para_id: ParaId,
+		expected_hash: PHash,
+	) -> Result<Option<(PersistedValidationData, ValidationCodeHash)>, RelayChainError> {
+		self.call_remote_runtime_function(
+			"ParachainHost_persisted_assumed_validation_data",
+			at,
+			Some((para_id, expected_hash)),
+		)
+		.await
+	}
+
 	pub async fn parachain_host_persisted_validation_data(
 		&self,
 		at: PHash,
@@ -252,6 +347,18 @@ impl RelayChainRPCClient {
 		.await
 	}
 
+	pub async fn parachain_host_validation_code_by_hash(
+		&self,
+		at: PHash,
+		validation_code_hash: ValidationCodeHash,
+	) -> Result<Option<ValidationCode>, RelayChainError> {
+		self.call_remote_runtime_function(
+			"ParachainHost_validation_code_by_hash",
+			at,
+			Some(validation_code_hash),
+		)
+		.await
+	}
 	pub async fn parachain_host_inbound_hrmp_channels_contents(
 		&self,
 		para_id: ParaId,
@@ -301,11 +408,19 @@ impl RelayChainRPCClient {
 #[derive(Clone)]
 pub struct RelayChainRPCInterface {
 	rpc_client: RelayChainRPCClient,
+	overseer_handle: Option<Handle>,
 }
 
 impl RelayChainRPCInterface {
 	pub async fn new(url: Url) -> RelayChainResult<Self> {
-		Ok(Self { rpc_client: RelayChainRPCClient::new(url).await? })
+		Ok(Self { rpc_client: RelayChainRPCClient::new(url).await?, overseer_handle: None })
+	}
+
+	pub async fn new_with_handle(
+		url: Url,
+		overseer_handle: Option<Handle>,
+	) -> RelayChainResult<Self> {
+		Ok(Self { rpc_client: RelayChainRPCClient::new(url).await?, overseer_handle })
 	}
 }
 
@@ -406,7 +521,7 @@ impl RelayChainInterface for RelayChainRPCInterface {
 	}
 
 	fn overseer_handle(&self) -> RelayChainResult<Option<Handle>> {
-		unimplemented!("Overseer handle is not available on relay-chain-rpc-interface");
+		Ok(self.overseer_handle.clone())
 	}
 
 	async fn get_storage_by_key(

@@ -3,7 +3,7 @@ use std::pin::Pin;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::RelayChainRPCClient;
 use futures::{executor::block_on, Future, Stream, StreamExt};
-use polkadot_core_primitives::{Block, Hash, Header};
+use polkadot_core_primitives::{Block, BlockId, Hash, Header};
 use polkadot_node_network_protocol::Arc;
 use polkadot_overseer::OverseerRuntimeClient;
 use polkadot_service::{runtime_traits::BlockIdTo, HeaderBackend};
@@ -38,7 +38,14 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		&self,
 		at: &polkadot_core_primitives::BlockId,
 	) -> Result<Vec<polkadot_primitives::v2::ValidatorId>, sp_api::ApiError> {
-		todo!()
+		if let BlockId::Hash(hash) = at {
+			block_on(self.rpc_client.parachain_host_validators(*hash))
+				.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
+		} else {
+			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
+				"Only hash is supported for RPC methods".to_string(),
+			)) as Box<_>))
+		}
 	}
 
 	fn validator_groups(
@@ -51,7 +58,14 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		),
 		sp_api::ApiError,
 	> {
-		todo!()
+		if let BlockId::Hash(hash) = at {
+			block_on(self.rpc_client.parachain_host_validator_groups(*hash))
+				.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
+		} else {
+			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
+				"Only hash is supported for RPC methods".to_string(),
+			)) as Box<_>))
+		}
 	}
 
 	fn availability_cores(
@@ -61,7 +75,14 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		Vec<polkadot_primitives::v2::CoreState<Hash, polkadot_core_primitives::BlockNumber>>,
 		sp_api::ApiError,
 	> {
-		todo!()
+		if let BlockId::Hash(hash) = at {
+			block_on(self.rpc_client.parachain_host_availability_cores(*hash))
+				.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
+		} else {
+			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
+				"Only hash is supported for RPC methods".to_string(),
+			)) as Box<_>))
+		}
 	}
 
 	fn persisted_validation_data(
@@ -78,7 +99,17 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		>,
 		sp_api::ApiError,
 	> {
-		todo!()
+		if let BlockId::Hash(hash) = at {
+			block_on(
+				self.rpc_client
+					.parachain_host_persisted_validation_data(*hash, para_id, assumption),
+			)
+			.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
+		} else {
+			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
+				"Only hash is supported for RPC methods".to_string(),
+			)) as Box<_>))
+		}
 	}
 
 	fn assumed_validation_data(
@@ -96,7 +127,18 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		)>,
 		sp_api::ApiError,
 	> {
-		todo!()
+		if let BlockId::Hash(hash) = at {
+			block_on(self.rpc_client.parachain_host_assumed_validation_data(
+				*hash,
+				para_id,
+				expected_persisted_validation_data_hash,
+			))
+			.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
+		} else {
+			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
+				"Only hash is supported for RPC methods".to_string(),
+			)) as Box<_>))
+		}
 	}
 
 	fn check_validation_outputs(
@@ -105,14 +147,30 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		para_id: cumulus_primitives_core::ParaId,
 		outputs: polkadot_primitives::v2::CandidateCommitments,
 	) -> Result<bool, sp_api::ApiError> {
-		todo!()
+		if let BlockId::Hash(hash) = at {
+			block_on(
+				self.rpc_client.parachain_host_check_validation_outputs(*hash, para_id, outputs),
+			)
+			.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
+		} else {
+			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
+				"Only hash is supported for RPC methods".to_string(),
+			)) as Box<_>))
+		}
 	}
 
 	fn session_index_for_child(
 		&self,
 		at: &polkadot_core_primitives::BlockId,
 	) -> Result<polkadot_primitives::v2::SessionIndex, sp_api::ApiError> {
-		todo!()
+		if let BlockId::Hash(hash) = at {
+			block_on(self.rpc_client.parachain_host_session_index_for_child(*hash))
+				.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
+		} else {
+			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
+				"Only hash is supported for RPC methods".to_string(),
+			)) as Box<_>))
+		}
 	}
 
 	fn validation_code(
@@ -121,7 +179,14 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		para_id: cumulus_primitives_core::ParaId,
 		assumption: polkadot_primitives::v2::OccupiedCoreAssumption,
 	) -> Result<Option<polkadot_primitives::v2::ValidationCode>, sp_api::ApiError> {
-		todo!()
+		if let BlockId::Hash(hash) = at {
+			block_on(self.rpc_client.parachain_host_validation_code(*hash, para_id, assumption))
+				.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
+		} else {
+			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
+				"Only hash is supported for RPC methods".to_string(),
+			)) as Box<_>))
+		}
 	}
 
 	fn candidate_pending_availability(
@@ -130,14 +195,28 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		para_id: cumulus_primitives_core::ParaId,
 	) -> Result<Option<polkadot_primitives::v2::CommittedCandidateReceipt<Hash>>, sp_api::ApiError>
 	{
-		todo!()
+		if let BlockId::Hash(hash) = at {
+			block_on(self.rpc_client.parachain_host_candidate_pending_availability(*hash, para_id))
+				.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
+		} else {
+			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
+				"Only hash is supported for RPC methods".to_string(),
+			)) as Box<_>))
+		}
 	}
 
 	fn candidate_events(
 		&self,
 		at: &polkadot_core_primitives::BlockId,
 	) -> Result<Vec<polkadot_primitives::v2::CandidateEvent<Hash>>, sp_api::ApiError> {
-		todo!()
+		if let BlockId::Hash(hash) = at {
+			block_on(self.rpc_client.parachain_host_candidate_events(*hash))
+				.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
+		} else {
+			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
+				"Only hash is supported for RPC methods".to_string(),
+			)) as Box<_>))
+		}
 	}
 
 	fn dmq_contents(
@@ -148,7 +227,14 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		Vec<cumulus_primitives_core::InboundDownwardMessage<polkadot_core_primitives::BlockNumber>>,
 		sp_api::ApiError,
 	> {
-		todo!()
+		if let BlockId::Hash(hash) = at {
+			block_on(self.rpc_client.parachain_host_dmq_contents(recipient, *hash))
+				.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
+		} else {
+			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
+				"Only hash is supported for RPC methods".to_string(),
+			)) as Box<_>))
+		}
 	}
 
 	fn inbound_hrmp_channels_contents(
@@ -164,15 +250,34 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		>,
 		sp_api::ApiError,
 	> {
-		todo!()
+		if let BlockId::Hash(hash) = at {
+			block_on(
+				self.rpc_client.parachain_host_inbound_hrmp_channels_contents(recipient, *hash),
+			)
+			.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
+		} else {
+			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
+				"Only hash is supported for RPC methods".to_string(),
+			)) as Box<_>))
+		}
 	}
 
 	fn validation_code_by_hash(
 		&self,
 		at: &polkadot_core_primitives::BlockId,
-		hash: polkadot_primitives::v2::ValidationCodeHash,
+		validation_code_hash: polkadot_primitives::v2::ValidationCodeHash,
 	) -> Result<Option<polkadot_primitives::v2::ValidationCode>, sp_api::ApiError> {
-		todo!()
+		if let BlockId::Hash(hash) = at {
+			block_on(
+				self.rpc_client
+					.parachain_host_validation_code_by_hash(*hash, validation_code_hash),
+			)
+			.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
+		} else {
+			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
+				"Only hash is supported for RPC methods".to_string(),
+			)) as Box<_>))
+		}
 	}
 
 	fn on_chain_votes(
@@ -187,7 +292,14 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		at: &polkadot_core_primitives::BlockId,
 		index: polkadot_primitives::v2::SessionIndex,
 	) -> Result<Option<polkadot_primitives::v2::SessionInfo>, sp_api::ApiError> {
-		todo!()
+		if let BlockId::Hash(hash) = at {
+			block_on(self.rpc_client.parachain_host_session_info(*hash, index))
+				.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
+		} else {
+			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
+				"Only hash is supported for RPC methods".to_string(),
+			)) as Box<_>))
+		}
 	}
 
 	fn session_info_before_version_2(
@@ -220,7 +332,16 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		para_id: cumulus_primitives_core::ParaId,
 		assumption: polkadot_primitives::v2::OccupiedCoreAssumption,
 	) -> Result<Option<polkadot_primitives::v2::ValidationCodeHash>, sp_api::ApiError> {
-		todo!()
+		if let BlockId::Hash(hash) = at {
+			block_on(
+				self.rpc_client.parachain_host_validation_code_hash(*hash, para_id, assumption),
+			)
+			.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
+		} else {
+			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
+				"Only hash is supported for RPC methods".to_string(),
+			)) as Box<_>))
+		}
 	}
 
 	fn configuration(
@@ -280,7 +401,6 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 		&self,
 		at: &polkadot_core_primitives::BlockId,
 	) -> Result<Option<u32>, sp_api::ApiError> {
-		tracing::info!("api_version_parachain_host");
 		Ok(Some(2))
 	}
 }
@@ -365,7 +485,6 @@ impl HeaderBackend<Block> for BlockChainRPCClient {
 		&self,
 		id: sp_api::BlockId<Block>,
 	) -> sp_blockchain::Result<Option<<Block as polkadot_service::BlockT>::Header>> {
-		tracing::info!("BlockBackend::block_status");
 		if let sp_api::BlockId::Hash(hash) = id {
 			block_on(self.rpc_client.chain_get_header(Some(hash)))
 				.map_err(|err| sp_blockchain::Error::Backend(err.to_string()))
@@ -375,13 +494,14 @@ impl HeaderBackend<Block> for BlockChainRPCClient {
 	}
 
 	fn info(&self) -> sp_blockchain::Info<Block> {
-		tracing::info!("BlockBackend::block_status");
+		tracing::debug!(target: LOG_TARGET, "BlockBackend::block_status");
 
 		let tokio_handle = tokio::runtime::Handle::current();
 		let best_header = block_local(self.rpc_client.chain_get_header(None))
 			.expect("get_header")
 			.unwrap();
-		tracing::info!(
+		tracing::debug!(
+			target: LOG_TARGET,
 			"BlockBackend::block_status - succeeded to get header parent: {:?}, number: {:?}",
 			best_header.parent_hash,
 			best_header.number
@@ -417,7 +537,7 @@ impl HeaderBackend<Block> for BlockChainRPCClient {
 	) -> sp_blockchain::Result<
 		Option<<<Block as polkadot_service::BlockT>::Header as polkadot_service::HeaderT>::Number>,
 	> {
-		tracing::info!("BlockBackend::block_status");
+		tracing::debug!(target: LOG_TARGET, "BlockBackend::block_status");
 		block_local(self.rpc_client.chain_get_header(Some(hash)))
 			.map_err(|err| sp_blockchain::Error::Backend(err.to_string()))
 			.map(|maybe_header| maybe_header.map(|header| header.number))
@@ -507,7 +627,7 @@ impl polkadot_service::Chain<Block> for BlockChainRPCClient {
 		&self,
 		id: &sp_api::BlockId<Block>,
 	) -> Result<sp_consensus::BlockStatus, Box<dyn std::error::Error + Send>> {
-		tracing::info!("Chain::block_status");
+		tracing::debug!(target: LOG_TARGET, "Chain::block_status");
 		if let sp_api::BlockId::Hash(hash) = id {
 			let maybe_header =
 				block_local(self.rpc_client.chain_get_header(None)).expect("get_header");
@@ -549,7 +669,7 @@ impl BlockBackend<Block> for BlockChainRPCClient {
 		&self,
 		id: &sp_api::BlockId<Block>,
 	) -> sp_blockchain::Result<sp_consensus::BlockStatus> {
-		tracing::info!("BlockBackend::block_status");
+		tracing::debug!(target: LOG_TARGET, "BlockBackend::block_status");
 		if let sp_api::BlockId::Hash(hash) = id {
 			let maybe_header =
 				block_local(self.rpc_client.chain_get_header(None)).expect("get_header");
