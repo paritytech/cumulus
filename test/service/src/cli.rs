@@ -25,6 +25,9 @@ use std::{net::SocketAddr, path::PathBuf};
 
 #[derive(Debug, Parser)]
 pub struct ExportGenesisStateCommand {
+	#[clap(default_value_t = 2000u32)]
+	pub parachain_id: u32,
+
 	/// Output file name or stdout if unspecified.
 	#[clap(parse(from_os_str))]
 	pub output: Option<PathBuf>,
@@ -33,13 +36,18 @@ pub struct ExportGenesisStateCommand {
 	#[clap(short, long)]
 	pub raw: bool,
 
-	#[clap(default_value_t = 2000u32)]
-	pub parachain_id: u32,
+	/// The name of the chain for that the genesis state should be exported.
+	#[clap(long)]
+	pub chain: Option<String>,
+
 }
 
 /// Command for exporting the genesis wasm file.
 #[derive(Debug, Parser)]
 pub struct ExportGenesisWasmCommand {
+	#[clap(default_value_t = 2000u32)]
+	pub parachain_id: u32,
+
 	/// Output file name or stdout if unspecified.
 	#[clap(parse(from_os_str))]
 	pub output: Option<PathBuf>,
@@ -48,8 +56,9 @@ pub struct ExportGenesisWasmCommand {
 	#[clap(short, long)]
 	pub raw: bool,
 
-	#[clap(default_value_t = 2000u32)]
-	pub parachain_id: u32,
+	/// The name of the chain for that the genesis wasm file should be exported.
+	#[clap(long)]
+	pub chain: Option<String>,
 }
 #[derive(Subcommand, Debug)]
 pub enum Commands {
@@ -58,6 +67,10 @@ pub enum Commands {
 
 	#[clap(name = "export-genesis-state")]
 	ExportGenesisState(ExportGenesisStateCommand),
+
+	/// Build a chain specification.
+	BuildSpec(sc_cli::BuildSpecCmd),
+
 }
 
 #[derive(Debug, Parser)]

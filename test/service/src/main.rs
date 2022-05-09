@@ -46,6 +46,10 @@ fn main() -> Result<(), sc_cli::Error> {
 	let cli = TestCollatorCli::parse();
 
 	match &cli.subcommand {
+		Some(Commands::BuildSpec(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
+		},
 		Some(Commands::ExportGenesisState(params)) => {
 			let mut builder = sc_cli::LoggerBuilder::new("");
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
