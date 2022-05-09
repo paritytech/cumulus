@@ -422,6 +422,9 @@ pub mod pallet {
 		/// Downward messages were processed using the given weight.
 		/// \[ weight_used, result_mqc_head \]
 		DownwardMessagesProcessed(Weight, relay_chain::Hash),
+		/// An upward message was sent to the relay chain.
+        UpwardMessageSent(Option<XcmHash>),
+
 	}
 
 	#[pallet::error]
@@ -966,7 +969,7 @@ impl<T: Config> frame_system::SetCode<T> for ParachainSetCode<T> {
 }
 
 impl<T: Config> Pallet<T> {
-	pub fn send_upward_message(message: UpwardMessage) -> Result<u32, MessageSendError> {
+	pub fn send_upward_message(message: UpwardMessage) -> Result<(u32, XcmHash), MessageSendError> {
 		// Check if the message fits into the relay-chain constraints.
 		//
 		// Note, that we are using `host_configuration` here which may be from the previous
@@ -997,12 +1000,14 @@ impl<T: Config> Pallet<T> {
 			},
 		};
 		<PendingUpwardMessages<T>>::append(message);
-		Ok(0)
+		let hash = message.using_encoded(sp_io::hashing::blake2_256);
+		Self::deposit_event(Event::UpwardMessageSent(Some(hash)));
+		Ok((0, hash))
 	}
 }
 
 impl<T: Config> UpwardMessageSender for Pallet<T> {
-	fn send_upward_message(message: UpwardMessage) -> Result<u32, MessageSendError> {
+	fn send_upward_message(message: UpwardMessage) -> Result<(u32, XcmHash), MessageSendError> {
 		Self::send_upward_message(message)
 	}
 }
