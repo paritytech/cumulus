@@ -1,8 +1,8 @@
 [package]
-name = "parachain-template-runtime"
+name = "penpal-runtime"
 version = "0.1.0"
 authors = ["Anonymous"]
-description = "A new Cumulus FRAME-based Substrate Runtime, ready for hacking together a parachain."
+description = "A parachain for communication back and forth with XCM of assets and uniques."
 license = "Unlicense"
 homepage = "https://substrate.io"
 repository = "https://github.com/paritytech/cumulus/"
@@ -22,9 +22,6 @@ scale-info = { version = "2.1.1", default-features = false, features = ["derive"
 serde = { version = "1.0.132", optional = true, features = ["derive"] }
 smallvec = "1.6.1"
 
-# Local
-pallet-template = { path = "../pallets/template", default-features = false }
-
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "master" }
 frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -41,6 +38,8 @@ pallet-sudo = { git = "https://github.com/paritytech/substrate", default-feature
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -55,6 +54,7 @@ sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default
 sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -63,17 +63,17 @@ xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 # Cumulus
-cumulus-pallet-aura-ext = { path = "../../pallets/aura-ext", default-features = false }
-cumulus-pallet-dmp-queue = { path = "../../pallets/dmp-queue", default-features = false }
-cumulus-pallet-parachain-system = { path = "../../pallets/parachain-system", default-features = false }
-cumulus-pallet-session-benchmarking = {path = "../../pallets/session-benchmarking", default-features = false, version = "3.0.0"}
-cumulus-pallet-xcm = { path = "../../pallets/xcm", default-features = false }
-cumulus-pallet-xcmp-queue = { path = "../../pallets/xcmp-queue", default-features = false }
-cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
-cumulus-primitives-timestamp = { path = "../../primitives/timestamp", default-features = false }
-cumulus-primitives-utility = { path = "../../primitives/utility", default-features = false }
-pallet-collator-selection = { path = "../../pallets/collator-selection", default-features = false }
-parachain-info = { path = "../../polkadot-parachains/pallets/parachain-info", default-features = false }
+cumulus-pallet-aura-ext = { path = "../../../pallets/aura-ext", default-features = false }
+cumulus-pallet-dmp-queue = { path = "../../../pallets/dmp-queue", default-features = false }
+cumulus-pallet-parachain-system = { path = "../../../pallets/parachain-system", default-features = false }
+cumulus-pallet-session-benchmarking = {path = "../../../pallets/session-benchmarking", default-features = false, version = "3.0.0"}
+cumulus-pallet-xcm = { path = "../../../pallets/xcm", default-features = false }
+cumulus-pallet-xcmp-queue = { path = "../../../pallets/xcmp-queue", default-features = false }
+cumulus-primitives-core = { path = "../../../primitives/core", default-features = false }
+cumulus-primitives-timestamp = { path = "../../../primitives/timestamp", default-features = false }
+cumulus-primitives-utility = { path = "../../../primitives/utility", default-features = false }
+pallet-collator-selection = { path = "../../../pallets/collator-selection", default-features = false }
+parachain-info = { path = "../../../polkadot-parachains/pallets/parachain-info", default-features = false }
 
 [features]
 default = [
@@ -102,11 +102,13 @@ std = [
 	"pallet-collator-selection/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
-	"pallet-template/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
+	"pallet-assets/std",
+	"pallet-asset-tx-payment/std",
 	"pallet-xcm/std",
+	"polkadot-primitives/std",
 	"parachain-info/std",
 	"polkadot-parachain/std",
 	"polkadot-runtime-common/std",
@@ -135,7 +137,6 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
-	"pallet-template/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",

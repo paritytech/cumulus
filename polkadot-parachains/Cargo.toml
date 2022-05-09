@@ -22,6 +22,7 @@ serde = { version = "1.0.132", features = ["derive"] }
 rococo-parachain-runtime = { path = "rococo-parachain" }
 shell-runtime = { path = "shell" }
 seedling-runtime = { path = "seedling" }
+penpal-runtime = { path = "testing/penpal" }
 statemint-runtime = { path = "statemint" }
 statemine-runtime = { path = "statemine" }
 westmint-runtime = { path = "westmint" }

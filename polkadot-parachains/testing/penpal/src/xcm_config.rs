@@ -1,27 +1,35 @@
 use super::{
-	AccountId, Balances, Call, Event, Origin,
+	AccountId, AssetId as AssetIdPalletAssets, Assets, Balance, Balances, Call, Event, Origin,
 	ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, WeightToFee, XcmpQueue,
 };
 use core::marker::PhantomData;
 use frame_support::{
 	log, match_types, parameter_types,
-	traits::{Everything, Nothing},
+	traits::{
+		fungibles::{self, Balanced, CreditOf},
+		Contains, Everything, Get, Nothing,
+	},
 	weights::Weight,
 };
+use pallet_asset_tx_payment::HandleCredit;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::impls::ToAuthor;
+use sp_runtime::traits::Zero;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AccountId32Aliases,
-	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom,
-	CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
-	IsConcrete, LocationInverter, NativeAsset, ParentIsPreset,
+	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
+	ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
+	FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset, ParentIsPreset,
 	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
 	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 	UsingComponents,
 };
-use xcm_executor::{traits::ShouldExecute, XcmExecutor};
+use xcm_executor::{
+	traits::{FilterAssetLocation, JustTry, ShouldExecute},
+	XcmExecutor,
+};
 
 parameter_types! {
 	pub const RelayLocation: MultiLocation = MultiLocation::parent();
@@ -43,7 +51,7 @@ pub type LocationToAccountId = (
 );
 
 /// Means for transacting assets on this chain.
-pub type LocalAssetTransactor = CurrencyAdapter<
+pub type CurrencyTransactor = CurrencyAdapter<
 	// Use this currency:
 	Balances,
 	// Use this currency when it is a fungible asset matching the given location or name:
@@ -55,6 +63,31 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 	// We don't track any teleports.
 	(),
 >;
+
+/// Means for transacting assets besides the native currency on this chain.
+pub type FungiblesTransactor = FungiblesAdapter<
+	// Use this fungibles implementation:
+	Assets,
+	// Use this currency when it is a fungible asset matching the given location or name:
+	ConvertedConcreteAssetId<
+		AssetIdPalletAssets,
+		Balance,
+		AsPrefixedGeneralIndex<CommonGoodAssetsPalletLocation, AssetIdPalletAssets, JustTry>,
+		JustTry,
+	>,
+	// Convert an XCM MultiLocation into a local account id:
+	LocationToAccountId,
+	// Our chain's account ID type (we can't get away without mentioning it explicitly):
+	AccountId,
+	// We only want to allow teleports of known assets. We use non-zero issuance as an indication
+	// that this asset is known.
+	NonZeroIssuance<AccountId, Assets>,
+	// The account to use for tracking teleports.
+	CheckingAccount,
+>;
+
+/// Means for transacting assets on this chain.
+pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -87,6 +120,9 @@ match_types! {
 	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
 		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
+	};
+	pub type CommonGoodAssetsParachain: impl Contains<MultiLocation> = {
+		MultiLocation { parents: 1, interior: X1(Parachain(1000)) }
 	};
 }
 
@@ -158,20 +194,117 @@ pub type Barrier = DenyThenTry<
 	(
 		TakeWeightCredit,
 		AllowTopLevelPaidExecutionFrom<Everything>,
+		// Parent and its exec plurality get free execution
 		AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
-		// ^^^ Parent and its exec plurality get free execution
+		// Assets Common Good parachain gets free execution
+		AllowUnpaidExecutionFrom<CommonGoodAssetsParachain>,
+		// Expected responses are OK.
+		AllowKnownQueryResponses<PolkadotXcm>,
+		// Subscriptions for version tracking are OK.
+		AllowSubscriptionsFrom<Everything>,
 	),
 >;
+
+/// Type alias to conveniently refer to `frame_system`'s `Config::AccountId`.
+pub type AccountIdOf<R> = <R as frame_system::Config>::AccountId;
+
+/// Asset filter that allows all assets from a certain location.
+pub struct AssetsFrom<T>(PhantomData<T>);
+impl<T: Get<MultiLocation>> FilterAssetLocation for AssetsFrom<T> {
+	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+		let loc = T::get();
+		&loc == origin &&
+			matches!(asset, MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) }
+			if asset_loc.match_and_split(&loc).is_some())
+	}
+}
+
+/// Allow checking in assets that have issuance > 0.
+pub struct NonZeroIssuance<AccountId, Assets>(PhantomData<(AccountId, Assets)>);
+impl<AccountId, Assets> Contains<<Assets as fungibles::Inspect<AccountId>>::AssetId>
+	for NonZeroIssuance<AccountId, Assets>
+where
+	Assets: fungibles::Inspect<AccountId>,
+{
+	fn contains(id: &<Assets as fungibles::Inspect<AccountId>>::AssetId) -> bool {
+		!Assets::total_issuance(*id).is_zero()
+	}
+}
+
+/// A `HandleCredit` implementation that naively transfers the fees to the block author.
+/// Will drop and burn the assets in case the transfer fails.
+pub struct AssetsToBlockAuthor<R>(PhantomData<R>);
+impl<R> HandleCredit<AccountIdOf<R>, pallet_assets::Pallet<R>> for AssetsToBlockAuthor<R>
+where
+	R: pallet_authorship::Config + pallet_assets::Config,
+	AccountIdOf<R>:
+		From<polkadot_primitives::v2::AccountId> + Into<polkadot_primitives::v2::AccountId>,
+{
+	fn handle_credit(credit: CreditOf<AccountIdOf<R>, pallet_assets::Pallet<R>>) {
+		if let Some(author) = pallet_authorship::Pallet::<R>::author() {
+			// In case of error: Will drop the result triggering the `OnDrop` of the imbalance.
+			let _ = pallet_assets::Pallet::<R>::resolve(&author, credit);
+		}
+	}
+}
+
+pub trait Reserve {
+	/// Returns assets reserve location.
+	fn reserve(&self) -> Option<MultiLocation>;
+}
+
+// Takes the chain part of a MultiAsset
+impl Reserve for MultiAsset {
+	fn reserve(&self) -> Option<MultiLocation> {
+		if let AssetId::Concrete(location) = self.id.clone() {
+			let first_interior = location.first_interior();
+			let parents = location.parent_count();
+			match (parents, first_interior.clone()) {
+				(0, Some(Parachain(id))) => Some(MultiLocation::new(0, X1(Parachain(id.clone())))),
+				(1, Some(Parachain(id))) => Some(MultiLocation::new(1, X1(Parachain(id.clone())))),
+				(1, _) => Some(MultiLocation::parent()),
+				_ => None,
+			}
+		} else {
+			None
+		}
+	}
+}
+
+/// A `FilterAssetLocation` implementation. Filters multi native assets whose
+/// reserve is same with `origin`.
+pub struct MultiNativeAsset;
+impl FilterAssetLocation for MultiNativeAsset {
+	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+		if let Some(ref reserve) = asset.reserve() {
+			if reserve == origin {
+				return true
+			}
+		}
+		false
+	}
+}
+
+parameter_types! {
+	pub CommonGoodAssetsLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(1000)));
+	// ALWAYS ensure that the index in PalletInstance stays up-to-date with
+	// Statemint's Assets pallet index
+	pub CommonGoodAssetsPalletLocation: MultiLocation =
+		MultiLocation::new(1, X2(Parachain(1000), PalletInstance(50)));
+	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
+}
+
+pub type Reserves = (NativeAsset, AssetsFrom<CommonGoodAssetsLocation>);
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// How to withdraw and deposit an asset.
-	type AssetTransactor = LocalAssetTransactor;
+	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	type IsReserve = NativeAsset; // TODO: maybe needed to be replaced by Reserves
-	type IsTeleporter = (); // Teleporting is disabled.
+	type IsReserve = MultiNativeAsset; // TODO: maybe needed to be replaced by Reserves
+	type IsTeleporter = NativeAsset;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
@@ -190,7 +323,7 @@ pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, RelayNet
 /// queues.
 pub type XcmRouter = (
 	// Two routers - use UMP to communicate with the relay chain:
-	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, ()>,
+	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm>,
 	// ..and XCMP to communicate with the sibling chains.
 	XcmpQueue,
 );
@@ -205,7 +338,7 @@ impl pallet_xcm::Config for Runtime {
 	// Needs to be `Everything` for local testing.
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;
-	type XcmReserveTransferFilter = Nothing;
+	type XcmReserveTransferFilter = Everything;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Origin = Origin;

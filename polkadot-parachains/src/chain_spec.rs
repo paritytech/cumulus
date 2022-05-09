@@ -34,6 +34,10 @@ pub type ShellChainSpec = sc_service::GenericChainSpec<shell_runtime::GenesisCon
 pub type SeedlingChainSpec =
 	sc_service::GenericChainSpec<seedling_runtime::GenesisConfig, Extensions>;
 
+	/// Specialized `ChainSpec` for the normal parachain runtime.
+pub type PenpalChainSpec =
+	sc_service::GenericChainSpec<penpal_runtime::GenesisConfig, Extensions>;
+
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
@@ -141,6 +145,61 @@ pub fn get_seedling_chain_spec() -> SeedlingChainSpec {
 	)
 }
 
+pub fn get_penpal_chain_spec(id: ParaId, relay_chain: &str) -> PenpalChainSpec {
+	// Give your base currency a unit name and decimal places
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("tokenSymbol".into(), "UNIT".into());
+	properties.insert("tokenDecimals".into(), 12u32.into());
+	properties.insert("ss58Format".into(), 42u32.into());
+
+	PenpalChainSpec::from_genesis(
+		// Name
+		"Penpal Parachain",
+		// ID
+		"penpal-parachain",
+		ChainType::Development,
+		move || {
+			penpal_testnet_genesis(
+				// initial collators.
+				vec![
+					(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed::<AuraId>("Alice"),
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed::<AuraId>("Bob"),
+					),
+				],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+				],
+				id,
+			)
+		},
+		Vec::new(),
+		None,
+		None,
+		None,
+		None,
+		Extensions {
+			relay_chain: relay_chain.into(), // You MUST set this to the correct network!
+			para_id: id.into(),
+		},
+	)
+}
+
 pub fn staging_test_net() -> ChainSpec {
 	ChainSpec::from_genesis(
 		"Staging Testnet",
@@ -226,6 +285,56 @@ fn seedling_testnet_genesis(
 	}
 }
 
+fn penpal_testnet_genesis(
+	invulnerables: Vec<(AccountId, AuraId)>,
+	endowed_accounts: Vec<AccountId>,
+	id: ParaId,
+) -> penpal_runtime::GenesisConfig {
+	penpal_runtime::GenesisConfig {
+		system: penpal_runtime::SystemConfig {
+			code: penpal_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!")
+				.to_vec(),
+		},
+		balances: penpal_runtime::BalancesConfig {
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, penpal_runtime::EXISTENTIAL_DEPOSIT * 4096))
+				.collect(),
+		},
+		parachain_info: penpal_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: penpal_runtime::CollatorSelectionConfig {
+			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
+			candidacy_bond: penpal_runtime::EXISTENTIAL_DEPOSIT * 16,
+			..Default::default()
+		},
+		session: penpal_runtime::SessionConfig {
+			keys: invulnerables
+				.into_iter()
+				.map(|(acc, aura)| {
+					(
+						acc.clone(),                 // account id
+						acc,                         // validator id
+						penpal_session_keys(aura), // session keys
+					)
+				})
+				.collect(),
+		},
+		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
+		// of this.
+		aura: Default::default(),
+		aura_ext: Default::default(),
+		parachain_system: Default::default(),
+		polkadot_xcm: penpal_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
+		},
+		sudo: penpal_runtime::SudoConfig {
+			key: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
+		},
+	}
+}
+
 use parachains_common::{Balance as StatemintBalance, StatemintAuraId};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
@@ -273,6 +382,13 @@ pub fn statemine_session_keys(keys: AuraId) -> statemine_runtime::SessionKeys {
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
 pub fn westmint_session_keys(keys: AuraId) -> westmint_runtime::SessionKeys {
 	westmint_runtime::SessionKeys { aura: keys }
+}
+
+/// Generate the session keys from individual elements.
+///
+/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
+pub fn penpal_session_keys(keys: AuraId) -> penpal_runtime::SessionKeys {
+	penpal_runtime::SessionKeys { aura: keys }
 }
 
 pub fn statemint_development_config() -> StatemintChainSpec {

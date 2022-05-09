@@ -61,61 +61,6 @@ pub fn template_session_keys(keys: AuraId) -> parachain_template_runtime::Sessio
 	parachain_template_runtime::SessionKeys { aura: keys }
 }
 
-pub fn community_parachain_config(id: ParaId, relay_chain: &str) -> ChainSpec {
-	// Give your base currency a unit name and decimal places
-	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "UNIT".into());
-	properties.insert("tokenDecimals".into(), 12.into());
-	properties.insert("ss58Format".into(), 42.into());
-
-	ChainSpec::from_genesis(
-		// Name
-		"Community Parachain",
-		// ID
-		"community-parachain",
-		ChainType::Development,
-		move || {
-			testnet_genesis(
-				// initial collators.
-				vec![
-					(
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed("Alice"),
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed("Bob"),
-					),
-				],
-				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie"),
-					get_account_id_from_seed::<sr25519::Public>("Dave"),
-					get_account_id_from_seed::<sr25519::Public>("Eve"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-				],
-				id,
-			)
-		},
-		Vec::new(),
-		None,
-		None,
-		None,
-		None,
-		Extensions {
-			relay_chain: relay_chain.into(), // You MUST set this to the correct network!
-			para_id: id.into(),
-		},
-	)
-}
-
 pub fn development_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
@@ -156,7 +101,7 @@ pub fn development_config() -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				3000.into(),
+				1000.into(),
 			)
 		},
 		Vec::new(),
@@ -166,7 +111,7 @@ pub fn development_config() -> ChainSpec {
 		None,
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-			para_id: 3000,
+			para_id: 1000,
 		},
 	)
 }
@@ -211,7 +156,7 @@ pub fn local_testnet_config() -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				3000.into(),
+				1000.into(),
 			)
 		},
 		// Bootnodes
@@ -227,7 +172,7 @@ pub fn local_testnet_config() -> ChainSpec {
 		// Extensions
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-			para_id: 3000,
+			para_id: 1000,
 		},
 	)
 }
@@ -247,7 +192,7 @@ fn testnet_genesis(
 			balances: endowed_accounts
 				.iter()
 				.cloned()
-				.map(|k| (k, EXISTENTIAL_DEPOSIT * 4096))
+				.map(|k| (k, 1 << 60))
 				.collect(),
 		},
 		parachain_info: parachain_template_runtime::ParachainInfoConfig { parachain_id: id },
@@ -275,9 +220,6 @@ fn testnet_genesis(
 		parachain_system: Default::default(),
 		polkadot_xcm: parachain_template_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
-		},
-		sudo: parachain_template_runtime::SudoConfig {
-			key: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 		},
 	}
 }

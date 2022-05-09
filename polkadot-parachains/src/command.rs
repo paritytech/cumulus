@@ -143,6 +143,14 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		)?),
 		// -- Fallback (generic chainspec)
 		"" => Box::new(chain_spec::get_chain_spec()),
+		"penpal-kusama" => Box::new(chain_spec::get_penpal_chain_spec(
+			extract_parachain_id(id).1.expect("Must specify parachain id"),
+			"kusama-local",
+		)),
+		"penpal-polkadot" => Box::new(chain_spec::get_penpal_chain_spec(
+			extract_parachain_id(id).1.expect("Must specify parachain id"),
+			"polkadot-local",
+ 		)),
 		// -- Loading a specific spec from disk
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
@@ -163,6 +171,27 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 			}
 		},
 	})
+}
+
+/// Extracts the normalized chain id and parachain id from the input chain id
+///
+/// E.g. "penpal-parachain-2004" yields ("penpal-parachain", Some(2004))
+fn extract_parachain_id(id: &str) -> (&str, Option<ParaId>) {
+	const KUSAMA_TEST_PARA_PREFIX: &str = "penpal-kusama-";
+	const POLKADOT_TEST_PARA_PREFIX: &str = "penpal-polkadot-";
+
+	let (norm_id, para) = if id.starts_with(KUSAMA_TEST_PARA_PREFIX) {
+		let suffix = &id[KUSAMA_TEST_PARA_PREFIX.len()..];
+		let para_id: u32 = suffix.parse().expect("Invalid parachain-id suffix");
+		(&id[..KUSAMA_TEST_PARA_PREFIX.len() - 1], Some(para_id))
+	} else if id.starts_with(POLKADOT_TEST_PARA_PREFIX) {
+		let suffix = &id[POLKADOT_TEST_PARA_PREFIX.len()..];
+		let para_id: u32 = suffix.parse().expect("Invalid parachain-id suffix");
+		(&id[..POLKADOT_TEST_PARA_PREFIX.len() - 1], Some(para_id))
+	} else {
+		(id, None)
+	};
+	(norm_id, para.map(Into::into))
 }
 
 impl SubstrateCli for Cli {
