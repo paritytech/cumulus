@@ -9,9 +9,9 @@ description = "Base pallet for cumulus-based parachains"
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 environmental = { version = "1.1.2", default-features = false }
 impl-trait-for-tuples = "0.2.1"
-log = { version = "0.4.16", default-features = false }
-scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
-serde = { version = "1.0.132", optional = true, features = ["derive"] }
+log = { version = "0.4.17", default-features = false }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+serde = { version = "1.0.137", optional = true, features = ["derive"] }
 
 # Substrate
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -72,4 +72,8 @@ std = [
 	"sp-std/std",
 	"sp-trie/std",
 	"xcm/std"
+]
+
+runtime-benchmarks = [
+	"sp-runtime/runtime-benchmarks"
 ]

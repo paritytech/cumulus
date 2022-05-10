@@ -177,7 +177,7 @@ fn main() -> Result<(), sc_cli::Error> {
 					polkadot_config,
 					parachain_id,
 					block_announce_wrapper,
-					|_| Ok(Default::default()),
+					|_| Ok(jsonrpsee::RpcModule::new(())),
 					consensus,
 					collator_options,
 				))

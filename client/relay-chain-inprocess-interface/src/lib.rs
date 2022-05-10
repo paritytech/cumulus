@@ -19,10 +19,8 @@ use std::{pin::Pin, sync::Arc, time::Duration};
 use async_trait::async_trait;
 use cumulus_primitives_core::{
 	relay_chain::{
-		v2::{
-			CommittedCandidateReceipt, OccupiedCoreAssumption, ParachainHost, SessionIndex,
-			ValidatorId,
-		},
+		runtime_api::ParachainHost,
+		v2::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
 		Block as PBlock, BlockId, Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
@@ -329,6 +327,7 @@ fn build_polkadot_full_node(
 	config: Configuration,
 	parachain_config: &Configuration,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
+	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> Result<(NewFull<polkadot_client::Client>, Option<CollatorPair>), polkadot_service::Error> {
 	let is_light = matches!(config.role, Role::Light);
 	if is_light {
@@ -350,6 +349,8 @@ fn build_polkadot_full_node(
 			telemetry_worker_handle,
 			true,
 			polkadot_service::RealOverseerGen,
+			None,
+			hwbench,
 		)?;
 
 		Ok((relay_chain_full_node, maybe_collator_key))
@@ -362,9 +363,14 @@ pub fn build_inprocess_relay_chain(
 	parachain_config: &Configuration,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	task_manager: &mut TaskManager,
+	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
-	let (full_node, collator_key) =
-		build_polkadot_full_node(polkadot_config, parachain_config, telemetry_worker_handle)?;
+	let (full_node, collator_key) = build_polkadot_full_node(
+		polkadot_config,
+		parachain_config,
+		telemetry_worker_handle,
+		hwbench,
+	)?;
 
 	let sync_oracle: Box<dyn SyncOracle + Send + Sync> = Box::new(full_node.network.clone());
 	let sync_oracle = Arc::new(Mutex::new(sync_oracle));
