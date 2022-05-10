@@ -318,10 +318,9 @@ pub fn new_mini(
 	let overseer_connector = OverseerConnector::default();
 	let overseer_handle = Handle::new(overseer_connector.handle());
 
-	let chain_spec = config.chain_spec.cloned_box();
-
 	let requires_overseer_for_chain_sel = false;
 
+	// let chain_spec = config.chain_spec.cloned_box();
 	// let disputes_enabled = chain_spec.is_rococo() ||
 	// 	chain_spec.is_kusama() ||
 	// 	chain_spec.is_westend() ||

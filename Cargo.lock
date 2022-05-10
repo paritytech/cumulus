@@ -5005,9 +5005,9 @@ dependencies = [
 
 [[package]]
 name = "log"
-version = "0.4.16"
+version = "0.4.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6389c490849ff5bc16be905ae24bc913a9c8892e19b2341dbc175e14c341c2b8"
+checksum = "abb12e687cfb44aa40f41fc3978ef76448f9b6038cad6aef4259d3c095a2382e"
 dependencies = [
  "cfg-if 1.0.0",
  "value-bag",
@@ -10575,9 +10575,9 @@ dependencies = [
 
 [[package]]
 name = "serde"
-version = "1.0.136"
+version = "1.0.137"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce31e24b01e1e524df96f1c2fdd054405f8d7376249a5110886fb4b658484789"
+checksum = "61ea8d54c77f8315140a05f4c7237403bf38b72704d031543aa1d16abbf517d1"
 dependencies = [
  "serde_derive",
 ]
@@ -10594,9 +10594,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.136"
+version = "1.0.137"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08597e7152fcd306f41838ed3e37be9eaeed2b61c42e2117266a554fab4662f9"
+checksum = "1f26faba0c3959972377d3b2d306ee9f71faee9714294e41bb777f83f88578be"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -11952,9 +11952,9 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "syn"
-version = "1.0.91"
+version = "1.0.92"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b683b2b825c8eef438b77c36a06dc262294da3d5a5813fac20da149241dcd44d"
+checksum = "7ff7c592601f11445996a06f8ad0c27f094a58857c2f89e97974ab9235b92c52"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -12053,18 +12053,18 @@ checksum = "b1141d4d61095b28419e22cb0bbf02755f5e54e0526f97f1e3d1d160e60885fb"
 
 [[package]]
 name = "thiserror"
-version = "1.0.30"
+version = "1.0.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "854babe52e4df1653706b98fcfc05843010039b406875930a70e4d9644e5c417"
+checksum = "bd829fe32373d27f76265620b5309d0340cb8550f523c1dda251d6298069069a"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.30"
+version = "1.0.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa32fd3f627f367fe16f893e2597ae3c05020f8bba2666a4e6ea73d377e5714b"
+checksum = "0396bc89e626244658bef819e22d0cc459e795a5ebe878e6ec336d1674a8d79a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -12496,7 +12496,7 @@ version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ee73e6e4924fe940354b8d4d98cad5231175d615cd855b758adc658c0aac6a0"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.3",
  "rand 0.8.5",
  "static_assertions",
@@ -12645,9 +12645,9 @@ checksum = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
 
 [[package]]
 name = "value-bag"
-version = "1.0.0-alpha.8"
+version = "1.0.0-alpha.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79923f7731dc61ebfba3633098bf3ac533bbd35ccd8c57e7088d9a5eebe0263f"
+checksum = "2209b78d1249f7e6f3293657c9779fe31ced465df091bbd433a1cf88e916ec55"
 dependencies = [
  "ctor",
  "version_check",
@@ -13460,9 +13460,9 @@ dependencies = [
 
 [[package]]
 name = "zeroize"
-version = "1.5.4"
+version = "1.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7eb5728b8afd3f280a869ce1d4c554ffaed35f45c231fc41bfbd0381bef50317"
+checksum = "94693807d016b2f2d2e14420eb3bfcca689311ff775dcf113d74ea624b7cdf07"
 dependencies = [
  "zeroize_derive",
 ]
@@ -13507,74 +13507,6 @@ dependencies = [
  "cc",
  "libc",
 ]
-
-[[patch.unused]]
-name = "polkadot"
-version = "0.9.19"
-
-[[patch.unused]]
-name = "polkadot-primitives-test-helpers"
-version = "0.9.19"
-
-[[patch.unused]]
-name = "polkadot-test-malus"
-version = "0.9.19"
-
-[[patch.unused]]
-name = "polkadot-voter-bags"
-version = "0.9.19"
-
-[[patch.unused]]
-name = "remote-ext-tests-bags-list"
-version = "0.9.19"
-
-[[patch.unused]]
-name = "staking-miner"
-version = "0.9.19"
-
-[[patch.unused]]
-name = "test-parachain-adder"
-version = "0.9.19"
-
-[[patch.unused]]
-name = "test-parachain-adder-collator"
-version = "0.9.19"
-
-[[patch.unused]]
-name = "test-parachain-halt"
-version = "0.9.19"
-
-[[patch.unused]]
-name = "test-parachain-undying"
-version = "0.9.19"
-
-[[patch.unused]]
-name = "test-parachain-undying-collator"
-version = "0.9.19"
-
-[[patch.unused]]
-name = "test-parachains"
-version = "0.9.19"
-
-[[patch.unused]]
-name = "xcm-executor-integration-tests"
-version = "0.9.19"
-
-[[patch.unused]]
-name = "xcm-simulator"
-version = "0.9.19"
-
-[[patch.unused]]
-name = "xcm-simulator-example"
-version = "0.9.19"
-
-[[patch.unused]]
-name = "xcm-simulator-fuzzer"
-version = "0.9.19"
-
-[[patch.unused]]
-name = "zombienet-backchannel"
-version = "0.9.19"
 
 [[patch.unused]]
 name = "chain-spec-builder"
@@ -13791,3 +13723,71 @@ version = "2.0.0"
 [[patch.unused]]
 name = "substrate-test-utils-test-crate"
 version = "0.1.0"
+
+[[patch.unused]]
+name = "polkadot"
+version = "0.9.19"
+
+[[patch.unused]]
+name = "polkadot-primitives-test-helpers"
+version = "0.9.19"
+
+[[patch.unused]]
+name = "polkadot-test-malus"
+version = "0.9.19"
+
+[[patch.unused]]
+name = "polkadot-voter-bags"
+version = "0.9.19"
+
+[[patch.unused]]
+name = "remote-ext-tests-bags-list"
+version = "0.9.19"
+
+[[patch.unused]]
+name = "staking-miner"
+version = "0.9.19"
+
+[[patch.unused]]
+name = "test-parachain-adder"
+version = "0.9.19"
+
+[[patch.unused]]
+name = "test-parachain-adder-collator"
+version = "0.9.19"
+
+[[patch.unused]]
+name = "test-parachain-halt"
+version = "0.9.19"
+
+[[patch.unused]]
+name = "test-parachain-undying"
+version = "0.9.19"
+
+[[patch.unused]]
+name = "test-parachain-undying-collator"
+version = "0.9.19"
+
+[[patch.unused]]
+name = "test-parachains"
+version = "0.9.19"
+
+[[patch.unused]]
+name = "xcm-executor-integration-tests"
+version = "0.9.19"
+
+[[patch.unused]]
+name = "xcm-simulator"
+version = "0.9.19"
+
+[[patch.unused]]
+name = "xcm-simulator-example"
+version = "0.9.19"
+
+[[patch.unused]]
+name = "xcm-simulator-fuzzer"
+version = "0.9.19"
+
+[[patch.unused]]
+name = "zombienet-backchannel"
+version = "0.9.19"
