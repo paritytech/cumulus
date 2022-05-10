@@ -39,7 +39,6 @@ pub struct ExportGenesisStateCommand {
 	/// The name of the chain for that the genesis state should be exported.
 	#[clap(long)]
 	pub chain: Option<String>,
-
 }
 
 /// Command for exporting the genesis wasm file.
@@ -70,7 +69,6 @@ pub enum Commands {
 
 	/// Build a chain specification.
 	BuildSpec(sc_cli::BuildSpecCmd),
-
 }
 
 #[derive(Debug, Parser)]
