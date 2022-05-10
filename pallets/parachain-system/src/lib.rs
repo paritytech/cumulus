@@ -53,6 +53,7 @@ use sp_runtime::{
 	},
 };
 use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
+use xcm::latest::XcmHash;
 
 mod migration;
 mod relay_state_snapshot;
@@ -999,7 +1000,7 @@ impl<T: Config> Pallet<T> {
 				// Thus fall through here.
 			},
 		};
-		<PendingUpwardMessages<T>>::append(message);
+		<PendingUpwardMessages<T>>::append(message.clone());
 		let hash = message.using_encoded(sp_io::hashing::blake2_256);
 		Self::deposit_event(Event::UpwardMessageSent(Some(hash)));
 		Ok((0, hash))
