@@ -1001,7 +1001,12 @@ impl<T: Config> Pallet<T> {
 			},
 		};
 		<PendingUpwardMessages<T>>::append(message.clone());
-		let hash = message.using_encoded(sp_io::hashing::blake2_256);
+
+		// The relay ump does not use using_encoded
+		// We apply the same this to use the same hash
+		// TODO: shall we change both ump and this to
+		// message.using_encoded(sp_io::hashing::blake2_256)?
+		let hash = sp_io::hashing::blake2_256(message);
 		Self::deposit_event(Event::UpwardMessageSent(Some(hash)));
 		Ok((0, hash))
 	}
