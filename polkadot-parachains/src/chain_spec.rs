@@ -34,9 +34,8 @@ pub type ShellChainSpec = sc_service::GenericChainSpec<shell_runtime::GenesisCon
 pub type SeedlingChainSpec =
 	sc_service::GenericChainSpec<seedling_runtime::GenesisConfig, Extensions>;
 
-	/// Specialized `ChainSpec` for the normal parachain runtime.
-pub type PenpalChainSpec =
-	sc_service::GenericChainSpec<penpal_runtime::GenesisConfig, Extensions>;
+/// Specialized `ChainSpec` for the normal parachain runtime.
+pub type PenpalChainSpec = sc_service::GenericChainSpec<penpal_runtime::GenesisConfig, Extensions>;
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
@@ -314,8 +313,8 @@ fn penpal_testnet_genesis(
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                 // account id
-						acc,                         // validator id
+						acc.clone(),               // account id
+						acc,                       // validator id
 						penpal_session_keys(aura), // session keys
 					)
 				})

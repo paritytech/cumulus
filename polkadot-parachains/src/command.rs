@@ -94,7 +94,8 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 }
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-	Ok(match id {
+	let (norm_id, para_id) = extract_parachain_id(id);
+	Ok(match norm_id {
 		"staging" => Box::new(chain_spec::staging_test_net()),
 		"tick" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../res/tick.json")[..],
@@ -144,15 +145,16 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		// -- Fallback (generic chainspec)
 		"" => Box::new(chain_spec::get_chain_spec()),
 		"penpal-kusama" => Box::new(chain_spec::get_penpal_chain_spec(
-			extract_parachain_id(id).1.expect("Must specify parachain id"),
+			para_id.expect("Must specify parachain id"),
 			"kusama-local",
 		)),
 		"penpal-polkadot" => Box::new(chain_spec::get_penpal_chain_spec(
-			extract_parachain_id(id).1.expect("Must specify parachain id"),
+			para_id.expect("Must specify parachain id"),
 			"polkadot-local",
- 		)),
+		)),
 		// -- Loading a specific spec from disk
 		path => {
+			println!("could not find a path {}", path);
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
 			if chain_spec.is_statemint() {
 				Box::new(chain_spec::StatemintChainSpec::from_json_file(path.into())?)
