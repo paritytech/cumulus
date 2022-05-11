@@ -42,7 +42,9 @@ use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 use parking_lot::Mutex;
 
 use frame_system_rpc_runtime_api::AccountNonceApi;
-use polkadot_primitives::v2::{CollatorPair, Hash as PHash, PersistedValidationData};
+use polkadot_primitives::v2::{
+	CollationForecast, CollatorPair, Hash as PHash, PersistedValidationData,
+};
 use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_network::{config::TransportConfig, multiaddr, NetworkService};
@@ -83,6 +85,15 @@ impl ParachainConsensus<Block> for NullConsensus {
 		_: PHash,
 		_: &PersistedValidationData,
 	) -> Option<ParachainCandidate<Block>> {
+		None
+	}
+
+	async fn is_collating(
+		&mut self,
+		_parent: &Header,
+		_relay_parent: PHash,
+		_validation_data: &PersistedValidationData,
+	) -> Option<CollationForecast> {
 		None
 	}
 }

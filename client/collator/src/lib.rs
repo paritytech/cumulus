@@ -33,14 +33,16 @@ use sp_runtime::{
 
 use cumulus_client_consensus_common::ParachainConsensus;
 use polkadot_node_primitives::{
-	BlockData, Collation, CollationGenerationConfig, CollationResult, MaybeCompressedPoV, PoV,
+	BlockData, Collation, CollationForecast, CollationGenerationConfig, CollationResult,
+	MaybeCompressedPoV, PoV,
 };
 use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
 use polkadot_overseer::Handle as OverseerHandle;
 use polkadot_primitives::v2::{CollatorPair, Id as ParaId};
 
+use async_trait::async_trait;
 use codec::{Decode, Encode};
-use futures::{channel::oneshot, FutureExt};
+use futures::channel::oneshot;
 use parking_lot::Mutex;
 use std::sync::Arc;
 use tracing::Instrument;
@@ -54,6 +56,7 @@ pub struct Collator<Block: BlockT, BS, RA> {
 	parachain_consensus: Box<dyn ParachainConsensus<Block>>,
 	wait_to_announce: Arc<Mutex<WaitToAnnounce<Block>>>,
 	runtime_api: Arc<RA>,
+	span: tracing::Span,
 }
 
 impl<Block: BlockT, BS, RA> Clone for Collator<Block, BS, RA> {
@@ -63,6 +66,7 @@ impl<Block: BlockT, BS, RA> Clone for Collator<Block, BS, RA> {
 			wait_to_announce: self.wait_to_announce.clone(),
 			parachain_consensus: self.parachain_consensus.clone(),
 			runtime_api: self.runtime_api.clone(),
+			span: self.span.clone(),
 		}
 	}
 }
@@ -83,8 +87,9 @@ where
 		parachain_consensus: Box<dyn ParachainConsensus<Block>>,
 	) -> Self {
 		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(spawner, announce_block)));
+		let span = tracing::Span::current();
 
-		Self { block_status, wait_to_announce, runtime_api, parachain_consensus }
+		Self { block_status, wait_to_announce, runtime_api, parachain_consensus, span }
 	}
 
 	/// Checks the status of the given block hash in the Parachain.
@@ -293,6 +298,64 @@ where
 
 		Some(CollationResult { collation, result_sender: Some(result_sender) })
 	}
+
+	async fn is_collating(
+		mut self,
+		relay_parent: PHash,
+		validation_data: &PersistedValidationData,
+	) -> Option<CollationForecast> {
+		let last_head = match Block::Header::decode(&mut &validation_data.parent_head.0[..]) {
+			Ok(x) => x,
+			Err(e) => {
+				tracing::error!(
+					target: LOG_TARGET,
+					error = ?e,
+					"Could not decode the head data."
+				);
+				return None
+			},
+		};
+
+		let last_head_hash = last_head.hash();
+		if !self.check_block_status(last_head_hash, &last_head) {
+			return None
+		}
+
+		self.parachain_consensus
+			.is_collating(&last_head, relay_parent, &validation_data)
+			.await
+	}
+}
+
+#[async_trait]
+impl<Block, BS, RA> polkadot_node_primitives::Collator for Collator<Block, BS, RA>
+where
+	Block: BlockT,
+	BS: BlockBackend<Block> + Send + Sync,
+	RA: ProvideRuntimeApi<Block> + Send + Sync,
+	RA::Api: CollectCollationInfo<Block>,
+{
+	async fn produce_collation(
+		&self,
+		relay_parent: PHash,
+		validation_data: &PersistedValidationData,
+	) -> Option<CollationResult> {
+		self.clone()
+			.produce_candidate(relay_parent, validation_data.clone())
+			.instrument(self.span.clone())
+			.await
+	}
+
+	async fn is_collating(
+		&self,
+		relay_parent: PHash,
+		validation_data: &PersistedValidationData,
+	) -> Option<CollationForecast> {
+		self.clone()
+			.is_collating(relay_parent, validation_data)
+			.instrument(self.span.clone())
+			.await
+	}
 }
 
 /// Parameters for [`start_collator`].
@@ -334,18 +397,7 @@ pub async fn start_collator<Block, RA, BS, Spawner>(
 		parachain_consensus,
 	);
 
-	let span = tracing::Span::current();
-	let config = CollationGenerationConfig {
-		key,
-		para_id,
-		collator: Box::new(move |relay_parent, validation_data| {
-			let collator = collator.clone();
-			collator
-				.produce_candidate(relay_parent, validation_data.clone())
-				.instrument(span.clone())
-				.boxed()
-		}),
-	};
+	let config = CollationGenerationConfig { key, para_id, collator: Box::new(collator.clone()) };
 
 	overseer_handle
 		.send_msg(CollationGenerationMessage::Initialize(config), "StartCollator")

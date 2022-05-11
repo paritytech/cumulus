@@ -34,7 +34,7 @@
 //! 5. After the parachain candidate got backed and included, all collators start at 1.
 
 use cumulus_client_consensus_common::{
-	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
+	CollationForecast, ParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
 use cumulus_primitives_core::{relay_chain::v2::Hash as PHash, ParaId, PersistedValidationData};
 use cumulus_relay_chain_interface::RelayChainInterface;
@@ -214,6 +214,15 @@ where
 		}
 
 		Some(ParachainCandidate { block, proof })
+	}
+
+	async fn is_collating(
+		&mut self,
+		_parent: &B::Header,
+		_relay_parent: PHash,
+		_validation_data: &PersistedValidationData,
+	) -> Option<CollationForecast> {
+		Some(CollationForecast::NextBlock)
 	}
 }
 

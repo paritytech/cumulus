@@ -22,6 +22,7 @@ mod parachain_consensus;
 #[cfg(test)]
 mod tests;
 pub use parachain_consensus::run_parachain_consensus;
+pub use polkadot_primitives::v2::CollationForecast;
 
 /// The result of [`ParachainConsensus::produce_candidate`].
 pub struct ParachainCandidate<B> {
@@ -53,6 +54,13 @@ pub trait ParachainConsensus<B: BlockT>: Send + Sync + dyn_clone::DynClone {
 		relay_parent: PHash,
 		validation_data: &PersistedValidationData,
 	) -> Option<ParachainCandidate<B>>;
+
+	async fn is_collating(
+		&mut self,
+		parent: &B::Header,
+		relay_parent: PHash,
+		validation_data: &PersistedValidationData,
+	) -> Option<CollationForecast>;
 }
 
 dyn_clone::clone_trait_object!(<B> ParachainConsensus<B> where B: BlockT);
@@ -66,6 +74,15 @@ impl<B: BlockT> ParachainConsensus<B> for Box<dyn ParachainConsensus<B> + Send +
 		validation_data: &PersistedValidationData,
 	) -> Option<ParachainCandidate<B>> {
 		(*self).produce_candidate(parent, relay_parent, validation_data).await
+	}
+
+	async fn is_collating(
+		&mut self,
+		parent: &B::Header,
+		relay_parent: PHash,
+		validation_data: &PersistedValidationData,
+	) -> Option<CollationForecast> {
+		(*self).is_collating(parent, relay_parent, validation_data).await
 	}
 }
 

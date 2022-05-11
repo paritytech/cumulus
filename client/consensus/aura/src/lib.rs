@@ -24,7 +24,7 @@
 
 use codec::{Decode, Encode};
 use cumulus_client_consensus_common::{
-	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
+	CollationForecast, ParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
 use cumulus_primitives_core::{relay_chain::v2::Hash as PHash, PersistedValidationData};
 
@@ -215,6 +215,28 @@ where
 		let res = self.aura_worker.lock().await.on_slot(info).await?;
 
 		Some(ParachainCandidate { block: res.block, proof: res.storage_proof })
+	}
+
+	async fn is_collating(
+		&mut self,
+		parent: &B::Header,
+		relay_parent: PHash,
+		validation_data: &PersistedValidationData,
+	) -> Option<CollationForecast> {
+		let inherent_data_providers =
+			self.inherent_data(parent.hash(), validation_data, relay_parent).await?.1;
+
+		let aura_worker = self.aura_worker.lock().await;
+		// Look for the next slot.
+		let next_slot = inherent_data_providers.slot() + 1;
+		let epoch_data = aura_worker.epoch_data(parent, next_slot).ok()?;
+
+		// Header is ignored.
+		if aura_worker.claim_slot(parent, next_slot, &epoch_data).await.is_some() {
+			Some(CollationForecast::NextBlock)
+		} else {
+			None
+		}
 	}
 }
 
