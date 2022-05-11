@@ -15,9 +15,12 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use lru::LruCache;
-use polkadot_node_network_protocol::request_response::{
-	v1::{AvailableDataFetchingRequest, CollationFetchingRequest},
-	IncomingRequest, IncomingRequestReceiver,
+use polkadot_node_network_protocol::{
+	request_response::{
+		v1::{AvailableDataFetchingRequest, CollationFetchingRequest},
+		IncomingRequest, IncomingRequestReceiver,
+	},
+	PeerId,
 };
 use polkadot_node_subsystem_util::metrics::{prometheus::Registry, Metrics};
 use polkadot_overseer::{
@@ -269,7 +272,7 @@ impl sc_service::ImportQueue<Block> for FakeImportQueue {
 	/// Import block justifications.
 	fn import_justifications(
 		&mut self,
-		who: libp2p::PeerId,
+		who: PeerId,
 		hash: PHash,
 		number: NumberFor<Block>,
 		justifications: Justifications,

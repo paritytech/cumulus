@@ -9,6 +9,7 @@ use polkadot_overseer::OverseerRuntimeClient;
 use polkadot_service::{runtime_traits::BlockIdTo, HeaderBackend};
 use sc_authority_discovery::AuthorityDiscoveryWrapper;
 use sc_client_api::{BlockBackend, BlockchainEvents, ProofProvider};
+use sp_api::ApiError;
 use sp_blockchain::HeaderMetadata;
 use tokio::runtime::Handle;
 use url::Url;
@@ -403,6 +404,27 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 	) -> Result<Option<u32>, sp_api::ApiError> {
 		Ok(Some(2))
 	}
+
+	fn staging_get_disputes(
+		&self,
+		at: &BlockId,
+	) -> Result<
+		Vec<(
+			polkadot_primitives::v2::SessionIndex,
+			polkadot_primitives::v2::CandidateHash,
+			polkadot_primitives::v2::DisputeState<polkadot_primitives::v2::BlockNumber>,
+		)>,
+		ApiError,
+	> {
+		if let BlockId::Hash(hash) = at {
+			block_on(self.rpc_client.parachain_host_staging_get_disputes(*hash))
+				.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
+		} else {
+			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
+				"Only hash is supported for RPC methods".to_string(),
+			)) as Box<_>))
+		}
+	}
 }
 
 impl AuthorityDiscoveryWrapper<Block> for BlockChainRPCClient {
@@ -703,6 +725,10 @@ impl BlockBackend<Block> for BlockChainRPCClient {
 		hash: &<Block as polkadot_service::BlockT>::Hash,
 	) -> sp_blockchain::Result<Option<Vec<u8>>> {
 		todo!()
+	}
+
+	fn requires_full_sync(&self) -> bool {
+		false
 	}
 }
 impl HeaderMetadata<Block> for BlockChainRPCClient {

@@ -25,7 +25,7 @@ use crate::{
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
-use frame_benchmarking_cli::BenchmarkCmd;
+use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::info;
 use parachains_common::{AuraId, StatemintAuraId};
 use polkadot_parachain::primitives::AccountIdConversion;
@@ -502,7 +502,8 @@ pub fn run() -> Result<()> {
 					})
 				}),
 				BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
-				BenchmarkCmd::Machine(cmd) => runner.sync_run(|config| cmd.run(&config)),
+				BenchmarkCmd::Machine(cmd) =>
+					runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
 			}
 		},
 		Some(Subcommand::TryRuntime(cmd)) => {
@@ -543,6 +544,15 @@ pub fn run() -> Result<()> {
 			let collator_options = cli.run.collator_options();
 
 			runner.run_node_until_exit(|config| async move {
+				let hwbench = if !cli.no_hardware_benchmarks {
+					config.database.path().map(|database_path| {
+						let _ = std::fs::create_dir_all(&database_path);
+						sc_sysinfo::gather_hwbench(Some(database_path))
+					})
+				} else {
+					None
+				};
+
 				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
 					.map(|e| e.para_id)
 					.ok_or_else(|| "Could not find parachain extension in chain-spec.")?;
@@ -581,7 +591,7 @@ pub fn run() -> Result<()> {
 					crate::service::start_statemint_node::<
 						statemint_runtime::RuntimeApi,
 						StatemintAuraId,
-					>(config, polkadot_config, collator_options, id)
+					>(config, polkadot_config, collator_options, id, hwbench)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
@@ -591,6 +601,7 @@ pub fn run() -> Result<()> {
 						polkadot_config,
 						collator_options,
 						id,
+						hwbench,
 					)
 					.await
 					.map(|r| r.0)
@@ -601,6 +612,7 @@ pub fn run() -> Result<()> {
 						polkadot_config,
 						collator_options,
 						id,
+						hwbench,
 					)
 					.await
 					.map(|r| r.0)
@@ -611,6 +623,7 @@ pub fn run() -> Result<()> {
 						polkadot_config,
 						collator_options,
 						id,
+						hwbench,
 					)
 					.await
 					.map(|r| r.0)
@@ -621,6 +634,7 @@ pub fn run() -> Result<()> {
 						polkadot_config,
 						collator_options,
 						id,
+						hwbench,
 					)
 					.await
 					.map(|r| r.0)
@@ -631,6 +645,7 @@ pub fn run() -> Result<()> {
 						polkadot_config,
 						collator_options,
 						id,
+						hwbench,
 					)
 					.await
 					.map(|r| r.0)
@@ -641,6 +656,7 @@ pub fn run() -> Result<()> {
 						polkadot_config,
 						collator_options,
 						id,
+						hwbench,
 					)
 					.await
 					.map(|r| r.0)

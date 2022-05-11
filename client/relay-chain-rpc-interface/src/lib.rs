@@ -21,10 +21,10 @@ use cumulus_primitives_core::{
 	relay_chain::{
 		v2::{
 			BlockNumber, CandidateCommitments, CandidateEvent, CommittedCandidateReceipt,
-			CoreState, GroupRotationInfo, OccupiedCoreAssumption, SessionIndex, SessionInfo,
-			ValidationCode, ValidationCodeHash, ValidatorId, ValidatorIndex,
+			CoreState, DisputeState, GroupRotationInfo, OccupiedCoreAssumption, SessionIndex,
+			SessionInfo, ValidationCode, ValidationCodeHash, ValidatorId, ValidatorIndex,
 		},
-		Hash as PHash, Header as PHeader, InboundHrmpMessage,
+		CandidateHash, Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
@@ -378,6 +378,14 @@ impl RelayChainRPCClient {
 		at: PHash,
 	) -> Result<Vec<InboundDownwardMessage>, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_dmq_contents", at, Some(para_id))
+			.await
+	}
+
+	pub async fn parachain_host_staging_get_disputes(
+		&self,
+		at: PHash,
+	) -> Result<Vec<(SessionIndex, CandidateHash, DisputeState<BlockNumber>)>, RelayChainError> {
+		self.call_remote_runtime_function("ParachainHost_staging_get_disputes", at, None::<()>)
 			.await
 	}
 
