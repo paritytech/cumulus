@@ -345,10 +345,10 @@ impl InstanceFilter<Call> for ProxyType {
 					Call::Uniques(pallet_uniques::Call::set_team { .. }) |
 					Call::Uniques(pallet_uniques::Call::set_metadata { .. }) |
 					Call::Uniques(pallet_uniques::Call::set_attribute { .. }) |
-					Call::Uniques(pallet_uniques::Call::set_class_metadata { .. }) |
+					Call::Uniques(pallet_uniques::Call::set_collection_metadata { .. }) |
 					Call::Uniques(pallet_uniques::Call::clear_metadata { .. }) |
 					Call::Uniques(pallet_uniques::Call::clear_attribute { .. }) |
-					Call::Uniques(pallet_uniques::Call::clear_class_metadata { .. }) |
+					Call::Uniques(pallet_uniques::Call::clear_collection_metadata { .. }) |
 					Call::Utility { .. } | Call::Multisig { .. }
 			),
 			ProxyType::AssetManager => matches!(
@@ -363,8 +363,8 @@ impl InstanceFilter<Call> for ProxyType {
 					Call::Uniques(pallet_uniques::Call::burn { .. }) |
 					Call::Uniques(pallet_uniques::Call::freeze { .. }) |
 					Call::Uniques(pallet_uniques::Call::thaw { .. }) |
-					Call::Uniques(pallet_uniques::Call::freeze_class { .. }) |
-					Call::Uniques(pallet_uniques::Call::thaw_class { .. }) |
+					Call::Uniques(pallet_uniques::Call::freeze_collection { .. }) |
+					Call::Uniques(pallet_uniques::Call::thaw_collection { .. }) |
 					Call::Utility { .. } | Call::Multisig { .. }
 			),
 			ProxyType::Collator => matches!(
