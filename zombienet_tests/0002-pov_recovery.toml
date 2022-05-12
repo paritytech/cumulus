@@ -27,9 +27,9 @@ cumulus_based = true
   command = "test-collator"
   args = ["-lparachain=debug"]
 
-	# Run dave as parachain collator and eve as parachain full node
-	#
-	# They will need to recover the pov blocks through availability recovery.
+  # Run dave as parachain collator and eve as parachain full node
+  #
+  # They will need to recover the pov blocks through availability recovery.
   [[parachains.collators]]
   name = "dave"
   validator = true

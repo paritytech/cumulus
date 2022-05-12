@@ -27,7 +27,7 @@ cumulus_based = true
   command = "test-collator"
   args = ["-lparachain=debug"]
 
-	# run cumulus dave (a parachain full node) and wait for it to sync some blocks
+  # run cumulus dave (a parachain full node) and wait for it to sync some blocks
   [[parachains.collators]]
   name = "dave"
   validator = false
