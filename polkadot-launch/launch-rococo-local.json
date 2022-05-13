@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../../../bin/polkadot-0.9.19",
+		"bin": "../../../bin/polkadot-v0.9.20",
 		"chain": "rococo-local",
 		"nodes": [
 			{
@@ -20,11 +20,8 @@
 			}
 		]
 	},
-	"parachains": [
-	],
-	"simpleParachains": [
-	],
-	"hrmpChannels": [
-	],
+	"parachains": [],
+	"simpleParachains": [],
+	"hrmpChannels": [],
 	"finalization": false
 }

@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../../../bin/polkadot-0.9.19",
+		"bin": "../../../bin/polkadot-v0.9.20",
 		"chain": "kusama-local",
 		"nodes": [
 			{
@@ -29,20 +29,24 @@
 					"wsPort": 9944,
 					"port": 31200,
 					"name": "dave",
-					"flags": ["--", "--execution=wasm"]
+					"flags": [
+						"--",
+						"--execution=wasm"
+					]
 				},
 				{
 					"wsPort": 9945,
 					"port": 31201,
 					"name": "eve",
-					"flags": ["--", "--execution=wasm"]
+					"flags": [
+						"--",
+						"--execution=wasm"
+					]
 				}
 			]
 		}
 	],
-	"simpleParachains": [
-	],
-	"hrmpChannels": [
-	],
+	"simpleParachains": [],
+	"hrmpChannels": [],
 	"finalization": false
 }

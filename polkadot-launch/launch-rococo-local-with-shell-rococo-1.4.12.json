@@ -1,6 +1,6 @@
 {
 	"relaychain": {
-		"bin": "../../../bin/polkadot-0.9.19",
+		"bin": "../../../bin/polkadot-v0.9.20",
 		"chain": "rococo-local",
 		"nodes": [
 			{
@@ -30,14 +30,15 @@
 					"rpcPort": 9933,
 					"port": 31200,
 					"name": "dave",
-					"flags": ["--", "--execution=wasm"]
+					"flags": [
+						"--",
+						"--execution=wasm"
+					]
 				}
 			]
 		}
 	],
-	"simpleParachains": [
-	],
-	"hrmpChannels": [
-	],
+	"simpleParachains": [],
+	"hrmpChannels": [],
 	"finalization": false
 }
