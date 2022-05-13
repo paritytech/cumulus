@@ -17,7 +17,7 @@
 #![allow(clippy::inconsistent_digit_grouping)]
 
 use cumulus_primitives_core::ParaId;
-use parachain_runtime::{AccountId, AuraId, TeerexConfig};
+use parachain_runtime::{AccountId, AuraId, DemocracyConfig, TeerexConfig};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::{ChainType, GenericChainSpec};
 use serde::{Deserialize, Serialize};
@@ -196,6 +196,9 @@ fn integritee_genesis_config(
 		balances: parachain_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 10__000_000_000_000)).collect(),
 		},
+		democracy: DemocracyConfig::default(),
+		council: Default::default(),
+		technical_committee: Default::default(),
 		sudo: parachain_runtime::SudoConfig { key: Some(root_key) },
 		vesting: Default::default(),
 		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },

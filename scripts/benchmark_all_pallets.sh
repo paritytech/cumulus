@@ -7,27 +7,20 @@ COLLATOR=./target/release/integritee-collator
 
 mkdir -p $INTEGRITEE_RUNTIME_WEIGHT_DIR
 
-pallets=(
-  "frame_system" \
-  "pallet_balances" \
-  "pallet_timestamp" \
-  "pallet_vesting" \
-  "pallet_teerex" \
-  "pallet_claims" \
-  "pallet_migration" \
-  "pallet_multisig" \
-  "pallet_proxy" \
-  "pallet_scheduler" \
-  "pallet_teeracle" \
-  "pallet_treasury" \
-  "pallet_utility" \
-)
+$COLLATOR benchmark pallet \
+    --chain integritee-rococo-local-dev \
+    --list |\
+  tail -n+2 |\
+  cut -d',' -f1 |\
+  uniq > "integritee_runtime_pallets"
 
-for pallet in ${pallets[*]}; do
+# For each pallet found in the previous command, run benches on each function
+while read -r line; do
+  pallet="$(echo "$line" | cut -d' ' -f1)";
   echo benchmarking "$pallet"...
 
   $COLLATOR \
-  benchmark \
+  benchmark pallet \
   --chain=integritee-rococo-local-dev \
   --steps=50 \
   --repeat=20 \
@@ -36,6 +29,6 @@ for pallet in ${pallets[*]}; do
   --execution=wasm \
   --wasm-execution=compiled \
   --heap-pages=4096 \
-  --output=./$INTEGRITEE_RUNTIME_WEIGHT_DIR/"$pallet".rs \
-
-done
+  --output=./$INTEGRITEE_RUNTIME_WEIGHT_DIR/"$pallet".rs
+done < "integritee_runtime_pallets"
+rm "integritee_runtime_pallets"

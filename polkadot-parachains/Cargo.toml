@@ -2,7 +2,7 @@
 name = "integritee-collator"
 description = "The Integritee parachain collator binary"
 # align major.minor revision with the runtimes. bump patch revision ad lib. make this the github release tag
-version = "1.5.22"
+version = "1.5.23"
 authors = ["Integritee AG <hello@integritee.network>"]
 homepage = "https://integritee.network/"
 repository = "https://github.com/integritee-network/parachain"
@@ -111,4 +111,8 @@ default = []
 runtime-benchmarks = [
 	'polkadot-service/runtime-benchmarks',
 	'parachain-runtime/runtime-benchmarks'
+]
+fast-runtime = [
+	"polkadot-service/fast-runtime",
+	"parachain-runtime/fast-runtime",
 ]
