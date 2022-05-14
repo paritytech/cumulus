@@ -263,17 +263,17 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Some XCM was executed ok.
-		Success { message_hash: Option<T::Hash> },
+		Success { message_id: Option<T::Hash> },
 		/// Some XCM failed.
-		Fail { message_hash: Option<T::Hash>, error: XcmError },
+		Fail { message_id: Option<T::Hash>, error: XcmError },
 		/// Bad XCM version used.
-		BadVersion { message_hash: Option<T::Hash> },
+		BadVersion { message_id: Option<T::Hash> },
 		/// Bad XCM format used.
-		BadFormat { message_hash: Option<T::Hash> },
+		BadFormat { message_id: Option<T::Hash> },
 		/// An upward message was sent to the relay chain.
-		UpwardMessageSent { message_hash: Option<T::Hash> },
+		UpwardMessageSent { message_id: Option<T::Hash> },
 		/// An HRMP message was sent to a sibling parachain.
-		XcmpMessageSent { message_hash: Option<T::Hash> },
+		XcmpMessageSent { message_id: Option<T::Hash> },
 		/// An XCM exceeded the individual message weight budget.
 		OverweightEnqueued {
 			sender: ParaId,
@@ -606,16 +606,16 @@ impl<T: Config> Pallet<T> {
 				let location = (1, Parachain(sender.into()));
 				match T::XcmExecutor::execute_xcm(location, xcm, max_weight) {
 					Outcome::Error(error) =>
-						(Err(error), Event::Fail { message_hash: Some(hash), error }),
-					Outcome::Complete(w) => (Ok(w), Event::Success { message_hash: Some(hash) }),
+						(Err(error), Event::Fail { message_id: Some(hash), error }),
+					Outcome::Complete(w) => (Ok(w), Event::Success { message_id: Some(hash) }),
 					// As far as the caller is concerned, this was dispatched without error, so
 					// we just report the weight used.
 					Outcome::Incomplete(w, error) =>
-						(Ok(w), Event::Fail { message_hash: Some(hash), error }),
+						(Ok(w), Event::Fail { message_id: Some(hash), error }),
 				}
 			},
 			Err(()) =>
-				(Err(XcmError::UnhandledXcmVersion), Event::BadVersion { message_hash: Some(hash) }),
+				(Err(XcmError::UnhandledXcmVersion), Event::BadVersion { message_id: Some(hash) }),
 		};
 		Self::deposit_event(event);
 		result
@@ -1111,7 +1111,7 @@ impl<T: Config> SendXcm for Pallet<T> {
 					versioned_xcm,
 				)
 				.map_err(|e| SendError::Transport(<&'static str>::from(e)))?;
-				Self::deposit_event(Event::XcmpMessageSent { message_hash: Some(hash) });
+				Self::deposit_event(Event::XcmpMessageSent { message_id: Some(hash) });
 				Ok(())
 			},
 			// Anything else is unhandled. This includes a message this is meant for us.
