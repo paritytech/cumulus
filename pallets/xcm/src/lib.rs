@@ -127,10 +127,7 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 				Ok(Ok(x)) => {
 					let outcome = T::XcmExecutor::execute_xcm(Parent, x, limit);
 					used += outcome.weight_used();
-					Pallet::<T>::deposit_event(Event::ExecutedDownward {
-						message_id: id,
-						outcome,
-					});
+					Pallet::<T>::deposit_event(Event::ExecutedDownward { message_id: id, outcome });
 				},
 			}
 		}
@@ -165,10 +162,7 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 					let weight_limit = limit.saturating_sub(used);
 					let outcome = T::XcmExecutor::execute_xcm(Parent, x, weight_limit);
 					used += outcome.weight_used();
-					Pallet::<T>::deposit_event(Event::ExecutedDownward {
-						message_id: id,
-						outcome,
-					});
+					Pallet::<T>::deposit_event(Event::ExecutedDownward { message_id: id, outcome });
 				},
 			}
 		}
