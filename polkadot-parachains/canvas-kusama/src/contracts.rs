@@ -4,7 +4,7 @@ use crate::{
 };
 use frame_support::{
 	parameter_types,
-	traits::{Nothing, OnRuntimeUpgrade},
+	traits::{ConstU32, Nothing, OnRuntimeUpgrade},
 	weights::Weight,
 };
 use pallet_contracts::{
