@@ -839,10 +839,10 @@ pub type ContractsRococoChainSpec =
 	sc_service::GenericChainSpec<contracts_rococo_runtime::GenesisConfig, Extensions>;
 
 /// No relay chain suffix because the id is the same over all relay chains.
-const CANVAS_PARACHAIN_ID: u32 = 1002;
+const CONTRACTS_PARACHAIN_ID: u32 = 1002;
 
 /// The existential deposit is determined by the runtime "contracts-rococo".
-const CANVAS_KUSAMA_ED: contracts_rococo_runtime::Balance =
+const CONTRACTS_ROCOCO_ED: contracts_rococo_runtime::Balance =
 	contracts_rococo_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 pub fn contracts_rococo_development_config() -> ContractsRococoChainSpec {
@@ -852,9 +852,9 @@ pub fn contracts_rococo_development_config() -> ContractsRococoChainSpec {
 
 	ContractsRococoChainSpec::from_genesis(
 		// Name
-		"Canvas on Rococo Development",
+		"Contracts on Rococo Development",
 		// ID
-		"canvas-rococo-dev",
+		"contracts-rococo-dev",
 		ChainType::Development,
 		move || {
 			contracts_rococo_genesis(
@@ -883,7 +883,7 @@ pub fn contracts_rococo_development_config() -> ContractsRococoChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				CANVAS_PARACHAIN_ID.into(),
+				CONTRACTS_PARACHAIN_ID.into(),
 			)
 		},
 		Vec::new(),
@@ -893,7 +893,7 @@ pub fn contracts_rococo_development_config() -> ContractsRococoChainSpec {
 		None,
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-			para_id: CANVAS_PARACHAIN_ID,
+			para_id: CONTRACTS_PARACHAIN_ID,
 		},
 	)
 }
@@ -905,9 +905,9 @@ pub fn contracts_rococo_local_config() -> ContractsRococoChainSpec {
 
 	ContractsRococoChainSpec::from_genesis(
 		// Name
-		"Canvas on Rococo",
+		"Contracts on Rococo",
 		// ID
-		"canvas-rococo-local",
+		"contracts-rococo-local",
 		ChainType::Local,
 		move || {
 			contracts_rococo_genesis(
@@ -936,7 +936,7 @@ pub fn contracts_rococo_local_config() -> ContractsRococoChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				CANVAS_PARACHAIN_ID.into(),
+				CONTRACTS_PARACHAIN_ID.into(),
 			)
 		},
 		// Bootnodes
@@ -952,7 +952,7 @@ pub fn contracts_rococo_local_config() -> ContractsRococoChainSpec {
 		// Extensions
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-			para_id: CANVAS_PARACHAIN_ID,
+			para_id: CONTRACTS_PARACHAIN_ID,
 		},
 	)
 }
@@ -965,9 +965,9 @@ pub fn contracts_rococo_config() -> ContractsRococoChainSpec {
 
 	ContractsRococoChainSpec::from_genesis(
 		// Name
-		"Canvas on Rococo",
+		"Contracts on Rococo",
 		// ID
-		"canvas-rococo",
+		"contracts-rococo",
 		ChainType::Live,
 		move || {
 			contracts_rococo_genesis(
@@ -1011,7 +1011,7 @@ pub fn contracts_rococo_config() -> ContractsRococoChainSpec {
 					// AccountId of an account which `ink-waterfall` uses for automated testing
 					hex!["0e47e2344d523c3cc5c34394b0d58b9a4200e813a038e6c5a6163cc07d70b069"].into(),
 				],
-				CANVAS_PARACHAIN_ID.into(),
+				CONTRACTS_PARACHAIN_ID.into(),
 			)
 		},
 		// Bootnodes
@@ -1038,7 +1038,7 @@ pub fn contracts_rococo_config() -> ContractsRococoChainSpec {
 		// Properties
 		Some(properties),
 		// Extensions
-		Extensions { relay_chain: "rococo".into(), para_id: CANVAS_PARACHAIN_ID },
+		Extensions { relay_chain: "rococo".into(), para_id: CONTRACTS_PARACHAIN_ID },
 	)
 }
 
@@ -1059,7 +1059,7 @@ fn contracts_rococo_genesis(
 		parachain_info: contracts_rococo_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: contracts_rococo_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: CANVAS_KUSAMA_ED * 16,
+			candidacy_bond: CONTRACTS_ROCOCO_ED * 16,
 			..Default::default()
 		},
 		session: contracts_rococo_runtime::SessionConfig {

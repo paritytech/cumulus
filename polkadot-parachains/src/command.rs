@@ -67,8 +67,7 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 		self.id().starts_with("westmint")
 	}
 	fn is_contracts_rococo(&self) -> bool {
-		// we use the same runtime on rococo and kusama
-		self.id().starts_with("contracts-rococo") || self.id().starts_with("canvas-rococo")
+		self.id().starts_with("contracts-rococo")
 	}
 }
 
@@ -135,10 +134,10 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 			&include_bytes!("../res/westmint.json")[..],
 		)?),
 		// -- Canvas on Rococo
-		"canvas-rococo-dev" => Box::new(chain_spec::contracts_rococo_development_config()),
-		"canvas-rococo-local" => Box::new(chain_spec::contracts_rococo_local_config()),
-		"canvas-rococo-genesis" => Box::new(chain_spec::contracts_rococo_config()),
-		"canvas-rococo" => Box::new(chain_spec::ChainSpec::from_json_bytes(
+		"contracts-rococo-dev" => Box::new(chain_spec::contracts_rococo_development_config()),
+		"contracts-rococo-local" => Box::new(chain_spec::contracts_rococo_local_config()),
+		"contracts-rococo-genesis" => Box::new(chain_spec::contracts_rococo_config()),
+		"contracts-rococo" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../res/contracts-rococo.json")[..],
 		)?),
 		// -- Fallback (generic chainspec)
