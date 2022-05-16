@@ -846,7 +846,7 @@ const CANVAS_PARACHAIN_ID: u32 = 1002;
 const CANVAS_KUSAMA_ED: contracts_rococo_runtime::Balance =
 	contracts_rococo_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
-pub fn canvas_rococo_development_config() -> CanvasKusamaChainSpec {
+pub fn contracts_rococo_development_config() -> CanvasKusamaChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "ROC".into());
 	properties.insert("tokenDecimals".into(), 12.into());
@@ -899,7 +899,7 @@ pub fn canvas_rococo_development_config() -> CanvasKusamaChainSpec {
 	)
 }
 
-pub fn canvas_rococo_local_config() -> CanvasKusamaChainSpec {
+pub fn contracts_rococo_local_config() -> CanvasKusamaChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "ROC".into());
 	properties.insert("tokenDecimals".into(), 12.into());
@@ -958,7 +958,7 @@ pub fn canvas_rococo_local_config() -> CanvasKusamaChainSpec {
 	)
 }
 
-pub fn canvas_rococo_config() -> CanvasKusamaChainSpec {
+pub fn contracts_rococo_config() -> CanvasKusamaChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "ROC".into());
