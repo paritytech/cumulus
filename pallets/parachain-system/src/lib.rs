@@ -419,10 +419,8 @@ pub mod pallet {
 		/// An upgrade has been authorized.
 		UpgradeAuthorized { code_hash: T::Hash },
 		/// Some downward messages have been received and will be processed.
-		/// \[ count \]
 		DownwardMessagesReceived { count: u32 },
 		/// Downward messages were processed using the given weight.
-		/// \[ weight_used, result_mqc_head \]
 		DownwardMessagesProcessed { used: Weight, dmq_head: relay_chain::Hash },
 	}
 

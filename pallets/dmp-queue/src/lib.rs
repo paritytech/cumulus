@@ -161,26 +161,20 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Downward message is invalid XCM.
-		/// \[ id \]
 		InvalidFormat { message_id: MessageId },
 		/// Downward message is unsupported version of XCM.
-		/// \[ id \]
 		UnsupportedVersion { message_id: MessageId },
 		/// Downward message executed with the given outcome.
-		/// \[ id, outcome \]
 		ExecutedDownward { message_id: MessageId, outcome: Outcome },
 		/// The weight limit for handling downward messages was reached.
-		/// \[ id, remaining, required \]
 		WeightExhausted { message_id: MessageId, remaining: Weight, required: Weight },
 		/// Downward message is overweight and was placed in the overweight queue.
-		/// \[ id, index, required \]
 		OverweightEnqueued {
 			message_id: MessageId,
 			overweight_index: OverweightIndex,
 			required: Weight,
 		},
 		/// Downward message from the overweight queue was executed.
-		/// \[ index, used \]
 		OverweightServiced { overweight_index: OverweightIndex, used: Weight },
 	}
 
