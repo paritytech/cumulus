@@ -421,7 +421,7 @@ pub mod pallet {
 		/// Some downward messages have been received and will be processed.
 		DownwardMessagesReceived { count: u32 },
 		/// Downward messages were processed using the given weight.
-		DownwardMessagesProcessed { used: Weight, dmq_head: relay_chain::Hash },
+		DownwardMessagesProcessed { weight_used: Weight, dmq_head: relay_chain::Hash },
 	}
 
 	#[pallet::error]
@@ -764,7 +764,7 @@ impl<T: Config> Pallet<T> {
 			<LastDmqMqcHead<T>>::put(&dmq_head);
 
 			Self::deposit_event(Event::DownwardMessagesProcessed {
-				used: weight_used,
+				weight_used,
 				dmq_head: dmq_head.head(),
 			});
 		}
