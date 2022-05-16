@@ -67,13 +67,13 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// Downward message is invalid XCM.
 		/// \[ id \]
-		InvalidFormat { message_id: [u8; 8] },
+		InvalidFormat([u8; 8]),
 		/// Downward message is unsupported version of XCM.
 		/// \[ id \]
-		UnsupportedVersion { message_id: [u8; 8] },
+		UnsupportedVersion([u8; 8]),
 		/// Downward message executed with the given outcome.
 		/// \[ id, outcome \]
-		ExecutedDownward { message_id: [u8; 8], outcome: Outcome },
+		ExecutedDownward([u8; 8], Outcome),
 	}
 
 	/// Origin for the parachains module.
@@ -121,13 +121,12 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 			)
 			.map(Xcm::<T::Call>::try_from);
 			match msg {
-				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat { message_id: id }),
-				Ok(Err(())) =>
-					Pallet::<T>::deposit_event(Event::UnsupportedVersion { message_id: id }),
+				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
+				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
 					let outcome = T::XcmExecutor::execute_xcm(Parent, x, limit);
 					used += outcome.weight_used();
-					Pallet::<T>::deposit_event(Event::ExecutedDownward { message_id: id, outcome });
+					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
 				},
 			}
 		}
@@ -155,14 +154,13 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 			)
 			.map(Xcm::<T::Call>::try_from);
 			match msg {
-				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat { message_id: id }),
-				Ok(Err(())) =>
-					Pallet::<T>::deposit_event(Event::UnsupportedVersion { message_id: id }),
+				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
+				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
 					let weight_limit = limit.saturating_sub(used);
 					let outcome = T::XcmExecutor::execute_xcm(Parent, x, weight_limit);
 					used += outcome.weight_used();
-					Pallet::<T>::deposit_event(Event::ExecutedDownward { message_id: id, outcome });
+					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
 				},
 			}
 		}
