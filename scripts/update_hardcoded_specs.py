@@ -25,6 +25,7 @@ SPECS = [
     "integritee-westend",
     "integritee-kusama",
     "integritee-polkadot",
+    "integritee-moonbase",
 ]
 COLLATOR = "target/release/integritee-collator"
 RES_DIR = "polkadot-parachains/res"

@@ -18,8 +18,9 @@
 use crate::{
 	chain_spec,
 	chain_spec::{
-		integritee_chain_spec, shell_chain_spec, shell_kusama_config, shell_polkadot_config,
-		shell_rococo_config, shell_westend_config, GenesisKeys, RelayChain, ShellChainSpec,
+		integritee_chain_spec, integritee_moonbase_config, shell_chain_spec, shell_kusama_config,
+		shell_polkadot_config, shell_rococo_config, shell_westend_config, GenesisKeys, RelayChain,
+		ShellChainSpec,
 	},
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{
@@ -47,6 +48,7 @@ const ROCOCO_PARA_ID: u32 = 2015;
 const WESTEND_PARA_ID: u32 = 2081;
 const KUSAMA_PARA_ID: u32 = 2015;
 const POLKADOT_PARA_ID: u32 = 2039;
+const MOONBASE_PARA_ID: u32 = 2015;
 
 trait IdentifyChain {
 	fn is_shell(&self) -> bool;
@@ -75,12 +77,14 @@ fn load_spec(
 		"integritee-westend" => Box::new(shell_westend_config()?),
 		"integritee-kusama" => Box::new(shell_kusama_config()?),
 		"integritee-polkadot" => Box::new(shell_polkadot_config()?),
+		"integritee-moonbase" => Box::new(integritee_moonbase_config()?),
 
 		// live config initialize
 		"integritee-rococo-fresh" => Box::new(shell_chain_spec(ROCOCO_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::Rococo)),
 		"integritee-westend-fresh" => Box::new(shell_chain_spec(WESTEND_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::Westend)),
 		"integritee-kusama-fresh" => Box::new(shell_chain_spec(KUSAMA_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::Kusama)),
 		"integritee-polkadot-fresh" => Box::new(shell_chain_spec(POLKADOT_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::Polkadot)),
+		"integritee-moonbase-fresh" => Box::new(integritee_chain_spec(MOONBASE_PARA_ID.into(), GenesisKeys::IntegriteeDev, RelayChain::Moonbase)),
 
 		// on-the-spot specs
 		"integritee-rococo-local" => Box::new(integritee_chain_spec(LOCAL_PARA_ID.into(), GenesisKeys::Integritee, RelayChain::RococoLocal)),

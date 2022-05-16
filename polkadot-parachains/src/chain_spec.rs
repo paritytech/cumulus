@@ -63,6 +63,8 @@ pub enum GenesisKeys {
 	Integritee,
 	/// Use Keys from the keyring for a test setup
 	WellKnown,
+	/// Use integriTEE dev keys.
+	IntegriteeDev,
 }
 
 struct WellKnownKeys;
@@ -104,6 +106,29 @@ impl IntegriteeKeys {
 	}
 }
 
+struct IntegriteeDevKeys;
+
+impl IntegriteeDevKeys {
+	fn root() -> AccountId {
+		public_from_ss58::<sr25519::Public>("5DMCERPw2yC6LBWNKzswHKLCtuYdtmgKssLJAsPGPVp6fuMY")
+			.into()
+	}
+	fn authorities() -> Vec<AuraId> {
+		vec![
+			public_from_ss58::<sr25519::Public>("5GZJjbPPD9u6NDgK1ApYmbyGs7EBX4HeEz2y2CD38YJxjvQH")
+				.into(),
+			public_from_ss58::<sr25519::Public>("5CcSd1GZus6Jw7rP47LLqMMmtr2KeXCH6W11ZKk1LbCQ9dPY")
+				.into(),
+			public_from_ss58::<sr25519::Public>("5FsECrDjBXrh5hXmN4PhQfNPbjYYwwW7edu2UQ8G5LR1JFuH")
+				.into(),
+			public_from_ss58::<sr25519::Public>("5HBdSEnswkqm6eoHzzX5PCeKoC15CCy88vARrT8XMaRRuyaE")
+				.into(),
+			public_from_ss58::<sr25519::Public>("5GGxVLYTXS7JZAwVzisdXbsugHSD6gtDb3AT3MVzih9jTLQT")
+				.into(),
+		]
+	}
+}
+
 pub fn shell_chain_spec(
 	id: ParaId,
 	genesis_keys: GenesisKeys,
@@ -112,6 +137,11 @@ pub fn shell_chain_spec(
 	let (root, endowed, authorities) = match genesis_keys {
 		GenesisKeys::Integritee =>
 			(IntegriteeKeys::root(), vec![IntegriteeKeys::root()], IntegriteeKeys::authorities()),
+		GenesisKeys::IntegriteeDev => (
+			IntegriteeDevKeys::root(),
+			vec![IntegriteeDevKeys::root()],
+			IntegriteeDevKeys::authorities(),
+		),
 		GenesisKeys::WellKnown =>
 			(WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities()),
 	};
@@ -136,6 +166,11 @@ pub fn integritee_chain_spec(
 			(IntegriteeKeys::root(), vec![IntegriteeKeys::root()], IntegriteeKeys::authorities()),
 		GenesisKeys::WellKnown =>
 			(WellKnownKeys::root(), WellKnownKeys::endowed(), WellKnownKeys::authorities()),
+		GenesisKeys::IntegriteeDev => (
+			IntegriteeDevKeys::root(),
+			vec![IntegriteeDevKeys::root()],
+			IntegriteeDevKeys::authorities(),
+		),
 	};
 
 	let chain_name = "Integritee Network".to_string();
@@ -244,6 +279,7 @@ pub enum RelayChain {
 	Westend,
 	Kusama,
 	Polkadot,
+	Moonbase,
 }
 
 pub fn shell_rococo_config() -> Result<ShellChainSpec, String> {
@@ -262,6 +298,10 @@ pub fn shell_polkadot_config() -> Result<ShellChainSpec, String> {
 	ShellChainSpec::from_json_bytes(&include_bytes!("../res/integritee-polkadot.json")[..])
 }
 
+pub fn integritee_moonbase_config() -> Result<IntegriteeChainSpec, String> {
+	IntegriteeChainSpec::from_json_bytes(&include_bytes!("../res/integritee-moonbase.json")[..])
+}
+
 impl ToString for RelayChain {
 	fn to_string(&self) -> String {
 		match self {
@@ -273,6 +313,7 @@ impl ToString for RelayChain {
 			RelayChain::Westend => "westend".into(),
 			RelayChain::Kusama => "kusama".into(),
 			RelayChain::Polkadot => "polkadot".into(),
+			RelayChain::Moonbase => "westend_moonbase_relay_testnet".into(),
 		}
 	}
 }
@@ -288,6 +329,7 @@ impl RelayChain {
 			RelayChain::Westend => ChainType::Live,
 			RelayChain::Kusama => ChainType::Live,
 			RelayChain::Polkadot => ChainType::Live,
+			RelayChain::Moonbase => ChainType::Live,
 		}
 	}
 	fn protocol_id(&self) -> &str {
@@ -300,6 +342,7 @@ impl RelayChain {
 			RelayChain::Westend => "teer-w",
 			RelayChain::Kusama => "teer-k",
 			RelayChain::Polkadot => "teer-p",
+			RelayChain::Moonbase => "teer-m",
 		}
 	}
 }

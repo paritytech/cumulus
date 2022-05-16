@@ -26,6 +26,7 @@ chainspecs=("integritee-rococo-local" \
       "integritee-polkadot-local" \
       "integritee-polkadot-local-dev" \
       "integritee-polkadot" \
+      "integritee-moonbase" \
       "shell-rococo-local" \
       "shell-rococo-local-dev" \
       "shell-westend-local" \
