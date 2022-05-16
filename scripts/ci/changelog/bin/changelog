@@ -81,7 +81,7 @@ WESTMINT_DIGEST = ENV['WESTMINT_DIGEST'] || 'digests/westmint-srtool-digest.json
 STATEMINE_DIGEST = ENV['STATEMINE_DIGEST'] || 'digests/statemine-srtool-digest.json'
 STATEMINT_DIGEST = ENV['STATEMINT_DIGEST'] || 'digests/statemint-srtool-digest.json'
 ROCOCO_PARA_DIGEST = ENV['ROCOCO_PARA_DIGEST'] || 'digests/rococo-parachain-srtool-digest.json'
-CANVAS_KUSAMA_DIGEST = ENV['CANVAS_KUSAMA_DIGEST'] || 'digests/canvas-kusama-srtool-digest.json'
+CANVAS_KUSAMA_DIGEST = ENV['CANVAS_KUSAMA_DIGEST'] || 'digests/contracts-rococo-srtool-digest.json'
 
 logger.debug("Release type: #{ENV['RELEASE_TYPE']}")
 

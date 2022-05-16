@@ -842,7 +842,7 @@ pub type CanvasKusamaChainSpec =
 /// No relay chain suffix because the id is the same over all relay chains.
 const CANVAS_PARACHAIN_ID: u32 = 1002;
 
-/// The existential deposit is determined by the runtime "canvas-kusama".
+/// The existential deposit is determined by the runtime "contracts-rococo".
 const CANVAS_KUSAMA_ED: canvas_kusama_runtime::Balance =
 	canvas_kusama_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 

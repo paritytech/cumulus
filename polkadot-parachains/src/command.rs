@@ -68,7 +68,7 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 	}
 	fn is_canvas_kusama(&self) -> bool {
 		// we use the same runtime on rococo and kusama
-		self.id().starts_with("canvas-kusama") || self.id().starts_with("canvas-rococo")
+		self.id().starts_with("contracts-rococo") || self.id().starts_with("canvas-rococo")
 	}
 }
 

@@ -936,7 +936,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "canvas-kusama-runtime"
+name = "contracts-rococo-runtime"
 version = "0.2.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
@@ -7721,8 +7721,8 @@ version = "0.9.190"
 dependencies = [
  "assert_cmd",
  "async-trait",
- "canvas-kusama-runtime",
  "clap 3.1.18",
+ "contracts-rococo-runtime",
  "cumulus-client-cli",
  "cumulus-client-consensus-aura",
  "cumulus-client-consensus-common",

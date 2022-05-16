@@ -69,7 +69,7 @@ Refer to the [setup instructions below](#local-setup) to run a local network for
 [l2]: https://discord.com/invite/wGUDt2p
 
 This is a node implementation of `Canvas`, a common good parachain for `pallet-contracts`
-based wasm smart contracts. Right now this repository only contains the `canvas-kusama` runtime
+based wasm smart contracts. Right now this repository only contains the `contracts-rococo` runtime
 which we plan to use for both Rococo and Kusama.
 
 If you have any questions, feel free to talk to us on [Element][k2] or on [Discord][l2]

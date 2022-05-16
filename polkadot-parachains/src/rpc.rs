@@ -70,7 +70,7 @@ where
 	Ok(module)
 }
 
-/// Instantiate all RPCs we want at the canvas-kusama chain.
+/// Instantiate all RPCs we want at the contracts-rococo chain.
 pub fn create_canvas_kusama<C, P>(
 	deps: FullDeps<C, P>,
 ) -> Result<RpcExtension, Box<dyn std::error::Error + Send + Sync>>

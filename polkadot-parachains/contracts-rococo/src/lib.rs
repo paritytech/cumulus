@@ -108,8 +108,8 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("canvas-kusama"),
-	impl_name: create_runtime_str!("canvas-kusama"),
+	spec_name: create_runtime_str!("contracts-rococo"),
+	impl_name: create_runtime_str!("contracts-rococo"),
 	authoring_version: 1,
 	spec_version: 900,
 	impl_version: 0,
