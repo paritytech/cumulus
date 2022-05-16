@@ -139,7 +139,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		"canvas-rococo-local" => Box::new(chain_spec::contracts_rococo_local_config()),
 		"canvas-rococo-genesis" => Box::new(chain_spec::contracts_rococo_config()),
 		"canvas-rococo" => Box::new(chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("../res/canvas-rococo.json")[..],
+			&include_bytes!("../res/contracts-rococo.json")[..],
 		)?),
 		// -- Fallback (generic chainspec)
 		"" => Box::new(chain_spec::get_chain_spec()),
