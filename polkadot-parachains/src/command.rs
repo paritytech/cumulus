@@ -157,7 +157,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 			} else if chain_spec.is_seedling() {
 				Box::new(chain_spec::SeedlingChainSpec::from_json_file(path.into())?)
 			} else if chain_spec.is_contracts_rococo() {
-				Box::new(chain_spec::CanvasKusamaChainSpec::from_json_file(path.into())?)
+				Box::new(chain_spec::ContractsRococoChainSpec::from_json_file(path.into())?)
 			} else {
 				Box::new(chain_spec)
 			}

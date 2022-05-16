@@ -835,8 +835,7 @@ fn westmint_genesis(
 	}
 }
 
-/// We use the same runtime on kusama and rococo.
-pub type CanvasKusamaChainSpec =
+pub type ContractsRococoChainSpec =
 	sc_service::GenericChainSpec<contracts_rococo_runtime::GenesisConfig, Extensions>;
 
 /// No relay chain suffix because the id is the same over all relay chains.
@@ -846,12 +845,12 @@ const CANVAS_PARACHAIN_ID: u32 = 1002;
 const CANVAS_KUSAMA_ED: contracts_rococo_runtime::Balance =
 	contracts_rococo_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
-pub fn contracts_rococo_development_config() -> CanvasKusamaChainSpec {
+pub fn contracts_rococo_development_config() -> ContractsRococoChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "ROC".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
-	CanvasKusamaChainSpec::from_genesis(
+	ContractsRococoChainSpec::from_genesis(
 		// Name
 		"Canvas on Rococo Development",
 		// ID
@@ -899,12 +898,12 @@ pub fn contracts_rococo_development_config() -> CanvasKusamaChainSpec {
 	)
 }
 
-pub fn contracts_rococo_local_config() -> CanvasKusamaChainSpec {
+pub fn contracts_rococo_local_config() -> ContractsRococoChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "ROC".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
-	CanvasKusamaChainSpec::from_genesis(
+	ContractsRococoChainSpec::from_genesis(
 		// Name
 		"Canvas on Rococo",
 		// ID
@@ -958,13 +957,13 @@ pub fn contracts_rococo_local_config() -> CanvasKusamaChainSpec {
 	)
 }
 
-pub fn contracts_rococo_config() -> CanvasKusamaChainSpec {
+pub fn contracts_rococo_config() -> ContractsRococoChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "ROC".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 
-	CanvasKusamaChainSpec::from_genesis(
+	ContractsRococoChainSpec::from_genesis(
 		// Name
 		"Canvas on Rococo",
 		// ID
