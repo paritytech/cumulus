@@ -837,14 +837,14 @@ fn westmint_genesis(
 
 /// We use the same runtime on kusama and rococo.
 pub type CanvasKusamaChainSpec =
-	sc_service::GenericChainSpec<canvas_kusama_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<contracts_rococo_runtime::GenesisConfig, Extensions>;
 
 /// No relay chain suffix because the id is the same over all relay chains.
 const CANVAS_PARACHAIN_ID: u32 = 1002;
 
 /// The existential deposit is determined by the runtime "contracts-rococo".
-const CANVAS_KUSAMA_ED: canvas_kusama_runtime::Balance =
-	canvas_kusama_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const CANVAS_KUSAMA_ED: contracts_rococo_runtime::Balance =
+	contracts_rococo_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 pub fn canvas_rococo_development_config() -> CanvasKusamaChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
@@ -858,16 +858,16 @@ pub fn canvas_rococo_development_config() -> CanvasKusamaChainSpec {
 		"canvas-rococo-dev",
 		ChainType::Development,
 		move || {
-			canvas_kusama_genesis(
+			contracts_rococo_genesis(
 				// initial collators.
 				vec![
 					(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed::<canvas_kusama_runtime::AuraId>("Alice"),
+						get_collator_keys_from_seed::<contracts_rococo_runtime::AuraId>("Alice"),
 					),
 					(
 						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed::<canvas_kusama_runtime::AuraId>("Bob"),
+						get_collator_keys_from_seed::<contracts_rococo_runtime::AuraId>("Bob"),
 					),
 				],
 				vec![
@@ -911,16 +911,16 @@ pub fn canvas_rococo_local_config() -> CanvasKusamaChainSpec {
 		"canvas-rococo-local",
 		ChainType::Local,
 		move || {
-			canvas_kusama_genesis(
+			contracts_rococo_genesis(
 				// initial collators.
 				vec![
 					(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed::<canvas_kusama_runtime::AuraId>("Alice"),
+						get_collator_keys_from_seed::<contracts_rococo_runtime::AuraId>("Alice"),
 					),
 					(
 						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed::<canvas_kusama_runtime::AuraId>("Bob"),
+						get_collator_keys_from_seed::<contracts_rococo_runtime::AuraId>("Bob"),
 					),
 				],
 				vec![
@@ -971,7 +971,7 @@ pub fn canvas_rococo_config() -> CanvasKusamaChainSpec {
 		"canvas-rococo",
 		ChainType::Live,
 		move || {
-			canvas_kusama_genesis(
+			contracts_rococo_genesis(
 				vec![
 					// 5GKFbTTgrVS4Vz1UWWHPqMZQNFWZtqo7H2KpCDyYhEL3aS26
 					(
@@ -1043,34 +1043,34 @@ pub fn canvas_rococo_config() -> CanvasKusamaChainSpec {
 	)
 }
 
-fn canvas_kusama_genesis(
+fn contracts_rococo_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> canvas_kusama_runtime::GenesisConfig {
-	canvas_kusama_runtime::GenesisConfig {
-		system: canvas_kusama_runtime::SystemConfig {
-			code: canvas_kusama_runtime::WASM_BINARY
+) -> contracts_rococo_runtime::GenesisConfig {
+	contracts_rococo_runtime::GenesisConfig {
+		system: contracts_rococo_runtime::SystemConfig {
+			code: contracts_rococo_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 		},
-		balances: canvas_kusama_runtime::BalancesConfig {
+		balances: contracts_rococo_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
-		parachain_info: canvas_kusama_runtime::ParachainInfoConfig { parachain_id: id },
-		collator_selection: canvas_kusama_runtime::CollatorSelectionConfig {
+		parachain_info: contracts_rococo_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: contracts_rococo_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: CANVAS_KUSAMA_ED * 16,
 			..Default::default()
 		},
-		session: canvas_kusama_runtime::SessionConfig {
+		session: contracts_rococo_runtime::SessionConfig {
 			keys: invulnerables
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
 						acc.clone(),                                 // account id
 						acc,                                         // validator id
-						canvas_kusama_runtime::SessionKeys { aura }, // session keys
+						contracts_rococo_runtime::SessionKeys { aura }, // session keys
 					)
 				})
 				.collect(),
@@ -1080,10 +1080,10 @@ fn canvas_kusama_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
-		polkadot_xcm: canvas_kusama_runtime::PolkadotXcmConfig {
+		polkadot_xcm: contracts_rococo_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
-		sudo: canvas_kusama_runtime::SudoConfig {
+		sudo: contracts_rococo_runtime::SudoConfig {
 			key: Some(
 				hex!["2681a28014e7d3a5bfb32a003b3571f53c408acbc28d351d6bf58f5028c4ef14"].into(),
 			),

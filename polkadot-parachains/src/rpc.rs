@@ -71,7 +71,7 @@ where
 }
 
 /// Instantiate all RPCs we want at the contracts-rococo chain.
-pub fn create_canvas_kusama<C, P>(
+pub fn create_contracts_rococo<C, P>(
 	deps: FullDeps<C, P>,
 ) -> Result<RpcExtension, Box<dyn std::error::Error + Send + Sync>>
 where
