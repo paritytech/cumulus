@@ -48,6 +48,7 @@ trait IdentifyChain {
 	fn is_statemine(&self) -> bool;
 	fn is_westmint(&self) -> bool;
 	fn is_canvas_kusama(&self) -> bool;
+	fn is_penpal(&self) -> bool;
 }
 
 impl IdentifyChain for dyn sc_service::ChainSpec {
@@ -70,6 +71,9 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 		// we use the same runtime on rococo and kusama
 		self.id().starts_with("canvas-kusama") || self.id().starts_with("canvas-rococo")
 	}
+	fn is_penpal(&self) -> bool {
+		self.id().starts_with("penpal")
+	}
 }
 
 impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
@@ -90,6 +94,9 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 	}
 	fn is_canvas_kusama(&self) -> bool {
 		<dyn sc_service::ChainSpec>::is_canvas_kusama(self)
+	}
+	fn is_penpal(&self) -> bool {
+		<dyn sc_service::ChainSpec>::is_penpal(self)
 	}
 }
 
@@ -162,7 +169,9 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 				Box::new(chain_spec::StatemineChainSpec::from_json_file(path.into())?)
 			} else if chain_spec.is_westmint() {
 				Box::new(chain_spec::WestmintChainSpec::from_json_file(path.into())?)
-			} else if chain_spec.is_shell() {
+			} else if chain_spec.is_penpal() {
+				Box::new(chain_spec::PenpalChainSpec::from_json_file(path.into())?)
+            } else if chain_spec.is_shell() {
 				Box::new(chain_spec::ShellChainSpec::from_json_file(path.into())?)
 			} else if chain_spec.is_seedling() {
 				Box::new(chain_spec::SeedlingChainSpec::from_json_file(path.into())?)
@@ -175,8 +184,8 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 	})
 }
 
-/// Extracts the normalized chain id and parachain id from the input chain id
-///
+/// Extracts the normalized chain id and parachain id from the input chain id.
+/// (H/T to Phala for the idea)
 /// E.g. "penpal-parachain-2004" yields ("penpal-parachain", Some(2004))
 fn extract_parachain_id(id: &str) -> (&str, Option<ParaId>) {
 	const KUSAMA_TEST_PARA_PREFIX: &str = "penpal-kusama-";

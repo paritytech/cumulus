@@ -163,11 +163,11 @@ pub fn get_penpal_chain_spec(id: ParaId, relay_chain: &str) -> PenpalChainSpec {
 				vec![
 					(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed::<AuraId>("Alice"),
+						get_collator_keys_from_seed::<penpal_runtime::AuraId>("Alice"),
 					),
 					(
 						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed::<AuraId>("Bob"),
+						get_collator_keys_from_seed::<penpal_runtime::AuraId>("Bob"),
 					),
 				],
 				vec![
@@ -285,8 +285,8 @@ fn seedling_testnet_genesis(
 }
 
 fn penpal_testnet_genesis(
-	invulnerables: Vec<(AccountId, AuraId)>,
-	endowed_accounts: Vec<AccountId>,
+	invulnerables: Vec<(penpal_runtime::AccountId, penpal_runtime::AuraId)>,
+	endowed_accounts: Vec<penpal_runtime::AccountId>,
 	id: ParaId,
 ) -> penpal_runtime::GenesisConfig {
 	penpal_runtime::GenesisConfig {
