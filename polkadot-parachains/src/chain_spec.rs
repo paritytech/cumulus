@@ -1067,8 +1067,8 @@ fn contracts_rococo_genesis(
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                                 // account id
-						acc,                                         // validator id
+						acc.clone(),                                    // account id
+						acc,                                            // validator id
 						contracts_rococo_runtime::SessionKeys { aura }, // session keys
 					)
 				})

@@ -1546,7 +1546,9 @@ where
 
 #[allow(clippy::type_complexity)]
 pub fn contracts_rococo_build_import_queue(
-	client: Arc<TFullClient<Block, contracts_rococo_runtime::RuntimeApi, WasmExecutor<HostFunctions>>>,
+	client: Arc<
+		TFullClient<Block, contracts_rococo_runtime::RuntimeApi, WasmExecutor<HostFunctions>>,
+	>,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
