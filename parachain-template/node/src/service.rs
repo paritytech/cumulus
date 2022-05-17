@@ -176,9 +176,10 @@ async fn build_relay_chain_interface(
 	collator_options: CollatorOptions,
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
-	match collator_options.relay_chain_rpc_url {
-		Some(relay_chain_url) => {
+	match (collator_options.relay_chain_rpc_url, parachain_config.role.is_authority()) {
+		(Some(relay_chain_url), true) => {
 			let collator_pair = CollatorPair::generate().0;
+			// TODO Implement error handling instead of `expect`
 			let collator_node = cumulus_relay_chain_mini::new_mini(
 				polkadot_config,
 				collator_pair.clone(),
@@ -187,7 +188,7 @@ async fn build_relay_chain_interface(
 				true,
 				Arc::new(BlockChainRPCClient::new(relay_chain_url.clone()).await),
 			)
-			.expect("nope");
+			.expect("Unable to create relay chain minimal node");
 			task_manager.add_child(collator_node.task_manager);
 			Ok((
 				Arc::new(
@@ -200,7 +201,9 @@ async fn build_relay_chain_interface(
 				Some(collator_pair),
 			))
 		},
-		None => build_inprocess_relay_chain(
+		(Some(relay_chain_url), false) =>
+			Ok((Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>, None)),
+		(None, _) => build_inprocess_relay_chain(
 			polkadot_config,
 			parachain_config,
 			telemetry_worker_handle,

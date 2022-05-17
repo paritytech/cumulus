@@ -37,6 +37,7 @@ use cumulus_client_service::{
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::RelayChainInProcessInterface;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
+use cumulus_relay_chain_mini::BlockChainRPCClient;
 use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 use parking_lot::Mutex;
@@ -177,11 +178,32 @@ pub fn new_partial(
 
 async fn build_relay_chain_interface(
 	relay_chain_config: Configuration,
+	parachain_config: &Configuration,
 	collator_key: Option<CollatorPair>,
 	collator_options: CollatorOptions,
 	task_manager: &mut TaskManager,
 ) -> RelayChainResult<Arc<dyn RelayChainInterface + 'static>> {
 	if let Some(relay_chain_url) = collator_options.relay_chain_rpc_url {
+		if parachain_config.role.is_authority() {
+			let collator_key = collator_key.or_else(|| Some(CollatorPair::generate().0));
+			let collator_node = cumulus_relay_chain_mini::new_mini(
+				relay_chain_config,
+				collator_key.clone().unwrap(),
+				None,
+				None,
+				true,
+				Arc::new(BlockChainRPCClient::new(relay_chain_url.clone()).await),
+			)
+			.expect("Unable to initialize relay chain minimal node");
+			task_manager.add_child(collator_node.task_manager);
+			return Ok(Arc::new(
+				RelayChainRPCInterface::new_with_handle(
+					relay_chain_url,
+					collator_node.overseer_handle,
+				)
+				.await?,
+			) as Arc<_>)
+		}
 		return Ok(Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>)
 	}
 
@@ -243,6 +265,7 @@ where
 
 	let relay_chain_interface = build_relay_chain_interface(
 		relay_chain_config,
+		&parachain_config,
 		collator_key.clone(),
 		collator_options.clone(),
 		&mut task_manager,

@@ -115,10 +115,6 @@ impl RelayChainRPCClient {
 		self.ws_client
 			.subscribe::<R>(sub_name, params, unsub_name)
 			.await
-			.map(|subscription| {
-				tracing::info!("Opened subscription '{}' with id {:?}", sub_name, subscription);
-				subscription
-			})
 			.map_err(|err| RelayChainError::RPCCallError(sub_name.to_string(), err))
 	}
 

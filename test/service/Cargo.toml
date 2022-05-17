@@ -60,6 +60,7 @@ cumulus-relay-chain-interface = { path = "../../client/relay-chain-interface" }
 cumulus-relay-chain-rpc-interface = { path = "../../client/relay-chain-rpc-interface" }
 cumulus-test-relay-validation-worker-provider = { path = "../relay-validation-worker-provider" }
 cumulus-test-runtime = { path = "../runtime" }
+cumulus-relay-chain-mini = { path = "../../client/mini-node" }
 
 [dev-dependencies]
 futures = "0.3.5"
