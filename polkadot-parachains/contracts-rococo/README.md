@@ -13,7 +13,7 @@ If you have any questions, it's best to ask in the
 
 ## Smart Contracts Development
 
-![Contracts Overview](./docs/contracts-overview.svg)
+![Contracts Overview](./contracts-overview.svg)
 
 This node contains Substrate's smart contracts module ‒ the
 [`pallet-contracts`](https://github.com/paritytech/substrate/tree/master/frame/contracts).

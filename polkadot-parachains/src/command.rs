@@ -133,7 +133,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		"westmint" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../res/westmint.json")[..],
 		)?),
-		// -- Canvas on Rococo
+		// -- Contracts on Rococo
 		"contracts-rococo-dev" => Box::new(chain_spec::contracts_rococo_development_config()),
 		"contracts-rococo-local" => Box::new(chain_spec::contracts_rococo_local_config()),
 		"contracts-rococo-genesis" => Box::new(chain_spec::contracts_rococo_config()),
