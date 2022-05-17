@@ -96,13 +96,13 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 	Ok(match id {
 		"staging" => Box::new(chain_spec::staging_test_net()),
 		"tick" => Box::new(chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("../chain-specs/tick.json")[..],
+			&include_bytes!("../../parachain-runtimes/chain-specs/tick.json")[..],
 		)?),
 		"trick" => Box::new(chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("../chain-specs/trick.json")[..],
+			&include_bytes!("../../parachain-runtimes/chain-specs/trick.json")[..],
 		)?),
 		"track" => Box::new(chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("../chain-specs/track.json")[..],
+			&include_bytes!("../../parachain-runtimes/chain-specs/track.json")[..],
 		)?),
 		"shell" => Box::new(chain_spec::get_shell_chain_spec()),
 		// -- Statemint
@@ -113,7 +113,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		"statemint-genesis" => Box::new(chain_spec::statemint_config()),
 		// the shell-based chain spec as used for syncing
 		"statemint" => Box::new(chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("../chain-specs/statemint.json")[..],
+			&include_bytes!("../../parachain-runtimes/chain-specs/statemint.json")[..],
 		)?),
 		// -- Statemine
 		"statemine-dev" => Box::new(chain_spec::statemine_development_config()),
@@ -122,7 +122,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		"statemine-genesis" => Box::new(chain_spec::statemine_config()),
 		// the shell-based chain spec as used for syncing
 		"statemine" => Box::new(chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("../chain-specs/statemine.json")[..],
+			&include_bytes!("../../parachain-runtimes/chain-specs/statemine.json")[..],
 		)?),
 		// -- Westmint
 		"westmint-dev" => Box::new(chain_spec::westmint_development_config()),
@@ -131,14 +131,14 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		"westmint-genesis" => Box::new(chain_spec::westmint_config()),
 		// the shell-based chain spec as used for syncing
 		"westmint" => Box::new(chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("../chain-specs/westmint.json")[..],
+			&include_bytes!("../../parachain-runtimes/chain-specs/westmint.json")[..],
 		)?),
 		// -- Canvas on Rococo
 		"canvas-rococo-dev" => Box::new(chain_spec::canvas_rococo_development_config()),
 		"canvas-rococo-local" => Box::new(chain_spec::canvas_rococo_local_config()),
 		"canvas-rococo-genesis" => Box::new(chain_spec::canvas_rococo_config()),
 		"canvas-rococo" => Box::new(chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("../chain-specs/canvas-rococo.json")[..],
+			&include_bytes!("../../parachain-runtimes/chain-specs/canvas-rococo.json")[..],
 		)?),
 		// -- Fallback (generic chainspec)
 		"" => Box::new(chain_spec::get_chain_spec()),

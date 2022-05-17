@@ -3,9 +3,9 @@
 steps=50
 repeat=20
 
-statemineOutput=./polkadot-parachains/statemine/src/weights
-statemintOutput=./polkadot-parachains/statemint/src/weights
-westmintOutput=./polkadot-parachains/westmint/src/weights
+statemineOutput=./parachain-runtimes/statemine/src/weights
+statemintOutput=./parachain-runtimes/statemint/src/weights
+westmintOutput=./parachain-runtimes/westmint/src/weights
 
 statemineChain=statemine-dev
 statemintChain=statemint-dev
