@@ -158,10 +158,10 @@ impl sc_executor::NativeExecutionDispatch for WestmintRuntimeExecutor {
 	}
 }
 
-/// Native Canvas on Kusama executor instance.
-pub struct CanvasKusamaRuntimeExecutor;
+/// Native Contracts on Rococo executor instance.
+pub struct ContractsRococoRuntimeExecutor;
 
-impl sc_executor::NativeExecutionDispatch for CanvasKusamaRuntimeExecutor {
+impl sc_executor::NativeExecutionDispatch for ContractsRococoRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
