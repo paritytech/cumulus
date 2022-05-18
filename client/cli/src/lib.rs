@@ -161,6 +161,12 @@ pub struct CollatorOptions {
 	pub relay_chain_rpc_url: Option<Url>,
 }
 
+impl Default for CollatorOptions {
+	fn default() -> Self {
+		Self { relay_chain_rpc_url: None }
+	}
+}
+
 /// A non-redundant version of the `RunCmd` that sets the `validator` field when the
 /// original `RunCmd` had the `collator` field.
 /// This is how we make `--collator` imply `--validator`.
