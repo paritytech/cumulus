@@ -73,6 +73,7 @@ pub enum Commands {
 
 #[derive(Debug, Parser)]
 #[clap(
+	version,
 	propagate_version = true,
 	args_conflicts_with_subcommands = true,
 	subcommand_negates_reqs = true
@@ -260,7 +261,7 @@ impl DefaultConfigurationValues for RelayChainCli {
 
 impl SubstrateCli for TestCollatorCli {
 	fn impl_name() -> String {
-		"Polkadot collator".into()
+		"Cumulus zombienet test parachain".into()
 	}
 
 	fn impl_version() -> String {
@@ -269,7 +270,7 @@ impl SubstrateCli for TestCollatorCli {
 
 	fn description() -> String {
 		format!(
-			"Polkadot collator\n\nThe command-line arguments provided first will be \
+			"Cumulus zombienet test parachain\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		{} [parachain-args] -- [relaychain-args]",

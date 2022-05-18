@@ -1,4 +1,4 @@
-// Copyright 2019-2021 Parity Technologies (UK) Ltd.
+// Copyright 2022 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -36,6 +36,7 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 }
 
 pub fn wrap_announce_block() -> Box<dyn FnOnce(AnnounceBlockFn) -> AnnounceBlockFn> {
+	tracing::info!("Block announcements disabled.");
 	Box::new(|_| {
 		// Never announce any block
 		Arc::new(|_, _| {})
@@ -105,16 +106,13 @@ fn main() -> Result<(), sc_cli::Error> {
 			let collator_options = cli.run.collator_options();
 			let tokio_runtime = sc_cli::build_runtime()?;
 			let tokio_handle = tokio_runtime.handle();
-			let mut config = cli
+			let config = cli
 				.run
 				.normalize()
 				.create_configuration(&cli, tokio_handle.clone())
 				.expect("Should be able to generate config");
 
 			let parachain_id = ParaId::from(cli.parachain_id);
-			config.chain_spec =
-				Box::new(cumulus_test_service::get_chain_spec(parachain_id)) as Box<_>;
-
 			let polkadot_cli = RelayChainCli::new(
 				&config,
 				[RelayChainCli::executable_name().to_string()]
@@ -158,25 +156,13 @@ fn main() -> Result<(), sc_cli::Error> {
 				})
 				.unwrap_or(cumulus_test_service::Consensus::RelayChain);
 
-			let block_announce_wrapper: Option<
-				Box<dyn FnOnce(AnnounceBlockFn) -> AnnounceBlockFn>,
-			> = if cli.disable_block_announcements {
-				tracing::info!("Block announcements disabled.");
-				Some(Box::new(|_| {
-					// Never announce any block
-					Arc::new(|_, _| {})
-				}))
-			} else {
-				None
-			};
-
 			let (mut task_manager, _, _, _, _) = tokio_runtime
 				.block_on(cumulus_test_service::start_node_impl(
 					config,
 					collator_key,
 					polkadot_config,
 					parachain_id,
-					block_announce_wrapper,
+					cli.disable_block_announcements.then(wrap_announce_block),
 					|_| Ok(jsonrpsee::RpcModule::new(())),
 					consensus,
 					collator_options,

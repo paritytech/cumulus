@@ -98,6 +98,7 @@ pub struct ExportGenesisWasmCommand {
 
 #[derive(Debug, Parser)]
 #[clap(
+	version,
 	propagate_version = true,
 	args_conflicts_with_subcommands = true,
 	subcommand_negates_reqs = true

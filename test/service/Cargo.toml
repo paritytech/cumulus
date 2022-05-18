@@ -5,7 +5,7 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 
 [[bin]]
-name = "test-collator"
+name = "test-parachain"
 path = "src/main.rs"
 
 [dependencies]
