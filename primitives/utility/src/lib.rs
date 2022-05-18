@@ -21,20 +21,19 @@
 
 use codec::Encode;
 use cumulus_primitives_core::UpwardMessageSender;
+use frame_support::{
+	pallet_prelude::Get,
+	traits::tokens::{currency::Currency as CurrencyT, fungibles, BalanceConversion},
+	weights::{Weight, WeightToFeePolynomial},
+};
+use pallet_asset_tx_payment::HandleCredit as HandleCreditT;
+use sp_runtime::{
+	traits::{Saturating, Zero},
+	SaturatedConversion,
+};
 use sp_std::marker::PhantomData;
 use xcm::{latest::prelude::*, WrapVersion};
-use frame_support::traits::{tokens::fungibles, Contains};
-use frame_support::traits::tokens::BalanceConversion;
-use frame_support::weights::WeightToFeePolynomial;
-use frame_support::pallet_prelude::Get;
-use frame_support::weights::Weight;
-use xcm_executor::traits::MatchesFungibles;
-use xcm_executor::traits::WeightTrader;
-use sp_runtime::traits::Zero;
-use frame_support::traits::tokens::currency::Currency as CurrencyT;
-use frame_support::traits::OnUnbalanced as OnUnbalancedT;
-use sp_runtime::traits::Saturating;
-use sp_runtime::SaturatedConversion;
+use xcm_executor::traits::{MatchesFungibles, WeightTrader};
 /// Xcm router which recognises the `Parent` destination and handles it by sending the message into
 /// the given UMP `UpwardMessageSender` implementation. Thus this essentially adapts an
 /// `UpwardMessageSender` trait impl into a `SendXcm` trait impl.
@@ -70,13 +69,13 @@ pub struct TakeFirstAssetTrader<
 	Currency: CurrencyT<AccountId>,
 	CON: BalanceConversion<Currency::Balance, Assets::AssetId, Assets::Balance>,
 	Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
-	Assets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId>,
-	OnUnbalanced: OnUnbalancedT<Currency::NegativeImbalance>,
+	Assets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId> + fungibles::Balanced<AccountId>,
+	HandleCredit: HandleCreditT<AccountId, Assets>,
 >(
 	Weight,
 	Assets::Balance,
 	Option<(MultiLocation, Assets::AssetId)>,
-	PhantomData<(WeightToFee, AssetId, AccountId, Currency, CON, Matcher, Assets, OnUnbalanced)>,
+	PhantomData<(WeightToFee, AssetId, AccountId, Currency, CON, Matcher, Assets, HandleCredit)>,
 );
 impl<
 		WeightToFee: WeightToFeePolynomial<Balance = Currency::Balance>,
@@ -85,11 +84,22 @@ impl<
 		Currency: CurrencyT<AccountId>,
 		CON: BalanceConversion<Currency::Balance, Assets::AssetId, Assets::Balance>,
 		Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
-		Assets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId>,
-		OnUnbalanced: OnUnbalancedT<Currency::NegativeImbalance>,
-	> WeightTrader for TakeFirstAssetTrader<WeightToFee, AssetId, AccountId, Currency, CON, Matcher, Assets, OnUnbalanced>
+		Assets: fungibles::Mutate<AccountId>
+			+ fungibles::Transfer<AccountId>
+			+ fungibles::Balanced<AccountId>,
+		HandleCredit: HandleCreditT<AccountId, Assets>,
+	> WeightTrader
+	for TakeFirstAssetTrader<
+		WeightToFee,
+		AssetId,
+		AccountId,
+		Currency,
+		CON,
+		Matcher,
+		Assets,
+		HandleCredit,
+	>
 {
-
 	fn new() -> Self {
 		Self(0, Zero::zero(), None, PhantomData)
 	}
@@ -98,7 +108,11 @@ impl<
 	// TODO: do we want to be iterating over all potential assets in payments?
 	// Check whether we can convert fee to asset_fee (is_sufficient, min_deposit)
 	// If everything goes well, we charge.
-	fn buy_weight(&mut self, weight: Weight, payment: xcm_executor::Assets) -> Result<xcm_executor::Assets, XcmError> {
+	fn buy_weight(
+		&mut self,
+		weight: Weight,
+		payment: xcm_executor::Assets,
+	) -> Result<xcm_executor::Assets, XcmError> {
 		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::buy_weight weight: {:?}, payment: {:?}", weight, payment);
 		// Based on weight bought, calculate how much native token fee we need to pay
 		let amount = WeightToFee::calc(&weight);
@@ -107,17 +121,19 @@ impl<
 		let multiassets: MultiAssets = payment.clone().into();
 		let first = multiassets.get(0).ok_or(XcmError::TooExpensive)?;
 		// We get the local asset id in which we can pay for fees
-		let (local_asset_id, _) = Matcher::matches_fungibles(&first).map_err(|_| XcmError::TooExpensive)?;
+		let (local_asset_id, _) =
+			Matcher::matches_fungibles(&first).map_err(|_| XcmError::TooExpensive)?;
 		// it reads the min_balance of the asset
 		// potential db read
 		// Already should have been read with WithdrawAsset in case of pallet-assets
-		let asset_balance = CON::to_asset_balance(amount, local_asset_id).map_err(|_| XcmError::TooExpensive)?;
+		let asset_balance =
+			CON::to_asset_balance(amount, local_asset_id).map_err(|_| XcmError::TooExpensive)?;
 
 		match first {
 			// Not relevant match, as matches_fungibles should have already verified this above
-			MultiAsset { 
+			MultiAsset {
 				id: xcm::latest::AssetId::Concrete(location),
-				fun: Fungibility::Fungible(_)
+				fun: Fungibility::Fungible(_),
 			} => {
 				// convert asset_balance to u128
 				let u128_amount: u128 = asset_balance.try_into().map_err(|_| XcmError::Overflow)?;
@@ -132,8 +148,8 @@ impl<
 				// record multilocation and local_asset_id
 				self.2 = Some((location.clone(), local_asset_id));
 				Ok(unused)
-			}
-			_ => return Err(XcmError::TooExpensive)
+			},
+			_ => return Err(XcmError::TooExpensive),
 		}
 	}
 
@@ -144,20 +160,49 @@ impl<
 		// If not None
 		if let Some((asset_location, local_asset_id)) = self.2.clone() {
 			// Calculate asset_balance
-			// This read should have already be cached in buy_weoght
+			// This read should have already be cached in buy_weight
 			let asset_balance = CON::to_asset_balance(amount, local_asset_id).ok()?;
 			self.0 -= weight;
 			self.1 = self.1.saturating_sub(asset_balance);
 
 			let asset_balance: u128 = asset_balance.saturated_into();
-				if asset_balance > 0 {
+			if asset_balance > 0 {
 				Some((asset_location, asset_balance).into())
 			} else {
 				None
 			}
-		}
-		else {
+		} else {
 			None
+		}
+	}
+}
+
+impl<
+		WeightToFee: WeightToFeePolynomial<Balance = Currency::Balance>,
+		AssetId: Get<MultiLocation>,
+		AccountId,
+		Currency: CurrencyT<AccountId>,
+		CON: BalanceConversion<Currency::Balance, Assets::AssetId, Assets::Balance>,
+		Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
+		Assets: fungibles::Mutate<AccountId>
+			+ fungibles::Transfer<AccountId>
+			+ fungibles::Balanced<AccountId>,
+		HandleCredit: HandleCreditT<AccountId, Assets>,
+	> Drop
+	for TakeFirstAssetTrader<
+		WeightToFee,
+		AssetId,
+		AccountId,
+		Currency,
+		CON,
+		Matcher,
+		Assets,
+		HandleCredit,
+	>
+{
+	fn drop(&mut self) {
+		if let Some((_, local_asset_id)) = self.2 {
+			HandleCredit::handle_credit(Assets::issue(local_asset_id, self.1));
 		}
 	}
 }
