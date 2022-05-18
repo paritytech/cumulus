@@ -30,7 +30,7 @@ members = [
 	"parachain-runtimes/testing/rococo-parachain",
 	"parachain-runtimes/starters/shell",
 	"parachain-runtimes/starters/seedling",
-	"parachain-runtimes/parachains-common",
+	"parachain-runtimes/common",
 	"parachain-runtimes/assets/statemint",
 	"parachain-runtimes/assets/statemine",
 	"parachain-runtimes/assets/westmint",
