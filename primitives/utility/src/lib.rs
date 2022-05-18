@@ -23,7 +23,18 @@ use codec::Encode;
 use cumulus_primitives_core::UpwardMessageSender;
 use sp_std::marker::PhantomData;
 use xcm::{latest::prelude::*, WrapVersion};
-
+use frame_support::traits::{tokens::fungibles, Contains};
+use frame_support::traits::tokens::BalanceConversion;
+use frame_support::weights::WeightToFeePolynomial;
+use frame_support::pallet_prelude::Get;
+use frame_support::weights::Weight;
+use xcm_executor::traits::MatchesFungibles;
+use xcm_executor::traits::WeightTrader;
+use sp_runtime::traits::Zero;
+use frame_support::traits::tokens::currency::Currency as CurrencyT;
+use frame_support::traits::OnUnbalanced as OnUnbalancedT;
+use sp_runtime::traits::Saturating;
+use sp_runtime::SaturatedConversion;
 /// Xcm router which recognises the `Parent` destination and handles it by sending the message into
 /// the given UMP `UpwardMessageSender` implementation. Thus this essentially adapts an
 /// `UpwardMessageSender` trait impl into a `SendXcm` trait impl.
@@ -48,6 +59,105 @@ impl<T: UpwardMessageSender, W: WrapVersion> SendXcm for ParentAsUmp<T, W> {
 		} else {
 			// Anything else is unhandled. This includes a message this is meant for us.
 			Err(SendError::CannotReachDestination(dest, msg))
+		}
+	}
+}
+
+pub struct TakeFirstAssetTrader<
+	WeightToFee: WeightToFeePolynomial<Balance = Currency::Balance>,
+	AssetId: Get<MultiLocation>,
+	AccountId,
+	Currency: CurrencyT<AccountId>,
+	CON: BalanceConversion<Currency::Balance, Assets::AssetId, Assets::Balance>,
+	Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
+	Assets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId>,
+	OnUnbalanced: OnUnbalancedT<Currency::NegativeImbalance>,
+>(
+	Weight,
+	Assets::Balance,
+	Option<(MultiLocation, Assets::AssetId)>,
+	PhantomData<(WeightToFee, AssetId, AccountId, Currency, CON, Matcher, Assets, OnUnbalanced)>,
+);
+impl<
+		WeightToFee: WeightToFeePolynomial<Balance = Currency::Balance>,
+		AssetId: Get<MultiLocation>,
+		AccountId,
+		Currency: CurrencyT<AccountId>,
+		CON: BalanceConversion<Currency::Balance, Assets::AssetId, Assets::Balance>,
+		Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
+		Assets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId>,
+		OnUnbalanced: OnUnbalancedT<Currency::NegativeImbalance>,
+	> WeightTrader for TakeFirstAssetTrader<WeightToFee, AssetId, AccountId, Currency, CON, Matcher, Assets, OnUnbalanced>
+{
+
+	fn new() -> Self {
+		Self(0, Zero::zero(), None, PhantomData)
+	}
+
+	// We take first asset
+	// TODO: do we want to be iterating over all potential assets in payments?
+	// Check whether we can convert fee to asset_fee (is_sufficient, min_deposit)
+	// If everything goes well, we charge.
+	fn buy_weight(&mut self, weight: Weight, payment: xcm_executor::Assets) -> Result<xcm_executor::Assets, XcmError> {
+		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::buy_weight weight: {:?}, payment: {:?}", weight, payment);
+		// Based on weight bought, calculate how much native token fee we need to pay
+		let amount = WeightToFee::calc(&weight);
+		// We take the very first multiasset from payment
+		// TODO: revisit this clone
+		let multiassets: MultiAssets = payment.clone().into();
+		let first = multiassets.get(0).ok_or(XcmError::TooExpensive)?;
+		// We get the local asset id in which we can pay for fees
+		let (local_asset_id, _) = Matcher::matches_fungibles(&first).map_err(|_| XcmError::TooExpensive)?;
+		// it reads the min_balance of the asset
+		// potential db read
+		// Already should have been read with WithdrawAsset in case of pallet-assets
+		let asset_balance = CON::to_asset_balance(amount, local_asset_id).map_err(|_| XcmError::TooExpensive)?;
+
+		match first {
+			// Not relevant match, as matches_fungibles should have already verified this above
+			MultiAsset { 
+				id: xcm::latest::AssetId::Concrete(location),
+				fun: Fungibility::Fungible(_)
+			} => {
+				// convert asset_balance to u128
+				let u128_amount: u128 = asset_balance.try_into().map_err(|_| XcmError::Overflow)?;
+				// Construct required payment
+				let required = (Concrete(location.clone()), u128_amount).into();
+				// Substract payment
+				let unused = payment.checked_sub(required).map_err(|_| XcmError::TooExpensive)?;
+				// record weight
+				self.0 = self.0.saturating_add(weight);
+				// record amount
+				self.1 = self.1.saturating_add(asset_balance);
+				// record multilocation and local_asset_id
+				self.2 = Some((location.clone(), local_asset_id));
+				Ok(unused)
+			}
+			_ => return Err(XcmError::TooExpensive)
+		}
+	}
+
+	fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
+		log::trace!(target: "xcm::weight", "UsingComponents::refund_weight weight: {:?}", weight);
+		let weight = weight.min(self.0);
+		let amount = WeightToFee::calc(&weight);
+		// If not None
+		if let Some((asset_location, local_asset_id)) = self.2.clone() {
+			// Calculate asset_balance
+			// This read should have already be cached in buy_weoght
+			let asset_balance = CON::to_asset_balance(amount, local_asset_id).ok()?;
+			self.0 -= weight;
+			self.1 = self.1.saturating_sub(asset_balance);
+
+			let asset_balance: u128 = asset_balance.saturated_into();
+				if asset_balance > 0 {
+				Some((asset_location, asset_balance).into())
+			} else {
+				None
+			}
+		}
+		else {
+			None
 		}
 	}
 }
