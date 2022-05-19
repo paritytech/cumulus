@@ -38,14 +38,13 @@ jobs:
           - category: assets
             runtime: westmint
           - category: smart-contracts
-            runtime: canvas-kusama
+            runtime: contracts-rococo
           - category: starters
             runtime: seedling
           - category: starters
             runtime: shell
           - category: testing
             runtime: rococo-parachain
-
     steps:
       - uses: actions/checkout@v3
         with:

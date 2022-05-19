@@ -34,7 +34,7 @@ members = [
 	"parachain-runtimes/assets/statemint",
 	"parachain-runtimes/assets/statemine",
 	"parachain-runtimes/assets/westmint",
-	"parachain-runtimes/smart-contracts/canvas-kusama",
+	"parachain-runtimes/smart-contracts/contracts-rococo",
 	"test/client",
 	"test/relay-sproof-builder",
 	"test/relay-validation-worker-provider",
