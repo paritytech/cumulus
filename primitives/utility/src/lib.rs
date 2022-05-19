@@ -64,7 +64,6 @@ impl<T: UpwardMessageSender, W: WrapVersion> SendXcm for ParentAsUmp<T, W> {
 
 pub struct TakeFirstAssetTrader<
 	WeightToFee: WeightToFeePolynomial<Balance = Currency::Balance>,
-	AssetId: Get<MultiLocation>,
 	AccountId,
 	Currency: CurrencyT<AccountId>,
 	CON: BalanceConversion<Currency::Balance, Assets::AssetId, Assets::Balance>,
@@ -75,11 +74,10 @@ pub struct TakeFirstAssetTrader<
 	Weight,
 	Assets::Balance,
 	Option<(MultiLocation, Assets::AssetId)>,
-	PhantomData<(WeightToFee, AssetId, AccountId, Currency, CON, Matcher, Assets, HandleCredit)>,
+	PhantomData<(WeightToFee, AccountId, Currency, CON, Matcher, Assets, HandleCredit)>,
 );
 impl<
 		WeightToFee: WeightToFeePolynomial<Balance = Currency::Balance>,
-		AssetId: Get<MultiLocation>,
 		AccountId,
 		Currency: CurrencyT<AccountId>,
 		CON: BalanceConversion<Currency::Balance, Assets::AssetId, Assets::Balance>,
@@ -91,7 +89,6 @@ impl<
 	> WeightTrader
 	for TakeFirstAssetTrader<
 		WeightToFee,
-		AssetId,
 		AccountId,
 		Currency,
 		CON,
@@ -179,7 +176,6 @@ impl<
 
 impl<
 		WeightToFee: WeightToFeePolynomial<Balance = Currency::Balance>,
-		AssetId: Get<MultiLocation>,
 		AccountId,
 		Currency: CurrencyT<AccountId>,
 		CON: BalanceConversion<Currency::Balance, Assets::AssetId, Assets::Balance>,
@@ -191,7 +187,6 @@ impl<
 	> Drop
 	for TakeFirstAssetTrader<
 		WeightToFee,
-		AssetId,
 		AccountId,
 		Currency,
 		CON,

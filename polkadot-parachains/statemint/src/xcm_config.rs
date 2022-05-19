@@ -156,6 +156,9 @@ pub type Barrier = DenyThenTry<
 	),
 >;
 
+use parachains_common::impls::AssetsToBlockAuthor;
+use sp_runtime::traits::ConvertInto;
+
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
 	type Call = Call;
@@ -167,8 +170,23 @@ impl xcm_executor::Config for XcmConfig {
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-	type Trader =
-		UsingComponents<WeightToFee, DotLocation, AccountId, Balances, ToStakingPot<Runtime>>;
+	type Trader = (
+		UsingComponents<WeightToFee, DotLocation, AccountId, Balances, ToStakingPot<Runtime>>,
+		cumulus_primitives_utility::TakeFirstAssetTrader<
+			WeightToFee,
+			AccountId,
+			Balances,
+			pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
+			ConvertedConcreteAssetId<
+				AssetId,
+				Balance,
+				AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>,
+				JustTry,
+			>,
+			Assets,
+			AssetsToBlockAuthor<Runtime>
+	>,
+	);
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;
