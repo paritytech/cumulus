@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        category: ["assets", "smart-contract", "starters", "testing"]
+        category: ["assets", "smart-contracts", "starters", "testing"]
         include:
           - runtime: statemine
             category: assets
@@ -57,7 +57,7 @@ jobs:
         uses: chevdor/srtool-actions@v0.4.0
         with:
           chain: ${{ matrix.runtime }}
-          runtime_dir: parachain-runtimes/${category}/${{ matrix.runtime }}
+          runtime_dir: parachain-runtimes/${{ matrix.category }}/${{ matrix.runtime }}
 
       - name: Summary
         run: |
