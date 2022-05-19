@@ -121,7 +121,7 @@ fn main() -> Result<(), sc_cli::Error> {
 			);
 
 			let parachain_account =
-				AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account(
+				AccountIdConversion::<polkadot_primitives::v2::AccountId>::try_into_account(
 					&parachain_id,
 				);
 
@@ -139,7 +139,9 @@ fn main() -> Result<(), sc_cli::Error> {
 					.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
 			tracing::info!("Parachain id: {:?}", parachain_id);
-			tracing::info!("Parachain Account: {}", parachain_account);
+			if let Some(parachain_account) = parachain_account {
+				tracing::info!("Parachain Account: {}", parachain_account);
+			}
 			tracing::info!("Parachain genesis state: {}", genesis_state);
 			tracing::info!(
 				"Is collating: {}",
