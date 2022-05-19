@@ -31,20 +31,20 @@ jobs:
     strategy:
       matrix:
         include:
-          - runtime: statemine
-            category: assets
-          - runtime: statemint
-            category: assets
-          - runtime: westmint
-            category: assets
-          - runtime: canvas-kusama
-            category: smart-contracts
-          - runtime: seedling
-            category: starters
-          - runtime: shell
-            category: starters
-          - runtime: rococo-parachain
-            category: testing
+          - category: assets
+            runtime: statemine
+          - category: assets
+            runtime: statemint
+          - category: assets
+            runtime: westmint
+          - category: smart-contracts
+            runtime: canvas-kusama
+          - category: starters
+            runtime: seedling
+          - category: starters
+            runtime: shell
+          - category: testing
+            runtime: rococo-parachain
 
     steps:
       - uses: actions/checkout@v3
