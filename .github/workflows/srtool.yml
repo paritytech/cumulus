@@ -30,8 +30,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        category: ["assets", "smart-contracts", "starters", "testing"]
-        runtime: ["statemine", "statemint", "westmint", "canvas-kusama", "seedling", "shell", "rococo-parachain"]
         include:
           - runtime: statemine
             category: assets
