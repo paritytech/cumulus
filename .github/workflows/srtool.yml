@@ -15,7 +15,7 @@ on:
     #   - "test"
     #   - "client"
     paths:
-      - parachain-runtimes/**/*
+      - parachains/runtimes/**/*
 
     branches:
       - "release*"
@@ -55,7 +55,7 @@ jobs:
         uses: chevdor/srtool-actions@v0.4.0
         with:
           chain: ${{ matrix.runtime }}
-          runtime_dir: parachain-runtimes/${{ matrix.category }}/${{ matrix.runtime }}
+          runtime_dir: parachains/runtimes/${{ matrix.category }}/${{ matrix.runtime }}
 
       - name: Summary
         run: |

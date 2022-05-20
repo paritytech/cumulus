@@ -4,7 +4,7 @@ steps=50
 repeat=20
 chainName=$1
 
-benhcmarkOutput=./parachain-runtimes/$chainName/src/weights
+benhcmarkOutput=./parachains/runtimes/$chainName/src/weights
 benhcmarkChainName="$chainName-dev"
 
 pallets=(
