@@ -39,5 +39,4 @@ std = [
 	"polkadot-primitives/std",
 	"cumulus-primitives-core/std",
 	"xcm-executor/std",
-	"xcm/std",
 ]

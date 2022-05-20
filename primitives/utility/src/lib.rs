@@ -22,7 +22,6 @@
 use codec::Encode;
 use cumulus_primitives_core::UpwardMessageSender;
 use frame_support::{
-	pallet_prelude::Get,
 	traits::tokens::{currency::Currency as CurrencyT, fungibles, BalanceConversion},
 	weights::{Weight, WeightToFeePolynomial},
 };
