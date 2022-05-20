@@ -226,8 +226,7 @@ struct BlockTests {
 	ran: bool,
 	relay_sproof_builder_hook:
 		Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut RelayStateSproofBuilder)>>,
-	persisted_validation_data_hook:
-		Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut PersistedValidationData)>>,
+	persisted_validation_data_hook: Option<Box<dyn Fn(&BlockTests, &mut PersistedValidationData)>>,
 	inherent_data_hook:
 		Option<Box<dyn Fn(&BlockTests, RelayChainBlockNumber, &mut ParachainInherentData)>>,
 }
@@ -274,10 +273,9 @@ impl BlockTests {
 		self
 	}
 
-	#[allow(dead_code)] // might come in handy in future. If now is future and it still hasn't - feel free.
 	fn with_validation_data<F>(mut self, f: F) -> Self
 	where
-		F: 'static + Fn(&BlockTests, RelayChainBlockNumber, &mut PersistedValidationData),
+		F: 'static + Fn(&BlockTests, &mut PersistedValidationData),
 	{
 		self.persisted_validation_data_hook = Some(Box::new(f));
 		self
@@ -319,7 +317,7 @@ impl BlockTests {
 					..Default::default()
 				};
 				if let Some(ref hook) = self.persisted_validation_data_hook {
-					hook(self, *n as RelayChainBlockNumber, &mut vfp);
+					hook(self, &mut vfp);
 				}
 
 				<ValidationData<Test>>::put(&vfp);
@@ -960,4 +958,15 @@ fn receive_hrmp_after_pause() {
 				m.clear();
 			});
 		});
+}
+
+#[test]
+#[should_panic = "Relay chain block number needs to strictly increase between Parachain blocks!"]
+fn test() {
+	BlockTests::new()
+		.with_validation_data(|_, data| {
+			data.relay_parent_number = 1;
+		})
+		.add(1, || {})
+		.add(2, || {});
 }

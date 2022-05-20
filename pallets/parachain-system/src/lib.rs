@@ -232,7 +232,7 @@ pub mod pallet {
 			}
 
 			// Remove the validation from the old block.
-			<ValidationData<T>>::kill();
+			ValidationData::<T>::kill();
 			ProcessedDownwardMessages::<T>::kill();
 			HrmpWatermark::<T>::kill();
 			UpwardMessages::<T>::kill();
@@ -306,6 +306,20 @@ pub mod pallet {
 			} = data;
 
 			Self::validate_validation_data(&vfp);
+
+			// Ensure that the associated relay chain parent is strictly increasing
+			//
+			// If this isn't the case, a collator tried to build multiple parachain blocks
+			// against the same relay chain block. This is a safeguard for when the relay chain
+			// supports async backing. Then this needs to be revisited and made modular for chains
+			// that may support multiple parachain blocks per relay chain block.
+			if LastRelayChainBlockNumber::<T>::get() < vfp.relay_parent_number {
+				LastRelayChainBlockNumber::<T>::put(vfp.relay_parent_number);
+			} else {
+				panic!(
+					"Relay chain block number needs to strictly increase between Parachain blocks!"
+				)
+			}
 
 			let relay_state_proof = RelayChainStateProof::new(
 				T::SelfParaId::get(),
@@ -473,6 +487,11 @@ pub mod pallet {
 	/// Were the validation data set to notify the relay chain?
 	#[pallet::storage]
 	pub(super) type DidSetValidationCode<T: Config> = StorageValue<_, bool, ValueQuery>;
+
+	/// The relay chain block number associated to the last parachain block.
+	#[pallet::storage]
+	pub(super) type LastRelayChainBlockNumber<T: Config> =
+		StorageValue<_, RelayChainBlockNumber, ValueQuery>;
 
 	/// An option which indicates if the relay-chain restricts signalling a validation code upgrade.
 	/// In other words, if this is `Some` and [`NewValidationCode`] is `Some` then the produced
