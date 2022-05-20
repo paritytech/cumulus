@@ -5,8 +5,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-polkadot-overseer = { git = "https://github.com/girazoki/polkadot", branch = "girazoki-fix-xcm-builder-runtime-benchmark-errors" }
-polkadot-service = { git = "https://github.com/girazoki/polkadot", branch = "girazoki-fix-xcm-builder-runtime-benchmark-errors" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 
