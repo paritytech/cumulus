@@ -237,10 +237,10 @@ jobs:
         id: get-runtime-ver
         run: |
           echo "require './scripts/ci/github/runtime-version.rb'" > script.rb
-          echo "puts get_runtime(runtime: \"${{ matrix.runtime }}\", runtime_dir: \"$RUNTIME_DIR\")" >> script.rb
+          echo "puts get_runtime(runtime: \"${{ matrix.runtime }}\", runtime_dir: \"$RUNTIME_DIR/${{ matrix.category }}/")" >> script.rb
 
           echo "Current folder: $PWD"
-          ls "$RUNTIME_DIR/${{ matrix.runtime }}"
+          ls "$RUNTIME_DIR/${{ matrix.category }}/${{ matrix.runtime }}"
           runtime_ver=$(ruby script.rb)
           echo "Found version: >$runtime_ver<"
           echo "::set-output name=runtime_ver::$runtime_ver"
