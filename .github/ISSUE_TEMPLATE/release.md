@@ -150,7 +150,7 @@ Until #631 is done, running the benchmarks is a manual process:
 5. From the root directory run `nohup ./scripts/benchmarks.sh &` (it will take quite a few hours)
 6. Checkout in your local machine to the branch of cumulus that has the version of Statemine you want to release
 7. `scp` from the host to your local machine the weights for Statemine, Westmint and Statemint you'll find in:
-   - `/parachain-runtimes/statemine/src/weights`
-   - `/parachain-runtimes/westmint/src/weights`
-   - `/parachain-runtimes/statemint/src/weights`
+   - `/parachain-runtimes/assets/statemine/src/weights`
+   - `/parachain-runtimes/assets/statemint/src/weights`
+   - `/parachain-runtimes/assets/westmint/src/weights`
 8. Commit the changes in your local and create a PR
