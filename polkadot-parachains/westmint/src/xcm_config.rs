@@ -24,10 +24,11 @@ use frame_support::{
 };
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
-	impls::ToStakingPot,
+	impls::{AssetsToBlockAuthor, ToStakingPot},
 	xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry},
 };
 use polkadot_parachain::primitives::Sibling;
+use sp_runtime::traits::ConvertInto;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
@@ -39,8 +40,6 @@ use xcm_builder::{
 	UsingComponents,
 };
 use xcm_executor::{traits::JustTry, XcmExecutor};
-use parachains_common::impls::AssetsToBlockAuthor;
-use sp_runtime::traits::ConvertInto;
 
 parameter_types! {
 	pub const WestendLocation: MultiLocation = MultiLocation::parent();
@@ -179,8 +178,8 @@ impl xcm_executor::Config for XcmConfig {
 				JustTry,
 			>,
 			Assets,
-			AssetsToBlockAuthor<Runtime>
-	>,
+			AssetsToBlockAuthor<Runtime>,
+		>,
 	);
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;

@@ -86,15 +86,7 @@ impl<
 			+ fungibles::Balanced<AccountId>,
 		HandleCredit: HandleCreditT<AccountId, Assets>,
 	> WeightTrader
-	for TakeFirstAssetTrader<
-		WeightToFee,
-		AccountId,
-		Currency,
-		CON,
-		Matcher,
-		Assets,
-		HandleCredit,
-	>
+	for TakeFirstAssetTrader<WeightToFee, AccountId, Currency, CON, Matcher, Assets, HandleCredit>
 {
 	fn new() -> Self {
 		Self(0, Zero::zero(), None, PhantomData)
@@ -184,15 +176,7 @@ impl<
 			+ fungibles::Balanced<AccountId>,
 		HandleCredit: HandleCreditT<AccountId, Assets>,
 	> Drop
-	for TakeFirstAssetTrader<
-		WeightToFee,
-		AccountId,
-		Currency,
-		CON,
-		Matcher,
-		Assets,
-		HandleCredit,
-	>
+	for TakeFirstAssetTrader<WeightToFee, AccountId, Currency, CON, Matcher, Assets, HandleCredit>
 {
 	fn drop(&mut self) {
 		if let Some((_, local_asset_id)) = self.2 {
