@@ -26,7 +26,7 @@ seedling-runtime = { path = "../parachain-runtimes/starters/seedling" }
 statemint-runtime = { path = "../parachain-runtimes/assets/statemint" }
 statemine-runtime = { path = "../parachain-runtimes/assets/statemine" }
 westmint-runtime = { path = "../parachain-runtimes/assets/westmint" }
-contracts-rococo-runtime = { path = "../parachain-runtimes/smart-contracts/contracts-rococo" }
+contracts-rococo-runtime = { path = "../parachain-runtimes/contracts/contracts-rococo" }
 jsonrpsee = { version = "0.13", features = ["server"] }
 parachains-common = { path = "../parachain-runtimes/common" }
 

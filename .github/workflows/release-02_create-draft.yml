@@ -50,7 +50,7 @@ jobs:
             runtime: statemint
           - category: assets
             runtime: westmint
-          - category: smart-contracts
+          - category: contracts
             runtime: contracts-rococo
           - category: starters
             runtime: seedling
@@ -212,7 +212,7 @@ jobs:
             runtime: statemint
           - category: assets
             runtime: westmint
-          - category: smart-contracts
+          - category: contracts
             runtime: contracts-rococo
           - category: starters
             runtime: seedling
