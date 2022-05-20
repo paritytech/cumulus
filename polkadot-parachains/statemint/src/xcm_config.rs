@@ -39,6 +39,8 @@ use xcm_builder::{
 	UsingComponents,
 };
 use xcm_executor::{traits::JustTry, XcmExecutor};
+use parachains_common::impls::AssetsToBlockAuthor;
+use sp_runtime::traits::ConvertInto;
 
 parameter_types! {
 	pub const DotLocation: MultiLocation = MultiLocation::parent();
@@ -155,9 +157,6 @@ pub type Barrier = DenyThenTry<
 		AllowSubscriptionsFrom<ParentOrSiblings>,
 	),
 >;
-
-use parachains_common::impls::AssetsToBlockAuthor;
-use sp_runtime::traits::ConvertInto;
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {

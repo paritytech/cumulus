@@ -39,6 +39,8 @@ use xcm_builder::{
 	UsingComponents,
 };
 use xcm_executor::{traits::JustTry, XcmExecutor};
+use parachains_common::impls::AssetsToBlockAuthor;
+use sp_runtime::traits::ConvertInto;
 
 parameter_types! {
 	pub const KsmLocation: MultiLocation = MultiLocation::parent();
@@ -156,8 +158,6 @@ pub type Barrier = DenyThenTry<
 	),
 >;
 
-use parachains_common::impls::AssetsToBlockAuthor;
-use sp_runtime::traits::ConvertInto;
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
 	type Call = Call;
