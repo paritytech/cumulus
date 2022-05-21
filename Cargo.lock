@@ -3537,7 +3537,7 @@ dependencies = [
 
 [[package]]
 name = "integritee-collator"
-version = "1.5.25"
+version = "1.5.26"
 dependencies = [
  "assert_cmd",
  "async-trait",
@@ -3618,7 +3618,7 @@ dependencies = [
 
 [[package]]
 name = "integritee-runtime"
-version = "1.5.21"
+version = "1.5.22"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -3650,7 +3650,6 @@ dependencies = [
  "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
- "pallet-sudo",
  "pallet-teeracle",
  "pallet-teerex",
  "pallet-timestamp",

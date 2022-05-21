@@ -2,7 +2,7 @@
 name = 'integritee-runtime'
 description = "The Integritee parachain runtime"
 # patch revision must match runtime spec_version
-version = '1.5.21'
+version = '1.5.22'
 authors = ["Integritee AG <hello@integritee.network>"]
 homepage = "https://integritee.network/"
 repository = "https://github.com/integritee-network/parachain"
@@ -15,7 +15,7 @@ log = { version = "0.4.14", default-features = false }
 parachain-info = { git = "https://github.com/paritytech/cumulus",  branch = "polkadot-v0.9.20", default-features = false }
 scale-info = { version = "2.0.1", default-features = false, features = ["derive"] }
 
-parachains-common = { path = "../parachains-common" , default-features = false  }
+parachains-common = { path = "../parachains-common", default-features = false  }
 
 # Substrate dependencies
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.20" }
@@ -44,7 +44,6 @@ pallet-democracy = { git = "https://github.com/paritytech/substrate", default-fe
 pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.20" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.20" }
 pallet-treasury  = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.20" }
-pallet-sudo = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.20" }
 pallet-vesting = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.20" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.20" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.20" }
@@ -122,7 +121,6 @@ std = [
 	"pallet-randomness-collective-flip/std",
 	"pallet-timestamp/std",
 	"pallet-treasury/std",
-	"pallet-sudo/std",
 	"pallet-transaction-payment/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-vesting/std",

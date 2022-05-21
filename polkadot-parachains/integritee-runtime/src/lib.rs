@@ -105,7 +105,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("integritee-parachain"),
 	impl_name: create_runtime_str!("integritee-full"),
 	authoring_version: 2,
-	spec_version: 21,
+	spec_version: 22,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 3,
@@ -294,11 +294,6 @@ impl pallet_transaction_payment::Config for Runtime {
 	type FeeMultiplierUpdate = ();
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
-}
-
-impl pallet_sudo::Config for Runtime {
-	type Call = Call;
-	type Event = Event;
 }
 
 parameter_types! {
@@ -688,7 +683,6 @@ construct_runtime! {
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 2,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 4,
-		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>} = 5,
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 6,
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 7,
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 8,
