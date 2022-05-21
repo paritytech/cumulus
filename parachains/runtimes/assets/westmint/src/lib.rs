@@ -13,7 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Westmint runtime.
+//! # Westmint Runtime
+//!
+//! Westmint is the testnet for Statemint.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]

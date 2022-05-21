@@ -13,7 +13,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Statemint runtime.
+//! # Statemint Runtime
+//!
+//! Statemint is a parachain that provides an interface to create, manage, and use assets, both
+//! fungible and non-fungible.
+//!
+//! ## Native Balances
+//!
+//! Statemint uses its parent DOT token as its native asset.
+//!
+//! ## Governance
+//!
+//! As a common good parachain, Statemint defers its governance (namely, its `Root` origin), to its
+//! Relay Chain parent, Polkadot.
+//!
+//! ## XCM
+//!
+//! Because Statemint is fully under the control of the Relay Chain, it is meant to be a
+//! `TrustedTeleporter`. It can also serve as a reserve location to other parachains for DOT as well
+//! as other local assets.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]

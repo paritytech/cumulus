@@ -1,0 +1,16 @@
+# Assets Parachain
+
+Implementation of _Statemint,_ a blockchain to support generic assets in the Polkadot and Kusama
+networks.
+
+Statemint allows users to:
+
+- Deploy promise-backed assets, both fungible and non-fungible, with a DOT/KSM deposit.
+- Set admin roles to manage assets and asset classes.
+- Register assets as "self-sufficient" if the Relay Chain agrees, i.e. gain the ability for an
+  asset to justify the existance of accounts sans DOT/KSM.
+- Pay transaction fees using sufficient assets.
+- Transfer (and approve transfer) assets.
+
+Statemint must stay fully aligned with the Relay Chain it is connected to. As such, it will accept
+the Relay Chain's governance origins as its own.

@@ -13,7 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Statemine runtime.
+//! # Statemine Runtime
+//!
+//! Statemine is the canary network for its Polkadot cousin, Statemint.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]
