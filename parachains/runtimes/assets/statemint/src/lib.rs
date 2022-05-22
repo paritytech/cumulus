@@ -15,19 +15,32 @@
 
 //! # Statemint Runtime
 //!
-//! Statemint is a parachain that provides an interface to create, manage, and use assets, both
-//! fungible and non-fungible.
+//! Statemint is a parachain that provides an interface to create, manage, and use assets. Assets
+//! may be fungible or non-fungible.
 //!
-//! ## Native Balances
+//! ## Assets
+//!
+//! - Fungibles: Configuration of `pallet-assets`.
+//! - Non-Fungibles (NFTs): Configuration of `pallet-uniques`.
+//!
+//! ## Other Functionality
+//!
+//! ### Native Balances
 //!
 //! Statemint uses its parent DOT token as its native asset.
 //!
-//! ## Governance
+//! ### Governance
 //!
 //! As a common good parachain, Statemint defers its governance (namely, its `Root` origin), to its
 //! Relay Chain parent, Polkadot.
 //!
-//! ## XCM
+//! ### Collator Selection
+//!
+//! Statemint uses `pallet-collator-selection`, a simple first-come-first-served registration
+//! system where collators can reserve a small bond to join the block producer set. There is no
+//! slashing.
+//!
+//! ### XCM
 //!
 //! Because Statemint is fully under the control of the Relay Chain, it is meant to be a
 //! `TrustedTeleporter`. It can also serve as a reserve location to other parachains for DOT as well

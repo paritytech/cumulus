@@ -11,6 +11,15 @@ Statemint allows users to:
   asset to justify the existance of accounts sans DOT/KSM.
 - Pay transaction fees using sufficient assets.
 - Transfer (and approve transfer) assets.
+- Interact with the chain via its transactional API or XCM.
 
 Statemint must stay fully aligned with the Relay Chain it is connected to. As such, it will accept
 the Relay Chain's governance origins as its own.
+
+See
+[this article](https://www.parity.io/blog/statemint-generic-assets-chain-proposing-a-common-good-parachain-to-polkadot-governance/)
+for a higher level description.
+
+Wallets, custodians, etc. should see
+[the Polkadot Wiki's Integration Guide](https://wiki.polkadot.network/docs/build-integrate-assets)
+for details about support.
