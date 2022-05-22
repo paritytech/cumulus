@@ -16,9 +16,8 @@
 
 //! # Shell Runtime
 //!
-//! The Shell runtime defines a lightweight parachain with almost no user interface. It can be used
-//! to test parachain block inclusion and finalization on a Relay Chain and listen for a downward
-//! message authorizing an upgrade into another parachain.
+//! The Shell runtime defines a minimal parachain. It can listen for a downward message authorizing
+//! an upgrade into another parachain.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.

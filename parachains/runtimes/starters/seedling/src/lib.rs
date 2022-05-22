@@ -17,7 +17,7 @@
 //! # Seedling Runtime
 //!
 //! Seedling is a parachain meant to help parachain auction winners migrate a blockchain from
-//! another consensus system (including its own) into the consensus system of a given Relay Chain.
+//! another consensus system into the consensus system of a given Relay Chain.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
