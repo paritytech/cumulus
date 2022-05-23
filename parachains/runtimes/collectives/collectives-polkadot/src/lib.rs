@@ -410,6 +410,74 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = weights::pallet_collator_selection::WeightInfo<Runtime>;
 }
 
+/* TODO:COLLECTIVES
+
+parameter_types! {
+	pub const AllianceMotionDuration: BlockNumber = 5 * DAYS;
+	pub const AllianceMaxProposals: u32 = 100;
+	pub const AllianceMaxMembers: u32 = 100;
+}
+
+type AllianceCollective = pallet_collective::Instance1;
+impl pallet_collective::Config<AllianceCollective> for Runtime {
+	type Origin = Origin;
+	type Proposal = Call;
+	type Event = Event;
+	type MotionDuration = AllianceMotionDuration;
+	type MaxProposals = AllianceMaxProposals;
+	type MaxMembers = AllianceMaxMembers;
+	type DefaultVote = pallet_collective::MoreThanMajorityThenPrimeDefaultVote;
+	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const MaxFounders: u32 = 10;
+	pub const MaxFellows: u32 = AllianceMaxMembers::get() - MaxFounders::get();
+	pub const MaxAllies: u32 = 100;
+	pub const AllyDeposit: Balance = 1_000 * UNITS;
+}
+
+impl pallet_alliance::Config for Runtime {
+	type Event = Event;
+	type Proposal = Call;
+	type AdminOrigin = EnsureOneOf<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionMoreThan<AccountId, AllianceCollective, 2, 3>,
+	>;
+	type MembershipManager = EnsureOneOf<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionMoreThan<AccountId, AllianceCollective, 2, 3>,
+	>;
+	type AnnouncementOrigin = EnsureOneOf<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionMoreThan<AccountId, AllianceCollective, 2, 3>,
+	>;
+	type Currency = Balances;
+	type Slashed = (); // TODO:COLLECTIVES add handler to send teleport to Relay Treasury
+	type InitializeMembers = AllianceMotion;
+	type MembershipChanged = AllianceMotion;
+	#[cfg(feature = "runtime-benchmarks")]
+	type IdentityVerifier = ();
+	type ProposalProvider = AllianceProposalProvider;
+	type MaxProposals = AllianceMaxProposals;
+	type MaxFounders = MaxFounders;
+	type MaxFellows = MaxFellows;
+	type MaxAllies = MaxAllies;
+	type MaxBlacklistCount = ConstU32<100>;
+	type MaxWebsiteUrlLength = ConstU32<255>;
+	type MaxAnnouncementsCount = ConstU32<100>;
+	type MaxMembersCount = AllianceMaxMembers;
+	type AllyDeposit = AllyDeposit;
+	type WeightInfo = pallet_alliance::weights::SubstrateWeight<Runtime>;
+}
+
+*/
+
+pub struct SlashedToRelayTreasury;
+impl OnUnbalanced<NegativeImbalance> for SlashedToRelayTreasury {
+	fn on_unbalanced()
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -449,7 +517,11 @@ construct_runtime!(
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 42,
 
 		// The main stage.
-		// TODO: Add Alliance
+		// TODO:COLLECTIVES Add Alliance
+		/*
+		Alliance: pallet_alliance::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 50,
+		AllianceMotion: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 51,
+		*/
 	}
 );
 
