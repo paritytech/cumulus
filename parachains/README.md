@@ -12,7 +12,7 @@ The general internal structure is:
 
 ## Common Good Parachains
 
-This directory includes many, but is not limited to,
+The `runtimes` directory includes many, but is not limited to,
 [common good parachains](https://wiki.polkadot.network/docs/learn-common-goods). Likewise, not all
 common good parachains are in this repo.
 
