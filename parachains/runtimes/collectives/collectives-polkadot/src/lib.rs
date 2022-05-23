@@ -474,7 +474,9 @@ impl pallet_alliance::Config for Runtime {
 pub struct SlashedToRelayTreasury;
 impl OnUnbalanced<NegativeImbalance> for SlashedToRelayTreasury {
 	// This should construct a teleport to the Treasury AccountId on the Relay Chain.
-	fn on_unbalanced()
+	fn on_unbalanced(amount: NegativeImbalance) {
+		/* teleport */
+	}
 }
 
 */
