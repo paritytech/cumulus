@@ -1,9 +1,9 @@
 [package]
-name = "statemint-runtime"
+name = "collectives-polkadot-runtime"
 version = "1.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
-description = "Statemint parachain runtime"
+description = "Polkadot Collectives Parachain Runtime"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
