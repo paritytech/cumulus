@@ -278,6 +278,8 @@ pub mod pallet {
 		OverweightEnqueued(ParaId, RelayBlockNumber, OverweightIndex, Weight),
 		/// An XCM from the overweight queue was executed with the given actual weight used.
 		OverweightServiced(OverweightIndex, Weight),
+		/// XCMP message executed with the given outcome.
+		ExecutedXcmp { message_id: Option<T::Hash>, outcome: Outcome },
 	}
 
 	#[pallet::error]
@@ -599,7 +601,15 @@ impl<T: Config> Pallet<T> {
 		let (result, event) = match Xcm::<T::Call>::try_from(xcm) {
 			Ok(xcm) => {
 				let location = (1, Parachain(sender.into()));
-				match T::XcmExecutor::execute_xcm(location, xcm, max_weight) {
+				let outcome =  T::XcmExecutor::execute_xcm(location, xcm, max_weight);
+				// Deposit new event
+				// Dont disrupt previous behavior
+				Self::deposit_event(Event::ExecutedXcmp {
+					message_id: Some(hash),
+					outcome: outcome.clone()
+				});
+
+				match outcome {
 					Outcome::Error(e) => (Err(e), Event::Fail(Some(hash), e)),
 					Outcome::Complete(w) => (Ok(w), Event::Success(Some(hash))),
 					// As far as the caller is concerned, this was dispatched without error, so
