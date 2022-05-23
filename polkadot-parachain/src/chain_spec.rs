@@ -1,4 +1,4 @@
-// Copyright 2019-2021 Parity Technologies (UK) Ltd.
+// Copyright 2019-2022 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -235,10 +235,14 @@ pub type StatemineChainSpec =
 	sc_service::GenericChainSpec<statemine_runtime::GenesisConfig, Extensions>;
 pub type WestmintChainSpec =
 	sc_service::GenericChainSpec<westmint_runtime::GenesisConfig, Extensions>;
+pub type CollectivesPolkadotChainSpec =
+	sc_service::GenericChainSpec<collectives_polkadot_runtime::GenesisConfig, Extensions>;
 
 const STATEMINT_ED: StatemintBalance = statemint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 const STATEMINE_ED: StatemintBalance = statemine_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 const WESTMINT_ED: StatemintBalance = westmint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const COLLECTIVES_POLKADOT_ED: StatemintBalance = 
+	collectives_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_public_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -273,6 +277,13 @@ pub fn statemine_session_keys(keys: AuraId) -> statemine_runtime::SessionKeys {
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
 pub fn westmint_session_keys(keys: AuraId) -> westmint_runtime::SessionKeys {
 	westmint_runtime::SessionKeys { aura: keys }
+}
+
+/// Generate the session keys from individual elements.
+///
+/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
+pub fn collectives_polkadot_session_keys(keys: AuraId) -> collectives_polkadot_runtime::SessionKeys {
+	collectives_polkadot_runtime::SessionKeys { aura: keys }
 }
 
 pub fn statemint_development_config() -> StatemintChainSpec {
@@ -830,6 +841,139 @@ fn westmint_genesis(
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
 		polkadot_xcm: westmint_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
+		},
+	}
+}
+
+pub fn collectives_polkadot_development_config() -> CollectivesPolkadotChainSpec {
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("ss58Format".into(), 0.into());
+	properties.insert("tokenSymbol".into(), "DOT".into());
+	properties.insert("tokenDecimals".into(), 10.into());
+
+	CollectivesPolkadotChainSpec::from_genesis(
+		// Name
+		"Polkadot Collectives Development",
+		// ID
+		"collectives_polkadot_dev",
+		ChainType::Local,
+		move || {
+			collectives_polkadot_genesis(
+				// initial collators.
+				vec![(
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_collator_keys_from_seed::<AuraId>("Alice"),
+				)],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+				],
+				// 1002 avoids a potential collision with Kusama-1001 (Encointer) should there ever
+				// be a collective para on Kusama.
+				1002.into(),
+			)
+		},
+		Vec::new(),
+		None,
+		None,
+		None,
+		Some(properties),
+		Extensions { relay_chain: "polkadot-dev".into(), para_id: 1002 },
+	)
+}
+
+pub fn collectives_polkadot_config() -> CollectivesPolkadotChainSpec {
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("ss58Format".into(), 0.into());
+	properties.insert("tokenSymbol".into(), "DOT".into());
+	properties.insert("tokenDecimals".into(), 10.into());
+
+	CollectivesPolkadotChainSpec::from_genesis(
+		// Name
+		"Polkadot Collectives Local",
+		// ID
+		"collectives_polkadot_local",
+		ChainType::Local,
+		move || {
+			collectives_polkadot_genesis(
+				// initial collators.
+				vec![
+					(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed::<AuraId>("Alice"),
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed::<AuraId>("Bob"),
+					),
+				],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+				],
+				1002.into(),
+			)
+		},
+		Vec::new(),
+		None,
+		None,
+		None,
+		Some(properties),
+		Extensions { relay_chain: "polkadot-local".into(), para_id: 1002 },
+	)
+}
+
+fn collectives_polkadot_genesis(
+	invulnerables: Vec<(AccountId, AuraId)>,
+	endowed_accounts: Vec<AccountId>,
+	id: ParaId,
+) -> collectives_polkadot_runtime::GenesisConfig {
+	collectives_polkadot_runtime::GenesisConfig {
+		system: collectives_polkadot_runtime::SystemConfig {
+			code: collectives_polkadot_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!")
+				.to_vec(),
+		},
+		balances: collectives_polkadot_runtime::BalancesConfig {
+			balances: endowed_accounts.iter().cloned().map(|k| (k, COLLECTIVES_POLKADOT_ED * 4096)).collect(),
+		},
+		parachain_info: collectives_polkadot_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: collectives_polkadot_runtime::CollatorSelectionConfig {
+			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
+			candidacy_bond: COLLECTIVES_POLKADOT_ED * 16,
+			..Default::default()
+		},
+		session: collectives_polkadot_runtime::SessionConfig {
+			keys: invulnerables
+				.into_iter()
+				.map(|(acc, aura)| {
+					(
+						acc.clone(),                             // account id
+						acc,                                     // validator id
+						collectives_polkadot_session_keys(aura), // session keys
+					)
+				})
+				.collect(),
+		},
+		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
+		// of this.
+		aura: Default::default(),
+		aura_ext: Default::default(),
+		parachain_system: Default::default(),
+		polkadot_xcm: collectives_polkadot_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 	}

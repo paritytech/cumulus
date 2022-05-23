@@ -18,8 +18,8 @@ use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{
-		new_partial, Block, ShellRuntimeExecutor, StatemineRuntimeExecutor,
-		StatemintRuntimeExecutor, WestmintRuntimeExecutor,
+		new_partial, Block, CollectivesPolkadotRuntimeExecutor, ShellRuntimeExecutor,
+		StatemineRuntimeExecutor, StatemintRuntimeExecutor, WestmintRuntimeExecutor,
 	},
 };
 use codec::Encode;
@@ -46,6 +46,7 @@ trait IdentifyChain {
 	fn is_statemint(&self) -> bool;
 	fn is_statemine(&self) -> bool;
 	fn is_westmint(&self) -> bool;
+	fn is_polkadot_collectives(&self) -> bool;
 	fn is_contracts_rococo(&self) -> bool;
 }
 
@@ -64,6 +65,9 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 	}
 	fn is_westmint(&self) -> bool {
 		self.id().starts_with("westmint")
+	}
+	fn is_polkadot_collectives(&self) -> bool {
+		self.id().starts_with("collective-polkadot")
 	}
 	fn is_contracts_rococo(&self) -> bool {
 		self.id().starts_with("contracts-rococo")
@@ -86,6 +90,9 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 	fn is_westmint(&self) -> bool {
 		<dyn sc_service::ChainSpec>::is_westmint(self)
 	}
+	fn is_polkadot_collectives(&self) -> bool {
+		<dyn sc_service::ChainSpec>::is_polkadot_collectives(self)
+	}
 	fn is_contracts_rococo(&self) -> bool {
 		<dyn sc_service::ChainSpec>::is_contracts_rococo(self)
 	}
@@ -104,6 +111,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 			&include_bytes!("../../parachains/chain-specs/track.json")[..],
 		)?),
 		"shell" => Box::new(chain_spec::get_shell_chain_spec()),
+
 		// -- Statemint
 		"seedling" => Box::new(chain_spec::get_seedling_chain_spec()),
 		"statemint-dev" => Box::new(chain_spec::statemint_development_config()),
@@ -114,6 +122,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		"statemint" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../../parachains/chain-specs/statemint.json")[..],
 		)?),
+
 		// -- Statemine
 		"statemine-dev" => Box::new(chain_spec::statemine_development_config()),
 		"statemine-local" => Box::new(chain_spec::statemine_local_config()),
@@ -123,6 +132,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		"statemine" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../../parachains/chain-specs/statemine.json")[..],
 		)?),
+
 		// -- Westmint
 		"westmint-dev" => Box::new(chain_spec::westmint_development_config()),
 		"westmint-local" => Box::new(chain_spec::westmint_local_config()),
@@ -132,6 +142,16 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		"westmint" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../../parachains/chain-specs/westmint.json")[..],
 		)?),
+
+		// -- Polkadot Collectives
+		"collective-polkadot-dev" => Box::new(chain_spec::collectives_polkadot_development_config()),
+		"collective-polkadot-local" => Box::new(chain_spec::collectives_polkadot_config()),
+		/* TODO:COLLECTIVES
+		"collective-polkadot" => Box::new(chain_spec::ChainSpec::from_json_bytes(
+			&include_bytes!("../../parachains/chain-specs/westmint.json")[..],
+		)?),
+		*/
+
 		// -- Contracts on Rococo
 		"contracts-rococo-dev" => Box::new(chain_spec::contracts_rococo_development_config()),
 		"contracts-rococo-local" => Box::new(chain_spec::contracts_rococo_local_config()),
@@ -139,8 +159,10 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		"contracts-rococo" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../../parachains/chain-specs/contracts-rococo.json")[..],
 		)?),
+
 		// -- Fallback (generic chainspec)
 		"" => Box::new(chain_spec::get_chain_spec()),
+
 		// -- Loading a specific spec from disk
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
@@ -150,6 +172,8 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 				Box::new(chain_spec::StatemineChainSpec::from_json_file(path.into())?)
 			} else if chain_spec.is_westmint() {
 				Box::new(chain_spec::WestmintChainSpec::from_json_file(path.into())?)
+			} else if chain_spec.is_polkadot_collectives() {
+				Box::new(chain_spec::CollectivesPolkadotChainSpec::from_json_file(path.into())?)
 			} else if chain_spec.is_shell() {
 				Box::new(chain_spec::ShellChainSpec::from_json_file(path.into())?)
 			} else if chain_spec.is_seedling() {
@@ -205,6 +229,8 @@ impl SubstrateCli for Cli {
 			&statemine_runtime::VERSION
 		} else if chain_spec.is_westmint() {
 			&westmint_runtime::VERSION
+		} else if chain_spec.is_polkadot_collectives() {
+			&collectives_polkadot_runtime::VERSION
 		} else if chain_spec.is_shell() {
 			&shell_runtime::VERSION
 		} else if chain_spec.is_seedling() {
@@ -288,6 +314,12 @@ macro_rules! construct_benchmark_partials {
 				crate::service::statemint_build_import_queue::<_, StatemintAuraId>,
 			)?;
 			$code
+		} else if $config.chain_spec.is_polkadot_collectives() {
+			let $partials = new_partial::<collectives_polkadot_runtime::RuntimeApi, _>(
+				&$config,
+				crate::service::statemint_build_import_queue::<_, AuraId>, // TODO:COLLECTIVES Rename
+			)?;
+			$code
 		} else {
 			Err("The chain is not supported".into())
 		}
@@ -320,6 +352,15 @@ macro_rules! construct_async_run {
 				let $components = new_partial::<statemint_runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::statemint_build_import_queue::<_, StatemintAuraId>,
+				)?;
+				let task_manager = $components.task_manager;
+				{ $( $code )* }.map(|v| (v, task_manager))
+			})
+		} else if runner.config().chain_spec.is_polkadot_collectives() {
+			runner.async_run(|$config| {
+				let $components = new_partial::<collectives_polkadot_runtime::RuntimeApi, _>(
+					&$config,
+					crate::service::statemint_build_import_queue::<_, AuraId>, // TODO:COLLECTIVES Rename
 				)?;
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
@@ -479,6 +520,8 @@ pub fn run() -> Result<()> {
 								cmd.run::<Block, WestmintRuntimeExecutor>(config)
 							} else if config.chain_spec.is_statemint() {
 								cmd.run::<Block, StatemintRuntimeExecutor>(config)
+							} else if config.chain_spec.is_polkadot_collectives() {
+								cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config)
 							} else {
 								Err("Chain doesn't support benchmarking".into())
 							}
@@ -524,6 +567,10 @@ pub fn run() -> Result<()> {
 				} else if runner.config().chain_spec.is_statemint() {
 					runner.async_run(|config| {
 						Ok((cmd.run::<Block, StatemintRuntimeExecutor>(config), task_manager))
+					})
+				} else if runner.config().chain_spec.is_polkadot_collectives() {
+					runner.async_run(|config| {
+						Ok((cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config), task_manager))
 					})
 				} else if runner.config().chain_spec.is_shell() {
 					runner.async_run(|config| {
@@ -606,6 +653,17 @@ pub fn run() -> Result<()> {
 					.map_err(Into::into)
 				} else if config.chain_spec.is_westmint() {
 					crate::service::start_statemint_node::<westmint_runtime::RuntimeApi, AuraId>(
+						config,
+						polkadot_config,
+						collator_options,
+						id,
+						hwbench,
+					)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
+				} else if config.chain_spec.is_polkadot_collectives() {
+					crate::service::start_statemint_node::<collectives_polkadot_runtime::RuntimeApi, AuraId>(
 						config,
 						polkadot_config,
 						collator_options,
