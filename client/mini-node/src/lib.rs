@@ -171,90 +171,6 @@ pub struct NewCollator {
 	pub network: Arc<sc_network::NetworkService<Block, <Block as BlockT>::Hash>>,
 }
 
-/// TODO This is just copied from polkadot_service
-/// Returns the active leaves the overseer should start with.
-async fn active_leaves<Client>(
-	select_chain: &impl SelectChain<Block>,
-	client: &Client,
-) -> Result<Vec<BlockInfo>, Error>
-where
-	Client: HeaderBackend<Block>,
-{
-	let best_block = select_chain.best_chain().await?;
-
-	let mut leaves = select_chain
-		.leaves()
-		.await
-		.unwrap_or_default()
-		.into_iter()
-		.filter_map(|hash| {
-			let number = client.number(hash).ok()??;
-
-			// Only consider leaves that are in maximum an uncle of the best block.
-			if number < best_block.number().saturating_sub(1) {
-				return None
-			} else if hash == best_block.hash() {
-				return None
-			};
-
-			let parent_hash = client.header(BlockId::Hash(hash)).ok()??.parent_hash;
-
-			Some(BlockInfo { hash, parent_hash, number })
-		})
-		.collect::<Vec<_>>();
-
-	// Sort by block number and get the maximum number of leaves
-	leaves.sort_by_key(|b| b.number);
-
-	leaves.push(BlockInfo {
-		hash: best_block.hash(),
-		parent_hash: *best_block.parent_hash(),
-		number: *best_block.number(),
-	});
-
-	// TODO Move the 4 into a constant
-	Ok(leaves.into_iter().rev().take(4).collect())
-}
-
-#[derive(Clone)]
-struct RPCSelectChain {
-	rpc_client: Arc<BlockChainRPCClient>,
-}
-
-impl RPCSelectChain {
-	pub fn new(rpc_client: Arc<BlockChainRPCClient>) -> Self {
-		RPCSelectChain { rpc_client }
-	}
-}
-
-#[async_trait::async_trait]
-impl SelectChain<Block> for RPCSelectChain {
-	async fn leaves(&self) -> Result<Vec<<Block as BlockT>::Hash>, ConsensusError> {
-		todo!("SelectChain::leaves")
-	}
-
-	async fn best_chain(&self) -> Result<<Block as BlockT>::Header, ConsensusError> {
-		// TODO proper error handling
-		// self.rpc_client
-		// 	.chain_get_header(None)
-		// 	.await
-		// 	.map_err(|err| ConsensusError::Other(Box::new(err)))
-		todo!("SelectChain::best_chain")
-	}
-
-	/// Get the best descendent of `target_hash` that we should attempt to
-	/// finalize next, if any. It is valid to return the given `target_hash`
-	/// itself if no better descendent exists.
-	async fn finality_target(
-		&self,
-		target_hash: <Block as BlockT>::Hash,
-		_maybe_max_number: Option<NumberFor<Block>>,
-	) -> Result<<Block as BlockT>::Hash, ConsensusError> {
-		// TODO We may use the default implementation for this
-		todo!("SelectChain::finality_target")
-	}
-}
-
 pub struct FakeImportQueue {}
 
 impl sc_service::ImportQueue<Block> for FakeImportQueue {
@@ -343,8 +259,6 @@ pub fn new_mini(
 	// } else {
 	// 	SelectRelayChain::new_longest_chain(basics.backend.clone())
 	// };
-
-	let select_chain = RPCSelectChain::new(relay_chain_rpc_client.clone());
 
 	let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
 	{
