@@ -1,6 +1,6 @@
 [package]
-name = "polkadot-collator"
-version = "5.4.0"
+name = "polkadot-parachain"
+version = "0.9.220"
 authors = ["Parity Technologies <admin@parity.io>"]
 build = "build.rs"
 edition = "2021"
