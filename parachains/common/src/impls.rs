@@ -49,6 +49,22 @@ where
 	}
 }
 
+
+pub struct ToParentTreasury<R>(PhantomData<R>);
+impl<R> OnUnbalanced<NegativeImbalance<R>> for ToParentTreasury<R>
+where
+	R: pallet_balances::Config,
+	AccountIdOf<R>:
+		From<polkadot_primitives::v2::AccountId> + Into<polkadot_primitives::v2::AccountId>,
+	<R as frame_system::Config>::Event: From<pallet_balances::Event<R>>,
+{
+	fn on_unbalanced(amount: NegativeImbalance<R>) {
+		polkadot_xcm::Pallet::<R>::teleport(
+			
+		);
+	}
+}
+
 /// Implementation of `OnUnbalanced` that deals with the fees by combining tip and fee and passing
 /// the result on to `ToStakingPot`.
 pub struct DealWithFees<R>(PhantomData<R>);
