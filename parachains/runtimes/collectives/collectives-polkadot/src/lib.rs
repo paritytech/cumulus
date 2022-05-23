@@ -453,7 +453,7 @@ impl pallet_alliance::Config for Runtime {
 		pallet_collective::EnsureProportionMoreThan<AccountId, AllianceCollective, 2, 3>,
 	>;
 	type Currency = Balances;
-	type Slashed = (); // TODO:COLLECTIVES add handler to send teleport to Relay Treasury
+	type Slashed = SlashedToRelayTreasury; // TODO:COLLECTIVES add handler to send teleport to Relay Treasury
 	type InitializeMembers = AllianceMotion;
 	type MembershipChanged = AllianceMotion;
 	#[cfg(feature = "runtime-benchmarks")]
@@ -471,12 +471,13 @@ impl pallet_alliance::Config for Runtime {
 	type WeightInfo = pallet_alliance::weights::SubstrateWeight<Runtime>;
 }
 
-*/
-
 pub struct SlashedToRelayTreasury;
 impl OnUnbalanced<NegativeImbalance> for SlashedToRelayTreasury {
+	// This should construct a teleport to the Treasury AccountId on the Relay Chain.
 	fn on_unbalanced()
 }
+
+*/
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
