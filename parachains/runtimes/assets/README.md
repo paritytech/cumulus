@@ -1,6 +1,6 @@
 # Assets Parachain
 
-Implementation of _Statemint,_ a blockchain to support generic assets in the Polkadot and Kusama
+Implementation of _Statemint_, a blockchain to support generic assets in the Polkadot and Kusama
 networks.
 
 Statemint allows users to:
