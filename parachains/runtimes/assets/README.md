@@ -17,7 +17,7 @@ Statemint must stay fully aligned with the Relay Chain it is connected to. As su
 the Relay Chain's governance origins as its own.
 
 See
-[this article](https://www.parity.io/blog/statemint-generic-assets-chain-proposing-a-common-good-parachain-to-polkadot-governance/)
+[the article on Statemint as common good parachain](https://www.parity.io/blog/statemint-generic-assets-chain-proposing-a-common-good-parachain-to-polkadot-governance/)
 for a higher level description.
 
 Wallets, custodians, etc. should see
