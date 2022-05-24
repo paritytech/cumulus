@@ -1,7 +1,7 @@
 # Parachains
 
 This directory is the home of Parity-developed parachain runtimes. This directory is _runtime
-focused,_ and does not include builds of parachain _nodes._
+focused_, and does not include builds of parachain _nodes_.
 
 The general internal structure is:
 
