@@ -27,7 +27,6 @@ jobs:
       REF_URL: ${{github.event.inputs.reference_url}}
 
     steps:
-
       - name: Fetch binary
         run: |
           echo Fetching $BIN_URL
