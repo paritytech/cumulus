@@ -39,7 +39,7 @@ candidate branch or started an additional release candidate branch (rc-2, rc-3, 
 
 ### All Releases
 
-- [ ] Check that the new polkadot-collator versions have [run on the network](#burn-in)
+- [ ] Check that the new polkadot-parachain versions have [run on the network](#burn-in)
     without issue.
 - [ ] Check that a draft release has been created at
     https://github.com/paritytech/cumulus/releases with relevant [release
@@ -150,7 +150,7 @@ Until #631 is done, running the benchmarks is a manual process:
 5. From the root directory run `nohup ./scripts/benchmarks.sh &` (it will take quite a few hours)
 6. Checkout in your local machine to the branch of cumulus that has the version of Statemine you want to release
 7. `scp` from the host to your local machine the weights for Statemine, Westmint and Statemint you'll find in:
-   - `/polkadot-parachains/statemine/src/weights`
-   - `/polkadot-parachains/westmint/src/weights`
-   - `/polkadot-parachains/statemint/src/weights`
+   - `/parachains/runtimes/assets/statemine/src/weights`
+   - `/parachains/runtimes/assets/statemint/src/weights`
+   - `/parachains/runtimes/assets/westmint/src/weights`
 8. Commit the changes in your local and create a PR
