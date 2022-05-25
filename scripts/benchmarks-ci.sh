@@ -2,10 +2,11 @@
 
 steps=50
 repeat=20
-chainName=$1
+category=$1
+runtimeName=$2
 
-benhcmarkOutput=./parachains/runtimes/$chainName/src/weights
-benhcmarkChainName="$chainName-dev"
+benhcmarkOutput=./parachains/runtimes/$category/$runtimeName/src/weights
+benhcmarkRuntimeName="$runtimeName-dev"
 
 pallets=(
     pallet_assets
@@ -24,7 +25,7 @@ pallets=(
 for p in ${pallets[@]}
 do
 	./artifacts/polkadot-parachain benchmark pallet \
-		--chain=$benhcmarkChainName \
+		--chain=$benhcmarkRuntimeName \
 		--execution=wasm \
 		--wasm-execution=compiled \
 		--pallet=$p  \
