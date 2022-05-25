@@ -1,5 +1,35 @@
 # Releases
 
+## Versionning
+
+### Example #1
+
+```
+| Polkadot   | v  0. 9.22    |
+| Client     | v  0. 9.22 0  |
+| Runtime    | v     9 22 0  |  =>  9220
+| senmver    |   00.09.22 0  |
+```
+
+### Example #2
+
+```
+| Polkadot   | v  0.10.42    |
+| Client     | v  0.10.42 0  |
+| Runtime    | v    10.42 0  |  => 10420
+| senmver    |   00.10.42 0  |
+```
+
+### Example #3
+
+```
+| Polkadot   | v  1.02.18    |
+| Client     | v  1.02.18 0  |
+| Runtime    | v  1 02 18 0  |  => 102180
+| senmver    |   01.02.18 0  |
+```
+
+
 This document contains information related to the releasing process and describes a few of the steps and checks that are performed during the release process.
 
 ## Client
@@ -47,7 +77,7 @@ functions. Nowadays, we are no longer using indices but the task of checking whe
 
 Compare the metadata of the current and new runtimes and ensure that the `module index, call index` tuples map to the same set of functions. It also checks if there have been any changes in `storage`. In case of a breaking change, increase `transaction_version`.
 
-To verify that the API did not break, manually start the following [Github Action](https://github.com/paritytech/cumulus/actions/workflows/extrinsic-ordering-check-from-bin.yml). It takes around a minute to run and will produce the report as artifact you need to manually check. 
+To verify that the API did not break, manually start the following [Github Action](https://github.com/paritytech/cumulus/actions/workflows/extrinsic-ordering-check-from-bin.yml). It takes around a minute to run and will produce the report as artifact you need to manually check.
 
 When the workflow is done, click on it and download the zip artifact, inside you'll find an `output.txt` file. The output should be appended as comment to the "Checklist issue".
 
