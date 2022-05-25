@@ -25,13 +25,13 @@ use frame_support::{
 	traits::tokens::{currency::Currency as CurrencyT, fungibles, BalanceConversion},
 	weights::{Weight, WeightToFeePolynomial},
 };
-use pallet_asset_tx_payment::HandleCredit as HandleCreditT;
 use sp_runtime::{
 	traits::{Saturating, Zero},
 	SaturatedConversion,
 };
 use sp_std::marker::PhantomData;
 use xcm::{latest::prelude::*, WrapVersion};
+use xcm_builder::TakeRevenue;
 use xcm_executor::traits::{MatchesFungibles, WeightTrader};
 /// Xcm router which recognises the `Parent` destination and handles it by sending the message into
 /// the given UMP `UpwardMessageSender` implementation. Thus this essentially adapts an
@@ -68,12 +68,12 @@ pub struct TakeFirstAssetTrader<
 	CON: BalanceConversion<Currency::Balance, Assets::AssetId, Assets::Balance>,
 	Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
 	Assets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId> + fungibles::Balanced<AccountId>,
-	HandleCredit: HandleCreditT<AccountId, Assets>,
+	HandleRefund: TakeRevenue,
 >(
 	Weight,
 	Assets::Balance,
 	Option<(MultiLocation, Assets::AssetId)>,
-	PhantomData<(WeightToFee, AccountId, Currency, CON, Matcher, Assets, HandleCredit)>,
+	PhantomData<(WeightToFee, AccountId, Currency, CON, Matcher, Assets, HandleRefund)>,
 );
 impl<
 		WeightToFee: WeightToFeePolynomial<Balance = Currency::Balance>,
@@ -84,9 +84,9 @@ impl<
 		Assets: fungibles::Mutate<AccountId>
 			+ fungibles::Transfer<AccountId>
 			+ fungibles::Balanced<AccountId>,
-		HandleCredit: HandleCreditT<AccountId, Assets>,
+		HandleRefund: TakeRevenue,
 	> WeightTrader
-	for TakeFirstAssetTrader<WeightToFee, AccountId, Currency, CON, Matcher, Assets, HandleCredit>
+	for TakeFirstAssetTrader<WeightToFee, AccountId, Currency, CON, Matcher, Assets, HandleRefund>
 {
 	fn new() -> Self {
 		Self(0, Zero::zero(), None, PhantomData)
@@ -173,13 +173,17 @@ impl<
 		Assets: fungibles::Mutate<AccountId>
 			+ fungibles::Transfer<AccountId>
 			+ fungibles::Balanced<AccountId>,
-		HandleCredit: HandleCreditT<AccountId, Assets>,
+		HandleRefund: TakeRevenue,
 	> Drop
-	for TakeFirstAssetTrader<WeightToFee, AccountId, Currency, CON, Matcher, Assets, HandleCredit>
+	for TakeFirstAssetTrader<WeightToFee, AccountId, Currency, CON, Matcher, Assets, HandleRefund>
 {
 	fn drop(&mut self) {
-		if let Some((_, local_asset_id)) = self.2 {
-			HandleCredit::handle_credit(Assets::issue(local_asset_id, self.1));
+		if let Some((location, _)) = &self.2 {
+			let u128_amount: u128 = self.1.try_into().map_err(|_| XcmError::Overflow).unwrap();
+			HandleRefund::take_revenue(MultiAsset {
+				id: location.clone().into(),
+				fun: Fungibility::Fungible(u128_amount),
+			});
 		}
 	}
 }

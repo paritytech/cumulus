@@ -13,7 +13,6 @@ frame-support = { git = "https://github.com/paritytech/substrate", default-featu
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 
 # Polkadot
 polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -21,6 +20,7 @@ polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-f
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 
 # Cumulus
