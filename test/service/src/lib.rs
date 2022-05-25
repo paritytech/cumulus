@@ -189,9 +189,6 @@ async fn build_relay_chain_interface(
 			let collator_node = cumulus_relay_chain_mini::new_mini(
 				relay_chain_config,
 				collator_key.clone().unwrap(),
-				None,
-				None,
-				true,
 				Arc::new(BlockChainRPCClient::new(relay_chain_url.clone()).await),
 			)
 			.expect("Unable to initialize relay chain minimal node");

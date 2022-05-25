@@ -33,24 +33,17 @@ use polkadot_service::{
 		AvailabilityRecoverySubsystem, CollationGenerationSubsystem, CollatorProtocolSubsystem,
 		NetworkBridgeSubsystem, ProtocolSide, RuntimeApiSubsystem,
 	},
-	AuthorityDiscoveryApi, Error, OverseerConnector,
+	Error, OverseerConnector,
 };
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
-use sp_blockchain::HeaderBackend;
-use sp_consensus::{BlockOrigin, Error as ConsensusError, SelectChain};
+use sp_consensus::BlockOrigin;
 use sp_runtime::{traits::NumberFor, Justifications};
 
 use std::sync::Arc;
 
-use cumulus_primitives_core::relay_chain::{
-	runtime_api::ParachainHost, Block, BlockId, Hash as PHash,
-};
+use cumulus_primitives_core::relay_chain::{Block, Hash as PHash};
 
-use polkadot_client::FullBackend;
-use polkadot_service::{
-	BabeApi, Configuration, ConstructRuntimeApi, FullClient, Handle, IdentifyVariant,
-	NativeExecutionDispatch, OverseerGen, RuntimeApiCollection, TaskManager,
-};
+use polkadot_service::{Configuration, Handle, TaskManager};
 
 use sc_telemetry::TelemetryWorkerHandle;
 use sp_api::{HeaderT, ProvideRuntimeApi};
@@ -212,9 +205,6 @@ impl sc_service::ImportQueue<Block> for FakeImportQueue {
 pub fn new_mini(
 	mut config: Configuration,
 	collator_pair: CollatorPair,
-	jaeger_agent: Option<std::net::SocketAddr>,
-	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
-	overseer_enable_anyways: bool,
 	relay_chain_rpc_client: Arc<BlockChainRPCClient>,
 ) -> Result<NewCollator, Error> {
 	// use sc_network::config::IncomingRequest;
@@ -235,7 +225,6 @@ pub fn new_mini(
 	let prometheus_registry = config.prometheus_registry().cloned();
 
 	let overseer_connector = OverseerConnector::default();
-	let overseer_handle = Handle::new(overseer_connector.handle());
 
 	let requires_overseer_for_chain_sel = false;
 
@@ -282,12 +271,7 @@ pub fn new_mini(
 			import_queue,
 		})?;
 
-	let overseer_client = relay_chain_rpc_client.clone();
 	let spawner = task_manager.spawn_handle();
-	// Cannot use the `RelayChainSelection`, since that'd require a setup _and running_ overseer
-	// which we are about to setup.
-	// let active_leaves =
-	// 	futures::executor::block_on(active_leaves(&select_chain, &*relay_chain_rpc_client))?;
 	let active_leaves = Vec::new();
 
 	let authority_discovery_service = {

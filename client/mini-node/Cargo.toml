@@ -49,8 +49,14 @@ url = "2.2.2"
 tokio = { version = "1.17.0", features = ["macros"] }
 
 [dev-dependencies]
+portpicker = "0.1.1"
+
 # Cumulus deps
 cumulus-test-service = { path = "../../test/service" }
 
 # Polkadot deps
 polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+
+# Substrate deps
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
+substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }

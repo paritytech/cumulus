@@ -183,9 +183,6 @@ async fn build_relay_chain_interface(
 			let collator_node = cumulus_relay_chain_mini::new_mini(
 				polkadot_config,
 				collator_pair.clone(),
-				None,
-				None,
-				true,
 				Arc::new(BlockChainRPCClient::new(relay_chain_url.clone()).await),
 			)
 			.expect("Unable to create relay chain minimal node");
