@@ -91,7 +91,6 @@ impl<
 	fn new() -> Self {
 		Self(0, Zero::zero(), None, PhantomData)
 	}
-
 	// We take first asset
 	// TODO: do we want to be iterating over all potential assets in payments?
 	// Check whether we can convert fee to asset_fee (is_sufficient, min_deposit)
@@ -142,7 +141,7 @@ impl<
 	}
 
 	fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
-		log::trace!(target: "xcm::weight", "UsingComponents::refund_weight weight: {:?}", weight);
+		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::refund_weight weight: {:?}", weight);
 		let weight = weight.min(self.0);
 		let amount = WeightToFee::calc(&weight);
 		// If not None
