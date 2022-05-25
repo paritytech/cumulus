@@ -62,6 +62,7 @@ async fn rpc_collator_builds_blocks() {
 	let one = cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle.clone(), One)
 		.enable_collator()
 		.use_external_relay_chain_node_at_port(ws_port)
+		.connect_to_relay_chain_nodes(vec![&bob, &alice])
 		.build()
 		.await;
 
