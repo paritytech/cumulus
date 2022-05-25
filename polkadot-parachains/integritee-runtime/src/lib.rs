@@ -66,6 +66,7 @@ pub use sp_runtime::{Perbill, Permill};
 
 // TEE
 pub use pallet_claims;
+pub use pallet_sidechain;
 pub use pallet_teeracle;
 pub use pallet_teerex::Call as TeerexCall;
 
@@ -105,7 +106,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("integritee-parachain"),
 	impl_name: create_runtime_str!("integritee-full"),
 	authoring_version: 2,
-	spec_version: 22,
+	spec_version: 23,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 3,
@@ -495,6 +496,17 @@ impl pallet_teerex::Config for Runtime {
 	type WeightInfo = weights::pallet_teerex::WeightInfo<Runtime>;
 }
 
+// Integritee pallet
+parameter_types! {
+	pub const EarlyBlockProposalLenience: u64 = 100;
+}
+
+impl pallet_sidechain::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = weights::pallet_sidechain::WeightInfo<Runtime>;
+	type EarlyBlockProposalLenience = EarlyBlockProposalLenience;
+}
+
 parameter_types! {
 	pub Prefix: &'static [u8] = b"Pay TEERs to the integriTEE account:";
 }
@@ -717,6 +729,7 @@ construct_runtime! {
 		Teerex: pallet_teerex::{Pallet, Call, Config, Storage, Event<T>} = 50,
 		Claims: pallet_claims::{Pallet, Call, Storage, Config<T>, Event<T>, ValidateUnsigned} = 51,
 		Teeracle: pallet_teeracle::{Pallet, Call, Storage, Event<T>} = 52,
+		Sidechain: pallet_sidechain::{Pallet, Call, Storage, Event<T>} = 53,
 	}
 }
 
@@ -782,6 +795,7 @@ mod benches {
 		[pallet_multisig, Multisig]
 		[pallet_proxy, Proxy]
 		[pallet_scheduler, Scheduler]
+		[pallet_sidechain, Sidechain]
 		[pallet_teeracle, Teeracle]
 		[pallet_teerex, Teerex]
 		[pallet_timestamp, Timestamp]

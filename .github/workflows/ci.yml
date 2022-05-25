@@ -17,7 +17,7 @@ on:
 
 env:
   VERBOSE: ${{ github.events.input.verbose }}
-  SUBWASM_VERSION: 0.14.1
+  SUBWASM_VERSION: 0.17.0
 
 
 jobs:
@@ -58,7 +58,7 @@ jobs:
       RUST_BIN_DIR: target/${{ matrix.rust-target }}/debug
       RELEASE_NAME: debug
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Print env
         run: |
@@ -111,7 +111,7 @@ jobs:
       RUSTV: ${{ matrix.rust }}
       TARGET: ${{ matrix.rust-target }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       # With rustup's nice new toml format, we just need to run rustup show to install the toolchain
       # https://github.com/actions-rs/toolchain/issues/126#issuecomment-782989659
@@ -137,7 +137,7 @@ jobs:
       matrix:
         runtime: ["shell", "integritee"]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Cache target dir
         uses: actions/cache@v2
@@ -150,7 +150,7 @@ jobs:
 
       - name: Srtool build
         id: srtool_build
-        uses: chevdor/srtool-actions@v0.3.0
+        uses: chevdor/srtool-actions@v0.4.0
         with:
           chain: ${{ matrix.runtime }}
           runtime_dir: polkadot-parachains/${{ matrix.runtime }}-runtime
@@ -231,7 +231,7 @@ jobs:
         config: [rococo, westend, kusama, polkadot, moonbase]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: actions/download-artifact@v2
         with:
@@ -277,7 +277,7 @@ jobs:
       release_url: ${{ steps.create-release.outputs.html_url }}
       asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Download Integritee Collator
         uses: actions/download-artifact@v2
@@ -324,7 +324,7 @@ jobs:
       matrix:
         runtime: ["shell", "integritee"]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/download-artifact@v2
       - name: Set up Ruby 2.7
         uses: actions/setup-ruby@v1
