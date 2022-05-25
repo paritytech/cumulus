@@ -45,8 +45,8 @@ use cumulus_primitives_core::relay_chain::{Block, Hash as PHash};
 
 use polkadot_service::{Configuration, Handle, TaskManager};
 
-use sc_telemetry::TelemetryWorkerHandle;
-use sp_api::{HeaderT, ProvideRuntimeApi};
+use futures::{select, StreamExt};
+
 use sp_runtime::traits::Block as BlockT;
 
 mod blockchain_rpc_client;
@@ -263,7 +263,7 @@ pub fn new_mini(
 
 	let import_queue = FakeImportQueue {};
 	// let transaction_pool = Arc::new(sc_network::config::EmptyTransactionPool);
-	let (network, _, network_starter) =
+	let (network, network_starter) =
 		sc_service::build_collator_network(sc_service::BuildCollatorNetworkParams {
 			config: &config,
 			client: relay_chain_rpc_client.clone(),
@@ -271,7 +271,6 @@ pub fn new_mini(
 			import_queue,
 		})?;
 
-	let spawner = task_manager.spawn_handle();
 	let active_leaves = Vec::new();
 
 	let authority_discovery_service = {
@@ -319,7 +318,7 @@ pub fn new_mini(
 					collation_req_receiver,
 					available_data_req_receiver,
 					registry: prometheus_registry.as_ref(),
-					spawner,
+					spawner: task_manager.spawn_handle(),
 					collator_pair,
 				},
 			)
@@ -327,6 +326,7 @@ pub fn new_mini(
 				tracing::error!("Failed to init overseer: {}", e);
 				e
 			})?;
+
 		let handle = Handle::new(overseer_handle.clone());
 
 		{
@@ -337,8 +337,7 @@ pub fn new_mini(
 				Box::pin(async move {
 					use futures::{pin_mut, select, FutureExt};
 
-					let forward =
-						polkadot_overseer::forward_collator_events(relay_chain_rpc_client, handle);
+					let forward = forward_collator_events(relay_chain_rpc_client, handle);
 
 					let forward = forward.fuse();
 					let overseer_fut = overseer.run().fuse();
@@ -366,4 +365,33 @@ pub fn new_mini(
 	network_starter.start_network();
 
 	Ok(NewCollator { task_manager, overseer_handle, network })
+}
+
+/// Glues together the [`Overseer`] and `BlockchainEvents` by forwarding
+/// import and finality notifications into the [`OverseerHandle`].
+pub async fn forward_collator_events(client: Arc<BlockChainRPCClient>, mut handle: Handle) {
+	let mut finality = client.finality_notification_stream_async().await.fuse();
+	let mut imports = client.import_notification_stream_async().await.fuse();
+
+	loop {
+		select! {
+			f = finality.next() => {
+				match f {
+					Some(header) => {
+						handle.block_finalized(header.into()).await;
+					}
+					None => break,
+				}
+			},
+			i = imports.next() => {
+				match i {
+					Some(header) => {
+						handle.block_imported(header.into()).await;
+					}
+					None => break,
+				}
+			},
+			complete => break,
+		}
+	}
 }

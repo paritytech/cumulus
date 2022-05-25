@@ -462,10 +462,14 @@ impl AuthorityDiscoveryWrapper<Block> for BlockChainRPCClient {
 	}
 }
 
-// TODO introduce error handling
-impl sc_client_api::BlockchainRPCEvents<Block> for BlockChainRPCClient {
-	fn import_notification_stream(&self) -> Pin<Box<dyn Stream<Item = Header> + Send>> {
-		let imported_headers_stream = block_on(self.rpc_client.subscribe_all_heads())
+impl BlockChainRPCClient {
+	pub async fn import_notification_stream_async(
+		&self,
+	) -> Pin<Box<dyn Stream<Item = Header> + Send>> {
+		let imported_headers_stream = self
+			.rpc_client
+			.subscribe_all_heads()
+			.await
 			.expect("subscribe_all_heads")
 			.filter_map(|item| async move {
 				item.map_err(|err| {
@@ -481,8 +485,13 @@ impl sc_client_api::BlockchainRPCEvents<Block> for BlockChainRPCClient {
 		imported_headers_stream.boxed()
 	}
 
-	fn finality_notification_stream(&self) -> Pin<Box<dyn Stream<Item = Header> + Send>> {
-		let imported_headers_stream = block_on(self.rpc_client.subscribe_finalized_heads())
+	pub async fn finality_notification_stream_async(
+		&self,
+	) -> Pin<Box<dyn Stream<Item = Header> + Send>> {
+		let imported_headers_stream = self
+			.rpc_client
+			.subscribe_finalized_heads()
+			.await
 			.expect("imported_headers_stream")
 			.filter_map(|item| async move {
 				item.map_err(|err| {
@@ -497,24 +506,25 @@ impl sc_client_api::BlockchainRPCEvents<Block> for BlockChainRPCClient {
 
 		imported_headers_stream.boxed()
 	}
+}
 
-	fn best_head_stream(
+impl BlockchainEvents<Block> for BlockChainRPCClient {
+	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<Block> {
+		unimplemented!()
+	}
+
+	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<Block> {
+		unimplemented!()
+	}
+
+	fn storage_changes_notification_stream(
 		&self,
-	) -> Pin<Box<dyn Stream<Item = <Block as polkadot_service::BlockT>::Header> + Send>> {
-		let imported_headers_stream = block_on(self.rpc_client.subscribe_new_best_heads())
-			.expect("new best heads")
-			.filter_map(|item| async move {
-				item.map_err(|err| {
-					tracing::error!(
-						target: LOG_TARGET,
-						"Error in best block notification stream: {}",
-						err
-					)
-				})
-				.ok()
-			});
-
-		imported_headers_stream.boxed()
+		filter_keys: Option<&[sc_client_api::StorageKey]>,
+		child_filter_keys: Option<
+			&[(sc_client_api::StorageKey, Option<Vec<sc_client_api::StorageKey>>)],
+		>,
+	) -> sp_blockchain::Result<sc_client_api::StorageEventStream<Hash>> {
+		unimplemented!()
 	}
 }
 
@@ -752,6 +762,9 @@ impl BlockBackend<Block> for BlockChainRPCClient {
 		false
 	}
 }
+
+/// The syncing code demands that clients implement `HeaderMetadata`. However, in the minimal collator node we
+/// these methods will never be called. Should be refactored at some point.
 impl HeaderMetadata<Block> for BlockChainRPCClient {
 	type Error = sp_blockchain::Error;
 
@@ -759,7 +772,7 @@ impl HeaderMetadata<Block> for BlockChainRPCClient {
 		&self,
 		hash: <Block as polkadot_service::BlockT>::Hash,
 	) -> Result<sp_blockchain::CachedHeaderMetadata<Block>, Self::Error> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn insert_header_metadata(
@@ -767,10 +780,10 @@ impl HeaderMetadata<Block> for BlockChainRPCClient {
 		hash: <Block as polkadot_service::BlockT>::Hash,
 		header_metadata: sp_blockchain::CachedHeaderMetadata<Block>,
 	) {
-		todo!()
+		unimplemented!()
 	}
 
 	fn remove_header_metadata(&self, hash: <Block as polkadot_service::BlockT>::Hash) {
-		todo!()
+		unimplemented!()
 	}
 }
