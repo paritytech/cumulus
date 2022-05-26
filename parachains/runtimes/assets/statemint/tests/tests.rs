@@ -164,10 +164,7 @@ fn test_asset_xcm_trader() {
 			);
 
 			// We also need to ensure the total supply increased
-			assert_eq!(
-				Assets::total_supply(1),
-				ExistentialDeposit::get() + amount_needed
-			);
+			assert_eq!(Assets::total_supply(1), ExistentialDeposit::get() + amount_needed);
 		});
 }
 
@@ -236,11 +233,7 @@ fn test_asset_xcm_trader_with_refund() {
 			);
 
 			// We also need to ensure the total supply increased
-			assert_eq!(
-				Assets::total_supply(1),
-				ExistentialDeposit::get() + fees_paid
-			);
-
+			assert_eq!(Assets::total_supply(1), ExistentialDeposit::get() + fees_paid);
 		});
 }
 
@@ -295,9 +288,6 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 			assert_eq!(Assets::balance(1, AccountId::from(ALICE)), 0);
 
 			// We also need to ensure the total supply increased
-			assert_eq!(
-				Assets::total_supply(1),
-				0
-			);
+			assert_eq!(Assets::total_supply(1), 0);
 		});
 }
