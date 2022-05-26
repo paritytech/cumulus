@@ -263,9 +263,9 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Some XCM was executed ok.
-		Success(Option<T::Hash>),
+		Success { message_id: Option<T::Hash>, weight: Weight },
 		/// Some XCM failed.
-		Fail(Option<T::Hash>, XcmError),
+		Fail { message_id: Option<T::Hash>, error: XcmError, weight: Weight },
 		/// Bad XCM version used.
 		BadVersion(Option<T::Hash>),
 		/// Bad XCM format used.
@@ -601,20 +601,16 @@ impl<T: Config> Pallet<T> {
 		let (result, event) = match Xcm::<T::Call>::try_from(xcm) {
 			Ok(xcm) => {
 				let location = (1, Parachain(sender.into()));
-				let outcome =  T::XcmExecutor::execute_xcm(location, xcm, max_weight);
-				// Deposit new event
-				// Dont disrupt previous behavior
-				Self::deposit_event(Event::ExecutedXcmp {
-					message_id: Some(hash),
-					outcome: outcome.clone()
-				});
 
-				match outcome {
-					Outcome::Error(e) => (Err(e), Event::Fail(Some(hash), e)),
-					Outcome::Complete(w) => (Ok(w), Event::Success(Some(hash))),
+				match T::XcmExecutor::execute_xcm(location, xcm, max_weight) {
+					Outcome::Error(e) =>
+						(Err(e), Event::Fail { message_id: Some(hash), error: e, weight: 0 }),
+					Outcome::Complete(w) =>
+						(Ok(w), Event::Success { message_id: Some(hash), weight: w }),
 					// As far as the caller is concerned, this was dispatched without error, so
 					// we just report the weight used.
-					Outcome::Incomplete(w, e) => (Ok(w), Event::Fail(Some(hash), e)),
+					Outcome::Incomplete(w, e) =>
+						(Ok(w), Event::Fail { message_id: Some(hash), error: e, weight: w }),
 				}
 			},
 			Err(()) => (Err(XcmError::UnhandledXcmVersion), Event::BadVersion(Some(hash))),
