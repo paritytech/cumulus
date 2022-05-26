@@ -278,8 +278,6 @@ pub mod pallet {
 		OverweightEnqueued(ParaId, RelayBlockNumber, OverweightIndex, Weight),
 		/// An XCM from the overweight queue was executed with the given actual weight used.
 		OverweightServiced(OverweightIndex, Weight),
-		/// XCMP message executed with the given outcome.
-		ExecutedXcmp { message_id: Option<T::Hash>, outcome: Outcome },
 	}
 
 	#[pallet::error]
