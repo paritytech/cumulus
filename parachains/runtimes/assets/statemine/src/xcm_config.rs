@@ -24,9 +24,10 @@ use frame_support::{
 };
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
-	impls::{ToStakingPot, AssetFeeAsExistentialDepositMultiplier},
-	xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry},
-	
+	impls::ToStakingPot,
+	xcm_config::{
+		AssetFeeAsExistentialDepositMultiplier, DenyReserveTransferToRelayChain, DenyThenTry,
+	},
 };
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::ConvertInto;
@@ -192,7 +193,7 @@ impl xcm_executor::Config for XcmConfig {
 			AssetFeeAsExistentialDepositMultiplier<
 				Runtime,
 				WeightToFee,
-				pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>
+				pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
 			>,
 			ConvertedConcreteAssetId<
 				AssetId,

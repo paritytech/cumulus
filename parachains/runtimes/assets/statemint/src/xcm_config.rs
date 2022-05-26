@@ -25,7 +25,9 @@ use frame_support::{
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
-	xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry},
+	xcm_config::{
+		AssetFeeAsExistentialDepositMultiplier, DenyReserveTransferToRelayChain, DenyThenTry,
+	},
 };
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::ConvertInto;
@@ -187,10 +189,12 @@ impl xcm_executor::Config for XcmConfig {
 	type Trader = (
 		UsingComponents<WeightToFee, DotLocation, AccountId, Balances, ToStakingPot<Runtime>>,
 		cumulus_primitives_utility::TakeFirstAssetTrader<
-			WeightToFee,
 			AccountId,
-			Balances,
-			pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
+			AssetFeeAsExistentialDepositMultiplier<
+				Runtime,
+				WeightToFee,
+				pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
+			>,
 			ConvertedConcreteAssetId<
 				AssetId,
 				Balance,

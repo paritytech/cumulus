@@ -6631,6 +6631,7 @@ dependencies = [
 name = "parachains-common"
 version = "1.0.0"
 dependencies = [
+ "cumulus-primitives-utility",
  "frame-executive",
  "frame-support",
  "frame-system",

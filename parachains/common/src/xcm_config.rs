@@ -1,5 +1,10 @@
+use crate::impls::AccountIdOf;
 use core::marker::PhantomData;
-use frame_support::{log, weights::Weight};
+use frame_support::{
+	log,
+	traits::{fungibles::Inspect, tokens::BalanceConversion},
+	weights::{Weight, WeightToFeePolynomial},
+};
 use xcm::latest::prelude::*;
 use xcm_executor::traits::ShouldExecute;
 
@@ -63,5 +68,34 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 		}
 		// Permit everything else
 		Ok(())
+	}
+}
+
+/// A `ChargeFeeInFungibles` implementation that converts the output of
+/// a given WeightToFee implementation an amount charged in
+/// a particular assetId from pallet-assets
+pub struct AssetFeeAsExistentialDepositMultiplier<R, WeightToFee, CON>(
+	PhantomData<(R, WeightToFee, CON)>,
+);
+impl<CurrencyBalance, R, WeightToFee, CON>
+	cumulus_primitives_utility::ChargeWeightInFungibles<AccountIdOf<R>, pallet_assets::Pallet<R>>
+	for AssetFeeAsExistentialDepositMultiplier<R, WeightToFee, CON>
+where
+	R: pallet_assets::Config,
+	WeightToFee: WeightToFeePolynomial<Balance = CurrencyBalance>,
+	CON: BalanceConversion<
+		CurrencyBalance,
+		<pallet_assets::Pallet<R> as Inspect<AccountIdOf<R>>>::AssetId,
+		<pallet_assets::Pallet<R> as Inspect<AccountIdOf<R>>>::Balance,
+	>,
+	AccountIdOf<R>:
+		From<polkadot_primitives::v2::AccountId> + Into<polkadot_primitives::v2::AccountId>,
+{
+	fn charge_weight_in_fungibles(
+		asset_id: <pallet_assets::Pallet<R> as Inspect<AccountIdOf<R>>>::AssetId,
+		weight: Weight,
+	) -> Result<<pallet_assets::Pallet<R> as Inspect<AccountIdOf<R>>>::Balance, XcmError> {
+		let amount = WeightToFee::calc(&weight);
+		CON::to_asset_balance(amount, asset_id).map_err(|_| XcmError::TooExpensive)
 	}
 }

@@ -16,10 +16,10 @@
 //! Auxiliary struct/enums for parachain runtimes.
 //! Taken from polkadot/runtime/common (at a21cd64) and adapted for parachains.
 
-use frame_support::{traits::{
+use frame_support::traits::{
 	fungibles::{self, Balanced, CreditOf},
 	Contains, Currency, Get, Imbalance, OnUnbalanced,
-}, weights::WeightToFeePolynomial};
+};
 use pallet_asset_tx_payment::HandleCredit;
 use sp_runtime::traits::Zero;
 use sp_std::marker::PhantomData;
@@ -83,34 +83,6 @@ where
 			// In case of error: Will drop the result triggering the `OnDrop` of the imbalance.
 			let _ = pallet_assets::Pallet::<R>::resolve(&author, credit);
 		}
-	}
-}
-
-use frame_support::traits::tokens::BalanceConversion;
-use frame_support::pallet_prelude::Weight;
-use xcm::latest::prelude::*;
-/// A `HandleCredit` implementation that naively transfers the fees to the block author.
-/// Will drop and burn the assets in case the transfer fails.
-pub struct AssetFeeAsExistentialDepositMultiplier<R, WeightToFee, CON>(PhantomData<(R, WeightToFee, CON)>);
-impl<R, WeightToFee, CON> cumulus_primitives_utility::ChargeFeeInFungibles<AccountIdOf<R>, pallet_assets::Pallet<R>>
-	for AssetFeeAsExistentialDepositMultiplier<R, WeightToFee, CON>
-where
-	R: pallet_balances::Config + pallet_assets::Config,
-	WeightToFee: WeightToFeePolynomial<Balance =<pallet_balances::Pallet<R> as Currency<AccountIdOf<R>>>::Balance>,
-	CON: BalanceConversion<
-		<pallet_balances::Pallet<R> as Currency<AccountIdOf<R>>>::Balance,
-		<pallet_assets::Pallet<R> as fungibles::Inspect<AccountIdOf<R>>>::AssetId,
-		<pallet_assets::Pallet<R> as fungibles::Inspect<AccountIdOf<R>>>::Balance
-	>,
-	AccountIdOf<R>:
-		From<polkadot_primitives::v2::AccountId> + Into<polkadot_primitives::v2::AccountId>,
-{
-	fn charge_weight_in_asset(
-		asset_id: <pallet_assets::Pallet::<R> as fungibles::Inspect<AccountIdOf<R>>>::AssetId,
-		weight: Weight) ->
-		Result<<pallet_assets::Pallet::<R> as fungibles::Inspect<AccountIdOf<R>>>::Balance, XcmError> {
-			let amount = WeightToFee::calc(&weight);
-			CON::to_asset_balance(amount, asset_id).map_err(|_| XcmError::TooExpensive)
 	}
 }
 

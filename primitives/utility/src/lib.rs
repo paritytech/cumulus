@@ -22,8 +22,8 @@
 use codec::Encode;
 use cumulus_primitives_core::UpwardMessageSender;
 use frame_support::{
-	traits::tokens::{currency::Currency as CurrencyT, fungibles, BalanceConversion, fungibles::Inspect},
-	weights::{Weight, WeightToFeePolynomial},
+	traits::tokens::{fungibles, fungibles::Inspect},
+	weights::Weight,
 };
 use sp_runtime::{
 	traits::{Saturating, Zero},
@@ -64,7 +64,7 @@ impl<T: UpwardMessageSender, W: WrapVersion> SendXcm for ParentAsUmp<T, W> {
 
 pub struct TakeFirstAssetTrader<
 	AccountId,
-    FeeCharger: ChargeFeeInFungibles<AccountId, Assets>,
+	FeeCharger: ChargeWeightInFungibles<AccountId, Assets>,
 	Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
 	Assets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId> + fungibles::Balanced<AccountId>,
 	HandleRefund: TakeRevenue,
@@ -74,16 +74,15 @@ pub struct TakeFirstAssetTrader<
 	Option<(MultiLocation, Assets::AssetId)>,
 	PhantomData<(AccountId, FeeCharger, Matcher, Assets, HandleRefund)>,
 );
-impl<        
+impl<
 		AccountId,
-        FeeCharger: ChargeFeeInFungibles<AccountId, Assets>,
+		FeeCharger: ChargeWeightInFungibles<AccountId, Assets>,
 		Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
 		Assets: fungibles::Mutate<AccountId>
 			+ fungibles::Transfer<AccountId>
 			+ fungibles::Balanced<AccountId>,
 		HandleRefund: TakeRevenue,
-	> WeightTrader
-	for TakeFirstAssetTrader<AccountId, FeeCharger, Matcher, Assets, HandleRefund>
+	> WeightTrader for TakeFirstAssetTrader<AccountId, FeeCharger, Matcher, Assets, HandleRefund>
 {
 	fn new() -> Self {
 		Self(0, Zero::zero(), None, PhantomData)
@@ -98,8 +97,6 @@ impl<
 		payment: xcm_executor::Assets,
 	) -> Result<xcm_executor::Assets, XcmError> {
 		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::buy_weight weight: {:?}, payment: {:?}", weight, payment);
-		// Based on weight bought, calculate how much native token fee we need to pay
-		// let amount = WeightToFee::calc(&weight);
 		// We take the very first multiasset from payment
 		// TODO: revisit this clone
 		let multiassets: MultiAssets = payment.clone().into();
@@ -107,11 +104,8 @@ impl<
 		// We get the local asset id in which we can pay for fees
 		let (local_asset_id, _) =
 			Matcher::matches_fungibles(&first).map_err(|_| XcmError::TooExpensive)?;
-		// it reads the min_balance of the asset
-		// potential db read
-		// Already should have been read with WithdrawAsset in case of pallet-assets
-		let asset_balance = FeeCharger::charge_weight_in_asset(local_asset_id, weight)?;
-			//CON::to_asset_balance(amount, local_asset_id).map_err(|_| XcmError::TooExpensive)?;
+		// we calculate how much we should charge in the asset_id for such amount of weight
+		let asset_balance = FeeCharger::charge_weight_in_fungibles(local_asset_id, weight)?;
 
 		match first {
 			// Not relevant match, as matches_fungibles should have already verified this above
@@ -140,11 +134,11 @@ impl<
 	fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
 		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::refund_weight weight: {:?}", weight);
 		let weight = weight.min(self.0);
-		// If not None
 		if let Some((asset_location, local_asset_id)) = self.2.clone() {
 			// Calculate asset_balance
 			// This read should have already be cached in buy_weight
-            let asset_balance = FeeCharger::charge_weight_in_asset(local_asset_id, weight).ok()?;
+			let asset_balance =
+				FeeCharger::charge_weight_in_fungibles(local_asset_id, weight).ok()?;
 
 			self.0 -= weight;
 			self.1 = self.1.saturating_sub(asset_balance);
@@ -163,14 +157,13 @@ impl<
 
 impl<
 		AccountId,
-        FeeCharger: ChargeFeeInFungibles<AccountId, Assets>,
+		FeeCharger: ChargeWeightInFungibles<AccountId, Assets>,
 		Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
 		Assets: fungibles::Mutate<AccountId>
 			+ fungibles::Transfer<AccountId>
 			+ fungibles::Balanced<AccountId>,
 		HandleRefund: TakeRevenue,
-	> Drop
-	for TakeFirstAssetTrader<AccountId, FeeCharger, Matcher, Assets, HandleRefund>
+	> Drop for TakeFirstAssetTrader<AccountId, FeeCharger, Matcher, Assets, HandleRefund>
 {
 	fn drop(&mut self) {
 		if let Some((location, _)) = &self.2 {
@@ -213,6 +206,12 @@ impl<
 	}
 }
 
-pub trait ChargeFeeInFungibles<AccountId, Assets: fungibles::Inspect<AccountId>> {
-	fn charge_weight_in_asset(asset_id: <Assets as Inspect<AccountId>>::AssetId, weight: Weight) -> Result<<Assets as Inspect<AccountId>>::Balance, XcmError>;
+/// ChargeWeightInFungibles trait, which converts a given amount of weight
+/// and an assetId, and it returns the balance amount that should be charged
+/// in such assetId for that amount of weight
+pub trait ChargeWeightInFungibles<AccountId, Assets: fungibles::Inspect<AccountId>> {
+	fn charge_weight_in_fungibles(
+		asset_id: <Assets as Inspect<AccountId>>::AssetId,
+		weight: Weight,
+	) -> Result<<Assets as Inspect<AccountId>>::Balance, XcmError>;
 }

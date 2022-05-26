@@ -108,7 +108,6 @@ pub fn root_origin() -> <Runtime as frame_system::Config>::Origin {
 pub fn origin_of(account_id: AccountId) -> <Runtime as frame_system::Config>::Origin {
 	<Runtime as frame_system::Config>::Origin::signed(account_id)
 }
-
 #[test]
 fn test_asset_xcm_trader() {
 	ExtBuilder::default()
@@ -140,6 +139,7 @@ fn test_asset_xcm_trader() {
 
 			// We are going to buy 4e9 weight
 			let bought = 4_000_000_000u64;
+
 			// lets calculate amount needed
 			let amount_needed = WeightToFee::calc(&bought);
 
@@ -155,9 +155,14 @@ fn test_asset_xcm_trader() {
 			);
 
 			let asset: MultiAsset = (asset_multilocation, amount_needed).into();
+
+			// Make sure buy_weight does not return an error
 			assert_ok!(trader.buy_weight(bought, asset.into()));
 
+			// Drop trader
 			drop(trader);
+
+			// Make sure author(Alice) has received the amount
 			assert_eq!(
 				Assets::balance(1, AccountId::from(ALICE)),
 				ExistentialDeposit::get() + amount_needed
@@ -211,20 +216,29 @@ fn test_asset_xcm_trader_with_refund() {
 				),
 			);
 
+			// lets calculate amount needed
 			let amount_bought = WeightToFee::calc(&bought);
 
 			let asset: MultiAsset = (asset_multilocation.clone(), amount_bought).into();
+
+			// Make sure buy_weight does not return an error
 			assert_ok!(trader.buy_weight(bought, asset.into()));
 
+			// We actually use half of the weight
 			let weight_used = bought / 2;
+
+			// Make sure refurnd works.
 			let amount_refunded = WeightToFee::calc(&(bought - weight_used));
 
 			assert_eq!(
 				trader.refund_weight(bought - weight_used),
 				Some((asset_multilocation, amount_refunded).into())
 			);
+
+			// Drop trader
 			drop(trader);
 
+			// We only should have paid for half of the bought weight
 			let fees_paid = WeightToFee::calc(&weight_used);
 
 			assert_eq!(
@@ -280,6 +294,8 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 			);
 
 			let asset: MultiAsset = (asset_multilocation.clone(), amount_bought).into();
+
+			// Make sure buy_weight does not return an error
 			assert_ok!(trader.buy_weight(bought, asset.into()));
 
 			drop(trader);
@@ -287,7 +303,7 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 			// not credited since the ED is higher than this value
 			assert_eq!(Assets::balance(1, AccountId::from(ALICE)), 0);
 
-			// We also need to ensure the total supply increased
+			// We also need to ensure the total supply did not increase
 			assert_eq!(Assets::total_supply(1), 0);
 		});
 }
