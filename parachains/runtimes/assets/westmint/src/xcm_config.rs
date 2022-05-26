@@ -14,7 +14,7 @@
 // limitations under the License.
 
 use super::{
-	AccountId, AssetId, Assets, Balance, Balances, Call, Event, Origin, ParachainInfo,
+	AccountId, AssetId, Assets, Authorship, Balance, Balances, Call, Event, Origin, ParachainInfo,
 	ParachainSystem, PolkadotXcm, Runtime, WeightToFee, XcmpQueue,
 };
 use frame_support::{
@@ -130,6 +130,7 @@ parameter_types! {
 	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
 	pub UnitWeightCost: Weight = 1_000_000_000;
 	pub const MaxInstructions: u32 = 100;
+	pub XcmAssetFeesReceiver: Option<AccountId> = Authorship::author();
 }
 
 match_types! {
@@ -151,6 +152,21 @@ pub type Barrier = DenyThenTry<
 		// Subscriptions for version tracking are OK.
 		AllowSubscriptionsFrom<Everything>,
 	),
+>;
+
+/// This is the struct that will handle the revenue from xcm fees
+/// We do not burn anything because we want to mimic exactly what
+/// the sovereign account has
+pub type XcmAssetFeesHandler = cumulus_primitives_utility::XcmFeesToAccount<
+	Assets,
+	ConvertedConcreteAssetId<
+		AssetId,
+		Balance,
+		AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>,
+		JustTry,
+	>,
+	AccountId,
+	XcmAssetFeesReceiver,
 >;
 
 pub struct XcmConfig;
@@ -178,7 +194,7 @@ impl xcm_executor::Config for XcmConfig {
 				JustTry,
 			>,
 			Assets,
-			(),
+			XcmAssetFeesHandler,
 		>,
 	);
 	type ResponseHandler = PolkadotXcm;

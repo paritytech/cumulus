@@ -2007,7 +2007,6 @@ dependencies = [
  "cumulus-primitives-core",
  "frame-support",
  "log",
- "pallet-asset-tx-payment",
  "parity-scale-codec",
  "polkadot-core-primitives",
  "polkadot-parachain 0.9.22",
@@ -2016,6 +2015,7 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "xcm",
+ "xcm-builder",
  "xcm-executor",
 ]
 

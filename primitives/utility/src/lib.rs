@@ -187,3 +187,33 @@ impl<
 		}
 	}
 }
+
+/// XCM fee depositor to which we implement the TakeRevenue trait
+/// It receives a fungibles::Mutate implemented argument, a matcher to convert MultiAsset into
+/// AssetId and amount, and the fee receiver account
+pub struct XcmFeesToAccount<Assets, Matcher, AccountId, ReceiverAccount>(
+	PhantomData<(Assets, Matcher, AccountId, ReceiverAccount)>,
+);
+impl<
+		Assets: fungibles::Mutate<AccountId>,
+		Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
+		AccountId: Clone,
+		ReceiverAccount: frame_support::traits::Get<Option<AccountId>>,
+	> TakeRevenue for XcmFeesToAccount<Assets, Matcher, AccountId, ReceiverAccount>
+{
+	fn take_revenue(revenue: MultiAsset) {
+		match Matcher::matches_fungibles(&revenue) {
+			Ok((asset_id, amount)) =>
+				if let Some(receiver) = ReceiverAccount::get() {
+					if !amount.is_zero() {
+						let ok = Assets::mint_into(asset_id, &receiver, amount).is_ok();
+						debug_assert!(ok, "`mint_into` cannot generally fail; qed");
+					}
+				},
+			Err(_) => log::debug!(
+				target: "xcm",
+				"take revenue failed matching fungible"
+			),
+		}
+	}
+}
