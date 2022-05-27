@@ -25,7 +25,7 @@ pallets=(
 for p in ${pallets[@]}
 do
 	./artifacts/polkadot-parachain benchmark pallet \
-		--chain=$benhcmarkRuntimeName \
+		--chain=$benchmarkRuntimeName \
 		--execution=wasm \
 		--wasm-execution=compiled \
 		--pallet=$p  \
