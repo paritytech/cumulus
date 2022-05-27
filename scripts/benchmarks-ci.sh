@@ -6,7 +6,7 @@ category=$1
 runtimeName=$2
 
 benhcmarkOutput=./parachains/runtimes/$category/$runtimeName/src/weights
-benhcmarkRuntimeName="$runtimeName-dev"
+benchmarkRuntimeName="$runtimeName-dev"
 
 pallets=(
     pallet_assets
