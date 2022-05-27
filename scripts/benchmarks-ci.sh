@@ -34,5 +34,5 @@ do
 		--repeat=$repeat \
 		--json \
         --header=./file_header.txt \
-		--output=$benhcmarkOutput
+		--output=$benchmarkOutput
 done
