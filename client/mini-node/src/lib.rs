@@ -173,10 +173,6 @@ impl sc_service::ImportQueue<Block> for FakeImportQueue {
 		origin: BlockOrigin,
 		blocks: Vec<sc_consensus::IncomingBlock<Block>>,
 	) {
-		tracing::debug!("Importing block from {:?}", origin);
-		blocks
-			.iter()
-			.for_each(|b| tracing::debug!("Fake import queue received {}", b.hash));
 	}
 	/// Import block justifications.
 	fn import_justifications(
@@ -186,8 +182,8 @@ impl sc_service::ImportQueue<Block> for FakeImportQueue {
 		number: NumberFor<Block>,
 		justifications: Justifications,
 	) {
-		tracing::debug!(?hash, ?who, "ImportQueue::import_justifications",)
 	}
+
 	/// Polls for actions to perform on the network.
 	///
 	/// This method should behave in a way similar to `Future::poll`. It can register the current
@@ -198,7 +194,6 @@ impl sc_service::ImportQueue<Block> for FakeImportQueue {
 		cx: &mut futures::task::Context,
 		link: &mut dyn sc_consensus::import_queue::Link<Block>,
 	) {
-		// tracing::info!("poll_actions is being called");
 	}
 }
 
@@ -207,15 +202,7 @@ pub fn new_mini(
 	collator_pair: CollatorPair,
 	relay_chain_rpc_client: Arc<BlockChainRPCClient>,
 ) -> Result<NewCollator, Error> {
-	// use sc_network::config::IncomingRequest;
-
 	let role = config.role.clone();
-
-	// let basics = polkadot_service::new_partial_basics::<RuntimeApi, ExecutorDispatch>(
-	// 	&mut config,
-	// 	jaeger_agent,
-	// 	telemetry_worker_handle,
-	// )?;
 
 	let task_manager = {
 		let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
@@ -227,27 +214,6 @@ pub fn new_mini(
 	let overseer_connector = OverseerConnector::default();
 
 	let requires_overseer_for_chain_sel = false;
-
-	// let chain_spec = config.chain_spec.cloned_box();
-	// let disputes_enabled = chain_spec.is_rococo() ||
-	// 	chain_spec.is_kusama() ||
-	// 	chain_spec.is_westend() ||
-	// 	chain_spec.is_versi() ||
-	// 	chain_spec.is_wococo();
-
-	// TODO Shortcut, we ignore the chain-selection-subsystem for now
-	// let select_chain = if requires_overseer_for_chain_sel {
-	// 	let metrics = Metrics::register(prometheus_registry.as_ref())?;
-
-	// 	SelectRelayChain::new_disputes_aware(
-	// 		basics.backend.clone(),
-	// 		overseer_handle.clone(),
-	// 		metrics,
-	// 		disputes_enabled,
-	// 	)
-	// } else {
-	// 	SelectRelayChain::new_longest_chain(basics.backend.clone())
-	// };
 
 	let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
 	{
@@ -262,7 +228,7 @@ pub fn new_mini(
 	config.network.request_response_protocols.push(cfg);
 
 	let import_queue = FakeImportQueue {};
-	// let transaction_pool = Arc::new(sc_network::config::EmptyTransactionPool);
+
 	let (network, network_starter) =
 		sc_service::build_collator_network(sc_service::BuildCollatorNetworkParams {
 			config: &config,
