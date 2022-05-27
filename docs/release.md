@@ -8,7 +8,7 @@
 | Polkadot   | v  0. 9.22    |
 | Client     | v  0. 9.22 0  |
 | Runtime    | v     9 22 0  |  =>  9220
-| senmver    |   00.09.22 0  |
+| senmver    |   00. 9.22 0  |
 ```
 
 ### Example #2
@@ -23,10 +23,10 @@
 ### Example #3
 
 ```
-| Polkadot   | v  1.02.18    |
-| Client     | v  1.02.18 0  |
-| Runtime    | v  1 02 18 0  |  => 102180
-| senmver    |   01.02.18 0  |
+| Polkadot   | v  1. 2.18    |
+| Client     | v  1. 2.18 0  |
+| Runtime    | v  1  2 18 0  |  => 102180
+| senmver    |   01. 2.18 0  |
 ```
 
 
