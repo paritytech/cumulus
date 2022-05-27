@@ -142,4 +142,4 @@ date to include them.
 
 ### Benchmarks
 
-The benchmarks are trigger from PRs against the `release-parachains-v*` branches.
+The benchmarks are triggered by PRs against the `release-parachains-v*` branches.
