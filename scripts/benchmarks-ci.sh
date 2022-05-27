@@ -5,7 +5,7 @@ repeat=20
 category=$1
 runtimeName=$2
 
-benhcmarkOutput=./parachains/runtimes/$category/$runtimeName/src/weights
+benchmarkOutput=./parachains/runtimes/$category/$runtimeName/src/weights
 benchmarkRuntimeName="$runtimeName-dev"
 
 pallets=(
