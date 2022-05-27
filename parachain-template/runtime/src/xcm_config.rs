@@ -127,19 +127,18 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 				InitiateReserveWithdraw {
 					reserve: MultiLocation { parents: 1, interior: Here },
 					..
-				} |
-				DepositReserveAsset { dest: MultiLocation { parents: 1, interior: Here }, .. } |
-				TransferReserveAsset {
-					dest: MultiLocation { parents: 1, interior: Here },
-					..
-				}
+				} | DepositReserveAsset { dest: MultiLocation { parents: 1, interior: Here }, .. } |
+					TransferReserveAsset {
+						dest: MultiLocation { parents: 1, interior: Here },
+						..
+					}
 			)
 		}) {
 			return Err(()) // Deny
 		}
 
-		// Deny reserve transfers to arrive from the Relay Chain. This should never hit if
-		// `IsReserve` is configured properly.
+		// An unexpected reserve transfers has arrived from the Relay Chain. Generally, `IsReserve`
+		// should not allow this, but we just log it here.
 		if matches!(origin, MultiLocation { parents: 1, interior: Here }) &&
 			message.0.iter().any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
 		{
@@ -147,7 +146,6 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 				target: "xcm::barriers",
 				"Unexpected ReserveAssetDeposited from the Relay Chain",
 			);
-			return Err(()) // Deny
 		}
 		// Permit everything else
 		Ok(())
