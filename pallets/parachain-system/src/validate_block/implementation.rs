@@ -223,10 +223,10 @@ fn host_storage_root(version: StateVersion) -> Vec<u8> {
 
 fn host_storage_clear_prefix(prefix: &[u8], limit: Option<u32>) -> KillStorageResult {
 	with_externalities(|ext| {
-		let (all_removed, num_removed) = ext.clear_prefix(prefix, limit);
-		match all_removed {
-			true => KillStorageResult::AllRemoved(num_removed),
-			false => KillStorageResult::SomeRemaining(num_removed),
+		let r = ext.clear_prefix(prefix, limit, None);
+		match r.maybe_cursor.is_none() {
+			true => KillStorageResult::AllRemoved(r.loops),
+			false => KillStorageResult::SomeRemaining(r.loops),
 		}
 	})
 }
