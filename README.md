@@ -174,7 +174,7 @@ the following will allow producing a new docker image where the compiled binary 
 ./docker/scripts/build-injected-image.sh
 ```
 
-Alternatively, you can build an image with a builder pattern:
+Alternatively, you can build an image with a builder image:
 
 ```bash
 docker build --tag $OWNER/$IMAGE_NAME --file ./docker/polkadot-parachain_builder.Containerfile .
