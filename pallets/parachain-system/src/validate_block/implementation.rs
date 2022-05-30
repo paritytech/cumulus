@@ -223,11 +223,7 @@ fn host_storage_root(version: StateVersion) -> Vec<u8> {
 
 fn host_storage_clear_prefix(prefix: &[u8], limit: Option<u32>) -> KillStorageResult {
 	with_externalities(|ext| {
-		let r = ext.clear_prefix(prefix, limit, None);
-		match r.maybe_cursor.is_none() {
-			true => KillStorageResult::AllRemoved(r.loops),
-			false => KillStorageResult::SomeRemaining(r.loops),
-		}
+		ext.clear_prefix(prefix, limit, None).into()
 	})
 }
 
@@ -295,11 +291,7 @@ fn host_default_child_storage_storage_kill(
 ) -> KillStorageResult {
 	let child_info = ChildInfo::new_default(storage_key);
 	with_externalities(|ext| {
-		let (all_removed, num_removed) = ext.kill_child_storage(&child_info, limit);
-		match all_removed {
-			true => KillStorageResult::AllRemoved(num_removed),
-			false => KillStorageResult::SomeRemaining(num_removed),
-		}
+		ext.kill_child_storage(&child_info, limit, None).into()
 	})
 }
 
@@ -315,11 +307,7 @@ fn host_default_child_storage_clear_prefix(
 ) -> KillStorageResult {
 	let child_info = ChildInfo::new_default(storage_key);
 	with_externalities(|ext| {
-		let (all_removed, num_removed) = ext.clear_child_prefix(&child_info, prefix, limit);
-		match all_removed {
-			true => KillStorageResult::AllRemoved(num_removed),
-			false => KillStorageResult::SomeRemaining(num_removed),
-		}
+		ext.clear_child_prefix(&child_info, prefix, limit, None).into()
 	})
 }
 
