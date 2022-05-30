@@ -25,7 +25,8 @@ jobs:
       CHAIN: ${{github.event.inputs.chain}}
       BIN_URL: ${{github.event.inputs.binary_url}}
       REF_URL: ${{github.event.inputs.reference_url}}
-      BIN: ./tmp/node-bin
+      BIN: node-bin
+      BIN_PATH: ./tmp/node-bin
 
     steps:    
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
@@ -36,17 +37,17 @@ jobs:
           mkdir -p tmp
           echo Fetching $BIN_URL
           wget $BIN_URL -O tmp/node-bin
-          chmod a+x $BIN
-          $BIN --version
+          chmod a+x $BIN_PATH
+          $BIN_PATH --version
 
       - name: Start local node
         run: |
           echo Running on $CHAIN
-          $BIN --chain=$CHAIN -- --chain polkadot-local &
+          $BIN_PATH --chain=$CHAIN -- --chain polkadot-local &
 
       - name: Prepare output
         run: |
-          VERSION=$($BIN --version)
+          VERSION=$($BIN_PATH --version)
           echo "Metadata comparison:" >> output.txt
           echo "Date: $(date)" >> output.txt
           echo "Reference: $REF_URL" >> output.txt
@@ -74,7 +75,7 @@ jobs:
 
       - name: Stop our local node
         run: |
-          pkill node-bin
+          pkill $BIN
         continue-on-error: true
 
       - name: Save output as artifact
