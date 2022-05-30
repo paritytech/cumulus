@@ -25,16 +25,17 @@ members = [
 	"primitives/parachain-inherent",
 	"primitives/timestamp",
 	"primitives/utility",
-	"polkadot-parachains/",
-	"polkadot-parachains/pallets/parachain-info",
-	"polkadot-parachains/pallets/ping",
-	"polkadot-parachains/rococo-parachain",
-	"polkadot-parachains/shell",
-	"polkadot-parachains/parachains-common",
-	"polkadot-parachains/statemint",
-	"polkadot-parachains/statemine",
-	"polkadot-parachains/westmint",
-	"polkadot-parachains/canvas-kusama",
+	"polkadot-parachain/",
+	"parachains/common",
+	"parachains/pallets/parachain-info",
+	"parachains/pallets/ping",
+	"parachains/runtimes/testing/rococo-parachain",
+	"parachains/runtimes/starters/shell",
+	"parachains/runtimes/starters/seedling",
+	"parachains/runtimes/assets/statemint",
+	"parachains/runtimes/assets/statemine",
+	"parachains/runtimes/assets/westmint",
+	"parachains/runtimes/contracts/contracts-rococo",
 	"test/client",
 	"test/relay-sproof-builder",
 	"test/relay-validation-worker-provider",
@@ -50,6 +51,7 @@ opt-level = 3
 inherits = "release"
 lto = true
 codegen-units = 1
+
 [patch."https://github.com/paritytech/substrate"]
 node-template ={path = "/Users/skunert/work/repos/substrate/bin/node-template/node" }
 frame-benchmarking ={path = "/Users/skunert/work/repos/substrate/frame/benchmarking" }
@@ -310,10 +312,10 @@ polkadot-node-primitives ={path = "/Users/skunert/work/repos/polkadot/node/primi
 polkadot-erasure-coding ={path = "/Users/skunert/work/repos/polkadot/erasure-coding" }
 polkadot-node-subsystem ={path = "/Users/skunert/work/repos/polkadot/node/subsystem" }
 polkadot-node-subsystem-types ={path = "/Users/skunert/work/repos/polkadot/node/subsystem-types" }
-polkadot-node-network-protocol ={path = "/Users/skunert/work/repos/polkadot/node/network/protocol" }
-polkadot-overseer-gen ={path = "/Users/skunert/work/repos/polkadot/node/overseer/overseer-gen" }
+orchestra ={path = "/Users/skunert/work/repos/polkadot/node/overseer/orchestra" }
 metered-channel ={path = "/Users/skunert/work/repos/polkadot/node/metered-channel" }
-polkadot-overseer-gen-proc-macro ={path = "/Users/skunert/work/repos/polkadot/node/overseer/overseer-gen/proc-macro" }
+orchestra-proc-macro ={path = "/Users/skunert/work/repos/polkadot/node/overseer/orchestra/proc-macro" }
+polkadot-node-network-protocol ={path = "/Users/skunert/work/repos/polkadot/node/network/protocol" }
 polkadot-statement-table ={path = "/Users/skunert/work/repos/polkadot/statement-table" }
 polkadot-overseer ={path = "/Users/skunert/work/repos/polkadot/node/overseer" }
 polkadot-node-metrics ={path = "/Users/skunert/work/repos/polkadot/node/metrics" }

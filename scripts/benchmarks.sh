@@ -3,9 +3,9 @@
 steps=50
 repeat=20
 
-statemineOutput=./polkadot-parachains/statemine/src/weights
-statemintOutput=./polkadot-parachains/statemint/src/weights
-westmintOutput=./polkadot-parachains/westmint/src/weights
+statemineOutput=./parachains/runtimes/statemine/src/weights
+statemintOutput=./parachains/runtimes/statemint/src/weights
+westmintOutput=./parachains/runtimes/westmint/src/weights
 
 statemineChain=statemine-dev
 statemintChain=statemint-dev
@@ -27,7 +27,7 @@ pallets=(
 
 for p in ${pallets[@]}
 do
-	./target/production/polkadot-collator benchmark pallet \
+	./target/production/polkadot-parachain benchmark pallet \
 		--chain=$statemineChain \
 		--execution=wasm \
 		--wasm-execution=compiled \
@@ -39,7 +39,7 @@ do
         --header=./file_header.txt \
 		--output=$statemineOutput
 
-	./target/production/polkadot-collator benchmark pallet \
+	./target/production/polkadot-parachain benchmark pallet \
 		--chain=$statemintChain \
 		--execution=wasm \
 		--wasm-execution=compiled \
@@ -51,7 +51,7 @@ do
         --header=./file_header.txt \
 		--output=$statemintOutput
 
-	./target/production/polkadot-collator benchmark pallet \
+	./target/production/polkadot-parachain benchmark pallet \
 		--chain=$westmintChain \
 		--execution=wasm \
 		--wasm-execution=compiled \

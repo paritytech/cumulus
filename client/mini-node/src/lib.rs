@@ -25,8 +25,9 @@ use polkadot_node_network_protocol::{
 use polkadot_node_subsystem_util::metrics::{prometheus::Registry, Metrics};
 use polkadot_overseer::{
 	BlockInfo, DummySubsystem, MetricsTrait, Overseer, OverseerHandle, OverseerMetrics,
-	OverseerRuntimeClient, SpawnNamed, KNOWN_LEAVES_CACHE_SIZE,
+	OverseerRuntimeClient, SpawnGlue, KNOWN_LEAVES_CACHE_SIZE,
 };
+
 use polkadot_primitives::v2::CollatorPair;
 use polkadot_service::{
 	overseer::{
@@ -37,6 +38,7 @@ use polkadot_service::{
 };
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
 use sp_consensus::BlockOrigin;
+use sp_core::traits::SpawnNamed;
 use sp_runtime::{traits::NumberFor, Justifications};
 
 use std::sync::Arc;
@@ -51,6 +53,30 @@ use sp_runtime::traits::Block as BlockT;
 
 mod blockchain_rpc_client;
 pub use blockchain_rpc_client::BlockChainRPCClient;
+
+/// Arguments passed for overseer construction.
+pub struct CollatorOverseerGenArgs<'a, Spawner, RuntimeClient>
+where
+	RuntimeClient: 'static + polkadot_overseer::OverseerRuntimeClient + Sync + Send,
+	Spawner: 'static + SpawnNamed + Clone + Unpin,
+{
+	/// Set of initial relay chain leaves to track.
+	pub leaves: Vec<BlockInfo>,
+	/// Runtime client generic, providing the `ProvieRuntimeApi` trait besides others.
+	pub runtime_client: Arc<RuntimeClient>,
+	/// Underlying network service implementation.
+	pub network_service: Arc<sc_network::NetworkService<Block, PHash>>,
+	/// Underlying authority discovery service.
+	pub authority_discovery_service: AuthorityDiscoveryService,
+	pub collation_req_receiver: IncomingRequestReceiver<CollationFetchingRequest>,
+	pub available_data_req_receiver: IncomingRequestReceiver<AvailableDataFetchingRequest>,
+	/// Prometheus registry, commonly used for production systems, less so for test.
+	pub registry: Option<&'a Registry>,
+	/// Task spawner to be used throughout the overseer and the APIs it provides.
+	pub spawner: Spawner,
+	/// Determines the behavior of the collator.
+	pub collator_pair: CollatorPair,
+}
 
 pub struct CollatorOverseerGen;
 impl CollatorOverseerGen {
@@ -68,13 +94,14 @@ impl CollatorOverseerGen {
 			spawner,
 			collator_pair,
 		}: CollatorOverseerGenArgs<'a, Spawner, RuntimeClient>,
-	) -> Result<(Overseer<Spawner, Arc<RuntimeClient>>, OverseerHandle), Error>
+	) -> Result<(Overseer<SpawnGlue<Spawner>, Arc<RuntimeClient>>, OverseerHandle), Error>
 	where
 		RuntimeClient: 'static + OverseerRuntimeClient + Sync + Send,
 		Spawner: 'static + SpawnNamed + Clone + Unpin,
 	{
 		let metrics = <OverseerMetrics as MetricsTrait>::register(registry)?;
 
+		let spawner = SpawnGlue(spawner);
 		let builder = Overseer::builder()
 			.availability_distribution(DummySubsystem)
 			.availability_recovery(AvailabilityRecoverySubsystem::with_chunks_only(
@@ -132,30 +159,6 @@ impl CollatorOverseerGen {
 
 		builder.build_with_connector(connector).map_err(|e| e.into())
 	}
-}
-
-/// Arguments passed for overseer construction.
-pub struct CollatorOverseerGenArgs<'a, Spawner, RuntimeClient>
-where
-	RuntimeClient: 'static + polkadot_overseer::OverseerRuntimeClient + Sync + Send,
-	Spawner: 'static + SpawnNamed + Clone + Unpin,
-{
-	/// Set of initial relay chain leaves to track.
-	pub leaves: Vec<BlockInfo>,
-	/// Runtime client generic, providing the `ProvieRuntimeApi` trait besides others.
-	pub runtime_client: Arc<RuntimeClient>,
-	/// Underlying network service implementation.
-	pub network_service: Arc<sc_network::NetworkService<Block, PHash>>,
-	/// Underlying authority discovery service.
-	pub authority_discovery_service: AuthorityDiscoveryService,
-	pub collation_req_receiver: IncomingRequestReceiver<CollationFetchingRequest>,
-	pub available_data_req_receiver: IncomingRequestReceiver<AvailableDataFetchingRequest>,
-	/// Prometheus registry, commonly used for production systems, less so for test.
-	pub registry: Option<&'a Registry>,
-	/// Task spawner to be used throughout the overseer and the APIs it provides.
-	pub spawner: Spawner,
-	/// Determines the behavior of the collator.
-	pub collator_pair: CollatorPair,
 }
 
 pub struct NewCollator {

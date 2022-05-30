@@ -149,8 +149,9 @@ pub struct RunCmd {
 	#[clap(
 		long,
 		parse(try_from_str),
-		validator = validate_relay_chain_url
-	)]
+		validator = validate_relay_chain_url,
+		conflicts_with_all = &["alice", "bob", "charlie", "dave", "eve", "ferdie", "one", "two"]	)
+	]
 	pub relay_chain_rpc_url: Option<Url>,
 }
 

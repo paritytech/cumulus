@@ -9,7 +9,6 @@ use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::info;
 use parachain_template_runtime::{Block, RuntimeApi};
-use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
@@ -19,7 +18,7 @@ use sc_service::{
 	TaskManager,
 };
 use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::traits::Block as BlockT;
+use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::{io::Write, net::SocketAddr};
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
@@ -312,7 +311,7 @@ pub fn run() -> Result<()> {
 				let id = ParaId::from(para_id);
 
 				let parachain_account =
-					AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account(&id);
+					AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
 
 				let state_version =
 					RelayChainCli::native_runtime_version(&config.chain_spec).state_version();
