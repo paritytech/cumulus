@@ -23,10 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CHAIN: ${{github.event.inputs.chain}}
-      BIN_URL: ${{github.event.inputs.binary_url}}
-      REF_URL: ${{github.event.inputs.reference_url}}
       BIN: node-bin
       BIN_PATH: ./tmp/$BIN
+      BIN_URL: ${{github.event.inputs.binary_url}}
+      REF_URL: ${{github.event.inputs.reference_url}}
 
     steps:    
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
