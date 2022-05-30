@@ -26,7 +26,7 @@ jobs:
       BIN_URL: ${{github.event.inputs.binary_url}}
       REF_URL: ${{github.event.inputs.reference_url}}
       BIN: node-bin
-      BIN_PATH: ./tmp/node-bin
+      BIN_PATH: ./tmp/$BIN
 
     steps:    
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
@@ -36,7 +36,7 @@ jobs:
           echo Creating a temp dir to download and run binary
           mkdir -p tmp
           echo Fetching $BIN_URL
-          wget $BIN_URL -O tmp/node-bin
+          wget $BIN_URL -O $BIN_PATH
           chmod a+x $BIN_PATH
           $BIN_PATH --version
 
