@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 mod cli;
+mod chain_spec;
 
 use clap::Parser;
 use cli::{Commands, RelayChainCli, TestCollatorCli};
@@ -56,8 +57,7 @@ fn main() -> Result<(), sc_cli::Error> {
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
 			let _ = builder.init();
 
-			let parachain_id = ParaId::from(params.parachain_id);
-			let spec = Box::new(cumulus_test_service::get_chain_spec(parachain_id)) as Box<_>;
+			let spec = cli.load_spec(&params.chain.clone().unwrap_or_default())?;
 			let state_version = cumulus_test_service::runtime::VERSION.state_version();
 
 			let block: parachains_common::Block = generate_genesis_block(&spec, state_version)?;
