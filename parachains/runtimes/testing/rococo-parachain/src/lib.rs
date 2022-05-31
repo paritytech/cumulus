@@ -1,4 +1,4 @@
-// Copyright 2019-2021 Parity Technologies (UK) Ltd.
+// Copyright 2019-2022 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -39,7 +39,7 @@ use sp_version::RuntimeVersion;
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, match_types, parameter_types,
-	traits::{EnsureOneOf, Everything, IsInVec, Randomness},
+	traits::{EitherOfDiverse, Everything, IsInVec, Randomness},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		ConstantMultiplier, DispatchClass, IdentityFee, Weight,
@@ -94,7 +94,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("test-parachain"),
 	impl_name: create_runtime_str!("test-parachain"),
 	authoring_version: 1,
-	spec_version: 900,
+	spec_version: 9220,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -485,7 +485,7 @@ parameter_types! {
 
 /// A majority of the Unit body from Rococo over XCM is our required administration origin.
 pub type AdminOrigin =
-	EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<RocLocation, UnitBody>>>;
+	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<RocLocation, UnitBody>>>;
 
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
@@ -594,6 +594,7 @@ impl frame_support::traits::OnRuntimeUpgrade for RemoveCollectiveFlip {
 	fn on_runtime_upgrade() -> Weight {
 		use frame_support::storage::migration;
 		// Remove the storage value `RandomMaterial` from removed pallet `RandomnessCollectiveFlip`
+		#[allow(deprecated)]
 		migration::remove_storage_prefix(b"RandomnessCollectiveFlip", b"RandomMaterial", b"");
 		<Runtime as frame_system::Config>::DbWeight::get().writes(1)
 	}
