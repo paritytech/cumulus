@@ -190,7 +190,6 @@ build-push-image:
     DOCKER_USER:                   ${PARITYPR_USER}
     DOCKER_PASS:                   ${PARITYPR_PASS}
   script:
-    uncomment after debug
     - test "$DOCKER_USER" -a "$DOCKER_PASS" ||
         ( echo "no docker credentials provided"; exit 1 )
     - buildah bud
