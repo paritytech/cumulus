@@ -27,23 +27,23 @@ RUN apt-get update && \
 	apt-get autoremove -y && \
 	apt-get clean && \
 	find /var/lib/apt/lists/ -type f -not -name lock -delete; \
-	# add user and link ~/.local/share/polkadot to /data
-	useradd -m -u 10000 -U -s /bin/sh -d /polkadot polkadot && \
-	mkdir -p /data /polkadot/.local/share && \
-	chown -R polkadot:polkadot /data && \
-	ln -s /data /polkadot/.local/share/polkadot && \
+	# add user and link ~/.local/share/polkadot-parachain to /data
+	useradd -m -u 10000 -U -s /bin/sh -d /polkadot-parachain polkadot-parachain && \
+	mkdir -p /data /polkadot-parachain/.local/share && \
+	chown -R polkadot-parachain:polkadot-parachain /data && \
+	ln -s /data /polkadot-parachain/.local/share/polkadot-parachain && \
 	mkdir -p /specs
 
 # add polkadot-parachain binary to the docker image
 COPY ./artifacts/polkadot-parachain /usr/local/bin
 COPY ./parachains/chain-specs/*.json /specs/
 
-USER polkadot
+USER polkadot-parachain
 
 # check if executable works in this container
 RUN /usr/local/bin/polkadot-parachain --version
 
 EXPOSE 30333 9933 9944
-VOLUME ["/polkadot"]
+VOLUME ["/polkadot-parachain"]
 
 ENTRYPOINT ["/usr/local/bin/polkadot-parachain"]
