@@ -91,7 +91,7 @@ variables:
 
 #### stage:                        test
 
-.test-linux-stable:
+test-linux-stable:
   stage:                           test
   <<:                              *docker-env
   rules:
@@ -127,7 +127,7 @@ variables:
         exit 0;
       fi
 
-.check-runtime-benchmarks:
+check-runtime-benchmarks:
   stage:                           test
   <<:                              *docker-env
   script:
@@ -135,26 +135,22 @@ variables:
     - time cargo check --all --features runtime-benchmarks
     # Check that parachain-template will compile with `runtime-benchmarks` feature flag.
     - time cargo check -p parachain-template-node --features runtime-benchmarks
-    - sccache -s
 
-.cargo-check-try-runtime:
+cargo-check-try-runtime:
   stage:                           test
   <<:                              *docker-env
+  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
+  needs:
+    - job:                         check-runtime-benchmarks
+      artifacts:                   false
   script:
     # Check that the node will compile with `try-runtime` feature flag.
     - time cargo check --all --features try-runtime
     # Check that parachain-template will compile with `try-runtime` feature flag.
     - time cargo check -p parachain-template-node --features try-runtime
-    - sccache -s
 
-.cargo-check-benches:
-  stage:                           test
-  <<:                              *docker-env
-  script:
-    - time cargo check --all --benches
-    - sccache -s
 
-.check-rustdoc:
+check-rustdoc:
   stage:                           test
   <<:                              *docker-env
   variables:
@@ -162,6 +158,16 @@ variables:
     RUSTDOCFLAGS:                  "-Dwarnings"
   script:
     - time cargo +nightly doc --workspace --all-features --verbose --no-deps
+
+cargo-check-benches:
+  stage:                           test
+  <<:                              *docker-env
+  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
+  needs:
+    - job:                         check-rustdoc
+      artifacts:                   false
+  script:
+    - time cargo check --all --benches
 
 #### stage:                        build
 
