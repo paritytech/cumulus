@@ -88,6 +88,51 @@ pub use relay_state_snapshot::{MessagingStateSnapshot, RelayChainStateProof};
 
 pub use pallet::*;
 
+/// Something that can check the associated relay block number.
+///
+/// Each Parachain block is build in the context of a relay chain block. This relay chain block
+/// has a block number associated this trait is about. With async backing it is legal to build
+/// multiple Parachain blocks per relay chain parent. With this trait it is possible for the
+/// Parachain to ensure that still only one Parachain block is build per relay chain parent.
+///
+/// By default [`RelayNumberStrictlyIncreases`] and [`AnyRelayNumber`] are provided.
+pub trait CheckAssociatedRelayNumber {
+	/// Check the current relay number versus the previous relay number.
+	///
+	/// The implementation should panic when there is something wrong.
+	fn check_associated_relay_number(
+		current: RelayChainBlockNumber,
+		previous: RelayChainBlockNumber,
+	);
+}
+
+/// Provides an implementation of [`CheckAssociatedRelayNumber`].
+///
+/// It will ensure that the associated relay block number strictly increases between Parachain
+/// blocks. This should be used by production Parachains when in doubt.
+pub struct RelayNumberStrictlyIncreases;
+
+impl CheckAssociatedRelayNumber for RelayNumberStrictlyIncreases {
+	fn check_associated_relay_number(
+		current: RelayChainBlockNumber,
+		previous: RelayChainBlockNumber,
+	) {
+		if current <= previous {
+			panic!("Relay chain block number needs to strictly increase between Parachain blocks!")
+		}
+	}
+}
+
+/// Provides an implementation of [`CheckAssociatedRelayNumber`].
+///
+/// This will accept any relay chain block number combination. This is mainly useful for
+/// test parachains.
+pub struct AnyRelayNumber;
+
+impl CheckAssociatedRelayNumber for AnyRelayNumber {
+	fn check_associated_relay_number(_: RelayChainBlockNumber, _: RelayChainBlockNumber) {}
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -128,6 +173,9 @@ pub mod pallet {
 
 		/// The weight we reserve at the beginning of the block for processing XCMP messages.
 		type ReservedXcmpWeight: Get<Weight>;
+
+		/// Something that can check the associated relay parent block number.
+		type CheckAssociatedRelayNumber: CheckAssociatedRelayNumber;
 	}
 
 	#[pallet::hooks]
@@ -307,19 +355,12 @@ pub mod pallet {
 
 			Self::validate_validation_data(&vfp);
 
-			// Ensure that the associated relay chain parent is strictly increasing
-			//
-			// If this isn't the case, a collator tried to build multiple parachain blocks
-			// against the same relay chain block. This is a safeguard for when the relay chain
-			// supports async backing. Then this needs to be revisited and made modular for chains
-			// that may support multiple parachain blocks per relay chain block.
-			if LastRelayChainBlockNumber::<T>::get() < vfp.relay_parent_number {
-				LastRelayChainBlockNumber::<T>::put(vfp.relay_parent_number);
-			} else {
-				panic!(
-					"Relay chain block number needs to strictly increase between Parachain blocks!"
-				)
-			}
+			// Check that the associated relay chain block number is as expected.
+			T::CheckAssociatedRelayNumber::check_associated_relay_number(
+				vfp.relay_parent_number,
+				LastRelayChainBlockNumber::<T>::get(),
+			);
+			LastRelayChainBlockNumber::<T>::put(vfp.relay_parent_number);
 
 			let relay_state_proof = RelayChainStateProof::new(
 				T::SelfParaId::get(),
