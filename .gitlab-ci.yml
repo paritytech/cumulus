@@ -172,7 +172,7 @@ build-linux-stable:
   script:
     - mkdir -p ./artifacts
     - time cargo build --release --locked --bin polkadot-parachain
-    - mv ${CARGO_TARGET_DIR}/release/polkadot-parachain ./artifacts/.
+    - mv ./target/release/polkadot-parachain ./artifacts/.
 
 #### stage:                        publish
 
