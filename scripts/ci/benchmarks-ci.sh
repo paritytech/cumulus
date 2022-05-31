@@ -21,6 +21,8 @@ pallets=(
 	frame_system
 )
 
+mkdir -p $benhcmarkOutput
+
 for p in ${pallets[@]}
 do
 	./artifacts/polkadot-parachain benchmark pallet \
