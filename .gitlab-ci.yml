@@ -92,7 +92,7 @@ variables:
 
 #### stage:                        test
 
-test-build-linux-stable:
+test-linux-stable:
   stage:                           test
   <<:                              *docker-env
   <<:                              *common-refs
@@ -103,15 +103,6 @@ test-build-linux-stable:
     RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
   script:
     - time cargo test --all --release --locked -- --include-ignored
-    # It's almost free to produce a binary here, please refrain from using it in production since
-    # it goes with the debug assertions.
-    - echo "___Building a binary___"
-    - time cargo build --release --locked --bin polkadot-parachain
-    - echo "___Packing the artifacts___"
-    - mkdir -p ./artifacts
-    - mv ./target/release/polkadot-parachain ./artifacts/.
-    - echo "___The VERSION is either a tag name or the curent branch if triggered not by a tag___"
-    - echo ${CI_COMMIT_REF_NAME} | tee ./artifacts/VERSION
 
 check-runtime-benchmarks:
   stage:                           test
@@ -137,7 +128,6 @@ cargo-check-try-runtime:
     # Check that parachain-template will compile with `try-runtime` feature flag.
     - time cargo check -p parachain-template-node --features try-runtime
 
-
 check-rustdoc:
   stage:                           test
   <<:                              *docker-env
@@ -159,6 +149,29 @@ cargo-check-benches:
   script:
     - time cargo check --all --benches
 
+#### stage:                        build
+
+build-linux-stable:
+  stage:                           build
+  <<:                              *docker-env
+  <<:                              *collect-artifacts
+  variables:
+    # Enable debug assertions since we are running optimized builds for testing
+    # but still want to have debug assertions.
+    RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
+  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
+  needs:
+    - job:                         check-rustdoc
+      artifacts:                   false
+  script:
+    - echo "___Building a binary___"
+    - time cargo build --release --locked --bin polkadot-parachain
+    - echo "___Packing the artifacts___"
+    - mkdir -p ./artifacts
+    - mv ./target/release/polkadot-parachain ./artifacts/.
+    - echo "___The VERSION is either a tag name or the curent branch if triggered not by a tag___"
+    - echo ${CI_COMMIT_REF_NAME} | tee ./artifacts/VERSION
+
 #### stage:                        publish
 
 build-push-image:
@@ -167,7 +180,7 @@ build-push-image:
   <<:                              *common-refs
   image:                           quay.io/buildah/stable
   needs:
-    - job:                         test-build-linux-stable
+    - job:                         build-linux-stable
       artifacts:                   true
   variables:
     DOCKERFILE:                    "docker/polkadot-parachain_unsigned_injected.Dockerfile"
@@ -263,7 +276,7 @@ benchmarks:
 cancel-pipeline:
   stage:                           .post
   needs:
-    - job:                         test-build-linux-stable
+    - job:                         test-linux-stable
       artifacts:                   false
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                         # PRs
