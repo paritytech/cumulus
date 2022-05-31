@@ -1,7 +1,7 @@
 #!/bin/bash
 
-steps=50
-repeat=20
+steps=5
+repeat=2
 chainName=$1
 
 benhcmarkOutput=./parachains/runtimes/$chainName/src/weights
