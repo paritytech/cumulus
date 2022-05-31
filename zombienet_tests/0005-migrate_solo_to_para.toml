@@ -1,0 +1,44 @@
+[relaychain]
+default_image = "docker.io/paritypr/polkadot-debug:master"
+default_command = "polkadot"
+default_args = [ "-lparachain=debug" ]
+
+chain = "rococo-local"
+
+  [[relaychain.nodes]]
+  name = "alice"
+  validator = true
+
+  [[relaychain.nodes]]
+  name = "bob"
+  validator = true
+
+
+[[parachains]]
+id = 2000
+cumulus_based = true
+
+  # run the solo chain (in our case this is also already a parachain, but as it has a different genesis it will not produce any blocks.)
+  [[parachains.collators]]
+  name = "dave"
+  validator = true
+  image = "docker.io/parity/polkadot-collator:latest"
+  command = "test-parachain"
+  args = ["-lparachain=debug"]
+
+[[parachains]]
+id = 2000
+cumulus_based = true
+add_to_genesis = false
+register_para = false
+[parachains.genesis.runtime.runtime_genesis_config.sudo]
+key = "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
+
+  # run the parachain that will be used to return the header of the solo chain.
+  [[parachains.collators]]
+  name = "eve"
+  validator = true
+  add_to_bootnodes = true
+  image = "docker.io/parity/polkadot-collator:latest"
+  command = "test-parachain"
+  args = ["-lparachain=debug"]

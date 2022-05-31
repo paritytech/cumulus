@@ -24,7 +24,7 @@ cumulus_based = true
   name = "charlie"
   validator = true
   image = "docker.io/parity/polkadot-collator:latest"
-  command = "test-collator"
+  command = "test-parachain"
   args = ["-lparachain=debug"]
 
   # Run dave as parachain collator and eve as parachain full node
@@ -34,7 +34,7 @@ cumulus_based = true
   name = "dave"
   validator = true
   image = "docker.io/parity/polkadot-collator:latest"
-  command = "test-collator"
+  command = "test-parachain"
   args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie}}", "--use-null-consensus", "--disable-block-announcements"]
 
   # run eve as parachain full node that is only connected to dave
@@ -42,5 +42,5 @@ cumulus_based = true
   name = "eve"
   validator = false
   image = "docker.io/parity/polkadot-collator:latest"
-  command = "test-collator"
+  command = "test-parachain"
   args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie}}", "--use-null-consensus", "--disable-block-announcements"]
