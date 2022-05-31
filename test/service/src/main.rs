@@ -13,8 +13,8 @@
 
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
-mod cli;
 mod chain_spec;
+mod cli;
 
 use clap::Parser;
 use cli::{Commands, RelayChainCli, TestCollatorCli};

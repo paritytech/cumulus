@@ -293,11 +293,11 @@ impl SubstrateCli for TestCollatorCli {
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 		Ok(match id {
 			"" => Box::new(cumulus_test_service::get_chain_spec(ParaId::from(self.parachain_id)))
-			as Box<_>,
+				as Box<_>,
 			path => {
 				let chain_spec = crate::chain_spec::ChainSpec::from_json_file(path.into())?;
 				Box::new(chain_spec)
-			}
+			},
 		})
 	}
 
