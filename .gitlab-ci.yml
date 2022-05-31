@@ -91,7 +91,7 @@ variables:
 
 #### stage:                        test
 
-test-linux-stable:
+.test-linux-stable:
   stage:                           test
   <<:                              *docker-env
   rules:
