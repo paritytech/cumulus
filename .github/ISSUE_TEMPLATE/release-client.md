@@ -1,7 +1,7 @@
 ---
 name: Release Checklist for Client - issue template
 about: Release Checklist for Client
-title: Release Checklist  - Client {{ env.VERSION }}
+title: Release Checklist - Client {{ env.VERSION }}
 ---
 
 # Release Checklist - Client
