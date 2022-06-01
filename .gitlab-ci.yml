@@ -183,8 +183,8 @@ build-push-image:
     - job:                         build-linux-stable
       artifacts:                   true
   variables:
-    DOCKERFILE:                    "docker/polkadot-parachain_unsigned_injected.Dockerfile"
-    IMAGE_NAME:                    docker.io/paritypr/polkadot-parachain
+    DOCKERFILE:                    "docker/polkadot-parachain-debug_unsigned_injected.Dockerfile"
+    IMAGE_NAME:                    docker.io/paritypr/polkadot-parachain-debug
     VERSION:                       "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
   script:
     - test "$PARITYPR_USER" -a "$PARITYPR_PASS" ||
