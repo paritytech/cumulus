@@ -22,7 +22,7 @@ cumulus_based = true
   [[parachains.collators]]
   name = "dave"
   validator = true
-  image = "docker.io/parity/polkadot-collator:latest"
+  image = "{{COL_IMAGE}}"
   command = "test-parachain"
   args = ["-lparachain=debug"]
 
@@ -39,6 +39,6 @@ key = "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
   name = "eve"
   validator = true
   add_to_bootnodes = true
-  image = "docker.io/parity/polkadot-collator:latest"
+  image = "{{COL_IMAGE}}"
   command = "test-parachain"
   args = ["-lparachain=debug"]

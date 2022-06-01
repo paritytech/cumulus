@@ -11,9 +11,7 @@ chain = "rococo-local"
 
   [[relaychain.nodes]]
   name = "bob"
-  image = "docker.io/paritypr/polkadot-debug:5236-0.9.18-c55660e9-be16bd72"
   validator = true
-  args = ["--database=paritydb-experimental"]
 
 [[parachains]]
 id = 2000
@@ -23,7 +21,7 @@ cumulus_based = true
   [[parachains.collators]]
   name = "charlie"
   validator = true
-  image = "docker.io/parity/polkadot-collator:latest"
+  image = "{{COL_IMAGE}}"
   command = "test-parachain"
   args = ["-lparachain=debug"]
 
@@ -31,5 +29,5 @@ cumulus_based = true
   [[parachains.collators]]
   name = "dave"
   validator = false
-  image = "docker.io/parity/polkadot-collator:latest"
+  image = "{{COL_IMAGE}}"
   command = "test-parachain"
