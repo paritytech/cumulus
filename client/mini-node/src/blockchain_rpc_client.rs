@@ -1,17 +1,16 @@
 use std::pin::Pin;
 
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
+use cumulus_relay_chain_interface::RelayChainError;
 use cumulus_relay_chain_rpc_interface::RelayChainRPCClient;
 use futures::{executor::block_on, Future, Stream, StreamExt};
 use polkadot_core_primitives::{Block, BlockId, Hash, Header};
-use polkadot_node_network_protocol::Arc;
 use polkadot_overseer::OverseerRuntimeClient;
 use polkadot_service::{runtime_traits::BlockIdTo, HeaderBackend};
 use sc_authority_discovery::AuthorityDiscoveryWrapper;
 use sc_client_api::{BlockBackend, BlockchainEvents, ProofProvider};
-use sp_api::ApiError;
+use sp_api::{ApiError, RuntimeApiInfo};
 use sp_blockchain::HeaderMetadata;
-use tokio::runtime::Handle;
+use tracing::info;
 use url::Url;
 
 const LOG_TARGET: &'static str = "blockchain-rpc-client";
@@ -300,9 +299,9 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 
 	async fn on_chain_votes(
 		&self,
-		at: &polkadot_core_primitives::BlockId,
+		_at: &polkadot_core_primitives::BlockId,
 	) -> Result<Option<polkadot_primitives::v2::ScrapedOnChainVotes<Hash>>, sp_api::ApiError> {
-		todo!()
+		unimplemented!()
 	}
 
 	async fn session_info(
@@ -324,26 +323,26 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 
 	async fn session_info_before_version_2(
 		&self,
-		at: &polkadot_core_primitives::BlockId,
-		index: polkadot_primitives::v2::SessionIndex,
+		_at: &polkadot_core_primitives::BlockId,
+		_index: polkadot_primitives::v2::SessionIndex,
 	) -> Result<Option<polkadot_primitives::v2::SessionInfo>, sp_api::ApiError> {
-		todo!()
+		unimplemented!()
 	}
 
 	async fn submit_pvf_check_statement(
 		&self,
-		at: &polkadot_core_primitives::BlockId,
-		stmt: polkadot_primitives::v2::PvfCheckStatement,
-		signature: polkadot_primitives::v2::ValidatorSignature,
+		_at: &polkadot_core_primitives::BlockId,
+		_stmt: polkadot_primitives::v2::PvfCheckStatement,
+		_signature: polkadot_primitives::v2::ValidatorSignature,
 	) -> Result<(), sp_api::ApiError> {
-		todo!()
+		unimplemented!()
 	}
 
 	async fn pvfs_require_precheck(
 		&self,
-		at: &polkadot_core_primitives::BlockId,
+		_at: &polkadot_core_primitives::BlockId,
 	) -> Result<Vec<polkadot_primitives::v2::ValidationCodeHash>, sp_api::ApiError> {
-		todo!()
+		unimplemented!()
 	}
 
 	async fn validation_code_hash(
@@ -366,62 +365,76 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 
 	async fn configuration(
 		&self,
-		at: &polkadot_core_primitives::BlockId,
+		_at: &polkadot_core_primitives::BlockId,
 	) -> Result<sp_consensus_babe::BabeGenesisConfiguration, sp_api::ApiError> {
-		todo!()
+		unimplemented!()
 	}
 
 	async fn current_epoch_start(
 		&self,
-		at: &polkadot_core_primitives::BlockId,
+		_at: &polkadot_core_primitives::BlockId,
 	) -> Result<sp_consensus_babe::Slot, sp_api::ApiError> {
-		todo!()
+		unimplemented!()
 	}
 
 	async fn current_epoch(
 		&self,
-		at: &polkadot_core_primitives::BlockId,
+		_at: &polkadot_core_primitives::BlockId,
 	) -> Result<sp_consensus_babe::Epoch, sp_api::ApiError> {
-		todo!()
+		unimplemented!()
 	}
 
 	async fn next_epoch(
 		&self,
-		at: &polkadot_core_primitives::BlockId,
+		_at: &polkadot_core_primitives::BlockId,
 	) -> Result<sp_consensus_babe::Epoch, sp_api::ApiError> {
-		todo!()
+		unimplemented!()
 	}
 
 	async fn generate_key_ownership_proof(
 		&self,
-		at: &polkadot_core_primitives::BlockId,
-		slot: sp_consensus_babe::Slot,
-		authority_id: sp_consensus_babe::AuthorityId,
+		_at: &polkadot_core_primitives::BlockId,
+		_slot: sp_consensus_babe::Slot,
+		_authority_id: sp_consensus_babe::AuthorityId,
 	) -> Result<Option<sp_consensus_babe::OpaqueKeyOwnershipProof>, sp_api::ApiError> {
-		todo!()
+		unimplemented!()
 	}
 
 	async fn submit_report_equivocation_unsigned_extrinsic(
 		&self,
-		at: &polkadot_core_primitives::BlockId,
-		equivocation_proof: sp_consensus_babe::EquivocationProof<polkadot_core_primitives::Header>,
-		key_owner_proof: sp_consensus_babe::OpaqueKeyOwnershipProof,
+		_at: &polkadot_core_primitives::BlockId,
+		_equivocation_proof: sp_consensus_babe::EquivocationProof<polkadot_core_primitives::Header>,
+		_key_owner_proof: sp_consensus_babe::OpaqueKeyOwnershipProof,
 	) -> Result<Option<()>, sp_api::ApiError> {
-		todo!()
+		unimplemented!()
 	}
 
 	async fn authorities(
 		&self,
-		at: &polkadot_core_primitives::BlockId,
+		_at: &polkadot_core_primitives::BlockId,
 	) -> std::result::Result<Vec<polkadot_primitives::v2::AuthorityDiscoveryId>, sp_api::ApiError> {
-		todo!()
+		unimplemented!()
 	}
 
 	async fn api_version_parachain_host(
 		&self,
 		at: &polkadot_core_primitives::BlockId,
 	) -> Result<Option<u32>, sp_api::ApiError> {
-		Ok(Some(2))
+		if let BlockId::Hash(hash) = at {
+			let api_id = <dyn polkadot_primitives::runtime_api::ParachainHost<Block>>::ID;
+			let ret = self
+				.rpc_client
+				.runtime_version(*hash)
+				.await
+				.map(|v| v.api_version(&api_id))
+				.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>));
+			info!("returning version {:?} for 'ParachainHost'", ret);
+			ret
+		} else {
+			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
+				"Only hash is supported for RPC methods".to_string(),
+			)) as Box<_>))
+		}
 	}
 
 	async fn staging_get_disputes(
@@ -457,7 +470,7 @@ impl AuthorityDiscoveryWrapper<Block> for BlockChainRPCClient {
 			block_on(self.rpc_client.authority_discovery_authorities(*hash))
 				.map_err(|err| sp_api::ApiError::Application(Box::new(err)))
 		} else {
-			todo!("BlockId number not supported")
+			unimplemented!("BlockId number not supported")
 		}
 	}
 }
@@ -519,8 +532,8 @@ impl BlockchainEvents<Block> for BlockChainRPCClient {
 
 	fn storage_changes_notification_stream(
 		&self,
-		filter_keys: Option<&[sc_client_api::StorageKey]>,
-		child_filter_keys: Option<
+		_filter_keys: Option<&[sc_client_api::StorageKey]>,
+		_child_filter_keys: Option<
 			&[(sc_client_api::StorageKey, Option<Vec<sc_client_api::StorageKey>>)],
 		>,
 	) -> sp_blockchain::Result<sc_client_api::StorageEventStream<Hash>> {
@@ -542,14 +555,13 @@ impl HeaderBackend<Block> for BlockChainRPCClient {
 			block_on(self.rpc_client.chain_get_header(Some(hash)))
 				.map_err(|err| sp_blockchain::Error::Backend(err.to_string()))
 		} else {
-			todo!("header with number not supported")
+			unimplemented!("header with number not supported")
 		}
 	}
 
 	fn info(&self) -> sp_blockchain::Info<Block> {
 		tracing::debug!(target: LOG_TARGET, "BlockBackend::block_status");
 
-		let tokio_handle = tokio::runtime::Handle::current();
 		let best_header = block_local(self.rpc_client.chain_get_header(None))
 			.expect("get_header")
 			.unwrap();
@@ -579,9 +591,9 @@ impl HeaderBackend<Block> for BlockChainRPCClient {
 
 	fn status(
 		&self,
-		id: sp_api::BlockId<Block>,
+		_id: sp_api::BlockId<Block>,
 	) -> sp_blockchain::Result<sp_blockchain::BlockStatus> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn number(
@@ -598,63 +610,63 @@ impl HeaderBackend<Block> for BlockChainRPCClient {
 
 	fn hash(
 		&self,
-		number: polkadot_service::NumberFor<Block>,
+		_number: polkadot_service::NumberFor<Block>,
 	) -> sp_blockchain::Result<Option<<Block as polkadot_service::BlockT>::Hash>> {
-		todo!()
+		unimplemented!()
 	}
 }
 impl ProofProvider<Block> for BlockChainRPCClient {
 	fn read_proof(
 		&self,
-		id: &sp_api::BlockId<Block>,
-		keys: &mut dyn Iterator<Item = &[u8]>,
+		_id: &sp_api::BlockId<Block>,
+		_keys: &mut dyn Iterator<Item = &[u8]>,
 	) -> sp_blockchain::Result<sc_client_api::StorageProof> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn read_child_proof(
 		&self,
-		id: &sp_api::BlockId<Block>,
-		child_info: &sc_client_api::ChildInfo,
-		keys: &mut dyn Iterator<Item = &[u8]>,
+		_id: &sp_api::BlockId<Block>,
+		_child_info: &sc_client_api::ChildInfo,
+		_keys: &mut dyn Iterator<Item = &[u8]>,
 	) -> sp_blockchain::Result<sc_client_api::StorageProof> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn execution_proof(
 		&self,
-		id: &sp_api::BlockId<Block>,
-		method: &str,
-		call_data: &[u8],
+		_id: &sp_api::BlockId<Block>,
+		_method: &str,
+		_call_data: &[u8],
 	) -> sp_blockchain::Result<(Vec<u8>, sc_client_api::StorageProof)> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn read_proof_collection(
 		&self,
-		id: &sp_api::BlockId<Block>,
-		start_keys: &[Vec<u8>],
-		size_limit: usize,
+		_id: &sp_api::BlockId<Block>,
+		_start_keys: &[Vec<u8>],
+		_size_limit: usize,
 	) -> sp_blockchain::Result<(sc_client_api::CompactProof, u32)> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn storage_collection(
 		&self,
-		id: &sp_api::BlockId<Block>,
-		start_key: &[Vec<u8>],
-		size_limit: usize,
+		_id: &sp_api::BlockId<Block>,
+		_start_key: &[Vec<u8>],
+		_size_limit: usize,
 	) -> sp_blockchain::Result<Vec<(sp_state_machine::KeyValueStorageLevel, bool)>> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn verify_range_proof(
 		&self,
-		root: <Block as polkadot_service::BlockT>::Hash,
-		proof: sc_client_api::CompactProof,
-		start_keys: &[Vec<u8>],
+		_root: <Block as polkadot_service::BlockT>::Hash,
+		_proof: sc_client_api::CompactProof,
+		_start_keys: &[Vec<u8>],
 	) -> sp_blockchain::Result<(sc_client_api::KeyValueStates, usize)> {
-		todo!()
+		unimplemented!()
 	}
 }
 impl BlockIdTo<Block> for BlockChainRPCClient {
@@ -662,100 +674,67 @@ impl BlockIdTo<Block> for BlockChainRPCClient {
 
 	fn to_hash(
 		&self,
-		block_id: &sp_runtime::generic::BlockId<Block>,
+		_block_id: &sp_runtime::generic::BlockId<Block>,
 	) -> Result<Option<<Block as polkadot_service::BlockT>::Hash>, Self::Error> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn to_number(
 		&self,
-		block_id: &sp_runtime::generic::BlockId<Block>,
+		_block_id: &sp_runtime::generic::BlockId<Block>,
 	) -> Result<Option<polkadot_service::NumberFor<Block>>, Self::Error> {
-		todo!()
-	}
-}
-
-impl polkadot_service::Chain<Block> for BlockChainRPCClient {
-	fn block_status(
-		&self,
-		id: &sp_api::BlockId<Block>,
-	) -> Result<sp_consensus::BlockStatus, Box<dyn std::error::Error + Send>> {
-		tracing::debug!(target: LOG_TARGET, "Chain::block_status");
-		if let sp_api::BlockId::Hash(hash) = id {
-			let maybe_header =
-				block_local(self.rpc_client.chain_get_header(None)).expect("get_header");
-			if let Some(header) = maybe_header {
-				// TODO we need to check for pruned blocks here
-				return Ok(sp_consensus::BlockStatus::InChainWithState)
-			} else {
-				return Ok(sp_consensus::BlockStatus::Unknown)
-			}
-		} else {
-			todo!("Not supported blockId::number, block_status");
-		}
+		unimplemented!()
 	}
 }
 
 impl BlockBackend<Block> for BlockChainRPCClient {
 	fn block_body(
 		&self,
-		id: &sp_api::BlockId<Block>,
+		_id: &sp_api::BlockId<Block>,
 	) -> sp_blockchain::Result<Option<Vec<<Block as polkadot_service::BlockT>::Extrinsic>>> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn block_indexed_body(
 		&self,
-		id: &sp_api::BlockId<Block>,
+		_id: &sp_api::BlockId<Block>,
 	) -> sp_blockchain::Result<Option<Vec<Vec<u8>>>> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn block(
 		&self,
-		id: &sp_api::BlockId<Block>,
+		_id: &sp_api::BlockId<Block>,
 	) -> sp_blockchain::Result<Option<polkadot_service::generic::SignedBlock<Block>>> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn block_status(
 		&self,
-		id: &sp_api::BlockId<Block>,
+		_id: &sp_api::BlockId<Block>,
 	) -> sp_blockchain::Result<sp_consensus::BlockStatus> {
-		tracing::debug!(target: LOG_TARGET, "BlockBackend::block_status");
-		if let sp_api::BlockId::Hash(hash) = id {
-			let maybe_header =
-				block_local(self.rpc_client.chain_get_header(None)).expect("get_header");
-			if let Some(header) = maybe_header {
-				// TODO we need to check for pruned blocks here
-				return Ok(sp_consensus::BlockStatus::InChainWithState)
-			} else {
-				return Ok(sp_consensus::BlockStatus::Unknown)
-			}
-		} else {
-			todo!("Not supported blockId::number, block_status");
-		}
+		unimplemented!("no 'block_status' for you");
 	}
 
 	fn justifications(
 		&self,
-		id: &sp_api::BlockId<Block>,
+		_id: &sp_api::BlockId<Block>,
 	) -> sp_blockchain::Result<Option<sp_runtime::Justifications>> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn block_hash(
 		&self,
-		number: polkadot_service::NumberFor<Block>,
+		_number: polkadot_service::NumberFor<Block>,
 	) -> sp_blockchain::Result<Option<<Block as polkadot_service::BlockT>::Hash>> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn indexed_transaction(
 		&self,
-		hash: &<Block as polkadot_service::BlockT>::Hash,
+		_hash: &<Block as polkadot_service::BlockT>::Hash,
 	) -> sp_blockchain::Result<Option<Vec<u8>>> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn requires_full_sync(&self) -> bool {
@@ -770,20 +749,20 @@ impl HeaderMetadata<Block> for BlockChainRPCClient {
 
 	fn header_metadata(
 		&self,
-		hash: <Block as polkadot_service::BlockT>::Hash,
+		_hash: <Block as polkadot_service::BlockT>::Hash,
 	) -> Result<sp_blockchain::CachedHeaderMetadata<Block>, Self::Error> {
 		unimplemented!()
 	}
 
 	fn insert_header_metadata(
 		&self,
-		hash: <Block as polkadot_service::BlockT>::Hash,
-		header_metadata: sp_blockchain::CachedHeaderMetadata<Block>,
+		_hash: <Block as polkadot_service::BlockT>::Hash,
+		_header_metadata: sp_blockchain::CachedHeaderMetadata<Block>,
 	) {
 		unimplemented!()
 	}
 
-	fn remove_header_metadata(&self, hash: <Block as polkadot_service::BlockT>::Hash) {
+	fn remove_header_metadata(&self, _hash: <Block as polkadot_service::BlockT>::Hash) {
 		unimplemented!()
 	}
 }

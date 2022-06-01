@@ -173,17 +173,17 @@ impl sc_service::ImportQueue<Block> for FakeImportQueue {
 	/// Import bunch of blocks.
 	fn import_blocks(
 		&mut self,
-		origin: BlockOrigin,
-		blocks: Vec<sc_consensus::IncomingBlock<Block>>,
+		_origin: BlockOrigin,
+		_blocks: Vec<sc_consensus::IncomingBlock<Block>>,
 	) {
 	}
 	/// Import block justifications.
 	fn import_justifications(
 		&mut self,
-		who: PeerId,
-		hash: PHash,
-		number: NumberFor<Block>,
-		justifications: Justifications,
+		_who: PeerId,
+		_hash: PHash,
+		_number: NumberFor<Block>,
+		_justifications: Justifications,
 	) {
 	}
 
@@ -194,8 +194,8 @@ impl sc_service::ImportQueue<Block> for FakeImportQueue {
 	/// it is as if this method always returned `Poll::Pending`.
 	fn poll_actions(
 		&mut self,
-		cx: &mut futures::task::Context,
-		link: &mut dyn sc_consensus::import_queue::Link<Block>,
+		_cx: &mut futures::task::Context,
+		_link: &mut dyn sc_consensus::import_queue::Link<Block>,
 	) {
 	}
 }
@@ -229,6 +229,7 @@ pub fn new_mini(
 	config.network.request_response_protocols.push(cfg);
 	let (available_data_req_receiver, cfg) = IncomingRequest::get_config_receiver();
 	config.network.request_response_protocols.push(cfg);
+	// config.network.sync_mode = sc_network::config::SyncMode::None;
 
 	let import_queue = FakeImportQueue {};
 
@@ -243,7 +244,6 @@ pub fn new_mini(
 	let active_leaves = Vec::new();
 
 	let authority_discovery_service = {
-		use futures::StreamExt;
 		use sc_network::Event;
 
 		let authority_discovery_role = sc_authority_discovery::Role::Discover;
@@ -304,7 +304,7 @@ pub fn new_mini(
 				"overseer",
 				None,
 				Box::pin(async move {
-					use futures::{pin_mut, select, FutureExt};
+					use futures::{pin_mut, FutureExt};
 
 					let forward = forward_collator_events(relay_chain_rpc_client, handle);
 

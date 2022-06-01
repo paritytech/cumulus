@@ -43,6 +43,7 @@ use parity_scale_codec::{Decode, Encode};
 use polkadot_service::Handle;
 use sc_client_api::{StorageData, StorageProof};
 use sc_rpc_api::{state::ReadProof, system::Health};
+use sp_api::RuntimeVersion;
 use sp_core::sp_std::collections::btree_map::BTreeMap;
 use sp_runtime::DeserializeOwned;
 use sp_state_machine::StorageValue;
@@ -375,6 +376,11 @@ impl RelayChainRPCClient {
 	) -> Result<Vec<InboundDownwardMessage>, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_dmq_contents", at, Some(para_id))
 			.await
+	}
+
+	pub async fn runtime_version(&self, at: PHash) -> Result<RuntimeVersion, RelayChainError> {
+		let params = rpc_params!(at);
+		self.request("state_getRuntimeVersion", params).await
 	}
 
 	pub async fn parachain_host_staging_get_disputes(

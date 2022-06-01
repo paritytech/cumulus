@@ -7570,7 +7570,6 @@ dependencies = [
  "polkadot-overseer",
  "polkadot-primitives",
  "sp-consensus-babe",
- "sp-core",
  "tracing-gum",
 ]
 
@@ -13334,74 +13333,6 @@ dependencies = [
 ]
 
 [[patch.unused]]
-name = "polkadot"
-version = "0.9.22"
-
-[[patch.unused]]
-name = "polkadot-primitives-test-helpers"
-version = "0.9.22"
-
-[[patch.unused]]
-name = "polkadot-test-malus"
-version = "0.9.22"
-
-[[patch.unused]]
-name = "polkadot-voter-bags"
-version = "0.9.22"
-
-[[patch.unused]]
-name = "remote-ext-tests-bags-list"
-version = "0.9.22"
-
-[[patch.unused]]
-name = "staking-miner"
-version = "0.9.22"
-
-[[patch.unused]]
-name = "test-parachain-adder"
-version = "0.9.22"
-
-[[patch.unused]]
-name = "test-parachain-adder-collator"
-version = "0.9.22"
-
-[[patch.unused]]
-name = "test-parachain-halt"
-version = "0.9.22"
-
-[[patch.unused]]
-name = "test-parachain-undying"
-version = "0.9.22"
-
-[[patch.unused]]
-name = "test-parachain-undying-collator"
-version = "0.9.22"
-
-[[patch.unused]]
-name = "test-parachains"
-version = "0.9.22"
-
-[[patch.unused]]
-name = "xcm-executor-integration-tests"
-version = "0.9.22"
-
-[[patch.unused]]
-name = "xcm-simulator"
-version = "0.9.22"
-
-[[patch.unused]]
-name = "xcm-simulator-example"
-version = "0.9.22"
-
-[[patch.unused]]
-name = "xcm-simulator-fuzzer"
-version = "0.9.22"
-
-[[patch.unused]]
-name = "zombienet-backchannel"
-version = "0.9.22"
-
-[[patch.unused]]
 name = "chain-spec-builder"
 version = "2.0.0"
 
@@ -13616,3 +13547,71 @@ version = "2.0.0"
 [[patch.unused]]
 name = "substrate-test-utils-test-crate"
 version = "0.1.0"
+
+[[patch.unused]]
+name = "polkadot"
+version = "0.9.22"
+
+[[patch.unused]]
+name = "polkadot-primitives-test-helpers"
+version = "0.9.22"
+
+[[patch.unused]]
+name = "polkadot-test-malus"
+version = "0.9.22"
+
+[[patch.unused]]
+name = "polkadot-voter-bags"
+version = "0.9.22"
+
+[[patch.unused]]
+name = "remote-ext-tests-bags-list"
+version = "0.9.22"
+
+[[patch.unused]]
+name = "staking-miner"
+version = "0.9.22"
+
+[[patch.unused]]
+name = "test-parachain-adder"
+version = "0.9.22"
+
+[[patch.unused]]
+name = "test-parachain-adder-collator"
+version = "0.9.22"
+
+[[patch.unused]]
+name = "test-parachain-halt"
+version = "0.9.22"
+
+[[patch.unused]]
+name = "test-parachain-undying"
+version = "0.9.22"
+
+[[patch.unused]]
+name = "test-parachain-undying-collator"
+version = "0.9.22"
+
+[[patch.unused]]
+name = "test-parachains"
+version = "0.9.22"
+
+[[patch.unused]]
+name = "xcm-executor-integration-tests"
+version = "0.9.22"
+
+[[patch.unused]]
+name = "xcm-simulator"
+version = "0.9.22"
+
+[[patch.unused]]
+name = "xcm-simulator-example"
+version = "0.9.22"
+
+[[patch.unused]]
+name = "xcm-simulator-fuzzer"
+version = "0.9.22"
+
+[[patch.unused]]
+name = "zombienet-backchannel"
+version = "0.9.22"
