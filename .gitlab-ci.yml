@@ -208,6 +208,9 @@ publish-s3:
   <<:                              *kubernetes-env
   image:                           paritytech/awscli:latest
   <<:                              *publish-refs
+  needs:
+    - job:                         build-linux-stable
+      artifacts:                   true
   variables:
     GIT_STRATEGY:                  none
     BUCKET:                        "releases.parity.io"
