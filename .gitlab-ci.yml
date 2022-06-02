@@ -225,7 +225,7 @@ build-push-image-polkadot-parachain-debug:
       artifacts:                   true
   variables:
     DOCKERFILE:                    "docker/polkadot-parachain-debug_unsigned_injected.Dockerfile"
-    IMAGE_NAME:                    docker.io/paritypr/polkadot-parachain-debug
+    IMAGE_NAME:                    "docker.io/paritypr/polkadot-parachain-debug"
     VERSION:                       "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
 
 build-push-image-test-parachain:
@@ -238,7 +238,7 @@ build-push-image-test-parachain:
       artifacts:                   true
   variables:
     DOCKERFILE:                    "docker/test-parachain_injected.Dockerfile"
-    IMAGE_NAME:                    docker.io/paritypr/test-parachain
+    IMAGE_NAME:                    "docker.io/paritypr/test-parachain"
     VERSION:                       "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
 
 publish-s3:
