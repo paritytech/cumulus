@@ -92,7 +92,7 @@ variables:
 
 #### stage:                        test
 
-test-linux-stable:
+.test-linux-stable:
   stage:                           test
   <<:                              *docker-env
   <<:                              *common-refs
@@ -103,7 +103,7 @@ test-linux-stable:
   script:
     - time cargo test --all --release --locked -- --include-ignored
 
-check-runtime-benchmarks:
+.check-runtime-benchmarks:
   stage:                           test
   <<:                              *docker-env
   <<:                              *common-refs
@@ -113,7 +113,7 @@ check-runtime-benchmarks:
     # Check that parachain-template will compile with `runtime-benchmarks` feature flag.
     - time cargo check -p parachain-template-node --features runtime-benchmarks
 
-cargo-check-try-runtime:
+.cargo-check-try-runtime:
   stage:                           test
   <<:                              *docker-env
   <<:                              *common-refs
@@ -127,7 +127,7 @@ cargo-check-try-runtime:
     # Check that parachain-template will compile with `try-runtime` feature flag.
     - time cargo check -p parachain-template-node --features try-runtime
 
-check-rustdoc:
+.check-rustdoc:
   stage:                           test
   <<:                              *docker-env
   <<:                              *common-refs
@@ -137,7 +137,7 @@ check-rustdoc:
   script:
     - time cargo +nightly doc --workspace --all-features --verbose --no-deps
 
-cargo-check-benches:
+.cargo-check-benches:
   stage:                           test
   <<:                              *docker-env
   <<:                              *common-refs
@@ -159,9 +159,9 @@ build-linux-stable:
     # but still want to have debug assertions.
     RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
   # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
-  needs:
-    - job:                         check-rustdoc
-      artifacts:                   false
+  # needs:
+  #   - job:                         check-rustdoc
+  #     artifacts:                   false
   script:
     - echo "___Building a binary, please refrain from using it in production since it goes with the debug assertions.___"
     - time cargo build --release --locked --bin polkadot-parachain
@@ -180,9 +180,9 @@ build-test-parachain:
     # but still want to have debug assertions.
     RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
   # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
-  needs:
-    - job:                         check-rustdoc
-      artifacts:                   false
+  # needs:
+  #   - job:                         check-rustdoc
+  #     artifacts:                   false
   script:
     - echo "___Building a binary, please refrain from using it in production since it goes with the debug assertions.___"
     - time cargo +nightly build --release --locked --bin test-parachain
@@ -194,9 +194,6 @@ build-test-parachain:
 
 .build-push-image:                  &build-push-image
   image:                           quay.io/buildah/stable
-  needs:
-    - job:                         build-linux-stable
-      artifacts:                   true
   # Variables here are just examples, override them in a job
   variables:
     DOCKERFILE:                    "docker/path-to.Dockerfile"
@@ -224,6 +221,9 @@ build-push-image-polkadot-parachain-debug:
   <<:                              *kubernetes-env
   <<:                              *common-refs
   <<:                              *build-push-image
+  needs:
+    - job:                         build-linux-stable
+      artifacts:                   true
   variables:
     DOCKERFILE:                    "docker/polkadot-parachain-debug_unsigned_injected.Dockerfile"
     IMAGE_NAME:                    docker.io/paritypr/polkadot-parachain-debug
@@ -234,9 +234,12 @@ build-push-image-test-parachain:
   <<:                              *kubernetes-env
   <<:                              *common-refs
   <<:                              *build-push-image
+  needs:
+    - job:                         build-test-parachain
+      artifacts:                   true
   variables:
-    DOCKERFILE:                    "docker/polkadot-parachain-debug_unsigned_injected.Dockerfile"
-    IMAGE_NAME:                    docker.io/paritypr/polkadot-parachain-debug
+    DOCKERFILE:                    "docker/test-parachain_injected.Dockerfile"
+    IMAGE_NAME:                    docker.io/paritypr/test-parachain
     VERSION:                       "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
 
 publish-s3:
