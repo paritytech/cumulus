@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Parity Technologies (UK) Ltd.
+// Copyright (C) 2021-2022 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +13,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Statemint runtime.
+//! # Statemint Runtime
+//!
+//! Statemint is a parachain that provides an interface to create, manage, and use assets. Assets
+//! may be fungible or non-fungible.
+//!
+//! ## Assets
+//!
+//! - Fungibles: Configuration of `pallet-assets`.
+//! - Non-Fungibles (NFTs): Configuration of `pallet-uniques`.
+//!
+//! ## Other Functionality
+//!
+//! ### Native Balances
+//!
+//! Statemint uses its parent DOT token as its native asset.
+//!
+//! ### Governance
+//!
+//! As a common good parachain, Statemint defers its governance (namely, its `Root` origin), to its
+//! Relay Chain parent, Polkadot.
+//!
+//! ### Collator Selection
+//!
+//! Statemint uses `pallet-collator-selection`, a simple first-come-first-served registration
+//! system where collators can reserve a small bond to join the block producer set. There is no
+//! slashing.
+//!
+//! ### XCM
+//!
+//! Because Statemint is fully under the control of the Relay Chain, it is meant to be a
+//! `TrustedTeleporter`. It can also serve as a reserve location to other parachains for DOT as well
+//! as other local assets.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]
@@ -44,7 +75,7 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{AsEnsureOriginWithArg, EnsureOneOf, InstanceFilter},
+	traits::{AsEnsureOriginWithArg, EitherOfDiverse, InstanceFilter},
 	weights::{ConstantMultiplier, DispatchClass, Weight},
 	PalletId, RuntimeDebug,
 };
@@ -221,7 +252,7 @@ parameter_types! {
 
 /// We allow root and the Relay Chain council to execute privileged asset operations.
 pub type AssetsForceOrigin =
-	EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
+	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
 
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
@@ -427,8 +458,10 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-	type ControllerOrigin =
-		EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
+	type ControllerOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>,
+	>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
 }
@@ -475,7 +508,7 @@ parameter_types! {
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
 pub type CollatorSelectionUpdateOrigin =
-	EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
+	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
 
 impl pallet_collator_selection::Config for Runtime {
 	type Event = Event;
