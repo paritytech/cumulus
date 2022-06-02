@@ -194,10 +194,9 @@ build-test-parachain:
 
 .build-push-image:                  &build-push-image
   image:                           quay.io/buildah/stable
-  # Variables here are just examples, override them in a job
   variables:
-    DOCKERFILE:                    "docker/path-to.Dockerfile"
-    IMAGE_NAME:                    docker.io/paritypr/image_name
+    DOCKERFILE:                    "" # docker/path-to.Dockerfile
+    IMAGE_NAME:                    "" # docker.io/paritypr/image_name
     VERSION:                       "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
   script:
     - test "$PARITYPR_USER" -a "$PARITYPR_PASS" ||
