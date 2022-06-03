@@ -90,8 +90,8 @@ pub use pallet::*;
 
 /// Something that can check the associated relay block number.
 ///
-/// Each Parachain block is build in the context of a relay chain block. This relay chain block
-/// has a block number associated this trait is about. With async backing it is legal to build
+/// Each Parachain block is built in the context of a relay chain block, this trait allows us
+/// to validate the given relay chain block number. With async backing it is legal to build
 /// multiple Parachain blocks per relay chain parent. With this trait it is possible for the
 /// Parachain to ensure that still only one Parachain block is build per relay chain parent.
 ///
