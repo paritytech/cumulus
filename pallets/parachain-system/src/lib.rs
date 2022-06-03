@@ -529,7 +529,7 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type DidSetValidationCode<T: Config> = StorageValue<_, bool, ValueQuery>;
 
-	/// The relay chain block number associated to the last parachain block.
+	/// The relay chain block number associated with the last parachain block.
 	#[pallet::storage]
 	pub(super) type LastRelayChainBlockNumber<T: Config> =
 		StorageValue<_, RelayChainBlockNumber, ValueQuery>;
