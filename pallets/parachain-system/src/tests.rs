@@ -107,7 +107,7 @@ impl Config for Test {
 	type ReservedDmpWeight = ReservedDmpWeight;
 	type XcmpMessageHandler = SaveIntoThreadLocal;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
-	type CheckAssociatedRelayNumber = AnyRelayNumber;
+	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
 pub struct FromThreadLocal;
