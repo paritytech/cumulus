@@ -44,4 +44,9 @@ impl<T: frame_system::Config> pallet_utility::WeightInfo for WeightInfo<T> {
 	fn dispatch_as() -> Weight {
 		(23_000_000 as Weight)
 	}
+
+	fn force_batch(_c: u32) -> Weight {
+		// Todo: dummy weight need to rerun benchmarks
+		(23_000_000 as Weight)
+	}
 }

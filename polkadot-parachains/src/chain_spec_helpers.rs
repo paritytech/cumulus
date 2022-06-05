@@ -19,7 +19,7 @@
 //! Only moved stuff here that is not in the `chain_spec.rs` upstream to prevent upstream merge
 //! confusion.
 
-use parachain_runtime::{AccountId, AuraId};
+use parachains_common::{AccountId, AuraId};
 use sc_chain_spec::Properties;
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Public};

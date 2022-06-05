@@ -20,6 +20,8 @@
 
 use std::sync::Arc;
 
+use parachain_runtime::Moment;
+use parachains_common::{AccountId, Balance, Block, BlockNumber, Index as Nonce};
 use sc_client_api::AuxStore;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_transaction_pool_api::TransactionPool;
@@ -27,13 +29,8 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
-use pallet_encointer_bazaar_rpc::{Bazaar, BazaarApi};
-use pallet_encointer_ceremonies_rpc::{Ceremonies, CeremoniesApi};
-use pallet_encointer_communities_rpc::{Communities, CommunitiesApi};
-use parachains_common::{AccountId, Balance, Block, BlockNumber, Index as Nonce, Moment};
-
 /// A type representing all RPC extensions.
-pub type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
+pub type RpcExtension = jsonrpsee::RpcModule<()>;
 
 /// Full client dependencies
 pub struct FullDeps<C, P, Backend> {
@@ -50,7 +47,9 @@ pub struct FullDeps<C, P, Backend> {
 }
 
 /// Instantiate all RPC extensions.
-pub fn create_full<C, P, TBackend>(deps: FullDeps<C, P, TBackend>) -> RpcExtension
+pub fn create_full<C, P, TBackend>(
+	deps: FullDeps<C, P, TBackend>,
+) -> Result<RpcExtension, Box<dyn std::error::Error + Send + Sync>>
 where
 	C: ProvideRuntimeApi<Block>
 		+ HeaderBackend<Block>
@@ -70,42 +69,49 @@ where
 	TBackend: sc_client_api::Backend<Block>, // added by encointer
 	<TBackend as sc_client_api::Backend<Block>>::OffchainStorage: 'static, // added by encointer
 {
-	use frame_rpc_system::{FullSystem, SystemApi};
-	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
+	use frame_rpc_system::{System, SystemApiServer};
+	use pallet_encointer_bazaar_rpc::{BazaarApiServer, BazaarRpc};
+	use pallet_encointer_ceremonies_rpc::{CeremoniesApiServer, CeremoniesRpc};
+	use pallet_encointer_communities_rpc::{CommunitiesApiServer, CommunitiesRpc};
+	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 
-	let mut io = jsonrpc_core::IoHandler::default();
+	let mut module = RpcExtension::new(());
 	let FullDeps { client, pool, backend, offchain_indexing_enabled, deny_unsafe } = deps;
 
-	io.extend_with(SystemApi::to_delegate(FullSystem::new(client.clone(), pool, deny_unsafe)));
-	io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(client.clone())));
-
-	io.extend_with(BazaarApi::to_delegate(Bazaar::new(client.clone(), deny_unsafe)));
+	module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
+	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
+	module.merge(BazaarRpc::new(client.clone(), deny_unsafe).into_rpc())?;
 
 	match backend.offchain_storage() {
 		Some(storage) => {
-			io.extend_with(CommunitiesApi::to_delegate(Communities::new(
-				client.clone(),
-				storage.clone(),
-				offchain_indexing_enabled,
-				deny_unsafe,
-			)));
-			io.extend_with(CeremoniesApi::to_delegate(Ceremonies::new(
-				client.clone(),
-				deny_unsafe,
-				storage,
-				offchain_indexing_enabled,
-			)))
+			module.merge(
+				CommunitiesRpc::new(
+					client.clone(),
+					storage.clone(),
+					offchain_indexing_enabled,
+					deny_unsafe,
+				)
+				.into_rpc(),
+			)?;
+
+			module.merge(
+				CeremoniesRpc::new(client.clone(), deny_unsafe, storage, offchain_indexing_enabled)
+					.into_rpc(),
+			)?;
 		},
 		None => log::warn!(
-			"Offchain caching disabled, due to lack of offchain storage support in backend."
+			"Offchain caching disabled, due to lack of offchain storage support in backend. \n
+			Will not initialize custom RPCs for 'CommunitiesApi' and 'CeremoniesApi'"
 		),
 	};
 
-	io
+	Ok(module)
 }
 
 /// Instantiate reduced RPC extensions for launch runtime
-pub fn create_launch_ext<C, P, TBackend>(deps: FullDeps<C, P, TBackend>) -> RpcExtension
+pub fn create_launch_ext<C, P, TBackend>(
+	deps: FullDeps<C, P, TBackend>,
+) -> Result<RpcExtension, Box<dyn std::error::Error + Send + Sync>>
 where
 	C: ProvideRuntimeApi<Block>
 		+ HeaderBackend<Block>
@@ -119,14 +125,14 @@ where
 	C::Api: BlockBuilder<Block>,
 	P: TransactionPool + Sync + Send + 'static,
 {
-	use frame_rpc_system::{FullSystem, SystemApi};
-	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
+	use frame_rpc_system::{System, SystemApiServer};
+	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 
-	let mut io = jsonrpc_core::IoHandler::default();
+	let mut module = RpcExtension::new(());
 	let FullDeps { client, pool, backend: _, offchain_indexing_enabled: _, deny_unsafe } = deps;
 
-	io.extend_with(SystemApi::to_delegate(FullSystem::new(client.clone(), pool, deny_unsafe)));
-	io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(client.clone())));
+	module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
+	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 
-	io
+	Ok(module)
 }

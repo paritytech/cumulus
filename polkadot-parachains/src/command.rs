@@ -25,8 +25,8 @@ use crate::{
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
+use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::info;
-use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
@@ -36,22 +36,29 @@ use sc_service::{
 	TaskManager,
 };
 use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::traits::Block as BlockT;
+use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::{io::Write, net::SocketAddr};
 
 trait IdentifyChain {
 	fn is_launch(&self) -> bool;
+	fn is_encointer(&self) -> bool;
 }
 
 impl IdentifyChain for dyn sc_service::ChainSpec {
 	fn is_launch(&self) -> bool {
 		self.name().starts_with("Encointer Launch")
 	}
+	fn is_encointer(&self) -> bool {
+		self.name().starts_with("Encointer Network")
+	}
 }
 
 impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 	fn is_launch(&self) -> bool {
 		<dyn sc_service::ChainSpec>::is_launch(self)
+	}
+	fn is_encointer(&self) -> bool {
+		<dyn sc_service::ChainSpec>::is_encointer(self)
 	}
 }
 
@@ -216,14 +223,35 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 		.ok_or_else(|| "Could not find wasm file in genesis state!".into())
 }
 
+/// Creates partial components for the runtimes that are supported by the benchmarks.
+macro_rules! construct_benchmark_partials {
+	($config:expr, |$partials:ident| $code:expr) => {
+		if $config.chain_spec.is_launch() {
+			let $partials = new_partial::<launch_runtime::RuntimeApi, _>(
+				&$config,
+				crate::service::parachain_build_import_queue::<_, parachains_common::AuraId>,
+			)?;
+			$code
+		} else if $config.chain_spec.is_encointer() {
+			let $partials = new_partial::<parachain_runtime::RuntimeApi, _>(
+				&$config,
+				crate::service::parachain_build_import_queue::<_, parachains_common::AuraId>,
+			)?;
+			$code
+		} else {
+			Err("The chain is not supported".into())
+		}
+	};
+}
+
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
 		if runner.config().chain_spec.is_launch() {
 			runner.async_run(|$config| {
-				let $components = new_partial::<launch_runtime::RuntimeApi, LaunchParachainRuntimeExecutor, _>(
+				let $components = new_partial::<launch_runtime::RuntimeApi, _>(
 					&$config,
-					crate::service::parachain_build_import_queue::<_, _, parachains_common::AuraId>,
+					crate::service::parachain_build_import_queue::<_, parachains_common::AuraId>,
 				)?;
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
@@ -232,11 +260,10 @@ macro_rules! construct_async_run {
 			runner.async_run(|$config| {
 			let $components = new_partial::<
 				parachain_runtime::RuntimeApi,
-				EncointerParachainRuntimeExecutor,
 				_
 			>(
 				&$config,
-				crate::service::parachain_build_import_queue::<_, _, parachains_common::AuraId>,
+				crate::service::parachain_build_import_queue::<_, parachains_common::AuraId>,
 			)?;
 			let task_manager = $components.task_manager;
 			{ $( $code )* }.map(|v| (v, task_manager))
@@ -296,7 +323,7 @@ pub fn run() -> Result<()> {
 			})
 		},
 		Some(Subcommand::Revert(cmd)) => construct_async_run!(|components, cli, cmd, config| {
-			Ok(cmd.run(components.client, components.backend))
+			Ok(cmd.run(components.client, components.backend, None))
 		}),
 		Some(Subcommand::ExportGenesisState(params)) => {
 			let mut builder = sc_cli::LoggerBuilder::new("");
@@ -343,22 +370,43 @@ pub fn run() -> Result<()> {
 
 			Ok(())
 		},
-		Some(Subcommand::Benchmark(cmd)) =>
-			if cfg!(feature = "runtime-benchmarks") {
-				let runner = cli.create_runner(cmd)?;
-				if runner.config().chain_spec.is_launch() {
-					runner
-						.sync_run(|config| cmd.run::<Block, LaunchParachainRuntimeExecutor>(config))
-				} else {
-					runner.sync_run(|config| {
-						cmd.run::<Block, EncointerParachainRuntimeExecutor>(config)
-					})
-				}
-			} else {
-				Err("Benchmarking wasn't enabled when building the node. \
+		Some(Subcommand::Benchmark(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+
+			// Switch on the concrete benchmark sub-command-
+			match cmd {
+				BenchmarkCmd::Pallet(cmd) =>
+					if cfg!(feature = "runtime-benchmarks") {
+						runner.sync_run(|config| {
+							if config.chain_spec.is_launch() {
+								cmd.run::<Block, LaunchParachainRuntimeExecutor>(config)
+							} else if config.chain_spec.is_encointer() {
+								cmd.run::<Block, EncointerParachainRuntimeExecutor>(config)
+							} else {
+								Err("Chain doesn't support benchmarking".into())
+							}
+						})
+					} else {
+						Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
-					.into())
-			},
+							.into())
+					},
+				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
+					construct_benchmark_partials!(config, |partials| cmd.run(partials.client))
+				}),
+				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
+					construct_benchmark_partials!(config, |partials| {
+						let db = partials.backend.expose_db();
+						let storage = partials.backend.expose_storage();
+
+						cmd.run(config, partials.client.clone(), db, storage)
+					})
+				}),
+				BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
+				BenchmarkCmd::Machine(cmd) =>
+					runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
+			}
+		},
 		Some(Subcommand::TryRuntime(cmd)) => {
 			if cfg!(feature = "try-runtime") {
 				// grab the task manager.
@@ -372,13 +420,15 @@ pub fn run() -> Result<()> {
 					runner.async_run(|config| {
 						Ok((cmd.run::<Block, LaunchParachainRuntimeExecutor>(config), task_manager))
 					})
-				} else {
+				} else if runner.config().chain_spec.is_encointer() {
 					runner.async_run(|config| {
 						Ok((
 							cmd.run::<Block, EncointerParachainRuntimeExecutor>(config),
 							task_manager,
 						))
 					})
+				} else {
+					Err("Chain doesn't support try-runtime".into())
 				}
 			} else {
 				Err("Try-runtime must be enabled by `--features try-runtime`.".into())
@@ -390,6 +440,15 @@ pub fn run() -> Result<()> {
 			let collator_options = cli.run.collator_options();
 
 			runner.run_node_until_exit(|config| async move {
+				let hwbench = if !cli.no_hardware_benchmarks {
+					config.database.path().map(|database_path| {
+						let _ = std::fs::create_dir_all(&database_path);
+						sc_sysinfo::gather_hwbench(Some(database_path))
+					})
+				} else {
+					None
+				};
+
 				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
 					.map(|e| e.para_id)
 					.ok_or_else(|| "Could not find parachain extension in chain-spec.")?;
@@ -404,10 +463,9 @@ pub fn run() -> Result<()> {
 				let id = ParaId::from(para_id);
 
 				let parachain_account =
-					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
+					AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
 
-				let state_version =
-					RelayChainCli::native_runtime_version(&config.chain_spec).state_version();
+				let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
 
 				let block: crate::service::Block =
 					generate_genesis_block(&config.chain_spec, state_version)
@@ -425,16 +483,23 @@ pub fn run() -> Result<()> {
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
 				if config.chain_spec.is_launch() {
-					crate::service::start_launch_node(config, polkadot_config, collator_options, id)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
+					crate::service::start_launch_node(
+						config,
+						polkadot_config,
+						collator_options,
+						id,
+						hwbench,
+					)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
 				} else {
 					crate::service::start_encointer_node(
 						config,
 						polkadot_config,
 						collator_options,
 						id,
+						hwbench,
 					)
 					.await
 					.map(|r| r.0)

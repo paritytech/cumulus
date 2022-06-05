@@ -14,22 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-//! The weights used in the encointer-parachain-runtime
+//! Common definitions for runtimes. It contains both: definitions by encointer, and
+//! definitions from the statemine runtime.
 
-// the generated files do not pass clippy
-#![allow(clippy::all)]
+#![cfg_attr(not(feature = "std"), no_std)]
 
-pub mod cumulus_pallet_xcmp_queue;
-pub mod frame_system;
-pub mod pallet_balances;
-pub mod pallet_collective;
-pub mod pallet_encointer_balances;
-pub mod pallet_encointer_bazaar;
-pub mod pallet_encointer_ceremonies;
-pub mod pallet_encointer_communities;
-pub mod pallet_encointer_scheduler;
-pub mod pallet_membership;
-pub mod pallet_proxy;
-pub mod pallet_timestamp;
-pub mod pallet_treasury;
-pub mod pallet_utility;
+pub mod deal_with_fees;
+pub mod weights;
+
+// copied from cumulus/parachains/runtimes/assets/statemine/constants
+mod constants;
+pub use constants::{currency, fee};

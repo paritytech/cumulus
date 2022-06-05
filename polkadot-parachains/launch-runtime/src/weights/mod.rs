@@ -19,6 +19,7 @@
 // the generated files do not pass clippy
 #![allow(clippy::all)]
 
+pub mod cumulus_pallet_xcmp_queue;
 pub mod frame_system;
 pub mod pallet_balances;
 pub mod pallet_collective;

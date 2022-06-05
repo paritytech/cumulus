@@ -14,6 +14,7 @@ echo "WEIGHT_OUTPUT_DIR:  ${WEIGHT_OUTPUT_DIR}"
 mkdir -p "$WEIGHT_OUTPUT_DIR"
 
 pallets=(
+  "cumulus_pallet_xcmp_queue"
   "frame_system" \
   "pallet_balances" \
   "pallet_collective" \
@@ -33,7 +34,7 @@ for pallet in ${pallets[*]}; do
   echo benchmarking "$pallet"...
 
   $NODE \
-  benchmark \
+  benchmark pallet \
   --chain="$CHAIN_SPEC" \
   --steps=50 \
   --repeat=20 \

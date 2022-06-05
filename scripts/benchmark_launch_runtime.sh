@@ -3,7 +3,7 @@
 # Create `WeightInfo` implementations for all the pallets and store it in the weight module of the `launch-runtime`.
 
 NODE=${1:-target/release/encointer-collator}
-CHAIN_SPEC=${2:-launch-rococo-fresh}
+CHAIN_SPEC=${2:-launch-rococo-local-dev}
 WEIGHT_OUTPUT_DIR=${3:-polkadot-parachains/launch-runtime/src/weights}
 
 echo "Running benchmarks for all pallets:"
@@ -14,6 +14,7 @@ echo "WEIGHT_OUTPUT_DIR:  ${WEIGHT_OUTPUT_DIR}"
 mkdir -p "$WEIGHT_OUTPUT_DIR"
 
 pallets=(
+  "cumulus_pallet_xcmp_queue"
   "frame_system" \
   "pallet_balances" \
   "pallet_collective" \
@@ -28,7 +29,7 @@ for pallet in ${pallets[*]}; do
   echo benchmarking "$pallet"...
 
   $NODE \
-  benchmark \
+  benchmark pallet \
   --chain="$CHAIN_SPEC" \
   --steps=50 \
   --repeat=20 \
