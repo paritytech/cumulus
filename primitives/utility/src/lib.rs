@@ -103,7 +103,7 @@ impl<
 		let first = multiassets.get(0).ok_or(XcmError::TooExpensive)?;
 		// We get the local asset id in which we can pay for fees
 		let (local_asset_id, _) =
-			Matcher::matches_fungibles(&first).map_err(|_| XcmError::TooExpensive)?;
+			Matcher::matches_fungibles(&first).map_err(|_| XcmError::AssetNotFound)?;
 		// we calculate how much we should charge in the asset_id for such amount of weight
 		let asset_balance = FeeCharger::charge_weight_in_fungibles(local_asset_id, weight)?;
 

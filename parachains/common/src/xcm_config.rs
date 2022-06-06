@@ -96,7 +96,7 @@ where
 		asset_id: <pallet_assets::Pallet<R> as Inspect<AccountIdOf<R>>>::AssetId,
 		weight: Weight,
 	) -> Result<<pallet_assets::Pallet<R> as Inspect<AccountIdOf<R>>>::Balance, XcmError> {
-		let amount = WeightToFee::calc(&weight);
+		let amount = WeightToFee::weight_to_fee(&weight);
 		CON::to_asset_balance(amount, asset_id).map_err(|_| XcmError::TooExpensive)
 	}
 }
