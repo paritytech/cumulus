@@ -2,7 +2,7 @@ use crate::impls::AccountIdOf;
 use core::marker::PhantomData;
 use frame_support::{
 	log,
-	traits::{fungibles::Inspect, tokens::BalanceConversion},
+	traits::{fungibles::Inspect, tokens::BalanceConversion, weights::WeightToFee},
 	weights::{Weight, WeightToFeePolynomial},
 };
 use xcm::latest::prelude::*;
