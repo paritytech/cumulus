@@ -60,7 +60,11 @@ pub mod pallet {
 
 	/// The target parachains to ping.
 	#[pallet::storage]
-	pub(super) type Targets<T: Config> = StorageValue<_, BoundedVec<(ParaId, BoundedVec<u8, MaxPayloadSize>), MaxParachains>, ValueQuery>;
+	pub(super) type Targets<T: Config> = StorageValue<
+		_,
+		BoundedVec<(ParaId, BoundedVec<u8, MaxPayloadSize>), MaxParachains>,
+		ValueQuery,
+	>;
 
 	/// The total number of pings sent.
 	#[pallet::storage]
@@ -117,7 +121,12 @@ pub mod pallet {
 						Self::deposit_event(Event::PingSent(para, seq, payload.to_vec()));
 					},
 					Err(e) => {
-						Self::deposit_event(Event::ErrorSendingPing(e, para, seq, payload.to_vec()));
+						Self::deposit_event(Event::ErrorSendingPing(
+							e,
+							para,
+							seq,
+							payload.to_vec(),
+						));
 					},
 				}
 			}
@@ -129,8 +138,11 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn start(origin: OriginFor<T>, para: ParaId, payload: Vec<u8>) -> DispatchResult {
 			ensure_root(origin)?;
-			let payload = BoundedVec::<u8, MaxPayloadSize>::try_from(payload).map_err(|_| Error::<T>::PayloadTooLarge)?;
-			Targets::<T>::try_mutate(|t| t.try_push((para, payload)).map_err(|_| Error::<T>::TooManyTargets))?;
+			let payload = BoundedVec::<u8, MaxPayloadSize>::try_from(payload)
+				.map_err(|_| Error::<T>::PayloadTooLarge)?;
+			Targets::<T>::try_mutate(|t| {
+				t.try_push((para, payload)).map_err(|_| Error::<T>::TooManyTargets)
+			})?;
 			Ok(())
 		}
 
@@ -142,9 +154,13 @@ pub mod pallet {
 			payload: Vec<u8>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
-			let bounded_payload = BoundedVec::<u8, MaxPayloadSize>::try_from(payload).map_err(|_| Error::<T>::PayloadTooLarge)?;
+			let bounded_payload = BoundedVec::<u8, MaxPayloadSize>::try_from(payload)
+				.map_err(|_| Error::<T>::PayloadTooLarge)?;
 			for _ in 0..count {
-				Targets::<T>::try_mutate(|t| t.try_push((para, bounded_payload.clone())).map_err(|_| Error::<T>::TooManyTargets))?;
+				Targets::<T>::try_mutate(|t| {
+					t.try_push((para, bounded_payload.clone()))
+						.map_err(|_| Error::<T>::TooManyTargets)
+				})?;
 			}
 			Ok(())
 		}
