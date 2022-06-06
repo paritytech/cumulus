@@ -31,6 +31,7 @@ polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 # Cumulus
 pallet-collator-selection = { path = "../../pallets/collator-selection", default-features = false }
@@ -62,4 +63,5 @@ std = [
 	"sp-std/std",
 	"pallet-collator-selection/std",
 	"cumulus-primitives-utility/std",
+	"xcm-builder/std"
 ]

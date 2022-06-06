@@ -160,21 +160,6 @@ pub type Barrier = DenyThenTry<
 	),
 >;
 
-/// This is the struct that will handle the revenue from xcm fees
-/// We do not burn anything because we want to mimic exactly what
-/// the sovereign account has
-pub type XcmAssetFeesHandler = cumulus_primitives_utility::XcmFeesToAccount<
-	Assets,
-	ConvertedConcreteAssetId<
-		AssetId,
-		Balance,
-		AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>,
-		JustTry,
-	>,
-	AccountId,
-	XcmAssetFeesReceiver,
->;
-
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
 	type Call = Call;
@@ -205,7 +190,11 @@ impl xcm_executor::Config for XcmConfig {
 				JustTry,
 			>,
 			Assets,
-			XcmAssetFeesHandler,
+			parachains_common::xcm_config::XcmAssetFeesHandler<
+				Runtime,
+				AssetsPalletLocation,
+				XcmAssetFeesReceiver,
+			>,
 		>,
 	);
 	type ResponseHandler = PolkadotXcm;

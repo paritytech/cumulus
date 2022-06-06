@@ -3,10 +3,11 @@ use core::marker::PhantomData;
 use frame_support::{
 	log,
 	traits::{fungibles::Inspect, tokens::BalanceConversion},
-	weights::{Weight, WeightToFeePolynomial, WeightToFee},
+	weights::{Weight, WeightToFee, WeightToFeePolynomial},
 };
 use xcm::latest::prelude::*;
-use xcm_executor::traits::ShouldExecute;
+use xcm_builder::{AsPrefixedGeneralIndex, ConvertedConcreteAssetId};
+use xcm_executor::traits::{JustTry, ShouldExecute};
 
 //TODO: move DenyThenTry to polkadot's xcm module.
 /// Deny executing the XCM if it matches any of the Deny filter regardless of anything else.
@@ -100,3 +101,23 @@ where
 		CON::to_asset_balance(amount, asset_id).map_err(|_| XcmError::TooExpensive)
 	}
 }
+
+/// This is the type that will handle the fees
+/// It receives the pallet-asset location for multilocation
+/// and the fees receiver
+pub type XcmAssetFeesHandler<R, AssetsPalletLocation, XcmAssetFeesReceiver> =
+	cumulus_primitives_utility::XcmFeesToAccount<
+		pallet_assets::Pallet<R>,
+		ConvertedConcreteAssetId<
+			<R as pallet_assets::Config>::AssetId,
+			<R as pallet_balances::Config>::Balance,
+			AsPrefixedGeneralIndex<
+				AssetsPalletLocation,
+				<R as pallet_assets::Config>::AssetId,
+				JustTry,
+			>,
+			JustTry,
+		>,
+		<R as frame_system::Config>::AccountId,
+		XcmAssetFeesReceiver,
+	>;
