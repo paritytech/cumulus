@@ -2,8 +2,8 @@ use crate::impls::AccountIdOf;
 use core::marker::PhantomData;
 use frame_support::{
 	log,
-	traits::{fungibles::Inspect, tokens::BalanceConversion, weights::WeightToFee},
-	weights::{Weight, WeightToFeePolynomial},
+	traits::{fungibles::Inspect, tokens::BalanceConversion},
+	weights::{Weight, WeightToFeePolynomial, WeightToFee},
 };
 use xcm::latest::prelude::*;
 use xcm_executor::traits::ShouldExecute;
