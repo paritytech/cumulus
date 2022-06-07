@@ -87,7 +87,7 @@ Otherwise you can compile it with
 ```bash
 docker run --rm -it -w /shellhere/cumulus \
                     -v $(pwd):/shellhere/cumulus \
-                    paritytech/ci-linux:production cargo build --release --locked -p polkadot-parachain
+                    --platform=linux/amd64 paritytech/ci-linux:production cargo build --release --locked -p polkadot-parachain
 sudo chown -R $(id -u):$(id -g) target/
 ```
 
