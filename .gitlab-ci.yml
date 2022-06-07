@@ -11,6 +11,7 @@ stages:
   - publish
   - benchmarks-build
   - benchmarks-run
+  - integration-test
 
 default:
   interruptible:                   true
@@ -28,6 +29,7 @@ variables:
   CI_IMAGE:                        "paritytech/ci-linux:production"
   DOCKER_OS:                       "debian:stretch"
   ARCH:                            "x86_64"
+  ZOMBIENET_IMAGE:                 "docker.io/paritytech/zombienet:v1.2.38"
 
 .collect-artifacts:                &collect-artifacts
   artifacts:
@@ -77,6 +79,15 @@ variables:
     - if: $CI_PIPELINE_SOURCE == "web" &&
           $CI_COMMIT_REF_NAME =~ /^release-parachains-v[0-9].*$/              # run from web and on branch release-parachains-v* (i.e. 1.0, 2.1rc1, 3)
     - if: $CI_COMMIT_REF_NAME =~ /^release-parachains-v[0-9].*$/              # i.e. release-parachains-v1.0, release-parachains-v2.1rc1, release-parachains-v3000
+
+.zombienet-refs:                   &zombienet-refs
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_REF_NAME == "master"
+    - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                         # PRs
 
 .docker-env:                       &docker-env
   image:                           "${CI_IMAGE}"
@@ -308,6 +319,37 @@ benchmarks:
   tags:
     - weights
 
+
+#### stage:                        integration-test
+
+zombienet-sync_blocks_from_tip_without_connected_collator:
+  stage:                           integration-test
+  image:                           "${ZOMBIENET_IMAGE}"
+  <<:                              *kubernetes-env
+  <<:                              *zombienet-refs
+  needs:
+    - job:                         build-push-image-test-parachain
+  variables:
+    POLKADOT_IMAGE:                "docker.io/paritypr/polkadot-debug:master"
+    GH_DIR:                        "https://github.com/paritytech/cumulus/tree/${CI_COMMIT_SHORT_SHA}/zombienet_tests"
+    COL_IMAGE:                     "docker.io/paritypr/test-parachain:${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
+  before_script:
+    - echo "Zombie-net Tests Config"
+    - echo "${ZOMBIENET_IMAGE_NAME}"
+    - echo "${RELAY_IMAGE}"
+    - echo "${COL_IMAGE}"
+    - echo "${GH_DIR}"
+    - export DEBUG=zombie*
+    - export RELAY_IMAGE=${POLKADOT_IMAGE}
+    - export COL_IMAGE=${COL_IMAGE}
+  script:
+    - /home/nonroot/zombie-net/scripts/ci/run-test-env-manager.sh
+        --github-remote-dir="${GH_DIR}"
+        --test="0001-sync_blocks_from_tip_without_connected_collator.feature"
+  allow_failure:                   true
+  retry: 2
+  tags:
+    - zombienet-polkadot-integration-test
 
 #### stage:                        .post
 
