@@ -1,4 +1,4 @@
-use frame_support::{assert_ok, traits::PalletInfo, weights::WeightToFeePolynomial};
+use frame_support::{assert_ok, traits::PalletInfo, weights::WeightToFee as WeightToFeeT};
 use parachains_common::{AccountId, AuraId, Balance};
 use sp_consensus_aura::AURA_ENGINE_ID;
 pub use statemine_runtime::{
@@ -141,7 +141,7 @@ fn test_asset_xcm_trader() {
 			let bought = 4_000_000_000u64;
 
 			// lets calculate amount needed
-			let amount_needed = WeightToFee::calc(&bought);
+			let amount_needed = WeightToFee::weight_to_fee(&bought);
 
 			let asset_multilocation = MultiLocation::new(
 				0,
@@ -217,7 +217,7 @@ fn test_asset_xcm_trader_with_refund() {
 			);
 
 			// lets calculate amount needed
-			let amount_bought = WeightToFee::calc(&bought);
+			let amount_bought = WeightToFee::weight_to_fee(&bought);
 
 			let asset: MultiAsset = (asset_multilocation.clone(), amount_bought).into();
 
@@ -228,7 +228,7 @@ fn test_asset_xcm_trader_with_refund() {
 			let weight_used = bought / 2;
 
 			// Make sure refurnd works.
-			let amount_refunded = WeightToFee::calc(&(bought - weight_used));
+			let amount_refunded = WeightToFee::weight_to_fee(&(bought - weight_used));
 
 			assert_eq!(
 				trader.refund_weight(bought - weight_used),
@@ -239,7 +239,7 @@ fn test_asset_xcm_trader_with_refund() {
 			drop(trader);
 
 			// We only should have paid for half of the bought weight
-			let fees_paid = WeightToFee::calc(&weight_used);
+			let fees_paid = WeightToFee::weight_to_fee(&weight_used);
 
 			assert_eq!(
 				Assets::balance(1, AccountId::from(ALICE)),
@@ -272,8 +272,8 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 			// Set Alice as block author, who will receive fees
 			run_to_block(2, Some(AccountId::from(ALICE)));
 
-			// We are going to buy 4e9 weight
-			let bought = 1_000_000_000u64;
+			// We are going to buy small amount
+			let bought = 500_000_000u64;
 
 			let asset_multilocation = MultiLocation::new(
 				0,
@@ -286,7 +286,7 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 				),
 			);
 
-			let amount_bought = WeightToFee::calc(&bought);
+			let amount_bought = WeightToFee::weight_to_fee(&bought);
 
 			assert!(
 				amount_bought < ExistentialDeposit::get(),
