@@ -416,7 +416,7 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::ExportGenesisState(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|_config| {
-				let spec = cli.load_spec(&cmd.chain.clone().unwrap_or_default())?;
+				let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
 				let state_version = Cli::native_runtime_version(&spec).state_version();
 				cmd.run::<crate::service::Block>(&*spec, state_version)
 			})
@@ -424,7 +424,7 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::ExportGenesisWasm(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|_config| {
-				let spec = cli.load_spec(&cmd.chain.clone().unwrap_or_default())?;
+				let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
 				cmd.run(&*spec)
 			})
 		},

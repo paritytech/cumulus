@@ -138,10 +138,6 @@ pub struct ExportGenesisStateCommand {
 	#[clap(short, long)]
 	pub raw: bool,
 
-	/// The name of the chain for that the genesis state should be exported.
-	#[clap(long)]
-	pub chain: Option<String>,
-
 	#[allow(missing_docs)]
 	#[clap(flatten)]
 	pub shared_params: sc_cli::SharedParams,
@@ -224,10 +220,6 @@ pub struct ExportGenesisWasmCommand {
 	/// Write output in binary. Default is to write in hex.
 	#[clap(short, long)]
 	pub raw: bool,
-
-	/// The name of the chain for that the genesis wasm file should be exported.
-	#[clap(long)]
-	pub chain: Option<String>,
 
 	#[allow(missing_docs)]
 	#[clap(flatten)]
