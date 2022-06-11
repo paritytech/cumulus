@@ -49,6 +49,8 @@ where
 	}
 }
 
+/*
+TODO:COLLECTIVES
 
 pub struct ToParentTreasury<R>(PhantomData<R>);
 impl<R> OnUnbalanced<NegativeImbalance<R>> for ToParentTreasury<R>
@@ -64,6 +66,7 @@ where
 		);
 	}
 }
+*/
 
 /// Implementation of `OnUnbalanced` that deals with the fees by combining tip and fee and passing
 /// the result on to `ToStakingPot`.

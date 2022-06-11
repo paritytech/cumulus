@@ -28,6 +28,7 @@ pub mod constants;
 mod weights;
 pub mod xcm_config;
 
+use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -45,8 +46,9 @@ use sp_version::RuntimeVersion;
 use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
+	pallet_prelude::*,
 	construct_runtime, parameter_types,
-	traits::{EnsureOneOf, InstanceFilter},
+	traits::{ConstU32, EitherOfDiverse, InstanceFilter},
 	weights::{ConstantMultiplier, DispatchClass, Weight},
 	PalletId, RuntimeDebug,
 };
@@ -54,11 +56,12 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
+use pallet_alliance::{IdentityVerifier, ProposalIndex, ProposalProvider};
 pub use parachains_common as common;
 use parachains_common::{
 	impls::DealWithFees,
 	opaque, AccountId, Balance, BlockNumber, Hash, Header, Index, Signature,
-	AuraId, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT,
+	AuraId, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{DotLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
@@ -269,6 +272,8 @@ pub enum ProxyType {
 	CancelProxy,
 	/// Collator selection proxy. Can execute calls related to collator selection mechanism.
 	Collator,
+	/// Alliance proxy. Allows calls related to the Alliance.
+	Alliance,
 }
 impl Default for ProxyType {
 	fn default() -> Self {
@@ -290,6 +295,11 @@ impl InstanceFilter<Call> for ProxyType {
 				c,
 				Call::CollatorSelection { .. } | Call::Utility { .. } | Call::Multisig { .. }
 			),
+			ProxyType::Alliance => matches!(
+				c,
+				Call::AllianceMotion { .. } | Call::Alliance { .. } | Call::Utility { .. } |
+					Call::Multisig { .. }
+			)
 		}
 	}
 	fn is_superset(&self, o: &Self) -> bool {
@@ -297,6 +307,7 @@ impl InstanceFilter<Call> for ProxyType {
 			(x, y) if x == y => true,
 			(ProxyType::Any, _) => true,
 			(_, ProxyType::Any) => false,
+			(ProxyType::NonTransfer, _) => true,
 			_ => false,
 		}
 	}
@@ -331,6 +342,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type OutboundXcmpMessageSource = XcmpQueue;
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
+	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -344,7 +356,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type VersionWrapper = PolkadotXcm;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 	type ControllerOrigin =
-		EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
+		EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
 }
@@ -392,7 +404,7 @@ parameter_types! {
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
 pub type CollatorSelectionUpdateOrigin =
-	EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
+	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
 
 impl pallet_collator_selection::Config for Runtime {
 	type Event = Event;
@@ -410,7 +422,58 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = weights::pallet_collator_selection::WeightInfo<Runtime>;
 }
 
-/* TODO:COLLECTIVES
+pub struct AllianceProposalProvider;
+impl ProposalProvider<AccountId, Hash, Call> for AllianceProposalProvider {
+	fn propose_proposal(
+		who: AccountId,
+		threshold: u32,
+		proposal: Box<Call>,
+		length_bound: u32,
+	) -> Result<(u32, u32), DispatchError> {
+		AllianceMotion::do_propose_proposed(who, threshold, proposal, length_bound)
+	}
+
+	fn vote_proposal(
+		who: AccountId,
+		proposal: Hash,
+		index: ProposalIndex,
+		approve: bool,
+	) -> Result<bool, DispatchError> {
+		AllianceMotion::do_vote(who, proposal, index, approve)
+	}
+
+	fn veto_proposal(proposal_hash: Hash) -> u32 {
+		AllianceMotion::do_disapprove_proposal(proposal_hash)
+	}
+
+	fn close_proposal(
+		proposal_hash: Hash,
+		proposal_index: ProposalIndex,
+		proposal_weight_bound: Weight,
+		length_bound: u32,
+	) -> DispatchResultWithPostInfo {
+		AllianceMotion::do_close(proposal_hash, proposal_index, proposal_weight_bound, length_bound)
+	}
+
+	fn proposal_of(proposal_hash: Hash) -> Option<Call> {
+		AllianceMotion::proposal_of(proposal_hash)
+	}
+}
+
+pub struct DoNotCheckIdentity;
+impl IdentityVerifier<AccountId> for DoNotCheckIdentity {
+	fn has_identity(_who: &AccountId, _fields: u64) -> bool {
+		true
+	}
+
+	fn has_good_judgement(_who: &AccountId) -> bool {
+		true
+	}
+
+	fn super_account_id(_who: &AccountId) -> Option<AccountId> {
+		None
+	}
+}
 
 parameter_types! {
 	pub const AllianceMotionDuration: BlockNumber = 5 * DAYS;
@@ -434,44 +497,41 @@ parameter_types! {
 	pub const MaxFounders: u32 = 10;
 	pub const MaxFellows: u32 = AllianceMaxMembers::get() - MaxFounders::get();
 	pub const MaxAllies: u32 = 100;
-	pub const AllyDeposit: Balance = 1_000 * UNITS;
+	pub const AllyDeposit: Balance = 1_000 * UNITS; // 1,000 DOT bond to join as an Ally
 }
 
 impl pallet_alliance::Config for Runtime {
 	type Event = Event;
 	type Proposal = Call;
-	type AdminOrigin = EnsureOneOf<
+	type AdminOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionMoreThan<AccountId, AllianceCollective, 2, 3>,
 	>;
-	type MembershipManager = EnsureOneOf<
+	type MembershipManager = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionMoreThan<AccountId, AllianceCollective, 2, 3>,
 	>;
-	type AnnouncementOrigin = EnsureOneOf<
+	type AnnouncementOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionMoreThan<AccountId, AllianceCollective, 2, 3>,
 	>;
 	type Currency = Balances;
-	type Slashed = ToParentTreasury; // TODO:COLLECTIVES add handler to send teleport to Relay Treasury
+	type Slashed = (); // TODO:COLLECTIVES add handler to send teleport to Relay Treasury
 	type InitializeMembers = AllianceMotion;
 	type MembershipChanged = AllianceMotion;
-	#[cfg(feature = "runtime-benchmarks")]
-	type IdentityVerifier = ();
+	type IdentityVerifier = DoNotCheckIdentity; // Don't block accounts on identity criteria
 	type ProposalProvider = AllianceProposalProvider;
 	type MaxProposals = AllianceMaxProposals;
 	type MaxFounders = MaxFounders;
 	type MaxFellows = MaxFellows;
 	type MaxAllies = MaxAllies;
-	type MaxBlacklistCount = ConstU32<100>;
+	type MaxUnscrupulousItems = ConstU32<100>;
 	type MaxWebsiteUrlLength = ConstU32<255>;
 	type MaxAnnouncementsCount = ConstU32<100>;
 	type MaxMembersCount = AllianceMaxMembers;
 	type AllyDeposit = AllyDeposit;
 	type WeightInfo = pallet_alliance::weights::SubstrateWeight<Runtime>;
 }
-
-*/
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -512,11 +572,8 @@ construct_runtime!(
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 42,
 
 		// The main stage.
-		// TODO:COLLECTIVES Add Alliance
-		/*
-		Alliance: pallet_alliance::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 50,
+		Alliance: pallet_alliance::{Pallet, Call, Storage, Event<T>, Config<T>} = 50,
 		AllianceMotion: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 51,
-		*/
 	}
 );
 
