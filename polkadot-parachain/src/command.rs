@@ -40,55 +40,54 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::{io::Write, net::SocketAddr};
 
-trait IdentifyChain {
-	fn is_shell(&self) -> bool;
-	fn is_seedling(&self) -> bool;
-	fn is_statemint(&self) -> bool;
-	fn is_statemine(&self) -> bool;
-	fn is_westmint(&self) -> bool;
-	fn is_contracts_rococo(&self) -> bool;
+enum Runtime {
+	Shell,
+	Seedling,
+	Statemint,
+	Statemine,
+	Westmint,
+	ContractsRococo,
 }
 
-impl IdentifyChain for dyn sc_service::ChainSpec {
-	fn is_shell(&self) -> bool {
-		self.id().starts_with("shell")
-	}
-	fn is_seedling(&self) -> bool {
-		self.id().starts_with("seedling")
-	}
-	fn is_statemint(&self) -> bool {
-		self.id().starts_with("statemint")
-	}
-	fn is_statemine(&self) -> bool {
-		self.id().starts_with("statemine")
-	}
-	fn is_westmint(&self) -> bool {
-		self.id().starts_with("westmint")
-	}
-	fn is_contracts_rococo(&self) -> bool {
-		self.id().starts_with("contracts-rococo")
+trait ChainType {
+	fn runtime(&self) -> Option<Runtime>;
+}
+
+impl ChainType for dyn ChainSpec {
+	fn runtime(&self) -> Option<Runtime> {
+		runtime(self.id())
 	}
 }
 
-impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
-	fn is_shell(&self) -> bool {
-		<dyn sc_service::ChainSpec>::is_shell(self)
+use sc_chain_spec::GenericChainSpec;
+impl ChainType
+	for GenericChainSpec<rococo_parachain_runtime::GenesisConfig, chain_spec::Extensions>
+{
+	fn runtime(&self) -> Option<Runtime> {
+		runtime(self.id())
 	}
-	fn is_seedling(&self) -> bool {
-		<dyn sc_service::ChainSpec>::is_seedling(self)
+}
+
+fn runtime(id: &str) -> Option<Runtime> {
+	if id.starts_with("shell") {
+		return Some(Runtime::Shell)
 	}
-	fn is_statemint(&self) -> bool {
-		<dyn sc_service::ChainSpec>::is_statemint(self)
+	if id.starts_with("seedling") {
+		return Some(Runtime::Seedling)
 	}
-	fn is_statemine(&self) -> bool {
-		<dyn sc_service::ChainSpec>::is_statemine(self)
+	if id.starts_with("statemint") {
+		return Some(Runtime::Statemint)
 	}
-	fn is_westmint(&self) -> bool {
-		<dyn sc_service::ChainSpec>::is_westmint(self)
+	if id.starts_with("statemine") {
+		return Some(Runtime::Statemine)
 	}
-	fn is_contracts_rococo(&self) -> bool {
-		<dyn sc_service::ChainSpec>::is_contracts_rococo(self)
+	if id.starts_with("westmint") {
+		return Some(Runtime::Westmint)
 	}
+	if id.starts_with("contracts-rococo") {
+		return Some(Runtime::ContractsRococo)
+	}
+	None
 }
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
@@ -146,22 +145,23 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		// -- Loading a specific spec from disk
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
-			if chain_spec.is_statemint() {
-				Box::new(chain_spec::statemint::StatemintChainSpec::from_json_file(path.into())?)
-			} else if chain_spec.is_statemine() {
-				Box::new(chain_spec::statemint::StatemineChainSpec::from_json_file(path.into())?)
-			} else if chain_spec.is_westmint() {
-				Box::new(chain_spec::statemint::WestmintChainSpec::from_json_file(path.into())?)
-			} else if chain_spec.is_shell() {
-				Box::new(chain_spec::shell::ShellChainSpec::from_json_file(path.into())?)
-			} else if chain_spec.is_seedling() {
-				Box::new(chain_spec::seedling::SeedlingChainSpec::from_json_file(path.into())?)
-			} else if chain_spec.is_contracts_rococo() {
-				Box::new(chain_spec::contracts::ContractsRococoChainSpec::from_json_file(
-					path.into(),
-				)?)
-			} else {
-				Box::new(chain_spec)
+			match chain_spec.runtime() {
+				Some(Runtime::Statemint) => Box::new(
+					chain_spec::statemint::StatemintChainSpec::from_json_file(path.into())?,
+				),
+				Some(Runtime::Statemine) => Box::new(
+					chain_spec::statemint::StatemineChainSpec::from_json_file(path.into())?,
+				),
+				Some(Runtime::Westmint) =>
+					Box::new(chain_spec::statemint::WestmintChainSpec::from_json_file(path.into())?),
+				Some(Runtime::Shell) =>
+					Box::new(chain_spec::shell::ShellChainSpec::from_json_file(path.into())?),
+				Some(Runtime::Seedling) =>
+					Box::new(chain_spec::seedling::SeedlingChainSpec::from_json_file(path.into())?),
+				Some(Runtime::ContractsRococo) => Box::new(
+					chain_spec::contracts::ContractsRococoChainSpec::from_json_file(path.into())?,
+				),
+				_ => Box::new(chain_spec),
 			}
 		},
 	})
@@ -203,20 +203,14 @@ impl SubstrateCli for Cli {
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		if chain_spec.is_statemint() {
-			&statemint_runtime::VERSION
-		} else if chain_spec.is_statemine() {
-			&statemine_runtime::VERSION
-		} else if chain_spec.is_westmint() {
-			&westmint_runtime::VERSION
-		} else if chain_spec.is_shell() {
-			&shell_runtime::VERSION
-		} else if chain_spec.is_seedling() {
-			&seedling_runtime::VERSION
-		} else if chain_spec.is_contracts_rococo() {
-			&contracts_rococo_runtime::VERSION
-		} else {
-			&rococo_parachain_runtime::VERSION
+		match chain_spec.runtime() {
+			Some(Runtime::Statemint) => &statemint_runtime::VERSION,
+			Some(Runtime::Statemine) => &statemine_runtime::VERSION,
+			Some(Runtime::Westmint) => &westmint_runtime::VERSION,
+			Some(Runtime::Shell) => &shell_runtime::VERSION,
+			Some(Runtime::Seedling) => &seedling_runtime::VERSION,
+			Some(Runtime::ContractsRococo) => &contracts_rococo_runtime::VERSION,
+			None => &rococo_parachain_runtime::VERSION,
 		}
 	}
 }
@@ -274,26 +268,29 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 /// Creates partial components for the runtimes that are supported by the benchmarks.
 macro_rules! construct_benchmark_partials {
 	($config:expr, |$partials:ident| $code:expr) => {
-		if $config.chain_spec.is_statemine() {
-			let $partials = new_partial::<statemine_runtime::RuntimeApi, _>(
-				&$config,
-				crate::service::statemint_build_import_queue::<_, AuraId>,
-			)?;
-			$code
-		} else if $config.chain_spec.is_westmint() {
-			let $partials = new_partial::<westmint_runtime::RuntimeApi, _>(
-				&$config,
-				crate::service::statemint_build_import_queue::<_, AuraId>,
-			)?;
-			$code
-		} else if $config.chain_spec.is_statemint() {
-			let $partials = new_partial::<statemint_runtime::RuntimeApi, _>(
-				&$config,
-				crate::service::statemint_build_import_queue::<_, StatemintAuraId>,
-			)?;
-			$code
-		} else {
-			Err("The chain is not supported".into())
+		match $config.chain_spec.runtime() {
+			Some(Runtime::Statemine) => {
+				let $partials = new_partial::<statemine_runtime::RuntimeApi, _>(
+					&$config,
+					crate::service::statemint_build_import_queue::<_, AuraId>,
+				)?;
+				$code
+			},
+			Some(Runtime::Westmint) => {
+				let $partials = new_partial::<westmint_runtime::RuntimeApi, _>(
+					&$config,
+					crate::service::statemint_build_import_queue::<_, AuraId>,
+				)?;
+				$code
+			},
+			Some(Runtime::Statemint) => {
+				let $partials = new_partial::<statemint_runtime::RuntimeApi, _>(
+					&$config,
+					crate::service::statemint_build_import_queue::<_, StatemintAuraId>,
+				)?;
+				$code
+			},
+			_ => Err("The chain is not supported".into()),
 		}
 	};
 }
@@ -301,72 +298,80 @@ macro_rules! construct_benchmark_partials {
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
-		if runner.config().chain_spec.is_westmint() {
-			runner.async_run(|$config| {
-				let $components = new_partial::<westmint_runtime::RuntimeApi, _>(
-					&$config,
-					crate::service::statemint_build_import_queue::<_, AuraId>,
-				)?;
-				let task_manager = $components.task_manager;
-				{ $( $code )* }.map(|v| (v, task_manager))
-			})
-		} else if runner.config().chain_spec.is_statemine() {
-			runner.async_run(|$config| {
-				let $components = new_partial::<statemine_runtime::RuntimeApi, _>(
-					&$config,
-					crate::service::statemint_build_import_queue::<_, AuraId>,
-				)?;
-				let task_manager = $components.task_manager;
-				{ $( $code )* }.map(|v| (v, task_manager))
-			})
-		} else if runner.config().chain_spec.is_statemint() {
-			runner.async_run(|$config| {
-				let $components = new_partial::<statemint_runtime::RuntimeApi, _>(
-					&$config,
-					crate::service::statemint_build_import_queue::<_, StatemintAuraId>,
-				)?;
-				let task_manager = $components.task_manager;
-				{ $( $code )* }.map(|v| (v, task_manager))
-			})
-		} else if runner.config().chain_spec.is_shell() {
-			runner.async_run(|$config| {
-				let $components = new_partial::<shell_runtime::RuntimeApi, _>(
-					&$config,
-					crate::service::shell_build_import_queue,
-				)?;
-				let task_manager = $components.task_manager;
-				{ $( $code )* }.map(|v| (v, task_manager))
-			})
-		} else if runner.config().chain_spec.is_seedling() {
-			runner.async_run(|$config| {
-				let $components = new_partial::<seedling_runtime::RuntimeApi, _>(
-					&$config,
-					crate::service::shell_build_import_queue,
-				)?;
-				let task_manager = $components.task_manager;
-				{ $( $code )* }.map(|v| (v, task_manager))
-			})
-		} else if runner.config().chain_spec.is_contracts_rococo() {
-			runner.async_run(|$config| {
-				let $components = new_partial::<contracts_rococo_runtime::RuntimeApi, _>(
-					&$config,
-					crate::service::contracts_rococo_build_import_queue,
-				)?;
-				let task_manager = $components.task_manager;
-				{ $( $code )* }.map(|v| (v, task_manager))
-			})
-		} else {
-			runner.async_run(|$config| {
-				let $components = new_partial::<
-					rococo_parachain_runtime::RuntimeApi,
-					_
-				>(
-					&$config,
-					crate::service::rococo_parachain_build_import_queue,
-				)?;
-				let task_manager = $components.task_manager;
-				{ $( $code )* }.map(|v| (v, task_manager))
-			})
+		match runner.config().chain_spec.runtime() {
+			Some(Runtime::Westmint) => {
+				runner.async_run(|$config| {
+					let $components = new_partial::<westmint_runtime::RuntimeApi, _>(
+						&$config,
+						crate::service::statemint_build_import_queue::<_, AuraId>,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			},
+			Some(Runtime::Statemine) => {
+				runner.async_run(|$config| {
+					let $components = new_partial::<statemine_runtime::RuntimeApi, _>(
+						&$config,
+						crate::service::statemint_build_import_queue::<_, AuraId>,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			},
+			Some(Runtime::Statemint) => {
+				runner.async_run(|$config| {
+					let $components = new_partial::<statemint_runtime::RuntimeApi, _>(
+						&$config,
+						crate::service::statemint_build_import_queue::<_, StatemintAuraId>,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			},
+			Some(Runtime::Shell) => {
+				runner.async_run(|$config| {
+					let $components = new_partial::<shell_runtime::RuntimeApi, _>(
+						&$config,
+						crate::service::shell_build_import_queue,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			},
+			Some(Runtime::Seedling) => {
+				runner.async_run(|$config| {
+					let $components = new_partial::<seedling_runtime::RuntimeApi, _>(
+						&$config,
+						crate::service::shell_build_import_queue,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			},
+			Some(Runtime::ContractsRococo) => {
+				runner.async_run(|$config| {
+					let $components = new_partial::<contracts_rococo_runtime::RuntimeApi, _>(
+						&$config,
+						crate::service::contracts_rococo_build_import_queue,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			},
+			None => {
+				runner.async_run(|$config| {
+					let $components = new_partial::<
+						rococo_parachain_runtime::RuntimeApi,
+						_
+					>(
+						&$config,
+						crate::service::rococo_parachain_build_import_queue,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			}
 		}
 	}}
 }
@@ -476,16 +481,14 @@ pub fn run() -> Result<()> {
 			match cmd {
 				BenchmarkCmd::Pallet(cmd) =>
 					if cfg!(feature = "runtime-benchmarks") {
-						runner.sync_run(|config| {
-							if config.chain_spec.is_statemine() {
-								cmd.run::<Block, StatemineRuntimeExecutor>(config)
-							} else if config.chain_spec.is_westmint() {
-								cmd.run::<Block, WestmintRuntimeExecutor>(config)
-							} else if config.chain_spec.is_statemint() {
-								cmd.run::<Block, StatemintRuntimeExecutor>(config)
-							} else {
-								Err("Chain doesn't support benchmarking".into())
-							}
+						runner.sync_run(|config| match config.chain_spec.runtime() {
+							Some(Runtime::Statemine) =>
+								cmd.run::<Block, StatemineRuntimeExecutor>(config),
+							Some(Runtime::Westmint) =>
+								cmd.run::<Block, WestmintRuntimeExecutor>(config),
+							Some(Runtime::Statemint) =>
+								cmd.run::<Block, StatemintRuntimeExecutor>(config),
+							_ => Err("Chain doesn't support benchmarking".into()),
 						})
 					} else {
 						Err("Benchmarking wasn't enabled when building the node. \
@@ -517,24 +520,20 @@ pub fn run() -> Result<()> {
 					TaskManager::new(runner.config().tokio_handle.clone(), *registry)
 						.map_err(|e| format!("Error: {:?}", e))?;
 
-				if runner.config().chain_spec.is_statemine() {
-					runner.async_run(|config| {
+				match runner.config().chain_spec.runtime() {
+					Some(Runtime::Statemine) => runner.async_run(|config| {
 						Ok((cmd.run::<Block, StatemineRuntimeExecutor>(config), task_manager))
-					})
-				} else if runner.config().chain_spec.is_westmint() {
-					runner.async_run(|config| {
+					}),
+					Some(Runtime::Westmint) => runner.async_run(|config| {
 						Ok((cmd.run::<Block, WestmintRuntimeExecutor>(config), task_manager))
-					})
-				} else if runner.config().chain_spec.is_statemint() {
-					runner.async_run(|config| {
+					}),
+					Some(Runtime::Statemint) => runner.async_run(|config| {
 						Ok((cmd.run::<Block, StatemintRuntimeExecutor>(config), task_manager))
-					})
-				} else if runner.config().chain_spec.is_shell() {
-					runner.async_run(|config| {
+					}),
+					Some(Runtime::Shell) => runner.async_run(|config| {
 						Ok((cmd.run::<Block, ShellRuntimeExecutor>(config), task_manager))
-					})
-				} else {
-					Err("Chain doesn't support try-runtime".into())
+					}),
+					_ => Err("Chain doesn't support try-runtime".into()),
 				}
 			} else {
 				Err("Try-runtime must be enabled by `--features try-runtime`.".into())
@@ -588,16 +587,19 @@ pub fn run() -> Result<()> {
 				info!("Parachain genesis state: {}", genesis_state);
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
-				if config.chain_spec.is_statemint() {
-					crate::service::start_statemint_node::<
-						statemint_runtime::RuntimeApi,
-						StatemintAuraId,
-					>(config, polkadot_config, collator_options, id, hwbench)
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into)
-				} else if config.chain_spec.is_statemine() {
-					crate::service::start_statemint_node::<statemine_runtime::RuntimeApi, AuraId>(
+				match config.chain_spec.runtime() {
+					Some(Runtime::Statemint) =>
+						crate::service::start_statemint_node::<
+							statemint_runtime::RuntimeApi,
+							StatemintAuraId,
+						>(config, polkadot_config, collator_options, id, hwbench)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into),
+					Some(Runtime::Statemine) => crate::service::start_statemint_node::<
+						statemine_runtime::RuntimeApi,
+						AuraId,
+					>(
 						config,
 						polkadot_config,
 						collator_options,
@@ -606,9 +608,11 @@ pub fn run() -> Result<()> {
 					)
 					.await
 					.map(|r| r.0)
-					.map_err(Into::into)
-				} else if config.chain_spec.is_westmint() {
-					crate::service::start_statemint_node::<westmint_runtime::RuntimeApi, AuraId>(
+					.map_err(Into::into),
+					Some(Runtime::Westmint) => crate::service::start_statemint_node::<
+						westmint_runtime::RuntimeApi,
+						AuraId,
+					>(
 						config,
 						polkadot_config,
 						collator_options,
@@ -617,9 +621,30 @@ pub fn run() -> Result<()> {
 					)
 					.await
 					.map(|r| r.0)
-					.map_err(Into::into)
-				} else if config.chain_spec.is_shell() {
-					crate::service::start_shell_node::<shell_runtime::RuntimeApi>(
+					.map_err(Into::into),
+					Some(Runtime::Shell) =>
+						crate::service::start_shell_node::<shell_runtime::RuntimeApi>(
+							config,
+							polkadot_config,
+							collator_options,
+							id,
+							hwbench,
+						)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into),
+					Some(Runtime::Seedling) =>
+						crate::service::start_shell_node::<seedling_runtime::RuntimeApi>(
+							config,
+							polkadot_config,
+							collator_options,
+							id,
+							hwbench,
+						)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into),
+					Some(Runtime::ContractsRococo) => crate::service::start_contracts_rococo_node(
 						config,
 						polkadot_config,
 						collator_options,
@@ -628,9 +653,8 @@ pub fn run() -> Result<()> {
 					)
 					.await
 					.map(|r| r.0)
-					.map_err(Into::into)
-				} else if config.chain_spec.is_seedling() {
-					crate::service::start_shell_node::<seedling_runtime::RuntimeApi>(
+					.map_err(Into::into),
+					None => crate::service::start_rococo_parachain_node(
 						config,
 						polkadot_config,
 						collator_options,
@@ -639,29 +663,7 @@ pub fn run() -> Result<()> {
 					)
 					.await
 					.map(|r| r.0)
-					.map_err(Into::into)
-				} else if config.chain_spec.is_contracts_rococo() {
-					crate::service::start_contracts_rococo_node(
-						config,
-						polkadot_config,
-						collator_options,
-						id,
-						hwbench,
-					)
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into)
-				} else {
-					crate::service::start_rococo_parachain_node(
-						config,
-						polkadot_config,
-						collator_options,
-						id,
-						hwbench,
-					)
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into)
+					.map_err(Into::into),
 				}
 			})
 		},
