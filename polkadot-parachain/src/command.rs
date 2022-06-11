@@ -133,8 +133,10 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 			&include_bytes!("../../parachains/chain-specs/westmint.json")[..],
 		)?),
 		// -- Contracts on Rococo
-		"contracts-rococo-dev" => Box::new(chain_spec::contracts::contracts_rococo_development_config()),
-		"contracts-rococo-local" => Box::new(chain_spec::contracts::contracts_rococo_local_config()),
+		"contracts-rococo-dev" =>
+			Box::new(chain_spec::contracts::contracts_rococo_development_config()),
+		"contracts-rococo-local" =>
+			Box::new(chain_spec::contracts::contracts_rococo_local_config()),
 		"contracts-rococo-genesis" => Box::new(chain_spec::contracts::contracts_rococo_config()),
 		"contracts-rococo" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../../parachains/chain-specs/contracts-rococo.json")[..],
@@ -155,7 +157,9 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 			} else if chain_spec.is_seedling() {
 				Box::new(chain_spec::seedling::SeedlingChainSpec::from_json_file(path.into())?)
 			} else if chain_spec.is_contracts_rococo() {
-				Box::new(chain_spec::contracts::ContractsRococoChainSpec::from_json_file(path.into())?)
+				Box::new(chain_spec::contracts::ContractsRococoChainSpec::from_json_file(
+					path.into(),
+				)?)
 			} else {
 				Box::new(chain_spec)
 			}

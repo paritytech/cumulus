@@ -104,7 +104,6 @@ pub fn get_chain_spec() -> ChainSpec {
 	)
 }
 
-
 pub fn staging_test_net() -> ChainSpec {
 	ChainSpec::from_genesis(
 		"Staging Testnet",

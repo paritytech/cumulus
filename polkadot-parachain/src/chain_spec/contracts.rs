@@ -14,13 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::chain_spec::{get_account_id_from_seed,SAFE_XCM_VERSION, get_collator_keys_from_seed,Extensions};
+use crate::chain_spec::{
+	get_account_id_from_seed, get_collator_keys_from_seed, Extensions, SAFE_XCM_VERSION,
+};
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
 use rococo_parachain_runtime::{AccountId, AuraId};
 use sc_service::ChainType;
 use sp_core::{crypto::UncheckedInto, sr25519};
-
 
 pub type ContractsRococoChainSpec =
 	sc_service::GenericChainSpec<contracts_rococo_runtime::GenesisConfig, Extensions>;

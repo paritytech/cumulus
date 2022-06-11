@@ -14,17 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::chain_spec::{get_account_id_from_seed,Extensions};
+use crate::chain_spec::{get_account_id_from_seed, Extensions};
 use cumulus_primitives_core::ParaId;
-use rococo_parachain_runtime::{AccountId};
+use rococo_parachain_runtime::AccountId;
 use sc_service::ChainType;
-use sp_core::{sr25519};
-
+use sp_core::sr25519;
 
 /// Specialized `ChainSpec` for the seedling parachain runtime.
 pub type SeedlingChainSpec =
 	sc_service::GenericChainSpec<seedling_runtime::GenesisConfig, Extensions>;
-
 
 pub fn get_seedling_chain_spec() -> SeedlingChainSpec {
 	SeedlingChainSpec::from_genesis(
