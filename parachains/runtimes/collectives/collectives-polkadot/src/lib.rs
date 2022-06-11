@@ -46,8 +46,9 @@ use sp_version::RuntimeVersion;
 use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
+	construct_runtime,
 	pallet_prelude::*,
-	construct_runtime, parameter_types,
+	parameter_types,
 	traits::{ConstU32, EitherOfDiverse, InstanceFilter},
 	weights::{ConstantMultiplier, DispatchClass, Weight},
 	PalletId, RuntimeDebug,
@@ -59,9 +60,8 @@ use frame_system::{
 use pallet_alliance::{IdentityVerifier, ProposalIndex, ProposalProvider};
 pub use parachains_common as common;
 use parachains_common::{
-	impls::DealWithFees,
-	opaque, AccountId, Balance, BlockNumber, Hash, Header, Index, Signature,
-	AuraId, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
+	impls::DealWithFees, opaque, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index,
+	Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use xcm_config::{DotLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
@@ -284,8 +284,7 @@ impl InstanceFilter<Call> for ProxyType {
 	fn filter(&self, c: &Call) -> bool {
 		match self {
 			ProxyType::Any => true,
-			ProxyType::NonTransfer =>
-				!matches!(c, Call::Balances { .. }),
+			ProxyType::NonTransfer => !matches!(c, Call::Balances { .. }),
 			ProxyType::CancelProxy => matches!(
 				c,
 				Call::Proxy(pallet_proxy::Call::reject_announcement { .. }) |
@@ -297,9 +296,10 @@ impl InstanceFilter<Call> for ProxyType {
 			),
 			ProxyType::Alliance => matches!(
 				c,
-				Call::AllianceMotion { .. } | Call::Alliance { .. } | Call::Utility { .. } |
-					Call::Multisig { .. }
-			)
+				Call::AllianceMotion { .. } |
+					Call::Alliance { .. } |
+					Call::Utility { .. } | Call::Multisig { .. }
+			),
 		}
 	}
 	fn is_superset(&self, o: &Self) -> bool {
@@ -355,8 +355,10 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-	type ControllerOrigin =
-		EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
+	type ControllerOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>,
+	>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
 }

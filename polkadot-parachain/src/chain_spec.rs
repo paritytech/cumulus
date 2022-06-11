@@ -241,7 +241,7 @@ pub type CollectivesPolkadotChainSpec =
 const STATEMINT_ED: StatemintBalance = statemint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 const STATEMINE_ED: StatemintBalance = statemine_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 const WESTMINT_ED: StatemintBalance = westmint_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
-const COLLECTIVES_POLKADOT_ED: StatemintBalance = 
+const COLLECTIVES_POLKADOT_ED: StatemintBalance =
 	collectives_polkadot_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
 
 /// Helper function to generate a crypto pair from seed
@@ -282,7 +282,9 @@ pub fn westmint_session_keys(keys: AuraId) -> westmint_runtime::SessionKeys {
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn collectives_polkadot_session_keys(keys: AuraId) -> collectives_polkadot_runtime::SessionKeys {
+pub fn collectives_polkadot_session_keys(
+	keys: AuraId,
+) -> collectives_polkadot_runtime::SessionKeys {
 	collectives_polkadot_runtime::SessionKeys { aura: keys }
 }
 
@@ -948,7 +950,11 @@ fn collectives_polkadot_genesis(
 				.to_vec(),
 		},
 		balances: collectives_polkadot_runtime::BalancesConfig {
-			balances: endowed_accounts.iter().cloned().map(|k| (k, COLLECTIVES_POLKADOT_ED * 4096)).collect(),
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, COLLECTIVES_POLKADOT_ED * 4096))
+				.collect(),
 		},
 		parachain_info: collectives_polkadot_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: collectives_polkadot_runtime::CollatorSelectionConfig {

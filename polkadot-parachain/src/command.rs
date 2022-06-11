@@ -144,14 +144,14 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		)?),
 
 		// -- Polkadot Collectives
-		"collective-polkadot-dev" => Box::new(chain_spec::collectives_polkadot_development_config()),
+		"collective-polkadot-dev" =>
+			Box::new(chain_spec::collectives_polkadot_development_config()),
 		"collective-polkadot-local" => Box::new(chain_spec::collectives_polkadot_config()),
 		/* TODO:COLLECTIVES
 		"collective-polkadot" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../../parachains/chain-specs/westmint.json")[..],
 		)?),
 		*/
-
 		// -- Contracts on Rococo
 		"contracts-rococo-dev" => Box::new(chain_spec::contracts_rococo_development_config()),
 		"contracts-rococo-local" => Box::new(chain_spec::contracts_rococo_local_config()),
@@ -570,7 +570,10 @@ pub fn run() -> Result<()> {
 					})
 				} else if runner.config().chain_spec.is_polkadot_collectives() {
 					runner.async_run(|config| {
-						Ok((cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config), task_manager))
+						Ok((
+							cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
+							task_manager,
+						))
 					})
 				} else if runner.config().chain_spec.is_shell() {
 					runner.async_run(|config| {
@@ -662,13 +665,10 @@ pub fn run() -> Result<()> {
 					.map(|r| r.0)
 					.map_err(Into::into)
 				} else if config.chain_spec.is_polkadot_collectives() {
-					crate::service::start_statemint_node::<collectives_polkadot_runtime::RuntimeApi, AuraId>(
-						config,
-						polkadot_config,
-						collator_options,
-						id,
-						hwbench,
-					)
+					crate::service::start_statemint_node::<
+						collectives_polkadot_runtime::RuntimeApi,
+						AuraId,
+					>(config, polkadot_config, collator_options, id, hwbench)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)

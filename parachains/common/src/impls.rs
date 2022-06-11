@@ -61,9 +61,7 @@ where
 	<R as frame_system::Config>::Event: From<pallet_balances::Event<R>>,
 {
 	fn on_unbalanced(amount: NegativeImbalance<R>) {
-		polkadot_xcm::Pallet::<R>::teleport(
-			
-		);
+		polkadot_xcm::Pallet::<R>::teleport();
 	}
 }
 */
