@@ -103,39 +103,39 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		"track" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../../parachains/chain-specs/track.json")[..],
 		)?),
-		"shell" => Box::new(chain_spec::get_shell_chain_spec()),
+		"shell" => Box::new(chain_spec::shell::get_shell_chain_spec()),
 		// -- Statemint
-		"seedling" => Box::new(chain_spec::get_seedling_chain_spec()),
-		"statemint-dev" => Box::new(chain_spec::statemint_development_config()),
-		"statemint-local" => Box::new(chain_spec::statemint_local_config()),
+		"seedling" => Box::new(chain_spec::seedling::get_seedling_chain_spec()),
+		"statemint-dev" => Box::new(chain_spec::statemint::statemint_development_config()),
+		"statemint-local" => Box::new(chain_spec::statemint::statemint_local_config()),
 		// the chain spec as used for generating the upgrade genesis values
-		"statemint-genesis" => Box::new(chain_spec::statemint_config()),
+		"statemint-genesis" => Box::new(chain_spec::statemint::statemint_config()),
 		// the shell-based chain spec as used for syncing
 		"statemint" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../../parachains/chain-specs/statemint.json")[..],
 		)?),
 		// -- Statemine
-		"statemine-dev" => Box::new(chain_spec::statemine_development_config()),
-		"statemine-local" => Box::new(chain_spec::statemine_local_config()),
+		"statemine-dev" => Box::new(chain_spec::statemint::statemine_development_config()),
+		"statemine-local" => Box::new(chain_spec::statemint::statemine_local_config()),
 		// the chain spec as used for generating the upgrade genesis values
-		"statemine-genesis" => Box::new(chain_spec::statemine_config()),
+		"statemine-genesis" => Box::new(chain_spec::statemint::statemine_config()),
 		// the shell-based chain spec as used for syncing
 		"statemine" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../../parachains/chain-specs/statemine.json")[..],
 		)?),
 		// -- Westmint
-		"westmint-dev" => Box::new(chain_spec::westmint_development_config()),
-		"westmint-local" => Box::new(chain_spec::westmint_local_config()),
+		"westmint-dev" => Box::new(chain_spec::statemint::westmint_development_config()),
+		"westmint-local" => Box::new(chain_spec::statemint::westmint_local_config()),
 		// the chain spec as used for generating the upgrade genesis values
-		"westmint-genesis" => Box::new(chain_spec::westmint_config()),
+		"westmint-genesis" => Box::new(chain_spec::statemint::westmint_config()),
 		// the shell-based chain spec as used for syncing
 		"westmint" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../../parachains/chain-specs/westmint.json")[..],
 		)?),
 		// -- Contracts on Rococo
-		"contracts-rococo-dev" => Box::new(chain_spec::contracts_rococo_development_config()),
-		"contracts-rococo-local" => Box::new(chain_spec::contracts_rococo_local_config()),
-		"contracts-rococo-genesis" => Box::new(chain_spec::contracts_rococo_config()),
+		"contracts-rococo-dev" => Box::new(chain_spec::contracts::contracts_rococo_development_config()),
+		"contracts-rococo-local" => Box::new(chain_spec::contracts::contracts_rococo_local_config()),
+		"contracts-rococo-genesis" => Box::new(chain_spec::contracts::contracts_rococo_config()),
 		"contracts-rococo" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../../parachains/chain-specs/contracts-rococo.json")[..],
 		)?),
@@ -145,17 +145,17 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
 			if chain_spec.is_statemint() {
-				Box::new(chain_spec::StatemintChainSpec::from_json_file(path.into())?)
+				Box::new(chain_spec::statemint::StatemintChainSpec::from_json_file(path.into())?)
 			} else if chain_spec.is_statemine() {
-				Box::new(chain_spec::StatemineChainSpec::from_json_file(path.into())?)
+				Box::new(chain_spec::statemint::StatemineChainSpec::from_json_file(path.into())?)
 			} else if chain_spec.is_westmint() {
-				Box::new(chain_spec::WestmintChainSpec::from_json_file(path.into())?)
+				Box::new(chain_spec::statemint::WestmintChainSpec::from_json_file(path.into())?)
 			} else if chain_spec.is_shell() {
-				Box::new(chain_spec::ShellChainSpec::from_json_file(path.into())?)
+				Box::new(chain_spec::shell::ShellChainSpec::from_json_file(path.into())?)
 			} else if chain_spec.is_seedling() {
-				Box::new(chain_spec::SeedlingChainSpec::from_json_file(path.into())?)
+				Box::new(chain_spec::seedling::SeedlingChainSpec::from_json_file(path.into())?)
 			} else if chain_spec.is_contracts_rococo() {
-				Box::new(chain_spec::ContractsRococoChainSpec::from_json_file(path.into())?)
+				Box::new(chain_spec::contracts::ContractsRococoChainSpec::from_json_file(path.into())?)
 			} else {
 				Box::new(chain_spec)
 			}
