@@ -436,7 +436,7 @@ pub mod pallet {
 		) -> Vec<T::AccountId> {
 			let mut collators = Self::invulnerables().to_vec();
 			collators.extend(candidates);
-			collators.to_vec()
+			collators
 		}
 
 		/// Kicks out candidates that did not produce a block in the kick threshold
