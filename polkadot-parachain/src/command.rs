@@ -41,6 +41,8 @@ use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::{io::Write, net::SocketAddr};
 
 enum Runtime {
+	/// This is the default runtime (based on rococo)
+	Generic,
 	Shell,
 	Seedling,
 	Statemint,
@@ -50,11 +52,11 @@ enum Runtime {
 }
 
 trait ChainType {
-	fn runtime(&self) -> Option<Runtime>;
+	fn runtime(&self) -> Runtime;
 }
 
 impl ChainType for dyn ChainSpec {
-	fn runtime(&self) -> Option<Runtime> {
+	fn runtime(&self) -> Runtime {
 		runtime(self.id())
 	}
 }
@@ -63,31 +65,27 @@ use sc_chain_spec::GenericChainSpec;
 impl ChainType
 	for GenericChainSpec<rococo_parachain_runtime::GenesisConfig, chain_spec::Extensions>
 {
-	fn runtime(&self) -> Option<Runtime> {
+	fn runtime(&self) -> Runtime {
 		runtime(self.id())
 	}
 }
 
-fn runtime(id: &str) -> Option<Runtime> {
+fn runtime(id: &str) -> Runtime {
 	if id.starts_with("shell") {
-		return Some(Runtime::Shell)
+		Runtime::Shell
+	} else if id.starts_with("seedling") {
+		Runtime::Seedling
+	} else if id.starts_with("statemint") {
+		Runtime::Statemint
+	} else if id.starts_with("statemine") {
+		Runtime::Statemine
+	} else if id.starts_with("westmint") {
+		Runtime::Westmint
+	} else if id.starts_with("contracts-rococo") {
+		Runtime::ContractsRococo
+	} else {
+		Runtime::Generic
 	}
-	if id.starts_with("seedling") {
-		return Some(Runtime::Seedling)
-	}
-	if id.starts_with("statemint") {
-		return Some(Runtime::Statemint)
-	}
-	if id.starts_with("statemine") {
-		return Some(Runtime::Statemine)
-	}
-	if id.starts_with("westmint") {
-		return Some(Runtime::Westmint)
-	}
-	if id.starts_with("contracts-rococo") {
-		return Some(Runtime::ContractsRococo)
-	}
-	None
 }
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
@@ -146,22 +144,22 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
 			match chain_spec.runtime() {
-				Some(Runtime::Statemint) => Box::new(
+				Runtime::Statemint => Box::new(
 					chain_spec::statemint::StatemintChainSpec::from_json_file(path.into())?,
 				),
-				Some(Runtime::Statemine) => Box::new(
+				Runtime::Statemine => Box::new(
 					chain_spec::statemint::StatemineChainSpec::from_json_file(path.into())?,
 				),
-				Some(Runtime::Westmint) =>
+				Runtime::Westmint =>
 					Box::new(chain_spec::statemint::WestmintChainSpec::from_json_file(path.into())?),
-				Some(Runtime::Shell) =>
+				Runtime::Shell =>
 					Box::new(chain_spec::shell::ShellChainSpec::from_json_file(path.into())?),
-				Some(Runtime::Seedling) =>
+				Runtime::Seedling =>
 					Box::new(chain_spec::seedling::SeedlingChainSpec::from_json_file(path.into())?),
-				Some(Runtime::ContractsRococo) => Box::new(
+				Runtime::ContractsRococo => Box::new(
 					chain_spec::contracts::ContractsRococoChainSpec::from_json_file(path.into())?,
 				),
-				_ => Box::new(chain_spec),
+				Runtime::Generic => Box::new(chain_spec),
 			}
 		},
 	})
@@ -204,13 +202,13 @@ impl SubstrateCli for Cli {
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
 		match chain_spec.runtime() {
-			Some(Runtime::Statemint) => &statemint_runtime::VERSION,
-			Some(Runtime::Statemine) => &statemine_runtime::VERSION,
-			Some(Runtime::Westmint) => &westmint_runtime::VERSION,
-			Some(Runtime::Shell) => &shell_runtime::VERSION,
-			Some(Runtime::Seedling) => &seedling_runtime::VERSION,
-			Some(Runtime::ContractsRococo) => &contracts_rococo_runtime::VERSION,
-			None => &rococo_parachain_runtime::VERSION,
+			Runtime::Statemint => &statemint_runtime::VERSION,
+			Runtime::Statemine => &statemine_runtime::VERSION,
+			Runtime::Westmint => &westmint_runtime::VERSION,
+			Runtime::Shell => &shell_runtime::VERSION,
+			Runtime::Seedling => &seedling_runtime::VERSION,
+			Runtime::ContractsRococo => &contracts_rococo_runtime::VERSION,
+			Runtime::Generic => &rococo_parachain_runtime::VERSION,
 		}
 	}
 }
@@ -269,21 +267,21 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 macro_rules! construct_benchmark_partials {
 	($config:expr, |$partials:ident| $code:expr) => {
 		match $config.chain_spec.runtime() {
-			Some(Runtime::Statemine) => {
+			Runtime::Statemine => {
 				let $partials = new_partial::<statemine_runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::statemint_build_import_queue::<_, AuraId>,
 				)?;
 				$code
 			},
-			Some(Runtime::Westmint) => {
+			Runtime::Westmint => {
 				let $partials = new_partial::<westmint_runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::statemint_build_import_queue::<_, AuraId>,
 				)?;
 				$code
 			},
-			Some(Runtime::Statemint) => {
+			Runtime::Statemint => {
 				let $partials = new_partial::<statemint_runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::statemint_build_import_queue::<_, StatemintAuraId>,
@@ -299,7 +297,7 @@ macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
 		match runner.config().chain_spec.runtime() {
-			Some(Runtime::Westmint) => {
+			Runtime::Westmint => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<westmint_runtime::RuntimeApi, _>(
 						&$config,
@@ -309,7 +307,7 @@ macro_rules! construct_async_run {
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
 			},
-			Some(Runtime::Statemine) => {
+			Runtime::Statemine => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<statemine_runtime::RuntimeApi, _>(
 						&$config,
@@ -319,7 +317,7 @@ macro_rules! construct_async_run {
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
 			},
-			Some(Runtime::Statemint) => {
+			Runtime::Statemint => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<statemint_runtime::RuntimeApi, _>(
 						&$config,
@@ -329,7 +327,7 @@ macro_rules! construct_async_run {
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
 			},
-			Some(Runtime::Shell) => {
+			Runtime::Shell => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<shell_runtime::RuntimeApi, _>(
 						&$config,
@@ -339,7 +337,7 @@ macro_rules! construct_async_run {
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
 			},
-			Some(Runtime::Seedling) => {
+			Runtime::Seedling => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<seedling_runtime::RuntimeApi, _>(
 						&$config,
@@ -349,7 +347,7 @@ macro_rules! construct_async_run {
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
 			},
-			Some(Runtime::ContractsRococo) => {
+			Runtime::ContractsRococo => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<contracts_rococo_runtime::RuntimeApi, _>(
 						&$config,
@@ -359,7 +357,7 @@ macro_rules! construct_async_run {
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
 			},
-			None => {
+			Runtime::Generic => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<
 						rococo_parachain_runtime::RuntimeApi,
@@ -482,11 +480,10 @@ pub fn run() -> Result<()> {
 				BenchmarkCmd::Pallet(cmd) =>
 					if cfg!(feature = "runtime-benchmarks") {
 						runner.sync_run(|config| match config.chain_spec.runtime() {
-							Some(Runtime::Statemine) =>
+							Runtime::Statemine =>
 								cmd.run::<Block, StatemineRuntimeExecutor>(config),
-							Some(Runtime::Westmint) =>
-								cmd.run::<Block, WestmintRuntimeExecutor>(config),
-							Some(Runtime::Statemint) =>
+							Runtime::Westmint => cmd.run::<Block, WestmintRuntimeExecutor>(config),
+							Runtime::Statemint =>
 								cmd.run::<Block, StatemintRuntimeExecutor>(config),
 							_ => Err("Chain doesn't support benchmarking".into()),
 						})
@@ -521,16 +518,16 @@ pub fn run() -> Result<()> {
 						.map_err(|e| format!("Error: {:?}", e))?;
 
 				match runner.config().chain_spec.runtime() {
-					Some(Runtime::Statemine) => runner.async_run(|config| {
+					Runtime::Statemine => runner.async_run(|config| {
 						Ok((cmd.run::<Block, StatemineRuntimeExecutor>(config), task_manager))
 					}),
-					Some(Runtime::Westmint) => runner.async_run(|config| {
+					Runtime::Westmint => runner.async_run(|config| {
 						Ok((cmd.run::<Block, WestmintRuntimeExecutor>(config), task_manager))
 					}),
-					Some(Runtime::Statemint) => runner.async_run(|config| {
+					Runtime::Statemint => runner.async_run(|config| {
 						Ok((cmd.run::<Block, StatemintRuntimeExecutor>(config), task_manager))
 					}),
-					Some(Runtime::Shell) => runner.async_run(|config| {
+					Runtime::Shell => runner.async_run(|config| {
 						Ok((cmd.run::<Block, ShellRuntimeExecutor>(config), task_manager))
 					}),
 					_ => Err("Chain doesn't support try-runtime".into()),
@@ -588,41 +585,28 @@ pub fn run() -> Result<()> {
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
 				match config.chain_spec.runtime() {
-					Some(Runtime::Statemint) =>
-						crate::service::start_statemint_node::<
-							statemint_runtime::RuntimeApi,
-							StatemintAuraId,
-						>(config, polkadot_config, collator_options, id, hwbench)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into),
-					Some(Runtime::Statemine) => crate::service::start_statemint_node::<
+					Runtime::Statemint => crate::service::start_statemint_node::<
+						statemint_runtime::RuntimeApi,
+						StatemintAuraId,
+					>(config, polkadot_config, collator_options, id, hwbench)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into),
+					Runtime::Statemine => crate::service::start_statemint_node::<
 						statemine_runtime::RuntimeApi,
 						AuraId,
-					>(
-						config,
-						polkadot_config,
-						collator_options,
-						id,
-						hwbench,
-					)
+					>(config, polkadot_config, collator_options, id, hwbench)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into),
-					Some(Runtime::Westmint) => crate::service::start_statemint_node::<
+					Runtime::Westmint => crate::service::start_statemint_node::<
 						westmint_runtime::RuntimeApi,
 						AuraId,
-					>(
-						config,
-						polkadot_config,
-						collator_options,
-						id,
-						hwbench,
-					)
+					>(config, polkadot_config, collator_options, id, hwbench)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into),
-					Some(Runtime::Shell) =>
+					Runtime::Shell =>
 						crate::service::start_shell_node::<shell_runtime::RuntimeApi>(
 							config,
 							polkadot_config,
@@ -633,18 +617,13 @@ pub fn run() -> Result<()> {
 						.await
 						.map(|r| r.0)
 						.map_err(Into::into),
-					Some(Runtime::Seedling) =>
-						crate::service::start_shell_node::<seedling_runtime::RuntimeApi>(
-							config,
-							polkadot_config,
-							collator_options,
-							id,
-							hwbench,
-						)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into),
-					Some(Runtime::ContractsRococo) => crate::service::start_contracts_rococo_node(
+					Runtime::Seedling => crate::service::start_shell_node::<
+						seedling_runtime::RuntimeApi,
+					>(config, polkadot_config, collator_options, id, hwbench)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into),
+					Runtime::ContractsRococo => crate::service::start_contracts_rococo_node(
 						config,
 						polkadot_config,
 						collator_options,
@@ -654,7 +633,7 @@ pub fn run() -> Result<()> {
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into),
-					None => crate::service::start_rococo_parachain_node(
+					Runtime::Generic => crate::service::start_rococo_parachain_node(
 						config,
 						polkadot_config,
 						collator_options,
