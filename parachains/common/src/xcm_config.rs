@@ -87,8 +87,8 @@ where
 	WeightToFee: WeightToFeePolynomial<Balance = CurrencyBalance>,
 	CON: BalanceConversion<
 		CurrencyBalance,
-		<pallet_assets::Pallet<R> as Inspect<AccountIdOf<R>>>::AssetId,
-		<pallet_assets::Pallet<R> as Inspect<AccountIdOf<R>>>::Balance,
+		<R as pallet_assets::Config>::AssetId,
+		<R as pallet_assets::Config>::Balance,
 	>,
 	AccountIdOf<R>:
 		From<polkadot_primitives::v2::AccountId> + Into<polkadot_primitives::v2::AccountId>,
