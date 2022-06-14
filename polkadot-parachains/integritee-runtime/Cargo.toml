@@ -96,6 +96,7 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 
 [features]
 default = [ "std" ]
+skip-ias-check = ["pallet-teerex/skip-ias-check"]
 std = [
 	"codec/std",
 	"serde/std",

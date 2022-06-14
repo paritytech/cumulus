@@ -109,6 +109,8 @@ substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate
 
 [features]
 default = []
+# allow workers to register without remote attestation for dev purposes
+skip-ias-check = ["parachain-runtime/skip-ias-check"]
 runtime-benchmarks = [
 	'polkadot-service/runtime-benchmarks',
 	'parachain-runtime/runtime-benchmarks'
