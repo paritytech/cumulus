@@ -5,17 +5,17 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-new-trie-cache" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-new-trie-cache" }
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
 
 futures = "0.3.21"
 parking_lot = "0.12.1"

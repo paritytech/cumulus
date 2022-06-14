@@ -11,17 +11,17 @@ parking_lot = "0.12.0"
 tracing = "0.1.25"
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
 
 # Polkadot
-polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-new-trie-cache" }
+polkadot-node-subsystem = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-new-trie-cache" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-new-trie-cache" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-new-trie-cache" }
 
 # Cumulus
 cumulus-client-consensus-common = { path = "../consensus/common" }
@@ -33,12 +33,12 @@ cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 async-trait = "0.1.42"
 
 # Substrate
-sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
 
 # Polkadot
-polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-node-subsystem-test-helpers = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-new-trie-cache" }
 
 # Cumulus
 cumulus-test-client = { path = "../../test/client" }
