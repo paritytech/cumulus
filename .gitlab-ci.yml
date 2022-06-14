@@ -336,7 +336,7 @@ zombienet-sync_blocks_from_tip_without_connected_collator:
     COL_IMAGE:                     "docker.io/paritypr/test-parachain:${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
   before_script:
     - echo "Zombie-net Tests Config"
-    - echo "${ZOMBIENET_IMAGE_NAME}"
+    - echo "${ZOMBIENET_IMAGE}"
     - echo "${RELAY_IMAGE}"
     - echo "${COL_IMAGE}"
     - echo "${GH_DIR}"
