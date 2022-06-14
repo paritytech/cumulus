@@ -381,7 +381,6 @@ impl InstanceFilter<Call> for ProxyType {
 					Call::Uniques(pallet_uniques::Call::clear_attribute { .. }) |
 					Call::Uniques(pallet_uniques::Call::clear_collection_metadata { .. }) |
 					Call::Uniques(pallet_uniques::Call::set_collection_max_supply { .. }) |
-					Call::Uniques(pallet_uniques::Call::set_price { .. }) |
 					Call::Utility { .. } | Call::Multisig { .. }
 			),
 			ProxyType::AssetManager => matches!(
