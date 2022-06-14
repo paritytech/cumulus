@@ -326,7 +326,6 @@ benchmarks:
 zombienet-sync_blocks_from_tip_without_connected_collator:
   stage:                           integration-test
   image:                           "${ZOMBIENET_IMAGE}"
-  <<:                              *kubernetes-env
   <<:                              *zombienet-refs
   needs:
     - job:                         build-push-image-test-parachain
