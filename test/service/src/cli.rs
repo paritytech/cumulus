@@ -295,7 +295,8 @@ impl SubstrateCli for TestCollatorCli {
 			"" => Box::new(cumulus_test_service::get_chain_spec(ParaId::from(self.parachain_id)))
 				as Box<_>,
 			path => {
-				let chain_spec = cumulus_test_service::chain_spec::ChainSpec::from_json_file(path.into())?;
+				let chain_spec =
+					cumulus_test_service::chain_spec::ChainSpec::from_json_file(path.into())?;
 				Box::new(chain_spec)
 			},
 		})
