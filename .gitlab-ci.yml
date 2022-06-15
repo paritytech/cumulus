@@ -345,6 +345,7 @@ zombienet-sync_blocks_from_tip_without_connected_collator:
   script:
     - /home/nonroot/zombie-net/scripts/ci/run-test-env-manager.sh
         --github-remote-dir="${GH_DIR}"
+        --concurrency=1
         --test="0001-sync_blocks_from_tip_without_connected_collator.feature"
   allow_failure:                   true
   retry: 2
