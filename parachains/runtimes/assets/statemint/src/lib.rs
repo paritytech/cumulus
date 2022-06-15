@@ -533,7 +533,7 @@ impl pallet_asset_tx_payment::Config for Runtime {
 }
 
 parameter_types! {
-	pub const CollectionDeposit: Balance = 10 * UNITS; // 10 UNIT deposit to create uniques class
+	pub const CollectionDeposit: Balance = UNITS / 10; // 10 UNIT deposit to create uniques class
 	pub const ItemDeposit: Balance = UNITS / 100; // 1 / 100 UNIT deposit to create uniques instance
 	pub const KeyLimit: u32 = 32;	// Max 32 bytes per key
 	pub const ValueLimit: u32 = 64;	// Max 64 bytes per value
