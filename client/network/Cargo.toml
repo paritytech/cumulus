@@ -6,12 +6,12 @@ description = "Cumulus-specific networking protocol"
 edition = "2021"
 
 [dependencies]
-async-trait = "0.1.53"
+async-trait = "0.1.56"
 codec = { package = "parity-scale-codec", version = "3.0.0", features = [ "derive" ] }
 derive_more = "0.99.2"
 futures = { version = "0.3.1", features = ["compat"] }
 futures-timer = "3.0.2"
-parking_lot = "0.12.0"
+parking_lot = "0.12.1"
 tracing = "0.1.34"
 
 # Substrate
@@ -33,13 +33,12 @@ cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 
 [dev-dependencies]
 portpicker = "0.1.1"
-tokio = { version = "1.18.2", features = ["macros"] }
+tokio = { version = "1.19.2", features = ["macros"] }
 url = "2.2.2"
 
 # Substrate
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }

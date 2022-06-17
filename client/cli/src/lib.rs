@@ -119,11 +119,11 @@ impl sc_cli::CliConfiguration for PurgeChainCmd {
 	}
 }
 
-fn validate_relay_chain_url(arg: &str) -> Result<(), String> {
+fn validate_relay_chain_url(arg: &str) -> Result<Url, String> {
 	let url = Url::parse(arg).map_err(|e| e.to_string())?;
 
 	if url.scheme() == "ws" {
-		Ok(())
+		Ok(url)
 	} else {
 		Err(format!(
 			"'{}' URL scheme not supported. Only websocket RPC is currently supported",
@@ -148,8 +148,7 @@ pub struct RunCmd {
 	/// EXPERIMENTAL: Specify an URL to a relay chain full node to communicate with.
 	#[clap(
 		long,
-		parse(try_from_str),
-		validator = validate_relay_chain_url,
+		value_parser = validate_relay_chain_url,
 		conflicts_with_all = &["alice", "bob", "charlie", "dave", "eve", "ferdie", "one", "two"]	)
 	]
 	pub relay_chain_rpc_url: Option<Url>,
@@ -268,6 +267,18 @@ impl sc_cli::CliConfiguration for NormalizedRunCmd {
 
 	fn rpc_max_payload(&self) -> sc_cli::Result<Option<usize>> {
 		self.base.rpc_max_payload()
+	}
+
+	fn rpc_max_request_size(&self) -> sc_cli::Result<Option<usize>> {
+		Ok(self.base.rpc_max_request_size)
+	}
+
+	fn rpc_max_response_size(&self) -> sc_cli::Result<Option<usize>> {
+		Ok(self.base.rpc_max_response_size)
+	}
+
+	fn rpc_max_subscriptions_per_connection(&self) -> sc_cli::Result<Option<usize>> {
+		Ok(self.base.rpc_max_subscriptions_per_connection)
 	}
 
 	fn ws_max_out_buffer_capacity(&self) -> sc_cli::Result<Option<usize>> {

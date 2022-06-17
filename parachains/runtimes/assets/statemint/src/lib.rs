@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Parity Technologies (UK) Ltd.
+// Copyright (C) 2021-2022 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +13,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Statemint runtime.
+//! # Statemint Runtime
+//!
+//! Statemint is a parachain that provides an interface to create, manage, and use assets. Assets
+//! may be fungible or non-fungible.
+//!
+//! ## Assets
+//!
+//! - Fungibles: Configuration of `pallet-assets`.
+//! - Non-Fungibles (NFTs): Configuration of `pallet-uniques`.
+//!
+//! ## Other Functionality
+//!
+//! ### Native Balances
+//!
+//! Statemint uses its parent DOT token as its native asset.
+//!
+//! ### Governance
+//!
+//! As a common good parachain, Statemint defers its governance (namely, its `Root` origin), to its
+//! Relay Chain parent, Polkadot.
+//!
+//! ### Collator Selection
+//!
+//! Statemint uses `pallet-collator-selection`, a simple first-come-first-served registration
+//! system where collators can reserve a small bond to join the block producer set. There is no
+//! slashing.
+//!
+//! ### XCM
+//!
+//! Because Statemint is fully under the control of the Relay Chain, it is meant to be a
+//! `TrustedTeleporter`. It can also serve as a reserve location to other parachains for DOT as well
+//! as other local assets.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]
@@ -26,6 +57,7 @@ pub mod constants;
 mod weights;
 pub mod xcm_config;
 
+use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -44,7 +76,7 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{AsEnsureOriginWithArg, EnsureOneOf, InstanceFilter},
+	traits::{AsEnsureOriginWithArg, EitherOfDiverse, InstanceFilter},
 	weights::{ConstantMultiplier, DispatchClass, Weight},
 	PalletId, RuntimeDebug,
 };
@@ -199,6 +231,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
+	type Event = Event;
 	type OnChargeTransaction =
 		pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees<Runtime>>;
 	type WeightToFee = WeightToFee;
@@ -208,7 +241,7 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
-	pub const AssetDeposit: Balance = 100 * DOLLARS; // 100 DOLLARS deposit to create asset
+	pub const AssetDeposit: Balance = 10 * UNITS; // 10 UNITS deposit to create fungible asset class
 	pub const AssetAccountDeposit: Balance = deposit(1, 16);
 	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
 	pub const AssetsStringLimit: u32 = 50;
@@ -221,7 +254,7 @@ parameter_types! {
 
 /// We allow root and the Relay Chain council to execute privileged asset operations.
 pub type AssetsForceOrigin =
-	EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
+	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
 
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
@@ -415,6 +448,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type OutboundXcmpMessageSource = XcmpQueue;
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
+	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -427,8 +461,10 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-	type ControllerOrigin =
-		EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
+	type ControllerOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>,
+	>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
 }
@@ -475,7 +511,7 @@ parameter_types! {
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
 pub type CollatorSelectionUpdateOrigin =
-	EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
+	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
 
 impl pallet_collator_selection::Config for Runtime {
 	type Event = Event;
@@ -502,8 +538,8 @@ impl pallet_asset_tx_payment::Config for Runtime {
 }
 
 parameter_types! {
-	pub const CollectionDeposit: Balance = UNITS; // 1 UNIT deposit to create asset class
-	pub const ItemDeposit: Balance = UNITS / 100; // 1/100 UNIT deposit to create asset instance
+	pub const CollectionDeposit: Balance = 10 * UNITS; // 10 UNIT deposit to create uniques class
+	pub const ItemDeposit: Balance = UNITS / 100; // 1 / 100 UNIT deposit to create uniques instance
 	pub const KeyLimit: u32 = 32;	// Max 32 bytes per key
 	pub const ValueLimit: u32 = 64;	// Max 64 bytes per value
 	pub const UniquesMetadataDepositBase: Balance = deposit(1, 129);
@@ -551,7 +587,7 @@ construct_runtime!(
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
-		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
 		AssetTxPayment: pallet_asset_tx_payment::{Pallet} = 12,
 
 		// Collator support. the order of these 5 are important and shall not change.
