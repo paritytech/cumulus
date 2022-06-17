@@ -136,11 +136,12 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		)?),
 
 		// -- Polkadot Collectives
-		"collective-polkadot-dev" =>
+		"collectives-polkadot-dev" =>
 			Box::new(chain_spec::collectives::collectives_polkadot_development_config()),
-		"collective-polkadot-local" => Box::new(chain_spec::collectives::collectives_polkadot_config()),
+		"collectives-polkadot-local" =>
+			Box::new(chain_spec::collectives::collectives_polkadot_config()),
 		/* TODO:COLLECTIVES
-		"collective-polkadot" => Box::new(chain_spec::ChainSpec::from_json_bytes(
+		"collectives-polkadot" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../../parachains/chain-specs/westmint.json")[..],
 		)?),
 		*/
@@ -170,7 +171,9 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 				Runtime::Westmint =>
 					Box::new(chain_spec::statemint::WestmintChainSpec::from_json_file(path.into())?),
 				Runtime::CollectivesPolkadot =>
-					Box::new(chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_file(path.into())?)
+					Box::new(chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_file(
+						path.into(),
+					)?),
 				Runtime::Shell =>
 					Box::new(chain_spec::shell::ShellChainSpec::from_json_file(path.into())?),
 				Runtime::Seedling =>
@@ -523,7 +526,7 @@ pub fn run() -> Result<()> {
 							Runtime::Statemint =>
 								cmd.run::<Block, StatemintRuntimeExecutor>(config),
 							Runtime::CollectivesPolkadot =>
-							cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
+								cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
 							_ => Err("Chain doesn't support benchmarking".into()),
 						})
 					} else {
@@ -567,7 +570,10 @@ pub fn run() -> Result<()> {
 						Ok((cmd.run::<Block, StatemintRuntimeExecutor>(config), task_manager))
 					}),
 					Runtime::CollectivesPolkadot => runner.async_run(|config| {
-						Ok((cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config), task_manager))
+						Ok((
+							cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
+							task_manager,
+						))
 					}),
 					Runtime::Shell => runner.async_run(|config| {
 						Ok((cmd.run::<Block, ShellRuntimeExecutor>(config), task_manager))
@@ -648,13 +654,14 @@ pub fn run() -> Result<()> {
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into),
-					Runtime::CollectivesPolkadot => crate::service::start_statemint_node::<
-						collectives_polkadot_runtime::RuntimeApi,
-						AuraId,
-					>(config, polkadot_config, collator_options, id, hwbench)
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into),
+					Runtime::CollectivesPolkadot =>
+						crate::service::start_statemint_node::<
+							collectives_polkadot_runtime::RuntimeApi,
+							AuraId,
+						>(config, polkadot_config, collator_options, id, hwbench)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into),
 					Runtime::Shell =>
 						crate::service::start_shell_node::<shell_runtime::RuntimeApi>(
 							config,
