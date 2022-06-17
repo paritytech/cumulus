@@ -344,7 +344,7 @@ fn build_polkadot_full_node(
 			config,
 			is_collator,
 			None,
-			true,
+			false,
 			None,
 			telemetry_worker_handle,
 			true,
