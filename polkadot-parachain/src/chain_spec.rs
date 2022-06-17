@@ -982,6 +982,8 @@ fn collectives_polkadot_genesis(
 		polkadot_xcm: collectives_polkadot_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
+		alliance: Default::default(),
+		alliance_motion: Default::default(),
 	}
 }
 
