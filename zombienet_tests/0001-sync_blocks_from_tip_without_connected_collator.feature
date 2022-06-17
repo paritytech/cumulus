@@ -1,4 +1,4 @@
-Description: Small Network test
+Description: Sync blocks from tip without connected collator test
 Network: ./0001-sync_blocks_from_tip_without_connected_collator.toml
 Creds: config
 

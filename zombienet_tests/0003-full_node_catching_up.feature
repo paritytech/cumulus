@@ -1,4 +1,4 @@
-Description: Small Network test
+Description: Full node catching up test
 Network: ./0003-full_node_catching_up.toml
 Creds: config
 
