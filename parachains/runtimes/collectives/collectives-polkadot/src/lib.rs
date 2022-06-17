@@ -16,6 +16,19 @@
 //! # Collectives Parachain
 //!
 //! This parachain is for collectives that serve the Polkadot network.
+//! Each collective is defined by a specialized (possibly instanced) pallet.
+//!
+//! ### Governance
+//!	
+//! As a common good parachain, Collectives defers its governance (namely, its `Root` origin), to its	
+//! Relay Chain parent, Polkadot.
+//!
+//! ### Collator Selection	
+//!	
+//! Collectives uses `pallet-collator-selection`, a simple first-come-first-served registration	
+//! system where collators can reserve a small bond to join the block producer set. There is no	
+//! slashing. Collective members are generally expected to run collators.
+//!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]
