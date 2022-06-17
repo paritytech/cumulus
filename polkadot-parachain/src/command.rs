@@ -139,11 +139,10 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		"collectives-polkadot-dev" =>
 			Box::new(chain_spec::collectives::collectives_polkadot_development_config()),
 		"collectives-polkadot-local" =>
-			Box::new(chain_spec::collectives::collectives_polkadot_config()),
+			Box::new(chain_spec::collectives::collectives_polkadot_local_config()),
 		/* TODO:COLLECTIVES
-		"collectives-polkadot" => Box::new(chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("../../parachains/chain-specs/westmint.json")[..],
-		)?),
+		"collectives-polkadot" =>
+			Box::new(chain_spec::collectives::collectives_polkadot_config()),
 		*/
 		// -- Contracts on Rococo
 		"contracts-rococo-dev" =>

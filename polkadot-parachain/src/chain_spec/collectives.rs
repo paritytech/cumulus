@@ -78,7 +78,7 @@ pub fn collectives_polkadot_development_config() -> CollectivesPolkadotChainSpec
 }
 
 /// Collectives Polkadot Local Config.
-pub fn collectives_polkadot_config() -> CollectivesPolkadotChainSpec {
+pub fn collectives_polkadot_local_config() -> CollectivesPolkadotChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("ss58Format".into(), 0.into());
 	properties.insert("tokenSymbol".into(), "DOT".into());
