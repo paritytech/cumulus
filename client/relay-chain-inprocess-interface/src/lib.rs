@@ -344,6 +344,7 @@ fn build_polkadot_full_node(
 			config,
 			is_collator,
 			None,
+			// Disable BEEFY. It should not be required by the internal relay chain node.
 			false,
 			None,
 			telemetry_worker_handle,
