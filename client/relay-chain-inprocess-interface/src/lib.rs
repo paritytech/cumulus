@@ -32,6 +32,7 @@ use polkadot_client::{ClientHandle, ExecuteWithClient, FullBackend};
 use polkadot_service::{
 	AuxStore, BabeApi, CollatorPair, Configuration, Handle, NewFull, Role, TaskManager,
 };
+use sc_cli::SubstrateCli;
 use sc_client_api::{
 	blockchain::BlockStatus, Backend, BlockchainEvents, HeaderBackend, ImportNotifications,
 	StorageProof, UsageProvider,
@@ -344,7 +345,8 @@ fn build_polkadot_full_node(
 			config,
 			is_collator,
 			None,
-			true,
+			// Disable BEEFY. It should not be required by the internal relay chain node.
+			false,
 			None,
 			telemetry_worker_handle,
 			true,
@@ -359,12 +361,17 @@ fn build_polkadot_full_node(
 
 /// Builds a relay chain interface by constructing a full relay chain node
 pub fn build_inprocess_relay_chain(
-	polkadot_config: Configuration,
+	mut polkadot_config: Configuration,
 	parachain_config: &Configuration,
 	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
 	task_manager: &mut TaskManager,
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
+	// This is essentially a hack, but we want to ensure that we send the correct node version
+	// to the telemetry.
+	polkadot_config.impl_version = polkadot_cli::Cli::impl_version();
+	polkadot_config.impl_name = polkadot_cli::Cli::impl_name();
+
 	let (full_node, collator_key) = build_polkadot_full_node(
 		polkadot_config,
 		parachain_config,
@@ -398,9 +405,9 @@ mod tests {
 		DefaultTestClientBuilderExt, ExecutionStrategy, InitPolkadotBlockBuilder,
 		TestClientBuilder, TestClientBuilderExt,
 	};
-	use sc_service::Arc;
 	use sp_consensus::{BlockOrigin, SyncOracle};
 	use sp_runtime::traits::Block as BlockT;
+	use std::sync::Arc;
 
 	use futures::{executor::block_on, poll, task::Poll};
 
