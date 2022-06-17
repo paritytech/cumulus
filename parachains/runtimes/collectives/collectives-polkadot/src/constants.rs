@@ -26,8 +26,8 @@ pub mod currency {
 	pub const MILLICENTS: Balance = constants::currency::MILLICENTS;
 
 	pub const fn deposit(items: u32, bytes: u32) -> Balance {
-		// 1/10 of Polkadot v9200
-		constants::currency::deposit(items, bytes) / 10
+		// 1/100 of Polkadot v9200
+		constants::currency::deposit(items, bytes) / 100
 	}
 }
 
@@ -59,7 +59,7 @@ pub mod fee {
 		type Balance = Balance;
 		fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
 			// in Polkadot, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 CENT:
-			// in Statemint, we map to 1/10 of that, or 1/100 CENT
+			// in a parachain, we map to 1/10 of that, or 1/100 CENT
 			let p = super::currency::CENTS;
 			let q = 100 * Balance::from(ExtrinsicBaseWeight::get());
 			smallvec![WeightToFeeCoefficient {
