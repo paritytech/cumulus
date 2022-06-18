@@ -380,7 +380,7 @@ impl InstanceFilter<Call> for ProxyType {
 			(_, ProxyType::Any) => false,
 			(ProxyType::Assets, ProxyType::AssetOwner) => true,
 			(ProxyType::Assets, ProxyType::AssetManager) => true,
-			(ProxyType::NonTransfer, y) => y != ProxyType::Any,
+			(ProxyType::NonTransfer, ProxyType::CollatorSelection) => true,
 			_ => false,
 		}
 	}
