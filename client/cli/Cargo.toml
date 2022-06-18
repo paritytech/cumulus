@@ -5,8 +5,9 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 
 [dependencies]
-clap = { version = "3.1", features = ["derive"] }
+clap = { version = "3.2.5", features = ["derive", "deprecated"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
+url = "2.2.2"
 
 # Substrate
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -14,4 +15,3 @@ sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "mas
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-url = "2.2.2"

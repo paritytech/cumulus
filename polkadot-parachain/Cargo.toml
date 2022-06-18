@@ -6,13 +6,9 @@ build = "build.rs"
 edition = "2021"
 description = "Runs a polkadot parachain node which could be a collator."
 
-[[bin]]
-name = "polkadot-parachain"
-path = "src/main.rs"
-
 [dependencies]
 async-trait = "0.1.56"
-clap = { version = "3.1", features = ["derive"] }
+clap = { version = "3.2.5", features = ["derive", "deprecated"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 futures = { version = "0.3.1", features = ["compat"] }
 hex-literal = "0.3.4"
@@ -27,7 +23,7 @@ statemint-runtime = { path = "../parachains/runtimes/assets/statemint" }
 statemine-runtime = { path = "../parachains/runtimes/assets/statemine" }
 westmint-runtime = { path = "../parachains/runtimes/assets/westmint" }
 contracts-rococo-runtime = { path = "../parachains/runtimes/contracts/contracts-rococo" }
-jsonrpsee = { version = "0.13", features = ["server"] }
+jsonrpsee = { version = "0.14.0", features = ["server"] }
 parachains-common = { path = "../parachains/common" }
 
 # Substrate
