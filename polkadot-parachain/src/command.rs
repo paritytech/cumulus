@@ -249,7 +249,6 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		let id = if self.is_rpc_collator { "polkadot" } else { id };
 		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name().to_string()].iter())
 			.load_spec(id)
 	}
@@ -406,7 +405,6 @@ pub fn run() -> Result<()> {
 					[RelayChainCli::executable_name().to_string()]
 						.iter()
 						.chain(cli.relaychain_args.iter()),
-					&Default::default(),
 				);
 
 				let polkadot_config = SubstrateCli::create_configuration(
@@ -562,7 +560,6 @@ pub fn run() -> Result<()> {
 					[RelayChainCli::executable_name().to_string()]
 						.iter()
 						.chain(cli.relaychain_args.iter()),
-					&collator_options,
 				);
 
 				let id = ParaId::from(para_id);
