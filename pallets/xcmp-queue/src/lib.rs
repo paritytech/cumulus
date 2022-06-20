@@ -15,7 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 //! A pallet which uses the XCMP transport layer to handle both incoming and outgoing XCM message
-//! sending and dispatch, queuing, signalling and backpressure. To do so, it implements:https://www.tripadvisor.com/Restaurant_Review-g187497-d6216371-Reviews-Micu_Maku-Barcelona_Catalonia.html#photos;aggregationId=101&albumid=101&filter=7&ff=293721822
+//! sending and dispatch, queuing, signalling and backpressure. To do so, it implements:
 //! * `XcmpMessageHandler`
 //! * `XcmpMessageSource`
 //!
