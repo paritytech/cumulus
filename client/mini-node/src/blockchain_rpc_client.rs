@@ -7,7 +7,7 @@ use polkadot_core_primitives::{Block, BlockId, Hash, Header};
 use polkadot_overseer::OverseerRuntimeClient;
 use polkadot_service::{runtime_traits::BlockIdTo, HeaderBackend};
 use sc_authority_discovery::AuthorityDiscoveryWrapper;
-use sc_client_api::{BlockBackend, BlockchainEvents, ProofProvider};
+use sc_client_api::{BlockBackend, BlockchainEvents, BlockchainRPCEvents, ProofProvider};
 use sp_api::{ApiError, RuntimeApiInfo};
 use sp_blockchain::HeaderMetadata;
 use tracing::info;
@@ -428,7 +428,6 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 				.await
 				.map(|v| v.api_version(&api_id))
 				.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>));
-			info!("returning version {:?} for 'ParachainHost'", ret);
 			ret
 		} else {
 			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
@@ -472,6 +471,43 @@ impl AuthorityDiscoveryWrapper<Block> for BlockChainRPCClient {
 		} else {
 			unimplemented!("BlockId number not supported")
 		}
+	}
+}
+
+#[async_trait::async_trait]
+impl BlockchainRPCEvents<Block> for BlockChainRPCClient {
+	async fn import_notification_stream_rpc(
+		&self,
+	) -> Pin<Box<dyn Stream<Item = <Block as polkadot_service::BlockT>::Header> + Send>> {
+		self.import_notification_stream_async().await
+	}
+
+	async fn finality_notification_stream_rpc(
+		&self,
+	) -> Pin<Box<dyn Stream<Item = <Block as polkadot_service::BlockT>::Header> + Send>> {
+		self.finality_notification_stream_async().await
+	}
+
+	async fn best_block_stream_rpc(
+		&self,
+	) -> Pin<Box<dyn Stream<Item = <Block as polkadot_service::BlockT>::Header> + Send>> {
+		let best_headers_stream = self
+			.rpc_client
+			.subscribe_new_best_heads()
+			.await
+			.expect("subscribe_best_heads")
+			.filter_map(|item| async move {
+				item.map_err(|err| {
+					tracing::error!(
+						target: LOG_TARGET,
+						"Encountered error in import notification stream: {}",
+						err
+					)
+				})
+				.ok()
+			});
+
+		best_headers_stream.boxed()
 	}
 }
 
@@ -711,9 +747,21 @@ impl BlockBackend<Block> for BlockChainRPCClient {
 
 	fn block_status(
 		&self,
-		_id: &sp_api::BlockId<Block>,
+		id: &sp_api::BlockId<Block>,
 	) -> sp_blockchain::Result<sp_consensus::BlockStatus> {
-		unimplemented!("no 'block_status' for you");
+		tracing::debug!(target: LOG_TARGET, "Chain::block_status");
+		if let sp_api::BlockId::Hash(hash) = id {
+			let maybe_header =
+				block_local(self.rpc_client.chain_get_header(Some(*hash))).expect("get_header");
+			if let Some(_header) = maybe_header {
+				// TODO we need to check for pruned blocks here
+				return Ok(sp_consensus::BlockStatus::InChainWithState)
+			} else {
+				return Ok(sp_consensus::BlockStatus::Unknown)
+			}
+		} else {
+			todo!("Not supported blockId::number, block_status");
+		}
 	}
 
 	fn justifications(

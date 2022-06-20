@@ -322,9 +322,9 @@ checksum = "e91831deabf0d6d7ec49552e489aed63b7456a7a3c46cff62adad428110b0af0"
 
 [[package]]
 name = "async-trait"
-version = "0.1.53"
+version = "0.1.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed6aa3524a2dfcf9fe180c51eae2b58738348d819517ceadf95789c51fff7600"
+checksum = "96cf8829f67d2eab0b2dfa42c5d0ef737e0724e4a82b01b3e292456202b19716"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2070,7 +2070,7 @@ dependencies = [
  "futures 0.3.21",
  "futures-timer",
  "libp2p 0.40.0",
- "lru 0.7.5",
+ "lru 0.7.7",
  "parking_lot 0.11.2",
  "polkadot-client",
  "polkadot-core-primitives",
@@ -4354,7 +4354,7 @@ dependencies = [
  "libp2p-core 0.32.1",
  "libp2p-swarm 0.35.0",
  "log",
- "lru 0.7.5",
+ "lru 0.7.7",
  "prost 0.9.0",
  "prost-build",
  "smallvec",
@@ -4844,9 +4844,9 @@ dependencies = [
 
 [[package]]
 name = "lru"
-version = "0.7.5"
+version = "0.7.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32613e41de4c47ab04970c348ca7ae7382cf116625755af070b008a15516a889"
+checksum = "c84e6fe5655adc6ce00787cf7dcaf8dc4f998a0565d23eafc207a8b08ca3349a"
 dependencies = [
  "hashbrown 0.11.2",
 ]
@@ -7115,7 +7115,7 @@ dependencies = [
  "derive_more",
  "fatality",
  "futures 0.3.21",
- "lru 0.7.5",
+ "lru 0.7.7",
  "parity-scale-codec",
  "polkadot-erasure-coding",
  "polkadot-node-network-protocol",
@@ -7136,7 +7136,7 @@ version = "0.9.22"
 dependencies = [
  "fatality",
  "futures 0.3.21",
- "lru 0.7.5",
+ "lru 0.7.7",
  "parity-scale-codec",
  "polkadot-erasure-coding",
  "polkadot-node-network-protocol",
@@ -7252,7 +7252,7 @@ dependencies = [
  "derive_more",
  "fatality",
  "futures 0.3.21",
- "lru 0.7.5",
+ "lru 0.7.7",
  "parity-scale-codec",
  "polkadot-erasure-coding",
  "polkadot-node-network-protocol",
@@ -7345,7 +7345,7 @@ dependencies = [
  "futures 0.3.21",
  "futures-timer",
  "kvdb",
- "lru 0.7.5",
+ "lru 0.7.7",
  "merlin",
  "parity-scale-codec",
  "polkadot-node-jaeger",
@@ -7469,7 +7469,7 @@ dependencies = [
  "fatality",
  "futures 0.3.21",
  "kvdb",
- "lru 0.7.5",
+ "lru 0.7.7",
  "parity-scale-codec",
  "polkadot-node-primitives",
  "polkadot-node-subsystem",
@@ -7703,7 +7703,7 @@ dependencies = [
  "futures 0.3.21",
  "itertools",
  "kvdb",
- "lru 0.7.5",
+ "lru 0.7.7",
  "metered-channel",
  "parity-db",
  "parity-scale-codec",
@@ -7732,7 +7732,7 @@ dependencies = [
  "async-trait",
  "futures 0.3.21",
  "futures-timer",
- "lru 0.7.5",
+ "lru 0.7.7",
  "orchestra",
  "parity-util-mem",
  "parking_lot 0.12.0",
@@ -8125,7 +8125,7 @@ dependencies = [
  "kusama-runtime",
  "kvdb",
  "kvdb-rocksdb",
- "lru 0.7.5",
+ "lru 0.7.7",
  "pallet-babe",
  "pallet-im-online",
  "pallet-staking",
@@ -9420,6 +9420,7 @@ dependencies = [
 name = "sc-client-api"
 version = "4.0.0-dev"
 dependencies = [
+ "async-trait",
  "fnv",
  "futures 0.3.21",
  "hash-db",
@@ -9632,7 +9633,7 @@ name = "sc-executor"
 version = "0.10.0-dev"
 dependencies = [
  "lazy_static",
- "lru 0.7.5",
+ "lru 0.7.7",
  "parity-scale-codec",
  "parking_lot 0.12.0",
  "sc-executor-common",
@@ -9809,7 +9810,7 @@ dependencies = [
  "linked-hash-map",
  "linked_hash_set",
  "log",
- "lru 0.7.5",
+ "lru 0.7.7",
  "parity-scale-codec",
  "parking_lot 0.12.0",
  "pin-project 1.0.10",
@@ -9861,7 +9862,7 @@ dependencies = [
  "futures-timer",
  "libp2p 0.44.0",
  "log",
- "lru 0.7.5",
+ "lru 0.7.7",
  "sc-network",
  "sp-runtime",
  "substrate-prometheus-endpoint",
@@ -9897,7 +9898,7 @@ dependencies = [
  "futures 0.3.21",
  "libp2p 0.44.0",
  "log",
- "lru 0.7.5",
+ "lru 0.7.7",
  "parity-scale-codec",
  "prost 0.10.3",
  "prost-build",
@@ -10839,7 +10840,7 @@ version = "4.0.0-dev"
 dependencies = [
  "futures 0.3.21",
  "log",
- "lru 0.7.5",
+ "lru 0.7.7",
  "parity-scale-codec",
  "parking_lot 0.12.0",
  "sp-api",
@@ -11804,9 +11805,9 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "syn"
-version = "1.0.95"
+version = "1.0.96"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbaf6116ab8924f39d52792136fb74fd60a80194cf1b1c6ffa6453eef1c3f942"
+checksum = "0748dd251e24453cb8717f0354206b91557e4ec8703673a4b30208f2abaf1ebf"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -12194,7 +12195,7 @@ dependencies = [
  "ahash",
  "lazy_static",
  "log",
- "lru 0.7.5",
+ "lru 0.7.7",
  "tracing-core",
 ]
 
