@@ -15,7 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 //! A pallet which uses the XCMP transport layer to handle both incoming and outgoing XCM message
-//! sending and dispatch, queuing, signalling and backpressure. To do so, it implements:
+//! sending and dispatch, queuing, signalling and backpressure. To do so, it implements:https://www.tripadvisor.com/Restaurant_Review-g187497-d6216371-Reviews-Micu_Maku-Barcelona_Catalonia.html#photos;aggregationId=101&albumid=101&filter=7&ff=293721822
 //! * `XcmpMessageHandler`
 //! * `XcmpMessageSource`
 //!
@@ -263,17 +263,17 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Some XCM was executed ok.
-		Success { message_id: Option<T::Hash>, weight: Weight },
+		Success { message_hash: Option<T::Hash>, weight: Weight },
 		/// Some XCM failed.
-		Fail { message_id: Option<T::Hash>, error: XcmError, weight: Weight },
+		Fail { message_hash: Option<T::Hash>, error: XcmError, weight: Weight },
 		/// Bad XCM version used.
-		BadVersion { message_id: Option<T::Hash> },
+		BadVersion { message_hash: Option<T::Hash> },
 		/// Bad XCM format used.
-		BadFormat { message_id: Option<T::Hash> },
+		BadFormat { message_hash: Option<T::Hash> },
 		/// An upward message was sent to the relay chain.
-		UpwardMessageSent { message_id: Option<T::Hash> },
+		UpwardMessageSent { message_hash: Option<T::Hash> },
 		/// An HRMP message was sent to a sibling parachain.
-		XcmpMessageSent { message_id: Option<T::Hash> },
+		XcmpMessageSent { message_hash: Option<T::Hash> },
 		/// An XCM exceeded the individual message weight budget.
 		OverweightEnqueued {
 			sender: ParaId,
@@ -607,17 +607,17 @@ impl<T: Config> Pallet<T> {
 
 				match T::XcmExecutor::execute_xcm(location, xcm, max_weight) {
 					Outcome::Error(e) =>
-						(Err(e), Event::Fail { message_id: Some(hash), error: e, weight: 0 }),
+						(Err(e), Event::Fail { message_hash: Some(hash), error: e, weight: 0 }),
 					Outcome::Complete(w) =>
-						(Ok(w), Event::Success { message_id: Some(hash), weight: w }),
+						(Ok(w), Event::Success { message_hash: Some(hash), weight: w }),
 					// As far as the caller is concerned, this was dispatched without error, so
 					// we just report the weight used.
 					Outcome::Incomplete(w, e) =>
-						(Ok(w), Event::Fail { message_id: Some(hash), error: e, weight: w }),
+						(Ok(w), Event::Fail { message_hash: Some(hash), error: e, weight: w }),
 				}
 			},
 			Err(()) =>
-				(Err(XcmError::UnhandledXcmVersion), Event::BadVersion { message_id: Some(hash) }),
+				(Err(XcmError::UnhandledXcmVersion), Event::BadVersion { message_hash: Some(hash) }),
 		};
 		Self::deposit_event(event);
 		result
@@ -1109,7 +1109,7 @@ impl<T: Config> SendXcm for Pallet<T> {
 					versioned_xcm,
 				)
 				.map_err(|e| SendError::Transport(<&'static str>::from(e)))?;
-				Self::deposit_event(Event::XcmpMessageSent { message_id: Some(hash) });
+				Self::deposit_event(Event::XcmpMessageSent { message_hash: Some(hash) });
 				Ok(())
 			},
 			// Anything else is unhandled. This includes a message this is meant for us.
