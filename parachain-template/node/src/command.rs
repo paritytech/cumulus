@@ -45,7 +45,7 @@ impl SubstrateCli for Cli {
 		"Parachain Collator Template\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relay chain node.\n\n\
-		parachain-collator <parachain-args> -- <relay-chain-args>"
+		parachain-template-node <parachain-args> -- <relay-chain-args>"
 			.into()
 	}
 
@@ -83,7 +83,7 @@ impl SubstrateCli for RelayChainCli {
 		"Parachain Collator Template\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relay chain node.\n\n\
-		parachain-collator <parachain-args> -- <relay-chain-args>"
+		parachain-template-node <parachain-args> -- <relay-chain-args>"
 			.into()
 	}
 
