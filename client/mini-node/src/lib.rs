@@ -200,6 +200,7 @@ impl sc_service::ImportQueue<Block> for FakeImportQueue {
 	}
 }
 
+#[sc_tracing::logging::prefix_logs_with("Relaychain")]
 pub fn new_mini(
 	mut config: Configuration,
 	collator_pair: CollatorPair,
@@ -257,6 +258,8 @@ pub fn new_mini(
 		let (worker, service) = sc_authority_discovery::new_worker_and_service_with_config(
 			sc_authority_discovery::WorkerConfig {
 				publish_non_global_ips: auth_disc_publish_non_global_ips,
+				// Require that authority discovery records are signed.
+				strict_record_validation: true,
 				..Default::default()
 			},
 			relay_chain_rpc_client.clone(),
