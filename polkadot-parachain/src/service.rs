@@ -1085,7 +1085,7 @@ where
 	}
 }
 
-/// Build the import queue for the statemint and other similar aura based runtimes.
+/// Build the import queue for Statemint and other Aura-based runtimes.
 pub fn aura_build_import_queue<RuntimeApi, AuraId: AppKey>(
 	client: Arc<TFullClient<Block, RuntimeApi, WasmExecutor<HostFunctions>>>,
 	config: &Configuration,
