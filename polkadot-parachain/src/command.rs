@@ -305,7 +305,7 @@ macro_rules! construct_benchmark_partials {
 			Runtime::CollectivesPolkadot => {
 				let $partials = new_partial::<collectives_polkadot_runtime::RuntimeApi, _>(
 					&$config,
-					crate::service::statemint_build_import_queue::<_, AuraId>, // TODO:COLLECTIVES
+					crate::service::aura_build_import_queue::<_, AuraId>,
 				)?;
 				$code
 			},
@@ -352,7 +352,7 @@ macro_rules! construct_async_run {
 				runner.async_run(|$config| {
 					let $components = new_partial::<collectives_polkadot_runtime::RuntimeApi, _>(
 						&$config,
-						crate::service::statemint_build_import_queue::<_, AuraId>, // TODO:COLLECTIVES
+						crate::service::aura_build_import_queue::<_, AuraId>,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -616,7 +616,7 @@ pub fn run() -> Result<()> {
 					.map(|r| r.0)
 					.map_err(Into::into),
 					Runtime::CollectivesPolkadot =>
-						crate::service::start_statemint_node::<
+						crate::service::start_statemint_node::< // TODO:COLLECTIVES
 							collectives_polkadot_runtime::RuntimeApi,
 							AuraId,
 						>(config, polkadot_config, collator_options, id, hwbench)
