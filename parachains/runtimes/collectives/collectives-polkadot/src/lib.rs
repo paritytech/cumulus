@@ -70,7 +70,7 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
-use pallet_alliance::{IdentityVerifier, ProposalIndex, ProposalProvider};
+use pallet_alliance::{ProposalIndex, ProposalProvider};
 pub use parachains_common as common;
 use parachains_common::{
 	impls::DealWithFees, opaque, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index,
@@ -476,21 +476,6 @@ impl ProposalProvider<AccountId, Hash, Call> for AllianceProposalProvider {
 	}
 }
 
-pub struct DoNotCheckIdentity;
-impl IdentityVerifier<AccountId> for DoNotCheckIdentity {
-	fn has_identity(_who: &AccountId, _fields: u64) -> bool {
-		true
-	}
-
-	fn has_good_judgement(_who: &AccountId) -> bool {
-		true
-	}
-
-	fn super_account_id(_who: &AccountId) -> Option<AccountId> {
-		None
-	}
-}
-
 parameter_types! {
 	pub const AllianceMotionDuration: BlockNumber = 5 * DAYS;
 	pub const AllianceMaxProposals: u32 = 100;
@@ -535,7 +520,7 @@ impl pallet_alliance::Config for Runtime {
 	type Slashed = (); // TODO:COLLECTIVES add handler to send teleport to Relay Treasury
 	type InitializeMembers = AllianceMotion;
 	type MembershipChanged = AllianceMotion;
-	type IdentityVerifier = DoNotCheckIdentity; // Don't block accounts on identity criteria
+	type IdentityVerifier = (); // Don't block accounts on identity criteria
 	type ProposalProvider = AllianceProposalProvider;
 	type MaxProposals = AllianceMaxProposals;
 	type MaxFounders = MaxFounders;
