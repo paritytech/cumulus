@@ -25,9 +25,9 @@ cargo build --release
 ```
 
 Run:
-`cp target/release/polkadot ../../bin/polkadot-0.9.23-sudo`  
+`cp target/release/polkadot ../../bin/polkadot-0.9.24-sudo`  
 It is assumed that the bin directory exists at this relative path.
-Note: When using the `launch-rococo-local-with-encointer` setup it is assumed that the `bin` folder also contains a `polkadot-0.9.23` binary.
+Note: When using the `launch-rococo-local-with-encointer` setup it is assumed that the `bin` folder also contains a `polkadot-0.9.24` binary.
 
 
 ### Setup local testnet with polkadot-launch
