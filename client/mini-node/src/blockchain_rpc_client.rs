@@ -7,11 +7,13 @@ use polkadot_core_primitives::{Block, BlockId, Hash, Header};
 use polkadot_overseer::OverseerRuntimeClient;
 use polkadot_service::{runtime_traits::BlockIdTo, HeaderBackend};
 use sc_authority_discovery::AuthorityDiscoveryWrapper;
-use sc_client_api::{BlockBackend, BlockchainEvents, BlockchainRPCEvents, ProofProvider};
+use sc_client_api::{BlockBackend, BlockchainEvents, ProofProvider};
 use sp_api::{ApiError, RuntimeApiInfo};
 use sp_blockchain::HeaderMetadata;
 use tracing::info;
 use url::Url;
+
+use crate::network::BlockchainRPCEvents;
 
 const LOG_TARGET: &'static str = "blockchain-rpc-client";
 
@@ -422,13 +424,11 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 	) -> Result<Option<u32>, sp_api::ApiError> {
 		if let BlockId::Hash(hash) = at {
 			let api_id = <dyn polkadot_primitives::runtime_api::ParachainHost<Block>>::ID;
-			let ret = self
-				.rpc_client
+			self.rpc_client
 				.runtime_version(*hash)
 				.await
 				.map(|v| v.api_version(&api_id))
-				.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>));
-			ret
+				.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
 		} else {
 			Err(sp_api::ApiError::Application(Box::new(RelayChainError::GenericError(
 				"Only hash is supported for RPC methods".to_string(),
@@ -476,21 +476,15 @@ impl AuthorityDiscoveryWrapper<Block> for BlockChainRPCClient {
 
 #[async_trait::async_trait]
 impl BlockchainRPCEvents<Block> for BlockChainRPCClient {
-	async fn import_notification_stream_rpc(
-		&self,
-	) -> Pin<Box<dyn Stream<Item = <Block as polkadot_service::BlockT>::Header> + Send>> {
-		self.import_notification_stream_async().await
-	}
-
-	async fn finality_notification_stream_rpc(
-		&self,
-	) -> Pin<Box<dyn Stream<Item = <Block as polkadot_service::BlockT>::Header> + Send>> {
+	async fn finality_stream(&self) -> Pin<Box<dyn Stream<Item = Header> + Send>> {
 		self.finality_notification_stream_async().await
 	}
 
-	async fn best_block_stream_rpc(
-		&self,
-	) -> Pin<Box<dyn Stream<Item = <Block as polkadot_service::BlockT>::Header> + Send>> {
+	async fn import_stream(&self) -> Pin<Box<dyn Stream<Item = Header> + Send>> {
+		self.import_notification_stream_async().await
+	}
+
+	async fn best_stream(&self) -> Pin<Box<dyn Stream<Item = Header> + Send>> {
 		let best_headers_stream = self
 			.rpc_client
 			.subscribe_new_best_heads()
@@ -510,7 +504,6 @@ impl BlockchainRPCEvents<Block> for BlockChainRPCClient {
 		best_headers_stream.boxed()
 	}
 }
-
 impl BlockChainRPCClient {
 	pub async fn import_notification_stream_async(
 		&self,
@@ -749,7 +742,7 @@ impl BlockBackend<Block> for BlockChainRPCClient {
 		&self,
 		id: &sp_api::BlockId<Block>,
 	) -> sp_blockchain::Result<sp_consensus::BlockStatus> {
-		tracing::debug!(target: LOG_TARGET, "Chain::block_status");
+		tracing::debug!(target: LOG_TARGET, "BlockBackend::block_status");
 		if let sp_api::BlockId::Hash(hash) = id {
 			let maybe_header =
 				block_local(self.rpc_client.chain_get_header(Some(*hash))).expect("get_header");

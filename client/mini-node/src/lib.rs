@@ -37,6 +37,7 @@ use polkadot_service::{
 	Error, OverseerConnector,
 };
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
+use sc_network::config;
 use sp_consensus::BlockOrigin;
 use sp_core::traits::SpawnNamed;
 use sp_runtime::{traits::NumberFor, Justifications};
@@ -52,6 +53,7 @@ use futures::{select, StreamExt};
 use sp_runtime::traits::Block as BlockT;
 
 mod blockchain_rpc_client;
+mod network;
 pub use blockchain_rpc_client::BlockChainRPCClient;
 
 /// Arguments passed for overseer construction.
@@ -234,8 +236,9 @@ pub fn new_mini(
 
 	let import_queue = FakeImportQueue {};
 
+	// config.network.sync_mode = config::SyncMode::None;
 	let (network, network_starter) =
-		sc_service::build_collator_network(sc_service::BuildCollatorNetworkParams {
+		network::build_collator_network(network::BuildCollatorNetworkParams {
 			config: &config,
 			client: relay_chain_rpc_client.clone(),
 			spawn_handle: task_manager.spawn_handle(),
