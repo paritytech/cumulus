@@ -1,6 +1,6 @@
 use crate::BlockChainRPCClient;
-use futures::{FutureExt, Stream, StreamExt};
-use polkadot_service::{runtime_traits::BlockIdTo, BlockT, HeaderMetadata, HeaderT};
+use futures::{FutureExt, Stream};
+use polkadot_service::{runtime_traits::BlockIdTo, BlockT, HeaderMetadata};
 use sc_client_api::{BlockBackend, BlockchainEvents, HeaderBackend, ProofProvider};
 use sc_consensus::ImportQueue;
 use sc_network::{
@@ -12,17 +12,6 @@ use sc_network::{
 use sc_service::{error::Error, Configuration, NetworkStarter, SpawnTaskHandle};
 use sp_consensus::block_validation::DefaultBlockAnnounceValidator;
 use std::{pin::Pin, sync::Arc};
-
-#[async_trait::async_trait]
-pub trait BlockchainRPCEvents<Block: BlockT> {
-	async fn finality_stream(
-		&self,
-	) -> Pin<Box<dyn Stream<Item = <Block as BlockT>::Header> + Send>>;
-
-	async fn import_stream(&self) -> Pin<Box<dyn Stream<Item = <Block as BlockT>::Header> + Send>>;
-
-	async fn best_stream(&self) -> Pin<Box<dyn Stream<Item = <Block as BlockT>::Header> + Send>>;
-}
 
 pub struct BuildCollatorNetworkParams<'a, TImpQu, TCl> {
 	/// The service configuration.
@@ -47,7 +36,6 @@ where
 		+ ProofProvider<TBl>
 		+ HeaderBackend<TBl>
 		+ BlockchainEvents<TBl>
-		+ BlockchainRPCEvents<TBl>
 		+ 'static,
 	TImpQu: ImportQueue<TBl> + 'static,
 {
@@ -68,7 +56,7 @@ where
 	let light_client_request_protocol_config =
 		light_client_requests::generate_protocol_config(&protocol_id);
 
-	let mut network_params = sc_network::config::Params {
+	let network_params = sc_network::config::Params {
 		role: config.role.clone(),
 		executor: {
 			let spawn_handle = Clone::clone(&spawn_handle);
@@ -98,7 +86,7 @@ where
 	let network_mut = sc_network::NetworkWorker::new(network_params)?;
 	let network = network_mut.service().clone();
 
-	let future = build_network_collator_future(network_mut, client);
+	let future = build_network_collator_future(network_mut);
 
 	// TODO: [skunert] Remove this comment
 	// TODO: Normally, one is supposed to pass a list of notifications protocols supported by the
@@ -146,57 +134,15 @@ where
 async fn build_network_collator_future<
 	B: BlockT,
 	H: sc_network::ExHashT,
-	C: BlockchainRPCEvents<B>
-		+ HeaderBackend<B>
+	C: HeaderBackend<B>
 		+ ProofProvider<B>
 		+ HeaderMetadata<B, Error = sp_blockchain::Error>
 		+ BlockBackend<B>,
 >(
 	mut network: sc_network::NetworkWorker<B, H, C>,
-	client: Arc<C>,
 ) {
-	let mut imported_blocks_stream = client.import_stream().await.fuse();
-
-	// Stream of finalized blocks reported by the client.
-	let mut finality_notification_stream = client.finality_stream().await.fuse();
-	let mut new_best_notification_stream = client.best_stream().await.fuse();
-
 	loop {
 		futures::select! {
-			// // List of blocks that the client has imported.
-			// notification = imported_blocks_stream.next() => {
-			// 	let notification = match notification {
-			// 		Some(n) => n,
-			// 		// If this stream is shut down, that means the client has shut down, and the
-			// 		// most appropriate thing to do for the network future is to shut down too.
-			// 		None => return,
-			// 	};
-
-			// 	// TODO skunert No need to announce anything
-			// 	if announce_imported_blocks {
-			// 		network.service().announce_block(notification.hash(), None);
-			// 	}
-			// }
-
-			notification = new_best_notification_stream.next() => {
-				let notification = match notification {
-					Some(n) => n,
-					// If this stream is shut down, that means the client has shut down, and the
-					// most appropriate thing to do for the network future is to shut down too.
-					None => return,
-				};
-
-					network.service().new_best_block_imported(
-						notification.hash(),
-						notification.number().clone(),
-					);
-			}
-
-			// List of blocks that the client has finalized.
-			notification = finality_notification_stream.select_next_some() => {
-				network.on_block_finalized(notification.hash(), notification);
-			}
-
 			// Answer incoming RPC requests.
 
 			// The network worker has done something. Nothing special to do, but could be

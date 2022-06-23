@@ -13,8 +13,6 @@ use sp_blockchain::HeaderMetadata;
 use tracing::info;
 use url::Url;
 
-use crate::network::BlockchainRPCEvents;
-
 const LOG_TARGET: &'static str = "blockchain-rpc-client";
 
 #[derive(Clone)]
@@ -474,36 +472,6 @@ impl AuthorityDiscoveryWrapper<Block> for BlockChainRPCClient {
 	}
 }
 
-#[async_trait::async_trait]
-impl BlockchainRPCEvents<Block> for BlockChainRPCClient {
-	async fn finality_stream(&self) -> Pin<Box<dyn Stream<Item = Header> + Send>> {
-		self.finality_notification_stream_async().await
-	}
-
-	async fn import_stream(&self) -> Pin<Box<dyn Stream<Item = Header> + Send>> {
-		self.import_notification_stream_async().await
-	}
-
-	async fn best_stream(&self) -> Pin<Box<dyn Stream<Item = Header> + Send>> {
-		let best_headers_stream = self
-			.rpc_client
-			.subscribe_new_best_heads()
-			.await
-			.expect("subscribe_best_heads")
-			.filter_map(|item| async move {
-				item.map_err(|err| {
-					tracing::error!(
-						target: LOG_TARGET,
-						"Encountered error in import notification stream: {}",
-						err
-					)
-				})
-				.ok()
-			});
-
-		best_headers_stream.boxed()
-	}
-}
 impl BlockChainRPCClient {
 	pub async fn import_notification_stream_async(
 		&self,

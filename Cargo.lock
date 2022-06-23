@@ -4221,9 +4221,9 @@ dependencies = [
 
 [[package]]
 name = "libp2p-autonat"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50de7c1d5c3f040fccb469e8a2d189e068b7627d760dd74ef914071c16bbe905"
+checksum = "1d45945fd2f96c4b133c23d5c28a8b7fc8d7138e6dd8d5a8cd492dd384f888e3"
 dependencies = [
  "async-trait",
  "futures 0.3.21",
@@ -4485,9 +4485,9 @@ dependencies = [
 
 [[package]]
 name = "libp2p-metrics"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "adc4357140141ba9739eee71b20aa735351c0fc642635b2bffc7f57a6b5c1090"
+checksum = "564a7e5284d7d9b3140fdfc3cb6567bc32555e86a21de5604c2ec85da05cf384"
 dependencies = [
  "libp2p-core 0.33.0",
  "libp2p-gossipsub",
@@ -12466,7 +12466,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.3",
  "rand 0.8.5",
  "static_assertions",
@@ -13461,6 +13461,74 @@ dependencies = [
 ]
 
 [[patch.unused]]
+name = "polkadot"
+version = "0.9.23"
+
+[[patch.unused]]
+name = "polkadot-primitives-test-helpers"
+version = "0.9.23"
+
+[[patch.unused]]
+name = "polkadot-test-malus"
+version = "0.9.23"
+
+[[patch.unused]]
+name = "polkadot-voter-bags"
+version = "0.9.23"
+
+[[patch.unused]]
+name = "remote-ext-tests-bags-list"
+version = "0.9.23"
+
+[[patch.unused]]
+name = "staking-miner"
+version = "0.9.23"
+
+[[patch.unused]]
+name = "test-parachain-adder"
+version = "0.9.23"
+
+[[patch.unused]]
+name = "test-parachain-adder-collator"
+version = "0.9.23"
+
+[[patch.unused]]
+name = "test-parachain-halt"
+version = "0.9.23"
+
+[[patch.unused]]
+name = "test-parachain-undying"
+version = "0.9.23"
+
+[[patch.unused]]
+name = "test-parachain-undying-collator"
+version = "0.9.23"
+
+[[patch.unused]]
+name = "test-parachains"
+version = "0.9.23"
+
+[[patch.unused]]
+name = "xcm-executor-integration-tests"
+version = "0.9.23"
+
+[[patch.unused]]
+name = "xcm-simulator"
+version = "0.9.23"
+
+[[patch.unused]]
+name = "xcm-simulator-example"
+version = "0.9.23"
+
+[[patch.unused]]
+name = "xcm-simulator-fuzzer"
+version = "0.9.23"
+
+[[patch.unused]]
+name = "zombienet-backchannel"
+version = "0.9.23"
+
+[[patch.unused]]
 name = "chain-spec-builder"
 version = "2.0.0"
 
@@ -13691,71 +13759,3 @@ version = "2.0.0"
 [[patch.unused]]
 name = "substrate-test-utils-test-crate"
 version = "0.1.0"
-
-[[patch.unused]]
-name = "polkadot"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "polkadot-primitives-test-helpers"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "polkadot-test-malus"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "polkadot-voter-bags"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "remote-ext-tests-bags-list"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "staking-miner"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "test-parachain-adder"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "test-parachain-adder-collator"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "test-parachain-halt"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "test-parachain-undying"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "test-parachain-undying-collator"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "test-parachains"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "xcm-executor-integration-tests"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "xcm-simulator"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "xcm-simulator-example"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "xcm-simulator-fuzzer"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "zombienet-backchannel"
-version = "0.9.23"
