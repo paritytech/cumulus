@@ -5,12 +5,11 @@ use cumulus_relay_chain_rpc_interface::RelayChainRPCClient;
 use futures::{executor::block_on, Future, Stream, StreamExt};
 use polkadot_core_primitives::{Block, BlockId, Hash, Header};
 use polkadot_overseer::OverseerRuntimeClient;
-use polkadot_service::{runtime_traits::BlockIdTo, HeaderBackend};
+use polkadot_service::HeaderBackend;
 use sc_authority_discovery::AuthorityDiscoveryWrapper;
-use sc_client_api::{BlockBackend, BlockchainEvents, ProofProvider};
+use sc_client_api::{BlockBackend, ProofProvider};
 use sp_api::{ApiError, RuntimeApiInfo};
 use sp_blockchain::HeaderMetadata;
-use tracing::info;
 use url::Url;
 
 const LOG_TARGET: &'static str = "blockchain-rpc-client";
@@ -458,17 +457,16 @@ impl OverseerRuntimeClient for BlockChainRPCClient {
 	}
 }
 
+#[async_trait::async_trait]
 impl AuthorityDiscoveryWrapper<Block> for BlockChainRPCClient {
-	fn authorities(
+	async fn authorities(
 		&self,
-		at: &sp_api::BlockId<Block>,
+		at: Hash,
 	) -> std::result::Result<Vec<polkadot_primitives::v2::AuthorityDiscoveryId>, sp_api::ApiError> {
-		if let sp_api::BlockId::Hash(hash) = at {
-			block_on(self.rpc_client.authority_discovery_authorities(*hash))
-				.map_err(|err| sp_api::ApiError::Application(Box::new(err)))
-		} else {
-			unimplemented!("BlockId number not supported")
-		}
+		self.rpc_client
+			.authority_discovery_authorities(at)
+			.await
+			.map_err(|err| sp_api::ApiError::Application(Box::new(err)))
 	}
 }
 
