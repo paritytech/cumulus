@@ -616,8 +616,7 @@ pub fn run() -> Result<()> {
 					.map(|r| r.0)
 					.map_err(Into::into),
 					Runtime::CollectivesPolkadot =>
-						crate::service::start_statemint_node::<
-							// TODO:COLLECTIVES
+						crate::service::start_generic_aura_node::<
 							collectives_polkadot_runtime::RuntimeApi,
 							AuraId,
 						>(config, polkadot_config, collator_options, id, hwbench)
