@@ -37,7 +37,6 @@ use polkadot_service::{
 	Error, OverseerConnector,
 };
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
-use sc_network::config;
 use sp_consensus::BlockOrigin;
 use sp_core::traits::SpawnNamed;
 use sp_runtime::{traits::NumberFor, Justifications};

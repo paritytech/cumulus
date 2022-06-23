@@ -518,26 +518,6 @@ impl BlockChainRPCClient {
 	}
 }
 
-impl BlockchainEvents<Block> for BlockChainRPCClient {
-	fn import_notification_stream(&self) -> sc_client_api::ImportNotifications<Block> {
-		unimplemented!()
-	}
-
-	fn finality_notification_stream(&self) -> sc_client_api::FinalityNotifications<Block> {
-		unimplemented!()
-	}
-
-	fn storage_changes_notification_stream(
-		&self,
-		_filter_keys: Option<&[sc_client_api::StorageKey]>,
-		_child_filter_keys: Option<
-			&[(sc_client_api::StorageKey, Option<Vec<sc_client_api::StorageKey>>)],
-		>,
-	) -> sp_blockchain::Result<sc_client_api::StorageEventStream<Hash>> {
-		unimplemented!()
-	}
-}
-
 fn block_local<T>(fut: impl Future<Output = T>) -> T {
 	let tokio_handle = tokio::runtime::Handle::current();
 	tokio::task::block_in_place(|| tokio_handle.block_on(fut))
@@ -612,6 +592,7 @@ impl HeaderBackend<Block> for BlockChainRPCClient {
 		unimplemented!()
 	}
 }
+
 impl ProofProvider<Block> for BlockChainRPCClient {
 	fn read_proof(
 		&self,
@@ -663,23 +644,6 @@ impl ProofProvider<Block> for BlockChainRPCClient {
 		_proof: sc_client_api::CompactProof,
 		_start_keys: &[Vec<u8>],
 	) -> sp_blockchain::Result<(sc_client_api::KeyValueStates, usize)> {
-		unimplemented!()
-	}
-}
-impl BlockIdTo<Block> for BlockChainRPCClient {
-	type Error = sp_blockchain::Error;
-
-	fn to_hash(
-		&self,
-		_block_id: &sp_runtime::generic::BlockId<Block>,
-	) -> Result<Option<<Block as polkadot_service::BlockT>::Hash>, Self::Error> {
-		unimplemented!()
-	}
-
-	fn to_number(
-		&self,
-		_block_id: &sp_runtime::generic::BlockId<Block>,
-	) -> Result<Option<polkadot_service::NumberFor<Block>>, Self::Error> {
 		unimplemented!()
 	}
 }

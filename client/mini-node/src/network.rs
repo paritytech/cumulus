@@ -1,17 +1,13 @@
-use crate::BlockChainRPCClient;
-use futures::{FutureExt, Stream};
-use polkadot_service::{runtime_traits::BlockIdTo, BlockT, HeaderMetadata};
-use sc_client_api::{BlockBackend, BlockchainEvents, HeaderBackend, ProofProvider};
+use futures::FutureExt;
+use polkadot_service::{BlockT, HeaderMetadata};
+use sc_client_api::{BlockBackend, HeaderBackend, ProofProvider};
 use sc_consensus::ImportQueue;
 use sc_network::{
-	block_request_handler,
-	light_client_requests::{self, handler::LightClientRequestHandler},
-	state_request_handler::{self, StateRequestHandler},
-	NetworkService,
+	block_request_handler, light_client_requests, state_request_handler, NetworkService,
 };
 use sc_service::{error::Error, Configuration, NetworkStarter, SpawnTaskHandle};
 use sp_consensus::block_validation::DefaultBlockAnnounceValidator;
-use std::{pin::Pin, sync::Arc};
+use std::sync::Arc;
 
 pub struct BuildCollatorNetworkParams<'a, TImpQu, TCl> {
 	/// The service configuration.
@@ -32,10 +28,8 @@ where
 	TBl: BlockT,
 	TCl: HeaderMetadata<TBl, Error = sp_blockchain::Error>
 		+ BlockBackend<TBl>
-		+ BlockIdTo<TBl, Error = sp_blockchain::Error>
 		+ ProofProvider<TBl>
 		+ HeaderBackend<TBl>
-		+ BlockchainEvents<TBl>
 		+ 'static,
 	TImpQu: ImportQueue<TBl> + 'static,
 {
