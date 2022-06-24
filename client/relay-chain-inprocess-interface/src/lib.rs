@@ -345,7 +345,8 @@ fn build_polkadot_full_node(
 			config,
 			is_collator,
 			None,
-			true,
+			// Disable BEEFY. It should not be required by the internal relay chain node.
+			false,
 			None,
 			telemetry_worker_handle,
 			true,
@@ -404,9 +405,9 @@ mod tests {
 		DefaultTestClientBuilderExt, ExecutionStrategy, InitPolkadotBlockBuilder,
 		TestClientBuilder, TestClientBuilderExt,
 	};
-	use sc_service::Arc;
 	use sp_consensus::{BlockOrigin, SyncOracle};
 	use sp_runtime::traits::Block as BlockT;
+	use std::sync::Arc;
 
 	use futures::{executor::block_on, poll, task::Poll};
 
