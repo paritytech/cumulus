@@ -17,6 +17,7 @@
 mod cli;
 
 use std::sync::Arc;
+use std::io::Write;
 
 use cli::{RelayChainCli, Subcommand, TestCollatorCli};
 use cumulus_client_cli::generate_genesis_block;
@@ -44,7 +45,7 @@ fn main() -> Result<(), sc_cli::Error> {
 			runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
 		},
 
-		Some(Commands::ExportGenesisState(params)) => {
+		Some(Subcommand::ExportGenesisState(params)) => {
 			let mut builder = sc_cli::LoggerBuilder::new("");
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
 			let _ = builder.init();
@@ -52,7 +53,7 @@ fn main() -> Result<(), sc_cli::Error> {
 			let spec = cli.load_spec(&params.chain.clone().unwrap_or_default())?;
 			let state_version = cumulus_test_service::runtime::VERSION.state_version();
 
-			let block: parachains_common::Block = generate_genesis_block(&spec, state_version)?;
+			let block: parachains_common::Block = generate_genesis_block(&*spec, state_version)?;
 			let raw_header = block.header().encode();
 			let output_buf = if params.raw {
 				raw_header
