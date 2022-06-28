@@ -59,8 +59,7 @@ use sp_version::RuntimeVersion;
 use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
-	construct_runtime,
-	parameter_types,
+	construct_runtime, parameter_types,
 	traits::{ConstU32, EitherOfDiverse, InstanceFilter},
 	weights::{ConstantMultiplier, DispatchClass, Weight},
 	PalletId, RuntimeDebug,
