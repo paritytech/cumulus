@@ -5,7 +5,6 @@ use frame_support::{
 	traits::{fungibles::Inspect, tokens::BalanceConversion},
 	weights::{Weight, WeightToFee, WeightToFeePolynomial},
 };
-use sp_runtime::traits::CheckedSub;
 use xcm::latest::prelude::*;
 use xcm_builder::{AsPrefixedGeneralIndex, ConvertedConcreteAssetId};
 use xcm_executor::traits::{JustTry, ShouldExecute};
@@ -100,8 +99,10 @@ where
 	) -> Result<<pallet_assets::Pallet<R> as Inspect<AccountIdOf<R>>>::Balance, XcmError> {
 		let amount = WeightToFee::weight_to_fee(&weight);
 		let minimum_balance = pallet_assets::Pallet::<R>::minimum_balance(asset_id);
-		let asset_amount = CON::to_asset_balance(amount, asset_id).map_err(|_| XcmError::TooExpensive)?;
-		Ok(asset_amount.checked_sub(&minimum_balance).unwrap_or(minimum_balance))
+		let asset_amount = CON::to_asset_balance(amount, asset_id)
+			.map_err(|_| XcmError::TooExpensive)
+			.map(|amount| if amount < minimum_balance { minimum_balance } else { amount })?;
+		Ok(asset_amount)
 	}
 }
 

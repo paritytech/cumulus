@@ -1,4 +1,6 @@
-use frame_support::{assert_ok, traits::PalletInfo, weights::WeightToFee as WeightToFeeT};
+use frame_support::{
+	assert_noop, assert_ok, traits::PalletInfo, weights::WeightToFee as WeightToFeeT,
+};
 use parachains_common::{AccountId, Balance, StatemintAuraId as AuraId};
 use sp_consensus_aura::AURA_ENGINE_ID;
 pub use statemint_runtime::{
@@ -138,8 +140,11 @@ fn test_asset_xcm_trader() {
 			// Set Alice as block author, who will receive fees
 			run_to_block(2, Some(AccountId::from(ALICE)));
 
-			// We are going to buy 4e9 weight
-			let bought = 4_000_000_000u64;
+			// We are going to buy 400e9 weight
+			// Because of the ED being higher in statemine
+			// and not to complicate things, we use a little
+			// bit more of weight
+			let bought = 400_000_000_000u64;
 
 			// lets calculate amount needed
 			let amount_needed = WeightToFee::weight_to_fee(&bought);
@@ -203,8 +208,11 @@ fn test_asset_xcm_trader_with_refund() {
 			// Set Alice as block author, who will receive fees
 			run_to_block(2, Some(AccountId::from(ALICE)));
 
-			// We are going to buy 4e9 weight
-			let bought = 4_000_000_000u64;
+			// We are going to buy 400e9 weight
+			// Because of the ED being higher in statemine
+			// and not to complicate things, we use a little
+			// bit more of weight
+			let bought = 400_000_000_000u64;
 
 			let asset_multilocation = MultiLocation::new(
 				0,
@@ -273,7 +281,8 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 			// Set Alice as block author, who will receive fees
 			run_to_block(2, Some(AccountId::from(ALICE)));
 
-			// We are going to buy 4e9 weight
+			// We are going to buy 1e9 weight
+			// this should be sufficient with the existing ED not to be able to pay
 			let bought = 1_000_000_000u64;
 
 			let asset_multilocation = MultiLocation::new(
@@ -296,10 +305,8 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 
 			let asset: MultiAsset = (asset_multilocation.clone(), amount_bought).into();
 
-			// Make sure buy_weight does not return an error
-			assert_ok!(trader.buy_weight(bought, asset.into()));
-
-			drop(trader);
+			// Buy weight should return an error
+			assert_noop!(trader.buy_weight(bought, asset.into()), XcmError::TooExpensive);
 
 			// not credited since the ED is higher than this value
 			assert_eq!(Assets::balance(1, AccountId::from(ALICE)), 0);

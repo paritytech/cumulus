@@ -1,4 +1,6 @@
-use frame_support::{assert_ok, traits::PalletInfo, weights::WeightToFee as WeightToFeeT};
+use frame_support::{
+	assert_noop, assert_ok, traits::PalletInfo, weights::WeightToFee as WeightToFeeT,
+};
 use parachains_common::{AccountId, AuraId, Balance};
 use sp_consensus_aura::AURA_ENGINE_ID;
 pub use westmint_runtime::{
@@ -296,10 +298,8 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 
 			let asset: MultiAsset = (asset_multilocation.clone(), amount_bought).into();
 
-			// Make sure buy_weight does not return an error
-			assert_ok!(trader.buy_weight(bought, asset.into()));
-
-			drop(trader);
+			// Buy weight should return an error
+			assert_noop!(trader.buy_weight(bought, asset.into()), XcmError::TooExpensive);
 
 			// not credited since the ED is higher than this value
 			assert_eq!(Assets::balance(1, AccountId::from(ALICE)), 0);
