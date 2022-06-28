@@ -27,9 +27,9 @@ pub fn build_collator_network<TBl, TImpQu, TCl>(
 where
 	TBl: BlockT,
 	TCl: HeaderMetadata<TBl, Error = sp_blockchain::Error>
+		+ HeaderBackend<TBl>
 		+ BlockBackend<TBl>
 		+ ProofProvider<TBl>
-		+ HeaderBackend<TBl>
 		+ 'static,
 	TImpQu: ImportQueue<TBl> + 'static,
 {

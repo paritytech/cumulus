@@ -231,11 +231,9 @@ pub fn new_mini(
 	config.network.request_response_protocols.push(cfg);
 	let (available_data_req_receiver, cfg) = IncomingRequest::get_config_receiver();
 	config.network.request_response_protocols.push(cfg);
-	// config.network.sync_mode = sc_network::config::SyncMode::None;
 
 	let import_queue = FakeImportQueue {};
 
-	// config.network.sync_mode = config::SyncMode::None;
 	let (network, network_starter) =
 		network::build_collator_network(network::BuildCollatorNetworkParams {
 			config: &config,
