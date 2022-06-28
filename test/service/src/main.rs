@@ -16,8 +16,7 @@
 
 mod cli;
 
-use std::sync::Arc;
-use std::io::Write;
+use std::{io::Write, sync::Arc};
 
 use cli::{RelayChainCli, Subcommand, TestCollatorCli};
 use cumulus_client_cli::generate_genesis_block;
