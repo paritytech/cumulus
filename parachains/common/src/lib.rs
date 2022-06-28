@@ -15,6 +15,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub mod alliance;
+pub mod collective;
 pub mod impls;
 pub mod xcm_config;
 pub use constants::*;
