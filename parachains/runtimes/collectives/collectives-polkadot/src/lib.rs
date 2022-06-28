@@ -70,12 +70,13 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
-use pallet_alliance::{ProposalIndex, ProposalProvider};
+
 pub use parachains_common as common;
 use parachains_common::{
 	impls::DealWithFees, opaque, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index,
 	Signature, AVERAGE_ON_INITIALIZE_RATIO, DAYS, HOURS, MAXIMUM_BLOCK_WEIGHT,
 	NORMAL_DISPATCH_RATIO, SLOT_DURATION,
+	alliance::CollectiveAdapter,
 };
 use xcm_config::{DotLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
 
@@ -438,44 +439,6 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = weights::pallet_collator_selection::WeightInfo<Runtime>;
 }
 
-pub struct AllianceProposalProvider;
-impl ProposalProvider<AccountId, Hash, Call> for AllianceProposalProvider {
-	fn propose_proposal(
-		who: AccountId,
-		threshold: u32,
-		proposal: Box<Call>,
-		length_bound: u32,
-	) -> Result<(u32, u32), DispatchError> {
-		AllianceMotion::do_propose_proposed(who, threshold, proposal, length_bound)
-	}
-
-	fn vote_proposal(
-		who: AccountId,
-		proposal: Hash,
-		index: ProposalIndex,
-		approve: bool,
-	) -> Result<bool, DispatchError> {
-		AllianceMotion::do_vote(who, proposal, index, approve)
-	}
-
-	fn veto_proposal(proposal_hash: Hash) -> u32 {
-		AllianceMotion::do_disapprove_proposal(proposal_hash)
-	}
-
-	fn close_proposal(
-		proposal_hash: Hash,
-		proposal_index: ProposalIndex,
-		proposal_weight_bound: Weight,
-		length_bound: u32,
-	) -> DispatchResultWithPostInfo {
-		AllianceMotion::do_close(proposal_hash, proposal_index, proposal_weight_bound, length_bound)
-	}
-
-	fn proposal_of(proposal_hash: Hash) -> Option<Call> {
-		AllianceMotion::proposal_of(proposal_hash)
-	}
-}
-
 parameter_types! {
 	pub const AllianceMotionDuration: BlockNumber = 5 * DAYS;
 	pub const AllianceMaxProposals: u32 = 100;
@@ -521,7 +484,7 @@ impl pallet_alliance::Config for Runtime {
 	type InitializeMembers = AllianceMotion;
 	type MembershipChanged = AllianceMotion;
 	type IdentityVerifier = (); // Don't block accounts on identity criteria
-	type ProposalProvider = AllianceProposalProvider;
+	type ProposalProvider = CollectiveAdapter<AllianceMotion, Runtime>;
 	type MaxProposals = AllianceMaxProposals;
 	type MaxFounders = MaxFounders;
 	type MaxFellows = MaxFellows;
