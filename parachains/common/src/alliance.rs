@@ -21,14 +21,12 @@ use frame_support::{
 	weights::Weight,
 };
 use pallet_alliance::{Config, ProposalIndex, ProposalProvider};
-use sp_std::marker::PhantomData;
-use sp_std::boxed::Box;
+use sp_std::{boxed::Box, marker::PhantomData};
 
 /// Adapter from {collective::ProposalProvider} to {pallet_alliance::ProposalProvider}.
 pub struct CollectiveAdapter<C, T, I = ()>(PhantomData<(C, T, I)>);
 
-impl<C, T, I> ProposalProvider<T::AccountId, T::Hash, T::Proposal>
-	for CollectiveAdapter<C, T, I>
+impl<C, T, I> ProposalProvider<T::AccountId, T::Hash, T::Proposal> for CollectiveAdapter<C, T, I>
 where
 	C: CollectiveProposalProvider<T::AccountId, T::Hash, T::Proposal>,
 	T: Config<I>,
