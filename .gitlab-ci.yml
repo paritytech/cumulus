@@ -8,9 +8,9 @@
 stages:
   - test
   - build
-  - publish
   - benchmarks-build
   - benchmarks-run
+  - publish
 
 default:
   interruptible:                   true
