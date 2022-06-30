@@ -31,11 +31,11 @@ jobs:
 
       - name: Prepare temp folder
         run: |
-          mkdir $TMP
+          mkdir ${TMP}
           ls -al
 
       - name: Fetch files from release
-        working-directory: $TMP
+        working-directory: ${{ env.TMP }}
         run: |
           echo "Repo: ${{ github.event.repository.full_name }}"
 
@@ -48,7 +48,7 @@ jobs:
           ls -al
 
       - name: Check files
-        working-directory: $TMP
+        working-directory: ${{ env.TMP }}
         run: |
           ls -al *$BINARY*
           shasum -a 256 -c $BINARY.sha256
@@ -85,7 +85,7 @@ jobs:
         run: |
           export OWNER=$DOCKERHUB_ORG
           mkdir -p target/release
-          cp -f $TMP/$BINARY* target/release/
+          cp -f ${TMP}/$BINARY* target/release/
           ./docker/scripts/build-injected-image.sh
 
       - name: Login to Dockerhub
