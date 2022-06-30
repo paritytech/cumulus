@@ -17,10 +17,26 @@ on:
         required: true
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    env:
+      TMP: tmp
+    steps:
+      - name: Prepare temp folder
+        run: |
+          mkdir $TMP
+          ls -al
+
   docker_build_publish:
+    needs: ["prepare"]
     env:
       BINARY: polkadot-parachain
+      TMP: tmp
+
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: $TMP
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
@@ -31,7 +47,6 @@ jobs:
         run: |
           echo "Repo: ${{ github.event.repository.full_name }}"
 
-          mkdir -p tmp; cd tmp
           for f in $BINARY $BINARY.asc $BINARY.sha256; do
             URL="https://github.com/${{ github.event.repository.full_name }}/releases/download/${{ github.event.inputs.tag }}/$f"
             echo " - Fetching $f from $URL"
