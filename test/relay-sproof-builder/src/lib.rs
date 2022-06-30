@@ -153,7 +153,7 @@ impl RelayStateSproofBuilder {
 			for (channel, metadata) in self.hrmp_channels {
 				insert(relay_chain::well_known_keys::hrmp_channels(channel), metadata.encode());
 			}
-
+			insert(relay_chain::well_known_keys::EPOCH_INDEX.to_vec(), 0u64.encode());
 			insert(relay_chain::well_known_keys::CURRENT_SLOT.to_vec(), self.current_slot.encode());
 		}
 
