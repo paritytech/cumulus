@@ -21,8 +21,8 @@ jobs:
     env:
       BINARY: polkadot-parachain
       TMP: tmp
-
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
@@ -38,6 +38,8 @@ jobs:
         working-directory: ${{ env.TMP }}
         run: |
           echo "Repo: ${{ github.event.repository.full_name }}"
+          echo "Working from folder $(pwd)"
+          ls -al
 
           for f in $BINARY $BINARY.asc $BINARY.sha256; do
             URL="https://github.com/${{ github.event.repository.full_name }}/releases/download/${{ github.event.inputs.tag }}/$f"
