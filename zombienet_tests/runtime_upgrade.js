@@ -21,9 +21,12 @@ async function run(nodeName, networkInfo, args) {
     const hashAtCurrent = await api.rpc.chain.getBlockHash(currentHeader.number.toHuman());
     const versionAtCurrent = await api.rpc.state.getRuntimeVersion(hashAtCurrent.toHuman());
 
-    console.log("1", versionAtBlock1.specVersion.toHuman());
+
     console.log("current", versionAtCurrent.specVersion.toHuman());
-    assert.equal(versionAtBlock1.specVersion.toHuman() + 1, versionAtCurrent.specVersion.toHuman(), "Running version should be the incremented version");
+    console.log("oldVersionIncremented", oldVersionIncremented);
+    const oldVersionIncremented = versionAtBlock1.specVersion.toHuman() + 1;
+    // 2 == 2
+    assert.equal( oldVersionIncremented, versionAtCurrent.specVersion.toHuman(), "Running version should be the incremented version");
 }
 
 module.exports = { run }
