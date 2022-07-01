@@ -1085,8 +1085,8 @@ where
 	}
 }
 
-/// Build the import queue for the statemint/statemine/westmine runtime.
-pub fn statemint_build_import_queue<RuntimeApi, AuraId: AppKey>(
+/// Build the import queue for Statemint and other Aura-based runtimes.
+pub fn aura_build_import_queue<RuntimeApi, AuraId: AppKey>(
 	client: Arc<TFullClient<Block, RuntimeApi, WasmExecutor<HostFunctions>>>,
 	config: &Configuration,
 	telemetry_handle: Option<TelemetryHandle>,
@@ -1165,8 +1165,9 @@ where
 	))
 }
 
-/// Start a statemint/statemine/westmint parachain node.
-pub async fn start_statemint_node<RuntimeApi, AuraId: AppKey>(
+/// Start an aura powered parachain node.
+/// (collective-polkadot and statemine/t use this)
+pub async fn start_generic_aura_node<RuntimeApi, AuraId: AppKey>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	collator_options: CollatorOptions,
@@ -1203,7 +1204,7 @@ where
 		collator_options,
 		id,
 		|_| Ok(RpcModule::new(())),
-		statemint_build_import_queue::<_, AuraId>,
+		aura_build_import_queue::<_, AuraId>,
 		|client,
 		 prometheus_registry,
 		 telemetry,

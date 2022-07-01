@@ -244,6 +244,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
+	type Event = Event;
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
 	type WeightToFee = IdentityFee<Balance>;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
@@ -265,6 +266,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type ReservedDmpWeight = ();
 	type XcmpMessageHandler = ();
 	type ReservedXcmpWeight = ();
+	type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::AnyRelayNumber;
 }
 
 parameter_types! {

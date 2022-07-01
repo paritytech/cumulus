@@ -42,7 +42,8 @@ use xcm_executor::{traits::JustTry, XcmExecutor};
 
 parameter_types! {
 	pub const WestendLocation: MultiLocation = MultiLocation::parent();
-	pub RelayNetwork: NetworkId = NetworkId::Named(b"Westend".to_vec());
+	pub RelayNetwork: NetworkId =
+		NetworkId::Named(b"Westend".to_vec().try_into().expect("less than length limit; qed"));
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	pub const Local: MultiLocation = Here.into();
@@ -158,7 +159,10 @@ impl xcm_executor::Config for XcmConfig {
 	type XcmSender = XcmRouter;
 	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	type IsReserve = NativeAsset;
+	// Westmint does not recognize a reserve location for any asset. This does not prevent
+	// Westmint acting _as_ a reserve location for WND and assets created under `pallet-assets`.
+	// For WND, users must use teleport where allowed (e.g. with the Relay Chain).
+	type IsReserve = ();
 	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of WND
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;

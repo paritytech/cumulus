@@ -57,6 +57,7 @@ pub mod constants;
 mod weights;
 pub mod xcm_config;
 
+use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -75,7 +76,7 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{AsEnsureOriginWithArg, EnsureOneOf, InstanceFilter},
+	traits::{AsEnsureOriginWithArg, EitherOfDiverse, InstanceFilter},
 	weights::{ConstantMultiplier, DispatchClass, Weight},
 	PalletId, RuntimeDebug,
 };
@@ -230,6 +231,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
+	type Event = Event;
 	type OnChargeTransaction =
 		pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees<Runtime>>;
 	type WeightToFee = WeightToFee;
@@ -239,7 +241,7 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
-	pub const AssetDeposit: Balance = 100 * DOLLARS; // 100 DOLLARS deposit to create asset
+	pub const AssetDeposit: Balance = 10 * UNITS; // 10 UNITS deposit to create fungible asset class
 	pub const AssetAccountDeposit: Balance = deposit(1, 16);
 	pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
 	pub const AssetsStringLimit: u32 = 50;
@@ -252,7 +254,7 @@ parameter_types! {
 
 /// We allow root and the Relay Chain council to execute privileged asset operations.
 pub type AssetsForceOrigin =
-	EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
+	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
 
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
@@ -405,6 +407,7 @@ impl InstanceFilter<Call> for ProxyType {
 			),
 		}
 	}
+
 	fn is_superset(&self, o: &Self) -> bool {
 		match (self, o) {
 			(x, y) if x == y => true,
@@ -412,6 +415,7 @@ impl InstanceFilter<Call> for ProxyType {
 			(_, ProxyType::Any) => false,
 			(ProxyType::Assets, ProxyType::AssetOwner) => true,
 			(ProxyType::Assets, ProxyType::AssetManager) => true,
+			(ProxyType::NonTransfer, ProxyType::Collator) => true,
 			_ => false,
 		}
 	}
@@ -446,6 +450,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type OutboundXcmpMessageSource = XcmpQueue;
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
+	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -458,8 +463,10 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-	type ControllerOrigin =
-		EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
+	type ControllerOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>,
+	>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = weights::cumulus_pallet_xcmp_queue::WeightInfo<Runtime>;
 }
@@ -506,7 +513,7 @@ parameter_types! {
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
 pub type CollatorSelectionUpdateOrigin =
-	EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
+	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
 
 impl pallet_collator_selection::Config for Runtime {
 	type Event = Event;
@@ -533,8 +540,8 @@ impl pallet_asset_tx_payment::Config for Runtime {
 }
 
 parameter_types! {
-	pub const CollectionDeposit: Balance = UNITS; // 1 UNIT deposit to create asset class
-	pub const ItemDeposit: Balance = UNITS / 100; // 1/100 UNIT deposit to create asset instance
+	pub const CollectionDeposit: Balance = 10 * UNITS; // 10 UNIT deposit to create uniques class
+	pub const ItemDeposit: Balance = UNITS / 100; // 1 / 100 UNIT deposit to create uniques instance
 	pub const KeyLimit: u32 = 32;	// Max 32 bytes per key
 	pub const ValueLimit: u32 = 64;	// Max 64 bytes per value
 	pub const UniquesMetadataDepositBase: Balance = deposit(1, 129);
@@ -582,7 +589,7 @@ construct_runtime!(
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
-		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
 		AssetTxPayment: pallet_asset_tx_payment::{Pallet} = 12,
 
 		// Collator support. the order of these 5 are important and shall not change.
