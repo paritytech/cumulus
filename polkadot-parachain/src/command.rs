@@ -15,7 +15,6 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::net::SocketAddr;
-
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
@@ -50,7 +49,7 @@ enum Runtime {
 	Statemint,
 	Statemine,
 	Westmint,
-	PenPal(NonZeroU32),
+	Penpal(ParaId),
 	ContractsRococo,
 }
 
@@ -62,9 +61,6 @@ impl ChainType for dyn ChainSpec {
 	fn runtime(&self) -> Runtime {
 		runtime(self.id())
 	}
-	fn is_penpal(&self) -> bool {
-		self.id().starts_with("penpal")
-	}
 }
 
 use sc_chain_spec::GenericChainSpec;
@@ -74,11 +70,7 @@ impl ChainType
 	fn runtime(&self) -> Runtime {
 		runtime(self.id())
 	}
-	fn is_penpal(&self) -> bool {
-		<dyn sc_service::ChainSpec>::is_penpal(self)
-	}
 }
-
 
 fn runtime(id: &str) -> Runtime {
 	let (id, para_id) = extract_parachain_id(id);
@@ -93,7 +85,7 @@ fn runtime(id: &str) -> Runtime {
 	} else if id.starts_with("westmint") {
 		Runtime::Westmint
 	} else if id.starts_with("penpal") {
-		Runtime::Penpal(para_id)
+		Runtime::Penpal(para_id.unwrap())
 	} else if id.starts_with("contracts-rococo") {
 		Runtime::ContractsRococo
 	} else {
@@ -102,6 +94,7 @@ fn runtime(id: &str) -> Runtime {
 }
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
+	let (id, para_id) = extract_parachain_id(id);
 	Ok(match id {
 		"staging" => Box::new(chain_spec::staging_test_net()),
 		"tick" => Box::new(chain_spec::ChainSpec::from_json_bytes(
@@ -153,11 +146,11 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		)?),
 		// -- Fallback (generic chainspec)
 		"" => Box::new(chain_spec::get_chain_spec()),
-		"penpal-kusama" => Box::new(chain_spec::get_penpal_chain_spec(
+		"penpal-kusama" => Box::new(chain_spec::penpal::get_penpal_chain_spec(
 			para_id.expect("Must specify parachain id"),
 			"kusama-local",
 		)),
-		"penpal-polkadot" => Box::new(chain_spec::get_penpal_chain_spec(
+		"penpal-polkadot" => Box::new(chain_spec::penpal::get_penpal_chain_spec(
 			para_id.expect("Must specify parachain id"),
 			"polkadot-local",
 		)),
@@ -181,7 +174,8 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				Runtime::ContractsRococo => Box::new(
 					chain_spec::contracts::ContractsRococoChainSpec::from_json_file(path.into())?,
 				),
-				Runtime::PenPal(_para_id) => Box::new(chain_spec::PenpalChainSpec::from_json_file(path.into())?)
+				Runtime::Penpal(_para_id) =>
+					Box::new(chain_spec::penpal::PenpalChainSpec::from_json_file(path.into())?),
 				Runtime::Generic => Box::new(chain_spec),
 			}
 		},
@@ -252,6 +246,7 @@ impl SubstrateCli for Cli {
 			Runtime::Shell => &shell_runtime::VERSION,
 			Runtime::Seedling => &seedling_runtime::VERSION,
 			Runtime::ContractsRococo => &contracts_rococo_runtime::VERSION,
+			Runtime::Penpal(_) => &penpal_runtime::VERSION,
 			Runtime::Generic => &rococo_parachain_runtime::VERSION,
 		}
 	}
@@ -392,7 +387,7 @@ macro_rules! construct_async_run {
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
 			},
-			Runtime::Generic => {
+			Runtime::Penpal(_) | Runtime::Generic => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<
 						rococo_parachain_runtime::RuntimeApi,
@@ -638,6 +633,7 @@ pub fn run() -> Result<()> {
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into),
+					Runtime::Penpal(_) | 
 					Runtime::Generic => crate::service::start_rococo_parachain_node(
 						config,
 						polkadot_config,

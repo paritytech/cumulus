@@ -6896,7 +6896,7 @@ dependencies = [
  "pallet-xcm",
  "parachain-info",
  "parity-scale-codec",
- "polkadot-parachain",
+ "polkadot-parachain 0.9.25",
  "polkadot-primitives",
  "polkadot-runtime-common",
  "scale-info",

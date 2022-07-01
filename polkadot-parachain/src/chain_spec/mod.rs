@@ -27,6 +27,7 @@ pub mod contracts;
 pub mod seedling;
 pub mod shell;
 pub mod statemint;
+pub mod penpal;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
