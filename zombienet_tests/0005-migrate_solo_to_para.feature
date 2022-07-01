@@ -11,5 +11,3 @@ alice: reports block height is at least 10 within 250 seconds
 alice: parachain 2000 block height is at least 10 within 250 seconds
 eve: reports block height is 0 within 20 seconds
 dave: js-script ./migrate_solo_to_para.js with "dave,2000-1,eve" within 200 seconds
-
-sleep 1200 seconds
