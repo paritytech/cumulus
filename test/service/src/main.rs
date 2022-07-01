@@ -49,18 +49,18 @@ fn main() -> Result<(), sc_cli::Error> {
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
 			let _ = builder.init();
 
-			let spec = cli.load_spec(&params.chain.clone().unwrap_or_default())?;
+			let spec = cli.load_spec(&params.base.shared_params.chain.clone().unwrap_or_default())?;
 			let state_version = cumulus_test_service::runtime::VERSION.state_version();
 
 			let block: parachains_common::Block = generate_genesis_block(&*spec, state_version)?;
 			let raw_header = block.header().encode();
-			let output_buf = if params.raw {
+			let output_buf = if params.base.raw {
 				raw_header
 			} else {
 				format!("0x{:?}", HexDisplay::from(&block.header().encode())).into_bytes()
 			};
 
-			if let Some(output) = &params.output {
+			if let Some(output) = &params.base.output {
 				std::fs::write(output, output_buf)?;
 			} else {
 				std::io::stdout().write_all(&output_buf)?;

@@ -70,18 +70,6 @@ pub struct ExportGenesisStateCommand {
 
 	#[clap(flatten)]
 	pub base: cumulus_client_cli::ExportGenesisStateCommand,
-
-	/// Output file name or stdout if unspecified.
-	#[clap(action)]
-	pub output: Option<PathBuf>,
-
-	/// Write output in binary. Default is to write in hex.
-	#[clap(short, long)]
-	pub raw: bool,
-
-	/// The name of the chain for that the genesis state should be exported.
-	#[clap(long)]
-	pub chain: Option<String>,
 }
 
 impl CliConfiguration for ExportGenesisStateCommand {
@@ -98,18 +86,6 @@ pub struct ExportGenesisWasmCommand {
 
 	#[clap(flatten)]
 	pub base: cumulus_client_cli::ExportGenesisWasmCommand,
-
-	/// Output file name or stdout if unspecified.
-	#[clap(action)]
-	pub output: Option<PathBuf>,
-
-	/// Write output in binary. Default is to write in hex.
-	#[clap(short, long)]
-	pub raw: bool,
-
-	/// The name of the chain for that the genesis state should be exported.
-	#[clap(long)]
-	pub chain: Option<String>,
 }
 
 impl CliConfiguration for ExportGenesisWasmCommand {
