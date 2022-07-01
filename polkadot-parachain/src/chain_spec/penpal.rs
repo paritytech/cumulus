@@ -21,7 +21,7 @@ pub fn get_penpal_chain_spec(id: ParaId, relay_chain: &str) -> PenpalChainSpec {
 		// Name
 		"Penpal Parachain",
 		// ID
-		"penpal-parachain",
+		&format!("penpal-{}", relay_chain.replace("-local","")),
 		ChainType::Development,
 		move || {
 			penpal_testnet_genesis(
