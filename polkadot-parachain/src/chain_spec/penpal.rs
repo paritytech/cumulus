@@ -1,14 +1,11 @@
- 
 use crate::chain_spec::{get_account_id_from_seed, Extensions};
 use cumulus_primitives_core::ParaId;
 // use rococo_parachain_runtime::{AuraId};
+use crate::chain_spec::{get_collator_keys_from_seed, SAFE_XCM_VERSION};
 use sc_service::ChainType;
 use sp_core::sr25519;
- use crate::chain_spec::get_collator_keys_from_seed;
-  use crate::chain_spec::SAFE_XCM_VERSION;
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type PenpalChainSpec = sc_service::GenericChainSpec<penpal_runtime::GenesisConfig, Extensions>;
-
 
 pub fn get_penpal_chain_spec(id: ParaId, relay_chain: &str) -> PenpalChainSpec {
 	// Give your base currency a unit name and decimal places
@@ -21,7 +18,7 @@ pub fn get_penpal_chain_spec(id: ParaId, relay_chain: &str) -> PenpalChainSpec {
 		// Name
 		"Penpal Parachain",
 		// ID
-		&format!("penpal-{}", relay_chain.replace("-local","")),
+		&format!("penpal-{}", relay_chain.replace("-local", "")),
 		ChainType::Development,
 		move || {
 			penpal_testnet_genesis(
