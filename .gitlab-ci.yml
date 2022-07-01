@@ -341,7 +341,7 @@ zombienet-0001-sync_blocks_from_tip_without_connected_collator:
     - echo "${RELAY_IMAGE}"
     - echo "${COL_IMAGE}"
     - echo "${GH_DIR}"
-    - export DEBUG=zombie*
+    - export DEBUG=zombie
     - export RELAY_IMAGE=${POLKADOT_IMAGE}
     - export COL_IMAGE=${COL_IMAGE}
   script:
@@ -370,7 +370,7 @@ zombienet-0002-pov_recovery:
     - echo "${RELAY_IMAGE}"
     - echo "${COL_IMAGE}"
     - echo "${GH_DIR}"
-    - export DEBUG=zombie*
+    - export DEBUG=zombie
     - export RELAY_IMAGE=${POLKADOT_IMAGE}
     - export COL_IMAGE=${COL_IMAGE}
   script:
@@ -399,7 +399,7 @@ zombienet-0003-full_node_catching_up:
     - echo "${RELAY_IMAGE}"
     - echo "${COL_IMAGE}"
     - echo "${GH_DIR}"
-    - export DEBUG=zombie*
+    - export DEBUG=zombie
     - export RELAY_IMAGE=${POLKADOT_IMAGE}
     - export COL_IMAGE=${COL_IMAGE}
   script:
@@ -433,7 +433,7 @@ zombienet-0004-runtime_upgrade:
     - echo "${RELAY_IMAGE}"
     - echo "${COL_IMAGE}"
     - echo "${GH_DIR}"
-    - export DEBUG=zombie*
+    - export DEBUG=zombie
     - export RELAY_IMAGE=${POLKADOT_IMAGE}
     - export COL_IMAGE=${COL_IMAGE}
   script:
@@ -465,7 +465,7 @@ zombienet-0005-migrate_solo_to_para:
     - echo "${RELAY_IMAGE}"
     - echo "${COL_IMAGE}"
     - echo "${GH_DIR}"
-    - export DEBUG=zombie*
+    - export DEBUG=zombie
     - export RELAY_IMAGE=${POLKADOT_IMAGE}
     - export COL_IMAGE=${COL_IMAGE}
   script:
