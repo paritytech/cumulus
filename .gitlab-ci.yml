@@ -325,7 +325,7 @@ benchmarks:
 
 #### stage:                        integration-test
 
-zombienet-sync_blocks_from_tip_without_connected_collator:
+zombienet-0001-sync_blocks_from_tip_without_connected_collator:
   stage:                           integration-test
   image:                           "${ZOMBIENET_IMAGE}"
   <<:                              *zombienet-refs
@@ -425,6 +425,7 @@ zombienet-0005-migrate_solo_to_para:
     GH_DIR:                        "https://github.com/paritytech/cumulus/tree/${CI_COMMIT_SHORT_SHA}/zombienet_tests"
     COL_IMAGE:                     "docker.io/paritypr/test-parachain:${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
   before_script:
+    - ls -ltr *
     - echo "Zombie-net Tests Config"
     - echo "${ZOMBIENET_IMAGE}"
     - echo "${RELAY_IMAGE}"

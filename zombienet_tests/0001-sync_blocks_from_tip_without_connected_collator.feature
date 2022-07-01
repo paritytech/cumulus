@@ -13,5 +13,3 @@ alice: parachain 2000 block height is at least 10 within 250 seconds
 
 ferdie: reports block height is at least 12 within 250 seconds
 eve: reports block height is at least 12 within 250 seconds
-
-sleep 1200
