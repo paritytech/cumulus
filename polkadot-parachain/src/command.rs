@@ -94,7 +94,7 @@ fn runtime(id: &str) -> Runtime {
 }
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
-	let (id, orig, para_id) = extract_parachain_id(id);
+	let (id, _, para_id) = extract_parachain_id(id);
 	Ok(match id {
 		"staging" => Box::new(chain_spec::staging_test_net()),
 		"tick" => Box::new(chain_spec::ChainSpec::from_json_bytes(
