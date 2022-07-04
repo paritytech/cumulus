@@ -156,7 +156,6 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		)),
 		// -- Loading a specific spec from disk
 		path => {
-			println!("could not find a path {}", path);
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
 			match chain_spec.runtime() {
 				Runtime::Statemint => Box::new(
