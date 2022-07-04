@@ -6358,6 +6358,7 @@ name = "pallet-state-trie-migration"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#279593d87f103fa5e10c9751a97b1584f3ad79d6"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -11765,7 +11766,6 @@ dependencies = [
  "pallet-multisig",
  "pallet-proxy",
  "pallet-session",
- "pallet-state-trie-migration",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",

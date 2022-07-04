@@ -846,7 +846,7 @@ cumulus_pallet_parachain_system::register_validate_block! {
 parameter_types! {
 	// The deposit configuration for the singed migration. Specially if you want to allow any signed account to do the migration (see `SignedFilter`, these deposits should be high)
 	pub const MigrationSignedDepositPerItem: Balance = 1 * CENTS;
-	pub const MigrationSignedDepositBase: Balance = 20 * DOLLARS;
+	pub const MigrationSignedDepositBase: Balance = 2_000 * CENTS;
 	pub const MigrationMaxKeyLen: u32 = 512;
 }
 
@@ -862,7 +862,7 @@ impl pallet_state_trie_migration::Config for Runtime {
 	//type SignedFilter = frame_system::EnsureSigned<Self::AccountId>;
 
 	// Replace this with weight based on your runtime.
-	type WeightInfo = weights::pallet_state_trie_migration::WeightInfo<Runtime>;
+	type WeightInfo = weights_mig::SubstrateWeight<Runtime>;
 
 	type MaxKeyLen = MigrationMaxKeyLen;
 }
@@ -906,4 +906,54 @@ fn ensure_key_ss58() {
 	let acc: &[u8] = acc.as_ref();
 	assert_eq!(acc, &KEY_ROOT_MIG_CONTROLLER[..]);
 	//	panic!("{:?}", acc);
+}
+
+pub mod weights_mig {
+	use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
+	use sp_std::marker::PhantomData;
+	use pallet_state_trie_migration::WeightInfo;
+
+
+	/// Weights for pallet_state_trie_migration using the Substrate node and recommended hardware.
+	pub struct SubstrateWeight<T>(PhantomData<T>);
+	impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
+		// Storage: StateTrieMigration SignedMigrationMaxLimits (r:1 w:0)
+		// Storage: StateTrieMigration MigrationProcess (r:1 w:1)
+		fn continue_migrate() -> Weight {
+			(19_019_000 as Weight)
+				.saturating_add(T::DbWeight::get().reads(2 as Weight))
+				.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		}
+		// Storage: StateTrieMigration SignedMigrationMaxLimits (r:1 w:0)
+		fn continue_migrate_wrong_witness() -> Weight {
+			(1_874_000 as Weight)
+				.saturating_add(T::DbWeight::get().reads(1 as Weight))
+		}
+		fn migrate_custom_top_success() -> Weight {
+			(16_381_000 as Weight)
+		}
+		// Storage: unknown [0x666f6f] (r:1 w:1)
+		fn migrate_custom_top_fail() -> Weight {
+			(25_966_000 as Weight)
+				.saturating_add(T::DbWeight::get().reads(1 as Weight))
+				.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		}
+		fn migrate_custom_child_success() -> Weight {
+			(16_712_000 as Weight)
+		}
+		// Storage: unknown [0x666f6f] (r:1 w:1)
+		fn migrate_custom_child_fail() -> Weight {
+			(29_885_000 as Weight)
+				.saturating_add(T::DbWeight::get().reads(1 as Weight))
+				.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		}
+		// Storage: unknown [0x6b6579] (r:1 w:1)
+		fn process_top_key(v: u32, ) -> Weight {
+			(0 as Weight)
+				// Standard Error: 0
+				.saturating_add((2_000 as Weight).saturating_mul(v as Weight))
+				.saturating_add(T::DbWeight::get().reads(1 as Weight))
+				.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		}
+	}
 }
