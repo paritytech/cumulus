@@ -62,6 +62,7 @@ sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", bra
 frame-rpc-system = { package = "substrate-frame-rpc-system", git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-contracts-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-state-trie-migration-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }

@@ -60,12 +60,14 @@ where
 {
 	use frame_rpc_system::{System, SystemApiServer};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
+	use substrate_state_trie_migration_rpc::{StateMigration, StateMigrationApiServer};
 
 	let mut module = RpcExtension::new(());
 	let FullDeps { client, pool, deny_unsafe } = deps;
 
 	module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
+	module.merge(StateMigration::new(client.clone(), backend, deny_unsafe).into_rpc())?;
 
 	Ok(module)
 }
