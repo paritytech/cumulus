@@ -634,7 +634,7 @@ where
 				deny_unsafe,
 			};
 
-			rpc::create_full(deps).map_err(Into::into)
+			rpc::create_full(deps, backend.clone()).map_err(Into::into)
 		})
 	};
 
