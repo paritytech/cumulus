@@ -42,7 +42,7 @@ pub struct FullDeps<C, P> {
 }
 
 /// Instantiate all RPC extensions.
-pub fn create_full<C, P>(
+pub fn create_full<C, P, B>(
 	deps: FullDeps<C, P>,
 	backend: Arc<B>,
 ) -> Result<RpcExtension, Box<dyn std::error::Error + Send + Sync>>
@@ -58,6 +58,7 @@ where
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: BlockBuilder<Block>,
 	P: TransactionPool + Sync + Send + 'static,
+	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashFor<Block>>,
 {
 	use frame_rpc_system::{System, SystemApiServer};
