@@ -190,4 +190,5 @@ tests:
                       attribute:
                         type: XcmV2TraitsOutcome
                         isError: true
-                        value: Barrier                                 
+                        value: Barrier
+                                 
