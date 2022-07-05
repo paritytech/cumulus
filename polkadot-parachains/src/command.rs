@@ -28,19 +28,18 @@ use crate::{
 	},
 };
 use codec::Encode;
+use common::AuraId;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::info;
-use parachains_common::AuraId;
-use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::traits::Block as BlockT;
+use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::{io::Write, net::SocketAddr};
 
 const LOCAL_PARA_ID: u32 = 2015;
@@ -223,7 +222,7 @@ macro_rules! construct_benchmark_partials {
 			let $partials =
 				new_partial::<shell_runtime::RuntimeApi, ShellParachainRuntimeExecutor, _>(
 					&$config,
-					crate::service::parachain_build_import_queue::<_, _, parachains_common::AuraId>,
+					crate::service::parachain_build_import_queue::<_, _, common::AuraId>,
 				)?;
 			$code
 		} else {
@@ -233,7 +232,7 @@ macro_rules! construct_benchmark_partials {
 				_,
 			>(
 				&$config,
-				crate::service::parachain_build_import_queue::<_, _, parachains_common::AuraId>,
+				crate::service::parachain_build_import_queue::<_, _, common::AuraId>,
 			)?;
 			$code
 		}
@@ -247,7 +246,7 @@ macro_rules! construct_async_run {
 			runner.async_run(|$config| {
 				let $components = new_partial::<shell_runtime::RuntimeApi, ShellParachainRuntimeExecutor, _>(
 					&$config,
-					crate::service::parachain_build_import_queue::<_, _, parachains_common::AuraId>,
+					crate::service::parachain_build_import_queue::<_, _, common::AuraId>,
 				)?;
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
@@ -260,7 +259,7 @@ macro_rules! construct_async_run {
 				_
 			>(
 				&$config,
-				crate::service::parachain_build_import_queue::<_, _, parachains_common::AuraId>,
+				crate::service::parachain_build_import_queue::<_, _, common::AuraId>,
 			)?;
 			let task_manager = $components.task_manager;
 			{ $( $code )* }.map(|v| (v, task_manager))
@@ -431,7 +430,7 @@ pub fn run() -> Result<()> {
 				let id = ParaId::from(para_id);
 
 				let parachain_account =
-					AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account(&id);
+					AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
 
 				let state_version =
 					RelayChainCli::native_runtime_version(&config.chain_spec).state_version();

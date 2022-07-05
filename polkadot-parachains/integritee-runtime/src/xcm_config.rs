@@ -23,6 +23,7 @@ use super::{
 	ParachainSystem, PolkadotXcm, Runtime, XcmpQueue, TEER,
 };
 use codec::{Decode, Encode, MaxEncodedLen};
+use common::xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry};
 use core::marker::PhantomData;
 use frame_support::{
 	pallet_prelude::Get,
@@ -38,7 +39,6 @@ use orml_traits::{
 };
 use orml_xcm_support::{IsNativeConcrete, MultiNativeAsset};
 use pallet_xcm::XcmPassthrough;
-use parachains_common::xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry};
 use polkadot_parachain::primitives::Sibling;
 use scale_info::TypeInfo;
 use sp_std::{
@@ -317,9 +317,16 @@ parameter_types! {
 	pub const MaxAssetsForTransfer: usize = 2;
 }
 
+// The min fee amount in fee asset is split into two parts:
+//
+// - fee asset sent to fee reserve chain = fee_amount - min_xcm_fee
+// - fee asset sent to dest reserve chain = min_xcm_fee
+// Check out for more information:
+// https://github.com/open-web3-stack/open-runtime-module-library/tree/master/xtokens#transfer-multiple-currencies
+
 parameter_type_with_key! {
-	pub ParachainMinFee: |_location: MultiLocation| -> u128 {
-		u128::MAX
+	pub ParachainMinFee: |_location: MultiLocation| -> Option<u128> {
+		None
 	};
 }
 

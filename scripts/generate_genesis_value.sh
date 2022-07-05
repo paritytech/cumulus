@@ -14,4 +14,4 @@ pushd generate_genesis_values
 yarn
 popd
 
-node generate_genesis_values ../polkadot-parachains/res/$chain_id.json ../polkadot-parachains/res/${chain_id}_genesis_values.json
+node generate_genesis_values ../polkadot-parachains/chain-specs/$chain_id.json ../polkadot-parachains/chain-specs/${chain_id}_genesis_values.json

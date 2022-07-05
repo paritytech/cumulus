@@ -287,23 +287,25 @@ pub enum RelayChain {
 }
 
 pub fn shell_rococo_config() -> Result<ShellChainSpec, String> {
-	ShellChainSpec::from_json_bytes(&include_bytes!("../res/integritee-rococo.json")[..])
+	ShellChainSpec::from_json_bytes(&include_bytes!("../chain-specs/integritee-rococo.json")[..])
 }
 
 pub fn shell_westend_config() -> Result<ShellChainSpec, String> {
-	ShellChainSpec::from_json_bytes(&include_bytes!("../res/integritee-westend.json")[..])
+	ShellChainSpec::from_json_bytes(&include_bytes!("../chain-specs/integritee-westend.json")[..])
 }
 
 pub fn shell_kusama_config() -> Result<ShellChainSpec, String> {
-	ShellChainSpec::from_json_bytes(&include_bytes!("../res/integritee-kusama.json")[..])
+	ShellChainSpec::from_json_bytes(&include_bytes!("../chain-specs/integritee-kusama.json")[..])
 }
 
 pub fn shell_polkadot_config() -> Result<ShellChainSpec, String> {
-	ShellChainSpec::from_json_bytes(&include_bytes!("../res/integritee-polkadot.json")[..])
+	ShellChainSpec::from_json_bytes(&include_bytes!("../chain-specs/integritee-polkadot.json")[..])
 }
 
 pub fn integritee_moonbase_config() -> Result<IntegriteeChainSpec, String> {
-	IntegriteeChainSpec::from_json_bytes(&include_bytes!("../res/integritee-moonbase.json")[..])
+	IntegriteeChainSpec::from_json_bytes(
+		&include_bytes!("../chain-specs/integritee-moonbase.json")[..],
+	)
 }
 
 impl ToString for RelayChain {
