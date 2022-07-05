@@ -6,9 +6,9 @@ settings:
     assets_parachain: &assets_parachain
       wsPort: 9910
       paraId: &ap_id 1000
-    community_parachain: &community_parachain
+    penpal_parachain: &penpal_parachain
       wsPort: 9920
-      paraId: &cp_id 2000
+      paraId: &pp_id 2000
   variables:
     common:
       xcm_verison: &xcm_version '2'
@@ -17,8 +17,8 @@ settings:
       relay_chain:
         signer: &rc_signer //Alice
         assets_parachain_destination: &ap_dest { v1: { 0, interior: { x1: { parachain: *ap_id }}}}
-      community_parachain:
-        signer: &cp_signer //Alice
+      penpal_parachain:
+        signer: &pp_signer //Alice
   decodedCalls:
     ap_force_xcm_version:
       chain: *assets_parachain
@@ -63,7 +63,7 @@ tests:
                   attribute:
                     type: u32
                     value: *xcm_version
-          - extrinsics: # Relay Chain sets supported version for Community Parachain
+          - extrinsics: # Relay Chain sets supported version for Penpal Parachain
             - chain: *relay_chain
               sudo: true
               signer: *rc_signer
@@ -74,7 +74,7 @@ tests:
                   parents: 0,
                   interior: {
                     X1: {
-                      Parachain: *cp_id
+                      Parachain: *pp_id
                     }
                   }
                 },
@@ -120,9 +120,9 @@ tests:
                   attribute:
                     type: u32
                     value: *xcm_version
-          - extrinsics: # Community Parachain sets supported version for Relay Chain
-            - chain: *community_parachain
-              signer: *cp_signer
+          - extrinsics: # Penpal Parachain sets supported version for Relay Chain
+            - chain: *penpal_parachain
+              signer: *pp_signer
               sudo: true
               pallet: polkadotXcm
               call: forceXcmVersion

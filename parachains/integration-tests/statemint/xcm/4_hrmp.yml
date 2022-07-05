@@ -6,10 +6,9 @@ settings:
     assets_parachain: &assets_parachain
       wsPort: 9910
       paraId: &ap_id 1000
-    community_parachain: &community_parachain
+    penpal_parachain: &penpal_parachain
       wsPort: 9920
-      paraId: &cp_id 2000
-      sovereign_account: &cp_sovereign F7fq1jMZkfuCuoMTyiEVAP2DMpMt18WopgBqTJznLihLNbZ
+      paraId: &pp_id 2000
   variables:
     common:
       amount: &amount 1000000000000
@@ -20,24 +19,23 @@ settings:
         signer: &rc_signer //Alice
         assets_parachain_destination: &ap_dest { v1: { 0, interior: { x1: { parachain: *ap_id }}}}
         assets_parachain_dest_routed: &ap_dest_routed { v1: { parents: 1, interior: { x1: { parachain: *ap_id } }}}
-        assets_parachain_account: &ap_acc '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d'
       assets_parachain_account:
         signer: &ap_signer //Alice
         wallet: &ap_wallet HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F
         asset_id: &asset_id 2
         assets_pallet_id: &assets_pallet_id 50
         asset_min_balance: &asset_ed 1000 
-        community_parachain_destination: &cp_dest { v1: { parents: 1, interior: { x1: { parachain: *cp_id } }}}
-        community_parachain_sovereign_account: &cp_sovereign_acc FBeL7EAeUroLWXW1yfKboiqTqVfbRBcsUKd6QqVf4kGBySS
+        penpal_parachain_destination: &pp_dest { v1: { parents: 1, interior: { x1: { parachain: *pp_id } }}}
         ksm: &ap_ksm { concrete: { parents: 1, interior: { here: true }}}
         ksm_fungible: &ap_ksm_fungible { id: *ap_ksm, fun: { fungible: *amount }}
         suff_asset: &suff_asset { concrete: { parents: 0, interior: { x2: [ { PalletInstance: *assets_pallet_id }, { GeneralIndex: *asset_id } ] }}}
         suff_asset_fail: &suff_asset_fail { concrete: { parents: 0, interior: { x2: [ { PalletInstance: *assets_pallet_id }, { GeneralIndex: 3 } ] }}}
         suff_asset_fungible: &ap_suff_asset_fungible { id: *suff_asset, fun: { fungible: *weight_at_most }}
         suff_asset_fungible_fail: &ap_suff_asset_fungible_fail { id: *suff_asset_fail, fun: { fungible: *weight_at_most }}
-      community_parachain:
-        signer: &cp_signer //Alice
-        community_parachain_account: &cp_acc '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d'
+      penpal_parachain:
+        sovereign_account: &pp_sovereign_sibl FBeL7EAeUroLWXW1yfKboiqTqVfbRBcsUKd6QqVf4kGBySS
+        signer: &pp_signer //Alice
+        penpal_parachain_account: &pp_acc '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d'
   decodedCalls:
     force_create_asset:
       chain: *assets_parachain
@@ -58,7 +56,7 @@ settings:
 tests:
   - name: HRMP
     describes:
-      - name: polkadotXcm.limitedReserveTransferAssets (Asset) | Assets Parachain -> Community Parachain
+      - name: polkadotXcm.limitedReserveTransferAssets (Asset) | Assets Parachain -> Penpal Parachain
         before:
           - name: DEPENDANCY | A sufficient Asset should exist in the Assets Parachain
             actions:
@@ -97,9 +95,8 @@ tests:
                     call: asset
                     args: [ *asset_id ]
               - asserts:
-                  custom:
-                    path: ../../../asserts/checkAssetWasCreated.ts
-                    args: $forced_created_asset
+                  isSome:
+                    args: [ $forced_created_asset ]
 
           - name: DEPENDANCY | Some Assets should be minted for the sender
             actions:
@@ -116,7 +113,7 @@ tests:
                   events:
                     - name: assets.Issued
         its:
-          - name: Assets Parachain should be able to reserve transfer an Asset to Community Parachain
+          - name: Assets Parachain should be able to reserve transfer an Asset to Penpal Parachain
             actions:
               - extrinsics:
                 - chain: *assets_parachain
@@ -124,7 +121,7 @@ tests:
                   pallet: polkadotXcm
                   call: limitedReserveTransferAssets
                   args: [ 
-                    *cp_dest, # destination
+                    *pp_dest, # destination
                     { # beneficiary
                       V1: {
                         parents: 0,
@@ -132,7 +129,7 @@ tests:
                           X1: {
                             AccountId32: {
                               network: Any,
-                              id: *cp_acc
+                              id: *pp_acc
                             }
                           }
                         }
@@ -174,15 +171,15 @@ tests:
                     - name: assets.Transferred
                       attributes:
                         type: AccountId32
-                        value: *cp_sovereign_acc
+                        value: *pp_sovereign_sibl
                     - name: assets.Transferred
                       attributes:
                         type: u128
                         value: *amount_to_send
 
-      - name: polkadotXcm.limitedReserveTransferAssets (KSM) | Assets Parachain -> Community Parachain
+      - name: polkadotXcm.limitedReserveTransferAssets (KSM) | Assets Parachain -> Penpal Parachain
         its:
-          - name: Assets Parachain should be able to reserve transfer KSM to Community Parachain
+          - name: Assets Parachain should be able to reserve transfer KSM to Penpal Parachain
             actions:
               - extrinsics:
                 - chain: *assets_parachain
@@ -190,7 +187,7 @@ tests:
                   pallet: polkadotXcm
                   call: limitedReserveTransferAssets
                   args: [ 
-                    *cp_dest, # destination
+                    *pp_dest, # destination
                     { # beneficiary
                       V1: {
                         parents: 0,
@@ -198,7 +195,7 @@ tests:
                           X1: {
                             AccountId32: {
                               network: Any,
-                              id: *cp_acc
+                              id: *pp_acc
                             }
                           }
                         }
@@ -221,19 +218,31 @@ tests:
                     - name: balances.Endowed
                       attributes:
                         type: AccountId32
-                        value: *cp_sovereign_acc
+                        value: *pp_sovereign_sibl
                     - name: balances.Endowed
                       attributes:
                         type: u128
                         value: *amount
 
-      - name: polkadotXcm.send( system.remarkWithEvent() ) | Community Parachain -> Assets Parachain
+      - name: polkadotXcm.send( system.remarkWithEvent() ) | Penpal Parachain -> Assets Parachain
+        before:
+          - name: Get the asset balance of the Penpal Parachain Sovereign account in Assets Parachain
+            actions:
+              - queries:
+                  assets_balance_pp_sovereign_before:
+                    chain: *assets_parachain
+                    pallet: assets
+                    call: account
+                    args: [ 
+                      *asset_id,
+                      *pp_sovereign_sibl
+                    ]
         its:
-          - name: Community Parachain should be able to send XCM message paying its fee with sufficient asset[2] in Assets Parachain
+          - name: Penpal Parachain should be able to send XCM message paying its fee with sufficient asset[2] in Assets Parachain
             actions:
               - extrinsics:
-                - chain: *community_parachain
-                  signer: *cp_signer
+                - chain: *penpal_parachain
+                  signer: *pp_signer
                   sudo: true
                   pallet: polkadotXcm
                   call: send
@@ -270,7 +279,7 @@ tests:
                       chain: *assets_parachain
                       attributes:
                         type: AccountId32
-                        value: *cp_sovereign
+                        value: *pp_sovereign_sibl
                     - name: assets.Issued
                       chain: *assets_parachain
                       attributes:
@@ -280,33 +289,33 @@ tests:
                       chain: *assets_parachain
                       attributes:
                         type: AccountId32
-                        value: *cp_sovereign
+                        value: *pp_sovereign_sibl
               - queries:
-                  asset_after_amount:
+                  assets_balance_pp_sovereign_after:
                     chain: *assets_parachain
                     pallet: assets
                     call: account
                     args: [
                       *asset_id,
-                      *cp_sovereign_acc
+                      *pp_sovereign_sibl
                     ]
-          - name: Should reduce the asset[2] balance of the Community Parachain's SovereignAccount in the Assets Parachain
+          - name: Should reduce the asset[2] balance of the Penpal Parachain's SovereignAccount in the Assets Parachain
             actions:
               - asserts:
-                  custom:
-                    path: ../../../asserts/checkAssetWasBurned.ts
-                    args:
+                  assetsDecreased:
+                    args: [
                       {
                         balances: {
-                          before: *amount_to_send,
-                          after: $asset_after_amount,
+                          before: $assets_balance_pp_sovereign_before,
+                          after: $assets_balance_pp_sovereign_after,
                         },
-                      }
-          - name: Community Parachain SHOULD NOT be able to send XCM message paying its fee with sufficient asset[3] if not balance
+                      }  
+                    ]
+          - name: Penpal Parachain SHOULD NOT be able to send XCM message paying its fee with sufficient asset[3] if not balance
             actions:
               - extrinsics:
-                - chain: *community_parachain
-                  signer: *cp_signer
+                - chain: *penpal_parachain
+                  signer: *pp_signer
                   sudo: true
                   pallet: polkadotXcm
                   call: send

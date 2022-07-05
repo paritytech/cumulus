@@ -117,34 +117,28 @@ tests:
           - name: Should reduce the balance of the sender
             actions:
               - asserts:
-                  custom:
-                    path: ../../../asserts/checkSenderBalances.ts
-                    args: 
+                  balanceDecreased:
+                    args: [
                       { 
                         balances: { 
                           before: $balance_ap_sender_before,
                           after: $balance_ap_sender_after,
                         },
-                        amount: *amount,
-                        fees: {
-                          from: *polkadotXcm.limitedTeleportAssets,
-                          index: 0
-                        }
-                      }
+                        amount: *amount
+                      }  
+                    ]
           - name: Should increase the balance of the receiver
             actions:
               - asserts:
-                  custom:
-                    path: ../../../asserts/checkReceiverBalances.ts
-                    args: 
+                  balanceIncreased:
+                    args: [
                       { 
                         balances: { 
                           before: $balance_rc_receiver_before,
                           after: $balance_rc_receiver_after,
-                        },
-                        amount: *amount,
-                        fee: null
+                        }
                       }
+                    ]
 
       - name: polkadotXcm.send | Native - Transact(system.remark)
         its:
@@ -175,48 +169,7 @@ tests:
                         type: SpRuntimeDispatchError
                         value: BadOrigin
 
-      - name: polkadotXcm.limitedReserveTransferAssets
-        # before:
-        #     - name: DEPENDANCY | Do a 'limitedReserveTransferAssets' from the Relay Chain to the Assets Parachain to have funds to send them back
-        #       actions:
-        #         - extrinsics:
-        #           - chain: *relay_chain
-        #             signer: *rc_signer
-        #             pallet: xcmPallet
-        #             call: limitedReserveTransferAssets
-        #             args: [ 
-        #               *ap_dest, # destination 
-        #               *ap_benf, # beneficiary
-        #               { v1: [ *rc_ksm_fungible ] }, # assets
-        #               0, # feeAssetItem
-        #               { unlimited: true } # weightLimit
-        #             ]
-        #             events:
-        #               - name: xcmPallet.Attempted
-        #                 attribute:
-        #                   type: XcmV2TraitsOutcome
-        #                   isComplete: true
-        #                   value: 1,000,000,000
-        #               - name: dmpQueue.ExecutedDownward
-        #                 chain: *assets_parachain
-        #                 attribute:
-        #                   type: XcmV2TraitsOutcome
-        #                   isComplete: true
-        #                 value: 4,000,000,000
-
-        #     - name: Get the balances of the Assets Parachain's sender & Relay Chain's receiver
-        #       actions:
-        #         - queries:
-        #             balance_ap_sender_before:
-        #               chain: *assets_parachain
-        #               pallet: system
-        #               call: account
-        #               args: [ *ap_wallet ]
-        #             balance_rc_receiver_before:
-        #               chain: *relay_chain
-        #               pallet: system
-        #               call: account
-        #               args: [ *rc_wallet ]                  
+      - name: polkadotXcm.limitedReserveTransferAssets                
         its:
           - name: Should NOT be able to reserve transfer native assets from the Assets Parachain to the Relay Chain
             actions:
@@ -238,52 +191,3 @@ tests:
                         type: XcmV2TraitsOutcome
                         isError: true
                         value: Barrier
-                    # - name: ump.ExecutedUpward
-                    #   chain: *relay_chain
-                    #   attribute:
-                    #     type: XcmV2TraitsOutcome
-                    #     isComplete: true
-                    #     value: 4,000,000,000    
-              # - queries:
-              #     balance_ap_sender_after:
-              #       chain: *assets_parachain
-              #       pallet: system
-              #       call: account
-              #       args: [ *ap_wallet ]
-              #     balance_rc_receiver_after:
-              #       chain: *relay_chain
-              #       pallet: system
-              #       call: account
-              #       args: [ *rc_wallet ]
-
-          # - name: Should reduce the balance of the sender
-          #   actions:
-          #     - asserts:
-          #         custom:
-          #           path: ./asserts/checkSenderBalances.ts
-          #           args: 
-          #             { 
-          #               balances: { 
-          #                 before: $balance_ap_sender_before,
-          #                 after: $balance_ap_sender_after,
-          #               },
-          #               amount: *amount,
-          #               fees: {
-          #                 from: *polkadotXcm.limitedTeleportAssets,
-          #                 index: 0
-          #               }
-          #             }
-          # - name: Should increase the balance of the receiver
-          #   actions:
-          #     - asserts:
-          #         custom:
-          #           path: ./asserts/checkReceiverBalances.ts
-          #           args: 
-          #             { 
-          #               balances: { 
-          #                 before: $balance_rc_receiver_before,
-          #                 after: $balance_rc_receiver_after,
-          #               },
-          #               amount: *amount,
-          #               fee: null
-          #             }                                   

@@ -34,16 +34,16 @@ cumulus_based = true
 	name = "collator2"
 	command = "./bin/polkadot-parachain"
 
-	[[parachains]]
-	id = 2000
-	chain = "polkadot-community-parachain-2000"
-	cumulus_based = true
+[[parachains]]
+id = 2000
+chain = "penpal-polkadot-2000"
+cumulus_based = true
 
 	[[parachains.collators]]
 	name = "collator3"
 	ws_port = 9920
-	command = "./bin/parachain-collator"
+	command = "./bin/polkadot-parachain"
 
 	[[parachains.collators]]
 	name = "collator4"
-	command = "./bin/parachain-collator"
+	command = "./bin/polkadot-parachain"

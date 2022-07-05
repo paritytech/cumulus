@@ -92,35 +92,29 @@ tests:
           - name: Should reduce the balance of the sender
             actions:
               - asserts:
-                  custom:
-                    path: ../../../asserts/checkSenderBalances.ts
-                    args: 
+                  balanceDecreased:
+                    args: [
                       { 
-                        balances: { 
+                        balances: {
                           before: $balance_rc_sender_before,
                           after: $balance_rc_sender_after,
                         },
-                        amount: *amount,
-                        fees: {
-                          from: *xcmPallet.limitedTeleportAssets,
-                          index: 0
-                        }
+                        amount: *amount
                       }
+                    ]
           - name: Should increase the balance of the receiver
             actions:
               - asserts:
-                  custom:
-                    path: ../../../asserts/checkReceiverBalances.ts
-                    args: 
+                  balanceIncreased:
+                    args: [
                       { 
                         balances: { 
                           before: $balance_ap_receiver_before,
                           after: $balance_ap_receiver_after,
-                        },
-                        amount: *amount,
-                        fee: null
+                        }
                       }
-
+                    ]
+                      
       - name: xcmPallet.send | Superuser - Transact(assets.forceCreate)
         its:
           - name: Relay Chain Superuser account SHOULD be able to execute a XCM Transact instruction in the Assets Parachain 
@@ -160,9 +154,8 @@ tests:
                     call: asset
                     args: [ *asset_id ]    
               - asserts:
-                  custom:
-                    path: ../../../asserts/checkAssetWasCreated.ts
-                    args: $forced_created_asset
+                  isSome:
+                    args: [ $forced_created_asset ]
 
       - name: xcmPallet.send | Native - Transact(assets.forceCreate)
         its:
@@ -198,7 +191,7 @@ tests:
         its:
           - name: SHOULD NOT reserved transfer native assets from the Relay Chain to the Assets Parachain
             actions:
-              - extrinsics: &xcmPallet.limitedTeleportAssets
+              - extrinsics:
                 - chain: *relay_chain
                   signer: *rc_signer
                   pallet: xcmPallet
@@ -236,20 +229,16 @@ tests:
           - name: Should reduce the balance of the sender
             actions:
               - asserts:
-                  custom:
-                    path: ../../../asserts/checkSenderBalances.ts
-                    args: 
+                  balanceDecreased:
+                    args: [
                       { 
                         balances: { 
                           before: $balance_rc_sender_before,
                           after: $balance_rc_sender_after,
                         },
-                        amount: *amount,
-                        fees: {
-                          from: *xcmPallet.limitedTeleportAssets,
-                          index: 0
-                        }
+                        amount: *amount
                       }
+                    ]
           - name: Should keep the balance of the receiver
             actions:
               - asserts:

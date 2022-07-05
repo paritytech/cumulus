@@ -6,11 +6,9 @@ settings:
     assets_parachain: &assets_parachain
       wsPort: 9910
       paraId: &ap_id 1000
-      sovereign_account: &ap_sovereign F7fq1jSNVTPfJmaHaXCMtatT1EZefCUsa7rRiQVNR5efcah
-    community_parachain: &community_parachain
+    penpal_parachain: &penpal_parachain
       wsPort: 9920
-      paraId: &cp_id 2000
-      sovereign_account: &cp_sovereign F7fq1jMZkfuCuoMTyiEVAP2DMpMt18WopgBqTJznLihLNbZ
+      paraId: &pp_id 2000
   variables:
     common:
       amount: &amount 2000000000000
@@ -32,14 +30,14 @@ settings:
       relay_chain:
         signer: &rc_signer //Alice
         assets_parachain_destination: &ap_dest { v1: { 0, interior: { x1: { parachain: *ap_id }}}}
-        assets_parachain_account: &ap_acc '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d'
-        assets_parachain_beneficiary: &ap_benf {v1: { parents: 0, interior: { x1: { accountId32: { network: { any: true }, id: *ap_acc }}}}}
         ksm: &rc_ksm { concrete: { 0, interior: { here: true }}}
         ksm_fungible: &rc_ksm_fungible { id: *rc_ksm, fun: { fungible: *amount }}     
       assets_parachain_account:
+        sovereign_account: &ap_sovereign F7fq1jSNVTPfJmaHaXCMtatT1EZefCUsa7rRiQVNR5efcah
         relay_chain_destination: &rc_dest { v1: { parents: 1, interior: { here: true }}}
-      community_parachain:
-        signer: &cp_signer //Alice
+      penpal_parachain:
+        sovereign_account: &pp_sovereign F7fq1jMZkfuCuoMTyiEVAP2DMpMt18WopgBqTJznLihLNbZ
+        signer: &pp_signer //Alice
   decodedCalls:
     init_open_channel_with_ap:
       chain: *relay_chain
@@ -55,7 +53,7 @@ settings:
       pallet: hrmp
       call: hrmpInitOpenChannel
       args: [ 
-        *cp_id, # recipient
+        *pp_id, # recipient
         *max_capacity, # proposedMaxCapacity
         *max_message_size # proposedMaxMessageSize
       ]
@@ -71,7 +69,7 @@ settings:
       pallet: hrmp
       call: hrmpAcceptOpenChannel
       args: [ 
-        *cp_id, # sender
+        *pp_id, # sender
       ]
     xcm_accept_init_open_request_from_cp:
       chain: *assets_parachain
@@ -132,7 +130,7 @@ settings:
 tests:
   - name: HRMP
     beforeEach:
-      - name: DEPENDANCY | Community Parachain Sovereign account in the Relay Chain needs to be funded
+      - name: DEPENDANCY | Penpal Parachain Sovereign account in the Relay Chain needs to be funded
         actions:
           - extrinsics:
             - chain: *relay_chain
@@ -140,7 +138,7 @@ tests:
               pallet: balances
               call: transfer
               args: [ 
-                *cp_sovereign, # destination 
+                *pp_sovereign, # destination 
                 *amount, # value
               ]
               events:
@@ -159,13 +157,13 @@ tests:
               events:
                 - name: balances.Transfer             
     describes:
-      - name: hrmp.hrmpInitOpenChannel (Community Parachain → Assets Parachain)
+      - name: hrmp.hrmpInitOpenChannel (Penpal Parachain → Assets Parachain)
         its:
-          - name: Community Parachain sends a request to the Relay Chain to open a channel with the Assets Parchain
+          - name: Penpal Parachain sends a request to the Relay Chain to open a channel with the Assets Parchain
             actions:
               - extrinsics:
-                - chain: *community_parachain
-                  signer: *cp_signer
+                - chain: *penpal_parachain
+                  signer: *pp_signer
                   sudo: true
                   pallet: polkadotXcm
                   call: send
@@ -218,15 +216,15 @@ tests:
                       $requested_channels,
                       [
                         {
-                          sender: *cp_id,
+                          sender: *pp_id,
                           recipient: *ap_id
                         }
                       ]
                     ]
 
-      - name: hrmp.hrmpAcceptOpenChannel (Assets Parachain → Community Parachain) 
+      - name: hrmp.hrmpAcceptOpenChannel (Assets Parachain → Penpal Parachain) 
         its:              
-          - name: Assets Parachain sends a response to the Relay Chain accepting the Community Parachain's request for openning a HRMP channel
+          - name: Assets Parachain sends a response to the Relay Chain accepting the Penpal Parachain's request for openning a HRMP channel
             actions:
               - extrinsics:
                 - chain: *relay_chain
@@ -263,14 +261,12 @@ tests:
                     - name: polkadotXcm.Sent
                       chain: *assets_parachain
                     - name: ump.ExecutedUpward
-                      remote: true
                       timeout: 40000
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
-                        value: 1,160,892,000
+                        value: 4,000,000,000
                     - name: hrmp.OpenChannelAccepted
-                      remote: true
                       timeout: 40000
               - queries:
                   open_channels:
@@ -280,7 +276,7 @@ tests:
                     delay: 80000
                     args: [
                       {
-                        sender: *cp_id,
+                        sender: *pp_id,
                         recipient: *ap_id
                       }
                     ]
@@ -291,9 +287,9 @@ tests:
                       *channel
                     ]
       
-      - name: hrmp.hrmpInitOpenChannel (Assets Parachain → Community Parachain) 
+      - name: hrmp.hrmpInitOpenChannel (Assets Parachain → Penpal Parachain) 
         its:              
-          - name: Assets Parchain sends a request to the Relay Chain to open a channel with a Community Parachain
+          - name: Assets Parchain sends a request to the Relay Chain to open a channel with a Penpal Parachain
             actions:
               - extrinsics:
                 - chain: *relay_chain
@@ -330,14 +326,12 @@ tests:
                     - name: polkadotXcm.Sent
                       chain: *assets_parachain
                     - name: ump.ExecutedUpward
-                      remote: true
                       timeout: 40000
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
-                        value: 1,160,892,000
+                        value: 4,000,000,000
                     - name: hrmp.OpenChannelRequested
-                      remote: true
                       timeout: 40000
               - queries:
                   requested_channels:
@@ -352,17 +346,18 @@ tests:
                       [
                         {
                           sender: *ap_id,
-                          recipient: *cp_id
+                          recipient: *pp_id
                         }
                       ]
                     ]
-      - name: hrmp.hrmpAcceptOpenChannel (Community Parachain → Assets Parachain) 
+                    
+      - name: hrmp.hrmpAcceptOpenChannel (Penpal Parachain → Assets Parachain) 
         its:              
-          - name: Community Parachain sends a response to the Relay Chain accepting the Assets Parachain's request for openning a HRMP channel
+          - name: Penpal Parachain sends a response to the Relay Chain accepting the Assets Parachain's request for openning a HRMP channel
             actions:
               - extrinsics:
-                - chain: *community_parachain
-                  signer: *cp_signer
+                - chain: *penpal_parachain
+                  signer: *pp_signer
                   sudo: true
                   pallet: polkadotXcm
                   call: send
@@ -403,7 +398,3 @@ tests:
                         value: 4,000,000
                     - name: hrmp.OpenChannelAccepted
                       chain: *relay_chain
-
-
-            
-                                
