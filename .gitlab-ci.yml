@@ -96,7 +96,7 @@ variables:
 
 #### stage:                        test
 
-test-linux-stable:
+.test-linux-stable:
   stage:                           test
   <<:                              *docker-env
   <<:                              *common-refs
@@ -154,7 +154,7 @@ cargo-check-benches:
 
 #### stage:                        build
 
-build-linux-stable:
+.build-linux-stable:
   stage:                           build
   <<:                              *docker-env
   <<:                              *collect-artifacts
@@ -175,7 +175,7 @@ build-linux-stable:
     - echo "___The VERSION is either a tag name or the curent branch if triggered not by a tag___"
     - echo ${CI_COMMIT_REF_NAME} | tee ./artifacts/VERSION
 
-build-test-parachain:
+.build-test-parachain:
   stage:                           build
   <<:                              *docker-env
   <<:                              *collect-artifacts
