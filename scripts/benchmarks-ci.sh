@@ -9,9 +9,11 @@ benchmarkOutput=./parachains/runtimes/$category/$runtimeName/src/weights
 benchmarkRuntimeName="$runtimeName-dev"
 
 pallets=(
+	pallet_alliance
     pallet_assets
 	pallet_balances
 	pallet_collator_selection
+	pallet_collective
 	pallet_multisig
 	pallet_proxy
 	pallet_session
