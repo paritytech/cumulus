@@ -1,9 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 steps=50
 repeat=20
 category=$1
 runtimeName=$2
+artifactsDir=$3
 
 benchmarkOutput=./parachains/runtimes/$category/$runtimeName/src/weights
 benchmarkRuntimeName="$runtimeName-dev"
@@ -26,7 +27,7 @@ pallets=(
 
 for p in ${pallets[@]}
 do
-	./artifacts/polkadot-parachain benchmark pallet \
+	$artifactsDir/polkadot-parachain benchmark pallet \
 		--chain=$benchmarkRuntimeName \
 		--execution=wasm \
 		--wasm-execution=compiled \

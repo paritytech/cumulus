@@ -284,9 +284,9 @@ benchmarks:
   <<:                              *collect-artifacts
   <<:                              *benchmarks-refs
   script:
-    - ./scripts/benchmarks-ci.sh assets statemine > ./artifacts/bench-statemine.log
-    - ./scripts/benchmarks-ci.sh assets statemint > ./artifacts/bench-statemint.log
-    - ./scripts/benchmarks-ci.sh assets westmint > ./artifacts/bench-westmint.log
+    - ./scripts/benchmarks-ci.sh assets statemine ./artifacts > ./artifacts/bench-statemine.log
+    - ./scripts/benchmarks-ci.sh assets statemint ./artifacts > ./artifacts/bench-statemint.log
+    - ./scripts/benchmarks-ci.sh assets westmint ./artifacts > ./artifacts/bench-westmint.log
     - git status
     - export BRANCHNAME="weights-${CI_COMMIT_BRANCH}"
     # Set git config
