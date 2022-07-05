@@ -183,7 +183,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 
 /// Extracts the normalized chain id and parachain id from the input chain id.
 /// (H/T to Phala for the idea)
-/// E.g. "penpal-parachain-2004" yields ("penpal-parachain", Some(2004))
+/// E.g. "penpal-kusama-2004" yields ("penpal-kusama", Some(2004))
 fn extract_parachain_id(id: &str) -> (&str, &str, Option<ParaId>) {
 	const KUSAMA_TEST_PARA_PREFIX: &str = "penpal-kusama-";
 	const POLKADOT_TEST_PARA_PREFIX: &str = "penpal-polkadot-";
