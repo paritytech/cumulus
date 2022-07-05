@@ -30,11 +30,11 @@
 use codec::Encode;
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
-	GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage, MessageSendError,
-	OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage, UpwardMessageSender,
-	XcmpMessageHandler, XcmpMessageSource,
+	DmpMessageHandlerContext, GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage,
+	MessageSendError, OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage,
+	UpwardMessageSender, XcmpMessageHandler, XcmpMessageSource, MessageQueueChain
 };
-use cumulus_primitives_parachain_inherent::{MessageQueueChain, ParachainInherentData};
+use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use frame_support::{
 	dispatch::{DispatchError, DispatchResult},
 	ensure,
@@ -52,7 +52,7 @@ use sp_runtime::{
 		ValidTransaction,
 	},
 };
-use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
+use sp_std::{cmp, collections::btree_map::BTreeMap, num::Wrapping, prelude::*};
 
 mod migration;
 mod relay_state_snapshot;
@@ -417,10 +417,8 @@ pub mod pallet {
 
 			// TODO: This is more than zero, but will need benchmarking to figure out what.
 			let mut total_weight = 0;
-			total_weight += Self::process_inbound_downward_messages(
-				relevant_messaging_state.dmq_mqc_head,
-				downward_messages,
-			);
+			total_weight +=
+				Self::process_inbound_downward_messages(downward_messages, &relay_state_proof);
 			total_weight += Self::process_inbound_horizontal_messages(
 				&relevant_messaging_state.ingress_channels,
 				horizontal_messages,
@@ -582,6 +580,12 @@ pub mod pallet {
 	/// by the system inherent.
 	#[pallet::storage]
 	pub(super) type LastDmqMqcHead<T: Config> = StorageValue<_, MessageQueueChain, ValueQuery>;
+
+	/// The last message index we processed from the `dmq`.
+	///
+	/// The value is loaded before and saved after processing last message.
+	#[pallet::storage]
+	pub(super) type LastDmqMessageIndex<T: Config> = StorageValue<_, u32, ValueQuery>;
 
 	/// The message queue chain heads we have observed per each channel incoming channel.
 	///
@@ -792,7 +796,7 @@ impl<T: Config> Pallet<T> {
 		});
 	}
 
-	/// Process all inbound downward messages relayed by the collator.
+	/// Process a subset of the inbound downward messages relayed by the collator.
 	///
 	/// Checks if the sequence of the messages is valid, dispatches them and communicates the
 	/// number of processed messages to the collator via a storage update.
@@ -802,41 +806,54 @@ impl<T: Config> Pallet<T> {
 	/// If it turns out that after processing all messages the Message Queue Chain
 	/// hash doesn't match the expected.
 	fn process_inbound_downward_messages(
-		expected_dmq_mqc_head: relay_chain::Hash,
 		downward_messages: Vec<InboundDownwardMessage>,
+		relay_state_proof: &RelayChainStateProof,
 	) -> Weight {
 		let dm_count = downward_messages.len() as u32;
 		let mut dmq_head = <LastDmqMqcHead<T>>::get();
-
+		let mut start_dmq_message_index = Wrapping(<LastDmqMessageIndex<T>>::get());
 		let mut weight_used = 0;
+
 		if dm_count != 0 {
-			Self::deposit_event(Event::DownwardMessagesReceived { count: dm_count });
 			let max_weight =
 				<ReservedDmpWeightOverride<T>>::get().unwrap_or_else(T::ReservedDmpWeight::get);
 
-			let message_iter = downward_messages
-				.into_iter()
-				.inspect(|m| {
-					dmq_head.extend_downward(m);
-				})
-				.map(|m| (m.sent_at, m.msg));
-			weight_used += T::DmpMessageHandler::handle_dmp_messages(message_iter, max_weight);
-			<LastDmqMqcHead<T>>::put(&dmq_head);
+			let mut message_handler_context =
+				DmpMessageHandlerContext::new(max_weight, start_dmq_message_index, dmq_head);
 
+			// TODO: compute dmq_head for just the received messages.
+			// TODO: cover this with a test.
+			let message_iter = downward_messages.into_iter().map(|m| (m.sent_at, m.msg));
+
+			// This will only process a subset of the messages stored on the relay chain queue.
+			weight_used += T::DmpMessageHandler::handle_dmp_messages(
+				message_iter,
+				&mut message_handler_context,
+			);
+			<LastDmqMqcHead<T>>::put(&message_handler_context.mqc_head);
+
+			let processed_message_count = (message_handler_context.message_index - start_dmq_message_index).0;
+			ProcessedDownwardMessages::<T>::put(processed_message_count);
+
+			Self::deposit_event(Event::DownwardMessagesReceived { count: processed_message_count });
 			Self::deposit_event(Event::DownwardMessagesProcessed {
 				weight_used,
 				dmq_head: dmq_head.head(),
 			});
+
+			// After hashing each message in the message queue chain submitted by the collator, we
+			// should arrive to the MQC head provided by the relay chain.
+			//
+			// A mismatch means that at least some of the submitted messages were altered, omitted or
+			// added improperly.
+			let expected_dmq_mqc_head = relay_state_proof
+				.read_dmp_mqc_head(message_handler_context.message_index.0)
+				.expect("Invalid messaging state in relay chain state proof: dpm_mqc_head");
+			
+			assert_eq!(dmq_head.head(), expected_dmq_mqc_head);
+
+			<LastDmqMessageIndex<T>>::put(message_handler_context.message_index.0);
 		}
-
-		// After hashing each message in the message queue chain submitted by the collator, we
-		// should arrive to the MQC head provided by the relay chain.
-		//
-		// A mismatch means that at least some of the submitted messages were altered, omitted or
-		// added improperly.
-		assert_eq!(dmq_head.head(), expected_dmq_mqc_head);
-
-		ProcessedDownwardMessages::<T>::put(dm_count);
 
 		weight_used
 	}

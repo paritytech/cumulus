@@ -31,11 +31,6 @@ use sp_trie::{HashDBT, MemoryDB, StorageProof, EMPTY_PREFIX};
 /// limits.
 #[derive(Clone, Encode, Decode, TypeInfo)]
 pub struct MessagingStateSnapshot {
-	/// The current message queue chain head for downward message queue.
-	///
-	/// If the value is absent on the relay chain this will be set to all zeros.
-	pub dmq_mqc_head: relay_chain::Hash,
-
 	/// The current capacity of the upward message queue of the current parachain on the relay chain.
 	///
 	/// The capacity is represented by a tuple that consist of the `count` of the messages and the
@@ -161,17 +156,19 @@ impl RelayChainStateProof {
 		Ok(Self { para_id, trie_backend })
 	}
 
+	pub fn read_dmp_mqc_head(&self, message_index: u32) -> Result<relay_chain::v2::Hash, Error> {
+		read_entry(
+			&self.trie_backend,
+			&relay_chain::well_known_keys::dmq_mqc_head_for_message(self.para_id, message_index),
+			Some(Default::default()),
+		)
+		.map_err(Error::DmqMqcHead)
+	}
+
 	/// Read the [`MessagingStateSnapshot`] from the relay chain state proof.
 	///
 	/// Returns an error if anything failed at reading or decoding.
 	pub fn read_messaging_state_snapshot(&self) -> Result<MessagingStateSnapshot, Error> {
-		let dmq_mqc_head: relay_chain::Hash = read_entry(
-			&self.trie_backend,
-			&relay_chain::well_known_keys::dmq_mqc_head(self.para_id),
-			Some(Default::default()),
-		)
-		.map_err(Error::DmqMqcHead)?;
-
 		let relay_dispatch_queue_size: (u32, u32) = read_entry(
 			&self.trie_backend,
 			&relay_chain::well_known_keys::relay_dispatch_queue_size(self.para_id),
@@ -219,12 +216,7 @@ impl RelayChainStateProof {
 
 		// NOTE that ingress_channels and egress_channels promise to be sorted. We satisfy this property
 		// by relying on the fact that `ingress_channel_index` and `egress_channel_index` are themselves sorted.
-		Ok(MessagingStateSnapshot {
-			dmq_mqc_head,
-			relay_dispatch_queue_size,
-			ingress_channels,
-			egress_channels,
-		})
+		Ok(MessagingStateSnapshot { relay_dispatch_queue_size, ingress_channels, egress_channels })
 	}
 
 	/// Read the [`AbridgedHostConfiguration`] from the relay chain state proof.

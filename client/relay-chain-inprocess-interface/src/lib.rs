@@ -93,10 +93,13 @@ where
 		para_id: ParaId,
 		relay_parent: PHash,
 	) -> RelayChainResult<Vec<InboundDownwardMessage>> {
-		Ok(self.full_client.runtime_api().dmq_contents_with_context(
+		// We want to include at most 4096 messages in the parachain block.
+		Ok(self.full_client.runtime_api().dmq_contents_bounded_with_context(
 			&BlockId::hash(relay_parent),
 			sp_core::ExecutionContext::Importing,
 			para_id,
+			0,
+			4096,
 		)?)
 	}
 

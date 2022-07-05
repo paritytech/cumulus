@@ -23,10 +23,10 @@ use polkadot_parachain::primitives::HeadData;
 use sp_runtime::{traits::Block as BlockT, RuntimeDebug};
 use sp_std::prelude::*;
 
-pub use polkadot_core_primitives::InboundDownwardMessage;
+pub use polkadot_core_primitives::{InboundDownwardMessage, MessageQueueChain};
 pub use polkadot_parachain::primitives::{
-	DmpMessageHandler, Id as ParaId, IsSystem, UpwardMessage, ValidationParams, XcmpMessageFormat,
-	XcmpMessageHandler,
+	DmpMessageHandler, DmpMessageHandlerContext, Id as ParaId, IsSystem, UpwardMessage,
+	ValidationParams, XcmpMessageFormat, XcmpMessageHandler,
 };
 pub use polkadot_primitives::v2::{
 	AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData,

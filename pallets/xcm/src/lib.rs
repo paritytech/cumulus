@@ -110,6 +110,7 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 	fn handle_dmp_messages(
 		iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
 		limit: Weight,
+		_message_index: &mut u32,
 	) -> Weight {
 		let mut used = 0;
 		for (_sent_at, data) in iter {
@@ -143,6 +144,7 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 	fn handle_dmp_messages(
 		iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
 		limit: Weight,
+		_message_index: &mut u32,
 	) -> Weight {
 		let mut used = 0;
 		for (_sent_at, data) in iter {
