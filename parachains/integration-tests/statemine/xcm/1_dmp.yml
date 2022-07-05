@@ -247,4 +247,4 @@ tests:
                       [
                         $balance_ap_receiver_before,
                         $balance_ap_receiver_after
-                      ]                              
+                      ]
