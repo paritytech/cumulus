@@ -11,7 +11,7 @@ benchmarkRuntimeName="$runtimeName-dev"
 
 pallets=(
 	pallet_alliance
-    pallet_assets
+	pallet_assets
 	pallet_balances
 	pallet_collator_selection
 	pallet_collective
@@ -25,7 +25,7 @@ pallets=(
 	frame_system
 )
 
-for p in ${pallets[@]}
+for pallet in ${pallets[@]}
 do
 	$artifactsDir/polkadot-parachain benchmark pallet \
 		--chain=$benchmarkRuntimeName \
@@ -37,5 +37,5 @@ do
 		--repeat=$repeat \
 		--json \
         --header=./file_header.txt \
-		--output=$benchmarkOutput
+		--output=$benchmarkOutput >> ./artifacts/${pallet}_benchmark.json
 done
