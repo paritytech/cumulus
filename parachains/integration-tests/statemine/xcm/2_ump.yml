@@ -17,7 +17,7 @@ settings:
       assets_parachain_account: &ap_acc '0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d'
       assets_parachain_beneficiary: &ap_benf {v1: { parents: 0, interior: { x1: { accountId32: { network: { any: true }, id: *ap_acc }}}}}
       ksm: &rc_ksm { concrete: { 0, interior: { here: true }}}
-      ksm_fungible: &rc_ksm_fungible { id: *rc_ksm, fun: { fungible: *amount }}     
+      ksm_fungible: &rc_ksm_fungible { id: *rc_ksm, fun: { fungible: *amount }}
     assets_parachain_account:
       signer: &ap_signer //Alice
       wallet: &ap_wallet HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F
@@ -34,7 +34,7 @@ settings:
       args: [ 0x0011 ]
 
 tests:
-  - name: UMP          
+  - name: UMP
     describes:
       - name: polkadotXcm.limitedTeleportAssets
         before:
@@ -45,8 +45,8 @@ tests:
                   signer: *rc_signer
                   pallet: xcmPallet
                   call: limitedTeleportAssets
-                  args: [ 
-                    *ap_dest, # destination 
+                  args: [
+                    *ap_dest, # destination
                     *ap_benf, # beneficiary
                     { v1: [ *rc_ksm_fungible ] }, # assets
                     0, # feeAssetItem
@@ -63,6 +63,7 @@ tests:
                         type: XcmV2TraitsOutcome
                         isComplete: true
                         value: 4,000,000,000
+
           - name: Get the balances of the Assets Parachain's sender & Relay Chain's receiver
             actions:
               - queries:
@@ -75,17 +76,17 @@ tests:
                     chain: *relay_chain
                     pallet: system
                     call: account
-                    args: [ *rc_wallet ]                      
+                    args: [ *rc_wallet ]
         its:
           - name: Should teleport native assets back from Assets Parachain to the Relay Chain
             actions:
-              - extrinsics: &polkadotXcm.limitedTeleportAssets
+              - extrinsics:
                 - chain: *assets_parachain
                   signer: *ap_signer
                   pallet: polkadotXcm
                   call: limitedTeleportAssets
-                  args: [ 
-                    *rc_dest, # destination 
+                  args: [
+                    *rc_dest, # destination
                     *rc_benf, # beneficiary
                     { v1: [ *ap_ksm_fungible ] }, # assets
                     0, # feeAssetItem
@@ -113,27 +114,29 @@ tests:
                     chain: *relay_chain
                     pallet: system
                     call: account
-                    args: [ *rc_wallet ]              
+                    args: [ *rc_wallet ]
+
           - name: Should reduce the balance of the sender
             actions:
               - asserts:
                   balanceDecreased:
                     args: [
-                      { 
-                        balances: { 
+                      {
+                        balances: {
                           before: $balance_ap_sender_before,
                           after: $balance_ap_sender_after,
                         },
                         amount: *amount
-                      }  
+                      }
                     ]
+
           - name: Should increase the balance of the receiver
             actions:
               - asserts:
                   balanceIncreased:
                     args: [
-                      { 
-                        balances: { 
+                      {
+                        balances: {
                           before: $balance_rc_receiver_before,
                           after: $balance_rc_receiver_after,
                         }
@@ -149,37 +152,37 @@ tests:
                   signer: *ap_signer
                   pallet: polkadotXcm
                   call: send
-                  args: [ 
-                    *rc_dest, # destination 
-                    { 
+                  args: [
+                    *rc_dest, # destination
+                    {
                       v2: [ #message
-                        { 
-                          Transact: { 
-                            originType: Native, 
-                            requireWeightAtMost: *weight_at_most, 
+                        {
+                          Transact: {
+                            originType: Native,
+                            requireWeightAtMost: *weight_at_most,
                             call: $system_remark
                           }
                         }
-                      ]  
+                      ]
                     }
-                  ]  
+                  ]
                   events:
                     - name: system.ExtrinsicFailed
                       attribute:
                         type: SpRuntimeDispatchError
                         value: BadOrigin
 
-      - name: polkadotXcm.limitedReserveTransferAssets                
+      - name: polkadotXcm.limitedReserveTransferAssets
         its:
           - name: Should NOT be able to reserve transfer native assets from the Assets Parachain to the Relay Chain
             actions:
-              - extrinsics: &polkadotXcm.limitedTeleportAssets
+              - extrinsics:
                 - chain: *assets_parachain
                   signer: *ap_signer
                   pallet: polkadotXcm
                   call: limitedReserveTransferAssets
-                  args: [ 
-                    *rc_dest, # destination 
+                  args: [
+                    *rc_dest, # destination
                     *rc_benf, # beneficiary
                     { v1: [ *ap_ksm_fungible ] }, # assets
                     0, # feeAssetItem

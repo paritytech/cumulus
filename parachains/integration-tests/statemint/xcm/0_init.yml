@@ -35,7 +35,7 @@ settings:
 tests:
   - name: Initialize Chains
     its:
-      - name: XCM supported versions between chains 
+      - name: XCM supported versions between chains
         actions:
           - extrinsics: # Relay Chain sets supported version for Assset Parachain
             - chain: *relay_chain
@@ -88,27 +88,27 @@ tests:
                 - name: xcmPallet.SupportedVersionChanged
                   attribute:
                     type: u32
-                    value: *xcm_version          
+                    value: *xcm_version
           - extrinsics: # Assset Parachain sets supported version for Relay Chain through it
             - chain: *relay_chain
               signer: *rc_signer
               sudo: true
               pallet: xcmPallet
               call: send
-              args: [ 
-                *ap_dest, # destination 
-                { 
+              args: [
+                *ap_dest, # destination
+                {
                   v2: [ #message
-                    { 
-                      Transact: { 
-                        originType: Superuser, 
-                        requireWeightAtMost: *weight_at_most, 
+                    {
+                      Transact: {
+                        originType: Superuser,
+                        requireWeightAtMost: *weight_at_most,
                         call: $ap_force_xcm_version
-                      }  
+                      }
                     }
-                  ] 
+                  ]
                 }
-              ]  
+              ]
               events:
                 - name: sudo.Sudid
                   attribute:
@@ -141,4 +141,4 @@ tests:
                 - name: polkadotXcm.SupportedVersionChanged
                   attribute:
                     type: u32
-                    value: *xcm_version          
+                    value: *xcm_version

@@ -24,7 +24,7 @@ settings:
         wallet: &ap_wallet HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F
         asset_id: &asset_id 2
         assets_pallet_id: &assets_pallet_id 50
-        asset_min_balance: &asset_ed 1000 
+        asset_min_balance: &asset_ed 1000
         penpal_parachain_destination: &pp_dest { v1: { parents: 1, interior: { x1: { parachain: *pp_id } }}}
         ksm: &ap_ksm { concrete: { parents: 1, interior: { here: true }}}
         ksm_fungible: &ap_ksm_fungible { id: *ap_ksm, fun: { fungible: *amount }}
@@ -66,20 +66,20 @@ tests:
                   sudo: true
                   pallet: xcmPallet
                   call: send
-                  args: [ 
-                    *ap_dest, # destination 
-                    { 
+                  args: [
+                    *ap_dest, # destination
+                    {
                       v2: [ #message
-                        { 
-                          Transact: { 
-                            originType: Superuser, 
-                            requireWeightAtMost: *weight_at_most, 
-                            call: $force_create_asset 
+                        {
+                          Transact: {
+                            originType: Superuser,
+                            requireWeightAtMost: *weight_at_most,
+                            call: $force_create_asset
                           }
                         }
-                      ]  
+                      ]
                     }
-                  ]  
+                  ]
                   events:
                     - name: xcmPallet.Sent
                     - name: dmpQueue.ExecutedDownward
@@ -105,13 +105,14 @@ tests:
                   signer: *ap_signer
                   pallet: assets
                   call: mint
-                  args: [ 
+                  args: [
                     *asset_id,
                     *ap_wallet,
                     *amount
                   ]
                   events:
                     - name: assets.Issued
+
         its:
           - name: Assets Parachain should be able to reserve transfer an Asset to Penpal Parachain
             actions:
@@ -120,7 +121,7 @@ tests:
                   signer: *ap_signer
                   pallet: polkadotXcm
                   call: limitedReserveTransferAssets
-                  args: [ 
+                  args: [
                     *pp_dest, # destination
                     { # beneficiary
                       V1: {
@@ -186,7 +187,7 @@ tests:
                   signer: *ap_signer
                   pallet: polkadotXcm
                   call: limitedReserveTransferAssets
-                  args: [ 
+                  args: [
                     *pp_dest, # destination
                     { # beneficiary
                       V1: {
@@ -233,12 +234,12 @@ tests:
                     chain: *assets_parachain
                     pallet: assets
                     call: account
-                    args: [ 
+                    args: [
                       *asset_id,
                       *pp_sovereign_sibl
                     ]
         its:
-          - name: Penpal Parachain should be able to send XCM message paying its fee with sufficient asset[2] in Assets Parachain
+          - name: Penpal Parachain should be able to send XCM message paying its fee with sufficient asset in Assets Parachain
             actions:
               - extrinsics:
                 - chain: *penpal_parachain
@@ -299,6 +300,7 @@ tests:
                       *asset_id,
                       *pp_sovereign_sibl
                     ]
+
           - name: Should reduce the assets balance of the Penpal Parachain's SovereignAccount in the Assets Parachain
             actions:
               - asserts:
@@ -309,8 +311,9 @@ tests:
                           before: $assets_balance_pp_sovereign_before,
                           after: $assets_balance_pp_sovereign_after,
                         },
-                      }  
+                      }
                     ]
+
           - name: Penpal Parachain SHOULD NOT be able to send XCM message paying its fee with sufficient assets if not enough balance
             actions:
               - extrinsics:

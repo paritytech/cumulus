@@ -31,7 +31,7 @@ settings:
         signer: &rc_signer //Alice
         assets_parachain_destination: &ap_dest { v1: { 0, interior: { x1: { parachain: *ap_id }}}}
         ksm: &rc_ksm { concrete: { 0, interior: { here: true }}}
-        ksm_fungible: &rc_ksm_fungible { id: *rc_ksm, fun: { fungible: *amount }}     
+        ksm_fungible: &rc_ksm_fungible { id: *rc_ksm, fun: { fungible: *amount }}
       assets_parachain_account:
         sovereign_account: &ap_sovereign F7fq1jSNVTPfJmaHaXCMtatT1EZefCUsa7rRiQVNR5efcah
         relay_chain_destination: &rc_dest { v1: { parents: 1, interior: { here: true }}}
@@ -43,7 +43,7 @@ settings:
       chain: *relay_chain
       pallet: hrmp
       call: hrmpInitOpenChannel
-      args: [ 
+      args: [
         *ap_id, # recipient
         *max_capacity, # proposedMaxCapacity
         *max_message_size # proposedMaxMessageSize
@@ -52,7 +52,7 @@ settings:
       chain: *relay_chain
       pallet: hrmp
       call: hrmpInitOpenChannel
-      args: [ 
+      args: [
         *pp_id, # recipient
         *max_capacity, # proposedMaxCapacity
         *max_message_size # proposedMaxMessageSize
@@ -61,25 +61,25 @@ settings:
       chain: *relay_chain
       pallet: hrmp
       call: hrmpAcceptOpenChannel
-      args: [ 
+      args: [
         *ap_id, # recipient
-      ]  
+      ]
     accept_init_open_request_from_cp:
       chain: *relay_chain
       pallet: hrmp
       call: hrmpAcceptOpenChannel
-      args: [ 
+      args: [
         *pp_id, # sender
       ]
     xcm_accept_init_open_request_from_cp:
       chain: *assets_parachain
       pallet: polkadotXcm
       call: send
-      args: [ 
-        *rc_dest, # destination 
-        { 
+      args: [
+        *rc_dest, # destination
+        {
           v2: [ #message
-            { 
+            {
               WithdrawAsset: [*rc_ksm_fungible]
             },
             {
@@ -90,24 +90,23 @@ settings:
             },
             {
               Transact: {
-                originType: Native, 
-                requireWeightAtMost: *weight_at_most, 
+                originType: Native,
+                requireWeightAtMost: *weight_at_most,
                 call: $accept_init_open_request_from_cp
               }
             }
-          ] 
+          ]
         }
-      ] 
-
+      ]
     xcm_init_open_channel_with_cp:
       chain: *assets_parachain
       pallet: polkadotXcm
       call: send
-      args: [ 
-        *rc_dest, # destination 
-        { 
+      args: [
+        *rc_dest, # destination
+        {
           v2: [ #message
-            { 
+            {
               WithdrawAsset: [*rc_ksm_fungible]
             },
             {
@@ -118,12 +117,12 @@ settings:
             },
             {
               Transact: {
-                originType: Native, 
-                requireWeightAtMost: *weight_at_most, 
+                originType: Native,
+                requireWeightAtMost: *weight_at_most,
                 call: $init_open_channel_with_cp
               }
             }
-          ] 
+          ]
         }
       ]
 
@@ -137,12 +136,13 @@ tests:
               signer: *rc_signer
               pallet: balances
               call: transfer
-              args: [ 
-                *pp_sovereign, # destination 
+              args: [
+                *pp_sovereign, # destination
                 *amount, # value
               ]
               events:
                 - name: balances.Transfer
+
       - name: DEPENDANCY | Assets Parachain Sovereign account in the Relay Chain needs to be funded
         actions:
           - extrinsics:
@@ -150,12 +150,12 @@ tests:
               signer: *rc_signer
               pallet: balances
               call: transfer
-              args: [ 
-                *ap_sovereign, # destination 
+              args: [
+                *ap_sovereign, # destination
                 *amount, # value
               ]
               events:
-                - name: balances.Transfer             
+                - name: balances.Transfer
     describes:
       - name: hrmp.hrmpInitOpenChannel (Penpal Parachain → Assets Parachain)
         its:
@@ -167,11 +167,11 @@ tests:
                   sudo: true
                   pallet: polkadotXcm
                   call: send
-                  args: [ 
-                    *rc_dest, # destination 
-                    { 
+                  args: [
+                    *rc_dest, # destination
+                    {
                       v2: [ #message
-                        { 
+                        {
                           WithdrawAsset: [*rc_ksm_fungible]
                         },
                         {
@@ -182,14 +182,14 @@ tests:
                         },
                         {
                           Transact: {
-                            originType: Native, 
-                            requireWeightAtMost: *weight_at_most, 
+                            originType: Native,
+                            requireWeightAtMost: *weight_at_most,
                             call: $init_open_channel_with_ap
                           }
                         }
-                      ] 
+                      ]
                     }
-                  ]  
+                  ]
                   events:
                     - name: sudo.Sudid
                       attribute:
@@ -222,8 +222,8 @@ tests:
                       ]
                     ]
 
-      - name: hrmp.hrmpAcceptOpenChannel (Assets Parachain → Penpal Parachain) 
-        its:              
+      - name: hrmp.hrmpAcceptOpenChannel (Assets Parachain → Penpal Parachain)
+        its:
           - name: Assets Parachain sends a response to the Relay Chain accepting the Penpal Parachain's request for openning a HRMP channel
             actions:
               - extrinsics:
@@ -232,20 +232,20 @@ tests:
                   sudo: true
                   pallet: xcmPallet
                   call: send
-                  args: [ 
-                    *ap_dest, # destination 
-                    { 
+                  args: [
+                    *ap_dest, # destination
+                    {
                       v2: [ #message
-                        { 
-                          Transact: { 
-                            originType: Superuser, 
-                            requireWeightAtMost: *weight_at_most, 
+                        {
+                          Transact: {
+                            originType: Superuser,
+                            requireWeightAtMost: *weight_at_most,
                             call: $xcm_accept_init_open_request_from_cp
-                          }  
+                          }
                         }
-                      ] 
+                      ]
                     }
-                  ]  
+                  ]
                   events:
                     - name: sudo.Sudid
                       attribute:
@@ -286,9 +286,9 @@ tests:
                       $open_channels,
                       *channel
                     ]
-      
-      - name: hrmp.hrmpInitOpenChannel (Assets Parachain → Penpal Parachain) 
-        its:              
+
+      - name: hrmp.hrmpInitOpenChannel (Assets Parachain → Penpal Parachain)
+        its:
           - name: Assets Parchain sends a request to the Relay Chain to open a channel with a Penpal Parachain
             actions:
               - extrinsics:
@@ -297,20 +297,20 @@ tests:
                   sudo: true
                   pallet: xcmPallet
                   call: send
-                  args: [ 
-                    *ap_dest, # destination 
-                    { 
+                  args: [
+                    *ap_dest, # destination
+                    {
                       v2: [ #message
-                        { 
-                          Transact: { 
-                            originType: Superuser, 
-                            requireWeightAtMost: *weight_at_most, 
+                        {
+                          Transact: {
+                            originType: Superuser,
+                            requireWeightAtMost: *weight_at_most,
                             call: $xcm_init_open_channel_with_cp
-                          }  
+                          }
                         }
-                      ] 
+                      ]
                     }
-                  ]  
+                  ]
                   events:
                     - name: sudo.Sudid
                       attribute:
@@ -350,9 +350,9 @@ tests:
                         }
                       ]
                     ]
-                    
-      - name: hrmp.hrmpAcceptOpenChannel (Penpal Parachain → Assets Parachain) 
-        its:              
+
+      - name: hrmp.hrmpAcceptOpenChannel (Penpal Parachain → Assets Parachain)
+        its:
           - name: Penpal Parachain sends a response to the Relay Chain accepting the Assets Parachain's request for openning a HRMP channel
             actions:
               - extrinsics:
@@ -361,11 +361,11 @@ tests:
                   sudo: true
                   pallet: polkadotXcm
                   call: send
-                  args: [ 
-                    *rc_dest, # destination 
-                    { 
+                  args: [
+                    *rc_dest, # destination
+                    {
                       v2: [ #message
-                        { 
+                        {
                           WithdrawAsset: [*rc_ksm_fungible]
                         },
                         {
@@ -376,14 +376,14 @@ tests:
                         },
                         {
                           Transact: {
-                            originType: Native, 
-                            requireWeightAtMost: *weight_at_most, 
+                            originType: Native,
+                            requireWeightAtMost: *weight_at_most,
                             call: $accept_open_channel_with_ap
                           }
                         }
-                      ] 
+                      ]
                     }
-                  ]  
+                  ]
                   events:
                     - name: sudo.Sudid
                       attribute:
