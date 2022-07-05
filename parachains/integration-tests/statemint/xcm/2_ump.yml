@@ -177,7 +177,7 @@ tests:
         its:
           - name: Should NOT be able to reserve transfer native assets from the Assets Parachain to the Relay Chain
             actions:
-              - extrinsics: &polkadotXcm.limitedTeleportAssets
+              - extrinsics:
                 - chain: *assets_parachain
                   signer: *ap_signer
                   pallet: polkadotXcm

@@ -55,7 +55,7 @@ tests:
         its:
           - name: Should teleport native assets from the Relay Chain to the Assets Parachain
             actions:
-              - extrinsics: &xcmPallet.limitedTeleportAssets
+              - extrinsics:
                 - chain: *relay_chain
                   signer: *rc_signer
                   pallet: xcmPallet
