@@ -399,7 +399,3 @@ tests:
                         value: 4,000,000
                     - name: hrmp.OpenChannelAccepted
                       chain: *relay_chain
-
-
-            
-                                
