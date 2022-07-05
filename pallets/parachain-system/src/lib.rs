@@ -821,11 +821,10 @@ impl<T: Config> Pallet<T> {
 			let mut message_handler_context =
 				DmpMessageHandlerContext::new(max_weight, start_dmq_message_index, dmq_head);
 
-			// TODO: compute dmq_head for just the received messages.
-			// TODO: cover this with a test.
 			let message_iter = downward_messages.into_iter().map(|m| (m.sent_at, m.msg));
 
 			// This will only process a subset of the messages stored on the relay chain queue.
+			// TODO: cover this with a test.
 			weight_used += T::DmpMessageHandler::handle_dmp_messages(
 				message_iter,
 				&mut message_handler_context,
@@ -849,7 +848,7 @@ impl<T: Config> Pallet<T> {
 			// added improperly.
 			let expected_dmq_mqc_head = relay_state_proof
 				.read_dmp_mqc_head(message_handler_context.message_index.0)
-				.expect("Invalid messaging state in relay chain state proof: dpm_mqc_head");
+				.expect("Invalid messaging state in relay chain state proof: dmp_mqc_head");
 
 			assert_eq!(dmq_head.head(), expected_dmq_mqc_head);
 
