@@ -149,8 +149,7 @@ impl XcmpMessageSource for FromThreadLocal {
 impl DmpMessageHandler for SaveIntoThreadLocal {
 	fn handle_dmp_messages(
 		iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
-		_max_weight: Weight,
-		_message_index: &mut u32,
+		_context: &mut DmpMessageHandlerContext,
 	) -> Weight {
 		HANDLED_DMP_MESSAGES.with(|m| {
 			for i in iter {
