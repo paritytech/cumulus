@@ -72,7 +72,6 @@ variables:
     - if: $CI_COMMIT_REF_NAME =~ /^release-parachains-v[0-9].*$/              # i.e. release-parachains-v1.0, release-parachains-v2.1rc1, release-parachains-v3000
       when: manual
     - if: $CI_COMMIT_REF_NAME == "1427" # Temporary, only for generating weights for https://github.com/paritytech/cumulus/pull/1427
-      when: manual
 
 # run benchmarks only on release-parachains-v* branch
 .benchmarks-refs:                  &benchmarks-refs
@@ -277,7 +276,7 @@ benchmarks-build:
   <<:                              *benchmarks-manual-refs
   script:
     - time cargo build --profile production --locked --features runtime-benchmarks
-    - mkdir artifacts
+    - mkdir -p artifacts
     - cp target/production/polkadot-parachain ./artifacts/
 
 benchmarks:
