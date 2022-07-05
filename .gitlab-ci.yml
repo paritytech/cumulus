@@ -154,7 +154,7 @@ cargo-check-benches:
 
 #### stage:                        build
 
-.build-linux-stable:
+build-linux-stable:
   stage:                           build
   <<:                              *docker-env
   <<:                              *collect-artifacts
@@ -175,7 +175,7 @@ cargo-check-benches:
     - echo "___The VERSION is either a tag name or the curent branch if triggered not by a tag___"
     - echo ${CI_COMMIT_REF_NAME} | tee ./artifacts/VERSION
 
-.build-test-parachain:
+build-test-parachain:
   stage:                           build
   <<:                              *docker-env
   <<:                              *collect-artifacts
@@ -219,7 +219,7 @@ cargo-check-benches:
   after_script:
     - buildah logout --all
 
-build-push-image-polkadot-parachain-debug:
+.build-push-image-polkadot-parachain-debug:
   stage:                           publish
   <<:                              *kubernetes-env
   <<:                              *common-refs
@@ -232,7 +232,7 @@ build-push-image-polkadot-parachain-debug:
     IMAGE_NAME:                    "docker.io/paritypr/polkadot-parachain-debug"
     VERSION:                       "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
 
-build-push-image-test-parachain:
+.build-push-image-test-parachain:
   stage:                           publish
   <<:                              *kubernetes-env
   <<:                              *common-refs
