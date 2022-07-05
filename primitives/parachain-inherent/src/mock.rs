@@ -17,7 +17,8 @@
 use crate::{ParachainInherentData, INHERENT_IDENTIFIER};
 use codec::Decode;
 use cumulus_primitives_core::{
-	relay_chain, InboundDownwardMessage, InboundHrmpMessage, ParaId, PersistedValidationData, MessageQueueChain
+	relay_chain, InboundDownwardMessage, InboundHrmpMessage, MessageQueueChain, ParaId,
+	PersistedValidationData,
 };
 use sc_client_api::{Backend, StorageProvider};
 use sp_api::BlockId;
@@ -145,7 +146,7 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 
 		// Process the downward messages and set up the correct head
 		let mut downward_messages = Vec::new();
-		let mut dmq_mqc = self.xcm_config.starting_dmq_mqc_head.into();
+		let mut dmq_mqc: MessageQueueChain = self.xcm_config.starting_dmq_mqc_head.into();
 		for msg in &self.raw_downward_messages {
 			let wrapped = InboundDownwardMessage { sent_at: relay_parent_number, msg: msg.clone() };
 
@@ -165,7 +166,7 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 
 		// Now iterate again, updating the heads as we go
 		for (para_id, messages) in &horizontal_messages {
-			let mut channel_mqc = crate::MessageQueueChain(
+			let mut channel_mqc = MessageQueueChain::from(
 				*self
 					.xcm_config
 					.starting_hrmp_mqc_heads

@@ -31,8 +31,8 @@ use codec::Encode;
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, ChannelStatus, CollationInfo, DmpMessageHandler,
 	DmpMessageHandlerContext, GetChannelInfo, InboundDownwardMessage, InboundHrmpMessage,
-	MessageSendError, OutboundHrmpMessage, ParaId, PersistedValidationData, UpwardMessage,
-	UpwardMessageSender, XcmpMessageHandler, XcmpMessageSource, MessageQueueChain
+	MessageQueueChain, MessageSendError, OutboundHrmpMessage, ParaId, PersistedValidationData,
+	UpwardMessage, UpwardMessageSender, XcmpMessageHandler, XcmpMessageSource,
 };
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use frame_support::{
@@ -809,12 +809,12 @@ impl<T: Config> Pallet<T> {
 		downward_messages: Vec<InboundDownwardMessage>,
 		relay_state_proof: &RelayChainStateProof,
 	) -> Weight {
-		let dm_count = downward_messages.len() as u32;
-		let mut dmq_head = <LastDmqMqcHead<T>>::get();
-		let mut start_dmq_message_index = Wrapping(<LastDmqMessageIndex<T>>::get());
 		let mut weight_used = 0;
 
-		if dm_count != 0 {
+		if downward_messages.len() > 0 {
+			let dmq_head = <LastDmqMqcHead<T>>::get();
+			let start_dmq_message_index = Wrapping(<LastDmqMessageIndex<T>>::get());
+
 			let max_weight =
 				<ReservedDmpWeightOverride<T>>::get().unwrap_or_else(T::ReservedDmpWeight::get);
 
@@ -832,7 +832,8 @@ impl<T: Config> Pallet<T> {
 			);
 			<LastDmqMqcHead<T>>::put(&message_handler_context.mqc_head);
 
-			let processed_message_count = (message_handler_context.message_index - start_dmq_message_index).0;
+			let processed_message_count =
+				(message_handler_context.message_index - start_dmq_message_index).0;
 			ProcessedDownwardMessages::<T>::put(processed_message_count);
 
 			Self::deposit_event(Event::DownwardMessagesReceived { count: processed_message_count });
@@ -849,7 +850,7 @@ impl<T: Config> Pallet<T> {
 			let expected_dmq_mqc_head = relay_state_proof
 				.read_dmp_mqc_head(message_handler_context.message_index.0)
 				.expect("Invalid messaging state in relay chain state proof: dpm_mqc_head");
-			
+
 			assert_eq!(dmq_head.head(), expected_dmq_mqc_head);
 
 			<LastDmqMessageIndex<T>>::put(message_handler_context.message_index.0);
