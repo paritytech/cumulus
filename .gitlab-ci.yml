@@ -244,7 +244,7 @@ variables:
     IMAGE_NAME:                    "docker.io/paritypr/test-parachain"
     VERSION:                       "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
 
-publish-s3:
+.publish-s3:
   stage:                           publish
   <<:                              *kubernetes-env
   image:                           paritytech/awscli:latest
