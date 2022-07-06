@@ -277,7 +277,7 @@ benchmarks-build:
     - mkdir artifacts
     - cp target/production/polkadot-parachain ./artifacts/
 
-benchmarks:
+benchmarks-statemint:
   stage:                           benchmarks-run
   before_script:
     - *rust-info-script
@@ -288,7 +288,7 @@ benchmarks:
     - ./scripts/benchmarks-ci.sh assets statemint ./artifacts > ./artifacts/bench-statemint.log
     - ./scripts/benchmarks-ci.sh assets westmint ./artifacts > ./artifacts/bench-westmint.log
     - git status
-    - export BRANCHNAME="weights-${CI_COMMIT_BRANCH}"
+    - export BRANCHNAME="weights-statemint-${CI_COMMIT_BRANCH}"
     # Set git config
     - rm -rf .git/config
     - git config --global user.email "${GITHUB_EMAIL}"
@@ -302,7 +302,37 @@ benchmarks:
     - git push origin $BRANCHNAME
     # create PR
     - curl -u ${GITHUB_USER}:${GITHUB_TOKEN}
-      -d '{"title":"[benchmarks] Update weights","body":"This PR is generated automatically by CI.","head":"'$BRANCHNAME'","base":"'${CI_COMMIT_BRANCH}'"}'
+      -d '{"title":"[benchmarks] Update weights for statemine/t","body":"This PR is generated automatically by CI.","head":"'$BRANCHNAME'","base":"'${CI_COMMIT_BRANCH}'"}'
+      -X POST https://api.github.com/repos/paritytech/${CI_PROJECT_NAME}/pulls
+  after_script:
+    - rm -rf .git/config
+  tags:
+    - weights
+
+benchmarks-collectives:
+  stage:                           benchmarks-run
+  before_script:
+    - *rust-info-script
+  <<:                              *collect-artifacts
+  <<:                              *benchmarks-refs
+  script:
+    - ./scripts/benchmarks-ci.sh collectives collectives-polkadot ./artifacts > ./artifacts/bench-statemine.log
+    - git status
+    - export BRANCHNAME="weights-collectives-${CI_COMMIT_BRANCH}"
+    # Set git config
+    - rm -rf .git/config
+    - git config --global user.email "${GITHUB_EMAIL}"
+    - git config --global user.name "${GITHUB_USER}"
+    - git config remote.origin.url "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/paritytech/${CI_PROJECT_NAME}.git"
+    - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+    # push results to github
+    - git checkout -b $BRANCHNAME
+    - git add parachains/*
+    - git commit -m "[benchmarks] pr with weights"
+    - git push origin $BRANCHNAME
+    # create PR
+    - curl -u ${GITHUB_USER}:${GITHUB_TOKEN}
+      -d '{"title":"[benchmarks] Update weights for collectives","body":"This PR is generated automatically by CI.","head":"'$BRANCHNAME'","base":"'${CI_COMMIT_BRANCH}'"}'
       -X POST https://api.github.com/repos/paritytech/${CI_PROJECT_NAME}/pulls
   after_script:
     - rm -rf .git/config
