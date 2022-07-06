@@ -20,7 +20,7 @@ do
 
     parachains-integration-tests \
         -m test \
-        -t ./parachains/integration-tests/$t/xcm/0_init.yml \
+        -t ./parachains/integration-tests/$t \
         -tl ./logs/$t/tests.log & tests=$!
 
     wait $tests
