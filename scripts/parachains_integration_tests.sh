@@ -6,13 +6,12 @@ tests=(
 )
 
 rm -R logs &> /dev/null
-mkdir logs &> /dev/null
 
 for t in ${tests[@]}
 do
     printf "\n🔍  Running $t tests...\n\n"
 
-    mkdir logs/$t &> /dev/null
+    mkdir -p logs/$t
 
     parachains-integration-tests \
         -m zombienet \
