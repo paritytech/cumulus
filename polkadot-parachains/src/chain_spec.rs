@@ -89,7 +89,7 @@ struct IntegriteeKeys;
 
 impl IntegriteeKeys {
 	fn root() -> AccountId {
-		public_from_ss58::<sr25519::Public>("5EqGFRTN3m2kLpoaThANra5REs5C7B2rfLmmZv2nbJsxaTe1")
+		public_from_ss58::<sr25519::Public>("2K7GtWP55g3rETCDGLBuxbWBSaXQyCswbvEdcHFXG6fkt9RP")
 			.into()
 	}
 	fn authorities() -> Vec<AuraId> {
