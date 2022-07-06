@@ -581,11 +581,11 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type LastDmqMqcHead<T: Config> = StorageValue<_, MessageQueueChain, ValueQuery>;
 
-	/// The last message index we processed from the `dmq`.
+	/// The last message index we processed from the queue. Starts at `1` and wraps around.
 	///
-	/// The value is loaded before and saved after processing last message.
+	/// The value is loaded before and saved after processing messages.
 	#[pallet::storage]
-	pub(super) type LastDmqMessageIndex<T: Config> = StorageValue<_, u32, ValueQuery>;
+	pub(super) type LastDmqMessageIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
 
 	/// The message queue chain heads we have observed per each channel incoming channel.
 	///
@@ -833,12 +833,14 @@ impl<T: Config> Pallet<T> {
 
 			let processed_message_count =
 				(message_handler_context.message_index - start_dmq_message_index).0;
-			ProcessedDownwardMessages::<T>::put(processed_message_count);
+			ProcessedDownwardMessages::<T>::put(processed_message_count as u32);
 
-			Self::deposit_event(Event::DownwardMessagesReceived { count: processed_message_count });
+			Self::deposit_event(Event::DownwardMessagesReceived {
+				count: processed_message_count as u32,
+			});
 			Self::deposit_event(Event::DownwardMessagesProcessed {
 				weight_used,
-				dmq_head: dmq_head.head(),
+				dmq_head: message_handler_context.mqc_head.head(),
 			});
 
 			// After hashing each message in the message queue chain submitted by the collator, we
@@ -848,9 +850,9 @@ impl<T: Config> Pallet<T> {
 			// added improperly.
 			let expected_dmq_mqc_head = relay_state_proof
 				.read_dmp_mqc_head(message_handler_context.message_index.0)
-				.expect("Invalid messaging state in relay chain state proof: dmp_mqc_head");
+				.expect("Invalid messaging state in relay chain state proof");
 
-			assert_eq!(dmq_head.head(), expected_dmq_mqc_head);
+			assert_eq!(message_handler_context.mqc_head.head(), expected_dmq_mqc_head);
 
 			<LastDmqMessageIndex<T>>::put(message_handler_context.message_index.0);
 		}

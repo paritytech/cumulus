@@ -18,11 +18,14 @@
 
 use crate::ParachainInherentData;
 use codec::Decode;
+
 use cumulus_primitives_core::{
 	relay_chain::{self, v2::HrmpChannelId, Hash as PHash},
 	ParaId, PersistedValidationData,
 };
 use cumulus_relay_chain_interface::RelayChainInterface;
+use relay_chain::well_known_keys as relay_well_known_keys;
+use sp_std::num::Wrapping;
 
 const LOG_TARGET: &str = "parachain-inherent";
 
@@ -32,9 +35,8 @@ async fn collect_relay_storage_proof(
 	relay_chain_interface: &impl RelayChainInterface,
 	para_id: ParaId,
 	relay_parent: PHash,
+	relevant_message_idx: (u64, u64),
 ) -> Option<sp_state_machine::StorageProof> {
-	use relay_chain::well_known_keys as relay_well_known_keys;
-
 	let ingress_channels = relay_chain_interface
 		.get_storage_by_key(
 			relay_parent,
@@ -99,6 +101,16 @@ async fn collect_relay_storage_proof(
 	relevant_keys.push(relay_well_known_keys::CURRENT_SLOT.to_vec());
 	relevant_keys.push(relay_well_known_keys::ACTIVE_CONFIG.to_vec());
 	relevant_keys.push(relay_well_known_keys::dmq_mqc_head(para_id));
+
+	tracing::debug!(
+		target: LOG_TARGET,
+		?relevant_message_idx,
+		"seting dmq_mqc_head_for_message relevant keys",
+	);
+
+	for idx in relevant_message_idx.0..=relevant_message_idx.1 {
+		relevant_keys.push(relay_well_known_keys::dmq_mqc_head_for_message(para_id, idx));
+	}
 	relevant_keys.push(relay_well_known_keys::relay_dispatch_queue_size(para_id));
 	relevant_keys.push(relay_well_known_keys::hrmp_ingress_channel_index(para_id));
 	relevant_keys.push(relay_well_known_keys::hrmp_egress_channel_index(para_id));
@@ -135,21 +147,95 @@ impl ParachainInherentData {
 		validation_data: &PersistedValidationData,
 		para_id: ParaId,
 	) -> Option<ParachainInherentData> {
-		let relay_chain_state =
-			collect_relay_storage_proof(relay_chain_interface, para_id, relay_parent).await?;
+		// A hard limit for the amount of messages we can process in bytes.
+		// All of the messages will use PoV space, so this is probably good to promote as configuration parameter.
+		// We could use `ACTIVE_CONFIG` to get max PoV si`e and use a percentage here instead.
+		const MESSAGE_PROCESSING_CAPACITY: usize = 1 * 1024 * 1024; // 1MB
+		const CHUNK_SIZE: u32 = 64;
 
-		let downward_messages = relay_chain_interface
-			.retrieve_dmq_contents(para_id, relay_parent)
+		// Fetch all messages until we reach `MESSAGE_PROCESSING_CAPACITY`.
+		let downward_messages = {
+			let mut free_capacity = MESSAGE_PROCESSING_CAPACITY;
+			let mut start_index = 0;
+			let mut messages = Vec::new();
+
+			while free_capacity > 0 {
+				let new_messages = relay_chain_interface
+					.retrieve_dmq_contents(para_id, relay_parent, start_index, CHUNK_SIZE)
+					.await
+					.map_err(|e| {
+						tracing::error!(
+							target: LOG_TARGET,
+							error = ?e,
+							"Cannot obtain the dmq contents.",
+						)
+					})
+					.ok()?;
+				let retrieved_count = new_messages.len();
+
+				// Extend while there is free capacity.
+				messages.extend(new_messages.into_iter().take_while(|message| {
+					if free_capacity < message.msg.len() {
+						// We can only process them sequentially, so break loop.
+						free_capacity = 0;
+						false
+					} else {
+						free_capacity = free_capacity.saturating_sub(message.msg.len());
+						true
+					}
+				}));
+
+				// Advance start index only if we processed all prev items (there is more free capacity).
+				if free_capacity > 0 {
+					start_index += CHUNK_SIZE;
+				}
+
+				// If we retrieved less than we asked for it means the queue is empty.
+				if retrieved_count < CHUNK_SIZE as usize {
+					break
+				}
+			}
+			messages
+		};
+
+		let message_idx = relay_chain_interface
+			.get_storage_by_key(relay_parent, &relay_well_known_keys::dmq_message_idx(para_id))
 			.await
 			.map_err(|e| {
 				tracing::error!(
 					target: LOG_TARGET,
-					relay_parent = ?relay_parent,
 					error = ?e,
-					"An error occured during requesting the downward messages.",
-				);
+					"Cannot obtain the dmp messsage idx.",
+				)
 			})
 			.ok()?;
+
+		let message_idx = if let Some(message_idx) = message_idx {
+			<(u64, u64)>::decode(&mut message_idx.as_slice()).expect("Failed to decode message_idx")
+		} else {
+			tracing::debug!(
+				target: LOG_TARGET,
+				"Relay chain storage is not initialized, did not receive first message.",
+			);
+
+			// No message was received yet.
+			(0, 0)
+		};
+
+		assert!(message_idx.1 - message_idx.0 >= downward_messages.len() as u64);
+
+		// Collect proof for a subset of mcq heads relevant to the messages we'll attempt to process in runtime.
+		let first_message_idx = Wrapping(message_idx.0);
+		let last_message_idx = first_message_idx + Wrapping(downward_messages.len() as u64);
+
+		let relay_chain_state = collect_relay_storage_proof(
+			relay_chain_interface,
+			para_id,
+			relay_parent,
+			(first_message_idx.0, last_message_idx.0),
+		)
+		.await?;
+
 		let horizontal_messages = relay_chain_interface
 			.retrieve_all_inbound_hrmp_channel_contents(para_id, relay_parent)
 			.await

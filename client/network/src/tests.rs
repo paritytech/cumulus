@@ -89,6 +89,8 @@ impl RelayChainInterface for DummyRelayChainInterface {
 		&self,
 		_: ParaId,
 		_: PHash,
+		_: u32,
+		_: u32,
 	) -> RelayChainResult<Vec<InboundDownwardMessage>> {
 		unimplemented!("Not needed for test")
 	}

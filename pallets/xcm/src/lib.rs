@@ -22,7 +22,8 @@
 
 use codec::{Decode, DecodeLimit, Encode};
 use cumulus_primitives_core::{
-	relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler, ParaId,
+	relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler, DmpMessageHandlerContext,
+	ParaId,
 };
 use frame_support::dispatch::Weight;
 pub use pallet::*;
@@ -109,8 +110,7 @@ pub struct UnlimitedDmpExecution<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 	fn handle_dmp_messages(
 		iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
-		limit: Weight,
-		_message_index: &mut u32,
+		context: &mut DmpMessageHandlerContext,
 	) -> Weight {
 		let mut used = 0;
 		for (_sent_at, data) in iter {
@@ -124,7 +124,7 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
 				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
-					let outcome = T::XcmExecutor::execute_xcm(Parent, x, limit);
+					let outcome = T::XcmExecutor::execute_xcm(Parent, x, context.max_weight);
 					used += outcome.weight_used();
 					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
 				},
@@ -143,8 +143,7 @@ pub struct LimitAndDropDmpExecution<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 	fn handle_dmp_messages(
 		iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
-		limit: Weight,
-		_message_index: &mut u32,
+		context: &mut DmpMessageHandlerContext,
 	) -> Weight {
 		let mut used = 0;
 		for (_sent_at, data) in iter {
@@ -158,7 +157,7 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
 				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
-					let weight_limit = limit.saturating_sub(used);
+					let weight_limit = context.max_weight.saturating_sub(used);
 					let outcome = T::XcmExecutor::execute_xcm(Parent, x, weight_limit);
 					used += outcome.weight_used();
 					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));

@@ -156,7 +156,7 @@ impl RelayChainStateProof {
 		Ok(Self { para_id, trie_backend })
 	}
 
-	pub fn read_dmp_mqc_head(&self, message_index: u32) -> Result<relay_chain::v2::Hash, Error> {
+	pub fn read_dmp_mqc_head(&self, message_index: u64) -> Result<relay_chain::v2::Hash, Error> {
 		read_entry(
 			&self.trie_backend,
 			&relay_chain::well_known_keys::dmq_mqc_head_for_message(self.para_id, message_index),

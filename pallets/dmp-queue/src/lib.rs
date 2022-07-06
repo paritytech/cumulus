@@ -218,7 +218,6 @@ pub mod pallet {
 	/// For an incoming downward message, this just adapts an XCM executor and executes DMP messages
 	/// immediately up until some `MaxWeight` at which point it errors. Their origin is asserted to be
 	/// the `Parent` location.
-	/// TODO: ensure parachain advancement rule.
 	impl<T: Config> DmpMessageHandler for Pallet<T> {
 		fn handle_dmp_messages(
 			// QQQ: This no longer looks appropriate, as we reconstruct the `InboundDownardMessage`. Should we change it
