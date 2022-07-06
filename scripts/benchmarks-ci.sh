@@ -24,8 +24,8 @@ then
 		cumulus_pallet_xcmp_queue
 		frame_system
 	)
-else
-	if [[ $runtimeName -eq "collectives-polkadot" ]]
+elif [[ $runtimeName -eq "collectives-polkadot" ]]
+then
 		pallets=(
 			pallet_alliance
 			pallet_balances
@@ -39,11 +39,9 @@ else
 			cumulus_pallet_xcmp_queue
 			frame_system
 		)
-	then
-	else
-		echo "$runtimeName pallet list not found in benchmarks-ci.sh"
-		exit 1
-	fi
+else
+	echo "$runtimeName pallet list not found in benchmarks-ci.sh"
+	exit 1
 fi
 
 for pallet in ${pallets[@]}
