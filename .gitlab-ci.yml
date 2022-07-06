@@ -318,7 +318,7 @@ benchmarks-collectives:
   <<:                              *collect-artifacts
   <<:                              *benchmarks-refs
   script:
-    - ./scripts/benchmarks-ci.sh collectives collectives-polkadot ./artifacts > ./artifacts/bench-statemine.log
+    - ./scripts/benchmarks-ci.sh collectives collectives-polkadot ./artifacts
     - git status
     - export BRANCHNAME="weights-collectives-${CI_COMMIT_BRANCH}"
     # Set git config
