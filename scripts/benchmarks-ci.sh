@@ -46,7 +46,7 @@ else
 	fi
 fi
 
-for p in ${pallets[@]}
+for pallet in ${pallets[@]}
 do
 	$artifactsDir/polkadot-parachain benchmark pallet \
 		--chain=$benchmarkRuntimeName \
@@ -58,5 +58,5 @@ do
 		--repeat=$repeat \
 		--json \
         --header=./file_header.txt \
-		--output=$benchmarkOutput
+		--output=$benchmarkOutput >> ./artifacts/${pallet}_benchmark.json
 done
