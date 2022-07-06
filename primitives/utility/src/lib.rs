@@ -140,7 +140,7 @@ impl<
 			let asset_balance =
 				FeeCharger::charge_weight_in_fungibles(local_asset_id, weight).ok()?;
 
-			self.0 -= weight;
+			self.0 = self.0.saturating_sub(weight);
 			self.1 = self.1.saturating_sub(asset_balance);
 
 			let asset_balance: u128 = asset_balance.saturated_into();
