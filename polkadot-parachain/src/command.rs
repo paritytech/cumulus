@@ -490,7 +490,11 @@ pub fn run() -> Result<()> {
 								cmd.run::<Block, StatemintRuntimeExecutor>(config),
 							Runtime::CollectivesPolkadot =>
 								cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
-							_ => Err(format!("Chain '{:?}' doesn't support benchmarking", config.chain_spec.runtime()).into()),
+							_ => Err(format!(
+								"Chain '{:?}' doesn't support benchmarking",
+								config.chain_spec.runtime()
+							)
+							.into()),
 						})
 					} else {
 						Err("Benchmarking wasn't enabled when building the node. \
