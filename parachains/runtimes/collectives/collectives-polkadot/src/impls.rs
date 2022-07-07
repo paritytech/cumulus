@@ -28,6 +28,7 @@ type NegativeImbalanceOf<T, I> = <<T as pallet_alliance::Config<I>>::Currency as
 type BalanceOf<T, I> = <<T as pallet_alliance::Config<I>>::Currency as Currency<
 	<T as frame_system::Config>::AccountId,
 >>::Balance;
+
 pub struct ToParentTreasury<T, I = ()>(PhantomData<(T, I)>);
 impl<T, I: 'static> OnUnbalanced<NegativeImbalanceOf<T, I>> for ToParentTreasury<T, I>
 where
