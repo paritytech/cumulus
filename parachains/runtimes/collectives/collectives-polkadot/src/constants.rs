@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub const POLKADOT_TREASURY_PALLET_INDEX: u8 = 19;
+
 pub mod currency {
 	use polkadot_core_primitives::Balance;
 	use polkadot_runtime_constants as constants;

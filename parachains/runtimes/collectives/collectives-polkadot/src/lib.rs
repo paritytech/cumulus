@@ -38,10 +38,12 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod constants;
+pub mod impls;
 mod weights;
 pub mod xcm_config;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+use impls::ToParentTreasury;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -500,7 +502,7 @@ impl pallet_alliance::Config for Runtime {
 		pallet_collective::EnsureProportionMoreThan<AccountId, AllianceCollective, 2, 3>,
 	>;
 	type Currency = Balances;
-	type Slashed = (); // TODO:COLLECTIVES add handler to send teleport to Relay Treasury
+	type Slashed = ToParentTreasury<Runtime>;
 	type InitializeMembers = AllianceMotion;
 	type MembershipChanged = AllianceMotion;
 	type IdentityVerifier = (); // Don't block accounts on identity criteria
