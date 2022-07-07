@@ -9,8 +9,7 @@ artifactsDir=$3
 benchmarkOutput=./parachains/runtimes/$category/$runtimeName/src/weights
 benchmarkRuntimeName="$runtimeName-dev"
 
-if [[ $runtimeName -eq "statemint" ]] || [[ $runtimeName -eq "statemine" ]] || [[ $runtimeName -eq "westmint" ]]
-then
+if [[ $runtimeName -eq "statemint" ]] || [[ $runtimeName -eq "statemine" ]] || [[ $runtimeName -eq "westmint" ]]; then
 	pallets=(
 		pallet_assets
 		pallet_balances
@@ -25,7 +24,7 @@ then
 		frame_system
 	)
 else
-	if [[ $runtimeName -eq "collectives-polkadot" ]]
+	if [[ $runtimeName -eq "collectives-polkadot" ]]; then
 		pallets=(
 			pallet_alliance
 			pallet_balances
@@ -39,7 +38,6 @@ else
 			cumulus_pallet_xcmp_queue
 			frame_system
 		)
-	then
 	else
 		echo "$runtimeName pallet list not found in benchmarks-ci.sh"
 		exit 1
@@ -58,5 +56,5 @@ do
 		--repeat=$repeat \
 		--json \
         --header=./file_header.txt \
-		--output=$benchmarkOutput >> ./artifacts/${pallet}_benchmark.json
+		--output=$benchmarkOutput >> $artifactsDir/${pallet}_benchmark.json
 done
