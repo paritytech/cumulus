@@ -106,7 +106,7 @@ variables:
   script:
     - time cargo test --all --release --locked -- --include-ignored
 
-check-runtime-benchmarks:
+.check-runtime-benchmarks:
   stage:                           test
   <<:                              *docker-env
   <<:                              *common-refs
@@ -116,7 +116,7 @@ check-runtime-benchmarks:
     # Check that parachain-template will compile with `runtime-benchmarks` feature flag.
     - time cargo check -p parachain-template-node --features runtime-benchmarks
 
-cargo-check-try-runtime:
+.cargo-check-try-runtime:
   stage:                           test
   <<:                              *docker-env
   <<:                              *common-refs
@@ -130,7 +130,7 @@ cargo-check-try-runtime:
     # Check that parachain-template will compile with `try-runtime` feature flag.
     - time cargo check -p parachain-template-node --features try-runtime
 
-check-rustdoc:
+.check-rustdoc:
   stage:                           test
   <<:                              *docker-env
   <<:                              *common-refs
@@ -140,7 +140,7 @@ check-rustdoc:
   script:
     - time cargo +nightly doc --workspace --all-features --verbose --no-deps
 
-cargo-check-benches:
+.cargo-check-benches:
   stage:                           test
   <<:                              *docker-env
   <<:                              *common-refs
@@ -153,7 +153,7 @@ cargo-check-benches:
 
 #### stage:                        build
 
-build-linux-stable:
+.build-linux-stable:
   stage:                           build
   <<:                              *docker-env
   <<:                              *collect-artifacts
@@ -174,7 +174,7 @@ build-linux-stable:
     - echo "___The VERSION is either a tag name or the curent branch if triggered not by a tag___"
     - echo ${CI_COMMIT_REF_NAME} | tee ./artifacts/VERSION
 
-build-test-parachain:
+.build-test-parachain:
   stage:                           build
   <<:                              *docker-env
   <<:                              *collect-artifacts
@@ -244,7 +244,7 @@ build-test-parachain:
     IMAGE_NAME:                    "docker.io/paritypr/test-parachain"
     VERSION:                       "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
 
-publish-s3:
+.publish-s3:
   stage:                           publish
   <<:                              *kubernetes-env
   image:                           paritytech/awscli:latest
@@ -279,7 +279,7 @@ benchmarks-build:
     - mkdir -p artifacts
     - cp target/production/polkadot-parachain ./artifacts/
 
-benchmarks-statemint:
+.benchmarks-statemint:
   stage:                           benchmarks-run
   before_script:
     - *rust-info-script
@@ -318,7 +318,7 @@ benchmarks-collectives:
   <<:                              *collect-artifacts
   <<:                              *benchmarks-refs
   script:
-    - ./scripts/benchmarks-ci.sh collectives collectives-polkadot ./artifacts > ./artifacts/bench-statemine.log
+    - ./scripts/benchmarks-ci.sh collectives collectives-polkadot ./artifacts
     - git status
     - export BRANCHNAME="weights-collectives-${CI_COMMIT_BRANCH}"
     # Set git config

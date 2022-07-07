@@ -9,7 +9,7 @@ artifactsDir=$3
 benchmarkOutput=./parachains/runtimes/$category/$runtimeName/src/weights
 benchmarkRuntimeName="$runtimeName-dev"
 
-if [[ $runtimeName -eq "statemint" ]] || [[ $runtimeName -eq "statemine" ]] || [[ $runtimeName -eq "westmint" ]]; then
+if [[ $runtimeName == "statemint" ]] || [[ $runtimeName == "statemine" ]] || [[ $runtimeName == "westmint" ]]; then
 	pallets=(
 		pallet_assets
 		pallet_balances
@@ -23,8 +23,7 @@ if [[ $runtimeName -eq "statemint" ]] || [[ $runtimeName -eq "statemine" ]] || [
 		cumulus_pallet_xcmp_queue
 		frame_system
 	)
-else
-	if [[ $runtimeName -eq "collectives-polkadot" ]]; then
+elif [[ $runtimeName == "collectives-polkadot" ]]; then
 		pallets=(
 			pallet_alliance
 			pallet_balances
@@ -38,10 +37,9 @@ else
 			cumulus_pallet_xcmp_queue
 			frame_system
 		)
-	else
-		echo "$runtimeName pallet list not found in benchmarks-ci.sh"
-		exit 1
-	fi
+else
+	echo "$runtimeName pallet list not found in benchmarks-ci.sh"
+	exit 1
 fi
 
 for pallet in ${pallets[@]}
