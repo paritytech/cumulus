@@ -36,6 +36,7 @@ members = [
 	"parachains/runtimes/assets/westmint",
 	"parachains/runtimes/contracts/contracts-rococo",
 	"parachains/runtimes/testing/penpal",
+	"parachains/runtimes/bridge-hub",
 	"test/client",
 	"test/relay-sproof-builder",
 	"test/relay-validation-worker-provider",

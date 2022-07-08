@@ -51,6 +51,7 @@ enum Runtime {
 	Westmint,
 	Penpal(ParaId),
 	ContractsRococo,
+	BridgeHub,
 }
 
 trait ChainType {
@@ -88,6 +89,8 @@ fn runtime(id: &str) -> Runtime {
 		Runtime::Penpal(para_id.unwrap_or(ParaId::new(0)))
 	} else if id.starts_with("contracts-rococo") {
 		Runtime::ContractsRococo
+	} else if id.starts_with("bridge-hub") {
+		Runtime::BridgeHub
 	} else {
 		Runtime::Generic
 	}
@@ -144,6 +147,8 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"contracts-rococo" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../../parachains/chain-specs/contracts-rococo.json")[..],
 		)?),
+		// -- Bridge Hub
+		"bridge-hub-local" => Box::new(chain_spec::bridge_hub::bridge_hub_local_config()),
 		// -- Fallback (generic chainspec)
 		"" => Box::new(chain_spec::get_chain_spec()),
 		"penpal-kusama" => Box::new(chain_spec::penpal::get_penpal_chain_spec(
@@ -175,6 +180,9 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				),
 				Runtime::Penpal(_para_id) =>
 					Box::new(chain_spec::penpal::PenpalChainSpec::from_json_file(path.into())?),
+				Runtime::BridgeHub => Box::new(
+					chain_spec::bridge_hub::BridgeHubChainSpec::from_json_file(path.into())?,
+				),
 				Runtime::Generic => Box::new(chain_spec),
 			}
 		},
@@ -239,6 +247,19 @@ impl SubstrateCli for Cli {
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
+		let runtime = match chain_spec.runtime() {
+			Runtime::Statemint => "Runtime::Statemint",
+			Runtime::Statemine => "Runtime::Statemine",
+			Runtime::Westmint => "Runtime::Westmint",
+			Runtime::Shell => "Runtime::Shell",
+			Runtime::Seedling => "Runtime::Seedling",
+			Runtime::ContractsRococo => "Runtime::ContractsRococo",
+			Runtime::Penpal(_) => "Runtime::Penpal",
+			Runtime::BridgeHub => "Runtime::BridgeHub",
+			Runtime::Generic => "Runtime::Generic",
+		};
+		info!("native_runtime_version: {} -> {}", chain_spec.id(), runtime);
+
 		match chain_spec.runtime() {
 			Runtime::Statemint => &statemint_runtime::VERSION,
 			Runtime::Statemine => &statemine_runtime::VERSION,
@@ -247,6 +268,7 @@ impl SubstrateCli for Cli {
 			Runtime::Seedling => &seedling_runtime::VERSION,
 			Runtime::ContractsRococo => &contracts_rococo_runtime::VERSION,
 			Runtime::Penpal(_) => &penpal_runtime::VERSION,
+			Runtime::BridgeHub => &bridge_hub_runtime::VERSION,
 			Runtime::Generic => &rococo_parachain_runtime::VERSION,
 		}
 	}
@@ -381,6 +403,19 @@ macro_rules! construct_async_run {
 					let $components = new_partial::<contracts_rococo_runtime::RuntimeApi, _>(
 						&$config,
 						crate::service::contracts_rococo_build_import_queue,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			},
+			Runtime::BridgeHub => {
+				runner.async_run(|$config| {
+					let $components = new_partial::<
+						bridge_hub_runtime::RuntimeApi,
+						_
+					>(
+						&$config,
+						crate::service::aura_build_import_queue::<_, AuraId>,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -581,6 +616,7 @@ pub fn run() -> Result<()> {
 				info!("Parachain Account: {}", parachain_account);
 				info!("Parachain genesis state: {}", genesis_state);
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
+				info!("Configuration: {:?}", config);
 
 				match config.chain_spec.runtime() {
 					Runtime::Statemint => crate::service::start_generic_aura_node::<
@@ -631,6 +667,16 @@ pub fn run() -> Result<()> {
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into),
+					Runtime::BridgeHub => {
+						info!("Starting BridgeHub...");
+						crate::service::start_generic_aura_node::<
+							bridge_hub_runtime::RuntimeApi,
+							AuraId,
+						>(config, polkadot_config, collator_options, id, hwbench)
+							.await
+							.map(|r| r.0)
+							.map_err(Into::into)
+					},
 					Runtime::Penpal(_) | Runtime::Generic =>
 						crate::service::start_rococo_parachain_node(
 							config,
