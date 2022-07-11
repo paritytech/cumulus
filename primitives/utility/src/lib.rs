@@ -97,6 +97,12 @@ impl<
 		payment: xcm_executor::Assets,
 	) -> Result<xcm_executor::Assets, XcmError> {
 		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::buy_weight weight: {:?}, payment: {:?}", weight, payment);
+
+		// Make sure we dont enter twice
+		if self.1.is_some() {
+			return Err(XcmError::NotWithdrawable);
+		}
+		
 		// We take the very first multiasset from payment
 		// TODO: revisit this clone
 		let multiassets: MultiAssets = payment.clone().into();
