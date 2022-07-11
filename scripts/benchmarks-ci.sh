@@ -48,11 +48,12 @@ do
 		--chain=$benchmarkRuntimeName \
 		--execution=wasm \
 		--wasm-execution=compiled \
-		--pallet=$p  \
+		--pallet=$pallet  \
 		--extrinsic='*' \
 		--steps=$steps  \
 		--repeat=$repeat \
 		--json \
         --header=./file_header.txt \
 		--output=$benchmarkOutput >> $artifactsDir/${pallet}_benchmark.json
+
 done
