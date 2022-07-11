@@ -231,7 +231,10 @@ fn test_asset_xcm_trader_with_refund() {
 			let asset: MultiAsset = (asset_multilocation.clone(), amount_bought).into();
 
 			// Make sure buy_weight does not return an error
-			assert_ok!(trader.buy_weight(bought, asset.into()));
+			assert_ok!(trader.buy_weight(bought, asset.clone().into()));
+
+			// Make sure again buy_weight does return an error
+			assert_noop!(trader.buy_weight(bought, asset.into()), XcmError::NotWithdrawable);
 
 			// We actually use half of the weight
 			let weight_used = bought / 2;

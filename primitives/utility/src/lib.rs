@@ -99,8 +99,8 @@ impl<
 		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::buy_weight weight: {:?}, payment: {:?}", weight, payment);
 
 		// Make sure we dont enter twice
-		if self.1.is_some() {
-			return Err(XcmError::NotWithdrawable);
+		if self.2.is_some() {
+			return Err(XcmError::NotWithdrawable)
 		}
 
 		// We take the very first multiasset from payment
