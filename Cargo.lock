@@ -493,6 +493,10 @@ dependencies = [
 [[package]]
 name = "beefy-merkle-tree"
 version = "4.0.0-dev"
+dependencies = [
+ "beefy-primitives",
+ "sp-api",
+]
 
 [[package]]
 name = "beefy-primitives"
@@ -1071,9 +1075,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.5"
+version = "3.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d53da17d37dba964b9b3ecb5c5a1f193a2762c700e6829201e645b9381c99dc7"
+checksum = "9f1fe12880bae935d142c8702d500c63a4e8634b6c3c57ad72bf978fc7b6249a"
 dependencies = [
  "atty",
  "bitflags",
@@ -1088,9 +1092,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "3.2.5"
+version = "3.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c11d40217d16aee8508cc8e5fde8b4ff24639758608e5374e731b53f85749fb9"
+checksum = "ed6db9e867166a43a53f7199b5e4d1f522a1e5bd626654be263c999ce59df39a"
 dependencies = [
  "heck 0.4.0",
  "proc-macro-error",
@@ -1204,7 +1208,7 @@ dependencies = [
  "parachains-common",
  "parity-scale-codec",
  "polkadot-core-primitives",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "polkadot-runtime-common",
  "scale-info",
  "serde",
@@ -1570,7 +1574,7 @@ dependencies = [
 name = "cumulus-client-cli"
 version = "0.1.0"
 dependencies = [
- "clap 3.2.5",
+ "clap 3.2.6",
  "parity-scale-codec",
  "sc-chain-spec",
  "sc-cli",
@@ -1700,7 +1704,7 @@ dependencies = [
  "parking_lot 0.12.1",
  "polkadot-client",
  "polkadot-node-primitives",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "polkadot-primitives",
  "polkadot-service",
  "polkadot-test-client",
@@ -1830,7 +1834,7 @@ dependencies = [
  "log",
  "pallet-balances",
  "parity-scale-codec",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "sc-client-api",
  "scale-info",
  "serde",
@@ -1949,7 +1953,7 @@ dependencies = [
  "frame-support",
  "parity-scale-codec",
  "polkadot-core-primitives",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "polkadot-primitives",
  "sp-api",
  "sp-runtime",
@@ -2004,7 +2008,7 @@ dependencies = [
  "frame-support",
  "parity-scale-codec",
  "polkadot-core-primitives",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "polkadot-primitives",
  "sp-runtime",
  "sp-std",
@@ -2156,7 +2160,7 @@ dependencies = [
  "pallet-balances",
  "pallet-transaction-payment",
  "parity-scale-codec",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "polkadot-primitives",
  "sc-block-builder",
  "sc-consensus",
@@ -2231,7 +2235,7 @@ name = "cumulus-test-service"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "clap 3.2.5",
+ "clap 3.2.6",
  "criterion",
  "cumulus-client-cli",
  "cumulus-client-consensus-common",
@@ -2516,9 +2520,9 @@ dependencies = [
 
 [[package]]
 name = "dyn-clone"
-version = "1.0.5"
+version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21e50f3adc76d6a43f5ed73b698a87d0760ca74617f60f7c3b879003536fdd28"
+checksum = "140206b78fb2bc3edbcfc9b5ccbd0b30699cfe8d348b8b31b330e47df5291a5a"
 
 [[package]]
 name = "ecdsa"
@@ -2899,7 +2903,7 @@ version = "4.0.0-dev"
 dependencies = [
  "Inflector",
  "chrono",
- "clap 3.2.5",
+ "clap 3.2.6",
  "comfy-table",
  "frame-benchmarking",
  "frame-support",
@@ -3963,7 +3967,7 @@ checksum = "67c21572b4949434e4fc1e1978b99c5f77064153c59d998bf13ecd96fb5ecba7"
 
 [[package]]
 name = "kusama-runtime"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "beefy-primitives",
  "bitvec",
@@ -4054,7 +4058,7 @@ dependencies = [
 
 [[package]]
 name = "kusama-runtime-constants"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -4221,9 +4225,9 @@ dependencies = [
 
 [[package]]
 name = "libp2p-autonat"
-version = "0.4.1"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d45945fd2f96c4b133c23d5c28a8b7fc8d7138e6dd8d5a8cd492dd384f888e3"
+checksum = "50de7c1d5c3f040fccb469e8a2d189e068b7627d760dd74ef914071c16bbe905"
 dependencies = [
  "async-trait",
  "futures 0.3.21",
@@ -4485,9 +4489,9 @@ dependencies = [
 
 [[package]]
 name = "libp2p-metrics"
-version = "0.6.1"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "564a7e5284d7d9b3140fdfc3cb6567bc32555e86a21de5604c2ec85da05cf384"
+checksum = "adc4357140141ba9739eee71b20aa735351c0fc642635b2bffc7f57a6b5c1090"
 dependencies = [
  "libp2p-core 0.33.0",
  "libp2p-gossipsub",
@@ -6601,7 +6605,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xcm"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6618,7 +6622,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xcm-benchmarks"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6648,7 +6652,7 @@ dependencies = [
 name = "parachain-template-node"
 version = "0.1.0"
 dependencies = [
- "clap 3.2.5",
+ "clap 3.2.6",
  "cumulus-client-cli",
  "cumulus-client-collator",
  "cumulus-client-consensus-aura",
@@ -6671,7 +6675,7 @@ dependencies = [
  "parachain-template-runtime",
  "parity-scale-codec",
  "polkadot-cli",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "polkadot-primitives",
  "polkadot-service",
  "sc-basic-authorship",
@@ -6747,7 +6751,7 @@ dependencies = [
  "pallet-xcm",
  "parachain-info",
  "parity-scale-codec",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "polkadot-runtime-common",
  "scale-info",
  "serde",
@@ -7132,7 +7136,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-approval-distribution"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "futures 0.3.21",
  "polkadot-node-network-protocol",
@@ -7146,7 +7150,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-availability-bitfield-distribution"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "futures 0.3.21",
  "polkadot-node-network-protocol",
@@ -7159,7 +7163,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-availability-distribution"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "derive_more",
  "fatality",
@@ -7181,7 +7185,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-availability-recovery"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "fatality",
  "futures 0.3.21",
@@ -7201,9 +7205,9 @@ dependencies = [
 
 [[package]]
 name = "polkadot-cli"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
- "clap 3.2.5",
+ "clap 3.2.6",
  "frame-benchmarking-cli",
  "futures 0.3.21",
  "log",
@@ -7225,7 +7229,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-client"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "beefy-primitives",
  "frame-benchmarking",
@@ -7264,7 +7268,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-collator-protocol"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "always-assert",
  "fatality",
@@ -7284,7 +7288,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-core-primitives"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "parity-scale-codec",
  "parity-util-mem",
@@ -7296,7 +7300,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-dispute-distribution"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "derive_more",
  "fatality",
@@ -7318,7 +7322,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-erasure-coding"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "parity-scale-codec",
  "polkadot-node-primitives",
@@ -7331,7 +7335,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-gossip-support"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "futures 0.3.21",
  "futures-timer",
@@ -7350,7 +7354,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-network-bridge"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "always-assert",
  "async-trait",
@@ -7370,7 +7374,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-collation-generation"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "futures 0.3.21",
  "parity-scale-codec",
@@ -7387,7 +7391,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-core-approval-voting"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "bitvec",
  "derive_more",
@@ -7415,7 +7419,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-core-av-store"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "bitvec",
  "futures 0.3.21",
@@ -7434,7 +7438,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-core-backing"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "bitvec",
  "fatality",
@@ -7452,7 +7456,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-core-bitfield-signing"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "futures 0.3.21",
  "polkadot-node-subsystem",
@@ -7466,7 +7470,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-core-candidate-validation"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "async-trait",
  "futures 0.3.21",
@@ -7475,7 +7479,7 @@ dependencies = [
  "polkadot-node-primitives",
  "polkadot-node-subsystem",
  "polkadot-node-subsystem-util",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "polkadot-primitives",
  "sp-maybe-compressed-blob",
  "tracing-gum",
@@ -7483,7 +7487,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-core-chain-api"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "futures 0.3.21",
  "polkadot-node-subsystem",
@@ -7497,7 +7501,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-core-chain-selection"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "futures 0.3.21",
  "futures-timer",
@@ -7513,7 +7517,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-core-dispute-coordinator"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "fatality",
  "futures 0.3.21",
@@ -7531,7 +7535,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-core-parachains-inherent"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "async-trait",
  "futures 0.3.21",
@@ -7547,7 +7551,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-core-provisioner"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "bitvec",
  "fatality",
@@ -7564,7 +7568,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-core-pvf"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "always-assert",
  "assert_matches",
@@ -7576,7 +7580,7 @@ dependencies = [
  "pin-project 1.0.10",
  "polkadot-core-primitives",
  "polkadot-node-subsystem-util",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "rand 0.8.5",
  "sc-executor",
  "sc-executor-common",
@@ -7594,7 +7598,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-core-pvf-checker"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "futures 0.3.21",
  "polkadot-node-primitives",
@@ -7609,7 +7613,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-core-runtime-api"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "futures 0.3.21",
  "memory-lru",
@@ -7624,7 +7628,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-jaeger"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "async-std",
  "lazy_static",
@@ -7641,7 +7645,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-metrics"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "bs58",
  "futures 0.3.21",
@@ -7659,7 +7663,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-network-protocol"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -7679,12 +7683,12 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-primitives"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "bounded-vec",
  "futures 0.3.21",
  "parity-scale-codec",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "polkadot-primitives",
  "schnorrkel",
  "serde",
@@ -7700,7 +7704,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-subsystem"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "polkadot-node-jaeger",
  "polkadot-node-subsystem-types",
@@ -7709,7 +7713,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-subsystem-test-helpers"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "async-trait",
  "futures 0.3.21",
@@ -7726,7 +7730,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-subsystem-types"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "derive_more",
  "futures 0.3.21",
@@ -7744,7 +7748,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-node-subsystem-util"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -7776,7 +7780,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-overseer"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "futures 0.3.21",
  "futures-timer",
@@ -7799,7 +7803,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-parachain"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "derive_more",
  "frame-support",
@@ -7819,7 +7823,7 @@ version = "0.9.220"
 dependencies = [
  "assert_cmd",
  "async-trait",
- "clap 3.2.5",
+ "clap 3.2.6",
  "contracts-rococo-runtime",
  "cumulus-client-cli",
  "cumulus-client-consensus-aura",
@@ -7845,7 +7849,7 @@ dependencies = [
  "parachains-common",
  "parity-scale-codec",
  "polkadot-cli",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "polkadot-primitives",
  "polkadot-service",
  "rococo-parachain-runtime",
@@ -7893,7 +7897,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-performance-test"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "env_logger 0.9.0",
  "kusama-runtime",
@@ -7907,7 +7911,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-primitives"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "bitvec",
  "frame-system",
@@ -7915,7 +7919,7 @@ dependencies = [
  "parity-scale-codec",
  "parity-util-mem",
  "polkadot-core-primitives",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "scale-info",
  "serde",
  "sp-api",
@@ -7936,7 +7940,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-rpc"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "beefy-gadget",
  "beefy-gadget-rpc",
@@ -7967,7 +7971,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-runtime"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "beefy-primitives",
  "bitvec",
@@ -8051,7 +8055,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-runtime-common"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "beefy-primitives",
  "bitvec",
@@ -8097,7 +8101,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-runtime-constants"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -8108,7 +8112,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-runtime-metrics"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "bs58",
  "parity-scale-codec",
@@ -8119,7 +8123,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-runtime-parachains"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "bitflags",
  "bitvec",
@@ -8161,7 +8165,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-service"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "async-trait",
  "beefy-gadget",
@@ -8206,7 +8210,7 @@ dependencies = [
  "polkadot-node-subsystem-types",
  "polkadot-node-subsystem-util",
  "polkadot-overseer",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "polkadot-primitives",
  "polkadot-rpc",
  "polkadot-runtime",
@@ -8263,7 +8267,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-statement-distribution"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "arrayvec 0.5.2",
  "fatality",
@@ -8283,7 +8287,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-statement-table"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "parity-scale-codec",
  "polkadot-primitives",
@@ -8292,7 +8296,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-test-client"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "parity-scale-codec",
  "polkadot-node-subsystem",
@@ -8316,7 +8320,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-test-runtime"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "beefy-primitives",
  "bitvec",
@@ -8343,7 +8347,7 @@ dependencies = [
  "pallet-vesting",
  "pallet-xcm",
  "parity-scale-codec",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "polkadot-primitives",
  "polkadot-runtime-common",
  "polkadot-runtime-parachains",
@@ -8376,7 +8380,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-test-service"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "frame-benchmarking",
  "frame-system",
@@ -8388,7 +8392,7 @@ dependencies = [
  "polkadot-node-primitives",
  "polkadot-node-subsystem",
  "polkadot-overseer",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "polkadot-primitives",
  "polkadot-rpc",
  "polkadot-runtime-common",
@@ -8567,9 +8571,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.39"
+version = "1.0.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c54b25569025b7fc9651de43004ae593a75ad88543b17178aa5e1b9c4f15f56f"
+checksum = "dd96a1e8ed2596c337f8eae5f24924ec83f5ad5ab21ea8e455d3566c69fbcaf7"
 dependencies = [
  "unicode-ident",
 ]
@@ -8766,9 +8770,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.18"
+version = "1.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1feb54ed693b93a84e14094943b84b7c4eae204c512b7ccb95ab0c66d278ad1"
+checksum = "3bcdf212e9776fbcb2d23ab029360416bb1706b1aea2d1a5ba002727cbcab804"
 dependencies = [
  "proc-macro2",
 ]
@@ -9117,7 +9121,7 @@ dependencies = [
  "parachain-info",
  "parachains-common",
  "parity-scale-codec",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "scale-info",
  "serde",
  "sp-api",
@@ -9140,7 +9144,7 @@ dependencies = [
 
 [[package]]
 name = "rococo-runtime"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "beefy-merkle-tree",
  "beefy-primitives",
@@ -9184,7 +9188,7 @@ dependencies = [
  "pallet-utility",
  "pallet-xcm",
  "parity-scale-codec",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "polkadot-primitives",
  "polkadot-runtime-common",
  "polkadot-runtime-parachains",
@@ -9216,7 +9220,7 @@ dependencies = [
 
 [[package]]
 name = "rococo-runtime-constants"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -9498,7 +9502,7 @@ name = "sc-cli"
 version = "0.10.0-dev"
 dependencies = [
  "chrono",
- "clap 3.2.5",
+ "clap 3.2.6",
  "fdlimit",
  "futures 0.3.21",
  "hex",
@@ -10789,7 +10793,7 @@ checksum = "9def91fd1e018fe007022791f865d0ccc9b3a0d5001e01aabb8b40e46000afb5"
 
 [[package]]
 name = "slot-range-helper"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "enumn",
  "parity-scale-codec",
@@ -10809,9 +10813,9 @@ dependencies = [
 
 [[package]]
 name = "smallvec"
-version = "1.8.0"
+version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2dd574626839106c320a323308629dcb1acfc96e32a8cba364ddc61ac23ee83"
+checksum = "cc88c725d61fc6c3132893370cac4a0200e3fedf5da8331c570664b1987f5ca2"
 
 [[package]]
 name = "snap"
@@ -11598,7 +11602,7 @@ dependencies = [
  "parachains-common",
  "parity-scale-codec",
  "polkadot-core-primitives",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "polkadot-runtime-common",
  "scale-info",
  "serde",
@@ -11663,7 +11667,7 @@ dependencies = [
  "parachains-common",
  "parity-scale-codec",
  "polkadot-core-primitives",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "polkadot-runtime-common",
  "polkadot-runtime-constants",
  "scale-info",
@@ -12006,7 +12010,7 @@ checksum = "13a4ec180a2de59b57434704ccfad967f789b12737738798fa08798cd5824c16"
 
 [[package]]
 name = "test-runtime-constants"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -12294,7 +12298,7 @@ dependencies = [
 
 [[package]]
 name = "tracing-gum"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "polkadot-node-jaeger",
  "polkadot-primitives",
@@ -12304,7 +12308,7 @@ dependencies = [
 
 [[package]]
 name = "tracing-gum-proc-macro"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "expander 0.0.6",
  "proc-macro-crate",
@@ -12434,7 +12438,7 @@ checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
 name = "try-runtime-cli"
 version = "0.10.0-dev"
 dependencies = [
- "clap 3.2.5",
+ "clap 3.2.6",
  "jsonrpsee",
  "log",
  "parity-scale-codec",
@@ -13012,7 +13016,7 @@ dependencies = [
 
 [[package]]
 name = "westend-runtime"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "beefy-primitives",
  "bitvec",
@@ -13065,7 +13069,7 @@ dependencies = [
  "pallet-xcm",
  "pallet-xcm-benchmarks",
  "parity-scale-codec",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "polkadot-primitives",
  "polkadot-runtime-common",
  "polkadot-runtime-parachains",
@@ -13099,7 +13103,7 @@ dependencies = [
 
 [[package]]
 name = "westend-runtime-constants"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "frame-support",
  "polkadot-primitives",
@@ -13150,7 +13154,7 @@ dependencies = [
  "parachains-common",
  "parity-scale-codec",
  "polkadot-core-primitives",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "polkadot-runtime-common",
  "scale-info",
  "serde",
@@ -13339,7 +13343,7 @@ dependencies = [
 
 [[package]]
 name = "xcm"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "derivative",
  "impl-trait-for-tuples",
@@ -13352,14 +13356,14 @@ dependencies = [
 
 [[package]]
 name = "xcm-builder"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "frame-support",
  "frame-system",
  "log",
  "pallet-transaction-payment",
  "parity-scale-codec",
- "polkadot-parachain 0.9.23",
+ "polkadot-parachain 0.9.25",
  "scale-info",
  "sp-arithmetic",
  "sp-io",
@@ -13371,7 +13375,7 @@ dependencies = [
 
 [[package]]
 name = "xcm-executor"
-version = "0.9.23"
+version = "0.9.25"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -13459,74 +13463,6 @@ dependencies = [
  "cc",
  "libc",
 ]
-
-[[patch.unused]]
-name = "polkadot"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "polkadot-primitives-test-helpers"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "polkadot-test-malus"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "polkadot-voter-bags"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "remote-ext-tests-bags-list"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "staking-miner"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "test-parachain-adder"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "test-parachain-adder-collator"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "test-parachain-halt"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "test-parachain-undying"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "test-parachain-undying-collator"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "test-parachains"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "xcm-executor-integration-tests"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "xcm-simulator"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "xcm-simulator-example"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "xcm-simulator-fuzzer"
-version = "0.9.23"
-
-[[patch.unused]]
-name = "zombienet-backchannel"
-version = "0.9.23"
 
 [[patch.unused]]
 name = "chain-spec-builder"
@@ -13759,3 +13695,71 @@ version = "2.0.0"
 [[patch.unused]]
 name = "substrate-test-utils-test-crate"
 version = "0.1.0"
+
+[[patch.unused]]
+name = "polkadot"
+version = "0.9.25"
+
+[[patch.unused]]
+name = "polkadot-primitives-test-helpers"
+version = "0.9.25"
+
+[[patch.unused]]
+name = "polkadot-test-malus"
+version = "0.9.25"
+
+[[patch.unused]]
+name = "polkadot-voter-bags"
+version = "0.9.25"
+
+[[patch.unused]]
+name = "remote-ext-tests-bags-list"
+version = "0.9.25"
+
+[[patch.unused]]
+name = "staking-miner"
+version = "0.9.25"
+
+[[patch.unused]]
+name = "test-parachain-adder"
+version = "0.9.25"
+
+[[patch.unused]]
+name = "test-parachain-adder-collator"
+version = "0.9.25"
+
+[[patch.unused]]
+name = "test-parachain-halt"
+version = "0.9.25"
+
+[[patch.unused]]
+name = "test-parachain-undying"
+version = "0.9.25"
+
+[[patch.unused]]
+name = "test-parachain-undying-collator"
+version = "0.9.25"
+
+[[patch.unused]]
+name = "test-parachains"
+version = "0.9.25"
+
+[[patch.unused]]
+name = "xcm-executor-integration-tests"
+version = "0.9.25"
+
+[[patch.unused]]
+name = "xcm-simulator"
+version = "0.9.25"
+
+[[patch.unused]]
+name = "xcm-simulator-example"
+version = "0.9.25"
+
+[[patch.unused]]
+name = "xcm-simulator-fuzzer"
+version = "0.9.25"
+
+[[patch.unused]]
+name = "zombienet-backchannel"
+version = "0.9.25"

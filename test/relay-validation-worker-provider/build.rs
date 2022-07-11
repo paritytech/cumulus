@@ -110,7 +110,7 @@ fn create_project(out_dir: &Path) -> PathBuf {
 }
 
 fn add_patches(project_toml: &mut Table) {
-	let mut workspace_toml_path = PathBuf::from(
+	let workspace_toml_path = PathBuf::from(
 		env::var("CARGO_MANIFEST_DIR").expect("`CARGO_MANIFEST_DIR` is set by cargo"),
 	)
 	.join("../../Cargo.toml");
@@ -120,7 +120,8 @@ fn add_patches(project_toml: &mut Table) {
 	)
 	.expect("Workspace root `Cargo.toml` is a valid toml file; qed");
 
-	workspace_toml_path.pop();
+	let mut workspace_path = workspace_toml_path;
+	workspace_path.pop();
 
 	while let Some(mut patch) =
 		workspace_toml.remove("patch").and_then(|p| p.try_into::<Table>().ok())
@@ -136,7 +137,7 @@ fn add_patches(project_toml: &mut Table) {
 				p.iter_mut().filter(|(k, _)| k == &"path").for_each(|(_, v)| {
 					if let Some(path) = v.as_str().map(PathBuf::from) {
 						if path.is_relative() {
-							*v = workspace_toml_path.join(path).display().to_string().into();
+							*v = workspace_path.join(path).display().to_string().into();
 						}
 					}
 				})

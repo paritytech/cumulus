@@ -247,8 +247,7 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name().to_string()].iter())
-			.load_spec(id)
+		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -263,21 +262,21 @@ macro_rules! construct_benchmark_partials {
 			Runtime::Statemine => {
 				let $partials = new_partial::<statemine_runtime::RuntimeApi, _>(
 					&$config,
-					crate::service::statemint_build_import_queue::<_, AuraId>,
+					crate::service::aura_build_import_queue::<_, AuraId>,
 				)?;
 				$code
 			},
 			Runtime::Westmint => {
 				let $partials = new_partial::<westmint_runtime::RuntimeApi, _>(
 					&$config,
-					crate::service::statemint_build_import_queue::<_, AuraId>,
+					crate::service::aura_build_import_queue::<_, AuraId>,
 				)?;
 				$code
 			},
 			Runtime::Statemint => {
 				let $partials = new_partial::<statemint_runtime::RuntimeApi, _>(
 					&$config,
-					crate::service::statemint_build_import_queue::<_, StatemintAuraId>,
+					crate::service::aura_build_import_queue::<_, StatemintAuraId>,
 				)?;
 				$code
 			},
@@ -294,7 +293,7 @@ macro_rules! construct_async_run {
 				runner.async_run(|$config| {
 					let $components = new_partial::<westmint_runtime::RuntimeApi, _>(
 						&$config,
-						crate::service::statemint_build_import_queue::<_, AuraId>,
+						crate::service::aura_build_import_queue::<_, AuraId>,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -304,7 +303,7 @@ macro_rules! construct_async_run {
 				runner.async_run(|$config| {
 					let $components = new_partial::<statemine_runtime::RuntimeApi, _>(
 						&$config,
-						crate::service::statemint_build_import_queue::<_, AuraId>,
+						crate::service::aura_build_import_queue::<_, AuraId>,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -314,7 +313,7 @@ macro_rules! construct_async_run {
 				runner.async_run(|$config| {
 					let $components = new_partial::<statemint_runtime::RuntimeApi, _>(
 						&$config,
-						crate::service::statemint_build_import_queue::<_, StatemintAuraId>,
+						crate::service::aura_build_import_queue::<_, StatemintAuraId>,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -405,9 +404,7 @@ pub fn run() -> Result<()> {
 			runner.sync_run(|config| {
 				let polkadot_cli = RelayChainCli::new(
 					&config,
-					[RelayChainCli::executable_name().to_string()]
-						.iter()
-						.chain(cli.relaychain_args.iter()),
+					[RelayChainCli::executable_name()].iter().chain(cli.relaychain_args.iter()),
 				);
 
 				let polkadot_config = SubstrateCli::create_configuration(
@@ -520,9 +517,7 @@ pub fn run() -> Result<()> {
 
 				let polkadot_cli = RelayChainCli::new(
 					&config,
-					[RelayChainCli::executable_name().to_string()]
-						.iter()
-						.chain(cli.relaychain_args.iter()),
+					[RelayChainCli::executable_name()].iter().chain(cli.relaychain_args.iter()),
 				);
 
 				let id = ParaId::from(para_id);
@@ -548,21 +543,21 @@ pub fn run() -> Result<()> {
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
 				match config.chain_spec.runtime() {
-					Runtime::Statemint => crate::service::start_statemint_node::<
+					Runtime::Statemint => crate::service::start_generic_aura_node::<
 						statemint_runtime::RuntimeApi,
 						StatemintAuraId,
 					>(config, polkadot_config, collator_options, id, hwbench)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into),
-					Runtime::Statemine => crate::service::start_statemint_node::<
+					Runtime::Statemine => crate::service::start_generic_aura_node::<
 						statemine_runtime::RuntimeApi,
 						AuraId,
 					>(config, polkadot_config, collator_options, id, hwbench)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into),
-					Runtime::Westmint => crate::service::start_statemint_node::<
+					Runtime::Westmint => crate::service::start_generic_aura_node::<
 						westmint_runtime::RuntimeApi,
 						AuraId,
 					>(config, polkadot_config, collator_options, id, hwbench)
