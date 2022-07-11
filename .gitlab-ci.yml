@@ -332,7 +332,7 @@ benchmarks-collectives:
   tags:
     - weights
 
-publish-benchmarks-s3:
+.publish-benchmarks-s3:
   stage:                           publish
   <<:                              *kubernetes-env
   image:                           paritytech/awscli:latest
