@@ -100,9 +100,9 @@ impl<
 
 		// Make sure we dont enter twice
 		if self.1.is_some() {
-			return Err(XcmError::NotWithdrawable);
+			return Err(XcmError::NotWithdrawable)
 		}
-		
+
 		// We take the very first multiasset from payment
 		// TODO: revisit this clone
 		let multiassets: MultiAssets = payment.clone().into();
