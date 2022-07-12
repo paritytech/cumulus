@@ -25,6 +25,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 
 pub mod collectives;
 pub mod contracts;
+pub mod penpal;
 pub mod seedling;
 pub mod shell;
 pub mod statemint;

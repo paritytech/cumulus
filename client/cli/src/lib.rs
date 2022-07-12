@@ -227,7 +227,7 @@ pub struct ExportGenesisWasmCommand {
 }
 
 impl ExportGenesisWasmCommand {
-	/// Run the export-genesis-state command
+	/// Run the export-genesis-wasm command
 	pub fn run(&self, chain_spec: &dyn ChainSpec) -> sc_cli::Result<()> {
 		let raw_wasm_blob = extract_genesis_wasm(chain_spec)?;
 		let output_buf = if self.raw {
@@ -427,8 +427,8 @@ impl sc_cli::CliConfiguration for NormalizedRunCmd {
 		self.base.ws_max_out_buffer_capacity()
 	}
 
-	fn transaction_pool(&self) -> sc_cli::Result<TransactionPoolOptions> {
-		self.base.transaction_pool()
+	fn transaction_pool(&self, is_dev: bool) -> sc_cli::Result<TransactionPoolOptions> {
+		self.base.transaction_pool(is_dev)
 	}
 
 	fn max_runtime_instances(&self) -> sc_cli::Result<Option<usize>> {
