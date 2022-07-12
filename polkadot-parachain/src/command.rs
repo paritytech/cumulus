@@ -41,6 +41,7 @@ use sc_service::{
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 
+#[derive(Debug)]
 enum Runtime {
 	/// This is the default runtime (based on rococo)
 	Generic,
@@ -73,6 +74,7 @@ impl ChainType
 }
 
 fn runtime(id: &str) -> Runtime {
+	let id = id.replace("_", "-");
 	if id.starts_with("shell") {
 		Runtime::Shell
 	} else if id.starts_with("seedling") {
@@ -488,7 +490,11 @@ pub fn run() -> Result<()> {
 								cmd.run::<Block, StatemintRuntimeExecutor>(config),
 							Runtime::CollectivesPolkadot =>
 								cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
-							_ => Err("Chain doesn't support benchmarking".into()),
+							_ => Err(format!(
+								"Chain '{:?}' doesn't support benchmarking",
+								config.chain_spec.runtime()
+							)
+							.into()),
 						})
 					} else {
 						Err("Benchmarking wasn't enabled when building the node. \
