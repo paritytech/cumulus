@@ -28,9 +28,9 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkad
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24-1" }
 
 # Polkadot
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.24" }
-polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.24" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.24" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.24-1" }
+polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.24-1" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.24-1" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core" }
@@ -42,8 +42,8 @@ cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24-1" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.24" }
-polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.24" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.24-1" }
+polkadot-test-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.24-1" }
 
 # Cumulus
 cumulus-test-service = { path = "../../test/service" }
