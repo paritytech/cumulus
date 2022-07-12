@@ -25,9 +25,14 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_interface::RelayChainInterface;
 use relay_chain::well_known_keys as relay_well_known_keys;
-use sp_std::num::Wrapping;
 
 const LOG_TARGET: &str = "parachain-inherent";
+// A hard limit for the amount of space used by the messages we pass in `ParachainInherentData`.
+// This is probably good to promote as configuration parameter.
+// TODO(optimization): remove the messages that we've not touched from the storage proof.
+const MESSAGE_PROCESSING_CAPACITY: usize = 1 * 1024 * 1024; // 1MB
+															// How many dmp queue pages we fetch at once. Page size is defined by the relay chain dmp storage.
+const PAGE_COUNT: u32 = 4;
 
 /// Collect the relevant relay chain state in form of a proof for putting it into the validation
 /// data inherent.
@@ -147,13 +152,7 @@ impl ParachainInherentData {
 		validation_data: &PersistedValidationData,
 		para_id: ParaId,
 	) -> Option<ParachainInherentData> {
-		// A hard limit for the amount of messages we can process in bytes.
-		// All of the messages will use PoV space, so this is probably good to promote as configuration parameter.
-		// We could use `ACTIVE_CONFIG` to get max PoV si`e and use a percentage here instead.
-		const MESSAGE_PROCESSING_CAPACITY: usize = 1 * 1024 * 1024; // 1MB
-		const CHUNK_SIZE: u32 = 64;
-
-		// Fetch all messages until we reach `MESSAGE_PROCESSING_CAPACITY`.
+		// Accumulate messages until we reach `MESSAGE_PROCESSING_CAPACITY`.
 		let downward_messages = {
 			let mut free_capacity = MESSAGE_PROCESSING_CAPACITY;
 			let mut start_index = 0;
@@ -161,7 +160,7 @@ impl ParachainInherentData {
 
 			while free_capacity > 0 {
 				let new_messages = relay_chain_interface
-					.retrieve_dmq_contents(para_id, relay_parent, start_index, CHUNK_SIZE)
+					.retrieve_dmq_contents(para_id, relay_parent, start_index, PAGE_COUNT)
 					.await
 					.map_err(|e| {
 						tracing::error!(
@@ -172,6 +171,11 @@ impl ParachainInherentData {
 					})
 					.ok()?;
 				let retrieved_count = new_messages.len();
+
+				if retrieved_count == 0 {
+					// DMP queue is empty.
+					break
+				}
 
 				// Extend while there is free capacity.
 				messages.extend(new_messages.into_iter().take_while(|message| {
@@ -187,12 +191,7 @@ impl ParachainInherentData {
 
 				// Advance start index only if we processed all prev items (there is more free capacity).
 				if free_capacity > 0 {
-					start_index += CHUNK_SIZE;
-				}
-
-				// If we retrieved less than we asked for it means the queue is empty.
-				if retrieved_count < CHUNK_SIZE as usize {
-					break
+					start_index += PAGE_COUNT;
 				}
 			}
 			messages
@@ -222,17 +221,18 @@ impl ParachainInherentData {
 			(0, 0)
 		};
 
+		// Ensure the message indexes are consistent with the downward messages we've collected.
 		assert!(message_idx.1 - message_idx.0 >= downward_messages.len() as u64);
 
-		// Collect proof for a subset of mcq heads relevant to the messages we'll attempt to process in runtime.
-		let first_message_idx = Wrapping(message_idx.0);
-		let last_message_idx = first_message_idx + Wrapping(downward_messages.len() as u64);
+		// Collect proof for a subset of mqc heads relevant to the messages we'll attempt to process in runtime.
+		let first_message_idx = message_idx.0;
+		let last_message_idx = first_message_idx.wrapping_add(downward_messages.len() as u64);
 
 		let relay_chain_state = collect_relay_storage_proof(
 			relay_chain_interface,
 			para_id,
 			relay_parent,
-			(first_message_idx.0, last_message_idx.0),
+			(first_message_idx, last_message_idx),
 		)
 		.await?;
 
