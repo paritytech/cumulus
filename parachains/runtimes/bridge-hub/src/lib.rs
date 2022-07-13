@@ -451,6 +451,15 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = ();
 }
 
+parameter_types! {
+	pub const StringMaxLength: u32 = 50;
+}
+
+// Our custom pallet initialization
+impl pallet_bridge_hub_sample::pallet::Config for Runtime {
+	type StringMaxLength = StringMaxLength;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -482,6 +491,9 @@ construct_runtime!(
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin, Config} = 31,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
+
+		// Custom pallet
+		BridgeHubSample: pallet_bridge_hub_sample::pallet::{Pallet, Storage} = 40,
 	}
 );
 

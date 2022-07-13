@@ -707,6 +707,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-bridge-hub-sample",
  "pallet-collator-selection",
  "pallet-session",
  "pallet-sudo",
@@ -5550,6 +5551,19 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-bridge-hub-sample"
+version = "0.1.0"
+dependencies = [
+ "cumulus-primitives-core",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
 ]
 
 [[package]]

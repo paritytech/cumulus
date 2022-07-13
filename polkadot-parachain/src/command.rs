@@ -673,9 +673,9 @@ pub fn run() -> Result<()> {
 							bridge_hub_runtime::RuntimeApi,
 							AuraId,
 						>(config, polkadot_config, collator_options, id, hwbench)
-							.await
-							.map(|r| r.0)
-							.map_err(Into::into)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into)
 					},
 					Runtime::Penpal(_) | Runtime::Generic =>
 						crate::service::start_rococo_parachain_node(

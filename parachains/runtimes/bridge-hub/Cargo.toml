@@ -65,6 +65,7 @@ cumulus-primitives-timestamp = { path = "../../../primitives/timestamp", default
 cumulus-primitives-utility = { path = "../../../primitives/utility", default-features = false }
 pallet-collator-selection = { path = "../../../pallets/collator-selection", default-features = false }
 parachain-info = { path = "../../../parachains/pallets/parachain-info", default-features = false }
+pallet-bridge-hub-sample = { path = "../../../parachains/pallets/bridge-hub-sample", default-features = false }
 
 [features]
 default = [
@@ -98,6 +99,7 @@ std = [
 	"pallet-transaction-payment/std",
 	"pallet-xcm/std",
 	"parachain-info/std",
+	"pallet-bridge-hub-sample/std",
 	"polkadot-parachain/std",
 	"polkadot-runtime-common/std",
 	"sp-api/std",

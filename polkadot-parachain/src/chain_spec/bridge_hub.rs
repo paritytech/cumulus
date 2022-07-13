@@ -25,7 +25,7 @@ use sp_core::sr25519;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type BridgeHubChainSpec =
-sc_service::GenericChainSpec<bridge_hub_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<bridge_hub_runtime::GenesisConfig, Extensions>;
 
 /// Generate the session keys from individual elements.
 ///
@@ -98,11 +98,7 @@ fn bridge_hub_genesis(
 				.to_vec(),
 		},
 		balances: bridge_hub_runtime::BalancesConfig {
-			balances: endowed_accounts
-				.iter()
-				.cloned()
-				.map(|k| (k, 1 << 60))
-				.collect(),
+			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
 		parachain_info: bridge_hub_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: bridge_hub_runtime::CollatorSelectionConfig {
@@ -116,8 +112,8 @@ fn bridge_hub_genesis(
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                  // account id
-						acc,                          // validator id
+						acc.clone(),                   // account id
+						acc,                           // validator id
 						bridge_hub_session_keys(aura), // session keys
 					)
 				})
