@@ -1,5 +1,7 @@
 # Cumulus ☁️
 
+[![Doc](https://img.shields.io/badge/cumulus%20docs-master-brightgreen)](https://paritytech.github.io/cumulus/)
+
 This repository contains both the Cumulus SDK and also specific chains implemented
 on top of this SDK.
 
@@ -34,6 +36,10 @@ and treat as best.
 
 A Polkadot [collator](https://wiki.polkadot.network/docs/en/learn-collator) for the parachain is
 implemented by the `polkadot-parachain` binary (previously called `polkadot-collator`).
+
+## Installation
+
+Before building Cumulus SDK based nodes / runtimes prepare your environment by following Substrate [installation instructions](https://docs.substrate.io/main-docs/install/).
 
 ## Statemint 🪙
 
