@@ -146,6 +146,9 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"collectives-polkadot" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../../parachains/chain-specs/collectives-polkadot.json")[..],
 		)?),
+		"collectives-westend" => Box::new(chain_spec::ChainSpec::from_json_bytes(
+			&include_bytes!("../../parachains/chain-specs/collectives-westend.json")[..],
+		)?),
 
 		// -- Contracts on Rococo
 		"contracts-rococo-dev" =>

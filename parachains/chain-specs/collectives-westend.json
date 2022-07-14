@@ -3,10 +3,22 @@
   "id": "collectives_westend",
   "chainType": "Live",
   "bootNodes": [
-    "/ip4/35.204.21.205/tcp/30334/p2p/12D3KooWLjaXWhNTSiRVFbTJCKLRWt9XXHLGVnAFtxvnExKkVPqn",
-    "/ip4/34.141.171.170/tcp/30334/p2p/12D3KooWBNy2Jdrjv2P7sdfb1mzH1AGzwjip5rW4N2Ft1T3Hdq5c",
-    "/ip4/34.141.221.252/tcp/30334/p2p/12D3KooWC9YYdjQLwxTNVda6t4nmjAZG37gaRZLNi4Zuhr9xUveW",
-    "/ip4/34.90.92.174/tcp/30334/p2p/12D3KooWQcXpUyVqwC2zJkwECCC7ttLCUCLTjnbGxTVfhSgmH2sD"
+    "/dns/westend-collectives-collator-0.parity-testnet.parity.io/tcp/30334/p2p/12D3KooWN8B1ChzED6DkWekX3QnNo6fZ6gGGwjnAhSkhG6QsWkLr",
+    "/dns/westend-collectives-collator-1.parity-testnet.parity.io/tcp/30334/p2p/12D3KooWHeAG244H1UfB8516KVspL1V7ubeeKLLnHNfxxDfbBAvg",
+    "/dns/westend-collectives-collator-2.parity-testnet.parity.io/tcp/30334/p2p/12D3KooWFZQoNPiCdyPg5yzUhQJyBDo9XPYfNA97njfhH57smsud",
+    "/dns/westend-collectives-collator-3.parity-testnet.parity.io/tcp/30334/p2p/12D3KooWQ7p65S7koitvskQuEwsoHHEM3g78pCdwZ5RpJi2FAtxE",
+    "/dns/westend-collectives-collator-4.parity-testnet.parity.io/tcp/30334/p2p/12D3KooWCui467sJqUd7GzxB9HWpxrvXQfHWuYGN14KoSQwJQ9Sk",
+    "/dns/westend-collectives-collator-5.parity-testnet.parity.io/tcp/30334/p2p/12D3KooWLGeRp67Y4LTpDYW15ophkcn8VAbNf4mhw9MXwPUamCss",
+    "/dns/westend-collectives-collator-6.parity-testnet.parity.io/tcp/30334/p2p/12D3KooWDVdnw4fU8KsvVmXYwC7ifqsXssQgQ5rzPpBNEJPZewEB",
+    "/dns/westend-collectives-collator-7.parity-testnet.parity.io/tcp/30334/p2p/12D3KooWCYmG2HhYQTSs7PHcrBcsdfte7SJhctW6PeTYLLDyN4Yb",
+    "/dns/westend-collectives-collator-0.parity-testnet.parity.io/tcp/443/wss/p2p/12D3KooWN8B1ChzED6DkWekX3QnNo6fZ6gGGwjnAhSkhG6QsWkLr",
+    "/dns/westend-collectives-collator-1.parity-testnet.parity.io/tcp/443/wss/p2p/12D3KooWHeAG244H1UfB8516KVspL1V7ubeeKLLnHNfxxDfbBAvg",
+    "/dns/westend-collectives-collator-2.parity-testnet.parity.io/tcp/443/wss/p2p/12D3KooWFZQoNPiCdyPg5yzUhQJyBDo9XPYfNA97njfhH57smsud",
+    "/dns/westend-collectives-collator-3.parity-testnet.parity.io/tcp/443/wss/p2p/12D3KooWQ7p65S7koitvskQuEwsoHHEM3g78pCdwZ5RpJi2FAtxE",
+    "/dns/westend-collectives-collator-4.parity-testnet.parity.io/tcp/443/wss/p2p/12D3KooWCui467sJqUd7GzxB9HWpxrvXQfHWuYGN14KoSQwJQ9Sk",
+    "/dns/westend-collectives-collator-5.parity-testnet.parity.io/tcp/443/wss/p2p/12D3KooWLGeRp67Y4LTpDYW15ophkcn8VAbNf4mhw9MXwPUamCss",
+    "/dns/westend-collectives-collator-6.parity-testnet.parity.io/tcp/443/wss/p2p/12D3KooWDVdnw4fU8KsvVmXYwC7ifqsXssQgQ5rzPpBNEJPZewEB",
+    "/dns/westend-collectives-collator-7.parity-testnet.parity.io/tcp/443/wss/p2p/12D3KooWCYmG2HhYQTSs7PHcrBcsdfte7SJhctW6PeTYLLDyN4Yb"
   ],
   "telemetryEndpoints": null,
   "protocolId": null,
@@ -28,26 +40,21 @@
       "balances": {
         "balances": [
           [
-            "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-            4096000000000
-          ],
-          [
-            "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
-            4096000000000
-          ],
-          [
-            "5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY",
-            4096000000000
-          ],
-          [
-            "5HpG9w8EBLe5XCrbczpwq5TSXvedjrBGCwqxK1iQ7qUsSWFc",
+            "5EAajHa4vjcfXVdSuaWTuK3DzduMBgmu1XNMpqAprCaGcY3H",
             4096000000000
           ]
         ]
       },
       "collatorSelection": {
         "invulnerables": [
-          "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+          "5H3smGYCiPYHc74MCRaRYAybMykyF958fwdFdHqYJRVaFA2f",
+          "5EcVvc6C9sAJNJ2r5YEmMdPbSiCRpDsVFbsnU6oVwpfRzCzX",
+          "5ExdaDEdWMDCTKzgw919bHdG9khjHTtcwwwJ54tM4TAC21xQ",
+          "5G95npHNCgq7RhqoMA9v4c4M4XmhkGnieMi1ZVngfuuP3xzG",
+          "5CA1fhVhpwZ28zx8Ee3onLQbY6rwLKuVBWqG6h1nACBzSbyK",
+          "5F4nSN6iDqyAEwHZwnewhXhXvfYasKYWQ8sSU53u2rf64VEU",
+          "5G4eMyR7a6dBQ1TNUQzDGj568tg3zjfW2i7hM7qVy2yH1uRU",
+          "5FHpttSJKiru6PMTCrGCVg4Dvf2AKGUy86tRKszStseukeHS"
         ],
         "candidacyBond": 16000000000,
         "desiredCandidates": 0
@@ -55,10 +62,59 @@
       "session": {
         "keys": [
           [
-            "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-            "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+            "5H3smGYCiPYHc74MCRaRYAybMykyF958fwdFdHqYJRVaFA2f",
+            "5H3smGYCiPYHc74MCRaRYAybMykyF958fwdFdHqYJRVaFA2f",
             {
-              "aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+              "aura": "5H3smGYCiPYHc74MCRaRYAybMykyF958fwdFdHqYJRVaFA2f"
+            }
+          ],
+          [
+            "5EcVvc6C9sAJNJ2r5YEmMdPbSiCRpDsVFbsnU6oVwpfRzCzX",
+            "5EcVvc6C9sAJNJ2r5YEmMdPbSiCRpDsVFbsnU6oVwpfRzCzX",
+            {
+              "aura": "5EcVvc6C9sAJNJ2r5YEmMdPbSiCRpDsVFbsnU6oVwpfRzCzX"
+            }
+          ],
+          [
+            "5ExdaDEdWMDCTKzgw919bHdG9khjHTtcwwwJ54tM4TAC21xQ",
+            "5ExdaDEdWMDCTKzgw919bHdG9khjHTtcwwwJ54tM4TAC21xQ",
+            {
+              "aura": "5ExdaDEdWMDCTKzgw919bHdG9khjHTtcwwwJ54tM4TAC21xQ"
+            }
+          ],
+          [
+            "5G95npHNCgq7RhqoMA9v4c4M4XmhkGnieMi1ZVngfuuP3xzG",
+            "5G95npHNCgq7RhqoMA9v4c4M4XmhkGnieMi1ZVngfuuP3xzG",
+            {
+              "aura": "5G95npHNCgq7RhqoMA9v4c4M4XmhkGnieMi1ZVngfuuP3xzG"
+            }
+          ],
+          [
+            "5CA1fhVhpwZ28zx8Ee3onLQbY6rwLKuVBWqG6h1nACBzSbyK",
+            "5CA1fhVhpwZ28zx8Ee3onLQbY6rwLKuVBWqG6h1nACBzSbyK",
+            {
+              "aura": "5CA1fhVhpwZ28zx8Ee3onLQbY6rwLKuVBWqG6h1nACBzSbyK"
+            }
+          ],
+          [
+            "5F4nSN6iDqyAEwHZwnewhXhXvfYasKYWQ8sSU53u2rf64VEU",
+            "5F4nSN6iDqyAEwHZwnewhXhXvfYasKYWQ8sSU53u2rf64VEU",
+            {
+              "aura": "5F4nSN6iDqyAEwHZwnewhXhXvfYasKYWQ8sSU53u2rf64VEU"
+            }
+          ],
+          [
+            "5G4eMyR7a6dBQ1TNUQzDGj568tg3zjfW2i7hM7qVy2yH1uRU",
+            "5G4eMyR7a6dBQ1TNUQzDGj568tg3zjfW2i7hM7qVy2yH1uRU",
+            {
+              "aura": "5G4eMyR7a6dBQ1TNUQzDGj568tg3zjfW2i7hM7qVy2yH1uRU"
+            }
+          ],
+          [
+            "5FHpttSJKiru6PMTCrGCVg4Dvf2AKGUy86tRKszStseukeHS",
+            "5FHpttSJKiru6PMTCrGCVg4Dvf2AKGUy86tRKszStseukeHS",
+            {
+              "aura": "5FHpttSJKiru6PMTCrGCVg4Dvf2AKGUy86tRKszStseukeHS"
             }
           ]
         ]
