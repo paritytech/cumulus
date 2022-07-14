@@ -4,7 +4,7 @@ use cumulus_relay_chain_interface::RelayChainError;
 use cumulus_relay_chain_rpc_interface::RelayChainRPCClient;
 use futures::{executor::block_on, Future, Stream, StreamExt};
 use polkadot_core_primitives::{Block, Hash, Header};
-use polkadot_overseer::OverseerRuntimeClient;
+use polkadot_overseer::RuntimeApiSubsystemClient;
 use polkadot_service::HeaderBackend;
 use sc_authority_discovery::AuthorityDiscoveryWrapper;
 use sc_client_api::{BlockBackend, ProofProvider};
@@ -33,7 +33,7 @@ impl BlockChainRPCClient {
 }
 
 #[async_trait::async_trait]
-impl OverseerRuntimeClient for BlockChainRPCClient {
+impl RuntimeApiSubsystemClient for BlockChainRPCClient {
 	async fn validators(
 		&self,
 		at: Hash,
