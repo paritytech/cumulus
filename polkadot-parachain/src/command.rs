@@ -52,6 +52,7 @@ enum Runtime {
 	Westmint,
 	ContractsRococo,
 	CollectivesPolkadot,
+	CollectivesWestend
 }
 
 trait ChainType {
@@ -89,6 +90,8 @@ fn runtime(id: &str) -> Runtime {
 		Runtime::ContractsRococo
 	} else if id.starts_with("collectives-polkadot") {
 		Runtime::CollectivesPolkadot
+	} else if id.starts_with("collectives-westend") {
+		Runtime::CollectivesWestend
 	} else {
 		Runtime::Generic
 	}
@@ -175,7 +178,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				),
 				Runtime::Westmint =>
 					Box::new(chain_spec::statemint::WestmintChainSpec::from_json_file(path.into())?),
-				Runtime::CollectivesPolkadot =>
+				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
 					Box::new(chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_file(
 						path.into(),
 					)?),
@@ -232,7 +235,7 @@ impl SubstrateCli for Cli {
 			Runtime::Statemint => &statemint_runtime::VERSION,
 			Runtime::Statemine => &statemine_runtime::VERSION,
 			Runtime::Westmint => &westmint_runtime::VERSION,
-			Runtime::CollectivesPolkadot => &collectives_polkadot_runtime::VERSION,
+			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => &collectives_polkadot_runtime::VERSION,
 			Runtime::Shell => &shell_runtime::VERSION,
 			Runtime::Seedling => &seedling_runtime::VERSION,
 			Runtime::ContractsRococo => &contracts_rococo_runtime::VERSION,
@@ -307,7 +310,7 @@ macro_rules! construct_benchmark_partials {
 				)?;
 				$code
 			},
-			Runtime::CollectivesPolkadot => {
+			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => {
 				let $partials = new_partial::<collectives_polkadot_runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::aura_build_import_queue::<_, AuraId>,
@@ -353,7 +356,7 @@ macro_rules! construct_async_run {
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
 			},
-			Runtime::CollectivesPolkadot => {
+			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<collectives_polkadot_runtime::RuntimeApi, _>(
 						&$config,
@@ -491,7 +494,7 @@ pub fn run() -> Result<()> {
 							Runtime::Westmint => cmd.run::<Block, WestmintRuntimeExecutor>(config),
 							Runtime::Statemint =>
 								cmd.run::<Block, StatemintRuntimeExecutor>(config),
-							Runtime::CollectivesPolkadot =>
+							Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
 								cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
 							_ => Err(format!(
 								"Chain '{:?}' doesn't support benchmarking",
@@ -539,7 +542,7 @@ pub fn run() -> Result<()> {
 					Runtime::Statemint => runner.async_run(|config| {
 						Ok((cmd.run::<Block, StatemintRuntimeExecutor>(config), task_manager))
 					}),
-					Runtime::CollectivesPolkadot => runner.async_run(|config| {
+					Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => runner.async_run(|config| {
 						Ok((
 							cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
 							task_manager,
@@ -624,7 +627,7 @@ pub fn run() -> Result<()> {
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into),
-					Runtime::CollectivesPolkadot =>
+					Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
 						crate::service::start_generic_aura_node::<
 							collectives_polkadot_runtime::RuntimeApi,
 							AuraId,
