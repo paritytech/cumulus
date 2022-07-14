@@ -52,7 +52,7 @@ enum Runtime {
 	Westmint,
 	ContractsRococo,
 	CollectivesPolkadot,
-	CollectivesWestend
+	CollectivesWestend,
 }
 
 trait ChainType {
@@ -235,7 +235,8 @@ impl SubstrateCli for Cli {
 			Runtime::Statemint => &statemint_runtime::VERSION,
 			Runtime::Statemine => &statemine_runtime::VERSION,
 			Runtime::Westmint => &westmint_runtime::VERSION,
-			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => &collectives_polkadot_runtime::VERSION,
+			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
+				&collectives_polkadot_runtime::VERSION,
 			Runtime::Shell => &shell_runtime::VERSION,
 			Runtime::Seedling => &seedling_runtime::VERSION,
 			Runtime::ContractsRococo => &contracts_rococo_runtime::VERSION,
@@ -542,12 +543,13 @@ pub fn run() -> Result<()> {
 					Runtime::Statemint => runner.async_run(|config| {
 						Ok((cmd.run::<Block, StatemintRuntimeExecutor>(config), task_manager))
 					}),
-					Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => runner.async_run(|config| {
-						Ok((
-							cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
-							task_manager,
-						))
-					}),
+					Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
+						runner.async_run(|config| {
+							Ok((
+								cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
+								task_manager,
+							))
+						}),
 					Runtime::Shell => runner.async_run(|config| {
 						Ok((cmd.run::<Block, ShellRuntimeExecutor>(config), task_manager))
 					}),
