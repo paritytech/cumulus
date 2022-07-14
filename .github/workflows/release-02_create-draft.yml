@@ -50,7 +50,7 @@ jobs:
             runtime: statemint
           - category: assets
             runtime: westmint
-          - cagegory: collectives
+          - category: collectives
             runtime: collectives-polkadot
           - category: contracts
             runtime: contracts-rococo
@@ -216,7 +216,7 @@ jobs:
             runtime: statemint
           - category: assets
             runtime: westmint
-          - catergoy: collectives
+          - category: collectives
             runtime: collectives-polkadot
           - category: contracts
             runtime: contracts-rococo
