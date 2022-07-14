@@ -21,28 +21,41 @@ use frame_support::{
 use sp_std::{boxed::Box, marker::PhantomData};
 use xcm::latest::{Fungibility, Junction, Parent};
 
+type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
+
 type NegativeImbalanceOf<T, I> = <<T as pallet_alliance::Config<I>>::Currency as Currency<
 	<T as frame_system::Config>::AccountId,
 >>::NegativeImbalance;
+
+type CurrencyOf<T, I> = <T as pallet_alliance::Config<I>>::Currency;
 
 type BalanceOf<T, I> = <<T as pallet_alliance::Config<I>>::Currency as Currency<
 	<T as frame_system::Config>::AccountId,
 >>::Balance;
 
 pub struct ToParentTreasury<T, I = ()>(PhantomData<(T, I)>);
+
 impl<T, I: 'static> OnUnbalanced<NegativeImbalanceOf<T, I>> for ToParentTreasury<T, I>
 where
 	T: pallet_xcm::Config + frame_system::Config + pallet_alliance::Config<I>,
+	AccountIdOf<T>: From<[u8; 32]>,
 	BalanceOf<T, I>: Into<Fungibility>,
+	<<T as frame_system::Config>::Origin as OriginTrait>::AccountId: From<AccountIdOf<T>>,
 {
 	fn on_unbalanced(amount: NegativeImbalanceOf<T, I>) {
+		let account: AccountIdOf<T> = [7u8; 32].into();
+		let imbalance = amount.peek();
+
+		<CurrencyOf<T, I>>::resolve_creating(&account, amount);
+
 		let result = pallet_xcm::Pallet::<T>::teleport_assets(
-			<T as frame_system::Config>::Origin::root(),
+			<T as frame_system::Config>::Origin::signed(account.into()),
 			Box::new(Parent.into()),
 			Box::new(Junction::PalletInstance(POLKADOT_TREASURY_PALLET_INDEX).into().into()),
-			Box::new((Parent, amount.peek()).into()),
+			Box::new((Parent, imbalance).into()),
 			0,
 		);
+
 		match result {
 			Err(err) => log::warn!("Failed to teleport slashed assets: {:?}", err),
 			_ => (),
