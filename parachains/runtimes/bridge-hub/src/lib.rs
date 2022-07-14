@@ -458,6 +458,7 @@ parameter_types! {
 // Our custom pallet initialization
 impl pallet_bridge_hub_sample::pallet::Config for Runtime {
 	type StringMaxLength = StringMaxLength;
+	type Event = Event;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -493,7 +494,7 @@ construct_runtime!(
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
 		// Custom pallet
-		BridgeHubSample: pallet_bridge_hub_sample::pallet::{Pallet, Storage} = 40,
+		BridgeHubSample: pallet_bridge_hub_sample::pallet::{Pallet, Call, Storage, Event<T>} = 40,
 	}
 );
 
