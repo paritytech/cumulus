@@ -13,14 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::constants::account::{RELAY_TREASURY_PALL_ID, SLASHED_IMBALANCE};
 use frame_support::{
 	log,
 	traits::{Currency, Imbalance, OnUnbalanced, OriginTrait},
-	PalletId,
 };
-use sp_runtime::traits::AccountIdConversion;
+use sp_runtime::{traits::AccountIdConversion, AccountId32};
 use sp_std::{boxed::Box, marker::PhantomData};
-use xcm::latest::{Fungibility, Junction, NetworkId, Parent};
+use xcm::latest::{Fungibility, Junction, Junctions, NetworkId, Parent};
 
 type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 
@@ -34,21 +34,19 @@ type BalanceOf<T, I> = <<T as pallet_alliance::Config<I>>::Currency as Currency<
 	<T as frame_system::Config>::AccountId,
 >>::Balance;
 
-pub const TREASURY_PALLET_ID: PalletId = PalletId(*b"py/trsry");
-
 pub struct ToParentTreasury<T, I = ()>(PhantomData<(T, I)>);
 
 impl<T, I: 'static> OnUnbalanced<NegativeImbalanceOf<T, I>> for ToParentTreasury<T, I>
 where
 	T: pallet_xcm::Config + frame_system::Config + pallet_alliance::Config<I>,
-	AccountIdOf<T>: From<[u8; 32]>,
 	[u8; 32]: From<AccountIdOf<T>>,
+	AccountIdOf<T>: From<AccountId32>,
 	BalanceOf<T, I>: Into<Fungibility>,
 	<<T as frame_system::Config>::Origin as OriginTrait>::AccountId: From<AccountIdOf<T>>,
 {
 	fn on_unbalanced(amount: NegativeImbalanceOf<T, I>) {
-		let temp_account: AccountIdOf<T> = [7u8; 32].into();
-		let treasury_acc: AccountIdOf<T> = TREASURY_PALLET_ID.into_account_truncating();
+		let temp_account: AccountIdOf<T> = SLASHED_IMBALANCE.into();
+		let treasury_acc: AccountIdOf<T> = RELAY_TREASURY_PALL_ID.into_account_truncating();
 		let imbalance = amount.peek();
 
 		<CurrencyOf<T, I>>::resolve_creating(&temp_account, amount);
@@ -61,7 +59,7 @@ where
 					.into()
 					.into(),
 			),
-			Box::new((Parent, imbalance).into()),
+			Box::new((Junctions::Here, imbalance).into()),
 			0,
 		);
 

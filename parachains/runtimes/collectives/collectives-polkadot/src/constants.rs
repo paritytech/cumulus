@@ -13,6 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub mod account {
+	use frame_support::PalletId;
+	use sp_runtime::AccountId32;
+
+	/// realy chain treasury pallet id, used to convert into AccountId
+	pub const RELAY_TREASURY_PALL_ID: PalletId = PalletId(*b"py/trsry");
+	/// account used to temporary deposit slashed imbalance before teleporting
+	pub const SLASHED_IMBALANCE: AccountId32 = AccountId32::new([7u8; 32]);
+}
+
 pub mod currency {
 	use polkadot_core_primitives::Balance;
 	use polkadot_runtime_constants as constants;
