@@ -75,7 +75,7 @@ struct AssetTraderRefunder<Balance, AssetId> {
 	asset: AssetId,
 }
 
-/// Charges for exercution in the first asset of those selected for fee payment
+/// Charges for exercution in the first multiasset of those selected for fee payment
 /// First tries to convert the this MultiAsset into a local assetId
 /// Then charges for this assetId as described by FeeCharger
 /// Weight, paid balance, local asset Id and the multilocation is stored for
@@ -105,7 +105,7 @@ impl<
 	fn new() -> Self {
 		Self(None, PhantomData)
 	}
-	// We take first asset
+	// We take first multiasset
 	// Check whether we can convert fee to asset_fee (is_sufficient, min_deposit)
 	// If everything goes well, we charge.
 	fn buy_weight(
@@ -123,7 +123,7 @@ impl<
 		// We take the very first multiasset from payment
 		let multiassets: MultiAssets = payment.clone().into();
 
-		// Take the first asset from the selected MultiAssets
+		// Take the first multiasset from the selected MultiAssets
 		let first = multiassets.get(0).ok_or(XcmError::TooExpensive)?;
 
 		// Get the local asset id in which we can pay for fees
@@ -175,6 +175,7 @@ impl<
 			self.0 = Some(asset_trader.clone());
 
 			let asset_balance: u128 = asset_balance.saturated_into();
+			// Only refund if positive
 			if asset_balance > 0 {
 				Some((asset_trader.location, asset_balance).into())
 			} else {
