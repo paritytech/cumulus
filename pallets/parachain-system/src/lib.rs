@@ -46,7 +46,7 @@ use frame_support::{
 use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
 use sp_runtime::{
-	traits::{Block as BlockT, BlockNumberProvider, Hash},
+	traits::{BlakeTwo256, Block as BlockT, BlockNumberProvider, Hash},
 	transaction_validity::{
 		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidity,
 		ValidTransaction,
@@ -915,10 +915,18 @@ impl<T: Config> Pallet<T> {
 					hrmp_watermark = Some(horizontal_message.sent_at);
 				}
 
-				running_mqc_heads
+				let new_mqc_head = running_mqc_heads
 					.entry(sender)
 					.or_insert_with(|| last_mqc_heads.get(&sender).cloned().unwrap_or_default())
-					.extend_hrmp(horizontal_message);
+					.extend(
+						horizontal_message.sent_at,
+						BlakeTwo256::hash_of(&horizontal_message.data),
+					);
+
+				running_mqc_heads
+					.entry(sender)
+					.and_modify(|old_mqc_head| *old_mqc_head = new_mqc_head);
+				assert_eq!(running_mqc_heads[sender].head(), new_mqc_head.head());
 			}
 		}
 		let message_iter = horizontal_messages

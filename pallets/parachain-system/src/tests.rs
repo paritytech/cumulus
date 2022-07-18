@@ -676,15 +676,8 @@ fn message_queue_chain() {
 	// These cases are taken from https://github.com/paritytech/polkadot/pull/2351
 	assert_eq!(
 		MessageQueueChain::default()
-			.extend_downward(&InboundDownwardMessage { sent_at: 2, msg: vec![1, 2, 3] })
-			.extend_downward(&InboundDownwardMessage { sent_at: 3, msg: vec![4, 5, 6] })
-			.head(),
-		hex!["88dc00db8cc9d22aa62b87807705831f164387dfa49f80a8600ed1cbe1704b6b"].into(),
-	);
-	assert_eq!(
-		MessageQueueChain::default()
-			.extend_hrmp(&InboundHrmpMessage { sent_at: 2, data: vec![1, 2, 3] })
-			.extend_hrmp(&InboundHrmpMessage { sent_at: 3, data: vec![4, 5, 6] })
+			.extend(2, BlakeTwo256::hash_of(&vec![1u8, 2, 3]))
+			.extend(3, BlakeTwo256::hash_of(&vec![4u8, 5, 6]))
 			.head(),
 		hex!["88dc00db8cc9d22aa62b87807705831f164387dfa49f80a8600ed1cbe1704b6b"].into(),
 	);
@@ -702,8 +695,11 @@ fn receive_dmp() {
 	BlockTests::new()
 		.with_relay_sproof_builder(|_, relay_block_num, sproof| match relay_block_num {
 			1 => {
-				sproof.dmq_mqc_head =
-					Some(MessageQueueChain::default().extend_downward(&MSG).head());
+				sproof.dmq_mqc_head = Some(
+					MessageQueueChain::default()
+						.extend(MSG.sent_at, BlakeTwo256::hash_of(&MSG.msg))
+						.head(),
+				);
 			},
 			_ => unreachable!(),
 		})
@@ -738,19 +734,25 @@ fn receive_dmp_after_pause() {
 	BlockTests::new()
 		.with_relay_sproof_builder(|_, relay_block_num, sproof| match relay_block_num {
 			1 => {
-				sproof.dmq_mqc_head =
-					Some(MessageQueueChain::default().extend_downward(&MSG_1).head());
+				sproof.dmq_mqc_head = Some(
+					MessageQueueChain::default()
+						.extend(MSG_1.sent_at, BlakeTwo256::hash_of(&MSG_1.msg))
+						.head(),
+				);
 			},
 			2 => {
 				// no new messages, mqc stayed the same.
-				sproof.dmq_mqc_head =
-					Some(MessageQueueChain::default().extend_downward(&MSG_1).head());
+				sproof.dmq_mqc_head = Some(
+					MessageQueueChain::default()
+						.extend(MSG_1.sent_at, BlakeTwo256::hash_of(&MSG_1.msg))
+						.head(),
+				);
 			},
 			3 => {
 				sproof.dmq_mqc_head = Some(
 					MessageQueueChain::default()
-						.extend_downward(&MSG_1)
-						.extend_downward(&MSG_2)
+						.extend(MSG_1.sent_at, BlakeTwo256::hash_of(&MSG_1.msg))
+						.extend(MSG_2.sent_at, BlakeTwo256::hash_of(&MSG_2.msg))
 						.head(),
 				);
 			},
@@ -814,27 +816,36 @@ fn receive_hrmp() {
 			1 => {
 				// 200 - doesn't exist yet
 				// 300 - one new message
-				sproof.upsert_inbound_channel(ParaId::from(300)).mqc_head =
-					Some(MessageQueueChain::default().extend_hrmp(&MSG_1).head());
+				sproof.upsert_inbound_channel(ParaId::from(300)).mqc_head = Some(
+					MessageQueueChain::default()
+						.extend(MSG_1.sent_at, BlakeTwo256::hash_of(&MSG_1.data))
+						.head(),
+				);
 			},
 			2 => {
 				// 200 - now present with one message
 				// 300 - two new messages
-				sproof.upsert_inbound_channel(ParaId::from(200)).mqc_head =
-					Some(MessageQueueChain::default().extend_hrmp(&MSG_4).head());
+				sproof.upsert_inbound_channel(ParaId::from(200)).mqc_head = Some(
+					MessageQueueChain::default()
+						.extend(MSG_4.sent_at, BlakeTwo256::hash_of(&MSG_4.data))
+						.head(),
+				);
 				sproof.upsert_inbound_channel(ParaId::from(300)).mqc_head = Some(
 					MessageQueueChain::default()
-						.extend_hrmp(&MSG_1)
-						.extend_hrmp(&MSG_2)
-						.extend_hrmp(&MSG_3)
+						.extend(MSG_1.sent_at, BlakeTwo256::hash_of(&MSG_1.data))
+						.extend(MSG_2.sent_at, BlakeTwo256::hash_of(&MSG_2.data))
+						.extend(MSG_3.sent_at, BlakeTwo256::hash_of(&MSG_3.data))
 						.head(),
 				);
 			},
 			3 => {
 				// 200 - no new messages
 				// 300 - is gone
-				sproof.upsert_inbound_channel(ParaId::from(200)).mqc_head =
-					Some(MessageQueueChain::default().extend_hrmp(&MSG_4).head());
+				sproof.upsert_inbound_channel(ParaId::from(200)).mqc_head = Some(
+					MessageQueueChain::default()
+						.extend(MSG_4.sent_at, BlakeTwo256::hash_of(&MSG_4.data))
+						.head(),
+				);
 			},
 			_ => unreachable!(),
 		})
@@ -919,18 +930,27 @@ fn receive_hrmp_after_pause() {
 	BlockTests::new()
 		.with_relay_sproof_builder(|_, relay_block_num, sproof| match relay_block_num {
 			1 => {
-				sproof.upsert_inbound_channel(ALICE).mqc_head =
-					Some(MessageQueueChain::default().extend_hrmp(&MSG_1).head());
+				sproof.upsert_inbound_channel(ALICE).mqc_head = Some(
+					MessageQueueChain::default()
+						.extend(MSG_1.sent_at, BlakeTwo256::hash_of(&MSG_1.data))
+						.head(),
+				);
 			},
 			2 => {
 				// 300 - no new messages, mqc stayed the same.
-				sproof.upsert_inbound_channel(ALICE).mqc_head =
-					Some(MessageQueueChain::default().extend_hrmp(&MSG_1).head());
+				sproof.upsert_inbound_channel(ALICE).mqc_head = Some(
+					MessageQueueChain::default()
+						.extend(MSG_1.sent_at, BlakeTwo256::hash_of(&MSG_1.data))
+						.head(),
+				);
 			},
 			3 => {
 				// 300 - new message.
 				sproof.upsert_inbound_channel(ALICE).mqc_head = Some(
-					MessageQueueChain::default().extend_hrmp(&MSG_1).extend_hrmp(&MSG_2).head(),
+					MessageQueueChain::default()
+						.extend(MSG_1.sent_at, BlakeTwo256::hash_of(&MSG_1.data))
+						.extend(MSG_2.sent_at, BlakeTwo256::hash_of(&MSG_2.data))
+						.head(),
 				);
 			},
 			_ => unreachable!(),

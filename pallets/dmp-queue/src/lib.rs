@@ -24,14 +24,16 @@
 use codec::{Decode, DecodeLimit, Encode};
 use cumulus_primitives_core::{
 	relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler, DmpMessageHandlerContext,
-	InboundDownwardMessage,
 };
 use frame_support::{
 	dispatch::Weight, traits::EnsureOrigin, weights::constants::WEIGHT_PER_MILLIS,
 };
 pub use pallet::*;
 use scale_info::TypeInfo;
-use sp_runtime::RuntimeDebug;
+use sp_runtime::{
+	traits::{BlakeTwo256, Hash},
+	RuntimeDebug,
+};
 use sp_std::{convert::TryFrom, prelude::*};
 use xcm::{latest::prelude::*, VersionedXcm, MAX_XCM_DECODE_DEPTH};
 
@@ -232,15 +234,14 @@ pub mod pallet {
 			for (_, (sent_at, data)) in iter.enumerate() {
 				let remaining_weight = context.max_weight.saturating_sub(used);
 
-				let inbound_message = InboundDownwardMessage { sent_at, msg: data };
-				context.mqc_head.extend_downward(&inbound_message);
+				let new_head = context.mqc_head.extend(sent_at, BlakeTwo256::hash_of(&data));
 
 				// Try to execute the message, abort if we run out of weight.
-				match Self::try_service_message(remaining_weight, sent_at, &inbound_message.msg[..])
-				{
+				match Self::try_service_message(remaining_weight, sent_at, &data[..]) {
 					Ok(consumed) => {
 						used += consumed;
 						context.message_index += 1;
+						context.mqc_head = new_head;
 					},
 					Err((message_id, required_weight)) =>
 					// Executing this one inline is not possible.
@@ -251,16 +252,15 @@ pub mod pallet {
 							// Add this overweight message to the queue and continue with message execution.
 							// The overweight queue is serviced by `ExecuteOverweightOrigin` call.
 							let overweight_index = page_index.overweight_count;
-							Overweight::<T>::insert(
-								overweight_index,
-								(sent_at, inbound_message.msg),
-							);
+							Overweight::<T>::insert(overweight_index, (sent_at, data));
 							Self::deposit_event(Event::OverweightEnqueued {
 								message_id,
 								overweight_index,
 								required_weight,
 							});
 							page_index.overweight_count += 1;
+
+							context.mqc_head = new_head;
 
 							// Not needed for control flow, but only to ensure that the compiler
 							// understands that we won't attempt to re-use `data` later.
@@ -271,9 +271,7 @@ pub mod pallet {
 								remaining_weight,
 								required_weight,
 							});
-							// Revert head since we didn't process this message and we stop processing.
-							context.mqc_head.undo();
-
+							// Don't advance MQC head since we didn't process this message.
 							break
 						}
 					},

@@ -24,7 +24,7 @@ use sc_client_api::{Backend, StorageProvider};
 use sp_api::BlockId;
 use sp_core::twox_128;
 use sp_inherents::{InherentData, InherentDataProvider};
-use sp_runtime::traits::Block;
+use sp_runtime::traits::{BlakeTwo256, Block, Hash};
 use std::collections::BTreeMap;
 
 use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
@@ -150,7 +150,7 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 		for msg in &self.raw_downward_messages {
 			let wrapped = InboundDownwardMessage { sent_at: relay_parent_number, msg: msg.clone() };
 
-			dmq_mqc.extend_downward(&wrapped);
+			dmq_mqc = dmq_mqc.extend(wrapped.sent_at, BlakeTwo256::hash_of(&wrapped.msg));
 			downward_messages.push(wrapped);
 		}
 		sproof_builder.dmq_mqc_head = Some(dmq_mqc.head());
@@ -174,7 +174,8 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 					.unwrap_or(&relay_chain::Hash::default()),
 			);
 			for message in messages {
-				channel_mqc.extend_hrmp(message);
+				channel_mqc =
+					channel_mqc.extend(message.sent_at, BlakeTwo256::hash_of(&message.data));
 			}
 			sproof_builder.upsert_inbound_channel(*para_id).mqc_head = Some(channel_mqc.head());
 		}
