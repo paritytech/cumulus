@@ -113,6 +113,10 @@ where
 			.replace_implementation(host_default_child_storage_next_key),
 		sp_io::offchain_index::host_set.replace_implementation(host_offchain_index_set),
 		sp_io::offchain_index::host_clear.replace_implementation(host_offchain_index_clear),
+		// QUESTION why is root not needed?
+		sp_io::mmr_child_storage::host_get.replace_implementation(host_mmr_child_storage_get),
+		sp_io::mmr_child_storage::host_push.replace_implementation(host_mmr_child_storage_push),
+		sp_io::mmr_child_storage::host_root.replace_implementation(host_mmr_child_storage_root),
 	);
 
 	let inherent_data = block
@@ -252,6 +256,11 @@ fn host_default_child_storage_get(storage_key: &[u8], key: &[u8]) -> Option<Vec<
 	with_externalities(|ext| ext.child_storage(&child_info, key))
 }
 
+fn host_mmr_child_storage_get(storage_key: &[u8], at: u64) -> Option<Vec<u8>> {
+	let child_info = ChildInfo::new_mmr(storage_key);
+	with_externalities(|ext| ext.child_storage_at(&child_info, at))
+}
+
 fn host_default_child_storage_read(
 	storage_key: &[u8],
 	key: &[u8],
@@ -276,6 +285,11 @@ fn host_default_child_storage_set(storage_key: &[u8], key: &[u8], value: &[u8]) 
 	with_externalities(|ext| {
 		ext.place_child_storage(&child_info, key.to_vec(), Some(value.to_vec()))
 	})
+}
+
+fn host_mmr_child_storage_push(storage_key: &[u8], value: &[u8]) {
+	let child_info = ChildInfo::new_mmr(storage_key);
+	with_externalities(|ext| ext.push_storage(&child_info, value.to_vec()))
 }
 
 fn host_default_child_storage_clear(storage_key: &[u8], key: &[u8]) {
@@ -308,6 +322,11 @@ fn host_default_child_storage_clear_prefix(
 fn host_default_child_storage_root(storage_key: &[u8], version: StateVersion) -> Vec<u8> {
 	let child_info = ChildInfo::new_default(storage_key);
 	with_externalities(|ext| ext.child_storage_root(&child_info, version))
+}
+
+fn host_mmr_child_storage_root(storage_key: &[u8]) -> Vec<u8> {
+	let child_info = ChildInfo::new_mmr(storage_key);
+	with_externalities(|ext| ext.child_storage_root(&child_info, StateVersion::V1))
 }
 
 fn host_default_child_storage_next_key(storage_key: &[u8], key: &[u8]) -> Option<Vec<u8>> {
