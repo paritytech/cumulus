@@ -76,6 +76,7 @@ struct AssetTraderRefunder<Balance, AssetId> {
 }
 
 /// Charges for exercution in the first multiasset of those selected for fee payment
+/// Only succeeds for Concrete Fungible Assets
 /// First tries to convert the this MultiAsset into a local assetId
 /// Then charges for this assetId as described by FeeCharger
 /// Weight, paid balance, local asset Id and the multilocation is stored for
