@@ -1,7 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::PalletError;
+use frame_support::{
+	log,
+	pallet_prelude::{
+		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransaction,
+	},
+	sp_runtime::traits::{DispatchInfoOf, SignedExtension},
+	sp_std, PalletError,
+};
 use scale_info::TypeInfo;
 
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo, Debug)]
@@ -209,6 +216,68 @@ pub mod pallet {
 				None => None,
 			}
 		}
+	}
+}
+
+/// Sample extension, which will add some_version (according to some cfg) to signed data
+#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+pub struct BridgeHubSampleSignedExtension<T: pallet::Config + Send + Sync> {
+	priority: u8,
+	_phantom: sp_std::marker::PhantomData<T>,
+}
+
+impl<T: pallet::Config + Send + Sync> BridgeHubSampleSignedExtension<T> {
+	/// Create new `SignedExtension` to check runtime version.
+	pub fn new(priority: u8) -> Self {
+		Self { priority, _phantom: sp_std::marker::PhantomData::<T>::default() }
+	}
+}
+
+impl<T: pallet::Config + Send + Sync> sp_std::fmt::Debug for BridgeHubSampleSignedExtension<T> {
+	fn fmt(&self, f: &mut sp_std::fmt::Formatter<'_>) -> sp_std::fmt::Result {
+		f.debug_struct("BridgeHubSampleSignedExtension").finish()
+	}
+}
+
+impl<T: pallet::Config + Send + Sync> SignedExtension for BridgeHubSampleSignedExtension<T> {
+	const IDENTIFIER: &'static str = "";
+	type AccountId = T::AccountId;
+	type Call = T::Call;
+	type AdditionalSigned = u32;
+	type Pre = ();
+
+	fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
+		let additional_signed_data =
+			<T::StringMaxLength as frame_support::pallet_prelude::Get<u32>>::get();
+		log::info!(" additional_signed(priority: {}): {}", self.priority, additional_signed_data);
+		Ok(additional_signed_data)
+	}
+
+	fn validate(
+		&self,
+		who: &Self::AccountId,
+		call: &Self::Call,
+		_info: &DispatchInfoOf<Self::Call>,
+		len: usize,
+	) -> TransactionValidity {
+		log::info!(" validate(priority: {}): {:?}, ({}) {:?}", self.priority, who, len, call);
+		if self.priority > 50 {
+			Err(TransactionValidityError::Invalid(InvalidTransaction::BadMandatory))
+		} else {
+			Ok(ValidTransaction { priority: self.priority as u64, ..Default::default() })
+		}
+	}
+
+	fn pre_dispatch(
+		self,
+		who: &Self::AccountId,
+		call: &Self::Call,
+		info: &DispatchInfoOf<Self::Call>,
+		len: usize,
+	) -> Result<Self::Pre, TransactionValidityError> {
+		log::info!(" pre_dispatch: {:?}, ({}) {:?}", who, len, call);
+		self.validate(who, call, info, len).map(|_| Self::Pre::default())
 	}
 }
 
