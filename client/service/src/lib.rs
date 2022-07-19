@@ -41,8 +41,6 @@ use sp_runtime::{
 };
 use std::{sync::Arc, time::Duration};
 
-pub mod genesis;
-
 /// Parameters given to [`start_collator`].
 pub struct StartCollatorParams<'a, Block: BlockT, BS, Client, RCInterface, Spawner, IQ> {
 	pub block_status: Arc<BS>,
@@ -220,9 +218,9 @@ where
 			min: relay_chain_slot_duration * 25,
 			max: relay_chain_slot_duration * 50,
 		},
-		client.clone(),
+		client,
 		import_queue,
-		relay_chain_interface.clone(),
+		relay_chain_interface,
 		para_id,
 	);
 

@@ -6,8 +6,8 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 
 [dependencies]
-async-trait = "0.1.53"
-futures = { version = "0.3.8", features = ["compat"] }
+async-trait = "0.1.56"
+futures = "0.3.21"
 parking_lot = "0.12.1"
 tracing = "0.1.34"
 

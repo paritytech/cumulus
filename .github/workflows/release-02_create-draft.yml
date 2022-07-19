@@ -77,7 +77,7 @@ jobs:
       - name: Build ${{ matrix.runtime }} runtime
         if: ${{ github.event.inputs.release_type != 'client' }}
         id: srtool_build
-        uses: chevdor/srtool-actions@v0.4.0
+        uses: chevdor/srtool-actions@v0.5.0
         with:
           image: paritytech/srtool
           chain: ${{ matrix.runtime }}
@@ -157,7 +157,7 @@ jobs:
         run: |
           find ${{env.GITHUB_WORKSPACE}} -type f -name "*-srtool-digest.json"
 
-          if [ "$RELEASE_TYPE" == "client" ]; then
+          if [ "$RELEASE_TYPE" != "client" ]; then
             ls -al $SHELL_DIGEST || true
             ls -al $WESTMINT_DIGEST || true
             ls -al $STATEMINE_DIGEST || true
