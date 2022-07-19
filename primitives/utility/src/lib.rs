@@ -25,10 +25,7 @@ use frame_support::{
 	traits::tokens::{fungibles, fungibles::Inspect},
 	weights::Weight,
 };
-use sp_runtime::{
-	traits::{Saturating, Zero},
-	SaturatedConversion,
-};
+use sp_runtime::{traits::Zero, SaturatedConversion};
 
 use sp_std::marker::PhantomData;
 use xcm::{latest::prelude::*, WrapVersion};
@@ -64,15 +61,11 @@ impl<T: UpwardMessageSender, W: WrapVersion> SendXcm for ParentAsUmp<T, W> {
 
 /// Contains information to handle refund/payment for xcm-execution
 #[derive(Clone, Eq, PartialEq, Debug)]
-struct AssetTraderRefunder<Balance, AssetId> {
+struct AssetTraderRefunder {
 	// The amount of weight bought minus the weigh already refunded
 	weight_outstanding: Weight,
-	// The balance paid for the weight bought minus the balance already refunded
-	outstanding_balance: Balance,
-	// The multilocation representing the fungible asset in which fees were paid
-	location: MultiLocation,
-	// The local assetId the aforementioned location corresponds to
-	asset: AssetId,
+	// The concrete asset containing the asset location and outstanding balance
+	outstanding_concrete_asset: MultiAsset,
 }
 
 /// Charges for exercution in the first multiasset of those selected for fee payment
@@ -90,7 +83,7 @@ pub struct TakeFirstAssetTrader<
 	ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId> + fungibles::Balanced<AccountId>,
 	HandleRefund: TakeRevenue,
 >(
-	Option<AssetTraderRefunder<ConcreteAssets::Balance, ConcreteAssets::AssetId>>,
+	Option<AssetTraderRefunder>,
 	PhantomData<(AccountId, FeeCharger, Matcher, ConcreteAssets, HandleRefund)>,
 );
 impl<
@@ -101,7 +94,8 @@ impl<
 			+ fungibles::Transfer<AccountId>
 			+ fungibles::Balanced<AccountId>,
 		HandleRefund: TakeRevenue,
-	> WeightTrader for TakeFirstAssetTrader<AccountId, FeeCharger, Matcher, ConcreteAssets, HandleRefund>
+	> WeightTrader
+	for TakeFirstAssetTrader<AccountId, FeeCharger, Matcher, ConcreteAssets, HandleRefund>
 {
 	fn new() -> Self {
 		Self(None, PhantomData)
@@ -143,16 +137,15 @@ impl<
 				// Convert asset_balance to u128
 				let u128_amount: u128 = asset_balance.try_into().map_err(|_| XcmError::Overflow)?;
 				// Construct required payment
-				let required = (Concrete(location.clone()), u128_amount).into();
+				let required: MultiAsset = (Concrete(location.clone()), u128_amount).into();
 				// Substract payment
-				let unused = payment.checked_sub(required).map_err(|_| XcmError::TooExpensive)?;
+				let unused =
+					payment.checked_sub(required.clone()).map_err(|_| XcmError::TooExpensive)?;
 
 				// record weight, balance, multilocation and assetId
 				self.0 = Some(AssetTraderRefunder {
 					weight_outstanding: weight,
-					outstanding_balance: asset_balance,
-					location: location.clone(),
-					asset: local_asset_id,
+					outstanding_concrete_asset: required,
 				});
 				Ok(unused)
 			},
@@ -162,23 +155,40 @@ impl<
 
 	fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
 		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::refund_weight weight: {:?}", weight);
-		if let Some(mut asset_trader) = self.0.clone() {
-			let weight = weight.min(asset_trader.weight_outstanding);
+		if let Some(AssetTraderRefunder {
+			mut weight_outstanding,
+			outstanding_concrete_asset: MultiAsset { id, fun },
+		}) = self.0.clone()
+		{
+			let weight = weight.min(weight_outstanding);
+
+			// Get the local asset id in which we can refund fees
+			let (local_asset_id, outstanding_balance) =
+				Matcher::matches_fungibles(&(id.clone(), fun).into()).ok()?;
 
 			// Calculate asset_balance
 			// This read should have already be cached in buy_weight
-			let asset_balance =
-				FeeCharger::charge_weight_in_fungibles(asset_trader.asset, weight).ok()?;
+			let asset_balance: u128 =
+				FeeCharger::charge_weight_in_fungibles(local_asset_id, weight)
+					.ok()?
+					.saturated_into();
+
+			// Convert into u128 outstanding_balance
+			let outstanding_balance: u128 = outstanding_balance.saturated_into();
+
+			// Construct outstanding_concrete_asset with the same location id and substracted balance
+			let outstanding_concrete_asset: MultiAsset =
+				(id.clone(), (outstanding_balance.saturating_sub(asset_balance))).into();
 
 			// Substract from existing weight and balance
-			asset_trader.weight_outstanding = asset_trader.weight_outstanding.saturating_sub(weight);
-			asset_trader.outstanding_balance = asset_trader.outstanding_balance.saturating_sub(asset_balance);
-			self.0 = Some(asset_trader.clone());
+			weight_outstanding = weight_outstanding.saturating_sub(weight);
 
-			let asset_balance: u128 = asset_balance.saturated_into();
+			// Override AssetTraderRefunder
+			self.0 = Some(AssetTraderRefunder { weight_outstanding, outstanding_concrete_asset });
+
 			// Only refund if positive
 			if asset_balance > 0 {
-				Some((asset_trader.location, asset_balance).into())
+				Some((id, asset_balance).into())
 			} else {
 				None
 			}
@@ -200,12 +210,7 @@ impl<
 {
 	fn drop(&mut self) {
 		if let Some(asset_trader) = self.0.clone() {
-			let u128_amount: u128 =
-				asset_trader.outstanding_balance.try_into().map_err(|_| XcmError::Overflow).unwrap();
-			HandleRefund::take_revenue(MultiAsset {
-				id: asset_trader.location.clone().into(),
-				fun: Fungibility::Fungible(u128_amount),
-			});
+			HandleRefund::take_revenue(asset_trader.outstanding_concrete_asset);
 		}
 	}
 }
@@ -217,7 +222,7 @@ pub struct XcmFeesToAccount<ConcreteAssets, Matcher, AccountId, ReceiverAccount>
 	PhantomData<(ConcreteAssets, Matcher, AccountId, ReceiverAccount)>,
 );
 impl<
-ConcreteAssets: fungibles::Mutate<AccountId>,
+		ConcreteAssets: fungibles::Mutate<AccountId>,
 		Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
 		AccountId: Clone,
 		ReceiverAccount: frame_support::traits::Get<Option<AccountId>>,
