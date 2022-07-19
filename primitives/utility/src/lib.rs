@@ -119,7 +119,7 @@ impl<
 		let multiassets: MultiAssets = payment.clone().into();
 
 		// Take the first multiasset from the selected MultiAssets
-		let first = multiassets.get(0).ok_or(XcmError::TooExpensive)?;
+		let first = multiassets.get(0).ok_or(XcmError::AssetNotFound)?;
 
 		// Get the local asset id in which we can pay for fees
 		let (local_asset_id, _) =
