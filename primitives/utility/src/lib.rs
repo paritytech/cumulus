@@ -66,9 +66,9 @@ impl<T: UpwardMessageSender, W: WrapVersion> SendXcm for ParentAsUmp<T, W> {
 #[derive(Clone, Eq, PartialEq, Debug)]
 struct AssetTraderRefunder<Balance, AssetId> {
 	// The amount of weight bought minus the weigh already refunded
-	weight: Weight,
+	weight_outstanding: Weight,
 	// The balance paid for the weight bought minus the balance already refunded
-	balance: Balance,
+	outstanding_balance: Balance,
 	// The multilocation representing the fungible asset in which fees were paid
 	location: MultiLocation,
 	// The local assetId the aforementioned location corresponds to
@@ -85,23 +85,23 @@ struct AssetTraderRefunder<Balance, AssetId> {
 /// Alternatively we could just return payment in the aforementioned case
 pub struct TakeFirstAssetTrader<
 	AccountId,
-	FeeCharger: ChargeWeightInFungibles<AccountId, Assets>,
-	Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
-	Assets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId> + fungibles::Balanced<AccountId>,
+	FeeCharger: ChargeWeightInFungibles<AccountId, ConcreteAssets>,
+	Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
+	ConcreteAssets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId> + fungibles::Balanced<AccountId>,
 	HandleRefund: TakeRevenue,
 >(
-	Option<AssetTraderRefunder<Assets::Balance, Assets::AssetId>>,
-	PhantomData<(AccountId, FeeCharger, Matcher, Assets, HandleRefund)>,
+	Option<AssetTraderRefunder<ConcreteAssets::Balance, ConcreteAssets::AssetId>>,
+	PhantomData<(AccountId, FeeCharger, Matcher, ConcreteAssets, HandleRefund)>,
 );
 impl<
 		AccountId,
-		FeeCharger: ChargeWeightInFungibles<AccountId, Assets>,
-		Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
-		Assets: fungibles::Mutate<AccountId>
+		FeeCharger: ChargeWeightInFungibles<AccountId, ConcreteAssets>,
+		Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
+		ConcreteAssets: fungibles::Mutate<AccountId>
 			+ fungibles::Transfer<AccountId>
 			+ fungibles::Balanced<AccountId>,
 		HandleRefund: TakeRevenue,
-	> WeightTrader for TakeFirstAssetTrader<AccountId, FeeCharger, Matcher, Assets, HandleRefund>
+	> WeightTrader for TakeFirstAssetTrader<AccountId, FeeCharger, Matcher, ConcreteAssets, HandleRefund>
 {
 	fn new() -> Self {
 		Self(None, PhantomData)
@@ -149,8 +149,8 @@ impl<
 
 				// record weight, balance, multilocation and assetId
 				self.0 = Some(AssetTraderRefunder {
-					weight,
-					balance: asset_balance,
+					weight_outstanding: weight,
+					outstanding_balance: asset_balance,
 					location: location.clone(),
 					asset: local_asset_id,
 				});
@@ -163,7 +163,7 @@ impl<
 	fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
 		log::trace!(target: "xcm::weight", "TakeFirstAssetTrader::refund_weight weight: {:?}", weight);
 		if let Some(mut asset_trader) = self.0.clone() {
-			let weight = weight.min(asset_trader.weight);
+			let weight = weight.min(asset_trader.weight_outstanding);
 
 			// Calculate asset_balance
 			// This read should have already be cached in buy_weight
@@ -171,8 +171,8 @@ impl<
 				FeeCharger::charge_weight_in_fungibles(asset_trader.asset, weight).ok()?;
 
 			// Substract from existing weight and balance
-			asset_trader.weight = asset_trader.weight.saturating_sub(weight);
-			asset_trader.balance = asset_trader.balance.saturating_sub(asset_balance);
+			asset_trader.weight_outstanding = asset_trader.weight_outstanding.saturating_sub(weight);
+			asset_trader.outstanding_balance = asset_trader.outstanding_balance.saturating_sub(asset_balance);
 			self.0 = Some(asset_trader.clone());
 
 			let asset_balance: u128 = asset_balance.saturated_into();
@@ -190,18 +190,18 @@ impl<
 
 impl<
 		AccountId,
-		FeeCharger: ChargeWeightInFungibles<AccountId, Assets>,
-		Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
-		Assets: fungibles::Mutate<AccountId>
+		FeeCharger: ChargeWeightInFungibles<AccountId, ConcreteAssets>,
+		Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
+		ConcreteAssets: fungibles::Mutate<AccountId>
 			+ fungibles::Transfer<AccountId>
 			+ fungibles::Balanced<AccountId>,
 		HandleRefund: TakeRevenue,
-	> Drop for TakeFirstAssetTrader<AccountId, FeeCharger, Matcher, Assets, HandleRefund>
+	> Drop for TakeFirstAssetTrader<AccountId, FeeCharger, Matcher, ConcreteAssets, HandleRefund>
 {
 	fn drop(&mut self) {
 		if let Some(asset_trader) = self.0.clone() {
 			let u128_amount: u128 =
-				asset_trader.balance.try_into().map_err(|_| XcmError::Overflow).unwrap();
+				asset_trader.outstanding_balance.try_into().map_err(|_| XcmError::Overflow).unwrap();
 			HandleRefund::take_revenue(MultiAsset {
 				id: asset_trader.location.clone().into(),
 				fun: Fungibility::Fungible(u128_amount),
@@ -213,22 +213,22 @@ impl<
 /// XCM fee depositor to which we implement the TakeRevenue trait
 /// It receives a fungibles::Mutate implemented argument, a matcher to convert MultiAsset into
 /// AssetId and amount, and the fee receiver account
-pub struct XcmFeesToAccount<Assets, Matcher, AccountId, ReceiverAccount>(
-	PhantomData<(Assets, Matcher, AccountId, ReceiverAccount)>,
+pub struct XcmFeesToAccount<ConcreteAssets, Matcher, AccountId, ReceiverAccount>(
+	PhantomData<(ConcreteAssets, Matcher, AccountId, ReceiverAccount)>,
 );
 impl<
-		Assets: fungibles::Mutate<AccountId>,
-		Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
+ConcreteAssets: fungibles::Mutate<AccountId>,
+		Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
 		AccountId: Clone,
 		ReceiverAccount: frame_support::traits::Get<Option<AccountId>>,
-	> TakeRevenue for XcmFeesToAccount<Assets, Matcher, AccountId, ReceiverAccount>
+	> TakeRevenue for XcmFeesToAccount<ConcreteAssets, Matcher, AccountId, ReceiverAccount>
 {
 	fn take_revenue(revenue: MultiAsset) {
 		match Matcher::matches_fungibles(&revenue) {
 			Ok((asset_id, amount)) =>
 				if let Some(receiver) = ReceiverAccount::get() {
 					if !amount.is_zero() {
-						let ok = Assets::mint_into(asset_id, &receiver, amount).is_ok();
+						let ok = ConcreteAssets::mint_into(asset_id, &receiver, amount).is_ok();
 						debug_assert!(ok, "`mint_into` cannot generally fail; qed");
 					}
 				},
