@@ -15,7 +15,6 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use async_trait::async_trait;
-use backoff::{future::retry_notify, ExponentialBackoff};
 use core::time::Duration;
 use cumulus_primitives_core::{
 	relay_chain::{
@@ -35,15 +34,13 @@ use jsonrpsee::{
 	types::ParamsSer,
 	ws_client::WsClientBuilder,
 };
-use parity_scale_codec::{Decode, Encode};
 use polkadot_service::Handle;
-use sc_client_api::{StorageData, StorageProof};
-use sc_rpc_api::{state::ReadProof, system::Health};
+use sc_client_api::StorageProof;
+use sc_service::SpawnTaskHandle;
 use sp_core::sp_std::collections::btree_map::BTreeMap;
-use sp_runtime::DeserializeOwned;
 use sp_state_machine::StorageValue;
 use sp_storage::StorageKey;
-use std::{pin::Pin, sync::Arc};
+use std::pin::Pin;
 
 pub use url::Url;
 mod rpc_client;
@@ -60,8 +57,10 @@ pub struct RelayChainRPCInterface {
 }
 
 impl RelayChainRPCInterface {
-	pub async fn new(url: Url) -> RelayChainResult<Self> {
-		Ok(Self { rpc_client: RelayChainRPCClient::new(url).await? })
+	pub async fn new(url: Url, spawn_handle: SpawnTaskHandle) -> RelayChainResult<Self> {
+		let (worker, client) = rpc_client::create_worker_client(url).await?;
+		spawn_handle.spawn("relay-chain-rpc-worker", None, worker.run());
+		Ok(Self { rpc_client: client })
 	}
 }
 

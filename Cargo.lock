@@ -2091,6 +2091,7 @@ dependencies = [
  "polkadot-service",
  "sc-client-api",
  "sc-rpc-api",
+ "sc-service",
  "sp-api",
  "sp-core",
  "sp-runtime",

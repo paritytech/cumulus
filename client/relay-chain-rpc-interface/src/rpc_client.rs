@@ -108,7 +108,7 @@ impl RPCWorker {
 		(worker, tx)
 	}
 
-	pub async fn run(&mut self) -> ! {
+	pub async fn run(mut self) {
 		loop {
 			futures::select! {
 				evt = self.client_receiver.next().fuse() => match evt {
@@ -120,7 +120,7 @@ impl RPCWorker {
 				import_evt = self.import_sub.next().fuse() => {
 					match import_evt {
 						Some(Ok(header)) => self.import_listener.iter().for_each(|e| {
-							tracing::debug!(target:LOG_TARGET, ?header, "Sending header to import listener.");
+							tracing::info!(target:LOG_TARGET, ?header, "Sending header to import listener.");
 							e.unbounded_send(header.clone());
 						}),
 						None => todo!(),
@@ -130,7 +130,7 @@ impl RPCWorker {
 				header_evt = self.best_sub.next().fuse() => {
 					match header_evt {
 						Some(Ok(header)) => self.head_listener.iter().for_each(|e| {
-							tracing::debug!(target:LOG_TARGET, ?header, "Sending header to best head listener.");
+							tracing::info!(target:LOG_TARGET, ?header, "Sending header to best head listener.");
 							e.unbounded_send(header.clone());
 						}),
 						None => todo!(),
@@ -140,7 +140,7 @@ impl RPCWorker {
 				finalized_evt = self.finalized_sub.next().fuse() => {
 					match finalized_evt {
 						Some(Ok(header)) => self.finalized_listener.iter().for_each(|e| {
-							tracing::debug!(target:LOG_TARGET, ?header, "Sending header to finalized head listener.");
+							tracing::info!(target:LOG_TARGET, ?header, "Sending header to finalized head listener2.");
 							e.unbounded_send(header.clone());
 						}),
 						None => todo!(),
