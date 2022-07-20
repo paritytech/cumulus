@@ -112,7 +112,7 @@ pub fn origin_of(account_id: AccountId) -> <Runtime as frame_system::Config>::Or
 }
 
 #[test]
-fn test_asset_xcm_trader() {
+fn test_asset_xcm_trader_does_not_work_in_statemine() {
 	ExtBuilder::default()
 		.with_collators(vec![AccountId::from(ALICE)])
 		.build()
@@ -124,14 +124,6 @@ fn test_asset_xcm_trader() {
 				1,
 				AccountId::from(ALICE).into(),
 				true,
-				ExistentialDeposit::get()
-			));
-
-			// We first mint enough asset for the account to exist for assets
-			assert_ok!(Assets::mint(
-				origin_of(AccountId::from(ALICE)),
-				1,
-				AccountId::from(ALICE).into(),
 				ExistentialDeposit::get()
 			));
 
@@ -162,153 +154,7 @@ fn test_asset_xcm_trader() {
 
 			let asset: MultiAsset = (asset_multilocation, amount_needed).into();
 
-			// Make sure buy_weight does not return an error
-			assert_ok!(trader.buy_weight(bought, asset.into()));
-
-			// Drop trader
-			drop(trader);
-
-			// Make sure author(Alice) has received the amount
-			assert_eq!(
-				Assets::balance(1, AccountId::from(ALICE)),
-				ExistentialDeposit::get() + amount_needed
-			);
-
-			// We also need to ensure the total supply increased
-			assert_eq!(Assets::total_supply(1), ExistentialDeposit::get() + amount_needed);
-		});
-}
-
-#[test]
-fn test_asset_xcm_trader_with_refund() {
-	ExtBuilder::default()
-		.with_collators(vec![AccountId::from(ALICE)])
-		.build()
-		.execute_with(|| {
-			// We need root origin to create a sufficient asset
-			// We set existential deposit to be identical to the one for Balances first
-			assert_ok!(Assets::force_create(
-				root_origin(),
-				1,
-				AccountId::from(ALICE).into(),
-				true,
-				ExistentialDeposit::get()
-			));
-
-			// We first mint enough asset for the account to exist for assets
-			assert_ok!(Assets::mint(
-				origin_of(AccountId::from(ALICE)),
-				1,
-				AccountId::from(ALICE).into(),
-				ExistentialDeposit::get()
-			));
-
-			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
-
-			// Set Alice as block author, who will receive fees
-			run_to_block(2, Some(AccountId::from(ALICE)));
-
-			// We are going to buy 400e9 weight
-			// Because of the ED being higher in statemine
-			// and not to complicate things, we use a little
-			// bit more of weight
-			let bought = 400_000_000_000u64;
-
-			let asset_multilocation = MultiLocation::new(
-				0,
-				X2(
-					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
-							as u8,
-					),
-					GeneralIndex(1),
-				),
-			);
-
-			// lets calculate amount needed
-			let amount_bought = WeightToFee::weight_to_fee(&bought);
-
-			let asset: MultiAsset = (asset_multilocation.clone(), amount_bought).into();
-
-			// Make sure buy_weight does not return an error
-			assert_ok!(trader.buy_weight(bought, asset.clone().into()));
-
-			// Make sure again buy_weight does return an error
-			assert_noop!(trader.buy_weight(bought, asset.into()), XcmError::NotWithdrawable);
-
-			// We actually use half of the weight
-			let weight_used = bought / 2;
-
-			// Make sure refurnd works.
-			let amount_refunded = WeightToFee::weight_to_fee(&(bought - weight_used));
-
-			assert_eq!(
-				trader.refund_weight(bought - weight_used),
-				Some((asset_multilocation, amount_refunded).into())
-			);
-
-			// Drop trader
-			drop(trader);
-
-			// We only should have paid for half of the bought weight
-			let fees_paid = WeightToFee::weight_to_fee(&weight_used);
-
-			assert_eq!(
-				Assets::balance(1, AccountId::from(ALICE)),
-				ExistentialDeposit::get() + fees_paid
-			);
-
-			// We also need to ensure the total supply increased
-			assert_eq!(Assets::total_supply(1), ExistentialDeposit::get() + fees_paid);
-		});
-}
-
-#[test]
-fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
-	ExtBuilder::default()
-		.with_collators(vec![AccountId::from(ALICE)])
-		.build()
-		.execute_with(|| {
-			// We need root origin to create a sufficient asset
-			// We set existential deposit to be identical to the one for Balances first
-			assert_ok!(Assets::force_create(
-				root_origin(),
-				1,
-				AccountId::from(ALICE).into(),
-				true,
-				ExistentialDeposit::get()
-			));
-
-			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
-
-			// Set Alice as block author, who will receive fees
-			run_to_block(2, Some(AccountId::from(ALICE)));
-
-			// We are going to buy 1e9 weight
-			// this should be sufficient with the existing ED not to be able to pay
-			let bought = 1_000_000_000u64;
-
-			let asset_multilocation = MultiLocation::new(
-				0,
-				X2(
-					PalletInstance(
-						<Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
-							as u8,
-					),
-					GeneralIndex(1),
-				),
-			);
-
-			let amount_bought = WeightToFee::weight_to_fee(&bought);
-
-			assert!(
-				amount_bought < ExistentialDeposit::get(),
-				"we are testing what happens when the amount does not exceed ED"
-			);
-
-			let asset: MultiAsset = (asset_multilocation.clone(), amount_bought).into();
-
-			// Buy weight should return an error
+			// Buy weight should return an error, since asset trader not installed
 			assert_noop!(trader.buy_weight(bought, asset.into()), XcmError::TooExpensive);
 
 			// not credited since the ED is higher than this value
