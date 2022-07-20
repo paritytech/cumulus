@@ -187,9 +187,9 @@ impl xcm_executor::Config for XcmConfig {
 				JustTry,
 			>,
 			Assets,
-			parachains_common::xcm_config::XcmAssetFeesHandler<
-				Runtime,
-				AssetsPalletLocation,
+			cumulus_primitives_utility::XcmFeesTo32ByteAccount<
+				FungiblesTransactor,
+				AccountId,
 				XcmAssetFeesReceiver,
 			>,
 		>,

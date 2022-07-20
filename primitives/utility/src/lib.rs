@@ -25,12 +25,12 @@ use frame_support::{
 	traits::tokens::{fungibles, fungibles::Inspect},
 	weights::Weight,
 };
-use sp_runtime::{traits::Zero, SaturatedConversion};
+use sp_runtime::SaturatedConversion;
 
 use sp_std::marker::PhantomData;
 use xcm::{latest::prelude::*, WrapVersion};
 use xcm_builder::TakeRevenue;
-use xcm_executor::traits::{MatchesFungibles, WeightTrader};
+use xcm_executor::traits::{MatchesFungibles, TransactAsset, WeightTrader};
 /// Xcm router which recognises the `Parent` destination and handles it by sending the message into
 /// the given UMP `UpwardMessageSender` implementation. Thus this essentially adapts an
 /// `UpwardMessageSender` trait impl into a `SendXcm` trait impl.
@@ -216,31 +216,26 @@ impl<
 }
 
 /// XCM fee depositor to which we implement the TakeRevenue trait
-/// It receives a fungibles::Mutate implemented argument, a matcher to convert MultiAsset into
-/// AssetId and amount, and the fee receiver account
-pub struct XcmFeesToAccount<ConcreteAssets, Matcher, AccountId, ReceiverAccount>(
-	PhantomData<(ConcreteAssets, Matcher, AccountId, ReceiverAccount)>,
+/// It receives a Transact implemented argument, a 32 byte convertible acocuntId, and the fee receiver account
+/// FungiblesMutateAdapter should be identical to that implemented by WithdrawAsset
+pub struct XcmFeesTo32ByteAccount<FungiblesMutateAdapter, AccountId, ReceiverAccount>(
+	PhantomData<(FungiblesMutateAdapter, AccountId, ReceiverAccount)>,
 );
 impl<
-		ConcreteAssets: fungibles::Mutate<AccountId>,
-		Matcher: MatchesFungibles<ConcreteAssets::AssetId, ConcreteAssets::Balance>,
-		AccountId: Clone,
+		FungiblesMutateAdapter: TransactAsset,
+		AccountId: Clone + Into<[u8; 32]>,
 		ReceiverAccount: frame_support::traits::Get<Option<AccountId>>,
-	> TakeRevenue for XcmFeesToAccount<ConcreteAssets, Matcher, AccountId, ReceiverAccount>
+	> TakeRevenue for XcmFeesTo32ByteAccount<FungiblesMutateAdapter, AccountId, ReceiverAccount>
 {
 	fn take_revenue(revenue: MultiAsset) {
-		match Matcher::matches_fungibles(&revenue) {
-			Ok((asset_id, amount)) =>
-				if let Some(receiver) = ReceiverAccount::get() {
-					if !amount.is_zero() {
-						let ok = ConcreteAssets::mint_into(asset_id, &receiver, amount).is_ok();
-						debug_assert!(ok, "`mint_into` cannot generally fail; qed");
-					}
-				},
-			Err(_) => log::debug!(
-				target: "xcm",
-				"take revenue failed matching fungible"
-			),
+		if let Some(receiver) = ReceiverAccount::get() {
+			let ok = FungiblesMutateAdapter::deposit_asset(
+				&revenue,
+				&(X1(AccountId32 { network: Any, id: receiver.into() }).into()),
+			)
+			.is_ok();
+
+			debug_assert!(ok, "`deposit_asset` cannot generally fail; qed");
 		}
 	}
 }
