@@ -100,12 +100,10 @@ where
 	) -> Result<<pallet_assets::Pallet<Runtime> as Inspect<AccountIdOf<Runtime>>>::Balance, XcmError>
 	{
 		let amount = WeightToFee::weight_to_fee(&weight);
-		let minimum_balance = pallet_assets::Pallet::<Runtime>::minimum_balance(asset_id);
 		// If the amount gotten is not at least the ED, then make it be the ED of the asset
 		// This is to avoid burning assets and decreasing the supply
 		let asset_amount = BalanceConverter::to_asset_balance(amount, asset_id)
-			.map_err(|_| XcmError::TooExpensive)
-			.map(|amount| if amount < minimum_balance { minimum_balance } else { amount })?;
+			.map_err(|_| XcmError::TooExpensive)?;
 		Ok(asset_amount)
 	}
 }

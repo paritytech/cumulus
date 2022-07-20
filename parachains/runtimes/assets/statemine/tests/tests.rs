@@ -310,3 +310,60 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 			assert_eq!(Assets::total_supply(1), 0);
 		});
 }
+
+#[test]
+fn test_that_buying_ed_refund_does_not_refund() {
+	ExtBuilder::default()
+		.with_collators(vec![AccountId::from(ALICE)])
+		.build()
+		.execute_with(|| {
+			// We need root origin to create a sufficient asset
+			// We set existential deposit to be identical to the one for Balances first
+			assert_ok!(Assets::force_create(
+				root_origin(),
+				1,
+				AccountId::from(ALICE).into(),
+				true,
+				ExistentialDeposit::get()
+			));
+
+			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
+
+			// Set Alice as block author, who will receive fees
+			run_to_block(2, Some(AccountId::from(ALICE)));
+
+			// We are gonna buy ED
+			let bought: u64 = ExistentialDeposit::get().try_into().unwrap();
+
+			let asset_multilocation = MultiLocation::new(
+				0,
+				X2(
+					PalletInstance(
+						<Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
+							as u8,
+					),
+					GeneralIndex(1),
+				),
+			);
+
+			let amount_bought = WeightToFee::weight_to_fee(&bought);
+
+			let asset: MultiAsset = (asset_multilocation.clone(), amount_bought).into();
+
+			// Buy weight should work
+			assert_ok!(trader.buy_weight(bought, asset.into()));
+
+			// Should return None. Refunding and then dropping below existential deposit
+			// should not be allowed
+			assert_eq!(trader.refund_weight(bought), None);
+
+			// Drop trader
+			drop(trader);
+
+			// Make sure author(Alice) has received the amount
+			assert_eq!(Assets::balance(1, AccountId::from(ALICE)), amount_bought);
+
+			// We also need to ensure the total supply increased
+			assert_eq!(Assets::total_supply(1), amount_bought);
+		});
+}

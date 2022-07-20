@@ -126,31 +126,33 @@ impl<
 			Matcher::matches_fungibles(&first).map_err(|_| XcmError::AssetNotFound)?;
 
 		// Calculate how much we should charge in the asset_id for such amount of weight
-		let asset_balance = FeeCharger::charge_weight_in_fungibles(local_asset_id, weight)?;
+		// Require at least a payment of minimum_balance
+		// Necessary for fully collateral-backed assets
+		let asset_balance: u128 = FeeCharger::charge_weight_in_fungibles(local_asset_id, weight)
+			.map(|amount| {
+				let minimum_balance = ConcreteAssets::minimum_balance(local_asset_id);
+				if amount < minimum_balance {
+					minimum_balance
+				} else {
+					amount
+				}
+			})?
+			.try_into()
+			.map_err(|_| XcmError::Overflow)?;
 
-		match first {
-			// Not relevant match, as matches_fungibles should have already verified this above
-			MultiAsset {
-				id: xcm::latest::AssetId::Concrete(location),
-				fun: Fungibility::Fungible(_),
-			} => {
-				// Convert asset_balance to u128
-				let u128_amount: u128 = asset_balance.try_into().map_err(|_| XcmError::Overflow)?;
-				// Construct required payment
-				let required: MultiAsset = (Concrete(location.clone()), u128_amount).into();
-				// Substract payment
-				let unused =
-					payment.checked_sub(required.clone()).map_err(|_| XcmError::TooExpensive)?;
+		// Convert to the same kind of multiasset, with the required fungible balance
+		let required = first.clone().id.into_multiasset(asset_balance.into());
 
-				// record weight, balance, multilocation and assetId
-				self.0 = Some(AssetTraderRefunder {
-					weight_outstanding: weight,
-					outstanding_concrete_asset: required,
-				});
-				Ok(unused)
-			},
-			_ => return Err(XcmError::TooExpensive),
-		}
+		// Substract payment
+		let unused = payment.checked_sub(required.clone()).map_err(|_| XcmError::TooExpensive)?;
+
+		// record weight and multiasset
+		self.0 = Some(AssetTraderRefunder {
+			weight_outstanding: weight,
+			outstanding_concrete_asset: required,
+		});
+
+		Ok(unused)
 	}
 
 	fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
@@ -175,10 +177,20 @@ impl<
 
 			// Convert into u128 outstanding_balance
 			let outstanding_balance: u128 = outstanding_balance.saturated_into();
+			let outstanding_minus_substrated = outstanding_balance.saturating_sub(asset_balance);
+
+			// Guarantee that the fee payment will contain at least the minimum balance of the asset.
+			// Require at least a drop of minimum_balance
+			// Necessary for fully collateral-backed assets
+			if outstanding_minus_substrated <
+				ConcreteAssets::minimum_balance(local_asset_id).saturated_into()
+			{
+				return None
+			}
 
 			// Construct outstanding_concrete_asset with the same location id and substracted balance
 			let outstanding_concrete_asset: MultiAsset =
-				(id.clone(), (outstanding_balance.saturating_sub(asset_balance))).into();
+				(id.clone(), outstanding_minus_substrated).into();
 
 			// Substract from existing weight and balance
 			weight_outstanding = weight_outstanding.saturating_sub(weight);
