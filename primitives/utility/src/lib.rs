@@ -177,12 +177,12 @@ impl<
 
 			// Convert into u128 outstanding_balance
 			let outstanding_balance: u128 = outstanding_balance.saturated_into();
-			let outstanding_minus_substrated = outstanding_balance.saturating_sub(asset_balance);
+			let outstanding_minus_substracted = outstanding_balance.saturating_sub(asset_balance);
 
 			// Guarantee that the fee payment will contain at least the minimum balance of the asset.
 			// Require at least a drop of minimum_balance
 			// Necessary for fully collateral-backed assets
-			if outstanding_minus_substrated <
+			if outstanding_minus_substracted <
 				ConcreteAssets::minimum_balance(local_asset_id).saturated_into()
 			{
 				return None
@@ -190,7 +190,7 @@ impl<
 
 			// Construct outstanding_concrete_asset with the same location id and substracted balance
 			let outstanding_concrete_asset: MultiAsset =
-				(id.clone(), outstanding_minus_substrated).into();
+				(id.clone(), outstanding_minus_substracted).into();
 
 			// Substract from existing weight and balance
 			weight_outstanding = weight_outstanding.saturating_sub(weight);
