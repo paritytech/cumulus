@@ -79,8 +79,10 @@ pub struct AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceC
 	PhantomData<(Runtime, WeightToFee, BalanceConverter)>,
 );
 impl<CurrencyBalance, Runtime, WeightToFee, BalanceConverter>
-	cumulus_primitives_utility::ChargeWeightInFungibles<AccountIdOf<Runtime>, pallet_assets::Pallet<Runtime>>
-	for AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceConverter>
+	cumulus_primitives_utility::ChargeWeightInFungibles<
+		AccountIdOf<Runtime>,
+		pallet_assets::Pallet<Runtime>,
+	> for AssetFeeAsExistentialDepositMultiplier<Runtime, WeightToFee, BalanceConverter>
 where
 	Runtime: pallet_assets::Config,
 	WeightToFee: WeightToFeePolynomial<Balance = CurrencyBalance>,
@@ -95,7 +97,8 @@ where
 	fn charge_weight_in_fungibles(
 		asset_id: <pallet_assets::Pallet<Runtime> as Inspect<AccountIdOf<Runtime>>>::AssetId,
 		weight: Weight,
-	) -> Result<<pallet_assets::Pallet<Runtime> as Inspect<AccountIdOf<Runtime>>>::Balance, XcmError> {
+	) -> Result<<pallet_assets::Pallet<Runtime> as Inspect<AccountIdOf<Runtime>>>::Balance, XcmError>
+	{
 		let amount = WeightToFee::weight_to_fee(&weight);
 		let minimum_balance = pallet_assets::Pallet::<Runtime>::minimum_balance(asset_id);
 		// If the amount gotten is not at least the ED, then make it be the ED of the asset
