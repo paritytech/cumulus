@@ -13,14 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::constants::account::{RELAY_TREASURY_PALL_ID, SLASHED_IMBALANCE};
 use frame_support::{
 	log,
-	traits::{Currency, Imbalance, OnUnbalanced, OriginTrait},
+	traits::{Currency, Get, Imbalance, OnUnbalanced, OriginTrait},
 };
-use sp_runtime::{traits::AccountIdConversion, AccountId32};
 use sp_std::{boxed::Box, marker::PhantomData};
-use xcm::latest::{Fungibility, Junction, Junctions, NetworkId, Parent};
+use xcm::latest::{Fungibility, Junction, NetworkId, Parent};
 
 type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 
@@ -34,19 +32,23 @@ type BalanceOf<T, I> = <<T as pallet_alliance::Config<I>>::Currency as Currency<
 	<T as frame_system::Config>::AccountId,
 >>::Balance;
 
-pub struct ToParentTreasury<T, I = ()>(PhantomData<(T, I)>);
+pub struct ToParentTreasury<TreasuryAcc, TempAcc, T, I = ()>(
+	PhantomData<(TreasuryAcc, TempAcc, T, I)>,
+);
 
-impl<T, I: 'static> OnUnbalanced<NegativeImbalanceOf<T, I>> for ToParentTreasury<T, I>
+impl<TreasuryAcc, TempAcc, T, I: 'static> OnUnbalanced<NegativeImbalanceOf<T, I>>
+	for ToParentTreasury<TreasuryAcc, TempAcc, T, I>
 where
+	TreasuryAcc: Get<AccountIdOf<T>>,
+	TempAcc: Get<AccountIdOf<T>>,
 	T: pallet_xcm::Config + frame_system::Config + pallet_alliance::Config<I>,
 	[u8; 32]: From<AccountIdOf<T>>,
-	AccountIdOf<T>: From<AccountId32>,
 	BalanceOf<T, I>: Into<Fungibility>,
 	<<T as frame_system::Config>::Origin as OriginTrait>::AccountId: From<AccountIdOf<T>>,
 {
 	fn on_unbalanced(amount: NegativeImbalanceOf<T, I>) {
-		let temp_account: AccountIdOf<T> = SLASHED_IMBALANCE.into();
-		let treasury_acc: AccountIdOf<T> = RELAY_TREASURY_PALL_ID.into_account_truncating();
+		let temp_account: AccountIdOf<T> = TempAcc::get();
+		let treasury_acc: AccountIdOf<T> = TreasuryAcc::get();
 		let imbalance = amount.peek();
 
 		<CurrencyOf<T, I>>::resolve_creating(&temp_account, amount);
@@ -59,7 +61,7 @@ where
 					.into()
 					.into(),
 			),
-			Box::new((Junctions::Here, imbalance).into()),
+			Box::new((Parent, imbalance).into()),
 			0,
 		);
 

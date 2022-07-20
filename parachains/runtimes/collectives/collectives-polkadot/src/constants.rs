@@ -20,7 +20,7 @@ pub mod account {
 	/// realy chain treasury pallet id, used to convert into AccountId
 	pub const RELAY_TREASURY_PALL_ID: PalletId = PalletId(*b"py/trsry");
 	/// account used to temporary deposit slashed imbalance before teleporting
-	pub const SLASHED_IMBALANCE: AccountId32 = AccountId32::new([7u8; 32]);
+	pub const SLASHED_IMBALANCE_ACC_ID: AccountId32 = AccountId32::new([7u8; 32]);
 }
 
 pub mod currency {
