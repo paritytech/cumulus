@@ -56,6 +56,8 @@ polkadot-runtime-constants = { git = "https://github.com/paritytech/polkadot", d
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", default-features = false, optional = true, branch = "master" }
+
 
 # Cumulus
 cumulus-pallet-aura-ext = { path = "../../../../pallets/aura-ext", default-features = false }
@@ -99,6 +101,7 @@ runtime-benchmarks = [
 	"cumulus-pallet-session-benchmarking/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
+	"pallet-xcm-benchmarks",
 ]
 try-runtime = [
 	"frame-executive/try-runtime",
