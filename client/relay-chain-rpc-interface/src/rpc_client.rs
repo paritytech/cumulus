@@ -14,9 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use async_trait::async_trait;
 use backoff::{future::retry_notify, ExponentialBackoff};
-use core::time::Duration;
 use cumulus_primitives_core::{
 	relay_chain::{
 		v2::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
@@ -24,10 +22,10 @@ use cumulus_primitives_core::{
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use futures::{
 	channel::mpsc::{UnboundedReceiver, UnboundedSender},
-	FutureExt, Stream, StreamExt,
+	FutureExt, StreamExt,
 };
 use jsonrpsee::{
 	core::{
@@ -39,19 +37,16 @@ use jsonrpsee::{
 	ws_client::WsClientBuilder,
 };
 use parity_scale_codec::{Decode, Encode};
-use polkadot_service::Handle;
-use sc_client_api::{StorageData, StorageProof};
+use sc_client_api::StorageData;
 use sc_rpc_api::{state::ReadProof, system::Health};
 use sp_core::sp_std::collections::btree_map::BTreeMap;
 use sp_runtime::DeserializeOwned;
-use sp_state_machine::StorageValue;
 use sp_storage::StorageKey;
-use std::{pin::Pin, sync::Arc};
+use std::sync::Arc;
 
 pub use url::Url;
 
-const LOG_TARGET: &str = "relay-chain-rpc-interface";
-const TIMEOUT_IN_SECONDS: u64 = 6;
+const LOG_TARGET: &str = "relay-chain-rpc-client";
 
 /// Client that maps RPC methods and deserializes results
 #[derive(Clone)]
@@ -120,31 +115,46 @@ impl RPCWorker {
 				import_evt = self.import_sub.next().fuse() => {
 					match import_evt {
 						Some(Ok(header)) => self.import_listener.iter().for_each(|e| {
-							tracing::info!(target:LOG_TARGET, ?header, "Sending header to import listener.");
-							e.unbounded_send(header.clone());
+							tracing::info!(target:LOG_TARGET, header = header.number, "Sending header to import listener.");
+							if let Err(err) = e.unbounded_send(header.clone()) {
+								tracing::error!(target:LOG_TARGET, ?err, "Unable to send to import stream.");
+								return;
+							};
 						}),
-						None => todo!(),
-						_ => todo!(),
+						_ => {
+							tracing::error!(target:LOG_TARGET, "Received some non-ok value from import stream.");
+							return;
+						}
 					};
 				},
 				header_evt = self.best_sub.next().fuse() => {
 					match header_evt {
 						Some(Ok(header)) => self.head_listener.iter().for_each(|e| {
-							tracing::info!(target:LOG_TARGET, ?header, "Sending header to best head listener.");
-							e.unbounded_send(header.clone());
+							tracing::info!(target:LOG_TARGET, header = header.number, "Sending header to best head listener.");
+							if let Err(err) = e.unbounded_send(header.clone()) {
+								tracing::error!(target:LOG_TARGET, ?err,  "Unable to send to best-block stream.");
+								return;
+							};
 						}),
-						None => todo!(),
-						_ => todo!(),
+						_ => {
+							tracing::error!(target:LOG_TARGET, "Received some non-ok value from best-block stream.");
+							return;
+						}
 					};
 				},
 				finalized_evt = self.finalized_sub.next().fuse() => {
 					match finalized_evt {
 						Some(Ok(header)) => self.finalized_listener.iter().for_each(|e| {
-							tracing::info!(target:LOG_TARGET, ?header, "Sending header to finalized head listener2.");
-							e.unbounded_send(header.clone());
+							tracing::info!(target:LOG_TARGET, header = header.number, "Sending header to finalized head listener.");
+							if let Err(err) = e.unbounded_send(header.clone()) {
+								tracing::error!(target:LOG_TARGET, ?err, "Unable to send to best-block stream.");
+								return;
+							};
 						}),
-						None => todo!(),
-						_ => todo!(),
+						_ => {
+							tracing::error!(target:LOG_TARGET, "Received some non-ok value from finalized stream.");
+							return;
+						}
 					};
 				},
 			}
@@ -379,8 +389,10 @@ impl RelayChainRPCClient {
 	) -> Result<UnboundedReceiver<PHeader>, RelayChainError> {
 		let (tx, rx) = futures::channel::mpsc::unbounded::<PHeader>();
 		if let Some(channel) = &self.to_worker_channel {
-			tracing::debug!(target: LOG_TARGET, "Registering 'NewImportListener'");
-			channel.unbounded_send(RPCMessages::NewImportListener(tx));
+			tracing::info!(target: LOG_TARGET, "Registering 'NewImportListener'");
+			channel
+				.unbounded_send(RPCMessages::NewImportListener(tx))
+				.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))?;
 		}
 		Ok(rx)
 	}
@@ -390,8 +402,10 @@ impl RelayChainRPCClient {
 	) -> Result<UnboundedReceiver<PHeader>, RelayChainError> {
 		let (tx, rx) = futures::channel::mpsc::unbounded::<PHeader>();
 		if let Some(channel) = &self.to_worker_channel {
-			tracing::debug!(target: LOG_TARGET, "Registering 'NewHeadListener'");
-			channel.unbounded_send(RPCMessages::NewHeadListener(tx));
+			tracing::info!(target: LOG_TARGET, "Registering 'NewHeadListener'");
+			channel
+				.unbounded_send(RPCMessages::NewHeadListener(tx))
+				.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))?;
 		}
 		Ok(rx)
 	}
@@ -401,8 +415,10 @@ impl RelayChainRPCClient {
 	) -> Result<UnboundedReceiver<PHeader>, RelayChainError> {
 		let (tx, rx) = futures::channel::mpsc::unbounded::<PHeader>();
 		if let Some(channel) = &self.to_worker_channel {
-			tracing::debug!(target: LOG_TARGET, "Registering 'NewFinalizedListener'");
-			channel.unbounded_send(RPCMessages::NewFinalizedListener(tx));
+			tracing::info!(target: LOG_TARGET, "Registering 'NewFinalizedListener'");
+			channel
+				.unbounded_send(RPCMessages::NewFinalizedListener(tx))
+				.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))?;
 		}
 		Ok(rx)
 	}

@@ -25,18 +25,8 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use futures::{FutureExt, Stream, StreamExt};
-use jsonrpsee::{
-	core::{
-		client::{Client as JsonRPCClient, ClientT, Subscription, SubscriptionClientT},
-		Error as JsonRpseeError,
-	},
-	rpc_params,
-	types::ParamsSer,
-	ws_client::WsClientBuilder,
-};
 use polkadot_service::Handle;
 use sc_client_api::StorageProof;
-use sc_service::SpawnTaskHandle;
 use sp_core::sp_std::collections::btree_map::BTreeMap;
 use sp_state_machine::StorageValue;
 use sp_storage::StorageKey;
@@ -44,9 +34,8 @@ use std::pin::Pin;
 
 pub use url::Url;
 mod rpc_client;
-pub use rpc_client::RelayChainRPCClient;
+pub use rpc_client::{create_worker_client, RelayChainRPCClient};
 
-const LOG_TARGET: &str = "relay-chain-rpc-interface";
 const TIMEOUT_IN_SECONDS: u64 = 6;
 
 /// RelayChainRPCInterface is used to interact with a full node that is running locally
@@ -57,10 +46,8 @@ pub struct RelayChainRPCInterface {
 }
 
 impl RelayChainRPCInterface {
-	pub async fn new(url: Url, spawn_handle: SpawnTaskHandle) -> RelayChainResult<Self> {
-		let (worker, client) = rpc_client::create_worker_client(url).await?;
-		spawn_handle.spawn("relay-chain-rpc-worker", None, worker.run());
-		Ok(Self { rpc_client: client })
+	pub fn new(rpc_client: RelayChainRPCClient) -> Self {
+		Self { rpc_client }
 	}
 }
 
