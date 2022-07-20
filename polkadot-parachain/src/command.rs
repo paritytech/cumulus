@@ -22,8 +22,6 @@ use crate::{
 		StatemineRuntimeExecutor, StatemintRuntimeExecutor, WestmintRuntimeExecutor,
 	},
 };
-use std::net::SocketAddr;
-
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
@@ -40,7 +38,9 @@ use sc_service::{
 };
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
+use std::net::SocketAddr;
 
+#[derive(Debug)]
 enum Runtime {
 	/// This is the default runtime (based on rococo)
 	Generic,
@@ -49,8 +49,10 @@ enum Runtime {
 	Statemint,
 	Statemine,
 	Westmint,
+	Penpal(ParaId),
 	ContractsRococo,
 	CollectivesPolkadot,
+	CollectivesWestend,
 }
 
 trait ChainType {
@@ -73,6 +75,9 @@ impl ChainType
 }
 
 fn runtime(id: &str) -> Runtime {
+	let id = id.replace("_", "-");
+	let (_, id, para_id) = extract_parachain_id(&id);
+
 	if id.starts_with("shell") {
 		Runtime::Shell
 	} else if id.starts_with("seedling") {
@@ -83,16 +88,21 @@ fn runtime(id: &str) -> Runtime {
 		Runtime::Statemine
 	} else if id.starts_with("westmint") {
 		Runtime::Westmint
+	} else if id.starts_with("penpal") {
+		Runtime::Penpal(para_id.unwrap_or(ParaId::new(0)))
 	} else if id.starts_with("contracts-rococo") {
 		Runtime::ContractsRococo
 	} else if id.starts_with("collectives-polkadot") {
 		Runtime::CollectivesPolkadot
+	} else if id.starts_with("collectives-westend") {
+		Runtime::CollectivesWestend
 	} else {
 		Runtime::Generic
 	}
 }
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
+	let (id, _, para_id) = extract_parachain_id(id);
 	Ok(match id {
 		"staging" => Box::new(chain_spec::staging_test_net()),
 		"tick" => Box::new(chain_spec::ChainSpec::from_json_bytes(
@@ -141,10 +151,13 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			Box::new(chain_spec::collectives::collectives_polkadot_development_config()),
 		"collectives-polkadot-local" =>
 			Box::new(chain_spec::collectives::collectives_polkadot_local_config()),
-		/* TODO:COLLECTIVES
-		"collectives-polkadot" =>
-			Box::new(chain_spec::collectives::collectives_polkadot_config()),
-		*/
+		"collectives-polkadot" => Box::new(chain_spec::ChainSpec::from_json_bytes(
+			&include_bytes!("../../parachains/chain-specs/collectives-polkadot.json")[..],
+		)?),
+		"collectives-westend" => Box::new(chain_spec::ChainSpec::from_json_bytes(
+			&include_bytes!("../../parachains/chain-specs/collectives-westend.json")[..],
+		)?),
+
 		// -- Contracts on Rococo
 		"contracts-rococo-dev" =>
 			Box::new(chain_spec::contracts::contracts_rococo_development_config()),
@@ -154,6 +167,14 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"contracts-rococo" => Box::new(chain_spec::ChainSpec::from_json_bytes(
 			&include_bytes!("../../parachains/chain-specs/contracts-rococo.json")[..],
 		)?),
+		"penpal-kusama" => Box::new(chain_spec::penpal::get_penpal_chain_spec(
+			para_id.expect("Must specify parachain id"),
+			"kusama-local",
+		)),
+		"penpal-polkadot" => Box::new(chain_spec::penpal::get_penpal_chain_spec(
+			para_id.expect("Must specify parachain id"),
+			"polkadot-local",
+		)),
 
 		// -- Fallback (generic chainspec)
 		"" => Box::new(chain_spec::get_chain_spec()),
@@ -170,7 +191,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				),
 				Runtime::Westmint =>
 					Box::new(chain_spec::statemint::WestmintChainSpec::from_json_file(path.into())?),
-				Runtime::CollectivesPolkadot =>
+				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
 					Box::new(chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_file(
 						path.into(),
 					)?),
@@ -181,10 +202,34 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				Runtime::ContractsRococo => Box::new(
 					chain_spec::contracts::ContractsRococoChainSpec::from_json_file(path.into())?,
 				),
+				Runtime::Penpal(_para_id) =>
+					Box::new(chain_spec::penpal::PenpalChainSpec::from_json_file(path.into())?),
 				Runtime::Generic => Box::new(chain_spec),
 			}
 		},
 	})
+}
+
+/// Extracts the normalized chain id and parachain id from the input chain id.
+/// (H/T to Phala for the idea)
+/// E.g. "penpal-kusama-2004" yields ("penpal-kusama", Some(2004))
+fn extract_parachain_id(id: &str) -> (&str, &str, Option<ParaId>) {
+	const KUSAMA_TEST_PARA_PREFIX: &str = "penpal-kusama-";
+	const POLKADOT_TEST_PARA_PREFIX: &str = "penpal-polkadot-";
+
+	let (norm_id, orig_id, para) = if id.starts_with(KUSAMA_TEST_PARA_PREFIX) {
+		let suffix = &id[KUSAMA_TEST_PARA_PREFIX.len()..];
+		let para_id: u32 = suffix.parse().expect("Invalid parachain-id suffix");
+		(&id[..KUSAMA_TEST_PARA_PREFIX.len() - 1], id, Some(para_id))
+	} else if id.starts_with(POLKADOT_TEST_PARA_PREFIX) {
+		let suffix = &id[POLKADOT_TEST_PARA_PREFIX.len()..];
+		let para_id: u32 = suffix.parse().expect("Invalid parachain-id suffix");
+		(&id[..POLKADOT_TEST_PARA_PREFIX.len() - 1], id, Some(para_id))
+	} else {
+		(id, id, None)
+	};
+
+	(norm_id, orig_id, para.map(Into::into))
 }
 
 impl SubstrateCli for Cli {
@@ -227,10 +272,12 @@ impl SubstrateCli for Cli {
 			Runtime::Statemint => &statemint_runtime::VERSION,
 			Runtime::Statemine => &statemine_runtime::VERSION,
 			Runtime::Westmint => &westmint_runtime::VERSION,
-			Runtime::CollectivesPolkadot => &collectives_polkadot_runtime::VERSION,
+			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
+				&collectives_polkadot_runtime::VERSION,
 			Runtime::Shell => &shell_runtime::VERSION,
 			Runtime::Seedling => &seedling_runtime::VERSION,
 			Runtime::ContractsRococo => &contracts_rococo_runtime::VERSION,
+			Runtime::Penpal(_) => &penpal_runtime::VERSION,
 			Runtime::Generic => &rococo_parachain_runtime::VERSION,
 		}
 	}
@@ -268,8 +315,7 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name().to_string()].iter())
-			.load_spec(id)
+		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -302,7 +348,7 @@ macro_rules! construct_benchmark_partials {
 				)?;
 				$code
 			},
-			Runtime::CollectivesPolkadot => {
+			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => {
 				let $partials = new_partial::<collectives_polkadot_runtime::RuntimeApi, _>(
 					&$config,
 					crate::service::aura_build_import_queue::<_, AuraId>,
@@ -348,7 +394,7 @@ macro_rules! construct_async_run {
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
 			},
-			Runtime::CollectivesPolkadot => {
+			Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<collectives_polkadot_runtime::RuntimeApi, _>(
 						&$config,
@@ -388,7 +434,7 @@ macro_rules! construct_async_run {
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
 			},
-			Runtime::Generic => {
+			Runtime::Penpal(_) | Runtime::Generic => {
 				runner.async_run(|$config| {
 					let $components = new_partial::<
 						rococo_parachain_runtime::RuntimeApi,
@@ -443,9 +489,7 @@ pub fn run() -> Result<()> {
 			runner.sync_run(|config| {
 				let polkadot_cli = RelayChainCli::new(
 					&config,
-					[RelayChainCli::executable_name().to_string()]
-						.iter()
-						.chain(cli.relaychain_args.iter()),
+					[RelayChainCli::executable_name()].iter().chain(cli.relaychain_args.iter()),
 				);
 
 				let polkadot_config = SubstrateCli::create_configuration(
@@ -486,9 +530,13 @@ pub fn run() -> Result<()> {
 							Runtime::Westmint => cmd.run::<Block, WestmintRuntimeExecutor>(config),
 							Runtime::Statemint =>
 								cmd.run::<Block, StatemintRuntimeExecutor>(config),
-							Runtime::CollectivesPolkadot =>
+							Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
 								cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
-							_ => Err("Chain doesn't support benchmarking".into()),
+							_ => Err(format!(
+								"Chain '{:?}' doesn't support benchmarking",
+								config.chain_spec.runtime()
+							)
+							.into()),
 						})
 					} else {
 						Err("Benchmarking wasn't enabled when building the node. \
@@ -530,12 +578,13 @@ pub fn run() -> Result<()> {
 					Runtime::Statemint => runner.async_run(|config| {
 						Ok((cmd.run::<Block, StatemintRuntimeExecutor>(config), task_manager))
 					}),
-					Runtime::CollectivesPolkadot => runner.async_run(|config| {
-						Ok((
-							cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
-							task_manager,
-						))
-					}),
+					Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
+						runner.async_run(|config| {
+							Ok((
+								cmd.run::<Block, CollectivesPolkadotRuntimeExecutor>(config),
+								task_manager,
+							))
+						}),
 					Runtime::Shell => runner.async_run(|config| {
 						Ok((cmd.run::<Block, ShellRuntimeExecutor>(config), task_manager))
 					}),
@@ -566,9 +615,7 @@ pub fn run() -> Result<()> {
 
 				let polkadot_cli = RelayChainCli::new(
 					&config,
-					[RelayChainCli::executable_name().to_string()]
-						.iter()
-						.chain(cli.relaychain_args.iter()),
+					[RelayChainCli::executable_name()].iter().chain(cli.relaychain_args.iter()),
 				);
 
 				let id = ParaId::from(para_id);
@@ -615,7 +662,7 @@ pub fn run() -> Result<()> {
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into),
-					Runtime::CollectivesPolkadot =>
+					Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
 						crate::service::start_generic_aura_node::<
 							collectives_polkadot_runtime::RuntimeApi,
 							AuraId,
@@ -650,16 +697,17 @@ pub fn run() -> Result<()> {
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into),
-					Runtime::Generic => crate::service::start_rococo_parachain_node(
-						config,
-						polkadot_config,
-						collator_options,
-						id,
-						hwbench,
-					)
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into),
+					Runtime::Penpal(_) | Runtime::Generic =>
+						crate::service::start_rococo_parachain_node(
+							config,
+							polkadot_config,
+							collator_options,
+							id,
+							hwbench,
+						)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into),
 				}
 			})
 		},
@@ -751,8 +799,8 @@ impl CliConfiguration<Self> for RelayChainCli {
 		self.base.base.role(is_dev)
 	}
 
-	fn transaction_pool(&self) -> Result<sc_service::config::TransactionPoolOptions> {
-		self.base.base.transaction_pool()
+	fn transaction_pool(&self, is_dev: bool) -> Result<sc_service::config::TransactionPoolOptions> {
+		self.base.base.transaction_pool(is_dev)
 	}
 
 	fn state_cache_child_ratio(&self) -> Result<Option<usize>> {
