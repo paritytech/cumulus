@@ -24,8 +24,8 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use futures::{
-	channel::mpsc::{UnboundedReceiver, UnboundedSender},
-	FutureExt, StreamExt,
+	channel::mpsc::{Receiver, Sender, UnboundedReceiver, UnboundedSender},
+	StreamExt,
 };
 use jsonrpsee::{
 	core::{
@@ -62,16 +62,16 @@ pub struct RelayChainRPCClient {
 
 #[derive(Clone, Debug)]
 pub enum RPCMessages {
-	NewHeadListener(UnboundedSender<PHeader>),
-	NewImportListener(UnboundedSender<PHeader>),
-	NewFinalizedListener(UnboundedSender<PHeader>),
+	NewHeadListener(Sender<PHeader>),
+	NewImportListener(Sender<PHeader>),
+	NewFinalizedListener(Sender<PHeader>),
 }
 
 pub struct RPCWorker {
 	client_receiver: UnboundedReceiver<RPCMessages>,
-	import_listener: Vec<UnboundedSender<PHeader>>,
-	finalized_listener: Vec<UnboundedSender<PHeader>>,
-	head_listener: Vec<UnboundedSender<PHeader>>,
+	import_listener: Vec<Sender<PHeader>>,
+	finalized_listener: Vec<Sender<PHeader>>,
+	head_listener: Vec<Sender<PHeader>>,
 	import_sub: Subscription<PHeader>,
 	finalized_sub: Subscription<PHeader>,
 	best_sub: Subscription<PHeader>,
@@ -104,55 +104,68 @@ impl RPCWorker {
 	}
 
 	pub async fn run(mut self) {
+		let mut import_sub = self.import_sub.fuse();
+		let mut best_head_sub = self.best_sub.fuse();
+		let mut finalized_sub = self.finalized_sub.fuse();
 		loop {
 			futures::select! {
-				evt = self.client_receiver.next().fuse() => match evt {
-					Some(RPCMessages::NewHeadListener(tx)) => { self.head_listener.push(tx) },
-					Some(RPCMessages::NewImportListener(tx)) => { self.import_listener.push(tx) },
-					Some(RPCMessages::NewFinalizedListener(tx)) => {self.finalized_listener.push(tx)  },
+				evt = self.client_receiver.next() => match evt {
+					Some(RPCMessages::NewHeadListener(tx)) => {
+						tracing::debug!("Registering new head listener, now at {}", self.head_listener.len() + 1);
+						self.head_listener.push(tx);
+					},
+					Some(RPCMessages::NewImportListener(tx)) => {
+						tracing::debug!("Registering new import listener, now at {}", self.import_listener.len() + 1);
+						self.import_listener.push(tx)
+					},
+					Some(RPCMessages::NewFinalizedListener(tx)) => {
+						tracing::debug!("Registering new finalized listener, now at {}", self.finalized_listener.len() + 1);
+						self.finalized_listener.push(tx)
+					},
 					None => {}
 				},
-				import_evt = self.import_sub.next().fuse() => {
+				import_evt = import_sub.next() => {
 					match import_evt {
-						Some(Ok(header)) => self.import_listener.iter().for_each(|e| {
-							tracing::info!(target:LOG_TARGET, header = header.number, "Sending header to import listener.");
-							if let Err(err) = e.unbounded_send(header.clone()) {
-								tracing::error!(target:LOG_TARGET, ?err, "Unable to send to import stream.");
-								return;
-							};
+						Some(Ok(header)) => self.import_listener.retain_mut(|e| {
+							if let Err(err) = e.try_send(header.clone()) {
+								false
+							} else {
+								true
+							}
 						}),
-						_ => {
-							tracing::error!(target:LOG_TARGET, "Received some non-ok value from import stream.");
+						err @ _ => {
+							tracing::error!(target:LOG_TARGET, ?err, "Received some non-ok value from import stream.");
 							return;
 						}
 					};
 				},
-				header_evt = self.best_sub.next().fuse() => {
+				header_evt = best_head_sub.next() => {
 					match header_evt {
-						Some(Ok(header)) => self.head_listener.iter().for_each(|e| {
-							tracing::info!(target:LOG_TARGET, header = header.number, "Sending header to best head listener.");
-							if let Err(err) = e.unbounded_send(header.clone()) {
-								tracing::error!(target:LOG_TARGET, ?err,  "Unable to send to best-block stream.");
-								return;
-							};
+						Some(Ok(header)) => self.head_listener.retain_mut(|e| {
+							if let Err(err) = e.try_send(header.clone()) {
+								false
+							} else {
+								true
+							}
 						}),
-						_ => {
-							tracing::error!(target:LOG_TARGET, "Received some non-ok value from best-block stream.");
+						err @ _ => {
+							tracing::error!(target:LOG_TARGET, ?err, "Received some non-ok value from best block stream.");
 							return;
 						}
 					};
 				},
-				finalized_evt = self.finalized_sub.next().fuse() => {
+				finalized_evt = finalized_sub.next() => {
 					match finalized_evt {
-						Some(Ok(header)) => self.finalized_listener.iter().for_each(|e| {
-							tracing::info!(target:LOG_TARGET, header = header.number, "Sending header to finalized head listener.");
-							if let Err(err) = e.unbounded_send(header.clone()) {
-								tracing::error!(target:LOG_TARGET, ?err, "Unable to send to best-block stream.");
-								return;
-							};
+						Some(Ok(header)) => self.finalized_listener.retain_mut(|e| {
+							if let Err(err) = e.try_send(header.clone()) {
+								tracing::debug!(target:LOG_TARGET, ?err, "Unable to send to finalized stream, removing listener.");
+								false
+							} else {
+								true
+							}
 						}),
-						_ => {
-							tracing::error!(target:LOG_TARGET, "Received some non-ok value from finalized stream.");
+						err @ _ => {
+							tracing::error!(target:LOG_TARGET, ?err, "Received some non-ok value from finalized block stream.");
 							return;
 						}
 					};
@@ -384,12 +397,9 @@ impl RelayChainRPCClient {
 			.await
 	}
 
-	pub async fn get_imported_heads_stream(
-		&self,
-	) -> Result<UnboundedReceiver<PHeader>, RelayChainError> {
-		let (tx, rx) = futures::channel::mpsc::unbounded::<PHeader>();
+	pub async fn get_imported_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
+		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(128);
 		if let Some(channel) = &self.to_worker_channel {
-			tracing::info!(target: LOG_TARGET, "Registering 'NewImportListener'");
 			channel
 				.unbounded_send(RPCMessages::NewImportListener(tx))
 				.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))?;
@@ -397,12 +407,9 @@ impl RelayChainRPCClient {
 		Ok(rx)
 	}
 
-	pub async fn get_best_heads_stream(
-		&self,
-	) -> Result<UnboundedReceiver<PHeader>, RelayChainError> {
-		let (tx, rx) = futures::channel::mpsc::unbounded::<PHeader>();
+	pub async fn get_best_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
+		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(128);
 		if let Some(channel) = &self.to_worker_channel {
-			tracing::info!(target: LOG_TARGET, "Registering 'NewHeadListener'");
 			channel
 				.unbounded_send(RPCMessages::NewHeadListener(tx))
 				.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))?;
@@ -410,12 +417,9 @@ impl RelayChainRPCClient {
 		Ok(rx)
 	}
 
-	pub async fn get_finalized_heads_stream(
-		&self,
-	) -> Result<UnboundedReceiver<PHeader>, RelayChainError> {
-		let (tx, rx) = futures::channel::mpsc::unbounded::<PHeader>();
+	pub async fn get_finalized_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
+		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(128);
 		if let Some(channel) = &self.to_worker_channel {
-			tracing::info!(target: LOG_TARGET, "Registering 'NewFinalizedListener'");
 			channel
 				.unbounded_send(RPCMessages::NewFinalizedListener(tx))
 				.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))?;
