@@ -70,13 +70,18 @@ pub enum NotificationRegisterMessage {
 
 /// Worker that should be used in combination with [`RelayChainRPCClient`]. Must be polled to distribute header notifications to listeners.
 pub struct RPCStreamWorker {
+	// Communication channel with the RPC client
 	client_receiver: TracingUnboundedReceiver<NotificationRegisterMessage>,
-	imported_heads_listeners: Vec<Sender<PHeader>>,
-	finalized_heads_listeners: Vec<Sender<PHeader>>,
-	best_heads_listeners: Vec<Sender<PHeader>>,
-	import_sub: Subscription<PHeader>,
-	finalized_sub: Subscription<PHeader>,
-	best_sub: Subscription<PHeader>,
+
+	// Senders to distribute incoming header notifications to
+	imported_header_listeners: Vec<Sender<PHeader>>,
+	finalized_header_listeners: Vec<Sender<PHeader>>,
+	best_header_listeners: Vec<Sender<PHeader>>,
+
+	// Incoming notification subscriptions
+	rpc_imported_header_subscription: Subscription<PHeader>,
+	rpc_finalized_header_subscription: Subscription<PHeader>,
+	rpc_best_header_subscription: Subscription<PHeader>,
 }
 
 /// Entry point to create [`RelayChainRPCClient`] and [`RPCStreamWorker`];
@@ -97,30 +102,20 @@ pub async fn create_worker_client(
 fn handle_event_distribution(
 	event: Option<Result<PHeader, JsonRpseeError>>,
 	senders: &mut Vec<Sender<PHeader>>,
-) {
+) -> Result<(), String> {
 	match event {
-		Some(Ok(header)) => senders.retain_mut(|e| {
-			if let Err(err) = e.try_send(header.clone()) {
-				tracing::debug!(
-					target: LOG_TARGET,
-					?err,
-					header = header.number,
-					"Unable to send, removing Sender from listeners."
-				);
-				false
-			} else {
-				true
-			}
-		}),
-		err @ _ => {
-			tracing::error!(target: LOG_TARGET, ?err, "Received error value from stream.");
-			return
+		// If sending fails, we remove the sender from the list because the receiver was dropped
+		Some(Ok(header)) => {
+			senders.retain_mut(|e| e.try_send(header.clone()).is_ok());
+			Ok(())
 		},
-	};
+		None => Err("RPC Subscription closed.".to_string()),
+		Some(Err(err)) => Err(format!("Error in RPC subscription: {}", err)),
+	}
 }
 
 impl RPCStreamWorker {
-	/// Create new worker
+	/// Create new worker. Returns the worker and a channel to register new listeners.
 	fn new(
 		import_sub: Subscription<PHeader>,
 		best_sub: Subscription<PHeader>,
@@ -129,12 +124,12 @@ impl RPCStreamWorker {
 		let (tx, rx) = tracing_unbounded("mpsc-cumulus-rpc-worker");
 		let worker = RPCStreamWorker {
 			client_receiver: rx,
-			imported_heads_listeners: Vec::new(),
-			finalized_heads_listeners: Vec::new(),
-			best_heads_listeners: Vec::new(),
-			import_sub,
-			best_sub,
-			finalized_sub,
+			imported_header_listeners: Vec::new(),
+			finalized_header_listeners: Vec::new(),
+			best_header_listeners: Vec::new(),
+			rpc_imported_header_subscription: import_sub,
+			rpc_best_header_subscription: best_sub,
+			rpc_finalized_header_subscription: finalized_sub,
 		};
 		(worker, tx)
 	}
@@ -145,29 +140,41 @@ impl RPCStreamWorker {
 	/// 2. Distribute incoming import, best head and finalization notifications to registered listeners.
 	///    If an error occurs during sending, the receiver has been closed and we remove the sender from the list.
 	pub async fn run(mut self) {
-		let mut import_sub = self.import_sub.fuse();
-		let mut best_head_sub = self.best_sub.fuse();
-		let mut finalized_sub = self.finalized_sub.fuse();
+		let mut import_sub = self.rpc_imported_header_subscription.fuse();
+		let mut best_head_sub = self.rpc_best_header_subscription.fuse();
+		let mut finalized_sub = self.rpc_finalized_header_subscription.fuse();
 		loop {
 			futures::select! {
 				evt = self.client_receiver.next() => match evt {
 					Some(NotificationRegisterMessage::RegisterBestHeadListener(tx)) => {
-						self.best_heads_listeners.push(tx);
+						self.best_header_listeners.push(tx);
 					},
 					Some(NotificationRegisterMessage::RegisterImportListener(tx)) => {
-						self.imported_heads_listeners.push(tx)
+						self.imported_header_listeners.push(tx)
 					},
 					Some(NotificationRegisterMessage::RegisterFinalizationListener(tx)) => {
-						self.finalized_heads_listeners.push(tx)
+						self.finalized_header_listeners.push(tx)
 					},
 					None => {}
 				},
-				import_evt = import_sub.next() =>
-					handle_event_distribution(import_evt, &mut self.imported_heads_listeners),
-				header_evt = best_head_sub.next() =>
-					handle_event_distribution(header_evt, &mut self.best_heads_listeners),
-				finalized_evt = finalized_sub.next() =>
-					handle_event_distribution(finalized_evt, &mut self.finalized_heads_listeners),
+				import_event = import_sub.next() => {
+					if let Err(err) = handle_event_distribution(import_event, &mut self.imported_header_listeners) {
+						tracing::error!(target: LOG_TARGET, err, "Encountered error while processing imported header notification. Stopping RPC Worker.");
+						return;
+					}
+				},
+				best_header_event = best_head_sub.next() => {
+					if let Err(err) = handle_event_distribution(best_header_event, &mut self.best_header_listeners) {
+						tracing::error!(target: LOG_TARGET, err, "Encountered error while processing best header notification. Stopping RPC Worker.");
+						return;
+					}
+				}
+				finalized_event = finalized_sub.next() => {
+					if let Err(err) = handle_event_distribution(finalized_event, &mut self.finalized_header_listeners) {
+						tracing::error!(target: LOG_TARGET, err, "Encountered error while processing finalized header notification. Stopping RPC Worker.");
+						return;
+					}
+				}
 			}
 		}
 	}
@@ -381,33 +388,45 @@ impl RelayChainRPCClient {
 			.await
 	}
 
+	fn send_register_message_to_worker(
+		&self,
+		message: NotificationRegisterMessage,
+	) -> Result<(), RelayChainError> {
+		match &self.to_worker_channel {
+			Some(channel) => {
+				channel
+					.unbounded_send(message)
+					.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))?;
+				Ok(())
+			},
+			None => Err(RelayChainError::WorkerCommunicationError(
+				"Worker channel needs to be set before requesting notification streams."
+					.to_string(),
+			)),
+		}
+	}
+
 	pub async fn get_imported_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
 		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(128);
-		if let Some(channel) = &self.to_worker_channel {
-			channel
-				.unbounded_send(NotificationRegisterMessage::RegisterImportListener(tx))
-				.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))?;
-		}
+		self.send_register_message_to_worker(NotificationRegisterMessage::RegisterImportListener(
+			tx,
+		))?;
 		Ok(rx)
 	}
 
 	pub async fn get_best_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
 		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(128);
-		if let Some(channel) = &self.to_worker_channel {
-			channel
-				.unbounded_send(NotificationRegisterMessage::RegisterBestHeadListener(tx))
-				.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))?;
-		}
+		self.send_register_message_to_worker(
+			NotificationRegisterMessage::RegisterBestHeadListener(tx),
+		)?;
 		Ok(rx)
 	}
 
 	pub async fn get_finalized_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
 		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(128);
-		if let Some(channel) = &self.to_worker_channel {
-			channel
-				.unbounded_send(NotificationRegisterMessage::RegisterFinalizationListener(tx))
-				.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))?;
-		}
+		self.send_register_message_to_worker(
+			NotificationRegisterMessage::RegisterFinalizationListener(tx),
+		)?;
 		Ok(rx)
 	}
 

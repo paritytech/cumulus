@@ -54,7 +54,7 @@ pub enum RelayChainError {
 	RPCCallError(String, JsonRPSeeError),
 	#[error("RPC Error: '{0}'")]
 	JsonRPCError(#[from] JsonRPSeeError),
-	#[error("Unable to reach worker: {0}")]
+	#[error("Unable to reach RPCStreamWorker: {0}")]
 	WorkerCommunicationError(String),
 	#[error("Scale codec deserialization error: {0}")]
 	DeserializationError(CodecError),
