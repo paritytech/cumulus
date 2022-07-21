@@ -348,22 +348,33 @@ fn test_that_buying_ed_refund_does_not_refund() {
 
 			let amount_bought = WeightToFee::weight_to_fee(&bought);
 
+			assert!(
+				amount_bought < ExistentialDeposit::get(),
+				"we are testing what happens when the amount does not exceed ED"
+			);
+
+			// We know we will have to buy at least ED, so lets make sure first it will
+			// fail with a payment of less than ED
 			let asset: MultiAsset = (asset_multilocation.clone(), amount_bought).into();
+			assert_noop!(trader.buy_weight(bought, asset.into()), XcmError::TooExpensive);
+
+			// Now lets buy ED at least
+			let asset: MultiAsset = (asset_multilocation.clone(), ExistentialDeposit::get()).into();
 
 			// Buy weight should work
 			assert_ok!(trader.buy_weight(bought, asset.into()));
 
-			// Should return None. Refunding and then dropping below existential deposit
-			// should not be allowed
+			// Should return None. We have a specific check making sure we dont go below ED for
+			// drop payment
 			assert_eq!(trader.refund_weight(bought), None);
 
 			// Drop trader
 			drop(trader);
 
 			// Make sure author(Alice) has received the amount
-			assert_eq!(Assets::balance(1, AccountId::from(ALICE)), amount_bought);
+			assert_eq!(Assets::balance(1, AccountId::from(ALICE)), ExistentialDeposit::get());
 
 			// We also need to ensure the total supply increased
-			assert_eq!(Assets::total_supply(1), amount_bought);
+			assert_eq!(Assets::total_supply(1), ExistentialDeposit::get());
 		});
 }

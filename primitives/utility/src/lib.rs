@@ -25,7 +25,7 @@ use frame_support::{
 	traits::tokens::{fungibles, fungibles::Inspect},
 	weights::Weight,
 };
-use sp_runtime::SaturatedConversion;
+use sp_runtime::{traits::Saturating, SaturatedConversion};
 
 use sp_std::marker::PhantomData;
 use xcm::{latest::prelude::*, WrapVersion};
@@ -168,25 +168,31 @@ impl<
 			let (local_asset_id, outstanding_balance) =
 				Matcher::matches_fungibles(&(id.clone(), fun).into()).ok()?;
 
+			let minimum_balance = ConcreteAssets::minimum_balance(local_asset_id);
+
 			// Calculate asset_balance
 			// This read should have already be cached in buy_weight
-			let asset_balance: u128 =
-				FeeCharger::charge_weight_in_fungibles(local_asset_id, weight)
-					.ok()?
-					.saturated_into();
+			let (asset_balance, outstanding_minus_substracted) =
+				FeeCharger::charge_weight_in_fungibles(local_asset_id, weight).ok().map(
+					|asset_balance| {
+						// Require at least a drop of minimum_balance
+						// Necessary for fully collateral-backed assets
+						if outstanding_balance.saturating_sub(asset_balance) > minimum_balance {
+							(asset_balance, outstanding_balance.saturating_sub(asset_balance))
+						}
+						// If the amount to be refunded leaves the remaining balance below ED,
+						// we just refund the exact amount that guarantees at least ED will be
+						// dropped
+						else {
+							(outstanding_balance.saturating_sub(minimum_balance), minimum_balance)
+						}
+					},
+				)?;
 
-			// Convert into u128 outstanding_balance
-			let outstanding_balance: u128 = outstanding_balance.saturated_into();
-			let outstanding_minus_substracted = outstanding_balance.saturating_sub(asset_balance);
-
-			// Guarantee that the fee payment will contain at least the minimum balance of the asset.
-			// Require at least a drop of minimum_balance
-			// Necessary for fully collateral-backed assets
-			if outstanding_minus_substracted <
-				ConcreteAssets::minimum_balance(local_asset_id).saturated_into()
-			{
-				return None
-			}
+			// Convert balances into u128
+			let outstanding_minus_substracted: u128 =
+				outstanding_minus_substracted.saturated_into();
+			let asset_balance: u128 = asset_balance.saturated_into();
 
 			// Construct outstanding_concrete_asset with the same location id and substracted balance
 			let outstanding_concrete_asset: MultiAsset =
