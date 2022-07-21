@@ -43,7 +43,7 @@ mod weights;
 pub mod xcm_config;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
-use impls::ToParentTreasury;
+use impls::{AllianceProposalProvider, ToParentTreasury};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -61,9 +61,7 @@ use sp_version::RuntimeVersion;
 use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
-	construct_runtime,
-	pallet_prelude::*,
-	parameter_types,
+	construct_runtime, parameter_types,
 	traits::{ConstU16, ConstU32, ConstU64, ConstU8, EitherOfDiverse, InstanceFilter},
 	weights::{ConstantMultiplier, DispatchClass, Weight},
 	PalletId, RuntimeDebug,
@@ -72,7 +70,6 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
-use pallet_alliance::{ProposalIndex, ProposalProvider};
 pub use parachains_common as common;
 use parachains_common::{
 	impls::DealWithFees, opaque, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index,
@@ -421,44 +418,6 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = weights::pallet_collator_selection::WeightInfo<Runtime>;
 }
 
-pub struct AllianceProposalProvider;
-impl ProposalProvider<AccountId, Hash, Call> for AllianceProposalProvider {
-	fn propose_proposal(
-		who: AccountId,
-		threshold: u32,
-		proposal: Box<Call>,
-		length_bound: u32,
-	) -> Result<(u32, u32), DispatchError> {
-		AllianceMotion::do_propose_proposed(who, threshold, proposal, length_bound)
-	}
-
-	fn vote_proposal(
-		who: AccountId,
-		proposal: Hash,
-		index: ProposalIndex,
-		approve: bool,
-	) -> Result<bool, DispatchError> {
-		AllianceMotion::do_vote(who, proposal, index, approve)
-	}
-
-	fn veto_proposal(proposal_hash: Hash) -> u32 {
-		AllianceMotion::do_disapprove_proposal(proposal_hash)
-	}
-
-	fn close_proposal(
-		proposal_hash: Hash,
-		proposal_index: ProposalIndex,
-		proposal_weight_bound: Weight,
-		length_bound: u32,
-	) -> DispatchResultWithPostInfo {
-		AllianceMotion::do_close(proposal_hash, proposal_index, proposal_weight_bound, length_bound)
-	}
-
-	fn proposal_of(proposal_hash: Hash) -> Option<Call> {
-		AllianceMotion::proposal_of(proposal_hash)
-	}
-}
-
 parameter_types! {
 	pub const AllianceMotionDuration: BlockNumber = 5 * DAYS;
 
@@ -509,7 +468,7 @@ impl pallet_alliance::Config for Runtime {
 	type InitializeMembers = AllianceMotion;
 	type MembershipChanged = AllianceMotion;
 	type IdentityVerifier = (); // Don't block accounts on identity criteria
-	type ProposalProvider = AllianceProposalProvider;
+	type ProposalProvider = AllianceProposalProvider<Runtime, AllianceCollective>;
 	type MaxProposals = ConstU32<ALLIANCE_MAX_MEMBERS>;
 	type MaxFounders = ConstU32<MAX_FOUNDERS>;
 	type MaxFellows = ConstU32<MAX_FELLOWS>;
