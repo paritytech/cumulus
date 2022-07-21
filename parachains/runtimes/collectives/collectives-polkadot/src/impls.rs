@@ -84,7 +84,8 @@ where
 /// Adapter from collective pallet to alliance proposal provider trait.
 pub struct AllianceProposalProvider<T, I = ()>(PhantomData<(T, I)>);
 
-impl<T, I> ProposalProvider<AccountIdOf<T>, HashOf<T>, ProposalOf<T, I>> for AllianceProposalProvider<T, I>
+impl<T, I> ProposalProvider<AccountIdOf<T>, HashOf<T>, ProposalOf<T, I>>
+	for AllianceProposalProvider<T, I>
 where
 	T: pallet_collective::Config<I> + frame_system::Config,
 	I: 'static,
@@ -95,7 +96,12 @@ where
 		proposal: Box<ProposalOf<T, I>>,
 		length_bound: u32,
 	) -> Result<(u32, u32), DispatchError> {
-		pallet_collective::Pallet::<T, I>::do_propose_proposed(who, threshold, proposal, length_bound)
+		pallet_collective::Pallet::<T, I>::do_propose_proposed(
+			who,
+			threshold,
+			proposal,
+			length_bound,
+		)
 	}
 
 	fn vote_proposal(
