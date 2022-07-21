@@ -484,8 +484,8 @@ pub const MAX_ALLIES: u32 = 100;
 
 parameter_types! {
 	pub const AllyDeposit: Balance = 1_000 * UNITS; // 1,000 DOT bond to join as an Ally
-	// account used to temporary deposit slashed imbalance before teleporting
-	pub SlachedImbalanceAccId: AccountId = constants::account::SLASHED_IMBALANCE_ACC_ID.into();
+	// account used to temporarily deposit slashed imbalance before teleporting
+	pub SlashedImbalanceAccId: AccountId = constants::account::SLASHED_IMBALANCE_ACC_ID.into();
 	pub RelayTreasuryAccId: AccountId = constants::account::RELAY_TREASURY_PALL_ID.into_account_truncating();
 }
 
@@ -505,7 +505,7 @@ impl pallet_alliance::Config for Runtime {
 		pallet_collective::EnsureProportionMoreThan<AccountId, AllianceCollective, 2, 3>,
 	>;
 	type Currency = Balances;
-	type Slashed = ToParentTreasury<RelayTreasuryAccId, SlachedImbalanceAccId, Runtime>;
+	type Slashed = ToParentTreasury<RelayTreasuryAccId, SlashedImbalanceAccId, Runtime>;
 	type InitializeMembers = AllianceMotion;
 	type MembershipChanged = AllianceMotion;
 	type IdentityVerifier = (); // Don't block accounts on identity criteria
