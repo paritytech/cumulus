@@ -63,6 +63,7 @@ pub struct RelayChainRPCClient {
 	to_worker_channel: Option<TracingUnboundedSender<NotificationRegisterMessage>>,
 }
 
+/// Worker messages to register new notification listeners
 #[derive(Clone, Debug)]
 pub enum NotificationRegisterMessage {
 	RegisterBestHeadListener(Sender<PHeader>),
