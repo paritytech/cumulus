@@ -24,7 +24,7 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use futures::{
-	channel::mpsc::{Receiver, Sender, UnboundedReceiver, UnboundedSender},
+	channel::mpsc::{Receiver, Sender},
 	StreamExt,
 };
 use jsonrpsee::{
@@ -39,6 +39,7 @@ use jsonrpsee::{
 use parity_scale_codec::{Decode, Encode};
 use sc_client_api::StorageData;
 use sc_rpc_api::{state::ReadProof, system::Health};
+use sc_utils::mpsc::{tracing_unbounded, TracingUnboundedReceiver, TracingUnboundedSender};
 use sp_core::sp_std::collections::btree_map::BTreeMap;
 use sp_runtime::DeserializeOwned;
 use sp_storage::StorageKey;
@@ -57,7 +58,7 @@ pub struct RelayChainRPCClient {
 	/// Retry strategy that should be used for requests and subscriptions
 	retry_strategy: ExponentialBackoff,
 
-	to_worker_channel: Option<UnboundedSender<NotificationRegisterMessage>>,
+	to_worker_channel: Option<TracingUnboundedSender<NotificationRegisterMessage>>,
 }
 
 #[derive(Clone, Debug)]
@@ -67,8 +68,9 @@ pub enum NotificationRegisterMessage {
 	RegisterFinalizationListener(Sender<PHeader>),
 }
 
-pub struct RPCWorker {
-	client_receiver: UnboundedReceiver<NotificationRegisterMessage>,
+/// Worker that should be used in combination with [`RelayChainRPCClient`]. Must be polled to distribute header notifications to listeners.
+pub struct RPCStreamWorker {
+	client_receiver: TracingUnboundedReceiver<NotificationRegisterMessage>,
 	imported_heads_listeners: Vec<Sender<PHeader>>,
 	finalized_heads_listeners: Vec<Sender<PHeader>>,
 	best_heads_listeners: Vec<Sender<PHeader>>,
@@ -77,9 +79,17 @@ pub struct RPCWorker {
 	best_sub: Subscription<PHeader>,
 }
 
-pub async fn create_worker_client(url: Url) -> RelayChainResult<(RPCWorker, RelayChainRPCClient)> {
-	let (mut client, import, head, finalized) = RelayChainRPCClient::new_with_streams(url).await?;
-	let (worker, sender) = RPCWorker::new(import, head, finalized);
+/// Entry point to create [`RelayChainRPCClient`] and [`RPCStreamWorker`];
+pub async fn create_worker_client(
+	url: Url,
+) -> RelayChainResult<(RPCStreamWorker, RelayChainRPCClient)> {
+	let mut client = RelayChainRPCClient::new(url).await?;
+	let best_head_stream = client.subscribe_new_best_heads().await?;
+	let finalized_head_stream = client.subscribe_finalized_heads().await?;
+	let imported_head_stream = client.subscribe_imported_heads().await?;
+
+	let (worker, sender) =
+		RPCStreamWorker::new(imported_head_stream, best_head_stream, finalized_head_stream);
 	client.set_worker_channel(sender);
 	Ok((worker, client))
 }
@@ -109,14 +119,15 @@ fn handle_event_distribution(
 	};
 }
 
-impl RPCWorker {
-	pub fn new(
+impl RPCStreamWorker {
+	/// Create new worker
+	fn new(
 		import_sub: Subscription<PHeader>,
 		best_sub: Subscription<PHeader>,
 		finalized_sub: Subscription<PHeader>,
-	) -> (RPCWorker, UnboundedSender<NotificationRegisterMessage>) {
-		let (tx, rx) = futures::channel::mpsc::unbounded();
-		let worker = RPCWorker {
+	) -> (RPCStreamWorker, TracingUnboundedSender<NotificationRegisterMessage>) {
+		let (tx, rx) = tracing_unbounded("mpsc-cumulus-rpc-worker");
+		let worker = RPCStreamWorker {
 			client_receiver: rx,
 			imported_heads_listeners: Vec::new(),
 			finalized_heads_listeners: Vec::new(),
@@ -128,15 +139,16 @@ impl RPCWorker {
 		(worker, tx)
 	}
 
+	/// Run this worker to drive notification streams.
+	/// The worker does two things:
+	/// 1. Listen for `NotificationRegisterMessage` and register new listeners for the notification streams
+	/// 2. Distribute incoming import, best head and finalization notifications to registered listeners.
+	///    If an error occurs during sending, the receiver has been closed and we remove the sender from the list.
 	pub async fn run(mut self) {
 		let mut import_sub = self.import_sub.fuse();
 		let mut best_head_sub = self.best_sub.fuse();
 		let mut finalized_sub = self.finalized_sub.fuse();
 		loop {
-			// In this loop we do two things:
-			// 1. Listen for `NotificationRegisterMessage` and register new listeners for the notification streams
-			// 2. Distribute incoming import, best head and finalization notifications to registered listeners.
-			//    If an error occurs during sending, the receiver has been closed and we drop the sender too.
 			futures::select! {
 				evt = self.client_receiver.next() => match evt {
 					Some(NotificationRegisterMessage::RegisterBestHeadListener(tx)) => {
@@ -162,14 +174,13 @@ impl RPCWorker {
 }
 
 impl RelayChainRPCClient {
-	fn set_worker_channel(&mut self, sender: UnboundedSender<NotificationRegisterMessage>) {
+	/// Set channel to exchange messages with the rpc-worker
+	fn set_worker_channel(&mut self, sender: TracingUnboundedSender<NotificationRegisterMessage>) {
 		self.to_worker_channel = Some(sender);
 	}
 
-	pub async fn new_with_streams(
-		url: Url,
-	) -> RelayChainResult<(Self, Subscription<PHeader>, Subscription<PHeader>, Subscription<PHeader>)>
-	{
+	/// Initialize new RPC Client and connect vie WebSocket to a given endpoint.
+	async fn new(url: Url) -> RelayChainResult<Self> {
 		tracing::info!(target: LOG_TARGET, url = %url.to_string(), "Initializing RPC Client");
 		let ws_client = WsClientBuilder::default().build(url.as_str()).await?;
 
@@ -178,21 +189,8 @@ impl RelayChainRPCClient {
 			ws_client: Arc::new(ws_client),
 			retry_strategy: ExponentialBackoff::default(),
 		};
-		let head_stream = client.subscribe_new_best_heads().await?;
-		let finalized_stream = client.subscribe_finalized_heads().await?;
-		let imported_stream = client.subscribe_imported_heads().await?;
-		Ok((client, imported_stream, head_stream, finalized_stream))
-	}
 
-	pub async fn new(url: Url) -> RelayChainResult<Self> {
-		tracing::info!(target: LOG_TARGET, url = %url.to_string(), "Initializing RPC Client");
-		let ws_client = WsClientBuilder::default().build(url.as_str()).await?;
-
-		Ok(RelayChainRPCClient {
-			to_worker_channel: None,
-			ws_client: Arc::new(ws_client),
-			retry_strategy: ExponentialBackoff::default(),
-		})
+		Ok(client)
 	}
 
 	/// Call a call to `state_call` rpc method.
