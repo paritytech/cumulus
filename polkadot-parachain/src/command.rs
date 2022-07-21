@@ -668,8 +668,8 @@ pub fn run() -> Result<()> {
 					.map(|r| r.0)
 					.map_err(Into::into),
 					Runtime::BridgeHub => {
-						info!("Starting BridgeHub...");
-						crate::service::start_generic_aura_node::<
+						info!("Starting BridgeHub sample...");
+						crate::service::start_bridge_hub_sample_node::<
 							bridge_hub_runtime::RuntimeApi,
 							AuraId,
 						>(config, polkadot_config, collator_options, id, hwbench)

@@ -70,6 +70,38 @@ where
 	Ok(module)
 }
 
+/// Instantiate all RPC extensions for bridge hub.
+pub fn create_full_for_bridge_hub<C, P>(
+	deps: FullDeps<C, P>,
+) -> Result<RpcExtension, Box<dyn std::error::Error + Send + Sync>>
+where
+	C: ProvideRuntimeApi<Block>
+		+ HeaderBackend<Block>
+		+ AuxStore
+		+ HeaderMetadata<Block, Error = BlockChainError>
+		+ Send
+		+ Sync
+		+ 'static,
+	C::Api: frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
+	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
+	C::Api: pallet_bridge_hub_sample_rpc::BridgeHubRuntimeApi<Block>,
+	C::Api: BlockBuilder<Block>,
+	P: TransactionPool + Sync + Send + 'static,
+{
+	use frame_rpc_system::{System, SystemApiServer};
+	use pallet_bridge_hub_sample_rpc::{BridgeHubRpc, BridgeHubRpcApiServer};
+	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
+
+	let mut module = RpcExtension::new(());
+	let FullDeps { client, pool, deny_unsafe } = deps;
+
+	module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
+	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
+	module.merge(BridgeHubRpc::new(client).into_rpc())?;
+
+	Ok(module)
+}
+
 /// Instantiate all RPCs we want at the contracts-rococo chain.
 pub fn create_contracts_rococo<C, P>(
 	deps: FullDeps<C, P>,

@@ -708,6 +708,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-bridge-hub-sample",
+ "pallet-bridge-hub-sample-runtime-api",
  "pallet-collator-selection",
  "pallet-session",
  "pallet-sudo",
@@ -5567,6 +5568,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-bridge-hub-sample-rpc"
+version = "0.1.0"
+dependencies = [
+ "jsonrpsee",
+ "pallet-bridge-hub-sample",
+ "pallet-bridge-hub-sample-runtime-api",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-bridge-hub-sample-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "pallet-bridge-hub-sample",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-runtime",
+]
+
+[[package]]
 name = "pallet-child-bounties"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#dbdbef95c84644328bee60bd170d79814c04e32b"
@@ -7678,6 +7704,8 @@ dependencies = [
  "jsonrpsee",
  "log",
  "nix 0.24.1",
+ "pallet-bridge-hub-sample",
+ "pallet-bridge-hub-sample-rpc",
  "pallet-contracts-rpc",
  "pallet-transaction-payment-rpc",
  "parachains-common",

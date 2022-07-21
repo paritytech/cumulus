@@ -1,3 +1,19 @@
+// Copyright 2020-2021 Parity Technologies (UK) Ltd.
+// This file is part of Cumulus.
+
+// Cumulus is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Cumulus is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
@@ -51,6 +67,7 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 // XCM Imports
+use pallet_bridge_hub_sample::ActualData;
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
 
@@ -456,7 +473,7 @@ parameter_types! {
 	pub const StringMaxLength: u32 = 50;
 }
 
-// Our custom pallet initialization
+/// Our custom pallet initialization
 impl pallet_bridge_hub_sample::pallet::Config for Runtime {
 	type StringMaxLength = StringMaxLength;
 	type Event = Event;
@@ -619,6 +636,17 @@ impl_runtime_apis! {
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
 		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
 			ParachainSystem::collect_collation_info(header)
+		}
+	}
+
+	impl pallet_bridge_hub_sample_runtime_api::BridgeHubRuntimeApi<Block> for Runtime {
+		fn get_actual_data() -> ActualData {
+			let counter_per_block = BridgeHubSample::get_counter_per_block();
+			let total_counter = BridgeHubSample::get_total_counter();
+			ActualData {
+				counter_per_block: counter_per_block.unwrap_or(0),
+				total_counter,
+			}
 		}
 	}
 

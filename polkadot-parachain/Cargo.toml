@@ -27,6 +27,8 @@ contracts-rococo-runtime = { path = "../parachains/runtimes/contracts/contracts-
 penpal-runtime = { path = "../parachains/runtimes/testing/penpal" }
 jsonrpsee = { version = "0.14.0", features = ["server"] }
 parachains-common = { path = "../parachains/common" }
+pallet-bridge-hub-sample = { path = "../parachains/pallets/bridge-hub-sample", default-features = false }
+pallet-bridge-hub-sample-rpc = { path = "../parachains/pallets/bridge-hub-sample/rpc" }
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "master" }

@@ -1,3 +1,19 @@
+// Copyright 2020-2021 Parity Technologies (UK) Ltd.
+// This file is part of Cumulus.
+
+// Cumulus is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Cumulus is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode, MaxEncodedLen};
@@ -17,6 +33,16 @@ pub struct SampleData<BoundedString> {
 	b: u32,
 }
 
+/// Counter type
+pub type Counter = u32;
+
+#[derive(Encode, Decode, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Debug, serde::Serialize, serde::Deserialize))]
+pub struct ActualData {
+	pub counter_per_block: Counter,
+	pub total_counter: Option<Counter>,
+}
+
 #[derive(Encode, Decode, PalletError, TypeInfo, Debug, PartialEq)]
 pub struct InvalidParameterDetails {
 	max: u8,
@@ -26,7 +52,7 @@ pub struct InvalidParameterDetails {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::SampleData;
-	use crate::InvalidParameterDetails;
+	use crate::{Counter, InvalidParameterDetails};
 	use frame_support::{
 		dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo, Weight},
 		ensure, log,
@@ -59,8 +85,8 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		SetNameCalled(u32),
-		CallsPerBlock(u32),
+		SetNameCalled(Counter),
+		CallsPerBlock(Counter),
 	}
 
 	#[pallet::error]
@@ -76,11 +102,11 @@ pub mod pallet {
 	// Add runtime storage to declare storage items.
 	#[pallet::storage]
 	#[pallet::getter(fn get_counter_per_block)]
-	pub type CounterPerBlockStorage<T: Config> = StorageValue<_, u32>;
+	pub type CounterPerBlockStorage<T: Config> = StorageValue<_, Counter>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn get_total_counter)]
-	pub type TotalCounterStorage<T: Config> = StorageValue<_, u32>;
+	pub type TotalCounterStorage<T: Config> = StorageValue<_, Counter>;
 
 	// Add runtime storage to declare storage items.
 	#[pallet::storage]
@@ -286,7 +312,7 @@ mod tests {
 	use crate::{
 		pallet,
 		pallet::{CounterPerBlockStorage, SampleDataStorage},
-		InvalidParameterDetails,
+		ActualData, InvalidParameterDetails,
 	};
 	use codec::Decode;
 	use frame_support::{
@@ -343,7 +369,7 @@ mod tests {
 	}
 
 	#[test]
-	fn test_decode_error() {
+	fn test_decode_error_from_extrinsic() {
 		let decode_error = |hex_string_from_polkadot_js: &str| -> pallet::Error<Runtime> {
 			let data = hex::decode(hex_string_from_polkadot_js.replace("0x", "")).expect("error");
 			Decode::decode(&mut data.as_slice()).expect("error")
@@ -374,6 +400,16 @@ mod tests {
 			}),
 			error
 		);
+	}
+
+	#[test]
+	fn test_decoded_actual_data() {
+		let decode = |hex_string_from_polkadot_js: &str| -> ActualData {
+			let data = hex::decode(hex_string_from_polkadot_js.replace("0x", "")).expect("error");
+			Decode::decode(&mut data.as_slice()).expect("error")
+		};
+
+		println!("decoded: {:?}", decode("0x000000000103000000"));
 	}
 
 	pub struct StringMaxLength;
