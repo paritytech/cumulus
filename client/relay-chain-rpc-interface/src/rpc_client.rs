@@ -49,6 +49,8 @@ pub use url::Url;
 
 const LOG_TARGET: &str = "relay-chain-rpc-client";
 
+const NOTIFICATION_CHANNEL_SIZE_LIMIT: usize = 20;
+
 /// Client that maps RPC methods and deserializes results
 #[derive(Clone)]
 pub struct RelayChainRPCClient {
@@ -407,7 +409,7 @@ impl RelayChainRPCClient {
 	}
 
 	pub async fn get_imported_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
-		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(128);
+		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
 		self.send_register_message_to_worker(NotificationRegisterMessage::RegisterImportListener(
 			tx,
 		))?;
@@ -415,7 +417,7 @@ impl RelayChainRPCClient {
 	}
 
 	pub async fn get_best_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
-		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(128);
+		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
 		self.send_register_message_to_worker(
 			NotificationRegisterMessage::RegisterBestHeadListener(tx),
 		)?;
@@ -423,7 +425,7 @@ impl RelayChainRPCClient {
 	}
 
 	pub async fn get_finalized_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
-		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(128);
+		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
 		self.send_register_message_to_worker(
 			NotificationRegisterMessage::RegisterFinalizationListener(tx),
 		)?;
