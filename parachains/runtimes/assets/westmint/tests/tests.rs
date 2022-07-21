@@ -332,8 +332,7 @@ fn test_that_buying_ed_refund_does_not_refund() {
 			// Set Alice as block author, who will receive fees
 			run_to_block(2, Some(AccountId::from(ALICE)));
 
-			// We are gonna buy ED
-			let bought: u64 = ExistentialDeposit::get().try_into().unwrap();
+			let bought = 500_000_000u64;
 
 			let asset_multilocation = MultiLocation::new(
 				0,
