@@ -12,7 +12,7 @@ statemintChain=statemint-dev
 westmintChain=westmint-dev
 
 pallets=(
-    pallet_assets
+  pallet_assets
 	pallet_balances
 	pallet_collator_selection
 	pallet_multisig
@@ -23,6 +23,8 @@ pallets=(
 	pallet_uniques
 	cumulus_pallet_xcmp_queue
 	frame_system
+	pallet_xcm_benchmarks::generic
+	pallet_xcm_benchmarks::fungible
 )
 
 for p in ${pallets[@]}
