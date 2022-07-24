@@ -867,7 +867,7 @@ impl_runtime_apis! {
 
 				fn get_multi_asset() -> MultiAsset {
 					MultiAsset {
-						id: Concrete(DotLocation::get()),
+						id: Concrete(Local::get()),
 						fun: Fungible(1 * UNITS),
 					}
 				}
