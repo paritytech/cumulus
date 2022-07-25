@@ -42,11 +42,13 @@ impl SubstrateCli for Cli {
 	}
 
 	fn description() -> String {
-		"Parachain Collator Template\n\nThe command-line arguments provided first will be \
+		format!(
+			"Parachain Collator Template\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relay chain node.\n\n\
-		parachain-collator <parachain-args> -- <relay-chain-args>"
-			.into()
+		{} <parachain-args> -- <relay-chain-args>",
+			Self::executable_name()
+		)
 	}
 
 	fn author() -> String {
@@ -80,11 +82,13 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn description() -> String {
-		"Parachain Collator Template\n\nThe command-line arguments provided first will be \
+		format!(
+			"Parachain Collator Template\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relay chain node.\n\n\
-		parachain-collator <parachain-args> -- <relay-chain-args>"
-			.into()
+		{} <parachain-args> -- <relay-chain-args>",
+			Self::executable_name()
+		)
 	}
 
 	fn author() -> String {
@@ -223,9 +227,12 @@ pub fn run() -> Result<()> {
 
 					cmd.run(config, partials.client.clone(), db, storage)
 				}),
-				BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
 				BenchmarkCmd::Machine(cmd) =>
 					runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())),
+				// NOTE: this allows the Client to leniently implement
+				// new benchmark commands without requiring a companion MR.
+				#[allow(unreachable_patterns)]
+				_ => Err("Benchmarking sub-command unsupported".into()),
 			}
 		},
 		Some(Subcommand::TryRuntime(cmd)) => {
@@ -388,8 +395,8 @@ impl CliConfiguration<Self> for RelayChainCli {
 		self.base.base.role(is_dev)
 	}
 
-	fn transaction_pool(&self) -> Result<sc_service::config::TransactionPoolOptions> {
-		self.base.base.transaction_pool()
+	fn transaction_pool(&self, is_dev: bool) -> Result<sc_service::config::TransactionPoolOptions> {
+		self.base.base.transaction_pool(is_dev)
 	}
 
 	fn state_cache_child_ratio(&self) -> Result<Option<usize>> {
