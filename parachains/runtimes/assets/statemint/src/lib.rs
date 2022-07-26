@@ -822,6 +822,9 @@ impl_runtime_apis! {
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
+			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
+
 			use xcm::latest::prelude::*;
 			use xcm_config::{Local, DotLocation};
 
@@ -889,9 +892,6 @@ impl_runtime_apis! {
 					Ok((origin, ticket, assets))
 				}
 			}
-
-			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
-			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
 
 			let whitelist: Vec<TrackedStorageKey> = vec![
