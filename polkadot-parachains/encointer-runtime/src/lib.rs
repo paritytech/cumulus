@@ -81,7 +81,7 @@ pub use pallet_encointer_scheduler::Call as EncointerSchedulerCall;
 pub use encointer_primitives::{
 	balances::{BalanceEntry, BalanceType, Demurrage},
 	bazaar::{BusinessData, BusinessIdentifier, OfferingData},
-	ceremonies::{AggregatedAccountData, CeremonyIndexType, CommunityReputation},
+	ceremonies::{AggregatedAccountData, CeremonyIndexType, CeremonyInfo, CommunityReputation},
 	common::PalletString,
 	communities::{CommunityIdentifier, Location},
 	scheduler::CeremonyPhaseType,
@@ -756,6 +756,9 @@ impl_runtime_apis! {
 		}
 		fn get_aggregated_account_data(cid:CommunityIdentifier, account: &AccountId) -> AggregatedAccountData<AccountId, Moment> {
 			EncointerCeremonies::get_aggregated_account_data(cid, &account)
+		}
+		fn get_ceremony_info() -> CeremonyInfo {
+			EncointerCeremonies::get_ceremony_info()
 		}
 	}
 
