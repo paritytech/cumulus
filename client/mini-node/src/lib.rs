@@ -22,17 +22,19 @@ use polkadot_node_network_protocol::{
 	},
 	PeerId,
 };
+use polkadot_node_subsystem_types::RuntimeApiSubsystemClient;
 use polkadot_node_subsystem_util::metrics::{prometheus::Registry, Metrics};
 use polkadot_overseer::{
-	BlockInfo, DummySubsystem, MetricsTrait, Overseer, OverseerHandle, OverseerMetrics,
-	OverseerRuntimeClient, SpawnGlue, KNOWN_LEAVES_CACHE_SIZE,
+	BlockInfo, DummySubsystem, MetricsTrait, Overseer, OverseerHandle, OverseerMetrics, SpawnGlue,
+	KNOWN_LEAVES_CACHE_SIZE,
 };
+use polkadot_service::overseer::NetworkBridgeMetrics;
 
 use polkadot_primitives::v2::CollatorPair;
 use polkadot_service::{
 	overseer::{
 		AvailabilityRecoverySubsystem, CollationGenerationSubsystem, CollatorProtocolSubsystem,
-		NetworkBridgeSubsystem, ProtocolSide, RuntimeApiSubsystem,
+		NetworkBridgeRxSubsystem, NetworkBridgeTxSubsystem, ProtocolSide, RuntimeApiSubsystem,
 	},
 	Error, OverseerConnector,
 };
@@ -58,7 +60,7 @@ pub use blockchain_rpc_client::BlockChainRPCClient;
 /// Arguments passed for overseer construction.
 pub struct CollatorOverseerGenArgs<'a, Spawner, RuntimeClient>
 where
-	RuntimeClient: 'static + polkadot_overseer::OverseerRuntimeClient + Sync + Send,
+	RuntimeClient: 'static + RuntimeApiSubsystemClient + Sync + Send,
 	Spawner: 'static + SpawnNamed + Clone + Unpin,
 {
 	/// Set of initial relay chain leaves to track.
@@ -97,12 +99,13 @@ impl CollatorOverseerGen {
 		}: CollatorOverseerGenArgs<'a, Spawner, RuntimeClient>,
 	) -> Result<(Overseer<SpawnGlue<Spawner>, Arc<RuntimeClient>>, OverseerHandle), Error>
 	where
-		RuntimeClient: 'static + OverseerRuntimeClient + Sync + Send,
+		RuntimeClient: 'static + RuntimeApiSubsystemClient + Sync + Send,
 		Spawner: 'static + SpawnNamed + Clone + Unpin,
 	{
 		let metrics = <OverseerMetrics as MetricsTrait>::register(registry)?;
 
 		let spawner = SpawnGlue(spawner);
+		let network_bridge_metrics: NetworkBridgeMetrics = Metrics::register(registry)?;
 		let builder = Overseer::builder()
 			.availability_distribution(DummySubsystem)
 			.availability_recovery(AvailabilityRecoverySubsystem::with_chunks_only(
@@ -126,11 +129,16 @@ impl CollatorOverseerGen {
 				);
 				CollatorProtocolSubsystem::new(side)
 			})
-			.network_bridge(NetworkBridgeSubsystem::new(
+			.network_bridge_rx(NetworkBridgeRxSubsystem::new(
 				network_service.clone(),
 				authority_discovery_service.clone(),
 				Box::new(network_service.clone()),
 				Metrics::register(registry)?,
+			))
+			.network_bridge_tx(NetworkBridgeTxSubsystem::new(
+				network_service.clone(),
+				authority_discovery_service.clone(),
+				network_bridge_metrics.clone(),
 			))
 			.provisioner(DummySubsystem)
 			.runtime_api(RuntimeApiSubsystem::new(

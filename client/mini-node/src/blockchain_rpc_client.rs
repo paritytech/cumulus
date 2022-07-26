@@ -240,7 +240,7 @@ impl RuntimeApiSubsystemClient for BlockChainRPCClient {
 		&self,
 		_at: Hash,
 		_index: polkadot_primitives::v2::SessionIndex,
-	) -> Result<Option<polkadot_primitives::v2::SessionInfo>, sp_api::ApiError> {
+	) -> Result<Option<polkadot_primitives::v2::OldV1SessionInfo>, sp_api::ApiError> {
 		unimplemented!()
 	}
 
@@ -272,43 +272,7 @@ impl RuntimeApiSubsystemClient for BlockChainRPCClient {
 			.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
 	}
 
-	async fn configuration(
-		&self,
-		_at: Hash,
-	) -> Result<sp_consensus_babe::BabeGenesisConfiguration, sp_api::ApiError> {
-		unimplemented!()
-	}
-
-	async fn current_epoch_start(
-		&self,
-		_at: Hash,
-	) -> Result<sp_consensus_babe::Slot, sp_api::ApiError> {
-		unimplemented!()
-	}
-
 	async fn current_epoch(&self, _at: Hash) -> Result<sp_consensus_babe::Epoch, sp_api::ApiError> {
-		unimplemented!()
-	}
-
-	async fn next_epoch(&self, _at: Hash) -> Result<sp_consensus_babe::Epoch, sp_api::ApiError> {
-		unimplemented!()
-	}
-
-	async fn generate_key_ownership_proof(
-		&self,
-		_at: Hash,
-		_slot: sp_consensus_babe::Slot,
-		_authority_id: sp_consensus_babe::AuthorityId,
-	) -> Result<Option<sp_consensus_babe::OpaqueKeyOwnershipProof>, sp_api::ApiError> {
-		unimplemented!()
-	}
-
-	async fn submit_report_equivocation_unsigned_extrinsic(
-		&self,
-		_at: Hash,
-		_equivocation_proof: sp_consensus_babe::EquivocationProof<polkadot_core_primitives::Header>,
-		_key_owner_proof: sp_consensus_babe::OpaqueKeyOwnershipProof,
-	) -> Result<Option<()>, sp_api::ApiError> {
 		unimplemented!()
 	}
 
@@ -567,9 +531,9 @@ impl BlockBackend<Block> for BlockChainRPCClient {
 				block_local(self.rpc_client.chain_get_header(Some(*hash))).expect("get_header");
 			if let Some(_header) = maybe_header {
 				// TODO we need to check for pruned blocks here
-				return Ok(sp_consensus::BlockStatus::InChainWithState)
+				return Ok(sp_consensus::BlockStatus::InChainWithState);
 			} else {
-				return Ok(sp_consensus::BlockStatus::Unknown)
+				return Ok(sp_consensus::BlockStatus::Unknown);
 			}
 		} else {
 			todo!("Not supported blockId::number, block_status");

@@ -189,7 +189,7 @@ pub fn generate_genesis_block<Block: BlockT>(
 
 	let extrinsics_root = <<<Block as BlockT>::Header as HeaderT>::Hashing as HashT>::trie_root(
 		Vec::new(),
-		sp_runtime::StateVersion::V0,
+		genesis_state_version,
 	);
 
 	Ok(Block::new(
@@ -426,8 +426,8 @@ impl sc_cli::CliConfiguration for NormalizedRunCmd {
 		self.base.ws_max_out_buffer_capacity()
 	}
 
-	fn transaction_pool(&self) -> sc_cli::Result<TransactionPoolOptions> {
-		self.base.transaction_pool()
+	fn transaction_pool(&self, is_dev: bool) -> sc_cli::Result<TransactionPoolOptions> {
+		self.base.transaction_pool(is_dev)
 	}
 
 	fn max_runtime_instances(&self) -> sc_cli::Result<Option<usize>> {

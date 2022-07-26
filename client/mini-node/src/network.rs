@@ -2,9 +2,9 @@ use futures::FutureExt;
 use polkadot_service::{BlockT, HeaderMetadata};
 use sc_client_api::{BlockBackend, HeaderBackend, ProofProvider};
 use sc_consensus::ImportQueue;
-use sc_network::{
-	block_request_handler, light_client_requests, state_request_handler, NetworkService,
-};
+use sc_network::NetworkService;
+use sc_network_light::light_client_requests;
+use sc_network_sync::{block_request_handler, state_request_handler, ChainSync};
 use sc_service::{error::Error, Configuration, NetworkStarter, SpawnTaskHandle};
 use sp_consensus::block_validation::DefaultBlockAnnounceValidator;
 use std::sync::Arc;
@@ -39,8 +39,6 @@ where
 
 	let protocol_id = config.protocol_id();
 
-	let block_announce_validator = Box::new(DefaultBlockAnnounceValidator);
-
 	let block_request_protocol_config =
 		block_request_handler::generate_protocol_config(&protocol_id);
 
@@ -49,6 +47,8 @@ where
 
 	let light_client_request_protocol_config =
 		light_client_requests::generate_protocol_config(&protocol_id);
+
+	let block_announce_validator = Box::new(DefaultBlockAnnounceValidator);
 
 	let network_params = sc_network::config::Params {
 		role: config.role.clone(),
@@ -64,12 +64,23 @@ where
 				spawn_handle.spawn("network-transactions-handler", Some("networking"), fut);
 			})
 		},
+		create_chain_sync: Box::new(
+			move |sync_mode, chain, warp_sync_provider| match ChainSync::new(
+				sync_mode,
+				chain,
+				block_announce_validator,
+				10,
+				warp_sync_provider,
+			) {
+				Ok(chain_sync) => Ok(Box::new(chain_sync)),
+				Err(error) => Err(Box::new(error).into()),
+			},
+		),
 		network_config: config.network.clone(),
 		chain: client.clone(),
 		transaction_pool: transaction_pool_adapter as _,
 		import_queue: Box::new(import_queue),
 		protocol_id,
-		block_announce_validator,
 		metrics_registry: config.prometheus_config.as_ref().map(|config| config.registry.clone()),
 		block_request_protocol_config,
 		state_request_protocol_config,
@@ -113,7 +124,7 @@ where
 			);
 			// This `return` might seem unnecessary, but we don't want to make it look like
 			// everything is working as normal even though the user is clearly misusing the API.
-			return
+			return;
 		}
 
 		future.await
