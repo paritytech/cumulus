@@ -146,13 +146,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NO_CACHE: 1
           DEBUG: 1
-          SHELL_DIGEST: ${{ github.workspace}}/shell-srtool-json/shell-srtool-digest.json
-          WESTMINT_DIGEST: ${{ github.workspace}}/westmint-srtool-json/westmint-srtool-digest.json
-          STATEMINE_DIGEST: ${{ github.workspace}}/statemine-srtool-json/statemine-srtool-digest.json
-          STATEMINT_DIGEST: ${{ github.workspace}}/statemint-srtool-json/statemint-srtool-digest.json
-          COLLECTIVES_POLKADOT_DIGEST: ${{ github.workspace}}/collectives-polkadot-srtool-json/collectives-polkadot-srtool-digest.json
-          ROCOCO_PARA_DIGEST: ${{ github.workspace}}/rococo-parachain-srtool-json/rococo-parachain-srtool-digest.json
-          CANVAS_KUSAMA_DIGEST: ${{ github.workspace}}/contracts-rococo-srtool-json/contracts-rococo-srtool-digest.json
+          SHELL_DIGEST: ${{ github.workspace }}/shell-srtool-json/shell-srtool-digest.json
+          WESTMINT_DIGEST: ${{ github.workspace }}/westmint-srtool-json/westmint-srtool-digest.json
+          STATEMINE_DIGEST: ${{ github.workspace }}/statemine-srtool-json/statemine-srtool-digest.json
+          STATEMINT_DIGEST: ${{ github.workspace }}/statemint-srtool-json/statemint-srtool-digest.json
+          COLLECTIVES_POLKADOT_DIGEST: ${{ github.workspace }}/collectives-polkadot-srtool-json/collectives-polkadot-srtool-digest.json
+          ROCOCO_PARA_DIGEST: ${{ github.workspace }}/rococo-parachain-srtool-json/rococo-parachain-srtool-digest.json
+          CANVAS_KUSAMA_DIGEST: ${{ github.workspace }}/contracts-rococo-srtool-json/contracts-rococo-srtool-digest.json
           REF1: ${{ github.event.inputs.ref1 }}
           REF2: ${{ github.event.inputs.ref2 }}
           PRE_RELEASE: ${{ github.event.inputs.pre_release }}
