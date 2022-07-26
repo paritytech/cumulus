@@ -12,7 +12,7 @@ statemintChain=statemint-dev
 westmintChain=westmint-dev
 
 pallets=(
-  pallet_assets
+	pallet_assets
 	pallet_balances
 	pallet_collator_selection
 	pallet_multisig
