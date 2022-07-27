@@ -29,7 +29,7 @@ use futures::{
 };
 use jsonrpsee::{
 	core::{
-		client::{Client as JsonRPCClient, ClientT, Subscription, SubscriptionClientT},
+		client::{Client as JsonRpcClient, ClientT, Subscription, SubscriptionClientT},
 		Error as JsonRpseeError,
 	},
 	rpc_params,
@@ -53,9 +53,9 @@ const NOTIFICATION_CHANNEL_SIZE_LIMIT: usize = 20;
 
 /// Client that maps RPC methods and deserializes results
 #[derive(Clone)]
-pub struct RelayChainRPCClient {
+pub struct RelayChainRpcClient {
 	/// Websocket client to make calls
-	ws_client: Arc<JsonRPCClient>,
+	ws_client: Arc<JsonRpcClient>,
 
 	/// Retry strategy that should be used for requests and subscriptions
 	retry_strategy: ExponentialBackoff,
@@ -72,7 +72,7 @@ pub enum NotificationRegisterMessage {
 }
 
 /// Worker that should be used in combination with [`RelayChainRPCClient`]. Must be polled to distribute header notifications to listeners.
-pub struct RPCStreamWorker {
+pub struct RpcStreamWorker {
 	// Communication channel with the RPC client
 	client_receiver: TracingUnboundedReceiver<NotificationRegisterMessage>,
 
@@ -87,17 +87,17 @@ pub struct RPCStreamWorker {
 	rpc_best_header_subscription: Subscription<PHeader>,
 }
 
-/// Entry point to create [`RelayChainRPCClient`] and [`RPCStreamWorker`];
+/// Entry point to create [`RelayChainRpcClient`] and [`RpcStreamWorker`];
 pub async fn create_worker_client(
 	url: Url,
-) -> RelayChainResult<(RPCStreamWorker, RelayChainRPCClient)> {
-	let mut client = RelayChainRPCClient::new(url).await?;
+) -> RelayChainResult<(RpcStreamWorker, RelayChainRpcClient)> {
+	let mut client = RelayChainRpcClient::new(url).await?;
 	let best_head_stream = client.subscribe_new_best_heads().await?;
 	let finalized_head_stream = client.subscribe_finalized_heads().await?;
 	let imported_head_stream = client.subscribe_imported_heads().await?;
 
 	let (worker, sender) =
-		RPCStreamWorker::new(imported_head_stream, best_head_stream, finalized_head_stream);
+		RpcStreamWorker::new(imported_head_stream, best_head_stream, finalized_head_stream);
 	client.set_worker_channel(sender);
 	Ok((worker, client))
 }
@@ -117,15 +117,15 @@ fn handle_event_distribution(
 	}
 }
 
-impl RPCStreamWorker {
+impl RpcStreamWorker {
 	/// Create new worker. Returns the worker and a channel to register new listeners.
 	fn new(
 		import_sub: Subscription<PHeader>,
 		best_sub: Subscription<PHeader>,
 		finalized_sub: Subscription<PHeader>,
-	) -> (RPCStreamWorker, TracingUnboundedSender<NotificationRegisterMessage>) {
+	) -> (RpcStreamWorker, TracingUnboundedSender<NotificationRegisterMessage>) {
 		let (tx, rx) = tracing_unbounded("mpsc-cumulus-rpc-worker");
-		let worker = RPCStreamWorker {
+		let worker = RpcStreamWorker {
 			client_receiver: rx,
 			imported_header_listeners: Vec::new(),
 			finalized_header_listeners: Vec::new(),
@@ -183,7 +183,7 @@ impl RPCStreamWorker {
 	}
 }
 
-impl RelayChainRPCClient {
+impl RelayChainRpcClient {
 	/// Set channel to exchange messages with the rpc-worker
 	fn set_worker_channel(&mut self, sender: TracingUnboundedSender<NotificationRegisterMessage>) {
 		self.to_worker_channel = Some(sender);
@@ -194,7 +194,7 @@ impl RelayChainRPCClient {
 		tracing::info!(target: LOG_TARGET, url = %url.to_string(), "Initializing RPC Client");
 		let ws_client = WsClientBuilder::default().build(url.as_str()).await?;
 
-		let client = RelayChainRPCClient {
+		let client = RelayChainRpcClient {
 			to_worker_channel: None,
 			ws_client: Arc::new(ws_client),
 			retry_strategy: ExponentialBackoff::default(),
@@ -244,7 +244,7 @@ impl RelayChainRPCClient {
 		self.ws_client
 			.subscribe::<R>(sub_name, params, unsub_name)
 			.await
-			.map_err(|err| RelayChainError::RPCCallError(sub_name.to_string(), err))
+			.map_err(|err| RelayChainError::RpcCallError(sub_name.to_string(), err))
 	}
 
 	/// Perform RPC request
@@ -289,7 +289,7 @@ impl RelayChainRPCClient {
 		.await
 		.map_err(|err| {
 			trace_error(&err);
-			RelayChainError::RPCCallError(method.to_string(), err)})
+			RelayChainError::RpcCallError(method.to_string(), err)})
 	}
 
 	pub async fn system_health(&self) -> Result<Health, RelayChainError> {

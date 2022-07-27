@@ -30,7 +30,7 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_rpc_interface::{create_worker_client, RelayChainRPCInterface};
+use cumulus_relay_chain_rpc_interface::{create_worker_client, RelayChainRpcInterface};
 use polkadot_service::CollatorPair;
 use sp_core::Pair;
 
@@ -303,7 +303,7 @@ async fn build_relay_chain_interface(
 				None,
 				worker.run(),
 			);
-			Ok((Arc::new(RelayChainRPCInterface::new(client)) as Arc<_>, None))
+			Ok((Arc::new(RelayChainRpcInterface::new(client)) as Arc<_>, None))
 		},
 		None => build_inprocess_relay_chain(
 			polkadot_config,

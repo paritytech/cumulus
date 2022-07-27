@@ -35,25 +35,25 @@ use std::pin::Pin;
 pub use url::Url;
 
 mod rpc_client;
-pub use rpc_client::{create_worker_client, RPCStreamWorker, RelayChainRPCClient};
+pub use rpc_client::{create_worker_client, RelayChainRpcClient, RpcStreamWorker};
 
 const TIMEOUT_IN_SECONDS: u64 = 6;
 
-/// RelayChainRPCInterface is used to interact with a full node that is running locally
+/// RelayChainRpcInterface is used to interact with a full node that is running locally
 /// in the same process.
 #[derive(Clone)]
-pub struct RelayChainRPCInterface {
-	rpc_client: RelayChainRPCClient,
+pub struct RelayChainRpcInterface {
+	rpc_client: RelayChainRpcClient,
 }
 
-impl RelayChainRPCInterface {
-	pub fn new(rpc_client: RelayChainRPCClient) -> Self {
+impl RelayChainRpcInterface {
+	pub fn new(rpc_client: RelayChainRpcClient) -> Self {
 		Self { rpc_client }
 	}
 }
 
 #[async_trait]
-impl RelayChainInterface for RelayChainRPCInterface {
+impl RelayChainInterface for RelayChainRpcInterface {
 	async fn retrieve_dmq_contents(
 		&self,
 		para_id: ParaId,
