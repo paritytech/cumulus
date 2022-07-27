@@ -37,6 +37,7 @@ use jsonrpsee::{
 	ws_client::WsClientBuilder,
 };
 use parity_scale_codec::{Decode, Encode};
+use polkadot_service::TaskManager;
 use sc_client_api::StorageData;
 use sc_rpc_api::{state::ReadProof, system::Health};
 use sc_utils::mpsc::{tracing_unbounded, TracingUnboundedReceiver, TracingUnboundedSender};
@@ -87,10 +88,11 @@ pub struct RpcStreamWorker {
 	rpc_best_header_subscription: Subscription<PHeader>,
 }
 
-/// Entry point to create [`RelayChainRpcClient`] and [`RpcStreamWorker`];
-pub async fn create_worker_client(
+/// Entry point to create [`RelayChainRpcClient`] and start a worker that distributes notifications.
+pub async fn create_client_and_start_worker(
 	url: Url,
-) -> RelayChainResult<(RpcStreamWorker, RelayChainRpcClient)> {
+	task_manager: &mut TaskManager,
+) -> RelayChainResult<RelayChainRpcClient> {
 	let mut client = RelayChainRpcClient::new(url).await?;
 	let best_head_stream = client.subscribe_new_best_heads().await?;
 	let finalized_head_stream = client.subscribe_finalized_heads().await?;
@@ -99,7 +101,12 @@ pub async fn create_worker_client(
 	let (worker, sender) =
 		RpcStreamWorker::new(imported_head_stream, best_head_stream, finalized_head_stream);
 	client.set_worker_channel(sender);
-	Ok((worker, client))
+
+	task_manager
+		.spawn_essential_handle()
+		.spawn("relay-chain-rpc-worker", None, worker.run());
+
+	Ok(client)
 }
 
 fn handle_event_distribution(

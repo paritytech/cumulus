@@ -35,7 +35,7 @@ use std::pin::Pin;
 pub use url::Url;
 
 mod rpc_client;
-pub use rpc_client::{create_worker_client, RelayChainRpcClient, RpcStreamWorker};
+pub use rpc_client::{create_client_and_start_worker, RelayChainRpcClient, RpcStreamWorker};
 
 const TIMEOUT_IN_SECONDS: u64 = 6;
 
