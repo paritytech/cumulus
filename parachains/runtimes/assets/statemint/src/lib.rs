@@ -802,6 +802,7 @@ impl_runtime_apis! {
 			Vec<frame_benchmarking::BenchmarkList>,
 			Vec<frame_support::traits::StorageInfo>,
 		) {
+			use self::{XcmBalances, XcmGeneric}
 			use frame_benchmarking::{Benchmarking, BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
 			use frame_system_benchmarking::Pallet as SystemBench;
@@ -892,6 +893,8 @@ impl_runtime_apis! {
 					Ok((origin, ticket, assets))
 				}
 			}
+
+			use self::{XcmBalances, XcmGeneric}
 
 			let whitelist: Vec<TrackedStorageKey> = vec![
 				// Block Number
