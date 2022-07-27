@@ -72,7 +72,7 @@ pub enum NotificationRegisterMessage {
 	RegisterFinalizationListener(Sender<PHeader>),
 }
 
-/// Worker that should be used in combination with [`RelayChainRPCClient`]. Must be polled to distribute header notifications to listeners.
+/// Worker that should be used in combination with [`RelayChainRpcClient`]. Must be polled to distribute header notifications to listeners.
 pub struct RpcStreamWorker {
 	// Communication channel with the RPC client
 	client_receiver: TracingUnboundedReceiver<NotificationRegisterMessage>,
