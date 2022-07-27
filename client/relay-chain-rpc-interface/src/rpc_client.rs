@@ -114,9 +114,19 @@ fn handle_event_distribution(
 	senders: &mut Vec<Sender<PHeader>>,
 ) -> Result<(), String> {
 	match event {
-		// If sending fails, we remove the sender from the list because the receiver was dropped
 		Some(Ok(header)) => {
-			senders.retain_mut(|e| e.try_send(header.clone()).is_ok());
+			senders.retain_mut(|e| {
+				match e.try_send(header.clone()) {
+					// Receiver has been dropped, remove Sender from list.
+					Err(error) if error.is_disconnected() => false,
+					// Channel is full. This should not happen.
+					Err(error) => {
+						tracing::error!(target: LOG_TARGET, ?error, "Event distribution channel has reached its limit. This can lead to missed notifications.");
+						true
+					},
+					_ => true,
+				}
+			});
 			Ok(())
 		},
 		None => Err("RPC Subscription closed.".to_string()),
