@@ -76,6 +76,7 @@ else
   logger.debug("Re-using:#{substrate_data}")
 end
 
+POLKADOT_COLLECTIVES_DIGEST = ENV['SHELL_DIGEST'] || 'digests/polkadot-collectives-srtool-digest.json'
 SHELL_DIGEST = ENV['SHELL_DIGEST'] || 'digests/shell-srtool-digest.json'
 WESTMINT_DIGEST = ENV['WESTMINT_DIGEST'] || 'digests/westmint-srtool-digest.json'
 STATEMINE_DIGEST = ENV['STATEMINE_DIGEST'] || 'digests/statemine-srtool-digest.json'
@@ -106,6 +107,7 @@ else
       --slurpfile cumulus %s \
       --slurpfile substrate %s \
       --slurpfile polkadot %s \
+      --slurpfile srtool_polkadot_collectives %s \
       --slurpfile srtool_shell %s \
       --slurpfile srtool_westmint %s \
       --slurpfile srtool_statemine %s \
@@ -117,6 +119,7 @@ else
               substrate: $substrate[0],
               polkadot: $polkadot[0],
           srtool: [
+          { name: "polkadot-collectives", data: $srtool_polkadot_collectives_parachain[0] },
           { name: "rococo", data: $srtool_rococo_parachain[0] },
           { name: "shell", data: $srtool_shell[0] },
           { name: "westmint", data: $srtool_westmint[0] },
@@ -124,6 +127,7 @@ else
           { name: "statemine", data: $srtool_statemine[0] },
           { name: "contracts", data: $srtool_contracts_rococo[0] }
       ] }\' > context.json', cumulus_data, substrate_data, polkadot_data,
+              POLKADOT_COLLECTIVES_DIGEST,
               SHELL_DIGEST,
               WESTMINT_DIGEST,
               STATEMINE_DIGEST,
