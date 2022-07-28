@@ -850,13 +850,10 @@ impl_runtime_apis! {
 			//TODO: Not sure how this should work
 			parameter_types! {
 				pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = Some((
-					Local::get(),
-					MultiAsset { fun: Fungible(1 * UNITS), id: Concrete(DotLocation::get()) },
+					DotLocation::get(),
+					MultiAsset { fun: Fungible(1 * UNITS), id: Concrete(Local::get()) },
 				));
-				pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = Some((
-					Local::get(),
-					MultiAsset { fun: Fungible(1 * UNITS), id: Concrete(DotLocation::get()) },
-				));
+				pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = None;
 			}
 
 			impl pallet_xcm_benchmarks::fungible::Config for Runtime {
