@@ -56,6 +56,7 @@ enum Runtime {
 	ContractsRococo,
 	CollectivesPolkadot,
 	CollectivesWestend,
+	BridgeHub(chain_spec::bridge_hubs::BridgeHubRuntimeType),
 }
 
 trait RuntimeResolver {
@@ -107,6 +108,11 @@ fn runtime(id: &str) -> Runtime {
 		Runtime::CollectivesPolkadot
 	} else if id.starts_with("collectives-westend") {
 		Runtime::CollectivesWestend
+	} else if id.starts_with(chain_spec::bridge_hubs::BridgeHubRuntimeType::ID_PREFIX) {
+		Runtime::BridgeHub(
+			id.parse::<chain_spec::bridge_hubs::BridgeHubRuntimeType>()
+				.expect("Invalid value"),
+		)
 	} else {
 		log::warn!("No specific runtime was recognized for ChainSpec's id: '{}', so Runtime::default() will be used", id);
 		Runtime::default()
@@ -191,6 +197,15 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				&include_bytes!("../../parachains/chain-specs/contracts-rococo.json")[..],
 			)?),
 
+		// -- BridgeHub
+		bridge_like_id
+			if bridge_like_id
+				.starts_with(chain_spec::bridge_hubs::BridgeHubRuntimeType::ID_PREFIX) =>
+			bridge_like_id
+				.parse::<chain_spec::bridge_hubs::BridgeHubRuntimeType>()
+				.expect("invalid value")
+				.load_config(),
+
 		// -- Penpall
 		"penpal-kusama" => Box::new(chain_spec::penpal::get_penpal_chain_spec(
 			para_id.expect("Must specify parachain id"),
@@ -226,6 +241,8 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 					Box::new(chain_spec::seedling::SeedlingChainSpec::from_json_file(path)?),
 				Runtime::ContractsRococo =>
 					Box::new(chain_spec::contracts::ContractsRococoChainSpec::from_json_file(path)?),
+				Runtime::BridgeHub(bridge_hub_runtime_type) =>
+					bridge_hub_runtime_type.chain_spec_from_json_file(path.into())?,
 				Runtime::Penpal(_para_id) =>
 					Box::new(chain_spec::penpal::PenpalChainSpec::from_json_file(path)?),
 				Runtime::Default => Box::new(
@@ -303,6 +320,8 @@ impl SubstrateCli for Cli {
 			Runtime::Shell => &shell_runtime::VERSION,
 			Runtime::Seedling => &seedling_runtime::VERSION,
 			Runtime::ContractsRococo => &contracts_rococo_runtime::VERSION,
+			Runtime::BridgeHub(bridge_hub_runtime_type) =>
+				bridge_hub_runtime_type.runtime_version(),
 			Runtime::Penpal(_) => &penpal_runtime::VERSION,
 			Runtime::Default => &rococo_parachain_runtime::VERSION,
 		}
@@ -456,6 +475,19 @@ macro_rules! construct_async_run {
 						&$config,
 						crate::service::contracts_rococo_build_import_queue,
 					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			},
+			Runtime::BridgeHub(bridge_hub_runtime_type) => {
+				runner.async_run(|$config| {
+					let $components = match bridge_hub_runtime_type {
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal => new_partial::<bridge_hub_rococo_runtime::RuntimeApi, _>(
+							&$config,
+							crate::service::aura_build_import_queue::<_, AuraId>,
+						)?,
+					};
+
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
@@ -732,6 +764,16 @@ pub fn run() -> Result<()> {
 						id,
 						hwbench,
 					)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into),
+					Runtime::BridgeHub(bridge_hub_runtime_type) => match bridge_hub_runtime_type {
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal =>
+							crate::service::start_generic_aura_node::<
+								bridge_hub_rococo_runtime::RuntimeApi,
+								AuraId,
+							>(config, polkadot_config, collator_options, id, hwbench),
+					}
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into),
