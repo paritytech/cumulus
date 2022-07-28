@@ -16,7 +16,7 @@
 
 use polkadot_primitives::v2::{Hash as PHash, PersistedValidationData};
 use sc_consensus::BlockImport;
-use sp_runtime::traits::Block as BlockT;
+use sp_runtime::traits::{Block as BlockT, Header as _};
 
 mod parachain_consensus;
 #[cfg(test)]
@@ -83,6 +83,11 @@ impl<I> ParachainBlockImport<I> {
 	}
 }
 
+extern "Rust" {
+	fn get_leaves() -> Vec<sp_core::H256>;
+	fn del_leaf(hash: &sp_core::H256);
+}
+
 #[async_trait::async_trait]
 impl<Block, I> BlockImport<Block> for ParachainBlockImport<I>
 where
@@ -101,14 +106,41 @@ where
 
 	async fn import_block(
 		&mut self,
-		mut block_import_params: sc_consensus::BlockImportParams<Block, Self::Transaction>,
+		mut params: sc_consensus::BlockImportParams<Block, Self::Transaction>,
 		cache: std::collections::HashMap<sp_consensus::CacheKeyId, Vec<u8>>,
 	) -> Result<sc_consensus::ImportResult, Self::Error> {
+		log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Importing block @ {}", params.header.number());
+		let leaves = unsafe { get_leaves() };
+		log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Leaves Number: {}", leaves.len());
+
+		const MAX_LEAVES: usize = 2;
+		if leaves.len() > MAX_LEAVES {
+			// Per interface contract, we know that the leaves are ordered from the highest.
+			// For this PoC just remove one of the lowers.
+			// TODO: Here we have to check the num of leaves at level of the block we are importing
+			// TODO: Better strategy, here we're just removin the first one
+			let leaf = &leaves[leaves.len() - 1];
+			log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Removing block: {}", leaf);
+			unsafe { del_leaf(leaf) };
+			let leaves = unsafe { get_leaves() };
+			log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Leaves Number (post-del): {}", leaves.len());
+		}
+
 		// Best block is determined by the relay chain, or if we are doing the initial sync
 		// we import all blocks as new best.
-		block_import_params.fork_choice = Some(sc_consensus::ForkChoiceStrategy::Custom(
-			block_import_params.origin == sp_consensus::BlockOrigin::NetworkInitialSync,
+		params.fork_choice = Some(sc_consensus::ForkChoiceStrategy::Custom(
+			params.origin == sp_consensus::BlockOrigin::NetworkInitialSync,
 		));
-		self.0.import_block(block_import_params, cache).await
+
+		// Check if we require to prune a leaf before trying to import block
+
+		let res = self.0.import_block(params, cache).await;
+		if let Err(err) = &res {
+			dbg!(&err);
+			log::error!("RAW ERRROR: {:?}", err);
+			let err_str = err.to_string();
+			log::error!("ERROR IMPORTING: {}", err_str);
+		}
+		res
 	}
 }

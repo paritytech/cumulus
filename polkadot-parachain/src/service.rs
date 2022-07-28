@@ -31,7 +31,7 @@ use cumulus_primitives_core::{
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
-use polkadot_service::CollatorPair;
+use polkadot_service::{CollatorPair, FullBackend};
 use sp_core::Pair;
 
 use jsonrpsee::RpcModule;
@@ -504,6 +504,46 @@ where
 	Ok((task_manager, client))
 }
 
+// ========= START TEMPORARY HACK =========
+
+use std::sync::Mutex as StdMutex;
+lazy_static::lazy_static! {
+	static ref BACKEND: StdMutex<Option<Arc<FullBackend>>> = StdMutex::new(None);
+}
+use sc_client_api::{
+	backend::Backend,
+	blockchain::{Backend as _, HeaderBackend as _},
+};
+
+#[no_mangle]
+pub fn get_leaves() -> Vec<sp_core::H256> {
+	let lock = BACKEND.lock().unwrap();
+	let backend = lock.as_ref().expect("Backend should be already initialized");
+	let blockchain = backend.blockchain();
+	// Interface contract: results are ordered best (longest, highest) chain first.
+	let leaves = blockchain.leaves().expect("Error fetching leaves from backend");
+	for leaf in leaves.iter() {
+		let number = match blockchain.number(*leaf).ok().flatten() {
+			Some(n) => n,
+			None => {
+				let msg = format!("Unexpected missing number for leaf {}", leaf);
+				panic!("{}", msg);
+			},
+		};
+		log::debug!(target: "parachain", ">>> (@{}) : {}", number, leaf);
+	}
+	leaves
+}
+
+#[no_mangle]
+pub fn del_leaf(hash: &sp_core::H256) {
+	let lock = BACKEND.lock().unwrap();
+	let backend = lock.as_ref().expect("Backend should be already initialized");
+	backend.remove_leaf_block(hash).expect("Error removing leaf");
+}
+
+// ========= END TEMPORARY HACK =========
+
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
@@ -579,6 +619,11 @@ where
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
+
+	{
+		let mut mtx = BACKEND.lock().unwrap();
+		*mtx = Some(backend.clone());
+	}
 
 	let mut task_manager = params.task_manager;
 	let (relay_chain_interface, collator_key) = build_relay_chain_interface(
