@@ -93,6 +93,7 @@ test-linux-stable:
     # but still want to have debug assertions.
     RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
   script:
+    - exit 1
     - time cargo nextest run --all --release --locked --run-ignored all
 
 test-doc:
