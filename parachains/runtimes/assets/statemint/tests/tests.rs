@@ -1,12 +1,12 @@
+use codec::Encode;
 use frame_support::{
 	assert_noop, assert_ok,
 	traits::{GenesisBuild, PalletInfo},
 	weights::WeightToFee as WeightToFeeT,
 };
-use codec::Encode;
-use sp_runtime::{Digest, DigestItem};
 use parachains_common::{AccountId, Balance, StatemintAuraId as AuraId};
 use sp_consensus_aura::AURA_ENGINE_ID;
+use sp_runtime::{Digest, DigestItem};
 pub use statemint_runtime::{
 	constants::fee::WeightToFee, xcm_config::XcmConfig, Assets, Balances, ExistentialDeposit,
 	Runtime, SessionKeys, System,
@@ -26,6 +26,7 @@ impl Default for ExtBuilder {
 		ExtBuilder { balances: vec![], collators: vec![] }
 	}
 }
+
 impl ExtBuilder {
 	pub fn with_balances(mut self, balances: Vec<(AccountId, Balance)>) -> Self {
 		self.balances = balances;
