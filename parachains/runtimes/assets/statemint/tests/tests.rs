@@ -1,6 +1,10 @@
 use frame_support::{
-	assert_noop, assert_ok, traits::PalletInfo, weights::WeightToFee as WeightToFeeT,
+	assert_noop, assert_ok,
+	traits::{GenesisBuild, PalletInfo},
+	weights::WeightToFee as WeightToFeeT,
 };
+use codec::Encode;
+use sp_runtime::{Digest, DigestItem};
 use parachains_common::{AccountId, Balance, StatemintAuraId as AuraId};
 use sp_consensus_aura::AURA_ENGINE_ID;
 pub use statemint_runtime::{
@@ -22,7 +26,6 @@ impl Default for ExtBuilder {
 		ExtBuilder { balances: vec![], collators: vec![] }
 	}
 }
-use frame_support::traits::GenesisBuild;
 impl ExtBuilder {
 	pub fn with_balances(mut self, balances: Vec<(AccountId, Balance)>) -> Self {
 		self.balances = balances;
@@ -76,8 +79,6 @@ impl ExtBuilder {
 	}
 }
 
-use codec::Encode;
-use sp_runtime::{Digest, DigestItem};
 /// Utility function that advances the chain to the desired block number.
 /// If an author is provided, that author information is injected to all the blocks in the meantime.
 pub fn run_to_block(n: u32, author: Option<AccountId>) {
