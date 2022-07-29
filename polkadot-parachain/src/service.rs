@@ -311,15 +311,16 @@ async fn build_relay_chain_interface(
 				Arc::new(
 					RelayChainRPCInterface::new_with_handle(
 						relay_chain_url,
-						collator_node.overseer_handle,
+						Some(collator_node.overseer_handle),
 					)
 					.await?,
 				) as Arc<_>,
 				Some(collator_pair),
 			))
 		},
-		(Some(relay_chain_url), false) =>
-			Ok((Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>, None)),
+		(Some(relay_chain_url), false) => {
+			Ok((Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>, None))
+		},
 		(None, _) => build_inprocess_relay_chain(
 			polkadot_config,
 			parachain_config,

@@ -21,9 +21,9 @@ use cumulus_primitives_core::{
 	relay_chain::{
 		v2::{
 			BlockNumber, CandidateCommitments, CandidateEvent, CommittedCandidateReceipt,
-			CoreState, DisputeState, GroupRotationInfo, OccupiedCoreAssumption, PvfCheckStatement,
-			SessionIndex, SessionInfo, ValidationCode, ValidationCodeHash, ValidatorId,
-			ValidatorId, ValidatorIndex, ValidatorSignature,
+			CoreState, DisputeState, GroupRotationInfo, OccupiedCoreAssumption, OldV1SessionInfo,
+			PvfCheckStatement, ScrapedOnChainVotes, SessionIndex, SessionInfo, ValidationCode,
+			ValidationCodeHash, ValidatorId, ValidatorIndex, ValidatorSignature,
 		},
 		CandidateHash, Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
@@ -45,6 +45,7 @@ use polkadot_service::Handle;
 use sc_client_api::{StorageData, StorageProof};
 use sc_rpc_api::{state::ReadProof, system::Health};
 use sp_api::RuntimeVersion;
+use sp_consensus_babe::Epoch;
 use sp_core::sp_std::collections::btree_map::BTreeMap;
 use sp_runtime::DeserializeOwned;
 use sp_state_machine::StorageValue;
@@ -138,17 +139,14 @@ impl RelayChainRPCClient {
 		.await
 	}
 
-	pub async fn babe_api_current_epoch(
-		&self,
-		at: PHash,
-	) -> Result<Vec<ValidatorId>, RelayChainError> {
+	pub async fn babe_api_current_epoch(&self, at: PHash) -> Result<Epoch, RelayChainError> {
 		self.call_remote_runtime_function("BabeApi_current_epoch", at, None::<()>).await
 	}
 	pub async fn parachain_host_session_info_before_version_2(
 		&self,
 		at: PHash,
 		index: SessionIndex,
-	) -> Result<Vec<ValidatorId>, RelayChainError> {
+	) -> Result<Option<OldV1SessionInfo>, RelayChainError> {
 		self.call_remote_runtime_function(
 			"ParachainHost_session_info_before_version_2",
 			at,
@@ -160,7 +158,7 @@ impl RelayChainRPCClient {
 	pub async fn parachain_host_on_chain_votes(
 		&self,
 		at: PHash,
-	) -> Result<Vec<ValidatorId>, RelayChainError> {
+	) -> Result<Option<ScrapedOnChainVotes<PHash>>, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_on_chain_votes", at, None::<()>)
 			.await
 	}
@@ -168,7 +166,7 @@ impl RelayChainRPCClient {
 	pub async fn parachain_host_pvfs_require_precheck(
 		&self,
 		at: PHash,
-	) -> Result<Vec<ValidatorId>, RelayChainError> {
+	) -> Result<Vec<ValidationCodeHash>, RelayChainError> {
 		self.call_remote_runtime_function("ParachainHost_pvfs_require_precheck", at, None::<()>)
 			.await
 	}
@@ -178,7 +176,7 @@ impl RelayChainRPCClient {
 		at: PHash,
 		stmt: PvfCheckStatement,
 		signature: ValidatorSignature,
-	) -> Result<Vec<ValidatorId>, RelayChainError> {
+	) -> Result<(), RelayChainError> {
 		self.call_remote_runtime_function(
 			"ParachainHost_submit_pvf_check_statement",
 			at,

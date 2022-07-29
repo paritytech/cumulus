@@ -28,9 +28,8 @@ use polkadot_overseer::{
 	BlockInfo, DummySubsystem, MetricsTrait, Overseer, OverseerHandle, OverseerMetrics, SpawnGlue,
 	KNOWN_LEAVES_CACHE_SIZE,
 };
-use polkadot_service::overseer::NetworkBridgeMetrics;
-
 use polkadot_primitives::v2::CollatorPair;
+use polkadot_service::overseer::NetworkBridgeMetrics;
 use polkadot_service::{
 	overseer::{
 		AvailabilityRecoverySubsystem, CollationGenerationSubsystem, CollatorProtocolSubsystem,
@@ -39,6 +38,7 @@ use polkadot_service::{
 	Error, OverseerConnector,
 };
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
+use sc_network::{Event, NetworkService};
 use sp_consensus::BlockOrigin;
 use sp_core::traits::SpawnNamed;
 use sp_runtime::{traits::NumberFor, Justifications};
@@ -172,13 +172,13 @@ impl CollatorOverseerGen {
 
 pub struct NewCollator {
 	pub task_manager: TaskManager,
-	pub overseer_handle: Option<Handle>,
+	pub overseer_handle: Handle,
 	pub network: Arc<sc_network::NetworkService<Block, <Block as BlockT>::Hash>>,
 }
 
-pub struct FakeImportQueue {}
+pub struct DummyImportQueue {}
 
-impl sc_service::ImportQueue<Block> for FakeImportQueue {
+impl sc_service::ImportQueue<Block> for DummyImportQueue {
 	/// Import bunch of blocks.
 	fn import_blocks(
 		&mut self,
@@ -209,6 +209,43 @@ impl sc_service::ImportQueue<Block> for FakeImportQueue {
 	}
 }
 
+fn build_authority_discovery_service<Block: BlockT>(
+	task_manager: &TaskManager,
+	client: Arc<BlockChainRPCClient>,
+	config: &Configuration,
+	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+	prometheus_registry: Option<Registry>,
+) -> AuthorityDiscoveryService {
+	let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
+	let authority_discovery_role = sc_authority_discovery::Role::Discover;
+	let dht_event_stream = network.event_stream("authority-discovery").filter_map(|e| async move {
+		match e {
+			Event::Dht(e) => Some(e),
+			_ => None,
+		}
+	});
+	let (worker, service) = sc_authority_discovery::new_worker_and_service_with_config(
+		sc_authority_discovery::WorkerConfig {
+			publish_non_global_ips: auth_disc_publish_non_global_ips,
+			// Require that authority discovery records are signed.
+			strict_record_validation: true,
+			..Default::default()
+		},
+		client,
+		network.clone(),
+		Box::pin(dht_event_stream),
+		authority_discovery_role,
+		prometheus_registry.clone(),
+	);
+
+	task_manager.spawn_handle().spawn(
+		"authority-discovery-worker",
+		Some("authority-discovery"),
+		Box::pin(worker.run()),
+	);
+	service
+}
+
 #[sc_tracing::logging::prefix_logs_with("Relaychain")]
 pub fn new_mini(
 	mut config: Configuration,
@@ -226,9 +263,6 @@ pub fn new_mini(
 
 	let overseer_connector = OverseerConnector::default();
 
-	let requires_overseer_for_chain_sel = false;
-
-	let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
 	{
 		use polkadot_network_bridge::{peer_sets_info, IsAuthority};
 		let is_authority = if role.is_authority() { IsAuthority::Yes } else { IsAuthority::No };
@@ -240,7 +274,7 @@ pub fn new_mini(
 	let (available_data_req_receiver, cfg) = IncomingRequest::get_config_receiver();
 	config.network.request_response_protocols.push(cfg);
 
-	let import_queue = FakeImportQueue {};
+	let import_queue = DummyImportQueue {};
 
 	let (network, network_starter) =
 		network::build_collator_network(network::BuildCollatorNetworkParams {
@@ -252,95 +286,61 @@ pub fn new_mini(
 
 	let active_leaves = Vec::new();
 
-	let authority_discovery_service = {
-		use sc_network::Event;
+	let authority_discovery_service = build_authority_discovery_service(
+		&task_manager,
+		relay_chain_rpc_client.clone(),
+		&config,
+		network.clone(),
+		prometheus_registry.clone(),
+	);
 
-		let authority_discovery_role = sc_authority_discovery::Role::Discover;
-		let dht_event_stream =
-			network.event_stream("authority-discovery").filter_map(|e| async move {
-				match e {
-					Event::Dht(e) => Some(e),
-					_ => None,
-				}
-			});
-		let (worker, service) = sc_authority_discovery::new_worker_and_service_with_config(
-			sc_authority_discovery::WorkerConfig {
-				publish_non_global_ips: auth_disc_publish_non_global_ips,
-				// Require that authority discovery records are signed.
-				strict_record_validation: true,
-				..Default::default()
+	let overseer_gen = CollatorOverseerGen;
+	let (overseer, overseer_handle) = overseer_gen
+		.generate::<sc_service::SpawnTaskHandle, BlockChainRPCClient>(
+			overseer_connector,
+			CollatorOverseerGenArgs {
+				leaves: active_leaves,
+				runtime_client: relay_chain_rpc_client.clone(),
+				network_service: network.clone(),
+				authority_discovery_service,
+				collation_req_receiver,
+				available_data_req_receiver,
+				registry: prometheus_registry.as_ref(),
+				spawner: task_manager.spawn_handle(),
+				collator_pair,
 			},
-			relay_chain_rpc_client.clone(),
-			network.clone(),
-			Box::pin(dht_event_stream),
-			authority_discovery_role,
-			prometheus_registry.clone(),
+		)
+		.map_err(|e| {
+			tracing::error!("Failed to init overseer: {}", e);
+			e
+		})?;
+
+	let overseer_handle = Handle::new(overseer_handle.clone());
+
+	{
+		let handle = overseer_handle.clone();
+		task_manager.spawn_essential_handle().spawn_blocking(
+			"overseer",
+			None,
+			Box::pin(async move {
+				use futures::{pin_mut, FutureExt};
+
+				let forward = forward_collator_events(relay_chain_rpc_client, handle);
+
+				let forward = forward.fuse();
+				let overseer_fut = overseer.run().fuse();
+
+				pin_mut!(overseer_fut);
+				pin_mut!(forward);
+
+				select! {
+					_ = forward => (),
+					_ = overseer_fut => (),
+					complete => (),
+				}
+			}),
 		);
-
-		task_manager.spawn_handle().spawn(
-			"authority-discovery-worker",
-			Some("authority-discovery"),
-			Box::pin(worker.run()),
-		);
-		Some(service)
-	};
-
-	let overseer_handle = if let Some(authority_discovery_service) = authority_discovery_service {
-		let overseer_gen = CollatorOverseerGen;
-		let (overseer, overseer_handle) = overseer_gen
-			.generate::<sc_service::SpawnTaskHandle, BlockChainRPCClient>(
-				overseer_connector,
-				CollatorOverseerGenArgs {
-					leaves: active_leaves,
-					runtime_client: relay_chain_rpc_client.clone(),
-					network_service: network.clone(),
-					authority_discovery_service,
-					collation_req_receiver,
-					available_data_req_receiver,
-					registry: prometheus_registry.as_ref(),
-					spawner: task_manager.spawn_handle(),
-					collator_pair,
-				},
-			)
-			.map_err(|e| {
-				tracing::error!("Failed to init overseer: {}", e);
-				e
-			})?;
-
-		let handle = Handle::new(overseer_handle.clone());
-
-		{
-			let handle = handle.clone();
-			task_manager.spawn_essential_handle().spawn_blocking(
-				"overseer",
-				None,
-				Box::pin(async move {
-					use futures::{pin_mut, FutureExt};
-
-					let forward = forward_collator_events(relay_chain_rpc_client, handle);
-
-					let forward = forward.fuse();
-					let overseer_fut = overseer.run().fuse();
-
-					pin_mut!(overseer_fut);
-					pin_mut!(forward);
-
-					select! {
-						_ = forward => (),
-						_ = overseer_fut => (),
-						complete => (),
-					}
-				}),
-			);
-		}
-		Some(handle)
-	} else {
-		assert!(
-			!requires_overseer_for_chain_sel,
-			"Precondition congruence (false) is guaranteed by manual checking. qed"
-		);
-		None
-	};
+	}
 
 	network_starter.start_network();
 
