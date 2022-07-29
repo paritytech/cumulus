@@ -220,9 +220,12 @@ impl RuntimeApiSubsystemClient for BlockChainRPCClient {
 
 	async fn on_chain_votes(
 		&self,
-		_at: Hash,
+		at: Hash,
 	) -> Result<Option<polkadot_primitives::v2::ScrapedOnChainVotes<Hash>>, sp_api::ApiError> {
-		unimplemented!()
+		self.rpc_client
+			.parachain_host_on_chain_votes(at)
+			.await
+			.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
 	}
 
 	async fn session_info(
@@ -238,26 +241,35 @@ impl RuntimeApiSubsystemClient for BlockChainRPCClient {
 
 	async fn session_info_before_version_2(
 		&self,
-		_at: Hash,
-		_index: polkadot_primitives::v2::SessionIndex,
+		at: Hash,
+		index: polkadot_primitives::v2::SessionIndex,
 	) -> Result<Option<polkadot_primitives::v2::OldV1SessionInfo>, sp_api::ApiError> {
-		unimplemented!()
+		self.rpc_client
+			.parachain_host_session_info_before_version_2(at, index)
+			.await
+			.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
 	}
 
 	async fn submit_pvf_check_statement(
 		&self,
-		_at: Hash,
-		_stmt: polkadot_primitives::v2::PvfCheckStatement,
-		_signature: polkadot_primitives::v2::ValidatorSignature,
+		at: Hash,
+		stmt: polkadot_primitives::v2::PvfCheckStatement,
+		signature: polkadot_primitives::v2::ValidatorSignature,
 	) -> Result<(), sp_api::ApiError> {
-		unimplemented!()
+		self.rpc_client
+			.parachain_host_submit_pvf_check_statement(at, stmt, signature)
+			.await
+			.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
 	}
 
 	async fn pvfs_require_precheck(
 		&self,
-		_at: Hash,
+		at: Hash,
 	) -> Result<Vec<polkadot_primitives::v2::ValidationCodeHash>, sp_api::ApiError> {
-		unimplemented!()
+		self.rpc_client
+			.parachain_host_pvfs_require_precheck(at)
+			.await
+			.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
 	}
 
 	async fn validation_code_hash(
@@ -272,15 +284,21 @@ impl RuntimeApiSubsystemClient for BlockChainRPCClient {
 			.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
 	}
 
-	async fn current_epoch(&self, _at: Hash) -> Result<sp_consensus_babe::Epoch, sp_api::ApiError> {
-		unimplemented!()
+	async fn current_epoch(&self, at: Hash) -> Result<sp_consensus_babe::Epoch, sp_api::ApiError> {
+		self.rpc_client
+			.babe_api_current_epoch(at)
+			.await
+			.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
 	}
 
 	async fn authorities(
 		&self,
-		_at: Hash,
+		at: Hash,
 	) -> std::result::Result<Vec<polkadot_primitives::v2::AuthorityDiscoveryId>, sp_api::ApiError> {
-		unimplemented!()
+		self.rpc_client
+			.authority_discovery_authorities(at)
+			.await
+			.map_err(|e| sp_api::ApiError::Application(Box::new(e) as Box<_>))
 	}
 
 	async fn api_version_parachain_host(&self, at: Hash) -> Result<Option<u32>, sp_api::ApiError> {

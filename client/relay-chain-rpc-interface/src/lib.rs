@@ -21,8 +21,9 @@ use cumulus_primitives_core::{
 	relay_chain::{
 		v2::{
 			BlockNumber, CandidateCommitments, CandidateEvent, CommittedCandidateReceipt,
-			CoreState, DisputeState, GroupRotationInfo, OccupiedCoreAssumption, SessionIndex,
-			SessionInfo, ValidationCode, ValidationCodeHash, ValidatorId, ValidatorIndex,
+			CoreState, DisputeState, GroupRotationInfo, OccupiedCoreAssumption, PvfCheckStatement,
+			SessionIndex, SessionInfo, ValidationCode, ValidationCodeHash, ValidatorId,
+			ValidatorId, ValidatorIndex, ValidatorSignature,
 		},
 		CandidateHash, Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
@@ -133,6 +134,55 @@ impl RelayChainRPCClient {
 			method,
 			params,
 			|e| tracing::trace!(target:LOG_TARGET, error = %e, %method, "Unable to complete RPC request"),
+		)
+		.await
+	}
+
+	pub async fn babe_api_current_epoch(
+		&self,
+		at: PHash,
+	) -> Result<Vec<ValidatorId>, RelayChainError> {
+		self.call_remote_runtime_function("BabeApi_current_epoch", at, None::<()>).await
+	}
+	pub async fn parachain_host_session_info_before_version_2(
+		&self,
+		at: PHash,
+		index: SessionIndex,
+	) -> Result<Vec<ValidatorId>, RelayChainError> {
+		self.call_remote_runtime_function(
+			"ParachainHost_session_info_before_version_2",
+			at,
+			Some(index),
+		)
+		.await
+	}
+
+	pub async fn parachain_host_on_chain_votes(
+		&self,
+		at: PHash,
+	) -> Result<Vec<ValidatorId>, RelayChainError> {
+		self.call_remote_runtime_function("ParachainHost_on_chain_votes", at, None::<()>)
+			.await
+	}
+
+	pub async fn parachain_host_pvfs_require_precheck(
+		&self,
+		at: PHash,
+	) -> Result<Vec<ValidatorId>, RelayChainError> {
+		self.call_remote_runtime_function("ParachainHost_pvfs_require_precheck", at, None::<()>)
+			.await
+	}
+
+	pub async fn parachain_host_submit_pvf_check_statement(
+		&self,
+		at: PHash,
+		stmt: PvfCheckStatement,
+		signature: ValidatorSignature,
+	) -> Result<Vec<ValidatorId>, RelayChainError> {
+		self.call_remote_runtime_function(
+			"ParachainHost_submit_pvf_check_statement",
+			at,
+			Some((stmt, signature)),
 		)
 		.await
 	}
@@ -575,7 +625,7 @@ impl RelayChainInterface for RelayChainRPCInterface {
 		let mut head_stream = self.rpc_client.subscribe_all_heads().await?;
 
 		if self.rpc_client.chain_get_header(Some(wait_for_hash)).await?.is_some() {
-			return Ok(())
+			return Ok(());
 		}
 
 		let mut timeout = futures_timer::Delay::new(Duration::from_secs(TIMEOUT_IN_SECONDS)).fuse();
