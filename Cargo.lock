@@ -1892,7 +1892,6 @@ dependencies = [
  "cumulus-test-service",
  "futures",
  "futures-timer",
- "parking_lot 0.12.1",
  "polkadot-cli",
  "polkadot-client",
  "polkadot-primitives",
@@ -2071,7 +2070,6 @@ dependencies = [
  "pallet-transaction-payment",
  "parachains-common",
  "parity-scale-codec",
- "parking_lot 0.12.1",
  "polkadot-cli",
  "polkadot-primitives",
  "polkadot-service",
@@ -2085,6 +2083,7 @@ dependencies = [
  "sc-consensus",
  "sc-executor",
  "sc-network",
+ "sc-network-common",
  "sc-rpc",
  "sc-service",
  "sc-telemetry",
@@ -6372,6 +6371,7 @@ dependencies = [
  "sc-executor",
  "sc-keystore",
  "sc-network",
+ "sc-network-common",
  "sc-rpc",
  "sc-rpc-api",
  "sc-service",
@@ -7108,6 +7108,7 @@ dependencies = [
  "polkadot-overseer",
  "polkadot-primitives",
  "sc-network",
+ "sc-network-common",
  "sp-consensus",
  "thiserror",
  "tracing-gum",
@@ -7629,6 +7630,7 @@ dependencies = [
  "sc-consensus",
  "sc-executor",
  "sc-network",
+ "sc-network-common",
  "sc-rpc",
  "sc-service",
  "sc-sysinfo",
@@ -8009,6 +8011,7 @@ dependencies = [
  "sc-finality-grandpa",
  "sc-keystore",
  "sc-network",
+ "sc-network-common",
  "sc-offchain",
  "sc-service",
  "sc-sync-state-rpc",
@@ -8191,6 +8194,7 @@ dependencies = [
  "sc-executor",
  "sc-finality-grandpa",
  "sc-network",
+ "sc-network-common",
  "sc-service",
  "sc-tracing",
  "sc-transaction-pool",
@@ -9137,7 +9141,6 @@ name = "sc-authority-discovery"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#3e0554a94193c1221c6bf12c7efabc25e2d63404"
 dependencies = [
- "async-trait",
  "futures",
  "futures-timer",
  "ip_network",
@@ -9149,6 +9152,7 @@ dependencies = [
  "rand 0.7.3",
  "sc-client-api",
  "sc-network",
+ "sc-network-common",
  "sp-api",
  "sp-authority-discovery",
  "sp-blockchain",
@@ -9625,7 +9629,7 @@ dependencies = [
  "log",
  "parity-util-mem",
  "sc-client-api",
- "sc-network",
+ "sc-network-common",
  "sc-transaction-pool-api",
  "sp-blockchain",
  "sp-runtime",
@@ -9700,7 +9704,9 @@ name = "sc-network-common"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#3e0554a94193c1221c6bf12c7efabc25e2d63404"
 dependencies = [
+ "async-trait",
  "bitflags",
+ "bytes",
  "futures",
  "libp2p",
  "parity-scale-codec",
@@ -9711,6 +9717,7 @@ dependencies = [
  "sp-consensus",
  "sp-finality-grandpa",
  "sp-runtime",
+ "thiserror",
 ]
 
 [[package]]
@@ -9725,6 +9732,7 @@ dependencies = [
  "log",
  "lru 0.7.7",
  "sc-network",
+ "sc-network-common",
  "sp-runtime",
  "substrate-prometheus-endpoint",
  "tracing",
@@ -9796,6 +9804,7 @@ dependencies = [
  "rand 0.7.3",
  "sc-client-api",
  "sc-network",
+ "sc-network-common",
  "sc-utils",
  "sp-api",
  "sp-core",
