@@ -40,11 +40,13 @@ use parity_scale_codec::{Decode, Encode};
 use polkadot_service::TaskManager;
 use sc_client_api::StorageData;
 use sc_rpc_api::{state::ReadProof, system::Health};
-use sc_utils::mpsc::{tracing_unbounded, TracingUnboundedReceiver, TracingUnboundedSender};
 use sp_core::sp_std::collections::btree_map::BTreeMap;
 use sp_runtime::DeserializeOwned;
 use sp_storage::StorageKey;
 use std::sync::Arc;
+use tokio::sync::mpsc::{
+	channel as tokio_channel, Receiver as TokioReceiver, Sender as TokioSender,
+};
 
 pub use url::Url;
 
@@ -61,7 +63,7 @@ pub struct RelayChainRpcClient {
 	/// Retry strategy that should be used for requests and subscriptions
 	retry_strategy: ExponentialBackoff,
 
-	to_worker_channel: Option<TracingUnboundedSender<NotificationRegisterMessage>>,
+	to_worker_channel: Option<TokioSender<NotificationRegisterMessage>>,
 }
 
 /// Worker messages to register new notification listeners
@@ -75,7 +77,7 @@ pub enum NotificationRegisterMessage {
 /// Worker that should be used in combination with [`RelayChainRpcClient`]. Must be polled to distribute header notifications to listeners.
 struct RpcStreamWorker {
 	// Communication channel with the RPC client
-	client_receiver: TracingUnboundedReceiver<NotificationRegisterMessage>,
+	client_receiver: TokioReceiver<NotificationRegisterMessage>,
 
 	// Senders to distribute incoming header notifications to
 	imported_header_listeners: Vec<Sender<PHeader>>,
@@ -120,6 +122,8 @@ fn handle_event_distribution(
 					// Receiver has been dropped, remove Sender from list.
 					Err(error) if error.is_disconnected() => false,
 					// Channel is full. This should not happen.
+					// TODO: Improve error handling here
+					// https://github.com/paritytech/cumulus/issues/1482
 					Err(error) => {
 						tracing::error!(target: LOG_TARGET, ?error, "Event distribution channel has reached its limit. This can lead to missed notifications.");
 						true
@@ -140,8 +144,8 @@ impl RpcStreamWorker {
 		import_sub: Subscription<PHeader>,
 		best_sub: Subscription<PHeader>,
 		finalized_sub: Subscription<PHeader>,
-	) -> (RpcStreamWorker, TracingUnboundedSender<NotificationRegisterMessage>) {
-		let (tx, rx) = tracing_unbounded("mpsc-cumulus-rpc-worker");
+	) -> (RpcStreamWorker, TokioSender<NotificationRegisterMessage>) {
+		let (tx, rx) = tokio_channel(100);
 		let worker = RpcStreamWorker {
 			client_receiver: rx,
 			imported_header_listeners: Vec::new(),
@@ -164,8 +168,8 @@ impl RpcStreamWorker {
 		let mut best_head_sub = self.rpc_best_header_subscription.fuse();
 		let mut finalized_sub = self.rpc_finalized_header_subscription.fuse();
 		loop {
-			futures::select! {
-				evt = self.client_receiver.next() => match evt {
+			tokio::select! {
+				evt = self.client_receiver.recv() => match evt {
 					Some(NotificationRegisterMessage::RegisterBestHeadListener(tx)) => {
 						self.best_header_listeners.push(tx);
 					},
@@ -175,7 +179,10 @@ impl RpcStreamWorker {
 					Some(NotificationRegisterMessage::RegisterFinalizationListener(tx)) => {
 						self.finalized_header_listeners.push(tx)
 					},
-					None => {}
+					None => {
+						tracing::error!(target: LOG_TARGET, "RPC client receiver closed. Stopping RPC Worker.");
+						return;
+					}
 				},
 				import_event = import_sub.next() => {
 					if let Err(err) = handle_event_distribution(import_event, &mut self.imported_header_listeners) {
@@ -202,7 +209,7 @@ impl RpcStreamWorker {
 
 impl RelayChainRpcClient {
 	/// Set channel to exchange messages with the rpc-worker
-	fn set_worker_channel(&mut self, sender: TracingUnboundedSender<NotificationRegisterMessage>) {
+	fn set_worker_channel(&mut self, sender: TokioSender<NotificationRegisterMessage>) {
 		self.to_worker_channel = Some(sender);
 	}
 
@@ -415,7 +422,7 @@ impl RelayChainRpcClient {
 		match &self.to_worker_channel {
 			Some(channel) => {
 				channel
-					.unbounded_send(message)
+					.try_send(message)
 					.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))?;
 				Ok(())
 			},

@@ -1950,12 +1950,12 @@ dependencies = [
  "polkadot-service",
  "sc-client-api",
  "sc-rpc-api",
- "sc-utils",
  "sp-api",
  "sp-core",
  "sp-runtime",
  "sp-state-machine",
  "sp-storage",
+ "tokio",
  "tracing",
  "url",
 ]
