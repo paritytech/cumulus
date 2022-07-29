@@ -62,6 +62,12 @@ pub enum RelayChainError {
 	GenericError(String),
 }
 
+impl From<RelayChainError> for ApiError {
+	fn from(r: RelayChainError) -> Self {
+		sp_api::ApiError::Application(Box::new(r) as Box<_>)
+	}
+}
+
 impl From<CodecError> for RelayChainError {
 	fn from(e: CodecError) -> Self {
 		RelayChainError::DeserializationError(e)
