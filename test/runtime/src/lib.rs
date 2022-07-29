@@ -347,7 +347,7 @@ pub struct TestOnRuntimeUpgrade;
 
 impl OnRuntimeUpgrade for TestOnRuntimeUpgrade {
 	fn on_runtime_upgrade() -> frame_support::weights::Weight {
-		assert_eq!(sp_io::storage::get(TEST_RUNTIME_UPGRADE_KEY), Some(vec![1, 2, 3, 4]));
+		assert_eq!(sp_io::storage::get(TEST_RUNTIME_UPGRADE_KEY), Some(vec![1, 2, 3, 4].into()));
 
 		1
 	}
@@ -471,7 +471,7 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 					sp_std::time::Duration::from_secs(6),
 				).create_inherent_data().expect("Could not create the timestamp inherent data");
 
-			inherent_data.check_extrinsics(&block)
+			inherent_data.check_extrinsics(block)
 		}
 	}
 }
