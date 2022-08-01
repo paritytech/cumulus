@@ -63,7 +63,8 @@ pub struct RelayChainRpcClient {
 	/// Retry strategy that should be used for requests and subscriptions
 	retry_strategy: ExponentialBackoff,
 
-	to_worker_channel: Option<TokioSender<NotificationRegisterMessage>>,
+	/// Channel to communicate with the RPC worker
+	to_worker_channel: TokioSender<NotificationRegisterMessage>,
 }
 
 /// Worker messages to register new notification listeners
@@ -95,14 +96,16 @@ pub async fn create_client_and_start_worker(
 	url: Url,
 	task_manager: &mut TaskManager,
 ) -> RelayChainResult<RelayChainRpcClient> {
-	let mut client = RelayChainRpcClient::new(url).await?;
-	let best_head_stream = client.subscribe_new_best_heads().await?;
-	let finalized_head_stream = client.subscribe_finalized_heads().await?;
-	let imported_head_stream = client.subscribe_imported_heads().await?;
+	tracing::info!(target: LOG_TARGET, url = %url.to_string(), "Initializing RPC Client");
+	let ws_client = WsClientBuilder::default().build(url.as_str()).await?;
+
+	let best_head_stream = RelayChainRpcClient::subscribe_new_best_heads(&ws_client).await?;
+	let finalized_head_stream = RelayChainRpcClient::subscribe_finalized_heads(&ws_client).await?;
+	let imported_head_stream = RelayChainRpcClient::subscribe_imported_heads(&ws_client).await?;
 
 	let (worker, sender) =
 		RpcStreamWorker::new(imported_head_stream, best_head_stream, finalized_head_stream);
-	client.set_worker_channel(sender);
+	let client = RelayChainRpcClient::new(ws_client, sender).await?;
 
 	task_manager
 		.spawn_essential_handle()
@@ -208,18 +211,13 @@ impl RpcStreamWorker {
 }
 
 impl RelayChainRpcClient {
-	/// Set channel to exchange messages with the rpc-worker
-	fn set_worker_channel(&mut self, sender: TokioSender<NotificationRegisterMessage>) {
-		self.to_worker_channel = Some(sender);
-	}
-
-	/// Initialize new RPC Client and connect vie WebSocket to a given endpoint.
-	async fn new(url: Url) -> RelayChainResult<Self> {
-		tracing::info!(target: LOG_TARGET, url = %url.to_string(), "Initializing RPC Client");
-		let ws_client = WsClientBuilder::default().build(url.as_str()).await?;
-
+	/// Initialize new RPC Client.
+	async fn new(
+		ws_client: JsonRpcClient,
+		sender: TokioSender<NotificationRegisterMessage>,
+	) -> RelayChainResult<Self> {
 		let client = RelayChainRpcClient {
-			to_worker_channel: None,
+			to_worker_channel: sender,
 			ws_client: Arc::new(ws_client),
 			retry_strategy: ExponentialBackoff::default(),
 		};
@@ -256,20 +254,6 @@ impl RelayChainRpcClient {
 	}
 
 	/// Subscribe to a notification stream via RPC
-	pub async fn subscribe<'a, R>(
-		&self,
-		sub_name: &'a str,
-		unsub_name: &'a str,
-		params: Option<ParamsSer<'a>>,
-	) -> RelayChainResult<Subscription<R>>
-	where
-		R: DeserializeOwned,
-	{
-		self.ws_client
-			.subscribe::<R>(sub_name, params, unsub_name)
-			.await
-			.map_err(|err| RelayChainError::RpcCallError(sub_name.to_string(), err))
-	}
 
 	/// Perform RPC request
 	async fn request<'a, R>(
@@ -419,18 +403,9 @@ impl RelayChainRpcClient {
 		&self,
 		message: NotificationRegisterMessage,
 	) -> Result<(), RelayChainError> {
-		match &self.to_worker_channel {
-			Some(channel) => {
-				channel
-					.try_send(message)
-					.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))?;
-				Ok(())
-			},
-			None => Err(RelayChainError::WorkerCommunicationError(
-				"Worker channel needs to be set before requesting notification streams."
-					.to_string(),
-			)),
-		}
+		self.to_worker_channel
+			.try_send(message)
+			.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))
 	}
 
 	pub async fn get_imported_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
@@ -457,22 +432,35 @@ impl RelayChainRpcClient {
 		Ok(rx)
 	}
 
-	async fn subscribe_imported_heads(&self) -> Result<Subscription<PHeader>, RelayChainError> {
-		self.subscribe::<PHeader>("chain_subscribeAllHeads", "chain_unsubscribeAllHeads", None)
-			.await
+	async fn subscribe_imported_heads(
+		ws_client: &JsonRpcClient,
+	) -> Result<Subscription<PHeader>, RelayChainError> {
+		Ok(ws_client
+			.subscribe::<PHeader>("chain_subscribeAllHeads", None, "chain_unsubscribeAllHeads")
+			.await?)
 	}
 
-	async fn subscribe_finalized_heads(&self) -> Result<Subscription<PHeader>, RelayChainError> {
-		self.subscribe::<PHeader>(
-			"chain_subscribeFinalizedHeads",
-			"chain_unsubscribeFinalizedHeads",
-			None,
-		)
-		.await
+	async fn subscribe_finalized_heads(
+		ws_client: &JsonRpcClient,
+	) -> Result<Subscription<PHeader>, RelayChainError> {
+		Ok(ws_client
+			.subscribe::<PHeader>(
+				"chain_subscribeFinalizedHeads",
+				None,
+				"chain_unsubscribeFinalizedHeads",
+			)
+			.await?)
 	}
 
-	async fn subscribe_new_best_heads(&self) -> Result<Subscription<PHeader>, RelayChainError> {
-		self.subscribe::<PHeader>("chain_subscribeNewHeads", "chain_unsubscribeNewHeads", None)
-			.await
+	async fn subscribe_new_best_heads(
+		ws_client: &JsonRpcClient,
+	) -> Result<Subscription<PHeader>, RelayChainError> {
+		Ok(ws_client
+			.subscribe::<PHeader>(
+				"chain_subscribeNewHeads",
+				None,
+				"chain_unsubscribeFinalizedHeads",
+			)
+			.await?)
 	}
 }
