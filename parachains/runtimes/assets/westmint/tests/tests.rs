@@ -1,12 +1,8 @@
-use codec::Encode;
+use asset_test_utils::{ExtBuilder, RuntimeHelper};
 use frame_support::{
-	assert_noop, assert_ok,
-	traits::{GenesisBuild, PalletInfo},
-	weights::WeightToFee as WeightToFeeT,
+	assert_noop, assert_ok, traits::PalletInfo, weights::WeightToFee as WeightToFeeT,
 };
-use parachains_common::{AccountId, AuraId, Balance};
-use sp_consensus_aura::AURA_ENGINE_ID;
-use sp_runtime::{Digest, DigestItem};
+use parachains_common::{AccountId, AuraId};
 pub use westmint_runtime::{
 	constants::fee::WeightToFee, xcm_config::XcmConfig, Assets, Balances, ExistentialDeposit,
 	Runtime, SessionKeys, System,
@@ -14,115 +10,23 @@ pub use westmint_runtime::{
 use xcm::latest::prelude::*;
 use xcm_executor::traits::WeightTrader;
 
-pub struct ExtBuilder {
-	// endowed accounts with balances
-	balances: Vec<(AccountId, Balance)>,
-	// collators to test block prod
-	collators: Vec<AccountId>,
-}
-
-impl Default for ExtBuilder {
-	fn default() -> ExtBuilder {
-		ExtBuilder { balances: vec![], collators: vec![] }
-	}
-}
-
-impl ExtBuilder {
-	pub fn with_balances(mut self, balances: Vec<(AccountId, Balance)>) -> Self {
-		self.balances = balances;
-		self
-	}
-	pub fn with_collators(mut self, collators: Vec<AccountId>) -> Self {
-		self.collators = collators;
-		self
-	}
-
-	pub fn build(self) -> sp_io::TestExternalities {
-		let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
-
-		pallet_balances::GenesisConfig::<Runtime> { balances: self.balances }
-			.assimilate_storage(&mut t)
-			.unwrap();
-
-		pallet_collator_selection::GenesisConfig::<Runtime> {
-			invulnerables: self.collators.clone(),
-			candidacy_bond: Default::default(),
-			desired_candidates: Default::default(),
-		}
-		.assimilate_storage(&mut t)
-		.unwrap();
-
-		let keys: Vec<(AccountId, AccountId, SessionKeys)> = self
-			.collators
-			.iter()
-			.map(|account| {
-				let bytearray: &[u8; 32] = account.as_ref();
-				(
-					account.clone(),
-					account.clone(),
-					SessionKeys {
-						aura: AuraId::from(sp_core::sr25519::Public::from_raw(*bytearray)),
-					},
-				)
-			})
-			.collect();
-		pallet_session::GenesisConfig::<Runtime> { keys }
-			.assimilate_storage(&mut t)
-			.unwrap();
-
-		let mut ext = sp_io::TestExternalities::new(t);
-
-		ext.execute_with(|| {
-			System::set_block_number(1);
-		});
-
-		ext
-	}
-}
-
-/// Utility function that advances the chain to the desired block number.
-/// If an author is provided, that author information is injected to all the blocks in the meantime.
-pub fn run_to_block(n: u32, author: Option<AccountId>) {
-	while System::block_number() < n {
-		// Set the new block number and author
-		match author {
-			Some(ref author) => {
-				let pre_digest =
-					Digest { logs: vec![DigestItem::PreRuntime(AURA_ENGINE_ID, author.encode())] };
-				System::reset_events();
-				System::initialize(
-					&(System::block_number() + 1),
-					&System::parent_hash(),
-					&pre_digest,
-				);
-			},
-			None => {
-				System::set_block_number(System::block_number() + 1);
-			},
-		}
-	}
-}
-
 pub const ALICE: [u8; 32] = [1u8; 32];
-
-pub fn root_origin() -> <Runtime as frame_system::Config>::Origin {
-	<Runtime as frame_system::Config>::Origin::root()
-}
-
-pub fn origin_of(account_id: AccountId) -> <Runtime as frame_system::Config>::Origin {
-	<Runtime as frame_system::Config>::Origin::signed(account_id)
-}
 
 #[test]
 fn test_asset_xcm_trader() {
-	ExtBuilder::default()
+	ExtBuilder::<Runtime>::default()
 		.with_collators(vec![AccountId::from(ALICE)])
+		.with_session_keys(vec![(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+		)])
 		.build()
 		.execute_with(|| {
 			// We need root origin to create a sufficient asset
 			// We set existential deposit to be identical to the one for Balances first
 			assert_ok!(Assets::force_create(
-				root_origin(),
+				RuntimeHelper::<Runtime>::root_origin(),
 				1,
 				AccountId::from(ALICE).into(),
 				true,
@@ -131,7 +35,7 @@ fn test_asset_xcm_trader() {
 
 			// We first mint enough asset for the account to exist for assets
 			assert_ok!(Assets::mint(
-				origin_of(AccountId::from(ALICE)),
+				RuntimeHelper::<Runtime>::origin_of(AccountId::from(ALICE)),
 				1,
 				AccountId::from(ALICE).into(),
 				ExistentialDeposit::get()
@@ -140,7 +44,7 @@ fn test_asset_xcm_trader() {
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
 
 			// Set Alice as block author, who will receive fees
-			run_to_block(2, Some(AccountId::from(ALICE)));
+			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
 
 			// We are going to buy 4e9 weight
 			let bought = 4_000_000_000u64;
@@ -180,14 +84,19 @@ fn test_asset_xcm_trader() {
 
 #[test]
 fn test_asset_xcm_trader_with_refund() {
-	ExtBuilder::default()
+	ExtBuilder::<Runtime>::default()
 		.with_collators(vec![AccountId::from(ALICE)])
+		.with_session_keys(vec![(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+		)])
 		.build()
 		.execute_with(|| {
 			// We need root origin to create a sufficient asset
 			// We set existential deposit to be identical to the one for Balances first
 			assert_ok!(Assets::force_create(
-				root_origin(),
+				RuntimeHelper::<Runtime>::root_origin(),
 				1,
 				AccountId::from(ALICE).into(),
 				true,
@@ -196,7 +105,7 @@ fn test_asset_xcm_trader_with_refund() {
 
 			// We first mint enough asset for the account to exist for assets
 			assert_ok!(Assets::mint(
-				origin_of(AccountId::from(ALICE)),
+				RuntimeHelper::<Runtime>::origin_of(AccountId::from(ALICE)),
 				1,
 				AccountId::from(ALICE).into(),
 				ExistentialDeposit::get()
@@ -205,7 +114,7 @@ fn test_asset_xcm_trader_with_refund() {
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
 
 			// Set Alice as block author, who will receive fees
-			run_to_block(2, Some(AccountId::from(ALICE)));
+			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
 
 			// We are going to buy 4e9 weight
 			let bought = 4_000_000_000u64;
@@ -260,14 +169,19 @@ fn test_asset_xcm_trader_with_refund() {
 
 #[test]
 fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
-	ExtBuilder::default()
+	ExtBuilder::<Runtime>::default()
 		.with_collators(vec![AccountId::from(ALICE)])
+		.with_session_keys(vec![(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+		)])
 		.build()
 		.execute_with(|| {
 			// We need root origin to create a sufficient asset
 			// We set existential deposit to be identical to the one for Balances first
 			assert_ok!(Assets::force_create(
-				root_origin(),
+				RuntimeHelper::<Runtime>::root_origin(),
 				1,
 				AccountId::from(ALICE).into(),
 				true,
@@ -277,7 +191,7 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
 
 			// Set Alice as block author, who will receive fees
-			run_to_block(2, Some(AccountId::from(ALICE)));
+			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
 
 			// We are going to buy 4e9 weight
 			let bought = 500_000_000u64;
@@ -315,14 +229,19 @@ fn test_asset_xcm_trader_refund_not_possible_since_amount_less_than_ed() {
 
 #[test]
 fn test_that_buying_ed_refund_does_not_refund() {
-	ExtBuilder::default()
+	ExtBuilder::<Runtime>::default()
 		.with_collators(vec![AccountId::from(ALICE)])
+		.with_session_keys(vec![(
+			AccountId::from(ALICE),
+			AccountId::from(ALICE),
+			SessionKeys { aura: AuraId::from(sp_core::sr25519::Public::from_raw(ALICE)) },
+		)])
 		.build()
 		.execute_with(|| {
 			// We need root origin to create a sufficient asset
 			// We set existential deposit to be identical to the one for Balances first
 			assert_ok!(Assets::force_create(
-				root_origin(),
+				RuntimeHelper::<Runtime>::root_origin(),
 				1,
 				AccountId::from(ALICE).into(),
 				true,
@@ -332,7 +251,7 @@ fn test_that_buying_ed_refund_does_not_refund() {
 			let mut trader = <XcmConfig as xcm_executor::Config>::Trader::new();
 
 			// Set Alice as block author, who will receive fees
-			run_to_block(2, Some(AccountId::from(ALICE)));
+			RuntimeHelper::<Runtime>::run_to_block(2, Some(AccountId::from(ALICE)));
 
 			let bought = 500_000_000u64;
 
