@@ -520,12 +520,17 @@ use sc_client_api::{
 };
 
 #[no_mangle]
-pub fn get_leaves() -> Vec<sp_core::H256> {
+pub fn check_leaves(number: u32) {
 	let lock = BACKEND.lock().unwrap();
 	let backend = lock.as_ref().expect("Backend should be already initialized");
 	let blockchain = backend.blockchain();
+
+	log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> BLOCK Number: {}", number);
+
 	// Interface contract: results are ordered best (longest, highest) chain first.
-	let leaves = blockchain.leaves().expect("Error fetching leaves from backend");
+	let mut leaves = blockchain.leaves().expect("Error fetching leaves from backend");
+	log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Leaves Number: {}", leaves.len());
+
 	for leaf in leaves.iter() {
 		let number = match blockchain.number(*leaf).ok().flatten() {
 			Some(n) => n,
@@ -536,14 +541,40 @@ pub fn get_leaves() -> Vec<sp_core::H256> {
 		};
 		log::debug!(target: "parachain", ">>> (@{}) : {}", number, leaf);
 	}
-	leaves
-}
 
-#[no_mangle]
-pub fn del_leaf(hash: &sp_core::H256) {
-	let lock = BACKEND.lock().unwrap();
-	let backend = lock.as_ref().expect("Backend should be already initialized");
-	backend.remove_leaf_block(hash).expect("Error removing leaf");
+	const MAX_LEAVES_PER_LEVEL: usize = 3;
+	if leaves.len() >= MAX_LEAVES_PER_LEVEL {
+		let best = blockchain.info().best_hash;
+
+		leaves.retain(|hash| {
+			let this_num = blockchain.number(*hash).ok().flatten().unwrap();
+			this_num == number
+		});
+		let leaves_len = leaves.len();
+		if leaves_len < MAX_LEAVES_PER_LEVEL {
+			return
+		}
+
+		let mut to_remove = (leaves_len + 1) - MAX_LEAVES_PER_LEVEL;
+		// TODO: Better strategy
+		for hash in leaves {
+			if hash == best {
+				continue
+			}
+			log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Removing block: {}", hash);
+			if backend.remove_leaf_block(&hash).is_err() {
+				log::debug!(target: "parachain", "Unable to remove block");
+			}
+
+			to_remove -= 1;
+			if to_remove == 0 {
+				break
+			}
+		}
+
+		let leaves = blockchain.leaves().expect("Error fetching leaves from backend");
+		log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Leaves Number (post-del): {}", leaves.len());
+	}
 }
 
 // ========= END TEMPORARY HACK =========

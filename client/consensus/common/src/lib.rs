@@ -84,8 +84,7 @@ impl<I> ParachainBlockImport<I> {
 }
 
 extern "Rust" {
-	fn get_leaves() -> Vec<sp_core::H256>;
-	fn del_leaf(hash: &sp_core::H256);
+	fn check_leaves(number: u32);
 }
 
 #[async_trait::async_trait]
@@ -109,21 +108,13 @@ where
 		mut params: sc_consensus::BlockImportParams<Block, Self::Transaction>,
 		cache: std::collections::HashMap<sp_consensus::CacheKeyId, Vec<u8>>,
 	) -> Result<sc_consensus::ImportResult, Self::Error> {
-		log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Importing block @ {}", params.header.number());
-		let leaves = unsafe { get_leaves() };
-		log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Leaves Number: {}", leaves.len());
+		let number = params.header.number();
+		let hash = params.header.hash();
+		log::debug!(target: "parachain", ">>>>>>>>>>>>>> Importing block {:?} @ {}", hash, number);
 
-		const MAX_LEAVES: usize = 2;
-		if leaves.len() > MAX_LEAVES {
-			// Per interface contract, we know that the leaves are ordered from the highest.
-			// For this PoC just remove one of the lowers.
-			// TODO: Here we have to check the num of leaves at level of the block we are importing
-			// TODO: Better strategy, here we're just removin the first one
-			let leaf = &leaves[leaves.len() - 1];
-			log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Removing block: {}", leaf);
-			unsafe { del_leaf(leaf) };
-			let leaves = unsafe { get_leaves() };
-			log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Leaves Number (post-del): {}", leaves.len());
+		unsafe {
+			let number = number as *const _ as *const u32;
+			check_leaves(*number);
 		}
 
 		// Best block is determined by the relay chain, or if we are doing the initial sync
