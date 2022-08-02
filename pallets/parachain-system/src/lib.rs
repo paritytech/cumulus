@@ -581,7 +581,7 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type LastDmqMqcHead<T: Config> = StorageValue<_, MessageQueueChain, ValueQuery>;
 
-	/// The next the index of the next message to be processed from the queue.
+	/// The index of the next message to be processed from the queue.
 	///
 	/// The value is loaded before and saved after processing messages.
 	#[pallet::storage]
