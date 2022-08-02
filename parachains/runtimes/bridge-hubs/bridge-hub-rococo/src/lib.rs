@@ -50,6 +50,7 @@ use frame_support::{
 	},
 	PalletId,
 };
+use frame_support::traits::IsInVec;
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
@@ -57,6 +58,8 @@ use frame_system::{
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
+
+use bp_polkadot_core::parachains::ParaId;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -114,6 +117,8 @@ pub type SignedExtra = (
 	frame_system::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+	// TODO: do we need?
+	// BridgeRejectObsoleteHeadersAndMessages,
 );
 
 /// Unchecked extrinsic type as expected by this runtime.
@@ -367,7 +372,8 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-	type Event = Event;
+	// TODO: hacked
+	// type Event = Event;
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
 	type WeightToFee = WeightToFee;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
@@ -405,6 +411,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ControllerOrigin = EnsureRoot<AccountId>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = ();
+	type PriceForSiblingDelivery = ();
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -467,6 +474,37 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = ();
 }
 
+/// Add bridge pallets (GPA)
+parameter_types! {
+	pub const MaxRequests: u32 = 50;
+	pub const HeadersToKeep: u32 = 1024;
+}
+
+/// Add granda bridge pallet to track Wococo relay chain
+pub type WococoGrandpaInstance = ();
+impl pallet_bridge_grandpa::Config for Runtime {
+	type BridgedChain = bp_wococo::Wococo;
+	type MaxRequests = MaxRequests;
+	type HeadersToKeep = HeadersToKeep;
+	type WeightInfo = ();
+}
+
+pub const PARAS_PALLET_NAME: &str = "WococoBridgeHubParachain";
+parameter_types! {
+	pub const ParachainHeadsToKeep: u32 = 50;
+	pub const ParasPalletName: &'static str = PARAS_PALLET_NAME;
+	pub GetTenFirstParachains: Vec<ParaId> = (0..10).map(ParaId).collect();
+}
+
+/// Add parachain bridge pallet to track Wococo bridge hub parachain
+impl pallet_bridge_parachains::Config for Runtime {
+	type WeightInfo = ();
+	type BridgesGrandpaPalletInstance = WococoGrandpaInstance;
+	type ParasPalletName = ParasPalletName;
+	type TrackedParachains = IsInVec<GetTenFirstParachains>;
+	type HeadsToKeep = ParachainHeadsToKeep;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -484,7 +522,9 @@ construct_runtime!(
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
-		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
+		// TODO: hacked
+		// TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
+		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
 
 		// Collator support. The order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
@@ -498,6 +538,10 @@ construct_runtime!(
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin, Config} = 31,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
+
+		// Bridge pallets
+		BridgeWococoGrandpa: pallet_bridge_grandpa::{Pallet, Call, Storage},
+		BridgeWococoParachains: pallet_bridge_parachains::{Pallet, Call, Storage},
 	}
 );
 

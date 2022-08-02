@@ -1,5 +1,14 @@
 [workspace]
 members = [
+	"bridges/modules/grandpa",
+	"bridges/modules/messages",
+	"bridges/modules/parachains",
+	"bridges/modules/relayers",
+	"bridges/modules/shift-session-manager",
+	"bridges/primitives/polkadot-core",
+	"bridges/primitives/runtime",
+	"bridges/primitives/chain-rococo",
+	"bridges/primitives/chain-wococo",
 	"client/cli",
 	"client/consensus/aura",
 	"client/consensus/common",

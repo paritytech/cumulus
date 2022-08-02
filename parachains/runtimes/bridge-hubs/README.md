@@ -38,6 +38,7 @@ ls -lrt ~/local_bridge_testing/bin/polkadot-parachain
 ### Run Rococo BridgeHub parachain
 #### Generate spec + genesis + wasm (paraId=1013)
 ```
+rm ~/local_bridge_testing/bridge-hub-rococo-local-raw.json
 ~/local_bridge_testing/bin/polkadot-parachain build-spec --chain bridge-hub-rococo-local --raw --disable-default-bootnode > ~/local_bridge_testing/bridge-hub-rococo-local-raw.json
 ~/local_bridge_testing/bin/polkadot-parachain export-genesis-state --chain ~/local_bridge_testing/bridge-hub-rococo-local-raw.json > ~/local_bridge_testing/bridge-hub-rococo-local-genesis
 ~/local_bridge_testing/bin/polkadot-parachain export-genesis-wasm --chain ~/local_bridge_testing/bridge-hub-rococo-local-raw.json > ~/local_bridge_testing/bridge-hub-rococo-local-genesis-wasm
@@ -63,3 +64,20 @@ https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer
 ```
 https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/parachains
 ```
+
+
+## Git subtree `./bridges`
+
+Add Bridges repo as a local remote and synchronize it with latest `master` from bridges repo:
+```
+git remote add -f bridges git@github.com:paritytech/parity-bridges-common.git
+# (ran just only first time, when subtree was initialized)
+# git subtree add --prefix=bridges bridges master --squash
+git subtree pull --prefix=bridges bridges master --squash
+````
+We use `--squash` to avoid adding individual commits and rather squashing them
+all into one.
+
+Now we use `master` branch, but in future, it could change to some release branch/tag.
+
+Original `./bridges/Cargo.toml` was renamed to `./bridges/Cargo.toml_removed_for_bridges_subtree_feature` to avoid confusion for `Cargo` having multiple workspaces.

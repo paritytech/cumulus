@@ -66,6 +66,16 @@ cumulus-primitives-utility = { path = "../../../../primitives/utility", default-
 pallet-collator-selection = { path = "../../../../pallets/collator-selection", default-features = false }
 parachain-info = { path = "../../../../parachains/pallets/parachain-info", default-features = false }
 
+# Bridges
+bp-polkadot-core = { path = "../../../../bridges/primitives/polkadot-core", default-features = false }
+bp-rococo = { path = "../../../../bridges/primitives/chain-rococo", default-features = false }
+bp-wococo = { path = "../../../../bridges/primitives/chain-wococo", default-features = false }
+pallet-bridge-grandpa = { path = "../../../../bridges/modules/grandpa", default-features = false }
+pallet-bridge-messages = { path = "../../../../bridges/modules/messages", default-features = false }
+pallet-bridge-parachains = { path = "../../../../bridges/modules/parachains", default-features = false }
+pallet-bridge-relayers = { path = "../../../../bridges/modules/relayers", default-features = false }
+pallet-shift-session-manager = { path = "../../../../bridges/modules/shift-session-manager", default-features = false }
+
 [features]
 default = [
 	"std",
