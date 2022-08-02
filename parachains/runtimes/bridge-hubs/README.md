@@ -12,6 +12,8 @@ Every _BridgeHub_ is meant to be **_common good parachain_** with main responsib
 - sync finality proofs between BridgeHub parachains
 - pass (XCM) messages between different BridgeHub parachains
 
+![](/home/bparity/parity/cumulus/cumulus/parachains/runtimes/bridge-hubs/docs/bridge-hub-parachain-design.jpg "Basic deployment setup")
+
 ## How to test locally Rococo <-> Wococo
 
 ### Deploy
@@ -73,6 +75,9 @@ Add Bridges repo as a local remote and synchronize it with latest `master` from 
 git remote add -f bridges git@github.com:paritytech/parity-bridges-common.git
 # (ran just only first time, when subtree was initialized)
 # git subtree add --prefix=bridges bridges master --squash
+
+# Synchro bridges repo
+git fetch bridges --prune
 git subtree pull --prefix=bridges bridges master --squash
 ````
 We use `--squash` to avoid adding individual commits and rather squashing them

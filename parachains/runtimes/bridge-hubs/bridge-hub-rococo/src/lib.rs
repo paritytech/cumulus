@@ -474,36 +474,61 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = ();
 }
 
-/// Add bridge pallets (GPA)
+// Add bridge pallets (GPA)
 parameter_types! {
-	pub const MaxRequests: u32 = 50;
+	pub const MaxRequests: u32 = 64;
 	pub const HeadersToKeep: u32 = 1024;
 }
 
 /// Add granda bridge pallet to track Wococo relay chain
-pub type WococoGrandpaInstance = ();
-impl pallet_bridge_grandpa::Config for Runtime {
+pub type BridgeGrandpaWococoInstance = pallet_bridge_grandpa::Instance1;
+impl pallet_bridge_grandpa::Config<BridgeGrandpaWococoInstance> for Runtime {
 	type BridgedChain = bp_wococo::Wococo;
 	type MaxRequests = MaxRequests;
 	type HeadersToKeep = HeadersToKeep;
 	type WeightInfo = ();
 }
 
-pub const PARAS_PALLET_NAME: &str = "WococoBridgeHubParachain";
+/// Add granda bridge pallet to track Wococo relay chain
+pub type BridgeGrandpaRococoInstance = pallet_bridge_grandpa::Instance2;
+impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
+	type BridgedChain = bp_rococo::Rococo;
+	type MaxRequests = MaxRequests;
+	type HeadersToKeep = HeadersToKeep;
+	type WeightInfo = ();
+}
+
+pub const ROCOCO_BRIDGE_PARA_PALLET_NAME: &str = "RococoBridgeHubParachainPallet";
+pub const WOCOCO_BRIDGE_PARA_PALLET_NAME: &str = "WococoBridgeHubParachainPallet";
 parameter_types! {
-	pub const ParachainHeadsToKeep: u32 = 50;
-	pub const ParasPalletName: &'static str = PARAS_PALLET_NAME;
+	pub const ParachainHeadsToKeep: u32 = 64;
+	pub const RococoBridgeParachainPalletName: &'static str = ROCOCO_BRIDGE_PARA_PALLET_NAME;
+	pub const WococoBridgeParachainPalletName: &'static str = WOCOCO_BRIDGE_PARA_PALLET_NAME;
 	pub GetTenFirstParachains: Vec<ParaId> = (0..10).map(ParaId).collect();
 }
 
 /// Add parachain bridge pallet to track Wococo bridge hub parachain
-impl pallet_bridge_parachains::Config for Runtime {
+pub type BridgeParachainWococoInstance = pallet_bridge_parachains::Instance1;
+impl pallet_bridge_parachains::Config<BridgeParachainWococoInstance> for Runtime {
 	type WeightInfo = ();
-	type BridgesGrandpaPalletInstance = WococoGrandpaInstance;
-	type ParasPalletName = ParasPalletName;
+	type BridgesGrandpaPalletInstance = BridgeGrandpaWococoInstance;
+	type ParasPalletName = RococoBridgeParachainPalletName;
 	type TrackedParachains = IsInVec<GetTenFirstParachains>;
 	type HeadsToKeep = ParachainHeadsToKeep;
 }
+
+/// Add parachain bridge pallet to track Rococo bridge hub parachain
+pub type BridgeParachainRococoInstance = pallet_bridge_parachains::Instance2;
+impl pallet_bridge_parachains::Config<BridgeParachainRococoInstance> for Runtime {
+	type WeightInfo = ();
+	type BridgesGrandpaPalletInstance = BridgeGrandpaRococoInstance;
+	type ParasPalletName = WococoBridgeParachainPalletName;
+	type TrackedParachains = IsInVec<GetTenFirstParachains>;
+	type HeadsToKeep = ParachainHeadsToKeep;
+}
+
+/// Add shift session manager
+impl pallet_shift_session_manager::Config for Runtime {}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -539,9 +564,16 @@ construct_runtime!(
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
-		// Bridge pallets
-		BridgeWococoGrandpa: pallet_bridge_grandpa::{Pallet, Call, Storage},
-		BridgeWococoParachains: pallet_bridge_parachains::{Pallet, Call, Storage},
+		// Consensus support.
+		ShiftSessionManager: pallet_shift_session_manager::{Pallet},
+
+		// Wococo bridge modules
+		BridgeWococoGrandpa: pallet_bridge_grandpa::<Instance1>::{Pallet, Call, Storage},
+		BridgeWococoParachain: pallet_bridge_parachains::<Instance1>::{Pallet, Call, Storage},
+
+		// Rococo bridge modules
+		BridgeRococoGrandpa: pallet_bridge_grandpa::<Instance2>::{Pallet, Call, Storage},
+		BridgeRococoParachain: pallet_bridge_parachains::<Instance2>::{Pallet, Call, Storage},
 	}
 );
 
