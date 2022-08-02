@@ -160,7 +160,7 @@ impl RelayChainStateProof {
 		read_entry(
 			&self.trie_backend,
 			&relay_chain::well_known_keys::dmq_mqc_head_for_message(self.para_id, message_index),
-			Some(Default::default()),
+			None,
 		)
 		.map_err(Error::DmqMqcHead)
 	}

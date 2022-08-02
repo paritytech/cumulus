@@ -21,8 +21,9 @@ use codec::Decode;
 
 use cumulus_primitives_core::{
 	relay_chain::{self, v2::HrmpChannelId, Hash as PHash},
-	ParaId, PersistedValidationData,
+	DmpMessageWindow, DmpQueueState, ParaId, PersistedValidationData,
 };
+
 use cumulus_relay_chain_interface::RelayChainInterface;
 use relay_chain::well_known_keys as relay_well_known_keys;
 
@@ -114,7 +115,9 @@ async fn collect_relay_storage_proof(
 	);
 
 	for idx in relevant_message_idx.0..=relevant_message_idx.1 {
-		relevant_keys.push(relay_well_known_keys::dmq_mqc_head_for_message(para_id, idx));
+		let key = relay_well_known_keys::dmq_mqc_head_for_message(para_id, idx);
+		tracing::debug!(target: LOG_TARGET, ?idx, ?key, "MQC head key",);
+		relevant_keys.push(key);
 	}
 	relevant_keys.push(relay_well_known_keys::relay_dispatch_queue_size(para_id));
 	relevant_keys.push(relay_well_known_keys::hrmp_ingress_channel_index(para_id));
@@ -197,8 +200,8 @@ impl ParachainInherentData {
 			messages
 		};
 
-		let message_idx = relay_chain_interface
-			.get_storage_by_key(relay_parent, &relay_well_known_keys::dmq_message_idx(para_id))
+		let queue_state = relay_chain_interface
+			.get_storage_by_key(relay_parent, &relay_well_known_keys::dmp_queue_state(para_id))
 			.await
 			.map_err(|e| {
 				tracing::error!(
@@ -209,8 +212,9 @@ impl ParachainInherentData {
 			})
 			.ok()?;
 
-		let message_idx = if let Some(message_idx) = message_idx {
-			<(u64, u64)>::decode(&mut message_idx.as_slice()).expect("Failed to decode message_idx")
+		let queue_state = if let Some(queue_state) = queue_state {
+			<DmpQueueState>::decode(&mut queue_state.as_slice())
+				.expect("Failed to decode relay chain DMP QueueState")
 		} else {
 			tracing::debug!(
 				target: LOG_TARGET,
@@ -218,21 +222,23 @@ impl ParachainInherentData {
 			);
 
 			// No message was received yet.
-			(0, 0)
+			DmpQueueState::default()
 		};
 
-		// Ensure the message indexes are consistent with the downward messages we've collected.
-		assert!(message_idx.1 - message_idx.0 >= downward_messages.len() as u64);
+		let window = DmpMessageWindow::with_state(queue_state.message_window_state, para_id);
+		// Check if the window covers all downward messages.
+		assert!(window.size() >= downward_messages.len() as u64);
 
-		// Collect proof for a subset of mqc heads relevant to the messages we'll attempt to process in runtime.
-		let first_message_idx = message_idx.0;
-		let last_message_idx = first_message_idx.wrapping_add(downward_messages.len() as u64);
+		// Collect proof for a subset of MQC heads relevant to the messages we'll attempt to process in runtime.
+		let first_message_idx = window.first().unwrap_or_default().message_idx;
+		let last_message_idx = first_message_idx
+			.wrapping_add((downward_messages.len().saturating_sub(1) as u64).into());
 
 		let relay_chain_state = collect_relay_storage_proof(
 			relay_chain_interface,
 			para_id,
 			relay_parent,
-			(first_message_idx, last_message_idx),
+			(first_message_idx.into(), last_message_idx.into()),
 		)
 		.await?;
 

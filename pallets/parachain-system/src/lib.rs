@@ -581,11 +581,11 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type LastDmqMqcHead<T: Config> = StorageValue<_, MessageQueueChain, ValueQuery>;
 
-	/// The last message index we processed from the queue. Starts at `1` and wraps around.
+	/// The next the index of the next message to be processed from the queue.
 	///
 	/// The value is loaded before and saved after processing messages.
 	#[pallet::storage]
-	pub(super) type LastDmqMessageIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
+	pub(super) type NextDmqMessageIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
 
 	/// The message queue chain heads we have observed per each channel incoming channel.
 	///
@@ -812,14 +812,14 @@ impl<T: Config> Pallet<T> {
 		let mut weight_used = 0;
 
 		if downward_messages.len() > 0 {
-			let dmq_head = <LastDmqMqcHead<T>>::get();
-			let start_dmq_message_index = Wrapping(<LastDmqMessageIndex<T>>::get());
-
+			let mqc_head = <LastDmqMqcHead<T>>::get();
+			let next_message_index = Wrapping(<NextDmqMessageIndex<T>>::get());
 			let max_weight =
 				<ReservedDmpWeightOverride<T>>::get().unwrap_or_else(T::ReservedDmpWeight::get);
 
+			// Restore the `DmqMessageHandlerContext` to continue processing.
 			let mut message_handler_context =
-				DmpMessageHandlerContext::new(max_weight, start_dmq_message_index, dmq_head);
+				DmpMessageHandlerContext { max_weight, next_message_index, mqc_head };
 
 			let message_iter = downward_messages.into_iter().map(|m| (m.sent_at, m.msg));
 
@@ -832,7 +832,7 @@ impl<T: Config> Pallet<T> {
 			<LastDmqMqcHead<T>>::put(&message_handler_context.mqc_head);
 
 			let processed_message_count =
-				(message_handler_context.message_index - start_dmq_message_index).0;
+				(message_handler_context.next_message_index - next_message_index).0;
 			ProcessedDownwardMessages::<T>::put(processed_message_count as u32);
 
 			Self::deposit_event(Event::DownwardMessagesReceived {
@@ -848,13 +848,15 @@ impl<T: Config> Pallet<T> {
 			//
 			// A mismatch means that at least some of the submitted messages were altered, omitted or
 			// added improperly.
+			let last_processed_message_index =
+				(message_handler_context.next_message_index - Wrapping(1)).0;
 			let expected_dmq_mqc_head = relay_state_proof
-				.read_dmp_mqc_head(message_handler_context.message_index.0)
+				.read_dmp_mqc_head(last_processed_message_index)
 				.expect("Invalid messaging state in relay chain state proof");
 
 			assert_eq!(message_handler_context.mqc_head.head(), expected_dmq_mqc_head);
 
-			<LastDmqMessageIndex<T>>::put(message_handler_context.message_index.0);
+			<NextDmqMessageIndex<T>>::put(message_handler_context.next_message_index.0);
 		}
 
 		weight_used
