@@ -226,6 +226,7 @@ sp-mmr-primitives ={path = "/Users/skunert/work/repos/substrate/primitives/merkl
 pallet-multisig ={path = "/Users/skunert/work/repos/substrate/frame/multisig" }
 pallet-nomination-pools ={path = "/Users/skunert/work/repos/substrate/frame/nomination-pools" }
 pallet-nomination-pools-benchmarking ={path = "/Users/skunert/work/repos/substrate/frame/nomination-pools/benchmarking" }
+pallet-nomination-pools-runtime-api ={path = "/Users/skunert/work/repos/substrate/frame/nomination-pools/runtime-api" }
 pallet-offences-benchmarking ={path = "/Users/skunert/work/repos/substrate/frame/offences/benchmarking" }
 pallet-proxy ={path = "/Users/skunert/work/repos/substrate/frame/proxy" }
 pallet-ranked-collective ={path = "/Users/skunert/work/repos/substrate/frame/ranked-collective" }

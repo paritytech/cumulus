@@ -1,7 +1,7 @@
 use std::pin::Pin;
 
 use cumulus_relay_chain_interface::RelayChainError;
-use cumulus_relay_chain_rpc_interface::RelayChainRPCClient;
+use cumulus_relay_chain_rpc_interface::RelayChainRpcClient;
 use futures::{executor::block_on, Future, Stream, StreamExt};
 use polkadot_core_primitives::{Block, Hash, Header};
 use polkadot_overseer::RuntimeApiSubsystemClient;
@@ -10,18 +10,17 @@ use sc_authority_discovery::AuthorityDiscoveryWrapper;
 use sc_client_api::{BlockBackend, ProofProvider};
 use sp_api::{ApiError, RuntimeApiInfo};
 use sp_blockchain::HeaderMetadata;
-use url::Url;
 
 const LOG_TARGET: &'static str = "blockchain-rpc-client";
 
 #[derive(Clone)]
 pub struct BlockChainRPCClient {
-	rpc_client: RelayChainRPCClient,
+	rpc_client: RelayChainRpcClient,
 }
 
 impl BlockChainRPCClient {
-	pub async fn new(url: Url) -> Self {
-		Self { rpc_client: RelayChainRPCClient::new(url).await.expect("should not fail") }
+	pub async fn new(rpc_client: RelayChainRpcClient) -> Self {
+		Self { rpc_client }
 	}
 
 	pub async fn chain_get_header(
@@ -322,45 +321,21 @@ impl BlockChainRPCClient {
 	pub async fn import_notification_stream_async(
 		&self,
 	) -> Pin<Box<dyn Stream<Item = Header> + Send>> {
-		let imported_headers_stream = self
-			.rpc_client
-			.subscribe_all_heads()
+		self.rpc_client
+			.get_imported_heads_stream()
 			.await
 			.expect("subscribe_all_heads")
-			.filter_map(|item| async move {
-				item.map_err(|err| {
-					tracing::error!(
-						target: LOG_TARGET,
-						"Encountered error in import notification stream: {}",
-						err
-					)
-				})
-				.ok()
-			});
-
-		imported_headers_stream.boxed()
+			.boxed()
 	}
 
 	pub async fn finality_notification_stream_async(
 		&self,
 	) -> Pin<Box<dyn Stream<Item = Header> + Send>> {
-		let imported_headers_stream = self
-			.rpc_client
-			.subscribe_finalized_heads()
+		self.rpc_client
+			.get_finalized_heads_stream()
 			.await
 			.expect("imported_headers_stream")
-			.filter_map(|item| async move {
-				item.map_err(|err| {
-					tracing::error!(
-						target: LOG_TARGET,
-						"Encountered error in finality notification stream: {}",
-						err
-					)
-				})
-				.ok()
-			});
-
-		imported_headers_stream.boxed()
+			.boxed()
 	}
 }
 

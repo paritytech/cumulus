@@ -15,475 +15,46 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use async_trait::async_trait;
-use backoff::{future::retry_notify, ExponentialBackoff};
 use core::time::Duration;
 use cumulus_primitives_core::{
 	relay_chain::{
-		v2::{
-			BlockNumber, CandidateCommitments, CandidateEvent, CommittedCandidateReceipt,
-			CoreState, DisputeState, GroupRotationInfo, OccupiedCoreAssumption, OldV1SessionInfo,
-			PvfCheckStatement, ScrapedOnChainVotes, SessionIndex, SessionInfo, ValidationCode,
-			ValidationCodeHash, ValidatorId, ValidatorIndex, ValidatorSignature,
-		},
-		CandidateHash, Hash as PHash, Header as PHeader, InboundHrmpMessage,
+		v2::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
+		Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use futures::{FutureExt, Stream, StreamExt};
-use jsonrpsee::{
-	core::{
-		client::{Client as JsonRPCClient, ClientT, Subscription, SubscriptionClientT},
-		Error as JsonRpseeError,
-	},
-	rpc_params,
-	types::ParamsSer,
-	ws_client::WsClientBuilder,
-};
-use parity_scale_codec::{Decode, Encode};
 use polkadot_service::Handle;
-use sc_client_api::{StorageData, StorageProof};
-use sc_rpc_api::{state::ReadProof, system::Health};
-use sp_api::RuntimeVersion;
-use sp_consensus_babe::Epoch;
+use sc_client_api::StorageProof;
 use sp_core::sp_std::collections::btree_map::BTreeMap;
-use sp_runtime::DeserializeOwned;
 use sp_state_machine::StorageValue;
 use sp_storage::StorageKey;
-use std::{pin::Pin, sync::Arc};
+use std::pin::Pin;
 
 pub use url::Url;
 
-const LOG_TARGET: &str = "relay-chain-rpc-interface";
+mod rpc_client;
+pub use rpc_client::{create_client_and_start_worker, RelayChainRpcClient};
+
 const TIMEOUT_IN_SECONDS: u64 = 6;
 
-/// Client that maps RPC methods and deserializes results
-#[derive(Clone)]
-pub struct RelayChainRPCClient {
-	/// Websocket client to make calls
-	ws_client: Arc<JsonRPCClient>,
-
-	/// Retry strategy that should be used for requests and subscriptions
-	retry_strategy: ExponentialBackoff,
-}
-
-impl RelayChainRPCClient {
-	pub async fn new(url: Url) -> RelayChainResult<Self> {
-		let ws_client = WsClientBuilder::default().build(url.as_str()).await?;
-
-		Ok(RelayChainRPCClient {
-			ws_client: Arc::new(ws_client),
-			retry_strategy: ExponentialBackoff::default(),
-		})
-	}
-
-	/// Call a call to `state_call` rpc method.
-	pub async fn call_remote_runtime_function<R: Decode>(
-		&self,
-		method_name: &str,
-		hash: PHash,
-		payload: Option<impl Encode>,
-	) -> RelayChainResult<R> {
-		let payload_bytes =
-			payload.map_or(sp_core::Bytes(Vec::new()), |v| sp_core::Bytes(v.encode()));
-		let params = rpc_params! {
-			method_name,
-			payload_bytes,
-			hash
-		};
-		let res = self
-			.request_tracing::<sp_core::Bytes, _>("state_call", params, |err| {
-				tracing::trace!(
-					target: LOG_TARGET,
-					%method_name,
-					%hash,
-					error = %err,
-					"Error during call to 'state_call'.",
-				);
-			})
-			.await?;
-		Decode::decode(&mut &*res.0).map_err(Into::into)
-	}
-
-	/// Subscribe to a notification stream via RPC
-	pub async fn subscribe<'a, R>(
-		&self,
-		sub_name: &'a str,
-		unsub_name: &'a str,
-		params: Option<ParamsSer<'a>>,
-	) -> RelayChainResult<Subscription<R>>
-	where
-		R: DeserializeOwned + std::fmt::Debug,
-	{
-		self.ws_client
-			.subscribe::<R>(sub_name, params, unsub_name)
-			.await
-			.map_err(|err| RelayChainError::RPCCallError(sub_name.to_string(), err))
-	}
-
-	/// Perform RPC request
-	pub async fn request<'a, R>(
-		&self,
-		method: &'a str,
-		params: Option<ParamsSer<'a>>,
-	) -> Result<R, RelayChainError>
-	where
-		R: DeserializeOwned + std::fmt::Debug,
-	{
-		tracing::trace!(target:LOG_TARGET, method = %method);
-		self.request_tracing(
-			method,
-			params,
-			|e| tracing::trace!(target:LOG_TARGET, error = %e, %method, "Unable to complete RPC request"),
-		)
-		.await
-	}
-
-	pub async fn babe_api_current_epoch(&self, at: PHash) -> Result<Epoch, RelayChainError> {
-		self.call_remote_runtime_function("BabeApi_current_epoch", at, None::<()>).await
-	}
-	pub async fn parachain_host_session_info_before_version_2(
-		&self,
-		at: PHash,
-		index: SessionIndex,
-	) -> Result<Option<OldV1SessionInfo>, RelayChainError> {
-		self.call_remote_runtime_function(
-			"ParachainHost_session_info_before_version_2",
-			at,
-			Some(index),
-		)
-		.await
-	}
-
-	pub async fn parachain_host_on_chain_votes(
-		&self,
-		at: PHash,
-	) -> Result<Option<ScrapedOnChainVotes<PHash>>, RelayChainError> {
-		self.call_remote_runtime_function("ParachainHost_on_chain_votes", at, None::<()>)
-			.await
-	}
-
-	pub async fn parachain_host_pvfs_require_precheck(
-		&self,
-		at: PHash,
-	) -> Result<Vec<ValidationCodeHash>, RelayChainError> {
-		self.call_remote_runtime_function("ParachainHost_pvfs_require_precheck", at, None::<()>)
-			.await
-	}
-
-	pub async fn parachain_host_submit_pvf_check_statement(
-		&self,
-		at: PHash,
-		stmt: PvfCheckStatement,
-		signature: ValidatorSignature,
-	) -> Result<(), RelayChainError> {
-		self.call_remote_runtime_function(
-			"ParachainHost_submit_pvf_check_statement",
-			at,
-			Some((stmt, signature)),
-		)
-		.await
-	}
-
-	/// Perform RPC request
-	pub async fn request_tracing<'a, R, OR>(
-		&self,
-		method: &'a str,
-		params: Option<ParamsSer<'a>>,
-		trace_error: OR,
-	) -> Result<R, RelayChainError>
-	where
-		R: DeserializeOwned + std::fmt::Debug,
-		OR: Fn(&jsonrpsee::core::Error),
-	{
-		retry_notify(
-			self.retry_strategy.clone(),
-			|| async {
-				self.ws_client.request(method, params.clone()).await.map_err(|err| match err {
-					JsonRpseeError::Transport(_) =>
-						backoff::Error::Transient { err, retry_after: None },
-					_ => backoff::Error::Permanent(err),
-				})
-			},
-			|error, dur| tracing::trace!(target: LOG_TARGET, %error, ?dur, "Encountered transport error, retrying."),
-		)
-		.await
-		.map_err(|err| {
-			trace_error(&err);
-			RelayChainError::RPCCallError(method.to_string(), err)})
-	}
-
-	pub async fn system_health(&self) -> Result<Health, RelayChainError> {
-		self.request("system_health", None).await
-	}
-
-	pub async fn state_get_read_proof(
-		&self,
-		storage_keys: Vec<StorageKey>,
-		at: Option<PHash>,
-	) -> Result<ReadProof<PHash>, RelayChainError> {
-		let params = rpc_params!(storage_keys, at);
-		self.request("state_getReadProof", params).await
-	}
-
-	pub async fn state_get_storage(
-		&self,
-		storage_key: StorageKey,
-		at: Option<PHash>,
-	) -> Result<Option<StorageData>, RelayChainError> {
-		let params = rpc_params!(storage_key, at);
-		self.request("state_getStorage", params).await
-	}
-
-	pub async fn chain_get_head(&self, at: Option<u64>) -> Result<PHash, RelayChainError> {
-		let params = rpc_params!(at);
-		self.request("chain_getHead", params).await
-	}
-
-	pub async fn chain_get_header(
-		&self,
-		hash: Option<PHash>,
-	) -> Result<Option<PHeader>, RelayChainError> {
-		let params = rpc_params!(hash);
-		self.request("chain_getHeader", params).await
-	}
-
-	pub async fn chain_get_finalized_head(&self) -> Result<PHash, RelayChainError> {
-		self.request("chain_getFinalizedHead", None).await
-	}
-
-	pub async fn parachain_host_candidate_pending_availability(
-		&self,
-		at: PHash,
-		para_id: ParaId,
-	) -> Result<Option<CommittedCandidateReceipt>, RelayChainError> {
-		self.call_remote_runtime_function(
-			"ParachainHost_candidate_pending_availability",
-			at,
-			Some(para_id),
-		)
-		.await
-	}
-
-	pub async fn authority_discovery_authorities(
-		&self,
-		at: PHash,
-	) -> Result<Vec<sp_authority_discovery::AuthorityId>, RelayChainError> {
-		self.call_remote_runtime_function("AuthorityDiscoveryApi_authorities", at, None::<()>)
-			.await
-	}
-
-	pub async fn parachain_host_session_index_for_child(
-		&self,
-		at: PHash,
-	) -> Result<SessionIndex, RelayChainError> {
-		self.call_remote_runtime_function("ParachainHost_session_index_for_child", at, None::<()>)
-			.await
-	}
-
-	pub async fn parachain_host_validators(
-		&self,
-		at: PHash,
-	) -> Result<Vec<ValidatorId>, RelayChainError> {
-		self.call_remote_runtime_function("ParachainHost_validators", at, None::<()>)
-			.await
-	}
-
-	pub async fn parachain_host_availability_cores(
-		&self,
-		at: PHash,
-	) -> Result<Vec<CoreState<PHash, BlockNumber>>, RelayChainError> {
-		self.call_remote_runtime_function("ParachainHost_availability_cores", at, None::<()>)
-			.await
-	}
-
-	pub async fn parachain_host_validation_code(
-		&self,
-		at: PHash,
-		para_id: ParaId,
-		occupied_core_assumption: OccupiedCoreAssumption,
-	) -> Result<Option<ValidationCode>, RelayChainError> {
-		self.call_remote_runtime_function(
-			"ParachainHost_validation_code",
-			at,
-			Some((para_id, occupied_core_assumption)),
-		)
-		.await
-	}
-
-	pub async fn parachain_host_validation_code_hash(
-		&self,
-		at: PHash,
-		para_id: ParaId,
-		occupied_core_assumption: OccupiedCoreAssumption,
-	) -> Result<Option<ValidationCodeHash>, RelayChainError> {
-		self.call_remote_runtime_function(
-			"ParachainHost_validation_code_hash",
-			at,
-			Some((para_id, occupied_core_assumption)),
-		)
-		.await
-	}
-
-	pub async fn parachain_host_session_info(
-		&self,
-		at: PHash,
-		index: SessionIndex,
-	) -> Result<Option<SessionInfo>, RelayChainError> {
-		self.call_remote_runtime_function("ParachainHost_session_info", at, Some(index))
-			.await
-	}
-
-	pub async fn parachain_host_validator_groups(
-		&self,
-		at: PHash,
-	) -> Result<(Vec<Vec<ValidatorIndex>>, GroupRotationInfo), RelayChainError> {
-		self.call_remote_runtime_function("ParachainHost_validator_groups", at, None::<()>)
-			.await
-	}
-
-	pub async fn parachain_host_candidate_events(
-		&self,
-		at: PHash,
-	) -> Result<Vec<CandidateEvent>, RelayChainError> {
-		self.call_remote_runtime_function("ParachainHost_candidate_events", at, None::<()>)
-			.await
-	}
-
-	pub async fn parachain_host_check_validation_outputs(
-		&self,
-		at: PHash,
-		para_id: ParaId,
-		outputs: CandidateCommitments,
-	) -> Result<bool, RelayChainError> {
-		self.call_remote_runtime_function(
-			"ParachainHost_check_validation_outputs",
-			at,
-			Some((para_id, outputs)),
-		)
-		.await
-	}
-
-	pub async fn parachain_host_assumed_validation_data(
-		&self,
-		at: PHash,
-		para_id: ParaId,
-		expected_hash: PHash,
-	) -> Result<Option<(PersistedValidationData, ValidationCodeHash)>, RelayChainError> {
-		self.call_remote_runtime_function(
-			"ParachainHost_persisted_assumed_validation_data",
-			at,
-			Some((para_id, expected_hash)),
-		)
-		.await
-	}
-
-	pub async fn parachain_host_persisted_validation_data(
-		&self,
-		at: PHash,
-		para_id: ParaId,
-		occupied_core_assumption: OccupiedCoreAssumption,
-	) -> Result<Option<PersistedValidationData>, RelayChainError> {
-		self.call_remote_runtime_function(
-			"ParachainHost_persisted_validation_data",
-			at,
-			Some((para_id, occupied_core_assumption)),
-		)
-		.await
-	}
-
-	pub async fn parachain_host_validation_code_by_hash(
-		&self,
-		at: PHash,
-		validation_code_hash: ValidationCodeHash,
-	) -> Result<Option<ValidationCode>, RelayChainError> {
-		self.call_remote_runtime_function(
-			"ParachainHost_validation_code_by_hash",
-			at,
-			Some(validation_code_hash),
-		)
-		.await
-	}
-	pub async fn parachain_host_inbound_hrmp_channels_contents(
-		&self,
-		para_id: ParaId,
-		at: PHash,
-	) -> Result<BTreeMap<ParaId, Vec<InboundHrmpMessage>>, RelayChainError> {
-		self.call_remote_runtime_function(
-			"ParachainHost_inbound_hrmp_channels_contents",
-			at,
-			Some(para_id),
-		)
-		.await
-	}
-
-	pub async fn parachain_host_dmq_contents(
-		&self,
-		para_id: ParaId,
-		at: PHash,
-	) -> Result<Vec<InboundDownwardMessage>, RelayChainError> {
-		self.call_remote_runtime_function("ParachainHost_dmq_contents", at, Some(para_id))
-			.await
-	}
-
-	pub async fn runtime_version(&self, at: PHash) -> Result<RuntimeVersion, RelayChainError> {
-		let params = rpc_params!(at);
-		self.request("state_getRuntimeVersion", params).await
-	}
-
-	pub async fn parachain_host_staging_get_disputes(
-		&self,
-		at: PHash,
-	) -> Result<Vec<(SessionIndex, CandidateHash, DisputeState<BlockNumber>)>, RelayChainError> {
-		self.call_remote_runtime_function("ParachainHost_staging_get_disputes", at, None::<()>)
-			.await
-	}
-
-	pub async fn subscribe_all_heads(&self) -> Result<Subscription<PHeader>, RelayChainError> {
-		self.subscribe::<PHeader>("chain_subscribeAllHeads", "chain_unsubscribeAllHeads", None)
-			.await
-	}
-
-	pub async fn subscribe_new_best_heads(&self) -> Result<Subscription<PHeader>, RelayChainError> {
-		self.subscribe::<PHeader>("chain_subscribeNewHeads", "chain_unsubscribeNewHeads", None)
-			.await
-	}
-
-	pub async fn subscribe_finalized_heads(
-		&self,
-	) -> Result<Subscription<PHeader>, RelayChainError> {
-		self.subscribe::<PHeader>(
-			"chain_subscribeFinalizedHeads",
-			"chain_unsubscribeFinalizedHeads",
-			None,
-		)
-		.await
-	}
-}
-
-/// RelayChainRPCInterface is used to interact with a full node that is running locally
+/// RelayChainRpcInterface is used to interact with a full node that is running locally
 /// in the same process.
 #[derive(Clone)]
-pub struct RelayChainRPCInterface {
-	rpc_client: RelayChainRPCClient,
+pub struct RelayChainRpcInterface {
+	rpc_client: RelayChainRpcClient,
 	overseer_handle: Option<Handle>,
 }
 
-impl RelayChainRPCInterface {
-	pub async fn new(url: Url) -> RelayChainResult<Self> {
-		Ok(Self { rpc_client: RelayChainRPCClient::new(url).await?, overseer_handle: None })
-	}
-
-	pub async fn new_with_handle(
-		url: Url,
-		overseer_handle: Option<Handle>,
-	) -> RelayChainResult<Self> {
-		Ok(Self { rpc_client: RelayChainRPCClient::new(url).await?, overseer_handle })
+impl RelayChainRpcInterface {
+	pub fn new(rpc_client: RelayChainRpcClient, overseer_handle: Option<Handle>) -> Self {
+		Self { rpc_client, overseer_handle }
 	}
 }
 
 #[async_trait]
-impl RelayChainInterface for RelayChainRPCInterface {
+impl RelayChainInterface for RelayChainRpcInterface {
 	async fn retrieve_dmq_contents(
 		&self,
 		para_id: ParaId,
@@ -534,17 +105,7 @@ impl RelayChainInterface for RelayChainRPCInterface {
 	async fn import_notification_stream(
 		&self,
 	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
-		let imported_headers_stream =
-			self.rpc_client.subscribe_all_heads().await?.filter_map(|item| async move {
-				item.map_err(|err| {
-					tracing::error!(
-						target: LOG_TARGET,
-						"Encountered error in import notification stream: {}",
-						err
-					)
-				})
-				.ok()
-			});
+		let imported_headers_stream = self.rpc_client.get_imported_heads_stream().await?;
 
 		Ok(imported_headers_stream.boxed())
 	}
@@ -552,20 +113,7 @@ impl RelayChainInterface for RelayChainRPCInterface {
 	async fn finality_notification_stream(
 		&self,
 	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
-		let imported_headers_stream = self
-			.rpc_client
-			.subscribe_finalized_heads()
-			.await?
-			.filter_map(|item| async move {
-				item.map_err(|err| {
-					tracing::error!(
-						target: LOG_TARGET,
-						"Encountered error in finality notification stream: {}",
-						err
-					)
-				})
-				.ok()
-			});
+		let imported_headers_stream = self.rpc_client.get_finalized_heads_stream().await?;
 
 		Ok(imported_headers_stream.boxed())
 	}
@@ -620,7 +168,7 @@ impl RelayChainInterface for RelayChainRPCInterface {
 	/// 3. Wait for the block to be imported via subscription.
 	/// 4. If timeout is reached, we return an error.
 	async fn wait_for_block(&self, wait_for_hash: PHash) -> RelayChainResult<()> {
-		let mut head_stream = self.rpc_client.subscribe_all_heads().await?;
+		let mut head_stream = self.rpc_client.get_imported_heads_stream().await?;
 
 		if self.rpc_client.chain_get_header(Some(wait_for_hash)).await?.is_some() {
 			return Ok(());
@@ -632,7 +180,7 @@ impl RelayChainInterface for RelayChainRPCInterface {
 			futures::select! {
 				_ = timeout => return Err(RelayChainError::WaitTimeout(wait_for_hash)),
 				evt = head_stream.next().fuse() => match evt {
-					Some(Ok(evt)) if evt.hash() == wait_for_hash => return Ok(()),
+					Some(evt) if evt.hash() == wait_for_hash => return Ok(()),
 					// Not the event we waited on.
 					Some(_) => continue,
 					None => return Err(RelayChainError::ImportListenerClosed(wait_for_hash)),
@@ -644,18 +192,7 @@ impl RelayChainInterface for RelayChainRPCInterface {
 	async fn new_best_notification_stream(
 		&self,
 	) -> RelayChainResult<Pin<Box<dyn Stream<Item = PHeader> + Send>>> {
-		let imported_headers_stream =
-			self.rpc_client.subscribe_new_best_heads().await?.filter_map(|item| async move {
-				item.map_err(|err| {
-					tracing::error!(
-						target: LOG_TARGET,
-						"Error in best block notification stream: {}",
-						err
-					)
-				})
-				.ok()
-			});
-
+		let imported_headers_stream = self.rpc_client.get_best_heads_stream().await?;
 		Ok(imported_headers_stream.boxed())
 	}
 }

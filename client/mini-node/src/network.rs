@@ -2,7 +2,7 @@ use futures::FutureExt;
 use polkadot_service::{BlockT, HeaderMetadata};
 use sc_client_api::{BlockBackend, HeaderBackend, ProofProvider};
 use sc_consensus::ImportQueue;
-use sc_network::NetworkService;
+use sc_network::{config::SyncMode, NetworkService};
 use sc_network_light::light_client_requests;
 use sc_network_sync::{block_request_handler, state_request_handler, ChainSync};
 use sc_service::{error::Error, Configuration, NetworkStarter, SpawnTaskHandle};
@@ -50,6 +50,20 @@ where
 
 	let block_announce_validator = Box::new(DefaultBlockAnnounceValidator);
 
+	let chain_sync = ChainSync::new(
+		match config.network.sync_mode {
+			SyncMode::Full => sc_network_common::sync::SyncMode::Full,
+			SyncMode::Fast { skip_proofs, storage_chain_mode } => {
+				sc_network_common::sync::SyncMode::LightState { skip_proofs, storage_chain_mode }
+			},
+			SyncMode::Warp => sc_network_common::sync::SyncMode::Warp,
+		},
+		client.clone(),
+		block_announce_validator,
+		config.network.max_parallel_downloads,
+		None,
+	)?;
+
 	let network_params = sc_network::config::Params {
 		role: config.role.clone(),
 		executor: {
@@ -64,18 +78,7 @@ where
 				spawn_handle.spawn("network-transactions-handler", Some("networking"), fut);
 			})
 		},
-		create_chain_sync: Box::new(
-			move |sync_mode, chain, warp_sync_provider| match ChainSync::new(
-				sync_mode,
-				chain,
-				block_announce_validator,
-				10,
-				warp_sync_provider,
-			) {
-				Ok(chain_sync) => Ok(Box::new(chain_sync)),
-				Err(error) => Err(Box::new(error).into()),
-			},
-		),
+		chain_sync: Box::new(chain_sync),
 		network_config: config.network.clone(),
 		chain: client.clone(),
 		transaction_pool: transaction_pool_adapter as _,
@@ -84,7 +87,7 @@ where
 		metrics_registry: config.prometheus_config.as_ref().map(|config| config.registry.clone()),
 		block_request_protocol_config,
 		state_request_protocol_config,
-		warp_sync: None,
+		warp_sync_protocol_config: None,
 		light_client_request_protocol_config,
 	};
 
