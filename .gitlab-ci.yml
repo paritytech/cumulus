@@ -84,103 +84,103 @@ variables:
 
 #### stage:                        test
 
-test-linux-stable:
-  stage:                           test
-  <<:                              *docker-env
-  <<:                              *common-refs
-  variables:
-    # Enable debug assertions since we are running optimized builds for testing
-    # but still want to have debug assertions.
-    RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
-  script:
-    - time cargo test --all --release --locked -- --include-ignored
+#test-linux-stable:
+#  stage:                           test
+#  <<:                              *docker-env
+#  <<:                              *common-refs
+#  variables:
+#    # Enable debug assertions since we are running optimized builds for testing
+#    # but still want to have debug assertions.
+#    RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
+#  script:
+#    - time cargo test --all --release --locked -- --include-ignored
 
-check-runtime-benchmarks:
-  stage:                           test
-  <<:                              *docker-env
-  <<:                              *common-refs
-  script:
-    # Check that the node will compile with `runtime-benchmarks` feature flag.
-    - time cargo check --all --features runtime-benchmarks
-    # Check that parachain-template will compile with `runtime-benchmarks` feature flag.
-    - time cargo check -p parachain-template-node --features runtime-benchmarks
-
-cargo-check-try-runtime:
-  stage:                           test
-  <<:                              *docker-env
-  <<:                              *common-refs
-  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
-  needs:
-    - job:                         check-runtime-benchmarks
-      artifacts:                   false
-  script:
-    # Check that the node will compile with `try-runtime` feature flag.
-    - time cargo check --all --features try-runtime
-    # Check that parachain-template will compile with `try-runtime` feature flag.
-    - time cargo check -p parachain-template-node --features try-runtime
-
-check-rustdoc:
-  stage:                           test
-  <<:                              *docker-env
-  <<:                              *common-refs
-  variables:
-    SKIP_WASM_BUILD:               1
-    RUSTDOCFLAGS:                  "-Dwarnings"
-  script:
-    - time cargo +nightly doc --workspace --all-features --verbose --no-deps
-
-cargo-check-benches:
-  stage:                           test
-  <<:                              *docker-env
-  <<:                              *common-refs
-  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
-  needs:
-    - job:                         check-rustdoc
-      artifacts:                   false
-  script:
-    - time cargo check --all --benches
+#check-runtime-benchmarks:
+#  stage:                           test
+#  <<:                              *docker-env
+#  <<:                              *common-refs
+#  script:
+#    # Check that the node will compile with `runtime-benchmarks` feature flag.
+#    - time cargo check --all --features runtime-benchmarks
+#    # Check that parachain-template will compile with `runtime-benchmarks` feature flag.
+#    - time cargo check -p parachain-template-node --features runtime-benchmarks
+#
+#cargo-check-try-runtime:
+#  stage:                           test
+#  <<:                              *docker-env
+#  <<:                              *common-refs
+#  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
+#  needs:
+#    - job:                         check-runtime-benchmarks
+#      artifacts:                   false
+#  script:
+#    # Check that the node will compile with `try-runtime` feature flag.
+#    - time cargo check --all --features try-runtime
+#    # Check that parachain-template will compile with `try-runtime` feature flag.
+#    - time cargo check -p parachain-template-node --features try-runtime
+#
+#check-rustdoc:
+#  stage:                           test
+#  <<:                              *docker-env
+#  <<:                              *common-refs
+#  variables:
+#    SKIP_WASM_BUILD:               1
+#    RUSTDOCFLAGS:                  "-Dwarnings"
+#  script:
+#    - time cargo +nightly doc --workspace --all-features --verbose --no-deps
+#
+#cargo-check-benches:
+#  stage:                           test
+#  <<:                              *docker-env
+#  <<:                              *common-refs
+#  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
+#  needs:
+#    - job:                         check-rustdoc
+#      artifacts:                   false
+#  script:
+#    - time cargo check --all --benches
 
 #### stage:                        build
 
-build-linux-stable:
-  stage:                           build
-  <<:                              *docker-env
-  <<:                              *collect-artifacts
-  variables:
-    # Enable debug assertions since we are running optimized builds for testing
-    # but still want to have debug assertions.
-    RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
-  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
-  needs:
-    - job:                         check-rustdoc
-      artifacts:                   false
-  script:
-    - echo "___Building a binary, please refrain from using it in production since it goes with the debug assertions.___"
-    - time cargo build --release --locked --bin polkadot-parachain
-    - echo "___Packing the artifacts___"
-    - mkdir -p ./artifacts
-    - mv ./target/release/polkadot-parachain ./artifacts/.
-    - echo "___The VERSION is either a tag name or the curent branch if triggered not by a tag___"
-    - echo ${CI_COMMIT_REF_NAME} | tee ./artifacts/VERSION
-
-build-test-parachain:
-  stage:                           build
-  <<:                              *docker-env
-  <<:                              *collect-artifacts
-  variables:
-    # Enable debug assertions since we are running optimized builds for testing
-    # but still want to have debug assertions.
-    RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
-  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
-  needs:
-    - job:                         check-rustdoc
-      artifacts:                   false
-  script:
-    - echo "___Building a binary, please refrain from using it in production since it goes with the debug assertions.___"
-    - time cargo +nightly build --release --locked --bin test-parachain
-    - echo "___Packing the artifacts___"
-    - mkdir -p ./artifacts
-    - mv ./target/release/test-parachain ./artifacts/.
+#build-linux-stable:
+#  stage:                           build
+#  <<:                              *docker-env
+#  <<:                              *collect-artifacts
+#  variables:
+#    # Enable debug assertions since we are running optimized builds for testing
+#    # but still want to have debug assertions.
+#    RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
+#  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
+#  needs:
+#    - job:                         check-rustdoc
+#      artifacts:                   false
+#  script:
+#    - echo "___Building a binary, please refrain from using it in production since it goes with the debug assertions.___"
+#    - time cargo build --release --locked --bin polkadot-parachain
+#    - echo "___Packing the artifacts___"
+#    - mkdir -p ./artifacts
+#    - mv ./target/release/polkadot-parachain ./artifacts/.
+#    - echo "___The VERSION is either a tag name or the curent branch if triggered not by a tag___"
+#    - echo ${CI_COMMIT_REF_NAME} | tee ./artifacts/VERSION
+#
+#build-test-parachain:
+#  stage:                           build
+#  <<:                              *docker-env
+#  <<:                              *collect-artifacts
+#  variables:
+#    # Enable debug assertions since we are running optimized builds for testing
+#    # but still want to have debug assertions.
+#    RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
+#  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
+#  needs:
+#    - job:                         check-rustdoc
+#      artifacts:                   false
+#  script:
+#    - echo "___Building a binary, please refrain from using it in production since it goes with the debug assertions.___"
+#    - time cargo +nightly build --release --locked --bin test-parachain
+#    - echo "___Packing the artifacts___"
+#    - mkdir -p ./artifacts
+#    - mv ./target/release/test-parachain ./artifacts/.
 
 #### stage:                        publish
 
@@ -207,119 +207,133 @@ build-test-parachain:
   after_script:
     - buildah logout --all
 
-build-push-image-polkadot-parachain-debug:
-  stage:                           publish
-  <<:                              *kubernetes-env
-  <<:                              *common-refs
-  <<:                              *build-push-image
-  needs:
-    - job:                         build-linux-stable
-      artifacts:                   true
-  variables:
-    DOCKERFILE:                    "docker/polkadot-parachain-debug_unsigned_injected.Dockerfile"
-    IMAGE_NAME:                    "docker.io/paritypr/polkadot-parachain-debug"
-    VERSION:                       "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
-
-build-push-image-test-parachain:
-  stage:                           publish
-  <<:                              *kubernetes-env
-  <<:                              *common-refs
-  <<:                              *build-push-image
-  needs:
-    - job:                         build-test-parachain
-      artifacts:                   true
-  variables:
-    DOCKERFILE:                    "docker/test-parachain_injected.Dockerfile"
-    IMAGE_NAME:                    "docker.io/paritypr/test-parachain"
-    VERSION:                       "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
-
-publish-s3:
-  stage:                           publish
-  <<:                              *kubernetes-env
-  image:                           paritytech/awscli:latest
-  <<:                              *publish-refs
-  needs:
-    - job:                         build-linux-stable
-      artifacts:                   true
-  variables:
-    GIT_STRATEGY:                  none
-    BUCKET:                        "releases.parity.io"
-    PREFIX:                        "cumulus/${ARCH}-${DOCKER_OS}"
-  script:
-    - echo "___Publishing a binary with debug assertions!___"
-    - echo "___VERSION = $(cat ./artifacts/VERSION) ___"
-    - aws s3 sync ./artifacts/ s3://${BUCKET}/${PREFIX}/$(cat ./artifacts/VERSION)/
-    - echo "___Updating objects in latest path___"
-    - aws s3 sync s3://${BUCKET}/${PREFIX}/$(cat ./artifacts/VERSION)/ s3://${BUCKET}/${PREFIX}/latest/
-  after_script:
-    - aws s3 ls s3://${BUCKET}/${PREFIX}/latest/
-        --recursive --human-readable --summarize
+#build-push-image-polkadot-parachain-debug:
+#  stage:                           publish
+#  <<:                              *kubernetes-env
+#  <<:                              *common-refs
+#  <<:                              *build-push-image
+#  needs:
+#    - job:                         build-linux-stable
+#      artifacts:                   true
+#  variables:
+#    DOCKERFILE:                    "docker/polkadot-parachain-debug_unsigned_injected.Dockerfile"
+#    IMAGE_NAME:                    "docker.io/paritypr/polkadot-parachain-debug"
+#    VERSION:                       "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
+#
+#build-push-image-test-parachain:
+#  stage:                           publish
+#  <<:                              *kubernetes-env
+#  <<:                              *common-refs
+#  <<:                              *build-push-image
+#  needs:
+#    - job:                         build-test-parachain
+#      artifacts:                   true
+#  variables:
+#    DOCKERFILE:                    "docker/test-parachain_injected.Dockerfile"
+#    IMAGE_NAME:                    "docker.io/paritypr/test-parachain"
+#    VERSION:                       "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
+#
+#publish-s3:
+#  stage:                           publish
+#  <<:                              *kubernetes-env
+#  image:                           paritytech/awscli:latest
+#  <<:                              *publish-refs
+#  needs:
+#    - job:                         build-linux-stable
+#      artifacts:                   true
+#  variables:
+#    GIT_STRATEGY:                  none
+#    BUCKET:                        "releases.parity.io"
+#    PREFIX:                        "cumulus/${ARCH}-${DOCKER_OS}"
+#  script:
+#    - echo "___Publishing a binary with debug assertions!___"
+#    - echo "___VERSION = $(cat ./artifacts/VERSION) ___"
+#    - aws s3 sync ./artifacts/ s3://${BUCKET}/${PREFIX}/$(cat ./artifacts/VERSION)/
+#    - echo "___Updating objects in latest path___"
+#    - aws s3 sync s3://${BUCKET}/${PREFIX}/$(cat ./artifacts/VERSION)/ s3://${BUCKET}/${PREFIX}/latest/
+#  after_script:
+#    - aws s3 ls s3://${BUCKET}/${PREFIX}/latest/
+#        --recursive --human-readable --summarize
 
 #### stage:                        benchmarks
 # Work only on release-parachains-v* branches
 
-benchmarks-build:
-  stage:                           benchmarks-build
-  <<:                              *docker-env
-  <<:                              *collect-artifacts
-  <<:                              *benchmarks-manual-refs
-  script:
-    - time cargo build --profile production --locked --features runtime-benchmarks
-    - mkdir artifacts
-    - cp target/production/polkadot-parachain ./artifacts/
+#benchmarks-build:
+#  stage:                           benchmarks-build
+#  <<:                              *docker-env
+#  <<:                              *collect-artifacts
+#  <<:                              *benchmarks-manual-refs
+#  script:
+#    - time cargo build --profile production --locked --features runtime-benchmarks
+#    - mkdir artifacts
+#    - cp target/production/polkadot-parachain ./artifacts/
+#
+#benchmarks:
+#  stage:                           benchmarks-run
+#  before_script:
+#    - *rust-info-script
+#  <<:                              *collect-artifacts
+#  <<:                              *benchmarks-refs
+#  timeout:                         1d
+#  script:
+#    - ./scripts/benchmarks-ci.sh assets statemine
+#    - ./scripts/benchmarks-ci.sh assets statemint
+#    - ./scripts/benchmarks-ci.sh assets westmint
+#    - git status
+#    - export BRANCHNAME="weights-${CI_COMMIT_BRANCH}"
+#    # Set git config
+#    - rm -rf .git/config
+#    - git config --global user.email "${GITHUB_EMAIL}"
+#    - git config --global user.name "${GITHUB_USER}"
+#    - git config remote.origin.url "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/paritytech/${CI_PROJECT_NAME}.git"
+#    - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+#    # push results to github
+#    - git checkout -b $BRANCHNAME
+#    - git add parachains/*
+#    - git commit -m "[benchmarks] pr with weights"
+#    - git push origin $BRANCHNAME
+#    # create PR
+#    - curl -u ${GITHUB_USER}:${GITHUB_TOKEN}
+#      -d '{"title":"[benchmarks] Update weights","body":"This PR is generated automatically by CI.","head":"'$BRANCHNAME'","base":"'${CI_COMMIT_BRANCH}'"}'
+#      -X POST https://api.github.com/repos/paritytech/${CI_PROJECT_NAME}/pulls
+#  after_script:
+#    - rm -rf .git/config
+#  tags:
+#    - weights
+#
+#publish-benchmarks-s3:
+#  stage:                           publish
+#  <<:                              *kubernetes-env
+#  image:                           paritytech/awscli:latest
+#  <<:                              *benchmarks-refs
+#  needs:
+#    - job:                         benchmarks
+#      artifacts:                   true
+#  variables:
+#    GIT_STRATEGY:                  none
+#    BUCKET:                        "releases.parity.io"
+#    PREFIX:                        "cumulus/$CI_COMMIT_REF_NAME/benchmarks"
+#  script:
+#    - echo "___Removing binary from artifacts___"
+#    - rm -f ./artifacts/polkadot-parachain
+#    - echo "___Publishing benchmark results___"
+#    - aws s3 sync ./artifacts/ s3://${BUCKET}/${PREFIX}/
+#  after_script:
+#    - aws s3 ls s3://${BUCKET}/${PREFIX}/ --recursive --human-readable --summarize
 
-benchmarks:
-  stage:                           benchmarks-run
-  before_script:
-    - *rust-info-script
-  <<:                              *collect-artifacts
-  <<:                              *benchmarks-refs
-  timeout:                         1d
-  script:
-    - ./scripts/benchmarks-ci.sh assets statemine
-    - ./scripts/benchmarks-ci.sh assets statemint
-    - ./scripts/benchmarks-ci.sh assets westmint
-    - git status
-    - export BRANCHNAME="weights-${CI_COMMIT_BRANCH}"
-    # Set git config
-    - rm -rf .git/config
-    - git config --global user.email "${GITHUB_EMAIL}"
-    - git config --global user.name "${GITHUB_USER}"
-    - git config remote.origin.url "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/paritytech/${CI_PROJECT_NAME}.git"
-    - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
-    # push results to github
-    - git checkout -b $BRANCHNAME
-    - git add parachains/*
-    - git commit -m "[benchmarks] pr with weights"
-    - git push origin $BRANCHNAME
-    # create PR
-    - curl -u ${GITHUB_USER}:${GITHUB_TOKEN}
-      -d '{"title":"[benchmarks] Update weights","body":"This PR is generated automatically by CI.","head":"'$BRANCHNAME'","base":"'${CI_COMMIT_BRANCH}'"}'
-      -X POST https://api.github.com/repos/paritytech/${CI_PROJECT_NAME}/pulls
-  after_script:
-    - rm -rf .git/config
-  tags:
-    - weights
-
-publish-benchmarks-s3:
+# Ref: https://github.com/paritytech/opstooling/issues/111
+update-parachain-template:
   stage:                           publish
-  <<:                              *kubernetes-env
-  image:                           paritytech/awscli:latest
-  <<:                              *benchmarks-refs
-  needs:
-    - job:                         benchmarks
-      artifacts:                   true
-  variables:
-    GIT_STRATEGY:                  none
-    BUCKET:                        "releases.parity.io"
-    PREFIX:                        "cumulus/$CI_COMMIT_REF_NAME/benchmarks"
+  extends:                         .kubernetes-env
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/ # i.e. polkadot-v1.0.99, polkadot-v2.1rc1
   script:
-    - echo "___Removing binary from artifacts___"
-    - rm -f ./artifacts/polkadot-parachain
-    - echo "___Publishing benchmark results___"
-    - aws s3 sync ./artifacts/ s3://${BUCKET}/${PREFIX}/
-  after_script:
-    - aws s3 ls s3://${BUCKET}/${PREFIX}/ --recursive --human-readable --summarize
+    - git clone --depth=1 --branch="$PIPELINE_SCRIPTS_TAG" https://github.com/paritytech/pipeline-scripts
+    - ./pipeline-scripts/update_substrate_template.sh
+      --repo-name "substrate-parachain-template"
+      --template-path "parachain-template"
+      --github-api-token "$GITHUB_TOKEN"
+      --polkadot-branch "polkadot-v0.9.27"
 
 #### stage:                        .post
 
