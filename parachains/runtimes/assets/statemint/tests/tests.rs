@@ -1,9 +1,8 @@
 use asset_test_utils::{ExtBuilder, RuntimeHelper};
-use codec::Decode;
 use frame_support::{
 	assert_noop, assert_ok, traits::PalletInfo, weights::WeightToFee as WeightToFeeT,
 };
-use parachains_common::{AccountId, Balance, StatemintAuraId as AuraId};
+use parachains_common::{AccountId, StatemintAuraId as AuraId};
 pub use statemint_runtime::{
 	constants::fee::WeightToFee, xcm_config::XcmConfig, Assets, Balances, ExistentialDeposit,
 	Runtime, SessionKeys, System,
