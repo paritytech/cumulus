@@ -37,7 +37,7 @@ use cumulus_client_service::{
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::RelayChainInProcessInterface;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_mini::BlockChainRPCClient;
+use cumulus_relay_chain_mini::BlockChainRpcClient;
 use cumulus_relay_chain_rpc_interface::{create_client_and_start_worker, RelayChainRpcInterface};
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 use parking_lot::Mutex;
@@ -190,7 +190,7 @@ async fn build_relay_chain_interface(
 			let collator_node = cumulus_relay_chain_mini::new_mini(
 				relay_chain_config,
 				collator_key.clone().unwrap(),
-				Arc::new(BlockChainRPCClient::new(client.clone()).await),
+				Arc::new(BlockChainRpcClient::new(client.clone()).await),
 			)
 			.expect("Unable to initialize relay chain minimal node");
 			task_manager.add_child(collator_node.task_manager);

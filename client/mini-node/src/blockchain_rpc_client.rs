@@ -14,11 +14,11 @@ use sp_blockchain::HeaderMetadata;
 const LOG_TARGET: &'static str = "blockchain-rpc-client";
 
 #[derive(Clone)]
-pub struct BlockChainRPCClient {
+pub struct BlockChainRpcClient {
 	rpc_client: RelayChainRpcClient,
 }
 
-impl BlockChainRPCClient {
+impl BlockChainRpcClient {
 	pub async fn new(rpc_client: RelayChainRpcClient) -> Self {
 		Self { rpc_client }
 	}
@@ -32,7 +32,7 @@ impl BlockChainRPCClient {
 }
 
 #[async_trait::async_trait]
-impl RuntimeApiSubsystemClient for BlockChainRPCClient {
+impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 	async fn validators(
 		&self,
 		at: Hash,
@@ -307,7 +307,7 @@ impl RuntimeApiSubsystemClient for BlockChainRPCClient {
 }
 
 #[async_trait::async_trait]
-impl AuthorityDiscoveryWrapper<Block> for BlockChainRPCClient {
+impl AuthorityDiscoveryWrapper<Block> for BlockChainRpcClient {
 	async fn authorities(
 		&self,
 		at: Hash,
@@ -317,7 +317,7 @@ impl AuthorityDiscoveryWrapper<Block> for BlockChainRPCClient {
 	}
 }
 
-impl BlockChainRPCClient {
+impl BlockChainRpcClient {
 	pub async fn import_notification_stream_async(
 		&self,
 	) -> Pin<Box<dyn Stream<Item = Header> + Send>> {
@@ -344,7 +344,7 @@ fn block_local<T>(fut: impl Future<Output = T>) -> T {
 	tokio::task::block_in_place(|| tokio_handle.block_on(fut))
 }
 
-impl HeaderBackend<Block> for BlockChainRPCClient {
+impl HeaderBackend<Block> for BlockChainRpcClient {
 	fn header(
 		&self,
 		id: sp_api::BlockId<Block>,
@@ -414,7 +414,7 @@ impl HeaderBackend<Block> for BlockChainRPCClient {
 	}
 }
 
-impl ProofProvider<Block> for BlockChainRPCClient {
+impl ProofProvider<Block> for BlockChainRpcClient {
 	fn read_proof(
 		&self,
 		_id: &sp_api::BlockId<Block>,
@@ -469,7 +469,7 @@ impl ProofProvider<Block> for BlockChainRPCClient {
 	}
 }
 
-impl BlockBackend<Block> for BlockChainRPCClient {
+impl BlockBackend<Block> for BlockChainRpcClient {
 	fn block_body(
 		&self,
 		_id: &sp_api::BlockId<Block>,
@@ -538,7 +538,7 @@ impl BlockBackend<Block> for BlockChainRPCClient {
 
 /// The syncing code demands that clients implement `HeaderMetadata`. However, in the minimal collator node we
 /// these methods will never be called. Should be refactored at some point.
-impl HeaderMetadata<Block> for BlockChainRPCClient {
+impl HeaderMetadata<Block> for BlockChainRpcClient {
 	type Error = sp_blockchain::Error;
 
 	fn header_metadata(

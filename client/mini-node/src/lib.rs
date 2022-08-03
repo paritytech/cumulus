@@ -55,7 +55,7 @@ use sp_runtime::traits::Block as BlockT;
 
 mod blockchain_rpc_client;
 mod network;
-pub use blockchain_rpc_client::BlockChainRPCClient;
+pub use blockchain_rpc_client::BlockChainRpcClient;
 
 /// Arguments passed for overseer construction.
 pub struct CollatorOverseerGenArgs<'a, Spawner, RuntimeClient>
@@ -211,7 +211,7 @@ impl sc_service::ImportQueue<Block> for DummyImportQueue {
 
 fn build_authority_discovery_service<Block: BlockT>(
 	task_manager: &TaskManager,
-	client: Arc<BlockChainRPCClient>,
+	client: Arc<BlockChainRpcClient>,
 	config: &Configuration,
 	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 	prometheus_registry: Option<Registry>,
@@ -250,7 +250,7 @@ fn build_authority_discovery_service<Block: BlockT>(
 pub fn new_mini(
 	mut config: Configuration,
 	collator_pair: CollatorPair,
-	relay_chain_rpc_client: Arc<BlockChainRPCClient>,
+	relay_chain_rpc_client: Arc<BlockChainRpcClient>,
 ) -> Result<NewCollator, Error> {
 	let role = config.role.clone();
 
@@ -296,7 +296,7 @@ pub fn new_mini(
 
 	let overseer_gen = CollatorOverseerGen;
 	let (overseer, overseer_handle) = overseer_gen
-		.generate::<sc_service::SpawnTaskHandle, BlockChainRPCClient>(
+		.generate::<sc_service::SpawnTaskHandle, BlockChainRpcClient>(
 			overseer_connector,
 			CollatorOverseerGenArgs {
 				leaves: active_leaves,
@@ -349,7 +349,7 @@ pub fn new_mini(
 
 /// Glues together the [`Overseer`] and `BlockchainEvents` by forwarding
 /// import and finality notifications into the [`OverseerHandle`].
-pub async fn forward_collator_events(client: Arc<BlockChainRPCClient>, mut handle: Handle) {
+pub async fn forward_collator_events(client: Arc<BlockChainRpcClient>, mut handle: Handle) {
 	let mut finality = client.finality_notification_stream_async().await.fuse();
 	let mut imports = client.import_notification_stream_async().await.fuse();
 
