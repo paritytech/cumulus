@@ -9,7 +9,7 @@ on:
     inputs:
       tag:
         description: release tag to build image for
-        default: v0.9.230
+        default: v0.9.270
         required: true
       prerelease:
         description: is prerelease
