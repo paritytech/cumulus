@@ -1023,7 +1023,7 @@ checksum = "245097e9a4535ee1e3e3931fcfcd55a796a44c643e8596ff6566d68f09b87bbc"
 
 [[package]]
 name = "contracts-rococo-runtime"
-version = "0.2.0"
+version = "0.9.27"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -6592,7 +6592,7 @@ dependencies = [
 
 [[package]]
 name = "parachains-common"
-version = "1.0.0"
+version = "0.9.27"
 dependencies = [
  "frame-executive",
  "frame-support",
@@ -7718,7 +7718,7 @@ dependencies = [
 
 [[package]]
 name = "polkadot-parachain"
-version = "0.9.220"
+version = "0.9.270"
 dependencies = [
  "assert_cmd",
  "async-trait",
@@ -8957,7 +8957,7 @@ dependencies = [
 
 [[package]]
 name = "rococo-parachain-runtime"
-version = "0.1.0"
+version = "0.9.27"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -11526,7 +11526,7 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "statemine-runtime"
-version = "2.0.0"
+version = "0.9.27"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -11592,7 +11592,7 @@ dependencies = [
 
 [[package]]
 name = "statemint-runtime"
-version = "1.0.0"
+version = "0.9.27"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -13094,7 +13094,7 @@ dependencies = [
 
 [[package]]
 name = "westmint-runtime"
-version = "1.0.0"
+version = "0.9.27"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",

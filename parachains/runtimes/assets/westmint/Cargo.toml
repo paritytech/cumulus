@@ -1,6 +1,6 @@
 [package]
 name = "westmint-runtime"
-version = "1.0.0"
+version = "0.9.27"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 description = "Westend variant of Statemint parachain runtime"

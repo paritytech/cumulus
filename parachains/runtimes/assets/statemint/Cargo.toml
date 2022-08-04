@@ -1,6 +1,6 @@
 [package]
 name = "statemint-runtime"
-version = "1.0.0"
+version = "0.9.27"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 description = "Statemint parachain runtime"

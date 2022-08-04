@@ -1,6 +1,6 @@
 [package]
 name = "contracts-rococo-runtime"
-version = "0.2.0"
+version = "0.9.27"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 

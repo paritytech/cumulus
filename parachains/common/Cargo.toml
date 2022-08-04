@@ -1,6 +1,6 @@
 [package]
 name = "parachains-common"
-version = "1.0.0"
+version = "0.9.27"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 description = "Logic which is common to all parachain runtimes"
