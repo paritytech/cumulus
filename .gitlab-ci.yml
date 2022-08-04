@@ -93,7 +93,18 @@ test-linux-stable:
     # but still want to have debug assertions.
     RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
   script:
-    - time cargo test --all --release --locked -- --include-ignored
+    - time cargo nextest run --all --release --locked --run-ignored all
+
+test-doc:
+  stage:                           test
+  <<:                              *docker-env
+  <<:                              *common-refs
+  variables:
+    # Enable debug assertions since we are running optimized builds for testing
+    # but still want to have debug assertions.
+    RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
+  script:
+    - time cargo test --doc
 
 check-runtime-benchmarks:
   stage:                           test
@@ -288,6 +299,7 @@ benchmarks-statemint:
     - *rust-info-script
   <<:                              *collect-artifacts
   <<:                              *benchmarks-refs
+  timeout:                         1d
   script:
     - ./scripts/benchmarks-ci.sh assets statemine ./artifacts
     - ./scripts/benchmarks-ci.sh assets statemint ./artifacts
@@ -349,6 +361,19 @@ publish-benchmarks-collectives-s3:
     - job:                         benchmarks-collectives
       artifacts:                   true
 
+# Ref: https://github.com/paritytech/opstooling/issues/111
+update-parachain-template:
+  stage:                           publish
+  extends:                         .kubernetes-env
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^polkadot-v[0-9]+\.[0-9]+.*$/ # i.e. polkadot-v1.0.99, polkadot-v2.1rc1
+  script:
+    - git clone --depth=1 --branch="$PIPELINE_SCRIPTS_TAG" https://github.com/paritytech/pipeline-scripts
+    - ./pipeline-scripts/update_substrate_template.sh
+      --repo-name "substrate-parachain-template"
+      --template-path "parachain-template"
+      --github-api-token "$GITHUB_TOKEN"
+      --polkadot-branch "$CI_COMMIT_REF_NAME"
 
 #### stage:                        .post
 
