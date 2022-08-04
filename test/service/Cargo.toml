@@ -51,10 +51,10 @@ substrate-test-client = { git = "https://github.com/paritytech/substrate", branc
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.27" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.27" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.27" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.27" }
 
 # Cumulus
 cumulus-client-cli = { path = "../../client/cli" }
@@ -76,7 +76,7 @@ futures = "0.3.21"
 portpicker = "0.1.1"
 
 # Polkadot dependencies
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.27" }
 
 # Substrate dependencies
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.27" }
