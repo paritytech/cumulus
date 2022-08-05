@@ -35,6 +35,7 @@ xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features
 
 # Cumulus
 pallet-collator-selection = { path = "../../pallets/collator-selection", default-features = false }
+cumulus-primitives-utility = { path = "../../primitives/utility", default-features = false }
 
 [dev-dependencies]
 pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.27" }
@@ -61,4 +62,6 @@ std = [
 	"sp-io/std",
 	"sp-std/std",
 	"pallet-collator-selection/std",
+	"cumulus-primitives-utility/std",
+	"xcm-builder/std"
 ]
