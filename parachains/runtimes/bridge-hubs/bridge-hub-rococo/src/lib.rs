@@ -31,9 +31,9 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, MultiSignature,
+	ApplyExtrinsicResult,
 };
 
 use sp_std::prelude::*;
@@ -43,14 +43,13 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::Everything,
+	traits::{Everything, IsInVec},
 	weights::{
 		constants::WEIGHT_PER_SECOND, ConstantMultiplier, DispatchClass, Weight,
 		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 	},
 	PalletId,
 };
-use frame_support::traits::IsInVec;
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
@@ -70,15 +69,9 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 // XCM Imports
+use parachains_common::{AccountId, Signature};
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
-
-/// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
-pub type Signature = MultiSignature;
-
-/// Some way of identifying an account on the chain. We intentionally make it equivalent
-/// to the public key of our transaction signing scheme.
-pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
 /// Balance of an account.
 pub type Balance = u128;
@@ -489,7 +482,7 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaWococoInstance> for Runtime {
 	type WeightInfo = ();
 }
 
-/// Add granda bridge pallet to track Wococo relay chain
+/// Add granda bridge pallet to track Rococo relay chain
 pub type BridgeGrandpaRococoInstance = pallet_bridge_grandpa::Instance2;
 impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
 	type BridgedChain = bp_rococo::Rococo;
@@ -512,7 +505,7 @@ pub type BridgeParachainWococoInstance = pallet_bridge_parachains::Instance1;
 impl pallet_bridge_parachains::Config<BridgeParachainWococoInstance> for Runtime {
 	type WeightInfo = ();
 	type BridgesGrandpaPalletInstance = BridgeGrandpaWococoInstance;
-	type ParasPalletName = RococoBridgeParachainPalletName;
+	type ParasPalletName = WococoBridgeParachainPalletName;
 	type TrackedParachains = IsInVec<GetTenFirstParachains>;
 	type HeadsToKeep = ParachainHeadsToKeep;
 }
@@ -522,7 +515,7 @@ pub type BridgeParachainRococoInstance = pallet_bridge_parachains::Instance2;
 impl pallet_bridge_parachains::Config<BridgeParachainRococoInstance> for Runtime {
 	type WeightInfo = ();
 	type BridgesGrandpaPalletInstance = BridgeGrandpaRococoInstance;
-	type ParasPalletName = WococoBridgeParachainPalletName;
+	type ParasPalletName = RococoBridgeParachainPalletName;
 	type TrackedParachains = IsInVec<GetTenFirstParachains>;
 	type HeadsToKeep = ParachainHeadsToKeep;
 }

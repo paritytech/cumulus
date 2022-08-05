@@ -37,6 +37,8 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::{net::SocketAddr, path::PathBuf};
 
+use crate::chain_spec::bridge_hubs::BridgeHubRuntimeType;
+
 /// Helper enum that is used for better distinction of different parachain/runtime configuration
 /// (it is based/calculated on ChainSpec's ID attribute)
 #[derive(Debug, PartialEq, Default)]
@@ -479,7 +481,11 @@ macro_rules! construct_async_run {
 			Runtime::BridgeHub(bridge_hub_runtime_type) => {
 				runner.async_run(|$config| {
 					let $components = match bridge_hub_runtime_type {
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal => new_partial::<bridge_hub_rococo_runtime::RuntimeApi, _>(
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal => new_partial::<chain_spec::bridge_hubs::rococo::RuntimeApi, _>(
+							&$config,
+							crate::service::aura_build_import_queue::<_, AuraId>,
+						)?,
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::WococoLocal => new_partial::<chain_spec::bridge_hubs::wococo::RuntimeApi, _>(
 							&$config,
 							crate::service::aura_build_import_queue::<_, AuraId>,
 						)?,
@@ -775,7 +781,12 @@ pub fn run() -> Result<()> {
 					Runtime::BridgeHub(bridge_hub_runtime_type) => match bridge_hub_runtime_type {
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal =>
 							crate::service::start_generic_aura_node::<
-								bridge_hub_rococo_runtime::RuntimeApi,
+								chain_spec::bridge_hubs::rococo::RuntimeApi,
+								AuraId,
+							>(config, polkadot_config, collator_options, id, hwbench),
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::WococoLocal =>
+							crate::service::start_generic_aura_node::<
+								chain_spec::bridge_hubs::wococo::RuntimeApi,
 								AuraId,
 							>(config, polkadot_config, collator_options, id, hwbench),
 					}

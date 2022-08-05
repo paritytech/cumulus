@@ -14,14 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use polkadot_service::ParaId;
+use cumulus_primitives_core::ParaId;
 use sc_chain_spec::ChainSpec;
 use sc_cli::RuntimeVersion;
 use std::{path::PathBuf, str::FromStr};
 
 /// Collects all supported BridgeHub configurations
+#[derive(Debug, PartialEq)]
 pub enum BridgeHubRuntimeType {
 	RococoLocal,
+	WococoLocal,
 }
 
 impl FromStr for BridgeHubRuntimeType {
@@ -30,6 +32,7 @@ impl FromStr for BridgeHubRuntimeType {
 	fn from_str(value: &str) -> Result<Self, Self::Err> {
 		match value {
 			rococo::BRIDGE_HUB_ROCOCO_LOCAL => Ok(BridgeHubRuntimeType::RococoLocal),
+			wococo::BRIDGE_HUB_WOCOCO_LOCAL => Ok(BridgeHubRuntimeType::WococoLocal),
 			_ => Err(format!("Value '{}' is not configured yet", value)),
 		}
 	}
@@ -41,19 +44,25 @@ impl BridgeHubRuntimeType {
 	pub fn chain_spec_from_json_file(&self, path: PathBuf) -> Result<Box<dyn ChainSpec>, String> {
 		Ok(Box::new(match self {
 			BridgeHubRuntimeType::RococoLocal => rococo::BridgeHubChainSpec::from_json_file(path)?,
+			BridgeHubRuntimeType::WococoLocal => wococo::BridgeHubChainSpec::from_json_file(path)?,
 		}))
 	}
 
 	pub fn load_config(&self) -> Box<dyn ChainSpec> {
 		Box::new(match self {
 			BridgeHubRuntimeType::RococoLocal =>
-				rococo::local_config("rococo-local", ParaId::new(1013)),
+				rococo::local_config("Rococo BrideHub Local", "rococo-local", ParaId::new(1013)),
+			BridgeHubRuntimeType::WococoLocal =>
+				wococo::local_config("Wococo BrideHub Local", "wococo-local", ParaId::new(1013)),
 		})
 	}
 
 	pub fn runtime_version(&self) -> &'static RuntimeVersion {
 		match self {
-			BridgeHubRuntimeType::RococoLocal => &bridge_hub_rococo_runtime::VERSION,
+			BridgeHubRuntimeType::RococoLocal | BridgeHubRuntimeType::WococoLocal => {
+				// this is intentional, for Rococo/Wococo we just want to have one runtime, which is configured for both sides
+				&bridge_hub_rococo_runtime::VERSION
+			},
 		}
 	}
 }
@@ -71,22 +80,29 @@ fn ensure_id(id: &str) -> Result<&str, String> {
 	}
 }
 
+/// Sub-module for Rococo setup
 pub mod rococo {
+	use super::ParaId;
 	use crate::chain_spec::{
 		get_account_id_from_seed, get_collator_keys_from_seed, Extensions, SAFE_XCM_VERSION,
 	};
-	use bridge_hub_rococo_runtime::{AccountId, AuraId};
-	use cumulus_primitives_core::ParaId;
+	use parachains_common::{AccountId, AuraId};
 	use sc_chain_spec::ChainType;
 	use sp_core::sr25519;
 
-	pub const BRIDGE_HUB_ROCOCO_LOCAL: &str = "bridge-hub-rococo-local";
+	pub(crate) const BRIDGE_HUB_ROCOCO_LOCAL: &str = "bridge-hub-rococo-local";
 
 	/// Specialized `ChainSpec` for the normal parachain runtime.
 	pub type BridgeHubChainSpec =
 		sc_service::GenericChainSpec<bridge_hub_rococo_runtime::GenesisConfig, Extensions>;
 
-	pub fn local_config(relay_chain: &str, para_id: ParaId) -> BridgeHubChainSpec {
+	pub type RuntimeApi = bridge_hub_rococo_runtime::RuntimeApi;
+
+	pub fn local_config(
+		chain_name: &str,
+		relay_chain: &str,
+		para_id: ParaId,
+	) -> BridgeHubChainSpec {
 		let properties = sc_chain_spec::Properties::new();
 		// TODO: check
 		// properties.insert("ss58Format".into(), 2.into());
@@ -95,7 +111,7 @@ pub mod rococo {
 
 		BridgeHubChainSpec::from_genesis(
 			// Name
-			"Rococo BrideHub Local",
+			chain_name,
 			// ID
 			super::ensure_id(BRIDGE_HUB_ROCOCO_LOCAL).expect("invalid id"),
 			ChainType::Local,
@@ -178,5 +194,24 @@ pub mod rococo {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
 			},
 		}
+	}
+}
+
+/// Sub-module for Wococo setup (reuses stuff from Rococo)
+pub mod wococo {
+	use super::ParaId;
+	use crate::chain_spec::bridge_hubs::rococo;
+
+	pub(crate) const BRIDGE_HUB_WOCOCO_LOCAL: &str = "bridge-hub-wococo-local";
+
+	pub type BridgeHubChainSpec = rococo::BridgeHubChainSpec;
+	pub type RuntimeApi = rococo::RuntimeApi;
+
+	pub fn local_config(
+		chain_name: &str,
+		relay_chain: &str,
+		para_id: ParaId,
+	) -> BridgeHubChainSpec {
+		rococo::local_config(chain_name, relay_chain, para_id)
 	}
 }
