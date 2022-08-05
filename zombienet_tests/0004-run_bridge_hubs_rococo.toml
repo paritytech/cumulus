@@ -1,0 +1,37 @@
+[relaychain]
+default_command = "{{POLKADOT_BINARY_PATH}}"
+default_args = [ "-lparachain=debug" ]
+
+chain = "rococo-local"
+
+  [[relaychain.nodes]]
+  name = "alice"
+  validator = true
+
+  [[relaychain.nodes]]
+  name = "bob"
+  validator = true
+
+  [[relaychain.nodes]]
+  name = "charlie"
+  validator = true
+
+[[parachains]]
+id = 1013
+cumulus_based = true
+chain = "bridge-hub-rococo-local"
+
+  [[parachains.collators]]
+  name = "alice"
+  command = "{{POLKADOT_PARACHAIN_BINARY_PATH}}"
+  args = ["-lparachain=debug"]
+
+  [[parachains.collators]]
+  name = "bob"
+  command = "{{POLKADOT_PARACHAIN_BINARY_PATH}}"
+  args = ["-lparachain=debug"]
+
+  [[parachains.collators]]
+  name = "charlie"
+  command = "{{POLKADOT_PARACHAIN_BINARY_PATH}}"
+  args = ["-lparachain=debug"]

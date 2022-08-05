@@ -1026,6 +1026,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-xcm",
  "parachain-info",
+ "parachains-common",
  "parity-scale-codec",
  "polkadot-parachain 0.9.27",
  "polkadot-runtime-common",
@@ -10052,6 +10053,7 @@ dependencies = [
  "sc-allocator",
  "sp-maybe-compressed-blob",
  "sp-sandbox",
+ "sp-serializer 4.0.0-dev (git+https://github.com/paritytech//substrate?branch=sv-locked-for-gav-xcm-v3-and-bridges)",
  "sp-wasm-interface",
  "thiserror",
  "wasm-instrument",
@@ -11722,6 +11724,15 @@ dependencies = [
 name = "sp-serializer"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#a47f200eebeb88a5bde6f1ed2be9728b82536dde"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "sp-serializer"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech//substrate?branch=sv-locked-for-gav-xcm-v3-and-bridges#aa7520bd0a2094204a6c0b33865aa264e6d686a5"
 dependencies = [
  "serde",
  "serde_json",
