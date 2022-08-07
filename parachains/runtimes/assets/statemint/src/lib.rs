@@ -851,7 +851,7 @@ impl_runtime_apis! {
 			parameter_types! {
 				pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = Some((
 					DotLocation::get(),
-					MultiAsset { fun: Fungible(1 * UNITS), id: Concrete(Local::get()) },
+					MultiAsset { fun: Fungible(1 * UNITS), id: Concrete(DotLocation::get()) },
 				));
 				pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = None;
 			}
@@ -888,7 +888,7 @@ impl_runtime_apis! {
 
 				fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
 					let origin = DotLocation::get();
-					let assets: MultiAssets = (Concrete(Local::get()), 1_000 * UNITS).into();
+					let assets: MultiAssets = (Concrete(DotLocation::get()), 1_000 * UNITS).into();
 					let ticket = MultiLocation { parents: 0, interior: Here };
 					Ok((origin, ticket, assets))
 				}
