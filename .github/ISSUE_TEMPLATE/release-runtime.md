@@ -18,7 +18,7 @@ These checks should be performed on the codebase.
 - [ ] No migrations added in the last release that would need to be removed
 - [ ] pallet and [extrinsic ordering](../../docs/release.md#extrinsic-ordering) as well as `SignedExtension`s have stayed
     the same. Bump `transaction_version` otherwise
-- [ ] the [benchmarks](../../docs/release.md#benchmarks) ran
+- [ ] the [benchmarks](https://github.com/paritytech/ci_cd/wiki/Benchmarks:-cumulus) ran
 - [ ] the weights have been updated for any modified runtime logic
 - [ ] the various pieces of XCM config are sane
 
@@ -30,7 +30,7 @@ candidate branch or started an additional release candidate branch (rc-2, rc-3, 
 - [ ] Verify [new migrations](../../docs/release.md#new-migrations) complete successfully, and the
     runtime state is correctly updated for any public (non-private/test)
     networks
-- [ ] Run integration tests
+- [ ] Run [integration tests](https://github.com/paritytech/parachains-integration-tests/), note that you might actually want to run those from a corresponding release branch
 - [ ] Push runtime upgrade to Westmint and verify network stability
 
 
