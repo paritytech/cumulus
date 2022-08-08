@@ -1,20 +1,16 @@
-# This workflow performs the Extrinsic Ordering Check on demand using a binary
+# This workflow performs the Extrinsic Ordering Check on demand using two binaries
 
-name: Extrinsic Ordering Check from Binary
+name: Extrinsic Ordering Check from reference bins
 on:
   workflow_dispatch:
     inputs:
-      reference_url:
-        description: The WebSocket url of the reference node
-        default: wss://kusama-statemine-rpc.paritytech.net
+      reference_binary_url:
+        description: A url to a Linux binary for the node containing the runtime to run as reference
+        default: https://releases.parity.io/cumulus/v0.9.230-rc3/polkadot-parachain
         required: true
       binary_url:
         description: A url to a Linux binary for the node containing the runtime to test
-        default: https://releases.parity.io/cumulus/polkadot-v0.9.21/polkadot-parachain
-        required: true
-      chain:
-        description: The name of the chain under test. Usually, you would pass a local chain
-        default: statemine-local
+        default: https://releases.parity.io/cumulus/v0.9.270-rc3/polkadot-parachain
         required: true
 
 jobs:
@@ -26,33 +22,55 @@ jobs:
       BIN: node-bin
       BIN_PATH: ./tmp/$BIN
       BIN_URL: ${{github.event.inputs.binary_url}}
-      REF_URL: ${{github.event.inputs.reference_url}}
+      REF_URL: ${{github.event.inputs.reference_binary_url}}
+    strategy:
+      fail-fast: false
+      matrix:
+        chain: [statemine-local]
 
-    steps:    
+    steps:
       - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
 
-      - name: Fetch binary
+      - name: Set up temp dir
         run: |
-          echo Creating a temp dir to download and run binary
+          echo Creating a temp dir
           mkdir -p tmp
+
+      - name: Fetch reference binary
+        run: |
+          echo Fetching $REF_URL
+          curl $REF_URL -o $BIN_PATH-ref
+          chmod a+x $BIN_PATH-ref
+          $BIN_PATH-ref --version
+
+      - name: Fetch test binary
+        run: |
           echo Fetching $BIN_URL
-          wget $BIN_URL -O $BIN_PATH
+          curl $BIN_URL -o $BIN_PATH
           chmod a+x $BIN_PATH
           $BIN_PATH --version
 
-      - name: Start local node
+      - name: Start local reference node
+        run: |
+          echo Running on ${{ matrix.chain }}
+          $BIN_PATH-ref --chain=${{ matrix.chain }} -- --chain polkadot-local --rpc-port 9934 --ws-port=9945 --base-path=ref-base/ &
+
+      - name: Start local test node
         run: |
           echo Running on $CHAIN
-          $BIN_PATH --chain=$CHAIN -- --chain polkadot-local &
+          $BIN_PATH --chain=${{ matrix.chain }} -- --chain polkadot-local &
 
       - name: Prepare output
         run: |
-          VERSION=$($BIN_PATH --version)
+          REF_VERSION=$($BIN_PATH-ref --version)
+          BIN_VERSION=$($BIN_PATH --version)
           echo "Metadata comparison:" >> output.txt
           echo "Date: $(date)" >> output.txt
-          echo "Reference: $REF_URL" >> output.txt
-          echo "Target version: $VERSION" >> output.txt
-          echo "Chain: $CHAIN" >> output.txt
+          echo "Ref. binary: $REF_URL" >> output.txt
+          echo "Test binary: $BIN_URL" >> output.txt
+          echo "Ref. version: $REF_VERSION" >> output.txt
+          echo "Test version: $BIN_VERSION" >> output.txt
+          echo "Chain: ${{ matrix.chain }}" >> output.txt
           echo "----------------------------------------------------------------------" >> output.txt
 
       - name: Pull polkadot-js-tools image
@@ -60,7 +78,7 @@ jobs:
 
       - name: Compare the metadata
         run: |
-          CMD="docker run --pull always --network host jacogr/polkadot-js-tools metadata $REF_URL ws://localhost:9944"
+          CMD="docker run --pull always --network host jacogr/polkadot-js-tools metadata ws://localhost:9945 ws://localhost:9944"
           echo -e "Running:\n$CMD"
           $CMD >> output.txt
           sed -z -i 's/\n\n/\n/g' output.txt
@@ -73,14 +91,16 @@ jobs:
         run: |
           cat output.txt
 
-      - name: Stop our local node
-        run: |
-          pkill $BIN
-        continue-on-error: true
-
       - name: Save output as artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.CHAIN }}
+          name: ${{ matrix.chain }}
           path: |
             output.txt
+
+      - name: Stop our local nodes
+        run: |
+          pkill $BIN-ref
+          pkill $BIN
+        continue-on-error: true
+
