@@ -30,7 +30,7 @@ candidate branch or started an additional release candidate branch (rc-2, rc-3, 
 - [ ] Verify [new migrations](https://github.com/paritytech/cumulus/blob/master/docs/release.md#new-migrations) complete successfully, and the
     runtime state is correctly updated for any public (non-private/test)
     networks
-- [ ] Run [integration tests](https://github.com/paritytech/parachains-integration-tests/), note that you might actually want to run those from a corresponding release branch
+- [ ] Run [integration tests](https://github.com/paritytech/cumulus/blob/master/docs/release.md#integration-tests), and make sure they pass.
 - [ ] Push runtime upgrade to Westmint and verify network stability
 
 
