@@ -65,7 +65,7 @@ parameter_types! {
 	pub SelfReserve: MultiLocation = MultiLocation {
 		parents:0,
 		interior: Junctions::X1(
-			GeneralKey("TEER".into())
+			GeneralKey(b"TEER".to_vec().try_into().expect("Is less than 32bytes; qed"))
 		)
 	};
 }
@@ -95,7 +95,10 @@ impl Convert<CurrencyId, Option<MultiLocation>> for CurrencyIdConvert {
 		match id {
 			CurrencyId::TEER => Some(MultiLocation::new(
 				1,
-				X2(Parachain(ParachainInfo::parachain_id().into()), GeneralKey("TEER".into())),
+				X2(
+					Parachain(ParachainInfo::parachain_id().into()),
+					GeneralKey(b"TEER".to_vec().try_into().expect("Is less than 32bytes; qed")),
+				),
 			)),
 		}
 	}
