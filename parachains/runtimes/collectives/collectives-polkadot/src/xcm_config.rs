@@ -118,14 +118,16 @@ match_types! {
 pub type Barrier = DenyThenTry<
 	DenyReserveTransferToRelayChain,
 	(
+		// Allow local users to buy weight credit.
 		TakeWeightCredit,
-		AllowTopLevelPaidExecutionFrom<Everything>,
-		// Parent and its exec plurality get free execution
+		// Parent and its exec plurality get free execution.
 		AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
 		// Expected responses are OK.
 		AllowKnownQueryResponses<PolkadotXcm>,
 		// Subscriptions for version tracking are OK.
 		AllowSubscriptionsFrom<ParentOrSiblings>,
+		// Allow anything to pay for execution.
+		AllowTopLevelPaidExecutionFrom<Everything>,
 	),
 >;
 
