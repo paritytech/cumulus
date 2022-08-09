@@ -78,6 +78,7 @@ where
 				spawn_handle.spawn("network-transactions-handler", Some("networking"), fut);
 			})
 		},
+		bitswap: None,
 		chain_sync: Box::new(chain_sync),
 		network_config: config.network.clone(),
 		chain: client.clone(),
@@ -142,10 +143,7 @@ where
 async fn build_network_collator_future<
 	B: BlockT,
 	H: sc_network::ExHashT,
-	C: HeaderBackend<B>
-		+ ProofProvider<B>
-		+ HeaderMetadata<B, Error = sp_blockchain::Error>
-		+ BlockBackend<B>,
+	C: HeaderBackend<B> + HeaderMetadata<B, Error = sp_blockchain::Error>,
 >(
 	mut network: sc_network::NetworkWorker<B, H, C>,
 ) {
