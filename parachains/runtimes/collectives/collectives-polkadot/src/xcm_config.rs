@@ -172,7 +172,7 @@ impl pallet_xcm::Config for Runtime {
 	type XcmRouter = XcmRouter;
 	// We support local origins dispatching XCM executions in principle...
 	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-	// ... but disallow generic XCM execution. As a result only teleports and reserve transfers are allowed.
+	// ... but disallow generic XCM execution. As a result only teleports are allowed.
 	type XcmExecuteFilter = Nothing;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;
