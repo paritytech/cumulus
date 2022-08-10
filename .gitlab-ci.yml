@@ -382,4 +382,6 @@ cancel-pipeline:
     FAILED_JOB_URL:                "${FAILED_JOB_URL}"
     FAILED_JOB_NAME:               "${FAILED_JOB_NAME}"
     PR_NUM:                        "${PR_NUM}"
-  trigger:                         "parity/infrastructure/ci_cd/pipeline-stopper"
+  trigger:
+    - project:                     "parity/infrastructure/ci_cd/pipeline-stopper"
+      ref:                         "as-improve"
