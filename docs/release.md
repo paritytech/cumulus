@@ -106,10 +106,6 @@ as long as the indexes did not change.
 
 **Note**: Extrinsic function signatures changes (adding/removing & ordering arguments) are not caught by the job, so those changes should be reviewed "manually"
 
-### Proxy Filtering
-
-The runtime contains proxy filters that map proxy types to allowable calls. If the new runtime contains any new calls, verify that the proxy filters are up to date to include them.
-
 ### Benchmarks
 
 The Benchmarks can now be started from the CI. First find the CI pipeline from [here](https://gitlab.parity.io/parity/mirrors/cumulus/-/pipelines?page=1&scope=all&ref=release-parachains-v9220) and pick the latest.
