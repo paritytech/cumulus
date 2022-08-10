@@ -21,15 +21,13 @@ use nix::{
 	sys::signal::{kill, Signal},
 	unistd::Pid,
 };
-use node_primitives::Block;
-use remote_externalities::rpc_api;
 use std::{
 	io::{BufRead, BufReader, Read},
 	ops::{Deref, DerefMut},
 	path::Path,
 	process::{self, Child, Command, ExitStatus},
 };
-use tokio::time::{timeout, Duration};
+use tokio::time::{sleep, timeout, Duration};
 
 /// Wait for the given `child` the given number of `secs`.
 ///
@@ -55,32 +53,8 @@ pub fn wait_for(child: &mut Child, secs: u64) -> Result<ExitStatus, ()> {
 	}
 }
 
-/// Wait for at least n blocks to be finalized within a specified time.
-pub async fn wait_n_finalized_blocks(
-	n: usize,
-	timeout_secs: u64,
-	url: &str,
-) -> Result<(), tokio::time::error::Elapsed> {
-	timeout(Duration::from_secs(timeout_secs), wait_n_finalized_blocks_from(n, url)).await
-}
-
-/// Wait for at least n blocks to be finalized from a specified node
-pub async fn wait_n_finalized_blocks_from(n: usize, url: &str) {
-	let mut built_blocks = std::collections::HashSet::new();
-	let mut interval = tokio::time::interval(Duration::from_secs(2));
-
-	loop {
-		if let Ok(block) = rpc_api::get_finalized_head::<Block, _>(url.to_string()).await {
-			built_blocks.insert(block);
-			if built_blocks.len() > n {
-				break
-			}
-		};
-		interval.tick().await;
-	}
-}
-
-/// Run the node for a while
+/// Run the node for a while (till the RPC is up + 30 secs)
+/// TODO: needs to be revisited to hit the RPC
 pub async fn run_node_for_a_while(base_path: &Path, args: &[&str], signal: Signal) {
 	let mut cmd = Command::new(cargo_bin("polkadot-parachain"))
 		.stdout(process::Stdio::piped())
@@ -94,12 +68,11 @@ pub async fn run_node_for_a_while(base_path: &Path, args: &[&str], signal: Signa
 	let stderr = cmd.stderr.take().unwrap();
 
 	let mut child = KillChildOnDrop(cmd);
-	let (ws_url, _) = find_ws_url_from_output(stderr);
+	// TODO: use this instead of the timeout going forward?
+	let (_, _) = find_ws_url_from_output(stderr);
 
-	// We don't actually have any blocks produced on the collator
-	// So we will just timeout for now
 	// TODO: Revisit this to find a better approach for collators
-	let _ = wait_n_finalized_blocks(3, 10, &ws_url).await;
+	sleep(Duration::from_secs(30));
 
 	assert!(child.try_wait().unwrap().is_none(), "the process should still be running");
 
