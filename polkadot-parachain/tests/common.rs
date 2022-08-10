@@ -28,9 +28,8 @@ use std::{
 	ops::{Deref, DerefMut},
 	path::Path,
 	process::{self, Child, Command, ExitStatus},
-	time::Duration,
 };
-use tokio::time::timeout;
+use tokio::time::{timeout, Duration};
 
 /// Wait for the given `child` the given number of `secs`.
 ///
@@ -86,16 +85,15 @@ pub async fn run_node_for_a_while(base_path: &Path, args: &[&str], signal: Signa
 	let mut cmd = Command::new(cargo_bin("polkadot-parachain"))
 		.stdout(process::Stdio::piped())
 		.stderr(process::Stdio::piped())
-		.args(args)
 		.arg("-d")
 		.arg(base_path)
+		.args(args)
 		.spawn()
 		.unwrap();
 
-	let stderr = cmd.stdout.take().unwrap();
+	let stderr = cmd.stderr.take().unwrap();
 
 	let mut child = KillChildOnDrop(cmd);
-
 	let (ws_url, _) = find_ws_url_from_output(stderr);
 
 	// Let it produce some blocks.
@@ -132,8 +130,8 @@ impl DerefMut for KillChildOnDrop {
 
 /// Read the WS address from the output.
 ///
-/// This is hack to get the actual binded sockaddr because
-/// substrate assigns a random port if the specified port was already binded.
+/// This is hack to get the actual bound sockaddr because
+/// substrate assigns a random port if the specified port was already bound.
 pub fn find_ws_url_from_output(read: impl Read + Send) -> (String, String) {
 	let mut data = String::new();
 
@@ -142,6 +140,7 @@ pub fn find_ws_url_from_output(read: impl Read + Send) -> (String, String) {
 		.find_map(|line| {
 			let line =
 				line.expect("failed to obtain next line from stdout for WS address discovery");
+
 			data.push_str(&line);
 
 			// does the line contain our port (we expect this specific output from substrate).
