@@ -386,3 +386,4 @@ cancel-pipeline:
     include:
       - project:                   "parity/infrastructure/ci_cd/pipeline-stopper"
         ref:                       "as-improve"
+        file:                      ".gitlab-ci.yml"
