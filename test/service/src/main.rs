@@ -123,7 +123,7 @@ fn main() -> Result<(), sc_cli::Error> {
 				if config.role.is_authority() { "yes" } else { "no" }
 			);
 
-			let collator_key = Some(CollatorPair::generate().0);
+			let collator_key = config.role.is_authority().then(|| CollatorPair::generate().0);
 
 			let consensus = cli
 				.use_null_consensus
