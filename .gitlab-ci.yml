@@ -99,12 +99,12 @@ variables:
 
 test-linux-stable:
   stage:                           test
-  before_script:
-    - *rust-info-script
-    - *pipeline-stopper-vars
   <<:                              *docker-env
   <<:                              *common-refs
   <<:                              *pipeline-stopper-artifacts
+  before_script:
+    - *rust-info-script
+    - *pipeline-stopper-vars
   variables:
     # Enable debug assertions since we are running optimized builds for testing
     # but still want to have debug assertions.
