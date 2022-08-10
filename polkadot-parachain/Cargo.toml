@@ -92,6 +92,11 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 assert_cmd = "2.0"
 nix = "0.24"
 tempfile = "3.3.0"
+tokio = { version = "1.17.0", features = ["macros", "time", "parking_lot"] }
+wait-timeout = "0.2"
+remote-externalities = { git = "https://github.com/paritytech/substrate", branch = "master" }
+node-primitives = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
 
 [features]
 default = []

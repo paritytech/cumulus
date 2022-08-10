@@ -16,13 +16,14 @@
 
 use assert_cmd::cargo::cargo_bin;
 use std::{convert::TryInto, fs, process::Command, thread, time::Duration};
+use tempfile::tempdir;
 
 mod common;
 
-#[test]
+#[tokio::test]
 #[cfg(unix)]
 #[ignore]
-fn interrupt_polkadot_mdns_issue_test() {
+async fn interrupt_polkadot_mdns_issue_test() {
 	use nix::{
 		sys::signal::{
 			kill,
@@ -31,24 +32,10 @@ fn interrupt_polkadot_mdns_issue_test() {
 		unistd::Pid,
 	};
 
-	fn run_command_and_kill(signal: Signal) {
-		let _ = fs::remove_dir_all("interrupt_polkadot_mdns_issue_test");
-		let mut cmd = Command::new(cargo_bin("polkadot-parachain"))
-			.args(&["-d", "interrupt_polkadot_mdns_issue_test", "--", "--dev"])
-			.spawn()
-			.unwrap();
+	let base_dir = tempdir().expect("could not create a temp dir");
 
-		thread::sleep(Duration::from_secs(20));
-		assert!(cmd.try_wait().unwrap().is_none(), "the process should still be running");
-		kill(Pid::from_raw(cmd.id().try_into().unwrap()), signal).unwrap();
-		assert_eq!(
-			common::wait_for(&mut cmd, 30).map(|x| x.success()),
-			Some(true),
-			"the process must exit gracefully after signal {}",
-			signal,
-		);
-	}
+	let args = &["--", "--dev"];
 
-	run_command_and_kill(SIGINT);
-	run_command_and_kill(SIGTERM);
+	common::run_node_for_a_while(base_dir.path(), args, SIGINT).await;
+	common::run_node_for_a_while(base_dir.path(), args, SIGTERM).await;
 }
