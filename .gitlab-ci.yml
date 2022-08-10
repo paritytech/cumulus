@@ -384,5 +384,5 @@ cancel-pipeline:
     FAILED_JOB_NAME:               "${FAILED_JOB_NAME}"
     PR_NUM:                        "${PR_NUM}"
   trigger:
-    project:                   "parity/infrastructure/ci_cd/pipeline-stopper"
-    branch:                       "as-improve"
+    project:                       "parity/infrastructure/ci_cd/pipeline-stopper"
+    branch:                        "as-improve"
