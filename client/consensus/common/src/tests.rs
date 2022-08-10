@@ -355,3 +355,115 @@ fn do_not_set_best_block_to_older_block() {
 	// Build and import a new best block.
 	build_and_import_block(client2.clone(), true);
 }
+
+#[test]
+fn prune_blocks_on_leaves_overflow() {
+	const NUM_BLOCKS: usize = 4;
+
+	let backend = Arc::new(Backend::new_test(1000, 1));
+    {
+        let mut mtx = BACKEND.lock().unwrap();
+        *mtx = Some(backend.clone());
+    }
+
+	let client = Arc::new(TestClientBuilder::with_backend(backend).build());
+
+	let blocks = (0..NUM_BLOCKS)
+		.into_iter()
+		.map(|_| build_and_import_block(client.clone(), true))
+		.collect::<Vec<_>>();
+
+    {
+        let builder = client.init_block_builder(None, Default::default());
+
+        let block = builder.build().unwrap().block;
+        let (header, body) = block.clone().deconstruct();
+
+        let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header);
+        block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(false));
+        block_import_params.body = Some(body);
+
+
+        let mut para_import = ParachainBlockImport::new(client);
+        block_on(para_import.import_block(block_import_params, Default::default())).unwrap();
+
+    }
+
+}
+
+// ========= START TEMPORARY HACK =========
+
+use std::sync::Mutex as StdMutex;
+
+lazy_static::lazy_static! {
+	static ref BACKEND: StdMutex<Option<Arc<Backend>>> = StdMutex::new(None);
+}
+use sc_client_api::{
+	backend::Backend as _,
+	blockchain::{Backend as _, HeaderBackend as _},
+};
+
+#[no_mangle]
+pub fn check_leaves(number: u32) {
+	let lock = BACKEND.lock().unwrap();
+	let backend = lock.as_ref().expect("Backend should be already initialized");
+	let blockchain = backend.blockchain();
+
+	log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> BLOCK Number: {}", number);
+
+	// Interface contract: results are ordered best (longest, highest) chain first.
+	let mut leaves = blockchain.leaves().expect("Error fetching leaves from backend");
+	log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Leaves Number: {}", leaves.len());
+
+    // TODO: Just debugging
+	for leaf in leaves.iter() {
+		let number = match blockchain.number(*leaf).ok().flatten() {
+			Some(n) => n,
+			None => {
+				let msg = format!("Unexpected missing number for leaf {}", leaf);
+				panic!("{}", msg);
+			},
+		};
+		log::debug!(target: "parachain", ">>> (@{}) : {}", number, leaf);
+	}
+
+    // Magic number
+	const MAX_LEAVES_PER_LEVEL: usize = 3;
+
+    // First cheap check: the number of leaves at level `number` is always less than the total.
+	if leaves.len() >= MAX_LEAVES_PER_LEVEL {
+        // Now focus on the leaves at the given height.
+		leaves.retain(|hash|
+			blockchain.number(*hash).ok().flatten().map(|n| n == number).unwrap_or_default()
+		);
+		if leaves.len() < MAX_LEAVES_PER_LEVEL {
+			return
+		}
+
+        // TODO: double check
+		let mut remove_count = (leaves.len() + 1) - MAX_LEAVES_PER_LEVEL;
+
+		// TODO: Better strategy
+		let best = blockchain.info().best_hash;
+
+        // TODO: here we strongly assume that the leaves returned by the backend are returned
+        // by "age". This is actually true in our backend implementation...
+        // We can add a constraint to the leaves() method signature.
+		for hash in leaves.into_iter().filter(|hash| *hash != best) {
+			log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Removing block: {}", hash);
+			if backend.remove_leaf_block(&hash).is_err() {
+				log::warn!(target: "parachain", "Unable to remove block {}", hash);
+                continue;
+			}
+			remove_count -= 1;
+			if remove_count == 0 {
+				break
+			}
+		}
+
+		let leaves = blockchain.leaves().expect("Error fetching leaves from backend");
+		log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Leaves Number (post-del): {}", leaves.len());
+	}
+}
+
+// ========= END TEMPORARY HACK =========
