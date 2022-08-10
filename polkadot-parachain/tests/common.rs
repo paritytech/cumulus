@@ -18,7 +18,7 @@
 
 use assert_cmd::cargo::cargo_bin;
 use nix::{
-	sys::signal::{kill, Signal, Signal::SIGINT},
+	sys::signal::{kill, Signal},
 	unistd::Pid,
 };
 use node_primitives::Block;
