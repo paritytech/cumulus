@@ -384,7 +384,5 @@ cancel-pipeline:
     FAILED_JOB_NAME:               "${FAILED_JOB_NAME}"
     PR_NUM:                        "${PR_NUM}"
   trigger:
-    include:
-      - project:                   "parity/infrastructure/ci_cd/pipeline-stopper"
-        ref:                       "as-improve"
-        file:                      ".gitlab-ci.yml"
+    project:                   "parity/infrastructure/ci_cd/pipeline-stopper"
+    branch:                       "as-improve"
