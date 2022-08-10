@@ -80,7 +80,7 @@ pub async fn wait_n_finalized_blocks_from(n: usize, url: &str) {
 	}
 }
 
-/// Run the node for a while (3 blocks)
+/// Run the node for a while
 pub async fn run_node_for_a_while(base_path: &Path, args: &[&str], signal: Signal) {
 	let mut cmd = Command::new(cargo_bin("polkadot-parachain"))
 		.stdout(process::Stdio::piped())
@@ -96,8 +96,10 @@ pub async fn run_node_for_a_while(base_path: &Path, args: &[&str], signal: Signa
 	let mut child = KillChildOnDrop(cmd);
 	let (ws_url, _) = find_ws_url_from_output(stderr);
 
-	// Let it produce some blocks.
-	let _ = wait_n_finalized_blocks(3, 30, &ws_url).await;
+	// We don't actually have any blocks produced on the collator
+	// So we will just timeout for now
+	// TODO: Revisit this to find a better approach for collators
+	let _ = wait_n_finalized_blocks(3, 10, &ws_url).await;
 
 	assert!(child.try_wait().unwrap().is_none(), "the process should still be running");
 

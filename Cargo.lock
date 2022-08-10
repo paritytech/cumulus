@@ -5105,19 +5105,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "node-primitives"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate?branch=master#edeba3f760fe54600ea38c8765a0d099e58d4799"
-dependencies = [
- "frame-system",
- "parity-scale-codec",
- "scale-info",
- "sp-application-crypto",
- "sp-core",
- "sp-runtime",
-]
-
-[[package]]
 name = "nodrop"
 version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7657,7 +7644,6 @@ dependencies = [
  "jsonrpsee",
  "log",
  "nix 0.24.2",
- "node-primitives",
  "pallet-contracts-rpc",
  "pallet-transaction-payment-rpc",
  "parachains-common",
@@ -7667,7 +7653,6 @@ dependencies = [
  "polkadot-parachain 0.9.27",
  "polkadot-primitives",
  "polkadot-service",
- "remote-externalities",
  "rococo-parachain-runtime",
  "sc-basic-authorship",
  "sc-chain-spec",
