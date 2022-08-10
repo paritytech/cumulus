@@ -18,24 +18,21 @@ ensure_labels() {
 # Must have one of the following labels
 releasenotes_labels=(
   'B0-silent'
-  'B1-releasenotes'
-  'B7-runtimenoteworthy'
+  'B1-note_worthy'
 )
 
 # Must be an ordered list of priorities, lowest first
 priority_labels=(
-  'C1-low 📌'
-  'C3-medium 📣'
-  'C7-high ❗️'
-  'C9-critical ‼️'
+  'C1-low'
+  'C3-medium'
+  'C7-high'
+  'C9-critical'
 )
 
 audit_labels=(
-  'D1-audited 👍'
-  'D2-notlive 💤'
-  'D3-trivial 🧸'
-  'D5-nicetohaveaudit ⚠️'
-  'D9-needsaudit 👮'
+  'D1-nice_to_have_audit'
+  'D2-needs_audit'
+  'D3-audited'
 )
 
 echo "[+] Checking release notes (B) labels for $CI_COMMIT_BRANCH"
