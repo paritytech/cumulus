@@ -15,7 +15,7 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
 use assert_cmd::cargo::cargo_bin;
-use nix::sys::signal::{SIGINT, SIGTERM};
+use nix::sys::signal::SIGINT;
 use std::process::Command;
 use tempfile::tempdir;
 
