@@ -348,6 +348,7 @@ construct_runtime!(
 
 		// Smart Contracts.
 		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>} = 40,
+		ContractsXcm: pallet_contracts_xcm::{Pallet} = 41,
 
 		// Handy utilities.
 		Utility: pallet_utility::{Pallet, Call, Event} = 50,
