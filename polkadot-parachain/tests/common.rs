@@ -104,22 +104,8 @@ pub async fn run_node_for_a_while(base_path: &Path, args: &[&str], signal: Signa
 	assert!(child.try_wait().unwrap().is_none(), "the process should still be running");
 
 	// Stop the process
-	kill(Pid::from_raw(child.id().try_into().unwrap()), SIGINT).unwrap();
+	kill(Pid::from_raw(child.id().try_into().unwrap()), signal).unwrap();
 	assert!(wait_for(&mut child, 40).map(|x| x.success()).unwrap());
-}
-
-/// Run the node asserting that it fails with an error
-pub fn run_node_assert_fail(base_path: &Path, args: &[&str]) {
-	let mut cmd = Command::new(cargo_bin("substrate"));
-
-	let mut child = KillChildOnDrop(cmd.args(args).arg("-d").arg(base_path).spawn().unwrap());
-
-	// Let it produce some blocks, but it should die within 10 seconds.
-	assert_ne!(
-		wait_timeout::ChildExt::wait_timeout(&mut *child, Duration::from_secs(10)).unwrap(),
-		None,
-		"the process should not be running anymore"
-	);
 }
 
 pub struct KillChildOnDrop(pub Child);

@@ -15,7 +15,6 @@
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
 use assert_cmd::cargo::cargo_bin;
-use std::{convert::TryInto, fs, process::Command, thread, time::Duration};
 use tempfile::tempdir;
 
 mod common;
@@ -24,13 +23,7 @@ mod common;
 #[cfg(unix)]
 #[ignore]
 async fn running_the_node_works_and_can_be_interrupted() {
-	use nix::{
-		sys::signal::{
-			kill,
-			Signal::{self, SIGINT, SIGTERM},
-		},
-		unistd::Pid,
-	};
+	use nix::sys::signal::Signal::{SIGINT, SIGTERM};
 
 	let base_dir = tempdir().expect("could not create a temp dir");
 

@@ -16,7 +16,7 @@
 
 use assert_cmd::cargo::cargo_bin;
 use nix::sys::signal::{SIGINT, SIGTERM};
-use std::{convert::TryInto, process::Command, thread, time::Duration};
+use std::process::Command;
 use tempfile::tempdir;
 
 mod common;
