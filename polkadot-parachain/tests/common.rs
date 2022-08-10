@@ -27,7 +27,7 @@ use std::{
 	path::Path,
 	process::{self, Child, Command, ExitStatus},
 };
-use tokio::time::{sleep, timeout, Duration};
+use tokio::time::{sleep, Duration};
 
 /// Wait for the given `child` the given number of `secs`.
 ///
@@ -72,7 +72,7 @@ pub async fn run_node_for_a_while(base_path: &Path, args: &[&str], signal: Signa
 	let (_, _) = find_ws_url_from_output(stderr);
 
 	// TODO: Revisit this to find a better approach for collators
-	sleep(Duration::from_secs(30));
+	sleep(Duration::from_secs(30)).await;
 
 	assert!(child.try_wait().unwrap().is_none(), "the process should still be running");
 
