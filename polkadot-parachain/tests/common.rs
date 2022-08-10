@@ -92,7 +92,7 @@ pub async fn run_node_for_a_while(base_path: &Path, args: &[&str], signal: Signa
 		.spawn()
 		.unwrap();
 
-	let stderr = cmd.stderr.take().unwrap();
+	let stderr = cmd.stdout.take().unwrap();
 
 	let mut child = KillChildOnDrop(cmd);
 

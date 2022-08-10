@@ -32,7 +32,6 @@ async fn purge_chain_works() {
 	let args = &["--", "--dev"];
 
 	common::run_node_for_a_while(base_dir.path(), args, SIGINT).await;
-	common::run_node_for_a_while(base_dir.path(), args, SIGTERM).await;
 
 	assert!(base_dir.path().join("chains/local_testnet/db/full").exists());
 	assert!(base_dir.path().join("polkadot/chains/dev/db/full").exists());
