@@ -39,7 +39,7 @@ cumulus_based = true
   validator = false
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'dave'|zombie}}"]
+  args = ["--reserved-only", "--reserved-nodes {{'dave'|zombie('multiAddress')}}"]
 
   # run ferdie as parachain full node that is only connected to dave
   [[parachains.collators]]
@@ -47,4 +47,4 @@ cumulus_based = true
   validator = false
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'dave'|zombie}}"]
+  args = ["--reserved-only", "--reserved-nodes {{'dave'|zombie('multiAddress')}}", "--relay-chain-rpc-url {{'alice'|zombie('wsUri')}}"]
