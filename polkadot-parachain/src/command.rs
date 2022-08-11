@@ -161,12 +161,14 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			Box::new(chain_spec::collectives::collectives_polkadot_development_config()),
 		"collectives-polkadot-local" =>
 			Box::new(chain_spec::collectives::collectives_polkadot_local_config()),
-		"collectives-polkadot" => Box::new(chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("../../parachains/chain-specs/collectives-polkadot.json")[..],
-		)?),
-		"collectives-westend" => Box::new(chain_spec::ChainSpec::from_json_bytes(
-			&include_bytes!("../../parachains/chain-specs/collectives-westend.json")[..],
-		)?),
+		"collectives-polkadot" =>
+			Box::new(chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_bytes(
+				&include_bytes!("../../parachains/chain-specs/collectives-polkadot.json")[..],
+			)?),
+		"collectives-westend" =>
+			Box::new(chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_bytes(
+				&include_bytes!("../../parachains/chain-specs/collectives-westend.json")[..],
+			)?),
 
 		// -- Contracts on Rococo
 		"contracts-rococo-dev" =>
@@ -174,9 +176,10 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"contracts-rococo-local" =>
 			Box::new(chain_spec::contracts::contracts_rococo_local_config()),
 		"contracts-rococo-genesis" => Box::new(chain_spec::contracts::contracts_rococo_config()),
-		"contracts-rococo" => Box::new(chain_spec::contracts::ContractsRococoChainSpec::from_json_bytes(
-			&include_bytes!("../../parachains/chain-specs/contracts-rococo.json")[..],
-		)?),
+		"contracts-rococo" =>
+			Box::new(chain_spec::contracts::ContractsRococoChainSpec::from_json_bytes(
+				&include_bytes!("../../parachains/chain-specs/contracts-rococo.json")[..],
+			)?),
 		"penpal-kusama" => Box::new(chain_spec::penpal::get_penpal_chain_spec(
 			para_id.expect("Must specify parachain id"),
 			"kusama-local",
@@ -201,10 +204,9 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 					Box::new(chain_spec::statemint::StatemineChainSpec::from_json_file(path)?),
 				Runtime::Westmint =>
 					Box::new(chain_spec::statemint::WestmintChainSpec::from_json_file(path)?),
-				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend =>
-					Box::new(chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_file(
-						path,
-					)?),
+				Runtime::CollectivesPolkadot | Runtime::CollectivesWestend => Box::new(
+					chain_spec::collectives::CollectivesPolkadotChainSpec::from_json_file(path)?,
+				),
 				Runtime::Shell =>
 					Box::new(chain_spec::shell::ShellChainSpec::from_json_file(path)?),
 				Runtime::Seedling =>
