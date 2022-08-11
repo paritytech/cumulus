@@ -114,10 +114,8 @@ pub fn native_version() -> NativeVersion {
 }
 
 /// Privileged origin that represents Root or the majority of the Relay Chain Council.
-pub type RootOrExecutiveSimpleMajority = EitherOfDiverse<
-	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>,
->;
+pub type RootOrExecutiveSimpleMajority =
+	EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
 /// Privileged origin that represents Root or more than two thirds of the Alliance.
 pub type RootOrAllianceTwoThirdsMajority = EitherOfDiverse<
 	EnsureRoot<AccountId>,
