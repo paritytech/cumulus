@@ -99,6 +99,7 @@ where
 			create_inherent_data_providers: Arc::new(create_inherent_data_providers),
 			block_import: Arc::new(futures::lock::Mutex::new(ParachainBlockImport::new(
 				block_import,
+				None,
 			))),
 			relay_chain_interface,
 			_phantom: PhantomData,

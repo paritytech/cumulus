@@ -103,8 +103,26 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 	}
 }
 
+#[inline]
 fn build_and_import_block(mut client: Arc<Client>, import_as_best: bool) -> Block {
-	let builder = client.init_block_builder(None, Default::default());
+	build_and_import_block_ext(&*client.clone(), import_as_best, &mut client, None, None)
+}
+
+fn build_and_import_block_ext<B: InitBlockBuilder, I: BlockImport<Block>>(
+	builder: &B,
+	import_as_best: bool,
+	importer: &mut I,
+	at: Option<BlockId<Block>>,
+	timestamp: Option<u64>,
+) -> Block {
+	let builder = match at {
+		Some(at) => match timestamp {
+			Some(ts) =>
+				builder.init_block_builder_with_timestamp(&at, None, Default::default(), ts),
+			None => builder.init_block_builder_at(&at, None, Default::default()),
+		},
+		None => builder.init_block_builder(None, Default::default()),
+	};
 
 	let block = builder.build().unwrap().block;
 	let (header, body) = block.clone().deconstruct();
@@ -113,7 +131,7 @@ fn build_and_import_block(mut client: Arc<Client>, import_as_best: bool) -> Bloc
 	block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(import_as_best));
 	block_import_params.body = Some(body);
 
-	block_on(client.import_block(block_import_params, Default::default())).unwrap();
+	block_on(importer.import_block(block_import_params, Default::default())).unwrap();
 
 	block
 }
@@ -358,37 +376,61 @@ fn do_not_set_best_block_to_older_block() {
 
 #[test]
 fn prune_blocks_on_leaves_overflow() {
-	const NUM_BLOCKS: usize = 4;
+	const LEVEL_LIMIT: usize = 3;
+	const TIMESTAMP_MULTIPLIER: u64 = 60000;
 
 	let backend = Arc::new(Backend::new_test(1000, 1));
-    {
-        let mut mtx = BACKEND.lock().unwrap();
-        *mtx = Some(backend.clone());
-    }
+	{
+		let mut mtx = BACKEND.lock().unwrap();
+		*mtx = Some(backend.clone());
+	}
 
-	let client = Arc::new(TestClientBuilder::with_backend(backend).build());
+	let client = Arc::new(TestClientBuilder::with_backend(backend.clone()).build());
 
-	let blocks = (0..NUM_BLOCKS)
+	let mut para_import = ParachainBlockImport::new(client.clone(), Some(LEVEL_LIMIT));
+
+	let root_block = build_and_import_block(client.clone(), true);
+	let _num = root_block.header.number();
+	let root_id = BlockId::Hash(root_block.header.hash());
+
+	let blocks = (0..LEVEL_LIMIT)
 		.into_iter()
-		.map(|_| build_and_import_block(client.clone(), true))
+		.map(|i| {
+			build_and_import_block_ext(
+				&*client,
+				false,
+				&mut para_import,
+				Some(root_id),
+				Some(i as u64 * TIMESTAMP_MULTIPLIER),
+			)
+		})
 		.collect::<Vec<_>>();
 
-    {
-        let builder = client.init_block_builder(None, Default::default());
+	let _ = dbg!(&blocks.iter().map(|b| b.header.hash()).collect::<Vec<_>>());
 
-        let block = builder.build().unwrap().block;
-        let (header, body) = block.clone().deconstruct();
+	let leaves = backend.blockchain().leaves();
+	let _ = dbg!(&leaves);
 
-        let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header);
-        block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(false));
-        block_import_params.body = Some(body);
+	{
+		let builder = client.init_block_builder_with_timestamp(
+			&root_id,
+			None,
+			Default::default(),
+			LEVEL_LIMIT as u64 * TIMESTAMP_MULTIPLIER,
+		);
 
+		let block = builder.build().unwrap().block;
+		let (header, body) = block.clone().deconstruct();
 
-        let mut para_import = ParachainBlockImport::new(client);
-        block_on(para_import.import_block(block_import_params, Default::default())).unwrap();
+		let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header);
+		block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(false));
+		block_import_params.body = Some(body);
 
-    }
+		block_on(para_import.import_block(block_import_params, Default::default())).unwrap();
+	}
 
+	let leaves = backend.blockchain().leaves();
+	let _ = dbg!(&leaves);
 }
 
 // ========= START TEMPORARY HACK =========
@@ -404,7 +446,7 @@ use sc_client_api::{
 };
 
 #[no_mangle]
-pub fn check_leaves(number: u32) {
+pub fn check_leaves(number: u32, level_limit: usize) {
 	let lock = BACKEND.lock().unwrap();
 	let backend = lock.as_ref().expect("Backend should be already initialized");
 	let blockchain = backend.blockchain();
@@ -415,7 +457,7 @@ pub fn check_leaves(number: u32) {
 	let mut leaves = blockchain.leaves().expect("Error fetching leaves from backend");
 	log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Leaves Number: {}", leaves.len());
 
-    // TODO: Just debugging
+	// TODO: Just debugging
 	for leaf in leaves.iter() {
 		let number = match blockchain.number(*leaf).ok().flatten() {
 			Some(n) => n,
@@ -427,33 +469,30 @@ pub fn check_leaves(number: u32) {
 		log::debug!(target: "parachain", ">>> (@{}) : {}", number, leaf);
 	}
 
-    // Magic number
-	const MAX_LEAVES_PER_LEVEL: usize = 3;
-
-    // First cheap check: the number of leaves at level `number` is always less than the total.
-	if leaves.len() >= MAX_LEAVES_PER_LEVEL {
-        // Now focus on the leaves at the given height.
-		leaves.retain(|hash|
+	// First cheap check: the number of leaves at level `number` is always less than the total.
+	if leaves.len() >= level_limit {
+		// Now focus on the leaves at the given height.
+		leaves.retain(|hash| {
 			blockchain.number(*hash).ok().flatten().map(|n| n == number).unwrap_or_default()
-		);
-		if leaves.len() < MAX_LEAVES_PER_LEVEL {
+		});
+		if leaves.len() < level_limit {
 			return
 		}
 
-        // TODO: double check
-		let mut remove_count = (leaves.len() + 1) - MAX_LEAVES_PER_LEVEL;
+		// TODO: double check
+		let mut remove_count = (leaves.len() + 1) - level_limit;
 
 		// TODO: Better strategy
 		let best = blockchain.info().best_hash;
 
-        // TODO: here we strongly assume that the leaves returned by the backend are returned
-        // by "age". This is actually true in our backend implementation...
-        // We can add a constraint to the leaves() method signature.
+		// TODO: here we strongly assume that the leaves returned by the backend are returned
+		// by "age". This is actually true in our backend implementation...
+		// We can add a constraint to the leaves() method signature.
 		for hash in leaves.into_iter().filter(|hash| *hash != best) {
 			log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Removing block: {}", hash);
 			if backend.remove_leaf_block(&hash).is_err() {
 				log::warn!(target: "parachain", "Unable to remove block {}", hash);
-                continue;
+				continue
 			}
 			remove_count -= 1;
 			if remove_count == 0 {

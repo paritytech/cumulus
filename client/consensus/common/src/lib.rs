@@ -74,17 +74,20 @@ impl<B: BlockT> ParachainConsensus<B> for Box<dyn ParachainConsensus<B> + Send +
 /// This is used to set `block_import_params.fork_choice` to `false` as long as the block origin is
 /// not `NetworkInitialSync`. The best block for parachains is determined by the relay chain. Meaning
 /// we will update the best block, as it is included by the relay-chain.
-pub struct ParachainBlockImport<I>(I);
+pub struct ParachainBlockImport<I> {
+	inner: I,
+	level_limit: Option<usize>,
+}
 
 impl<I> ParachainBlockImport<I> {
 	/// Create a new instance.
-	pub fn new(inner: I) -> Self {
-		Self(inner)
+	pub fn new(inner: I, level_limit: Option<usize>) -> Self {
+		Self { inner, level_limit }
 	}
 }
 
 extern "Rust" {
-	fn check_leaves(number: u32);
+	fn check_leaves(number: u32, level_limit: usize);
 }
 
 #[async_trait::async_trait]
@@ -100,7 +103,7 @@ where
 		&mut self,
 		block: sc_consensus::BlockCheckParams<Block>,
 	) -> Result<sc_consensus::ImportResult, Self::Error> {
-		self.0.check_block(block).await
+		self.inner.check_block(block).await
 	}
 
 	async fn import_block(
@@ -112,9 +115,11 @@ where
 		let hash = params.header.hash();
 		log::debug!(target: "parachain", ">>>>>>>>>>>>>> Importing block {:?} @ {}", hash, number);
 
-		unsafe {
-			let number = number as *const _ as *const u32;
-			check_leaves(*number);
+		if let Some(limit) = self.level_limit {
+			unsafe {
+				let number = number as *const _ as *const u32;
+				check_leaves(*number, limit);
+			}
 		}
 
 		// Best block is determined by the relay chain, or if we are doing the initial sync
@@ -125,7 +130,7 @@ where
 
 		// Check if we require to prune a leaf before trying to import block
 
-		let res = self.0.import_block(params, cache).await;
+		let res = self.inner.import_block(params, cache).await;
 		if let Err(err) = &res {
 			dbg!(&err);
 			log::error!("RAW ERRROR: {:?}", err);

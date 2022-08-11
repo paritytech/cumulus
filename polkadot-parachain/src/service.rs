@@ -532,7 +532,7 @@ pub fn check_leaves(number: u32) {
 	let mut leaves = blockchain.leaves().expect("Error fetching leaves from backend");
 	log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Leaves Number: {}", leaves.len());
 
-    // TODO: Just debugging
+	// TODO: Just debugging
 	for leaf in leaves.iter() {
 		let number = match blockchain.number(*leaf).ok().flatten() {
 			Some(n) => n,
@@ -544,33 +544,33 @@ pub fn check_leaves(number: u32) {
 		log::debug!(target: "parachain", ">>> (@{}) : {}", number, leaf);
 	}
 
-    // Magic number
+	// Magic number
 	const MAX_LEAVES_PER_LEVEL: usize = 3;
 
-    // First cheap check: the number of leaves at level `number` is always less than the total.
+	// First cheap check: the number of leaves at level `number` is always less than the total.
 	if leaves.len() >= MAX_LEAVES_PER_LEVEL {
-        // Now focus on the leaves at the given height.
-		leaves.retain(|hash|
+		// Now focus on the leaves at the given height.
+		leaves.retain(|hash| {
 			blockchain.number(*hash).ok().flatten().map(|n| n == number).unwrap_or_default()
-		);
+		});
 		if leaves.len() < MAX_LEAVES_PER_LEVEL {
 			return
 		}
 
-        // TODO: double check
+		// TODO: double check
 		let mut remove_count = (leaves.len() + 1) - MAX_LEAVES_PER_LEVEL;
 
 		// TODO: Better strategy
 		let best = blockchain.info().best_hash;
 
-        // TODO: here we strongly assume that the leaves returned by the backend are returned
-        // by "age". This is actually true in our backend implementation...
-        // We can add a constraint to the leaves() method signature.
+		// TODO: here we strongly assume that the leaves returned by the backend are returned
+		// by "age". This is actually true in our backend implementation...
+		// We can add a constraint to the leaves() method signature.
 		for hash in leaves.into_iter().filter(|hash| *hash != best) {
 			log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Removing block: {}", hash);
 			if backend.remove_leaf_block(&hash).is_err() {
 				log::warn!(target: "parachain", "Unable to remove block {}", hash);
-                continue;
+				continue
 			}
 			remove_count -= 1;
 			if remove_count == 0 {
