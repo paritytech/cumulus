@@ -30,9 +30,11 @@ priority_labels=(
 )
 
 audit_labels=(
-  'D1-nice_to_have_audit'
-  'D2-needs_audit'
-  'D3-audited'
+  'D1-audited 👍'
+  'D2-notlive 💤'
+  'D3-trivial 🧸'
+  'D5-nicetohaveaudit ⚠️'
+  'D9-needsaudit 👮'
 )
 
 echo "[+] Checking release notes (B) labels for $CI_COMMIT_BRANCH"
