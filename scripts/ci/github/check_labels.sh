@@ -25,8 +25,8 @@ releasenotes_labels=(
 priority_labels=(
   'C1-low'
   'C3-medium'
-  'C7-high'
-  'C9-critical'
+  'C5-high'
+  'C7-critical'
 )
 
 audit_labels=(
