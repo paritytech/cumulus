@@ -11,6 +11,7 @@ codec = { package = "parity-scale-codec", version = "3.0.0", features = [ "deriv
 dyn-clone = "1.0.9"
 futures = "0.3.21"
 tracing = "0.1.36"
+log = "0.4.17"
 
 # Substrate
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -26,9 +27,6 @@ polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch =
 
 # Cumulus
 cumulus-relay-chain-interface = { path = "../../relay-chain-interface" }
-
-# TEMPORARY (REMOVE THIS)
-log = "0.4.17"
 
 [dev-dependencies]
 futures-timer = "3.0.2"

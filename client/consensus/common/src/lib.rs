@@ -145,25 +145,10 @@ where
 		cache: std::collections::HashMap<sp_consensus::CacheKeyId, Vec<u8>>,
 	) -> Result<sc_consensus::ImportResult, Self::Error> {
 		let number = params.header.number();
-		let hash = params.header.hash();
-		log::debug!(target: "parachain", ">>>>>>>>>>>>>> Importing block {:?} @ {}", hash, number);
 
 		let check_leaves = |level_limit| {
 			let blockchain = self.backend.blockchain();
-
-			log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> BLOCK Number: {}", number);
-
-			// Interface contract: results are ordered best (longest, highest) chain first.
-			let mut leaves = blockchain.leaves().expect("Error fetching leaves from backend");
-			log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Leaves Number: {}", leaves.len());
-
-			// TODO: Just debugging
-			for leaf in leaves.iter() {
-				match blockchain.number(*leaf).ok().flatten() {
-					Some(n) => log::debug!(target: "parachain", ">>> (@{}) : {}", n, leaf),
-					None => panic!("Unexpected missing number for leaf {}", leaf),
-				};
-			}
+			let mut leaves = blockchain.leaves().unwrap_or_default();
 
 			// First cheap check: the number of leaves at level `number` is always less than the total.
 			if leaves.len() < level_limit {
@@ -183,17 +168,19 @@ where
 				return
 			}
 
-			let best = blockchain.info().best_hash;
+			log::debug!(target: "parachain", "Detected leaves overflow, removing old blocks");
 
 			// TODO: here we assuming that the leaves returned by the backend are sorted
 			// by "age" with younger leaves in the back.
 			// This is true in our backend implementation, we can add a constraint to the
-			// leaves() method signature.
+			// Backend trait leaves() method signature.
+
+			let best = blockchain.info().best_hash;
 			let mut remove_count = (leaves.len() + 1) - level_limit;
+
 			for hash in leaves.into_iter().filter(|hash| *hash != best) {
-				log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Removing block: {}", hash);
 				if self.backend.remove_leaf_block(&hash).is_err() {
-					log::warn!(target: "parachain", "Unable to remove block {}", hash);
+					log::warn!(target: "parachain", "Unable to remove block {}, skipping it...", hash);
 					continue
 				}
 				remove_count -= 1;
@@ -201,9 +188,6 @@ where
 					break
 				}
 			}
-
-			let leaves = blockchain.leaves().expect("Error fetching leaves from backend");
-			log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Leaves Number (post-del): {}", leaves.len());
 		};
 
 		if let Some(limit) = self.level_leaves_max {
