@@ -33,7 +33,7 @@ pub use parachain_consensus::run_parachain_consensus;
 
 /// Value good enough to be use on parachains under the current backend implementation.
 /// Note that this value may change in the future.
-pub const MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT: usize = 3;
+pub const MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT: usize = 32;
 
 /// Upper bound for the number of leaves allowed for each chain level.
 ///
