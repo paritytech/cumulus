@@ -35,7 +35,7 @@ pub use parachain_consensus::run_parachain_consensus;
 /// Note that this value may change in the future.
 pub const MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT: usize = 3;
 
-/// Uppere bound to the number of leaves held by each chain level.
+/// Upper bound for the number of leaves allowed for each chain level.
 ///
 /// The a limit is set and more leaves are detected on block import, then the older ones are
 /// eventually dropped to make space for more fresh blocks.

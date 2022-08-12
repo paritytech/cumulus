@@ -855,7 +855,6 @@ pub async fn start_rococo_parachain_node(
 					},
 					block_import: client.clone(),
 					para_client: client,
-					backend,
 					backoff_authoring_blocks: Option::<()>::None,
 					sync_oracle,
 					keystore,
@@ -866,6 +865,7 @@ pub async fn start_rococo_parachain_node(
 					// And a maximum of 750ms if slots are skipped
 					max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
 					telemetry,
+					backend,
 				}),
 			)
 		},
@@ -1293,7 +1293,6 @@ where
 							},
 						block_import: client2.clone(),
 						para_client: client2.clone(),
-						backend: backend2.clone(),
 						backoff_authoring_blocks: Option::<()>::None,
 						sync_oracle,
 						keystore,
@@ -1304,6 +1303,7 @@ where
 						// And a maximum of 750ms if slots are skipped
 						max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
 						telemetry: telemetry2,
+						backend: backend2,
 					},
 				)
 			})));
@@ -1701,7 +1701,6 @@ pub async fn start_contracts_rococo_node(
 					},
 					block_import: client.clone(),
 					para_client: client,
-					backend,
 					backoff_authoring_blocks: Option::<()>::None,
 					sync_oracle,
 					keystore,
@@ -1712,6 +1711,7 @@ pub async fn start_contracts_rococo_node(
 					// And a maximum of 750ms if slots are skipped
 					max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
 					telemetry,
+					backend,
 				}),
 			)
 		},

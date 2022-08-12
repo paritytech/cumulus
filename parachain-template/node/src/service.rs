@@ -533,7 +533,6 @@ pub async fn start_parachain_node(
 					},
 					block_import: client.clone(),
 					para_client: client,
-					backend,
 					backoff_authoring_blocks: Option::<()>::None,
 					sync_oracle,
 					keystore,
@@ -544,6 +543,7 @@ pub async fn start_parachain_node(
 					// And a maximum of 750ms if slots are skipped
 					max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
 					telemetry,
+					backend,
 				}),
 			)
 		},
