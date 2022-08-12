@@ -31,19 +31,18 @@ mod tests;
 
 pub use parachain_consensus::run_parachain_consensus;
 
-/// Value good enough to be use on parachains under the current backend implementation.
-/// Note that this value may change in the future.
+/// Value good enough to be used with parachains using the current backend implementation
+/// that ships with Substrate. This value may change in the future.
 pub const MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT: usize = 32;
 
-/// Upper bound for the number of leaves allowed for each chain level.
+/// Upper bound to the number of leaves allowed for each level of the blockchain.
 ///
-/// The a limit is set and more leaves are detected on block import, then the older ones are
-/// eventually dropped to make space for more fresh blocks.
+/// If the limit is set and more leaves are detected on block import, then the older ones are
+/// dropped to make space for the fresh blocks.
 ///
-/// In environments where blocks confirmations from the relay chain are "slow", then
+/// In environments where blocks confirmations from the relay chain may be "slow", then
 /// setting an upper bound helps keeping the chain health by dropping old (presumably) stale
-/// leaves and prevents discarding new fresh blocks because we've reached the backend max value
-/// according to the backend implementation.
+/// leaves and prevents discarding new blocks because we've reached the backend max value.
 pub enum LeavesLevelLimit {
 	/// Limit set to `MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT`.
 	Default,
@@ -169,11 +168,6 @@ where
 			}
 
 			log::debug!(target: "parachain", "Detected leaves overflow, removing old blocks");
-
-			// TODO: here we assuming that the leaves returned by the backend are sorted
-			// by "age" with younger leaves in the back.
-			// This is true in our backend implementation, we can add a constraint to the
-			// Backend trait leaves() method signature.
 
 			let best = blockchain.info().best_hash;
 			let mut remove_count = (leaves.len() + 1) - level_limit;
