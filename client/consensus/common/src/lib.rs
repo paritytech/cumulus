@@ -15,13 +15,43 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use polkadot_primitives::v2::{Hash as PHash, PersistedValidationData};
+
+use sc_client_api::{
+	blockchain::{Backend as _, HeaderBackend as _},
+	Backend,
+};
 use sc_consensus::BlockImport;
 use sp_runtime::traits::{Block as BlockT, Header as _};
+
+use std::sync::Arc;
 
 mod parachain_consensus;
 #[cfg(test)]
 mod tests;
+
 pub use parachain_consensus::run_parachain_consensus;
+
+/// Value good enough to be use on parachains under the current backend implementation.
+/// Note that this value may change in the future.
+pub const MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT: usize = 3;
+
+/// Uppere bound to the number of leaves held by each chain level.
+///
+/// The a limit is set and more leaves are detected on block import, then the older ones are
+/// eventually dropped to make space for more fresh blocks.
+///
+/// In environments where blocks confirmations from the relay chain are "slow", then
+/// setting an upper bound helps keeping the chain health by dropping old (presumably) stale
+/// leaves and prevents discarding new fresh blocks because we've reached the backend max value
+/// according to the backend implementation.
+pub enum LeavesLevelLimit {
+	/// Limit set to `MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT`.
+	Default,
+	/// No explicit limit, however a limit may be implicitly imposed by the backend implementation.
+	None,
+	/// Custom value.
+	Some(usize),
+}
 
 /// The result of [`ParachainConsensus::produce_candidate`].
 pub struct ParachainCandidate<B> {
@@ -74,30 +104,33 @@ impl<B: BlockT> ParachainConsensus<B> for Box<dyn ParachainConsensus<B> + Send +
 /// This is used to set `block_import_params.fork_choice` to `false` as long as the block origin is
 /// not `NetworkInitialSync`. The best block for parachains is determined by the relay chain. Meaning
 /// we will update the best block, as it is included by the relay-chain.
-pub struct ParachainBlockImport<I> {
-	inner: I,
-	level_limit: Option<usize>,
+pub struct ParachainBlockImport<BI, BE> {
+	inner: BI,
+	backend: Arc<BE>,
+	level_leaves_max: Option<usize>,
 }
 
-impl<I> ParachainBlockImport<I> {
+impl<BI, BE> ParachainBlockImport<BI, BE> {
 	/// Create a new instance.
-	pub fn new(inner: I, level_limit: Option<usize>) -> Self {
-		Self { inner, level_limit }
+	pub fn new(inner: BI, backend: Arc<BE>, level_leaves_max: LeavesLevelLimit) -> Self {
+		let level_leaves_max = match level_leaves_max {
+			LeavesLevelLimit::None => None,
+			LeavesLevelLimit::Some(limit) => Some(limit),
+			LeavesLevelLimit::Default => Some(MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT),
+		};
+		Self { inner, backend, level_leaves_max }
 	}
 }
 
-extern "Rust" {
-	fn check_leaves(number: u32, level_limit: usize);
-}
-
 #[async_trait::async_trait]
-impl<Block, I> BlockImport<Block> for ParachainBlockImport<I>
+impl<Block, BI, BE> BlockImport<Block> for ParachainBlockImport<BI, BE>
 where
 	Block: BlockT,
-	I: BlockImport<Block> + Send,
+	BI: BlockImport<Block> + Send,
+	BE: Backend<Block>,
 {
-	type Error = I::Error;
-	type Transaction = I::Transaction;
+	type Error = BI::Error;
+	type Transaction = BI::Transaction;
 
 	async fn check_block(
 		&mut self,
@@ -115,11 +148,66 @@ where
 		let hash = params.header.hash();
 		log::debug!(target: "parachain", ">>>>>>>>>>>>>> Importing block {:?} @ {}", hash, number);
 
-		if let Some(limit) = self.level_limit {
-			unsafe {
-				let number = number as *const _ as *const u32;
-				check_leaves(*number, limit);
+		let check_leaves = |level_limit| {
+			let blockchain = self.backend.blockchain();
+
+			log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> BLOCK Number: {}", number);
+
+			// Interface contract: results are ordered best (longest, highest) chain first.
+			let mut leaves = blockchain.leaves().expect("Error fetching leaves from backend");
+			log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Leaves Number: {}", leaves.len());
+
+			// TODO: Just debugging
+			for leaf in leaves.iter() {
+				match blockchain.number(*leaf).ok().flatten() {
+					Some(n) => log::debug!(target: "parachain", ">>> (@{}) : {}", n, leaf),
+					None => panic!("Unexpected missing number for leaf {}", leaf),
+				};
 			}
+
+			// First cheap check: the number of leaves at level `number` is always less than the total.
+			if leaves.len() < level_limit {
+				return
+			}
+
+			// Now focus on the leaves at the given height.
+			leaves.retain(|hash| {
+				blockchain
+					.number(*hash)
+					.ok()
+					.flatten()
+					.map(|n| n == *number)
+					.unwrap_or_default()
+			});
+			if leaves.len() < level_limit {
+				return
+			}
+
+			let best = blockchain.info().best_hash;
+
+			// TODO: here we assuming that the leaves returned by the backend are sorted
+			// by "age" with younger leaves in the back.
+			// This is true in our backend implementation, we can add a constraint to the
+			// leaves() method signature.
+			let mut remove_count = (leaves.len() + 1) - level_limit;
+			for hash in leaves.into_iter().filter(|hash| *hash != best) {
+				log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Removing block: {}", hash);
+				if self.backend.remove_leaf_block(&hash).is_err() {
+					log::warn!(target: "parachain", "Unable to remove block {}", hash);
+					continue
+				}
+				remove_count -= 1;
+				if remove_count == 0 {
+					break
+				}
+			}
+
+			let leaves = blockchain.leaves().expect("Error fetching leaves from backend");
+			log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Leaves Number (post-del): {}", leaves.len());
+		};
+
+		if let Some(limit) = self.level_leaves_max {
+			check_leaves(limit);
 		}
 
 		// Best block is determined by the relay chain, or if we are doing the initial sync

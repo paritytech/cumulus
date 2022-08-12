@@ -387,7 +387,12 @@ fn prune_blocks_on_leaves_overflow() {
 
 	let client = Arc::new(TestClientBuilder::with_backend(backend.clone()).build());
 
-	let mut para_import = ParachainBlockImport::new(client.clone(), Some(LEVEL_LIMIT));
+	// TODO: maybe we have to pass a weak ref
+	let mut para_import = ParachainBlockImport::new(
+		client.clone(),
+		backend.clone(),
+		LeavesLevelLimit::Some(LEVEL_LIMIT),
+	);
 
 	let root_block = build_and_import_block(client.clone(), true);
 	let _num = root_block.header.number();

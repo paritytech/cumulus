@@ -34,11 +34,10 @@
 //! 5. After the parachain candidate got backed and included, all collators start at 1.
 
 use cumulus_client_consensus_common::{
-	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
+	LeavesLevelLimit, ParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
 use cumulus_primitives_core::{relay_chain::v2::Hash as PHash, ParaId, PersistedValidationData};
 use cumulus_relay_chain_interface::RelayChainInterface;
-use parking_lot::Mutex;
 
 use sc_consensus::{BlockImport, BlockImportParams};
 use sp_consensus::{
@@ -46,6 +45,8 @@ use sp_consensus::{
 };
 use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvider};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
+
+use parking_lot::Mutex;
 use std::{marker::PhantomData, sync::Arc, time::Duration};
 
 mod import_queue;
@@ -54,16 +55,17 @@ pub use import_queue::{import_queue, Verifier};
 const LOG_TARGET: &str = "cumulus-consensus-relay-chain";
 
 /// The implementation of the relay-chain provided consensus for parachains.
-pub struct RelayChainConsensus<B, PF, BI, RCInterface, CIDP> {
+pub struct RelayChainConsensus<B, PF, BI, RCInterface, CIDP, BE> {
 	para_id: ParaId,
 	_phantom: PhantomData<B>,
 	proposer_factory: Arc<Mutex<PF>>,
 	create_inherent_data_providers: Arc<CIDP>,
-	block_import: Arc<futures::lock::Mutex<ParachainBlockImport<BI>>>,
+	block_import: Arc<futures::lock::Mutex<ParachainBlockImport<BI, BE>>>,
 	relay_chain_interface: RCInterface,
 }
 
-impl<B, PF, BI, RCInterface, CIDP> Clone for RelayChainConsensus<B, PF, BI, RCInterface, CIDP>
+impl<B, PF, BI, RCInterface, CIDP, BE> Clone
+	for RelayChainConsensus<B, PF, BI, RCInterface, CIDP, BE>
 where
 	RCInterface: Clone,
 {
@@ -79,7 +81,7 @@ where
 	}
 }
 
-impl<B, PF, BI, RCInterface, CIDP> RelayChainConsensus<B, PF, BI, RCInterface, CIDP>
+impl<B, PF, BI, RCInterface, CIDP, BE> RelayChainConsensus<B, PF, BI, RCInterface, CIDP, BE>
 where
 	B: BlockT,
 	RCInterface: RelayChainInterface,
@@ -92,6 +94,7 @@ where
 		create_inherent_data_providers: CIDP,
 		block_import: BI,
 		relay_chain_interface: RCInterface,
+		backend: Arc<BE>,
 	) -> Self {
 		Self {
 			para_id,
@@ -99,7 +102,8 @@ where
 			create_inherent_data_providers: Arc::new(create_inherent_data_providers),
 			block_import: Arc::new(futures::lock::Mutex::new(ParachainBlockImport::new(
 				block_import,
-				None,
+				backend,
+				LeavesLevelLimit::None,
 			))),
 			relay_chain_interface,
 			_phantom: PhantomData,
@@ -140,8 +144,8 @@ where
 }
 
 #[async_trait::async_trait]
-impl<B, PF, BI, RCInterface, CIDP> ParachainConsensus<B>
-	for RelayChainConsensus<B, PF, BI, RCInterface, CIDP>
+impl<B, PF, BI, RCInterface, CIDP, BE> ParachainConsensus<B>
+	for RelayChainConsensus<B, PF, BI, RCInterface, CIDP, BE>
 where
 	B: BlockT,
 	RCInterface: RelayChainInterface + Clone,
@@ -154,6 +158,7 @@ where
 		Proof = <EnableProofRecording as ProofRecording>::Proof,
 	>,
 	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)>,
+	BE: sc_client_api::Backend<B> + Send + Sync,
 {
 	async fn produce_candidate(
 		&mut self,
@@ -219,25 +224,27 @@ where
 }
 
 /// Parameters of [`build_relay_chain_consensus`].
-pub struct BuildRelayChainConsensusParams<PF, BI, CIDP, RCInterface> {
+pub struct BuildRelayChainConsensusParams<PF, BI, CIDP, RCInterface, BE> {
 	pub para_id: ParaId,
 	pub proposer_factory: PF,
 	pub create_inherent_data_providers: CIDP,
 	pub block_import: BI,
 	pub relay_chain_interface: RCInterface,
+	pub backend: Arc<BE>,
 }
 
 /// Build the [`RelayChainConsensus`].
 ///
 /// Returns a boxed [`ParachainConsensus`].
-pub fn build_relay_chain_consensus<Block, PF, BI, CIDP, RCInterface>(
+pub fn build_relay_chain_consensus<Block, PF, BI, CIDP, RCInterface, BE>(
 	BuildRelayChainConsensusParams {
 		para_id,
 		proposer_factory,
 		create_inherent_data_providers,
 		block_import,
 		relay_chain_interface,
-	}: BuildRelayChainConsensusParams<PF, BI, CIDP, RCInterface>,
+		backend,
+	}: BuildRelayChainConsensusParams<PF, BI, CIDP, RCInterface, BE>,
 ) -> Box<dyn ParachainConsensus<Block>>
 where
 	Block: BlockT,
@@ -251,6 +258,7 @@ where
 	BI: BlockImport<Block> + Send + Sync + 'static,
 	CIDP: CreateInherentDataProviders<Block, (PHash, PersistedValidationData)> + 'static,
 	RCInterface: RelayChainInterface + Clone + 'static,
+	BE: sc_client_api::Backend<Block> + Send + Sync + 'static,
 {
 	Box::new(RelayChainConsensus::new(
 		para_id,
@@ -258,5 +266,6 @@ where
 		create_inherent_data_providers,
 		block_import,
 		relay_chain_interface,
+		backend,
 	))
 }

@@ -24,12 +24,12 @@
 
 use codec::{Decode, Encode};
 use cumulus_client_consensus_common::{
-	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
+	LeavesLevelLimit, ParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
 use cumulus_primitives_core::{relay_chain::v2::Hash as PHash, PersistedValidationData};
 
 use futures::lock::Mutex;
-use sc_client_api::{backend::AuxStore, BlockOf};
+use sc_client_api::{backend::AuxStore, Backend, BlockOf};
 use sc_consensus::BlockImport;
 use sc_consensus_slots::{BackoffAuthoringBlocksStrategy, SimpleSlotWorker, SlotInfo};
 use sc_telemetry::TelemetryHandle;
@@ -78,12 +78,13 @@ where
 	CIDP::InherentDataProviders: InherentDataProviderExt,
 {
 	/// Create a new boxed instance of AURA consensus.
-	pub fn build<P, Client, BI, SO, PF, BS, Error>(
+	pub fn build<P, Client, BI, SO, PF, BS, Error, BE>(
 		BuildAuraConsensusParams {
 			proposer_factory,
 			create_inherent_data_providers,
 			block_import,
 			para_client,
+			backend,
 			backoff_authoring_blocks,
 			sync_oracle,
 			keystore,
@@ -92,12 +93,13 @@ where
 			telemetry,
 			block_proposal_slot_portion,
 			max_block_proposal_slot_portion,
-		}: BuildAuraConsensusParams<PF, BI, CIDP, Client, BS, SO>,
+		}: BuildAuraConsensusParams<PF, BI, CIDP, Client, BS, SO, BE>,
 	) -> Box<dyn ParachainConsensus<B>>
 	where
 		Client:
 			ProvideRuntimeApi<B> + BlockOf + AuxStore + HeaderBackend<B> + Send + Sync + 'static,
 		Client::Api: AuraApi<B, P::Public>,
+		BE: Backend<B> + 'static,
 		BI: BlockImport<B, Transaction = sp_api::TransactionFor<Client, B>> + Send + Sync + 'static,
 		SO: SyncOracle + Send + Sync + Clone + 'static,
 		BS: BackoffAuthoringBlocksStrategy<NumberFor<B>> + Send + Sync + 'static,
@@ -117,7 +119,11 @@ where
 		let worker = sc_consensus_aura::build_aura_worker::<P, _, _, _, _, _, _, _, _>(
 			BuildAuraWorkerParams {
 				client: para_client,
-				block_import: ParachainBlockImport::new(block_import),
+				block_import: ParachainBlockImport::new(
+					block_import,
+					backend,
+					LeavesLevelLimit::Default,
+				),
 				justification_sync_link: (),
 				proposer_factory,
 				sync_oracle,
@@ -219,11 +225,12 @@ where
 }
 
 /// Parameters of [`AuraConsensus::build`].
-pub struct BuildAuraConsensusParams<PF, BI, CIDP, Client, BS, SO> {
+pub struct BuildAuraConsensusParams<PF, BI, CIDP, Client, BS, SO, BE> {
 	pub proposer_factory: PF,
 	pub create_inherent_data_providers: CIDP,
 	pub block_import: BI,
 	pub para_client: Arc<Client>,
+	pub backend: Arc<BE>,
 	pub backoff_authoring_blocks: Option<BS>,
 	pub sync_oracle: SO,
 	pub keystore: SyncCryptoStorePtr,

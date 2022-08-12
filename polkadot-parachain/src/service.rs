@@ -18,7 +18,7 @@ use codec::Codec;
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 use cumulus_client_consensus_common::{
-	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
+	LeavesLevelLimit, ParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
@@ -214,6 +214,7 @@ where
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
 	BIQ: FnOnce(
 		Arc<TFullClient<Block, RuntimeApi, WasmExecutor<HostFunctions>>>,
+		Arc<TFullBackend<Block>>,
 		&Configuration,
 		Option<TelemetryHandle>,
 		&TaskManager,
@@ -269,6 +270,7 @@ where
 
 	let import_queue = build_import_queue(
 		client.clone(),
+		backend.clone(),
 		config,
 		telemetry.as_ref().map(|telemetry| telemetry.handle()),
 		&task_manager,
@@ -350,6 +352,7 @@ where
 		+ 'static,
 	BIQ: FnOnce(
 		Arc<TFullClient<Block, RuntimeApi, WasmExecutor<HostFunctions>>>,
+		Arc<TFullBackend<Block>>,
 		&Configuration,
 		Option<TelemetryHandle>,
 		&TaskManager,
@@ -375,6 +378,7 @@ where
 		Arc<NetworkService<Block, Hash>>,
 		SyncCryptoStorePtr,
 		bool,
+		Arc<TFullBackend<Block>>,
 	) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
 {
 	let parachain_config = prepare_node_config(parachain_config);
@@ -468,6 +472,7 @@ where
 			network,
 			params.keystore_container.sync_keystore(),
 			force_authoring,
+			backend,
 		)?;
 
 		let spawner = task_manager.spawn_handle();
@@ -506,84 +511,6 @@ where
 
 	Ok((task_manager, client))
 }
-
-// ========= START TEMPORARY HACK =========
-
-use polkadot_service::FullBackend;
-use std::sync::Mutex as StdMutex;
-
-lazy_static::lazy_static! {
-	static ref BACKEND: StdMutex<Option<Arc<FullBackend>>> = StdMutex::new(None);
-}
-use sc_client_api::{
-	backend::Backend,
-	blockchain::{Backend as _, HeaderBackend as _},
-};
-
-#[no_mangle]
-pub fn check_leaves(number: u32) {
-	let lock = BACKEND.lock().unwrap();
-	let backend = lock.as_ref().expect("Backend should be already initialized");
-	let blockchain = backend.blockchain();
-
-	log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> BLOCK Number: {}", number);
-
-	// Interface contract: results are ordered best (longest, highest) chain first.
-	let mut leaves = blockchain.leaves().expect("Error fetching leaves from backend");
-	log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Leaves Number: {}", leaves.len());
-
-	// TODO: Just debugging
-	for leaf in leaves.iter() {
-		let number = match blockchain.number(*leaf).ok().flatten() {
-			Some(n) => n,
-			None => {
-				let msg = format!("Unexpected missing number for leaf {}", leaf);
-				panic!("{}", msg);
-			},
-		};
-		log::debug!(target: "parachain", ">>> (@{}) : {}", number, leaf);
-	}
-
-	// Magic number
-	const MAX_LEAVES_PER_LEVEL: usize = 3;
-
-	// First cheap check: the number of leaves at level `number` is always less than the total.
-	if leaves.len() >= MAX_LEAVES_PER_LEVEL {
-		// Now focus on the leaves at the given height.
-		leaves.retain(|hash| {
-			blockchain.number(*hash).ok().flatten().map(|n| n == number).unwrap_or_default()
-		});
-		if leaves.len() < MAX_LEAVES_PER_LEVEL {
-			return
-		}
-
-		// TODO: double check
-		let mut remove_count = (leaves.len() + 1) - MAX_LEAVES_PER_LEVEL;
-
-		// TODO: Better strategy
-		let best = blockchain.info().best_hash;
-
-		// TODO: here we strongly assume that the leaves returned by the backend are returned
-		// by "age". This is actually true in our backend implementation...
-		// We can add a constraint to the leaves() method signature.
-		for hash in leaves.into_iter().filter(|hash| *hash != best) {
-			log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Removing block: {}", hash);
-			if backend.remove_leaf_block(&hash).is_err() {
-				log::warn!(target: "parachain", "Unable to remove block {}", hash);
-				continue
-			}
-			remove_count -= 1;
-			if remove_count == 0 {
-				break
-			}
-		}
-
-		let leaves = blockchain.leaves().expect("Error fetching leaves from backend");
-		log::debug!(target: "parachain", ">>>>>>>>>>>>>>>>>>>>> Leaves Number (post-del): {}", leaves.len());
-	}
-}
-
-// ========= END TEMPORARY HACK =========
 
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
@@ -626,6 +553,7 @@ where
 		+ 'static,
 	BIQ: FnOnce(
 			Arc<TFullClient<Block, RuntimeApi, WasmExecutor<HostFunctions>>>,
+			Arc<TFullBackend<Block>>,
 			&Configuration,
 			Option<TelemetryHandle>,
 			&TaskManager,
@@ -651,6 +579,7 @@ where
 		Arc<NetworkService<Block, Hash>>,
 		SyncCryptoStorePtr,
 		bool,
+		Arc<TFullBackend<Block>>,
 	) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
 {
 	let parachain_config = prepare_node_config(parachain_config);
@@ -660,11 +589,6 @@ where
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
-
-	{
-		let mut mtx = BACKEND.lock().unwrap();
-		*mtx = Some(backend.clone());
-	}
 
 	let mut task_manager = params.task_manager;
 	let (relay_chain_interface, collator_key) = build_relay_chain_interface(
@@ -760,6 +684,7 @@ where
 			network,
 			params.keystore_container.sync_keystore(),
 			force_authoring,
+			backend,
 		)?;
 
 		let spawner = task_manager.spawn_handle();
@@ -804,6 +729,7 @@ pub fn rococo_parachain_build_import_queue(
 	client: Arc<
 		TFullClient<Block, rococo_parachain_runtime::RuntimeApi, WasmExecutor<HostFunctions>>,
 	>,
+	backend: Arc<TFullBackend<Block>>,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
@@ -818,6 +744,7 @@ pub fn rococo_parachain_build_import_queue(
 
 	cumulus_client_consensus_aura::import_queue::<
 		sp_consensus_aura::sr25519::AuthorityPair,
+		_,
 		_,
 		_,
 		_,
@@ -842,6 +769,7 @@ pub fn rococo_parachain_build_import_queue(
 		can_author_with: sp_consensus::AlwaysCanAuthor,
 		spawner: &task_manager.spawn_essential_handle(),
 		telemetry,
+		backend,
 	})
 	.map_err(Into::into)
 }
@@ -872,7 +800,8 @@ pub async fn start_rococo_parachain_node(
 		 transaction_pool,
 		 sync_oracle,
 		 keystore,
-		 force_authoring| {
+		 force_authoring,
+		 backend| {
 			let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
 
 			let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
@@ -883,8 +812,17 @@ pub async fn start_rococo_parachain_node(
 				telemetry.clone(),
 			);
 
-			Ok(AuraConsensus::build::<sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _>(
-				BuildAuraConsensusParams {
+			Ok(
+				AuraConsensus::build::<
+					sp_consensus_aura::sr25519::AuthorityPair,
+					_,
+					_,
+					_,
+					_,
+					_,
+					_,
+					_,
+				>(BuildAuraConsensusParams {
 					proposer_factory,
 					create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
 						let relay_chain_interface = relay_chain_interface.clone();
@@ -917,6 +855,7 @@ pub async fn start_rococo_parachain_node(
 					},
 					block_import: client.clone(),
 					para_client: client,
+					backend,
 					backoff_authoring_blocks: Option::<()>::None,
 					sync_oracle,
 					keystore,
@@ -927,8 +866,8 @@ pub async fn start_rococo_parachain_node(
 					// And a maximum of 750ms if slots are skipped
 					max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
 					telemetry,
-				},
-			))
+				}),
+			)
 		},
 		hwbench,
 	)
@@ -938,6 +877,7 @@ pub async fn start_rococo_parachain_node(
 /// Build the import queue for the shell runtime.
 pub fn shell_build_import_queue<RuntimeApi>(
 	client: Arc<TFullClient<Block, RuntimeApi, WasmExecutor<HostFunctions>>>,
+	backend: Arc<TFullBackend<Block>>,
 	config: &Configuration,
 	_: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
@@ -969,6 +909,7 @@ where
 		|_, _| async { Ok(()) },
 		&task_manager.spawn_essential_handle(),
 		config.prometheus_registry(),
+		backend,
 	)
 	.map_err(Into::into)
 }
@@ -1015,7 +956,8 @@ where
 		 transaction_pool,
 		 _,
 		 _,
-		 _| {
+		 _,
+		 backend| {
 			let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
 				task_manager.spawn_handle(),
 				client.clone(),
@@ -1048,6 +990,7 @@ where
 							Ok(parachain_inherent)
 						}
 					},
+					backend,
 				},
 			))
 		},
@@ -1166,6 +1109,7 @@ where
 /// Build the import queue for Statemint and other Aura-based runtimes.
 pub fn aura_build_import_queue<RuntimeApi, AuraId: AppKey>(
 	client: Arc<TFullClient<Block, RuntimeApi, WasmExecutor<HostFunctions>>>,
+	backend: Arc<TFullBackend<Block>>,
 	config: &Configuration,
 	telemetry_handle: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
@@ -1236,7 +1180,7 @@ where
 
 	Ok(BasicQueue::new(
 		verifier,
-		Box::new(ParachainBlockImport::new(client)),
+		Box::new(ParachainBlockImport::new(client, backend, LeavesLevelLimit::Default)),
 		None,
 		&spawner,
 		registry,
@@ -1291,13 +1235,16 @@ where
 		 transaction_pool,
 		 sync_oracle,
 		 keystore,
-		 force_authoring| {
+		 force_authoring,
+		 backend| {
 			let client2 = client.clone();
 			let spawn_handle = task_manager.spawn_handle();
 			let transaction_pool2 = transaction_pool.clone();
 			let telemetry2 = telemetry.clone();
 			let prometheus_registry2 = prometheus_registry.map(|r| (*r).clone());
 			let relay_chain_for_aura = relay_chain_interface.clone();
+			let backend2 = backend.clone();
+
 			let aura_consensus = BuildOnAccess::Uninitialized(Some(Box::new(move || {
 				let slot_duration =
 					cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
@@ -1310,7 +1257,7 @@ where
 					telemetry2.clone(),
 				);
 
-				AuraConsensus::build::<<AuraId as AppKey>::Pair, _, _, _, _, _, _>(
+				AuraConsensus::build::<<AuraId as AppKey>::Pair, _, _, _, _, _, _, _>(
 					BuildAuraConsensusParams {
 						proposer_factory,
 						create_inherent_data_providers:
@@ -1346,6 +1293,7 @@ where
 							},
 						block_import: client2.clone(),
 						para_client: client2.clone(),
+						backend: backend2.clone(),
 						backoff_authoring_blocks: Option::<()>::None,
 						sync_oracle,
 						keystore,
@@ -1395,6 +1343,7 @@ where
 									Ok(parachain_inherent)
 								}
 							},
+						backend,
 					},
 				);
 
@@ -1451,6 +1400,7 @@ where
 		+ 'static,
 	BIQ: FnOnce(
 			Arc<TFullClient<Block, RuntimeApi, WasmExecutor<HostFunctions>>>,
+			Arc<TFullBackend<Block>>,
 			&Configuration,
 			Option<TelemetryHandle>,
 			&TaskManager,
@@ -1476,6 +1426,7 @@ where
 		Arc<NetworkService<Block, Hash>>,
 		SyncCryptoStorePtr,
 		bool,
+		Arc<TFullBackend<Block>>,
 	) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
 {
 	let parachain_config = prepare_node_config(parachain_config);
@@ -1580,6 +1531,7 @@ where
 			network,
 			params.keystore_container.sync_keystore(),
 			force_authoring,
+			backend,
 		)?;
 
 		let spawner = task_manager.spawn_handle();
@@ -1624,6 +1576,7 @@ pub fn contracts_rococo_build_import_queue(
 	client: Arc<
 		TFullClient<Block, contracts_rococo_runtime::RuntimeApi, WasmExecutor<HostFunctions>>,
 	>,
+	backend: Arc<TFullBackend<Block>>,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
@@ -1638,6 +1591,7 @@ pub fn contracts_rococo_build_import_queue(
 
 	cumulus_client_consensus_aura::import_queue::<
 		sp_consensus_aura::sr25519::AuthorityPair,
+		_,
 		_,
 		_,
 		_,
@@ -1662,6 +1616,7 @@ pub fn contracts_rococo_build_import_queue(
 		can_author_with: sp_consensus::AlwaysCanAuthor,
 		spawner: &task_manager.spawn_essential_handle(),
 		telemetry,
+		backend,
 	})
 	.map_err(Into::into)
 }
@@ -1692,7 +1647,8 @@ pub async fn start_contracts_rococo_node(
 		 transaction_pool,
 		 sync_oracle,
 		 keystore,
-		 force_authoring| {
+		 force_authoring,
+		 backend| {
 			let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
 
 			let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
@@ -1703,8 +1659,17 @@ pub async fn start_contracts_rococo_node(
 				telemetry.clone(),
 			);
 
-			Ok(AuraConsensus::build::<sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _>(
-				BuildAuraConsensusParams {
+			Ok(
+				AuraConsensus::build::<
+					sp_consensus_aura::sr25519::AuthorityPair,
+					_,
+					_,
+					_,
+					_,
+					_,
+					_,
+					_,
+				>(BuildAuraConsensusParams {
 					proposer_factory,
 					create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
 						let relay_chain_interface = relay_chain_interface.clone();
@@ -1736,6 +1701,7 @@ pub async fn start_contracts_rococo_node(
 					},
 					block_import: client.clone(),
 					para_client: client,
+					backend,
 					backoff_authoring_blocks: Option::<()>::None,
 					sync_oracle,
 					keystore,
@@ -1746,8 +1712,8 @@ pub async fn start_contracts_rococo_node(
 					// And a maximum of 750ms if slots are skipped
 					max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
 					telemetry,
-				},
-			))
+				}),
+			)
 		},
 		hwbench,
 	)

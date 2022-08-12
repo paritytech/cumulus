@@ -159,6 +159,7 @@ pub fn new_partial(
 		|_, _| async { Ok(sp_timestamp::InherentDataProvider::from_system_time()) },
 		&task_manager.spawn_essential_handle(),
 		registry,
+		backend.clone(),
 	)?;
 
 	let params = PartialComponents {
@@ -280,7 +281,7 @@ where
 		task_manager: &mut task_manager,
 		config: parachain_config,
 		keystore: params.keystore_container.sync_keystore(),
-		backend,
+		backend: backend.clone(),
 		network: network.clone(),
 		system_rpc_tx,
 		telemetry: None,
@@ -333,6 +334,7 @@ where
 					},
 					client.clone(),
 					relay_chain_interface2,
+					backend,
 				))
 			},
 			Consensus::Null => Box::new(NullConsensus),

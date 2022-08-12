@@ -34,7 +34,7 @@ use std::{fmt::Debug, hash::Hash, sync::Arc};
 use substrate_prometheus_endpoint::Registry;
 
 /// Parameters of [`import_queue`].
-pub struct ImportQueueParams<'a, I, C, CIDP, S, CAW> {
+pub struct ImportQueueParams<'a, I, C, CIDP, S, CAW, BE> {
 	/// The block import to use.
 	pub block_import: I,
 	/// The client to interact with the chain.
@@ -49,10 +49,12 @@ pub struct ImportQueueParams<'a, I, C, CIDP, S, CAW> {
 	pub can_author_with: CAW,
 	/// The telemetry handle.
 	pub telemetry: Option<TelemetryHandle>,
+	/// The backend.
+	pub backend: Arc<BE>,
 }
 
 /// Start an import queue for the Aura consensus algorithm.
-pub fn import_queue<'a, P, Block, I, C, S, CAW, CIDP>(
+pub fn import_queue<'a, P, Block, I, C, S, CAW, CIDP, BE>(
 	ImportQueueParams {
 		block_import,
 		client,
@@ -61,7 +63,8 @@ pub fn import_queue<'a, P, Block, I, C, S, CAW, CIDP>(
 		registry,
 		can_author_with,
 		telemetry,
-	}: ImportQueueParams<'a, I, C, CIDP, S, CAW>,
+		backend,
+	}: ImportQueueParams<'a, I, C, CIDP, S, CAW, BE>,
 ) -> Result<DefaultImportQueue<Block, C>, sp_consensus::Error>
 where
 	Block: BlockT,
@@ -85,9 +88,12 @@ where
 	CAW: CanAuthorWith<Block> + Send + Sync + 'static,
 	CIDP: CreateInherentDataProviders<Block, ()> + Sync + Send + 'static,
 	CIDP::InherentDataProviders: InherentDataProviderExt + Send + Sync,
+	BE: sc_client_api::Backend<Block> + 'static,
 {
+	use cumulus_client_consensus_common::{LeavesLevelLimit, ParachainBlockImport};
+
 	sc_consensus_aura::import_queue::<P, _, _, _, _, _, _>(sc_consensus_aura::ImportQueueParams {
-		block_import: cumulus_client_consensus_common::ParachainBlockImport::new(block_import),
+		block_import: ParachainBlockImport::new(block_import, backend, LeavesLevelLimit::Default),
 		justification_import: None,
 		client,
 		create_inherent_data_providers,
