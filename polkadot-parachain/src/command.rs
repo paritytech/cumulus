@@ -40,9 +40,10 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::{net::SocketAddr, path::PathBuf};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 enum Runtime {
 	/// This is the default runtime (based on rococo)
+	#[default]
 	Default,
 	Shell,
 	Seedling,
@@ -105,14 +106,14 @@ fn runtime(id: &str) -> Runtime {
 	} else if id.starts_with("collectives-westend") {
 		Runtime::CollectivesWestend
 	} else {
-		Runtime::Default
+		Runtime::default()
 	}
 }
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	let (id, _, para_id) = extract_parachain_id(id);
 	Ok(match id {
-		// - Default
+		// - Defaul-like
 		"staging" => Box::new(chain_spec::default::staging_test_net()),
 		"tick" => Box::new(chain_spec::default::DefaultChainSpec::from_json_bytes(
 			&include_bytes!("../../parachains/chain-specs/tick.json")[..],
@@ -123,10 +124,12 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"track" => Box::new(chain_spec::default::DefaultChainSpec::from_json_bytes(
 			&include_bytes!("../../parachains/chain-specs/track.json")[..],
 		)?),
-		// -- Shell
+
+		// -- Starters
 		"shell" => Box::new(chain_spec::shell::get_shell_chain_spec()),
-		// -- Statemint
 		"seedling" => Box::new(chain_spec::seedling::get_seedling_chain_spec()),
+
+		// -- Statemint
 		"statemint-dev" => Box::new(chain_spec::statemint::statemint_development_config()),
 		"statemint-local" => Box::new(chain_spec::statemint::statemint_local_config()),
 		// the chain spec as used for generating the upgrade genesis values
@@ -180,6 +183,8 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			Box::new(chain_spec::contracts::ContractsRococoChainSpec::from_json_bytes(
 				&include_bytes!("../../parachains/chain-specs/contracts-rococo.json")[..],
 			)?),
+
+		// -- Penpall
 		"penpal-kusama" => Box::new(chain_spec::penpal::get_penpal_chain_spec(
 			para_id.expect("Must specify parachain id"),
 			"kusama-local",
@@ -194,6 +199,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			log::warn!("No ChainSpec.id specified, so using default one, based on rococo-parachain runtime");
 			Box::new(chain_spec::default::get_chain_spec())
 		},
+
 		// -- Loading a specific spec from disk
 		path => {
 			let path: PathBuf = path.into();
@@ -275,7 +281,7 @@ impl SubstrateCli for Cli {
 		2017
 	}
 
-	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		load_spec(id)
 	}
 
@@ -326,7 +332,7 @@ impl SubstrateCli for RelayChainCli {
 		2017
 	}
 
-	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
 	}
 
