@@ -192,8 +192,8 @@ remote-externalities ={path = "/Users/skunert/work/repos/substrate/utils/frame/r
 pallet-elections-phragmen ={path = "/Users/skunert/work/repos/substrate/frame/elections-phragmen" }
 substrate-build-script-utils ={path = "/Users/skunert/work/repos/substrate/utils/build-script-utils" }
 node-bench ={path = "/Users/skunert/work/repos/substrate/bin/node/bench" }
+kitchensink-runtime ={path = "/Users/skunert/work/repos/substrate/bin/node/runtime" }
 node-primitives ={path = "/Users/skunert/work/repos/substrate/bin/node/primitives" }
-node-runtime ={path = "/Users/skunert/work/repos/substrate/bin/node/runtime" }
 pallet-alliance ={path = "/Users/skunert/work/repos/substrate/frame/alliance" }
 pallet-collective ={path = "/Users/skunert/work/repos/substrate/frame/collective" }
 pallet-identity ={path = "/Users/skunert/work/repos/substrate/frame/identity" }

@@ -192,6 +192,7 @@ async fn build_relay_chain_interface(
 				collator_key.clone().unwrap(),
 				Arc::new(BlockChainRpcClient::new(client.clone()).await),
 			)
+			.await
 			.expect("Unable to initialize relay chain minimal node");
 			task_manager.add_child(collator_node.task_manager);
 			return Ok(Arc::new(RelayChainRpcInterface::new(

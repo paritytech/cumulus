@@ -38,7 +38,8 @@ use polkadot_service::{
 	Error, OverseerConnector,
 };
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
-use sc_network::{Event, NetworkService};
+use sc_network::{Event, NetworkService, NetworkStateInfo};
+use sc_network_common::service::NetworkEventStream;
 use sp_consensus::BlockOrigin;
 use sp_core::traits::SpawnNamed;
 use sp_runtime::{traits::NumberFor, Justifications};
@@ -247,7 +248,7 @@ fn build_authority_discovery_service<Block: BlockT>(
 }
 
 #[sc_tracing::logging::prefix_logs_with("Relaychain")]
-pub fn new_mini(
+pub async fn new_mini(
 	mut config: Configuration,
 	collator_pair: CollatorPair,
 	relay_chain_rpc_client: Arc<BlockChainRpcClient>,
@@ -275,6 +276,10 @@ pub fn new_mini(
 	config.network.request_response_protocols.push(cfg);
 
 	let import_queue = DummyImportQueue {};
+	let genesis_hash = relay_chain_rpc_client
+		.block_get_hash(Some(0))
+		.await
+		.expect("Crash here if no genesis is available");
 
 	let (network, network_starter) =
 		network::build_collator_network(network::BuildCollatorNetworkParams {
@@ -282,6 +287,7 @@ pub fn new_mini(
 			client: relay_chain_rpc_client.clone(),
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue,
+			genesis_hash: genesis_hash.unwrap_or(Default::default()),
 		})?;
 
 	let active_leaves = Vec::new();

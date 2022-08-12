@@ -427,6 +427,14 @@ impl RelayChainRpcClient {
 		self.request("chain_getFinalizedHead", None).await
 	}
 
+	pub async fn chain_get_block_hash(
+		&self,
+		block_number: Option<polkadot_service::BlockNumber>,
+	) -> Result<Option<PHash>, RelayChainError> {
+		let params = rpc_params!(block_number);
+		self.request("chain_getBlockHash", params).await
+	}
+
 	pub async fn parachain_host_persisted_validation_data(
 		&self,
 		at: PHash,

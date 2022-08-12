@@ -29,6 +29,13 @@ impl BlockChainRpcClient {
 	) -> Result<Option<Header>, RelayChainError> {
 		self.rpc_client.chain_get_header(hash).await
 	}
+
+	pub async fn block_get_hash(
+		&self,
+		number: Option<polkadot_service::BlockNumber>,
+	) -> Result<Option<Hash>, RelayChainError> {
+		self.rpc_client.chain_get_block_hash(number).await
+	}
 }
 
 #[async_trait::async_trait]

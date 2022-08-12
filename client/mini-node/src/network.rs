@@ -1,8 +1,10 @@
 use futures::FutureExt;
+use polkadot_core_primitives::Hash;
 use polkadot_service::{BlockT, HeaderMetadata};
 use sc_client_api::{BlockBackend, HeaderBackend, ProofProvider};
 use sc_consensus::ImportQueue;
-use sc_network::{config::SyncMode, NetworkService};
+use sc_network::{config::SyncMode, NetworkService, NetworkStateInfo};
+use sc_network_common::service::NetworkEventStream;
 use sc_network_light::light_client_requests;
 use sc_network_sync::{block_request_handler, state_request_handler, ChainSync};
 use sc_service::{error::Error, Configuration, NetworkStarter, SpawnTaskHandle};
@@ -18,6 +20,8 @@ pub struct BuildCollatorNetworkParams<'a, TImpQu, TCl> {
 	pub spawn_handle: SpawnTaskHandle,
 	/// An import queue.
 	pub import_queue: TImpQu,
+
+	pub genesis_hash: Hash,
 }
 
 /// Build the network service, the network status sinks and an RPC sender.
@@ -33,20 +37,21 @@ where
 		+ 'static,
 	TImpQu: ImportQueue<TBl> + 'static,
 {
-	let BuildCollatorNetworkParams { config, client, spawn_handle, import_queue } = params;
+	let BuildCollatorNetworkParams { config, client, spawn_handle, import_queue, genesis_hash } =
+		params;
 
 	let transaction_pool_adapter = Arc::new(sc_network::config::EmptyTransactionPool {});
 
 	let protocol_id = config.protocol_id();
 
 	let block_request_protocol_config =
-		block_request_handler::generate_protocol_config(&protocol_id);
+		block_request_handler::generate_protocol_config(&protocol_id, genesis_hash, None);
 
 	let state_request_protocol_config =
-		state_request_handler::generate_protocol_config(&protocol_id);
+		state_request_handler::generate_protocol_config(&protocol_id, genesis_hash, None);
 
 	let light_client_request_protocol_config =
-		light_client_requests::generate_protocol_config(&protocol_id);
+		light_client_requests::generate_protocol_config(&protocol_id, genesis_hash, None);
 
 	let block_announce_validator = Box::new(DefaultBlockAnnounceValidator);
 
@@ -78,6 +83,7 @@ where
 				spawn_handle.spawn("network-transactions-handler", Some("networking"), fut);
 			})
 		},
+		fork_id: None,
 		bitswap: None,
 		chain_sync: Box::new(chain_sync),
 		network_config: config.network.clone(),
