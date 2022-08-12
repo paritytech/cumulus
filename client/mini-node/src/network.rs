@@ -29,7 +29,7 @@ pub fn build_collator_network<TBl, TImpQu, TCl>(
 ) -> Result<(Arc<NetworkService<TBl, <TBl as BlockT>::Hash>>, NetworkStarter), Error>
 where
 	TBl: BlockT,
-	TCl: HeaderMetadata<TBl, Error = sp_blockchain::Error> + HeaderBackend<TBl> + 'static,
+	TCl: HeaderBackend<TBl> + 'static,
 	TImpQu: ImportQueue<TBl> + 'static,
 {
 	let BuildCollatorNetworkParams { config, client, spawn_handle, import_queue, genesis_hash } =
@@ -127,11 +127,7 @@ where
 /// Builds a never-ending future that continuously polls the network.
 ///
 /// The `status_sink` contain a list of senders to send a periodic network status to.
-async fn build_network_collator_future<
-	B: BlockT,
-	H: sc_network::ExHashT,
-	C: HeaderBackend<B> + HeaderMetadata<B, Error = sp_blockchain::Error>,
->(
+async fn build_network_collator_future<B: BlockT, H: sc_network::ExHashT, C: HeaderBackend<B>>(
 	mut network: sc_network::NetworkWorker<B, H, C>,
 ) {
 	loop {
@@ -225,7 +221,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		dyn Iterator<Item = (&libp2p::PeerId, sc_network_common::sync::message::BlockRequest<B>)>
 			+ '_,
 	> {
-		todo!()
+		Box::new(Vec::new().into_iter()) as Box<_>
 	}
 
 	fn state_request(

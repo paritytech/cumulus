@@ -421,28 +421,3 @@ impl HeaderBackend<Block> for BlockChainRpcClient {
 			.map_err(|err| sp_blockchain::Error::Backend(err.to_string()))
 	}
 }
-
-/// The syncing code demands that clients implement `HeaderMetadata`. However, in the minimal collator node we
-/// these methods will never be called. Should be refactored at some point.
-impl HeaderMetadata<Block> for BlockChainRpcClient {
-	type Error = sp_blockchain::Error;
-
-	fn header_metadata(
-		&self,
-		_hash: <Block as polkadot_service::BlockT>::Hash,
-	) -> Result<sp_blockchain::CachedHeaderMetadata<Block>, Self::Error> {
-		unimplemented!()
-	}
-
-	fn insert_header_metadata(
-		&self,
-		_hash: <Block as polkadot_service::BlockT>::Hash,
-		_header_metadata: sp_blockchain::CachedHeaderMetadata<Block>,
-	) {
-		unimplemented!()
-	}
-
-	fn remove_header_metadata(&self, _hash: <Block as polkadot_service::BlockT>::Hash) {
-		unimplemented!()
-	}
-}
