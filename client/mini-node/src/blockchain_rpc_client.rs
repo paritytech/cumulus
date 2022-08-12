@@ -415,9 +415,10 @@ impl HeaderBackend<Block> for BlockChainRpcClient {
 
 	fn hash(
 		&self,
-		_number: polkadot_service::NumberFor<Block>,
+		number: polkadot_service::NumberFor<Block>,
 	) -> sp_blockchain::Result<Option<<Block as polkadot_service::BlockT>::Hash>> {
-		unimplemented!()
+		block_local(self.rpc_client.chain_get_block_hash(number.into()))
+			.map_err(|err| sp_blockchain::Error::Backend(err.to_string()))
 	}
 }
 
