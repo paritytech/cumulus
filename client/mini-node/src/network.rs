@@ -1,14 +1,13 @@
 use futures::FutureExt;
 use polkadot_core_primitives::Hash;
 use polkadot_service::{BlockT, HeaderMetadata};
-use sc_client_api::{BlockBackend, HeaderBackend, ProofProvider};
+use sc_client_api::HeaderBackend;
 use sc_consensus::ImportQueue;
-use sc_network::{config::SyncMode, NetworkService, NetworkStateInfo};
-use sc_network_common::service::NetworkEventStream;
+use sc_network::NetworkService;
 use sc_network_light::light_client_requests;
-use sc_network_sync::{block_request_handler, state_request_handler, ChainSync};
+use sc_network_sync::{block_request_handler, state_request_handler};
 use sc_service::{error::Error, Configuration, NetworkStarter, SpawnTaskHandle};
-use sp_consensus::block_validation::DefaultBlockAnnounceValidator;
+
 use std::sync::Arc;
 
 pub struct BuildCollatorNetworkParams<'a, TImpQu, TCl> {
@@ -30,11 +29,7 @@ pub fn build_collator_network<TBl, TImpQu, TCl>(
 ) -> Result<(Arc<NetworkService<TBl, <TBl as BlockT>::Hash>>, NetworkStarter), Error>
 where
 	TBl: BlockT,
-	TCl: HeaderMetadata<TBl, Error = sp_blockchain::Error>
-		+ HeaderBackend<TBl>
-		+ BlockBackend<TBl>
-		+ ProofProvider<TBl>
-		+ 'static,
+	TCl: HeaderMetadata<TBl, Error = sp_blockchain::Error> + HeaderBackend<TBl> + 'static,
 	TImpQu: ImportQueue<TBl> + 'static,
 {
 	let BuildCollatorNetworkParams { config, client, spawn_handle, import_queue, genesis_hash } =
@@ -53,21 +48,7 @@ where
 	let light_client_request_protocol_config =
 		light_client_requests::generate_protocol_config(&protocol_id, genesis_hash, None);
 
-	let block_announce_validator = Box::new(DefaultBlockAnnounceValidator);
-
-	let chain_sync = ChainSync::new(
-		match config.network.sync_mode {
-			SyncMode::Full => sc_network_common::sync::SyncMode::Full,
-			SyncMode::Fast { skip_proofs, storage_chain_mode } => {
-				sc_network_common::sync::SyncMode::LightState { skip_proofs, storage_chain_mode }
-			},
-			SyncMode::Warp => sc_network_common::sync::SyncMode::Warp,
-		},
-		client.clone(),
-		block_announce_validator,
-		config.network.max_parallel_downloads,
-		None,
-	)?;
+	let chain_sync = DummyChainSync {};
 
 	let network_params = sc_network::config::Params {
 		role: config.role.clone(),
@@ -162,5 +143,245 @@ async fn build_network_collator_future<
 			// the network.
 			_ = (&mut network).fuse() => {}
 		}
+	}
+}
+
+struct DummyChainSync {}
+
+impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
+	fn peer_info(&self, who: &libp2p::PeerId) -> Option<sc_network_common::sync::PeerInfo<B>> {
+		todo!()
+	}
+
+	fn status(&self) -> sc_network_common::sync::SyncStatus<B> {
+		todo!()
+	}
+
+	fn num_sync_requests(&self) -> usize {
+		todo!()
+	}
+
+	fn num_downloaded_blocks(&self) -> usize {
+		todo!()
+	}
+
+	fn num_peers(&self) -> usize {
+		todo!()
+	}
+
+	fn new_peer(
+		&mut self,
+		who: libp2p::PeerId,
+		best_hash: <B as BlockT>::Hash,
+		best_number: polkadot_service::NumberFor<B>,
+	) -> Result<
+		Option<sc_network_common::sync::message::BlockRequest<B>>,
+		sc_network_common::sync::BadPeer,
+	> {
+		todo!()
+	}
+
+	fn update_chain_info(
+		&mut self,
+		best_hash: &<B as BlockT>::Hash,
+		best_number: polkadot_service::NumberFor<B>,
+	) {
+		todo!()
+	}
+
+	fn request_justification(
+		&mut self,
+		hash: &<B as BlockT>::Hash,
+		number: polkadot_service::NumberFor<B>,
+	) {
+		todo!()
+	}
+
+	fn clear_justification_requests(&mut self) {
+		todo!()
+	}
+
+	fn set_sync_fork_request(
+		&mut self,
+		peers: Vec<libp2p::PeerId>,
+		hash: &<B as BlockT>::Hash,
+		number: polkadot_service::NumberFor<B>,
+	) {
+		todo!()
+	}
+
+	fn justification_requests(
+		&mut self,
+	) -> Box<
+		dyn Iterator<Item = (libp2p::PeerId, sc_network_common::sync::message::BlockRequest<B>)>
+			+ '_,
+	> {
+		todo!()
+	}
+
+	fn block_requests(
+		&mut self,
+	) -> Box<
+		dyn Iterator<Item = (&libp2p::PeerId, sc_network_common::sync::message::BlockRequest<B>)>
+			+ '_,
+	> {
+		todo!()
+	}
+
+	fn state_request(
+		&mut self,
+	) -> Option<(libp2p::PeerId, sc_network_common::sync::OpaqueStateRequest)> {
+		todo!()
+	}
+
+	fn warp_sync_request(
+		&mut self,
+	) -> Option<(libp2p::PeerId, sc_network_common::sync::warp::WarpProofRequest<B>)> {
+		todo!()
+	}
+
+	fn on_block_data(
+		&mut self,
+		who: &libp2p::PeerId,
+		request: Option<sc_network_common::sync::message::BlockRequest<B>>,
+		response: sc_network_common::sync::message::BlockResponse<B>,
+	) -> Result<sc_network_common::sync::OnBlockData<B>, sc_network_common::sync::BadPeer> {
+		todo!()
+	}
+
+	fn on_state_data(
+		&mut self,
+		who: &libp2p::PeerId,
+		response: sc_network_common::sync::OpaqueStateResponse,
+	) -> Result<sc_network_common::sync::OnStateData<B>, sc_network_common::sync::BadPeer> {
+		todo!()
+	}
+
+	fn on_warp_sync_data(
+		&mut self,
+		who: &libp2p::PeerId,
+		response: sc_network_common::sync::warp::EncodedProof,
+	) -> Result<(), sc_network_common::sync::BadPeer> {
+		todo!()
+	}
+
+	fn on_block_justification(
+		&mut self,
+		who: libp2p::PeerId,
+		response: sc_network_common::sync::message::BlockResponse<B>,
+	) -> Result<sc_network_common::sync::OnBlockJustification<B>, sc_network_common::sync::BadPeer>
+	{
+		todo!()
+	}
+
+	fn on_blocks_processed(
+		&mut self,
+		imported: usize,
+		count: usize,
+		results: Vec<(
+			Result<
+				sc_consensus::BlockImportStatus<polkadot_service::NumberFor<B>>,
+				sc_consensus::BlockImportError,
+			>,
+			<B as BlockT>::Hash,
+		)>,
+	) -> Box<
+		dyn Iterator<
+			Item = Result<
+				(libp2p::PeerId, sc_network_common::sync::message::BlockRequest<B>),
+				sc_network_common::sync::BadPeer,
+			>,
+		>,
+	> {
+		todo!()
+	}
+
+	fn on_justification_import(
+		&mut self,
+		hash: <B as BlockT>::Hash,
+		number: polkadot_service::NumberFor<B>,
+		success: bool,
+	) {
+		todo!()
+	}
+
+	fn on_block_finalized(
+		&mut self,
+		hash: &<B as BlockT>::Hash,
+		number: polkadot_service::NumberFor<B>,
+	) {
+		todo!()
+	}
+
+	fn push_block_announce_validation(
+		&mut self,
+		who: libp2p::PeerId,
+		hash: <B as BlockT>::Hash,
+		announce: sc_network_common::sync::message::BlockAnnounce<<B as BlockT>::Header>,
+		is_best: bool,
+	) {
+		todo!()
+	}
+
+	fn poll_block_announce_validation(
+		&mut self,
+		cx: &mut std::task::Context,
+	) -> std::task::Poll<sc_network_common::sync::PollBlockAnnounceValidation<<B as BlockT>::Header>>
+	{
+		todo!()
+	}
+
+	fn peer_disconnected(
+		&mut self,
+		who: &libp2p::PeerId,
+	) -> Option<sc_network_common::sync::OnBlockData<B>> {
+		todo!()
+	}
+
+	fn metrics(&self) -> sc_network_common::sync::Metrics {
+		todo!()
+	}
+
+	fn create_opaque_block_request(
+		&self,
+		request: &sc_network_common::sync::message::BlockRequest<B>,
+	) -> sc_network_common::sync::OpaqueBlockRequest {
+		todo!()
+	}
+
+	fn encode_block_request(
+		&self,
+		request: &sc_network_common::sync::OpaqueBlockRequest,
+	) -> Result<Vec<u8>, String> {
+		todo!()
+	}
+
+	fn decode_block_response(
+		&self,
+		response: &[u8],
+	) -> Result<sc_network_common::sync::OpaqueBlockResponse, String> {
+		todo!()
+	}
+
+	fn block_response_into_blocks(
+		&self,
+		request: &sc_network_common::sync::message::BlockRequest<B>,
+		response: sc_network_common::sync::OpaqueBlockResponse,
+	) -> Result<Vec<sc_network_common::sync::message::BlockData<B>>, String> {
+		todo!()
+	}
+
+	fn encode_state_request(
+		&self,
+		request: &sc_network_common::sync::OpaqueStateRequest,
+	) -> Result<Vec<u8>, String> {
+		todo!()
+	}
+
+	fn decode_state_response(
+		&self,
+		response: &[u8],
+	) -> Result<sc_network_common::sync::OpaqueStateResponse, String> {
+		todo!()
 	}
 }
