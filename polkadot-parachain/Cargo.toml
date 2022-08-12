@@ -85,9 +85,6 @@ cumulus-relay-chain-interface = { path = "../client/relay-chain-interface" }
 cumulus-relay-chain-inprocess-interface = { path = "../client/relay-chain-inprocess-interface" }
 cumulus-relay-chain-rpc-interface = { path = "../client/relay-chain-rpc-interface" }
 
-# Temporary
-lazy_static = "1.4.0"
-
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
 

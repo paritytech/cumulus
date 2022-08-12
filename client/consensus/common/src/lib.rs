@@ -216,15 +216,6 @@ where
 			params.origin == sp_consensus::BlockOrigin::NetworkInitialSync,
 		));
 
-		// Check if we require to prune a leaf before trying to import block
-
-		let res = self.inner.import_block(params, cache).await;
-		if let Err(err) = &res {
-			dbg!(&err);
-			log::error!("RAW ERRROR: {:?}", err);
-			let err_str = err.to_string();
-			log::error!("ERROR IMPORTING: {}", err_str);
-		}
-		res
+		self.inner.import_block(params, cache).await
 	}
 }

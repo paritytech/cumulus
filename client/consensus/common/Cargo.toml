@@ -27,10 +27,8 @@ polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch =
 # Cumulus
 cumulus-relay-chain-interface = { path = "../../relay-chain-interface" }
 
-# Temporary
+# TEMPORARY (REMOVE THIS)
 log = "0.4.17"
-lazy_static = "1.4.0"
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [dev-dependencies]
 futures-timer = "3.0.2"
