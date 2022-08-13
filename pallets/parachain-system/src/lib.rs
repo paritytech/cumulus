@@ -88,6 +88,51 @@ pub use relay_state_snapshot::{MessagingStateSnapshot, RelayChainStateProof};
 
 pub use pallet::*;
 
+/// Something that can check the associated relay block number.
+///
+/// Each Parachain block is built in the context of a relay chain block, this trait allows us
+/// to validate the given relay chain block number. With async backing it is legal to build
+/// multiple Parachain blocks per relay chain parent. With this trait it is possible for the
+/// Parachain to ensure that still only one Parachain block is build per relay chain parent.
+///
+/// By default [`RelayNumberStrictlyIncreases`] and [`AnyRelayNumber`] are provided.
+pub trait CheckAssociatedRelayNumber {
+	/// Check the current relay number versus the previous relay number.
+	///
+	/// The implementation should panic when there is something wrong.
+	fn check_associated_relay_number(
+		current: RelayChainBlockNumber,
+		previous: RelayChainBlockNumber,
+	);
+}
+
+/// Provides an implementation of [`CheckAssociatedRelayNumber`].
+///
+/// It will ensure that the associated relay block number strictly increases between Parachain
+/// blocks. This should be used by production Parachains when in doubt.
+pub struct RelayNumberStrictlyIncreases;
+
+impl CheckAssociatedRelayNumber for RelayNumberStrictlyIncreases {
+	fn check_associated_relay_number(
+		current: RelayChainBlockNumber,
+		previous: RelayChainBlockNumber,
+	) {
+		if current <= previous {
+			panic!("Relay chain block number needs to strictly increase between Parachain blocks!")
+		}
+	}
+}
+
+/// Provides an implementation of [`CheckAssociatedRelayNumber`].
+///
+/// This will accept any relay chain block number combination. This is mainly useful for
+/// test parachains.
+pub struct AnyRelayNumber;
+
+impl CheckAssociatedRelayNumber for AnyRelayNumber {
+	fn check_associated_relay_number(_: RelayChainBlockNumber, _: RelayChainBlockNumber) {}
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -128,6 +173,9 @@ pub mod pallet {
 
 		/// The weight we reserve at the beginning of the block for processing XCMP messages.
 		type ReservedXcmpWeight: Get<Weight>;
+
+		/// Something that can check the associated relay parent block number.
+		type CheckAssociatedRelayNumber: CheckAssociatedRelayNumber;
 	}
 
 	#[pallet::hooks]
@@ -232,7 +280,7 @@ pub mod pallet {
 			}
 
 			// Remove the validation from the old block.
-			<ValidationData<T>>::kill();
+			ValidationData::<T>::kill();
 			ProcessedDownwardMessages::<T>::kill();
 			HrmpWatermark::<T>::kill();
 			UpwardMessages::<T>::kill();
@@ -307,6 +355,13 @@ pub mod pallet {
 
 			Self::validate_validation_data(&vfp);
 
+			// Check that the associated relay chain block number is as expected.
+			T::CheckAssociatedRelayNumber::check_associated_relay_number(
+				vfp.relay_parent_number,
+				LastRelayChainBlockNumber::<T>::get(),
+			);
+			LastRelayChainBlockNumber::<T>::put(vfp.relay_parent_number);
+
 			let relay_state_proof = RelayChainStateProof::new(
 				T::SelfParaId::get(),
 				vfp.relay_parent_storage_root,
@@ -330,7 +385,9 @@ pub mod pallet {
 
 					Self::put_parachain_code(&validation_code);
 					<T::OnSystemEvent as OnSystemEvent>::on_validation_code_applied();
-					Self::deposit_event(Event::ValidationFunctionApplied(vfp.relay_parent_number));
+					Self::deposit_event(Event::ValidationFunctionApplied {
+						relay_chain_block_num: vfp.relay_parent_number,
+					});
 				},
 				Some(relay_chain::v2::UpgradeGoAhead::Abort) => {
 					<PendingValidationCode<T>>::kill();
@@ -389,7 +446,7 @@ pub mod pallet {
 
 			AuthorizedUpgrade::<T>::put(&code_hash);
 
-			Self::deposit_event(Event::UpgradeAuthorized(code_hash));
+			Self::deposit_event(Event::UpgradeAuthorized { code_hash });
 			Ok(())
 		}
 
@@ -411,17 +468,15 @@ pub mod pallet {
 		/// The validation function has been scheduled to apply.
 		ValidationFunctionStored,
 		/// The validation function was applied as of the contained relay chain block number.
-		ValidationFunctionApplied(RelayChainBlockNumber),
+		ValidationFunctionApplied { relay_chain_block_num: RelayChainBlockNumber },
 		/// The relay-chain aborted the upgrade process.
 		ValidationFunctionDiscarded,
 		/// An upgrade has been authorized.
-		UpgradeAuthorized(T::Hash),
+		UpgradeAuthorized { code_hash: T::Hash },
 		/// Some downward messages have been received and will be processed.
-		/// \[ count \]
-		DownwardMessagesReceived(u32),
+		DownwardMessagesReceived { count: u32 },
 		/// Downward messages were processed using the given weight.
-		/// \[ weight_used, result_mqc_head \]
-		DownwardMessagesProcessed(Weight, relay_chain::Hash),
+		DownwardMessagesProcessed { weight_used: Weight, dmq_head: relay_chain::Hash },
 	}
 
 	#[pallet::error]
@@ -473,6 +528,11 @@ pub mod pallet {
 	/// Were the validation data set to notify the relay chain?
 	#[pallet::storage]
 	pub(super) type DidSetValidationCode<T: Config> = StorageValue<_, bool, ValueQuery>;
+
+	/// The relay chain block number associated with the last parachain block.
+	#[pallet::storage]
+	pub(super) type LastRelayChainBlockNumber<T: Config> =
+		StorageValue<_, RelayChainBlockNumber, ValueQuery>;
 
 	/// An option which indicates if the relay-chain restricts signalling a validation code upgrade.
 	/// In other words, if this is `Some` and [`NewValidationCode`] is `Some` then the produced
@@ -750,7 +810,7 @@ impl<T: Config> Pallet<T> {
 
 		let mut weight_used = 0;
 		if dm_count != 0 {
-			Self::deposit_event(Event::DownwardMessagesReceived(dm_count));
+			Self::deposit_event(Event::DownwardMessagesReceived { count: dm_count });
 			let max_weight =
 				<ReservedDmpWeightOverride<T>>::get().unwrap_or_else(T::ReservedDmpWeight::get);
 
@@ -763,7 +823,10 @@ impl<T: Config> Pallet<T> {
 			weight_used += T::DmpMessageHandler::handle_dmp_messages(message_iter, max_weight);
 			<LastDmqMqcHead<T>>::put(&dmq_head);
 
-			Self::deposit_event(Event::DownwardMessagesProcessed(weight_used, dmq_head.head()));
+			Self::deposit_event(Event::DownwardMessagesProcessed {
+				weight_used,
+				dmq_head: dmq_head.head(),
+			});
 		}
 
 		// After hashing each message in the message queue chain submitted by the collator, we
@@ -835,7 +898,7 @@ impl<T: Config> Pallet<T> {
 
 				running_mqc_heads
 					.entry(sender)
-					.or_insert_with(|| last_mqc_heads.get(&sender).cloned().unwrap_or_default())
+					.or_insert_with(|| last_mqc_heads.get(sender).cloned().unwrap_or_default())
 					.extend_hrmp(horizontal_message);
 			}
 		}
@@ -1046,5 +1109,18 @@ impl<T: Config> BlockNumberProvider for RelaychainBlockNumberProvider<T> {
 		Pallet::<T>::validation_data()
 			.map(|d| d.relay_parent_number)
 			.unwrap_or_default()
+	}
+	#[cfg(feature = "runtime-benchmarks")]
+	fn set_block_number(block: Self::BlockNumber) {
+		let mut validation_data = Pallet::<T>::validation_data().unwrap_or_else(||
+			// PersistedValidationData does not impl default in non-std
+			PersistedValidationData {
+				parent_head: vec![].into(),
+				relay_parent_number: Default::default(),
+				max_pov_size: Default::default(),
+				relay_parent_storage_root: Default::default(),
+			});
+		validation_data.relay_parent_number = block;
+		ValidationData::<T>::put(validation_data)
 	}
 }

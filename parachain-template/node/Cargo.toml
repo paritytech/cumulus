@@ -9,18 +9,14 @@ repository = "https://github.com/paritytech/cumulus/"
 edition = "2021"
 build = "build.rs"
 
-[[bin]]
-name = "parachain-collator"
-path = "src/main.rs"
-
 [dependencies]
-clap = { version = "3.1", features = ["derive"] }
+clap = { version = "3.2.16", features = ["derive"] }
 derive_more = "0.99.2"
-log = "0.4.16"
+log = "0.4.17"
 codec = { package = "parity-scale-codec", version = "3.0.0" }
-serde = { version = "1.0.132", features = ["derive"] }
+serde = { version = "1.0.143", features = ["derive"] }
 hex-literal = "0.3.4"
-jsonrpc-core = "18.0.0"
+jsonrpsee = { version = "0.15.1", features = ["server"] }
 
 # Local
 parachain-template-runtime = { path = "../runtime" }
@@ -37,9 +33,11 @@ sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "mast
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
 sc-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-network-common = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
+sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }

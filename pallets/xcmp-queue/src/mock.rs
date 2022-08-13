@@ -16,6 +16,7 @@
 use super::*;
 use crate as xcmp_queue;
 use core::marker::PhantomData;
+use cumulus_pallet_parachain_system::AnyRelayNumber;
 use cumulus_primitives_core::{IsSystem, ParaId};
 use frame_support::{
 	parameter_types,
@@ -110,6 +111,7 @@ impl cumulus_pallet_parachain_system::Config for Test {
 	type ReservedDmpWeight = ();
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ();
+	type CheckAssociatedRelayNumber = AnyRelayNumber;
 }
 
 parameter_types! {

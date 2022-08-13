@@ -17,10 +17,10 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 hex-literal = { version = "0.3.4", optional = true }
-log = { version = "0.4.16", default-features = false }
+log = { version = "0.4.17", default-features = false }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
-serde = { version = "1.0.132", optional = true, features = ["derive"] }
-smallvec = "1.6.1"
+serde = { version = "1.0.143", optional = true, features = ["derive"] }
+smallvec = "1.9.0"
 
 # Local
 pallet-template = { path = "../pallets/template", default-features = false }
@@ -73,7 +73,7 @@ cumulus-primitives-core = { path = "../../primitives/core", default-features = f
 cumulus-primitives-timestamp = { path = "../../primitives/timestamp", default-features = false }
 cumulus-primitives-utility = { path = "../../primitives/utility", default-features = false }
 pallet-collator-selection = { path = "../../pallets/collator-selection", default-features = false }
-parachain-info = { path = "../../polkadot-parachains/pallets/parachain-info", default-features = false }
+parachain-info = { path = "../../parachains/pallets/parachain-info", default-features = false }
 
 [features]
 default = [
