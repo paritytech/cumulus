@@ -291,7 +291,7 @@ impl<
 		if let Some(receiver) = ReceiverAccount::get() {
 			let ok = FungiblesMutateAdapter::deposit_asset(
 				&revenue,
-				&(X1(AccountId32 { network: Any, id: receiver.into() }).into()),
+				&(X1(AccountId32 { network: None, id: receiver.into() }).into()),
 			)
 			.is_ok();
 
