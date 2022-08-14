@@ -118,7 +118,13 @@ pub mod pallet {
 				) {
 					Ok((hash, cost)) => {
 						Pings::<T>::insert(seq, n);
-						Self::deposit_event(Event::PingSent(para, seq, payload.to_vec(), hash, cost));
+						Self::deposit_event(Event::PingSent(
+							para,
+							seq,
+							payload.to_vec(),
+							hash,
+							cost,
+						));
 					},
 					Err(e) => {
 						Self::deposit_event(Event::ErrorSendingPing(

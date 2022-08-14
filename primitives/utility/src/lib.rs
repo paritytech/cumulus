@@ -22,7 +22,10 @@
 use codec::Encode;
 use cumulus_primitives_core::{MessageSendError, UpwardMessageSender};
 use frame_support::{
-	traits::{Get, tokens::{fungibles, fungibles::Inspect}},
+	traits::{
+		tokens::{fungibles, fungibles::Inspect},
+		Get,
+	},
 	weights::Weight,
 };
 use polkadot_runtime_common::xcm_sender::ConstantPrice;
