@@ -1,6 +1,26 @@
 # Changelog
 
-Currently, the changelog is built locally. It will be moved to CI once labels stabilize.
+The changelog is built using the CI when a draft release is created.
+
+## Testing template changes locally
+
+A test context.json file for a client and runtime release are in the test dir. Most of the time this
+will be up to date enough to test release note changes. (If not grab the context.json from the github actions `create draft release` artifacts).
+
+To generate the release notes install tera-cli:
+
+```
+cargo install --git https://github.com/chevdor/tera-cli -f
+```
+
+and then run:
+
+   * `./test-relnotes-client.sh`
+   * `./test-relnotes-runtime.sh`
+
+It will output the release notes to the console.
+
+## Generating everything locally
 
 For now, a bit of preparation is required before you can run the script:
 - fetch the srtool digests
