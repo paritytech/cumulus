@@ -40,9 +40,11 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::{net::SocketAddr, path::PathBuf};
 
+/// Helper enum that is used for better distinction of different parachain/runtime configuration
+/// (it is based/calculated on ChainSpec's ID attribute)
 #[derive(Debug, PartialEq, Default)]
 enum Runtime {
-	/// This is the default runtime (based on rococo)
+	/// This is the default runtime (actually based on rococo)
 	#[default]
 	Default,
 	Shell,
@@ -106,6 +108,7 @@ fn runtime(id: &str) -> Runtime {
 	} else if id.starts_with("collectives-westend") {
 		Runtime::CollectivesWestend
 	} else {
+		log::warn!("No specific runtime was recognized for ChainSpec's id: '{}', so Runtime::default() will be used", id);
 		Runtime::default()
 	}
 }
@@ -114,16 +117,20 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	let (id, _, para_id) = extract_parachain_id(id);
 	Ok(match id {
 		// - Defaul-like
-		"staging" => Box::new(chain_spec::default::staging_test_net()),
-		"tick" => Box::new(chain_spec::default::DefaultChainSpec::from_json_bytes(
-			&include_bytes!("../../parachains/chain-specs/tick.json")[..],
-		)?),
-		"trick" => Box::new(chain_spec::default::DefaultChainSpec::from_json_bytes(
-			&include_bytes!("../../parachains/chain-specs/trick.json")[..],
-		)?),
-		"track" => Box::new(chain_spec::default::DefaultChainSpec::from_json_bytes(
-			&include_bytes!("../../parachains/chain-specs/track.json")[..],
-		)?),
+		"staging" =>
+			Box::new(chain_spec::rococo_parachain::staging_rococo_parachain_local_config()),
+		"tick" =>
+			Box::new(chain_spec::rococo_parachain::RococoParachainChainSpec::from_json_bytes(
+				&include_bytes!("../../parachains/chain-specs/tick.json")[..],
+			)?),
+		"trick" =>
+			Box::new(chain_spec::rococo_parachain::RococoParachainChainSpec::from_json_bytes(
+				&include_bytes!("../../parachains/chain-specs/trick.json")[..],
+			)?),
+		"track" =>
+			Box::new(chain_spec::rococo_parachain::RococoParachainChainSpec::from_json_bytes(
+				&include_bytes!("../../parachains/chain-specs/track.json")[..],
+			)?),
 
 		// -- Starters
 		"shell" => Box::new(chain_spec::shell::get_shell_chain_spec()),
@@ -197,7 +204,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		// -- Fallback (generic chainspec)
 		"" => {
 			log::warn!("No ChainSpec.id specified, so using default one, based on rococo-parachain runtime");
-			Box::new(chain_spec::default::get_chain_spec())
+			Box::new(chain_spec::rococo_parachain::rococo_parachain_local_config())
 		},
 
 		// -- Loading a specific spec from disk
@@ -221,8 +228,9 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 					Box::new(chain_spec::contracts::ContractsRococoChainSpec::from_json_file(path)?),
 				Runtime::Penpal(_para_id) =>
 					Box::new(chain_spec::penpal::PenpalChainSpec::from_json_file(path)?),
-				Runtime::Default =>
-					Box::new(chain_spec::default::DefaultChainSpec::from_json_file(path)?),
+				Runtime::Default => Box::new(
+					chain_spec::rococo_parachain::RococoParachainChainSpec::from_json_file(path)?,
+				),
 			}
 		},
 	})
@@ -926,7 +934,7 @@ mod tests {
 			id,
 			ChainType::Local,
 			move || {
-				crate::chain_spec::default::testnet_genesis(
+				crate::chain_spec::rococo_parachain::testnet_genesis(
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					vec![
 						get_from_seed::<rococo_parachain_runtime::AuraId>("Alice"),
@@ -967,8 +975,10 @@ mod tests {
 		);
 		assert_eq!(Runtime::Seedling, path.runtime());
 
-		let path =
-			store_configuration(&temp_dir, Box::new(crate::chain_spec::default::get_chain_spec()));
+		let path = store_configuration(
+			&temp_dir,
+			Box::new(crate::chain_spec::rococo_parachain::rococo_parachain_local_config()),
+		);
 		assert_eq!(Runtime::Default, path.runtime());
 
 		let path = store_configuration(

@@ -1,4 +1,4 @@
-// Copyright 2019-2021 Parity Technologies (UK) Ltd.
+// Copyright 2022 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Default parachain ChainSpec based on testing rococo parachain runtime
+//! ChainSpecs dedicated to Rococo parachain setups (for testing and example purposes)
 
 use crate::chain_spec::{get_from_seed, Extensions, SAFE_XCM_VERSION};
 use cumulus_primitives_core::ParaId;
@@ -25,13 +25,12 @@ use rococo_parachain_runtime::AuraId;
 use sc_chain_spec::ChainType;
 use sp_core::{crypto::UncheckedInto, sr25519};
 
-/// Specialized `ChainSpec` for the normal parachain runtime.
-pub type DefaultChainSpec =
+pub type RococoParachainChainSpec =
 	sc_service::GenericChainSpec<rococo_parachain_runtime::GenesisConfig, Extensions>;
 
-pub fn get_chain_spec() -> DefaultChainSpec {
-	DefaultChainSpec::from_genesis(
-		"Local Testnet",
+pub fn rococo_parachain_local_config() -> RococoParachainChainSpec {
+	RococoParachainChainSpec::from_genesis(
+		"Rococo Parachain Local",
 		"local_testnet",
 		ChainType::Local,
 		move || {
@@ -60,13 +59,13 @@ pub fn get_chain_spec() -> DefaultChainSpec {
 		None,
 		None,
 		None,
-		Extensions { relay_chain: "westend".into(), para_id: 1000 },
+		Extensions { relay_chain: "rococo-local".into(), para_id: 1000 },
 	)
 }
 
-pub fn staging_test_net() -> DefaultChainSpec {
-	DefaultChainSpec::from_genesis(
-		"Staging Testnet",
+pub fn staging_rococo_parachain_local_config() -> RococoParachainChainSpec {
+	RococoParachainChainSpec::from_genesis(
+		"Staging Rococo Parachain Local",
 		"staging_testnet",
 		ChainType::Live,
 		move || {
@@ -91,7 +90,7 @@ pub fn staging_test_net() -> DefaultChainSpec {
 		None,
 		None,
 		None,
-		Extensions { relay_chain: "westend".into(), para_id: 1000 },
+		Extensions { relay_chain: "rococo-local".into(), para_id: 1000 },
 	)
 }
 
