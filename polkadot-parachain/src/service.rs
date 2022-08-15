@@ -47,6 +47,7 @@ use sc_consensus::{
 };
 use sc_executor::WasmExecutor;
 use sc_network::NetworkService;
+use sc_network_common::service::NetworkBlock;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::{ApiExt, ConstructRuntimeApi};
@@ -155,6 +156,21 @@ impl sc_executor::NativeExecutionDispatch for WestmintRuntimeExecutor {
 
 	fn native_version() -> sc_executor::NativeVersion {
 		westmint_runtime::native_version()
+	}
+}
+
+// Native Polkadot Collectives executor instance.
+pub struct CollectivesPolkadotRuntimeExecutor;
+
+impl sc_executor::NativeExecutionDispatch for CollectivesPolkadotRuntimeExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		collectives_polkadot_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		collectives_polkadot_runtime::native_version()
 	}
 }
 

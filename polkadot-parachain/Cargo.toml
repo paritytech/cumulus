@@ -1,19 +1,19 @@
 [package]
 name = "polkadot-parachain"
-version = "0.9.220"
+version = "0.9.230"
 authors = ["Parity Technologies <admin@parity.io>"]
 build = "build.rs"
 edition = "2021"
 description = "Runs a polkadot parachain node which could be a collator."
 
 [dependencies]
-async-trait = "0.1.56"
-clap = { version = "3.2.16", features = ["derive", "deprecated"] }
+async-trait = "0.1.57"
+clap = { version = "3.2.17", features = ["derive", "deprecated"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 futures = "0.3.21"
 hex-literal = "0.3.4"
 log = "0.4.17"
-serde = { version = "1.0.141", features = ["derive"] }
+serde = { version = "1.0.143", features = ["derive"] }
 
 # Local
 rococo-parachain-runtime = { path = "../parachains/runtimes/testing/rococo-parachain" }
@@ -22,9 +22,10 @@ seedling-runtime = { path = "../parachains/runtimes/starters/seedling" }
 statemint-runtime = { path = "../parachains/runtimes/assets/statemint" }
 statemine-runtime = { path = "../parachains/runtimes/assets/statemine" }
 westmint-runtime = { path = "../parachains/runtimes/assets/westmint" }
+collectives-polkadot-runtime = { path = "../parachains/runtimes/collectives/collectives-polkadot" }
 contracts-rococo-runtime = { path = "../parachains/runtimes/contracts/contracts-rococo" }
 penpal-runtime = { path = "../parachains/runtimes/testing/penpal" }
-jsonrpsee = { version = "0.14.0", features = ["server"] }
+jsonrpsee = { version = "0.15.1", features = ["server"] }
 parachains-common = { path = "../parachains/common" }
 
 # Substrate
@@ -45,6 +46,7 @@ sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "mast
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-network-common = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -91,6 +93,8 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 assert_cmd = "2.0"
 nix = "0.24"
 tempfile = "3.3.0"
+tokio = { version = "1.19.2", features = ["macros", "time", "parking_lot"] }
+wait-timeout = "0.2"
 
 [features]
 default = []
