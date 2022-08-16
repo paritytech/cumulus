@@ -20,7 +20,7 @@ use frame_support::{
 	weights::Weight,
 };
 use pallet_alliance::{ProposalIndex, ProposalProvider};
-use sp_std::{boxed::Box, marker::PhantomData};
+use sp_std::{prelude::*, marker::PhantomData};
 use xcm::latest::{Fungibility, Junction, NetworkId, Parent};
 
 type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
@@ -133,5 +133,9 @@ where
 
 	fn proposal_of(proposal_hash: HashOf<T>) -> Option<ProposalOf<T, I>> {
 		pallet_collective::Pallet::<T, I>::proposal_of(proposal_hash)
+	}
+
+	fn proposals() -> Vec<HashOf<T>> {
+		pallet_collective::Pallet::<T, I>::proposals().into_inner()
 	}
 }
