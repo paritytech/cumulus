@@ -34,6 +34,7 @@ use cumulus_primitives_core::{
 	MessageQueueChain, MessageSendError, OutboundHrmpMessage, ParaId, PersistedValidationData,
 	UpwardMessage, UpwardMessageSender, XcmpMessageHandler, XcmpMessageSource,
 };
+
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use frame_support::{
 	dispatch::{DispatchError, DispatchResult},
@@ -52,7 +53,7 @@ use sp_runtime::{
 		ValidTransaction,
 	},
 };
-use sp_std::{cmp, collections::btree_map::BTreeMap, num::Wrapping, prelude::*};
+use sp_std::{cmp, collections::btree_map::BTreeMap, prelude::*};
 
 mod migration;
 mod relay_state_snapshot;
@@ -813,7 +814,7 @@ impl<T: Config> Pallet<T> {
 
 		if downward_messages.len() > 0 {
 			let mqc_head = <LastDmqMqcHead<T>>::get();
-			let next_message_index = Wrapping(<NextDmqMessageIndex<T>>::get());
+			let next_message_index = <NextDmqMessageIndex<T>>::get().into();
 			let max_weight =
 				<ReservedDmpWeightOverride<T>>::get().unwrap_or_else(T::ReservedDmpWeight::get);
 
@@ -832,7 +833,7 @@ impl<T: Config> Pallet<T> {
 			<LastDmqMqcHead<T>>::put(&message_handler_context.mqc_head);
 
 			let processed_message_count =
-				(message_handler_context.next_message_index - next_message_index).0;
+				(message_handler_context.next_message_index.wrapping_sub(next_message_index)).0;
 			ProcessedDownwardMessages::<T>::put(processed_message_count as u32);
 
 			Self::deposit_event(Event::DownwardMessagesReceived {
@@ -846,10 +847,10 @@ impl<T: Config> Pallet<T> {
 			// After hashing each message in the message queue chain submitted by the collator, we
 			// should arrive to the MQC head provided by the relay chain.
 			//
-			// A mismatch means that at least some of the submitted messages were altered, omitted or
+			// A mismatch means that at least some of the submitted messages were ialtered, omitted or
 			// added improperly.
 			let last_processed_message_index =
-				(message_handler_context.next_message_index - Wrapping(1)).0;
+				message_handler_context.next_message_index.wrapping_dec().0;
 			let expected_dmq_mqc_head = relay_state_proof
 				.read_dmp_mqc_head(last_processed_message_index)
 				.expect("Invalid messaging state in relay chain state proof");

@@ -240,7 +240,7 @@ pub mod pallet {
 				match Self::try_service_message(remaining_weight, sent_at, &data[..]) {
 					Ok(consumed) => {
 						used += consumed;
-						context.next_message_index += 1;
+						context.next_message_index = context.next_message_index.wrapping_inc();
 						// This head is valid for `next_message_index` - 1.
 						context.mqc_head = new_head;
 					},
@@ -262,7 +262,7 @@ pub mod pallet {
 							page_index.overweight_count += 1;
 
 							context.mqc_head = new_head;
-							context.next_message_index += 1;
+							context.next_message_index = context.next_message_index.wrapping_inc();
 
 							// Not needed for control flow, but only to ensure that the compiler
 							// understands that we won't attempt to re-use `data` later.
@@ -415,8 +415,8 @@ mod tests {
 		let iter = incoming.iter().map(|m| (0, VersionedXcm::<Call>::from(m.clone()).encode()));
 		let mut context = DmpMessageHandlerContext {
 			max_weight: limit,
-			next_message_index: sp_std::num::Wrapping(0),
-			mqc_head: Hash::zero(),
+			next_message_index: Default::default(),
+			mqc_head: Default::default(),
 		};
 		DmpQueue::handle_dmp_messages(iter, &mut context)
 	}
