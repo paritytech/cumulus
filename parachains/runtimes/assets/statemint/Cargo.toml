@@ -56,7 +56,7 @@ polkadot-runtime-constants = { git = "https://github.com/paritytech/polkadot", d
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", default-features = false, optional = true, branch = "master" }
+pallet-xcm-benchmarks = { path = "../../../../pallets/pallet-xcm-benchmarks", default-features = false, optional = true }
 
 
 # Cumulus

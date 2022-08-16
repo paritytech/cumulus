@@ -831,7 +831,7 @@ impl_runtime_apis! {
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
 			use xcm::latest::prelude::*;
-			use xcm_config::{Local, DotLocation};
+			use xcm_config::DotLocation;
 
 			impl pallet_xcm_benchmarks::Config for Runtime {
 				type XcmConfig = xcm_config::XcmConfig;
@@ -842,6 +842,10 @@ impl_runtime_apis! {
 				fn worst_case_holding() -> MultiAssets {
 					// TODO: Create some assets
 					vec![MultiAsset{
+						id: Concrete(DotLocation::get()),
+						fun: Fungible(1_000_000 * UNITS),
+					},
+					MultiAsset{
 						id: Concrete(DotLocation::get()),
 						fun: Fungible(1_000_000 * UNITS),
 					}].into()

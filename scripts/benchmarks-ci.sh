@@ -42,8 +42,20 @@ else
 	exit 1
 fi
 
+if [[ $runtimeName == "statemint" ]]; then
+		pallets+=(
+			pallet_xcm_benchmarks::generic
+			pallet_xcm_benchmarks::fungible
+		)
+fi
+
 for pallet in ${pallets[@]}
 do
+	# a little hack for xcm benchmarks
+	output_file="${pallet//::/_}"
+  if [[ "$pallet" == *"xcm"* ]]; then
+		output_file="xcm/$output_file"
+  fi
 	$artifactsDir/polkadot-parachain benchmark pallet \
 		--chain=$benchmarkRuntimeName \
 		--execution=wasm \
@@ -53,7 +65,6 @@ do
 		--steps=$steps  \
 		--repeat=$repeat \
 		--json \
-        --header=./file_header.txt \
-		--output=$benchmarkOutput >> $artifactsDir/${pallet}_benchmark.json
-
+		--header=./file_header.txt \
+		--output="${benchmarkOutput}/${output_file}.rs" >> $artifactsDir/${pallet}_benchmark.json
 done
