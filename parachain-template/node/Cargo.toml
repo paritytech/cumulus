@@ -10,11 +10,11 @@ edition = "2021"
 build = "build.rs"
 
 [dependencies]
-clap = { version = "3.2.16", features = ["derive"] }
+clap = { version = "3.2.17", features = ["derive"] }
 derive_more = "0.99.2"
 log = "0.4.17"
 codec = { package = "parity-scale-codec", version = "3.0.0" }
-serde = { version = "1.0.141", features = ["derive"] }
+serde = { version = "1.0.143", features = ["derive"] }
 hex-literal = "0.3.4"
 jsonrpsee = { version = "0.15.1", features = ["server"] }
 
@@ -33,6 +33,7 @@ sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "mast
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
 sc-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-network-common = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
