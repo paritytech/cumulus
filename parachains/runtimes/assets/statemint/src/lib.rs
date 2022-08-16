@@ -844,10 +844,6 @@ impl_runtime_apis! {
 					vec![MultiAsset{
 						id: Concrete(DotLocation::get()),
 						fun: Fungible(1_000_000 * UNITS),
-					},
-					MultiAsset{
-						id: Concrete(DotLocation::get()),
-						fun: Fungible(1_000_000 * UNITS),
 					}].into()
 				}
 			}
