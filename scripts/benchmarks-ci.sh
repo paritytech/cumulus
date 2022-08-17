@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-steps=50
-repeat=20
+steps=2
+repeat=1
 category=$1
 runtimeName=$2
 artifactsDir=$3
@@ -22,6 +22,8 @@ if [[ $runtimeName == "statemint" ]] || [[ $runtimeName == "statemine" ]] || [[ 
 		pallet_uniques
 		cumulus_pallet_xcmp_queue
 		frame_system
+		pallet_xcm_benchmarks::generic
+		pallet_xcm_benchmarks::fungible
 	)
 elif [[ $runtimeName == "collectives-polkadot" ]]; then
 		pallets=(
@@ -40,13 +42,6 @@ elif [[ $runtimeName == "collectives-polkadot" ]]; then
 else
 	echo "$runtimeName pallet list not found in benchmarks-ci.sh"
 	exit 1
-fi
-
-if [[ $runtimeName == "statemint" ]]; then
-		pallets+=(
-			pallet_xcm_benchmarks::generic
-			pallet_xcm_benchmarks::fungible
-		)
 fi
 
 for pallet in ${pallets[@]}

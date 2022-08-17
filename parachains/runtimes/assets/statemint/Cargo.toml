@@ -56,8 +56,6 @@ polkadot-runtime-constants = { git = "https://github.com/paritytech/polkadot", d
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-pallet-xcm-benchmarks = { path = "../../../../pallets/pallet-xcm-benchmarks", default-features = false, optional = true }
-
 
 # Cumulus
 cumulus-pallet-aura-ext = { path = "../../../../pallets/aura-ext", default-features = false }
@@ -73,6 +71,7 @@ cumulus-primitives-utility = { path = "../../../../primitives/utility", default-
 pallet-collator-selection = { path = "../../../../pallets/collator-selection", default-features = false }
 parachain-info = { path = "../../../pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }
+pallet-xcm-benchmarks = { path = "../../../../pallets/pallet-xcm-benchmarks", default-features = false, optional = true }
 
 [dev-dependencies]
 hex-literal = "0.3.4"

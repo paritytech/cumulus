@@ -832,6 +832,7 @@ impl_runtime_apis! {
 
 			use xcm::latest::prelude::*;
 			use xcm_config::DotLocation;
+			use pallet_xcm_benchmarks::asset_instance_from;
 
 			impl pallet_xcm_benchmarks::Config for Runtime {
 				type XcmConfig = xcm_config::XcmConfig;
@@ -840,15 +841,33 @@ impl_runtime_apis! {
 					Ok(DotLocation::get())
 				}
 				fn worst_case_holding() -> MultiAssets {
-					// TODO: Create some assets
-					vec![MultiAsset{
-						id: Concrete(DotLocation::get()),
-						fun: Fungible(1_000_000 * UNITS),
-					}].into()
+					// A mix of fungible, non-fungible, and concrete assets.
+					const HOLDING_FUNGIBLES: u32 = 100;
+					const HOLDING_NON_FUNGIBLES: u32 = 100;
+					let fungibles_amount: u128 = 100;
+					let mut assets = (0..HOLDING_FUNGIBLES)
+						.map(|i| {
+							MultiAsset {
+								id: Concrete(GeneralIndex(i as u128).into()),
+								fun: Fungible(fungibles_amount * i as u128),
+							}
+							.into()
+						})
+						.chain(core::iter::once(MultiAsset { id: Concrete(Here.into()), fun: Fungible(u128::MAX) }))
+						.chain((0..HOLDING_NON_FUNGIBLES).map(|i| MultiAsset {
+							id: Concrete(GeneralIndex(i as u128).into()),
+							fun: NonFungible(asset_instance_from(i)),
+						}))
+						.collect::<Vec<_>>();
+
+						assets.push(MultiAsset{
+							id: Concrete(DotLocation::get()),
+							fun: Fungible(1_000_000 * UNITS),
+						});
+						assets.into()
 				}
 			}
 
-			//TODO: Not sure how this should work
 			parameter_types! {
 				pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = Some((
 					DotLocation::get(),
@@ -897,7 +916,6 @@ impl_runtime_apis! {
 
 			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
 			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
-
 
 			let whitelist: Vec<TrackedStorageKey> = vec![
 				// Block Number
