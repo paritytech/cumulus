@@ -952,9 +952,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.16"
+version = "3.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3dbbb6653e7c55cc8595ad3e1f7be8f32aba4eb7ff7f0fd1163d4f3d137c0a9"
+checksum = "29e724a68d9319343bb3328c9cc2dfde263f4b3142ee1059a9980580171c954b"
 dependencies = [
  "atty",
  "bitflags",
@@ -969,9 +969,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "3.2.15"
+version = "3.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ba52acd3b0a5c33aeada5cdaa3267cdc7c594a98731d4268cdc1532f4264cb4"
+checksum = "13547f7012c01ab4a0e8f8967730ada8f9fdf419e8b6c792788f39cf4e46eefa"
 dependencies = [
  "heck",
  "proc-macro-error",
@@ -1523,7 +1523,7 @@ dependencies = [
 name = "cumulus-client-cli"
 version = "0.1.0"
 dependencies = [
- "clap 3.2.16",
+ "clap 3.2.17",
  "parity-scale-codec",
  "sc-chain-spec",
  "sc-cli",
@@ -2137,7 +2137,7 @@ name = "cumulus-test-service"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "clap 3.2.16",
+ "clap 3.2.17",
  "criterion",
  "cumulus-client-cli",
  "cumulus-client-consensus-common",
@@ -2807,7 +2807,7 @@ source = "git+https://github.com/paritytech/substrate?branch=master#1fd71c7845d6
 dependencies = [
  "Inflector",
  "chrono",
- "clap 3.2.16",
+ "clap 3.2.17",
  "comfy-table",
  "frame-benchmarking",
  "frame-support",
@@ -6453,7 +6453,7 @@ dependencies = [
 name = "parachain-template-node"
 version = "0.1.0"
 dependencies = [
- "clap 3.2.16",
+ "clap 3.2.17",
  "cumulus-client-cli",
  "cumulus-client-collator",
  "cumulus-client-consensus-aura",
@@ -6815,6 +6815,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-xcm",
  "parachain-info",
+ "parachains-common",
  "parity-scale-codec",
  "polkadot-parachain 0.9.27",
  "polkadot-primitives",
@@ -7055,7 +7056,7 @@ name = "polkadot-cli"
 version = "0.9.27"
 source = "git+https://github.com/paritytech/polkadot?branch=master#4863d0a33a4a3534236f76abb5b1dc91751c6c34"
 dependencies = [
- "clap 3.2.16",
+ "clap 3.2.17",
  "frame-benchmarking-cli",
  "futures",
  "log",
@@ -7093,6 +7094,7 @@ dependencies = [
  "polkadot-primitives",
  "polkadot-runtime",
  "polkadot-runtime-common",
+ "rococo-runtime",
  "sc-client-api",
  "sc-consensus",
  "sc-executor",
@@ -7710,7 +7712,7 @@ version = "0.9.230"
 dependencies = [
  "assert_cmd",
  "async-trait",
- "clap 3.2.16",
+ "clap 3.2.17",
  "collectives-polkadot-runtime",
  "contracts-rococo-runtime",
  "cumulus-client-cli",
@@ -7770,6 +7772,7 @@ dependencies = [
  "sp-keystore",
  "sp-offchain",
  "sp-runtime",
+ "sp-serializer",
  "sp-session",
  "sp-timestamp",
  "sp-transaction-pool",
@@ -8118,6 +8121,7 @@ dependencies = [
  "polkadot-runtime-parachains",
  "polkadot-statement-distribution",
  "rococo-runtime",
+ "rococo-runtime-constants",
  "sc-authority-discovery",
  "sc-basic-authorship",
  "sc-block-builder",
@@ -9357,7 +9361,7 @@ version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#1fd71c7845d6c28c532795ec79106d959dd1fe30"
 dependencies = [
  "chrono",
- "clap 3.2.16",
+ "clap 3.2.17",
  "fdlimit",
  "futures",
  "hex",
@@ -10402,6 +10406,7 @@ dependencies = [
  "pallet-balances",
  "pallet-sudo",
  "parachain-info",
+ "parachains-common",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -10609,6 +10614,7 @@ dependencies = [
  "frame-try-runtime",
  "log",
  "parachain-info",
+ "parachains-common",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -12377,7 +12383,7 @@ name = "try-runtime-cli"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#1fd71c7845d6c28c532795ec79106d959dd1fe30"
 dependencies = [
- "clap 3.2.16",
+ "clap 3.2.17",
  "jsonrpsee",
  "log",
  "parity-scale-codec",
