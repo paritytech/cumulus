@@ -3,7 +3,8 @@ use polkadot_core_primitives::Hash;
 use polkadot_service::{BlockT, HeaderMetadata};
 use sc_client_api::HeaderBackend;
 use sc_consensus::ImportQueue;
-use sc_network::NetworkService;
+use sc_network::{NetworkService, SyncState};
+use sc_network_common::sync::SyncStatus;
 use sc_network_light::light_client_requests;
 use sc_network_sync::{block_request_handler, state_request_handler};
 use sc_service::{error::Error, Configuration, NetworkStarter, SpawnTaskHandle};
@@ -150,19 +151,26 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 	}
 
 	fn status(&self) -> sc_network_common::sync::SyncStatus<B> {
-		todo!()
+		SyncStatus {
+			state: SyncState::Idle,
+			best_seen_block: None,
+			num_peers: 0,
+			queued_blocks: 0,
+			state_sync: None,
+			warp_sync: None,
+		}
 	}
 
 	fn num_sync_requests(&self) -> usize {
-		todo!()
+		0
 	}
 
 	fn num_downloaded_blocks(&self) -> usize {
-		todo!()
+		0
 	}
 
 	fn num_peers(&self) -> usize {
-		todo!()
+		0
 	}
 
 	fn new_peer(
@@ -174,7 +182,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		Option<sc_network_common::sync::message::BlockRequest<B>>,
 		sc_network_common::sync::BadPeer,
 	> {
-		todo!()
+		Ok(None)
 	}
 
 	fn update_chain_info(
@@ -182,7 +190,6 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		best_hash: &<B as BlockT>::Hash,
 		best_number: polkadot_service::NumberFor<B>,
 	) {
-		todo!()
 	}
 
 	fn request_justification(
@@ -190,12 +197,9 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		hash: &<B as BlockT>::Hash,
 		number: polkadot_service::NumberFor<B>,
 	) {
-		todo!()
 	}
 
-	fn clear_justification_requests(&mut self) {
-		todo!()
-	}
+	fn clear_justification_requests(&mut self) {}
 
 	fn set_sync_fork_request(
 		&mut self,
@@ -203,7 +207,6 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		hash: &<B as BlockT>::Hash,
 		number: polkadot_service::NumberFor<B>,
 	) {
-		todo!()
 	}
 
 	fn justification_requests(
@@ -212,7 +215,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		dyn Iterator<Item = (libp2p::PeerId, sc_network_common::sync::message::BlockRequest<B>)>
 			+ '_,
 	> {
-		todo!()
+		Box::new(Vec::new().into_iter()) as Box<_>
 	}
 
 	fn block_requests(
@@ -227,13 +230,13 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 	fn state_request(
 		&mut self,
 	) -> Option<(libp2p::PeerId, sc_network_common::sync::OpaqueStateRequest)> {
-		todo!()
+		None
 	}
 
 	fn warp_sync_request(
 		&mut self,
 	) -> Option<(libp2p::PeerId, sc_network_common::sync::warp::WarpProofRequest<B>)> {
-		todo!()
+		None
 	}
 
 	fn on_block_data(
@@ -289,7 +292,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 			>,
 		>,
 	> {
-		todo!()
+		Box::new(Vec::new().into_iter()) as Box<_>
 	}
 
 	fn on_justification_import(
@@ -298,7 +301,6 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		number: polkadot_service::NumberFor<B>,
 		success: bool,
 	) {
-		todo!()
 	}
 
 	fn on_block_finalized(
@@ -306,7 +308,6 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		hash: &<B as BlockT>::Hash,
 		number: polkadot_service::NumberFor<B>,
 	) {
-		todo!()
 	}
 
 	fn push_block_announce_validation(
@@ -316,7 +317,6 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		announce: sc_network_common::sync::message::BlockAnnounce<<B as BlockT>::Header>,
 		is_best: bool,
 	) {
-		todo!()
 	}
 
 	fn poll_block_announce_validation(
@@ -324,7 +324,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		cx: &mut std::task::Context,
 	) -> std::task::Poll<sc_network_common::sync::PollBlockAnnounceValidation<<B as BlockT>::Header>>
 	{
-		todo!()
+		std::task::Poll::Pending
 	}
 
 	fn peer_disconnected(
