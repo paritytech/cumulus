@@ -20,7 +20,7 @@ use cumulus_primitives_core::{
 };
 use scale_info::TypeInfo;
 use sp_runtime::traits::HashFor;
-use sp_state_machine::{Backend, TrieBackendBuilder, TrieBackend};
+use sp_state_machine::{Backend, TrieBackend, TrieBackendBuilder};
 use sp_std::vec::Vec;
 use sp_trie::{HashDBT, MemoryDB, StorageProof, EMPTY_PREFIX};
 
