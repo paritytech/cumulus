@@ -6,18 +6,18 @@ edition = "2021"
 
 
 [dependencies]
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-new-trie-cache" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-relay-chain-interface = { path = "../relay-chain-interface" }
 
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sp-storage = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-storage = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 futures = "0.3.21"
 futures-timer = "3.0.2"

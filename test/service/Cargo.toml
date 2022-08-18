@@ -20,41 +20,41 @@ tokio = { version = "1.19.2", features = ["macros"] }
 url = "2.2.2"
 
 # Substrate
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sc-executor = { git = "https://github.com/paritytech/substrate", features = ["wasmtime"] , branch = "bkchr-state-access-benchmark" }
-sc-network = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sc-service = { git = "https://github.com/paritytech/substrate", features = [ "wasmtime" ] , branch = "bkchr-state-access-benchmark" }
-sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "bkchr-state-access-benchmark" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
+sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master", features = [ "wasmtime" ] }
+sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-test-client = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
 clap = { version = "3.1", features = ["derive"] }
 tracing = "0.1.25"
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-new-trie-cache" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-new-trie-cache" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-new-trie-cache" }
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-new-trie-cache" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus
 cumulus-client-cli = { path = "../../client/cli" }
@@ -76,11 +76,11 @@ futures = "0.3.5"
 portpicker = "0.1.1"
 
 # Polkadot dependencies
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-new-trie-cache" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Substrate dependencies
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [[bench]]
 name = "transaction_throughput"

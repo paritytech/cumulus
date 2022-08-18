@@ -13,16 +13,16 @@ async-trait = "0.1.56"
 dyn-clone = "1.0.5"
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "bkchr-new-trie-cache" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus
 cumulus-relay-chain-interface = { path = "../../relay-chain-interface" }
@@ -31,7 +31,7 @@ cumulus-relay-chain-interface = { path = "../../relay-chain-interface" }
 futures-timer = "3.0.2"
 
 # Substrate
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "bkchr-state-access-benchmark" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Cumulus
 cumulus-test-client = { path = "../../../test/client" }
