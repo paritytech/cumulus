@@ -76,6 +76,12 @@ impl From<CodecError> for RelayChainError {
 	}
 }
 
+impl From<RelayChainError> for sp_blockchain::Error {
+	fn from(r: RelayChainError) -> Self {
+		sp_blockchain::Error::Backend(r.to_string())
+	}
+}
+
 /// Trait that provides all necessary methods for interaction between collator and relay chain.
 #[async_trait]
 pub trait RelayChainInterface: Send + Sync {

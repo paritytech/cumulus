@@ -6,11 +6,10 @@ use cumulus_relay_chain_rpc_interface::RelayChainRpcClient;
 use futures::{executor::block_on, Future, Stream, StreamExt};
 use polkadot_core_primitives::{Block, Hash, Header};
 use polkadot_overseer::RuntimeApiSubsystemClient;
-use polkadot_service::HeaderBackend;
 use sc_authority_discovery::AuthorityDiscoveryWrapper;
 use sc_client_api::{BlockBackend, ProofProvider};
-use sc_network::NetworkHeaderBackend;
 use sp_api::{ApiError, RuntimeApiInfo};
+use sp_blockchain::NetworkHeaderBackend;
 
 const LOG_TARGET: &'static str = "blockchain-rpc-client";
 
@@ -352,94 +351,12 @@ fn block_local<T>(fut: impl Future<Output = T>) -> T {
 	tokio::task::block_in_place(|| tokio_handle.block_on(fut))
 }
 
-#[async_trait]
 impl NetworkHeaderBackend<Block> for BlockChainRpcClient {
-	async fn header(
-		&self,
-		id: sp_api::BlockId<Block>,
-	) -> sp_blockchain::Result<Option<<Block as polkadot_service::BlockT>::Header>> {
-		if let sp_api::BlockId::Hash(hash) = id {
-			self.rpc_client
-				.chain_get_header(Some(hash))
-				.await
-				.map_err(|err| sp_blockchain::Error::Backend(err.to_string()))
-		} else {
-			unimplemented!("header with number not supported")
-		}
-	}
-
-	async fn info(&self) -> sp_blockchain::Info<Block> {
-		tracing::debug!(target: LOG_TARGET, "BlockBackend::block_status");
-
-		let best_header =
-			self.rpc_client.chain_get_header(None).await.expect("get_header").unwrap();
-		tracing::debug!(
-			target: LOG_TARGET,
-			"BlockBackend::block_status - succeeded to get header parent: {:?}, number: {:?}",
-			best_header.parent_hash,
-			best_header.number
-		);
-		let genesis_hash = self.rpc_client.chain_get_head(Some(0)).expect("get_head");
-		let finalized_head = self.rpc_client.chain_get_finalized_head().expect("get_head");
-		let finalized_header = self
-			.rpc_client
-			.chain_get_header(Some(finalized_head))
-			.expect("get_head")
-			.unwrap();
-		sp_blockchain::Info {
-			best_hash: best_header.hash(),
-			best_number: best_header.number,
-			genesis_hash,
-			finalized_hash: finalized_head,
-			finalized_number: finalized_header.number,
-			finalized_state: None,
-			number_leaves: 1,
-			block_gap: None,
-		}
-	}
-
-	async fn status(
-		&self,
-		_id: sp_api::BlockId<Block>,
-	) -> sp_blockchain::Result<sp_blockchain::BlockStatus> {
-		unimplemented!()
-	}
-
-	async fn number(
-		&self,
-		hash: <Block as polkadot_service::BlockT>::Hash,
-	) -> sp_blockchain::Result<
-		Option<<<Block as polkadot_service::BlockT>::Header as polkadot_service::HeaderT>::Number>,
-	> {
-		tracing::debug!(target: LOG_TARGET, "BlockBackend::block_status");
-		self.rpc_client
-			.chain_get_header(Some(hash))
-			.await
-			.map_err(|err| sp_blockchain::Error::Backend(err.to_string()))
-			.map(|maybe_header| maybe_header.map(|header| header.number))
-	}
-
-	async fn hash(
-		&self,
-		number: polkadot_service::NumberFor<Block>,
-	) -> sp_blockchain::Result<Option<<Block as polkadot_service::BlockT>::Hash>> {
-		self.rpc_client
-			.chain_get_block_hash(number.into())
-			.await
-			.map_err(|err| sp_blockchain::Error::Backend(err.to_string()))
-	}
-}
-impl HeaderBackend<Block> for BlockChainRpcClient {
 	fn header(
 		&self,
-		id: sp_api::BlockId<Block>,
+		hash: <Block as polkadot_service::BlockT>::Hash,
 	) -> sp_blockchain::Result<Option<<Block as polkadot_service::BlockT>::Header>> {
-		if let sp_api::BlockId::Hash(hash) = id {
-			block_on(self.rpc_client.chain_get_header(Some(hash)))
-				.map_err(|err| sp_blockchain::Error::Backend(err.to_string()))
-		} else {
-			unimplemented!("header with number not supported")
-		}
+		Ok(block_local(self.rpc_client.chain_get_header(Some(hash)))?)
 	}
 
 	fn info(&self) -> sp_blockchain::Info<Block> {
@@ -472,30 +389,21 @@ impl HeaderBackend<Block> for BlockChainRpcClient {
 		}
 	}
 
-	fn status(
-		&self,
-		_id: sp_api::BlockId<Block>,
-	) -> sp_blockchain::Result<sp_blockchain::BlockStatus> {
-		unimplemented!()
-	}
-
 	fn number(
 		&self,
 		hash: <Block as polkadot_service::BlockT>::Hash,
 	) -> sp_blockchain::Result<
 		Option<<<Block as polkadot_service::BlockT>::Header as polkadot_service::HeaderT>::Number>,
 	> {
-		tracing::debug!(target: LOG_TARGET, "BlockBackend::block_status");
-		block_local(self.rpc_client.chain_get_header(Some(hash)))
-			.map_err(|err| sp_blockchain::Error::Backend(err.to_string()))
-			.map(|maybe_header| maybe_header.map(|header| header.number))
+		let result = block_local(self.rpc_client.chain_get_header(Some(hash)))?
+			.map(|maybe_header| maybe_header.number);
+		Ok(result)
 	}
 
 	fn hash(
 		&self,
 		number: polkadot_service::NumberFor<Block>,
 	) -> sp_blockchain::Result<Option<<Block as polkadot_service::BlockT>::Hash>> {
-		block_local(self.rpc_client.chain_get_block_hash(number.into()))
-			.map_err(|err| sp_blockchain::Error::Backend(err.to_string()))
+		Ok(block_local(self.rpc_client.chain_get_block_hash(number.into()))?)
 	}
 }

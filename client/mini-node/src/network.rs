@@ -1,13 +1,13 @@
 use futures::FutureExt;
 use polkadot_core_primitives::Hash;
-use polkadot_service::{BlockT, HeaderMetadata};
-use sc_client_api::HeaderBackend;
+use polkadot_service::BlockT;
 use sc_consensus::ImportQueue;
 use sc_network::{NetworkService, SyncState};
 use sc_network_common::sync::SyncStatus;
 use sc_network_light::light_client_requests;
 use sc_network_sync::{block_request_handler, state_request_handler};
 use sc_service::{error::Error, Configuration, NetworkStarter, SpawnTaskHandle};
+use sp_blockchain::NetworkHeaderBackend;
 
 use std::sync::Arc;
 
@@ -30,7 +30,7 @@ pub fn build_collator_network<TBl, TImpQu, TCl>(
 ) -> Result<(Arc<NetworkService<TBl, <TBl as BlockT>::Hash>>, NetworkStarter), Error>
 where
 	TBl: BlockT,
-	TCl: HeaderBackend<TBl> + 'static,
+	TCl: NetworkHeaderBackend<TBl> + 'static,
 	TImpQu: ImportQueue<TBl> + 'static,
 {
 	let BuildCollatorNetworkParams { config, client, spawn_handle, import_queue, genesis_hash } =
@@ -128,7 +128,11 @@ where
 /// Builds a never-ending future that continuously polls the network.
 ///
 /// The `status_sink` contain a list of senders to send a periodic network status to.
-async fn build_network_collator_future<B: BlockT, H: sc_network::ExHashT, C: HeaderBackend<B>>(
+async fn build_network_collator_future<
+	B: BlockT,
+	H: sc_network::ExHashT,
+	C: NetworkHeaderBackend<B>,
+>(
 	mut network: sc_network::NetworkWorker<B, H, C>,
 ) {
 	loop {
