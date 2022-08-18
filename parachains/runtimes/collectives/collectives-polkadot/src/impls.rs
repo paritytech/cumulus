@@ -61,7 +61,8 @@ where
 
 		<CurrencyOf<T, I>>::resolve_creating(&temp_account, amount);
 
-		let dest: MultiLocation = Junction::AccountId32 { network: None, id: treasury_acc.into() }.into();
+		let dest: MultiLocation =
+			Junction::AccountId32 { network: None, id: treasury_acc.into() }.into();
 		let result = pallet_xcm::Pallet::<T>::teleport_assets(
 			<T as frame_system::Config>::Origin::signed(temp_account.into()),
 			Box::new(Parent.into()),

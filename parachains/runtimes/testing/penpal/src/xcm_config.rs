@@ -43,11 +43,10 @@ use xcm::latest::{prelude::*, Instruction};
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
-	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
-	FungiblesAdapter, IsConcrete, NativeAsset, ParentIsPreset,
-	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-	UsingComponents,
+	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter,
+	IsConcrete, NativeAsset, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
 use xcm_executor::{
 	traits::{JustTry, ShouldExecute},
@@ -233,7 +232,9 @@ pub type AccountIdOf<R> = <R as frame_system::Config>::AccountId;
 
 /// Asset filter that allows all assets from a certain location.
 pub struct AssetsFrom<T>(PhantomData<T>);
-impl<T: Get<(MultiAssetFilter, MultiLocation)>> ContainsPair<MultiAsset, MultiLocation> for AssetsFrom<T> {
+impl<T: Get<(MultiAssetFilter, MultiLocation)>> ContainsPair<MultiAsset, MultiLocation>
+	for AssetsFrom<T>
+{
 	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
 		let (_, loc) = T::get();
 		&loc == origin &&

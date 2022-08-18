@@ -7,7 +7,10 @@ pub use westmint_runtime::{
 	constants::fee::WeightToFee, xcm_config::XcmConfig, Assets, Balances, ExistentialDeposit,
 	Runtime, SessionKeys, System,
 };
-use xcm::latest::{prelude::*, Instruction::{self, *}};
+use xcm::latest::{
+	prelude::*,
+	Instruction::{self, *},
+};
 use xcm_executor::traits::WeightTrader;
 
 pub const ALICE: [u8; 32] = [1u8; 32];
