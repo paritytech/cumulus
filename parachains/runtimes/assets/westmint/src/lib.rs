@@ -83,10 +83,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("westmint"),
 	impl_name: create_runtime_str!("westmint"),
 	authoring_version: 1,
-	spec_version: 9220,
+	spec_version: 9230,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 6,
+	transaction_version: 7,
 	state_version: 0,
 };
 
@@ -199,6 +199,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
+	type Event = Event;
 	type OnChargeTransaction =
 		pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees<Runtime>>;
 	type WeightToFee = WeightToFee;
@@ -371,6 +372,7 @@ impl InstanceFilter<Call> for ProxyType {
 			),
 		}
 	}
+
 	fn is_superset(&self, o: &Self) -> bool {
 		match (self, o) {
 			(x, y) if x == y => true,
@@ -378,6 +380,7 @@ impl InstanceFilter<Call> for ProxyType {
 			(_, ProxyType::Any) => false,
 			(ProxyType::Assets, ProxyType::AssetOwner) => true,
 			(ProxyType::Assets, ProxyType::AssetManager) => true,
+			(ProxyType::NonTransfer, ProxyType::Collator) => true,
 			_ => false,
 		}
 	}
@@ -489,6 +492,7 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 impl pallet_asset_tx_payment::Config for Runtime {
+	type Event = Event;
 	type Fungibles = Assets;
 	type OnChargeAssetTransaction = pallet_asset_tx_payment::FungiblesAdapter<
 		pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
@@ -546,8 +550,8 @@ construct_runtime!(
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
-		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
-		AssetTxPayment: pallet_asset_tx_payment::{Pallet} = 12,
+		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
+		AssetTxPayment: pallet_asset_tx_payment::{Pallet, Event<T>} = 12,
 
 		// Collator support. the order of these 5 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
@@ -818,7 +822,7 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 			.create_inherent_data()
 			.expect("Could not create the timestamp inherent data");
 
-		inherent_data.check_extrinsics(&block)
+		inherent_data.check_extrinsics(block)
 	}
 }
 

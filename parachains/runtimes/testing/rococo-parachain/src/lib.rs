@@ -59,7 +59,7 @@ pub use sp_runtime::{Perbill, Permill};
 
 use parachains_common::{
 	impls::{AssetsFrom, NonZeroIssuance},
-	AssetId,
+	AccountId, AssetId, Signature,
 };
 use xcm_builder::{
 	AllowKnownQueryResponses, AllowSubscriptionsFrom, AsPrefixedGeneralIndex,
@@ -94,7 +94,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("test-parachain"),
 	impl_name: create_runtime_str!("test-parachain"),
 	authoring_version: 1,
-	spec_version: 9220,
+	spec_version: 9230,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -240,6 +240,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
+	type Event = Event;
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
 	type WeightToFee = IdentityFee<Balance>;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
@@ -519,7 +520,7 @@ construct_runtime! {
 		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Sudo: pallet_sudo::{Pallet, Call, Storage, Config<T>, Event<T>},
-		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
+		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>},
 
 		ParachainSystem: cumulus_pallet_parachain_system::{
 			Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
@@ -542,11 +543,6 @@ construct_runtime! {
 	}
 }
 
-/// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
-pub type Signature = sp_runtime::MultiSignature;
-/// Some way of identifying an account on the chain. We intentionally make it equivalent
-/// to the public key of our transaction signing scheme.
-pub type AccountId = <<Signature as sp_runtime::traits::Verify>::Signer as sp_runtime::traits::IdentifyAccount>::AccountId;
 /// Balance of an account.
 pub type Balance = u128;
 /// Index of a transaction in the chain.
@@ -569,6 +565,7 @@ pub type BlockId = generic::BlockId<Block>;
 pub type SignedExtra = (
 	frame_system::CheckNonZeroSender<Runtime>,
 	frame_system::CheckSpecVersion<Runtime>,
+	frame_system::CheckTxVersion<Runtime>,
 	frame_system::CheckGenesis<Runtime>,
 	frame_system::CheckEra<Runtime>,
 	frame_system::CheckNonce<Runtime>,
@@ -726,7 +723,7 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 			.create_inherent_data()
 			.expect("Could not create the timestamp inherent data");
 
-		inherent_data.check_extrinsics(&block)
+		inherent_data.check_extrinsics(block)
 	}
 }
 

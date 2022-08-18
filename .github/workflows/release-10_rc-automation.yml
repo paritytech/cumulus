@@ -1,8 +1,9 @@
-name: RC automation
+name: Release - RC automation
 on:
   push:
     branches:
-      - release-**v[0-9]+.[0-9]+.[0-9]+
+      - release-v[0-9]+.[0-9]+.[0-9]+
+      - release-parachains-v[0-9]+
   workflow_dispatch:
 
 jobs:
@@ -36,7 +37,7 @@ jobs:
           fi
 
       - name: Apply new tag
-        uses: tvdias/github-tagger@v0.0.2
+        uses: tvdias/github-tagger@ed7350546e3e503b5e942dffd65bc8751a95e49d # v0.0.2
         with:
           # We can't use the normal GITHUB_TOKEN for the following reason:
           # https://docs.github.com/en/actions/reference/events-that-trigger-workflows#triggering-new-workflows-using-a-personal-access-token
@@ -45,7 +46,7 @@ jobs:
           tag: ${{ steps.compute_tag.outputs.new_tag }}
 
       - id: create-issue-checklist-client
-        uses: JasonEtco/create-an-issue@v9e6213aec58987fa7d2f4deb8b256b99e63107a2 # v2.6.0
+        uses: JasonEtco/create-an-issue@9e6213aec58987fa7d2f4deb8b256b99e63107a2 # v2.6.0
         # Only create the issue if it's the first release candidate
         if: steps.compute_tag.outputs.first_rc == 'true'
         env:
@@ -56,7 +57,7 @@ jobs:
           filename: .github/ISSUE_TEMPLATE/release-client.md
 
       - id: create-issue-checklist-runtime
-        uses: JasonEtco/create-an-issue@v9e6213aec58987fa7d2f4deb8b256b99e63107a2 # v2.6.0
+        uses: JasonEtco/create-an-issue@9e6213aec58987fa7d2f4deb8b256b99e63107a2 # v2.6.0
         # Only create the issue if it's the first release candidate
         if: steps.compute_tag.outputs.first_rc == 'true'
         env:
@@ -67,7 +68,7 @@ jobs:
           filename: .github/ISSUE_TEMPLATE/release-runtime.md
 
       - name: Send Matrix message
-        uses: s3krit/matrix-message-action@v0.0.3
+        uses: s3krit/matrix-message-action@70ad3fb812ee0e45ff8999d6af11cafad11a6ecf # v0.0.3
         if: steps.create-issue-checklist-client.outputs.url != '' && steps.create-issue-checklist-runtime.outputs.url != ''
         with:
           room_id: ${{ secrets.INTERNAL_CUMULUS_MATRIX_ROOM_ID }}

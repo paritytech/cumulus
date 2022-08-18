@@ -5,11 +5,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-async-trait = "0.1.56"
-futures = "0.3.21"
+async-trait = "0.1.57"
+futures = "0.3.23"
 futures-timer = "3.0.2"
-parking_lot = "0.12.1"
-tracing = "0.1.34"
+tracing = "0.1.36"
 
 # Substrate
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -27,7 +26,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
 polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 

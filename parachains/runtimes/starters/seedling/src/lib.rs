@@ -52,6 +52,7 @@ pub use frame_support::{
 	StorageValue,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
+use parachains_common::{AccountId, Signature};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -62,7 +63,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("seedling"),
 	impl_name: create_runtime_str!("seedling"),
 	authoring_version: 1,
-	spec_version: 9220,
+	spec_version: 9230,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -189,11 +190,6 @@ construct_runtime! {
 	}
 }
 
-/// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
-pub type Signature = sp_runtime::MultiSignature;
-/// Some way of identifying an account on the chain. We intentionally make it equivalent
-/// to the public key of our transaction signing scheme.
-pub type AccountId = <<Signature as sp_runtime::traits::Verify>::Signer as sp_runtime::traits::IdentifyAccount>::AccountId;
 /// Index of a transaction in the chain.
 pub type Index = u32;
 /// A hash of some data used by the chain.

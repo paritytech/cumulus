@@ -30,7 +30,7 @@ use cumulus_primitives_core::{
 };
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
+use cumulus_relay_chain_rpc_interface::{create_client_and_start_worker, RelayChainRpcInterface};
 use polkadot_service::CollatorPair;
 use sp_core::Pair;
 
@@ -47,7 +47,8 @@ use sc_consensus::{
 };
 use sc_executor::WasmExecutor;
 use sc_network::NetworkService;
-use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
+use sc_network_common::service::NetworkBlock;
+use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::{ApiExt, ConstructRuntimeApi};
 use sp_consensus::CacheKeyId;
@@ -69,21 +70,6 @@ type HostFunctions =
 	(sp_io::SubstrateHostFunctions, frame_benchmarking::benchmarking::HostFunctions);
 
 /// Native executor instance.
-pub struct RococoParachainRuntimeExecutor;
-
-impl sc_executor::NativeExecutionDispatch for RococoParachainRuntimeExecutor {
-	type ExtendHostFunctions = ();
-
-	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		rococo_parachain_runtime::api::dispatch(method, data)
-	}
-
-	fn native_version() -> sc_executor::NativeVersion {
-		rococo_parachain_runtime::native_version()
-	}
-}
-
-/// Native executor instance.
 pub struct ShellRuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for ShellRuntimeExecutor {
@@ -95,21 +81,6 @@ impl sc_executor::NativeExecutionDispatch for ShellRuntimeExecutor {
 
 	fn native_version() -> sc_executor::NativeVersion {
 		shell_runtime::native_version()
-	}
-}
-
-/// Native executor instance.
-pub struct SeedlingRuntimeExecutor;
-
-impl sc_executor::NativeExecutionDispatch for SeedlingRuntimeExecutor {
-	type ExtendHostFunctions = ();
-
-	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		seedling_runtime::api::dispatch(method, data)
-	}
-
-	fn native_version() -> sc_executor::NativeVersion {
-		seedling_runtime::native_version()
 	}
 }
 
@@ -158,18 +129,18 @@ impl sc_executor::NativeExecutionDispatch for WestmintRuntimeExecutor {
 	}
 }
 
-/// Native Contracts on Rococo executor instance.
-pub struct ContractsRococoRuntimeExecutor;
+// Native Polkadot Collectives executor instance.
+pub struct CollectivesPolkadotRuntimeExecutor;
 
-impl sc_executor::NativeExecutionDispatch for ContractsRococoRuntimeExecutor {
+impl sc_executor::NativeExecutionDispatch for CollectivesPolkadotRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		contracts_rococo_runtime::api::dispatch(method, data)
+		collectives_polkadot_runtime::api::dispatch(method, data)
 	}
 
 	fn native_version() -> sc_executor::NativeVersion {
-		contracts_rococo_runtime::native_version()
+		collectives_polkadot_runtime::native_version()
 	}
 }
 
@@ -245,7 +216,7 @@ where
 
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, _>(
-			&config,
+			config,
 			telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
 			executor,
 		)?;
@@ -296,8 +267,10 @@ async fn build_relay_chain_interface(
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
 	match collator_options.relay_chain_rpc_url {
-		Some(relay_chain_url) =>
-			Ok((Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>, None)),
+		Some(relay_chain_url) => {
+			let client = create_client_and_start_worker(relay_chain_url, task_manager).await?;
+			Ok((Arc::new(RelayChainRpcInterface::new(client)) as Arc<_>, None))
+		},
 		None => build_inprocess_relay_chain(
 			polkadot_config,
 			parachain_config,
@@ -374,10 +347,6 @@ where
 		bool,
 	) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
 {
-	if matches!(parachain_config.role, Role::Light) {
-		return Err("Light client not supported!".into())
-	}
-
 	let parachain_config = prepare_node_config(parachain_config);
 
 	let params = new_partial::<RuntimeApi, BIQ>(&parachain_config, build_import_queue)?;
@@ -576,10 +545,6 @@ where
 		bool,
 	) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
 {
-	if matches!(parachain_config.role, Role::Light) {
-		return Err("Light client not supported!".into())
-	}
-
 	let parachain_config = prepare_node_config(parachain_config);
 
 	let params = new_partial::<RuntimeApi, BIQ>(&parachain_config, build_import_queue)?;
@@ -748,7 +713,7 @@ pub fn rococo_parachain_build_import_queue(
 		_,
 	>(cumulus_client_consensus_aura::ImportQueueParams {
 		block_import: client.clone(),
-		client: client.clone(),
+		client,
 		create_inherent_data_providers: move |_, _| async move {
 			let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
@@ -760,7 +725,7 @@ pub fn rococo_parachain_build_import_queue(
 
 			Ok((timestamp, slot))
 		},
-		registry: config.prometheus_registry().clone(),
+		registry: config.prometheus_registry(),
 		can_author_with: sp_consensus::AlwaysCanAuthor,
 		spawner: &task_manager.spawn_essential_handle(),
 		telemetry,
@@ -801,7 +766,7 @@ pub async fn start_rococo_parachain_node(
 				task_manager.spawn_handle(),
 				client.clone(),
 				transaction_pool,
-				prometheus_registry.clone(),
+				prometheus_registry,
 				telemetry.clone(),
 			);
 
@@ -838,7 +803,7 @@ pub async fn start_rococo_parachain_node(
 						}
 					},
 					block_import: client.clone(),
-					para_client: client.clone(),
+					para_client: client,
 					backoff_authoring_blocks: Option::<()>::None,
 					sync_oracle,
 					keystore,
@@ -890,7 +855,7 @@ where
 		client,
 		|_, _| async { Ok(()) },
 		&task_manager.spawn_essential_handle(),
-		config.prometheus_registry().clone(),
+		config.prometheus_registry(),
 	)
 	.map_err(Into::into)
 }
@@ -942,15 +907,15 @@ where
 				task_manager.spawn_handle(),
 				client.clone(),
 				transaction_pool,
-				prometheus_registry.clone(),
-				telemetry.clone(),
+				prometheus_registry,
+				telemetry,
 			);
 
 			Ok(cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
 				cumulus_client_consensus_relay_chain::BuildRelayChainConsensusParams {
 					para_id: id,
 					proposer_factory,
-					block_import: client.clone(),
+					block_import: client,
 					relay_chain_interface: relay_chain_interface.clone(),
 					create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
 						let relay_chain_interface = relay_chain_interface.clone();
@@ -1085,8 +1050,8 @@ where
 	}
 }
 
-/// Build the import queue for the statemint/statemine/westmine runtime.
-pub fn statemint_build_import_queue<RuntimeApi, AuraId: AppKey>(
+/// Build the import queue for Statemint and other Aura-based runtimes.
+pub fn aura_build_import_queue<RuntimeApi, AuraId: AppKey>(
 	client: Arc<TFullClient<Block, RuntimeApi, WasmExecutor<HostFunctions>>>,
 	config: &Configuration,
 	telemetry_handle: Option<TelemetryHandle>,
@@ -1153,20 +1118,21 @@ where
 		_phantom: PhantomData,
 	};
 
-	let registry = config.prometheus_registry().clone();
+	let registry = config.prometheus_registry();
 	let spawner = task_manager.spawn_essential_handle();
 
 	Ok(BasicQueue::new(
 		verifier,
-		Box::new(ParachainBlockImport::new(client.clone())),
+		Box::new(ParachainBlockImport::new(client)),
 		None,
 		&spawner,
 		registry,
 	))
 }
 
-/// Start a statemint/statemine/westmint parachain node.
-pub async fn start_statemint_node<RuntimeApi, AuraId: AppKey>(
+/// Start an aura powered parachain node.
+/// (collective-polkadot and statemine/t use this)
+pub async fn start_generic_aura_node<RuntimeApi, AuraId: AppKey>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	collator_options: CollatorOptions,
@@ -1203,7 +1169,7 @@ where
 		collator_options,
 		id,
 		|_| Ok(RpcModule::new(())),
-		statemint_build_import_queue::<_, AuraId>,
+		aura_build_import_queue::<_, AuraId>,
 		|client,
 		 prometheus_registry,
 		 telemetry,
@@ -1285,8 +1251,8 @@ where
 				task_manager.spawn_handle(),
 				client.clone(),
 				transaction_pool,
-				prometheus_registry.clone(),
-				telemetry.clone(),
+				prometheus_registry,
+				telemetry,
 			);
 
 			let relay_chain_consensus =
@@ -1320,7 +1286,7 @@ where
 				);
 
 			let parachain_consensus = Box::new(WaitForAuraConsensus {
-				client: client.clone(),
+				client,
 				aura_consensus: Arc::new(Mutex::new(aura_consensus)),
 				relay_chain_consensus: Arc::new(Mutex::new(relay_chain_consensus)),
 				_phantom: PhantomData,
@@ -1399,10 +1365,6 @@ where
 		bool,
 	) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
 {
-	if matches!(parachain_config.role, Role::Light) {
-		return Err("Light client not supported!".into())
-	}
-
 	let parachain_config = prepare_node_config(parachain_config);
 
 	let params = new_partial::<RuntimeApi, BIQ>(&parachain_config, build_import_queue)?;
@@ -1571,7 +1533,7 @@ pub fn contracts_rococo_build_import_queue(
 		_,
 	>(cumulus_client_consensus_aura::ImportQueueParams {
 		block_import: client.clone(),
-		client: client.clone(),
+		client,
 		create_inherent_data_providers: move |_, _| async move {
 			let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 

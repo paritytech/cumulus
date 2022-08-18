@@ -6,10 +6,10 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 
 [dependencies]
-async-trait = "0.1.56"
-futures = { version = "0.3.8", features = ["compat"] }
+async-trait = "0.1.57"
+futures = "0.3.23"
 parking_lot = "0.12.1"
-tracing = "0.1.34"
+tracing = "0.1.36"
 
 # Substrate
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }

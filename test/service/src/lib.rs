@@ -37,18 +37,18 @@ use cumulus_client_service::{
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::RelayChainInProcessInterface;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
+use cumulus_relay_chain_rpc_interface::{create_client_and_start_worker, RelayChainRpcInterface};
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
-use parking_lot::Mutex;
 
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use polkadot_primitives::v2::{CollatorPair, Hash as PHash, PersistedValidationData};
 use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
 use sc_network::{config::TransportConfig, multiaddr, NetworkService};
+use sc_network_common::service::{NetworkBlock, NetworkStateInfo};
 use sc_service::{
 	config::{
-		DatabaseSource, KeepBlocks, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
+		BlocksPruning, DatabaseSource, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
 		OffchainWorkerConfig, PruningMode, WasmExecutionMethod,
 	},
 	BasePath, ChainSpec, Configuration, Error as ServiceError, PartialComponents, Role,
@@ -140,7 +140,7 @@ pub fn new_partial(
 	);
 
 	let (client, backend, keystore_container, task_manager) =
-		sc_service::new_full_parts::<Block, RuntimeApi, _>(&config, None, executor)?;
+		sc_service::new_full_parts::<Block, RuntimeApi, _>(config, None, executor)?;
 	let client = Arc::new(client);
 
 	let registry = config.prometheus_registry();
@@ -158,7 +158,7 @@ pub fn new_partial(
 		client.clone(),
 		|_, _| async { Ok(sp_timestamp::InherentDataProvider::from_system_time()) },
 		&task_manager.spawn_essential_handle(),
-		registry.clone(),
+		registry,
 	)?;
 
 	let params = PartialComponents {
@@ -182,7 +182,8 @@ async fn build_relay_chain_interface(
 	task_manager: &mut TaskManager,
 ) -> RelayChainResult<Arc<dyn RelayChainInterface + 'static>> {
 	if let Some(relay_chain_url) = collator_options.relay_chain_rpc_url {
-		return Ok(Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>)
+		let client = create_client_and_start_worker(relay_chain_url, task_manager).await?;
+		return Ok(Arc::new(RelayChainRpcInterface::new(client)) as Arc<_>)
 	}
 
 	let relay_chain_full_node = polkadot_test_service::new_full(
@@ -199,8 +200,8 @@ async fn build_relay_chain_interface(
 	Ok(Arc::new(RelayChainInProcessInterface::new(
 		relay_chain_full_node.client.clone(),
 		relay_chain_full_node.backend.clone(),
-		Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),
-		relay_chain_full_node.overseer_handle.clone(),
+		Arc::new(relay_chain_full_node.network.clone()),
+		relay_chain_full_node.overseer_handle,
 	)) as Arc<_>)
 }
 
@@ -227,10 +228,6 @@ pub async fn start_node_impl<RB>(
 where
 	RB: Fn(Arc<Client>) -> Result<jsonrpsee::RpcModule<()>, sc_service::Error> + Send + 'static,
 {
-	if matches!(parachain_config.role, Role::Light) {
-		return Err("Light client not supported!".into())
-	}
-
 	let mut parachain_config = prepare_node_config(parachain_config);
 
 	let params = new_partial(&mut parachain_config)?;
@@ -621,7 +618,7 @@ pub fn node_config(
 	spec.set_storage(storage);
 
 	let mut network_config = NetworkConfiguration::new(
-		format!("{} (parachain)", key_seed.to_string()),
+		format!("{} (parachain)", key_seed),
 		"network/test/0.1",
 		Default::default(),
 		None,
@@ -655,7 +652,7 @@ pub fn node_config(
 		database: DatabaseSource::RocksDb { path: root.join("db"), cache_size: 128 },
 		trie_cache_maximum_size: Some(64 * 1024 * 1024),
 		state_pruning: Some(PruningMode::ArchiveAll),
-		keep_blocks: KeepBlocks::All,
+		blocks_pruning: BlocksPruning::All,
 		chain_spec: spec,
 		wasm_method: WasmExecutionMethod::Interpreted,
 		// NOTE: we enforce the use of the native runtime to make the errors more debuggable
@@ -773,10 +770,10 @@ pub fn construct_extrinsic(
 	);
 	let signature = raw_payload.using_encoded(|e| caller.sign(e));
 	runtime::UncheckedExtrinsic::new_signed(
-		function.clone(),
+		function,
 		caller.public().into(),
-		runtime::Signature::Sr25519(signature.clone()),
-		extra.clone(),
+		runtime::Signature::Sr25519(signature),
+		extra,
 	)
 }
 

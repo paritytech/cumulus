@@ -116,7 +116,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("contracts-rococo"),
 	impl_name: create_runtime_str!("contracts-rococo"),
 	authoring_version: 1,
-	spec_version: 9220,
+	spec_version: 9230,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -211,6 +211,7 @@ impl pallet_balances::Config for Runtime {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
+	type Event = Event;
 	type OnChargeTransaction =
 		pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees<Runtime>>;
 	type WeightToFee = WeightToFee;
@@ -330,7 +331,7 @@ construct_runtime!(
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
-		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
 
 		// Collator support. The order of these 5 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
@@ -535,7 +536,7 @@ impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, B
 
 		fn get_storage(
 			address: AccountId,
-			key: [u8; 32],
+			key: Vec<u8>,
 		) -> pallet_contracts_primitives::GetStorageResult {
 			Contracts::get_storage(address, key)
 		}
@@ -625,7 +626,7 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 			.create_inherent_data()
 			.expect("Could not create the timestamp inherent data");
 
-		inherent_data.check_extrinsics(&block)
+		inherent_data.check_extrinsics(block)
 	}
 }
 
