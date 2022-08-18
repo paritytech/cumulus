@@ -183,7 +183,7 @@ impl xcm_executor::Config for XcmConfig {
 				WeightToFee,
 				pallet_assets::BalanceToAssetBalance<Balances, Runtime, ConvertInto>,
 			>,
-			ConvertedConcreteAssetId<
+			ConvertedConcreteId<
 				AssetId,
 				Balance,
 				AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>,
