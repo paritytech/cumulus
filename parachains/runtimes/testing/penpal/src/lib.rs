@@ -50,9 +50,9 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, MultiSignature,
+	ApplyExtrinsicResult,
 };
 pub use sp_runtime::{traits::ConvertInto, MultiAddress, Perbill, Permill};
 use sp_std::prelude::*;
@@ -70,15 +70,9 @@ use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 // XCM Imports
+use parachains_common::{AccountId, Signature};
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
-
-/// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
-pub type Signature = MultiSignature;
-
-/// Some way of identifying an account on the chain. We intentionally make it equivalent
-/// to the public key of our transaction signing scheme.
-pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
 /// Balance of an account.
 pub type Balance = u128;
@@ -671,6 +665,23 @@ impl_runtime_apis! {
 			len: u32,
 		) -> pallet_transaction_payment::FeeDetails<Balance> {
 			TransactionPayment::query_fee_details(uxt, len)
+		}
+	}
+
+	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, Call>
+		for Runtime
+	{
+		fn query_call_info(
+			call: Call,
+			len: u32,
+		) -> pallet_transaction_payment::RuntimeDispatchInfo<Balance> {
+			TransactionPayment::query_call_info(call, len)
+		}
+		fn query_call_fee_details(
+			call: Call,
+			len: u32,
+		) -> pallet_transaction_payment::FeeDetails<Balance> {
+			TransactionPayment::query_call_fee_details(call, len)
 		}
 	}
 
