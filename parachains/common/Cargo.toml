@@ -13,36 +13,36 @@ codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 
 # Substrate
-frame-executive = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-frame-support = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-assets = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-authorship = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+frame-executive = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "slumber-aura-logs" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "slumber-aura-logs" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "slumber-aura-logs" }
+pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "slumber-aura-logs" }
+pallet-assets = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "slumber-aura-logs" }
+pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "slumber-aura-logs" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "slumber-aura-logs" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "slumber-aura-logs" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "slumber-aura-logs" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "slumber-aura-logs" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "slumber-aura-logs" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "slumber-aura-logs" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "slumber-aura-logs" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "slumber-aura-logs" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "slumber-aura-logs" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "slumber-aura-logs" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "slumber-aura-logs" }
 
 # Cumulus
 pallet-collator-selection = { path = "../../pallets/collator-selection", default-features = false }
 cumulus-primitives-utility = { path = "../../primitives/utility", default-features = false }
 
 [dev-dependencies]
-pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-authorship = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "slumber-aura-logs" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "slumber-aura-logs" }
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "slumber-aura-logs" }
 
 [features]
 default = ["std"]
