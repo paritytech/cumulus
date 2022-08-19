@@ -126,7 +126,7 @@ impl<Block: BlockT, BE: Backend<Block>> LeavesLevelMonitor<Block, BE> {
 		let blockchain = self.backend.blockchain();
 		let mut leaves = blockchain.leaves().unwrap_or_default();
 
-		if self.import_map.len() - leaves.len() >= CLEANUP_THRESHOLD {
+		if self.import_map.len().saturating_sub(leaves.len()) >= CLEANUP_THRESHOLD {
 			// Using a temporary HashSet we allegedly reduce iterations from O(n^2) to O(2n)
 			let leaves_set: HashSet<_> = leaves.iter().collect();
 			self.import_map.retain(|hash, _| leaves_set.contains(hash));
@@ -156,9 +156,7 @@ impl<Block: BlockT, BE: Backend<Block>> LeavesLevelMonitor<Block, BE> {
 		let best = blockchain.info().best_hash;
 		let mut remove_count = leaves.len() - self.level_limit + 1;
 
-		// Sort by import chronological order
-		// With Substrate the leaves for one level are already given ordered by
-		// import time, so this will be cheap.
+		// Sort leaves by import chronological order
 		leaves.sort_unstable_by(|a, b| self.import_map.get(a).cmp(&self.import_map.get(b)));
 
 		for hash in leaves.into_iter().filter(|hash| *hash != best) {
