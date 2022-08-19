@@ -42,11 +42,11 @@ use sp_runtime::traits::Zero;
 use xcm::latest::{prelude::*, Instruction};
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex, AssetChecking,
-	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter,
-	IsConcrete, MintLocation, NativeAsset, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
+	AssetChecking, ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
+	FungiblesAdapter, IsConcrete, MintLocation, NativeAsset, ParentIsPreset, RelayChainAsNative,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
 use xcm_executor::{
 	traits::{JustTry, ShouldExecute},
@@ -256,12 +256,13 @@ where
 }
 
 impl<AccountId, Assets> AssetChecking<<Assets as fungibles::Inspect<AccountId>>::AssetId>
-for NonZeroIssuance<AccountId, Assets>
-	where
-		Assets: fungibles::Inspect<AccountId>,
+	for NonZeroIssuance<AccountId, Assets>
+where
+	Assets: fungibles::Inspect<AccountId>,
 {
 	fn asset_checking(
-		asset: &<Assets as fungibles::Inspect<AccountId>>::AssetId) -> Option<MintLocation> {
+		asset: &<Assets as fungibles::Inspect<AccountId>>::AssetId,
+	) -> Option<MintLocation> {
 		match !Assets::total_issuance(*asset).is_zero() {
 			true => Some(MintLocation::NonLocal),
 			false => None,

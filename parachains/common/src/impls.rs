@@ -104,7 +104,8 @@ where
 	Assets: fungibles::Inspect<AccountId>,
 {
 	fn asset_checking(
-		asset: &<Assets as fungibles::Inspect<AccountId>>::AssetId) -> Option<MintLocation> {
+		asset: &<Assets as fungibles::Inspect<AccountId>>::AssetId,
+	) -> Option<MintLocation> {
 		match !Assets::total_issuance(*asset).is_zero() {
 			true => Some(MintLocation::NonLocal),
 			false => None,
