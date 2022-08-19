@@ -150,8 +150,9 @@ impl<Block: BlockT, BE: Backend<Block>> LeavesLevelMonitor<Block, BE> {
 		}
 
 		log::debug!(
-            target: "parachain",
-            "Detected leaves overflow at height {}, removing old blocks", number);
+			target: "parachain",
+			"Detected leaves overflow at height {}, removing old blocks", number
+		);
 
 		let best = blockchain.info().best_hash;
 		let mut remove_count = leaves.len() - self.level_limit + 1;
