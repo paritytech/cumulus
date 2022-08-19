@@ -24,6 +24,7 @@ use pallet_asset_tx_payment::HandleCredit;
 use sp_runtime::traits::Zero;
 use sp_std::marker::PhantomData;
 use xcm::latest::{AssetId, Fungibility::Fungible, MultiAsset, MultiLocation};
+use xcm_builder::{AssetChecking, MintLocation};
 
 /// Type alias to conveniently refer to the `Currency::NegativeImbalance` associated type.
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
@@ -97,6 +98,19 @@ where
 	}
 }
 
+impl<AccountId, Assets> AssetChecking<<Assets as fungibles::Inspect<AccountId>>::AssetId>
+	for NonZeroIssuance<AccountId, Assets>
+where
+	Assets: fungibles::Inspect<AccountId>,
+{
+	fn asset_checking(
+		asset: &<Assets as fungibles::Inspect<AccountId>>::AssetId) -> Option<MintLocation> {
+		match !Assets::total_issuance(*asset).is_zero() {
+			true => Some(MintLocation::NonLocal),
+			false => None,
+		}
+	}
+}
 /// Asset filter that allows all assets from a certain location.
 pub struct AssetsFrom<T>(PhantomData<T>);
 impl<T: Get<MultiLocation>> ContainsPair<MultiAsset, MultiLocation> for AssetsFrom<T> {

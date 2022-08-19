@@ -42,9 +42,9 @@ use sp_runtime::traits::Zero;
 use xcm::latest::{prelude::*, Instruction};
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
+	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex, AssetChecking,
 	ConvertedConcreteId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter,
-	IsConcrete, NativeAsset, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+	IsConcrete, MintLocation, NativeAsset, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
 	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
@@ -255,6 +255,20 @@ where
 	}
 }
 
+impl<AccountId, Assets> AssetChecking<<Assets as fungibles::Inspect<AccountId>>::AssetId>
+for NonZeroIssuance<AccountId, Assets>
+	where
+		Assets: fungibles::Inspect<AccountId>,
+{
+	fn asset_checking(
+		asset: &<Assets as fungibles::Inspect<AccountId>>::AssetId) -> Option<MintLocation> {
+		match !Assets::total_issuance(*asset).is_zero() {
+			true => Some(MintLocation::NonLocal),
+			false => None,
+		}
+	}
+}
+
 /// A `HandleCredit` implementation that naively transfers the fees to the block author.
 /// Will drop and burn the assets in case the transfer fails.
 pub struct AssetsToBlockAuthor<R>(PhantomData<R>);
@@ -297,8 +311,6 @@ impl Reserve for MultiAsset {
 
 /// A `FilterAssetLocation` implementation. Filters multi native assets whose
 /// reserve is same with `origin`.
-///pub struct MultiNativeAsset<T>(PhantomData<T>);
-///impl<T: Get<(MultiAssetFilter, MultiLocation)>> ContainsPair<MultiAsset, MultiLocation> for MultiNativeAsset<T> {
 pub struct MultiNativeAsset;
 impl ContainsPair<MultiAsset, MultiLocation> for MultiNativeAsset {
 	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
