@@ -47,7 +47,7 @@ use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvid
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 
 use parking_lot::Mutex;
-use std::{marker::PhantomData, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 mod import_queue;
 pub use import_queue::{import_queue, Verifier};
@@ -55,24 +55,23 @@ pub use import_queue::{import_queue, Verifier};
 const LOG_TARGET: &str = "cumulus-consensus-relay-chain";
 
 /// The implementation of the relay-chain provided consensus for parachains.
-pub struct RelayChainConsensus<B, PF, BI, RCInterface, CIDP, BE> {
+pub struct RelayChainConsensus<B: BlockT, PF, BI, RCInterface, CIDP, BE> {
 	para_id: ParaId,
-	_phantom: PhantomData<B>,
 	proposer_factory: Arc<Mutex<PF>>,
 	create_inherent_data_providers: Arc<CIDP>,
-	block_import: Arc<futures::lock::Mutex<ParachainBlockImport<BI, BE>>>,
+	block_import: Arc<futures::lock::Mutex<ParachainBlockImport<B, BI, BE>>>,
 	relay_chain_interface: RCInterface,
 }
 
 impl<B, PF, BI, RCInterface, CIDP, BE> Clone
 	for RelayChainConsensus<B, PF, BI, RCInterface, CIDP, BE>
 where
+	B: BlockT,
 	RCInterface: Clone,
 {
 	fn clone(&self) -> Self {
 		Self {
 			para_id: self.para_id,
-			_phantom: PhantomData,
 			proposer_factory: self.proposer_factory.clone(),
 			create_inherent_data_providers: self.create_inherent_data_providers.clone(),
 			block_import: self.block_import.clone(),
@@ -106,7 +105,6 @@ where
 				LeavesLevelLimit::None,
 			))),
 			relay_chain_interface,
-			_phantom: PhantomData,
 		}
 	}
 
