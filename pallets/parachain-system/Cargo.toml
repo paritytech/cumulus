@@ -15,18 +15,18 @@ scale-info = { version = "2.1.1", default-features = false, features = ["derive"
 serde = { version = "1.0.143", optional = true, features = ["derive"] }
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-externalities = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-support = { git = "https://github.com/arturgontijo/substrate", default-features = false, branch = "master" }
+frame-system = { git = "https://github.com/arturgontijo/substrate", default-features = false, branch = "master" }
+pallet-balances = { git = "https://github.com/arturgontijo/substrate", default-features = false, branch = "master" }
+sp-core = { git = "https://github.com/arturgontijo/substrate", default-features = false, branch = "master" }
+sp-externalities = { git = "https://github.com/arturgontijo/substrate", default-features = false, branch = "master" }
+sp-inherents = { git = "https://github.com/arturgontijo/substrate", default-features = false, branch = "master" }
+sp-io = { git = "https://github.com/arturgontijo/substrate", default-features = false, branch = "master" }
+sp-runtime = { git = "https://github.com/arturgontijo/substrate", default-features = false, branch = "master" }
+sp-state-machine = { git = "https://github.com/arturgontijo/substrate", default-features = false, branch = "master" }
+sp-std = { git = "https://github.com/arturgontijo/substrate", default-features = false, branch = "master" }
+sp-trie = { git = "https://github.com/arturgontijo/substrate", default-features = false, branch = "master" }
+sp-version = { git = "https://github.com/arturgontijo/substrate", default-features = false, branch = "master" }
 
 # Polkadot
 polkadot-parachain = { git = "https://github.com/arturgontijo/polkadot", default-features = false, features = [ "wasm-api" ], branch = "trappist-xcm-v3" }
@@ -42,10 +42,10 @@ hex-literal = "0.3.4"
 lazy_static = "1.4"
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-version = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-keyring = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-tracing = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-version = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
 
 # Cumulus
 cumulus-test-client = { path = "../../test/client" }

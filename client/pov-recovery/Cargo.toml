@@ -13,12 +13,12 @@ rand = "0.8.5"
 tracing = "0.1.36"
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-maybe-compressed-blob = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sc-consensus = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-api = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-maybe-compressed-blob = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
 
 # Polkadot
 polkadot-node-primitives = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3" }
@@ -37,6 +37,6 @@ tokio = { version = "1.19.2", features = ["macros"] }
 cumulus-test-service = { path = "../../test/service" }
 
 # Substrate
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-cli = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+substrate-test-utils = { git = "https://github.com/arturgontijo/substrate", branch = "master" }

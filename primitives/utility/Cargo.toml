@@ -9,11 +9,11 @@ codec = { package = "parity-scale-codec", version = "3.0.0", default-features = 
 log = { version = "0.4.17", default-features = false }
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-support = { git = "https://github.com/arturgontijo/substrate", default-features = false, branch = "master" }
+sp-io = { git = "https://github.com/arturgontijo/substrate", default-features = false, branch = "master" }
+sp-runtime = { git = "https://github.com/arturgontijo/substrate", default-features = false, branch = "master" }
+sp-std = { git = "https://github.com/arturgontijo/substrate", default-features = false, branch = "master" }
+sp-trie = { git = "https://github.com/arturgontijo/substrate", default-features = false, branch = "master" }
 
 # Polkadot
 polkadot-core-primitives = { git = "https://github.com/arturgontijo/polkadot", default-features = false, branch = "trappist-xcm-v3" }

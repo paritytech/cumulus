@@ -13,13 +13,13 @@ futures = "0.3.23"
 tracing = "0.1.36"
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sc-consensus = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-api = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-trie = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
 
 # Polkadot
 polkadot-primitives = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3" }
@@ -31,7 +31,7 @@ cumulus-relay-chain-interface = { path = "../../relay-chain-interface" }
 futures-timer = "3.0.2"
 
 # Substrate
-sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-tracing = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
 
 # Cumulus
 cumulus-test-client = { path = "../../../test/client" }

@@ -15,13 +15,13 @@ parking_lot = "0.12.1"
 tracing = "0.1.36"
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-api = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-core = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-state-machine = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
 
 # Polkadot
 polkadot-node-primitives = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3" }
@@ -37,13 +37,13 @@ tokio = { version = "1.19.2", features = ["macros"] }
 url = "2.2.2"
 
 # Substrate
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
-substrate-test-utils = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-cli = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-core = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-keyring = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+sp-keystore = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
+substrate-test-utils = { git = "https://github.com/arturgontijo/substrate", branch = "master" }
 
 # Polkadot
 polkadot-client = { git = "https://github.com/arturgontijo/polkadot", branch = "trappist-xcm-v3" }
