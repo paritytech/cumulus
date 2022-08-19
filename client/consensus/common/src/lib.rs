@@ -20,37 +20,20 @@ use sc_client_api::{
 	blockchain::{Backend as _, HeaderBackend as _},
 	Backend,
 };
-use sc_consensus::{BlockImport, ImportResult};
+use sc_consensus::BlockImport;
+use sp_api::NumberFor;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 
-use std::{collections::HashMap, sync::Arc};
+use std::{
+	collections::{HashMap, HashSet},
+	sync::Arc,
+};
 
 mod parachain_consensus;
 #[cfg(test)]
 mod tests;
 
 pub use parachain_consensus::run_parachain_consensus;
-
-/// Value good enough to be used with parachains using the current backend implementation
-/// that ships with Substrate. This value may change in the future.
-pub const MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT: usize = 32;
-
-/// Upper bound to the number of leaves allowed for each level of the blockchain.
-///
-/// If the limit is set and more leaves are detected on block import, then the older ones are
-/// dropped to make space for the fresh blocks.
-///
-/// In environments where blocks confirmations from the relay chain may be "slow", then
-/// setting an upper bound helps keeping the chain health by dropping old (presumably) stale
-/// leaves and prevents discarding new blocks because we've reached the backend max value.
-pub enum LeavesLevelLimit {
-	/// Limit set to `MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT`.
-	Default,
-	/// No explicit limit, however a limit may be implicitly imposed by the backend implementation.
-	None,
-	/// Custom value.
-	Some(usize),
-}
 
 /// The result of [`ParachainConsensus::produce_candidate`].
 pub struct ParachainCandidate<B> {
@@ -98,12 +81,98 @@ impl<B: BlockT> ParachainConsensus<B> for Box<dyn ParachainConsensus<B> + Send +
 	}
 }
 
+/// Value good enough to be used with parachains using the current backend implementation
+/// that ships with Substrate. This value may change in the future.
+pub const MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT: usize = 32;
+
+/// Upper bound to the number of leaves allowed for each level of the blockchain.
+///
+/// If the limit is set and more leaves are detected on block import, then the older ones are
+/// dropped to make space for the fresh blocks.
+///
+/// In environments where blocks confirmations from the relay chain may be "slow", then
+/// setting an upper bound helps keeping the chain health by dropping old (presumably) stale
+/// leaves and prevents discarding new blocks because we've reached the backend max value.
+pub enum LeavesLevelLimit {
+	/// Limit set to `MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT`.
+	Default,
+	/// No explicit limit, however a limit may be implicitly imposed by the backend implementation.
+	None,
+	/// Custom value.
+	Some(usize),
+}
+
 type BlockHash<Block> = <<Block as BlockT>::Header as HeaderT>::Hash;
 
-struct LeavesCache<Block: BlockT> {
+// Support structure to constrain the number of leaves for each level.
+struct LeavesLevelMonitor<Block: BlockT, BE> {
+	// Max number of leaves for each level.
 	level_limit: usize,
+	// Monotonic counter used to keep track of block age (bigger is younger).
 	import_counter: u64,
+	// Map between block hash and age.
 	import_map: HashMap<BlockHash<Block>, u64>,
+	// Backend reference to remove leaves on level saturation.
+	backend: Arc<BE>,
+}
+
+// Threshold after which we are going to cleanup our internal map by removing hashes that
+// doesn't belong to leaves anymore.
+// This is a farly arbitrary value that can be changed in the future without breaking anything.
+const CLEANUP_THRESHOLD: usize = 64;
+
+impl<Block: BlockT, BE: Backend<Block>> LeavesLevelMonitor<Block, BE> {
+	fn update(&mut self, hash: BlockHash<Block>, number: NumberFor<Block>) {
+		let blockchain = self.backend.blockchain();
+		let mut leaves = blockchain.leaves().unwrap_or_default();
+
+		if self.import_map.len() - leaves.len() >= CLEANUP_THRESHOLD {
+			// Using a temporary HashSet we allegedly reduce iterations from O(n^2) to O(2n)
+			let leaves_set: HashSet<_> = leaves.iter().collect();
+			self.import_map.retain(|hash, _| leaves_set.contains(hash));
+		}
+
+		self.import_counter += 1;
+		self.import_map.insert(hash, self.import_counter);
+
+		// First cheap check: the number of leaves at level `number` is always less than the total.
+		if leaves.len() < self.level_limit {
+			return
+		}
+
+		// Now focus on the leaves at the given height.
+		leaves.retain(|hash| {
+			blockchain.number(*hash).ok().flatten().map(|n| n == number).unwrap_or_default()
+		});
+
+		if leaves.len() < self.level_limit {
+			return
+		}
+
+		log::debug!(
+            target: "parachain",
+            "Detected leaves overflow at height {}, removing old blocks", number);
+
+		let best = blockchain.info().best_hash;
+		let mut remove_count = leaves.len() - self.level_limit + 1;
+
+		// Sort by import chronological order
+		// With Substrate the leaves for one level are already given ordered by
+		// import time, so this will be cheap.
+		leaves.sort_unstable_by(|a, b| self.import_map.get(a).cmp(&self.import_map.get(b)));
+
+		for hash in leaves.into_iter().filter(|hash| *hash != best) {
+			log::debug!(target: "parachain", "Removing block {}", hash);
+			if self.backend.remove_leaf_block(&hash).is_err() {
+				log::warn!(target: "parachain", "Unable to remove block {}, skipping it...", hash);
+				continue
+			}
+			remove_count -= 1;
+			if remove_count == 0 {
+				break
+			}
+		}
+	}
 }
 
 /// Parachain specific block import.
@@ -113,8 +182,7 @@ struct LeavesCache<Block: BlockT> {
 /// we will update the best block, as it is included by the relay-chain.
 pub struct ParachainBlockImport<Block: BlockT, BI, BE> {
 	inner: BI,
-	backend: Arc<BE>,
-	leaves_cache: Option<LeavesCache<Block>>,
+	leaves_monitor: Option<LeavesLevelMonitor<Block, BE>>,
 }
 
 impl<Block: BlockT, BI, BE> ParachainBlockImport<Block, BI, BE> {
@@ -125,16 +193,15 @@ impl<Block: BlockT, BI, BE> ParachainBlockImport<Block, BI, BE> {
 			LeavesLevelLimit::Some(limit) => Some(limit),
 			LeavesLevelLimit::Default => Some(MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT),
 		};
-		let leaves_cache = level_limit.map(|limit| LeavesCache {
+		let leaves_monitor = level_limit.map(|limit| LeavesLevelMonitor {
 			level_limit: limit,
 			import_map: HashMap::new(),
 			import_counter: 0,
+			backend,
 		});
-		Self { inner, backend, leaves_cache }
+		Self { inner, leaves_monitor }
 	}
 }
-
-use std::collections::HashSet;
 
 #[async_trait::async_trait]
 impl<Block, BI, BE> BlockImport<Block> for ParachainBlockImport<Block, BI, BE>
@@ -158,65 +225,8 @@ where
 		mut params: sc_consensus::BlockImportParams<Block, Self::Transaction>,
 		cache: std::collections::HashMap<sp_consensus::CacheKeyId, Vec<u8>>,
 	) -> Result<sc_consensus::ImportResult, Self::Error> {
-		let hash = params.header.hash();
-		let number = *params.header.number();
-
-		let check_leaves = |leaves_cache: &mut LeavesCache<_>| {
-			let blockchain = self.backend.blockchain();
-			let mut leaves = blockchain.leaves().unwrap_or_default();
-
-			// First cheap check: the number of leaves at level `number` is always less than the total.
-			if leaves.len() < leaves_cache.level_limit {
-				return
-			}
-
-			let mut leaves_set = HashSet::with_capacity(leaves.len());
-
-			// Now focus on the leaves at the given height.
-			leaves.retain(|hash| {
-				// Pick all the leaves in our temporary leaves set to cleanup the leaves cache.
-				leaves_set.insert(*hash);
-
-				// Exloit this iteration to cleanup our cache
-				blockchain.number(*hash).ok().flatten().map(|n| n == number).unwrap_or_default()
-			});
-
-			// Take the opportunity to cleanup our leaves cache.
-			// We use the leaves HashSet to have a O(1) complexity.
-			leaves_cache.import_map.retain(|hash, _| leaves_set.contains(hash));
-
-			if leaves.len() < leaves_cache.level_limit {
-				return
-			}
-
-			log::debug!(
-                target: "parachain",
-                "Detected leaves overflow at height {}, removing old blocks", number);
-
-			let best = blockchain.info().best_hash;
-			let mut remove_count = (leaves.len() + 1) - leaves_cache.level_limit;
-
-			// Sort by import chronological order
-			// With Substrate the leaves for one level are already given ordered by
-			// import time, so this will be cheap.
-			leaves.sort_unstable_by(|a, b| {
-				leaves_cache.import_map.get(a).cmp(&leaves_cache.import_map.get(b))
-			});
-
-			for hash in leaves.into_iter().filter(|hash| *hash != best) {
-				if self.backend.remove_leaf_block(&hash).is_err() {
-					log::warn!(target: "parachain", "Unable to remove block {}, skipping it...", hash);
-					continue
-				}
-				remove_count -= 1;
-				if remove_count == 0 {
-					break
-				}
-			}
-		};
-
-		if let Some(leaves_cache) = &mut self.leaves_cache {
-			check_leaves(leaves_cache);
+		if let Some(ref mut leaves_monitor) = self.leaves_monitor {
+			leaves_monitor.update(params.header.hash(), *params.header.number());
 		}
 
 		// Best block is determined by the relay chain, or if we are doing the initial sync
@@ -225,14 +235,6 @@ where
 			params.origin == sp_consensus::BlockOrigin::NetworkInitialSync,
 		));
 
-		let res = self.inner.import_block(params, cache).await;
-		if let Ok(ImportResult::Imported(_)) = res {
-			if let Some(leaves_cache) = &mut self.leaves_cache {
-				leaves_cache.import_counter += 1;
-				leaves_cache.import_map.insert(hash, leaves_cache.import_counter);
-			}
-		}
-
-		res
+		self.inner.import_block(params, cache).await
 	}
 }
