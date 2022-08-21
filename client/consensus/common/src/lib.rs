@@ -108,32 +108,36 @@ type BlockHash<Block> = <<Block as BlockT>::Header as HeaderT>::Hash;
 struct LeavesLevelMonitor<Block: BlockT, BE> {
 	// Max number of leaves for each level.
 	level_limit: usize,
-	// Monotonic counter used to keep track of block age (bigger is younger).
+	// Monotonic counter used to keep track of block import age (bigger is younger).
 	import_counter: u64,
 	// Map between block hash and age.
-	import_map: HashMap<BlockHash<Block>, u64>,
+	leaves_cache: HashMap<BlockHash<Block>, u64>,
 	// Backend reference to remove leaves on level saturation.
 	backend: Arc<BE>,
 }
 
-// Threshold after which we are going to cleanup our internal map by removing hashes that
-// doesn't belong to leaves anymore.
+// Threshold after which we are going to cleanup our internal leaves cache by removing hashes that
+// doesn't belong to leaf blocks anymore.
 // This is a farly arbitrary value that can be changed in the future without breaking anything.
 const CLEANUP_THRESHOLD: usize = 64;
 
 impl<Block: BlockT, BE: Backend<Block>> LeavesLevelMonitor<Block, BE> {
-	fn update(&mut self, hash: BlockHash<Block>, number: NumberFor<Block>) {
+	fn update(&mut self, hash: BlockHash<Block>, parent_hash: BlockHash<Block>) {
+		self.import_counter += 1;
+		self.leaves_cache.insert(hash, self.import_counter);
+		self.leaves_cache.remove(&parent_hash);
+	}
+
+	fn check(&mut self, number: NumberFor<Block>) {
 		let blockchain = self.backend.blockchain();
 		let mut leaves = blockchain.leaves().unwrap_or_default();
 
-		if self.import_map.len().saturating_sub(leaves.len()) >= CLEANUP_THRESHOLD {
-			// Using a temporary HashSet we allegedly reduce iterations from O(n^2) to O(2n)
+		if self.leaves_cache.len().saturating_sub(leaves.len()) >= CLEANUP_THRESHOLD {
+			// Update the cache once in a while by using the leaves set returned by the backend.
+			// Using a temporary HashSet we reduce iterations from O(n^2) to O(2n)
 			let leaves_set: HashSet<_> = leaves.iter().collect();
-			self.import_map.retain(|hash, _| leaves_set.contains(hash));
+			self.leaves_cache.retain(|hash, _| leaves_set.contains(hash));
 		}
-
-		self.import_counter += 1;
-		self.import_map.insert(hash, self.import_counter);
 
 		// First cheap check: the number of leaves at level `number` is always less than the total.
 		if leaves.len() < self.level_limit {
@@ -158,7 +162,7 @@ impl<Block: BlockT, BE: Backend<Block>> LeavesLevelMonitor<Block, BE> {
 		let mut remove_count = leaves.len() - self.level_limit + 1;
 
 		// Sort leaves by import chronological order
-		leaves.sort_unstable_by(|a, b| self.import_map.get(a).cmp(&self.import_map.get(b)));
+		leaves.sort_unstable_by(|a, b| self.leaves_cache.get(a).cmp(&self.leaves_cache.get(b)));
 
 		for hash in leaves.into_iter().filter(|hash| *hash != best) {
 			log::debug!(target: "parachain", "Removing block {}", hash);
@@ -166,6 +170,7 @@ impl<Block: BlockT, BE: Backend<Block>> LeavesLevelMonitor<Block, BE> {
 				log::warn!(target: "parachain", "Unable to remove block {}, skipping it...", hash);
 				continue
 			}
+			self.leaves_cache.remove(&hash);
 			remove_count -= 1;
 			if remove_count == 0 {
 				break
@@ -194,7 +199,7 @@ impl<Block: BlockT, BI, BE> ParachainBlockImport<Block, BI, BE> {
 		};
 		let leaves_monitor = level_limit.map(|limit| LeavesLevelMonitor {
 			level_limit: limit,
-			import_map: HashMap::new(),
+			leaves_cache: HashMap::new(),
 			import_counter: 0,
 			backend,
 		});
@@ -224,8 +229,11 @@ where
 		mut params: sc_consensus::BlockImportParams<Block, Self::Transaction>,
 		cache: std::collections::HashMap<sp_consensus::CacheKeyId, Vec<u8>>,
 	) -> Result<sc_consensus::ImportResult, Self::Error> {
-		if let Some(ref mut leaves_monitor) = self.leaves_monitor {
-			leaves_monitor.update(params.header.hash(), *params.header.number());
+		let hash = params.header.hash();
+		let parent = *params.header.parent_hash();
+
+		if let Some(ref mut monitor) = self.leaves_monitor {
+			monitor.check(*params.header.number());
 		}
 
 		// Best block is determined by the relay chain, or if we are doing the initial sync
@@ -234,6 +242,12 @@ where
 			params.origin == sp_consensus::BlockOrigin::NetworkInitialSync,
 		));
 
-		self.inner.import_block(params, cache).await
+		let res = self.inner.import_block(params, cache).await?;
+
+		if let Some(ref mut monitor) = self.leaves_monitor {
+			monitor.update(hash, parent);
+		}
+
+		Ok(res)
 	}
 }
