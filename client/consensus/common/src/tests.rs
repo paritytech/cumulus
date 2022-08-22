@@ -103,7 +103,6 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 	}
 }
 
-#[inline]
 fn build_and_import_block(mut client: Arc<Client>, import_as_best: bool) -> Block {
 	build_and_import_block_ext(&*client.clone(), import_as_best, &mut client, None, None)
 }

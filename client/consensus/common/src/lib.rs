@@ -111,7 +111,7 @@ struct LeavesLevelMonitor<Block: BlockT, BE> {
 	// Monotonic counter used to keep track of block import age (bigger is younger).
 	import_counter: u64,
 	// Map between block hash and age.
-	leaves_cache: HashMap<BlockHash<Block>, u64>,
+	leaves_cache: HashMap<Block::Hash, u64>,
 	// Backend reference to remove leaves on level saturation.
 	backend: Arc<BE>,
 }
