@@ -136,7 +136,7 @@ fn follow_new_best_works() {
 		loop {
 			Delay::new(Duration::from_millis(100)).await;
 			if block.hash() == client.usage_info().chain.best_hash {
-				break;
+				break
 			}
 		}
 	};
@@ -170,7 +170,7 @@ fn follow_finalized_works() {
 		loop {
 			Delay::new(Duration::from_millis(100)).await;
 			if block.hash() == client.usage_info().chain.finalized_hash {
-				break;
+				break
 			}
 		}
 	};
@@ -217,7 +217,7 @@ fn follow_finalized_does_not_stop_on_unknown_block() {
 		loop {
 			Delay::new(Duration::from_millis(100)).await;
 			if block.hash() == client.usage_info().chain.finalized_hash {
-				break;
+				break
 			}
 		}
 	};
@@ -262,7 +262,7 @@ fn follow_new_best_sets_best_after_it_is_imported() {
 		loop {
 			Delay::new(Duration::from_millis(100)).await;
 			if block.hash() == client.usage_info().chain.best_hash {
-				break;
+				break
 			}
 		}
 
@@ -287,7 +287,7 @@ fn follow_new_best_sets_best_after_it_is_imported() {
 		loop {
 			Delay::new(Duration::from_millis(100)).await;
 			if unknown_block.hash() == client.usage_info().chain.best_hash {
-				break;
+				break
 			}
 		}
 	};

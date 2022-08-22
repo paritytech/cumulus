@@ -496,7 +496,7 @@ impl<T: Config> Pallet<T> {
 		let max_message_size =
 			T::ChannelInfo::get_channel_max(recipient).ok_or(MessageSendError::NoChannel)?;
 		if data.len() > max_message_size {
-			return Err(MessageSendError::TooBig);
+			return Err(MessageSendError::TooBig)
 		}
 
 		let mut s = <OutboundXcmpStatus<T>>::get();
@@ -507,18 +507,18 @@ impl<T: Config> Pallet<T> {
 			s.last_mut().expect("can't be empty; a new element was just pushed; qed")
 		};
 		let have_active = details.last_index > details.first_index;
-		let appended = have_active
-			&& <OutboundXcmpMessages<T>>::mutate(recipient, details.last_index - 1, |s| {
-				if XcmpMessageFormat::decode_with_depth_limit(MAX_XCM_DECODE_DEPTH, &mut &s[..])
-					!= Ok(format)
+		let appended = have_active &&
+			<OutboundXcmpMessages<T>>::mutate(recipient, details.last_index - 1, |s| {
+				if XcmpMessageFormat::decode_with_depth_limit(MAX_XCM_DECODE_DEPTH, &mut &s[..]) !=
+					Ok(format)
 				{
-					return false;
+					return false
 				}
 				if s.len() + data.len() > max_message_size {
-					return false;
+					return false
 				}
 				s.extend_from_slice(&data[..]);
-				return true;
+				return true
 			});
 		if appended {
 			Ok((details.last_index - details.first_index - 1) as u32)
@@ -606,22 +606,18 @@ impl<T: Config> Pallet<T> {
 				let location = (1, Parachain(sender.into()));
 
 				match T::XcmExecutor::execute_xcm(location, xcm, max_weight) {
-					Outcome::Error(e) => {
-						(Err(e), Event::Fail { message_hash: Some(hash), error: e, weight: 0 })
-					},
-					Outcome::Complete(w) => {
-						(Ok(w), Event::Success { message_hash: Some(hash), weight: w })
-					},
+					Outcome::Error(e) =>
+						(Err(e), Event::Fail { message_hash: Some(hash), error: e, weight: 0 }),
+					Outcome::Complete(w) =>
+						(Ok(w), Event::Success { message_hash: Some(hash), weight: w }),
 					// As far as the caller is concerned, this was dispatched without error, so
 					// we just report the weight used.
-					Outcome::Incomplete(w, e) => {
-						(Ok(w), Event::Fail { message_hash: Some(hash), error: e, weight: w })
-					},
+					Outcome::Incomplete(w, e) =>
+						(Ok(w), Event::Fail { message_hash: Some(hash), error: e, weight: w }),
 				}
 			},
-			Err(()) => {
-				(Err(XcmError::UnhandledXcmVersion), Event::BadVersion { message_hash: Some(hash) })
-			},
+			Err(()) =>
+				(Err(XcmError::UnhandledXcmVersion), Event::BadVersion { message_hash: Some(hash) }),
 		};
 		Self::deposit_event(event);
 		result
@@ -668,7 +664,7 @@ impl<T: Config> Pallet<T> {
 								// That message didn't get processed this time because of being
 								// too heavy. We leave it around for next time and bail.
 								remaining_fragments = last_remaining_fragments;
-								break;
+								break
 							},
 							Err(error) => {
 								log::error!(
@@ -696,7 +692,7 @@ impl<T: Config> Pallet<T> {
 								// That message didn't get processed this time because of being
 								// too heavy. We leave it around for next time and bail.
 								remaining_fragments = last_remaining_fragments;
-								break;
+								break
 							},
 							Err(false) => {
 								// Message invalid; don't attempt to retry
@@ -770,7 +766,7 @@ impl<T: Config> Pallet<T> {
 
 		let mut status = <InboundXcmpStatus<T>>::get(); // <- sorted.
 		if status.is_empty() {
-			return 0;
+			return 0
 		}
 
 		let QueueConfigData {
@@ -794,8 +790,8 @@ impl<T: Config> Pallet<T> {
 		// send more, heavier messages.
 
 		let mut shuffle_index = 0;
-		while shuffle_index < shuffled.len()
-			&& max_weight.saturating_sub(weight_used) >= threshold_weight
+		while shuffle_index < shuffled.len() &&
+			max_weight.saturating_sub(weight_used) >= threshold_weight
 		{
 			let index = shuffled[shuffle_index];
 			let sender = status[index].sender;
@@ -808,7 +804,7 @@ impl<T: Config> Pallet<T> {
 
 			if suspended && !is_controller {
 				shuffle_index += 1;
-				continue;
+				continue
 			}
 
 			if weight_available != max_weight {
@@ -845,8 +841,8 @@ impl<T: Config> Pallet<T> {
 			};
 			weight_used += weight_processed;
 
-			if status[index].message_metadata.len() as u32 <= resume_threshold
-				&& status[index].state == InboundState::Suspended
+			if status[index].message_metadata.len() as u32 <= resume_threshold &&
+				status[index].state == InboundState::Suspended
 			{
 				// Resume
 				let r = Self::send_signal(sender, ChannelSignal::Resume);
@@ -857,12 +853,12 @@ impl<T: Config> Pallet<T> {
 			// If there are more and we're making progress, we process them after we've given the
 			// other channels a look in. If we've still not unlocked all weight, then we set them
 			// up for processing a second time anyway.
-			if !status[index].message_metadata.is_empty()
-				&& (weight_processed > 0 || weight_available != max_weight)
+			if !status[index].message_metadata.is_empty() &&
+				(weight_processed > 0 || weight_available != max_weight)
 			{
 				if shuffle_index + 1 == shuffled.len() {
 					// Only this queue left. Just run around this loop once more.
-					continue;
+					continue
 				}
 				shuffled.push(index);
 			}
@@ -927,7 +923,7 @@ impl<T: Config> XcmpMessageHandler for Pallet<T> {
 				Ok(f) => f,
 				Err(_) => {
 					debug_assert!(false, "Unknown XCMP message format. Silently dropping message");
-					continue;
+					continue
 				},
 			};
 			if format == XcmpMessageFormat::Signals {
@@ -1002,10 +998,10 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 			if result.len() == max_message_count {
 				// We check this condition in the beginning of the loop so that we don't include
 				// a message where the limit is 0.
-				break;
+				break
 			}
 			if outbound_state == OutboundState::Suspended {
-				continue;
+				continue
 			}
 			let (max_size_now, max_size_ever) = match T::ChannelInfo::get_channel_status(para_id) {
 				ChannelStatus::Closed => {
@@ -1018,7 +1014,7 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 						<SignalMessages<T>>::remove(para_id);
 					}
 					*status = OutboundChannelDetails::new(para_id);
-					continue;
+					continue
 				},
 				ChannelStatus::Full => continue,
 				ChannelStatus::Ready(n, e) => (n, e),
@@ -1031,7 +1027,7 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 					signals_exist = false;
 					page
 				} else {
-					continue;
+					continue
 				}
 			} else if last_index > first_index {
 				let page = <OutboundXcmpMessages<T>>::get(para_id, first_index);
@@ -1040,10 +1036,10 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 					first_index += 1;
 					page
 				} else {
-					continue;
+					continue
 				}
 			} else {
-				continue;
+				continue
 			};
 			if first_index == last_index {
 				first_index = 0;

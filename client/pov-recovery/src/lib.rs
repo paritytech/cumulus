@@ -96,9 +96,8 @@ impl RecoveryDelay {
 	fn as_delay(self) -> Delay {
 		match self {
 			Self::WithMax { max } => Delay::new(max.mul_f64(thread_rng().gen())),
-			Self::WithMinAndMax { min, max } => {
-				Delay::new(min + max.saturating_sub(min).mul_f64(thread_rng().gen()))
-			},
+			Self::WithMinAndMax { min, max } =>
+				Delay::new(min + max.saturating_sub(min).mul_f64(thread_rng().gen())),
 		}
 	}
 }
@@ -167,12 +166,12 @@ where
 					error = ?e,
 					"Failed to decode parachain header from pending candidate",
 				);
-				return;
+				return
 			},
 		};
 
 		if *header.number() <= self.parachain_client.usage_info().chain.finalized_number {
-			return;
+			return
 		}
 
 		let hash = header.hash();
@@ -187,7 +186,7 @@ where
 					block_hash = ?hash,
 					"Failed to get block status",
 				);
-				return;
+				return
 			},
 		}
 
@@ -203,7 +202,7 @@ where
 			)
 			.is_some()
 		{
-			return;
+			return
 		}
 
 		// Delay the recovery by some random time to not spam the relay chain.
@@ -261,7 +260,7 @@ where
 			Some(data) => data,
 			None => {
 				self.clear_waiting_for_parent(block_hash);
-				return;
+				return
 			},
 		};
 
@@ -275,7 +274,7 @@ where
 
 				self.clear_waiting_for_parent(block_hash);
 
-				return;
+				return
 			},
 		};
 
@@ -290,7 +289,7 @@ where
 
 				self.clear_waiting_for_parent(block_hash);
 
-				return;
+				return
 			},
 		};
 
@@ -309,7 +308,7 @@ where
 					);
 
 					self.waiting_for_parent.entry(parent).or_default().push(block);
-					return;
+					return
 				} else {
 					tracing::debug!(
 						target: "cumulus-consensus",
@@ -320,7 +319,7 @@ where
 
 					self.clear_waiting_for_parent(block_hash);
 
-					return;
+					return
 				}
 			},
 			Err(error) => {
@@ -333,7 +332,7 @@ where
 
 				self.clear_waiting_for_parent(block_hash);
 
-				return;
+				return
 			},
 			// Any other status is fine to "ignore/accept"
 			_ => (),
@@ -386,7 +385,7 @@ where
 				Ok(pending_candidate_stream) => pending_candidate_stream.fuse(),
 				Err(err) => {
 					tracing::error!(target: LOG_TARGET, error = ?err, "Unable to retrieve pending candidate stream.");
-					return;
+					return
 				},
 			};
 
