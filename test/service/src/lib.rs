@@ -183,7 +183,7 @@ async fn build_relay_chain_interface(
 ) -> RelayChainResult<Arc<dyn RelayChainInterface + 'static>> {
 	if let Some(relay_chain_url) = collator_options.relay_chain_rpc_url {
 		let client = create_client_and_start_worker(relay_chain_url, task_manager).await?;
-		return Ok(Arc::new(RelayChainRpcInterface::new(client)) as Arc<_>)
+		return Ok(Arc::new(RelayChainRpcInterface::new(client)) as Arc<_>);
 	}
 
 	let relay_chain_full_node = polkadot_test_service::new_full(

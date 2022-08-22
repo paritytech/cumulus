@@ -199,7 +199,7 @@ pub mod pallet {
 						Err(..) => {
 							// Too much weight needed - put the remaining messages back and bail
 							Pages::<T>::insert(page_index.begin_used, &page[i..]);
-							return used
+							return used;
 						},
 					}
 				}
@@ -241,8 +241,9 @@ pub mod pallet {
 				Ok(Ok(x)) => {
 					let outcome = T::XcmExecutor::execute_xcm(Parent, x, limit);
 					match outcome {
-						Outcome::Error(XcmError::WeightLimitReached(required)) =>
-							Err((message_id, required)),
+						Outcome::Error(XcmError::WeightLimitReached(required)) => {
+							Err((message_id, required))
+						},
 						outcome => {
 							let weight_used = outcome.weight_used();
 							Self::deposit_event(Event::ExecutedDownward { message_id, outcome });
@@ -300,7 +301,7 @@ pub mod pallet {
 								page_index.overweight_count += 1;
 								// Not needed for control flow, but only to ensure that the compiler
 								// understands that we won't attempt to re-use `data` later.
-								continue
+								continue;
 							} else {
 								// not overweight. stop executing inline and enqueue normally
 								// from here on.

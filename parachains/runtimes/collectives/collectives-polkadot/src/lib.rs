@@ -296,8 +296,9 @@ impl InstanceFilter<Call> for ProxyType {
 			ProxyType::NonTransfer => !matches!(c, Call::Balances { .. }),
 			ProxyType::CancelProxy => matches!(
 				c,
-				Call::Proxy(pallet_proxy::Call::reject_announcement { .. }) |
-					Call::Utility { .. } | Call::Multisig { .. }
+				Call::Proxy(pallet_proxy::Call::reject_announcement { .. })
+					| Call::Utility { .. }
+					| Call::Multisig { .. }
 			),
 			ProxyType::Collator => matches!(
 				c,
@@ -305,9 +306,10 @@ impl InstanceFilter<Call> for ProxyType {
 			),
 			ProxyType::Alliance => matches!(
 				c,
-				Call::AllianceMotion { .. } |
-					Call::Alliance { .. } |
-					Call::Utility { .. } | Call::Multisig { .. }
+				Call::AllianceMotion { .. }
+					| Call::Alliance { .. }
+					| Call::Utility { .. }
+					| Call::Multisig { .. }
 			),
 		}
 	}

@@ -164,7 +164,7 @@ where
 						target: LOG_TARGET,
 						"Could not fetch `CollectCollationInfo` runtime api version."
 					);
-					return Ok(None)
+					return Ok(None);
 				},
 			};
 
@@ -228,13 +228,13 @@ where
 					error = ?e,
 					"Could not decode the head data."
 				);
-				return None
+				return None;
 			},
 		};
 
 		let last_head_hash = last_head.hash();
 		if !self.check_block_status(last_head_hash, &last_head) {
-			return None
+			return None;
 		}
 
 		tracing::info!(
@@ -258,7 +258,7 @@ where
 			Ok(proof) => proof,
 			Err(e) => {
 				tracing::error!(target: "cumulus-collator", "Failed to compact proof: {:?}", e);
-				return None
+				return None;
 			},
 		};
 
