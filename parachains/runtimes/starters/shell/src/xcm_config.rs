@@ -69,6 +69,6 @@ impl xcm_executor::Config for XcmConfig {
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = xcm_executor::XcmExecutor<XcmConfig>;
 }

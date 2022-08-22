@@ -147,7 +147,8 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config<OnSetCode = ParachainSetCode<Self>> {
 		/// The overarching event type.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<PalletEvent<Self>>
+			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Something which can be notified when the validation data is set.
 		type OnSystemEvent: OnSystemEvent;
@@ -385,13 +386,13 @@ pub mod pallet {
 
 					Self::put_parachain_code(&validation_code);
 					<T::OnSystemEvent as OnSystemEvent>::on_validation_code_applied();
-					Self::deposit_event(Event::ValidationFunctionApplied {
+					Self::deposit_event(PalletEvent::ValidationFunctionApplied {
 						relay_chain_block_num: vfp.relay_parent_number,
 					});
 				},
 				Some(relay_chain::v2::UpgradeGoAhead::Abort) => {
 					<PendingValidationCode<T>>::kill();
-					Self::deposit_event(Event::ValidationFunctionDiscarded);
+					Self::deposit_event(PalletEvent::ValidationFunctionDiscarded);
 				},
 				None => {},
 			}
@@ -446,7 +447,7 @@ pub mod pallet {
 
 			AuthorizedUpgrade::<T>::put(&code_hash);
 
-			Self::deposit_event(Event::UpgradeAuthorized { code_hash });
+			Self::deposit_event(PalletEvent::UpgradeAuthorized { code_hash });
 			Ok(())
 		}
 
@@ -464,7 +465,7 @@ pub mod pallet {
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event<T: Config> {
+	pub enum PalletEvent<T: Config> {
 		/// The validation function has been scheduled to apply.
 		ValidationFunctionStored,
 		/// The validation function was applied as of the contained relay chain block number.
@@ -810,7 +811,7 @@ impl<T: Config> Pallet<T> {
 
 		let mut weight_used = 0;
 		if dm_count != 0 {
-			Self::deposit_event(Event::DownwardMessagesReceived { count: dm_count });
+			Self::deposit_event(PalletEvent::DownwardMessagesReceived { count: dm_count });
 			let max_weight =
 				<ReservedDmpWeightOverride<T>>::get().unwrap_or_else(T::ReservedDmpWeight::get);
 
@@ -823,7 +824,7 @@ impl<T: Config> Pallet<T> {
 			weight_used += T::DmpMessageHandler::handle_dmp_messages(message_iter, max_weight);
 			<LastDmqMqcHead<T>>::put(&dmq_head);
 
-			Self::deposit_event(Event::DownwardMessagesProcessed {
+			Self::deposit_event(PalletEvent::DownwardMessagesProcessed {
 				weight_used,
 				dmq_head: dmq_head.head(),
 			});
@@ -977,7 +978,7 @@ impl<T: Config> Pallet<T> {
 		// be applied later: when the relay-chain communicates go-ahead signal to us.
 		Self::notify_polkadot_of_pending_upgrade(&validation_function);
 		<PendingValidationCode<T>>::put(validation_function);
-		Self::deposit_event(Event::ValidationFunctionStored);
+		Self::deposit_event(PalletEvent::ValidationFunctionStored);
 
 		Ok(())
 	}

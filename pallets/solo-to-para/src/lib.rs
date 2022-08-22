@@ -40,7 +40,7 @@ pub mod pallet {
 	pub trait Config:
 		frame_system::Config + parachain_system::Config + pallet_sudo::Config
 	{
-		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<PalletEvent> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 	}
 
 	#[pallet::pallet]
@@ -55,7 +55,7 @@ pub mod pallet {
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event {
+	pub enum PalletEvent {
 		/// The custom validation head data has been scheduled to apply.
 		CustomValidationHeadDataStored,
 		/// The custom validation head data was applied as of the contained relay chain block number.
@@ -89,14 +89,14 @@ pub mod pallet {
 		/// the Relay Chain is GoAhead
 		fn store_pending_custom_validation_head_data(head_data: Vec<u8>) {
 			PendingCustomValidationHeadData::<T>::put(head_data);
-			Self::deposit_event(Event::CustomValidationHeadDataStored);
+			Self::deposit_event(PalletEvent::CustomValidationHeadDataStored);
 		}
 
 		/// Set pending custom head data as head data that will be returned by `validate_block`. on the relay chain.
 		fn set_pending_custom_validation_head_data() {
 			if let Some(head_data) = <PendingCustomValidationHeadData<T>>::take() {
 				parachain_system::Pallet::<T>::set_custom_validation_head_data(head_data);
-				Self::deposit_event(Event::CustomValidationHeadDataApplied);
+				Self::deposit_event(PalletEvent::CustomValidationHeadDataApplied);
 			}
 		}
 	}

@@ -48,7 +48,8 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<PalletEvent<Self>>
+			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		type XcmExecutor: ExecuteXcm<Self::Call>;
 	}
@@ -64,7 +65,7 @@ pub mod pallet {
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event<T: Config> {
+	pub enum PalletEvent<T: Config> {
 		/// Downward message is invalid XCM.
 		/// \[ id \]
 		InvalidFormat([u8; 8]),
@@ -120,12 +121,12 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 			)
 			.map(Xcm::<T::Call>::try_from);
 			match msg {
-				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
-				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
+				Err(_) => Pallet::<T>::deposit_event(PalletEvent::InvalidFormat(id)),
+				Ok(Err(())) => Pallet::<T>::deposit_event(PalletEvent::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
 					let outcome = T::XcmExecutor::execute_xcm(Parent, x, limit);
 					used += outcome.weight_used();
-					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
+					Pallet::<T>::deposit_event(PalletEvent::ExecutedDownward(id, outcome));
 				},
 			}
 		}
@@ -153,13 +154,13 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 			)
 			.map(Xcm::<T::Call>::try_from);
 			match msg {
-				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
-				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
+				Err(_) => Pallet::<T>::deposit_event(PalletEvent::InvalidFormat(id)),
+				Ok(Err(())) => Pallet::<T>::deposit_event(PalletEvent::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
 					let weight_limit = limit.saturating_sub(used);
 					let outcome = T::XcmExecutor::execute_xcm(Parent, x, weight_limit);
 					used += outcome.weight_used();
-					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
+					Pallet::<T>::deposit_event(PalletEvent::ExecutedDownward(id, outcome));
 				},
 			}
 		}

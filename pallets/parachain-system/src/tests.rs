@@ -82,7 +82,7 @@ impl frame_system::Config for Test {
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
 	type BlockWeights = ();
@@ -99,7 +99,7 @@ impl frame_system::Config for Test {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 impl Config for Test {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = ParachainId;
 	type OutboundXcmpMessageSource = FromThreadLocal;
@@ -403,7 +403,9 @@ fn events() {
 				let events = System::events();
 				assert_eq!(
 					events[0].event,
-					Event::ParachainSystem(crate::Event::ValidationFunctionStored.into())
+					PalletEvent::ParachainSystem(
+						crate::PalletEvent::ValidationFunctionStored.into()
+					)
 				);
 			},
 		)
@@ -414,9 +416,11 @@ fn events() {
 				let events = System::events();
 				assert_eq!(
 					events[0].event,
-					Event::ParachainSystem(
-						crate::Event::ValidationFunctionApplied { relay_chain_block_num: 1234 }
-							.into()
+					PalletEvent::ParachainSystem(
+						crate::PalletEvent::ValidationFunctionApplied {
+							relay_chain_block_num: 1234
+						}
+						.into()
 					)
 				);
 			},
@@ -490,7 +494,9 @@ fn aborted_upgrade() {
 				let events = System::events();
 				assert_eq!(
 					events[0].event,
-					Event::ParachainSystem(crate::Event::ValidationFunctionDiscarded.into())
+					PalletEvent::ParachainSystem(
+						crate::PalletEvent::ValidationFunctionDiscarded.into()
+					)
 				);
 			},
 		);

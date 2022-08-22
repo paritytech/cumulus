@@ -166,7 +166,7 @@ pub type XcmRouter = (
 );
 
 impl pallet_xcm::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	// We want to disallow users sending (arbitrary) XCMs from this chain.
 	type SendXcmOrigin = EnsureXcmOrigin<Origin, ()>;
 	type XcmRouter = XcmRouter;
@@ -186,6 +186,6 @@ impl pallet_xcm::Config for Runtime {
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
