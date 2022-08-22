@@ -20,7 +20,7 @@
 
 use std::{
 	fs,
-	io::{self, Write},  
+	io::{self, Write},
 	net::SocketAddr,
 	path::PathBuf,
 };
