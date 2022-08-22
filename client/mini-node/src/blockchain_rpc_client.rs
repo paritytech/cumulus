@@ -9,7 +9,7 @@ use polkadot_overseer::RuntimeApiSubsystemClient;
 use sc_authority_discovery::AuthorityDiscoveryWrapper;
 use sc_client_api::{BlockBackend, ProofProvider};
 use sp_api::{ApiError, RuntimeApiInfo};
-use sp_blockchain::NetworkHeaderBackend;
+use sp_blockchain::{Info, NetworkHeaderBackend};
 
 const LOG_TARGET: &'static str = "blockchain-rpc-client";
 
@@ -359,7 +359,7 @@ impl NetworkHeaderBackend<Block> for BlockChainRpcClient {
 		Ok(block_local(self.rpc_client.chain_get_header(Some(hash)))?)
 	}
 
-	fn info(&self) -> sp_blockchain::Info<Block> {
+	fn info(&self) -> sp_blockchain::Result<Info<Block>> {
 		tracing::debug!(target: LOG_TARGET, "BlockBackend::block_status");
 
 		let best_header = block_local(self.rpc_client.chain_get_header(None))
@@ -377,7 +377,7 @@ impl NetworkHeaderBackend<Block> for BlockChainRpcClient {
 		let finalized_header = block_local(self.rpc_client.chain_get_header(Some(finalized_head)))
 			.expect("get_head")
 			.unwrap();
-		sp_blockchain::Info {
+		Info {
 			best_hash: best_header.hash(),
 			best_number: best_header.number,
 			genesis_hash,
