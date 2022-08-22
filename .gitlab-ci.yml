@@ -122,7 +122,7 @@ cargo-fmt:
     - echo PROJECT_NAME=$CI_PROJECT_NAME > fmt.env
     - echo PR_BRANCH_NAME=$(curl -s https://api.github.com/repos/paritytech/${CI_PROJECT_NAME}/pulls/${CI_COMMIT_REF_NAME} | jq -r ".head.ref") >> fmt.env
   script:
-    - cargo fmt --check
+    - cargo +nightly fmt --check
   artifacts:
      reports:
        dotenv: fmt.env
