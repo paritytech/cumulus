@@ -102,7 +102,7 @@ where
 			block_import: Arc::new(futures::lock::Mutex::new(ParachainBlockImport::new(
 				block_import,
 				backend,
-				LeavesLevelLimit::None,
+				LeavesLevelLimit::Default,
 			))),
 			relay_chain_interface,
 		}

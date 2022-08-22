@@ -123,7 +123,7 @@ where
 
 	Ok(BasicQueue::new(
 		verifier,
-		Box::new(ParachainBlockImport::new(block_import, backend, LeavesLevelLimit::None)),
+		Box::new(ParachainBlockImport::new(block_import, backend, LeavesLevelLimit::Default)),
 		None,
 		spawner,
 		registry,
