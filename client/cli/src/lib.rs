@@ -15,9 +15,6 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Cumulus CLI library.
-//! 
-
-STUPID DUMMY CHANGE WHICH CANNOT BE CORRECTED BY CARGO FMT
 
 #![warn(missing_docs)]
 
