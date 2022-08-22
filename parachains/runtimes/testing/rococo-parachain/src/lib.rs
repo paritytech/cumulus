@@ -59,7 +59,7 @@ pub use sp_runtime::{Perbill, Permill};
 
 use parachains_common::{
 	impls::{AssetsFrom, NonZeroIssuance},
-	AssetId,
+	AccountId, AssetId, Signature,
 };
 use xcm_builder::{
 	AllowKnownQueryResponses, AllowSubscriptionsFrom, AsPrefixedGeneralIndex,
@@ -543,11 +543,6 @@ construct_runtime! {
 	}
 }
 
-/// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
-pub type Signature = sp_runtime::MultiSignature;
-/// Some way of identifying an account on the chain. We intentionally make it equivalent
-/// to the public key of our transaction signing scheme.
-pub type AccountId = <<Signature as sp_runtime::traits::Verify>::Signer as sp_runtime::traits::IdentifyAccount>::AccountId;
 /// Balance of an account.
 pub type Balance = u128;
 /// Index of a transaction in the chain.
@@ -699,6 +694,23 @@ impl_runtime_apis! {
 			len: u32,
 		) -> pallet_transaction_payment::FeeDetails<Balance> {
 			TransactionPayment::query_fee_details(uxt, len)
+		}
+	}
+
+	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, Call>
+		for Runtime
+	{
+		fn query_call_info(
+			call: Call,
+			len: u32,
+		) -> pallet_transaction_payment::RuntimeDispatchInfo<Balance> {
+			TransactionPayment::query_call_info(call, len)
+		}
+		fn query_call_fee_details(
+			call: Call,
+			len: u32,
+		) -> pallet_transaction_payment::FeeDetails<Balance> {
+			TransactionPayment::query_call_fee_details(call, len)
 		}
 	}
 
