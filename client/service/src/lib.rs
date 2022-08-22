@@ -199,7 +199,7 @@ where
 	// relay chain if blocks are not announced on parachain. This will be enabled again once
 	// https://github.com/paritytech/cumulus/issues/545 is finished.
 	if collator_options.relay_chain_rpc_url.is_some() {
-		return Ok(())
+		return Ok(());
 	}
 
 	let overseer_handle = relay_chain_interface

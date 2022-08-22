@@ -95,7 +95,7 @@ async fn test_runtime_upgrade() {
 				.expect("Runtime version exists");
 
 			if expected_runtime_version == runtime_version {
-				break
+				break;
 			}
 		}
 	}

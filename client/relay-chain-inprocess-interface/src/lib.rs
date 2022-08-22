@@ -270,7 +270,7 @@ where
 	let block_id = BlockId::Hash(hash);
 
 	if backend.blockchain().status(block_id)? == BlockStatus::InChain {
-		return Ok(BlockCheckStatus::InChain)
+		return Ok(BlockCheckStatus::InChain);
 	}
 
 	let listener = client.import_notification_stream();

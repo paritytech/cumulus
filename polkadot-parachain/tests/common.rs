@@ -43,7 +43,7 @@ pub fn wait_for(child: &mut Child, secs: u64) -> Result<ExitStatus, ()> {
 			let result = wait_timeout::ChildExt::wait_timeout(child, Duration::from_secs(secs - 5))
 				.map_err(|_| ())?;
 			if let Some(exit_status) = result {
-				return Ok(exit_status)
+				return Ok(exit_status);
 			}
 		}
 		eprintln!("Took too long to exit (> {} seconds). Killing...", secs);

@@ -28,7 +28,7 @@ const SKIP_ENV: &str = "SKIP_BUILD";
 
 fn main() {
 	if env::var(SKIP_ENV).is_ok() {
-		return
+		return;
 	}
 
 	let out_dir = PathBuf::from(env::var("OUT_DIR").expect("`OUT_DIR` is set by cargo"));
@@ -47,7 +47,7 @@ fn find_cargo_lock() -> PathBuf {
 
 	loop {
 		if path.join("Cargo.lock").exists() {
-			return path.join("Cargo.lock")
+			return path.join("Cargo.lock");
 		}
 
 		if !path.pop() {

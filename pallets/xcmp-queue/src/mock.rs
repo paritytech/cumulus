@@ -167,8 +167,8 @@ impl<Origin: OriginTrait> ConvertOrigin<Origin> for SystemParachainAsSuperuser<O
 		kind: OriginKind,
 	) -> Result<Origin, MultiLocation> {
 		let origin = origin.into();
-		if kind == OriginKind::Superuser &&
-			matches!(
+		if kind == OriginKind::Superuser
+			&& matches!(
 				origin,
 				MultiLocation {
 					parents: 1,
