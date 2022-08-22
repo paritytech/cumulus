@@ -41,7 +41,7 @@ where
 	R: pallet_balances::Config + pallet_collator_selection::Config,
 	AccountIdOf<R>:
 		From<polkadot_primitives::v2::AccountId> + Into<polkadot_primitives::v2::AccountId>,
-	<R as frame_system::Config>::RuntimeEvent: From<pallet_balances::Event<R>>,
+	<R as frame_system::Config>::RuntimeEvent: From<pallet_balances::PalletEvent<R>>,
 {
 	fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
 		let staking_pot = <pallet_collator_selection::Pallet<R>>::account_id();
@@ -57,7 +57,7 @@ where
 	R: pallet_balances::Config + pallet_collator_selection::Config,
 	AccountIdOf<R>:
 		From<polkadot_primitives::v2::AccountId> + Into<polkadot_primitives::v2::AccountId>,
-	<R as frame_system::Config>::RuntimeEvent: From<pallet_balances::Event<R>>,
+	<R as frame_system::Config>::RuntimeEvent: From<pallet_balances::PalletEvent<R>>,
 {
 	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance<R>>) {
 		if let Some(mut fees) = fees_then_tips.next() {
