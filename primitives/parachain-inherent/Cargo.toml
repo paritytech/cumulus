@@ -11,15 +11,15 @@ scale-info = { version = "2.1.1", default-features = false, features = ["derive"
 tracing = { version = "0.1.36", optional = true }
 
 # Substrate
-sc-client-api = { git = "https://github.com/paritytech/substrate", optional = true, branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate", optional = true, branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", optional = true, branch = "master" }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", optional = true, branch = "master" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-sp-storage = { git = "https://github.com/paritytech/substrate", optional = true, branch = "master" }
-sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.28" }
+sp-api = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.28" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.28" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.28" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.28" }
+sp-state-machine = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.28" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.28" }
+sp-storage = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.28" }
+sp-trie = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.28" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../core", default-features = false }
