@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-steps=2
-repeat=1
+steps=50
+repeat=20
 category=$1
 runtimeName=$2
 artifactsDir=$3

@@ -27,10 +27,8 @@ sp-io = { git = "https://github.com/paritytech/substrate" , branch = "master" }
 sp-tracing = { git = "https://github.com/paritytech/substrate" , branch = "master" }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 xcm = { git = "https://github.com/paritytech/polkadot" , branch = "master" }
-# temp
 pallet-xcm = { git = "https://github.com/paritytech/polkadot" , branch = "master" }
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot" , branch = "master" }
-# westend-runtime = { path = "../../runtime/westend", features = ["runtime-benchmarks"] }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot" , branch = "master" }
 
 [features]
