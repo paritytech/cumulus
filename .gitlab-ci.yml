@@ -114,6 +114,8 @@ variables:
 
 #### stage:                        .pre
 
+# checks code format and fails if formatting is required
+# the code will be formatted automatically and the pipeline will be restarted
 cargo-fmt:
   stage:                           .pre
   <<:                              *pr-refs
