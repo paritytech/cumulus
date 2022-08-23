@@ -102,8 +102,6 @@ pub enum LeavesLevelLimit {
 	Some(usize),
 }
 
-type BlockHash<Block> = <<Block as BlockT>::Header as HeaderT>::Hash;
-
 // Support structure to constrain the number of leaves for each level.
 struct LeavesLevelMonitor<Block: BlockT, BE> {
 	// Max number of leaves for each level.
@@ -122,7 +120,7 @@ struct LeavesLevelMonitor<Block: BlockT, BE> {
 const CLEANUP_THRESHOLD: usize = 64;
 
 impl<Block: BlockT, BE: Backend<Block>> LeavesLevelMonitor<Block, BE> {
-	fn update(&mut self, hash: BlockHash<Block>, parent_hash: BlockHash<Block>) {
+	fn update(&mut self, hash: Block::Hash, parent_hash: Block::Hash) {
 		self.import_counter += 1;
 		self.leaves_cache.insert(hash, self.import_counter);
 		self.leaves_cache.remove(&parent_hash);
