@@ -23,7 +23,7 @@ where
 {
 	fn should_execute<Call>(
 		origin: &MultiLocation,
-		message: &mut Xcm<Call>,
+		message: &mut [Instruction<Call>],
 		max_weight: Weight,
 		weight_credit: &mut Weight,
 	) -> Result<(), ()> {
@@ -37,7 +37,7 @@ pub struct DenyReserveTransferToRelayChain;
 impl ShouldExecute for DenyReserveTransferToRelayChain {
 	fn should_execute<Call>(
 		origin: &MultiLocation,
-		message: &mut Xcm<Call>,
+		message: &mut [Instruction<Call>],
 		_max_weight: Weight,
 		_weight_credit: &mut Weight,
 	) -> Result<(), ()> {
