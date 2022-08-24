@@ -143,6 +143,8 @@ pub mod rococo {
 						get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 					],
 					para_id,
+					Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
+					Some(get_account_id_from_seed::<sr25519::Public>("Bob")),
 				)
 			},
 			Vec::new(),
@@ -158,6 +160,8 @@ pub mod rococo {
 		invulnerables: Vec<(AccountId, AuraId)>,
 		endowed_accounts: Vec<AccountId>,
 		id: ParaId,
+		root_key: Option<AccountId>,
+		bridges_pallet_owner: Option<AccountId>,
 	) -> bridge_hub_rococo_runtime::GenesisConfig {
 		bridge_hub_rococo_runtime::GenesisConfig {
 			system: bridge_hub_rococo_runtime::SystemConfig {
@@ -192,6 +196,16 @@ pub mod rococo {
 			parachain_system: Default::default(),
 			polkadot_xcm: bridge_hub_rococo_runtime::PolkadotXcmConfig {
 				safe_xcm_version: Some(SAFE_XCM_VERSION),
+			},
+			// TODO: when go live, check it: https://github.com/paritytech/parity-bridges-common/issues/1551
+			sudo: bridge_hub_rococo_runtime::SudoConfig { key: root_key },
+			bridge_wococo_grandpa: bridge_hub_rococo_runtime::BridgeWococoGrandpaConfig {
+				owner: bridges_pallet_owner.clone(),
+				..Default::default()
+			},
+			bridge_rococo_grandpa: bridge_hub_rococo_runtime::BridgeRococoGrandpaConfig {
+				owner: bridges_pallet_owner,
+				..Default::default()
 			},
 		}
 	}

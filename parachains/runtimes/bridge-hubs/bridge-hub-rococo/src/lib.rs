@@ -467,6 +467,11 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = ();
 }
 
+impl pallet_sudo::Config for Runtime {
+	type Call = Call;
+	type Event = Event;
+}
+
 // Add bridge pallets (GPA)
 parameter_types! {
 	pub const MaxRequests: u32 = 64;
@@ -558,15 +563,18 @@ construct_runtime!(
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
 		// Consensus support.
-		ShiftSessionManager: pallet_shift_session_manager::{Pallet},
+		ShiftSessionManager: pallet_shift_session_manager::{Pallet} = 40,
 
 		// Wococo bridge modules
-		BridgeWococoGrandpa: pallet_bridge_grandpa::<Instance1>::{Pallet, Call, Storage},
-		BridgeWococoParachain: pallet_bridge_parachains::<Instance1>::{Pallet, Call, Storage},
+		BridgeWococoGrandpa: pallet_bridge_grandpa::<Instance1>::{Pallet, Call, Storage, Config<T>} = 41,
+		BridgeWococoParachain: pallet_bridge_parachains::<Instance1>::{Pallet, Call, Storage} = 42,
 
 		// Rococo bridge modules
-		BridgeRococoGrandpa: pallet_bridge_grandpa::<Instance2>::{Pallet, Call, Storage},
-		BridgeRococoParachain: pallet_bridge_parachains::<Instance2>::{Pallet, Call, Storage},
+		BridgeRococoGrandpa: pallet_bridge_grandpa::<Instance2>::{Pallet, Call, Storage, Config<T>} = 43,
+		BridgeRococoParachain: pallet_bridge_parachains::<Instance2>::{Pallet, Call, Storage} = 44,
+
+		// Sudo
+		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Event<T>, Storage} = 100,
 	}
 );
 

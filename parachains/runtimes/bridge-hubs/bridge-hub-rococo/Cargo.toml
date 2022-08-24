@@ -82,6 +82,9 @@ default = [
 	"std",
 ]
 std = [
+	"bp-polkadot-core/std",
+	"bp-rococo/std",
+	"bp-wococo/std",
 	"codec/std",
 	"log/std",
 	"scale-info/std",
@@ -101,6 +104,11 @@ std = [
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
+	"pallet-bridge-grandpa/std",
+	"pallet-bridge-messages/std",
+	"pallet-bridge-parachains/std",
+	"pallet-bridge-relayers/std",
+	"pallet-shift-session-manager/std",
 	"pallet-collator-selection/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
