@@ -21,7 +21,7 @@ use frame_support::{
 };
 use pallet_alliance::{ProposalIndex, ProposalProvider};
 use sp_std::{boxed::Box, marker::PhantomData};
-use xcm::latest::{Fungibility, Junction, NetworkId, Parent};
+use xcm::latest::{Fungibility, Junction, Parent};
 
 type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 
@@ -66,7 +66,7 @@ where
 			Box::new(Parent.into()),
 			Box::new(
 				Junction::AccountId32 { network: None, id: treasury_acc.into() }
-					.into()
+					.into_location()
 					.into(),
 			),
 			Box::new((Parent, imbalance).into()),
