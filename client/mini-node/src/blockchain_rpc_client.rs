@@ -1,15 +1,14 @@
 use std::pin::Pin;
 
-use async_trait::async_trait;
 use cumulus_relay_chain_interface::RelayChainError;
 use cumulus_relay_chain_rpc_interface::RelayChainRpcClient;
-use futures::{executor::block_on, Future, Stream, StreamExt};
+use futures::{Future, Stream, StreamExt};
 use polkadot_core_primitives::{Block, Hash, Header};
 use polkadot_overseer::RuntimeApiSubsystemClient;
-use sc_authority_discovery::AuthorityDiscoveryWrapper;
-use sc_client_api::{BlockBackend, ProofProvider};
+use sc_authority_discovery::AuthorityDiscovery;
+use sc_network_common::header_backend::NetworkHeaderBackend;
 use sp_api::{ApiError, RuntimeApiInfo};
-use sp_blockchain::{Info, NetworkHeaderBackend};
+use sp_blockchain::Info;
 
 const LOG_TARGET: &'static str = "blockchain-rpc-client";
 
@@ -314,7 +313,7 @@ impl RuntimeApiSubsystemClient for BlockChainRpcClient {
 }
 
 #[async_trait::async_trait]
-impl AuthorityDiscoveryWrapper<Block> for BlockChainRpcClient {
+impl AuthorityDiscovery<Block> for BlockChainRpcClient {
 	async fn authorities(
 		&self,
 		at: Hash,
@@ -359,7 +358,7 @@ impl NetworkHeaderBackend<Block> for BlockChainRpcClient {
 		Ok(block_local(self.rpc_client.chain_get_header(Some(hash)))?)
 	}
 
-	fn info(&self) -> sp_blockchain::Result<Info<Block>> {
+	fn info(&self) -> Info<Block> {
 		tracing::debug!(target: LOG_TARGET, "BlockBackend::block_status");
 
 		let best_header = block_local(self.rpc_client.chain_get_header(None))

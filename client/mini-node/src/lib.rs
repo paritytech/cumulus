@@ -18,7 +18,7 @@ use lru::LruCache;
 use polkadot_node_network_protocol::{
 	request_response::{
 		v1::{AvailableDataFetchingRequest, CollationFetchingRequest},
-		IncomingRequest, IncomingRequestReceiver,
+		IncomingRequest, IncomingRequestReceiver, ReqProtocolNames,
 	},
 	PeerId,
 };
@@ -39,7 +39,7 @@ use polkadot_service::{
 };
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
 use sc_network::{Event, NetworkService, NetworkStateInfo};
-use sc_network_common::service::NetworkEventStream;
+use sc_network_common::{header_backend::NetworkHeaderBackend, service::NetworkEventStream};
 use sp_consensus::BlockOrigin;
 use sp_core::traits::SpawnNamed;
 use sp_runtime::{traits::NumberFor, Justifications};
@@ -80,6 +80,7 @@ where
 	pub spawner: Spawner,
 	/// Determines the behavior of the collator.
 	pub collator_pair: CollatorPair,
+	pub req_protocol_names: ReqProtocolNames,
 }
 
 pub struct CollatorOverseerGen;
@@ -97,6 +98,7 @@ impl CollatorOverseerGen {
 			registry,
 			spawner,
 			collator_pair,
+			req_protocol_names,
 		}: CollatorOverseerGenArgs<'a, Spawner, RuntimeClient>,
 	) -> Result<(Overseer<SpawnGlue<Spawner>, Arc<RuntimeClient>>, OverseerHandle), Error>
 	where
@@ -140,6 +142,7 @@ impl CollatorOverseerGen {
 				network_service.clone(),
 				authority_discovery_service.clone(),
 				network_bridge_metrics.clone(),
+				req_protocol_names,
 			))
 			.provisioner(DummySubsystem)
 			.runtime_api(RuntimeApiSubsystem::new(
@@ -270,16 +273,20 @@ pub async fn new_mini(
 		config.network.extra_sets.extend(peer_sets_info(is_authority));
 	}
 
-	let (collation_req_receiver, cfg) = IncomingRequest::get_config_receiver();
-	config.network.request_response_protocols.push(cfg);
-	let (available_data_req_receiver, cfg) = IncomingRequest::get_config_receiver();
-	config.network.request_response_protocols.push(cfg);
-
 	let import_queue = DummyImportQueue {};
 	let genesis_hash = relay_chain_rpc_client
 		.block_get_hash(Some(0))
 		.await
-		.expect("Crash here if no genesis is available");
+		.expect("Crash here if no genesis is available")
+		.unwrap_or_default();
+
+	let request_protocol_names = ReqProtocolNames::new(genesis_hash, config.chain_spec.fork_id());
+	let (collation_req_receiver, cfg) =
+		IncomingRequest::get_config_receiver(&request_protocol_names);
+	config.network.request_response_protocols.push(cfg);
+	let (available_data_req_receiver, cfg) =
+		IncomingRequest::get_config_receiver(&request_protocol_names);
+	config.network.request_response_protocols.push(cfg);
 
 	let (network, network_starter) =
 		network::build_collator_network(network::BuildCollatorNetworkParams {
@@ -287,7 +294,7 @@ pub async fn new_mini(
 			client: relay_chain_rpc_client.clone(),
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue,
-			genesis_hash: genesis_hash.unwrap_or(Default::default()),
+			genesis_hash,
 		})?;
 
 	let active_leaves = Vec::new();
@@ -314,6 +321,10 @@ pub async fn new_mini(
 				registry: prometheus_registry.as_ref(),
 				spawner: task_manager.spawn_handle(),
 				collator_pair,
+				req_protocol_names: ReqProtocolNames::new(
+					genesis_hash,
+					config.chain_spec.fork_id(),
+				),
 			},
 		)
 		.map_err(|e| {

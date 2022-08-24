@@ -3,11 +3,11 @@ use polkadot_core_primitives::Hash;
 use polkadot_service::BlockT;
 use sc_consensus::ImportQueue;
 use sc_network::{NetworkService, SyncState};
+use sc_network_common::header_backend::NetworkHeaderBackend;
 use sc_network_common::sync::SyncStatus;
 use sc_network_light::light_client_requests;
 use sc_network_sync::{block_request_handler, state_request_handler};
 use sc_service::{error::Error, Configuration, NetworkStarter, SpawnTaskHandle};
-use sp_blockchain::NetworkHeaderBackend;
 
 use std::sync::Arc;
 
