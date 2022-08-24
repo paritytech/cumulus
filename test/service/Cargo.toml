@@ -10,12 +10,12 @@ path = "src/main.rs"
 
 [dependencies]
 async-trait = "0.1.57"
-clap = { version = "3.2.16", features = ["derive", "deprecated"] }
+clap = { version = "3.2.17", features = ["derive", "deprecated"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 criterion = { version = "0.3.6", features = [ "async_tokio" ] }
 jsonrpsee = { version = "0.15.1", features = ["server"] }
 rand = "0.8.5"
-serde = { version = "1.0.143", features = ["derive"] }
+serde = { version = "1.0.144", features = ["derive"] }
 tokio = { version = "1.19.2", features = ["macros"] }
 tracing = "0.1.36"
 url = "2.2.2"
@@ -72,7 +72,7 @@ cumulus-test-relay-validation-worker-provider = { path = "../relay-validation-wo
 cumulus-test-runtime = { path = "../runtime" }
 
 [dev-dependencies]
-futures = "0.3.21"
+futures = "0.3.23"
 portpicker = "0.1.1"
 
 # Polkadot dependencies
