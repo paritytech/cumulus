@@ -1,5 +1,5 @@
-// Copyright 2021 Parity Technologies (UK) Ltd.
-// This file is part of Polkadot.
+// Copyright 2022 Parity Technologies (UK) Ltd.
+// This file is part of Cumulus.
 
 // Polkadot is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
