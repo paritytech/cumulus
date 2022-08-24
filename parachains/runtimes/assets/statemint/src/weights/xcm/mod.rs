@@ -29,8 +29,7 @@ trait WeighMultiAssets {
 	fn weigh_multi_assets(&self, weight: Weight) -> Weight;
 }
 
-// TODO: This needs to be changed, not sure what to
-const MAX_ASSETS: u32 = 1;
+const MAX_ASSETS: u32 = 100;
 
 impl WeighMultiAssets for MultiAssetFilter {
 	fn weigh_multi_assets(&self, weight: Weight) -> Weight {
@@ -53,9 +52,9 @@ impl<Call> XcmWeightInfo<Call> for StatemintXcmWeight<Call> {
 	fn withdraw_asset(assets: &MultiAssets) -> Weight {
 		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::withdraw_asset())
 	}
-	//TODO: We don't have a trustedReserve, but still good to check if this is correct
+	// Currently there is no trusted reserve
 	fn reserve_asset_deposited(_assets: &MultiAssets) -> Weight {
-		Weight::MAX
+		unimplemented!()
 	}
 	fn receive_teleported_asset(assets: &MultiAssets) -> Weight {
 		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::receive_teleported_asset())
