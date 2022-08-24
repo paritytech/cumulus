@@ -180,39 +180,6 @@ pub struct NewCollator {
 	pub network: Arc<sc_network::NetworkService<Block, <Block as BlockT>::Hash>>,
 }
 
-pub struct DummyImportQueue {}
-
-impl sc_service::ImportQueue<Block> for DummyImportQueue {
-	/// Import bunch of blocks.
-	fn import_blocks(
-		&mut self,
-		_origin: BlockOrigin,
-		_blocks: Vec<sc_consensus::IncomingBlock<Block>>,
-	) {
-	}
-	/// Import block justifications.
-	fn import_justifications(
-		&mut self,
-		_who: PeerId,
-		_hash: PHash,
-		_number: NumberFor<Block>,
-		_justifications: Justifications,
-	) {
-	}
-
-	/// Polls for actions to perform on the network.
-	///
-	/// This method should behave in a way similar to `Future::poll`. It can register the current
-	/// task and notify later when more actions are ready to be polled. To continue the comparison,
-	/// it is as if this method always returned `Poll::Pending`.
-	fn poll_actions(
-		&mut self,
-		_cx: &mut futures::task::Context,
-		_link: &mut dyn sc_consensus::import_queue::Link<Block>,
-	) {
-	}
-}
-
 fn build_authority_discovery_service<Block: BlockT>(
 	task_manager: &TaskManager,
 	client: Arc<BlockChainRpcClient>,
@@ -273,7 +240,6 @@ pub async fn new_mini(
 		config.network.extra_sets.extend(peer_sets_info(is_authority));
 	}
 
-	let import_queue = DummyImportQueue {};
 	let genesis_hash = relay_chain_rpc_client
 		.block_get_hash(Some(0))
 		.await
@@ -293,7 +259,6 @@ pub async fn new_mini(
 			config: &config,
 			client: relay_chain_rpc_client.clone(),
 			spawn_handle: task_manager.spawn_handle(),
-			import_queue,
 			genesis_hash,
 		})?;
 

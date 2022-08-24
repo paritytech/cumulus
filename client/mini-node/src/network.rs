@@ -1,40 +1,70 @@
 use futures::FutureExt;
-use polkadot_core_primitives::Hash;
-use polkadot_service::BlockT;
-use sc_consensus::ImportQueue;
+use polkadot_core_primitives::{Block, Hash};
+use polkadot_service::{BlockT, NumberFor};
+
+use polkadot_node_network_protocol::PeerId;
 use sc_network::{NetworkService, SyncState};
 use sc_network_common::header_backend::NetworkHeaderBackend;
 use sc_network_common::sync::SyncStatus;
 use sc_network_light::light_client_requests;
 use sc_network_sync::{block_request_handler, state_request_handler};
 use sc_service::{error::Error, Configuration, NetworkStarter, SpawnTaskHandle};
+use sp_consensus::BlockOrigin;
+use sp_runtime::Justifications;
 
 use std::sync::Arc;
 
-pub struct BuildCollatorNetworkParams<'a, TImpQu, TCl> {
+use crate::BlockChainRpcClient;
+
+pub struct BuildCollatorNetworkParams<'a> {
 	/// The service configuration.
 	pub config: &'a Configuration,
 	/// A shared client returned by `new_full_parts`.
-	pub client: Arc<TCl>,
+	pub client: Arc<BlockChainRpcClient>,
 	/// A handle for spawning tasks.
 	pub spawn_handle: SpawnTaskHandle,
-	/// An import queue.
-	pub import_queue: TImpQu,
 
 	pub genesis_hash: Hash,
 }
 
+pub struct DummyImportQueue {}
+
+impl sc_service::ImportQueue<Block> for DummyImportQueue {
+	/// Import bunch of blocks.
+	fn import_blocks(
+		&mut self,
+		_origin: BlockOrigin,
+		_blocks: Vec<sc_consensus::IncomingBlock<Block>>,
+	) {
+	}
+	/// Import block justifications.
+	fn import_justifications(
+		&mut self,
+		_who: PeerId,
+		_hash: Hash,
+		_number: NumberFor<Block>,
+		_justifications: Justifications,
+	) {
+	}
+
+	/// Polls for actions to perform on the network.
+	///
+	/// This method should behave in a way similar to `Future::poll`. It can register the current
+	/// task and notify later when more actions are ready to be polled. To continue the comparison,
+	/// it is as if this method always returned `Poll::Pending`.
+	fn poll_actions(
+		&mut self,
+		_cx: &mut futures::task::Context,
+		_link: &mut dyn sc_consensus::import_queue::Link<Block>,
+	) {
+	}
+}
+
 /// Build the network service, the network status sinks and an RPC sender.
-pub fn build_collator_network<TBl, TImpQu, TCl>(
-	params: BuildCollatorNetworkParams<TImpQu, TCl>,
-) -> Result<(Arc<NetworkService<TBl, <TBl as BlockT>::Hash>>, NetworkStarter), Error>
-where
-	TBl: BlockT,
-	TCl: NetworkHeaderBackend<TBl> + 'static,
-	TImpQu: ImportQueue<TBl> + 'static,
-{
-	let BuildCollatorNetworkParams { config, client, spawn_handle, import_queue, genesis_hash } =
-		params;
+pub fn build_collator_network(
+	params: BuildCollatorNetworkParams,
+) -> Result<(Arc<NetworkService<Block, Hash>>, NetworkStarter), Error> {
+	let BuildCollatorNetworkParams { config, client, spawn_handle, genesis_hash } = params;
 
 	let transaction_pool_adapter = Arc::new(sc_network::config::EmptyTransactionPool {});
 
@@ -49,6 +79,7 @@ where
 	let light_client_request_protocol_config =
 		light_client_requests::generate_protocol_config(&protocol_id, genesis_hash, None);
 
+	let import_queue = DummyImportQueue {};
 	let chain_sync = DummyChainSync {};
 
 	let network_params = sc_network::config::Params {
@@ -71,7 +102,7 @@ where
 		network_config: config.network.clone(),
 		chain: client.clone(),
 		transaction_pool: transaction_pool_adapter as _,
-		import_queue: Box::new(import_queue),
+		import_queue: Box::new(import_queue) as Box<_>,
 		protocol_id,
 		metrics_registry: config.prometheus_config.as_ref().map(|config| config.registry.clone()),
 		block_request_protocol_config,
