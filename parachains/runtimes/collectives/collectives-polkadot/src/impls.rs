@@ -65,7 +65,7 @@ where
 			<T as frame_system::Config>::Origin::signed(temp_account.into()),
 			Box::new(Parent.into()),
 			Box::new(
-				Junction::AccountId32 { network: NetworkId::Any, id: treasury_acc.into() }
+				Junction::AccountId32 { network: None, id: treasury_acc.into() }
 					.into()
 					.into(),
 			),
