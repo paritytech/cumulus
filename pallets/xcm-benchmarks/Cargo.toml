@@ -3,6 +3,11 @@ name = "pallet-xcm-benchmarks"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
 version = "0.9.27"
+description = "A pallet to benchmark XCM interactions."
+homepage = "https://substrate.io"
+license = "Gpl3_0"
+readme = "README.md"
+repository = "https://github.com/paritytech/cumulus/"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
