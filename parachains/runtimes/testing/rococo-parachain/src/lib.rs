@@ -79,7 +79,7 @@ use xcm_builder::{
 	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 	UsingComponents,
 };
-use xcm_executor::{Config, XcmExecutor};
+use xcm_executor::XcmExecutor;
 
 pub type SessionHandlers = ();
 
@@ -399,7 +399,7 @@ parameter_types! {
 pub type Reserves = (NativeAsset, AssetsFrom<StatemintLocation>);
 
 pub struct XcmConfig;
-impl Config for XcmConfig {
+impl xcm_executor::Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// How to withdraw and deposit an asset.
@@ -422,6 +422,7 @@ impl Config for XcmConfig {
 	type FeeManager = ();
 	type MessageExporter = ();
 	type UniversalAliases = Nothing;
+	type CallDispatcher = Call;
 }
 
 /// Local origins on this chain are allowed to dispatch XCM sends/executions.
