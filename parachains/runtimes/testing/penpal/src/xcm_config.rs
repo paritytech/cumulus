@@ -298,7 +298,7 @@ impl Reserve for MultiAsset {
 /// reserve is same with `origin`.
 pub struct MultiNativeAsset;
 impl ContainsPair<MultiAsset, MultiLocation> for MultiNativeAsset {
-	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
 		if let Some(ref reserve) = asset.reserve() {
 			if reserve == origin {
 				return true
