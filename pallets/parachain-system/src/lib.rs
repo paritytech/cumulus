@@ -851,7 +851,7 @@ impl<T: Config> Pallet<T> {
 			// added improperly.
 			//
 			// `DmpMessageHandlerContext` tracks the index of the next message to process, so we need to
-			// decrement to get the last processed message index. We'll then fetch the MQC head at that 
+			// decrement to get the last processed message index. We'll then fetch the MQC head at that
 			// index.
 			let last_processed_message_index =
 				message_handler_context.next_message_index.wrapping_dec().0;

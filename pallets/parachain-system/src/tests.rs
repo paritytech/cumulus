@@ -149,11 +149,13 @@ impl XcmpMessageSource for FromThreadLocal {
 impl DmpMessageHandler for SaveIntoThreadLocal {
 	fn handle_dmp_messages(
 		iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
-		_context: &mut DmpMessageHandlerContext,
+		context: &mut DmpMessageHandlerContext,
 	) -> Weight {
 		HANDLED_DMP_MESSAGES.with(|m| {
-			for i in iter {
-				m.borrow_mut().push(i);
+			for (sent_at, data) in iter {
+				context.mqc_head = context.mqc_head.extend(sent_at, BlakeTwo256::hash_of(&data));
+				context.next_message_index = context.next_message_index.wrapping_inc();
+				m.borrow_mut().push((sent_at, data));
 			}
 			0
 		})
@@ -695,11 +697,12 @@ fn receive_dmp() {
 	BlockTests::new()
 		.with_relay_sproof_builder(|_, relay_block_num, sproof| match relay_block_num {
 			1 => {
-				sproof.dmq_mqc_head = Some(
+				sproof.dmq_mqc_head_for_message = vec![(
+					0,
 					MessageQueueChain::default()
 						.extend(MSG.sent_at, BlakeTwo256::hash_of(&MSG.msg))
 						.head(),
-				);
+				)];
 			},
 			_ => unreachable!(),
 		})
@@ -734,27 +737,29 @@ fn receive_dmp_after_pause() {
 	BlockTests::new()
 		.with_relay_sproof_builder(|_, relay_block_num, sproof| match relay_block_num {
 			1 => {
-				sproof.dmq_mqc_head = Some(
+				sproof.dmq_mqc_head_for_message = vec![(
+					0,
 					MessageQueueChain::default()
 						.extend(MSG_1.sent_at, BlakeTwo256::hash_of(&MSG_1.msg))
 						.head(),
-				);
+				)];
 			},
 			2 => {
 				// no new messages, mqc stayed the same.
-				sproof.dmq_mqc_head = Some(
+				sproof.dmq_mqc_head_for_message = vec![(
+					0,
 					MessageQueueChain::default()
 						.extend(MSG_1.sent_at, BlakeTwo256::hash_of(&MSG_1.msg))
 						.head(),
-				);
+				)];
 			},
 			3 => {
-				sproof.dmq_mqc_head = Some(
-					MessageQueueChain::default()
-						.extend(MSG_1.sent_at, BlakeTwo256::hash_of(&MSG_1.msg))
-						.extend(MSG_2.sent_at, BlakeTwo256::hash_of(&MSG_2.msg))
-						.head(),
-				);
+				let mqc = MessageQueueChain::default()
+					.extend(MSG_1.sent_at, BlakeTwo256::hash_of(&MSG_1.msg));
+				sproof.dmq_mqc_head_for_message = vec![
+					(0, mqc.head()),
+					(1, mqc.extend(MSG_2.sent_at, BlakeTwo256::hash_of(&MSG_2.msg)).head()),
+				];
 			},
 			_ => unreachable!(),
 		})

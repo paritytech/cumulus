@@ -36,7 +36,7 @@ pub struct RelayStateSproofBuilder {
 	pub para_id: ParaId,
 
 	pub host_config: AbridgedHostConfiguration,
-	pub dmq_mqc_head: Option<relay_chain::Hash>,
+	pub dmq_mqc_head_for_message: Vec<(u64, relay_chain::Hash)>,
 	pub upgrade_go_ahead: Option<UpgradeGoAhead>,
 	pub relay_dispatch_queue_size: Option<(u32, u32)>,
 	pub hrmp_ingress_channel_index: Option<Vec<ParaId>>,
@@ -61,7 +61,7 @@ impl Default for RelayStateSproofBuilder {
 				validation_upgrade_cooldown: 6,
 				validation_upgrade_delay: 6,
 			},
-			dmq_mqc_head: None,
+			dmq_mqc_head_for_message: Vec::new(),
 			upgrade_go_ahead: None,
 			relay_dispatch_queue_size: None,
 			hrmp_ingress_channel_index: None,
@@ -114,10 +114,14 @@ impl RelayStateSproofBuilder {
 			};
 
 			insert(relay_chain::well_known_keys::ACTIVE_CONFIG.to_vec(), self.host_config.encode());
-			if let Some(dmq_mqc_head) = self.dmq_mqc_head {
+
+			for (message_index, hash) in self.dmq_mqc_head_for_message {
 				insert(
-					relay_chain::well_known_keys::dmq_mqc_head(self.para_id),
-					dmq_mqc_head.encode(),
+					relay_chain::well_known_keys::dmq_mqc_head_for_message(
+						self.para_id,
+						message_index,
+					),
+					hash.encode(),
 				);
 			}
 			if let Some(relay_dispatch_queue_size) = self.relay_dispatch_queue_size {

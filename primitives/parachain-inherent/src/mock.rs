@@ -147,13 +147,15 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 		// Process the downward messages and set up the correct head
 		let mut downward_messages = Vec::new();
 		let mut dmq_mqc: MessageQueueChain = self.xcm_config.starting_dmq_mqc_head.into();
-		for msg in &self.raw_downward_messages {
-			let wrapped = InboundDownwardMessage { sent_at: relay_parent_number, msg: msg.clone() };
+		let mut mqc_heads = vec![];
 
+		for (index, msg) in self.raw_downward_messages.iter().enumerate() {
+			let wrapped = InboundDownwardMessage { sent_at: relay_parent_number, msg: msg.clone() };
 			dmq_mqc = dmq_mqc.extend(wrapped.sent_at, BlakeTwo256::hash_of(&wrapped.msg));
+			mqc_heads.push((index as u64, dmq_mqc.head()));
 			downward_messages.push(wrapped);
 		}
-		sproof_builder.dmq_mqc_head = Some(dmq_mqc.head());
+		sproof_builder.dmq_mqc_head_for_message = mqc_heads;
 
 		// Process the hrmp messages and set up the correct heads
 		// Begin by collecting them into a Map
