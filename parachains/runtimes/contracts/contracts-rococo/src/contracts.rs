@@ -1,6 +1,6 @@
 use crate::{
-	constants::currency::deposit, Balance, Balances, Call, RandomnessCollectiveFlip, Runtime,
-	RuntimeBlockWeights, RuntimeEvent, Timestamp,
+	constants::currency::deposit, Balance, Balances, Call, Event, RandomnessCollectiveFlip,
+	Runtime, RuntimeBlockWeights, Timestamp,
 };
 use frame_support::{
 	parameter_types,
