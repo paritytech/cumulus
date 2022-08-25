@@ -30,7 +30,7 @@ use frame_support::{
 	log, match_types, parameter_types,
 	traits::{
 		fungibles::{self, Balanced, CreditOf},
-		ConstU32, Contains, Everything, Get, Nothing,
+		ConstU32, Contains, ContainsPair, Everything, Get, Nothing,
 	},
 	weights::Weight,
 };
@@ -49,7 +49,7 @@ use xcm_builder::{
 	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
 use xcm_executor::{
-	traits::{FilterAssetLocation, JustTry, ShouldExecute},
+	traits::{JustTry, ShouldExecute},
 	XcmExecutor,
 };
 
@@ -164,7 +164,7 @@ where
 {
 	fn should_execute<Call>(
 		origin: &MultiLocation,
-		message: &mut Xcm<Call>,
+		message: &mut [Instruction<Call>],
 		max_weight: Weight,
 		weight_credit: &mut Weight,
 	) -> Result<(), ()> {
@@ -178,11 +178,11 @@ pub struct DenyReserveTransferToRelayChain;
 impl ShouldExecute for DenyReserveTransferToRelayChain {
 	fn should_execute<Call>(
 		origin: &MultiLocation,
-		message: &mut Xcm<Call>,
+		message: &mut [Instruction<Call>],
 		_max_weight: Weight,
 		_weight_credit: &mut Weight,
 	) -> Result<(), ()> {
-		if message.0.iter().any(|inst| {
+		if message.iter().any(|inst| {
 			matches!(
 				inst,
 				InitiateReserveWithdraw {
@@ -200,7 +200,7 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 
 		// allow reserve transfers to arrive from relay chain
 		if matches!(origin, MultiLocation { parents: 1, interior: Here }) &&
-			message.0.iter().any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
+			message.iter().any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
 		{
 			log::warn!(
 				target: "xcm::barriers",
@@ -233,8 +233,8 @@ pub type AccountIdOf<R> = <R as frame_system::Config>::AccountId;
 
 /// Asset filter that allows all assets from a certain location.
 pub struct AssetsFrom<T>(PhantomData<T>);
-impl<T: Get<MultiLocation>> FilterAssetLocation for AssetsFrom<T> {
-	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+impl<T: Get<MultiLocation>> ContainsPair<MultiAsset, MultiLocation> for AssetsFrom<T> {
+	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
 		let loc = T::get();
 		&loc == origin &&
 			matches!(asset, MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) }
@@ -297,7 +297,7 @@ impl Reserve for MultiAsset {
 /// A `FilterAssetLocation` implementation. Filters multi native assets whose
 /// reserve is same with `origin`.
 pub struct MultiNativeAsset;
-impl FilterAssetLocation for MultiNativeAsset {
+impl ContainsPair<MultiAsset, MultiLocation> for MultiNativeAsset {
 	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
 		if let Some(ref reserve) = asset.reserve() {
 			if reserve == origin {
