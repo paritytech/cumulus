@@ -58,8 +58,8 @@ impl RelayChainInterface for RelayChainRpcInterface {
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
-		_start: u32,
-		_count: u32,
+		_start_page: u32,
+		_page_count: u32,
 	) -> RelayChainResult<Vec<InboundDownwardMessage>> {
 		self.rpc_client.parachain_host_dmq_contents(para_id, relay_parent).await
 	}

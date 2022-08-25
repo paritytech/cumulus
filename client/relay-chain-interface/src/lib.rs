@@ -94,8 +94,8 @@ pub trait RelayChainInterface: Send + Sync {
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
-		start: u32,
-		count: u32,
+		start_page: u32,
+		page_count: u32,
 	) -> RelayChainResult<Vec<InboundDownwardMessage>>;
 
 	/// Returns channels contents for each inbound HRMP channel addressed to the parachain we are
@@ -176,10 +176,10 @@ where
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
-		start: u32,
-		count: u32,
+		start_page: u32,
+		page_count: u32,
 	) -> RelayChainResult<Vec<InboundDownwardMessage>> {
-		(**self).retrieve_dmq_contents(para_id, relay_parent, start, count).await
+		(**self).retrieve_dmq_contents(para_id, relay_parent, start_page, page_count).await
 	}
 
 	async fn retrieve_all_inbound_hrmp_channel_contents(

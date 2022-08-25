@@ -91,15 +91,15 @@ where
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
-		start: u32,
-		count: u32,
+		start_page: u32,
+		page_count: u32,
 	) -> RelayChainResult<Vec<InboundDownwardMessage>> {
 		Ok(self.full_client.runtime_api().dmq_contents_bounded_with_context(
 			&BlockId::hash(relay_parent),
 			sp_core::ExecutionContext::Importing,
 			para_id,
-			start,
-			count,
+			start_page,
+			page_count,
 		)?)
 	}
 
