@@ -849,6 +849,10 @@ impl<T: Config> Pallet<T> {
 			//
 			// A mismatch means that at least some of the submitted messages were ialtered, omitted or
 			// added improperly.
+			//
+			// `DmpMessageHandlerContext` tracks the index of the next message to process, so we need to
+			// decrement to get the last processed message index. We'll then fetch the MQC head at that 
+			// index.
 			let last_processed_message_index =
 				message_handler_context.next_message_index.wrapping_dec().0;
 			let expected_dmq_mqc_head = relay_state_proof
