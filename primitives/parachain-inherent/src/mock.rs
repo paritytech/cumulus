@@ -178,6 +178,13 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 			sproof_builder.upsert_inbound_channel(*para_id).mqc_head = Some(channel_mqc.head());
 		}
 
+		// TODO: offset field to improve this so epoch changes every N relay blocks
+		// instead of every block
+		sproof_builder.current_epoch = relay_parent_number.into();
+		let mut mock_randomness: [u8; 32] = [0u8; 32];
+		mock_randomness.copy_from_slice(&sproof_builder.current_epoch.to_be_bytes());
+		sproof_builder.randomness = mock_randomness.into();
+
 		let (relay_parent_storage_root, proof) = sproof_builder.into_state_root_and_proof();
 
 		inherent_data.put_data(
