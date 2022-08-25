@@ -10,10 +10,10 @@ description = "Runs a polkadot parachain node which could be a collator."
 async-trait = "0.1.57"
 clap = { version = "3.2.17", features = ["derive", "deprecated"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
-futures = "0.3.21"
+futures = "0.3.23"
 hex-literal = "0.3.4"
 log = "0.4.17"
-serde = { version = "1.0.143", features = ["derive"] }
+serde = { version = "1.0.144", features = ["derive"] }
 
 # Local
 rococo-parachain-runtime = { path = "../parachains/runtimes/testing/rococo-parachain" }
@@ -59,6 +59,7 @@ sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "maste
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-serializer = { git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "master" }
 try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -91,10 +92,12 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 
 [dev-dependencies]
 assert_cmd = "2.0"
-nix = "0.24"
+nix = "0.25"
 tempfile = "3.3.0"
 tokio = { version = "1.19.2", features = ["macros", "time", "parking_lot"] }
 wait-timeout = "0.2"
+# purge_chain_works works with rococo-local and needs to allow this
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", features = ["rococo-native"] }
 
 [features]
 default = []
