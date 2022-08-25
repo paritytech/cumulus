@@ -388,5 +388,4 @@ impl pallet_xcm::Config for Runtime {
 impl cumulus_pallet_xcm::Config for Runtime {
 	type Event = Event;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
-	type PriceForSiblingDelivery = ();
 }
