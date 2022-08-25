@@ -44,9 +44,9 @@ macro_rules! whitelist {
 	};
 }
 
-fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
+fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	let events = frame_system::Pallet::<T>::events();
-	let system_event: <T as frame_system::Config>::RuntimeEvent = generic_event.into();
+	let system_event: <T as frame_system::Config>::Event = generic_event.into();
 	// compare to the last event record
 	let EventRecord { event, .. } = &events[events.len() - 1];
 	assert_eq!(event, &system_event);
@@ -117,7 +117,7 @@ benchmarks! {
 		);
 	}
 	verify {
-		assert_last_event::<T>(PalletEvent::NewInvulnerables{invulnerables: new_invulnerables}.into());
+		assert_last_event::<T>(Event::NewInvulnerables{invulnerables: new_invulnerables}.into());
 	}
 
 	set_desired_candidates {
@@ -129,7 +129,7 @@ benchmarks! {
 		);
 	}
 	verify {
-		assert_last_event::<T>(PalletEvent::NewDesiredCandidates{desired_candidates: max}.into());
+		assert_last_event::<T>(Event::NewDesiredCandidates{desired_candidates: max}.into());
 	}
 
 	set_candidacy_bond {
@@ -141,7 +141,7 @@ benchmarks! {
 		);
 	}
 	verify {
-		assert_last_event::<T>(PalletEvent::NewCandidacyBond{bond_amount}.into());
+		assert_last_event::<T>(Event::NewCandidacyBond{bond_amount}.into());
 	}
 
 	// worse case is when we have all the max-candidate slots filled except one, and we fill that
@@ -167,7 +167,7 @@ benchmarks! {
 
 	}: _(RawOrigin::Signed(caller.clone()))
 	verify {
-		assert_last_event::<T>(PalletEvent::CandidateAdded{account_id: caller, deposit: bond / 2u32.into()}.into());
+		assert_last_event::<T>(Event::CandidateAdded{account_id: caller, deposit: bond / 2u32.into()}.into());
 	}
 
 	// worse case is the last candidate leaving.
@@ -183,7 +183,7 @@ benchmarks! {
 		whitelist!(leaving);
 	}: _(RawOrigin::Signed(leaving.clone()))
 	verify {
-		assert_last_event::<T>(PalletEvent::CandidateRemoved{account_id: leaving}.into());
+		assert_last_event::<T>(Event::CandidateRemoved{account_id: leaving}.into());
 	}
 
 	// worse case is paying a non-existing candidate account.

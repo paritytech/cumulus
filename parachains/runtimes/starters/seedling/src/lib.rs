@@ -128,7 +128,7 @@ impl frame_system::Config for Runtime {
 	/// The header type.
 	type Header = generic::Header<BlockNumber, BlakeTwo256>;
 	/// The ubiquitous event type.
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	/// The ubiquitous origin type.
 	type Origin = Origin;
 	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
@@ -152,15 +152,15 @@ impl frame_system::Config for Runtime {
 
 impl pallet_sudo::Config for Runtime {
 	type Call = Call;
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 }
 
 impl cumulus_pallet_solo_to_para::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type OnSystemEvent = cumulus_pallet_solo_to_para::Pallet<Runtime>;
 	type SelfParaId = parachain_info::Pallet<Runtime>;
 	type OutboundXcmpMessageSource = ();

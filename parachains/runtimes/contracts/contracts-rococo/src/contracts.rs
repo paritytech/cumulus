@@ -37,7 +37,7 @@ impl Config for Runtime {
 	type Time = Timestamp;
 	type Randomness = RandomnessCollectiveFlip;
 	type Currency = Balances;
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type Call = Call;
 	/// The safest default is to allow no calls at all.
 	///

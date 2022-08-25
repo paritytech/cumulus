@@ -112,8 +112,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// Overarching event type.
-		type RuntimeEvent: From<PalletEvent<Self>>
-			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		/// The currency mechanism.
 		type Currency: ReservableCurrency<Self::AccountId>;
@@ -249,7 +248,7 @@ pub mod pallet {
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum PalletEvent<T: Config> {
+	pub enum Event<T: Config> {
 		NewInvulnerables { invulnerables: Vec<T::AccountId> },
 		NewDesiredCandidates { desired_candidates: u32 },
 		NewCandidacyBond { bond_amount: BalanceOf<T> },
@@ -308,7 +307,7 @@ pub mod pallet {
 			}
 
 			<Invulnerables<T>>::put(&bounded_invulnerables);
-			Self::deposit_event(PalletEvent::NewInvulnerables {
+			Self::deposit_event(Event::NewInvulnerables {
 				invulnerables: bounded_invulnerables.to_vec(),
 			});
 			Ok(().into())
@@ -328,7 +327,7 @@ pub mod pallet {
 				log::warn!("max > T::MaxCandidates; you might need to run benchmarks again");
 			}
 			<DesiredCandidates<T>>::put(&max);
-			Self::deposit_event(PalletEvent::NewDesiredCandidates { desired_candidates: max });
+			Self::deposit_event(Event::NewDesiredCandidates { desired_candidates: max });
 			Ok(().into())
 		}
 
@@ -340,7 +339,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
 			<CandidacyBond<T>>::put(&bond);
-			Self::deposit_event(PalletEvent::NewCandidacyBond { bond_amount: bond });
+			Self::deposit_event(Event::NewCandidacyBond { bond_amount: bond });
 			Ok(().into())
 		}
 
@@ -383,7 +382,7 @@ pub mod pallet {
 					}
 				})?;
 
-			Self::deposit_event(PalletEvent::CandidateAdded { account_id: who, deposit });
+			Self::deposit_event(Event::CandidateAdded { account_id: who, deposit });
 			Ok(Some(T::WeightInfo::register_as_candidate(current_count as u32)).into())
 		}
 
@@ -425,7 +424,7 @@ pub mod pallet {
 					<LastAuthoredBlock<T>>::remove(who.clone());
 					Ok(candidates.len())
 				})?;
-			Self::deposit_event(PalletEvent::CandidateRemoved { account_id: who.clone() });
+			Self::deposit_event(Event::CandidateRemoved { account_id: who.clone() });
 			Ok(current_count)
 		}
 

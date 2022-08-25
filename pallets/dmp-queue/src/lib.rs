@@ -84,8 +84,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
-		type RuntimeEvent: From<PalletEvent<Self>>
-			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		type XcmExecutor: ExecuteXcm<Self::Call>;
 
@@ -153,17 +152,14 @@ pub mod pallet {
 			let weight_used = Self::try_service_message(weight_limit, sent_at, &data[..])
 				.map_err(|_| Error::<T>::OverLimit)?;
 			Overweight::<T>::remove(index);
-			Self::deposit_event(PalletEvent::OverweightServiced {
-				overweight_index: index,
-				weight_used,
-			});
+			Self::deposit_event(Event::OverweightServiced { overweight_index: index, weight_used });
 			Ok(Some(weight_used.saturating_add(1_000_000)).into())
 		}
 	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum PalletEvent<T: Config> {
+	pub enum Event<T: Config> {
 		/// Downward message is invalid XCM.
 		InvalidFormat { message_id: MessageId },
 		/// Downward message is unsupported version of XCM.
@@ -235,11 +231,11 @@ pub mod pallet {
 			.map(Xcm::<T::Call>::try_from);
 			match maybe_msg {
 				Err(_) => {
-					Self::deposit_event(PalletEvent::InvalidFormat { message_id });
+					Self::deposit_event(Event::InvalidFormat { message_id });
 					Ok(0)
 				},
 				Ok(Err(())) => {
-					Self::deposit_event(PalletEvent::UnsupportedVersion { message_id });
+					Self::deposit_event(Event::UnsupportedVersion { message_id });
 					Ok(0)
 				},
 				Ok(Ok(x)) => {
@@ -249,10 +245,7 @@ pub mod pallet {
 							Err((message_id, required)),
 						outcome => {
 							let weight_used = outcome.weight_used();
-							Self::deposit_event(PalletEvent::ExecutedDownward {
-								message_id,
-								outcome,
-							});
+							Self::deposit_event(Event::ExecutedDownward { message_id, outcome });
 							Ok(weight_used)
 						},
 					}
@@ -299,7 +292,7 @@ pub mod pallet {
 								// message execution.
 								let overweight_index = page_index.overweight_count;
 								Overweight::<T>::insert(overweight_index, (sent_at, data));
-								Self::deposit_event(PalletEvent::OverweightEnqueued {
+								Self::deposit_event(Event::OverweightEnqueued {
 									message_id,
 									overweight_index,
 									required_weight,
@@ -313,7 +306,7 @@ pub mod pallet {
 								// from here on.
 								let item_count_left = item_count.saturating_sub(i);
 								maybe_enqueue_page = Some(Vec::with_capacity(item_count_left));
-								Self::deposit_event(PalletEvent::WeightExhausted {
+								Self::deposit_event(Event::WeightExhausted {
 									message_id,
 									remaining_weight,
 									required_weight,
@@ -402,7 +395,7 @@ mod tests {
 		type AccountId = AccountId;
 		type Lookup = IdentityLookup<Self::AccountId>;
 		type Header = Header;
-		type RuntimeEvent = RuntimeEvent;
+		type Event = Event;
 		type BlockHashCount = BlockHashCount;
 		type BlockLength = ();
 		type BlockWeights = ();
@@ -456,7 +449,7 @@ mod tests {
 	}
 
 	impl Config for Test {
-		type RuntimeEvent = RuntimeEvent;
+		type Event = Event;
 		type XcmExecutor = MockExec;
 		type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
 	}

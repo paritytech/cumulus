@@ -47,8 +47,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
-		type RuntimeEvent: From<PalletEvent<Self>>
-			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		type Origin: From<<Self as SystemConfig>::Origin>
 			+ Into<Result<CumulusOrigin, <Self as Config>::Origin>>;
@@ -78,7 +77,7 @@ pub mod pallet {
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum PalletEvent<T: Config> {
+	pub enum Event<T: Config> {
 		PingSent(ParaId, u32, Vec<u8>),
 		Pinged(ParaId, u32, Vec<u8>),
 		PongSent(ParaId, u32, Vec<u8>),
@@ -119,10 +118,10 @@ pub mod pallet {
 				) {
 					Ok(()) => {
 						Pings::<T>::insert(seq, n);
-						Self::deposit_event(PalletEvent::PingSent(para, seq, payload.to_vec()));
+						Self::deposit_event(Event::PingSent(para, seq, payload.to_vec()));
 					},
 					Err(e) => {
-						Self::deposit_event(PalletEvent::ErrorSendingPing(
+						Self::deposit_event(Event::ErrorSendingPing(
 							e,
 							para,
 							seq,
@@ -193,7 +192,7 @@ pub mod pallet {
 			// Only accept pings from other chains.
 			let para = ensure_sibling_para(<T as Config>::Origin::from(origin))?;
 
-			Self::deposit_event(PalletEvent::Pinged(para, seq, payload.clone()));
+			Self::deposit_event(Event::Pinged(para, seq, payload.clone()));
 			match T::XcmSender::send_xcm(
 				(1, Junction::Parachain(para.into())),
 				Xcm(vec![Transact {
@@ -207,8 +206,8 @@ pub mod pallet {
 					.into(),
 				}]),
 			) {
-				Ok(()) => Self::deposit_event(PalletEvent::PongSent(para, seq, payload)),
-				Err(e) => Self::deposit_event(PalletEvent::ErrorSendingPong(e, para, seq, payload)),
+				Ok(()) => Self::deposit_event(Event::PongSent(para, seq, payload)),
+				Err(e) => Self::deposit_event(Event::ErrorSendingPong(e, para, seq, payload)),
 			}
 			Ok(())
 		}
@@ -219,7 +218,7 @@ pub mod pallet {
 			let para = ensure_sibling_para(<T as Config>::Origin::from(origin))?;
 
 			if let Some(sent_at) = Pings::<T>::take(seq) {
-				Self::deposit_event(PalletEvent::Ponged(
+				Self::deposit_event(Event::Ponged(
 					para,
 					seq,
 					payload,
@@ -227,7 +226,7 @@ pub mod pallet {
 				));
 			} else {
 				// Pong received for a ping we apparently didn't send?!
-				Self::deposit_event(PalletEvent::UnknownPong(para, seq, payload));
+				Self::deposit_event(Event::UnknownPong(para, seq, payload));
 			}
 			Ok(())
 		}
