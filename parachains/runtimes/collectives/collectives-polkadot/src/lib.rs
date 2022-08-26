@@ -451,6 +451,9 @@ parameter_types! {
 	// account used to temporarily deposit slashed imbalance before teleporting
 	pub SlashedImbalanceAccId: AccountId = constants::account::SLASHED_IMBALANCE_ACC_ID.into();
 	pub RelayTreasuryAccId: AccountId = constants::account::RELAY_TREASURY_PALL_ID.into_account_truncating();
+	// The number of blocks a member must wait between giving a retirement notice and retiring.
+	// Supposed to be greater than time required to `kick_member` with alliance motion.
+	pub const AllianceRetirementPeriod: BlockNumber = (90 * DAYS) + AllianceMotionDuration;
 }
 
 impl pallet_alliance::Config for Runtime {
@@ -463,6 +466,7 @@ impl pallet_alliance::Config for Runtime {
 	type Slashed = ToParentTreasury<RelayTreasuryAccId, SlashedImbalanceAccId, Runtime>;
 	type InitializeMembers = AllianceMotion;
 	type MembershipChanged = AllianceMotion;
+	type RetirementPeriod = AllianceRetirementPeriod;
 	type IdentityVerifier = (); // Don't block accounts on identity criteria
 	type ProposalProvider = AllianceProposalProvider<Runtime, AllianceCollective>;
 	type MaxProposals = ConstU32<ALLIANCE_MAX_MEMBERS>;
@@ -549,7 +553,14 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
+	Migrations,
 >;
+
+// All migrations executed on runtime upgrade as a nested tuple of types implementing `OnRuntimeUpgrade`.
+// Included migrations must be idempotent.
+type Migrations = (
+	pallet_alliance::migration::Migration<Runtime>,
+);
 
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
