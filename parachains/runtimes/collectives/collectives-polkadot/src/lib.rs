@@ -558,9 +558,7 @@ pub type Executive = frame_executive::Executive<
 
 // All migrations executed on runtime upgrade as a nested tuple of types implementing `OnRuntimeUpgrade`.
 // Included migrations must be idempotent.
-type Migrations = (
-	pallet_alliance::migration::Migration<Runtime>,
-);
+type Migrations = (pallet_alliance::migration::Migration<Runtime>,);
 
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
