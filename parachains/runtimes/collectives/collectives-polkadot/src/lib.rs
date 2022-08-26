@@ -293,21 +293,23 @@ impl InstanceFilter<Call> for ProxyType {
 	fn filter(&self, c: &Call) -> bool {
 		match self {
 			ProxyType::Any => true,
-			ProxyType::NonTransfer => !matches!(c, Call::Balances { .. }),
+			ProxyType::NonTransfer => !matches!(c, RuntimeCall::Balances { .. }),
 			ProxyType::CancelProxy => matches!(
 				c,
 				Call::Proxy(pallet_proxy::Call::reject_announcement { .. }) |
-					Call::Utility { .. } | Call::Multisig { .. }
+					Call::Utility { .. } | RuntimeCall::Multisig { .. }
 			),
 			ProxyType::Collator => matches!(
 				c,
-				Call::CollatorSelection { .. } | Call::Utility { .. } | Call::Multisig { .. }
+				Call::CollatorSelection { .. } |
+					RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
 			),
 			ProxyType::Alliance => matches!(
 				c,
 				Call::AllianceMotion { .. } |
 					Call::Alliance { .. } |
-					Call::Utility { .. } | Call::Multisig { .. }
+					Call::Utility { .. } | RuntimeCall::Multisig { .. }
 			),
 		}
 	}

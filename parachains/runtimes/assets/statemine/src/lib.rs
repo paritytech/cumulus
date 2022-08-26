@@ -319,18 +319,22 @@ impl InstanceFilter<Call> for ProxyType {
 	fn filter(&self, c: &Call) -> bool {
 		match self {
 			ProxyType::Any => true,
-			ProxyType::NonTransfer =>
-				!matches!(c, Call::Balances { .. } | Call::Assets { .. } | Call::Uniques { .. }),
+			ProxyType::NonTransfer => !matches!(
+				c,
+				RuntimeCall::Balances { .. } |
+					RuntimeCall::Assets { .. } |
+					RuntimeCall::Uniques { .. }
+			),
 			ProxyType::CancelProxy => matches!(
 				c,
 				Call::Proxy(pallet_proxy::Call::reject_announcement { .. }) |
-					Call::Utility { .. } | Call::Multisig { .. }
+					Call::Utility { .. } | RuntimeCall::Multisig { .. }
 			),
 			ProxyType::Assets => {
 				matches!(
 					c,
 					Call::Assets { .. } |
-						Call::Utility { .. } | Call::Multisig { .. } |
+						Call::Utility { .. } | RuntimeCall::Multisig { .. } |
 						Call::Uniques { .. }
 				)
 			},
@@ -353,7 +357,7 @@ impl InstanceFilter<Call> for ProxyType {
 					Call::Uniques(pallet_uniques::Call::clear_attribute { .. }) |
 					Call::Uniques(pallet_uniques::Call::clear_collection_metadata { .. }) |
 					Call::Uniques(pallet_uniques::Call::set_collection_max_supply { .. }) |
-					Call::Utility { .. } | Call::Multisig { .. }
+					Call::Utility { .. } | RuntimeCall::Multisig { .. }
 			),
 			ProxyType::AssetManager => matches!(
 				c,
@@ -369,11 +373,13 @@ impl InstanceFilter<Call> for ProxyType {
 					Call::Uniques(pallet_uniques::Call::thaw { .. }) |
 					Call::Uniques(pallet_uniques::Call::freeze_collection { .. }) |
 					Call::Uniques(pallet_uniques::Call::thaw_collection { .. }) |
-					Call::Utility { .. } | Call::Multisig { .. }
+					Call::Utility { .. } | RuntimeCall::Multisig { .. }
 			),
 			ProxyType::Collator => matches!(
 				c,
-				Call::CollatorSelection { .. } | Call::Utility { .. } | Call::Multisig { .. }
+				Call::CollatorSelection { .. } |
+					RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
 			),
 		}
 	}
