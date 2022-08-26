@@ -15,12 +15,9 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use lru::LruCache;
-use polkadot_node_network_protocol::{
-	request_response::{
-		v1::{AvailableDataFetchingRequest, CollationFetchingRequest},
-		IncomingRequest, IncomingRequestReceiver, ReqProtocolNames,
-	},
-	PeerId,
+use polkadot_node_network_protocol::request_response::{
+	v1::{AvailableDataFetchingRequest, CollationFetchingRequest},
+	IncomingRequest, IncomingRequestReceiver, ReqProtocolNames,
 };
 use polkadot_node_subsystem_types::RuntimeApiSubsystemClient;
 use polkadot_node_subsystem_util::metrics::{prometheus::Registry, Metrics};
@@ -39,10 +36,8 @@ use polkadot_service::{
 };
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
 use sc_network::{Event, NetworkService, NetworkStateInfo};
-use sc_network_common::{header_backend::NetworkHeaderBackend, service::NetworkEventStream};
-use sp_consensus::BlockOrigin;
+use sc_network_common::service::NetworkEventStream;
 use sp_core::traits::SpawnNamed;
-use sp_runtime::{traits::NumberFor, Justifications};
 
 use std::sync::Arc;
 
