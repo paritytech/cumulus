@@ -111,21 +111,21 @@ impl<Call> XcmWeightInfo<Call> for StatemintXcmWeight<Call> {
 
 	fn deposit_asset(
 		assets: &MultiAssetFilter,
-		_max_assets: &u32, // TODO use max assets?
+		_max_assets: &u32,
 		_dest: &MultiLocation,
 	) -> Weight {
 		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_asset())
 	}
 	fn deposit_reserve_asset(
 		assets: &MultiAssetFilter,
-		_max_assets: &u32, // TODO use max assets?
+		_max_assets: &u32,
 		_dest: &MultiLocation,
 		_xcm: &Xcm<()>,
 	) -> Weight {
 		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_reserve_asset())
 	}
 	fn exchange_asset(_give: &MultiAssetFilter, _receive: &MultiAssets) -> Weight {
-		Weight::MAX // todo fix
+		Weight::MAX
 	}
 	fn initiate_reserve_withdraw(
 		assets: &MultiAssetFilter,

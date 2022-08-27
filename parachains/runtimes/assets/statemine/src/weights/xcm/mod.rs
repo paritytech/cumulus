@@ -29,7 +29,6 @@ trait WeighMultiAssets {
 	fn weigh_multi_assets(&self, weight: Weight) -> Weight;
 }
 
-// TODO: This needs to be changed, not sure what to
 const MAX_ASSETS: u32 = 100;
 
 impl WeighMultiAssets for MultiAssetFilter {
@@ -112,14 +111,14 @@ impl<Call> XcmWeightInfo<Call> for StatemineXcmWeight<Call> {
 
 	fn deposit_asset(
 		assets: &MultiAssetFilter,
-		_max_assets: &u32, // TODO use max assets?
+		_max_assets: &u32,
 		_dest: &MultiLocation,
 	) -> Weight {
 		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_asset())
 	}
 	fn deposit_reserve_asset(
 		assets: &MultiAssetFilter,
-		_max_assets: &u32, // TODO use max assets?
+		_max_assets: &u32,
 		_dest: &MultiLocation,
 		_xcm: &Xcm<()>,
 	) -> Weight {
