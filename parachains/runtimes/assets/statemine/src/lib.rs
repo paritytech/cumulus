@@ -328,13 +328,15 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			ProxyType::CancelProxy => matches!(
 				c,
 				RuntimeCall::Proxy(pallet_proxy::RuntimeCall::reject_announcement { .. }) |
-					RuntimeCall::Utility { .. } | RuntimeCall::Multisig { .. }
+					RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
 			),
 			ProxyType::Assets => {
 				matches!(
 					c,
 					RuntimeCall::Assets { .. } |
-						RuntimeCall::Utility { .. } | RuntimeCall::Multisig { .. } |
+						RuntimeCall::Utility { .. } |
+						RuntimeCall::Multisig { .. } |
 						RuntimeCall::Uniques { .. }
 				)
 			},
@@ -352,12 +354,16 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::set_team { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::set_metadata { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::set_attribute { .. }) |
-					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::set_collection_metadata { .. }) |
-					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::clear_metadata { .. }) |
+					RuntimeCall::Uniques(
+						pallet_uniques::RuntimeCall::set_collection_metadata { .. }
+					) | RuntimeCall::Uniques(pallet_uniques::RuntimeCall::clear_metadata { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::clear_attribute { .. }) |
-					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::clear_collection_metadata { .. }) |
-					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::set_collection_max_supply { .. }) |
-					RuntimeCall::Utility { .. } | RuntimeCall::Multisig { .. }
+					RuntimeCall::Uniques(
+						pallet_uniques::RuntimeCall::clear_collection_metadata { .. }
+					) | RuntimeCall::Uniques(
+					pallet_uniques::RuntimeCall::set_collection_max_supply { .. }
+				) | RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
 			),
 			ProxyType::AssetManager => matches!(
 				c,
@@ -373,7 +379,8 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::thaw { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::freeze_collection { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::thaw_collection { .. }) |
-					RuntimeCall::Utility { .. } | RuntimeCall::Multisig { .. }
+					RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
 			),
 			ProxyType::Collator => matches!(
 				c,
@@ -613,7 +620,8 @@ pub type SignedExtra = (
 	pallet_asset_tx_payment::ChargeAssetTxPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+pub type UncheckedExtrinsic =
+	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 /// Executive: handles dispatch to the various modules.

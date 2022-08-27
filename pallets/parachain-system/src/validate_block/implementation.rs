@@ -50,7 +50,7 @@ pub fn validate_block<
 ) -> ValidationResult
 where
 	B::Extrinsic: ExtrinsicCall,
-	<B::Extrinsic as Extrinsic>::Call: IsSubType<crate::Call<PSC>>,
+	<B::Extrinsic as Extrinsic>::RuntimeCall: IsSubType<crate::Call<PSC>>,
 {
 	let block_data =
 		cumulus_primitives_core::ParachainBlockData::<B>::decode(&mut &params.block_data.0[..])

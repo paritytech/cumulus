@@ -47,7 +47,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		type Origin: From<<Self as SystemConfig>::Origin>
 			+ Into<Result<CumulusOrigin, <Self as Config>::Origin>>;
@@ -108,7 +108,7 @@ pub mod pallet {
 					Xcm(vec![Transact {
 						origin_type: OriginKind::Native,
 						require_weight_at_most: 1_000,
-						call: <T as Config>::Call::from(Call::<T>::ping {
+						call: <T as Config>::RuntimeCall::from(Call::<T>::ping {
 							seq,
 							payload: payload.clone().to_vec(),
 						})
@@ -198,7 +198,7 @@ pub mod pallet {
 				Xcm(vec![Transact {
 					origin_type: OriginKind::Native,
 					require_weight_at_most: 1_000,
-					call: <T as Config>::Call::from(Call::<T>::pong {
+					call: <T as Config>::RuntimeCall::from(Call::<T>::pong {
 						seq,
 						payload: payload.clone(),
 					})
