@@ -289,27 +289,29 @@ impl Default for ProxyType {
 		Self::Any
 	}
 }
-impl InstanceFilter<Call> for ProxyType {
+impl InstanceFilter<RuntimeCall> for ProxyType {
 	fn filter(&self, c: &Call) -> bool {
 		match self {
 			ProxyType::Any => true,
 			ProxyType::NonTransfer => !matches!(c, RuntimeCall::Balances { .. }),
 			ProxyType::CancelProxy => matches!(
 				c,
-				Call::Proxy(pallet_proxy::Call::reject_announcement { .. }) |
-					Call::Utility { .. } | RuntimeCall::Multisig { .. }
+				RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. }) |
+					RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
 			),
 			ProxyType::Collator => matches!(
 				c,
-				Call::CollatorSelection { .. } |
+				RuntimeCall::CollatorSelection { .. } |
 					RuntimeCall::Utility { .. } |
 					RuntimeCall::Multisig { .. }
 			),
 			ProxyType::Alliance => matches!(
 				c,
-				Call::AllianceMotion { .. } |
-					Call::Alliance { .. } |
-					Call::Utility { .. } | RuntimeCall::Multisig { .. }
+				RuntimeCall::AllianceMotion { .. } |
+					RuntimeCall::Alliance { .. } |
+					RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
 			),
 		}
 	}

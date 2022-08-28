@@ -162,9 +162,9 @@ where
 	Deny: ShouldExecute,
 	Allow: ShouldExecute,
 {
-	fn should_execute<Call>(
+	fn should_execute<RuntimeCall>(
 		origin: &MultiLocation,
-		message: &mut Xcm<Call>,
+		message: &mut Xcm<RuntimeCall>,
 		max_weight: Weight,
 		weight_credit: &mut Weight,
 	) -> Result<(), ()> {
@@ -176,9 +176,9 @@ where
 // See issue #5233
 pub struct DenyReserveTransferToRelayChain;
 impl ShouldExecute for DenyReserveTransferToRelayChain {
-	fn should_execute<Call>(
+	fn should_execute<RuntimeCall>(
 		origin: &MultiLocation,
-		message: &mut Xcm<Call>,
+		message: &mut Xcm<RuntimeCall>,
 		_max_weight: Weight,
 		_weight_credit: &mut Weight,
 	) -> Result<(), ()> {

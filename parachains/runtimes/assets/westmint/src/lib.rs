@@ -310,7 +310,7 @@ impl Default for ProxyType {
 		Self::Any
 	}
 }
-impl InstanceFilter<Call> for ProxyType {
+impl InstanceFilter<RuntimeCall> for ProxyType {
 	fn filter(&self, c: &Call) -> bool {
 		match self {
 			ProxyType::Any => true,
@@ -322,57 +322,61 @@ impl InstanceFilter<Call> for ProxyType {
 			),
 			ProxyType::CancelProxy => matches!(
 				c,
-				Call::Proxy(pallet_proxy::Call::reject_announcement { .. }) |
-					Call::Utility { .. } | RuntimeCall::Multisig { .. }
+				RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. }) |
+					RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
 			),
 			ProxyType::Assets => {
 				matches!(
 					c,
-					Call::Assets { .. } |
-						Call::Utility { .. } | RuntimeCall::Multisig { .. } |
-						Call::Uniques { .. }
+					RuntimeCall::Assets { .. } |
+						RuntimeCall::Utility { .. } |
+						RuntimeCall::Multisig { .. } |
+						RuntimeCall::Uniques { .. }
 				)
 			},
 			ProxyType::AssetOwner => matches!(
 				c,
-				Call::Assets(pallet_assets::Call::create { .. }) |
-					Call::Assets(pallet_assets::Call::destroy { .. }) |
-					Call::Assets(pallet_assets::Call::transfer_ownership { .. }) |
-					Call::Assets(pallet_assets::Call::set_team { .. }) |
-					Call::Assets(pallet_assets::Call::set_metadata { .. }) |
-					Call::Assets(pallet_assets::Call::clear_metadata { .. }) |
-					Call::Uniques(pallet_uniques::Call::create { .. }) |
-					Call::Uniques(pallet_uniques::Call::destroy { .. }) |
-					Call::Uniques(pallet_uniques::Call::transfer_ownership { .. }) |
-					Call::Uniques(pallet_uniques::Call::set_team { .. }) |
-					Call::Uniques(pallet_uniques::Call::set_metadata { .. }) |
-					Call::Uniques(pallet_uniques::Call::set_attribute { .. }) |
-					Call::Uniques(pallet_uniques::Call::set_collection_metadata { .. }) |
-					Call::Uniques(pallet_uniques::Call::clear_metadata { .. }) |
-					Call::Uniques(pallet_uniques::Call::clear_attribute { .. }) |
-					Call::Uniques(pallet_uniques::Call::clear_collection_metadata { .. }) |
-					Call::Uniques(pallet_uniques::Call::set_collection_max_supply { .. }) |
-					Call::Utility { .. } | RuntimeCall::Multisig { .. }
+				RuntimeCall::Assets(pallet_assets::Call::create { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::destroy { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::transfer_ownership { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::set_team { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::set_metadata { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::clear_metadata { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::create { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::destroy { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::transfer_ownership { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::set_team { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::set_metadata { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::set_attribute { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::set_collection_metadata { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::clear_metadata { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::clear_attribute { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::clear_collection_metadata { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::set_collection_max_supply { .. }) |
+					RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
 			),
 			ProxyType::AssetManager => matches!(
 				c,
-				Call::Assets(pallet_assets::Call::mint { .. }) |
-					Call::Assets(pallet_assets::Call::burn { .. }) |
-					Call::Assets(pallet_assets::Call::freeze { .. }) |
-					Call::Assets(pallet_assets::Call::thaw { .. }) |
-					Call::Assets(pallet_assets::Call::freeze_asset { .. }) |
-					Call::Assets(pallet_assets::Call::thaw_asset { .. }) |
-					Call::Uniques(pallet_uniques::Call::mint { .. }) |
-					Call::Uniques(pallet_uniques::Call::burn { .. }) |
-					Call::Uniques(pallet_uniques::Call::freeze { .. }) |
-					Call::Uniques(pallet_uniques::Call::thaw { .. }) |
-					Call::Uniques(pallet_uniques::Call::freeze_collection { .. }) |
-					Call::Uniques(pallet_uniques::Call::thaw_collection { .. }) |
-					Call::Utility { .. } | RuntimeCall::Multisig { .. }
+				RuntimeCall::Assets(pallet_assets::Call::mint { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::burn { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::freeze { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::thaw { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::freeze_asset { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::thaw_asset { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::mint { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::burn { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::freeze { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::thaw { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::freeze_collection { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::thaw_collection { .. }) |
+					RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
 			),
 			ProxyType::Collator => matches!(
 				c,
-				Call::CollatorSelection { .. } |
+				RuntimeCall::CollatorSelection { .. } |
 					RuntimeCall::Utility { .. } |
 					RuntimeCall::Multisig { .. }
 			),
