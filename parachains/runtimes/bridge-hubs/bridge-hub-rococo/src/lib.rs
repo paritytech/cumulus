@@ -59,6 +59,7 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 use bp_polkadot_core::parachains::ParaId;
+use bp_runtime::{HeaderId, HeaderIdProvider};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -231,6 +232,14 @@ const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
+}
+
+// TODO: check-parameter - move to bridges/primitives, once rebased and would compile with bp_bridge_hub_xyz dependencies
+mod runtime_api {
+	use super::BlockNumber;
+	use super::Hash;
+	bp_runtime::decl_bridge_finality_runtime_apis!(rococo);
+	bp_runtime::decl_bridge_finality_runtime_apis!(wococo);
 }
 
 parameter_types! {
@@ -698,6 +707,18 @@ impl_runtime_apis! {
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
 		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
 			ParachainSystem::collect_collation_info(header)
+		}
+	}
+
+	impl runtime_api::RococoFinalityApi<Block> for Runtime {
+		fn best_finalized() -> Option<HeaderId<bp_rococo::Hash, bp_rococo::BlockNumber>> {
+			BridgeRococoGrandpa::best_finalized().map(|header| header.id())
+		}
+	}
+
+	impl runtime_api::WococoFinalityApi<Block> for Runtime {
+		fn best_finalized() -> Option<HeaderId<bp_wococo::Hash, bp_wococo::BlockNumber>> {
+			BridgeWococoGrandpa::best_finalized().map(|header| header.id())
 		}
 	}
 
