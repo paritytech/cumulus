@@ -14,7 +14,7 @@
 // limitations under the License.
 
 use super::{
-	AccountId, Balances, Call, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime,
+	AccountId, Balances, RuntimeCall, RuntimeEvent, Origin, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime,
 	WeightToFee, XcmpQueue,
 };
 use frame_support::{
