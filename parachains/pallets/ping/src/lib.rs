@@ -53,7 +53,7 @@ pub mod pallet {
 			+ Into<Result<CumulusOrigin, <Self as Config>::Origin>>;
 
 		/// The overarching call type; we assume sibling chains use the same type.
-		type Call: From<Call<Self>> + Encode;
+		type Call: From<RuntimeCall<Self>> + Encode;
 
 		type XcmSender: SendXcm;
 	}
