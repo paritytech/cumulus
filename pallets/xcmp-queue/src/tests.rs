@@ -16,7 +16,7 @@
 use super::*;
 use cumulus_primitives_core::XcmpMessageHandler;
 use frame_support::{assert_noop, assert_ok};
-use mock::{new_test_ext, RuntimeCall, Origin, Test, XcmpQueue};
+use mock::{new_test_ext, Origin, RuntimeCall, Test, XcmpQueue};
 use sp_runtime::traits::BadOrigin;
 
 #[test]
@@ -102,7 +102,8 @@ fn suspend_xcm_execution_works() {
 	new_test_ext().execute_with(|| {
 		QueueSuspended::<Test>::put(true);
 
-		let xcm = VersionedXcm::from(Xcm::<RuntimeCall>(vec![Instruction::<Call>::ClearOrigin])).encode();
+		let xcm =
+			VersionedXcm::from(Xcm::<RuntimeCall>(vec![Instruction::<Call>::ClearOrigin])).encode();
 		let mut message_format = XcmpMessageFormat::ConcatenatedVersionedXcm.encode();
 		message_format.extend(xcm.clone());
 		let messages = vec![(ParaId::from(999), 1u32.into(), message_format.as_slice())];

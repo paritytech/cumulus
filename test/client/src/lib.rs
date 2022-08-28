@@ -19,7 +19,7 @@
 mod block_builder;
 use codec::{Decode, Encode};
 use runtime::{
-	Balance, Block, BlockHashCount, RuntimeCall, GenesisConfig, Runtime, Signature, SignedExtra,
+	Balance, Block, BlockHashCount, GenesisConfig, Runtime, RuntimeCall, Signature, SignedExtra,
 	SignedPayload, UncheckedExtrinsic, VERSION,
 };
 use sc_executor::{WasmExecutionMethod, WasmExecutor};
