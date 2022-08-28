@@ -69,6 +69,7 @@ parachains-common = { path = "../../../../parachains/common", default-features =
 
 # Bridges
 bp-polkadot-core = { path = "../../../../bridges/primitives/polkadot-core", default-features = false }
+bp-runtime = { path = "../../../../bridges/primitives/runtime", default-features = false }
 bp-rococo = { path = "../../../../bridges/primitives/chain-rococo", default-features = false }
 bp-wococo = { path = "../../../../bridges/primitives/chain-wococo", default-features = false }
 pallet-bridge-grandpa = { path = "../../../../bridges/modules/grandpa", default-features = false }
@@ -83,6 +84,7 @@ default = [
 ]
 std = [
 	"bp-polkadot-core/std",
+	"bp-runtime/std",
 	"bp-rococo/std",
 	"bp-wococo/std",
 	"codec/std",
