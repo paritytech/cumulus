@@ -71,7 +71,7 @@ cumulus-primitives-utility = { path = "../../../../primitives/utility", default-
 pallet-collator-selection = { path = "../../../../pallets/collator-selection", default-features = false }
 parachain-info = { path = "../../../pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }
-pallet-xcm-benchmarks = { path = "../../../../pallets/xcm-benchmarks", default-features = false, optional = true }
+pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false, optional = true }
 
 
 [dev-dependencies]
