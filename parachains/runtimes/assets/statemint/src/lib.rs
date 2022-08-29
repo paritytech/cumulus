@@ -891,12 +891,13 @@ impl_runtime_apis! {
 					MultiAsset { fun: Fungible(1 * UNITS), id: Concrete(DotLocation::get()) },
 				));
 				pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = None;
+				pub const CheckedAccount: Option<AccountId> = None;
 			}
 
 			impl pallet_xcm_benchmarks::fungible::Config for Runtime {
 				type TransactAsset = Balances;
 
-				type CheckedAccount = xcm_config::CheckingAccount;
+				type CheckedAccount = CheckedAccount;
 				type TrustedTeleporter = TrustedTeleporter;
 				type TrustedReserve = TrustedReserve;
 
