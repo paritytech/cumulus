@@ -1,0 +1,23 @@
+name: Cumulus ruled-labels test cases
+spec_file: specs.yaml
+
+specs:
+  - name: Pass - Pass all
+    labels: [ B1, P1, D1, X1 ]
+    expected: true
+
+  - name: Fail - Require release label
+    labels: [ A1 ]
+    expected: false
+
+  - name: Fail - Runtimes require an audit Label
+    labels: [ X1, B1, P1 ]
+    expected: false
+
+  - name: Fail - Release need priorities
+    labels: [ B1, X1, D1 ]
+    expected: false
+
+  - name: Fail - Release require some topics
+    labels: [ B1, P1, D1 ]
+    expected: false
