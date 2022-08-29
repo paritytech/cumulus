@@ -200,7 +200,7 @@ pub struct DisallowSigned;
 impl sp_runtime::traits::SignedExtension for DisallowSigned {
 	const IDENTIFIER: &'static str = "DisallowSigned";
 	type AccountId = AccountId;
-	type RuntimeCall = RuntimeCall;
+	type Call = RuntimeCall;
 	type AdditionalSigned = ();
 	type Pre = ();
 	fn additional_signed(
