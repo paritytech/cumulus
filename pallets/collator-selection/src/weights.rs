@@ -41,7 +41,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	fn set_invulnerables(b: u32) -> Weight {
 		Weight::from_ref_time(18_563_000 as RefTimeWeight)
 			// Standard Error: 0
-			.saturating_add((68_000 as RefTimeWeight).saturating_mul(b as Weight))
+			.saturating_add((68_000 as RefTimeWeight).saturating_mul(b as RefTimeWeight))
 			.saturating_add(T::DbWeight::get().writes(1 as RefTimeWeight))
 	}
 	fn set_desired_candidates() -> Weight {
@@ -53,14 +53,14 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	fn register_as_candidate(c: u32) -> Weight {
 		Weight::from_ref_time(71_196_000 as RefTimeWeight)
 			// Standard Error: 0
-			.saturating_add((198_000 as RefTimeWeight).saturating_mul(c as Weight))
+			.saturating_add((198_000 as RefTimeWeight).saturating_mul(c as RefTimeWeight))
 			.saturating_add(T::DbWeight::get().reads(4 as RefTimeWeight))
 			.saturating_add(T::DbWeight::get().writes(2 as RefTimeWeight))
 	}
 	fn leave_intent(c: u32) -> Weight {
 		Weight::from_ref_time(55_336_000 as RefTimeWeight)
 			// Standard Error: 0
-			.saturating_add((151_000 as RefTimeWeight).saturating_mul(c as Weight))
+			.saturating_add((151_000 as RefTimeWeight).saturating_mul(c as RefTimeWeight))
 			.saturating_add(T::DbWeight::get().reads(1 as RefTimeWeight))
 			.saturating_add(T::DbWeight::get().writes(2 as RefTimeWeight))
 	}
@@ -72,20 +72,20 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	fn new_session(r: u32, c: u32) -> Weight {
 		Weight::from_ref_time(0 as RefTimeWeight)
 			// Standard Error: 1_010_000
-			.saturating_add((109_961_000 as RefTimeWeight).saturating_mul(r as Weight))
+			.saturating_add((109_961_000 as RefTimeWeight).saturating_mul(r as RefTimeWeight))
 			// Standard Error: 1_010_000
-			.saturating_add((151_952_000 as RefTimeWeight).saturating_mul(c as Weight))
+			.saturating_add((151_952_000 as RefTimeWeight).saturating_mul(c as RefTimeWeight))
 			.saturating_add(
-				T::DbWeight::get().reads((1 as RefTimeWeight).saturating_mul(r as Weight)),
+				T::DbWeight::get().reads((1 as RefTimeWeight).saturating_mul(r as RefTimeWeight)),
 			)
 			.saturating_add(
-				T::DbWeight::get().reads((2 as RefTimeWeight).saturating_mul(c as Weight)),
+				T::DbWeight::get().reads((2 as RefTimeWeight).saturating_mul(c as RefTimeWeight)),
 			)
 			.saturating_add(
-				T::DbWeight::get().writes((2 as RefTimeWeight).saturating_mul(r as Weight)),
+				T::DbWeight::get().writes((2 as RefTimeWeight).saturating_mul(r as RefTimeWeight)),
 			)
 			.saturating_add(
-				T::DbWeight::get().writes((2 as RefTimeWeight).saturating_mul(c as Weight)),
+				T::DbWeight::get().writes((2 as RefTimeWeight).saturating_mul(c as RefTimeWeight)),
 			)
 	}
 }
@@ -95,7 +95,7 @@ impl WeightInfo for () {
 	fn set_invulnerables(b: u32) -> Weight {
 		Weight::from_ref_time(18_563_000 as RefTimeWeight)
 			// Standard Error: 0
-			.saturating_add((68_000 as RefTimeWeight).saturating_mul(b as Weight))
+			.saturating_add((68_000 as RefTimeWeight).saturating_mul(b as RefTimeWeight))
 			.saturating_add(RocksDbWeight::get().writes(1 as RefTimeWeight))
 	}
 	fn set_desired_candidates() -> Weight {
@@ -109,14 +109,14 @@ impl WeightInfo for () {
 	fn register_as_candidate(c: u32) -> Weight {
 		Weight::from_ref_time(71_196_000 as RefTimeWeight)
 			// Standard Error: 0
-			.saturating_add((198_000 as RefTimeWeight).saturating_mul(c as Weight))
+			.saturating_add((198_000 as RefTimeWeight).saturating_mul(c as RefTimeWeight))
 			.saturating_add(RocksDbWeight::get().reads(4 as RefTimeWeight))
 			.saturating_add(RocksDbWeight::get().writes(2 as RefTimeWeight))
 	}
 	fn leave_intent(c: u32) -> Weight {
 		Weight::from_ref_time(55_336_000 as RefTimeWeight)
 			// Standard Error: 0
-			.saturating_add((151_000 as RefTimeWeight).saturating_mul(c as Weight))
+			.saturating_add((151_000 as RefTimeWeight).saturating_mul(c as RefTimeWeight))
 			.saturating_add(RocksDbWeight::get().reads(1 as RefTimeWeight))
 			.saturating_add(RocksDbWeight::get().writes(2 as RefTimeWeight))
 	}
@@ -128,20 +128,20 @@ impl WeightInfo for () {
 	fn new_session(r: u32, c: u32) -> Weight {
 		Weight::from_ref_time(0 as RefTimeWeight)
 			// Standard Error: 1_010_000
-			.saturating_add((109_961_000 as RefTimeWeight).saturating_mul(r as Weight))
+			.saturating_add((109_961_000 as RefTimeWeight).saturating_mul(r as RefTimeWeight))
 			// Standard Error: 1_010_000
-			.saturating_add((151_952_000 as RefTimeWeight).saturating_mul(c as Weight))
+			.saturating_add((151_952_000 as RefTimeWeight).saturating_mul(c as RefTimeWeight))
 			.saturating_add(
-				RocksDbWeight::get().reads((1 as RefTimeWeight).saturating_mul(r as Weight)),
+				RocksDbWeight::get().reads((1 as RefTimeWeight).saturating_mul(r as RefTimeWeight)),
 			)
 			.saturating_add(
-				RocksDbWeight::get().reads((2 as RefTimeWeight).saturating_mul(c as Weight)),
+				RocksDbWeight::get().reads((2 as RefTimeWeight).saturating_mul(c as RefTimeWeight)),
 			)
 			.saturating_add(
-				RocksDbWeight::get().writes((2 as RefTimeWeight).saturating_mul(r as Weight)),
+				RocksDbWeight::get().writes((2 as RefTimeWeight).saturating_mul(r as RefTimeWeight)),
 			)
 			.saturating_add(
-				RocksDbWeight::get().writes((2 as RefTimeWeight).saturating_mul(c as Weight)),
+				RocksDbWeight::get().writes((2 as RefTimeWeight).saturating_mul(c as RefTimeWeight)),
 			)
 	}
 }

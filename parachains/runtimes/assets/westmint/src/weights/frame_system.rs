@@ -54,7 +54,7 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 	fn remark_with_event(b: u32, ) -> Weight {
 		Weight::from_ref_time(0 as RefTimeWeight)
 			// Standard Error: 0
-			.saturating_add((1_000 as RefTimeWeight).saturating_mul(b as Weight))
+			.saturating_add((1_000 as RefTimeWeight).saturating_mul(b as RefTimeWeight))
 	}
 	// Storage: System Digest (r:1 w:1)
 	// Storage: unknown [0x3a686561707061676573] (r:0 w:1)
@@ -68,23 +68,23 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 	fn set_storage(i: u32, ) -> Weight {
 		Weight::from_ref_time(0 as RefTimeWeight)
 			// Standard Error: 1_000
-			.saturating_add((616_000 as RefTimeWeight).saturating_mul(i as Weight))
-			.saturating_add(T::DbWeight::get().writes((1 as RefTimeWeight).saturating_mul(i as Weight)))
+			.saturating_add((616_000 as RefTimeWeight).saturating_mul(i as RefTimeWeight))
+			.saturating_add(T::DbWeight::get().writes((1 as RefTimeWeight).saturating_mul(i as RefTimeWeight)))
 	}
 	// Storage: Skipped Metadata (r:0 w:0)
 	/// The range of component `i` is `[1, 1000]`.
 	fn kill_storage(i: u32, ) -> Weight {
 		Weight::from_ref_time(0 as RefTimeWeight)
 			// Standard Error: 1_000
-			.saturating_add((519_000 as RefTimeWeight).saturating_mul(i as Weight))
-			.saturating_add(T::DbWeight::get().writes((1 as RefTimeWeight).saturating_mul(i as Weight)))
+			.saturating_add((519_000 as RefTimeWeight).saturating_mul(i as RefTimeWeight))
+			.saturating_add(T::DbWeight::get().writes((1 as RefTimeWeight).saturating_mul(i as RefTimeWeight)))
 	}
 	// Storage: Skipped Metadata (r:0 w:0)
 	/// The range of component `p` is `[1, 1000]`.
 	fn kill_prefix(p: u32, ) -> Weight {
 		Weight::from_ref_time(0 as RefTimeWeight)
 			// Standard Error: 1_000
-			.saturating_add((1_067_000 as RefTimeWeight).saturating_mul(p as Weight))
-			.saturating_add(T::DbWeight::get().writes((1 as RefTimeWeight).saturating_mul(p as Weight)))
+			.saturating_add((1_067_000 as RefTimeWeight).saturating_mul(p as RefTimeWeight))
+			.saturating_add(T::DbWeight::get().writes((1 as RefTimeWeight).saturating_mul(p as RefTimeWeight)))
 	}
 }

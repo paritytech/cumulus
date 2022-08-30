@@ -69,19 +69,19 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for WeightInfo<T> {
 	fn destroy(c: u32, s: u32, a: u32, ) -> Weight {
 		Weight::from_ref_time(0 as RefTimeWeight)
 			// Standard Error: 46_000
-			.saturating_add((16_382_000 as RefTimeWeight).saturating_mul(c as Weight))
+			.saturating_add((16_382_000 as RefTimeWeight).saturating_mul(c as RefTimeWeight))
 			// Standard Error: 46_000
-			.saturating_add((19_187_000 as RefTimeWeight).saturating_mul(s as Weight))
+			.saturating_add((19_187_000 as RefTimeWeight).saturating_mul(s as RefTimeWeight))
 			// Standard Error: 465_000
-			.saturating_add((16_818_000 as RefTimeWeight).saturating_mul(a as Weight))
+			.saturating_add((16_818_000 as RefTimeWeight).saturating_mul(a as RefTimeWeight))
 			.saturating_add(T::DbWeight::get().reads(5 as RefTimeWeight))
-			.saturating_add(T::DbWeight::get().reads((2 as RefTimeWeight).saturating_mul(c as Weight)))
-			.saturating_add(T::DbWeight::get().reads((2 as RefTimeWeight).saturating_mul(s as Weight)))
-			.saturating_add(T::DbWeight::get().reads((1 as RefTimeWeight).saturating_mul(a as Weight)))
+			.saturating_add(T::DbWeight::get().reads((2 as RefTimeWeight).saturating_mul(c as RefTimeWeight)))
+			.saturating_add(T::DbWeight::get().reads((2 as RefTimeWeight).saturating_mul(s as RefTimeWeight)))
+			.saturating_add(T::DbWeight::get().reads((1 as RefTimeWeight).saturating_mul(a as RefTimeWeight)))
 			.saturating_add(T::DbWeight::get().writes(2 as RefTimeWeight))
-			.saturating_add(T::DbWeight::get().writes((2 as RefTimeWeight).saturating_mul(c as Weight)))
-			.saturating_add(T::DbWeight::get().writes((2 as RefTimeWeight).saturating_mul(s as Weight)))
-			.saturating_add(T::DbWeight::get().writes((1 as RefTimeWeight).saturating_mul(a as Weight)))
+			.saturating_add(T::DbWeight::get().writes((2 as RefTimeWeight).saturating_mul(c as RefTimeWeight)))
+			.saturating_add(T::DbWeight::get().writes((2 as RefTimeWeight).saturating_mul(s as RefTimeWeight)))
+			.saturating_add(T::DbWeight::get().writes((1 as RefTimeWeight).saturating_mul(a as RefTimeWeight)))
 	}
 	// Storage: Assets Asset (r:1 w:1)
 	// Storage: Assets Account (r:1 w:1)
