@@ -183,7 +183,7 @@ async fn build_relay_chain_interface(
 			let client = create_client_and_start_worker(relay_chain_url, task_manager).await?;
 			let collator_pair = CollatorPair::generate().0;
 			// TODO Implement error handling instead of `expect`
-			let collator_node = cumulus_relay_chain_mini::new_mini(
+			let collator_node = cumulus_relay_chain_mini::new_minimal_relay_chain(
 				polkadot_config,
 				collator_pair.clone(),
 				Arc::new(BlockChainRpcClient::new(client.clone()).await),

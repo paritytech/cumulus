@@ -17,9 +17,8 @@
 use lru::LruCache;
 use polkadot_node_network_protocol::request_response::{
 	v1::{AvailableDataFetchingRequest, CollationFetchingRequest},
-	IncomingRequest, IncomingRequestReceiver, ReqProtocolNames,
+	IncomingRequestReceiver, ReqProtocolNames,
 };
-use polkadot_node_subsystem_types::RuntimeApiSubsystemClient;
 use polkadot_node_subsystem_util::metrics::{prometheus::Registry, Metrics};
 use polkadot_overseer::{
 	BlockInfo, DummySubsystem, MetricsTrait, Overseer, OverseerHandle, OverseerMetrics, SpawnGlue,
@@ -35,34 +34,24 @@ use polkadot_service::{
 	Error, OverseerConnector,
 };
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
-use sc_network::{Event, NetworkService, NetworkStateInfo};
-use sc_network_common::service::NetworkEventStream;
-use sp_core::traits::SpawnNamed;
+use sc_network::NetworkStateInfo;
 
 use std::sync::Arc;
 
 use cumulus_primitives_core::relay_chain::{Block, Hash as PHash};
 
-use polkadot_service::{Configuration, Handle, TaskManager};
+use polkadot_service::{Handle, TaskManager};
 
+use crate::BlockChainRpcClient;
 use futures::{select, StreamExt};
-
 use sp_runtime::traits::Block as BlockT;
 
-mod blockchain_rpc_client;
-mod network;
-pub use blockchain_rpc_client::BlockChainRpcClient;
-
 /// Arguments passed for overseer construction.
-pub struct CollatorOverseerGenArgs<'a, Spawner, RuntimeClient>
-where
-	RuntimeClient: 'static + RuntimeApiSubsystemClient + Sync + Send,
-	Spawner: 'static + SpawnNamed + Clone + Unpin,
-{
+pub(crate) struct CollatorOverseerGenArgs<'a> {
 	/// Set of initial relay chain leaves to track.
 	pub leaves: Vec<BlockInfo>,
 	/// Runtime client generic, providing the `ProvieRuntimeApi` trait besides others.
-	pub runtime_client: Arc<RuntimeClient>,
+	pub runtime_client: Arc<BlockChainRpcClient>,
 	/// Underlying network service implementation.
 	pub network_service: Arc<sc_network::NetworkService<Block, PHash>>,
 	/// Underlying authority discovery service.
@@ -72,15 +61,15 @@ where
 	/// Prometheus registry, commonly used for production systems, less so for test.
 	pub registry: Option<&'a Registry>,
 	/// Task spawner to be used throughout the overseer and the APIs it provides.
-	pub spawner: Spawner,
+	pub spawner: sc_service::SpawnTaskHandle,
 	/// Determines the behavior of the collator.
 	pub collator_pair: CollatorPair,
 	pub req_protocol_names: ReqProtocolNames,
 }
 
-pub struct CollatorOverseerGen;
+pub(crate) struct CollatorOverseerGen;
 impl CollatorOverseerGen {
-	pub fn generate<'a, Spawner, RuntimeClient>(
+	pub(crate) fn generate<'a>(
 		&self,
 		connector: OverseerConnector,
 		CollatorOverseerGenArgs {
@@ -94,12 +83,14 @@ impl CollatorOverseerGen {
 			spawner,
 			collator_pair,
 			req_protocol_names,
-		}: CollatorOverseerGenArgs<'a, Spawner, RuntimeClient>,
-	) -> Result<(Overseer<SpawnGlue<Spawner>, Arc<RuntimeClient>>, OverseerHandle), Error>
-	where
-		RuntimeClient: 'static + RuntimeApiSubsystemClient + Sync + Send,
-		Spawner: 'static + SpawnNamed + Clone + Unpin,
-	{
+		}: CollatorOverseerGenArgs<'a>,
+	) -> Result<
+		(
+			Overseer<SpawnGlue<sc_service::SpawnTaskHandle>, Arc<BlockChainRpcClient>>,
+			OverseerHandle,
+		),
+		Error,
+	> {
 		let metrics = <OverseerMetrics as MetricsTrait>::register(registry)?;
 
 		let spawner = SpawnGlue(spawner);
@@ -169,131 +160,20 @@ impl CollatorOverseerGen {
 	}
 }
 
-pub struct NewCollator {
-	pub task_manager: TaskManager,
-	pub overseer_handle: Handle,
-	pub network: Arc<sc_network::NetworkService<Block, <Block as BlockT>::Hash>>,
-}
-
-fn build_authority_discovery_service<Block: BlockT>(
+pub(crate) fn spawn_overseer(
+	overseer_args: CollatorOverseerGenArgs,
 	task_manager: &TaskManager,
-	client: Arc<BlockChainRpcClient>,
-	config: &Configuration,
-	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
-	prometheus_registry: Option<Registry>,
-) -> AuthorityDiscoveryService {
-	let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
-	let authority_discovery_role = sc_authority_discovery::Role::Discover;
-	let dht_event_stream = network.event_stream("authority-discovery").filter_map(|e| async move {
-		match e {
-			Event::Dht(e) => Some(e),
-			_ => None,
-		}
-	});
-	let (worker, service) = sc_authority_discovery::new_worker_and_service_with_config(
-		sc_authority_discovery::WorkerConfig {
-			publish_non_global_ips: auth_disc_publish_non_global_ips,
-			// Require that authority discovery records are signed.
-			strict_record_validation: true,
-			..Default::default()
-		},
-		client,
-		network.clone(),
-		Box::pin(dht_event_stream),
-		authority_discovery_role,
-		prometheus_registry.clone(),
-	);
-
-	task_manager.spawn_handle().spawn(
-		"authority-discovery-worker",
-		Some("authority-discovery"),
-		Box::pin(worker.run()),
-	);
-	service
-}
-
-#[sc_tracing::logging::prefix_logs_with("Relaychain")]
-pub async fn new_mini(
-	mut config: Configuration,
-	collator_pair: CollatorPair,
 	relay_chain_rpc_client: Arc<BlockChainRpcClient>,
-) -> Result<NewCollator, Error> {
-	let role = config.role.clone();
-
-	let task_manager = {
-		let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
-		TaskManager::new(config.tokio_handle.clone(), registry)?
-	};
-
-	let prometheus_registry = config.prometheus_registry().cloned();
-
-	let overseer_connector = OverseerConnector::default();
-
-	{
-		use polkadot_network_bridge::{peer_sets_info, IsAuthority};
-		let is_authority = if role.is_authority() { IsAuthority::Yes } else { IsAuthority::No };
-		config.network.extra_sets.extend(peer_sets_info(is_authority));
-	}
-
-	let genesis_hash = relay_chain_rpc_client
-		.block_get_hash(Some(0))
-		.await
-		.expect("Crash here if no genesis is available")
-		.unwrap_or_default();
-
-	let request_protocol_names = ReqProtocolNames::new(genesis_hash, config.chain_spec.fork_id());
-	let (collation_req_receiver, cfg) =
-		IncomingRequest::get_config_receiver(&request_protocol_names);
-	config.network.request_response_protocols.push(cfg);
-	let (available_data_req_receiver, cfg) =
-		IncomingRequest::get_config_receiver(&request_protocol_names);
-	config.network.request_response_protocols.push(cfg);
-
-	let (network, network_starter) =
-		network::build_collator_network(network::BuildCollatorNetworkParams {
-			config: &config,
-			client: relay_chain_rpc_client.clone(),
-			spawn_handle: task_manager.spawn_handle(),
-			genesis_hash,
-		})?;
-
-	let active_leaves = Vec::new();
-
-	let authority_discovery_service = build_authority_discovery_service(
-		&task_manager,
-		relay_chain_rpc_client.clone(),
-		&config,
-		network.clone(),
-		prometheus_registry.clone(),
-	);
-
+) -> Result<polkadot_overseer::Handle, polkadot_service::Error> {
 	let overseer_gen = CollatorOverseerGen;
 	let (overseer, overseer_handle) = overseer_gen
-		.generate::<sc_service::SpawnTaskHandle, BlockChainRpcClient>(
-			overseer_connector,
-			CollatorOverseerGenArgs {
-				leaves: active_leaves,
-				runtime_client: relay_chain_rpc_client.clone(),
-				network_service: network.clone(),
-				authority_discovery_service,
-				collation_req_receiver,
-				available_data_req_receiver,
-				registry: prometheus_registry.as_ref(),
-				spawner: task_manager.spawn_handle(),
-				collator_pair,
-				req_protocol_names: ReqProtocolNames::new(
-					genesis_hash,
-					config.chain_spec.fork_id(),
-				),
-			},
-		)
+		.generate(OverseerConnector::default(), overseer_args)
 		.map_err(|e| {
-			tracing::error!("Failed to init overseer: {}", e);
+			tracing::error!("Failed to initialize overseer: {}", e);
 			e
 		})?;
 
 	let overseer_handle = Handle::new(overseer_handle.clone());
-
 	{
 		let handle = overseer_handle.clone();
 		task_manager.spawn_essential_handle().spawn_blocking(
@@ -302,9 +182,9 @@ pub async fn new_mini(
 			Box::pin(async move {
 				use futures::{pin_mut, FutureExt};
 
-				let forward = forward_collator_events(relay_chain_rpc_client, handle);
+				let forward = forward_collator_events(relay_chain_rpc_client, handle).fuse();
 
-				let forward = forward.fuse();
+				// let forward = forward.fuse();
 				let overseer_fut = overseer.run().fuse();
 
 				pin_mut!(overseer_fut);
@@ -318,15 +198,18 @@ pub async fn new_mini(
 			}),
 		);
 	}
+	Ok(overseer_handle)
+}
 
-	network_starter.start_network();
-
-	Ok(NewCollator { task_manager, overseer_handle, network })
+pub struct NewCollator {
+	pub task_manager: TaskManager,
+	pub overseer_handle: Handle,
+	pub network: Arc<sc_network::NetworkService<Block, <Block as BlockT>::Hash>>,
 }
 
 /// Glues together the [`Overseer`] and `BlockchainEvents` by forwarding
 /// import and finality notifications into the [`OverseerHandle`].
-pub async fn forward_collator_events(client: Arc<BlockChainRpcClient>, mut handle: Handle) {
+pub(crate) async fn forward_collator_events(client: Arc<BlockChainRpcClient>, mut handle: Handle) {
 	let mut finality = client.finality_notification_stream_async().await.fuse();
 	let mut imports = client.import_notification_stream_async().await.fuse();
 

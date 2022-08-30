@@ -187,7 +187,7 @@ async fn build_relay_chain_interface(
 		let client = create_client_and_start_worker(relay_chain_url, task_manager).await?;
 		if parachain_config.role.is_authority() {
 			let collator_key = collator_key.or_else(|| Some(CollatorPair::generate().0));
-			let collator_node = cumulus_relay_chain_mini::new_mini(
+			let collator_node = cumulus_relay_chain_mini::new_minimal_relay_chain(
 				relay_chain_config,
 				collator_key.clone().unwrap(),
 				Arc::new(BlockChainRpcClient::new(client.clone()).await),

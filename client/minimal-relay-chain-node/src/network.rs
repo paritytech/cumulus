@@ -16,18 +16,18 @@ use std::sync::Arc;
 
 use crate::BlockChainRpcClient;
 
-pub struct BuildCollatorNetworkParams<'a> {
+pub(crate) struct BuildCollatorNetworkParams<'a> {
 	/// The service configuration.
-	pub config: &'a Configuration,
+	pub(crate) config: &'a Configuration,
 	/// A shared client returned by `new_full_parts`.
-	pub client: Arc<BlockChainRpcClient>,
+	pub(crate) client: Arc<BlockChainRpcClient>,
 	/// A handle for spawning tasks.
-	pub spawn_handle: SpawnTaskHandle,
+	pub(crate) spawn_handle: SpawnTaskHandle,
 
-	pub genesis_hash: Hash,
+	pub(crate) genesis_hash: Hash,
 }
 
-pub struct DummyImportQueue {}
+pub(crate) struct DummyImportQueue {}
 
 impl sc_service::ImportQueue<Block> for DummyImportQueue {
 	/// Import bunch of blocks.
@@ -61,7 +61,7 @@ impl sc_service::ImportQueue<Block> for DummyImportQueue {
 }
 
 /// Build the network service, the network status sinks and an RPC sender.
-pub fn build_collator_network(
+pub(crate) fn build_collator_network(
 	params: BuildCollatorNetworkParams,
 ) -> Result<(Arc<NetworkService<Block, Hash>>, NetworkStarter), Error> {
 	let BuildCollatorNetworkParams { config, client, spawn_handle, genesis_hash } = params;
@@ -233,7 +233,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		dyn Iterator<Item = (libp2p::PeerId, sc_network_common::sync::message::BlockRequest<B>)>
 			+ '_,
 	> {
-		Box::new(Vec::new().into_iter()) as Box<_>
+		Box::new(std::iter::empty()) as Box<_>
 	}
 
 	fn block_requests(
@@ -242,7 +242,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		dyn Iterator<Item = (&libp2p::PeerId, sc_network_common::sync::message::BlockRequest<B>)>
 			+ '_,
 	> {
-		Box::new(Vec::new().into_iter()) as Box<_>
+		Box::new(std::iter::empty()) as Box<_>
 	}
 
 	fn state_request(
@@ -310,7 +310,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 			>,
 		>,
 	> {
-		Box::new(Vec::new().into_iter()) as Box<_>
+		Box::new(std::iter::empty()) as Box<_>
 	}
 
 	fn on_justification_import(
