@@ -250,10 +250,10 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
 	type DmpMessageHandler = DmpQueue;
-	type ReservedDmpWeight = ConstU64<{ MAXIMUM_BLOCK_WEIGHT / 4 }>;
+	type ReservedDmpWeight = ConstU64<{ MAXIMUM_BLOCK_WEIGHT.scalar_div(4) }>;
 	type OutboundXcmpMessageSource = XcmpQueue;
 	type XcmpMessageHandler = XcmpQueue;
-	type ReservedXcmpWeight = ConstU64<{ MAXIMUM_BLOCK_WEIGHT / 4 }>;
+	type ReservedXcmpWeight = ConstU64<{ MAXIMUM_BLOCK_WEIGHT.scalar_div(4) }>;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
