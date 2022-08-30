@@ -192,8 +192,8 @@ where
 	}
 }
 
-/// Accepts an asset if it is a native asset of a particular type.
-pub struct ConcreteNativeAsset<AssetId>(PhantomData<AssetId>);
+/// Accepts an asset if it is a native asset from a particular `MultiLocation`.
+pub struct ConcreteNativeAssetFrom<Location>(PhantomData<Location>);
 impl<AssetId: Get<MultiLocation>> FilterAssetLocation for ConcreteNativeAsset<AssetId> {
 	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
 		log::trace!(target: "xcm::filter_asset_location",
