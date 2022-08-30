@@ -403,7 +403,22 @@ impl HeaderBackend<Block> for BlockChainRpcClient {
 		&self,
 		id: sp_api::BlockId<Block>,
 	) -> sp_blockchain::Result<sp_blockchain::BlockStatus> {
-		todo!()
+		let exists = match id {
+			BlockId::Hash(_) => self.header(id)?.is_some(),
+			BlockId::Number(n) => {
+				let best_header = block_local(self.rpc_client.chain_get_header(None))?;
+				if let Some(best) = best_header {
+					n < best.number
+				} else {
+					false
+				}
+			},
+		};
+
+		match exists {
+			true => Ok(sc_client_api::blockchain::BlockStatus::InChain),
+			false => Ok(sc_client_api::blockchain::BlockStatus::Unknown),
+		}
 	}
 
 	fn number(
