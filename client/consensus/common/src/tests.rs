@@ -104,11 +104,19 @@ impl crate::parachain_consensus::RelaychainClient for Relaychain {
 }
 
 fn build_and_import_block(mut client: Arc<Client>, import_as_best: bool) -> Block {
-	build_and_import_block_ext(&*client.clone(), import_as_best, &mut client, None, None)
+	build_and_import_block_ext(
+		&*client.clone(),
+		BlockOrigin::Own,
+		import_as_best,
+		&mut client,
+		None,
+		None,
+	)
 }
 
 fn build_and_import_block_ext<B: InitBlockBuilder, I: BlockImport<Block>>(
 	builder: &B,
+	origin: BlockOrigin,
 	import_as_best: bool,
 	importer: &mut I,
 	at: Option<BlockId<Block>>,
@@ -126,7 +134,7 @@ fn build_and_import_block_ext<B: InitBlockBuilder, I: BlockImport<Block>>(
 	let block = builder.build().unwrap().block;
 	let (header, body) = block.clone().deconstruct();
 
-	let mut block_import_params = BlockImportParams::new(BlockOrigin::Own, header);
+	let mut block_import_params = BlockImportParams::new(origin, header);
 	block_import_params.fork_choice = Some(ForkChoiceStrategy::Custom(import_as_best));
 	block_import_params.body = Some(body);
 
@@ -374,54 +382,193 @@ fn do_not_set_best_block_to_older_block() {
 }
 
 #[test]
-fn prune_blocks_on_leaves_overflow() {
+fn prune_blocks_on_level_overflow() {
+	// Here we are using the timestamp value to generate blocks with different hashes.
 	const LEVEL_LIMIT: usize = 3;
 	const TIMESTAMP_MULTIPLIER: u64 = 60000;
 
-	let backend = Arc::new(Backend::new_test(1000, 1));
-
+	let backend = Arc::new(Backend::new_test(1000, 3));
 	let client = Arc::new(TestClientBuilder::with_backend(backend.clone()).build());
+	let mut para_import =
+		ParachainBlockImport::new(client.clone(), backend.clone(), LevelLimit::Some(LEVEL_LIMIT));
 
-	let mut para_import = ParachainBlockImport::new(
-		client.clone(),
-		backend.clone(),
-		LeavesLevelLimit::Some(LEVEL_LIMIT),
+	let block0 = build_and_import_block_ext(
+		&*client,
+		BlockOrigin::NetworkInitialSync,
+		true,
+		&mut para_import,
+		None,
+		None,
 	);
+	let id0 = BlockId::Hash(block0.header.hash());
 
-	let root_block = build_and_import_block(client.clone(), true);
-	let root_id = BlockId::Number(*root_block.header.number());
-
-	// Here we are using the timestamp value to generate blocks with different hashes.
-	let blocks = (0..LEVEL_LIMIT)
+	let blocks1 = (0..LEVEL_LIMIT)
 		.into_iter()
 		.map(|i| {
 			build_and_import_block_ext(
 				&*client,
+				if i == 1 { BlockOrigin::NetworkInitialSync } else { BlockOrigin::Own },
+				i == 1,
+				&mut para_import,
+				Some(id0),
+				Some(i as u64 * TIMESTAMP_MULTIPLIER),
+			)
+		})
+		.collect::<Vec<_>>();
+	let id10 = BlockId::Hash(blocks1[0].header.hash());
+
+	let blocks2 = (0..2)
+		.into_iter()
+		.map(|i| {
+			build_and_import_block_ext(
+				&*client,
+				BlockOrigin::Own,
 				false,
 				&mut para_import,
-				Some(root_id),
+				Some(id10),
 				Some(i as u64 * TIMESTAMP_MULTIPLIER),
 			)
 		})
 		.collect::<Vec<_>>();
 
+	// Initial scenario (with B11 imported as best)
+	//
+	//   B0 --+-- B10 --+-- B20
+	//        +-- B11   +-- B21
+	//        +-- B12
+
 	let leaves = backend.blockchain().leaves().unwrap();
-	let mut expected = blocks.iter().map(|b| b.header.hash()).collect::<Vec<_>>();
-
-	assert_eq!(leaves.len(), LEVEL_LIMIT);
+	let mut expected = vec![
+		blocks2[0].header.hash(),
+		blocks2[1].header.hash(),
+		blocks1[1].header.hash(),
+		blocks1[2].header.hash(),
+	];
 	assert_eq!(leaves, expected);
+	let best = client.usage_info().chain.best_hash;
+	assert_eq!(best, blocks1[1].header.hash());
 
-	let block = build_and_import_block_ext(
+	let block13 = build_and_import_block_ext(
 		&*client,
+		BlockOrigin::Own,
 		false,
 		&mut para_import,
-		Some(root_id),
+		Some(id0),
 		Some(LEVEL_LIMIT as u64 * TIMESTAMP_MULTIPLIER),
 	);
 
+	// Expected scenario
+	//
+	//   B0 --+-- B10 --+-- B20
+	//        +-- B11   +-- B21
+	//        +--(B13)              <-- B12 has been replaced
+
+	let leaves = backend.blockchain().leaves().unwrap();
+	expected[3] = block13.header.hash();
+	assert_eq!(leaves, expected);
+
+	let block14 = build_and_import_block_ext(
+		&*client,
+		BlockOrigin::Own,
+		false,
+		&mut para_import,
+		Some(id0),
+		Some(2 * LEVEL_LIMIT as u64 * TIMESTAMP_MULTIPLIER),
+	);
+
+	// Expected scenario
+	//
+	//   B0 --+--(B14)              <-- B10 has been replaced
+	//        +-- B11
+	//        +--(B13)
+
 	let leaves = backend.blockchain().leaves().unwrap();
 	expected.remove(0);
-	expected.push(block.header.hash());
-	assert_eq!(leaves.len(), LEVEL_LIMIT);
+	expected.remove(0);
+	expected.push(block14.header.hash());
 	assert_eq!(leaves, expected);
+}
+
+// TODO: test monitor reload from backend
+#[test]
+fn restore_limit_monitor() {
+	// Here we are using the timestamp value to generate blocks with different hashes.
+	const LEVEL_LIMIT: usize = 3;
+	const TIMESTAMP_MULTIPLIER: u64 = 60000;
+
+	let backend = Arc::new(Backend::new_test(1000, 3));
+	let client = Arc::new(TestClientBuilder::with_backend(backend.clone()).build());
+	let mut para_import =
+		ParachainBlockImport::new(client.clone(), backend.clone(), LevelLimit::Some(LEVEL_LIMIT));
+
+	let block0 = build_and_import_block_ext(
+		&*client,
+		BlockOrigin::NetworkInitialSync,
+		true,
+		&mut para_import,
+		None,
+		None,
+	);
+	let id0 = BlockId::Hash(block0.header.hash());
+
+	let blocks1 = (0..LEVEL_LIMIT)
+		.into_iter()
+		.map(|i| {
+			build_and_import_block_ext(
+				&*client,
+				if i == 1 { BlockOrigin::NetworkInitialSync } else { BlockOrigin::Own },
+				i == 1,
+				&mut para_import,
+				Some(id0),
+				Some(i as u64 * TIMESTAMP_MULTIPLIER),
+			)
+		})
+		.collect::<Vec<_>>();
+	let id10 = BlockId::Hash(blocks1[0].header.hash());
+
+	let blocks2 = (0..2)
+		.into_iter()
+		.map(|i| {
+			build_and_import_block_ext(
+				&*client,
+				BlockOrigin::Own,
+				false,
+				&mut para_import,
+				Some(id10),
+				Some(i as u64 * TIMESTAMP_MULTIPLIER),
+			)
+		})
+		.collect::<Vec<_>>();
+
+	// Simulate a restart by using a new structure
+
+	let mut para_import =
+		ParachainBlockImport::new(client.clone(), backend.clone(), LevelLimit::Some(LEVEL_LIMIT));
+
+	let block13 = build_and_import_block_ext(
+		&*client,
+		BlockOrigin::Own,
+		false,
+		&mut para_import,
+		Some(id0),
+		Some(LEVEL_LIMIT as u64 * TIMESTAMP_MULTIPLIER),
+	);
+
+	// Expected scenario
+	//
+	//   B0 --+-- B10 --+-- B20
+	//        +-- B11   +-- B21
+	//        +--(B13)              <-- B12 has been replaced
+
+	let leaves = backend.blockchain().leaves().unwrap();
+	let expected = vec![
+		blocks2[0].header.hash(),
+		blocks2[1].header.hash(),
+		blocks1[1].header.hash(),
+		block13.header.hash(),
+	];
+	assert_eq!(leaves, expected);
+
+	let monitor = para_import.level_monitor.unwrap();
+	assert_eq!(monitor.import_counter, 0);
 }

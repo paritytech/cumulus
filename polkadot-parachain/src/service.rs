@@ -18,7 +18,7 @@ use codec::Codec;
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 use cumulus_client_consensus_common::{
-	LeavesLevelLimit, ParachainBlockImport, ParachainCandidate, ParachainConsensus,
+	LevelLimit, ParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
@@ -1150,7 +1150,7 @@ where
 
 	Ok(BasicQueue::new(
 		verifier,
-		Box::new(ParachainBlockImport::new(client, backend, LeavesLevelLimit::Default)),
+		Box::new(ParachainBlockImport::new(client, backend, LevelLimit::Default)),
 		None,
 		&spawner,
 		registry,

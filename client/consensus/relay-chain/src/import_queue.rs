@@ -30,7 +30,7 @@ use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT},
 };
 
-use cumulus_client_consensus_common::{LeavesLevelLimit, ParachainBlockImport};
+use cumulus_client_consensus_common::{LevelLimit, ParachainBlockImport};
 
 /// A verifier that just checks the inherents.
 pub struct Verifier<Client, Block, CIDP> {
@@ -123,7 +123,7 @@ where
 
 	Ok(BasicQueue::new(
 		verifier,
-		Box::new(ParachainBlockImport::new(block_import, backend, LeavesLevelLimit::Default)),
+		Box::new(ParachainBlockImport::new(block_import, backend, LevelLimit::Default)),
 		None,
 		spawner,
 		registry,

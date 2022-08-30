@@ -90,10 +90,10 @@ where
 	CIDP::InherentDataProviders: InherentDataProviderExt + Send + Sync,
 	BE: Backend<Block> + 'static,
 {
-	use cumulus_client_consensus_common::{LeavesLevelLimit, ParachainBlockImport};
+	use cumulus_client_consensus_common::{LevelLimit, ParachainBlockImport};
 
 	sc_consensus_aura::import_queue::<P, _, _, _, _, _, _>(sc_consensus_aura::ImportQueueParams {
-		block_import: ParachainBlockImport::new(block_import, backend, LeavesLevelLimit::Default),
+		block_import: ParachainBlockImport::new(block_import, backend, LevelLimit::Default),
 		justification_import: None,
 		client,
 		create_inherent_data_providers,
