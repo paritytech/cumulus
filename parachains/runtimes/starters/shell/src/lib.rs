@@ -160,7 +160,7 @@ impl frame_system::Config for Runtime {
 
 parameter_types! {
 	// We do anything the parent chain tells us in this runtime.
-	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 2;
+	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.scalar_div(2);
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
