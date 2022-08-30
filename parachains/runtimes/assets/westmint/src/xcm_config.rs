@@ -20,7 +20,6 @@ use super::{
 use frame_support::{
 	match_types, parameter_types,
 	traits::{Everything, PalletInfoAccess},
-	weights::Weight,
 };
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
