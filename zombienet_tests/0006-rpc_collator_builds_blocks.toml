@@ -1,0 +1,46 @@
+[relaychain]
+default_image = "{{RELAY_IMAGE}}"
+default_command = "polkadot"
+default_args = [ "-lparachain=debug" ]
+
+chain = "rococo-local"
+
+  [[relaychain.nodes]]
+  name = "alice"
+  validator = true
+
+  [[relaychain.nodes]]
+  name = "bob"
+  validator = true
+
+  [[relaychain.nodes]]
+  name = "charlie"
+  validator = true
+
+[[parachains]]
+id = 2000
+cumulus_based = true
+
+  # run dave as parachain full node
+  [[parachains.collators]]
+  name = "dave"
+  validator = true
+  image = "{{COL_IMAGE}}"
+  command = "test-parachain"
+  args = ["-lparachain=debug", "--relay-chain-rpc-url {{'alice'|zombie('wsUri')}}"]
+
+  # run eve as parachain full node that is only connected to dave
+  [[parachains.collators]]
+  name = "eve"
+  validator = true
+  image = "{{COL_IMAGE}}"
+  command = "test-parachain"
+  args = ["-lparachain=debug", "--relay-chain-rpc-url {{'bob'|zombie('wsUri')}}"]
+
+  # run ferdie as parachain collator
+  [[parachains.collators]]
+  name = "ferdie"
+  validator = true
+  image = "{{COL_IMAGE}}"
+  command = "test-parachain"
+  args = ["-lparachain=debug", "--relay-chain-rpc-url {{'alice'|zombie('wsUri')}}"]
