@@ -5,7 +5,7 @@ use frame_support::{
 	traits::{fungibles::Inspect, tokens::BalanceConversion},
 	weights::{Weight, WeightToFee, WeightToFeePolynomial},
 };
-use xcm::latest::prelude::*;
+use xcm::latest::{prelude::*, Weight as XCMWeight};
 use xcm_executor::traits::ShouldExecute;
 
 //TODO: move DenyThenTry to polkadot's xcm module.
@@ -24,8 +24,8 @@ where
 	fn should_execute<Call>(
 		origin: &MultiLocation,
 		message: &mut Xcm<Call>,
-		max_weight: Weight,
-		weight_credit: &mut Weight,
+		max_weight: XCMWeight,
+		weight_credit: &mut XCMWeight,
 	) -> Result<(), ()> {
 		Deny::should_execute(origin, message, max_weight, weight_credit)?;
 		Allow::should_execute(origin, message, max_weight, weight_credit)
@@ -38,8 +38,8 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 	fn should_execute<Call>(
 		origin: &MultiLocation,
 		message: &mut Xcm<Call>,
-		_max_weight: Weight,
-		_weight_credit: &mut Weight,
+		_max_weight: XCMWeight,
+		_weight_credit: &mut XCMWeight,
 	) -> Result<(), ()> {
 		if message.0.iter().any(|inst| {
 			matches!(
