@@ -24,16 +24,15 @@ use codec::{Decode, DecodeLimit, Encode};
 use cumulus_primitives_core::{
 	relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler, ParaId,
 };
-use frame_support::{dispatch::Weight, traits::Get};
+use frame_support::dispatch::Weight;
 pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{traits::BadOrigin, RuntimeDebug};
-use sp_std::{convert::TryFrom, marker::PhantomData, prelude::*};
+use sp_std::{convert::TryFrom, prelude::*};
 use xcm::{
-	latest::{AssetId::Concrete, ExecuteXcm, MultiAsset, MultiLocation, Outcome, Parent, Xcm},
+	latest::{ExecuteXcm, Outcome, Parent, Xcm},
 	VersionedXcm, MAX_XCM_DECODE_DEPTH,
 };
-use xcm_executor::traits::FilterAssetLocation;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -189,16 +188,5 @@ where
 	match o.into() {
 		Ok(Origin::Relay) => Ok(()),
 		_ => Err(BadOrigin),
-	}
-}
-
-/// Accepts an asset if it is a native asset from a particular `MultiLocation`.
-pub struct ConcreteNativeAssetFrom<Location>(PhantomData<Location>);
-impl<AssetId: Get<MultiLocation>> FilterAssetLocation for ConcreteNativeAsset<AssetId> {
-	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
-		log::trace!(target: "xcm::filter_asset_location",
-			"ConcreteNativeAsset asset: {:?}, origin: {:?}, id: {:?}",
-			asset, origin, AssetId::get());
-		matches!(asset.id, Concrete(ref id) if id == origin && origin == &AssetId::get())
 	}
 }

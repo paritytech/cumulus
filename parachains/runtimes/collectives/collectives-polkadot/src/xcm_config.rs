@@ -25,7 +25,7 @@ use frame_support::{
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
-	xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry},
+	xcm_config::{ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry},
 };
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
@@ -140,7 +140,7 @@ impl xcm_executor::Config for XcmConfig {
 	// Collectives does not recognize a reserve location for any asset. Users must teleport DOT
 	// where allowed (e.g. with the Relay Chain).
 	type IsReserve = ();
-	type IsTeleporter = cumulus_pallet_xcm::ConcreteNativeAsset<DotLocation>; // <- should be enough to allow teleportation of DOT
+	type IsTeleporter = ConcreteNativeAssetFrom<DotLocation>; // <- should be enough to allow teleportation of DOT
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
