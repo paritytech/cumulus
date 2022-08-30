@@ -489,9 +489,9 @@ impl TestNodeBuilder {
 	/// node.
 	pub fn connect_to_parachain_nodes<'a>(
 		mut self,
-		nodes: impl Iterator<Item = &'a TestNode>,
+		nodes: impl IntoIterator<Item = &'a TestNode>,
 	) -> Self {
-		self.parachain_nodes.extend(nodes.map(|n| n.addr.clone()));
+		self.parachain_nodes.extend(nodes.into_iter().map(|n| n.addr.clone()));
 		self
 	}
 

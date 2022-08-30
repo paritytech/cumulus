@@ -1,10 +1,10 @@
 use futures::FutureExt;
 use polkadot_core_primitives::{Block, Hash};
-use polkadot_service::{BlockT, NumberFor};
+use polkadot_service::{BlockT, HeaderBackend, NumberFor};
 
 use polkadot_node_network_protocol::PeerId;
 use sc_network::{NetworkService, SyncState};
-use sc_network_common::header_backend::NetworkHeaderBackend;
+
 use sc_network_common::sync::SyncStatus;
 use sc_network_light::light_client_requests;
 use sc_network_sync::{block_request_handler, state_request_handler};
@@ -116,21 +116,6 @@ pub fn build_collator_network(
 
 	let future = build_network_collator_future(network_mut);
 
-	// TODO: [skunert] Remove this comment
-	// TODO: Normally, one is supposed to pass a list of notifications protocols supported by the
-	// node through the `NetworkConfiguration` struct. But because this function doesn't know in
-	// advance which components, such as GrandPa or Polkadot, will be plugged on top of the
-	// service, it is unfortunately not possible to do so without some deep refactoring. To bypass
-	// this problem, the `NetworkService` provides a `register_notifications_protocol` method that
-	// can be called even after the network has been initialized. However, we want to avoid the
-	// situation where `register_notifications_protocol` is called *after* the network actually
-	// connects to other peers. For this reason, we delay the process of the network future until
-	// the user calls `NetworkStarter::start_network`.
-	//
-	// This entire hack should eventually be removed in favour of passing the list of protocols
-	// through the configuration.
-	//
-	// See also https://github.com/paritytech/substrate/issues/6827
 	let (network_start_tx, network_start_rx) = futures_channel::oneshot::channel();
 
 	// The network worker is responsible for gathering all network messages and processing
@@ -153,17 +138,15 @@ pub fn build_collator_network(
 		future.await
 	});
 
-	Ok((network, NetworkStarter::new(network_start_tx)))
+	let network_starter = NetworkStarter::new(network_start_tx);
+
+	Ok((network, network_starter))
 }
 
 /// Builds a never-ending future that continuously polls the network.
 ///
 /// The `status_sink` contain a list of senders to send a periodic network status to.
-async fn build_network_collator_future<
-	B: BlockT,
-	H: sc_network::ExHashT,
-	C: NetworkHeaderBackend<B>,
->(
+async fn build_network_collator_future<B: BlockT, H: sc_network::ExHashT, C: HeaderBackend<B>>(
 	mut network: sc_network::NetworkWorker<B, H, C>,
 ) {
 	loop {
@@ -280,7 +263,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		_request: Option<sc_network_common::sync::message::BlockRequest<B>>,
 		_response: sc_network_common::sync::message::BlockResponse<B>,
 	) -> Result<sc_network_common::sync::OnBlockData<B>, sc_network_common::sync::BadPeer> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn on_state_data(
@@ -288,7 +271,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		_who: &libp2p::PeerId,
 		_response: sc_network_common::sync::OpaqueStateResponse,
 	) -> Result<sc_network_common::sync::OnStateData<B>, sc_network_common::sync::BadPeer> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn on_warp_sync_data(
@@ -296,7 +279,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		_who: &libp2p::PeerId,
 		_response: sc_network_common::sync::warp::EncodedProof,
 	) -> Result<(), sc_network_common::sync::BadPeer> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn on_block_justification(
@@ -305,7 +288,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		_response: sc_network_common::sync::message::BlockResponse<B>,
 	) -> Result<sc_network_common::sync::OnBlockJustification<B>, sc_network_common::sync::BadPeer>
 	{
-		todo!()
+		unimplemented!()
 	}
 
 	fn on_blocks_processed(
@@ -366,32 +349,32 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		&mut self,
 		_who: &libp2p::PeerId,
 	) -> Option<sc_network_common::sync::OnBlockData<B>> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn metrics(&self) -> sc_network_common::sync::Metrics {
-		todo!()
+		unimplemented!()
 	}
 
 	fn create_opaque_block_request(
 		&self,
 		_request: &sc_network_common::sync::message::BlockRequest<B>,
 	) -> sc_network_common::sync::OpaqueBlockRequest {
-		todo!()
+		unimplemented!()
 	}
 
 	fn encode_block_request(
 		&self,
 		_request: &sc_network_common::sync::OpaqueBlockRequest,
 	) -> Result<Vec<u8>, String> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn decode_block_response(
 		&self,
 		_response: &[u8],
 	) -> Result<sc_network_common::sync::OpaqueBlockResponse, String> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn block_response_into_blocks(
@@ -399,20 +382,20 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		_request: &sc_network_common::sync::message::BlockRequest<B>,
 		_response: sc_network_common::sync::OpaqueBlockResponse,
 	) -> Result<Vec<sc_network_common::sync::message::BlockData<B>>, String> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn encode_state_request(
 		&self,
 		_request: &sc_network_common::sync::OpaqueStateRequest,
 	) -> Result<Vec<u8>, String> {
-		todo!()
+		unimplemented!()
 	}
 
 	fn decode_state_response(
 		&self,
 		_response: &[u8],
 	) -> Result<sc_network_common::sync::OpaqueStateResponse, String> {
-		todo!()
+		unimplemented!()
 	}
 }

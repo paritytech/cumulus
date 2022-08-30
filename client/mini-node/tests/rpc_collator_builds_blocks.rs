@@ -66,5 +66,21 @@ async fn rpc_collator_builds_blocks() {
 		.build()
 		.await;
 
-	join!(one.wait_for_blocks(7));
+	let two = cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle.clone(), Two)
+		.enable_collator()
+		.use_external_relay_chain_node_at_port(ws_port)
+		.connect_to_parachain_nodes(vec![&one])
+		.connect_to_relay_chain_nodes(vec![&bob, &alice])
+		.build()
+		.await;
+
+	let ferdie = cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle.clone(), Ferdie)
+		.enable_collator()
+		.use_external_relay_chain_node_at_port(ws_port)
+		.connect_to_relay_chain_nodes(vec![&bob, &alice])
+		.connect_to_parachain_nodes(vec![&one, &two])
+		.build()
+		.await;
+
+	join!(one.wait_for_blocks(30), two.wait_for_blocks(30), ferdie.wait_for_blocks(30));
 }

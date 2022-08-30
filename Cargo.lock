@@ -838,6 +838,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cfg-expr"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0aacacf4d96c24b2ad6eb8ee6df040e4f27b0d0b39a5710c30091baa830485db"
+dependencies = [
+ "smallvec",
+]
+
+[[package]]
 name = "cfg-if"
 version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3003,7 +3012,9 @@ name = "frame-support-procedural"
 version = "4.0.0-dev"
 dependencies = [
  "Inflector",
+ "cfg-expr",
  "frame-support-procedural-tools",
+ "itertools",
  "proc-macro2",
  "quote",
  "syn",
@@ -7867,6 +7878,7 @@ dependencies = [
  "pallet-multisig",
  "pallet-nomination-pools",
  "pallet-nomination-pools-benchmarking",
+ "pallet-nomination-pools-runtime-api",
  "pallet-offences",
  "pallet-offences-benchmarking",
  "pallet-preimage",
@@ -10399,9 +10411,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.81"
+version = "1.0.85"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b7ce2b32a1aed03c558dc61a5cd328f15aff2dbc17daad8fb8af04d2100e15c"
+checksum = "e55a28e3aaef9d5ce0506d0a14dbba8054ddc7e499ef522dd8b26859ec9d4a44"
 dependencies = [
  "itoa 1.0.1",
  "ryu",
@@ -13308,74 +13320,6 @@ dependencies = [
 ]
 
 [[patch.unused]]
-name = "polkadot"
-version = "0.9.27"
-
-[[patch.unused]]
-name = "polkadot-primitives-test-helpers"
-version = "0.9.27"
-
-[[patch.unused]]
-name = "polkadot-test-malus"
-version = "0.9.27"
-
-[[patch.unused]]
-name = "polkadot-voter-bags"
-version = "0.9.27"
-
-[[patch.unused]]
-name = "remote-ext-tests-bags-list"
-version = "0.9.27"
-
-[[patch.unused]]
-name = "staking-miner"
-version = "0.9.27"
-
-[[patch.unused]]
-name = "test-parachain-adder"
-version = "0.9.27"
-
-[[patch.unused]]
-name = "test-parachain-adder-collator"
-version = "0.9.27"
-
-[[patch.unused]]
-name = "test-parachain-halt"
-version = "0.9.27"
-
-[[patch.unused]]
-name = "test-parachain-undying"
-version = "0.9.27"
-
-[[patch.unused]]
-name = "test-parachain-undying-collator"
-version = "0.9.27"
-
-[[patch.unused]]
-name = "test-parachains"
-version = "0.9.27"
-
-[[patch.unused]]
-name = "xcm-executor-integration-tests"
-version = "0.9.27"
-
-[[patch.unused]]
-name = "xcm-simulator"
-version = "0.9.27"
-
-[[patch.unused]]
-name = "xcm-simulator-example"
-version = "0.9.27"
-
-[[patch.unused]]
-name = "xcm-simulator-fuzzer"
-version = "0.9.27"
-
-[[patch.unused]]
-name = "zombienet-backchannel"
-version = "0.9.27"
-
-[[patch.unused]]
 name = "chain-spec-builder"
 version = "2.0.0"
 
@@ -13606,3 +13550,71 @@ version = "2.0.0"
 [[patch.unused]]
 name = "substrate-test-utils-test-crate"
 version = "0.1.0"
+
+[[patch.unused]]
+name = "polkadot"
+version = "0.9.27"
+
+[[patch.unused]]
+name = "polkadot-primitives-test-helpers"
+version = "0.9.27"
+
+[[patch.unused]]
+name = "polkadot-test-malus"
+version = "0.9.27"
+
+[[patch.unused]]
+name = "polkadot-voter-bags"
+version = "0.9.27"
+
+[[patch.unused]]
+name = "remote-ext-tests-bags-list"
+version = "0.9.27"
+
+[[patch.unused]]
+name = "staking-miner"
+version = "0.9.27"
+
+[[patch.unused]]
+name = "test-parachain-adder"
+version = "0.9.27"
+
+[[patch.unused]]
+name = "test-parachain-adder-collator"
+version = "0.9.27"
+
+[[patch.unused]]
+name = "test-parachain-halt"
+version = "0.9.27"
+
+[[patch.unused]]
+name = "test-parachain-undying"
+version = "0.9.27"
+
+[[patch.unused]]
+name = "test-parachain-undying-collator"
+version = "0.9.27"
+
+[[patch.unused]]
+name = "test-parachains"
+version = "0.9.27"
+
+[[patch.unused]]
+name = "xcm-executor-integration-tests"
+version = "0.9.27"
+
+[[patch.unused]]
+name = "xcm-simulator"
+version = "0.9.27"
+
+[[patch.unused]]
+name = "xcm-simulator-example"
+version = "0.9.27"
+
+[[patch.unused]]
+name = "xcm-simulator-fuzzer"
+version = "0.9.27"
+
+[[patch.unused]]
+name = "zombienet-backchannel"
+version = "0.9.27"

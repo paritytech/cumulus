@@ -3,10 +3,11 @@ use std::pin::Pin;
 use cumulus_relay_chain_interface::RelayChainError;
 use cumulus_relay_chain_rpc_interface::RelayChainRpcClient;
 use futures::{Future, Stream, StreamExt};
-use polkadot_core_primitives::{Block, Hash, Header};
+use polkadot_core_primitives::{Block, BlockId, Hash, Header};
 use polkadot_overseer::RuntimeApiSubsystemClient;
+use polkadot_service::HeaderBackend;
 use sc_authority_discovery::AuthorityDiscovery;
-use sc_network_common::header_backend::NetworkHeaderBackend;
+
 use sp_api::{ApiError, RuntimeApiInfo};
 use sp_blockchain::Info;
 
@@ -350,17 +351,27 @@ fn block_local<T>(fut: impl Future<Output = T>) -> T {
 	tokio::task::block_in_place(|| tokio_handle.block_on(fut))
 }
 
-impl NetworkHeaderBackend<Block> for BlockChainRpcClient {
+impl HeaderBackend<Block> for BlockChainRpcClient {
 	fn header(
 		&self,
-		hash: <Block as polkadot_service::BlockT>::Hash,
+		id: BlockId,
 	) -> sp_blockchain::Result<Option<<Block as polkadot_service::BlockT>::Header>> {
-		Ok(block_local(self.rpc_client.chain_get_header(Some(hash)))?)
+		let fetch_header = |hash| block_local(self.rpc_client.chain_get_header(Some(hash)));
+
+		match id {
+			BlockId::Hash(hash) => Ok(fetch_header(hash)?),
+			BlockId::Number(number) => {
+				if let Some(hash) = HeaderBackend::<Block>::hash(self, number)? {
+					Ok(fetch_header(hash)?)
+				} else {
+					Ok(None)
+				}
+			},
+		}
 	}
 
 	fn info(&self) -> Info<Block> {
 		tracing::debug!(target: LOG_TARGET, "BlockBackend::block_status");
-
 		let best_header = block_local(self.rpc_client.chain_get_header(None))
 			.expect("get_header")
 			.unwrap();
@@ -386,6 +397,13 @@ impl NetworkHeaderBackend<Block> for BlockChainRpcClient {
 			number_leaves: 1,
 			block_gap: None,
 		}
+	}
+
+	fn status(
+		&self,
+		id: sp_api::BlockId<Block>,
+	) -> sp_blockchain::Result<sp_blockchain::BlockStatus> {
+		todo!()
 	}
 
 	fn number(
