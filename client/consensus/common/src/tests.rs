@@ -26,7 +26,7 @@ use cumulus_test_client::{
 use futures::{channel::mpsc, executor::block_on, select, FutureExt, Stream, StreamExt};
 use futures_timer::Delay;
 use polkadot_primitives::v2::Id as ParaId;
-use sc_client_api::{Backend as _, UsageProvider};
+use sc_client_api::{blockchain::Backend as _, Backend as _, UsageProvider};
 use sc_consensus::{BlockImport, BlockImportParams, ForkChoiceStrategy};
 use sp_blockchain::Error as ClientError;
 use sp_consensus::BlockOrigin;
@@ -489,7 +489,6 @@ fn prune_blocks_on_level_overflow() {
 	assert_eq!(leaves, expected);
 }
 
-// TODO: test monitor reload from backend
 #[test]
 fn restore_limit_monitor() {
 	// Here we are using the timestamp value to generate blocks with different hashes.
@@ -540,7 +539,7 @@ fn restore_limit_monitor() {
 		})
 		.collect::<Vec<_>>();
 
-	// Simulate a restart by using a new structure
+	// Simulate a restart by forcing a new monitor structure instance
 
 	let mut para_import =
 		ParachainBlockImport::new(client.clone(), backend.clone(), LevelLimit::Some(LEVEL_LIMIT));
@@ -570,5 +569,15 @@ fn restore_limit_monitor() {
 	assert_eq!(leaves, expected);
 
 	let monitor = para_import.level_monitor.unwrap();
-	assert_eq!(monitor.import_counter, 0);
+	assert_eq!(monitor.import_counter, 5);
+	assert!(monitor.levels.iter().all(|(number, hashes)| {
+		hashes
+			.iter()
+			.filter(|hash| **hash != block13.header.hash())
+			.all(|hash| *number as u64 == *monitor.import_counters.get(hash).unwrap())
+	}));
+	assert_eq!(
+		*monitor.import_counters.get(&block13.header.hash()).unwrap(),
+		monitor.import_counter - 1
+	);
 }
