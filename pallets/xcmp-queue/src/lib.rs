@@ -795,8 +795,8 @@ impl<T: Config> Pallet<T> {
 		} = <QueueConfig<T>>::get();
 
 		let mut shuffled = Self::create_shuffle(status.len());
-		let mut weight_used = Weight::new();
-		let mut weight_available = Weight::new();
+		let mut weight_used = Weight::zero(1);
+		let mut weight_available = Weight::zero(1);
 
 		// We don't want the possibility of a chain sending a series of really heavy messages and
 		// tying up the block's execution time from other chains. Therefore we execute any remaining
