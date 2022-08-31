@@ -252,6 +252,9 @@ build-test-parachain:
 .build-runtime-template:           &build-runtime-template
   stage:                           build
   <<:                              *docker-env
+  needs:
+    - job:                         check-rustdoc
+      artifacts:                   false
   variables:
     RUNTIME_PATH:                  "parachains/runtimes/assets"
     RUNTIME_NAME:                  "statemine"
