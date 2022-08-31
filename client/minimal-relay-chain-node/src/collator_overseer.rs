@@ -15,9 +15,12 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use lru::LruCache;
-use polkadot_node_network_protocol::request_response::{
-	v1::{AvailableDataFetchingRequest, CollationFetchingRequest},
-	IncomingRequestReceiver, ReqProtocolNames,
+use polkadot_node_network_protocol::{
+	peer_set::PeerSetProtocolNames,
+	request_response::{
+		v1::{AvailableDataFetchingRequest, CollationFetchingRequest},
+		IncomingRequestReceiver, ReqProtocolNames,
+	},
 };
 use polkadot_node_subsystem_util::metrics::{prometheus::Registry, Metrics};
 use polkadot_overseer::{
@@ -65,6 +68,7 @@ pub(crate) struct CollatorOverseerGenArgs<'a> {
 	/// Determines the behavior of the collator.
 	pub collator_pair: CollatorPair,
 	pub req_protocol_names: ReqProtocolNames,
+	pub peer_set_protocol_names: PeerSetProtocolNames,
 }
 
 pub(crate) struct CollatorOverseerGen;
@@ -83,6 +87,7 @@ impl CollatorOverseerGen {
 			spawner,
 			collator_pair,
 			req_protocol_names,
+			peer_set_protocol_names,
 		}: CollatorOverseerGenArgs<'a>,
 	) -> Result<
 		(
@@ -123,12 +128,14 @@ impl CollatorOverseerGen {
 				authority_discovery_service.clone(),
 				Box::new(network_service.clone()),
 				Metrics::register(registry)?,
+				peer_set_protocol_names.clone(),
 			))
 			.network_bridge_tx(NetworkBridgeTxSubsystem::new(
 				network_service.clone(),
 				authority_discovery_service.clone(),
 				network_bridge_metrics.clone(),
 				req_protocol_names,
+				peer_set_protocol_names,
 			))
 			.provisioner(DummySubsystem)
 			.runtime_api(RuntimeApiSubsystem::new(

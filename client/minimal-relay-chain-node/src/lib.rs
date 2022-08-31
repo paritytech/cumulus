@@ -17,7 +17,10 @@
 use collator_overseer::{CollatorOverseerGenArgs, NewCollator};
 
 use polkadot_network_bridge::{peer_sets_info, IsAuthority};
-use polkadot_node_network_protocol::request_response::{IncomingRequest, ReqProtocolNames};
+use polkadot_node_network_protocol::{
+	peer_set::PeerSetProtocolNames,
+	request_response::{IncomingRequest, ReqProtocolNames},
+};
 use polkadot_node_subsystem_util::metrics::prometheus::Registry;
 use polkadot_primitives::v2::CollatorPair;
 use polkadot_service::Error;
@@ -103,16 +106,22 @@ pub async fn new_minimal_relay_chain(
 
 	let prometheus_registry = config.prometheus_registry().cloned();
 
-	{
-		let is_authority = if role.is_authority() { IsAuthority::Yes } else { IsAuthority::No };
-		config.network.extra_sets.extend(peer_sets_info(is_authority));
-	}
-
 	let genesis_hash = relay_chain_rpc_client
 		.block_get_hash(Some(0))
 		.await
 		.expect("Crash here if no genesis is available")
 		.unwrap_or_default();
+
+	let peer_set_protocol_names =
+		PeerSetProtocolNames::new(genesis_hash, config.chain_spec.fork_id());
+
+	{
+		let is_authority = if role.is_authority() { IsAuthority::Yes } else { IsAuthority::No };
+		config
+			.network
+			.extra_sets
+			.extend(peer_sets_info(is_authority, &peer_set_protocol_names));
+	}
 
 	let request_protocol_names = ReqProtocolNames::new(genesis_hash, config.chain_spec.fork_id());
 	let (collation_req_receiver, cfg) =
@@ -150,7 +159,8 @@ pub async fn new_minimal_relay_chain(
 		registry: prometheus_registry.as_ref(),
 		spawner: task_manager.spawn_handle(),
 		collator_pair,
-		req_protocol_names: ReqProtocolNames::new(genesis_hash, config.chain_spec.fork_id()),
+		req_protocol_names: request_protocol_names,
+		peer_set_protocol_names,
 	};
 
 	let overseer_handle = collator_overseer::spawn_overseer(
