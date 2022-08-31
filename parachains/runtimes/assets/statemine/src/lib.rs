@@ -327,7 +327,7 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			),
 			ProxyType::CancelProxy => matches!(
 				c,
-				RuntimeCall::Proxy(pallet_proxy::RuntimeCall::reject_announcement { .. }) |
+				RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. }) |
 					RuntimeCall::Utility { .. } |
 					RuntimeCall::Multisig { .. }
 			),
@@ -342,43 +342,43 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			},
 			ProxyType::AssetOwner => matches!(
 				c,
-				RuntimeCall::Assets(pallet_assets::RuntimeCall::create { .. }) |
-					RuntimeCall::Assets(pallet_assets::RuntimeCall::destroy { .. }) |
-					RuntimeCall::Assets(pallet_assets::RuntimeCall::transfer_ownership { .. }) |
-					RuntimeCall::Assets(pallet_assets::RuntimeCall::set_team { .. }) |
-					RuntimeCall::Assets(pallet_assets::RuntimeCall::set_metadata { .. }) |
-					RuntimeCall::Assets(pallet_assets::RuntimeCall::clear_metadata { .. }) |
-					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::create { .. }) |
-					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::destroy { .. }) |
-					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::transfer_ownership { .. }) |
-					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::set_team { .. }) |
-					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::set_metadata { .. }) |
-					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::set_attribute { .. }) |
+				RuntimeCall::Assets(pallet_assets::Call::create { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::destroy { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::transfer_ownership { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::set_team { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::set_metadata { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::clear_metadata { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::create { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::destroy { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::transfer_ownership { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::set_team { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::set_metadata { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::set_attribute { .. }) |
 					RuntimeCall::Uniques(
-						pallet_uniques::RuntimeCall::set_collection_metadata { .. }
-					) | RuntimeCall::Uniques(pallet_uniques::RuntimeCall::clear_metadata { .. }) |
-					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::clear_attribute { .. }) |
+						pallet_uniques::Call::set_collection_metadata { .. }
+					) | RuntimeCall::Uniques(pallet_uniques::Call::clear_metadata { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::clear_attribute { .. }) |
 					RuntimeCall::Uniques(
-						pallet_uniques::RuntimeCall::clear_collection_metadata { .. }
+						pallet_uniques::Call::clear_collection_metadata { .. }
 					) | RuntimeCall::Uniques(
-					pallet_uniques::RuntimeCall::set_collection_max_supply { .. }
+					pallet_uniques::Call::set_collection_max_supply { .. }
 				) | RuntimeCall::Utility { .. } |
 					RuntimeCall::Multisig { .. }
 			),
 			ProxyType::AssetManager => matches!(
 				c,
-				RuntimeCall::Assets(pallet_assets::RuntimeCall::mint { .. }) |
-					RuntimeCall::Assets(pallet_assets::RuntimeCall::burn { .. }) |
-					RuntimeCall::Assets(pallet_assets::RuntimeCall::freeze { .. }) |
-					RuntimeCall::Assets(pallet_assets::RuntimeCall::thaw { .. }) |
-					RuntimeCall::Assets(pallet_assets::RuntimeCall::freeze_asset { .. }) |
-					RuntimeCall::Assets(pallet_assets::RuntimeCall::thaw_asset { .. }) |
-					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::mint { .. }) |
-					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::burn { .. }) |
-					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::freeze { .. }) |
-					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::thaw { .. }) |
-					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::freeze_collection { .. }) |
-					RuntimeCall::Uniques(pallet_uniques::RuntimeCall::thaw_collection { .. }) |
+				RuntimeCall::Assets(pallet_assets::Call::mint { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::burn { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::freeze { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::thaw { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::freeze_asset { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::thaw_asset { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::mint { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::burn { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::freeze { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::thaw { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::freeze_collection { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::thaw_collection { .. }) |
 					RuntimeCall::Utility { .. } |
 					RuntimeCall::Multisig { .. }
 			),
@@ -563,40 +563,40 @@ construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		// System support stuff.
-		System: frame_system::{Pallet, RuntimeCall, Config, Storage, Event<T>} = 0,
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 0,
 		ParachainSystem: cumulus_pallet_parachain_system::{
-			Pallet, RuntimeCall, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
+			Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
 		} = 1,
 		// RandomnessCollectiveFlip = 2 removed
-		Timestamp: pallet_timestamp::{Pallet, RuntimeCall, Storage, Inherent} = 3,
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 4,
 
 		// Monetary stuff.
-		Balances: pallet_balances::{Pallet, RuntimeCall, Storage, Config<T>, Event<T>} = 10,
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
 		AssetTxPayment: pallet_asset_tx_payment::{Pallet, Event<T>} = 12,
 
 		// Collator support. the order of these 5 are important and shall not change.
-		Authorship: pallet_authorship::{Pallet, RuntimeCall, Storage} = 20,
-		CollatorSelection: pallet_collator_selection::{Pallet, RuntimeCall, Storage, Event<T>, Config<T>} = 21,
-		Session: pallet_session::{Pallet, RuntimeCall, Storage, Event, Config<T>} = 22,
+		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
+		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
+		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
 
 		// XCM helpers.
-		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, RuntimeCall, Storage, Event<T>} = 30,
-		PolkadotXcm: pallet_xcm::{Pallet, RuntimeCall, Storage, Event<T>, Origin, Config} = 31,
+		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin, Config} = 31,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
-		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, RuntimeCall, Storage, Event<T>} = 33,
+		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
 		// Handy utilities.
-		Utility: pallet_utility::{Pallet, RuntimeCall, Event} = 40,
-		Multisig: pallet_multisig::{Pallet, RuntimeCall, Storage, Event<T>} = 41,
-		Proxy: pallet_proxy::{Pallet, RuntimeCall, Storage, Event<T>} = 42,
+		Utility: pallet_utility::{Pallet, Call, Event} = 40,
+		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
+		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 42,
 
 		// The main stage.
-		Assets: pallet_assets::{Pallet, RuntimeCall, Storage, Event<T>} = 50,
-		Uniques: pallet_uniques::{Pallet, RuntimeCall, Storage, Event<T>} = 51,
+		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
+		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 	}
 );
 

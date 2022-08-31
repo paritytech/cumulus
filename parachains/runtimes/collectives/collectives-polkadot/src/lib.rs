@@ -290,7 +290,7 @@ impl Default for ProxyType {
 	}
 }
 impl InstanceFilter<RuntimeCall> for ProxyType {
-	fn filter(&self, c: &Call) -> bool {
+	fn filter(&self, c: &RuntimeCall) -> bool {
 		match self {
 			ProxyType::Any => true,
 			ProxyType::NonTransfer => !matches!(c, RuntimeCall::Balances { .. }),
@@ -438,7 +438,7 @@ pub const ALLIANCE_MAX_MEMBERS: u32 = 100;
 type AllianceCollective = pallet_collective::Instance1;
 impl pallet_collective::Config<AllianceCollective> for Runtime {
 	type Origin = Origin;
-	type Proposal = Call;
+	type Proposal = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type MotionDuration = AllianceMotionDuration;
 	type MaxProposals = ConstU32<ALLIANCE_MAX_PROPOSALS>;
@@ -463,7 +463,7 @@ parameter_types! {
 
 impl pallet_alliance::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type Proposal = Call;
+	type Proposal = RuntimeCall;
 	type AdminOrigin = RootOrAllianceTwoThirdsMajority;
 	type MembershipManager = RootOrAllianceTwoThirdsMajority;
 	type AnnouncementOrigin = RootOrAllianceTwoThirdsMajority;
@@ -525,7 +525,7 @@ construct_runtime!(
 
 		// The main stage.
 		Alliance: pallet_alliance::{Pallet, Call, Storage, Event<T>, Config<T>} = 50,
-		AllianceMotion: pallet_collective::<Instance1>::{Pallet, RuntimeCall, Storage, Origin<T>, Event<T>, Config<T>} = 51,
+		AllianceMotion: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 51,
 	}
 );
 
