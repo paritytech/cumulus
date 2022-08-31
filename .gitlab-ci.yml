@@ -262,6 +262,9 @@ build-test-parachain:
     - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                         # PRs
       changes:
         - $RUNTIME_PATH/$RUNTIME_NAME/**/*
+        - parachains/common/**/*
+        - parachains/pallets/**/*
+        - parachains/chain-specs/**/*
   script:
     - cd ${RUNTIME_PATH}/${RUNTIME_NAME}
     - SKIP_WASM_BUILD=1 cargo check
