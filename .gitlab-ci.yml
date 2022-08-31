@@ -264,7 +264,7 @@ build-test-parachain:
         - $RUNTIME_PATH/$RUNTIME_NAME/**/*
   script:
     - cd ${RUNTIME_PATH}/${RUNTIME_NAME}
-    - cargo +nightly build --locked --profile release -Z unstable-options
+    - SKIP_WASM_BUILD=1 cargo check
 
 build-runtime-assets-statemine:
   <<: *build-runtime-template
