@@ -25,7 +25,7 @@ pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 /// Migrates the pallet storage to the most recent version, checking and setting the
 /// `StorageVersion`.
 pub fn migrate_to_latest<T: Config>() -> Weight {
-	let mut weight = Weight::zero(1);
+	let mut weight = Weight::zero();
 
 	if StorageVersion::get::<Pallet<T>>() == 0 {
 		weight += migrate_to_v1::<T>();
