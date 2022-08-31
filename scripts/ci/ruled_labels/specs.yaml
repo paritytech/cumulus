@@ -200,21 +200,62 @@ labels:
     color: 009B40
 
 rules:
-  - name: Require a release label (B)
+  - name: Require a single Release (B) label
+    id: single_b
+    tags: [ PR ]
     spec:
       require: !one_of [ B* ]
 
+  - name: Require a single Crticality (C) label
+    id: single_c
+    tags: [ PR ]
+    spec:
+      when: !some_of  [ C* ]
+      require: !one_of [ C* ]
+
+  - name: Require a single Auditing (D) label
+    id: single_d
+    tags: [ PR ]
+    spec:
+      when: !some_of  [ D* ]
+      require: !one_of [ D* ]
+
+  - name: Require a single issue status (S) label
+    id: single_s
+    tags: [ issue ]
+    spec:
+      when: !some_of  [ S* ]
+      require: !one_of [ S* ]
+
+  - name: Require a single Urgency status (U) label
+    id: single_u
+    tags: [ issue ]
+    spec:
+      when: !some_of  [ U* ]
+      require: !one_of [ U* ]
+
   - name: Runtimes require an audit Label
+    id: require_one_d_when_x1
+    tags: [ PR ]
     when: !one_of [ X1 ]
     spec:
       require: !one_of [ D* ]
 
   - name: Release need priorities
+    id: require_one_p_when_b1
+    tags: [ PR ]
     when: !one_of [ B1 ]
     spec:
       require: !one_of [ P* ]
 
+  - name: Release need topics
+    tags: [ PR ]
+    when: !one_of [ B1 ]
+    spec:
+      require: !some_of [ T* ]
+
   - name: Release require some topics
+    tags: [ PR ]
     when: !one_of [ B1 ]
     spec:
       require: !some_of [ X* ]

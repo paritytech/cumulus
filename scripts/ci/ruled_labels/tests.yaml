@@ -3,7 +3,12 @@ spec_file: specs.yaml
 
 specs:
   - name: Pass - Pass all
-    labels: [ B1, P1, D1, X1 ]
+    # Not supported yet: see https://github.com/chevdor/ruled_labels/issues/5
+    filter:
+      id: single_.*
+      tags: [ PR ]
+      name: .*Urgency.*
+    labels: [ B1, P1, D1, X1, T4 ]
     expected: true
 
   - name: Fail - Require release label
