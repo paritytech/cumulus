@@ -67,13 +67,6 @@ async fn sync_blocks_from_tip_without_being_connected_to_a_collator() {
 			.build()
 			.await;
 
-	let one = cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle.clone(), One)
-		.enable_collator()
-		.connect_to_parachain_node(&charlie)
-		.use_external_relay_chain_node_at_port(ws_port)
-		.build()
-		.await;
-
 	// run dave as parachain full node
 	let dave = cumulus_test_service::TestNodeBuilder::new(para_id, tokio_handle.clone(), Dave)
 		.connect_to_parachain_node(&charlie)
@@ -98,5 +91,5 @@ async fn sync_blocks_from_tip_without_being_connected_to_a_collator() {
 		.build()
 		.await;
 
-	join!(ferdie.wait_for_blocks(7), eve.wait_for_blocks(7), one.wait_for_blocks(7));
+	join!(ferdie.wait_for_blocks(7), eve.wait_for_blocks(7));
 }

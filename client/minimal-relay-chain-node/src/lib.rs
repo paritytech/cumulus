@@ -20,7 +20,7 @@ use polkadot_network_bridge::{peer_sets_info, IsAuthority};
 use polkadot_node_network_protocol::request_response::{IncomingRequest, ReqProtocolNames};
 use polkadot_node_subsystem_util::metrics::prometheus::Registry;
 use polkadot_primitives::v2::CollatorPair;
-use polkadot_service::{Error};
+use polkadot_service::Error;
 
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
 use sc_network::{Event, NetworkService};
@@ -29,7 +29,7 @@ use std::sync::Arc;
 
 use polkadot_service::{Configuration, TaskManager};
 
-use futures::{StreamExt};
+use futures::StreamExt;
 
 use sp_runtime::traits::Block as BlockT;
 

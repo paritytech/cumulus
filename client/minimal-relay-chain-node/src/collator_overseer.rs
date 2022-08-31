@@ -1,4 +1,4 @@
-// Copyright 2017-2022 Parity Technologies (UK) Ltd.
+// Copyright 2022 Parity Technologies (UK) Ltd.
 // This file is part of Polkadot.
 
 // Polkadot is free software: you can redistribute it and/or modify
@@ -218,7 +218,8 @@ pub(crate) async fn forward_collator_events(client: Arc<BlockChainRpcClient>, mu
 			f = finality.next() => {
 				match f {
 					Some(header) => {
-						handle.block_finalized(header.into()).await;
+		let block_info = BlockInfo { hash: header.hash(), parent_hash: header.parent_hash, number: header.number };
+						handle.block_finalized(block_info).await;
 					}
 					None => break,
 				}
@@ -226,7 +227,8 @@ pub(crate) async fn forward_collator_events(client: Arc<BlockChainRpcClient>, mu
 			i = imports.next() => {
 				match i {
 					Some(header) => {
-						handle.block_imported(header.into()).await;
+		let block_info = BlockInfo { hash: header.hash(), parent_hash: header.parent_hash, number: header.number };
+						handle.block_imported(block_info).await;
 					}
 					None => break,
 				}

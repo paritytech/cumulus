@@ -34,10 +34,10 @@ use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
+use cumulus_minimal_relay_chain_node::BlockChainRpcClient;
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::RelayChainInProcessInterface;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_mini::BlockChainRpcClient;
 use cumulus_relay_chain_rpc_interface::{create_client_and_start_worker, RelayChainRpcInterface};
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 
@@ -187,13 +187,12 @@ async fn build_relay_chain_interface(
 		let client = create_client_and_start_worker(relay_chain_url, task_manager).await?;
 		if parachain_config.role.is_authority() {
 			let collator_key = collator_key.or_else(|| Some(CollatorPair::generate().0));
-			let collator_node = cumulus_relay_chain_mini::new_minimal_relay_chain(
+			let collator_node = cumulus_minimal_relay_chain_node::new_minimal_relay_chain(
 				relay_chain_config,
 				collator_key.clone().unwrap(),
 				Arc::new(BlockChainRpcClient::new(client.clone()).await),
 			)
-			.await
-			.expect("Unable to initialize relay chain minimal node");
+			.await?;
 			task_manager.add_child(collator_node.task_manager);
 			return Ok(Arc::new(RelayChainRpcInterface::new(
 				client,

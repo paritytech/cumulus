@@ -58,7 +58,7 @@ pub enum RelayChainError {
 	WorkerCommunicationError(String),
 	#[error("Scale codec deserialization error: {0}")]
 	DeserializationError(CodecError),
-	#[error("Scale codec deserialization error: {0}")]
+	#[error("Polkadot service error: {0}")]
 	ServiceError(#[from] polkadot_service::Error),
 	#[error("Unspecified error occured: {0}")]
 	GenericError(String),

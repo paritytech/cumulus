@@ -1,3 +1,19 @@
+// Copyright 2022 Parity Technologies (UK) Ltd.
+// This file is part of Cumulus.
+
+// Cumulus is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Cumulus is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
+
 use std::pin::Pin;
 
 use cumulus_relay_chain_interface::RelayChainError;
@@ -10,8 +26,6 @@ use sc_authority_discovery::AuthorityDiscovery;
 
 use sp_api::{ApiError, RuntimeApiInfo};
 use sp_blockchain::Info;
-
-const LOG_TARGET: &'static str = "blockchain-rpc-client";
 
 #[derive(Clone)]
 pub struct BlockChainRpcClient {
@@ -371,16 +385,9 @@ impl HeaderBackend<Block> for BlockChainRpcClient {
 	}
 
 	fn info(&self) -> Info<Block> {
-		tracing::debug!(target: LOG_TARGET, "BlockBackend::block_status");
 		let best_header = block_local(self.rpc_client.chain_get_header(None))
 			.expect("get_header")
 			.unwrap();
-		tracing::debug!(
-			target: LOG_TARGET,
-			"BlockBackend::block_status - succeeded to get header parent: {:?}, number: {:?}",
-			best_header.parent_hash,
-			best_header.number
-		);
 		let genesis_hash = block_local(self.rpc_client.chain_get_head(Some(0))).expect("get_head");
 		let finalized_head =
 			block_local(self.rpc_client.chain_get_finalized_head()).expect("get_head");

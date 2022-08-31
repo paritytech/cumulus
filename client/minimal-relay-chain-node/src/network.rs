@@ -1,3 +1,19 @@
+// Copyright 2022 Parity Technologies (UK) Ltd.
+// This file is part of Cumulus.
+
+// Cumulus is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Cumulus is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
+
 use futures::FutureExt;
 use polkadot_core_primitives::{Block, Hash};
 use polkadot_service::{BlockT, HeaderBackend, NumberFor};
@@ -18,16 +34,16 @@ use crate::BlockChainRpcClient;
 
 pub(crate) struct BuildCollatorNetworkParams<'a> {
 	/// The service configuration.
-	pub(crate) config: &'a Configuration,
+	pub config: &'a Configuration,
 	/// A shared client returned by `new_full_parts`.
-	pub(crate) client: Arc<BlockChainRpcClient>,
+	pub client: Arc<BlockChainRpcClient>,
 	/// A handle for spawning tasks.
-	pub(crate) spawn_handle: SpawnTaskHandle,
+	pub spawn_handle: SpawnTaskHandle,
 
-	pub(crate) genesis_hash: Hash,
+	pub genesis_hash: Hash,
 }
 
-pub(crate) struct DummyImportQueue {}
+struct DummyImportQueue;
 
 impl sc_service::ImportQueue<Block> for DummyImportQueue {
 	/// Import bunch of blocks.
@@ -79,9 +95,6 @@ pub(crate) fn build_collator_network(
 	let light_client_request_protocol_config =
 		light_client_requests::generate_protocol_config(&protocol_id, genesis_hash, None);
 
-	let import_queue = DummyImportQueue {};
-	let chain_sync = DummyChainSync {};
-
 	let network_params = sc_network::config::Params {
 		role: config.role.clone(),
 		executor: {
@@ -98,11 +111,11 @@ pub(crate) fn build_collator_network(
 		},
 		fork_id: None,
 		bitswap: None,
-		chain_sync: Box::new(chain_sync),
+		chain_sync: Box::new(DummyChainSync),
 		network_config: config.network.clone(),
 		chain: client.clone(),
 		transaction_pool: transaction_pool_adapter as _,
-		import_queue: Box::new(import_queue) as Box<_>,
+		import_queue: Box::new(DummyImportQueue) as Box<_>,
 		protocol_id,
 		metrics_registry: config.prometheus_config.as_ref().map(|config| config.registry.clone()),
 		block_request_protocol_config,
@@ -116,7 +129,7 @@ pub(crate) fn build_collator_network(
 
 	let future = build_network_collator_future(network_mut);
 
-	let (network_start_tx, network_start_rx) = futures_channel::oneshot::channel();
+	let (network_start_tx, network_start_rx) = futures::channel::oneshot::channel();
 
 	// The network worker is responsible for gathering all network messages and processing
 	// them. This is quite a heavy task, and at the time of the writing of this comment it
@@ -161,10 +174,13 @@ async fn build_network_collator_future<B: BlockT, H: sc_network::ExHashT, C: Hea
 	}
 }
 
-struct DummyChainSync {}
+/// Empty ChainSync shell. Syncing code is not necessary for
+/// the minimal node, but network currently requires it. So
+/// we provide a noop implementation.
+struct DummyChainSync;
 
 impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
-	fn peer_info(&self, _who: &libp2p::PeerId) -> Option<sc_network_common::sync::PeerInfo<B>> {
+	fn peer_info(&self, _who: &PeerId) -> Option<sc_network_common::sync::PeerInfo<B>> {
 		None
 	}
 
@@ -193,7 +209,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 
 	fn new_peer(
 		&mut self,
-		_who: libp2p::PeerId,
+		_who: PeerId,
 		_best_hash: <B as BlockT>::Hash,
 		_best_number: polkadot_service::NumberFor<B>,
 	) -> Result<
@@ -221,7 +237,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 
 	fn set_sync_fork_request(
 		&mut self,
-		_peers: Vec<libp2p::PeerId>,
+		_peers: Vec<PeerId>,
 		_hash: &<B as BlockT>::Hash,
 		_number: polkadot_service::NumberFor<B>,
 	) {
@@ -229,37 +245,31 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 
 	fn justification_requests(
 		&mut self,
-	) -> Box<
-		dyn Iterator<Item = (libp2p::PeerId, sc_network_common::sync::message::BlockRequest<B>)>
-			+ '_,
-	> {
+	) -> Box<dyn Iterator<Item = (PeerId, sc_network_common::sync::message::BlockRequest<B>)> + '_>
+	{
 		Box::new(std::iter::empty()) as Box<_>
 	}
 
 	fn block_requests(
 		&mut self,
-	) -> Box<
-		dyn Iterator<Item = (&libp2p::PeerId, sc_network_common::sync::message::BlockRequest<B>)>
-			+ '_,
-	> {
+	) -> Box<dyn Iterator<Item = (&PeerId, sc_network_common::sync::message::BlockRequest<B>)> + '_>
+	{
 		Box::new(std::iter::empty()) as Box<_>
 	}
 
-	fn state_request(
-		&mut self,
-	) -> Option<(libp2p::PeerId, sc_network_common::sync::OpaqueStateRequest)> {
+	fn state_request(&mut self) -> Option<(PeerId, sc_network_common::sync::OpaqueStateRequest)> {
 		None
 	}
 
 	fn warp_sync_request(
 		&mut self,
-	) -> Option<(libp2p::PeerId, sc_network_common::sync::warp::WarpProofRequest<B>)> {
+	) -> Option<(PeerId, sc_network_common::sync::warp::WarpProofRequest<B>)> {
 		None
 	}
 
 	fn on_block_data(
 		&mut self,
-		_who: &libp2p::PeerId,
+		_who: &PeerId,
 		_request: Option<sc_network_common::sync::message::BlockRequest<B>>,
 		_response: sc_network_common::sync::message::BlockResponse<B>,
 	) -> Result<sc_network_common::sync::OnBlockData<B>, sc_network_common::sync::BadPeer> {
@@ -268,7 +278,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 
 	fn on_state_data(
 		&mut self,
-		_who: &libp2p::PeerId,
+		_who: &PeerId,
 		_response: sc_network_common::sync::OpaqueStateResponse,
 	) -> Result<sc_network_common::sync::OnStateData<B>, sc_network_common::sync::BadPeer> {
 		unimplemented!()
@@ -276,7 +286,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 
 	fn on_warp_sync_data(
 		&mut self,
-		_who: &libp2p::PeerId,
+		_who: &PeerId,
 		_response: sc_network_common::sync::warp::EncodedProof,
 	) -> Result<(), sc_network_common::sync::BadPeer> {
 		unimplemented!()
@@ -284,7 +294,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 
 	fn on_block_justification(
 		&mut self,
-		_who: libp2p::PeerId,
+		_who: PeerId,
 		_response: sc_network_common::sync::message::BlockResponse<B>,
 	) -> Result<sc_network_common::sync::OnBlockJustification<B>, sc_network_common::sync::BadPeer>
 	{
@@ -305,7 +315,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 	) -> Box<
 		dyn Iterator<
 			Item = Result<
-				(libp2p::PeerId, sc_network_common::sync::message::BlockRequest<B>),
+				(PeerId, sc_network_common::sync::message::BlockRequest<B>),
 				sc_network_common::sync::BadPeer,
 			>,
 		>,
@@ -330,7 +340,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 
 	fn push_block_announce_validation(
 		&mut self,
-		_who: libp2p::PeerId,
+		_who: PeerId,
 		_hash: <B as BlockT>::Hash,
 		_announce: sc_network_common::sync::message::BlockAnnounce<<B as BlockT>::Header>,
 		_is_best: bool,
@@ -347,7 +357,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 
 	fn peer_disconnected(
 		&mut self,
-		_who: &libp2p::PeerId,
+		_who: &PeerId,
 	) -> Option<sc_network_common::sync::OnBlockData<B>> {
 		unimplemented!()
 	}
