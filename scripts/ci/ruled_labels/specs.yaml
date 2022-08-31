@@ -206,13 +206,6 @@ rules:
     spec:
       require: !one_of [ B* ]
 
-  - name: Require a single Crticality (C) label
-    id: single_c
-    tags: [ PR ]
-    spec:
-      when: !some_of  [ C* ]
-      require: !one_of [ C* ]
-
   - name: Require a single Auditing (D) label
     id: single_d
     tags: [ PR ]
@@ -259,3 +252,10 @@ rules:
     when: !one_of [ B1 ]
     spec:
       require: !some_of [ X* ]
+
+  - name: Release needs criticality (C)
+    id: when_b1_require_one_c
+    tags: [ PR ]
+    when: !one_of [ B1 ]
+    spec:
+      require: !one_of [ C* ]
