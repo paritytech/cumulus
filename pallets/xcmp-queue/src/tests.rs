@@ -231,7 +231,10 @@ fn update_xcmp_max_individual_weight() {
 			30u64 * WEIGHT_PER_MILLIS
 		));
 		assert_noop!(
-			XcmpQueue::update_xcmp_max_individual_weight(Origin::signed(3), 10u64 * WEIGHT_PER_MILLIS),
+			XcmpQueue::update_xcmp_max_individual_weight(
+				Origin::signed(3),
+				10u64 * WEIGHT_PER_MILLIS
+			),
 			BadOrigin
 		);
 		let data: QueueConfigData = <QueueConfig<Test>>::get();
