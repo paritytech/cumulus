@@ -451,7 +451,7 @@ impl Default for QueueConfigData {
 			resume_threshold: 1,
 			threshold_weight: Weight::from_ref_time(100_000),
 			weight_restrict_decay: Weight::from_ref_time(2),
-			xcmp_max_individual_weight: 20 * WEIGHT_PER_MILLIS,
+			xcmp_max_individual_weight: 20u64 * WEIGHT_PER_MILLIS,
 		}
 	}
 }

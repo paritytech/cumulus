@@ -43,7 +43,7 @@ pub struct ConfigData {
 impl Default for ConfigData {
 	fn default() -> Self {
 		Self {
-			max_individual: 10 * WEIGHT_PER_MILLIS, // 10 ms of execution time maximum by default
+			max_individual: 10u64 * WEIGHT_PER_MILLIS, // 10 ms of execution time maximum by default
 		}
 	}
 }
