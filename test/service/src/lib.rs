@@ -28,6 +28,7 @@ use std::{
 };
 use url::Url;
 
+use crate::runtime::Weight;
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_client_network::BlockAnnounceValidator;
