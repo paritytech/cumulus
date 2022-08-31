@@ -28,11 +28,11 @@ use polkadot_overseer::{
 	KNOWN_LEAVES_CACHE_SIZE,
 };
 use polkadot_primitives::v2::CollatorPair;
-use polkadot_service::overseer::NetworkBridgeMetrics;
 use polkadot_service::{
 	overseer::{
 		AvailabilityRecoverySubsystem, CollationGenerationSubsystem, CollatorProtocolSubsystem,
-		NetworkBridgeRxSubsystem, NetworkBridgeTxSubsystem, ProtocolSide, RuntimeApiSubsystem,
+		NetworkBridgeMetrics, NetworkBridgeRxSubsystem, NetworkBridgeTxSubsystem, ProtocolSide,
+		RuntimeApiSubsystem,
 	},
 	Error, OverseerConnector,
 };

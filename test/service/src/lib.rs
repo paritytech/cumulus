@@ -198,9 +198,9 @@ async fn build_relay_chain_interface(
 			return Ok(Arc::new(RelayChainRpcInterface::new(
 				client,
 				Some(collator_node.overseer_handle),
-			)) as Arc<_>);
+			)) as Arc<_>)
 		}
-		return Ok(Arc::new(RelayChainRpcInterface::new(client, None)) as Arc<_>);
+		return Ok(Arc::new(RelayChainRpcInterface::new(client, None)) as Arc<_>)
 	}
 
 	let relay_chain_full_node = polkadot_test_service::new_full(
