@@ -64,9 +64,6 @@ use xcm_config::CollatorSelectionUpdateOrigin;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-#[cfg(feature = "try-runtime")]
-use frame_support::weights::Weight;
-
 // Polkadot imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 

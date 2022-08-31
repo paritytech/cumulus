@@ -155,7 +155,7 @@ impl DmpMessageHandler for SaveIntoThreadLocal {
 			for i in iter {
 				m.borrow_mut().push(i);
 			}
-			0
+			Weight::zero()
 		})
 	}
 }
@@ -169,7 +169,7 @@ impl XcmpMessageHandler for SaveIntoThreadLocal {
 			for (sender, sent_at, message) in iter {
 				m.borrow_mut().push((sender, sent_at, message.to_vec()));
 			}
-			0
+			Weight::zero()
 		})
 	}
 }
