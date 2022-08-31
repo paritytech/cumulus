@@ -204,27 +204,27 @@ variables:
 
 # #### stage:                        build
 
-# build-linux-stable:
-#   stage:                           build
-#   <<:                              *docker-env
-#   <<:                              *collect-artifacts
-#   <<:                              *common-refs
-#   variables:
-#     # Enable debug assertions since we are running optimized builds for testing
-#     # but still want to have debug assertions.
-#     RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
-#   # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
-#   needs:
-#     - job:                         check-rustdoc
-#       artifacts:                   false
-#   script:
-#     - echo "___Building a binary, please refrain from using it in production since it goes with the debug assertions.___"
-#     - time cargo build --release --locked --bin polkadot-parachain
-#     - echo "___Packing the artifacts___"
-#     - mkdir -p ./artifacts
-#     - mv ./target/release/polkadot-parachain ./artifacts/.
-#     - echo "___The VERSION is either a tag name or the curent branch if triggered not by a tag___"
-#     - echo ${CI_COMMIT_REF_NAME} | tee ./artifacts/VERSION
+build-linux-stable:
+  stage:                           build
+  <<:                              *docker-env
+  <<:                              *collect-artifacts
+  <<:                              *common-refs
+  variables:
+    # Enable debug assertions since we are running optimized builds for testing
+    # but still want to have debug assertions.
+    RUSTFLAGS: "-Cdebug-assertions=y -Dwarnings"
+  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
+  needs:
+    - job:                         check-rustdoc
+      artifacts:                   false
+  script:
+    - echo "___Building a binary, please refrain from using it in production since it goes with the debug assertions.___"
+    - time cargo build --release --locked --bin polkadot-parachain
+    - echo "___Packing the artifacts___"
+    - mkdir -p ./artifacts
+    - mv ./target/release/polkadot-parachain ./artifacts/.
+    - echo "___The VERSION is either a tag name or the curent branch if triggered not by a tag___"
+    - echo ${CI_COMMIT_REF_NAME} | tee ./artifacts/VERSION
 
 # build-test-parachain:
 #   stage:                           build
