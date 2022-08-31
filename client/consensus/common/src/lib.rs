@@ -129,7 +129,7 @@ where
 		let hash = params.header.hash();
 
 		if let Some(ref mut monitor) = self.level_monitor {
-			monitor.check(number);
+			monitor.enforce_limit(number);
 		}
 
 		// Best block is determined by the relay chain, or if we are doing the initial sync

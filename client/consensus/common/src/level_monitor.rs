@@ -15,12 +15,18 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use sc_client_api::{blockchain::Backend as _, Backend, HeaderBackend as _};
-use sp_runtime::traits::{Block as BlockT, NumberFor, UniqueSaturatedInto};
-use std::{collections::HashMap, sync::Arc};
+use sp_runtime::traits::{Block as BlockT, NumberFor, Saturating, UniqueSaturatedInto, Zero};
+use std::{
+	collections::{HashMap, HashSet},
+	sync::Arc,
+};
 
 /// Value good enough to be used with parachains using the current backend implementation
 /// that ships with Substrate. This value may change in the future.
 pub const MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT: usize = 32;
+
+// Counter threshold after which we are going to eventually cleanup our internal data.
+const CLEANUP_THRESHOLD: u64 = 32;
 
 /// Upper bound to the number of leaves allowed for each level of the blockchain.
 ///
@@ -39,32 +45,31 @@ pub enum LevelLimit {
 	Some(usize),
 }
 
-// Support structure to constrain the number of leaves for each level.
+// Support structure to constrain the number of leaves at each level.
 pub struct LevelMonitor<Block: BlockT, BE> {
 	// Max number of leaves for each level.
 	pub level_limit: usize,
-	// Monotonic counter used to keep track of block import age (used as a timestamp).
+	// Monotonic counter used to keep track of block freshness.
 	pub import_counter: u64,
-	// Map between leaves hashes and insertion timestamp.
-	pub import_counters: HashMap<Block::Hash, u64>,
-	// Blockhain levels cache.
-	pub levels: HashMap<NumberFor<Block>, Vec<Block::Hash>>,
-	// Backend reference to remove leaves on level saturation.
+	// Map between blocks hashes and freshness.
+	pub freshness: HashMap<Block::Hash, u64>,
+	// Blockchain levels cache.
+	pub levels: HashMap<NumberFor<Block>, HashSet<Block::Hash>>,
+	// Lower level number stored by the levels map.
+	pub lowest_level: NumberFor<Block>,
+	// Backend reference to remove blocks on level saturation.
 	pub backend: Arc<BE>,
 }
 
-// // Threshold after which we are going to cleanup our internal leaves cache by removing hashes that
-// // doesn't belong to leaf blocks anymore.
-// // This is a farly arbitrary value that can be changed in the future without breaking anything.
-// const CLEANUP_THRESHOLD: usize = 64;
-
 impl<Block: BlockT, BE> LevelMonitor<Block, BE> {
+	/// Instance a new monitor structure.
 	pub fn new(level_limit: usize, backend: Arc<BE>) -> Self {
 		LevelMonitor {
 			level_limit,
 			import_counter: 0,
-			import_counters: HashMap::new(),
+			freshness: HashMap::new(),
 			levels: HashMap::new(),
+			lowest_level: Zero::zero(),
 			backend,
 		}
 	}
@@ -75,15 +80,54 @@ where
 	Block: BlockT,
 	BE: Backend<Block>,
 {
-	pub fn update(&mut self, number: NumberFor<Block>, hash: Block::Hash) {
-		self.import_counters.insert(hash, self.import_counter);
-		self.levels.entry(number).or_default().push(hash);
-		self.import_counter += 1;
+	/// Restore the structure using the backend.
+	///
+	/// Blocks freshness values are inferred from the height and not from the effective import
+	/// moment. This is a not accurate but "good-enough" best effort solution.
+	///
+	/// Level limits are not enforced during this phase.
+	fn restore(&mut self) {
+		let mut counter_max = 0;
+		let finalized = self.backend.blockchain().info().finalized_hash;
+
+		for leaf in self.backend.blockchain().leaves().unwrap_or_default() {
+			let route = sp_blockchain::tree_route(self.backend.blockchain(), finalized, leaf)
+				.expect("Route from finalized to leaf should be available; qed");
+			if !route.retracted().is_empty() {
+				continue
+			}
+			std::iter::once(route.common_block()).chain(route.enacted()).for_each(|elem| {
+				if !self.freshness.contains_key(&elem.hash) {
+					// Use the block height value as the freshness.
+					self.import_counter = elem.number.unique_saturated_into();
+					self.update(elem.number, elem.hash);
+				}
+			});
+			if self.import_counter > counter_max {
+				counter_max = self.import_counter;
+			}
+		}
+
+		self.import_counter = counter_max;
+		self.lowest_level = self.backend.blockchain().info().finalized_number;
 	}
 
-	pub fn check(&mut self, number: NumberFor<Block>) {
+	/// Check and enforce the limit bound at the given height.
+	///
+	/// In practice this will enforce the given height in haiving a number of blocks less than
+	/// the limit passed to the constructor.
+	///
+	/// If the given level is found to have a number of blocks greater than or equal the limit
+	/// then the limit is enforced by chosing one (or more) blocks to remove.
+	/// The removal strategy is driven by the block freshess.
+	///
+	/// A block freshness is determined by the most recent leaf freshness descending from the block
+	/// itself. In other words its freshness is equal to its more "fresh" descendant.
+	///
+	/// The least "fresh" blocks are eventually removed.
+	pub fn enforce_limit(&mut self, number: NumberFor<Block>) {
 		if self.import_counter == 0 {
-			// First call detected, restore using backend.
+			// First call detected, restore using the backend persistent information.
 			self.restore();
 		}
 
@@ -94,107 +138,110 @@ where
 
 		log::debug!(
 			target: "parachain",
-			"Detected leaves overflow at height {}, removing old blocks", number
+			"Detected leaves overflow at height {}, removing obsolete blocks", number
 		);
 
-		let blockchain = self.backend.blockchain();
-		let best = blockchain.info().best_hash;
-
-		let mut leaves = blockchain.leaves().unwrap_or_default();
-		// Sort leaves by import time.
-		leaves
-			.sort_unstable_by(|a, b| self.import_counters.get(a).cmp(&self.import_counters.get(b)));
+		let mut leaves = self.backend.blockchain().leaves().unwrap_or_default();
+		// Sort leaves by freshness (most recent first).
+		leaves.sort_unstable_by(|a, b| self.freshness.get(a).cmp(&self.freshness.get(b)));
 
 		let remove_count = level.len() - self.level_limit + 1;
 
-		let mut remove_one = || {
-			let mut candidate_idx = 0;
-			let mut candidate_routes = vec![];
-			let mut candidate_fresher_leaf_idx = usize::MAX;
-
-			for (blk_idx, blk_hash) in level.iter().enumerate() {
-				let mut blk_leaves_routes = vec![];
-				let mut blk_fresher_leaf_idx = 0;
-				// Start from the most current one (the bottom)
-				// Here leaf index is synonym of its freshness, that is the greater the index the
-				// fresher it is.
-				for (leaf_idx, leaf_hash) in leaves.iter().enumerate().rev() {
-					let leaf_route =
-						match sp_blockchain::tree_route(blockchain, *blk_hash, *leaf_hash) {
-							Ok(route) => route,
-							Err(e) => {
-								log::warn!(
-									target: "parachain",
-									"Unable getting route from {} to {}: {}",
-									blk_hash, leaf_hash, e,
-								);
-								continue
-							},
-						};
-					if leaf_route.retracted().is_empty() {
-						if leaf_idx > candidate_fresher_leaf_idx ||
-							leaf_route.common_block().hash == best ||
-							leaf_route.enacted().iter().any(|entry| entry.hash == best)
-						{
-							blk_leaves_routes.clear();
-							break
-						}
-
-						if blk_fresher_leaf_idx == 0 {
-							blk_fresher_leaf_idx = leaf_idx;
-						}
-						blk_leaves_routes.push(leaf_route);
-					}
-				}
-
-				if !blk_leaves_routes.is_empty() {
-					candidate_idx = blk_idx;
-					candidate_routes = blk_leaves_routes;
-					candidate_fresher_leaf_idx = blk_fresher_leaf_idx;
-				}
-			}
-
-			// We now have all the routes to remove
-			for route in candidate_routes.iter() {
-				std::iter::once(route.common_block()).chain(route.enacted()).rev().for_each(
-					|elem| {
-						self.import_counters.remove(&elem.hash);
-						if let Err(err) = self.backend.remove_leaf_block(&elem.hash) {
-							log::warn!(target: "parachain", "Unable to remove block {}: {}", elem.hash, err);
-						}
-					},
-				);
-			}
-
-			level.remove(candidate_idx);
-		};
-
-		// This is not the most efficient way to remove multiple entries,
-		// but sould be considered that remove count is commonly 1.
-		(0..remove_count).for_each(|_| remove_one());
+		// This may not be the most efficient way to remove **multiple** entries, but is the clear
+		// one. Should be considered that in normal conditions the number of blocks to remove is 0
+		// or 1, it is not worth to complicate the code too much.
+		(0..remove_count).for_each(|_| self.remove_block(number, &leaves));
 	}
 
-	pub fn restore(&mut self) {
-		let leaves = self.backend.blockchain().leaves().unwrap_or_default();
-		let finalized = self.backend.blockchain().last_finalized().unwrap_or_default();
-		let mut counter_max = 0;
+	/// This will effectively search for the less fresh block and removes it along with all
+	/// its descendants.
+	fn remove_block(&mut self, number: NumberFor<Block>, leaves: &[Block::Hash]) {
+		let mut candidate_leaves_routes = vec![];
+		let mut candidate_fresher_leaf_idx = usize::MAX;
 
-		for leaf in leaves {
-			let route = sp_blockchain::tree_route(self.backend.blockchain(), finalized, leaf)
-				.expect("Route from finalized to leaf should be present; qed");
-			if !route.retracted().is_empty() {
-				continue
-			}
-			std::iter::once(route.common_block()).chain(route.enacted()).for_each(|elem| {
-				if !self.import_counters.contains_key(&elem.hash) {
-					self.import_counter = elem.number.unique_saturated_into();
-					self.update(elem.number, elem.hash);
+		let mut leaves_routes = vec![];
+
+		let blockchain = self.backend.blockchain();
+		let best_hash = blockchain.info().best_hash;
+
+		for blk_hash in self.levels.entry(number).or_default().iter() {
+			let mut fresher_leaf_idx = usize::MAX;
+			// Start checking the most fresh leaf (the last)
+			// Here leaf index is synonym of its freshness, that is the greater the index the
+			// fresher it is.
+			for (leaf_idx, leaf_hash) in leaves.iter().enumerate().rev() {
+				let route = match sp_blockchain::tree_route(blockchain, *blk_hash, *leaf_hash) {
+					Ok(route) => route,
+					Err(e) => {
+						log::warn!(
+							target: "parachain",
+							"Unable getting route from {} to {}: {}",
+							blk_hash, leaf_hash, e,
+						);
+						continue
+					},
+				};
+				if route.retracted().is_empty() {
+					if leaf_idx >= candidate_fresher_leaf_idx ||
+						route.common_block().hash == best_hash ||
+						route.enacted().iter().any(|entry| entry.hash == best_hash)
+					{
+						leaves_routes.clear();
+						break
+					}
+
+					if leaves_routes.is_empty() {
+						fresher_leaf_idx = leaf_idx;
+					}
+					leaves_routes.push(route);
 				}
-			});
-			if self.import_counter > counter_max {
-				counter_max = self.import_counter;
+			}
+
+			if !leaves_routes.is_empty() {
+				// We have a new candidate
+				candidate_fresher_leaf_idx = fresher_leaf_idx;
+				std::mem::swap(&mut leaves_routes, &mut candidate_leaves_routes);
+				leaves_routes.clear();
 			}
 		}
-		self.import_counter = counter_max;
+
+		// We now have all the routes to remove
+		for route in candidate_leaves_routes {
+			std::iter::once(route.common_block())
+				.chain(route.enacted())
+				.rev()
+				.for_each(|elem| {
+					if self.backend.remove_leaf_block(&elem.hash).is_ok() {
+						log::debug!(target: "parachain", "Removing block {}", elem.hash);
+						self.levels
+							.get_mut(&elem.number)
+							.and_then(|level| level.remove(&elem.hash).then_some(()));
+						self.freshness.remove(&elem.hash);
+					}
+				});
+		}
+	}
+
+	/// Add a new imported block information to the monitor.
+	pub fn update(&mut self, number: NumberFor<Block>, hash: Block::Hash) {
+		self.freshness.insert(hash, self.import_counter);
+		self.levels.entry(number).or_default().insert(hash);
+		self.import_counter += 1;
+
+		if self.import_counter % CLEANUP_THRESHOLD == 0 {
+			// Do cleanup once in a while, we are allowed to have some obsolete information.
+			let finalized_num = self.backend.blockchain().info().finalized_number;
+			let delta: u64 =
+				finalized_num.saturating_sub(self.lowest_level).unique_saturated_into();
+
+			for i in 0..delta {
+				let number = finalized_num + i.unique_saturated_into();
+				self.levels.remove(&number).unwrap_or_default().iter().for_each(|hash| {
+					self.freshness.remove(hash);
+				});
+			}
+
+			self.lowest_level = finalized_num;
+		}
 	}
 }

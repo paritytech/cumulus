@@ -574,10 +574,7 @@ fn restore_limit_monitor() {
 		hashes
 			.iter()
 			.filter(|hash| **hash != block13.header.hash())
-			.all(|hash| *number as u64 == *monitor.import_counters.get(hash).unwrap())
+			.all(|hash| *number as u64 == *monitor.freshness.get(hash).unwrap())
 	}));
-	assert_eq!(
-		*monitor.import_counters.get(&block13.header.hash()).unwrap(),
-		monitor.import_counter - 1
-	);
+	assert_eq!(*monitor.freshness.get(&block13.header.hash()).unwrap(), monitor.import_counter - 1);
 }
