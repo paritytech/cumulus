@@ -119,7 +119,7 @@ where
 	///
 	/// If the given level is found to have a number of blocks greater than or equal the limit
 	/// then the limit is enforced by chosing one (or more) blocks to remove.
-	/// The removal strategy is driven by the block freshess.
+	/// The removal strategy is driven by the block freshness.
 	///
 	/// A block freshness is determined by the most recent leaf freshness descending from the block
 	/// itself. In other words its freshness is equal to its more "fresh" descendant.
