@@ -84,6 +84,7 @@ where
 			Ok((data, price))
 		} else {
 			*dest = Some(d);
+			*msg = Some(xcm);
 			// Anything else is unhandled. This includes a message this is meant for us.
 			Err(SendError::NotApplicable)
 		}

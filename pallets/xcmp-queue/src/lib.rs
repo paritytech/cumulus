@@ -1135,6 +1135,7 @@ impl<T: Config> SendXcm for Pallet<T> {
 			// Anything else is unhandled. This includes a message this is meant for us.
 			_ => {
 				*dest = Some(d);
+				*msg = Some(xcm);
 				Err(SendError::NotApplicable)
 			},
 		}
