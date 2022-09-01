@@ -226,7 +226,8 @@ where
 
 		remove_route(candidate_fresher_route);
 
-		leaves.iter().rev().skip(candidate_fresher_leaf_idx).for_each(|leaf_hash| {
+		let to_skip = leaves.len() - candidate_fresher_leaf_idx;
+		leaves.iter().rev().skip(to_skip).for_each(|leaf_hash| {
 			match sp_blockchain::tree_route(blockchain, candidate_hash, *leaf_hash) {
 				Ok(route) if route.retracted().is_empty() => {
 					remove_route(route);
