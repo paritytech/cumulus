@@ -45,8 +45,12 @@ cp target/release/substrate-relay ~/local_bridge_testing/bin/substrate-relay
 
 ```
 ./scripts/bridges_rococo_wococo.sh stop
+
 ./scripts/bridges_rococo_wococo.sh start-rococo
+# TODO: check log and activate parachain manually
+
 ./scripts/bridges_rococo_wococo.sh start-wococo
+# TODO: check log and activate parachain manually
 ```
 
 ### Run relayers (Rococo, Wococo)
@@ -56,6 +60,16 @@ cp target/release/substrate-relay ~/local_bridge_testing/bin/substrate-relay
 - `Alice` is `Sudo`
 
 **1. Init bridges**
+
+Need to wait for parachain activation, then run:
+
+```
+./scripts/bridges_rococo_wococo.sh init-ro-wo
+./scripts/bridges_rococo_wococo.sh init-wo-ro
+```
+
+or
+
 ```
 # Rococo -> Wococo
 RUST_LOG=runtime=trace,rpc=trace,runtime::bridge=trace \
@@ -115,7 +129,37 @@ RUST_LOG=runtime=trace,rpc=trace,runtime::bridge=trace \
 
 **3. Relay (BridgeHub parachain) headers**
 
-TODO:
+```
+# Rococo -> Wococo
+RUST_LOG=runtime=trace,rpc=trace,runtime::bridge=trace \
+	~/local_bridge_testing/bin/substrate-relay relay-parachains bridge-hub-rococo-to-bridge-hub-wococo \
+	--source-host localhost \
+	--source-port 48943 \
+	--target-host localhost \
+	--target-port 8945 \
+	--target-signer //Bob \
+	--target-transactions-mortality=4
+
+# Wococo -> Rococo
+RUST_LOG=runtime=trace,rpc=trace,runtime::bridge=trace \
+	~/local_bridge_testing/bin/substrate-relay relay-parachains bridge-hub-wococo-to-bridge-hub-rococo \
+	--source-host localhost \
+	--source-port 48945 \
+	--target-host localhost \
+	--target-port 8943 \
+	--target-signer //Bob \
+	--target-transactions-mortality=4
+```
+
+**Check parachain collators:**
+- Rococo parachain:
+	- https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A8943#/chainstate
+	- Pallet: **bridgeWococoParachain**
+	- Keys: **bestParaHeads()**
+- Wococo parachain:
+	- https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A8945#/chainstate
+	- Pallet: **bridgeRococoParachain**
+	- Keys: **bestParaHeads()**
 
 **4. Relay (XCM) messages**
 

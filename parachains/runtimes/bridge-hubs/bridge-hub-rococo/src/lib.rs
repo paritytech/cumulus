@@ -43,7 +43,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{Everything, IsInVec},
+	traits::Everything,
 	weights::{
 		constants::WEIGHT_PER_SECOND, ConstantMultiplier, DispatchClass, Weight,
 		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
@@ -192,6 +192,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	state_version: 1,
 };
 
+// TODO:check-parameter - remove all unneeded and reuse frm parachain_common
+
 /// This determines the average expected block time that we are targeting.
 /// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
 /// `SLOT_DURATION` is picked up by `pallet_timestamp` which is in turn picked
@@ -234,7 +236,7 @@ pub fn native_version() -> NativeVersion {
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
-// TODO: check-parameter - move to bridges/primitives, once rebased and would compile with bp_bridge_hub_xyz dependencies
+// TODO:check-parameter - move to bridges/primitives, once rebased and would compile with bp_bridge_hub_xyz dependencies
 mod runtime_api {
 	use super::BlockNumber;
 	use super::Hash;
@@ -347,6 +349,7 @@ impl pallet_authorship::Config for Runtime {
 	type EventHandler = (CollatorSelection,);
 }
 
+// TODO:check-parameter
 parameter_types! {
 	pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT;
 	pub const MaxLocks: u32 = 50;
@@ -367,6 +370,7 @@ impl pallet_balances::Config for Runtime {
 	type ReserveIdentifier = [u8; 8];
 }
 
+// TODO:check-parameter
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
 	pub const TransactionByteFee: Balance = 10 * MICROUNIT;
@@ -483,7 +487,9 @@ impl pallet_sudo::Config for Runtime {
 
 // Add bridge pallets (GPA)
 parameter_types! {
+	// TODO:check-parameter
 	pub const MaxRequests: u32 = 64;
+	// TODO:check-parameter
 	pub const HeadersToKeep: u32 = 1024;
 }
 
@@ -493,6 +499,7 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaWococoInstance> for Runtime {
 	type BridgedChain = bp_wococo::Wococo;
 	type MaxRequests = MaxRequests;
 	type HeadersToKeep = HeadersToKeep;
+	// TODO:check-parameter
 	type WeightInfo = ();
 }
 
@@ -502,6 +509,7 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
 	type BridgedChain = bp_rococo::Rococo;
 	type MaxRequests = MaxRequests;
 	type HeadersToKeep = HeadersToKeep;
+	// TODO:check-parameter
 	type WeightInfo = ();
 }
 
@@ -511,26 +519,27 @@ parameter_types! {
 	pub const ParachainHeadsToKeep: u32 = 64;
 	pub const RococoBridgeParachainPalletName: &'static str = ROCOCO_BRIDGE_PARA_PALLET_NAME;
 	pub const WococoBridgeParachainPalletName: &'static str = WOCOCO_BRIDGE_PARA_PALLET_NAME;
-	pub GetTenFirstParachains: Vec<ParaId> = (0..10).map(ParaId).collect();
 }
 
 /// Add parachain bridge pallet to track Wococo bridge hub parachain
 pub type BridgeParachainWococoInstance = pallet_bridge_parachains::Instance1;
 impl pallet_bridge_parachains::Config<BridgeParachainWococoInstance> for Runtime {
+	// TODO:check-parameter
 	type WeightInfo = ();
 	type BridgesGrandpaPalletInstance = BridgeGrandpaWococoInstance;
 	type ParasPalletName = WococoBridgeParachainPalletName;
-	type TrackedParachains = IsInVec<GetTenFirstParachains>;
+	type TrackedParachains = Everything;
 	type HeadsToKeep = ParachainHeadsToKeep;
 }
 
 /// Add parachain bridge pallet to track Rococo bridge hub parachain
 pub type BridgeParachainRococoInstance = pallet_bridge_parachains::Instance2;
 impl pallet_bridge_parachains::Config<BridgeParachainRococoInstance> for Runtime {
+	// TODO:check-parameter
 	type WeightInfo = ();
 	type BridgesGrandpaPalletInstance = BridgeGrandpaRococoInstance;
 	type ParasPalletName = RococoBridgeParachainPalletName;
-	type TrackedParachains = IsInVec<GetTenFirstParachains>;
+	type TrackedParachains = Everything;
 	type HeadsToKeep = ParachainHeadsToKeep;
 }
 
