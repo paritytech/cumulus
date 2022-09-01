@@ -18,7 +18,7 @@
 
 #![warn(missing_docs)]
 
-mod chain_spec;
+pub mod chain_spec;
 mod genesis;
 
 use std::{
@@ -28,6 +28,7 @@ use std::{
 };
 use url::Url;
 
+use crate::runtime::Weight;
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_client_network::BlockAnnounceValidator;
@@ -650,8 +651,7 @@ pub fn node_config(
 		keystore: KeystoreConfig::InMemory,
 		keystore_remote: Default::default(),
 		database: DatabaseSource::RocksDb { path: root.join("db"), cache_size: 128 },
-		state_cache_size: 67108864,
-		state_cache_child_ratio: None,
+		trie_cache_maximum_size: Some(64 * 1024 * 1024),
 		state_pruning: Some(PruningMode::ArchiveAll),
 		blocks_pruning: BlocksPruning::All,
 		chain_spec: spec,
@@ -718,7 +718,10 @@ impl TestNode {
 		let call = frame_system::Call::set_code { code: validation };
 
 		self.send_extrinsic(
-			runtime::SudoCall::sudo_unchecked_weight { call: Box::new(call.into()), weight: 1_000 },
+			runtime::SudoCall::sudo_unchecked_weight {
+				call: Box::new(call.into()),
+				weight: Weight::from_ref_time(1_000),
+			},
 			Sr25519Keyring::Alice,
 		)
 		.await
