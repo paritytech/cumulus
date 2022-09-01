@@ -269,7 +269,8 @@ build-test-parachain:
         cd ..;
       done
 
-
+# DAG: build-runtime-assets -> build-runtime-collectives -> build-runtime-contracts
+# DAG: build-runtime-assets ->build-runtime-starters -> build-runtime-testing
 build-runtime-assets:
   <<: *build-runtime-template
   variables:
@@ -279,21 +280,37 @@ build-runtime-collectives:
   <<: *build-runtime-template
   variables:
     RUNTIME_PATH:                  "parachains/runtimes/collectives"
+  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
+  needs:
+    - job:                         build-runtime-assets
+      artifacts:                   false
 
 build-runtime-contracts:
   <<: *build-runtime-template
   variables:
     RUNTIME_PATH:                  "parachains/runtimes/contracts"
+  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
+  needs:
+    - job:                         build-runtime-collectives
+      artifacts:                   false
 
 build-runtime-starters:
   <<: *build-runtime-template
   variables:
     RUNTIME_PATH:                  "parachains/runtimes/starters"
+  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
+  needs:
+    - job:                         build-runtime-assets
+      artifacts:                   false
 
 build-runtime-testing:
   <<: *build-runtime-template
   variables:
     RUNTIME_PATH:                  "parachains/runtimes/testing"
+  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
+  needs:
+    - job:                         build-runtime-starters
+      artifacts:                   false
 
 
 #### stage:                        publish
