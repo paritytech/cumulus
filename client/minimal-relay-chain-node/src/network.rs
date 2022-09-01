@@ -21,7 +21,7 @@ use polkadot_service::{BlockT, HeaderBackend, NumberFor};
 use polkadot_node_network_protocol::PeerId;
 use sc_network::{NetworkService, SyncState};
 
-use sc_network_common::sync::SyncStatus;
+use sc_network_common::sync::{Metrics, SyncStatus};
 use sc_network_light::light_client_requests;
 use sc_network_sync::{block_request_handler, state_request_handler};
 use sc_service::{error::Error, Configuration, NetworkStarter, SpawnTaskHandle};
@@ -145,7 +145,7 @@ pub(crate) fn build_collator_network(
 			);
 			// This `return` might seem unnecessary, but we don't want to make it look like
 			// everything is working as normal even though the user is clearly misusing the API.
-			return
+			return;
 		}
 
 		future.await
@@ -359,11 +359,20 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		&mut self,
 		_who: &PeerId,
 	) -> Option<sc_network_common::sync::OnBlockData<B>> {
-		unimplemented!()
+		None
 	}
 
 	fn metrics(&self) -> sc_network_common::sync::Metrics {
-		unimplemented!()
+		Metrics {
+			queued_blocks: 0,
+			fork_targets: 0,
+			justifications: sc_network_common::sync::metrics::Metrics {
+				pending_requests: 0,
+				active_requests: 0,
+				importing_requests: 0,
+				failed_requests: 0,
+			},
+		}
 	}
 
 	fn create_opaque_block_request(
