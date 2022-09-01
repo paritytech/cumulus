@@ -263,6 +263,7 @@ build-test-parachain:
     - cd ${RUNTIME_PATH}
     - for directory in $(echo */); do
         cd $directory;
+        echo "_____Running cargo check for $directory______"
         SKIP_WASM_BUILD=1 cargo check;
         cd ..;
       done
