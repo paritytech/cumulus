@@ -252,19 +252,13 @@ build-test-parachain:
 .build-runtime-template:           &build-runtime-template
   stage:                           build
   <<:                              *docker-env
+  <<:                              *pr-refs
   needs:
     - job:                         check-rustdoc
       artifacts:                   false
   variables:
     RUNTIME_PATH:                  "parachains/runtimes/assets"
     RUNTIME_NAME:                  "statemine"
-  rules:
-    - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                         # PRs
-      changes:
-        - $RUNTIME_PATH/$RUNTIME_NAME/**/*
-        - parachains/common/**/*
-        - parachains/pallets/**/*
-        - parachains/chain-specs/**/*
   script:
     - cd ${RUNTIME_PATH}/${RUNTIME_NAME}
     - SKIP_WASM_BUILD=1 cargo check
