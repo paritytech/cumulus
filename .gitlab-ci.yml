@@ -253,69 +253,46 @@ build-test-parachain:
   stage:                           build
   <<:                              *docker-env
   <<:                              *pr-refs
+  # this is an artificial job dependency, for pipeline optimization using GitLab's DAGs
   needs:
     - job:                         check-rustdoc
       artifacts:                   false
   variables:
     RUNTIME_PATH:                  "parachains/runtimes/assets"
-    RUNTIME_NAME:                  "statemine"
   script:
-    - cd ${RUNTIME_PATH}/${RUNTIME_NAME}
-    - SKIP_WASM_BUILD=1 cargo check
+    - cd ${RUNTIME_PATH}
+    - for directory in $(echo */); do
+        cd $directory;
+        SKIP_WASM_BUILD=1 cargo check;
+        cd ..;
+      done
 
-build-runtime-assets-statemine:
+
+build-runtime-assets:
   <<: *build-runtime-template
   variables:
     RUNTIME_PATH:                  "parachains/runtimes/assets"
-    RUNTIME_NAME:                  "statemine"
 
-build-runtime-assets-statemint:
-  <<: *build-runtime-template
-  variables:
-    RUNTIME_PATH:                  "parachains/runtimes/assets"
-    RUNTIME_NAME:                  "statemint"
-
-build-runtime-assets-westmint:
-  <<: *build-runtime-template
-  variables:
-    RUNTIME_PATH:                  "parachains/runtimes/assets"
-    RUNTIME_NAME:                  "westmint"
-
-build-runtime-collectives-collectives-polkadot:
+build-runtime-collectives:
   <<: *build-runtime-template
   variables:
     RUNTIME_PATH:                  "parachains/runtimes/collectives"
-    RUNTIME_NAME:                  "collectives-polkadot"
 
-build-runtime-contracts-contracts-rococo:
+build-runtime-contracts:
   <<: *build-runtime-template
   variables:
     RUNTIME_PATH:                  "parachains/runtimes/contracts"
-    RUNTIME_NAME:                  "contracts-rococo"
 
-build-runtime-starters-shell:
+build-runtime-starters:
   <<: *build-runtime-template
   variables:
     RUNTIME_PATH:                  "parachains/runtimes/starters"
-    RUNTIME_NAME:                  "shell"
 
-build-runtime-starters-seedling:
-  <<: *build-runtime-template
-  variables:
-    RUNTIME_PATH:                  "parachains/runtimes/starters"
-    RUNTIME_NAME:                  "seedling"
-
-build-runtime-testing-penpal:
+build-runtime-testing:
   <<: *build-runtime-template
   variables:
     RUNTIME_PATH:                  "parachains/runtimes/testing"
-    RUNTIME_NAME:                  "penpal"
 
-build-runtime-testing-rococo-parachain:
-  <<: *build-runtime-template
-  variables:
-    RUNTIME_PATH:                  "parachains/runtimes/testing"
-    RUNTIME_NAME:                  "rococo-parachain"
 
 #### stage:                        publish
 
