@@ -156,8 +156,8 @@ where
 	/// This will search for the less fresh block and removes it along with all its descendants.
 	/// Leaves should have already been ordered by "freshness" (older first).
 	fn remove_block(&mut self, number: NumberFor<Block>, leaves: &[Block::Hash]) {
-		let mut candidate_fresher_leaf_idx = usize::MAX;
-		let mut candidate_fresher_route = None;
+		let mut candidate_freshest_leaf_idx = usize::MAX;
+		let mut candidate_freshest_route = None;
 
 		let blockchain = self.backend.blockchain();
 		let best_hash = blockchain.info().best_hash;
@@ -171,13 +171,13 @@ where
 					Ok(route) if route.retracted().is_empty() => {
 						// Skip this block if it is the ancestor of the best block or if it has
 						// a descendant leaf fresher (or equally fresh) than the current candidate.
-						if leaf_idx < candidate_fresher_leaf_idx &&
+						if leaf_idx < candidate_freshest_leaf_idx &&
 							route.common_block().hash != best_hash &&
 							route.enacted().iter().all(|entry| entry.hash != best_hash)
 						{
 							// We have a new candidate
-							candidate_fresher_leaf_idx = leaf_idx;
-							candidate_fresher_route = Some(route);
+							candidate_freshest_leaf_idx = leaf_idx;
+							candidate_freshest_route = Some(route);
 						}
 						break
 					},
@@ -191,20 +191,20 @@ where
 					_ => (),
 				};
 			}
-			if candidate_fresher_leaf_idx == 0 {
+			if candidate_freshest_leaf_idx == 0 {
 				// We can't find a candidate with an older leaf.
 				break
 			}
 		}
 
-		let candidate_fresher_route = match candidate_fresher_route {
+		let candidate_freshest_route = match candidate_freshest_route {
 			Some(route) => route,
 			None => return,
 		};
 
-		// We have a candidate, proceed removing the blocka and all its descendants.
+		// We have a candidate, proceed removing the block and all its descendants.
 
-		let candidate_hash = candidate_fresher_route.common_block().hash;
+		let candidate_hash = candidate_freshest_route.common_block().hash;
 
 		// Takes care of route removal. Starts from the leaf and stops as soon as an error is
 		// encountered. In this case an error is interpreted as the block being not a leaf
@@ -224,9 +224,9 @@ where
 			});
 		};
 
-		remove_route(candidate_fresher_route);
+		remove_route(candidate_freshest_route);
 
-		let to_skip = leaves.len() - candidate_fresher_leaf_idx;
+		let to_skip = leaves.len() - candidate_freshest_leaf_idx;
 		leaves.iter().rev().skip(to_skip).for_each(|leaf_hash| {
 			match sp_blockchain::tree_route(blockchain, candidate_hash, *leaf_hash) {
 				Ok(route) if route.retracted().is_empty() => {
