@@ -261,10 +261,10 @@ variables:
     RUNTIME_PATH:                  "parachains/runtimes/assets"
   script:
     - cd ${RUNTIME_PATH}
-    - for directory in "$(echo */)"; do
+    - for directory in $(echo */); do
+        echo "_____Running cargo check for ${directory} ______";
         cd $directory;
         pwd;
-        echo "_____Running cargo check for $directory______";
         SKIP_WASM_BUILD=1 cargo check;
         cd ..;
       done
