@@ -207,7 +207,7 @@ where
 		let candidate_hash = candidate_fresher_route.common_block().hash;
 
 		// Takes care of route removal. Starts from the leaf and stops as soon as an error is
-		// encountered (in this case this is interpreted as the block being not a leaf
+		// encountered. In this case an error is interpreted as the block being not a leaf
 		// and it will be removed while removing another route from the same block but to a
 		// different leaf.
 		let mut remove_route = |route: TreeRoute<Block>| {
