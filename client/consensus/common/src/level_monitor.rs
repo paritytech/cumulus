@@ -15,6 +15,7 @@
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
 use sc_client_api::{blockchain::Backend as _, Backend, HeaderBackend as _};
+use sp_blockchain::TreeRoute;
 use sp_runtime::traits::{Block as BlockT, NumberFor, Saturating, UniqueSaturatedInto, Zero};
 use std::{
 	collections::{HashMap, HashSet},
@@ -114,7 +115,7 @@ where
 
 	/// Check and enforce the limit bound at the given height.
 	///
-	/// In practice this will enforce the given height in haiving a number of blocks less than
+	/// In practice this will enforce the given height in having a number of blocks less than
 	/// the limit passed to the constructor.
 	///
 	/// If the given level is found to have a number of blocks greater than or equal the limit
@@ -145,81 +146,101 @@ where
 		// Sort leaves by freshness (most recent first).
 		leaves.sort_unstable_by(|a, b| self.freshness.get(a).cmp(&self.freshness.get(b)));
 
-		let remove_count = level.len() - self.level_limit + 1;
-
 		// This may not be the most efficient way to remove **multiple** entries, but is the clear
 		// one. Should be considered that in normal conditions the number of blocks to remove is 0
 		// or 1, it is not worth to complicate the code too much.
+		let remove_count = level.len() - self.level_limit + 1;
 		(0..remove_count).for_each(|_| self.remove_block(number, &leaves));
 	}
 
-	/// This will effectively search for the less fresh block and removes it along with all
-	/// its descendants.
+	/// This will search for the less fresh block and removes it along with all its descendants.
+	/// Leaves should have already been ordered by "freshness" (older first).
 	fn remove_block(&mut self, number: NumberFor<Block>, leaves: &[Block::Hash]) {
-		let mut candidate_leaves_routes = vec![];
 		let mut candidate_fresher_leaf_idx = usize::MAX;
-
-		let mut leaves_routes = vec![];
+		let mut candidate_fresher_route = None;
 
 		let blockchain = self.backend.blockchain();
 		let best_hash = blockchain.info().best_hash;
 
 		for blk_hash in self.levels.entry(number).or_default().iter() {
-			let mut fresher_leaf_idx = usize::MAX;
-			// Start checking the most fresh leaf (the last)
-			// Here leaf index is synonym of its freshness, that is the greater the index the
+			// Start checking from the most fresh leaf (the last). Because of the leaves ordering,
+			// here leaf index is synonym of its freshness, that is the greater the index the
 			// fresher it is.
 			for (leaf_idx, leaf_hash) in leaves.iter().enumerate().rev() {
-				let route = match sp_blockchain::tree_route(blockchain, *blk_hash, *leaf_hash) {
-					Ok(route) => route,
-					Err(e) => {
+				match sp_blockchain::tree_route(blockchain, *blk_hash, *leaf_hash) {
+					Ok(route) if route.retracted().is_empty() => {
+						// Skip this block if it is the ancestor of the best block or if it has
+						// a descendant leaf fresher (or equally fresh) than the current candidate.
+						if leaf_idx < candidate_fresher_leaf_idx &&
+							route.common_block().hash != best_hash &&
+							route.enacted().iter().all(|entry| entry.hash != best_hash)
+						{
+							// We have a new candidate
+							candidate_fresher_leaf_idx = leaf_idx;
+							candidate_fresher_route = Some(route);
+						}
+						break
+					},
+					Err(err) => {
 						log::warn!(
 							target: "parachain",
 							"Unable getting route from {} to {}: {}",
-							blk_hash, leaf_hash, e,
+							blk_hash, leaf_hash, err,
 						);
-						continue
 					},
+					_ => (),
 				};
-				if route.retracted().is_empty() {
-					if leaf_idx >= candidate_fresher_leaf_idx ||
-						route.common_block().hash == best_hash ||
-						route.enacted().iter().any(|entry| entry.hash == best_hash)
-					{
-						leaves_routes.clear();
-						break
-					}
+			}
+			if candidate_fresher_leaf_idx == 0 {
+				// We can't find a candidate with an older leaf.
+				break
+			}
+		}
 
-					if leaves_routes.is_empty() {
-						fresher_leaf_idx = leaf_idx;
-					}
-					leaves_routes.push(route);
+		let candidate_fresher_route = match candidate_fresher_route {
+			Some(route) => route,
+			None => return,
+		};
+
+		// We have a candidate, proceed removing the blocka and all its descendants.
+
+		let candidate_hash = candidate_fresher_route.common_block().hash;
+
+		// Takes care of route removal. Starts from the leaf and stops as soon as an error is
+		// encountered (in this case this is interpreted as the block being not a leaf
+		// and it will be removed while removing another route from the same block but to a
+		// different leaf.
+		let mut remove_route = |route: TreeRoute<Block>| {
+			std::iter::once(route.common_block()).chain(route.enacted()).rev().all(|elem| {
+				if self.backend.remove_leaf_block(&elem.hash).is_err() {
+					return false
 				}
-			}
+				log::debug!(target: "parachain", "Removing block {}", elem.hash);
+				self.levels
+					.get_mut(&elem.number)
+					.and_then(|level| level.remove(&elem.hash).then_some(()));
+				self.freshness.remove(&elem.hash);
+				true
+			});
+		};
 
-			if !leaves_routes.is_empty() {
-				// We have a new candidate
-				candidate_fresher_leaf_idx = fresher_leaf_idx;
-				std::mem::swap(&mut leaves_routes, &mut candidate_leaves_routes);
-				leaves_routes.clear();
-			}
-		}
+		remove_route(candidate_fresher_route);
 
-		// We now have all the routes to remove
-		for route in candidate_leaves_routes {
-			std::iter::once(route.common_block())
-				.chain(route.enacted())
-				.rev()
-				.for_each(|elem| {
-					if self.backend.remove_leaf_block(&elem.hash).is_ok() {
-						log::debug!(target: "parachain", "Removing block {}", elem.hash);
-						self.levels
-							.get_mut(&elem.number)
-							.and_then(|level| level.remove(&elem.hash).then_some(()));
-						self.freshness.remove(&elem.hash);
-					}
-				});
-		}
+		leaves.iter().rev().skip(candidate_fresher_leaf_idx).for_each(|leaf_hash| {
+			match sp_blockchain::tree_route(blockchain, candidate_hash, *leaf_hash) {
+				Ok(route) if route.retracted().is_empty() => {
+					remove_route(route);
+				},
+				Err(err) => {
+					log::warn!(
+						target: "parachain",
+						"Unable getting route from {} to {}: {}",
+						candidate_hash, leaf_hash, err,
+					);
+				},
+				_ => (),
+			};
+		});
 	}
 
 	/// Add a new imported block information to the monitor.
