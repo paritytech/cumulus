@@ -127,13 +127,13 @@ impl CollatorOverseerGen {
 				network_service.clone(),
 				authority_discovery_service.clone(),
 				Box::new(network_service.clone()),
-				Metrics::register(registry)?,
+				network_bridge_metrics.clone(),
 				peer_set_protocol_names.clone(),
 			))
 			.network_bridge_tx(NetworkBridgeTxSubsystem::new(
 				network_service.clone(),
 				authority_discovery_service.clone(),
-				network_bridge_metrics.clone(),
+				network_bridge_metrics,
 				req_protocol_names,
 				peer_set_protocol_names,
 			))
