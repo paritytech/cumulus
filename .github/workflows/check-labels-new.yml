@@ -14,12 +14,27 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
+
       - name: Check labels
         continue-on-error: true
-        run: |
-          bash ${{ github.workspace }}/scripts/ci/github/check_labels_new.sh
         env:
+          IMAGE: chevdor/ruled-labels:latest
+          MOUNT: /work
+          CHECK_SPECS: tests.yaml
           GITHUB_PR: ${{ github.event.pull_request.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          API_BASE: https://api.github.com/repos
+          REPO: ${{ github.repository }}
+          PR_ID: ${{github.event.number}}
+        run: |
+          echo "repo: $REPO"
+          echo "pr_ir: $PR_ID"
+
+          # Fetch the labels for the PR under test
+          labels="$(curl -H "Authorization: token $GITHUB_PR_TOKEN" -s "$API_BASE/$repo/pulls/$PR_ID" | jq ".labels | .[] | .name" | tr '\n' ' ')"
+
+          docker pull $IMAGE
+          docker run --rm -i $IMAGE --version
+          docker run --rm -i -v $PWD/scripts/ci/ruled_labels/:$MOUNT $IMAGE check $MOUNT/$CHECK_SPECS --labels
