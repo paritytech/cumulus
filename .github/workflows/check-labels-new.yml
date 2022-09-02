@@ -36,6 +36,7 @@ jobs:
 
           # Fetch the labels for the PR under test
           labels=($( curl -H "Authorization: token $GITHUB_TOKEN" -s "$API_BASE/$REPO/pulls/$GITHUB_PR" | jq '.labels | .[] | .name' | tr '\n' ' '))
+          printf "Checking labels: %s" $labels
 
           docker run --rm -i $IMAGE --version
           echo $labels | xargs -I{} docker run --rm -i -v $PWD/scripts/ci/ruled_labels/:$MOUNT $IMAGE check $MOUNT/$CHECK_SPECS --labels {}
