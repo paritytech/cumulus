@@ -353,6 +353,10 @@ impl RelayChainRpcClient {
 		.await
 	}
 
+	pub async fn system_local_listen_addresses(&self) -> Result<Vec<String>, RelayChainError> {
+		self.request("system_localListenAddresses", None).await
+	}
+
 	pub async fn system_health(&self) -> Result<Health, RelayChainError> {
 		self.request("system_health", None).await
 	}

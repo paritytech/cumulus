@@ -17,6 +17,14 @@ chain = "rococo-local"
   name = "charlie"
   validator = true
 
+  [[relaychain.nodes]]
+  name = "one"
+  validator = false
+
+  [[relaychain.nodes]]
+  name = "two"
+  validator = false
+
 [[parachains]]
 id = 2000
 cumulus_based = true
@@ -27,7 +35,7 @@ cumulus_based = true
   validator = true
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["-lparachain=debug", "--relay-chain-rpc-url {{'alice'|zombie('wsUri')}}"]
+  args = ["-lparachain=debug", "--relay-chain-rpc-url {{'one'|zombie('wsUri')}}"]
 
   # run eve as parachain full node that is only connected to dave
   [[parachains.collators]]
@@ -35,12 +43,4 @@ cumulus_based = true
   validator = true
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["-lparachain=debug", "--relay-chain-rpc-url {{'bob'|zombie('wsUri')}}"]
-
-  # run ferdie as parachain collator
-  [[parachains.collators]]
-  name = "ferdie"
-  validator = true
-  image = "{{COL_IMAGE}}"
-  command = "test-parachain"
-  args = ["-lparachain=debug", "--relay-chain-rpc-url {{'alice'|zombie('wsUri')}}"]
+  args = ["-lparachain=debug", "--relay-chain-rpc-url {{'two'|zombie('wsUri')}}"]

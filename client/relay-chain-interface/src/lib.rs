@@ -23,7 +23,8 @@ use cumulus_primitives_core::{
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
-use polkadot_overseer::Handle as OverseerHandle;
+use polkadot_overseer::{prometheus::PrometheusError, Handle as OverseerHandle};
+use polkadot_service::SubstrateServiceError;
 use sc_client_api::StorageProof;
 
 use futures::Stream;
@@ -60,6 +61,10 @@ pub enum RelayChainError {
 	DeserializationError(CodecError),
 	#[error("Polkadot service error: {0}")]
 	ServiceError(#[from] polkadot_service::Error),
+	#[error("Substrate service error: {0}")]
+	SubServiceError(#[from] SubstrateServiceError),
+	#[error("Prometheus error: {0}")]
+	PrometheusError(#[from] PrometheusError),
 	#[error("Unspecified error occured: {0}")]
 	GenericError(String),
 }
