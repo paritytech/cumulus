@@ -242,12 +242,14 @@ rules:
       require: !one_of [ P* ]
 
   - name: Release need topics
+    id: b_needs_t
     tags: [ PR ]
     when: !one_of [ B1 ]
     spec:
       require: !some_of [ T* ]
 
   - name: Release require some topics
+    id: b_needs_x
     tags: [ PR ]
     when: !one_of [ B1 ]
     spec:

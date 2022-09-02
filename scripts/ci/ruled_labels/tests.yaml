@@ -3,26 +3,37 @@ spec_file: specs.yaml
 
 specs:
   - name: Pass - Pass all
-    # Not supported yet: see https://github.com/chevdor/ruled_labels/issues/5
     filter:
-      id: single_.*
-      tags: [ PR ]
-      name: .*Urgency.*
+      id: [ single_b, single_d, single_u, single_s]
     labels: [ B1, P1, D1, X1, T4 ]
     expected: true
 
   - name: Fail - Require release label
+    filter:
+      id: [ single_b ]
     labels: [ A1 ]
     expected: false
 
   - name: Fail - Runtimes require an audit Label
+    filter:
+      id: [ require_one_d_when_x1 ]
     labels: [ X1, B1, P1 ]
     expected: false
 
   - name: Fail - Release need priorities
+    filter:
+      id: [ require_one_p_when_b1 ]
     labels: [ B1, X1, D1 ]
     expected: false
 
-  - name: Fail - Release require some topics
+  - name: Fail - Release require some T topics
+    filter:
+      id: [ b_needs_t ]
+    labels: [ B1, P1, D1 ]
+    expected: false
+
+  - name: Fail - Release require some X topics
+    filter:
+      id: [ b_needs_x ]
     labels: [ B1, P1, D1 ]
     expected: false
