@@ -20,7 +20,7 @@ jobs:
         env:
           IMAGE: chevdor/ruled-labels:latest
           MOUNT: /work
-          CHECK_SPECS: tests.yaml
+          CHECK_SPECS: specs.yaml
           GITHUB_PR: ${{ github.event.pull_request.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           API_BASE: https://api.github.com/repos
@@ -30,7 +30,7 @@ jobs:
           echo "GITHUB_PR: $GITHUB_PR"
 
           # Fetch the labels for the PR under test
-          labels=($( curl -H "Authorization: token $GITHUB_PR_TOKEN" -s "$API_BASE/$REPO/pulls/$GITHUB_PR" | jq '.labels | .[] | .name' | tr '\n' ' '))
+          labels=($( curl -H "Authorization: token $GITHUB_TOKEN" -s "$API_BASE/$REPO/pulls/$GITHUB_PR" | jq '.labels | .[] | .name' | tr '\n' ' '))
 
           docker pull $IMAGE
           docker run --rm -i $IMAGE --version
