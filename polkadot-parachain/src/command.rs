@@ -710,8 +710,9 @@ pub fn run() -> Result<()> {
 						.await
 						.map(|r| r.0)
 						.map_err(Into::into),
-					Runtime::Seedling => crate::service::start_shell_node::<
-						seedling_runtime::RuntimeApi,
+					Runtime::Seedling => crate::service::start_generic_aura_node::<
+					seedling_runtime::RuntimeApi,
+					AuraId,
 					>(config, polkadot_config, collator_options, id, hwbench)
 					.await
 					.map(|r| r.0)

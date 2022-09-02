@@ -54,18 +54,18 @@ where
 		+ Sync
 		+ 'static,
 	C::Api: frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
-	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
+	//C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: BlockBuilder<Block>,
 	P: TransactionPool + Sync + Send + 'static,
 {
 	use frame_rpc_system::{System, SystemApiServer};
-	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
+	//use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 
 	let mut module = RpcExtension::new(());
 	let FullDeps { client, pool, deny_unsafe } = deps;
 
 	module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
-	module.merge(TransactionPayment::new(client).into_rpc())?;
+	//module.merge(TransactionPayment::new(client).into_rpc())?;
 
 	Ok(module)
 }

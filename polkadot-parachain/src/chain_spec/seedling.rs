@@ -16,9 +16,23 @@
 
 use crate::chain_spec::{get_account_id_from_seed, Extensions};
 use cumulus_primitives_core::ParaId;
-use parachains_common::AccountId;
+use parachains_common::{AccountId, AuraId};
 use sc_service::ChainType;
-use sp_core::sr25519;
+use sp_core::{sr25519, Public, Pair};
+use seedling_runtime::AuraConfig;
+use sp_runtime::traits::{IdentifyAccount, Verify};
+
+/// Generate a crypto pair from seed.
+pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
+	TPublic::Pair::from_string(&format!("//{}", seed), None)
+		.expect("static values are valid; qed")
+		.public()
+}
+
+/// Generate an Aura authority key.
+pub fn authority_keys_from_seed(s: &str) -> AuraId {
+	get_from_seed::<AuraId>(s)
+}
 
 /// Specialized `ChainSpec` for the seedling parachain runtime.
 pub type SeedlingChainSpec =
@@ -31,7 +45,11 @@ pub fn get_seedling_chain_spec() -> SeedlingChainSpec {
 		ChainType::Local,
 		move || {
 			seedling_testnet_genesis(
+				// Initial PoA authorities
+				vec![authority_keys_from_seed("Alice")],
+				// Sudo account
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				// Parachain Id
 				2000.into(),
 			)
 		},
@@ -45,6 +63,7 @@ pub fn get_seedling_chain_spec() -> SeedlingChainSpec {
 }
 
 fn seedling_testnet_genesis(
+	initial_authorities: Vec<AuraId>,
 	root_key: AccountId,
 	parachain_id: ParaId,
 ) -> seedling_runtime::GenesisConfig {
@@ -54,6 +73,10 @@ fn seedling_testnet_genesis(
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 		},
+		aura: AuraConfig {
+			authorities: initial_authorities.iter().map(|x| x.clone()).collect(),
+		},
+		aura_ext: Default::default(),
 		sudo: seedling_runtime::SudoConfig { key: Some(root_key) },
 		parachain_info: seedling_runtime::ParachainInfoConfig { parachain_id },
 		parachain_system: Default::default(),
