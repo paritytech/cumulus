@@ -15,6 +15,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
 
+      - name: Pull image
+        env:
+          IMAGE: chevdor/ruled-labels:latest
+        run: docker pull $IMAGE
+
       - name: Check labels
         continue-on-error: true
         env:
@@ -32,6 +37,5 @@ jobs:
           # Fetch the labels for the PR under test
           labels=($( curl -H "Authorization: token $GITHUB_TOKEN" -s "$API_BASE/$REPO/pulls/$GITHUB_PR" | jq '.labels | .[] | .name' | tr '\n' ' '))
 
-          docker pull $IMAGE
           docker run --rm -i $IMAGE --version
           echo $labels | xargs -I{} docker run --rm -i -v $PWD/scripts/ci/ruled_labels/:$MOUNT $IMAGE check $MOUNT/$CHECK_SPECS --labels {}
