@@ -1,8 +1,6 @@
 name: Check label Rules
 
 on:
-  pull_request:
-    types: [labeled, opened, synchronize, unlabeled]
   push:
     paths:
       - scripts/ci/ruled_labels/**
