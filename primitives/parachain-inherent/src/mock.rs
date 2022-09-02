@@ -183,7 +183,7 @@ impl InherentDataProvider for MockValidationDataInherentDataProvider {
 		// Randomness is set equal to current relay block
 		// could improve mock randomness by XOR with [u8::MAX; 32]
 		let mut mock_randomness: [u8; 32] = [0u8; 32];
-		mock_randomness[..8].copy_from_slice(&relay_parent_number.to_be_bytes());
+		mock_randomness[..4].copy_from_slice(&relay_parent_number.to_be_bytes());
 		sproof_builder.randomness = mock_randomness.into();
 
 		let (relay_parent_storage_root, proof) = sproof_builder.into_state_root_and_proof();
