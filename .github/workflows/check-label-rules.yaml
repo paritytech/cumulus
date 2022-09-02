@@ -1,0 +1,27 @@
+name: Check label Rules
+
+on:
+  pull_request:
+    types: [labeled, opened, synchronize, unlabeled]
+  push:
+    paths:
+      - scripts/ci/ruled_labels/**
+
+jobs:
+  check-label-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+      - name: Check label Rules
+        env:
+          IMAGE: chevdor/ruled-labels:latest
+          MOUNT: /work
+          TEST_SPECS: tests.yaml
+        run: |
+          docker run --rm -i --pull=always -v $PWD/scripts/ci/ruled_labels/:$MOUNT $IMAGE test $MOUNT/$TEST_SPECS
