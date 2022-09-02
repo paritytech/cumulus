@@ -15,8 +15,9 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: Check labels
+        continue-on-error: true
         run: |
-          bash ${{ github.workspace }}/scripts/ci/github/check_labels_new.sh || true
+          bash ${{ github.workspace }}/scripts/ci/github/check_labels_new.sh
         env:
           GITHUB_PR: ${{ github.event.pull_request.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
