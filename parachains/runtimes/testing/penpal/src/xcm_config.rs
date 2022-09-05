@@ -332,6 +332,7 @@ parameter_types! {
 		MultiLocation::new(1, X2(Parachain(1000), PalletInstance(50)));
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 	pub UniversalLocation: InteriorMultiLocation = X1(Parachain(ParachainInfo::parachain_id().into()));
+	pub const MaxAssetsIntoHolding: u32 = 64;
 }
 
 pub type Reserves = (NativeAsset, AssetsFrom<CommonGoodAssetsLocation>);
@@ -357,7 +358,7 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetClaims = PolkadotXcm;
 	type SubscriptionService = PolkadotXcm;
 	type PalletInstancesInfo = ();
-	type MaxAssetsIntoHolding = ();
+	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
 	type FeeManager = ();
 	type MessageExporter = ();
 	type UniversalAliases = ();
