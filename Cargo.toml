@@ -37,11 +37,11 @@ members = [
 	"parachains/runtimes/collectives/collectives-polkadot",
 	"parachains/runtimes/contracts/contracts-rococo",
 	"parachains/runtimes/testing/penpal",
-	"test/client",
-	"test/relay-sproof-builder",
-	"test/relay-validation-worker-provider",
-	"test/runtime",
-	"test/service",
+	 "test/client",
+	 "test/relay-sproof-builder",
+	 "test/relay-validation-worker-provider",
+	 "test/runtime",
+	 "test/service",
 ]
 
 [profile.release]

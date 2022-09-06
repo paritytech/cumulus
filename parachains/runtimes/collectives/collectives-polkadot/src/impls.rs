@@ -21,7 +21,7 @@ use frame_support::{
 };
 use pallet_alliance::{ProposalIndex, ProposalProvider};
 use sp_std::{boxed::Box, marker::PhantomData};
-use xcm::latest::{Fungibility, Junction, NetworkId, Parent};
+use xcm::latest::{Fungibility, Junction, MultiLocation, Parent};
 
 type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 
@@ -61,14 +61,12 @@ where
 
 		<CurrencyOf<T, I>>::resolve_creating(&temp_account, amount);
 
+		let dest: MultiLocation =
+			Junction::AccountId32 { network: None, id: treasury_acc.into() }.into();
 		let result = pallet_xcm::Pallet::<T>::teleport_assets(
 			<T as frame_system::Config>::Origin::signed(temp_account.into()),
 			Box::new(Parent.into()),
-			Box::new(
-				Junction::AccountId32 { network: NetworkId::Any, id: treasury_acc.into() }
-					.into()
-					.into(),
-			),
+			Box::new(dest.into()),
 			Box::new((Parent, imbalance).into()),
 			0,
 		);

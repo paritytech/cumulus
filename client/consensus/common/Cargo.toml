@@ -9,7 +9,7 @@ edition = "2021"
 async-trait = "0.1.57"
 codec = { package = "parity-scale-codec", version = "3.0.0", features = [ "derive" ] }
 dyn-clone = "1.0.9"
-futures = "0.3.21"
+futures = "0.3.23"
 tracing = "0.1.36"
 
 # Substrate
@@ -22,7 +22,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkad
 sp-trie = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.28" }
+polkadot-primitives = { git = "https://github.com/bernardoaraujor/polkadot", branch = "v0.9.28-xcm-v3" }
 
 # Cumulus
 cumulus-relay-chain-interface = { path = "../../relay-chain-interface" }

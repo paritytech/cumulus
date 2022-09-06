@@ -239,7 +239,7 @@ pub mod pallet {
 					Ok(0)
 				},
 				Ok(Ok(x)) => {
-					let outcome = T::XcmExecutor::execute_xcm(Parent, x, limit);
+					let outcome = T::XcmExecutor::execute_xcm(Parent, x, message_id, limit);
 					match outcome {
 						Outcome::Error(XcmError::WeightLimitReached(required)) =>
 							Err((message_id, required)),
@@ -424,27 +424,32 @@ mod tests {
 		})
 	}
 
+	pub enum Weightless {}
+	impl PreparedMessage for Weightless {
+		fn weight_of(&self) -> Weight {
+			unreachable!()
+		}
+	}
+
 	pub struct MockExec;
 	impl ExecuteXcm<Call> for MockExec {
-		fn execute_xcm_in_credit(
+		type Prepared = Weightless;
+
+		fn prepare(message: Xcm) -> Result<Self::Prepared, Xcm> {
+			Err(message)
+		}
+
+		fn execute(
 			_origin: impl Into<MultiLocation>,
-			message: Xcm,
-			weight_limit: Weight,
-			_credit: Weight,
+			_: Weightless,
+			_hash: XcmHash,
+			_weight_limit: Weight,
 		) -> Outcome {
-			let o = match (message.0.len(), &message.0.first()) {
-				(1, Some(Transact { require_weight_at_most, .. })) => {
-					if *require_weight_at_most <= weight_limit {
-						Outcome::Complete(*require_weight_at_most)
-					} else {
-						Outcome::Error(XcmError::WeightLimitReached(*require_weight_at_most))
-					}
-				},
-				// use 1000 to decide that it's not supported.
-				_ => Outcome::Incomplete(1000.min(weight_limit), XcmError::Unimplemented),
-			};
-			TRACE.with(|q| q.borrow_mut().push((message, o.clone())));
-			o
+			unreachable!()
+		}
+
+		fn charge_fees(_location: impl Into<MultiLocation>, _fees: MultiAssets) -> XcmResult {
+			Err(XcmError::Unimplemented)
 		}
 	}
 
@@ -480,7 +485,7 @@ mod tests {
 
 	fn msg(weight: Weight) -> Xcm {
 		Xcm(vec![Transact {
-			origin_type: OriginKind::Native,
+			origin_kind: OriginKind::Native,
 			require_weight_at_most: weight,
 			call: Vec::new().into(),
 		}])

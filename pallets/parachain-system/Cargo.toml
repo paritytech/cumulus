@@ -29,8 +29,8 @@ sp-trie = { git = "https://github.com/paritytech/substrate", default-features = 
 sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.28" }
 
 # Polkadot
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, features = [ "wasm-api" ], branch = "release-v0.9.28" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.28" }
+polkadot-parachain = { git = "https://github.com/bernardoaraujor/polkadot", default-features = false, features = [ "wasm-api" ], branch = "v0.9.28-xcm-v3" }
+xcm = { git = "https://github.com/bernardoaraujor/polkadot", default-features = false, branch = "v0.9.28-xcm-v3" }
 
 # Cumulus
 cumulus-pallet-parachain-system-proc-macro = { path = "proc-macro", default-features = false }

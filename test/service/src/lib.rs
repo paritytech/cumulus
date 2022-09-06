@@ -18,7 +18,7 @@
 
 #![warn(missing_docs)]
 
-mod chain_spec;
+pub mod chain_spec;
 mod genesis;
 
 use std::{
@@ -650,7 +650,7 @@ pub fn node_config(
 		keystore: KeystoreConfig::InMemory,
 		keystore_remote: Default::default(),
 		database: DatabaseSource::RocksDb { path: root.join("db"), cache_size: 128 },
-		state_cache_size: 67108864,
+		state_cache_size: 16777216,
 		state_cache_child_ratio: None,
 		state_pruning: Some(PruningMode::ArchiveAll),
 		blocks_pruning: BlocksPruning::All,

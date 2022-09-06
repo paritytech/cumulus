@@ -10,7 +10,7 @@ description = "Runs a polkadot parachain node which could be a collator."
 async-trait = "0.1.57"
 clap = { version = "3.2.17", features = ["derive", "deprecated"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
-futures = "0.3.21"
+futures = "0.3.23"
 hex-literal = "0.3.4"
 log = "0.4.17"
 serde = { version = "1.0.143", features = ["derive"] }
@@ -68,11 +68,11 @@ pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrat
 pallet-contracts-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
 
 # Polkadot
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.28" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.28" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.28" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.28" }
-xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.28" }
+polkadot-cli = { git = "https://github.com/bernardoaraujor/polkadot", branch = "v0.9.28-xcm-v3" }
+polkadot-parachain = { git = "https://github.com/bernardoaraujor/polkadot", branch = "v0.9.28-xcm-v3" }
+polkadot-primitives = { git = "https://github.com/bernardoaraujor/polkadot", branch = "v0.9.28-xcm-v3" }
+polkadot-service = { git = "https://github.com/bernardoaraujor/polkadot", branch = "v0.9.28-xcm-v3" }
+xcm = { git = "https://github.com/bernardoaraujor/polkadot", branch = "v0.9.28-xcm-v3" }
 
 # Cumulus
 cumulus-client-cli = { path = "../client/cli" }
@@ -92,12 +92,12 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 
 [dev-dependencies]
 assert_cmd = "2.0"
-nix = "0.24"
+nix = "0.25"
 tempfile = "3.3.0"
 tokio = { version = "1.19.2", features = ["macros", "time", "parking_lot"] }
 wait-timeout = "0.2"
 # purge_chain_works works with rococo-local and needs to allow this
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", features = ["rococo-native"] , branch = "release-v0.9.28" }
+polkadot-cli = { git = "https://github.com/bernardoaraujor/polkadot", branch = "v0.9.28-xcm-v3", features = ["rococo-native"] }
 
 [features]
 default = []

@@ -78,9 +78,9 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		PingSent(ParaId, u32, Vec<u8>),
+		PingSent(ParaId, u32, Vec<u8>, XcmHash, MultiAssets),
 		Pinged(ParaId, u32, Vec<u8>),
-		PongSent(ParaId, u32, Vec<u8>),
+		PongSent(ParaId, u32, Vec<u8>, XcmHash, MultiAssets),
 		Ponged(ParaId, u32, Vec<u8>, T::BlockNumber),
 		ErrorSendingPing(SendError, ParaId, u32, Vec<u8>),
 		ErrorSendingPong(SendError, ParaId, u32, Vec<u8>),
@@ -103,10 +103,10 @@ pub mod pallet {
 					*seq += 1;
 					*seq
 				});
-				match T::XcmSender::send_xcm(
-					(1, Junction::Parachain(para.into())),
+				match send_xcm::<T::XcmSender>(
+					(Parent, Junction::Parachain(para.into())).into(),
 					Xcm(vec![Transact {
-						origin_type: OriginKind::Native,
+						origin_kind: OriginKind::Native,
 						require_weight_at_most: 1_000,
 						call: <T as Config>::Call::from(Call::<T>::ping {
 							seq,
@@ -116,9 +116,15 @@ pub mod pallet {
 						.into(),
 					}]),
 				) {
-					Ok(()) => {
+					Ok((hash, cost)) => {
 						Pings::<T>::insert(seq, n);
-						Self::deposit_event(Event::PingSent(para, seq, payload.to_vec()));
+						Self::deposit_event(Event::PingSent(
+							para,
+							seq,
+							payload.to_vec(),
+							hash,
+							cost,
+						));
 					},
 					Err(e) => {
 						Self::deposit_event(Event::ErrorSendingPing(
@@ -193,10 +199,10 @@ pub mod pallet {
 			let para = ensure_sibling_para(<T as Config>::Origin::from(origin))?;
 
 			Self::deposit_event(Event::Pinged(para, seq, payload.clone()));
-			match T::XcmSender::send_xcm(
-				(1, Junction::Parachain(para.into())),
+			match send_xcm::<T::XcmSender>(
+				(Parent, Junction::Parachain(para.into())).into(),
 				Xcm(vec![Transact {
-					origin_type: OriginKind::Native,
+					origin_kind: OriginKind::Native,
 					require_weight_at_most: 1_000,
 					call: <T as Config>::Call::from(Call::<T>::pong {
 						seq,
@@ -206,7 +212,8 @@ pub mod pallet {
 					.into(),
 				}]),
 			) {
-				Ok(()) => Self::deposit_event(Event::PongSent(para, seq, payload)),
+				Ok((hash, cost)) =>
+					Self::deposit_event(Event::PongSent(para, seq, payload, hash, cost)),
 				Err(e) => Self::deposit_event(Event::ErrorSendingPong(e, para, seq, payload)),
 			}
 			Ok(())
