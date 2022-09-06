@@ -43,7 +43,7 @@ pub use client_side::*;
 #[cfg(feature = "std")]
 mod mock;
 #[cfg(feature = "std")]
-pub use mock::{MockValidationDataInherentDataProvider, MockXcmConfig};
+pub use mock::{MockRandomnessConfig, MockValidationDataInherentDataProvider, MockXcmConfig};
 
 /// The identifier for the parachain inherent.
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"sysi1337";
