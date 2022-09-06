@@ -229,6 +229,9 @@ jobs:
       matrix:
         chain: [integritee]
         config: [rococo, westend, kusama, polkadot, moonbase]
+        include:
+          - chain: shell
+            config: kusama-lease2
     steps:
       - name: Checkout
         uses: actions/checkout@v3

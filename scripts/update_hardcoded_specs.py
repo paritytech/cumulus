@@ -26,6 +26,7 @@ SPECS = [
     "integritee-kusama",
     "integritee-polkadot",
     "integritee-moonbase",
+    # "shell-kusama-lease2", # enable if you want to change the data for registration.
 ]
 COLLATOR = "target/release/integritee-collator"
 RES_DIR = "polkadot-parachains/chain-specs"

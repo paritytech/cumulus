@@ -89,7 +89,7 @@ struct IntegriteeKeys;
 
 impl IntegriteeKeys {
 	fn root() -> AccountId {
-		public_from_ss58::<sr25519::Public>("2K7GtWP55g3rETCDGLBuxbWBSaXQyCswbvEdcHFXG6fkt9RP")
+		public_from_ss58::<sr25519::Public>("2JcYbKMfEGidntYP1LpPWsCMxFvUbjaPyipRViat4Sn5nuqm")
 			.into()
 	}
 	fn authorities() -> Vec<AuraId> {
@@ -296,6 +296,10 @@ pub fn shell_westend_config() -> Result<ShellChainSpec, String> {
 
 pub fn shell_kusama_config() -> Result<ShellChainSpec, String> {
 	ShellChainSpec::from_json_bytes(&include_bytes!("../chain-specs/integritee-kusama.json")[..])
+}
+
+pub fn shell_kusama_lease2_config() -> Result<ShellChainSpec, String> {
+	ShellChainSpec::from_json_bytes(&include_bytes!("../chain-specs/shell-kusama-lease2.json")[..])
 }
 
 pub fn shell_polkadot_config() -> Result<ShellChainSpec, String> {
