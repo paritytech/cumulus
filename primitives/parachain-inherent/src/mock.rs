@@ -66,11 +66,11 @@ pub trait GenerateRandomness<I> {
 }
 
 impl GenerateRandomness<u64> for () {
-	/// Default implementation takes first 4 bytes of relay epoch as randomness
-	/// A more random appearing implementation may hash the relay epoch instead
+	/// Default implementation uses relay epoch as randomness value
+	/// A more seemingly random implementation may hash the relay epoch instead
 	fn generate_randomness(&self, input: u64) -> relay_chain::Hash {
 		let mut mock_randomness: [u8; 32] = [0u8; 32];
-		mock_randomness[..4].copy_from_slice(&input.to_be_bytes());
+		mock_randomness[..8].copy_from_slice(&input.to_be_bytes());
 		mock_randomness.into()
 	}
 }
