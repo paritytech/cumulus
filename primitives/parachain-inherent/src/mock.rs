@@ -53,9 +53,9 @@ pub struct MockValidationDataInherentDataProvider<R = ()> {
 	pub relay_blocks_per_para_block: u32,
 	/// Number of parachain blocks per relay chain epoch
 	/// Mock epoch is computed by dividing `current_para_block` by this value.
-	pub para_blocks_per_epoch: u32,
+	pub para_blocks_per_relay_epoch: u32,
 	/// Function to mock BABE one epoch ago randomness using input current epoch
-	pub randomness_config: R,
+	pub relay_randomness_config: R,
 	/// XCM messages and associated configuration information.
 	pub xcm_config: MockXcmConfig,
 	/// Inbound downward XCM messages to be injected into the block.
@@ -200,17 +200,18 @@ impl<R: Send + Sync + GenerateRandomness<u64>> InherentDataProvider
 		}
 
 		// Epoch is set equal to current para block / blocks per epoch
-		sproof_builder.current_epoch = if self.current_para_block < self.para_blocks_per_epoch {
+		sproof_builder.current_epoch = if self.current_para_block < self.para_blocks_per_relay_epoch
+		{
 			0u64
-		} else if self.para_blocks_per_epoch == 0u32 {
+		} else if self.para_blocks_per_relay_epoch == 0u32 {
 			// do not divide by 0 => set epoch to para block number
 			self.current_para_block.into()
 		} else {
-			(self.current_para_block / self.para_blocks_per_epoch).into()
+			(self.current_para_block / self.para_blocks_per_relay_epoch).into()
 		};
 		// Randomness is set by randomness generator
 		sproof_builder.randomness =
-			self.randomness_config.generate_randomness(sproof_builder.current_epoch);
+			self.relay_randomness_config.generate_randomness(sproof_builder.current_epoch);
 
 		let (relay_parent_storage_root, proof) = sproof_builder.into_state_root_and_proof();
 
