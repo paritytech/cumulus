@@ -1,0 +1,67 @@
+{
+  "name": "Polkadot Collectives", // TODO Collectives OR Polkadot Collectives?
+  "id": "collectives_polkadot",
+  "chainType": "Live",
+  "bootNodes": [ // TBD
+    "/ip4/127.0.0.1/tcp/30333/p2p/12D3KooWJY6kM1ES9cZV6tv7CXNcxetKVDXXmpwxzeqvTzANfDza"
+  ],
+  "telemetryEndpoints": null,
+  "protocolId": null,
+  "properties": {
+    "ss58Format": 0,
+    "tokenDecimals": 10,
+    "tokenSymbol": "DOT"
+  },
+  "relay_chain": "polkadot",
+  "para_id": 1002, // TODO review!
+  "codeSubstitutes": {},
+  "genesis": {
+    "runtime": {
+      "system": {
+        "code": "" // TODO inject when the rest is ready, otherwise this file is not reviewable on github
+      },
+      "parachainSystem": null,
+      "parachainInfo": {
+        "parachainId": 1002 // TODO review!
+      },
+      "balances": {
+        "balances": []
+      },
+      "collatorSelection": { // TODO TBD
+        "invulnerables": [
+          "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+        ],
+        "candidacyBond": 16000000000,
+        "desiredCandidates": 0
+      },
+      "session": {
+        "keys": [ // TODO TBD
+          [
+            "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+            "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+            {
+              "aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+            }
+          ]
+        ]
+      },
+      "aura": {
+        "authorities": []
+      },
+      "auraExt": null,
+      "polkadotXcm": {
+        "safeXcmVersion": 2 // TODO review!
+      },
+      "alliance": {
+        "founders": [],
+        "fellows": [],
+        "allies": [],
+        "phantom": null
+      },
+      "allianceMotion": {
+        "phantom": null,
+        "members": []
+      }
+    }
+  }
+}
