@@ -831,7 +831,7 @@ impl<T: Config> Pallet<T> {
 				if shuffle_index < status.len() {
 					weight_available +=
 						(max_weight - weight_available) / (weight_restrict_decay.ref_time() + 1);
-					if (weight_available + threshold_weight).all_gt(max_weight) {
+					if (weight_available + threshold_weight).any_gt(max_weight) {
 						weight_available = max_weight;
 					}
 				} else {
