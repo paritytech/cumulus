@@ -51,8 +51,11 @@ pub struct MockValidationDataInherentDataProvider<R = ()> {
 	/// The number of relay blocks that elapses between each parablock. Probably set this to 1 or 2
 	/// to simulate optimistic or realistic relay chain behavior.
 	pub relay_blocks_per_para_block: u32,
-	/// Relay epoch index and babe one epoch ago randomness
-	pub randomness_config: MockRandomnessConfig<R>,
+	/// Number of parachain blocks per relay chain epoch
+	/// Mock epoch is computed by dividing `current_para_block` by this value.
+	pub para_blocks_per_epoch: u32,
+	/// Function to mock BABE one epoch ago randomness using input current epoch
+	pub randomness_config: R,
 	/// XCM messages and associated configuration information.
 	pub xcm_config: MockXcmConfig,
 	/// Inbound downward XCM messages to be injected into the block.
@@ -73,16 +76,6 @@ impl GenerateRandomness<u64> for () {
 		mock_randomness[..8].copy_from_slice(&input.to_be_bytes());
 		mock_randomness.into()
 	}
-}
-
-/// Parameters for how the Mock inherent data provider should inject the relay
-/// epoch index and BABE one epoch ago randomness.
-pub struct MockRandomnessConfig<R> {
-	/// Number of parachain blocks per relay chain epoch
-	/// Mock epoch is computed by dividing `current_para_block` by this value.
-	pub para_blocks_per_epoch: u32,
-	/// Function to mock BABE one epoch ago randomness using input current epoch
-	pub generator: R,
 }
 
 /// Parameters for how the Mock inherent data provider should inject XCM messages.
@@ -207,20 +200,17 @@ impl<R: Send + Sync + GenerateRandomness<u64>> InherentDataProvider
 		}
 
 		// Epoch is set equal to current para block / blocks per epoch
-		sproof_builder.current_epoch =
-			if self.current_para_block < self.randomness_config.para_blocks_per_epoch {
-				0u64
-			} else if self.randomness_config.para_blocks_per_epoch == 0u32 {
-				// do not divide by 0 => set epoch to para block number
-				self.current_para_block.into()
-			} else {
-				(self.current_para_block / self.randomness_config.para_blocks_per_epoch).into()
-			};
+		sproof_builder.current_epoch = if self.current_para_block < self.para_blocks_per_epoch {
+			0u64
+		} else if self.para_blocks_per_epoch == 0u32 {
+			// do not divide by 0 => set epoch to para block number
+			self.current_para_block.into()
+		} else {
+			(self.current_para_block / self.para_blocks_per_epoch).into()
+		};
 		// Randomness is set by randomness generator
-		sproof_builder.randomness = self
-			.randomness_config
-			.generator
-			.generate_randomness(sproof_builder.current_epoch);
+		sproof_builder.randomness =
+			self.randomness_config.generate_randomness(sproof_builder.current_epoch);
 
 		let (relay_parent_storage_root, proof) = sproof_builder.into_state_root_and_proof();
 
