@@ -16,13 +16,13 @@ sp-trie = { git = "https://github.com/paritytech/substrate", default-features = 
 sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.28" }
 
 # Polkadot
-polkadot-core-primitives = { git = "https://github.com/bernardoaraujor/polkadot", default-features = false, branch = "v0.9.28-xcm-v3" }
-polkadot-runtime-common = { git = "https://github.com/bernardoaraujor/polkadot", default-features = false, branch = "v0.9.28-xcm-v3" }
-polkadot-parachain = { git = "https://github.com/bernardoaraujor/polkadot", default-features = false, branch = "v0.9.28-xcm-v3" }
-polkadot-primitives = { git = "https://github.com/bernardoaraujor/polkadot", default-features = false, branch = "v0.9.28-xcm-v3" }
-xcm = { git = "https://github.com/bernardoaraujor/polkadot", default-features = false, branch = "v0.9.28-xcm-v3" }
-xcm-executor = { git = "https://github.com/bernardoaraujor/polkadot", default-features = false, branch = "v0.9.28-xcm-v3" }
-xcm-builder = { git = "https://github.com/bernardoaraujor/polkadot", default-features = false, branch = "v0.9.28-xcm-v3" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "trappist-xcm-v3" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "trappist-xcm-v3" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "trappist-xcm-v3" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "trappist-xcm-v3" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "trappist-xcm-v3" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "trappist-xcm-v3" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "trappist-xcm-v3" }
 
 
 # Cumulus
