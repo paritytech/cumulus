@@ -871,7 +871,7 @@ impl<T: Config> Pallet<T> {
 			// other channels a look in. If we've still not unlocked all weight, then we set them
 			// up for processing a second time anyway.
 			if !status[index].message_metadata.is_empty() &&
-				(weight_processed.all_gt(Weight::zero()) || weight_available != max_weight)
+				(weight_processed.any_gt(Weight::zero()) || weight_available != max_weight)
 			{
 				if shuffle_index + 1 == shuffled.len() {
 					// Only this queue left. Just run around this loop once more.
