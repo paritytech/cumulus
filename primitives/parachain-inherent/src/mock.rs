@@ -207,9 +207,8 @@ impl<R: Send + Sync + GenerateRandomness<u64>> InherentDataProvider
 			(self.current_para_block / self.para_blocks_per_relay_epoch).into()
 		};
 		// Randomness is set by randomness generator
-		sproof_builder.randomness = self
-			.relay_randomness_config
-			.generate_randomness(self.current_para_block.into());
+		sproof_builder.randomness =
+			self.relay_randomness_config.generate_randomness(self.current_para_block.into());
 
 		let (relay_parent_storage_root, proof) = sproof_builder.into_state_root_and_proof();
 
