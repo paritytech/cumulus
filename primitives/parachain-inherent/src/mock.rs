@@ -54,7 +54,7 @@ pub struct MockValidationDataInherentDataProvider<R = ()> {
 	/// Number of parachain blocks per relay chain epoch
 	/// Mock epoch is computed by dividing `current_para_block` by this value.
 	pub para_blocks_per_relay_epoch: u32,
-	/// Function to mock BABE one epoch ago randomness using input current epoch
+	/// Function to mock BABE one epoch ago randomness
 	pub relay_randomness_config: R,
 	/// XCM messages and associated configuration information.
 	pub xcm_config: MockXcmConfig,
