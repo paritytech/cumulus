@@ -28,7 +28,7 @@
     "tokenSymbol": "DOT"
   },
   "relay_chain": "polkadot",
-  "para_id": 1002,
+  "para_id": 1001,
   "codeSubstitutes": {},
   "genesis": {
     "runtime": {
@@ -37,7 +37,7 @@
       },
       "parachainSystem": null,
       "parachainInfo": {
-        "parachainId": 1002
+        "parachainId": 1001
       },
       "balances": {
         "balances": []
