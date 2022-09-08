@@ -389,8 +389,11 @@ fn prune_blocks_on_level_overflow() {
 
 	let backend = Arc::new(Backend::new_test(1000, 3));
 	let client = Arc::new(TestClientBuilder::with_backend(backend.clone()).build());
-	let mut para_import =
-		ParachainBlockImport::new(client.clone(), backend.clone(), LevelLimit::Some(LEVEL_LIMIT));
+	let mut para_import = ParachainBlockImport::new_with_limit(
+		client.clone(),
+		backend.clone(),
+		LevelLimit::Some(LEVEL_LIMIT),
+	);
 
 	let block0 = build_and_import_block_ext(
 		&*client,
@@ -497,8 +500,11 @@ fn restore_limit_monitor() {
 
 	let backend = Arc::new(Backend::new_test(1000, 3));
 	let client = Arc::new(TestClientBuilder::with_backend(backend.clone()).build());
-	let mut para_import =
-		ParachainBlockImport::new(client.clone(), backend.clone(), LevelLimit::Some(LEVEL_LIMIT));
+	let mut para_import = ParachainBlockImport::new_with_limit(
+		client.clone(),
+		backend.clone(),
+		LevelLimit::Some(LEVEL_LIMIT),
+	);
 
 	let block0 = build_and_import_block_ext(
 		&*client,
@@ -541,8 +547,11 @@ fn restore_limit_monitor() {
 
 	// Simulate a restart by forcing a new monitor structure instance
 
-	let mut para_import =
-		ParachainBlockImport::new(client.clone(), backend.clone(), LevelLimit::Some(LEVEL_LIMIT));
+	let mut para_import = ParachainBlockImport::new_with_limit(
+		client.clone(),
+		backend.clone(),
+		LevelLimit::Some(LEVEL_LIMIT),
+	);
 
 	let block13 = build_and_import_block_ext(
 		&*client,

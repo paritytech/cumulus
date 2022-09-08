@@ -34,7 +34,7 @@
 //! 5. After the parachain candidate got backed and included, all collators start at 1.
 
 use cumulus_client_consensus_common::{
-	LevelLimit, ParachainBlockImport, ParachainCandidate, ParachainConsensus,
+	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
 use cumulus_primitives_core::{relay_chain::v2::Hash as PHash, ParaId, PersistedValidationData};
 use cumulus_relay_chain_interface::RelayChainInterface;
@@ -102,7 +102,6 @@ where
 			block_import: Arc::new(futures::lock::Mutex::new(ParachainBlockImport::new(
 				block_import,
 				backend,
-				LevelLimit::Default,
 			))),
 			relay_chain_interface,
 		}

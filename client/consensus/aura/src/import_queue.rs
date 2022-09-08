@@ -17,6 +17,7 @@
 //! Parachain specific wrapper for the AuRa import queue.
 
 use codec::Codec;
+use cumulus_client_consensus_common::ParachainBlockImport;
 use sc_client_api::{backend::AuxStore, Backend, BlockOf, UsageProvider};
 use sc_consensus::{import_queue::DefaultImportQueue, BlockImport};
 use sc_consensus_aura::AuraVerifier;
@@ -90,10 +91,8 @@ where
 	CIDP::InherentDataProviders: InherentDataProviderExt + Send + Sync,
 	BE: Backend<Block> + 'static,
 {
-	use cumulus_client_consensus_common::{LevelLimit, ParachainBlockImport};
-
 	sc_consensus_aura::import_queue::<P, _, _, _, _, _, _>(sc_consensus_aura::ImportQueueParams {
-		block_import: ParachainBlockImport::new(block_import, backend, LevelLimit::Default),
+		block_import: ParachainBlockImport::new(block_import, backend),
 		justification_import: None,
 		client,
 		create_inherent_data_providers,

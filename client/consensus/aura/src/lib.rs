@@ -24,7 +24,7 @@
 
 use codec::{Decode, Encode};
 use cumulus_client_consensus_common::{
-	LevelLimit, ParachainBlockImport, ParachainCandidate, ParachainConsensus,
+	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
 use cumulus_primitives_core::{relay_chain::v2::Hash as PHash, PersistedValidationData};
 
@@ -119,7 +119,7 @@ where
 		let worker = sc_consensus_aura::build_aura_worker::<P, _, _, _, _, _, _, _, _>(
 			BuildAuraWorkerParams {
 				client: para_client,
-				block_import: ParachainBlockImport::new(block_import, backend, LevelLimit::Default),
+				block_import: ParachainBlockImport::new(block_import, backend),
 				justification_sync_link: (),
 				proposer_factory,
 				sync_oracle,

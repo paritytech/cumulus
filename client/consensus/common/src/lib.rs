@@ -90,7 +90,14 @@ pub struct ParachainBlockImport<Block: BlockT, BI, BE> {
 
 impl<Block: BlockT, BI, BE> ParachainBlockImport<Block, BI, BE> {
 	/// Create a new instance.
-	pub fn new(inner: BI, backend: Arc<BE>, level_leaves_max: LevelLimit) -> Self {
+	///
+	/// The number of leaves per level limit is set to `LevelLimit::Default`.
+	pub fn new(inner: BI, backend: Arc<BE>) -> Self {
+		Self::new_with_limit(inner, backend, LevelLimit::Default)
+	}
+
+	/// Create a new instance with an explicit limit to the number of leaves per level.
+	pub fn new_with_limit(inner: BI, backend: Arc<BE>, level_leaves_max: LevelLimit) -> Self {
 		let level_limit = match level_leaves_max {
 			LevelLimit::None => None,
 			LevelLimit::Some(limit) => Some(limit),
