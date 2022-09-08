@@ -1,9 +1,24 @@
 {
-  "name": "Polkadot Collectives", // TODO Collectives OR Polkadot Collectives?
+  "name": "Collectives",
   "id": "collectives_polkadot",
   "chainType": "Live",
-  "bootNodes": [ // TBD
-    "/ip4/127.0.0.1/tcp/30333/p2p/12D3KooWJY6kM1ES9cZV6tv7CXNcxetKVDXXmpwxzeqvTzANfDza"
+  "bootNodes": [
+    "/dns/polkadot-collectives-collator-ew6-0.polkadot.io/tcp/30334/p2p/12D3KooWKgrivNBkMswNNNYqUkhEBvnyRzt6TLPQ2shu4eoPuuRi",
+    "/dns/polkadot-collectives-collator-ew6-1.polkadot.io/tcp/30334/p2p/12D3KooWQen2oX7hWqhUiJ4sxj7WA4Qa3WoAmz6rQbmYPCYjeCk9",
+    "/dns/polkadot-collectives-collator-ew6-2.polkadot.io/tcp/30334/p2p/12D3KooWLDZT5gAjMtC8fojiCwiz17SC61oeX2C7GWBCqqf9TwVD",
+    "/dns/polkadot-collectives-collator-ew6-3.polkadot.io/tcp/30334/p2p/12D3KooWC9BwKMDyRUTXsE7teSmoKMgbyxqAp3zi2MTGRJR5nhCL",
+    "/dns/polkadot-collectives-collator-uw1-0.polkadot.io/tcp/30334/p2p/12D3KooWJXwJS1d2UcdkKd8a6vM4TFB79gvtHtsp4bm4c8fYdpY7",
+    "/dns/polkadot-collectives-collator-uw1-1.polkadot.io/tcp/30334/p2p/12D3KooWRjdypZdMT9rjajYM2L2P5mYaxPGErP9ExGBsY3PBdYDy",
+    "/dns/polkadot-collectives-collator-uw1-2.polkadot.io/tcp/30334/p2p/12D3KooWPrJ9VTn3GEs2e7GQs4zoEFiTFcjXFNbQ2iDxFDQAbstQ",
+    "/dns/polkadot-collectives-collator-uw1-3.polkadot.io/tcp/30334/p2p/12D3KooWGFYW6hJYn3pkpJawyMk6souXh7sznK8yvPmVQ7ktfHbV",
+    "/dns/polkadot-collectives-collator-ew6-0.polkadot.io/tcp/443/wss/12D3KooWKgrivNBkMswNNNYqUkhEBvnyRzt6TLPQ2shu4eoPuuRi",
+    "/dns/polkadot-collectives-collator-ew6-1.polkadot.io/tcp/443/wss/12D3KooWQen2oX7hWqhUiJ4sxj7WA4Qa3WoAmz6rQbmYPCYjeCk9",
+    "/dns/polkadot-collectives-collator-ew6-2.polkadot.io/tcp/443/wss/12D3KooWLDZT5gAjMtC8fojiCwiz17SC61oeX2C7GWBCqqf9TwVD",
+    "/dns/polkadot-collectives-collator-ew6-3.polkadot.io/tcp/443/wss/12D3KooWC9BwKMDyRUTXsE7teSmoKMgbyxqAp3zi2MTGRJR5nhCL",
+    "/dns/polkadot-collectives-collator-uw1-0.polkadot.io/tcp/443/wss/12D3KooWJXwJS1d2UcdkKd8a6vM4TFB79gvtHtsp4bm4c8fYdpY7",
+    "/dns/polkadot-collectives-collator-uw1-1.polkadot.io/tcp/443/wss/12D3KooWRjdypZdMT9rjajYM2L2P5mYaxPGErP9ExGBsY3PBdYDy",
+    "/dns/polkadot-collectives-collator-uw1-2.polkadot.io/tcp/443/wss/12D3KooWPrJ9VTn3GEs2e7GQs4zoEFiTFcjXFNbQ2iDxFDQAbstQ",
+    "/dns/polkadot-collectives-collator-uw1-3.polkadot.io/tcp/443/wss/12D3KooWGFYW6hJYn3pkpJawyMk6souXh7sznK8yvPmVQ7ktfHbV"
   ],
   "telemetryEndpoints": null,
   "protocolId": null,
@@ -13,7 +28,7 @@
     "tokenSymbol": "DOT"
   },
   "relay_chain": "polkadot",
-  "para_id": 1002, // TODO review!
+  "para_id": 1002,
   "codeSubstitutes": {},
   "genesis": {
     "runtime": {
@@ -22,7 +37,7 @@
       },
       "parachainSystem": null,
       "parachainInfo": {
-        "parachainId": 1002 // TODO review!
+        "parachainId": 1002
       },
       "balances": {
         "balances": []
@@ -50,7 +65,7 @@
       },
       "auraExt": null,
       "polkadotXcm": {
-        "safeXcmVersion": 2 // TODO review!
+        "safeXcmVersion": 2
       },
       "alliance": {
         "founders": [],
