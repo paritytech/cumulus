@@ -723,7 +723,7 @@ pub fn rococo_parachain_build_import_queue(
 					slot_duration,
 				);
 
-			Ok((timestamp, slot))
+			Ok((slot, timestamp))
 		},
 		registry: config.prometheus_registry(),
 		can_author_with: sp_consensus::AlwaysCanAuthor,
@@ -799,7 +799,7 @@ pub async fn start_rococo_parachain_node(
 								)
 							})?;
 
-							Ok((timestamp, slot, parachain_inherent))
+							Ok((slot, timestamp, parachain_inherent))
 						}
 					},
 					block_import: client.clone(),
@@ -1099,7 +1099,7 @@ where
 								slot_duration,
 							);
 
-						Ok((timestamp, slot))
+						Ok((slot, timestamp))
 					},
 					can_author_with: sp_consensus::AlwaysCanAuthor,
 					telemetry: telemetry_handle,
@@ -1228,7 +1228,7 @@ where
 											)
 										})?;
 
-									Ok((timestamp, slot, parachain_inherent))
+									Ok((slot, timestamp, parachain_inherent))
 								}
 							},
 						block_import: client2.clone(),
@@ -1543,7 +1543,7 @@ pub fn contracts_rococo_build_import_queue(
 					slot_duration,
 				);
 
-			Ok((timestamp, slot))
+			Ok((slot, timestamp))
 		},
 		registry: config.prometheus_registry(),
 		can_author_with: sp_consensus::AlwaysCanAuthor,
@@ -1618,7 +1618,7 @@ pub async fn start_contracts_rococo_node(
 								)
 							})?;
 
-							Ok((timestamp, slot, parachain_inherent))
+							Ok((slot, timestamp, parachain_inherent))
 						}
 					},
 					block_import: client.clone(),
