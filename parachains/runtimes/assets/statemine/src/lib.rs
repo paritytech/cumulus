@@ -354,15 +354,12 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 					RuntimeCall::Uniques(pallet_uniques::Call::set_team { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::set_metadata { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::set_attribute { .. }) |
-					RuntimeCall::Uniques(
-						pallet_uniques::Call::set_collection_metadata { .. }
-					) | RuntimeCall::Uniques(pallet_uniques::Call::clear_metadata { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::set_collection_metadata { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::clear_metadata { .. }) |
 					RuntimeCall::Uniques(pallet_uniques::Call::clear_attribute { .. }) |
-					RuntimeCall::Uniques(
-						pallet_uniques::Call::clear_collection_metadata { .. }
-					) | RuntimeCall::Uniques(
-					pallet_uniques::Call::set_collection_max_supply { .. }
-				) | RuntimeCall::Utility { .. } |
+					RuntimeCall::Uniques(pallet_uniques::Call::clear_collection_metadata { .. }) |
+					RuntimeCall::Uniques(pallet_uniques::Call::set_collection_max_supply { .. }) |
+					RuntimeCall::Utility { .. } |
 					RuntimeCall::Multisig { .. }
 			),
 			ProxyType::AssetManager => matches!(
