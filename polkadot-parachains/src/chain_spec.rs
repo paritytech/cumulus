@@ -51,6 +51,10 @@ impl Extensions {
 	}
 }
 
+pub fn pub_sr25519(ss58: &str) -> sr25519::Public {
+	public_from_ss58::<sr25519::Public>(ss58)
+}
+
 pub fn public_from_ss58<TPublic: Public + FromStr>(ss58: &str) -> TPublic
 where
 	// what's up with this weird trait bound??
@@ -89,21 +93,15 @@ struct IntegriteeKeys;
 
 impl IntegriteeKeys {
 	fn root() -> AccountId {
-		public_from_ss58::<sr25519::Public>("2JcYbKMfEGidntYP1LpPWsCMxFvUbjaPyipRViat4Sn5nuqm")
-			.into()
+		pub_sr25519("2JcYbKMfEGidntYP1LpPWsCMxFvUbjaPyipRViat4Sn5nuqm").into()
 	}
 	fn authorities() -> Vec<AuraId> {
 		vec![
-			public_from_ss58::<sr25519::Public>("5GZJjbPPD9u6NDgK1ApYmbyGs7EBX4HeEz2y2CD38YJxjvQH")
-				.into(),
-			public_from_ss58::<sr25519::Public>("5CcSd1GZus6Jw7rP47LLqMMmtr2KeXCH6W11ZKk1LbCQ9dPY")
-				.into(),
-			public_from_ss58::<sr25519::Public>("5FsECrDjBXrh5hXmN4PhQfNPbjYYwwW7edu2UQ8G5LR1JFuH")
-				.into(),
-			public_from_ss58::<sr25519::Public>("5HBdSEnswkqm6eoHzzX5PCeKoC15CCy88vARrT8XMaRRuyaE")
-				.into(),
-			public_from_ss58::<sr25519::Public>("5GGxVLYTXS7JZAwVzisdXbsugHSD6gtDb3AT3MVzih9jTLQT")
-				.into(),
+			pub_sr25519("5GZJjbPPD9u6NDgK1ApYmbyGs7EBX4HeEz2y2CD38YJxjvQH").into(),
+			pub_sr25519("5CcSd1GZus6Jw7rP47LLqMMmtr2KeXCH6W11ZKk1LbCQ9dPY").into(),
+			pub_sr25519("5FsECrDjBXrh5hXmN4PhQfNPbjYYwwW7edu2UQ8G5LR1JFuH").into(),
+			pub_sr25519("5HBdSEnswkqm6eoHzzX5PCeKoC15CCy88vARrT8XMaRRuyaE").into(),
+			pub_sr25519("5GGxVLYTXS7JZAwVzisdXbsugHSD6gtDb3AT3MVzih9jTLQT").into(),
 		]
 	}
 }
@@ -112,21 +110,15 @@ struct IntegriteeDevKeys;
 
 impl IntegriteeDevKeys {
 	fn root() -> AccountId {
-		public_from_ss58::<sr25519::Public>("5DMCERPw2yC6LBWNKzswHKLCtuYdtmgKssLJAsPGPVp6fuMY")
-			.into()
+		pub_sr25519("5DMCERPw2yC6LBWNKzswHKLCtuYdtmgKssLJAsPGPVp6fuMY").into()
 	}
 	fn authorities() -> Vec<AuraId> {
 		vec![
-			public_from_ss58::<sr25519::Public>("5GZJjbPPD9u6NDgK1ApYmbyGs7EBX4HeEz2y2CD38YJxjvQH")
-				.into(),
-			public_from_ss58::<sr25519::Public>("5CcSd1GZus6Jw7rP47LLqMMmtr2KeXCH6W11ZKk1LbCQ9dPY")
-				.into(),
-			public_from_ss58::<sr25519::Public>("5FsECrDjBXrh5hXmN4PhQfNPbjYYwwW7edu2UQ8G5LR1JFuH")
-				.into(),
-			public_from_ss58::<sr25519::Public>("5HBdSEnswkqm6eoHzzX5PCeKoC15CCy88vARrT8XMaRRuyaE")
-				.into(),
-			public_from_ss58::<sr25519::Public>("5GGxVLYTXS7JZAwVzisdXbsugHSD6gtDb3AT3MVzih9jTLQT")
-				.into(),
+			pub_sr25519("5GZJjbPPD9u6NDgK1ApYmbyGs7EBX4HeEz2y2CD38YJxjvQH").into(),
+			pub_sr25519("5CcSd1GZus6Jw7rP47LLqMMmtr2KeXCH6W11ZKk1LbCQ9dPY").into(),
+			pub_sr25519("5FsECrDjBXrh5hXmN4PhQfNPbjYYwwW7edu2UQ8G5LR1JFuH").into(),
+			pub_sr25519("5HBdSEnswkqm6eoHzzX5PCeKoC15CCy88vARrT8XMaRRuyaE").into(),
+			pub_sr25519("5GGxVLYTXS7JZAwVzisdXbsugHSD6gtDb3AT3MVzih9jTLQT").into(),
 		]
 	}
 }
