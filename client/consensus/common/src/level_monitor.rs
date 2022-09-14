@@ -144,7 +144,7 @@ where
 		);
 
 		let mut leaves = self.backend.blockchain().leaves().unwrap_or_default();
-		// Sort leaves by freshness (most recent first).
+		// Sort leaves by freshness (least recent first).
 		leaves.sort_unstable_by(|a, b| self.freshness.get(a).cmp(&self.freshness.get(b)));
 
 		// This may not be the most efficient way to remove **multiple** entries, but is the clear
