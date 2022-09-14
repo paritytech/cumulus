@@ -78,10 +78,10 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Something to execute an XCM message. We need this to service the XCMoXCMP queue.
-		type XcmExecutor: ExecuteXcm<Self::Call>;
+		type XcmExecutor: ExecuteXcm<Self::RuntimeCall>;
 
 		/// Information on the avaialble XCMP channels.
 		type ChannelInfo: GetChannelInfo;
@@ -140,7 +140,7 @@ pub mod pallet {
 
 			let (sender, sent_at, data) =
 				Overweight::<T>::get(index).ok_or(Error::<T>::BadOverweightIndex)?;
-			let xcm = VersionedXcm::<T::Call>::decode_all_with_depth_limit(
+			let xcm = VersionedXcm::<T::RuntimeCall>::decode_all_with_depth_limit(
 				MAX_XCM_DECODE_DEPTH,
 				&mut data.as_slice(),
 			)
@@ -596,12 +596,12 @@ impl<T: Config> Pallet<T> {
 	fn handle_xcm_message(
 		sender: ParaId,
 		_sent_at: RelayBlockNumber,
-		xcm: VersionedXcm<T::Call>,
+		xcm: VersionedXcm<T::RuntimeCall>,
 		max_weight: Weight,
 	) -> Result<Weight, XcmError> {
 		let hash = Encode::using_encoded(&xcm, T::Hashing::hash);
 		log::debug!("Processing XCMP-XCM: {:?}", &hash);
-		let (result, event) = match Xcm::<T::Call>::try_from(xcm) {
+		let (result, event) = match Xcm::<T::RuntimeCall>::try_from(xcm) {
 			Ok(xcm) => {
 				let location = (1, Parachain(sender.into()));
 
@@ -650,7 +650,7 @@ impl<T: Config> Pallet<T> {
 			XcmpMessageFormat::ConcatenatedVersionedXcm => {
 				while !remaining_fragments.is_empty() {
 					last_remaining_fragments = remaining_fragments;
-					if let Ok(xcm) = VersionedXcm::<T::Call>::decode_with_depth_limit(
+					if let Ok(xcm) = VersionedXcm::<T::RuntimeCall>::decode_with_depth_limit(
 						MAX_XCM_DECODE_DEPTH,
 						&mut remaining_fragments,
 					) {
@@ -808,7 +808,7 @@ impl<T: Config> Pallet<T> {
 
 		let mut shuffle_index = 0;
 		while shuffle_index < shuffled.len() &&
-			max_weight.saturating_sub(weight_used) >= threshold_weight
+			max_weight.saturating_sub(weight_used).all_gte(threshold_weight)
 		{
 			let index = shuffled[shuffle_index];
 			let sender = status[index].sender;
@@ -831,7 +831,7 @@ impl<T: Config> Pallet<T> {
 				if shuffle_index < status.len() {
 					weight_available +=
 						(max_weight - weight_available) / (weight_restrict_decay.ref_time() + 1);
-					if weight_available + threshold_weight > max_weight {
+					if (weight_available + threshold_weight).any_gt(max_weight) {
 						weight_available = max_weight;
 					}
 				} else {
@@ -871,7 +871,7 @@ impl<T: Config> Pallet<T> {
 			// other channels a look in. If we've still not unlocked all weight, then we set them
 			// up for processing a second time anyway.
 			if !status[index].message_metadata.is_empty() &&
-				(weight_processed > Weight::zero() || weight_available != max_weight)
+				(weight_processed.any_gt(Weight::zero()) || weight_available != max_weight)
 			{
 				if shuffle_index + 1 == shuffled.len() {
 					// Only this queue left. Just run around this loop once more.
