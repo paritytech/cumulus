@@ -76,6 +76,14 @@ impl<Block: BlockT, BE> LevelMonitor<Block, BE> {
 	}
 }
 
+// Internal support structure containing information about the target scheduled for removal.
+struct TargetInfo<Block: BlockT> {
+	// Index of freshest leaf in the leaves array.
+	freshest_leaf_idx: usize,
+	// Route from target to its freshest leaf.
+	freshest_route: TreeRoute<Block>,
+}
+
 impl<Block, BE> LevelMonitor<Block, BE>
 where
 	Block: BlockT,
@@ -124,6 +132,7 @@ where
 	///
 	/// If the given level is found to have a number of blocks greater than or equal the limit
 	/// then the limit is enforced by chosing one (or more) blocks to remove.
+	///
 	/// The removal strategy is driven by the block freshness.
 	///
 	/// A block freshness is determined by the most recent leaf freshness descending from the block
@@ -148,28 +157,97 @@ where
 		);
 
 		let mut leaves = self.backend.blockchain().leaves().unwrap_or_default();
-		// Sort leaves by freshness (least recent first).
+		// Sort leaves by freshness (least fresh first).
 		leaves.sort_unstable_by(|a, b| self.freshness.get(a).cmp(&self.freshness.get(b)));
 
-		// This may not be the most efficient way to remove **multiple** entries, but is the clear
-		// one. Should be considered that in normal conditions the number of blocks to remove is 0
-		// or 1, it is not worth to complicate the code too much.
-		// One condition that may trigger multiple removals is if we restart the node using an
-		// existing db and a smaller limit wrt the one previously used.
+		// This may not be the most efficient way to remove **multiple** entries, but is the easy
+		// one :-). Should be considered that in "normal" conditions the number of blocks to remove
+		// is 0 or 1, it is not worth to complicate the code too much. One condition that may
+		// trigger multiple removals (2+) is if we restart the node using an existing db and a
+		// smaller limit wrt the one previously used.
 		let remove_count = level_len - self.level_limit + 1;
-		(0..remove_count).for_each(|_| self.remove_block(number, &leaves));
+		(0..remove_count).all(|_| {
+			self.find_target(number, &leaves).map_or(false, |target| {
+				self.remove_target(target, &leaves);
+				true
+			})
+		});
 	}
 
-	/// This will search for the less fresh block and removes it along with all its descendants.
-	/// Leaves should have already been ordered by "freshness" (older first).
-	fn remove_block(&mut self, number: NumberFor<Block>, leaves: &[Block::Hash]) {
+	// Remove the target block and all its descendants.
+	//
+	// Leaves should have already been ordered by "freshness" (older first).
+	fn remove_target(&mut self, target: TargetInfo<Block>, leaves: &[Block::Hash]) {
+		let mut remove_leaf = |number, hash| {
+			if self.backend.remove_leaf_block(&hash).is_err() {
+				return false
+			}
+			log::debug!(target: "parachain", "Removing block {}", hash);
+			self.levels.get_mut(&number).map(|level| level.remove(&hash));
+			self.freshness.remove(&hash);
+			true
+		};
+
+		// Takes care of route removal. Starts from the leaf and stops as soon as an error is
+		// encountered. In this case an error is interpreted as the block being not a leaf
+		// and it will be removed while removing another route from the same block but to a
+		// different leaf.
+		let mut remove_route = |route: TreeRoute<Block>| {
+			route.enacted().iter().rev().all(|elem| remove_leaf(elem.number, elem.hash));
+		};
+
+		let target_number = target.freshest_route.common_block().number;
+		let target_hash = target.freshest_route.common_block().hash;
+
+		remove_route(target.freshest_route);
+
+		// Don't bother trying with leaves we already found to not be our descendants.
+		let to_skip = leaves.len() - target.freshest_leaf_idx;
+		leaves.iter().rev().skip(to_skip).for_each(|leaf_hash| {
+			match sp_blockchain::tree_route(self.backend.blockchain(), target_hash, *leaf_hash) {
+				Ok(route) if route.retracted().is_empty() => remove_route(route),
+				Err(err) => {
+					log::warn!(
+						target: "parachain",
+						"Unable getting route from {:?} to {:?}: {}",
+						target_hash, leaf_hash, err,
+					);
+				},
+				_ => (),
+			};
+		});
+
+		remove_leaf(target_number, target_hash);
+	}
+
+	// Helper function to find the best candidate to be removed.
+	//
+	// Given a set of blocks with height equal to `number` (potential candidates)
+	// 1. For each candidate fetch all the leaves that are descending from it.
+	// 2. Set the candidate freshness equal to the fresher of its descending leaves.
+	// 3. The target is set as the candidate that is less fresh.
+	//
+	// Input `leaves` are assumed to be already ordered by "freshness" (fresher first).
+	//
+	// Returns the index of the target fresher leaf within `leaves` and the route from target to
+	// such leaf.
+	fn find_target(
+		&self,
+		number: NumberFor<Block>,
+		leaves: &[Block::Hash],
+	) -> Option<TargetInfo<Block>> {
 		let mut candidate_freshest_leaf_idx = usize::MAX;
 		let mut candidate_freshest_route = None;
 
 		let blockchain = self.backend.blockchain();
 		let best_hash = blockchain.info().best_hash;
 
-		for blk_hash in self.levels.entry(number).or_default().iter() {
+		let level = match self.levels.get(&number) {
+			Some(level) => level,
+			None => return None,
+		};
+
+		for blk_hash in level.iter() {
 			// Start checking from the most fresh leaf (the last). Because of the leaves ordering,
 			// here leaf index is synonym of its freshness, that is the greater the index the
 			// fresher it is.
@@ -199,54 +277,15 @@ where
 				};
 			}
 			if candidate_freshest_leaf_idx == 0 {
-				// We can't find a candidate with an older leaf.
+				// We can't find a candidate with an older leaf that the current one.
 				break
 			}
 		}
 
-		let candidate_freshest_route = match candidate_freshest_route {
-			Some(route) => route,
-			None => return,
-		};
-
-		// We have a candidate, proceed removing the block and all its descendants.
-
-		let candidate_hash = candidate_freshest_route.common_block().hash;
-
-		// Takes care of route removal. Starts from the leaf and stops as soon as an error is
-		// encountered. In this case an error is interpreted as the block being not a leaf
-		// and it will be removed while removing another route from the same block but to a
-		// different leaf.
-		let mut remove_route = |route: TreeRoute<Block>| {
-			std::iter::once(route.common_block()).chain(route.enacted()).rev().all(|elem| {
-				if self.backend.remove_leaf_block(&elem.hash).is_err() {
-					return false
-				}
-				log::debug!(target: "parachain", "Removing block {}", elem.hash);
-				self.levels.get_mut(&elem.number).map(|level| level.remove(&elem.hash));
-				self.freshness.remove(&elem.hash);
-				true
-			});
-		};
-
-		remove_route(candidate_freshest_route);
-
-		let to_skip = leaves.len() - candidate_freshest_leaf_idx;
-		leaves.iter().rev().skip(to_skip).for_each(|leaf_hash| {
-			match sp_blockchain::tree_route(blockchain, candidate_hash, *leaf_hash) {
-				Ok(route) if route.retracted().is_empty() => {
-					remove_route(route);
-				},
-				Err(err) => {
-					log::warn!(
-						target: "parachain",
-						"Unable getting route from {} to {}: {}",
-						candidate_hash, leaf_hash, err,
-					);
-				},
-				_ => (),
-			};
-		});
+		candidate_freshest_route.map(|route| TargetInfo {
+			freshest_leaf_idx: candidate_freshest_leaf_idx,
+			freshest_route: route,
+		})
 	}
 
 	/// Add a new imported block information to the monitor.
