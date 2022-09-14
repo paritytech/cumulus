@@ -217,9 +217,7 @@ where
 					return false
 				}
 				log::debug!(target: "parachain", "Removing block {}", elem.hash);
-				self.levels
-					.get_mut(&elem.number)
-					.map(|level| level.remove(&elem.hash));
+				self.levels.get_mut(&elem.number).map(|level| level.remove(&elem.hash));
 				self.freshness.remove(&elem.hash);
 				true
 			});
