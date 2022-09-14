@@ -132,14 +132,15 @@ where
 			self.restore();
 		}
 
-		let level = self.levels.entry(number).or_default();
+		let level_len = self.levels.get(&number).map(|l| l.len()).unwrap_or_default();
 		if level.len() < self.level_limit {
 			return
 		}
 
 		log::debug!(
 			target: "parachain",
-			"Detected leaves overflow at height {}, removing obsolete blocks", number
+			"Detected leaves overflow at height {}, removing obsolete blocks",
+			number,
 		);
 
 		let mut leaves = self.backend.blockchain().leaves().unwrap_or_default();
@@ -184,7 +185,7 @@ where
 					Err(err) => {
 						log::warn!(
 							target: "parachain",
-							"Unable getting route from {} to {}: {}",
+							"Unable getting route from {:?} to {:?}: {}",
 							blk_hash, leaf_hash, err,
 						);
 					},
@@ -218,7 +219,7 @@ where
 				log::debug!(target: "parachain", "Removing block {}", elem.hash);
 				self.levels
 					.get_mut(&elem.number)
-					.and_then(|level| level.remove(&elem.hash).then_some(()));
+					.map(|level| level.remove(&elem.hash));
 				self.freshness.remove(&elem.hash);
 				true
 			});
@@ -257,7 +258,7 @@ where
 				finalized_num.saturating_sub(self.lowest_level).unique_saturated_into();
 
 			for i in 0..delta {
-				let number = finalized_num + i.unique_saturated_into();
+				let number = self.lowest_level + i.unique_saturated_into();
 				self.levels.remove(&number).unwrap_or_default().iter().for_each(|hash| {
 					self.freshness.remove(hash);
 				});
