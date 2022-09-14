@@ -157,7 +157,7 @@ where
 		);
 
 		let mut leaves = self.backend.blockchain().leaves().unwrap_or_default();
-		// Sort leaves by freshness (least fresh first).
+		// Sort leaves by freshness (less fresh first).
 		leaves.sort_unstable_by(|a, b| self.freshness.get(a).cmp(&self.freshness.get(b)));
 
 		// This may not be the most efficient way to remove **multiple** entries, but is the easy
@@ -172,52 +172,6 @@ where
 				true
 			})
 		});
-	}
-
-	// Remove the target block and all its descendants.
-	//
-	// Leaves should have already been ordered by "freshness" (older first).
-	fn remove_target(&mut self, target: TargetInfo<Block>, leaves: &[Block::Hash]) {
-		let mut remove_leaf = |number, hash| {
-			if self.backend.remove_leaf_block(&hash).is_err() {
-				return false
-			}
-			log::debug!(target: "parachain", "Removing block {}", hash);
-			self.levels.get_mut(&number).map(|level| level.remove(&hash));
-			self.freshness.remove(&hash);
-			true
-		};
-
-		// Takes care of route removal. Starts from the leaf and stops as soon as an error is
-		// encountered. In this case an error is interpreted as the block being not a leaf
-		// and it will be removed while removing another route from the same block but to a
-		// different leaf.
-		let mut remove_route = |route: TreeRoute<Block>| {
-			route.enacted().iter().rev().all(|elem| remove_leaf(elem.number, elem.hash));
-		};
-
-		let target_number = target.freshest_route.common_block().number;
-		let target_hash = target.freshest_route.common_block().hash;
-
-		remove_route(target.freshest_route);
-
-		// Don't bother trying with leaves we already found to not be our descendants.
-		let to_skip = leaves.len() - target.freshest_leaf_idx;
-		leaves.iter().rev().skip(to_skip).for_each(|leaf_hash| {
-			match sp_blockchain::tree_route(self.backend.blockchain(), target_hash, *leaf_hash) {
-				Ok(route) if route.retracted().is_empty() => remove_route(route),
-				Err(err) => {
-					log::warn!(
-						target: "parachain",
-						"Unable getting route from {:?} to {:?}: {}",
-						target_hash, leaf_hash, err,
-					);
-				},
-				_ => (),
-			};
-		});
-
-		remove_leaf(target_number, target_hash);
 	}
 
 	// Helper function to find the best candidate to be removed.
@@ -286,6 +240,52 @@ where
 			freshest_leaf_idx: candidate_freshest_leaf_idx,
 			freshest_route: route,
 		})
+	}
+
+	// Remove the target block and all its descendants.
+	//
+	// Leaves should have already been ordered by "freshness" (older first).
+	fn remove_target(&mut self, target: TargetInfo<Block>, leaves: &[Block::Hash]) {
+		let mut remove_leaf = |number, hash| {
+			if self.backend.remove_leaf_block(&hash).is_err() {
+				return false
+			}
+			log::debug!(target: "parachain", "Removing block {}", hash);
+			self.levels.get_mut(&number).map(|level| level.remove(&hash));
+			self.freshness.remove(&hash);
+			true
+		};
+
+		// Takes care of route removal. Starts from the leaf and stops as soon as an error is
+		// encountered. In this case an error is interpreted as the block being not a leaf
+		// and it will be removed while removing another route from the same block but to a
+		// different leaf.
+		let mut remove_route = |route: TreeRoute<Block>| {
+			route.enacted().iter().rev().all(|elem| remove_leaf(elem.number, elem.hash));
+		};
+
+		let target_number = target.freshest_route.common_block().number;
+		let target_hash = target.freshest_route.common_block().hash;
+
+		remove_route(target.freshest_route);
+
+		// Don't bother trying with leaves we already found to not be our descendants.
+		let to_skip = leaves.len() - target.freshest_leaf_idx;
+		leaves.iter().rev().skip(to_skip).for_each(|leaf_hash| {
+			match sp_blockchain::tree_route(self.backend.blockchain(), target_hash, *leaf_hash) {
+				Ok(route) if route.retracted().is_empty() => remove_route(route),
+				Err(err) => {
+					log::warn!(
+						target: "parachain",
+						"Unable getting route from {:?} to {:?}: {}",
+						target_hash, leaf_hash, err,
+					);
+				},
+				_ => (),
+			};
+		});
+
+		remove_leaf(target_number, target_hash);
 	}
 
 	/// Add a new imported block information to the monitor.
