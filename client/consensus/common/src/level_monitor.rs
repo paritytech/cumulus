@@ -16,7 +16,7 @@
 
 use sc_client_api::{blockchain::Backend as _, Backend, HeaderBackend as _};
 use sp_blockchain::TreeRoute;
-use sp_runtime::traits::{Block as BlockT, NumberFor, Saturating, UniqueSaturatedInto, Zero};
+use sp_runtime::traits::{Block as BlockT, NumberFor, One, Saturating, UniqueSaturatedInto, Zero};
 use std::{
 	collections::{HashMap, HashSet},
 	sync::Arc,
@@ -51,9 +51,9 @@ pub struct LevelMonitor<Block: BlockT, BE> {
 	// Max number of leaves for each level.
 	pub level_limit: usize,
 	// Monotonic counter used to keep track of block freshness.
-	pub import_counter: u64,
+	pub import_counter: NumberFor<Block>,
 	// Map between blocks hashes and freshness.
-	pub freshness: HashMap<Block::Hash, u64>,
+	pub freshness: HashMap<Block::Hash, NumberFor<Block>>,
 	// Blockchain levels cache.
 	pub levels: HashMap<NumberFor<Block>, HashSet<Block::Hash>>,
 	// Lower level number stored by the levels map.
@@ -67,7 +67,7 @@ impl<Block: BlockT, BE> LevelMonitor<Block, BE> {
 	pub fn new(level_limit: usize, backend: Arc<BE>) -> Self {
 		LevelMonitor {
 			level_limit,
-			import_counter: 0,
+			import_counter: Zero::zero(),
 			freshness: HashMap::new(),
 			levels: HashMap::new(),
 			lowest_level: Zero::zero(),
@@ -88,19 +88,23 @@ where
 	///
 	/// Level limits are not enforced during this phase.
 	fn restore(&mut self) {
-		let mut counter_max = 0;
-		let finalized = self.backend.blockchain().info().finalized_hash;
+		let mut counter_max = Zero::zero();
+		let info = self.backend.blockchain().info();
+
+		self.import_counter = info.finalized_number;
+		self.update(info.finalized_number, info.finalized_hash);
 
 		for leaf in self.backend.blockchain().leaves().unwrap_or_default() {
-			let route = sp_blockchain::tree_route(self.backend.blockchain(), finalized, leaf)
-				.expect("Route from finalized to leaf should be available; qed");
+			let route =
+				sp_blockchain::tree_route(self.backend.blockchain(), info.finalized_hash, leaf)
+					.expect("Route from finalized to leaf should be available; qed");
 			if !route.retracted().is_empty() {
 				continue
 			}
-			std::iter::once(route.common_block()).chain(route.enacted()).for_each(|elem| {
+			route.enacted().iter().for_each(|elem| {
 				if !self.freshness.contains_key(&elem.hash) {
 					// Use the block height value as the freshness.
-					self.import_counter = elem.number.unique_saturated_into();
+					self.import_counter = elem.number;
 					self.update(elem.number, elem.hash);
 				}
 			});
@@ -127,7 +131,7 @@ where
 	///
 	/// The least "fresh" blocks are eventually removed.
 	pub fn enforce_limit(&mut self, number: NumberFor<Block>) {
-		if self.import_counter == 0 {
+		if self.import_counter == Zero::zero() {
 			// First call detected, restore using the backend persistent information.
 			self.restore();
 		}
@@ -150,6 +154,8 @@ where
 		// This may not be the most efficient way to remove **multiple** entries, but is the clear
 		// one. Should be considered that in normal conditions the number of blocks to remove is 0
 		// or 1, it is not worth to complicate the code too much.
+		// One condition that may trigger multiple removals is if we restart the node using an
+		// existing db and a smaller limit wrt the one previously used.
 		let remove_count = level_len - self.level_limit + 1;
 		(0..remove_count).for_each(|_| self.remove_block(number, &leaves));
 	}
@@ -247,18 +253,18 @@ where
 	pub fn update(&mut self, number: NumberFor<Block>, hash: Block::Hash) {
 		self.freshness.insert(hash, self.import_counter);
 		self.levels.entry(number).or_default().insert(hash);
-		self.import_counter += 1;
+		self.import_counter += One::one();
 
-		if self.import_counter % CLEANUP_THRESHOLD == 0 {
-			// Do cleanup once in a while, we are allowed to have some obsolete information.
-			let finalized_num = self.backend.blockchain().info().finalized_number;
-			let delta: u64 =
-				finalized_num.saturating_sub(self.lowest_level).unique_saturated_into();
-
+		// Do cleanup once in a while, we are allowed to have some obsolete information.
+		let finalized_num = self.backend.blockchain().info().finalized_number;
+		let delta: u64 = finalized_num.saturating_sub(self.lowest_level).unique_saturated_into();
+		if delta >= CLEANUP_THRESHOLD {
 			for i in 0..delta {
 				let number = self.lowest_level + i.unique_saturated_into();
-				self.levels.remove(&number).unwrap_or_default().iter().for_each(|hash| {
-					self.freshness.remove(hash);
+				self.levels.remove(&number).map(|level| {
+					level.iter().for_each(|hash| {
+						self.freshness.remove(hash);
+					})
 				});
 			}
 
