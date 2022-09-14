@@ -133,7 +133,7 @@ where
 		}
 
 		let level_len = self.levels.get(&number).map(|l| l.len()).unwrap_or_default();
-		if level.len() < self.level_limit {
+		if level_len < self.level_limit {
 			return
 		}
 
@@ -150,7 +150,7 @@ where
 		// This may not be the most efficient way to remove **multiple** entries, but is the clear
 		// one. Should be considered that in normal conditions the number of blocks to remove is 0
 		// or 1, it is not worth to complicate the code too much.
-		let remove_count = level.len() - self.level_limit + 1;
+		let remove_count = level_len - self.level_limit + 1;
 		(0..remove_count).for_each(|_| self.remove_block(number, &leaves));
 	}
 
