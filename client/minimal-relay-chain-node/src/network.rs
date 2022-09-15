@@ -110,7 +110,6 @@ pub(crate) fn build_collator_network(
 			})
 		},
 		fork_id: None,
-		bitswap: None,
 		chain_sync: Box::new(DummyChainSync),
 		network_config: config.network.clone(),
 		chain: client.clone(),
@@ -122,6 +121,7 @@ pub(crate) fn build_collator_network(
 		state_request_protocol_config,
 		warp_sync_protocol_config: None,
 		light_client_request_protocol_config,
+		request_response_protocol_configs: Vec::new(),
 	};
 
 	let network_mut = sc_network::NetworkWorker::new(network_params)?;
@@ -145,7 +145,7 @@ pub(crate) fn build_collator_network(
 			);
 			// This `return` might seem unnecessary, but we don't want to make it look like
 			// everything is working as normal even though the user is clearly misusing the API.
-			return
+			return;
 		}
 
 		future.await
