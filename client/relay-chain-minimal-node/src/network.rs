@@ -114,7 +114,7 @@ pub(crate) fn build_collator_network(
 		network_config: config.network.clone(),
 		chain: client.clone(),
 		transaction_pool: transaction_pool_adapter as _,
-		import_queue: Box::new(DummyImportQueue) as Box<_>,
+		import_queue: Box::new(DummyImportQueue),
 		protocol_id,
 		metrics_registry: config.prometheus_config.as_ref().map(|config| config.registry.clone()),
 		block_request_protocol_config,
@@ -247,14 +247,14 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		&mut self,
 	) -> Box<dyn Iterator<Item = (PeerId, sc_network_common::sync::message::BlockRequest<B>)> + '_>
 	{
-		Box::new(std::iter::empty()) as Box<_>
+		Box::new(std::iter::empty())
 	}
 
 	fn block_requests(
 		&mut self,
 	) -> Box<dyn Iterator<Item = (&PeerId, sc_network_common::sync::message::BlockRequest<B>)> + '_>
 	{
-		Box::new(std::iter::empty()) as Box<_>
+		Box::new(std::iter::empty())
 	}
 
 	fn state_request(&mut self) -> Option<(PeerId, sc_network_common::sync::OpaqueStateRequest)> {
@@ -320,7 +320,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 			>,
 		>,
 	> {
-		Box::new(std::iter::empty()) as Box<_>
+		Box::new(std::iter::empty())
 	}
 
 	fn on_justification_import(

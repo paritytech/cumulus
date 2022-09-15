@@ -71,7 +71,7 @@ pub enum RelayChainError {
 
 impl From<RelayChainError> for ApiError {
 	fn from(r: RelayChainError) -> Self {
-		sp_api::ApiError::Application(Box::new(r) as Box<_>)
+		sp_api::ApiError::Application(Box::new(r))
 	}
 }
 
