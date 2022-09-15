@@ -260,8 +260,6 @@ impl RelayChainRpcClient {
 		Decode::decode(&mut &*res.0).map_err(Into::into)
 	}
 
-	/// Subscribe to a notification stream via RPC
-
 	/// Perform RPC request
 	async fn request<'a, R>(
 		&self,
@@ -307,9 +305,12 @@ impl RelayChainRpcClient {
 			RelayChainError::RpcCallError(method.to_string(), err)})
 	}
 
+	/// Returns information regarding the current epoch.
 	pub async fn babe_api_current_epoch(&self, at: PHash) -> Result<Epoch, RelayChainError> {
 		self.call_remote_runtime_function("BabeApi_current_epoch", at, None::<()>).await
 	}
+
+	/// Old method to fetch v1 session info.
 	pub async fn parachain_host_session_info_before_version_2(
 		&self,
 		at: PHash,
@@ -323,6 +324,7 @@ impl RelayChainRpcClient {
 		.await
 	}
 
+	/// Scrape dispute relevant from on-chain, backing votes and resolved disputes.
 	pub async fn parachain_host_on_chain_votes(
 		&self,
 		at: PHash,
@@ -331,6 +333,7 @@ impl RelayChainRpcClient {
 			.await
 	}
 
+	/// Returns code hashes of PVFs that require pre-checking by validators in the active set.
 	pub async fn parachain_host_pvfs_require_precheck(
 		&self,
 		at: PHash,
@@ -339,6 +342,7 @@ impl RelayChainRpcClient {
 			.await
 	}
 
+	/// Submits a PVF pre-checking statement into the transaction pool.
 	pub async fn parachain_host_submit_pvf_check_statement(
 		&self,
 		at: PHash,
@@ -353,14 +357,17 @@ impl RelayChainRpcClient {
 		.await
 	}
 
+	/// Get local listen address of the node
 	pub async fn system_local_listen_addresses(&self) -> Result<Vec<String>, RelayChainError> {
 		self.request("system_localListenAddresses", None).await
 	}
 
+	/// Get system health information
 	pub async fn system_health(&self) -> Result<Health, RelayChainError> {
 		self.request("system_health", None).await
 	}
 
+	/// Get read proof for `storage_keys`
 	pub async fn state_get_read_proof(
 		&self,
 		storage_keys: Vec<StorageKey>,
@@ -370,6 +377,7 @@ impl RelayChainRpcClient {
 		self.request("state_getReadProof", params).await
 	}
 
+	/// Retrieve storage item at `storage_key`
 	pub async fn state_get_storage(
 		&self,
 		storage_key: StorageKey,
@@ -379,10 +387,17 @@ impl RelayChainRpcClient {
 		self.request("state_getStorage", params).await
 	}
 
+	/// Get hash of the n-th block in the canon chain.
+	///
+	/// By default returns latest block hash.
 	pub async fn chain_get_head(&self, at: Option<u64>) -> Result<PHash, RelayChainError> {
 		let params = rpc_params!(at);
 		self.request("chain_getHead", params).await
 	}
+
+	/// Returns the validator groups and rotation info localized based on the hypothetical child
+	///  of a block whose state  this is invoked on. Note that `now` in the `GroupRotationInfo`
+	/// should be the successor of the number of the block.
 	pub async fn parachain_host_validator_groups(
 		&self,
 		at: PHash,
@@ -391,6 +406,7 @@ impl RelayChainRpcClient {
 			.await
 	}
 
+	/// Get a vector of events concerning candidates that occurred within a block.
 	pub async fn parachain_host_candidate_events(
 		&self,
 		at: PHash,
@@ -399,6 +415,7 @@ impl RelayChainRpcClient {
 			.await
 	}
 
+	/// Checks if the given validation outputs pass the acceptance criteria.
 	pub async fn parachain_host_check_validation_outputs(
 		&self,
 		at: PHash,
@@ -413,6 +430,9 @@ impl RelayChainRpcClient {
 		.await
 	}
 
+	/// Returns the persisted validation data for the given `ParaId` along with the corresponding
+	/// validation code hash. Instead of accepting assumption about the para, matches the validation
+	/// data hash against an expected one and yields `None` if they're not equal.
 	pub async fn parachain_host_assumed_validation_data(
 		&self,
 		at: PHash,
@@ -427,10 +447,12 @@ impl RelayChainRpcClient {
 		.await
 	}
 
+	/// Get hash of last finalized block.
 	pub async fn chain_get_finalized_head(&self) -> Result<PHash, RelayChainError> {
 		self.request("chain_getFinalizedHead", None).await
 	}
 
+	/// Get hash of n-th block.
 	pub async fn chain_get_block_hash(
 		&self,
 		block_number: Option<polkadot_service::BlockNumber>,
@@ -439,6 +461,11 @@ impl RelayChainRpcClient {
 		self.request("chain_getBlockHash", params).await
 	}
 
+	/// Yields the persisted validation data for the given `ParaId` along with an assumption that
+	/// should be used if the para currently occupies a core.
+	///
+	/// Returns `None` if either the para is not registered or the assumption is `Freed`
+	/// and the para already occupies a core.
 	pub async fn parachain_host_persisted_validation_data(
 		&self,
 		at: PHash,
@@ -453,6 +480,7 @@ impl RelayChainRpcClient {
 		.await
 	}
 
+	/// Get the validation code from its hash.
 	pub async fn parachain_host_validation_code_by_hash(
 		&self,
 		at: PHash,
@@ -466,6 +494,8 @@ impl RelayChainRpcClient {
 		.await
 	}
 
+	/// Yields information on all availability cores as relevant to the child block.
+	/// Cores are either free or occupied. Free cores can have paras assigned to them.
 	pub async fn parachain_host_availability_cores(
 		&self,
 		at: PHash,
@@ -474,11 +504,14 @@ impl RelayChainRpcClient {
 			.await
 	}
 
+	/// Get runtime version
 	pub async fn runtime_version(&self, at: PHash) -> Result<RuntimeVersion, RelayChainError> {
 		let params = rpc_params!(at);
 		self.request("state_getRuntimeVersion", params).await
 	}
 
+	/// Returns all onchain disputes.
+	/// This is a staging method! Do not use on production runtimes!
 	pub async fn parachain_host_staging_get_disputes(
 		&self,
 		at: PHash,
@@ -495,6 +528,10 @@ impl RelayChainRpcClient {
 			.await
 	}
 
+	/// Fetch the validation code used by a para, making the given `OccupiedCoreAssumption`.
+	///
+	/// Returns `None` if either the para is not registered or the assumption is `Freed`
+	/// and the para already occupies a core.
 	pub async fn parachain_host_validation_code(
 		&self,
 		at: PHash,
@@ -509,6 +546,7 @@ impl RelayChainRpcClient {
 		.await
 	}
 
+	/// Fetch the hash of the validation code used by a para, making the given `OccupiedCoreAssumption`.
 	pub async fn parachain_host_validation_code_hash(
 		&self,
 		at: PHash,
@@ -523,6 +561,7 @@ impl RelayChainRpcClient {
 		.await
 	}
 
+	/// Get the session info for the given session, if stored.
 	pub async fn parachain_host_session_info(
 		&self,
 		at: PHash,
@@ -532,6 +571,7 @@ impl RelayChainRpcClient {
 			.await
 	}
 
+	/// Get header at specified hash
 	pub async fn chain_get_header(
 		&self,
 		hash: Option<PHash>,
@@ -540,6 +580,8 @@ impl RelayChainRpcClient {
 		self.request("chain_getHeader", params).await
 	}
 
+	/// Get the receipt of a candidate pending availability. This returns `Some` for any paras
+	/// assigned to occupied cores in `availability_cores` and `None` otherwise.
 	pub async fn parachain_host_candidate_pending_availability(
 		&self,
 		at: PHash,
@@ -553,6 +595,9 @@ impl RelayChainRpcClient {
 		.await
 	}
 
+	/// Returns the session index expected at a child of the block.
+	///
+	/// This can be used to instantiate a `SigningContext`.
 	pub async fn parachain_host_session_index_for_child(
 		&self,
 		at: PHash,
@@ -561,6 +606,7 @@ impl RelayChainRpcClient {
 			.await
 	}
 
+	/// Get the current validators.
 	pub async fn parachain_host_validators(
 		&self,
 		at: PHash,
@@ -569,6 +615,8 @@ impl RelayChainRpcClient {
 			.await
 	}
 
+	/// Get the contents of all channels addressed to the given recipient. Channels that have no
+	/// messages in them are also included.
 	pub async fn parachain_host_inbound_hrmp_channels_contents(
 		&self,
 		para_id: ParaId,
@@ -582,6 +630,7 @@ impl RelayChainRpcClient {
 		.await
 	}
 
+	/// Get all the pending inbound messages in the downward message queue for a para.
 	pub async fn parachain_host_dmq_contents(
 		&self,
 		para_id: ParaId,
@@ -591,15 +640,7 @@ impl RelayChainRpcClient {
 			.await
 	}
 
-	fn send_register_message_to_worker(
-		&self,
-		message: NotificationRegisterMessage,
-	) -> Result<(), RelayChainError> {
-		self.to_worker_channel
-			.try_send(message)
-			.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))
-	}
-
+	/// Get a stream of all imported relay chain headers
 	pub async fn get_imported_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
 		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
 		self.send_register_message_to_worker(NotificationRegisterMessage::RegisterImportListener(
@@ -608,6 +649,7 @@ impl RelayChainRpcClient {
 		Ok(rx)
 	}
 
+	/// Get a stream of new best relay chain headers
 	pub async fn get_best_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
 		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
 		self.send_register_message_to_worker(
@@ -616,12 +658,22 @@ impl RelayChainRpcClient {
 		Ok(rx)
 	}
 
+	/// Get a stream of finalized relay chain headers
 	pub async fn get_finalized_heads_stream(&self) -> Result<Receiver<PHeader>, RelayChainError> {
 		let (tx, rx) = futures::channel::mpsc::channel::<PHeader>(NOTIFICATION_CHANNEL_SIZE_LIMIT);
 		self.send_register_message_to_worker(
 			NotificationRegisterMessage::RegisterFinalizationListener(tx),
 		)?;
 		Ok(rx)
+	}
+
+	fn send_register_message_to_worker(
+		&self,
+		message: NotificationRegisterMessage,
+	) -> Result<(), RelayChainError> {
+		self.to_worker_channel
+			.try_send(message)
+			.map_err(|e| RelayChainError::WorkerCommunicationError(e.to_string()))
 	}
 
 	async fn subscribe_imported_heads(

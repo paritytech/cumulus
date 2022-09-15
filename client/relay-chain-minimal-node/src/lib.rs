@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
-use collator_overseer::{CollatorOverseerGenArgs, NewCollator};
+use collator_overseer::{CollatorOverseerGenArgs, NewMinimalNode};
 
 use cumulus_relay_chain_interface::RelayChainError;
 use polkadot_network_bridge::{peer_sets_info, IsAuthority};
@@ -75,7 +75,7 @@ fn build_authority_discovery_service<Block: BlockT>(
 	task_manager.spawn_handle().spawn(
 		"authority-discovery-worker",
 		Some("authority-discovery"),
-		Box::pin(worker.run()),
+		worker.run(),
 	);
 	service
 }
@@ -96,7 +96,7 @@ pub async fn new_minimal_relay_chain(
 	mut config: Configuration,
 	collator_pair: CollatorPair,
 	relay_chain_rpc_client: Arc<BlockChainRpcClient>,
-) -> Result<NewCollator, RelayChainError> {
+) -> Result<NewMinimalNode, RelayChainError> {
 	let role = config.role.clone();
 
 	// Use the given RPC node as bootnode, since we do not have a chain spec with valid boot nodes
@@ -175,5 +175,5 @@ pub async fn new_minimal_relay_chain(
 
 	network_starter.start_network();
 
-	Ok(NewCollator { task_manager, overseer_handle, network })
+	Ok(NewMinimalNode { task_manager, overseer_handle, network })
 }

@@ -35,10 +35,10 @@ use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
-use cumulus_minimal_relay_chain_node::BlockChainRpcClient;
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::RelayChainInProcessInterface;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
+use cumulus_relay_chain_minimal_node::BlockChainRpcClient;
 use cumulus_relay_chain_rpc_interface::{create_client_and_start_worker, RelayChainRpcInterface};
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 
@@ -188,7 +188,7 @@ async fn build_relay_chain_interface(
 		let client = create_client_and_start_worker(relay_chain_url, task_manager).await?;
 		if parachain_config.role.is_authority() {
 			let collator_key = collator_key.or_else(|| Some(CollatorPair::generate().0));
-			let collator_node = cumulus_minimal_relay_chain_node::new_minimal_relay_chain(
+			let collator_node = cumulus_relay_chain_minimal_node::new_minimal_relay_chain(
 				relay_chain_config,
 				collator_key.clone().unwrap(),
 				Arc::new(BlockChainRpcClient::new(client.clone()).await),
@@ -198,9 +198,9 @@ async fn build_relay_chain_interface(
 			return Ok(Arc::new(RelayChainRpcInterface::new(
 				client,
 				Some(collator_node.overseer_handle),
-			)) as Arc<_>)
+			)))
 		}
-		return Ok(Arc::new(RelayChainRpcInterface::new(client, None)) as Arc<_>)
+		return Ok(Arc::new(RelayChainRpcInterface::new(client, None)))
 	}
 
 	let relay_chain_full_node = polkadot_test_service::new_full(
@@ -219,7 +219,7 @@ async fn build_relay_chain_interface(
 		relay_chain_full_node.backend.clone(),
 		Arc::new(relay_chain_full_node.network.clone()),
 		relay_chain_full_node.overseer_handle,
-	)) as Arc<_>)
+	)))
 }
 
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
@@ -625,7 +625,7 @@ pub fn node_config(
 	is_collator: bool,
 ) -> Result<Configuration, ServiceError> {
 	let base_path = BasePath::new_temp_dir()?;
-	let root = base_path.path().join(format!("cumulus_test_service_{}", key.to_string()));
+	let root = base_path.path().to_path_buf();
 	let role = if is_collator { Role::Authority } else { Role::Full };
 	let key_seed = key.to_seed();
 	let mut spec = Box::new(chain_spec::get_chain_spec(para_id));

@@ -24,13 +24,13 @@ use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
-use cumulus_minimal_relay_chain_node::BlockChainRpcClient;
 use cumulus_primitives_core::{
 	relay_chain::v2::{Hash as PHash, PersistedValidationData},
 	ParaId,
 };
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
+use cumulus_relay_chain_minimal_node::BlockChainRpcClient;
 use cumulus_relay_chain_rpc_interface::{create_client_and_start_worker, RelayChainRpcInterface};
 use polkadot_service::CollatorPair;
 use sp_core::Pair;
@@ -271,7 +271,7 @@ async fn build_relay_chain_interface(
 		(Some(relay_chain_url), true) => {
 			let client = create_client_and_start_worker(relay_chain_url, task_manager).await?;
 			let collator_pair = CollatorPair::generate().0;
-			let collator_node = cumulus_minimal_relay_chain_node::new_minimal_relay_chain(
+			let collator_node = cumulus_relay_chain_minimal_node::new_minimal_relay_chain(
 				polkadot_config,
 				collator_pair.clone(),
 				Arc::new(BlockChainRpcClient::new(client.clone()).await),
@@ -282,13 +282,13 @@ async fn build_relay_chain_interface(
 				Arc::new(RelayChainRpcInterface::new(
 					client.clone(),
 					Some(collator_node.overseer_handle),
-				)) as Arc<_>,
+				)),
 				Some(collator_pair),
 			))
 		},
 		(Some(relay_chain_url), false) => {
 			let client = create_client_and_start_worker(relay_chain_url, task_manager).await?;
-			Ok((Arc::new(RelayChainRpcInterface::new(client, None)) as Arc<_>, None))
+			Ok((Arc::new(RelayChainRpcInterface::new(client, None)), None))
 		},
 		(None, _) => build_inprocess_relay_chain(
 			polkadot_config,

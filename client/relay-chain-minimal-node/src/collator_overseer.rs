@@ -191,7 +191,6 @@ pub(crate) fn spawn_overseer(
 
 				let forward = forward_collator_events(relay_chain_rpc_client, handle).fuse();
 
-				// let forward = forward.fuse();
 				let overseer_fut = overseer.run().fuse();
 
 				pin_mut!(overseer_fut);
@@ -200,7 +199,6 @@ pub(crate) fn spawn_overseer(
 				select! {
 					_ = forward => (),
 					_ = overseer_fut => (),
-					complete => (),
 				}
 			}),
 		);
@@ -208,15 +206,19 @@ pub(crate) fn spawn_overseer(
 	Ok(overseer_handle)
 }
 
-pub struct NewCollator {
+/// Minimal relay chain node representation
+pub struct NewMinimalNode {
+	/// Task manager running all tasks for the minimal node
 	pub task_manager: TaskManager,
+	/// Overseer handle to interact with subsystems
 	pub overseer_handle: Handle,
+	/// Network service
 	pub network: Arc<sc_network::NetworkService<Block, <Block as BlockT>::Hash>>,
 }
 
 /// Glues together the [`Overseer`] and `BlockchainEvents` by forwarding
 /// import and finality notifications into the [`OverseerHandle`].
-pub(crate) async fn forward_collator_events(client: Arc<BlockChainRpcClient>, mut handle: Handle) {
+async fn forward_collator_events(client: Arc<BlockChainRpcClient>, mut handle: Handle) {
 	let mut finality = client.finality_notification_stream_async().await.fuse();
 	let mut imports = client.import_notification_stream_async().await.fuse();
 
@@ -239,8 +241,7 @@ pub(crate) async fn forward_collator_events(client: Arc<BlockChainRpcClient>, mu
 					}
 					None => break,
 				}
-			},
-			complete => break,
+			}
 		}
 	}
 }

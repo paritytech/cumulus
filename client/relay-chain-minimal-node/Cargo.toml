@@ -1,6 +1,6 @@
 [package]
 authors = ["Parity Technologies <admin@parity.io>"]
-name = "cumulus-minimal-relay-chain-node"
+name = "cumulus-relay-chain-minimal-node"
 version = "0.1.0"
 edition = "2021"
 
@@ -42,6 +42,6 @@ cumulus-primitives-core = { path = "../../primitives/core" }
 lru = "0.7"
 tracing = "0.1.25"
 async-trait = "0.1.52"
-futures = { version = "0.3.1", features = ["compat"] }
+futures = "0.3.24"
 url = "2.2.2"
 tokio = { version = "1.17.0", features = ["macros"] }
