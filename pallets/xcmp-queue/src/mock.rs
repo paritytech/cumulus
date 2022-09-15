@@ -62,7 +62,7 @@ impl frame_system::Config for Test {
 	type BlockWeights = ();
 	type BlockLength = ();
 	type DbWeight = ();
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
 	type Index = u64;
 	type BlockNumber = u64;
@@ -175,7 +175,7 @@ impl<Origin: OriginTrait> ConvertOrigin<Origin> for SystemParachainAsSuperuser<O
 					interior: X1(Parachain(id)),
 				} if ParaId::from(id).is_system(),
 			) {
-			Ok(Origin::root())
+			Ok(RuntimeOrigin::root())
 		} else {
 			Err(origin)
 		}

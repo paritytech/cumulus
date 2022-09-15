@@ -62,7 +62,7 @@ where
 		<CurrencyOf<T, I>>::resolve_creating(&temp_account, amount);
 
 		let result = pallet_xcm::Pallet::<T>::teleport_assets(
-			<T as frame_system::Config>::Origin::signed(temp_account.into()),
+			<T as frame_system::Config>::RuntimeOrigin::signed(temp_account.into()),
 			Box::new(Parent.into()),
 			Box::new(
 				Junction::AccountId32 { network: NetworkId::Any, id: treasury_acc.into() }

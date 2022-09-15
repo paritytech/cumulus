@@ -123,12 +123,12 @@ where
 	}
 
 	pub fn root_origin() -> <Runtime as frame_system::Config>::Origin {
-		<Runtime as frame_system::Config>::Origin::root()
+		<Runtime as frame_system::Config>::RuntimeOrigin::root()
 	}
 
 	pub fn origin_of(
 		account_id: AccountIdOf<Runtime>,
 	) -> <Runtime as frame_system::Config>::Origin {
-		<Runtime as frame_system::Config>::Origin::signed(account_id.into())
+		<Runtime as frame_system::Config>::RuntimeOrigin::signed(account_id.into())
 	}
 }

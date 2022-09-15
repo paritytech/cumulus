@@ -18,7 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use cumulus_pallet_xcm::{ensure_sibling_para, Origin as CumulusOrigin};
+use cumulus_pallet_xcm::{ensure_sibling_para, RuntimeOrigin as CumulusOrigin};
 use cumulus_primitives_core::ParaId;
 use frame_support::{parameter_types, BoundedVec};
 use frame_system::Config as SystemConfig;
