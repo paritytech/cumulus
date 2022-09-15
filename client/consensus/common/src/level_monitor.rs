@@ -181,7 +181,7 @@ where
 	// 2. Set the candidate freshness equal to the fresher of its descending leaves.
 	// 3. The target is set as the candidate that is less fresh.
 	//
-	// Input `leaves` are assumed to be already ordered by "freshness" (fresher first).
+	// Input `leaves` are assumed to be already ordered by "freshness" (less fresh first).
 	//
 	// Returns the index of the target fresher leaf within `leaves` and the route from target to
 	// such leaf.
@@ -190,9 +190,7 @@ where
 		number: NumberFor<Block>,
 		leaves: &[Block::Hash],
 	) -> Option<TargetInfo<Block>> {
-		let mut candidate_freshest_leaf_idx = usize::MAX;
-		let mut candidate_freshest_route = None;
-
+		let mut target_info: Option<TargetInfo<Block>> = None;
 		let blockchain = self.backend.blockchain();
 		let best_hash = blockchain.info().best_hash;
 
@@ -201,50 +199,64 @@ where
 			None => return None,
 		};
 
-		for blk_hash in level.iter() {
-			// Start checking from the most fresh leaf (the last). Because of the leaves ordering,
-			// here leaf index is synonym of its freshness, that is the greater the index the
-			// fresher it is.
-			for (leaf_idx, leaf_hash) in leaves.iter().enumerate().rev() {
-				match sp_blockchain::tree_route(blockchain, *blk_hash, *leaf_hash) {
-					Ok(route) if route.retracted().is_empty() => {
-						// Skip this block if it is the ancestor of the best block or if it has
-						// a descendant leaf fresher (or equally fresh) than the current candidate.
-						if leaf_idx < candidate_freshest_leaf_idx &&
-							route.common_block().hash != best_hash &&
-							route.enacted().iter().all(|entry| entry.hash != best_hash)
-						{
-							// We have a new candidate
-							candidate_freshest_leaf_idx = leaf_idx;
-							candidate_freshest_route = Some(route);
-						}
-						break
-					},
-					Err(err) => {
-						log::warn!(
-							target: "parachain",
-							"Unable getting route from {:?} to {:?}: {}",
-							blk_hash, leaf_hash, err,
-						);
-					},
-					_ => (),
-				};
-			}
-			if candidate_freshest_leaf_idx == 0 {
-				// We can't find a candidate with an older leaf that the current one.
-				break
+		for blk_hash in level.iter().filter(|hash| **hash != best_hash) {
+			// Search for the fresher leaf information for this block
+			let candidate_info =
+				leaves.iter().enumerate().rev().find_map(|(leaf_idx, leaf_hash)| {
+					match sp_blockchain::tree_route(blockchain, *blk_hash, *leaf_hash) {
+						Ok(route) if route.retracted().is_empty() =>
+							Some(TargetInfo { freshest_leaf_idx: leaf_idx, freshest_route: route }),
+						Err(err) => {
+							log::warn!(
+								target: "parachain",
+								"Unable getting route from {:?} to {:?}: {}",
+								blk_hash, leaf_hash, err,
+							);
+							None
+						},
+						_ => None,
+					}
+				});
+
+			let candidate_info = match candidate_info {
+				Some(candidate_info) => candidate_info,
+				None => {
+					log::warn!(
+						target: "parachain",
+						"Unable getting route to any leaf from {:?}",
+						blk_hash,
+					);
+					continue
+				},
+			};
+
+			// Found fresher leaf for this block.
+			// This block is the new target if its fresher leaf is less fresh than the
+			// previous target fresher leaf AND if best block is not in its route.
+			if target_info
+				.as_ref()
+				.map(|ti| candidate_info.freshest_leaf_idx < ti.freshest_leaf_idx)
+				.unwrap_or(true) && candidate_info
+				.freshest_route
+				.enacted()
+				.iter()
+				.all(|entry| entry.hash != best_hash)
+			{
+				let early_stop = candidate_info.freshest_leaf_idx == 0;
+				target_info = Some(candidate_info);
+				if early_stop {
+					// We will not find a candidate with an older leaf than this.
+					break
+				}
 			}
 		}
 
-		candidate_freshest_route.map(|route| TargetInfo {
-			freshest_leaf_idx: candidate_freshest_leaf_idx,
-			freshest_route: route,
-		})
+		target_info
 	}
 
 	// Remove the target block and all its descendants.
 	//
-	// Leaves should have already been ordered by "freshness" (older first).
+	// Leaves should have already been ordered by "freshness" (less fresh first).
 	fn remove_target(&mut self, target: TargetInfo<Block>, leaves: &[Block::Hash]) {
 		let mut remove_leaf = |number, hash| {
 			if self.backend.remove_leaf_block(&hash).is_err() {
