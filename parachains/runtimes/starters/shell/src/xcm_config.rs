@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use super::{AccountId, Call, Event, Origin, ParachainInfo, Runtime};
-use frame_support::{match_types, parameter_types, weights::Weight};
+use super::{AccountId, Origin, ParachainInfo, Runtime, RuntimeCall, RuntimeEvent};
+use frame_support::{match_types, parameter_types};
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AllowUnpaidExecutionFrom, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
@@ -46,13 +46,13 @@ match_types! {
 
 parameter_types! {
 	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-	pub UnitWeightCost: Weight = 1_000_000_000;
+	pub UnitWeightCost: u64 = 1_000_000_000;
 	pub const MaxInstructions: u32 = 100;
 }
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	type XcmSender = (); // sending XCM not supported
 	type AssetTransactor = (); // balances not supported
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
@@ -60,7 +60,7 @@ impl xcm_executor::Config for XcmConfig {
 	type IsTeleporter = (); // balances not supported
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = AllowUnpaidExecutionFrom<JustTheParent>;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>; // balances not supported
+	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>; // balances not supported
 	type Trader = (); // balances not supported
 	type ResponseHandler = (); // Don't handle responses for now.
 	type AssetTrap = (); // don't trap for now
@@ -69,6 +69,6 @@ impl xcm_executor::Config for XcmConfig {
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = xcm_executor::XcmExecutor<XcmConfig>;
 }

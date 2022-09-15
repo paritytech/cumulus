@@ -14,13 +14,12 @@
 // limitations under the License.
 
 use super::{
-	AccountId, AssetId, Assets, Authorship, Balance, Balances, Call, Event, Origin, ParachainInfo,
-	ParachainSystem, PolkadotXcm, Runtime, WeightToFee, XcmpQueue,
+	AccountId, AssetId, Assets, Authorship, Balance, Balances, Origin, ParachainInfo,
+	ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, WeightToFee, XcmpQueue,
 };
 use frame_support::{
 	match_types, parameter_types,
 	traits::{Everything, PalletInfoAccess},
-	weights::Weight,
 };
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
@@ -35,11 +34,11 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
-	ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
-	FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsPreset,
-	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-	UsingComponents,
+	ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin, FungiblesAdapter, IsConcrete,
+	LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+	WeightInfoBounds,
 };
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
@@ -130,8 +129,6 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 parameter_types! {
-	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-	pub UnitWeightCost: Weight = 1_000_000_000;
 	pub const MaxInstructions: u32 = 100;
 	pub XcmAssetFeesReceiver: Option<AccountId> = Authorship::author();
 }
@@ -159,7 +156,7 @@ pub type Barrier = DenyThenTry<
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	type XcmSender = XcmRouter;
 	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
@@ -170,7 +167,11 @@ impl xcm_executor::Config for XcmConfig {
 	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of WND
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+	type Weigher = WeightInfoBounds<
+		crate::weights::xcm::WestmintXcmWeight<RuntimeCall>,
+		RuntimeCall,
+		MaxInstructions,
+	>;
 	type Trader = (
 		UsingComponents<WeightToFee, WestendLocation, AccountId, Balances, ToStakingPot<Runtime>>,
 		cumulus_primitives_utility::TakeFirstAssetTrader<
@@ -213,7 +214,7 @@ pub type XcmRouter = (
 );
 
 impl pallet_xcm::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
 	type XcmRouter = XcmRouter;
 	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
@@ -221,15 +222,19 @@ impl pallet_xcm::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;
 	type XcmReserveTransferFilter = Everything;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+	type Weigher = WeightInfoBounds<
+		crate::weights::xcm::WestmintXcmWeight<RuntimeCall>,
+		RuntimeCall,
+		MaxInstructions,
+	>;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Origin = Origin;
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }

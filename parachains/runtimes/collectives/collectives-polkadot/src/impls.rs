@@ -20,7 +20,7 @@ use frame_support::{
 	weights::Weight,
 };
 use pallet_alliance::{ProposalIndex, ProposalProvider};
-use sp_std::{boxed::Box, marker::PhantomData};
+use sp_std::{marker::PhantomData, prelude::*};
 use xcm::latest::{Fungibility, Junction, NetworkId, Parent};
 
 type AccountIdOf<T> = <T as frame_system::Config>::AccountId;

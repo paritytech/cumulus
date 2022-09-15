@@ -25,7 +25,6 @@ use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayC
 use cumulus_relay_chain_rpc_interface::{create_client_and_start_worker, RelayChainRpcInterface};
 
 // Substrate Imports
-use sc_client_api::ExecutorProvider;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
 use sc_network_common::service::NetworkBlock;
@@ -431,7 +430,6 @@ pub fn parachain_build_import_queue(
 		_,
 		_,
 		_,
-		_,
 	>(cumulus_client_consensus_aura::ImportQueueParams {
 		block_import: client.clone(),
 		client: client.clone(),
@@ -447,7 +445,6 @@ pub fn parachain_build_import_queue(
 			Ok((time, slot))
 		},
 		registry: config.prometheus_registry(),
-		can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
 		spawner: &task_manager.spawn_essential_handle(),
 		telemetry,
 		backend,

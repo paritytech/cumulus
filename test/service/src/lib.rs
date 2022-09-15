@@ -28,6 +28,7 @@ use std::{
 };
 use url::Url;
 
+use crate::runtime::Weight;
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_client_network::BlockAnnounceValidator;
@@ -609,7 +610,7 @@ pub fn node_config(
 	is_collator: bool,
 ) -> Result<Configuration, ServiceError> {
 	let base_path = BasePath::new_temp_dir()?;
-	let root = base_path.path().to_path_buf();
+	let root = base_path.path().join(format!("cumulus_test_service_{}", key.to_string()));
 	let role = if is_collator { Role::Authority } else { Role::Full };
 	let key_seed = key.to_seed();
 	let mut spec = Box::new(chain_spec::get_chain_spec(para_id));
@@ -706,7 +707,7 @@ impl TestNode {
 	/// Send an extrinsic to this node.
 	pub async fn send_extrinsic(
 		&self,
-		function: impl Into<runtime::Call>,
+		function: impl Into<runtime::RuntimeCall>,
 		caller: Sr25519Keyring,
 	) -> Result<RpcTransactionOutput, RpcTransactionError> {
 		let extrinsic = construct_extrinsic(&*self.client, function, caller.pair(), Some(0));
@@ -719,7 +720,10 @@ impl TestNode {
 		let call = frame_system::Call::set_code { code: validation };
 
 		self.send_extrinsic(
-			runtime::SudoCall::sudo_unchecked_weight { call: Box::new(call.into()), weight: 1_000 },
+			runtime::SudoCall::sudo_unchecked_weight {
+				call: Box::new(call.into()),
+				weight: Weight::from_ref_time(1_000),
+			},
 			Sr25519Keyring::Alice,
 		)
 		.await
@@ -739,7 +743,7 @@ pub fn fetch_nonce(client: &Client, account: sp_core::sr25519::Public) -> u32 {
 /// Construct an extrinsic that can be applied to the test runtime.
 pub fn construct_extrinsic(
 	client: &Client,
-	function: impl Into<runtime::Call>,
+	function: impl Into<runtime::RuntimeCall>,
 	caller: sp_core::sr25519::Pair,
 	nonce: Option<u32>,
 ) -> runtime::UncheckedExtrinsic {

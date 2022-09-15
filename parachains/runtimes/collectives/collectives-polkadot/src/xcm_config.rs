@@ -14,26 +14,25 @@
 // limitations under the License.
 
 use super::{
-	AccountId, Balances, Call, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime,
-	WeightToFee, XcmpQueue,
+	AccountId, Balances, Origin, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall,
+	RuntimeEvent, WeightToFee, XcmpQueue,
 };
 use frame_support::{
 	match_types, parameter_types,
 	traits::{Everything, Nothing},
-	weights::Weight,
 };
 use pallet_xcm::XcmPassthrough;
 use parachains_common::{
 	impls::ToStakingPot,
-	xcm_config::{DenyReserveTransferToRelayChain, DenyThenTry},
+	xcm_config::{ConcreteNativeAssetFrom, DenyReserveTransferToRelayChain, DenyThenTry},
 };
 use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin,
-	FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser,
-	ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+	FixedWeightBounds, IsConcrete, LocationInverter, ParentAsSuperuser, ParentIsPreset,
+	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
 	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 	UsingComponents,
 };
@@ -100,7 +99,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 
 parameter_types! {
 	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-	pub UnitWeightCost: Weight = 1_000_000_000;
+	pub UnitWeightCost: u64 = 1_000_000_000;
 	pub const MaxInstructions: u32 = 100;
 }
 
@@ -133,17 +132,18 @@ pub type Barrier = DenyThenTry<
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	type XcmSender = XcmRouter;
 	type AssetTransactor = CurrencyTransactor;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	// Collectives does not recognize a reserve location for any asset. Users must teleport DOT
 	// where allowed (e.g. with the Relay Chain).
 	type IsReserve = ();
-	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of DOT
+	/// Only allow teleportation of DOT.
+	type IsTeleporter = ConcreteNativeAssetFrom<DotLocation>;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 	type Trader =
 		UsingComponents<WeightToFee, DotLocation, AccountId, Balances, ToStakingPot<Runtime>>;
 	type ResponseHandler = PolkadotXcm;
@@ -166,7 +166,7 @@ pub type XcmRouter = (
 );
 
 impl pallet_xcm::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	// We want to disallow users sending (arbitrary) XCMs from this chain.
 	type SendXcmOrigin = EnsureXcmOrigin<Origin, ()>;
 	type XcmRouter = XcmRouter;
@@ -177,15 +177,15 @@ impl pallet_xcm::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;
 	type XcmReserveTransferFilter = Nothing; // This parachain is not meant as a reserve location.
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Origin = Origin;
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }

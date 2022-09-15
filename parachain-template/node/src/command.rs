@@ -217,6 +217,15 @@ pub fn run() -> Result<()> {
 					)?;
 					cmd.run(partials.client)
 				}),
+				#[cfg(not(feature = "runtime-benchmarks"))]
+				BenchmarkCmd::Storage(_) =>
+					return Err(sc_cli::Error::Input(
+						"Compile with --features=runtime-benchmarks \
+						to enable storage benchmarks."
+							.into(),
+					)
+					.into()),
+				#[cfg(feature = "runtime-benchmarks")]
 				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
 					let partials = new_partial::<RuntimeApi, TemplateRuntimeExecutor, _>(
 						&config,
@@ -348,7 +357,7 @@ impl CliConfiguration<Self> for RelayChainCli {
 	fn base_path(&self) -> Result<Option<BasePath>> {
 		Ok(self
 			.shared_params()
-			.base_path()
+			.base_path()?
 			.or_else(|| self.base_path.clone().map(Into::into)))
 	}
 
