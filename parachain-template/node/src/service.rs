@@ -177,8 +177,8 @@ async fn build_relay_chain_interface(
 	collator_options: CollatorOptions,
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
-	match (collator_options.relay_chain_rpc_url, parachain_config.role.is_authority()) {
-		(Some(relay_chain_url), true) => {
+	match collator_options.relay_chain_rpc_url {
+		Some(relay_chain_url) => {
 			let client = create_client_and_start_worker(relay_chain_url, task_manager).await?;
 			let collator_pair = CollatorPair::generate().0;
 			let collator_node = cumulus_relay_chain_minimal_node::new_minimal_relay_chain(
@@ -193,11 +193,7 @@ async fn build_relay_chain_interface(
 				Some(collator_pair),
 			))
 		},
-		(Some(relay_chain_url), false) => {
-			let client = create_client_and_start_worker(relay_chain_url, task_manager).await?;
-			Ok((Arc::new(RelayChainRpcInterface::new(client.clone(), None)), None))
-		},
-		(None, _) => build_inprocess_relay_chain(
+		None => build_inprocess_relay_chain(
 			polkadot_config,
 			parachain_config,
 			telemetry_worker_handle,
@@ -405,7 +401,6 @@ where
 			relay_chain_interface,
 			relay_chain_slot_duration,
 			import_queue,
-			collator_options,
 		};
 
 		start_full_node(params)?;

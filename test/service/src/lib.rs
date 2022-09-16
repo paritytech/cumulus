@@ -179,28 +179,24 @@ pub fn new_partial(
 
 async fn build_relay_chain_interface(
 	relay_chain_config: Configuration,
-	parachain_config: &Configuration,
 	collator_key: Option<CollatorPair>,
 	collator_options: CollatorOptions,
 	task_manager: &mut TaskManager,
 ) -> RelayChainResult<Arc<dyn RelayChainInterface + 'static>> {
 	if let Some(relay_chain_url) = collator_options.relay_chain_rpc_url {
 		let client = create_client_and_start_worker(relay_chain_url, task_manager).await?;
-		if parachain_config.role.is_authority() {
-			let collator_key = collator_key.or_else(|| Some(CollatorPair::generate().0));
-			let collator_node = cumulus_relay_chain_minimal_node::new_minimal_relay_chain(
-				relay_chain_config,
-				collator_key.clone().unwrap(),
-				Arc::new(BlockChainRpcClient::new(client.clone()).await),
-			)
-			.await?;
-			task_manager.add_child(collator_node.task_manager);
-			return Ok(Arc::new(RelayChainRpcInterface::new(
-				client,
-				Some(collator_node.overseer_handle),
-			)))
-		}
-		return Ok(Arc::new(RelayChainRpcInterface::new(client, None)))
+		let collator_key = collator_key.or_else(|| Some(CollatorPair::generate().0));
+		let collator_node = cumulus_relay_chain_minimal_node::new_minimal_relay_chain(
+			relay_chain_config,
+			collator_key.clone().unwrap(),
+			Arc::new(BlockChainRpcClient::new(client.clone()).await),
+		)
+		.await?;
+		task_manager.add_child(collator_node.task_manager);
+		return Ok(Arc::new(RelayChainRpcInterface::new(
+			client,
+			Some(collator_node.overseer_handle),
+		)));
 	}
 
 	let relay_chain_full_node = polkadot_test_service::new_full(
@@ -257,7 +253,6 @@ where
 
 	let relay_chain_interface = build_relay_chain_interface(
 		relay_chain_config,
-		&parachain_config,
 		collator_key.clone(),
 		collator_options.clone(),
 		&mut task_manager,
@@ -383,7 +378,6 @@ where
 			// the recovery delay of pov-recovery. We don't want to wait for too
 			// long on the full node to recover, so we reduce this time here.
 			relay_chain_slot_duration: Duration::from_millis(6),
-			collator_options,
 		};
 
 		start_full_node(params)?;
