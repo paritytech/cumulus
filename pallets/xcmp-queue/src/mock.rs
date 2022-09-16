@@ -165,7 +165,7 @@ impl<RuntimeOrigin: OriginTrait> ConvertOrigin<RuntimeOrigin> for SystemParachai
 	fn convert_origin(
 		origin: impl Into<MultiLocation>,
 		kind: OriginKind,
-	) -> Result<RuntimeOrigin, MultiLocation> {
+	) -> Result<Origin, MultiLocation> {
 		let origin = origin.into();
 		if kind == OriginKind::Superuser &&
 			matches!(
