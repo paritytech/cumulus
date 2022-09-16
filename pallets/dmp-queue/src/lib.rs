@@ -90,7 +90,7 @@ pub mod pallet {
 		type XcmExecutor: ExecuteXcm<Self::RuntimeCall>;
 
 		/// Origin which is allowed to execute overweight messages.
-		type ExecuteOverweightOrigin: EnsureOrigin<Self::Origin>;
+		type ExecuteOverweightOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 	}
 
 	/// The configuration.

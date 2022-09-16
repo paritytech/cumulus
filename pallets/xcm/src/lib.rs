@@ -171,7 +171,7 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 /// Returns `Ok` with the parachain ID of the sibling or an `Err` otherwise.
 pub fn ensure_sibling_para<OuterOrigin>(o: OuterOrigin) -> Result<ParaId, BadOrigin>
 where
-	OuterOrigin: Into<Result<Origin, OuterOrigin>>,
+	OuterOrigin: Into<Result<RuntimeOrigin, OuterOrigin>>,
 {
 	match o.into() {
 		Ok(Origin::SiblingParachain(id)) => Ok(id),
@@ -183,7 +183,7 @@ where
 /// Returns `Ok` if it does or an `Err` otherwise.
 pub fn ensure_relay<OuterOrigin>(o: OuterOrigin) -> Result<(), BadOrigin>
 where
-	OuterOrigin: Into<Result<Origin, OuterOrigin>>,
+	OuterOrigin: Into<Result<RuntimeOrigin, OuterOrigin>>,
 {
 	match o.into() {
 		Ok(Origin::Relay) => Ok(()),

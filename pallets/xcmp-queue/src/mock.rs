@@ -160,12 +160,12 @@ pub type XcmRouter = (
 	XcmpQueue,
 );
 
-pub struct SystemParachainAsSuperuser<Origin>(PhantomData<Origin>);
-impl<Origin: OriginTrait> ConvertOrigin<Origin> for SystemParachainAsSuperuser<Origin> {
+pub struct SystemParachainAsSuperuser<RuntimeOrigin>(PhantomData<RuntimeOrigin>);
+impl<RuntimeOrigin: OriginTrait> ConvertOrigin<RuntimeOrigin> for SystemParachainAsSuperuser<RuntimeOrigin> {
 	fn convert_origin(
 		origin: impl Into<MultiLocation>,
 		kind: OriginKind,
-	) -> Result<Origin, MultiLocation> {
+	) -> Result<RuntimeOrigin, MultiLocation> {
 		let origin = origin.into();
 		if kind == OriginKind::Superuser &&
 			matches!(
@@ -189,7 +189,7 @@ impl Config for Test {
 	type VersionWrapper = ();
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 	type ControllerOrigin = EnsureRoot<AccountId>;
-	type ControllerOriginConverter = SystemParachainAsSuperuser<Origin>;
+	type ControllerOriginConverter = SystemParachainAsSuperuser<RuntimeOrigin>;
 	type WeightInfo = ();
 }
 
