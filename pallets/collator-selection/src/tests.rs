@@ -75,7 +75,10 @@ fn set_desired_candidates_works() {
 		assert_eq!(CollatorSelection::desired_candidates(), 7);
 
 		// rejects bad origin
-		assert_noop!(CollatorSelection::set_desired_candidates(RuntimeOrigin::signed(1), 8), BadOrigin);
+		assert_noop!(
+			CollatorSelection::set_desired_candidates(RuntimeOrigin::signed(1), 8),
+			BadOrigin
+		);
 	});
 }
 
@@ -86,7 +89,10 @@ fn set_candidacy_bond() {
 		assert_eq!(CollatorSelection::candidacy_bond(), 10);
 
 		// can set
-		assert_ok!(CollatorSelection::set_candidacy_bond(RuntimeOrigin::signed(RootAccount::get()), 7));
+		assert_ok!(CollatorSelection::set_candidacy_bond(
+			RuntimeOrigin::signed(RootAccount::get()),
+			7
+		));
 		assert_eq!(CollatorSelection::candidacy_bond(), 7);
 
 		// rejects bad origin.

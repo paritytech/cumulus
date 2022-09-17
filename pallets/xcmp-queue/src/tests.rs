@@ -16,7 +16,7 @@
 use super::*;
 use cumulus_primitives_core::XcmpMessageHandler;
 use frame_support::{assert_noop, assert_ok};
-use mock::{new_test_ext, RuntimeOrigin, RuntimeCall, Test, XcmpQueue};
+use mock::{new_test_ext, RuntimeCall, RuntimeOrigin, Test, XcmpQueue};
 use sp_runtime::traits::BadOrigin;
 
 #[test]
@@ -214,7 +214,10 @@ fn update_weight_restrict_decay_works() {
 			Weight::from_ref_time(5)
 		));
 		assert_noop!(
-			XcmpQueue::update_weight_restrict_decay(RuntimeOrigin::signed(6), Weight::from_ref_time(4)),
+			XcmpQueue::update_weight_restrict_decay(
+				RuntimeOrigin::signed(6),
+				Weight::from_ref_time(4)
+			),
 			BadOrigin
 		);
 		let data: QueueConfigData = <QueueConfig<Test>>::get();

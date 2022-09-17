@@ -22,8 +22,9 @@
 //! with statemine as the reserve. At present no derivative tokens are minted on receipt of a
 //! ReserveAssetTransferDeposited message but that will but the intension will be to support this soon.
 use super::{
-	AccountId, AssetId as AssetIdPalletAssets, Assets, Balance, Balances, Origin, ParachainInfo,
-	ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, WeightToFee, XcmpQueue,
+	AccountId, AssetId as AssetIdPalletAssets, Assets, Balance, Balances, ParachainInfo,
+	ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee,
+	XcmpQueue,
 };
 use core::marker::PhantomData;
 use frame_support::{

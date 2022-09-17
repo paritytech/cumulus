@@ -15,6 +15,9 @@ fn it_works_for_default_value() {
 fn correct_error_for_none_value() {
 	new_test_ext().execute_with(|| {
 		// Ensure the expected error is thrown when no value is present.
-		assert_noop!(TemplateModule::cause_error(RuntimeOrigin::signed(1)), Error::<Test>::NoneValue);
+		assert_noop!(
+			TemplateModule::cause_error(RuntimeOrigin::signed(1)),
+			Error::<Test>::NoneValue
+		);
 	});
 }

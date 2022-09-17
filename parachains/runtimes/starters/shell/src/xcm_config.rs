@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use super::{AccountId, RuntimeOrigin, ParachainInfo, Runtime, RuntimeCall, RuntimeEvent};
+use super::{AccountId, ParachainInfo, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin};
 use frame_support::{match_types, parameter_types};
 use xcm::latest::prelude::*;
 use xcm_builder::{

@@ -161,7 +161,9 @@ pub type XcmRouter = (
 );
 
 pub struct SystemParachainAsSuperuser<RuntimeOrigin>(PhantomData<RuntimeOrigin>);
-impl<RuntimeOrigin: OriginTrait> ConvertOrigin<RuntimeOrigin> for SystemParachainAsSuperuser<RuntimeOrigin> {
+impl<RuntimeOrigin: OriginTrait> ConvertOrigin<RuntimeOrigin>
+	for SystemParachainAsSuperuser<RuntimeOrigin>
+{
 	fn convert_origin(
 		origin: impl Into<MultiLocation>,
 		kind: OriginKind,
