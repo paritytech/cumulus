@@ -2,12 +2,12 @@
 settings:
   chains:
     relay_chain: &relay_chain
-      wsPort: 9900
+      wsPort: 8800
     assets_parachain: &assets_parachain
-      wsPort: 9910
+      wsPort: 8810
       paraId: &ap_id 1000
     penpal_parachain: &penpal_parachain
-      wsPort: 9920
+      wsPort: 8820
       paraId: &pp_id 2000
   variables:
     common:
@@ -87,7 +87,7 @@ tests:
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
-                        value: 2,000,000,000
+                        # value: 2,000,000,000
               - queries:
                   forced_created_asset:
                     chain: *assets_parachain
@@ -112,7 +112,6 @@ tests:
                   ]
                   events:
                     - name: assets.Issued
-
         its:
           - name: Assets Parachain should be able to reserve transfer an Asset to Penpal Parachain
             actions:
@@ -168,7 +167,7 @@ tests:
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
-                        value: 1,000,000,000
+                        # value: 1,000,000,000
                     - name: assets.Transferred
                       attribute:
                         type: AccountId32
@@ -176,7 +175,7 @@ tests:
                     - name: assets.Transferred
                       attribute:
                         type: u128
-                        value: *amount_to_send
+                        value: 500,000,000,000
 
       - name: polkadotXcm.limitedReserveTransferAssets (KSM) | Assets Parachain -> Penpal Parachain
         its:
@@ -215,7 +214,7 @@ tests:
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
-                        value: 1,000,000,000
+                        # value: 1,000,000,000
                     - name: balances.Endowed
                       attribute:
                         type: AccountId32
@@ -223,7 +222,7 @@ tests:
                     - name: balances.Endowed
                       attribute:
                         type: u128
-                        value: *amount
+                        value: 1,000,000,000,000
 
       - name: polkadotXcm.send( system.remarkWithEvent() ) | Penpal Parachain -> Assets Parachain
         before:

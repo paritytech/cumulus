@@ -87,7 +87,7 @@ tests:
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
-                        value: 2,000,000,000
+                        # value: 2,000,000,000
               - queries:
                   forced_created_asset:
                     chain: *assets_parachain
@@ -167,7 +167,7 @@ tests:
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
-                        value: 1,000,000,000
+                        # value: 1,000,000,000  "655,068,000"
                     - name: assets.Transferred
                       attribute:
                         type: AccountId32
@@ -175,11 +175,11 @@ tests:
                     - name: assets.Transferred
                       attribute:
                         type: u128
-                        value: *amount_to_send
+                        value: 500,000,000,000
 
-      - name: polkadotXcm.limitedReserveTransferAssets (KSM) | Assets Parachain -> Penpal Parachain
+      - name: polkadotXcm.limitedReserveTransferAssets (DOT) | Assets Parachain -> Penpal Parachain
         its:
-          - name: Assets Parachain should be able to reserve transfer KSM to Penpal Parachain
+          - name: Assets Parachain should be able to reserve transfer DOT to Penpal Parachain
             actions:
               - extrinsics:
                 - chain: *assets_parachain
@@ -214,7 +214,7 @@ tests:
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
-                        value: 1,000,000,000
+                        # value: 1,000,000,000   "655,068,000"
                     - name: balances.Endowed
                       attribute:
                         type: AccountId32
@@ -222,4 +222,4 @@ tests:
                     - name: balances.Endowed
                       attribute:
                         type: u128
-                        value: *amount
+                        value: 1,000,000,000,000

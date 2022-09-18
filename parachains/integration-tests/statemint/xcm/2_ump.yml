@@ -62,7 +62,7 @@ tests:
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
-                        value: 4,000,000,000
+                        # value: 4,000,000,000
 
           - name: Get the balances of the Assets Parachain's sender & Relay Chain's receiver
             actions:
@@ -79,7 +79,7 @@ tests:
                     args: [ *rc_wallet ]
 
         its:
-          - name: Should be able to teleport native assets back from Assets Parachain to the Relay Chain
+          - name: Should teleport native assets back from Assets Parachain to the Relay Chain
             actions:
               - extrinsics:
                 - chain: *assets_parachain
@@ -98,7 +98,7 @@ tests:
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
-                        value: 2,000,000,000
+                        # value: 2,000,000,000 to 40 billion
                     - name: ump.ExecutedUpward
                       chain: *relay_chain
                       attribute:
@@ -146,7 +146,7 @@ tests:
 
       - name: polkadotXcm.send | Native - Transact(system.remark)
         its:
-          - name: Assets Parachain SHOULD NOT be able to dipatch 'send' call
+          - name: Assets Parachain SHOULD NOT be able to dispatch 'send' call
             actions:
               - extrinsics:
                 - chain: *assets_parachain

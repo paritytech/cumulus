@@ -224,7 +224,7 @@ tests:
 
       - name: hrmp.hrmpAcceptOpenChannel (Assets Parachain → Penpal Parachain)
         its:
-          - name: Assets Parachain sends a response to the Relay Chain accepting the Penpal Parachain's request for openning a HRMP channel
+          - name: Assets Parachain sends a response to the Relay Chain accepting the Penpal Parachain's request for opening a HRMP channel
             actions:
               - extrinsics:
                 - chain: *relay_chain
@@ -257,7 +257,7 @@ tests:
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
-                        value: 2,000,000,000
+                        # value: 2,000,000,000
                     - name: polkadotXcm.Sent
                       chain: *assets_parachain
                     - name: ump.ExecutedUpward
@@ -289,7 +289,7 @@ tests:
 
       - name: hrmp.hrmpInitOpenChannel (Assets Parachain → Penpal Parachain)
         its:
-          - name: Assets Parchain sends a request to the Relay Chain to open a channel with a Penpal Parachain
+          - name: Assets Parachain sends a request to the Relay Chain to open a channel with a Penpal Parachain
             actions:
               - extrinsics:
                 - chain: *relay_chain
@@ -322,7 +322,7 @@ tests:
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
-                        value: 2,000,000,000
+                        # value: 2,000,000,000
                     - name: polkadotXcm.Sent
                       chain: *assets_parachain
                     - name: ump.ExecutedUpward
@@ -353,7 +353,7 @@ tests:
 
       - name: hrmp.hrmpAcceptOpenChannel (Penpal Parachain → Assets Parachain)
         its:
-          - name: Penpal Parachain sends a response to the Relay Chain accepting the Assets Parachain's request for openning a HRMP channel
+          - name: Penpal Parachain sends a response to the Relay Chain accepting the Assets Parachain's request for opening a HRMP channel
             actions:
               - extrinsics:
                 - chain: *penpal_parachain

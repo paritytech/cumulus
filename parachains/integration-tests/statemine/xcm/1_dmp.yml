@@ -2,9 +2,9 @@
 settings:
   chains:
     relay_chain: &relay_chain
-      wsPort: 9900
+      wsPort: 8800
     assets_parachain: &assets_parachain
-      wsPort: 9910
+      wsPort: 8810
       paraId: &ap_id 1000
   variables:
     relay_chain:
@@ -77,7 +77,7 @@ tests:
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
-                        value: 4,000,000,000
+                        # value: 4,000,000,000
               - queries:
                   balance_rc_sender_after:
                     chain: *relay_chain
@@ -148,7 +148,7 @@ tests:
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
-                        value: 2,000,000,000
+                        # value: 2,000,000,000
               - queries:
                   forced_created_asset:
                     chain: *assets_parachain
@@ -215,8 +215,8 @@ tests:
                       chain: *assets_parachain
                       attribute:
                         type: XcmV2TraitsOutcome
-                        isIncomplete: true
-                        value: ['1,000,000,000' , UntrustedReserveLocation]
+                        isError: true
+                        value: "WeightNotComputable"
               - queries:
                   balance_rc_sender_after:
                     chain: *relay_chain
