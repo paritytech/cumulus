@@ -15,6 +15,7 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use lru::LruCache;
+use polkadot_node_core_av_store::{AvailabilityStoreSubsystem, Config};
 use polkadot_node_network_protocol::{
 	peer_set::PeerSetProtocolNames,
 	request_response::{
@@ -69,6 +70,9 @@ pub(crate) struct CollatorOverseerGenArgs<'a> {
 	pub collator_pair: CollatorPair,
 	pub req_protocol_names: ReqProtocolNames,
 	pub peer_set_protocol_names: PeerSetProtocolNames,
+	pub availability_config: Config,
+	/// The underlying key value store for the parachains.
+	pub parachains_db: Arc<dyn polkadot_node_subsystem_util::database::Database>,
 }
 
 pub(crate) struct CollatorOverseerGen;
@@ -83,11 +87,13 @@ impl CollatorOverseerGen {
 			authority_discovery_service,
 			collation_req_receiver,
 			available_data_req_receiver,
+			availability_config,
 			registry,
 			spawner,
 			collator_pair,
 			req_protocol_names,
 			peer_set_protocol_names,
+			parachains_db,
 		}: CollatorOverseerGenArgs<'a>,
 	) -> Result<
 		(
@@ -106,7 +112,11 @@ impl CollatorOverseerGen {
 				available_data_req_receiver,
 				Metrics::register(registry)?,
 			))
-			.availability_store(DummySubsystem)
+			.availability_store(AvailabilityStoreSubsystem::new(
+				parachains_db.clone(),
+				availability_config,
+				Metrics::register(registry)?,
+			))
 			.bitfield_distribution(DummySubsystem)
 			.bitfield_signing(DummySubsystem)
 			.candidate_backing(DummySubsystem)

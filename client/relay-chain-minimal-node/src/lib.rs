@@ -18,6 +18,7 @@ use collator_overseer::{CollatorOverseerGenArgs, NewMinimalNode};
 
 use cumulus_relay_chain_interface::RelayChainError;
 use polkadot_network_bridge::{peer_sets_info, IsAuthority};
+use polkadot_node_core_av_store::Config as AvailabilityConfig;
 use polkadot_node_network_protocol::{
 	peer_set::PeerSetProtocolNames,
 	request_response::{IncomingRequest, ReqProtocolNames},
@@ -26,11 +27,12 @@ use polkadot_node_subsystem_util::metrics::prometheus::Registry;
 use polkadot_primitives::v2::CollatorPair;
 
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
+use sc_client_db::DatabaseSource;
 use sc_network::{Event, NetworkService};
 use sc_network_common::service::NetworkEventStream;
 use std::sync::Arc;
 
-use polkadot_service::{Configuration, TaskManager};
+use polkadot_service::{open_database, Configuration, TaskManager};
 
 use futures::StreamExt;
 
@@ -153,6 +155,8 @@ pub async fn new_minimal_relay_chain(
 		prometheus_registry.clone(),
 	);
 
+	let parachains_db = open_database(&config.database)?;
+	let availability_config = AvailabilityConfig { col_data: 0, col_meta: 1 };
 	let overseer_args = CollatorOverseerGenArgs {
 		leaves: active_leaves,
 		runtime_client: relay_chain_rpc_client.clone(),
@@ -165,6 +169,8 @@ pub async fn new_minimal_relay_chain(
 		collator_pair,
 		req_protocol_names: request_protocol_names,
 		peer_set_protocol_names,
+		parachains_db,
+		availability_config,
 	};
 
 	let overseer_handle = collator_overseer::spawn_overseer(
