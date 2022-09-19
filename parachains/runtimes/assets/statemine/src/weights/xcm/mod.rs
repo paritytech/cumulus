@@ -31,13 +31,12 @@ trait WeighMultiAssets {
 	fn weigh_multi_assets(&self, weight: Weight) -> XCMWeight;
 }
 
-const MAX_ASSETS: u32 = 100;
+const MAX_ASSETS: u32 = 1;
 
 impl WeighMultiAssets for MultiAssetFilter {
 	fn weigh_multi_assets(&self, weight: Weight) -> XCMWeight {
 		let weight = match self {
-			Self::Definite(assets) =>
-				weight.saturating_mul(assets.inner().into_iter().count() as u64),
+			Self::Definite(assets) => weight.saturating_mul(assets.len() as u64),
 			Self::Wild(_) => weight.saturating_mul(MAX_ASSETS as u64),
 		};
 		weight.ref_time()
@@ -46,7 +45,7 @@ impl WeighMultiAssets for MultiAssetFilter {
 
 impl WeighMultiAssets for MultiAssets {
 	fn weigh_multi_assets(&self, weight: Weight) -> XCMWeight {
-		weight.saturating_mul(self.inner().into_iter().count() as u64).ref_time()
+		weight.saturating_mul(self.len() as u64).ref_time()
 	}
 }
 
