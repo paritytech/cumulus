@@ -127,9 +127,9 @@ pub fn weigh_multi_assets_generic(
 	weight: Weight,
 	max_assets: u32,
 ) -> XCMWeight {
-	let weight = match filter {
-		MultiAssetFilter::Definite(assets) => weight.saturating_mul(assets.len() as u64),
-		MultiAssetFilter::Wild(_) => weight.saturating_mul(max_assets as u64),
+	let multiplier = match filter {
+		MultiAssetFilter::Definite(assets) => assets.len() as u64,
+		MultiAssetFilter::Wild(_) => max_assets as u64,
 	};
-	weight.ref_time()
+	weight.saturating_mul(multiplier).ref_time()
 }
