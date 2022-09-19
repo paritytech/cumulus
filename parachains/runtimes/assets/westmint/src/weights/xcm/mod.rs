@@ -43,12 +43,12 @@ trait WeighMultiAssets {
 	fn weigh_multi_assets(&self, weight: Weight) -> XCMWeight;
 }
 
-trait WeighMultiAssetsTeleport {
-	fn weigh_multi_assets_teleport(&self, weight: Weight) -> XCMWeight;
+trait WeighMultiAssetsReserve {
+	fn weigh_multi_assets_reserve(&self, weight: Weight) -> XCMWeight;
 }
 
-const MAX_ASSETS: u32 = 100;
-const TELEPORT_MAX_ASSETS: u32 = 1;
+const RESERVE_MAX_ASSETS: u32 = 100;
+const MAX_ASSETS: u32 = 1;
 
 impl WeighMultiAssets for MultiAssetFilter {
 	fn weigh_multi_assets(&self, weight: Weight) -> XCMWeight {
@@ -56,9 +56,9 @@ impl WeighMultiAssets for MultiAssetFilter {
 	}
 }
 
-impl WeighMultiAssetsTeleport for MultiAssetFilter {
-	fn weigh_multi_assets_teleport(&self, weight: Weight) -> XCMWeight {
-		weigh_multi_assets_generic(self, weight, TELEPORT_MAX_ASSETS)
+impl WeighMultiAssetsReserve for MultiAssetFilter {
+	fn weigh_multi_assets_reserve(&self, weight: Weight) -> XCMWeight {
+		weigh_multi_assets_generic(self, weight, RESERVE_MAX_ASSETS)
 	}
 }
 
@@ -135,7 +135,7 @@ impl<Call> XcmWeightInfo<Call> for WestmintXcmWeight<Call> {
 		_max_assets: &u32,
 		_dest: &MultiLocation,
 	) -> XCMWeight {
-		assets.weigh_multi_assets_teleport(XcmFungibleWeight::<Runtime>::deposit_asset())
+		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_asset())
 	}
 	fn deposit_reserve_asset(
 		assets: &MultiAssetFilter,
@@ -143,7 +143,7 @@ impl<Call> XcmWeightInfo<Call> for WestmintXcmWeight<Call> {
 		_dest: &MultiLocation,
 		_xcm: &Xcm<()>,
 	) -> XCMWeight {
-		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_reserve_asset())
+		assets.weigh_multi_assets_reserve(XcmFungibleWeight::<Runtime>::deposit_reserve_asset())
 	}
 	fn exchange_asset(_give: &MultiAssetFilter, _receive: &MultiAssets) -> XCMWeight {
 		Weight::MAX.ref_time()
@@ -153,14 +153,14 @@ impl<Call> XcmWeightInfo<Call> for WestmintXcmWeight<Call> {
 		_reserve: &MultiLocation,
 		_xcm: &Xcm<()>,
 	) -> XCMWeight {
-		assets.weigh_multi_assets(XcmGeneric::<Runtime>::initiate_reserve_withdraw())
+		assets.weigh_multi_assets_reserve(XcmGeneric::<Runtime>::initiate_reserve_withdraw())
 	}
 	fn initiate_teleport(
 		assets: &MultiAssetFilter,
 		_dest: &MultiLocation,
 		_xcm: &Xcm<()>,
 	) -> XCMWeight {
-		assets.weigh_multi_assets_teleport(XcmFungibleWeight::<Runtime>::initiate_teleport())
+		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::initiate_teleport())
 	}
 	fn query_holding(
 		_query_id: &u64,
