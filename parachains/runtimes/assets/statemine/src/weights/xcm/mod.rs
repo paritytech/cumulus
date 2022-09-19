@@ -27,19 +27,38 @@ use xcm::{
 	DoubleEncoded,
 };
 
+fn weigh_multi_assets_generic(
+	filter: &MultiAssetFilter,
+	weight: Weight,
+	max_assets: u32,
+) -> XCMWeight {
+	let weight = match filter {
+		MultiAssetFilter::Definite(assets) => weight.saturating_mul(assets.len() as u64),
+		MultiAssetFilter::Wild(_) => weight.saturating_mul(max_assets as u64),
+	};
+	weight.ref_time()
+}
+
 trait WeighMultiAssets {
 	fn weigh_multi_assets(&self, weight: Weight) -> XCMWeight;
 }
 
-const MAX_ASSETS: u32 = 1;
+trait WeighMultiAssetsTeleport {
+	fn weigh_multi_assets_teleport(&self, weight: Weight) -> XCMWeight;
+}
+
+const MAX_ASSETS: u32 = 100;
+const TELEPORT_MAX_ASSETS: u32 = 1;
 
 impl WeighMultiAssets for MultiAssetFilter {
 	fn weigh_multi_assets(&self, weight: Weight) -> XCMWeight {
-		let weight = match self {
-			Self::Definite(assets) => weight.saturating_mul(assets.len() as u64),
-			Self::Wild(_) => weight.saturating_mul(MAX_ASSETS as u64),
-		};
-		weight.ref_time()
+		weigh_multi_assets_generic(self, weight, MAX_ASSETS)
+	}
+}
+
+impl WeighMultiAssetsTeleport for MultiAssetFilter {
+	fn weigh_multi_assets_teleport(&self, weight: Weight) -> XCMWeight {
+		weigh_multi_assets_generic(self, weight, TELEPORT_MAX_ASSETS)
 	}
 }
 
@@ -141,7 +160,7 @@ impl<Call> XcmWeightInfo<Call> for StatemineXcmWeight<Call> {
 		_dest: &MultiLocation,
 		_xcm: &Xcm<()>,
 	) -> XCMWeight {
-		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::initiate_teleport())
+		assets.weigh_multi_assets_teleport(XcmFungibleWeight::<Runtime>::initiate_teleport())
 	}
 	fn query_holding(
 		_query_id: &u64,
