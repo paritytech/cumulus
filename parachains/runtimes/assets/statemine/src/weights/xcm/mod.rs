@@ -21,22 +21,11 @@ use crate::Runtime;
 use frame_support::weights::Weight;
 use pallet_xcm_benchmarks_fungible::WeightInfo as XcmFungibleWeight;
 use pallet_xcm_benchmarks_generic::WeightInfo as XcmGeneric;
+use parachains_common::xcm_config::weigh_multi_assets_generic;
 use xcm::{
 	latest::{prelude::*, Weight as XCMWeight},
 	DoubleEncoded,
 };
-
-fn weigh_multi_assets_generic(
-	filter: &MultiAssetFilter,
-	weight: Weight,
-	max_assets: u32,
-) -> XCMWeight {
-	let weight = match filter {
-		MultiAssetFilter::Definite(assets) => weight.saturating_mul(assets.len() as u64),
-		MultiAssetFilter::Wild(_) => weight.saturating_mul(max_assets as u64),
-	};
-	weight.ref_time()
-}
 
 trait WeighMultiAssets {
 	fn weigh_multi_assets(&self, weight: Weight) -> XCMWeight;
