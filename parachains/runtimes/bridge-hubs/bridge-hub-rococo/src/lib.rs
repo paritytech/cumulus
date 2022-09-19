@@ -513,8 +513,8 @@ impl pallet_bridge_grandpa::Config<BridgeGrandpaRococoInstance> for Runtime {
 	type WeightInfo = ();
 }
 
-pub const ROCOCO_BRIDGE_PARA_PALLET_NAME: &str = "RococoBridgeHubParachainPallet";
-pub const WOCOCO_BRIDGE_PARA_PALLET_NAME: &str = "WococoBridgeHubParachainPallet";
+pub const ROCOCO_BRIDGE_PARA_PALLET_NAME: &str = "Paras";
+pub const WOCOCO_BRIDGE_PARA_PALLET_NAME: &str = "Paras";
 parameter_types! {
 	pub const ParachainHeadsToKeep: u32 = 64;
 	pub const RococoBridgeParachainPalletName: &'static str = ROCOCO_BRIDGE_PARA_PALLET_NAME;
