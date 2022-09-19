@@ -135,7 +135,7 @@ impl<Call> XcmWeightInfo<Call> for StatemineXcmWeight<Call> {
 		_max_assets: &u32,
 		_dest: &MultiLocation,
 	) -> XCMWeight {
-		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_asset())
+		assets.weigh_multi_assets_teleport(XcmFungibleWeight::<Runtime>::deposit_asset())
 	}
 	fn deposit_reserve_asset(
 		assets: &MultiAssetFilter,
