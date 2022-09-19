@@ -36,6 +36,7 @@ trait WeighMultiAssetsReserve {
 }
 
 const RESERVE_MAX_ASSETS: u32 = 100;
+/// For teleports and deposits
 const MAX_ASSETS: u32 = 1;
 
 impl WeighMultiAssets for MultiAssetFilter {
