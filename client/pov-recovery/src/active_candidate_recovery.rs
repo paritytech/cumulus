@@ -102,7 +102,7 @@ impl<Block: BlockT> ActiveCandidateRecovery<Block> {
 		loop {
 			if let Some(res) = self.recoveries.next().await {
 				self.candidates.remove(&res.0);
-				return res
+				return res;
 			} else {
 				futures::pending!()
 			}

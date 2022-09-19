@@ -193,10 +193,8 @@ async fn build_relay_chain_interface(
 		)
 		.await?;
 		task_manager.add_child(collator_node.task_manager);
-		return Ok(Arc::new(RelayChainRpcInterface::new(
-			client,
-			Some(collator_node.overseer_handle),
-		)));
+		tracing::info!("Using relay chain minimal node.");
+		return Ok(Arc::new(RelayChainRpcInterface::new(client, collator_node.overseer_handle)));
 	}
 
 	let relay_chain_full_node = polkadot_test_service::new_full(
@@ -210,11 +208,14 @@ async fn build_relay_chain_interface(
 	)?;
 
 	task_manager.add_child(relay_chain_full_node.task_manager);
+	tracing::info!("Using inprocess node.");
 	Ok(Arc::new(RelayChainInProcessInterface::new(
 		relay_chain_full_node.client.clone(),
 		relay_chain_full_node.backend.clone(),
 		Arc::new(relay_chain_full_node.network.clone()),
-		relay_chain_full_node.overseer_handle,
+		relay_chain_full_node.overseer_handle.ok_or(RelayChainError::GenericError(
+			"Overseer should be running in full node.".to_string(),
+		))?,
 	)))
 }
 

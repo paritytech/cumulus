@@ -29,6 +29,7 @@ sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = "
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false, features = ["cli"] }
 polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+prioritized-metered-channel  = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 # Cumulus
 cumulus-primitives-core = { path = "../../primitives/core" }

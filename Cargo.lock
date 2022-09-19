@@ -1989,6 +1989,7 @@ dependencies = [
  "polkadot-primitives",
  "polkadot-service",
  "polkadot-test-client",
+ "prioritized-metered-channel",
  "sc-cli",
  "sc-client-api",
  "sc-consensus-babe",

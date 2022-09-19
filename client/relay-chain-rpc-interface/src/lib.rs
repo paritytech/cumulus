@@ -44,11 +44,11 @@ const TIMEOUT_IN_SECONDS: u64 = 6;
 #[derive(Clone)]
 pub struct RelayChainRpcInterface {
 	rpc_client: RelayChainRpcClient,
-	overseer_handle: Option<Handle>,
+	overseer_handle: Handle,
 }
 
 impl RelayChainRpcInterface {
-	pub fn new(rpc_client: RelayChainRpcClient, overseer_handle: Option<Handle>) -> Self {
+	pub fn new(rpc_client: RelayChainRpcClient, overseer_handle: Handle) -> Self {
 		Self { rpc_client, overseer_handle }
 	}
 }
@@ -126,7 +126,7 @@ impl RelayChainInterface for RelayChainRpcInterface {
 		self.rpc_client.system_health().await.map(|h| h.is_syncing)
 	}
 
-	fn overseer_handle(&self) -> RelayChainResult<Option<Handle>> {
+	fn overseer_handle(&self) -> RelayChainResult<Handle> {
 		Ok(self.overseer_handle.clone())
 	}
 
@@ -171,7 +171,7 @@ impl RelayChainInterface for RelayChainRpcInterface {
 		let mut head_stream = self.rpc_client.get_imported_heads_stream().await?;
 
 		if self.rpc_client.chain_get_header(Some(wait_for_hash)).await?.is_some() {
-			return Ok(())
+			return Ok(());
 		}
 
 		let mut timeout = futures_timer::Delay::new(Duration::from_secs(TIMEOUT_IN_SECONDS)).fuse();

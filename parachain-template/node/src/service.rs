@@ -189,7 +189,7 @@ async fn build_relay_chain_interface(
 			.await?;
 			task_manager.add_child(collator_node.task_manager);
 			Ok((
-				Arc::new(RelayChainRpcInterface::new(client, Some(collator_node.overseer_handle))),
+				Arc::new(RelayChainRpcInterface::new(client, collator_node.overseer_handle)),
 				Some(collator_pair),
 			))
 		},

@@ -172,7 +172,7 @@ pub trait RelayChainInterface: Send + Sync {
 	async fn is_major_syncing(&self) -> RelayChainResult<bool>;
 
 	/// Get a handle to the overseer.
-	fn overseer_handle(&self) -> RelayChainResult<Option<OverseerHandle>>;
+	fn overseer_handle(&self) -> RelayChainResult<OverseerHandle>;
 
 	/// Generate a storage read proof.
 	async fn prove_read(
@@ -250,7 +250,7 @@ where
 		(**self).is_major_syncing().await
 	}
 
-	fn overseer_handle(&self) -> RelayChainResult<Option<OverseerHandle>> {
+	fn overseer_handle(&self) -> RelayChainResult<OverseerHandle> {
 		(**self).overseer_handle()
 	}
 

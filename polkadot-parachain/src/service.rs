@@ -281,7 +281,7 @@ async fn build_relay_chain_interface(
 			Ok((
 				Arc::new(RelayChainRpcInterface::new(
 					client.clone(),
-					Some(collator_node.overseer_handle),
+					collator_node.overseer_handle,
 				)),
 				Some(collator_pair),
 			))
