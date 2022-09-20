@@ -143,7 +143,12 @@ impl<Call> XcmWeightInfo<Call> for StatemintXcmWeight<Call> {
 		_xcm: &Xcm<()>,
 	) -> XCMWeight {
 		// Hardcoded till the XCM pallet is fixed
-		Weight::from_ref_time(200_000_000 as u64).ref_time()
+		let hardcoded_weight = Weight::from_ref_time(200_000_000 as u64).ref_time();
+		let weight = assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::initiate_teleport());
+		if (weight > hardcoded_weight) {
+			return hardcoded_weight
+		}
+		weight
 	}
 	fn query_holding(
 		_query_id: &u64,
