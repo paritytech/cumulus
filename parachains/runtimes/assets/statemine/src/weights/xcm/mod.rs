@@ -143,7 +143,7 @@ impl<Call> XcmWeightInfo<Call> for StatemineXcmWeight<Call> {
 		_xcm: &Xcm<()>,
 	) -> XCMWeight {
 		// Hardcoded till the XCM pallet is fixed
-		Weight::from_ref_time(200_000_000 as u64)
+		Weight::from_ref_time(200_000_000 as u64).ref_time()
 	}
 	fn query_holding(
 		_query_id: &u64,
