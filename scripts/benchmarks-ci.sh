@@ -22,8 +22,6 @@ if [[ $runtimeName == "statemint" ]] || [[ $runtimeName == "statemine" ]] || [[ 
 		pallet_uniques
 		cumulus_pallet_xcmp_queue
 		frame_system
-	)
-	xcm_pallets=(
 		pallet_xcm_benchmarks::generic
 		pallet_xcm_benchmarks::fungible
 	)
@@ -41,42 +39,22 @@ elif [[ $runtimeName == "collectives-polkadot" ]]; then
 		cumulus_pallet_xcmp_queue
 		frame_system
 	)
-	xcm_pallets=(
-	)
 else
 	echo "$runtimeName pallet list not found in benchmarks-ci.sh"
 	exit 1
 fi
 
-for pallet in ${xcm_pallets[@]}
-do
-	# a little hack for xcm benchmarks
-	output_file="${pallet//::/_}"
-  if [[ "$pallet" == *"xcm"* ]]; then
-		output_file="xcm/$output_file"
-  fi
-	$artifactsDir/polkadot-parachain benchmark pallet \
-		--template=./templates/xcm-bench-template.hbs \
-		--chain=$benchmarkRuntimeName \
-		--execution=wasm \
-		--wasm-execution=compiled \
-		--pallet=$pallet  \
-		--extrinsic='*' \
-		--steps=$steps  \
-		--repeat=$repeat \
-		--json \
-		--header=./file_header.txt \
-		--output="${benchmarkOutput}/${output_file}.rs" >> $artifactsDir/${pallet}_benchmark.json
-done
-
 for pallet in ${pallets[@]}
 do
 	# a little hack for xcm benchmarks
 	output_file="${pallet//::/_}"
+	extra_args=""
   if [[ "$pallet" == *"xcm"* ]]; then
 		output_file="xcm/$output_file"
+		extra_args="--template=./templates/xcm-bench-template.hbs"
   fi
 	$artifactsDir/polkadot-parachain benchmark pallet \
+		$extra_args \
 		--chain=$benchmarkRuntimeName \
 		--execution=wasm \
 		--wasm-execution=compiled \
