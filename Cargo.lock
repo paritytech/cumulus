@@ -719,9 +719,8 @@ dependencies = [
 name = "bp-header-chain"
 version = "0.1.0"
 dependencies = [
- "assert_matches",
- "bp-runtime 0.1.0",
- "bp-test-utils 0.1.0",
+ "bp-runtime",
+ "bp-test-utils",
  "finality-grandpa",
  "frame-support",
  "hex",
@@ -736,61 +735,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "bp-header-chain"
-version = "0.1.0"
-source = "git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges#81128ab75395e256ae8ef50994d46101d0e67cea"
-dependencies = [
- "bp-runtime 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "finality-grandpa",
- "frame-support",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-finality-grandpa",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "bp-message-dispatch"
-version = "0.1.0"
-source = "git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges#81128ab75395e256ae8ef50994d46101d0e67cea"
-dependencies = [
- "bp-runtime 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "frame-support",
- "parity-scale-codec",
- "scale-info",
- "sp-std",
-]
-
-[[package]]
 name = "bp-messages"
 version = "0.1.0"
 dependencies = [
  "bitvec",
- "bp-runtime 0.1.0",
+ "bp-runtime",
  "frame-support",
  "frame-system",
  "hex",
  "hex-literal",
- "impl-trait-for-tuples",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-std",
-]
-
-[[package]]
-name = "bp-messages"
-version = "0.1.0"
-source = "git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges#81128ab75395e256ae8ef50994d46101d0e67cea"
-dependencies = [
- "bitvec",
- "bp-runtime 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "frame-support",
- "frame-system",
  "impl-trait-for-tuples",
  "parity-scale-codec",
  "scale-info",
@@ -803,8 +756,8 @@ dependencies = [
 name = "bp-parachains"
 version = "0.1.0"
 dependencies = [
- "bp-polkadot-core 0.1.0",
- "bp-runtime 0.1.0",
+ "bp-polkadot-core",
+ "bp-runtime",
  "frame-support",
  "parity-scale-codec",
  "scale-info",
@@ -816,8 +769,8 @@ dependencies = [
 name = "bp-polkadot-core"
 version = "0.1.0"
 dependencies = [
- "bp-messages 0.1.0",
- "bp-runtime 0.1.0",
+ "bp-messages",
+ "bp-runtime",
  "frame-support",
  "frame-system",
  "hex",
@@ -825,24 +778,6 @@ dependencies = [
  "parity-util-mem",
  "scale-info",
  "serde",
- "sp-api",
- "sp-core",
- "sp-runtime",
- "sp-std",
- "sp-version",
-]
-
-[[package]]
-name = "bp-polkadot-core"
-version = "0.1.0"
-source = "git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges#81128ab75395e256ae8ef50994d46101d0e67cea"
-dependencies = [
- "bp-messages 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "bp-runtime 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "scale-info",
  "sp-api",
  "sp-core",
  "sp-runtime",
@@ -865,26 +800,9 @@ dependencies = [
 name = "bp-rococo"
 version = "0.1.0"
 dependencies = [
- "bp-messages 0.1.0",
- "bp-polkadot-core 0.1.0",
- "bp-runtime 0.1.0",
- "frame-support",
- "parity-scale-codec",
- "smallvec",
- "sp-api",
- "sp-runtime",
- "sp-std",
- "sp-version",
-]
-
-[[package]]
-name = "bp-rococo"
-version = "0.1.0"
-source = "git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges#81128ab75395e256ae8ef50994d46101d0e67cea"
-dependencies = [
- "bp-messages 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "bp-polkadot-core 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "bp-runtime 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
+ "bp-messages",
+ "bp-polkadot-core",
+ "bp-runtime",
  "frame-support",
  "parity-scale-codec",
  "smallvec",
@@ -912,46 +830,14 @@ dependencies = [
  "sp-state-machine",
  "sp-std",
  "sp-trie",
-]
-
-[[package]]
-name = "bp-runtime"
-version = "0.1.0"
-source = "git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges#81128ab75395e256ae8ef50994d46101d0e67cea"
-dependencies = [
- "frame-support",
- "hash-db",
- "num-traits",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-state-machine",
- "sp-std",
- "sp-trie",
+ "trie-db",
 ]
 
 [[package]]
 name = "bp-test-utils"
 version = "0.1.0"
 dependencies = [
- "bp-header-chain 0.1.0",
- "ed25519-dalek",
- "finality-grandpa",
- "parity-scale-codec",
- "sp-application-crypto",
- "sp-finality-grandpa",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "bp-test-utils"
-version = "0.1.0"
-source = "git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges#81128ab75395e256ae8ef50994d46101d0e67cea"
-dependencies = [
- "bp-header-chain 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
+ "bp-header-chain",
  "ed25519-dalek",
  "finality-grandpa",
  "parity-scale-codec",
@@ -965,25 +851,10 @@ dependencies = [
 name = "bp-wococo"
 version = "0.1.0"
 dependencies = [
- "bp-messages 0.1.0",
- "bp-polkadot-core 0.1.0",
- "bp-rococo 0.1.0",
- "bp-runtime 0.1.0",
- "parity-scale-codec",
- "sp-api",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "bp-wococo"
-version = "0.1.0"
-source = "git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges#81128ab75395e256ae8ef50994d46101d0e67cea"
-dependencies = [
- "bp-messages 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "bp-polkadot-core 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "bp-rococo 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "bp-runtime 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
+ "bp-messages",
+ "bp-polkadot-core",
+ "bp-rococo",
+ "bp-runtime",
  "parity-scale-codec",
  "sp-api",
  "sp-runtime",
@@ -994,9 +865,10 @@ dependencies = [
 name = "bridge-hub-rococo-runtime"
 version = "0.1.0"
 dependencies = [
- "bp-polkadot-core 0.1.0",
- "bp-rococo 0.1.0",
- "bp-wococo 0.1.0",
+ "bp-polkadot-core",
+ "bp-rococo",
+ "bp-runtime",
+ "bp-wococo",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -1018,8 +890,13 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-bridge-grandpa",
+ "pallet-bridge-messages",
+ "pallet-bridge-parachains",
+ "pallet-bridge-relayers",
  "pallet-collator-selection",
  "pallet-session",
+ "pallet-shift-session-manager",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -1028,7 +905,7 @@ dependencies = [
  "parachain-info",
  "parachains-common",
  "parity-scale-codec",
- "polkadot-parachain 0.9.27",
+ "polkadot-parachain 0.9.29",
  "polkadot-runtime-common",
  "scale-info",
  "serde",
@@ -2936,6 +2813,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "ethbloom"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11da94e443c60508eb62cf256243a64da87304c2802ac2528847f79d750007ef"
+dependencies = [
+ "crunchy",
+ "fixed-hash",
+ "impl-rlp",
+ "impl-serde",
+ "tiny-keccak",
+]
+
+[[package]]
+name = "ethereum-types"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b2827b94c556145446fcce834ca86b7abf0c39a805883fe20e72c5bfdb5a0dc6"
+dependencies = [
+ "ethbloom",
+ "fixed-hash",
+ "impl-rlp",
+ "impl-serde",
+ "primitive-types",
+ "uint",
+]
+
+[[package]]
 name = "event-listener"
 version = "2.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3963,6 +3867,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba6a270039626615617f3f36d15fc827041df3b78c439da2cadfa47455a77f2f"
 dependencies = [
  "parity-scale-codec",
+]
+
+[[package]]
+name = "impl-rlp"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f28220f89297a075ddc7245cd538076ee98b01f2a9c23a53a4f1105d5a322808"
+dependencies = [
+ "rlp",
 ]
 
 [[package]]
@@ -5953,6 +5866,101 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-bridge-grandpa"
+version = "0.1.0"
+dependencies = [
+ "bp-header-chain",
+ "bp-runtime",
+ "bp-test-utils",
+ "finality-grandpa",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num-traits",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-finality-grandpa",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-trie",
+]
+
+[[package]]
+name = "pallet-bridge-messages"
+version = "0.1.0"
+dependencies = [
+ "bitvec",
+ "bp-messages",
+ "bp-runtime",
+ "bp-test-utils",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num-traits",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-bridge-parachains"
+version = "0.1.0"
+dependencies = [
+ "bp-header-chain",
+ "bp-parachains",
+ "bp-polkadot-core",
+ "bp-runtime",
+ "bp-test-utils",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-bridge-grandpa",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-trie",
+]
+
+[[package]]
+name = "pallet-bridge-relayers"
+version = "0.1.0"
+dependencies = [
+ "bp-messages",
+ "bp-relayers",
+ "bp-runtime",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num-traits",
+ "pallet-balances",
+ "pallet-bridge-messages",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-child-bounties"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#a47f200eebeb88a5bde6f1ed2be9728b82536dde"
@@ -6525,6 +6533,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-shift-session-manager"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-session",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-society"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#a47f200eebeb88a5bde6f1ed2be9728b82536dde"
@@ -7011,8 +7034,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c32561d248d352148124f036cac253a644685a21dc9fea383eb4907d7bd35a8f"
 dependencies = [
  "cfg-if 1.0.0",
+ "ethereum-types",
  "hashbrown 0.12.3",
  "impl-trait-for-tuples",
+ "lru 0.7.7",
  "parity-util-mem-derive",
  "parking_lot 0.12.1",
  "primitive-types",
@@ -8793,6 +8818,7 @@ checksum = "e28720988bff275df1f51b171e1b2a18c30d194c4d2b61defdacecd625a5d94a"
 dependencies = [
  "fixed-hash",
  "impl-codec",
+ "impl-rlp",
  "impl-serde",
  "scale-info",
  "uint",
@@ -9346,6 +9372,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "rlp"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "999508abb0ae792aabed2460c45b89106d97fe4adac593bdaef433c2605847b5"
+dependencies = [
+ "bytes",
+ "rustc-hex",
+]
+
+[[package]]
 name = "rocksdb"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9412,11 +9448,6 @@ source = "git+https://github.com/paritytech/polkadot?branch=master#afbc64e61697d
 dependencies = [
  "beefy-merkle-tree",
  "beefy-primitives",
- "bp-messages 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "bp-rococo 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "bp-runtime 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "bp-wococo 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "bridge-runtime-common",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -10053,7 +10084,6 @@ dependencies = [
  "sc-allocator",
  "sp-maybe-compressed-blob",
  "sp-sandbox",
- "sp-serializer 4.0.0-dev (git+https://github.com/paritytech//substrate?branch=sv-locked-for-gav-xcm-v3-and-bridges)",
  "sp-wasm-interface",
  "thiserror",
  "wasm-instrument",
@@ -11730,15 +11760,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-serializer"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech//substrate?branch=sv-locked-for-gav-xcm-v3-and-bridges#aa7520bd0a2094204a6c0b33865aa264e6d686a5"
-dependencies = [
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "sp-session"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#a47f200eebeb88a5bde6f1ed2be9728b82536dde"
@@ -12567,6 +12588,15 @@ dependencies = [
  "unicode-normalization",
  "wasm-bindgen",
  "zeroize",
+]
+
+[[package]]
+name = "tiny-keccak"
+version = "2.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c9d3793400a45f954c52e73d068316d76b6f4e36977e3fcebb13a2721e80237"
+dependencies = [
+ "crunchy",
 ]
 
 [[package]]

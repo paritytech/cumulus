@@ -68,15 +68,15 @@ parachain-info = { path = "../../../../parachains/pallets/parachain-info", defau
 parachains-common = { path = "../../../../parachains/common", default-features = false }
 
 # Bridges
-bp-polkadot-core = { "TODO:check-parameter subtree path or git", default-features = false }
-bp-runtime = { "TODO:check-parameter subtree path or git", default-features = false }
-bp-rococo = { "TODO:check-parameter subtree path or git", default-features = false }
-bp-wococo = { "TODO:check-parameter subtree path or git", default-features = false }
-pallet-bridge-grandpa = { "TODO:check-parameter subtree path or git", default-features = false }
-pallet-bridge-messages = { "TODO:check-parameter subtree path or git", default-features = false }
-pallet-bridge-parachains = { "TODO:check-parameter subtree path or git", default-features = false }
-pallet-bridge-relayers = { "TODO:check-parameter subtree path or git", default-features = false }
-pallet-shift-session-manager = { "TODO:check-parameter subtree path or git", default-features = false }
+bp-polkadot-core = { path = "../../../../bridges/primitives/polkadot-core", default-features = false }
+bp-runtime = { path = "../../../../bridges/primitives/runtime", default-features = false }
+bp-rococo = { path = "../../../../bridges/primitives/chain-rococo", default-features = false }
+bp-wococo = { path = "../../../../bridges/primitives/chain-wococo", default-features = false }
+pallet-bridge-grandpa = { path = "../../../../bridges/modules/grandpa", default-features = false }
+pallet-bridge-messages = { path = "../../../../bridges/modules/messages", default-features = false }
+pallet-bridge-parachains = { path = "../../../../bridges/modules/parachains", default-features = false }
+pallet-bridge-relayers = { path = "../../../../bridges/modules/relayers", default-features = false }
+pallet-shift-session-manager = { path = "../../../../bridges/modules/shift-session-manager", default-features = false }
 
 [features]
 default = [
