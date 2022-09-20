@@ -15,7 +15,7 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use lru::LruCache;
-use polkadot_node_core_av_store::{AvailabilityStoreSubsystem, Config};
+use polkadot_node_core_av_store::Config;
 use polkadot_node_network_protocol::{
 	peer_set::PeerSetProtocolNames,
 	request_response::{
@@ -31,9 +31,9 @@ use polkadot_overseer::{
 use polkadot_primitives::v2::CollatorPair;
 use polkadot_service::{
 	overseer::{
-		AvailabilityRecoverySubsystem, CollationGenerationSubsystem, CollatorProtocolSubsystem,
-		NetworkBridgeMetrics, NetworkBridgeRxSubsystem, NetworkBridgeTxSubsystem, ProtocolSide,
-		RuntimeApiSubsystem,
+		AvailabilityRecoverySubsystem, AvailabilityStoreSubsystem, ChainApiSubsystem,
+		CollationGenerationSubsystem, CollatorProtocolSubsystem, NetworkBridgeMetrics,
+		NetworkBridgeRxSubsystem, NetworkBridgeTxSubsystem, ProtocolSide, RuntimeApiSubsystem,
 	},
 	Error, OverseerConnector,
 };
@@ -122,7 +122,7 @@ impl CollatorOverseerGen {
 			.candidate_backing(DummySubsystem)
 			.candidate_validation(DummySubsystem)
 			.pvf_checker(DummySubsystem)
-			.chain_api(DummySubsystem)
+			.chain_api(ChainApiSubsystem::new(runtime_client.clone(), Metrics::register(registry)?))
 			.collation_generation(CollationGenerationSubsystem::new(Metrics::register(registry)?))
 			.collator_protocol({
 				let side = ProtocolSide::Collator(
