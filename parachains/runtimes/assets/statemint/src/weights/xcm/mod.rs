@@ -142,7 +142,8 @@ impl<Call> XcmWeightInfo<Call> for StatemintXcmWeight<Call> {
 		_dest: &MultiLocation,
 		_xcm: &Xcm<()>,
 	) -> XCMWeight {
-		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::initiate_teleport())
+		// Hardcoded till the XCM pallet is fixed
+		Weight::from_ref_time(200_000_000 as u64)
 	}
 	fn query_holding(
 		_query_id: &u64,
