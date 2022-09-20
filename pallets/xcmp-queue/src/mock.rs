@@ -167,7 +167,7 @@ impl<RuntimeOrigin: OriginTrait> ConvertOrigin<RuntimeOrigin>
 	fn convert_origin(
 		origin: impl Into<MultiLocation>,
 		kind: OriginKind,
-	) -> Result<Origin, MultiLocation> {
+	) -> Result<RuntimeOrigin, MultiLocation> {
 		let origin = origin.into();
 		if kind == OriginKind::Superuser &&
 			matches!(
