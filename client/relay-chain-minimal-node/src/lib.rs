@@ -18,16 +18,14 @@ use collator_overseer::{CollatorOverseerGenArgs, NewMinimalNode};
 
 use cumulus_relay_chain_interface::RelayChainError;
 use polkadot_network_bridge::{peer_sets_info, IsAuthority};
-use polkadot_node_core_av_store::Config as AvailabilityConfig;
 use polkadot_node_network_protocol::{
 	peer_set::PeerSetProtocolNames,
-	request_response::{IncomingRequest, ReqProtocolNames},
+	request_response::{self, IncomingRequest, ReqProtocolNames},
 };
 use polkadot_node_subsystem_util::metrics::prometheus::Registry;
 use polkadot_primitives::v2::CollatorPair;
 
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
-use sc_client_db::DatabaseSource;
 use sc_network::{Event, NetworkService};
 use sc_network_common::service::NetworkEventStream;
 use std::sync::Arc;
@@ -120,7 +118,6 @@ pub async fn new_minimal_relay_chain(
 
 	let peer_set_protocol_names =
 		PeerSetProtocolNames::new(genesis_hash, config.chain_spec.fork_id());
-
 	{
 		let is_authority = if role.is_authority() { IsAuthority::Yes } else { IsAuthority::No };
 		config
@@ -130,13 +127,8 @@ pub async fn new_minimal_relay_chain(
 	}
 
 	let request_protocol_names = ReqProtocolNames::new(genesis_hash, config.chain_spec.fork_id());
-	let (collation_req_receiver, cfg) =
-		IncomingRequest::get_config_receiver(&request_protocol_names);
-	config.network.request_response_protocols.push(cfg);
-	let (available_data_req_receiver, cfg) =
-		IncomingRequest::get_config_receiver(&request_protocol_names);
-	config.network.request_response_protocols.push(cfg);
-
+	let (collation_req_receiver, available_data_req_receiver, pov_req_receiver, chunk_req_receiver) =
+		build_request_response_protocol_receivers(&request_protocol_names, &mut config);
 	let (network, network_starter) =
 		network::build_collator_network(network::BuildCollatorNetworkParams {
 			config: &config,
@@ -144,8 +136,6 @@ pub async fn new_minimal_relay_chain(
 			spawn_handle: task_manager.spawn_handle(),
 			genesis_hash,
 		})?;
-
-	let active_leaves = Vec::new();
 
 	let authority_discovery_service = build_authority_discovery_service(
 		&task_manager,
@@ -156,9 +146,8 @@ pub async fn new_minimal_relay_chain(
 	);
 
 	let parachains_db = open_database(&config.database)?;
-	let availability_config = AvailabilityConfig { col_data: 0, col_meta: 1 };
+
 	let overseer_args = CollatorOverseerGenArgs {
-		leaves: active_leaves,
 		runtime_client: relay_chain_rpc_client.clone(),
 		network_service: network.clone(),
 		authority_discovery_service,
@@ -170,7 +159,9 @@ pub async fn new_minimal_relay_chain(
 		req_protocol_names: request_protocol_names,
 		peer_set_protocol_names,
 		parachains_db,
-		availability_config,
+		availability_config: polkadot_service::create_availability_config(),
+		pov_req_receiver,
+		chunk_req_receiver,
 	};
 
 	let overseer_handle = collator_overseer::spawn_overseer(
@@ -182,4 +173,26 @@ pub async fn new_minimal_relay_chain(
 	network_starter.start_network();
 
 	Ok(NewMinimalNode { task_manager, overseer_handle, network })
+}
+
+fn build_request_response_protocol_receivers(
+	request_protocol_names: &ReqProtocolNames,
+	config: &mut Configuration,
+) -> (
+	request_response::IncomingRequestReceiver<request_response::v1::CollationFetchingRequest>,
+	request_response::IncomingRequestReceiver<request_response::v1::AvailableDataFetchingRequest>,
+	request_response::IncomingRequestReceiver<request_response::v1::PoVFetchingRequest>,
+	request_response::IncomingRequestReceiver<request_response::v1::ChunkFetchingRequest>,
+) {
+	let (collation_req_receiver, cfg) =
+		IncomingRequest::get_config_receiver(request_protocol_names);
+	config.network.request_response_protocols.push(cfg);
+	let (available_data_req_receiver, cfg) =
+		IncomingRequest::get_config_receiver(request_protocol_names);
+	config.network.request_response_protocols.push(cfg);
+	let (pov_req_receiver, cfg) = IncomingRequest::get_config_receiver(request_protocol_names);
+	config.network.request_response_protocols.push(cfg);
+	let (chunk_req_receiver, cfg) = IncomingRequest::get_config_receiver(request_protocol_names);
+	config.network.request_response_protocols.push(cfg);
+	(collation_req_receiver, available_data_req_receiver, pov_req_receiver, chunk_req_receiver)
 }

@@ -15,11 +15,17 @@
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
 use lru::LruCache;
+use polkadot_availability_distribution::{
+	AvailabilityDistributionSubsystem, IncomingRequestReceivers,
+};
 use polkadot_node_core_av_store::Config;
 use polkadot_node_network_protocol::{
 	peer_set::PeerSetProtocolNames,
 	request_response::{
-		v1::{AvailableDataFetchingRequest, CollationFetchingRequest},
+		v1::{
+			AvailableDataFetchingRequest, ChunkFetchingRequest, CollationFetchingRequest,
+			PoVFetchingRequest,
+		},
 		IncomingRequestReceiver, ReqProtocolNames,
 	},
 };
@@ -38,6 +44,7 @@ use polkadot_service::{
 	Error, OverseerConnector,
 };
 use sc_authority_discovery::Service as AuthorityDiscoveryService;
+use sc_keystore::LocalKeystore;
 use sc_network::NetworkStateInfo;
 
 use std::sync::Arc;
@@ -52,15 +59,19 @@ use sp_runtime::traits::Block as BlockT;
 
 /// Arguments passed for overseer construction.
 pub(crate) struct CollatorOverseerGenArgs<'a> {
-	/// Set of initial relay chain leaves to track.
-	pub leaves: Vec<BlockInfo>,
 	/// Runtime client generic, providing the `ProvieRuntimeApi` trait besides others.
 	pub runtime_client: Arc<BlockChainRpcClient>,
 	/// Underlying network service implementation.
 	pub network_service: Arc<sc_network::NetworkService<Block, PHash>>,
 	/// Underlying authority discovery service.
 	pub authority_discovery_service: AuthorityDiscoveryService,
+	// Receiver for collation request protocol
 	pub collation_req_receiver: IncomingRequestReceiver<CollationFetchingRequest>,
+	// Receiver for PoV request protocol
+	pub pov_req_receiver: IncomingRequestReceiver<PoVFetchingRequest>,
+	// Receiver for chunk request protocol
+	pub chunk_req_receiver: IncomingRequestReceiver<ChunkFetchingRequest>,
+	// Receiver for availability request protocol
 	pub available_data_req_receiver: IncomingRequestReceiver<AvailableDataFetchingRequest>,
 	/// Prometheus registry, commonly used for production systems, less so for test.
 	pub registry: Option<&'a Registry>,
@@ -68,20 +79,22 @@ pub(crate) struct CollatorOverseerGenArgs<'a> {
 	pub spawner: sc_service::SpawnTaskHandle,
 	/// Determines the behavior of the collator.
 	pub collator_pair: CollatorPair,
+	/// Request response protocols
 	pub req_protocol_names: ReqProtocolNames,
 	pub peer_set_protocol_names: PeerSetProtocolNames,
+	/// Config for the availability store
 	pub availability_config: Config,
 	/// The underlying key value store for the parachains.
 	pub parachains_db: Arc<dyn polkadot_node_subsystem_util::database::Database>,
 }
 
 pub(crate) struct CollatorOverseerGen;
+
 impl CollatorOverseerGen {
 	pub(crate) fn generate<'a>(
 		&self,
 		connector: OverseerConnector,
 		CollatorOverseerGenArgs {
-			leaves,
 			runtime_client,
 			network_service,
 			authority_discovery_service,
@@ -94,6 +107,8 @@ impl CollatorOverseerGen {
 			req_protocol_names,
 			peer_set_protocol_names,
 			parachains_db,
+			pov_req_receiver,
+			chunk_req_receiver,
 		}: CollatorOverseerGenArgs<'a>,
 	) -> Result<
 		(
@@ -102,12 +117,17 @@ impl CollatorOverseerGen {
 		),
 		Error,
 	> {
+		let leaves = Vec::new();
 		let metrics = <OverseerMetrics as MetricsTrait>::register(registry)?;
-
+		let keystore = Arc::new(LocalKeystore::in_memory());
 		let spawner = SpawnGlue(spawner);
 		let network_bridge_metrics: NetworkBridgeMetrics = Metrics::register(registry)?;
 		let builder = Overseer::builder()
-			.availability_distribution(DummySubsystem)
+			.availability_distribution(AvailabilityDistributionSubsystem::new(
+				keystore.clone(),
+				IncomingRequestReceivers { pov_req_receiver, chunk_req_receiver },
+				Metrics::register(registry)?,
+			))
 			.availability_recovery(AvailabilityRecoverySubsystem::with_chunks_only(
 				available_data_req_receiver,
 				Metrics::register(registry)?,
@@ -183,6 +203,7 @@ pub(crate) fn spawn_overseer(
 	relay_chain_rpc_client: Arc<BlockChainRpcClient>,
 ) -> Result<polkadot_overseer::Handle, polkadot_service::Error> {
 	let overseer_gen = CollatorOverseerGen;
+
 	let (overseer, overseer_handle) = overseer_gen
 		.generate(OverseerConnector::default(), overseer_args)
 		.map_err(|e| {

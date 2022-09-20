@@ -194,7 +194,7 @@ async fn build_relay_chain_interface(
 		.await?;
 		task_manager.add_child(collator_node.task_manager);
 		tracing::info!("Using relay chain minimal node.");
-		return Ok(Arc::new(RelayChainRpcInterface::new(client, collator_node.overseer_handle)));
+		return Ok(Arc::new(RelayChainRpcInterface::new(client, collator_node.overseer_handle)))
 	}
 
 	let relay_chain_full_node = polkadot_test_service::new_full(

@@ -55,6 +55,8 @@ impl BlockChainRpcClient {
 	}
 }
 
+// Implementation required by Availability-Distribution subsystem
+// but never called in our case.
 impl AuxStore for BlockChainRpcClient {
 	fn insert_aux<
 		'a,
@@ -64,14 +66,14 @@ impl AuxStore for BlockChainRpcClient {
 		D: IntoIterator<Item = &'a &'b [u8]>,
 	>(
 		&self,
-		insert: I,
-		delete: D,
+		_insert: I,
+		_delete: D,
 	) -> sp_blockchain::Result<()> {
-		todo!()
+		unimplemented!()
 	}
 
-	fn get_aux(&self, key: &[u8]) -> sp_blockchain::Result<Option<Vec<u8>>> {
-		todo!()
+	fn get_aux(&self, _key: &[u8]) -> sp_blockchain::Result<Option<Vec<u8>>> {
+		unimplemented!()
 	}
 }
 
