@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", features = [ "derive" ] }
-futures = "0.3.23"
+futures = "0.3.24"
 futures-timer = "3.0.2"
 rand = "0.8.5"
 tracing = "0.1.36"
@@ -31,7 +31,7 @@ cumulus-primitives-core = { path = "../../primitives/core" }
 cumulus-relay-chain-interface = {path = "../relay-chain-interface"}
 
 [dev-dependencies]
-tokio = { version = "1.19.2", features = ["macros"] }
+tokio = { version = "1.21.1", features = ["macros"] }
 
 # Cumulus
 cumulus-test-service = { path = "../../test/service" }

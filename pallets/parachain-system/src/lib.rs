@@ -37,12 +37,12 @@ use cumulus_primitives_core::{
 
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use frame_support::{
-	dispatch::{DispatchError, DispatchResult},
+	dispatch::{DispatchError, DispatchResult, Pays, PostDispatchInfo},
 	ensure,
 	inherent::{InherentData, InherentIdentifier, ProvideInherent},
 	storage,
 	traits::Get,
-	weights::{Pays, PostDispatchInfo, Weight},
+	weights::Weight,
 };
 use frame_system::{ensure_none, ensure_root};
 use polkadot_parachain::primitives::RelayChainBlockNumber;
@@ -148,7 +148,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config<OnSetCode = ParachainSetCode<Self>> {
 		/// The overarching event type.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Something which can be notified when the validation data is set.
 		type OnSystemEvent: OnSystemEvent;
@@ -270,7 +270,7 @@ pub mod pallet {
 		}
 
 		fn on_initialize(_n: T::BlockNumber) -> Weight {
-			let mut weight = 0;
+			let mut weight = Weight::zero();
 
 			// To prevent removing `NewValidationCode` that was set by another `on_initialize`
 			// like for example from scheduler, we only kill the storage entry if it was not yet
@@ -417,7 +417,7 @@ pub mod pallet {
 			<T::OnSystemEvent as OnSystemEvent>::on_validation_data(&vfp);
 
 			// TODO: This is more than zero, but will need benchmarking to figure out what.
-			let mut total_weight = 0;
+			let mut total_weight = Weight::zero();
 			total_weight +=
 				Self::process_inbound_downward_messages(downward_messages, &relay_state_proof);
 			total_weight += Self::process_inbound_horizontal_messages(
@@ -810,7 +810,7 @@ impl<T: Config> Pallet<T> {
 		downward_messages: Vec<InboundDownwardMessage>,
 		relay_state_proof: &RelayChainStateProof,
 	) -> Weight {
-		let mut weight_used = 0;
+		let mut weight_used = Weight::zero();
 
 		if downward_messages.len() > 0 {
 			let mqc_head = <LastDmqMqcHead<T>>::get();

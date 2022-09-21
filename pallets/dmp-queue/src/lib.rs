@@ -26,7 +26,8 @@ use cumulus_primitives_core::{
 	relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler, DmpMessageHandlerContext,
 };
 use frame_support::{
-	dispatch::Weight, traits::EnsureOrigin, weights::constants::WEIGHT_PER_MILLIS,
+	traits::EnsureOrigin,
+	weights::{constants::WEIGHT_PER_MILLIS, Weight},
 };
 pub use pallet::*;
 use scale_info::TypeInfo;
@@ -48,7 +49,7 @@ pub struct ConfigData {
 impl Default for ConfigData {
 	fn default() -> Self {
 		Self {
-			max_individual: 10 * WEIGHT_PER_MILLIS, // 10 ms of execution time maximum by default
+			max_individual: 10u64 * WEIGHT_PER_MILLIS, // 10 ms of execution time maximum by default
 		}
 	}
 }
@@ -89,12 +90,12 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		type XcmExecutor: ExecuteXcm<Self::Call>;
+		type XcmExecutor: ExecuteXcm<Self::RuntimeCall>;
 
 		/// Origin which is allowed to execute overweight messages.
-		type ExecuteOverweightOrigin: EnsureOrigin<Self::Origin>;
+		type ExecuteOverweightOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 	}
 
 	/// The configuration.
@@ -137,7 +138,7 @@ pub mod pallet {
 		///
 		/// Events:
 		/// - `OverweightServiced`: On success.
-		#[pallet::weight(weight_limit.saturating_add(1_000_000))]
+		#[pallet::weight(weight_limit.saturating_add(Weight::from_ref_time(1_000_000)))]
 		pub fn service_overweight(
 			origin: OriginFor<T>,
 			index: OverweightIndex,
@@ -150,7 +151,7 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::OverLimit)?;
 			Overweight::<T>::remove(index);
 			Self::deposit_event(Event::OverweightServiced { overweight_index: index, weight_used });
-			Ok(Some(weight_used.saturating_add(1_000_000)).into())
+			Ok(Some(weight_used.saturating_add(Weight::from_ref_time(1_000_000))).into())
 		}
 	}
 
@@ -187,27 +188,27 @@ pub mod pallet {
 			mut data: &[u8],
 		) -> Result<Weight, (MessageId, Weight)> {
 			let message_id = sp_io::hashing::blake2_256(data);
-			let maybe_msg = VersionedXcm::<T::Call>::decode_all_with_depth_limit(
+			let maybe_msg = VersionedXcm::<T::RuntimeCall>::decode_all_with_depth_limit(
 				MAX_XCM_DECODE_DEPTH,
 				&mut data,
 			)
-			.map(Xcm::<T::Call>::try_from);
+			.map(Xcm::<T::RuntimeCall>::try_from);
 			match maybe_msg {
 				Err(_) => {
 					Self::deposit_event(Event::InvalidFormat { message_id });
-					Ok(0)
+					Ok(Weight::zero())
 				},
 				Ok(Err(())) => {
 					Self::deposit_event(Event::UnsupportedVersion { message_id });
-					Ok(0)
+					Ok(Weight::zero())
 				},
 				Ok(Ok(x)) => {
-					let outcome = T::XcmExecutor::execute_xcm(Parent, x, limit);
+					let outcome = T::XcmExecutor::execute_xcm(Parent, x, limit.ref_time());
 					match outcome {
 						Outcome::Error(XcmError::WeightLimitReached(required)) =>
-							Err((message_id, required)),
+							Err((message_id, Weight::from_ref_time(required))),
 						outcome => {
-							let weight_used = outcome.weight_used();
+							let weight_used = Weight::from_ref_time(outcome.weight_used());
 							Self::deposit_event(Event::ExecutedDownward { message_id, outcome });
 							Ok(weight_used)
 						},
@@ -302,11 +303,11 @@ mod tests {
 	};
 	use sp_version::RuntimeVersion;
 	use std::cell::RefCell;
-	use xcm::latest::{MultiLocation, OriginKind};
+	use xcm::latest::{MultiLocation, OriginKind, Weight as XCMWeight};
 
 	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 	type Block = frame_system::mocking::MockBlock<Test>;
-	type Xcm = xcm::latest::Xcm<Call>;
+	type Xcm = xcm::latest::Xcm<RuntimeCall>;
 
 	frame_support::construct_runtime!(
 		pub enum Test where
@@ -332,15 +333,15 @@ mod tests {
 			state_version: 1,
 		};
 		pub const ParachainId: ParaId = ParaId::new(200);
-		pub const ReservedXcmpWeight: Weight = 0;
-		pub const ReservedDmpWeight: Weight = 0;
+		pub const ReservedXcmpWeight: Weight = Weight::zero();
+		pub const ReservedDmpWeight: Weight = Weight::zero();
 	}
 
 	type AccountId = u64;
 
 	impl frame_system::Config for Test {
-		type Origin = Origin;
-		type Call = Call;
+		type RuntimeOrigin = RuntimeOrigin;
+		type RuntimeCall = RuntimeCall;
 		type Index = u64;
 		type BlockNumber = u64;
 		type Hash = H256;
@@ -348,7 +349,7 @@ mod tests {
 		type AccountId = AccountId;
 		type Lookup = IdentityLookup<Self::AccountId>;
 		type Header = Header;
-		type Event = Event;
+		type RuntimeEvent = RuntimeEvent;
 		type BlockHashCount = BlockHashCount;
 		type BlockLength = ();
 		type BlockWeights = ();
@@ -378,12 +379,12 @@ mod tests {
 	}
 
 	pub struct MockExec;
-	impl ExecuteXcm<Call> for MockExec {
+	impl ExecuteXcm<RuntimeCall> for MockExec {
 		fn execute_xcm_in_credit(
 			_origin: impl Into<MultiLocation>,
 			message: Xcm,
-			weight_limit: Weight,
-			_credit: Weight,
+			weight_limit: XCMWeight,
+			_credit: XCMWeight,
 		) -> Outcome {
 			let o = match (message.0.len(), &message.0.first()) {
 				(1, Some(Transact { require_weight_at_most, .. })) => {
@@ -402,7 +403,7 @@ mod tests {
 	}
 
 	impl Config for Test {
-		type Event = Event;
+		type RuntimeEvent = RuntimeEvent;
 		type XcmExecutor = MockExec;
 		type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
 	}
@@ -421,7 +422,7 @@ mod tests {
 		DmpQueue::handle_dmp_messages(iter, &mut context)
 	}
 
-	fn msg(weight: Weight) -> Xcm {
+	fn msg(weight: XCMWeight) -> Xcm {
 		Xcm(vec![Transact {
 			origin_type: OriginKind::Native,
 			require_weight_at_most: weight,
@@ -429,11 +430,11 @@ mod tests {
 		}])
 	}
 
-	fn msg_complete(weight: Weight) -> (Xcm, Outcome) {
+	fn msg_complete(weight: XCMWeight) -> (Xcm, Outcome) {
 		(msg(weight), Outcome::Complete(weight))
 	}
 
-	fn msg_limit_reached(weight: Weight) -> (Xcm, Outcome) {
+	fn msg_limit_reached(weight: XCMWeight) -> (Xcm, Outcome) {
 		(msg(weight), Outcome::Error(XcmError::WeightLimitReached(weight)))
 	}
 
@@ -444,8 +445,6 @@ mod tests {
 	fn queue_is_empty() -> bool {
 		pages_queued() == 0
 	}
-
-	fn overweights() -> Vec<OverweightIndex> {
 		(0..PageIndex::<Test>::get().overweight_count)
 			.filter(|i| Overweight::<Test>::contains_key(i))
 			.collect::<Vec<_>>()
@@ -454,35 +453,46 @@ mod tests {
 	#[test]
 	fn basic_setup_works() {
 		new_test_ext().execute_with(|| {
-			let weight_used = handle_messages(&[], 1000);
-			assert_eq!(weight_used, 0);
-			assert_eq!(take_trace(), Vec::new());
-			assert!(queue_is_empty());
-		});
-	}
-
 	#[test]
-	fn service_inline_complete_works() {
-		new_test_ext().execute_with(|| {
-			let incoming = vec![msg(1000), msg(1001)];
-			let weight_used = handle_messages(&incoming, 2500);
-			assert_eq!(weight_used, 2001);
-			assert_eq!(take_trace(), vec![msg_complete(1000), msg_complete(1001)]);
-			assert!(queue_is_empty());
-		});
-	}
-
-	#[test]
-	fn service_inline() {
+	fn enqueue_works() {
 		new_test_ext().execute_with(|| {
 			let incoming = vec![msg(1000), msg(1001), msg(1002)];
-			let weight_used = handle_messages(&incoming, 1500);
-			assert_eq!(weight_used, 1000);
-			assert_eq!(pages_queued(), 0);
+			let weight_used = handle_messages(&incoming, Weight::from_ref_time(999));
+			assert_eq!(weight_used, Weight::zero());
+			assert_eq!(
+				PageIndex::<Test>::get(),
+				PageIndexData { begin_used: 0, end_used: 1, overweight_count: 0 }
+			);
+			assert_eq!(Pages::<Test>::get(0).len(), 3);
+			assert_eq!(take_trace(), vec![msg_limit_reached(1000)]);
+
+			let weight_used = handle_messages(&[], Weight::from_ref_time(2500));
+			assert_eq!(weight_used, Weight::from_ref_time(2001));
+			assert_eq!(
+				take_trace(),
+				vec![msg_complete(1000), msg_complete(1001), msg_limit_reached(1002),]
+			);
+
+			let weight_used = handle_messages(&[], Weight::from_ref_time(2500));
+			assert_eq!(weight_used, Weight::from_ref_time(1002));
+			assert_eq!(take_trace(), vec![msg_complete(1002),]);
+			assert!(queue_is_empty());
+		});
+	}
+
+	#[test]
+	fn service_inline_then_enqueue_works() {
+		new_test_ext().execute_with(|| {
+			let incoming = vec![msg(1000), msg(1001), msg(1002)];
+			let weight_used = handle_messages(&incoming, Weight::from_ref_time(1500));
+			assert_eq!(weight_used, Weight::from_ref_time(1000));
+			assert_eq!(pages_queued(), 1);
+			assert_eq!(Pages::<Test>::get(0).len(), 2);
 			assert_eq!(take_trace(), vec![msg_complete(1000), msg_limit_reached(1001),]);
 
-			let weight_used = handle_messages(&[msg(1001), msg(1002)], 2500);
-			assert_eq!(weight_used, 2003);
+			let weight_used = handle_messages(&[], Weight::from_ref_time(2500));
+			assert_eq!(weight_used, Weight::from_ref_time(2003));
+>>>>>>> 14186393b28dcfc14d6d30a8aa92b1e6a6ece46d
 			assert_eq!(take_trace(), vec![msg_complete(1001), msg_complete(1002),]);
 		});
 	}
@@ -521,37 +531,58 @@ mod tests {
 	fn overweights_should_be_manually_executable() {
 		new_test_ext().execute_with(|| {
 			// Set the overweight threshold to 9999.
-			Configuration::<Test>::put(ConfigData { max_individual: 9999 });
+			Configuration::<Test>::put(ConfigData { max_individual: Weight::from_ref_time(9999) });
 
 			let incoming = vec![msg(10000)];
-			let weight_used = handle_messages(&incoming, 2500);
-			assert_eq!(weight_used, 0);
+			let weight_used = handle_messages(&incoming, Weight::from_ref_time(2500));
+			assert_eq!(weight_used, Weight::zero());
 			assert_eq!(take_trace(), vec![msg_limit_reached(10000)]);
 			assert_eq!(overweights(), vec![0]);
 
-			assert_noop!(DmpQueue::service_overweight(Origin::signed(1), 0, 20000), BadOrigin);
 			assert_noop!(
-				DmpQueue::service_overweight(Origin::root(), 1, 20000),
+				DmpQueue::service_overweight(
+					RuntimeOrigin::signed(1),
+					0,
+					Weight::from_ref_time(20000)
+				),
+				BadOrigin
+			);
+			assert_noop!(
+				DmpQueue::service_overweight(
+					RuntimeOrigin::root(),
+					1,
+					Weight::from_ref_time(20000)
+				),
 				Error::<Test>::Unknown
 			);
 			assert_noop!(
-				DmpQueue::service_overweight(Origin::root(), 0, 9999),
+				DmpQueue::service_overweight(RuntimeOrigin::root(), 0, Weight::from_ref_time(9999)),
 				Error::<Test>::OverLimit
 			);
 			assert_eq!(take_trace(), vec![msg_limit_reached(10000)]);
 
-			let base_weight = super::Call::<Test>::service_overweight { index: 0, weight_limit: 0 }
-				.get_dispatch_info()
-				.weight;
-			use frame_support::weights::GetDispatchInfo;
-			let info = DmpQueue::service_overweight(Origin::root(), 0, 20000).unwrap();
+			let base_weight =
+				super::Call::<Test>::service_overweight { index: 0, weight_limit: Weight::zero() }
+					.get_dispatch_info()
+					.weight;
+			use frame_support::dispatch::GetDispatchInfo;
+			let info = DmpQueue::service_overweight(
+				RuntimeOrigin::root(),
+				0,
+				Weight::from_ref_time(20000),
+			)
+			.unwrap();
 			let actual_weight = info.actual_weight.unwrap();
-			assert_eq!(actual_weight, base_weight + 10000);
+			assert_eq!(actual_weight, base_weight + Weight::from_ref_time(10000));
 			assert_eq!(take_trace(), vec![msg_complete(10000)]);
 			assert!(overweights().is_empty());
 
 			assert_noop!(
-				DmpQueue::service_overweight(Origin::root(), 0, 20000),
+				DmpQueue::service_overweight(
+					RuntimeOrigin::root(),
+					0,
+					Weight::from_ref_time(20000)
+				),
 				Error::<Test>::Unknown
 			);
 		});
