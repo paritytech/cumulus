@@ -141,7 +141,7 @@ pub mod pallet {
 		///
 		/// Events:
 		/// - `OverweightServiced`: On success.
-		#[pallet::weight(weight_limit.saturating_add(Weight::from_ref_time(1_000_000)))]
+		#[pallet::weight(weight_limit.saturating_add(/* TODO: hack: Weight::from_ref_time*/(1_000_000)))]
 		pub fn service_overweight(
 			origin: OriginFor<T>,
 			index: OverweightIndex,
@@ -154,7 +154,7 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::OverLimit)?;
 			Overweight::<T>::remove(index);
 			Self::deposit_event(Event::OverweightServiced { overweight_index: index, weight_used });
-			Ok(Some(weight_used.saturating_add(Weight::from_ref_time(1_000_000))).into())
+			Ok(Some(weight_used.saturating_add(/* TODO: hack: Weight::from_ref_time*/(1_000_000))).into())
 		}
 	}
 
@@ -190,7 +190,7 @@ pub mod pallet {
 		/// Exactly equivalent to `service_queue` but expects a mutable `page_index` to be passed
 		/// in and any changes stored.
 		fn do_service_queue(limit: Weight, page_index: &mut PageIndexData) -> Weight {
-			let mut used = Weight::zero();
+			let mut used = /* TODO: hack: Weight::zero()*/ 0_u64;
 			while page_index.begin_used < page_index.end_used {
 				let page = Pages::<T>::take(page_index.begin_used);
 				for (i, &(sent_at, ref data)) in page.iter().enumerate() {
@@ -233,19 +233,19 @@ pub mod pallet {
 			match maybe_msg {
 				Err(_) => {
 					Self::deposit_event(Event::InvalidFormat { message_id });
-					Ok(Weight::zero())
+					Ok(/* TODO: hack: Weight::zero()*/ 0_u64)
 				},
 				Ok(Err(())) => {
 					Self::deposit_event(Event::UnsupportedVersion { message_id });
-					Ok(Weight::zero())
+					Ok(/* TODO: hack: Weight::zero()*/ 0_u64)
 				},
 				Ok(Ok(x)) => {
 					let outcome = T::XcmExecutor::execute_xcm(Parent, x, limit.ref_time());
 					match outcome {
 						Outcome::Error(XcmError::WeightLimitReached(required)) =>
-							Err((message_id, Weight::from_ref_time(required))),
+							Err((message_id, /* TODO: hack: Weight::from_ref_time*/(required))),
 						outcome => {
-							let weight_used = Weight::from_ref_time(outcome.weight_used());
+							let weight_used = /* TODO: hack: Weight::from_ref_time*/(outcome.weight_used());
 							Self::deposit_event(Event::ExecutedDownward { message_id, outcome });
 							Ok(weight_used)
 						},
@@ -288,7 +288,9 @@ pub mod pallet {
 						Err((message_id, required_weight)) =>
 						// Too much weight required right now.
 						{
-							if required_weight.any_gt(config.max_individual) {
+							// TODO: hack
+							// if required_weight.any_gt(config.max_individual) {
+							if required_weight > (config.max_individual) {
 								// overweight - add to overweight queue and continue with
 								// message execution.
 								let overweight_index = page_index.overweight_count;
@@ -380,8 +382,8 @@ mod tests {
 			state_version: 1,
 		};
 		pub const ParachainId: ParaId = ParaId::new(200);
-		pub const ReservedXcmpWeight: Weight = Weight::zero();
-		pub const ReservedDmpWeight: Weight = Weight::zero();
+		pub const ReservedXcmpWeight: Weight = /* TODO: hack: Weight::zero()*/ 0_u64;
+		pub const ReservedDmpWeight: Weight = /* TODO: hack: Weight::zero()*/ 0_u64;
 	}
 
 	type AccountId = u64;
@@ -514,8 +516,8 @@ mod tests {
 	#[test]
 	fn basic_setup_works() {
 		new_test_ext().execute_with(|| {
-			let weight_used = handle_messages(&[], Weight::from_ref_time(1000));
-			assert_eq!(weight_used, Weight::zero());
+			let weight_used = handle_messages(&[], /* TODO: hack: Weight::from_ref_time*/(1000));
+			assert_eq!(weight_used, /* TODO: hack: Weight::zero()*/ 0_u64);
 			assert_eq!(take_trace(), Vec::new());
 			assert!(queue_is_empty());
 		});
@@ -525,8 +527,8 @@ mod tests {
 	fn service_inline_complete_works() {
 		new_test_ext().execute_with(|| {
 			let incoming = vec![msg(1000), msg(1001)];
-			let weight_used = handle_messages(&incoming, Weight::from_ref_time(2500));
-			assert_eq!(weight_used, Weight::from_ref_time(2001));
+			let weight_used = handle_messages(&incoming, /* TODO: hack: Weight::from_ref_time*/(2500));
+			assert_eq!(weight_used, /* TODO: hack: Weight::from_ref_time*/(2001));
 			assert_eq!(take_trace(), vec![msg_complete(1000), msg_complete(1001)]);
 			assert!(queue_is_empty());
 		});
@@ -537,8 +539,8 @@ mod tests {
 		new_test_ext().execute_with(|| {
 			let enqueued = vec![msg(1000), msg(1001), msg(1002)];
 			enqueue(&enqueued);
-			let weight_used = handle_messages(&[], Weight::from_ref_time(2500));
-			assert_eq!(weight_used, Weight::from_ref_time(2001));
+			let weight_used = handle_messages(&[], /* TODO: hack: Weight::from_ref_time*/(2500));
+			assert_eq!(weight_used, /* TODO: hack: Weight::from_ref_time*/(2001));
 			assert_eq!(
 				take_trace(),
 				vec![msg_complete(1000), msg_complete(1001), msg_limit_reached(1002),]
@@ -550,8 +552,8 @@ mod tests {
 	fn enqueue_works() {
 		new_test_ext().execute_with(|| {
 			let incoming = vec![msg(1000), msg(1001), msg(1002)];
-			let weight_used = handle_messages(&incoming, Weight::from_ref_time(999));
-			assert_eq!(weight_used, Weight::zero());
+			let weight_used = handle_messages(&incoming, /* TODO: hack: Weight::from_ref_time*/(999));
+			assert_eq!(weight_used, /* TODO: hack: Weight::zero()*/ 0_u64);
 			assert_eq!(
 				PageIndex::<Test>::get(),
 				PageIndexData { begin_used: 0, end_used: 1, overweight_count: 0 }
@@ -560,14 +562,14 @@ mod tests {
 			assert_eq!(take_trace(), vec![msg_limit_reached(1000)]);
 
 			let weight_used = handle_messages(&[], Weight::from_ref_time(2500));
-			assert_eq!(weight_used, Weight::from_ref_time(2001));
+			assert_eq!(weight_used, /* TODO: hack: Weight::from_ref_time*/(2001));
 			assert_eq!(
 				take_trace(),
 				vec![msg_complete(1000), msg_complete(1001), msg_limit_reached(1002),]
 			);
 
 			let weight_used = handle_messages(&[], Weight::from_ref_time(2500));
-			assert_eq!(weight_used, Weight::from_ref_time(1002));
+			assert_eq!(weight_used, /* TODO: hack: Weight::from_ref_time*/(1002));
 			assert_eq!(take_trace(), vec![msg_complete(1002),]);
 			assert!(queue_is_empty());
 		});
@@ -577,14 +579,14 @@ mod tests {
 	fn service_inline_then_enqueue_works() {
 		new_test_ext().execute_with(|| {
 			let incoming = vec![msg(1000), msg(1001), msg(1002)];
-			let weight_used = handle_messages(&incoming, Weight::from_ref_time(1500));
-			assert_eq!(weight_used, Weight::from_ref_time(1000));
+			let weight_used = handle_messages(&incoming, /* TODO: hack: Weight::from_ref_time*/(1500));
+			assert_eq!(weight_used, /* TODO: hack: Weight::from_ref_time*/(1000));
 			assert_eq!(pages_queued(), 1);
 			assert_eq!(Pages::<Test>::get(0).len(), 2);
 			assert_eq!(take_trace(), vec![msg_complete(1000), msg_limit_reached(1001),]);
 
-			let weight_used = handle_messages(&[], Weight::from_ref_time(2500));
-			assert_eq!(weight_used, Weight::from_ref_time(2003));
+			let weight_used = handle_messages(&[], /* TODO: hack: Weight::from_ref_time*/(2500));
+			assert_eq!(weight_used, /* TODO: hack: Weight::from_ref_time*/(2003));
 			assert_eq!(take_trace(), vec![msg_complete(1001), msg_complete(1002),]);
 			assert!(queue_is_empty());
 		});
@@ -596,8 +598,8 @@ mod tests {
 			let enqueued = vec![msg(1000), msg(1001)];
 			let incoming = vec![msg(1002), msg(1003)];
 			enqueue(&enqueued);
-			let weight_used = handle_messages(&incoming, Weight::from_ref_time(5000));
-			assert_eq!(weight_used, Weight::from_ref_time(4006));
+			let weight_used = handle_messages(&incoming, /* TODO: hack: Weight::from_ref_time*/(5000));
+			assert_eq!(weight_used, /* TODO: hack: Weight::from_ref_time*/(4006));
 			assert_eq!(
 				take_trace(),
 				vec![
@@ -617,19 +619,19 @@ mod tests {
 			let enqueued = vec![msg(1000), msg(10001)];
 			let incoming = vec![msg(1002), msg(1003)];
 			enqueue(&enqueued);
-			let weight_used = handle_messages(&incoming, Weight::from_ref_time(5000));
-			assert_eq!(weight_used, Weight::from_ref_time(1000));
+			let weight_used = handle_messages(&incoming, /* TODO: hack: Weight::from_ref_time*/(5000));
+			assert_eq!(weight_used, /* TODO: hack: Weight::from_ref_time*/(1000));
 			assert_eq!(take_trace(), vec![msg_complete(1000), msg_limit_reached(10001),]);
 			assert_eq!(pages_queued(), 2);
 
 			// 5000 is not enough to process the 10001 blocker, so nothing happens.
-			let weight_used = handle_messages(&[], Weight::from_ref_time(5000));
-			assert_eq!(weight_used, Weight::zero());
+			let weight_used = handle_messages(&[], /* TODO: hack: Weight::from_ref_time*/(5000));
+			assert_eq!(weight_used, /* TODO: hack: Weight::zero()*/ 0_u64);
 			assert_eq!(take_trace(), vec![msg_limit_reached(10001),]);
 
 			// 20000 is now enough to process everything.
-			let weight_used = handle_messages(&[], Weight::from_ref_time(20000));
-			assert_eq!(weight_used, Weight::from_ref_time(12006));
+			let weight_used = handle_messages(&[], /* TODO: hack: Weight::from_ref_time*/(20000));
+			assert_eq!(weight_used, /* TODO: hack: Weight::from_ref_time*/(12006));
 			assert_eq!(
 				take_trace(),
 				vec![msg_complete(10001), msg_complete(1002), msg_complete(1003),]
@@ -644,8 +646,8 @@ mod tests {
 			let enqueued = vec![msg(1000), msg(1001)];
 			let incoming = vec![msg(10002), msg(1003)];
 			enqueue(&enqueued);
-			let weight_used = handle_messages(&incoming, Weight::from_ref_time(5000));
-			assert_eq!(weight_used, Weight::from_ref_time(2001));
+			let weight_used = handle_messages(&incoming, /* TODO: hack: Weight::from_ref_time*/(5000));
+			assert_eq!(weight_used, /* TODO: hack: Weight::from_ref_time*/(2001));
 			assert_eq!(
 				take_trace(),
 				vec![msg_complete(1000), msg_complete(1001), msg_limit_reached(10002),]
@@ -653,8 +655,8 @@ mod tests {
 			assert_eq!(pages_queued(), 1);
 
 			// 20000 is now enough to process everything.
-			let weight_used = handle_messages(&[], Weight::from_ref_time(20000));
-			assert_eq!(weight_used, Weight::from_ref_time(11005));
+			let weight_used = handle_messages(&[], /* TODO: hack: Weight::from_ref_time*/(20000));
+			assert_eq!(weight_used, /* TODO: hack: Weight::from_ref_time*/(11005));
 			assert_eq!(take_trace(), vec![msg_complete(10002), msg_complete(1003),]);
 			assert!(queue_is_empty());
 		});
@@ -666,8 +668,8 @@ mod tests {
 			let enqueued = vec![msg(1000), msg(1001)];
 			let incoming = vec![msg(1002), msg(10003)];
 			enqueue(&enqueued);
-			let weight_used = handle_messages(&incoming, Weight::from_ref_time(5000));
-			assert_eq!(weight_used, Weight::from_ref_time(3003));
+			let weight_used = handle_messages(&incoming, /* TODO: hack: Weight::from_ref_time*/(5000));
+			assert_eq!(weight_used, /* TODO: hack: Weight::from_ref_time*/(3003));
 			assert_eq!(
 				take_trace(),
 				vec![
@@ -680,8 +682,8 @@ mod tests {
 			assert_eq!(pages_queued(), 1);
 
 			// 20000 is now enough to process everything.
-			let weight_used = handle_messages(&[], Weight::from_ref_time(20000));
-			assert_eq!(weight_used, Weight::from_ref_time(10003));
+			let weight_used = handle_messages(&[], /* TODO: hack: Weight::from_ref_time*/(20000));
+			assert_eq!(weight_used, /* TODO: hack: Weight::from_ref_time*/(10003));
 			assert_eq!(take_trace(), vec![msg_complete(10003),]);
 			assert!(queue_is_empty());
 		});
@@ -692,20 +694,20 @@ mod tests {
 		new_test_ext().execute_with(|| {
 			let enqueued = vec![msg(1000), msg(1001)];
 			enqueue(&enqueued);
-			let weight_used = handle_messages(&vec![msg(1002)], Weight::from_ref_time(1500));
-			assert_eq!(weight_used, Weight::from_ref_time(1000));
+			let weight_used = handle_messages(&vec![msg(1002)], /* TODO: hack: Weight::from_ref_time*/(1500));
+			assert_eq!(weight_used, /* TODO: hack: Weight::from_ref_time*/(1000));
 			assert_eq!(take_trace(), vec![msg_complete(1000), msg_limit_reached(1001),]);
 			assert_eq!(pages_queued(), 2);
 			assert_eq!(PageIndex::<Test>::get().begin_used, 0);
 
-			let weight_used = handle_messages(&vec![msg(1003)], Weight::from_ref_time(1500));
-			assert_eq!(weight_used, Weight::from_ref_time(1001));
+			let weight_used = handle_messages(&vec![msg(1003)], /* TODO: hack: Weight::from_ref_time*/(1500));
+			assert_eq!(weight_used, /* TODO: hack: Weight::from_ref_time*/(1001));
 			assert_eq!(take_trace(), vec![msg_complete(1001), msg_limit_reached(1002),]);
 			assert_eq!(pages_queued(), 2);
 			assert_eq!(PageIndex::<Test>::get().begin_used, 1);
 
-			let weight_used = handle_messages(&vec![msg(1004)], Weight::from_ref_time(1500));
-			assert_eq!(weight_used, Weight::from_ref_time(1002));
+			let weight_used = handle_messages(&vec![msg(1004)], /* TODO: hack: Weight::from_ref_time*/(1500));
+			assert_eq!(weight_used, /* TODO: hack: Weight::from_ref_time*/(1002));
 			assert_eq!(take_trace(), vec![msg_complete(1002), msg_limit_reached(1003),]);
 			assert_eq!(pages_queued(), 2);
 			assert_eq!(PageIndex::<Test>::get().begin_used, 2);
@@ -716,11 +718,11 @@ mod tests {
 	fn overweight_should_not_block_queue() {
 		new_test_ext().execute_with(|| {
 			// Set the overweight threshold to 9999.
-			Configuration::<Test>::put(ConfigData { max_individual: Weight::from_ref_time(9999) });
+			Configuration::<Test>::put(ConfigData { max_individual: /* TODO: hack: Weight::from_ref_time*/(9999) });
 
 			let incoming = vec![msg(1000), msg(10001), msg(1002)];
-			let weight_used = handle_messages(&incoming, Weight::from_ref_time(2500));
-			assert_eq!(weight_used, Weight::from_ref_time(2002));
+			let weight_used = handle_messages(&incoming, /* TODO: hack: Weight::from_ref_time*/(2500));
+			assert_eq!(weight_used, /* TODO: hack: Weight::from_ref_time*/(2002));
 			assert!(queue_is_empty());
 			assert_eq!(
 				take_trace(),
@@ -735,11 +737,11 @@ mod tests {
 	fn overweights_should_be_manually_executable() {
 		new_test_ext().execute_with(|| {
 			// Set the overweight threshold to 9999.
-			Configuration::<Test>::put(ConfigData { max_individual: Weight::from_ref_time(9999) });
+			Configuration::<Test>::put(ConfigData { max_individual: /* TODO: hack: Weight::from_ref_time*/(9999) });
 
 			let incoming = vec![msg(10000)];
-			let weight_used = handle_messages(&incoming, Weight::from_ref_time(2500));
-			assert_eq!(weight_used, Weight::zero());
+			let weight_used = handle_messages(&incoming, /* TODO: hack: Weight::from_ref_time*/(2500));
+			assert_eq!(weight_used, /* TODO: hack: Weight::zero()*/ 0_u64);
 			assert_eq!(take_trace(), vec![msg_limit_reached(10000)]);
 			assert_eq!(overweights(), vec![0]);
 
@@ -747,7 +749,7 @@ mod tests {
 				DmpQueue::service_overweight(
 					RuntimeOrigin::signed(1),
 					0,
-					Weight::from_ref_time(20000)
+					/* TODO: hack: Weight::from_ref_time*/(20000)
 				),
 				BadOrigin
 			);
@@ -755,29 +757,29 @@ mod tests {
 				DmpQueue::service_overweight(
 					RuntimeOrigin::root(),
 					1,
-					Weight::from_ref_time(20000)
+					/* TODO: hack: Weight::from_ref_time*/(20000)
 				),
 				Error::<Test>::Unknown
 			);
 			assert_noop!(
-				DmpQueue::service_overweight(RuntimeOrigin::root(), 0, Weight::from_ref_time(9999)),
+				DmpQueue::service_overweight(RuntimeOrigin::root(), 0, /* TODO: hack: Weight::from_ref_time*/(9999)),
 				Error::<Test>::OverLimit
 			);
 			assert_eq!(take_trace(), vec![msg_limit_reached(10000)]);
 
 			let base_weight =
-				super::Call::<Test>::service_overweight { index: 0, weight_limit: Weight::zero() }
+				super::Call::<Test>::service_overweight { index: 0, weight_limit: /* TODO: hack: Weight::zero()*/ 0_u64 }
 					.get_dispatch_info()
 					.weight;
 			use frame_support::dispatch::GetDispatchInfo;
 			let info = DmpQueue::service_overweight(
 				RuntimeOrigin::root(),
 				0,
-				Weight::from_ref_time(20000),
+				/* TODO: hack: Weight::from_ref_time*/(20000),
 			)
 			.unwrap();
 			let actual_weight = info.actual_weight.unwrap();
-			assert_eq!(actual_weight, base_weight + Weight::from_ref_time(10000));
+			assert_eq!(actual_weight, base_weight + /* TODO: hack: Weight::from_ref_time*/(10000));
 			assert_eq!(take_trace(), vec![msg_complete(10000)]);
 			assert!(overweights().is_empty());
 
@@ -785,7 +787,7 @@ mod tests {
 				DmpQueue::service_overweight(
 					RuntimeOrigin::root(),
 					0,
-					Weight::from_ref_time(20000)
+					/* TODO: hack: Weight::from_ref_time*/(20000)
 				),
 				Error::<Test>::Unknown
 			);
@@ -799,8 +801,8 @@ mod tests {
 			enqueue(&vec![msg(1002), msg(1003)]);
 			enqueue(&vec![msg(1004), msg(1005)]);
 
-			let weight_used = DmpQueue::on_idle(1, Weight::from_ref_time(6000));
-			assert_eq!(weight_used, Weight::from_ref_time(5010));
+			let weight_used = DmpQueue::on_idle(1, /* TODO: hack: Weight::from_ref_time*/(6000));
+			assert_eq!(weight_used, /* TODO: hack: Weight::from_ref_time*/(5010));
 			assert_eq!(
 				take_trace(),
 				vec![

@@ -118,7 +118,7 @@ impl<
 			return Err(XcmError::NotWithdrawable)
 		}
 
-		let weight = Weight::from_ref_time(weight);
+		let weight = /* TODO: hack: Weight::from_ref_time*/(weight);
 
 		// We take the very first multiasset from payment
 		let multiassets: MultiAssets = payment.clone().into();
@@ -167,7 +167,7 @@ impl<
 			outstanding_concrete_asset: MultiAsset { id, fun },
 		}) = self.0.clone()
 		{
-			let weight = Weight::from_ref_time(weight).min(weight_outstanding);
+			let weight = /* TODO: hack: Weight::from_ref_time*/(weight).min(weight_outstanding);
 
 			// Get the local asset id in which we can refund fees
 			let (local_asset_id, outstanding_balance) =

@@ -351,7 +351,7 @@ pub struct TestOnRuntimeUpgrade;
 impl OnRuntimeUpgrade for TestOnRuntimeUpgrade {
 	fn on_runtime_upgrade() -> frame_support::weights::Weight {
 		assert_eq!(sp_io::storage::get(TEST_RUNTIME_UPGRADE_KEY), Some(vec![1, 2, 3, 4].into()));
-		Weight::from_ref_time(1)
+		/* TODO: hack: Weight::from_ref_time*/(1)
 	}
 }
 

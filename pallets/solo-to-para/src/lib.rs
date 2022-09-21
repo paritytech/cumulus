@@ -172,7 +172,7 @@ pub mod pallet {
 
 			if *who == root_account {
 				Ok(ValidTransaction {
-					priority: info.weight.ref_time() as TransactionPriority,
+					priority: info.weight/* TODO: hack: .ref_time()*/ as TransactionPriority,
 					longevity: TransactionLongevity::max_value(),
 					propagate: true,
 					..Default::default()

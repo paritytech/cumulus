@@ -111,7 +111,7 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 		iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
 		limit: Weight,
 	) -> Weight {
-		let mut used = Weight::zero();
+		let mut used = /* TODO: hack: Weight::zero()*/ 0_u64;
 		for (_sent_at, data) in iter {
 			let id = sp_io::hashing::twox_64(&data[..]);
 			let msg = VersionedXcm::<T::RuntimeCall>::decode_all_with_depth_limit(
@@ -124,7 +124,7 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
 					let outcome = T::XcmExecutor::execute_xcm(Parent, x, limit.ref_time());
-					used += Weight::from_ref_time(outcome.weight_used());
+					used += /* TODO: hack: /* TODO: hack: Weight::from_ref_time*/*/(outcome.weight_used());
 					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
 				},
 			}
@@ -144,7 +144,7 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 		iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
 		limit: Weight,
 	) -> Weight {
-		let mut used = Weight::zero();
+		let mut used = /* TODO: hack: Weight::zero()*/ 0_u64;
 		for (_sent_at, data) in iter {
 			let id = sp_io::hashing::twox_64(&data[..]);
 			let msg = VersionedXcm::<T::RuntimeCall>::decode_all_with_depth_limit(
@@ -158,7 +158,7 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 				Ok(Ok(x)) => {
 					let weight_limit = limit.saturating_sub(used);
 					let outcome = T::XcmExecutor::execute_xcm(Parent, x, weight_limit.ref_time());
-					used += Weight::from_ref_time(outcome.weight_used());
+					used += /* TODO: hack: Weight::from_ref_time*/(outcome.weight_used());
 					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
 				},
 			}

@@ -720,7 +720,7 @@ impl TestNode {
 		self.send_extrinsic(
 			runtime::SudoCall::sudo_unchecked_weight {
 				call: Box::new(call.into()),
-				weight: Weight::from_ref_time(1_000),
+				weight: /* TODO: hack: Weight::from_ref_time*/(1_000),
 			},
 			Sr25519Keyring::Alice,
 		)
