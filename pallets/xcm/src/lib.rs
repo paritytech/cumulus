@@ -123,7 +123,9 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
 				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
-					let outcome = T::XcmExecutor::execute_xcm(Parent, x, limit.ref_time());
+					// TODO: hack
+					let message_id = sp_io::hashing::blake2_256(&data);
+					let outcome = T::XcmExecutor::execute_xcm(Parent, x, /* TODO: hack */ message_id, /* TODO: hack limit.ref_time()*/ limit);
 					used += /* TODO: hack: /* TODO: hack: Weight::from_ref_time*/*/(outcome.weight_used());
 					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
 				},
@@ -156,8 +158,10 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
 				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
+					// TODO: hack
+					let message_id = sp_io::hashing::blake2_256(&data);
 					let weight_limit = limit.saturating_sub(used);
-					let outcome = T::XcmExecutor::execute_xcm(Parent, x, weight_limit.ref_time());
+					let outcome = T::XcmExecutor::execute_xcm(Parent, x, /* TODO: hack*/ message_id, /* TODO: hack weight_limit.ref_time()*/ weight_limit);
 					used += /* TODO: hack: Weight::from_ref_time*/(outcome.weight_used());
 					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
 				},

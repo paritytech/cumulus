@@ -24,7 +24,9 @@ where
 {
 	fn should_execute<RuntimeCall>(
 		origin: &MultiLocation,
-		message: &mut Xcm<RuntimeCall>,
+		// TODO: hack
+		// message: &mut Xcm<RuntimeCall>,
+		message: &mut [Instruction<RuntimeCall>],
 		max_weight: XCMWeight,
 		weight_credit: &mut XCMWeight,
 	) -> Result<(), ()> {
@@ -38,11 +40,13 @@ pub struct DenyReserveTransferToRelayChain;
 impl ShouldExecute for DenyReserveTransferToRelayChain {
 	fn should_execute<RuntimeCall>(
 		origin: &MultiLocation,
-		message: &mut Xcm<RuntimeCall>,
-		_max_weight: XCMWeight,
-		_weight_credit: &mut XCMWeight,
+		// TODO: hack
+		// message: &mut Xcm<RuntimeCall>,
+		message: &mut [Instruction<RuntimeCall>],
+		_max_weight: Weight,
+		_weight_credit: &mut Weight,
 	) -> Result<(), ()> {
-		if message.0.iter().any(|inst| {
+		if message.iter().any(|inst| {
 			matches!(
 				inst,
 				InitiateReserveWithdraw {
@@ -61,7 +65,7 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 		// An unexpected reserve transfer has arrived from the Relay Chain. Generally, `IsReserve`
 		// should not allow this, but we just log it here.
 		if matches!(origin, MultiLocation { parents: 1, interior: Here }) &&
-			message.0.iter().any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
+			message.iter().any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
 		{
 			log::warn!(
 				target: "xcm::barrier",
@@ -112,7 +116,9 @@ where
 /// Accepts an asset if it is a native asset from a particular `MultiLocation`.
 pub struct ConcreteNativeAssetFrom<Location>(PhantomData<Location>);
 impl<Location: Get<MultiLocation>> FilterAssetLocation for ConcreteNativeAssetFrom<Location> {
-	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+	// TODO: hack
+	// fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
 		log::trace!(target: "xcm::filter_asset_location",
 			"ConcreteNativeAsset asset: {:?}, origin: {:?}, location: {:?}",
 			asset, origin, Location::get());

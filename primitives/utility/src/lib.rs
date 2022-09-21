@@ -43,23 +43,35 @@ use xcm_executor::traits::{MatchesFungibles, TransactAsset, WeightTrader};
 /// for the `SendXcm` implementation.
 pub struct ParentAsUmp<T, W>(PhantomData<(T, W)>);
 impl<T: UpwardMessageSender, W: WrapVersion> SendXcm for ParentAsUmp<T, W> {
-	fn send_xcm(dest: impl Into<MultiLocation>, msg: Xcm<()>) -> Result<(), SendError> {
-		let dest = dest.into();
+	type Ticket = ();
 
-		if dest.contains_parents_only(1) {
-			// An upward message for the relay chain.
-			let versioned_xcm =
-				W::wrap_version(&dest, msg).map_err(|()| SendError::DestinationUnsupported)?;
-			let data = versioned_xcm.encode();
-
-			T::send_upward_message(data).map_err(|e| SendError::Transport(e.into()))?;
-
-			Ok(())
-		} else {
-			// Anything else is unhandled. This includes a message this is meant for us.
-			Err(SendError::CannotReachDestination(dest, msg))
-		}
+	fn validate(destination: &mut Option<MultiLocation>, message: &mut Option<Xcm<()>>) -> SendResult<Self::Ticket> {
+		todo!("TODO: hack - validate - fix after rebase")
 	}
+
+	fn deliver(ticket: Self::Ticket) -> Result<XcmHash, SendError> {
+		todo!("TODO: hack - deliver - fix after rebase")
+	}
+	// TODO: hack
+	// fn send_xcm(dest: impl Into<MultiLocation>, msg: Xcm<()>) -> Result<(), SendError> {
+	// 	let dest = dest.into();
+	//
+	// 	if dest.contains_parents_only(1) {
+	// 		// An upward message for the relay chain.
+	// 		let versioned_xcm =
+	// 			W::wrap_version(&dest, msg).map_err(|()| SendError::DestinationUnsupported)?;
+	// 		let data = versioned_xcm.encode();
+	//
+	// 		T::send_upward_message(data).map_err(|e| SendError::Transport(e.into()))?;
+	//
+	// 		Ok(())
+	// 	} else {
+	// 		// Anything else is unhandled. This includes a message this is meant for us.
+	// 		Err(SendError::CannotReachDestination(dest, msg))
+	// 	}
+	// }
+
+
 }
 
 /// Contains information to handle refund/payment for xcm-execution
@@ -252,13 +264,17 @@ impl<
 {
 	fn take_revenue(revenue: MultiAsset) {
 		if let Some(receiver) = ReceiverAccount::get() {
-			let ok = FungiblesMutateAdapter::deposit_asset(
-				&revenue,
-				&(X1(AccountId32 { network: Any, id: receiver.into() }).into()),
-			)
-			.is_ok();
+			// TODO: hack
+			// let ok = FungiblesMutateAdapter::deposit_asset(
+			// 	&revenue,
+			// 	 &(X1(AccountId32 { network: Any, id: receiver.into() }).into()),
+			// )
+			// .is_ok();
 
-			debug_assert!(ok, "`deposit_asset` cannot generally fail; qed");
+			// TODO: hack
+			// debug_assert!(ok, "`deposit_asset` cannot generally fail; qed");
+
+			todo!("TODO: hack - fix after rebase");
 		}
 	}
 }

@@ -103,20 +103,49 @@ pub mod pallet {
 					*seq += 1;
 					*seq
 				});
-				match T::XcmSender::send_xcm(
-					(1, Junction::Parachain(para.into())),
-					Xcm(vec![Transact {
-						origin_type: OriginKind::Native,
-						require_weight_at_most: 1_000,
-						call: <T as Config>::RuntimeCall::from(Call::<T>::ping {
-							seq,
-							payload: payload.clone().to_vec(),
-						})
+				// TODO: hack - old impl
+				// match T::XcmSender::deliver(
+				// 	(1, Junction::Parachain(para.into())),
+				// 	Xcm(vec![Transact {
+				// 		origin_kind: OriginKind::Native,
+				// 		require_weight_at_most: 1_000,
+				// 		call: <T as Config>::Call::from(Call::<T>::ping {
+				// 			seq,
+				// 			payload: payload.clone().to_vec(),
+				// 		})
+				// 		.encode()
+				// 		.into(),
+				// 	}]),
+				// ) {
+				// 	Ok(()) => {
+				// 		Pings::<T>::insert(seq, n);
+				// 		Self::deposit_event(Event::PingSent(para, seq, payload.to_vec()));
+				// 	},
+				// 	Err(e) => {
+				// 		Self::deposit_event(Event::ErrorSendingPing(
+				// 			e,
+				// 			para,
+				// 			seq,
+				// 			payload.to_vec(),
+				// 		));
+				// 	},
+				// }
+				let mut dest: Option<MultiLocation> = Some((Parent, Junction::Parachain(para.into())).into());
+				let mut msg = Some(Xcm(vec![Transact {
+					origin_kind: OriginKind::Native,
+					require_weight_at_most: 1_000,
+					call: <T as Config>::Call::from(Call::<T>::ping {
+						seq,
+						payload: payload.clone().to_vec(),
+					})
 						.encode()
 						.into(),
-					}]),
+				}]));
+				let (ticket, fee) = T::XcmSender::validate(&mut dest, &mut msg).unwrap();
+				match T::XcmSender::deliver(
+					ticket
 				) {
-					Ok(()) => {
+					Ok(hash) => {
 						Pings::<T>::insert(seq, n);
 						Self::deposit_event(Event::PingSent(para, seq, payload.to_vec()));
 					},
@@ -193,20 +222,39 @@ pub mod pallet {
 			let para = ensure_sibling_para(<T as Config>::RuntimeOrigin::from(origin))?;
 
 			Self::deposit_event(Event::Pinged(para, seq, payload.clone()));
-			match T::XcmSender::send_xcm(
-				(1, Junction::Parachain(para.into())),
-				Xcm(vec![Transact {
-					origin_type: OriginKind::Native,
-					require_weight_at_most: 1_000,
-					call: <T as Config>::RuntimeCall::from(Call::<T>::pong {
-						seq,
-						payload: payload.clone(),
-					})
+			// TODO: hacj
+			// match T::XcmSender::send_xcm(
+			// 	(1, Junction::Parachain(para.into())),
+			// 	Xcm(vec![Transact {
+			// 		origin_kind: OriginKind::Native,
+			// 		require_weight_at_most: 1_000,
+			// 		call: <T as Config>::Call::from(Call::<T>::pong {
+			// 			seq,
+			// 			payload: payload.clone(),
+			// 		})
+			// 		.encode()
+			// 		.into(),
+			// 	}]),
+			// ) {
+			// 	Ok(()) => Self::deposit_event(Event::PongSent(para, seq, payload)),
+			// 	Err(e) => Self::deposit_event(Event::ErrorSendingPong(e, para, seq, payload)),
+			// }
+			let mut dest: Option<MultiLocation> = Some((Parent, Junction::Parachain(para.into())).into());
+			let mut msg = Some(Xcm(vec![Transact {
+				origin_kind: OriginKind::Native,
+				require_weight_at_most: 1_000,
+				call: <T as Config>::Call::from(Call::<T>::pong {
+					seq,
+					payload: payload.clone(),
+				})
 					.encode()
 					.into(),
-				}]),
+			}]));
+			let (ticket, fee) = T::XcmSender::validate(&mut dest, &mut msg).unwrap();
+			match T::XcmSender::deliver(
+				ticket
 			) {
-				Ok(()) => Self::deposit_event(Event::PongSent(para, seq, payload)),
+				Ok(hash) => Self::deposit_event(Event::PongSent(para, seq, payload)),
 				Err(e) => Self::deposit_event(Event::ErrorSendingPong(e, para, seq, payload)),
 			}
 			Ok(())

@@ -240,7 +240,7 @@ pub mod pallet {
 					Ok(/* TODO: hack: Weight::zero()*/ 0_u64)
 				},
 				Ok(Ok(x)) => {
-					let outcome = T::XcmExecutor::execute_xcm(Parent, x, limit.ref_time());
+					let outcome = T::XcmExecutor::execute_xcm(Parent, x, /* TODO: hack*/message_id, /* TODO: hack limit.ref_time()*/ limit);
 					match outcome {
 						Outcome::Error(XcmError::WeightLimitReached(required)) =>
 							Err((message_id, /* TODO: hack: Weight::from_ref_time*/(required))),

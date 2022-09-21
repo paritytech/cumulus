@@ -603,9 +603,12 @@ impl<T: Config> Pallet<T> {
 		log::debug!("Processing XCMP-XCM: {:?}", &hash);
 		let (result, event) = match Xcm::<T::Call>::try_from(xcm) {
 			Ok(xcm) => {
-				let location = (1, Parachain(sender.into()));
+				// TODO: hack
+				// let location = (1, Parachain(sender.into()));
+				let location = (Parent, Parachain(sender.into()));
 
-				match T::XcmExecutor::execute_xcm(location, xcm, max_weight.ref_time()) {
+				let message_id = hash.using_encoded(sp_io::hashing::blake2_256);
+				match T::XcmExecutor::execute_xcm(location, xcm, message_id, /*max_weight.ref_time()*/ max_weight) {
 					Outcome::Error(e) => (
 						Err(e),
 						Event::Fail { message_hash: Some(hash), error: e, weight: /* TODO: hack: Weight::zero()*/ 0_u64 },
@@ -815,7 +818,7 @@ impl<T: Config> Pallet<T> {
 			let index = shuffled[shuffle_index];
 			let sender = status[index].sender;
 			let sender_origin = T::ControllerOriginConverter::convert_origin(
-				(1, Parachain(sender.into())),
+				(Parent, Parachain(sender.into())),
 				OriginKind::Superuser,
 			);
 			let is_controller = sender_origin
@@ -1113,26 +1116,35 @@ impl<T: Config> XcmpMessageSource for Pallet<T> {
 
 /// Xcm sender for sending to a sibling parachain.
 impl<T: Config> SendXcm for Pallet<T> {
-	fn send_xcm(dest: impl Into<MultiLocation>, msg: Xcm<()>) -> Result<(), SendError> {
-		let dest = dest.into();
+	type Ticket = ();
 
-		match &dest {
-			// An HRMP message for a sibling parachain.
-			MultiLocation { parents: 1, interior: X1(Parachain(id)) } => {
-				let versioned_xcm = T::VersionWrapper::wrap_version(&dest, msg)
-					.map_err(|()| SendError::DestinationUnsupported)?;
-				let hash = T::Hashing::hash_of(&versioned_xcm);
-				Self::send_fragment(
-					(*id).into(),
-					XcmpMessageFormat::ConcatenatedVersionedXcm,
-					versioned_xcm,
-				)
-				.map_err(|e| SendError::Transport(<&'static str>::from(e)))?;
-				Self::deposit_event(Event::XcmpMessageSent { message_hash: Some(hash) });
-				Ok(())
-			},
-			// Anything else is unhandled. This includes a message this is meant for us.
-			_ => Err(SendError::CannotReachDestination(dest, msg)),
-		}
+	fn validate(destination: &mut Option<MultiLocation>, message: &mut Option<Xcm<()>>) -> SendResult<Self::Ticket> {
+		todo!("TODO: hack - fix after rebase")
 	}
+
+	fn deliver(ticket: Self::Ticket) -> Result<XcmHash, SendError> {
+		todo!("TODO: hack - fix after rebase")
+	}
+	// fn send_xcm(dest: impl Into<MultiLocation>, msg: Xcm<()>) -> Result<(), SendError> {
+	// 	let dest = dest.into();
+	//
+	// 	match &dest {
+	// 		// An HRMP message for a sibling parachain.
+	// 		MultiLocation { parents: 1, interior: X1(Parachain(id)) } => {
+	// 			let versioned_xcm = T::VersionWrapper::wrap_version(&dest, msg)
+	// 				.map_err(|()| SendError::DestinationUnsupported)?;
+	// 			let hash = T::Hashing::hash_of(&versioned_xcm);
+	// 			Self::send_fragment(
+	// 				(*id).into(),
+	// 				XcmpMessageFormat::ConcatenatedVersionedXcm,
+	// 				versioned_xcm,
+	// 			)
+	// 			.map_err(|e| SendError::Transport(<&'static str>::from(e)))?;
+	// 			Self::deposit_event(Event::XcmpMessageSent { message_hash: Some(hash) });
+	// 			Ok(())
+	// 		},
+	// 		// Anything else is unhandled. This includes a message this is meant for us.
+	// 		_ => Err(SendError::CannotReachDestination(dest, msg)),
+	// 	}
+	// }
 }
