@@ -118,7 +118,7 @@ impl<Call> XcmWeightInfo<Call> for WestmintXcmWeight<Call> {
 		_dest: &MultiLocation,
 	) -> XCMWeight {
 		// Hardcoded till the XCM pallet is fixed
-		let hardcoded_weight = Weight::from_ref_time(1000_000_000 as u64).ref_time();
+		let hardcoded_weight = Weight::from_ref_time(1_000_000_000 as u64).ref_time();
 		let weight = assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_asset());
 		cmp::min(hardcoded_weight, weight)
 	}
