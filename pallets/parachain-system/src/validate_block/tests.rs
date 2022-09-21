@@ -284,7 +284,7 @@ fn check_inherents_are_unsigned_and_before_all_other_extrinsics() {
 			.expect("Runs the test");
 		assert!(output.status.success());
 
-		assert!(dbg!(String::from_utf8(output.stderr).unwrap())
+		assert!(String::from_utf8(output.stderr).unwrap()
 			.contains("Could not find `set_validation_data` inherent"));
 	}
 }
