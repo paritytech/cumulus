@@ -50,20 +50,20 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 	// Storage: CollatorSelection Invulnerables (r:0 w:1)
 	/// The range of component `b` is `[1, 100]`.
 	fn set_invulnerables(b: u32, ) -> Weight {
-		Weight::from_ref_time(24_165_000 as u64)
-			// Standard Error: 4_000
-			.saturating_add(Weight::from_ref_time(2_457_000 as u64).saturating_mul(b as u64))
+		Weight::from_ref_time(22_814_000 as u64)
+			// Standard Error: 3_000
+			.saturating_add(Weight::from_ref_time(2_513_000 as u64).saturating_mul(b as u64))
 			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(b as u64)))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: CollatorSelection DesiredCandidates (r:0 w:1)
 	fn set_desired_candidates() -> Weight {
-		Weight::from_ref_time(13_866_000 as u64)
+		Weight::from_ref_time(14_106_000 as u64)
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: CollatorSelection CandidacyBond (r:0 w:1)
 	fn set_candidacy_bond() -> Weight {
-		Weight::from_ref_time(14_183_000 as u64)
+		Weight::from_ref_time(14_226_000 as u64)
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: CollatorSelection Candidates (r:1 w:1)
@@ -74,7 +74,7 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 	// Storage: CollatorSelection LastAuthoredBlock (r:0 w:1)
 	/// The range of component `c` is `[1, 1000]`.
 	fn register_as_candidate(c: u32, ) -> Weight {
-		Weight::from_ref_time(62_877_000 as u64)
+		Weight::from_ref_time(64_383_000 as u64)
 			// Standard Error: 0
 			.saturating_add(Weight::from_ref_time(169_000 as u64).saturating_mul(c as u64))
 			.saturating_add(T::DbWeight::get().reads(5 as u64))
@@ -84,9 +84,9 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 	// Storage: CollatorSelection LastAuthoredBlock (r:0 w:1)
 	/// The range of component `c` is `[6, 1000]`.
 	fn leave_intent(c: u32, ) -> Weight {
-		Weight::from_ref_time(66_591_000 as u64)
+		Weight::from_ref_time(64_372_000 as u64)
 			// Standard Error: 1_000
-			.saturating_add(Weight::from_ref_time(156_000 as u64).saturating_mul(c as u64))
+			.saturating_add(Weight::from_ref_time(158_000 as u64).saturating_mul(c as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -94,7 +94,7 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 	// Storage: System BlockWeight (r:1 w:1)
 	// Storage: CollatorSelection LastAuthoredBlock (r:0 w:1)
 	fn note_author() -> Weight {
-		Weight::from_ref_time(34_750_000 as u64)
+		Weight::from_ref_time(35_349_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
@@ -107,10 +107,10 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for WeightIn
 	/// The range of component `c` is `[1, 1000]`.
 	fn new_session(r: u32, c: u32, ) -> Weight {
 		Weight::from_ref_time(0 as u64)
-			// Standard Error: 1_263_000
-			.saturating_add(Weight::from_ref_time(6_851_000 as u64).saturating_mul(r as u64))
-			// Standard Error: 1_263_000
-			.saturating_add(Weight::from_ref_time(33_215_000 as u64).saturating_mul(c as u64))
+			// Standard Error: 1_305_000
+			.saturating_add(Weight::from_ref_time(7_489_000 as u64).saturating_mul(r as u64))
+			// Standard Error: 1_305_000
+			.saturating_add(Weight::from_ref_time(34_245_000 as u64).saturating_mul(c as u64))
 			.saturating_add(T::DbWeight::get().reads((2 as u64).saturating_mul(c as u64)))
 			.saturating_add(T::DbWeight::get().writes((1 as u64).saturating_mul(r as u64)))
 			.saturating_add(T::DbWeight::get().writes((1 as u64).saturating_mul(c as u64)))

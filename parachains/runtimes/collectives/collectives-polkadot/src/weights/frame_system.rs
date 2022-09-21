@@ -59,7 +59,7 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 	// Storage: System Digest (r:1 w:1)
 	// Storage: unknown [0x3a686561707061676573] (r:0 w:1)
 	fn set_heap_pages() -> Weight {
-		Weight::from_ref_time(7_941_000 as u64)
+		Weight::from_ref_time(8_028_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -68,7 +68,7 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 	fn set_storage(i: u32, ) -> Weight {
 		Weight::from_ref_time(0 as u64)
 			// Standard Error: 1_000
-			.saturating_add(Weight::from_ref_time(641_000 as u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_ref_time(633_000 as u64).saturating_mul(i as u64))
 			.saturating_add(T::DbWeight::get().writes((1 as u64).saturating_mul(i as u64)))
 	}
 	// Storage: Skipped Metadata (r:0 w:0)
@@ -76,7 +76,7 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 	fn kill_storage(i: u32, ) -> Weight {
 		Weight::from_ref_time(0 as u64)
 			// Standard Error: 1_000
-			.saturating_add(Weight::from_ref_time(577_000 as u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_ref_time(561_000 as u64).saturating_mul(i as u64))
 			.saturating_add(T::DbWeight::get().writes((1 as u64).saturating_mul(i as u64)))
 	}
 	// Storage: Skipped Metadata (r:0 w:0)
@@ -84,7 +84,7 @@ impl<T: frame_system::Config> frame_system::WeightInfo for WeightInfo<T> {
 	fn kill_prefix(p: u32, ) -> Weight {
 		Weight::from_ref_time(0 as u64)
 			// Standard Error: 2_000
-			.saturating_add(Weight::from_ref_time(1_156_000 as u64).saturating_mul(p as u64))
+			.saturating_add(Weight::from_ref_time(1_139_000 as u64).saturating_mul(p as u64))
 			.saturating_add(T::DbWeight::get().writes((1 as u64).saturating_mul(p as u64)))
 	}
 }
