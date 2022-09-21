@@ -85,12 +85,12 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-		type XcmExecutor: ExecuteXcm<Self::RuntimeCall>;
+		type XcmExecutor: ExecuteXcm<Self::Call>;
 
 		/// Origin which is allowed to execute overweight messages.
-		type ExecuteOverweightOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+		type ExecuteOverweightOrigin: EnsureOrigin<Self::Origin>;
 	}
 
 	/// The configuration.
@@ -225,11 +225,11 @@ pub mod pallet {
 			mut data: &[u8],
 		) -> Result<Weight, (MessageId, Weight)> {
 			let message_id = sp_io::hashing::blake2_256(data);
-			let maybe_msg = VersionedXcm::<T::RuntimeCall>::decode_all_with_depth_limit(
+			let maybe_msg = VersionedXcm::<T::Call>::decode_all_with_depth_limit(
 				MAX_XCM_DECODE_DEPTH,
 				&mut data,
 			)
-			.map(Xcm::<T::RuntimeCall>::try_from);
+			.map(Xcm::<T::Call>::try_from);
 			match maybe_msg {
 				Err(_) => {
 					Self::deposit_event(Event::InvalidFormat { message_id });

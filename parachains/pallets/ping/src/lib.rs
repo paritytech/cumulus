@@ -47,13 +47,13 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		type RuntimeOrigin: From<<Self as SystemConfig>::RuntimeOrigin>
 			+ Into<Result<CumulusOrigin, <Self as Config>::RuntimeOrigin>>;
 
 		/// The overarching call type; we assume sibling chains use the same type.
-		type RuntimeCall: From<Call<Self>> + Encode;
+		type Call: From<Call<Self>> + Encode;
 
 		type XcmSender: SendXcm;
 	}
