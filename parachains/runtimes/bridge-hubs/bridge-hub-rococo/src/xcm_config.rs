@@ -182,26 +182,6 @@ pub type Barrier = (
 /// XCM weigher type.
 pub type XcmWeigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 
-// TODO: hacked
-// pub struct XcmConfig;
-// impl xcm_executor::Config for XcmConfig {
-// 	type Call = Call;
-// 	type XcmSender = XcmRouter;
-// 	// How to withdraw and deposit an asset.
-// 	type AssetTransactor = LocalAssetTransactor;
-// 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-// 	type IsReserve = NativeAsset;
-// 	type IsTeleporter = (); // Teleporting is disabled.
-// 	type LocationInverter = LocationInverter<Ancestry>;
-// 	type Barrier = Barrier;
-// 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-// 	type Trader =
-// 		UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ToAuthor<Runtime>>;
-// 	type ResponseHandler = PolkadotXcm;
-// 	type AssetTrap = PolkadotXcm;
-// 	type AssetClaims = PolkadotXcm;
-// 	type SubscriptionService = PolkadotXcm;
-// }
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
 	type Call = Call;
@@ -225,6 +205,7 @@ impl xcm_executor::Config for XcmConfig {
 	type FeeManager = ();
 	type MessageExporter = ();
 	type UniversalAliases = Nothing;
+	type CallDispatcher = Call;
 }
 
 /// No local origins on this chain are allowed to dispatch XCM sends/executions.
@@ -234,7 +215,7 @@ pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, RelayNet
 /// queues.
 pub type XcmRouter = (
 	// Two routers - use UMP to communicate with the relay chain:
-	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, (), ()>,
+	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, ()>,
 	// ..and XCMP to communicate with the sibling chains.
 	XcmpQueue,
 );
