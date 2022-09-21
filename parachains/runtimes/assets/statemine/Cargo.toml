@@ -87,7 +87,8 @@ runtime-benchmarks = [
 	"hex-literal",
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
-	"frame-system-benchmarking/runtime-benchmarks",
+# TODO: hack
+#	"frame-system-benchmarking/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
 	"pallet-assets/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
@@ -126,7 +127,8 @@ try-runtime = [
 	"pallet-transaction-payment/try-runtime",
 	"pallet-uniques/try-runtime",
 	"pallet-utility/try-runtime",
-	"pallet-xcm/try-runtime",
+# TODO: hack
+#	"pallet-xcm/try-runtime",
 	"parachain-info/try-runtime",
 ]
 std = [
