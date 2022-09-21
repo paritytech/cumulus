@@ -378,8 +378,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-	// TODO: hacked
-	// type Event = Event;
+	type Event = Event;
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
 	type WeightToFee = WeightToFee;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
@@ -417,7 +416,6 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ControllerOrigin = EnsureRoot<AccountId>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = ();
-	type PriceForSiblingDelivery = ();
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -526,6 +524,7 @@ pub type BridgeParachainWococoInstance = pallet_bridge_parachains::Instance1;
 impl pallet_bridge_parachains::Config<BridgeParachainWococoInstance> for Runtime {
 	// TODO:check-parameter
 	type WeightInfo = ();
+	type Event = Event;
 	type BridgesGrandpaPalletInstance = BridgeGrandpaWococoInstance;
 	type ParasPalletName = WococoBridgeParachainPalletName;
 	type TrackedParachains = Everything;
@@ -535,6 +534,7 @@ impl pallet_bridge_parachains::Config<BridgeParachainWococoInstance> for Runtime
 /// Add parachain bridge pallet to track Rococo bridge hub parachain
 pub type BridgeParachainRococoInstance = pallet_bridge_parachains::Instance2;
 impl pallet_bridge_parachains::Config<BridgeParachainRococoInstance> for Runtime {
+	type Event = Event;
 	// TODO:check-parameter
 	type WeightInfo = ();
 	type BridgesGrandpaPalletInstance = BridgeGrandpaRococoInstance;
@@ -563,9 +563,7 @@ construct_runtime!(
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
-		// TODO: hacked
-		// TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
-		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
 
 		// Collator support. The order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
@@ -585,11 +583,11 @@ construct_runtime!(
 
 		// Wococo bridge modules
 		BridgeWococoGrandpa: pallet_bridge_grandpa::<Instance1>::{Pallet, Call, Storage, Config<T>} = 41,
-		BridgeWococoParachain: pallet_bridge_parachains::<Instance1>::{Pallet, Call, Storage} = 42,
+		BridgeWococoParachain: pallet_bridge_parachains::<Instance1>::{Pallet, Call, Storage, Event<T>} = 42,
 
 		// Rococo bridge modules
 		BridgeRococoGrandpa: pallet_bridge_grandpa::<Instance2>::{Pallet, Call, Storage, Config<T>} = 43,
-		BridgeRococoParachain: pallet_bridge_parachains::<Instance2>::{Pallet, Call, Storage} = 44,
+		BridgeRococoParachain: pallet_bridge_parachains::<Instance2>::{Pallet, Call, Storage, Event<T>} = 44,
 
 		// Sudo
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Event<T>, Storage} = 100,
