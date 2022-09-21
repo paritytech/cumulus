@@ -11,3 +11,5 @@ eve: is up
 alice: parachain 2000 is registered within 225 seconds
 dave: reports block height is at least 7 within 250 seconds
 eve: reports block height is at least 7 within 250 seconds
+one: reports block height is at least 7 within 250 seconds
+two: reports block height is at least 7 within 250 seconds
