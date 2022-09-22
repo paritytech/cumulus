@@ -230,7 +230,7 @@ pub mod pallet {
 		) -> Weight {
 			let mut page_index = PageIndex::<T>::get();
 			let config = Configuration::<T>::get();
-			let mut used = 0;
+			let mut used = Weight::zero();
 
 			for (_, (sent_at, data)) in iter.enumerate() {
 				let remaining_weight = context.max_weight.saturating_sub(used);
@@ -250,7 +250,7 @@ pub mod pallet {
 					{
 						// We are optimistic, even if this message doesn't fit we don't block here and
 						// try to execute the next messages.
-						if required_weight > config.max_individual {
+						if required_weight.ref_time() > config.max_individual.ref_time() {
 							// Add this overweight message to the queue and continue with message execution.
 							// The overweight queue is serviced by `ExecuteOverweightOrigin` call.
 							let overweight_index = page_index.overweight_count;
@@ -445,6 +445,8 @@ mod tests {
 	fn queue_is_empty() -> bool {
 		pages_queued() == 0
 	}
+
+	fn overweights() -> Vec<OverweightIndex> {
 		(0..PageIndex::<Test>::get().overweight_count)
 			.filter(|i| Overweight::<Test>::contains_key(i))
 			.collect::<Vec<_>>()
@@ -453,6 +455,13 @@ mod tests {
 	#[test]
 	fn basic_setup_works() {
 		new_test_ext().execute_with(|| {
+			let weight_used = handle_messages(&[], 1000);
+			assert_eq!(weight_used, 0);
+			assert_eq!(take_trace(), Vec::new());
+			assert!(queue_is_empty());
+		});
+	}
+
 	#[test]
 	fn enqueue_works() {
 		new_test_ext().execute_with(|| {
@@ -492,7 +501,6 @@ mod tests {
 
 			let weight_used = handle_messages(&[], Weight::from_ref_time(2500));
 			assert_eq!(weight_used, Weight::from_ref_time(2003));
->>>>>>> 14186393b28dcfc14d6d30a8aa92b1e6a6ece46d
 			assert_eq!(take_trace(), vec![msg_complete(1001), msg_complete(1002),]);
 		});
 	}

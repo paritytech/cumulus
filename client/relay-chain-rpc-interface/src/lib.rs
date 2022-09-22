@@ -19,7 +19,7 @@ use core::time::Duration;
 use cumulus_primitives_core::{
 	relay_chain::{
 		v2::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
-		Hash as PHash, Header as PHeader, InboundHrmpMessage,
+		DmqContentsBounds, Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
@@ -58,10 +58,9 @@ impl RelayChainInterface for RelayChainRpcInterface {
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
-		_start_page: u32,
-		_page_count: u32,
+		bounds: DmqContentsBounds,
 	) -> RelayChainResult<Vec<InboundDownwardMessage>> {
-		self.rpc_client.parachain_host_dmq_contents(para_id, relay_parent).await
+		self.rpc_client.parachain_host_dmq_contents(para_id, bounds, relay_parent).await
 	}
 
 	async fn retrieve_all_inbound_hrmp_channel_contents(

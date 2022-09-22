@@ -32,8 +32,7 @@ pub use polkadot_primitives::v2::{
 	AbridgedHostConfiguration, AbridgedHrmpChannel, PersistedValidationData,
 };
 pub use polkadot_runtime_parachains::dmp::{
-	MessageIdx as DmpMessageIdx, MessageWindow as DmpMessageWindow, QueueState as DmpQueueState,
-	RingBuffer as DmpRingBuffer,
+	MessageWindow as DmpMessageWindow, QueueState as DmpQueueState, RingBuffer as DmpRingBuffer,
 };
 
 /// A module that re-exports relevant relay chain definitions.

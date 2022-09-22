@@ -21,7 +21,8 @@ use cumulus_primitives_core::{
 	relay_chain::{
 		runtime_api::ParachainHost,
 		v2::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
-		Block as PBlock, BlockId, Hash as PHash, Header as PHeader, InboundHrmpMessage,
+		Block as PBlock, BlockId, DmqContentsBounds, Hash as PHash, Header as PHeader,
+		InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
@@ -91,15 +92,13 @@ where
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
-		start_page: u32,
-		page_count: u32,
+		bounds: DmqContentsBounds,
 	) -> RelayChainResult<Vec<InboundDownwardMessage>> {
 		Ok(self.full_client.runtime_api().dmq_contents_bounded_with_context(
 			&BlockId::hash(relay_parent),
 			sp_core::ExecutionContext::Importing,
 			para_id,
-			start_page,
-			page_count,
+			bounds,
 		)?)
 	}
 

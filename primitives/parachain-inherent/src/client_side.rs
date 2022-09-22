@@ -20,7 +20,7 @@ use crate::ParachainInherentData;
 use codec::Decode;
 
 use cumulus_primitives_core::{
-	relay_chain::{self, v2::HrmpChannelId, Hash as PHash},
+	relay_chain::{self, v2::HrmpChannelId, DmqContentsBounds, Hash as PHash},
 	DmpMessageWindow, DmpQueueState, ParaId, PersistedValidationData,
 };
 
@@ -41,7 +41,8 @@ async fn collect_relay_storage_proof(
 	relay_chain_interface: &impl RelayChainInterface,
 	para_id: ParaId,
 	relay_parent: PHash,
-	relevant_message_idx: (u64, u64),
+	dmq_start_index: u64,
+	dmq_message_count: u64,
 ) -> Option<sp_state_machine::StorageProof> {
 	let ingress_channels = relay_chain_interface
 		.get_storage_by_key(
@@ -110,15 +111,19 @@ async fn collect_relay_storage_proof(
 
 	tracing::debug!(
 		target: LOG_TARGET,
-		?relevant_message_idx,
+		?dmq_start_index,
+		?dmq_message_count,
 		"seting dmq_mqc_head_for_message relevant keys",
 	);
 
-	for idx in relevant_message_idx.0..=relevant_message_idx.1 {
-		let key = relay_well_known_keys::dmq_mqc_head_for_message(para_id, idx);
-		tracing::debug!(target: LOG_TARGET, ?idx, ?key, "MQC head key",);
-		relevant_keys.push(key);
+	if dmq_message_count > 0 {
+		for idx in dmq_start_index..=dmq_start_index + dmq_message_count {
+			let key = relay_well_known_keys::dmq_mqc_head_for_message(para_id, idx);
+			tracing::debug!(target: LOG_TARGET, ?idx, ?key, "MQC head key",);
+			relevant_keys.push(key);
+		}
 	}
+
 	relevant_keys.push(relay_well_known_keys::relay_dispatch_queue_size(para_id));
 	relevant_keys.push(relay_well_known_keys::hrmp_ingress_channel_index(para_id));
 	relevant_keys.push(relay_well_known_keys::hrmp_egress_channel_index(para_id));
@@ -163,7 +168,11 @@ impl ParachainInherentData {
 
 			while free_capacity > 0 {
 				let new_messages = relay_chain_interface
-					.retrieve_dmq_contents(para_id, relay_parent, start_index, PAGE_COUNT)
+					.retrieve_dmq_contents(
+						para_id,
+						relay_parent,
+						DmqContentsBounds { start_page_index: start_index, page_count: PAGE_COUNT },
+					)
 					.await
 					.map_err(|e| {
 						tracing::error!(
@@ -238,7 +247,8 @@ impl ParachainInherentData {
 			relay_chain_interface,
 			para_id,
 			relay_parent,
-			(first_message_idx.into(), last_message_idx.into()),
+			first_message_idx.into(),
+			last_message_idx.wrapping_sub(first_message_idx).into(),
 		)
 		.await?;
 

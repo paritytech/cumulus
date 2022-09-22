@@ -124,8 +124,9 @@ impl<T: Config> DmpMessageHandler for UnlimitedDmpExecution<T> {
 				Err(_) => Pallet::<T>::deposit_event(Event::InvalidFormat(id)),
 				Ok(Err(())) => Pallet::<T>::deposit_event(Event::UnsupportedVersion(id)),
 				Ok(Ok(x)) => {
-					let outcome = T::XcmExecutor::execute_xcm(Parent, x, context.max_weight.ref_time());
-					used += outcome.weight_used();
+					let outcome =
+						T::XcmExecutor::execute_xcm(Parent, x, context.max_weight.ref_time());
+					used += Weight::from_ref_time(outcome.weight_used());
 					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
 				},
 			}
@@ -159,7 +160,7 @@ impl<T: Config> DmpMessageHandler for LimitAndDropDmpExecution<T> {
 				Ok(Ok(x)) => {
 					let weight_limit = context.max_weight.saturating_sub(used);
 					let outcome = T::XcmExecutor::execute_xcm(Parent, x, weight_limit.ref_time());
-					used += outcome.weight_used();
+					used += Weight::from_ref_time(outcome.weight_used());
 					Pallet::<T>::deposit_event(Event::ExecutedDownward(id, outcome));
 				},
 			}

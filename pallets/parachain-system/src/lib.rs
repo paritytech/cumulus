@@ -832,8 +832,9 @@ impl<T: Config> Pallet<T> {
 			);
 			<LastDmqMqcHead<T>>::put(&message_handler_context.mqc_head);
 
-			let processed_message_count =
-				(message_handler_context.next_message_index.wrapping_sub(next_message_index)).0;
+			let processed_message_count: u64 =
+				(message_handler_context.next_message_index.wrapping_sub(next_message_index))
+					.into();
 			ProcessedDownwardMessages::<T>::put(processed_message_count as u32);
 
 			Self::deposit_event(Event::DownwardMessagesReceived {
@@ -854,14 +855,15 @@ impl<T: Config> Pallet<T> {
 			// decrement to get the last processed message index. We'll then fetch the MQC head at that
 			// index.
 			let last_processed_message_index =
-				message_handler_context.next_message_index.wrapping_dec().0;
+				message_handler_context.next_message_index.wrapping_dec().into();
+
 			let expected_dmq_mqc_head = relay_state_proof
 				.read_dmp_mqc_head(last_processed_message_index)
 				.expect("Invalid messaging state in relay chain state proof");
 
 			assert_eq!(message_handler_context.mqc_head.head(), expected_dmq_mqc_head);
-
-			<NextDmqMessageIndex<T>>::put(message_handler_context.next_message_index.0);
+			let next_message_index: u64 = message_handler_context.next_message_index.into();
+			<NextDmqMessageIndex<T>>::put(next_message_index);
 		}
 
 		weight_used

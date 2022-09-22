@@ -19,7 +19,7 @@ use std::{collections::BTreeMap, pin::Pin, sync::Arc};
 use cumulus_primitives_core::{
 	relay_chain::{
 		v2::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
-		Hash as PHash, Header as PHeader, InboundHrmpMessage,
+		DmqContentsBounds, Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
@@ -94,8 +94,7 @@ pub trait RelayChainInterface: Send + Sync {
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
-		start_page: u32,
-		page_count: u32,
+		bounds: DmqContentsBounds,
 	) -> RelayChainResult<Vec<InboundDownwardMessage>>;
 
 	/// Returns channels contents for each inbound HRMP channel addressed to the parachain we are
@@ -176,10 +175,9 @@ where
 		&self,
 		para_id: ParaId,
 		relay_parent: PHash,
-		start_page: u32,
-		page_count: u32,
+		bounds: DmqContentsBounds,
 	) -> RelayChainResult<Vec<InboundDownwardMessage>> {
-		(**self).retrieve_dmq_contents(para_id, relay_parent, start_page, page_count).await
+		(**self).retrieve_dmq_contents(para_id, relay_parent, bounds).await
 	}
 
 	async fn retrieve_all_inbound_hrmp_channel_contents(
