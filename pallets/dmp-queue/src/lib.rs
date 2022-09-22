@@ -240,7 +240,8 @@ pub mod pallet {
 					Ok(Weight::zero())
 				},
 				Ok(Ok(x)) => {
-					let outcome = T::XcmExecutor::execute_xcm(Parent, x, message_id, limit.ref_time());
+					let outcome =
+						T::XcmExecutor::execute_xcm(Parent, x, message_id, limit.ref_time());
 					match outcome {
 						Outcome::Error(XcmError::WeightLimitReached(required)) =>
 							Err((message_id, Weight::from_ref_time(required))),

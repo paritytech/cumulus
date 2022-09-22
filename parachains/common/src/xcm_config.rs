@@ -2,7 +2,7 @@ use crate::impls::AccountIdOf;
 use core::marker::PhantomData;
 use frame_support::{
 	log,
-	traits::{fungibles::Inspect, tokens::BalanceConversion},
+	traits::{fungibles::Inspect, tokens::BalanceConversion, ContainsPair},
 	weights::{Weight, WeightToFee, WeightToFeePolynomial},
 };
 use sp_runtime::traits::Get;
@@ -111,8 +111,10 @@ where
 
 /// Accepts an asset if it is a native asset from a particular `MultiLocation`.
 pub struct ConcreteNativeAssetFrom<Location>(PhantomData<Location>);
-impl<Location: Get<MultiLocation>> FilterAssetLocation for ConcreteNativeAssetFrom<Location> {
-	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+impl<Location: Get<MultiLocation>> ContainsPair<MultiAsset, MultiLocation>
+	for ConcreteNativeAssetFrom<Location>
+{
+	fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
 		log::trace!(target: "xcm::filter_asset_location",
 			"ConcreteNativeAsset asset: {:?}, origin: {:?}, location: {:?}",
 			asset, origin, Location::get());
