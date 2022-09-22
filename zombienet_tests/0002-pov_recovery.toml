@@ -33,7 +33,7 @@ cumulus_based = true
   validator = true
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "--use-null-consensus", "--disable-block-announcements"]
+  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug", "--use-null-consensus", "--disable-block-announcements"]
 
   # run eve as parachain full node that is only connected to charlie
   [[parachains.collators]]
@@ -41,7 +41,7 @@ cumulus_based = true
   validator = false
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "--use-null-consensus", "--disable-block-announcements"]
+  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug", "--use-null-consensus", "--disable-block-announcements"]
 
   # Run one as parachain collator and two as parachain full node, connected via RPC relay chain node
   #
@@ -51,7 +51,7 @@ cumulus_based = true
   validator = true
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'alice'|zombie('wsUri')}}", "-- --bootnodes {{'alice'|zombie('multiAddress')}}"]
+  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug", "--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'alice'|zombie('wsUri')}}", "-- --bootnodes {{'alice'|zombie('multiAddress')}}"]
 
   # run two as parachain full node that is only connected to dave
   [[parachains.collators]]
@@ -59,4 +59,4 @@ cumulus_based = true
   validator = false
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'bob'|zombie('wsUri')}}"]
+  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug","--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'bob'|zombie('wsUri')}}"]
