@@ -18,7 +18,7 @@ use backoff::{future::retry_notify, ExponentialBackoff};
 use cumulus_primitives_core::{
 	relay_chain::{
 		v2::{CommittedCandidateReceipt, OccupiedCoreAssumption, SessionIndex, ValidatorId},
-		Hash as PHash, Header as PHeader, InboundHrmpMessage,
+		DmqContentsBounds, Hash as PHash, Header as PHeader, InboundHrmpMessage,
 	},
 	InboundDownwardMessage, ParaId, PersistedValidationData,
 };
@@ -393,10 +393,15 @@ impl RelayChainRpcClient {
 	pub async fn parachain_host_dmq_contents(
 		&self,
 		para_id: ParaId,
+		bounds: DmqContentsBounds,
 		at: PHash,
 	) -> Result<Vec<InboundDownwardMessage>, RelayChainError> {
-		self.call_remote_runtime_function("ParachainHost_dmq_contents", at, Some(para_id))
-			.await
+		self.call_remote_runtime_function(
+			"ParachainHost_dmq_contents_bounded",
+			at,
+			Some((para_id, bounds)),
+		)
+		.await
 	}
 
 	fn send_register_message_to_worker(
