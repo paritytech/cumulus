@@ -159,7 +159,7 @@ pub async fn new_minimal_relay_chain(
 		req_protocol_names: request_protocol_names,
 		peer_set_protocol_names,
 		parachains_db,
-		availability_config: polkadot_service::create_availability_config(),
+		availability_config: polkadot_service::AVAILABILITY_CONFIG,
 		pov_req_receiver,
 		chunk_req_receiver,
 	};
