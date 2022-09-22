@@ -20,7 +20,7 @@ use frame_support::{
 	weights::Weight,
 };
 use pallet_alliance::{ProposalIndex, ProposalProvider};
-use sp_std::{boxed::Box, marker::PhantomData};
+use sp_std::{marker::PhantomData, prelude::*};
 use xcm::latest::{Fungibility, Junction, Parent};
 
 type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
@@ -52,7 +52,7 @@ where
 	T: pallet_xcm::Config + frame_system::Config + pallet_alliance::Config<I>,
 	[u8; 32]: From<AccountIdOf<T>>,
 	BalanceOf<T, I>: Into<Fungibility>,
-	<<T as frame_system::Config>::Origin as OriginTrait>::AccountId: From<AccountIdOf<T>>,
+	<<T as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId: From<AccountIdOf<T>>,
 {
 	fn on_unbalanced(amount: NegativeImbalanceOf<T, I>) {
 		let temp_account: AccountIdOf<T> = TempAcc::get();
@@ -62,7 +62,7 @@ where
 		<CurrencyOf<T, I>>::resolve_creating(&temp_account, amount);
 
 		let result = pallet_xcm::Pallet::<T>::teleport_assets(
-			<T as frame_system::Config>::Origin::signed(temp_account.into()),
+			<T as frame_system::Config>::RuntimeOrigin::signed(temp_account.into()),
 			Box::new(Parent.into()),
 			Box::new(
 				Junction::AccountId32 { network: None, id: treasury_acc.into() }
