@@ -451,11 +451,11 @@ parachains-int-test-init:
       when: manual
     # DEBUG: remove me
     - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                         # PRs
-      when: manual
+      # when: manual
   script:
     - echo "let's go!"
 
-# can be taken from build-linux-stable
+# binary can be taken from build-linux-stable
 .parachains-int-test-build-cumulus:
   stage:                           parachains-int-test-build
   <<:                              *docker-env
@@ -470,11 +470,26 @@ parachains-int-test-build-polkadot:
   stage:                           parachains-int-test-build
   <<:                              *docker-env
   <<:                              *parachain-int-tests-refs
+  <<:                              *collect-artifacts
   needs:
     - job:                         parachains-int-test-init
       artifacts:                   false
+  variables:
+    GIT_STRATEGY:                  none
   script:
-    - echo "let's go!"
+    # -------------for tests-----------------
+    - export CI_COMMIT_REF_NAME="release-parachains-v9290"
+    # ---------------------------------------
+    # transform v9290 to v0.9.290
+    - export VERSION=$(echo ${CI_COMMIT_REF_NAME} cut -d "-" -f 3 | sed -e "s/\(.\)\(.\)\(...\)/\10.\2.\3/")
+    - export BRANCH="it/release-${VERSION:0:-1}-fast-sudo"
+    - git clone https://github.com/paritytech/polkadot
+    - mkdir -p ./artifacts
+    - cd polkadot
+    - git fetch origin $BRANCH
+    - git checkout $BRANCH
+    - cargo build --release --features fast-runtime
+    - mv ./target/release/polkadot-parachain ../artifacts/.
 
 parachains-int-test-run:
   stage:                           parachains-int-test-run
@@ -486,7 +501,7 @@ parachains-int-test-run:
     - job:                         parachains-int-test-build-polkadot
       artifacts:                   true
   script:
-    - echo "let's go!"
+    - ls -la artifacts
 
 # #### stage:                        integration-test
 
