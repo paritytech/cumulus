@@ -174,7 +174,7 @@ variables:
     # Check that parachain-template will compile with `try-runtime` feature flag.
     - time cargo check -p parachain-template-node --features try-runtime
 
-.check-rustdoc:
+check-rustdoc:
   stage:                           test
   <<:                              *docker-env
   <<:                              *common-refs
@@ -197,7 +197,7 @@ variables:
 
 #### stage:                        build
 
-.build-linux-stable:
+build-linux-stable:
   stage:                           build
   <<:                              *docker-env
   <<:                              *collect-artifacts
@@ -442,6 +442,7 @@ update-parachain-template:
 
 #### stage:                        parachain-int-tests
 
+# manual job to init build
 parachains-int-test-init:
   stage:                           parachains-int-test-init
   <<:                              *kubernetes-env
@@ -454,7 +455,8 @@ parachains-int-test-init:
   script:
     - echo "let's go!"
 
-parachains-int-test-build-cumulus:
+# can be taken from build-linux-stable
+.parachains-int-test-build-cumulus:
   stage:                           parachains-int-test-build
   <<:                              *docker-env
   <<:                              *parachain-int-tests-refs
@@ -462,7 +464,7 @@ parachains-int-test-build-cumulus:
     - job:                         parachains-int-test-init
       artifacts:                   false
   script:
-    - echo "let's go!"
+    - cargo build --release --locked --bin polkadot-parachain
 
 parachains-int-test-build-polkadot:
   stage:                           parachains-int-test-build
@@ -479,7 +481,7 @@ parachains-int-test-run:
   <<:                              *docker-env
   <<:                              *parachain-int-tests-refs
   needs:
-    - job:                         parachains-int-test-build-cumulus
+    - job:                         build-linux-stable
       artifacts:                   true
     - job:                         parachains-int-test-build-polkadot
       artifacts:                   true
