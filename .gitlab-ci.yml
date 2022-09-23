@@ -182,6 +182,9 @@ check-rustdoc:
     SKIP_WASM_BUILD:               1
     RUSTDOCFLAGS:                  "-Dwarnings"
   script:
+    # remove me
+    - exit 0
+    # ---------------
     - time cargo +nightly doc --workspace --all-features --verbose --no-deps
 
 .cargo-check-benches:
@@ -472,7 +475,8 @@ parachains-int-test-build-polkadot:
   <<:                              *parachain-int-tests-refs
   <<:                              *collect-artifacts
   needs:
-    - job:                         parachains-int-test-init
+    # - job:                         parachains-int-test-init
+    - job: check-rustdoc
       artifacts:                   false
   variables:
     GIT_STRATEGY:                  none
@@ -483,6 +487,7 @@ parachains-int-test-build-polkadot:
     # transform v9290 to v0.9.290
     - export VERSION=$(echo ${CI_COMMIT_REF_NAME} cut -d "-" -f 3 | sed -e "s/\(.\)\(.\)\(...\)/\10.\2.\3/")
     - export BRANCH="it/release-${VERSION:0:-1}-fast-sudo"
+    - echo $VERSION $BRANCH
     - git clone https://github.com/paritytech/polkadot
     - mkdir -p ./artifacts
     - cd polkadot
