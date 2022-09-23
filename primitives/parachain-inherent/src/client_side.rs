@@ -41,8 +41,8 @@ async fn collect_relay_storage_proof(
 	relay_chain_interface: &impl RelayChainInterface,
 	para_id: ParaId,
 	relay_parent: PHash,
-	dmq_start_index: u64,
-	dmq_message_count: u64,
+	dmp_message_window: DmpMessageWindow,
+	downward_messages_count: u64,
 ) -> Option<sp_state_machine::StorageProof> {
 	let ingress_channels = relay_chain_interface
 		.get_storage_by_key(
@@ -111,13 +111,16 @@ async fn collect_relay_storage_proof(
 
 	tracing::debug!(
 		target: LOG_TARGET,
-		?dmq_start_index,
-		?dmq_message_count,
+		?dmp_message_window,
 		"seting dmq_mqc_head_for_message relevant keys",
 	);
 
-	if dmq_message_count > 0 {
-		for idx in dmq_start_index..=dmq_start_index + dmq_message_count {
+	// Collect proof for a subset of messages (`downward_messages_count`).
+	if let Some(first_message) = dmp_message_window.first() {
+		let first_message = first_message.message_idx;
+		let last_message = first_message.wrapping_add(downward_messages_count.into());
+
+		for idx in first_message.into()..last_message.into() {
 			let key = relay_well_known_keys::dmq_mqc_head_for_message(para_id, idx);
 			tracing::debug!(target: LOG_TARGET, ?idx, ?key, "MQC head key",);
 			relevant_keys.push(key);
@@ -235,20 +238,18 @@ impl ParachainInherentData {
 		};
 
 		let window = DmpMessageWindow::with_state(queue_state.message_window_state, para_id);
-		// Check if the window covers all downward messages.
-		assert!(window.size() >= downward_messages.len() as u64);
+		let downward_messages_count = downward_messages.len() as u64;
+		// Check if the window covers all downward messages we plan to process. If we don't it means there is
+		// a bug in relay chain DMP storag.
+		assert!(window.size() >= downward_messages_count);
 
 		// Collect proof for a subset of MQC heads relevant to the messages we'll attempt to process in runtime.
-		let first_message_idx = window.first().unwrap_or_default().message_idx;
-		let last_message_idx = first_message_idx
-			.wrapping_add((downward_messages.len().saturating_sub(1) as u64).into());
-
 		let relay_chain_state = collect_relay_storage_proof(
 			relay_chain_interface,
 			para_id,
 			relay_parent,
-			first_message_idx.into(),
-			last_message_idx.wrapping_sub(first_message_idx).into(),
+			window,
+			downward_messages_count,
 		)
 		.await?;
 

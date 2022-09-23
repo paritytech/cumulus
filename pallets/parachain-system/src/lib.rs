@@ -857,6 +857,8 @@ impl<T: Config> Pallet<T> {
 			let last_processed_message_index =
 				message_handler_context.next_message_index.wrapping_dec().into();
 
+			log::debug!("reading proof for message {}", last_processed_message_index,);
+
 			let expected_dmq_mqc_head = relay_state_proof
 				.read_dmp_mqc_head(last_processed_message_index)
 				.expect("Invalid messaging state in relay chain state proof");
