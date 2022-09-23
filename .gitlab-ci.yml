@@ -512,6 +512,8 @@ parachains-int-test-run:
       artifacts:                   true
     - job:                         parachains-int-test-build-polkadot
       artifacts:                   true
+  before_script:
+    - echo ok
   script:
     - mkdir -p ./bin
     - mkdir -p ./logs
