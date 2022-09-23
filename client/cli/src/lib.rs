@@ -96,7 +96,7 @@ impl PurgeChainCmd {
 				Some('y') | Some('Y') => {},
 				_ => {
 					println!("Aborted");
-					return Ok(())
+					return Ok(());
 				},
 			}
 		}
@@ -264,7 +264,8 @@ impl sc_cli::CliConfiguration for ExportGenesisWasmCommand {
 fn validate_relay_chain_url(arg: &str) -> Result<Url, String> {
 	let url = Url::parse(arg).map_err(|e| e.to_string())?;
 
-	if url.scheme() == "ws" {
+	let scheme = url.scheme();
+	if scheme == "ws" || scheme == "wss" {
 		Ok(url)
 	} else {
 		Err(format!(
