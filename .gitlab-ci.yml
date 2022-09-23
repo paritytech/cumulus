@@ -517,7 +517,7 @@ parachains-int-test-run:
   script:
     - mkdir -p ./bin
     - mkdir -p ./logs
-    - mv artifacts/polakdot ./bin/
+    - mv artifacts/polkadot ./bin/
     - mv artifacts/polkadot-parachain ./bin/
     - yarn global add @parity/parachains-integration-tests
     - ./scripts/parachains_integration_tests.sh
