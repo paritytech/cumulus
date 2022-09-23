@@ -46,9 +46,11 @@ use sp_version::RuntimeVersion;
 use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime,
+	dispatch::DispatchClass,
+	parameter_types,
 	traits::{AsEnsureOriginWithArg, EitherOfDiverse, InstanceFilter},
-	weights::{ConstantMultiplier, DispatchClass, Weight},
+	weights::{ConstantMultiplier, Weight},
 	PalletId, RuntimeDebug,
 };
 use frame_system::{
@@ -88,7 +90,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_version: 9290,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 7,
+	transaction_version: 8,
 	state_version: 0,
 };
 
@@ -137,7 +139,7 @@ impl frame_system::Config for Runtime {
 	type Hashing = BlakeTwo256;
 	type Header = Header;
 	type RuntimeEvent = RuntimeEvent;
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type BlockHashCount = BlockHashCount;
 	type DbWeight = RocksDbWeight;
 	type Version = Version;

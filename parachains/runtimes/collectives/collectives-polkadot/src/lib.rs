@@ -61,9 +61,11 @@ use sp_version::RuntimeVersion;
 use codec::{Decode, Encode, MaxEncodedLen};
 use constants::{currency::*, fee::WeightToFee};
 use frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime,
+	dispatch::DispatchClass,
+	parameter_types,
 	traits::{ConstU16, ConstU32, ConstU64, ConstU8, EitherOfDiverse, InstanceFilter},
-	weights::{ConstantMultiplier, DispatchClass, Weight},
+	weights::{ConstantMultiplier, Weight},
 	PalletId, RuntimeDebug,
 };
 use frame_system::{
@@ -160,7 +162,7 @@ impl frame_system::Config for Runtime {
 	type Hashing = BlakeTwo256;
 	type Header = Header;
 	type RuntimeEvent = RuntimeEvent;
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type BlockHashCount = BlockHashCount;
 	type DbWeight = RocksDbWeight;
 	type Version = Version;
@@ -437,7 +439,7 @@ pub const ALLIANCE_MAX_MEMBERS: u32 = 100;
 
 type AllianceCollective = pallet_collective::Instance1;
 impl pallet_collective::Config<AllianceCollective> for Runtime {
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type Proposal = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type MotionDuration = AllianceMotionDuration;

@@ -8,7 +8,7 @@ description = "Runs a polkadot parachain node which could be a collator."
 
 [dependencies]
 async-trait = "0.1.57"
-clap = { version = "3.2.20", features = ["derive", "deprecated"] }
+clap = { version = "3.2.22", features = ["derive", "deprecated"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 futures = "0.3.24"
 hex-literal = "0.3.4"
@@ -94,7 +94,7 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 assert_cmd = "2.0"
 nix = "0.25"
 tempfile = "3.3.0"
-tokio = { version = "1.21.0", features = ["macros", "time", "parking_lot"] }
+tokio = { version = "1.21.1", features = ["macros", "time", "parking_lot"] }
 wait-timeout = "0.2"
 # purge_chain_works works with rococo-local and needs to allow this
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", features = ["rococo-native"] }
