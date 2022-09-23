@@ -292,7 +292,7 @@ variables:
     IMAGE_NAME:                    "docker.io/paritypr/test-parachain"
     VERSION:                       "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
 
-publish-s3:
+.publish-s3:
   stage:                           publish
   <<:                              *kubernetes-env
   image:                           paritytech/awscli:latest
@@ -400,7 +400,7 @@ benchmarks-collectives:
   tags:
     - weights
 
-publish-benchmarks-assets-s3:      &publish-benchmarks
+.publish-benchmarks-assets-s3:      &publish-benchmarks
   stage:                           publish
   <<:                              *kubernetes-env
   image:                           paritytech/awscli:latest
@@ -420,7 +420,7 @@ publish-benchmarks-assets-s3:      &publish-benchmarks
   after_script:
     - aws s3 ls s3://${BUCKET}/${PREFIX}/ --recursive --human-readable --summarize
 
-publish-benchmarks-collectives-s3:
+.publish-benchmarks-collectives-s3:
   <<:                              *publish-benchmarks
   needs:
     - job:                         benchmarks-collectives
