@@ -7,7 +7,7 @@ use frame_support::{
 };
 use sp_runtime::traits::Get;
 use xcm::latest::{prelude::*, Weight as XCMWeight};
-use xcm_executor::traits::{FilterAssetLocation, ShouldExecute};
+use xcm_executor::traits::ShouldExecute;
 
 //TODO: move DenyThenTry to polkadot's xcm module.
 /// Deny executing the XCM if it matches any of the Deny filter regardless of anything else.
