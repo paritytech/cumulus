@@ -494,7 +494,7 @@ parachains-int-test-build-polkadot:
     - git fetch origin $BRANCH
     - git checkout $BRANCH
     - cargo build --release --features fast-runtime
-    - mv ./target/release/polkadot-parachain ../artifacts/.
+    - mv ./target/release/polkadot ../artifacts/.
 
 parachains-int-test-run:
   stage:                           parachains-int-test-run
