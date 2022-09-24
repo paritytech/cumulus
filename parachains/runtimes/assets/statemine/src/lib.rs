@@ -979,3 +979,98 @@ cumulus_pallet_parachain_system::register_validate_block! {
 	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
 	CheckInherents = CheckInherents,
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use frame_support::traits::PalletInfoAccess;
+	use sp_io::TestExternalities;
+	use sp_keyring::AccountKeyring::*;
+	use xcm::v2::{
+		ExecuteXcm,
+		Instruction::{BuyExecution, DepositAsset, WithdrawAsset},
+		Junction::Parachain,
+		MultiAsset, MultiLocation, Xcm,
+	};
+	use xcm_executor::traits::Convert;
+
+	#[test]
+	fn asset_burn() {
+		sp_tracing::try_init_simple();
+
+		TestExternalities::new_empty().execute_with(|| {
+			Balances::set_balance(
+				RuntimeOrigin::root(),
+				Alice.to_account_id().into(),
+				UNITS * 10_000_000,
+				0,
+			)
+			.unwrap();
+
+			Assets::force_create(RuntimeOrigin::root(), 10, Alice.to_account_id().into(), true, 1)
+				.unwrap();
+
+			Assets::mint(
+				RuntimeOrigin::signed(Alice.to_account_id().into()),
+				10,
+				Alice.to_account_id().into(),
+				100,
+			)
+			.unwrap();
+
+			assert_eq!(Assets::total_supply(10), 100);
+
+			// Simulate xcm message from a different chain
+			let error = XcmExecutor::<XcmConfig>::execute_xcm(
+				xcm_config::LocalOriginToLocation::convert(RuntimeOrigin::signed(
+					Alice.to_account_id().into(),
+				))
+				.unwrap(),
+				Xcm::<RuntimeCall>(vec![
+					WithdrawAsset(
+						vec![MultiAsset {
+							id: xcm::v2::AssetId::Concrete(MultiLocation {
+								parents: 0,
+								interior: xcm::v2::Junctions::X2(
+									xcm::v2::Junction::PalletInstance(Assets::index() as u8),
+									xcm::v2::Junction::GeneralIndex(10),
+								),
+							}),
+							fun: xcm::v2::Fungibility::Fungible(10),
+						}]
+						.into(),
+					),
+					BuyExecution {
+						fees: MultiAsset {
+							id: xcm::v2::AssetId::Concrete(MultiLocation {
+								parents: 0,
+								interior: xcm::v2::Junctions::X2(
+									xcm::v2::Junction::PalletInstance(Assets::index() as u8),
+									xcm::v2::Junction::GeneralIndex(10),
+								),
+							}),
+							fun: xcm::v2::Fungibility::Fungible(1),
+						},
+						weight_limit: xcm::v2::WeightLimit::Unlimited,
+					},
+					DepositAsset {
+						assets: xcm::v2::MultiAssetFilter::Wild(xcm::v2::WildMultiAsset::All),
+						max_assets: 1,
+						beneficiary: MultiLocation {
+							parents: 0,
+							interior: xcm::v2::Junctions::X1(Parachain(2000)),
+						},
+					},
+				]),
+				10_000_000_000,
+			)
+			.ensure_complete()
+			.unwrap_err();
+
+			assert_eq!(error, xcm::v2::Error::FailedToTransactAsset("AccountIdConversionFailed"));
+
+			// supply should not decrease, but this line fails.
+			assert_eq!(Assets::total_supply(10), 100);
+		});
+	}
+}

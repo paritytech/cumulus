@@ -77,6 +77,8 @@ pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", branch
 [dev-dependencies]
 hex-literal = "0.3.4"
 asset-test-utils = { path = "../test-utils"}
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
