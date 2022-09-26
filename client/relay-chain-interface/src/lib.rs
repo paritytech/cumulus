@@ -83,7 +83,7 @@ impl From<CodecError> for RelayChainError {
 
 impl From<RelayChainError> for sp_blockchain::Error {
 	fn from(r: RelayChainError) -> Self {
-		sp_blockchain::Error::Backend(r.to_string())
+		sp_blockchain::Error::Application(Box::new(r))
 	}
 }
 

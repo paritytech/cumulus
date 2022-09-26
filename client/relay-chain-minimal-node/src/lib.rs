@@ -118,13 +118,11 @@ pub async fn new_minimal_relay_chain(
 
 	let peer_set_protocol_names =
 		PeerSetProtocolNames::new(genesis_hash, config.chain_spec.fork_id());
-	{
-		let is_authority = if role.is_authority() { IsAuthority::Yes } else { IsAuthority::No };
-		config
-			.network
-			.extra_sets
-			.extend(peer_sets_info(is_authority, &peer_set_protocol_names));
-	}
+	let is_authority = if role.is_authority() { IsAuthority::Yes } else { IsAuthority::No };
+	config
+		.network
+		.extra_sets
+		.extend(peer_sets_info(is_authority, &peer_set_protocol_names));
 
 	let request_protocol_names = ReqProtocolNames::new(genesis_hash, config.chain_spec.fork_id());
 	let (collation_req_receiver, available_data_req_receiver, pov_req_receiver, chunk_req_receiver) =

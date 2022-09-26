@@ -274,7 +274,7 @@ async fn build_relay_chain_interface(
 			let collator_node = cumulus_relay_chain_minimal_node::new_minimal_relay_chain(
 				polkadot_config,
 				collator_pair.clone(),
-				Arc::new(BlockChainRpcClient::new(client.clone()).await),
+				Arc::new(BlockChainRpcClient::new(client.clone())),
 			)
 			.await?;
 			task_manager.add_child(collator_node.task_manager);
@@ -589,6 +589,7 @@ where
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let transaction_pool = params.transaction_pool.clone();
 	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
+
 	let (network, system_rpc_tx, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &parachain_config,

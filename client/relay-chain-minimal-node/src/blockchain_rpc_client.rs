@@ -36,7 +36,7 @@ pub struct BlockChainRpcClient {
 }
 
 impl BlockChainRpcClient {
-	pub async fn new(rpc_client: RelayChainRpcClient) -> Self {
+	pub fn new(rpc_client: RelayChainRpcClient) -> Self {
 		Self { rpc_client }
 	}
 

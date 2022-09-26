@@ -189,7 +189,7 @@ async fn build_relay_chain_interface(
 		let collator_node = cumulus_relay_chain_minimal_node::new_minimal_relay_chain(
 			relay_chain_config,
 			collator_key.clone().unwrap(),
-			Arc::new(BlockChainRpcClient::new(client.clone()).await),
+			Arc::new(BlockChainRpcClient::new(client.clone())),
 		)
 		.await?;
 		task_manager.add_child(collator_node.task_manager);

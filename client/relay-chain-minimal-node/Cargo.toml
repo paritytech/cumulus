@@ -16,7 +16,6 @@ polkadot-network-bridge = { git = "https://github.com/paritytech/polkadot", bran
 polkadot-node-core-av-store = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-availability-distribution = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
-
 # substrate deps
 sc-authority-discovery = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
