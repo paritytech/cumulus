@@ -1,14 +1,13 @@
 use crate::{
-	constants::currency::deposit, Balance, Balances, Call, Event, RandomnessCollectiveFlip,
-	Runtime, RuntimeBlockWeights, Timestamp,
+	constants::currency::deposit, Balance, Balances, RandomnessCollectiveFlip, Runtime,
+	RuntimeBlockWeights, RuntimeCall, RuntimeEvent, Timestamp,
 };
 use frame_support::{
 	parameter_types,
-	traits::{ConstU32, Nothing, OnRuntimeUpgrade},
+	traits::{ConstU32, Nothing},
 	weights::Weight,
 };
 use pallet_contracts::{
-	migration,
 	weights::{SubstrateWeight, WeightInfo},
 	Config, DefaultAddressGenerator, DefaultContractAccessWeight, Frame, Schedule,
 };
@@ -37,8 +36,8 @@ impl Config for Runtime {
 	type Time = Timestamp;
 	type Randomness = RandomnessCollectiveFlip;
 	type Currency = Balances;
-	type Event = Event;
-	type Call = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 	/// The safest default is to allow no calls at all.
 	///
 	/// Runtimes should whitelist dispatchables that are allowed to be called from contracts
@@ -58,13 +57,5 @@ impl Config for Runtime {
 	type AddressGenerator = DefaultAddressGenerator;
 	type ContractAccessWeight = DefaultContractAccessWeight<RuntimeBlockWeights>;
 	type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
-	type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
 	type MaxStorageKeyLen = ConstU32<128>;
-}
-
-pub struct Migrations;
-impl OnRuntimeUpgrade for Migrations {
-	fn on_runtime_upgrade() -> Weight {
-		migration::migrate::<Runtime>()
-	}
 }
