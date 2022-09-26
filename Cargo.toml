@@ -25,7 +25,7 @@ members = [
 	"primitives/parachain-inherent",
 	"primitives/timestamp",
 	"primitives/utility",
-	"polkadot-parachain/",
+	"polkadot-parachain",
 	"parachains/common",
 	"parachains/pallets/parachain-info",
 	"parachains/pallets/ping",
