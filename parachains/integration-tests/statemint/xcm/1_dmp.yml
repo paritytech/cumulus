@@ -77,7 +77,8 @@ tests:
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
-                        value: 1,022,566,000
+                        threshold: [10, 10]
+                        value: 1,021,635,000
               - queries:
                   balance_rc_sender_after:
                     chain: *relay_chain
@@ -148,7 +149,8 @@ tests:
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
-                        value: 1,020,265,000
+                        threshold: [10, 10]
+                        value: 1,020,807,000
               - queries:
                   forced_created_asset:
                     chain: *assets_parachain

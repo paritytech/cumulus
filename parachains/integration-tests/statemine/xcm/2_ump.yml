@@ -62,7 +62,8 @@ tests:
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
-                        value: 1,015,543,000
+                        threshold: [10, 10]
+                        value: 1,021,973,000
 
           - name: Get the balances of the Assets Parachain's sender & Relay Chain's receiver
             actions:
@@ -97,12 +98,14 @@ tests:
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
-                        value: 354,190,000
+                        threshold: [10, 10]
+                        value: 360,315,000
                     - name: ump.ExecutedUpward
                       chain: *relay_chain
                       attribute:
                         type: XcmV2TraitsOutcome
                         isComplete: true
+                        threshold: [10, 10]
                         value: 297,578,000
               - queries:
                   balance_ap_sender_after:
