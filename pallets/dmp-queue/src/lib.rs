@@ -223,8 +223,6 @@ pub mod pallet {
 	/// the `Parent` location.
 	impl<T: Config> DmpMessageHandler for Pallet<T> {
 		fn handle_dmp_messages(
-			// QQQ: This no longer looks appropriate, as we reconstruct the `InboundDownardMessage`. Should we change it
-			// to `InboundDownardMessage`?
 			iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
 			context: &mut DmpMessageHandlerContext,
 		) -> Weight {

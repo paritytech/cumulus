@@ -163,7 +163,7 @@ impl ParachainInherentData {
 		validation_data: &PersistedValidationData,
 		para_id: ParaId,
 	) -> Option<ParachainInherentData> {
-		// Accumulate messages until we reach `MESSAGE_PROCESSING_CAPACITY`.
+		// Accumulate messages until we reach `MESSAGE_PROCESSING_CAPACITY` or the queue is empty.
 		let downward_messages = {
 			let mut free_capacity = MESSAGE_PROCESSING_CAPACITY;
 			let mut start_index = 0;
@@ -240,7 +240,7 @@ impl ParachainInherentData {
 		let window = DmpMessageWindow::with_state(queue_state.message_window_state, para_id);
 		let downward_messages_count = downward_messages.len() as u64;
 		// Check if the window covers all downward messages we plan to process. If we don't it means there is
-		// a bug in relay chain DMP storag.
+		// a bug in relay chain DMP storage.
 		assert!(window.size() >= downward_messages_count);
 
 		// Collect proof for a subset of MQC heads relevant to the messages we'll attempt to process in runtime.

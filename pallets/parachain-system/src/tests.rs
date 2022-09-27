@@ -722,6 +722,50 @@ fn receive_dmp() {
 }
 
 #[test]
+fn receive_subset_of_dmp_messages() {
+	const MESSAGE_COUNT: usize = 1000;
+
+	let mut messages = Vec::new();
+	for index in 0..MESSAGE_COUNT {
+		messages.push(InboundDownwardMessage {
+			sent_at: 1,
+			msg: format!("message {}", index).to_string().as_bytes().to_vec(),
+		})
+	}
+
+	let mut proofs = Vec::new();
+	let mut mqc = MessageQueueChain::default();
+	for index in 0..MESSAGE_COUNT {
+		mqc = mqc.extend(messages[index].sent_at, BlakeTwo256::hash_of(&messages[index].msg));
+		proofs.push((index as u64, mqc.head()));
+	}
+
+	BlockTests::new()
+		.with_relay_sproof_builder(move |_, relay_block_num, sproof| match relay_block_num {
+			1 => {
+				sproof.dmq_mqc_head_for_message = proofs.clone();
+			},
+			_ => unreachable!(),
+		})
+		.with_inherent_data(move |_, relay_block_num, data| match relay_block_num {
+			1 => {
+				let mut messages = messages.clone();
+				let _ = messages.split_off(100);
+				data.downward_messages.extend(messages);
+			},
+			_ => unreachable!(),
+		})
+		.add(1, || {
+			HANDLED_DMP_MESSAGES.with(|m| {
+				let mut m = m.borrow_mut();
+				// assert_eq!(&*m, &[(MSG_1.sent_at, MSG_1.msg.clone())]);
+				assert_eq!(m.len(), 100);
+				m.clear();
+			});
+		});
+}
+
+#[test]
 fn receive_dmp_after_pause() {
 	lazy_static::lazy_static! {
 		static ref MSG_1: InboundDownwardMessage = InboundDownwardMessage {
