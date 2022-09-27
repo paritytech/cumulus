@@ -878,7 +878,7 @@ impl_runtime_apis! {
 				fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
 					Ok(DotLocation::get())
 				}
-				fn worst_case_holding() -> MultiAssets {
+				fn worst_case_holding(_depositable_count: u32) -> MultiAssets {
 					// A mix of fungible, non-fungible, and concrete assets.
 					const HOLDING_FUNGIBLES: u32 = 100;
 					const HOLDING_NON_FUNGIBLES: u32 = 100;
@@ -911,7 +911,6 @@ impl_runtime_apis! {
 					DotLocation::get(),
 					MultiAsset { fun: Fungible(1 * UNITS), id: Concrete(DotLocation::get()) },
 				));
-				pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = None;
 				pub const CheckedAccount: Option<AccountId> = None;
 			}
 
@@ -920,7 +919,6 @@ impl_runtime_apis! {
 
 				type CheckedAccount = CheckedAccount;
 				type TrustedTeleporter = TrustedTeleporter;
-				type TrustedReserve = TrustedReserve;
 
 				fn get_multi_asset() -> MultiAsset {
 					MultiAsset {
@@ -937,6 +935,14 @@ impl_runtime_apis! {
 					(0u64, Response::Version(Default::default()))
 				}
 
+				fn worst_case_asset_exchange() -> Result<(MultiAssets, MultiAssets), BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+
+				fn universal_alias() -> Result<Junction, BenchmarkError> {
+					Err(BenchmarkError::Skip)
+				}
+
 				fn transact_origin() -> Result<MultiLocation, BenchmarkError> {
 					Ok(DotLocation::get())
 				}
@@ -950,6 +956,10 @@ impl_runtime_apis! {
 					let assets: MultiAssets = (Concrete(DotLocation::get()), 1_000 * UNITS).into();
 					let ticket = MultiLocation { parents: 0, interior: Here };
 					Ok((origin, ticket, assets))
+				}
+
+				fn unlockable_asset() -> Result<(MultiLocation, MultiLocation, MultiAsset), BenchmarkError> {
+					Err(BenchmarkError::Skip)
 				}
 			}
 

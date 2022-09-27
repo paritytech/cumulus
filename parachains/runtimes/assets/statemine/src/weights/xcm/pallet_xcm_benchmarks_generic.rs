@@ -48,16 +48,15 @@ use sp_std::marker::PhantomData;
 /// Weights for `pallet_xcm_benchmarks::generic`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo<T> {
-	// Storage: ParachainInfo ParachainId (r:1 w:0)
-	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
-	// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
-	// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
-	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
-	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
-	pub(crate) fn query_holding() -> Weight {
-		Weight::from_ref_time(694_466_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(6 as u64))
-			.saturating_add(T::DbWeight::get().writes(2 as u64))
+	// Storage: XcmPallet SupportedVersion (r:1 w:0)
+	// Storage: XcmPallet VersionDiscoveryQueue (r:1 w:1)
+	// Storage: XcmPallet SafeXcmVersion (r:1 w:0)
+	// Storage: Dmp DownwardMessageQueueHeads (r:1 w:1)
+	// Storage: Dmp DownwardMessageQueues (r:1 w:1)
+	pub(crate) fn report_holding() -> Weight {
+		Weight::from_ref_time(25_878_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(5 as u64))
+			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 	pub(crate) fn buy_execution() -> Weight {
 		Weight::from_ref_time(7_095_000 as u64)
@@ -133,5 +132,52 @@ impl<T: frame_system::Config> WeightInfo<T> {
 		Weight::from_ref_time(878_786_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(6 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
+	}
+	pub(crate) fn burn_asset() -> Weight {
+		Weight::from_ref_time(5_194_000 as u64)
+	}
+	pub(crate) fn expect_asset() -> Weight {
+		Weight::from_ref_time(3_698_000 as u64)
+	}
+	pub(crate) fn expect_origin() -> Weight {
+		Weight::from_ref_time(3_786_000 as u64)
+	}
+	pub(crate) fn expect_error() -> Weight {
+		Weight::from_ref_time(3_645_000 as u64)
+	}
+	// Storage: XcmPallet SupportedVersion (r:1 w:0)
+	// Storage: XcmPallet VersionDiscoveryQueue (r:1 w:1)
+	// Storage: XcmPallet SafeXcmVersion (r:1 w:0)
+	// Storage: Dmp DownwardMessageQueueHeads (r:1 w:1)
+	// Storage: Dmp DownwardMessageQueues (r:1 w:1)
+	pub(crate) fn query_pallet() -> Weight {
+		Weight::from_ref_time(22_993_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(5 as u64))
+			.saturating_add(T::DbWeight::get().writes(3 as u64))
+	}
+	pub(crate) fn expect_pallet() -> Weight {
+		Weight::from_ref_time(4_043_000 as u64)
+	}
+	// Storage: XcmPallet SupportedVersion (r:1 w:0)
+	// Storage: XcmPallet VersionDiscoveryQueue (r:1 w:1)
+	// Storage: XcmPallet SafeXcmVersion (r:1 w:0)
+	// Storage: Dmp DownwardMessageQueueHeads (r:1 w:1)
+	// Storage: Dmp DownwardMessageQueues (r:1 w:1)
+	pub(crate) fn report_transact_status() -> Weight {
+		Weight::from_ref_time(21_668_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(5 as u64))
+			.saturating_add(T::DbWeight::get().writes(3 as u64))
+	}
+	pub(crate) fn clear_transact_status() -> Weight {
+		Weight::from_ref_time(3_673_000 as u64)
+	}
+	pub(crate) fn set_topic() -> Weight {
+		Weight::from_ref_time(3_661_000 as u64)
+	}
+	pub(crate) fn clear_topic() -> Weight {
+		Weight::from_ref_time(3_647_000 as u64)
+	}
+	pub(crate) fn set_fees_mode() -> Weight {
+		Weight::from_ref_time(3_599_000 as u64)
 	}
 }
