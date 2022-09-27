@@ -434,7 +434,7 @@ mod tests {
 	}
 
 	pub struct MockExec;
-	impl ExecuteXcm<Call> for MockExec {
+	impl ExecuteXcm<RuntimeCall> for MockExec {
 		type Prepared = Weightless;
 
 		fn prepare(message: Xcm) -> Result<Self::Prepared, Xcm> {
