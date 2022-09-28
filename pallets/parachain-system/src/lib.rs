@@ -45,7 +45,8 @@ use frame_support::{
 	weights::Weight,
 };
 use frame_system::{ensure_none, ensure_root};
-use polkadot_parachain::primitives::RelayChainBlockNumber;
+use polkadot_parachain::primitives::{MessageIndex, RelayChainBlockNumber, WrappingIndex};
+
 use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, BlockNumberProvider, Hash},
 	transaction_validity::{
@@ -586,7 +587,8 @@ pub mod pallet {
 	///
 	/// The value is loaded before and saved after processing messages.
 	#[pallet::storage]
-	pub(super) type NextDmqMessageIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
+	pub(super) type NextDmqMessageIndex<T: Config> =
+		StorageValue<_, WrappingIndex<MessageIndex>, ValueQuery>;
 
 	/// The message queue chain heads we have observed per each channel incoming channel.
 	///
@@ -814,7 +816,7 @@ impl<T: Config> Pallet<T> {
 
 		if downward_messages.len() > 0 {
 			let mqc_head = <LastDmqMqcHead<T>>::get();
-			let next_message_index = <NextDmqMessageIndex<T>>::get().into();
+			let next_message_index = <NextDmqMessageIndex<T>>::get();
 			let max_weight =
 				<ReservedDmpWeightOverride<T>>::get().unwrap_or_else(T::ReservedDmpWeight::get);
 
@@ -864,8 +866,7 @@ impl<T: Config> Pallet<T> {
 				.expect("Invalid messaging state in relay chain state proof");
 
 			assert_eq!(message_handler_context.mqc_head.head(), expected_dmq_mqc_head);
-			let next_message_index: u64 = message_handler_context.next_message_index.into();
-			<NextDmqMessageIndex<T>>::put(next_message_index);
+			<NextDmqMessageIndex<T>>::put(message_handler_context.next_message_index);
 		}
 
 		weight_used

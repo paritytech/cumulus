@@ -118,9 +118,10 @@ async fn collect_relay_storage_proof(
 	// Collect proof for a subset of messages (`downward_messages_count`).
 	if let Some(first_message) = dmp_message_window.first() {
 		let first_message = first_message.message_idx;
-		let last_message = first_message.wrapping_add(downward_messages_count.into());
+		let last_message =
+			first_message.wrapping_add(downward_messages_count.into()).wrapping_dec();
 
-		for idx in first_message.into()..last_message.into() {
+		for idx in first_message.into()..=last_message.into() {
 			let key = relay_well_known_keys::dmq_mqc_head_for_message(para_id, idx);
 			tracing::debug!(target: LOG_TARGET, ?idx, ?key, "MQC head key",);
 			relevant_keys.push(key);
