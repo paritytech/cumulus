@@ -61,13 +61,13 @@ zombienet-0003-full_node_catching_up:
         --concurrency=1
         --test="0003-full_node_catching_up.feature"
 
-# todo: check that the job has 2 needs: build-test-parachain and build-push-image-test-parachain
 zombienet-0004-runtime_upgrade:
   extends:
     - .zombienet-common
     - .zombienet-refs
     - .zombienet-before-script
   needs:
+    - !reference [.zombienet-common, needs]
     - job:                         build-test-parachain
       artifacts:                   true
   before_script:
@@ -81,13 +81,13 @@ zombienet-0004-runtime_upgrade:
         --concurrency=1
         --test="0004-runtime_upgrade.feature"
 
-# todo: check that the job has 2 needs: build-test-parachain and build-push-image-test-parachain
 zombienet-0005-migrate_solo_to_para:
   extends:
     - .zombienet-common
     - .zombienet-refs
     - .zombienet-before-script
   needs:
+    - !reference [.zombienet-common, needs]
     - job:                         build-test-parachain
       artifacts:                   true
   before_script:
