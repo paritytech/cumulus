@@ -117,14 +117,29 @@ async fn collect_relay_storage_proof(
 
 	// Collect proof for a subset of messages (`downward_messages_count`).
 	if let Some(first_message) = dmp_message_window.first() {
-		let first_message = first_message.message_idx;
-		let last_message =
-			first_message.wrapping_add(downward_messages_count.into()).wrapping_dec();
+		let mut current_message_index = first_message.message_idx;
 
-		for idx in first_message.into()..=last_message.into() {
-			let key = relay_well_known_keys::dmq_mqc_head_for_message(para_id, idx);
-			tracing::debug!(target: LOG_TARGET, ?idx, ?key, "MQC head key",);
+		// `downward_messages_count` is guaranted to be at least 1, since the window is not empty:
+		// `dmp_message_window.first().is_some()` is true.
+		let last_message_index =
+			current_message_index.wrapping_add(downward_messages_count.saturating_sub(1).into());
+
+		// Since we are using wrapping index bounds, we'll loop until the current index catches up
+		// with the index of the last message.
+		loop {
+			let key = relay_well_known_keys::dmq_mqc_head_for_message(
+				para_id,
+				current_message_index.into(),
+			);
+			tracing::debug!(target: LOG_TARGET, ?current_message_index, ?key, "MQC head key",);
 			relevant_keys.push(key);
+
+			// Loop stops when we've added the last message key.
+			if current_message_index == last_message_index {
+				break
+			}
+
+			current_message_index = current_message_index.wrapping_inc();
 		}
 	}
 
