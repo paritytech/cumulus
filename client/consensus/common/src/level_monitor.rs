@@ -303,7 +303,7 @@ where
 
 		// Do cleanup once in a while, we are allowed to have some obsolete information.
 		let finalized_num = self.backend.blockchain().info().finalized_number;
-		let delta: u64 = finalized_num.saturating_sub(self.lowest_level).unique_saturated_into();
+		let delta: u32 = finalized_num.saturating_sub(self.lowest_level).unique_saturated_into();
 		if delta >= CLEANUP_THRESHOLD {
 			for i in 0..delta {
 				let number = self.lowest_level + i.unique_saturated_into();
