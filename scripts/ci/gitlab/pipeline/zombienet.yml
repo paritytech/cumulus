@@ -18,7 +18,7 @@
   image:                           "${ZOMBIENET_IMAGE}"
   needs:
     - job:                         build-push-image-test-parachain
-      artifact:                    true
+      artifacts:                    true
   variables:
     POLKADOT_IMAGE:                "docker.io/paritypr/polkadot-debug:master"
     GH_DIR:                        "https://github.com/paritytech/cumulus/tree/${CI_COMMIT_SHORT_SHA}/zombienet_tests"
