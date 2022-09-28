@@ -27,7 +27,7 @@ use std::{
 pub const MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT: usize = 32;
 
 // Counter threshold after which we are going to eventually cleanup our internal data.
-const CLEANUP_THRESHOLD: u64 = 32;
+const CLEANUP_THRESHOLD: u32 = 32;
 
 /// Upper bound to the number of leaves allowed for each level of the blockchain.
 ///
@@ -38,7 +38,7 @@ const CLEANUP_THRESHOLD: u64 = 32;
 /// setting an upper bound helps keeping the chain health by dropping old (presumably) stale
 /// leaves and prevents discarding new blocks because we've reached the backend max value.
 pub enum LevelLimit {
-	/// Limit set to `MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT`.
+	/// Limit set to [`MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT`].
 	Default,
 	/// No explicit limit, however a limit may be implicitly imposed by the backend implementation.
 	None,
@@ -76,11 +76,11 @@ impl<Block: BlockT, BE> LevelMonitor<Block, BE> {
 	}
 }
 
-// Internal support structure containing information about the target scheduled for removal.
+/// Contains information about the target scheduled for removal.
 struct TargetInfo<Block: BlockT> {
-	// Index of freshest leaf in the leaves array.
+	/// Index of freshest leaf in the leaves array.
 	freshest_leaf_idx: usize,
-	// Route from target to its freshest leaf.
+	/// Route from target to its freshest leaf.
 	freshest_route: TreeRoute<Block>,
 }
 
@@ -116,13 +116,11 @@ where
 					self.update(elem.number, elem.hash);
 				}
 			});
-			if self.import_counter > counter_max {
-				counter_max = self.import_counter;
-			}
+			counter_max = std::cmp::max(self.import_counter, counter_max);
 		}
 
 		self.import_counter = counter_max;
-		self.lowest_level = self.backend.blockchain().info().finalized_number;
+		self.lowest_level = info.finalized_number;
 	}
 
 	/// Check and enforce the limit bound at the given height.
@@ -194,10 +192,7 @@ where
 		let blockchain = self.backend.blockchain();
 		let best_hash = blockchain.info().best_hash;
 
-		let level = match self.levels.get(&number) {
-			Some(level) => level,
-			None => return None,
-		};
+		let level = self.levels.get(&number)?;
 
 		for blk_hash in level.iter().filter(|hash| **hash != best_hash) {
 			// Search for the fresher leaf information for this block
