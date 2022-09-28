@@ -29,8 +29,8 @@ mod tests;
 
 pub use parachain_consensus::run_parachain_consensus;
 
-pub use level_monitor::LevelLimit;
-use level_monitor::{LevelMonitor, MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT};
+use level_monitor::LevelMonitor;
+pub use level_monitor::{LevelLimit, MAX_LEAVES_PER_LEVEL_SENSIBLE_DEFAULT};
 
 /// The result of [`ParachainConsensus::produce_candidate`].
 pub struct ParachainCandidate<B> {
@@ -88,7 +88,7 @@ pub struct ParachainBlockImport<Block: BlockT, BI, BE> {
 	level_monitor: Option<LevelMonitor<Block, BE>>,
 }
 
-impl<Block: BlockT, BI, BE> ParachainBlockImport<Block, BI, BE> {
+impl<Block: BlockT, BI, BE: Backend<Block>> ParachainBlockImport<Block, BI, BE> {
 	/// Create a new instance.
 	///
 	/// The number of leaves per level limit is set to `LevelLimit::Default`.

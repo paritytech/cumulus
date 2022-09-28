@@ -85,6 +85,7 @@ where
 	B: BlockT,
 	RCInterface: RelayChainInterface,
 	CIDP: CreateInherentDataProviders<B, (PHash, PersistedValidationData)>,
+	BE: sc_client_api::Backend<B> + Send + Sync,
 {
 	/// Create a new instance of relay-chain provided consensus.
 	pub fn new(

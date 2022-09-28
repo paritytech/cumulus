@@ -46,34 +46,20 @@ pub enum LevelLimit {
 	Some(usize),
 }
 
-// Support structure to constrain the number of leaves at each level.
+/// Support structure to constrain the number of leaves at each level.
 pub struct LevelMonitor<Block: BlockT, BE> {
 	// Max number of leaves for each level.
-	pub level_limit: usize,
+	level_limit: usize,
 	// Monotonic counter used to keep track of block freshness.
-	pub import_counter: NumberFor<Block>,
+	pub(crate) import_counter: NumberFor<Block>,
 	// Map between blocks hashes and freshness.
-	pub freshness: HashMap<Block::Hash, NumberFor<Block>>,
+	pub(crate) freshness: HashMap<Block::Hash, NumberFor<Block>>,
 	// Blockchain levels cache.
-	pub levels: HashMap<NumberFor<Block>, HashSet<Block::Hash>>,
+	pub(crate) levels: HashMap<NumberFor<Block>, HashSet<Block::Hash>>,
 	// Lower level number stored by the levels map.
-	pub lowest_level: NumberFor<Block>,
+	lowest_level: NumberFor<Block>,
 	// Backend reference to remove blocks on level saturation.
-	pub backend: Arc<BE>,
-}
-
-impl<Block: BlockT, BE> LevelMonitor<Block, BE> {
-	/// Instance a new monitor structure.
-	pub fn new(level_limit: usize, backend: Arc<BE>) -> Self {
-		LevelMonitor {
-			level_limit,
-			import_counter: Zero::zero(),
-			freshness: HashMap::new(),
-			levels: HashMap::new(),
-			lowest_level: Zero::zero(),
-			backend,
-		}
-	}
+	backend: Arc<BE>,
 }
 
 /// Contains information about the target scheduled for removal.
@@ -81,7 +67,8 @@ struct TargetInfo<Block: BlockT> {
 	/// Index of freshest leaf in the leaves array.
 	freshest_leaf_idx: usize,
 	/// Route from target to its freshest leaf.
-	freshest_route: TreeRoute<Block>,
+	/// `None` if they are equal.
+	freshest_route: Option<TreeRoute<Block>>,
 }
 
 impl<Block, BE> LevelMonitor<Block, BE>
@@ -89,6 +76,20 @@ where
 	Block: BlockT,
 	BE: Backend<Block>,
 {
+	/// Instance a new monitor structure.
+	pub fn new(level_limit: usize, backend: Arc<BE>) -> Self {
+		let mut monitor = LevelMonitor {
+			level_limit,
+			import_counter: Zero::zero(),
+			freshness: HashMap::new(),
+			levels: HashMap::new(),
+			lowest_level: Zero::zero(),
+			backend,
+		};
+		monitor.restore();
+		monitor
+	}
+
 	/// Restore the structure using the backend.
 	///
 	/// Blocks freshness values are inferred from the height and not from the effective import
@@ -138,11 +139,6 @@ where
 	///
 	/// The least "fresh" blocks are eventually removed.
 	pub fn enforce_limit(&mut self, number: NumberFor<Block>) {
-		if self.import_counter == Zero::zero() {
-			// First call detected, restore using the backend persistent information.
-			self.restore();
-		}
-
 		let level_len = self.levels.get(&number).map(|l| l.len()).unwrap_or_default();
 		if level_len < self.level_limit {
 			return
@@ -166,7 +162,7 @@ where
 		let remove_count = level_len - self.level_limit + 1;
 		(0..remove_count).all(|_| {
 			self.find_target(number, &leaves).map_or(false, |target| {
-				self.remove_target(target, &leaves);
+				self.remove_target(target, number, &leaves);
 				true
 			})
 		});
@@ -192,29 +188,46 @@ where
 		let blockchain = self.backend.blockchain();
 		let best_hash = blockchain.info().best_hash;
 
+		// Leaves that where already assigned to some node and thus can be skipped
+		// during the search.
+		let mut assigned_leaves = HashSet::new();
+
 		let level = self.levels.get(&number)?;
 
 		for blk_hash in level.iter().filter(|hash| **hash != best_hash) {
 			// Search for the fresher leaf information for this block
-			let candidate_info =
-				leaves.iter().enumerate().rev().find_map(|(leaf_idx, leaf_hash)| {
-					match sp_blockchain::tree_route(blockchain, *blk_hash, *leaf_hash) {
-						Ok(route) if route.retracted().is_empty() =>
-							Some(TargetInfo { freshest_leaf_idx: leaf_idx, freshest_route: route }),
-						Err(err) => {
-							log::warn!(
-								target: "parachain",
-								"Unable getting route from {:?} to {:?}: {}",
-								blk_hash, leaf_hash, err,
-							);
-							None
-						},
-						_ => None,
+			let candidate_info = leaves
+				.iter()
+				.enumerate()
+				.filter(|(leaf_idx, _)| !assigned_leaves.contains(leaf_idx))
+				.rev()
+				.find_map(|(leaf_idx, leaf_hash)| {
+					if blk_hash == leaf_hash {
+						Some(TargetInfo { freshest_leaf_idx: leaf_idx, freshest_route: None })
+					} else {
+						match sp_blockchain::tree_route(blockchain, *blk_hash, *leaf_hash) {
+							Ok(route) if route.retracted().is_empty() => Some(TargetInfo {
+								freshest_leaf_idx: leaf_idx,
+								freshest_route: Some(route),
+							}),
+							Err(err) => {
+								log::warn!(
+									target: "parachain",
+									"Unable getting route from {:?} to {:?}: {}",
+									blk_hash, leaf_hash, err,
+								);
+								None
+							},
+							_ => None,
+						}
 					}
 				});
 
 			let candidate_info = match candidate_info {
-				Some(candidate_info) => candidate_info,
+				Some(candidate_info) => {
+					assigned_leaves.insert(candidate_info.freshest_leaf_idx);
+					candidate_info
+				},
 				None => {
 					log::warn!(
 						target: "parachain",
@@ -225,22 +238,30 @@ where
 				},
 			};
 
-			// Found fresher leaf for this block.
-			// This block is the new target if its fresher leaf is less fresh than the
-			// previous target fresher leaf AND if best block is not in its route.
-			if target_info
-				.as_ref()
-				.map(|ti| candidate_info.freshest_leaf_idx < ti.freshest_leaf_idx)
-				.unwrap_or(true) && candidate_info
-				.freshest_route
-				.enacted()
-				.iter()
-				.all(|entry| entry.hash != best_hash)
-			{
+			// Found fresher leaf for this candidate.
+			// This candidate is set as the new target if:
+			// 1. its fresher leaf is less fresh than the previous target fresher leaf AND
+			// 2. best block is not in its route
+
+			let is_less_fresh = || {
+				target_info
+					.as_ref()
+					.map(|ti| candidate_info.freshest_leaf_idx < ti.freshest_leaf_idx)
+					.unwrap_or(true)
+			};
+			let not_contains_best = || {
+				candidate_info
+					.freshest_route
+					.as_ref()
+					.map(|tr| tr.enacted().iter().all(|entry| entry.hash != best_hash))
+					.unwrap_or(true)
+			};
+
+			if is_less_fresh() && not_contains_best() {
 				let early_stop = candidate_info.freshest_leaf_idx == 0;
 				target_info = Some(candidate_info);
 				if early_stop {
-					// We will not find a candidate with an older leaf than this.
+					// We will never find a candidate with an worst freshest leaf than this.
 					break
 				}
 			}
@@ -252,7 +273,12 @@ where
 	// Remove the target block and all its descendants.
 	//
 	// Leaves should have already been ordered by "freshness" (less fresh first).
-	fn remove_target(&mut self, target: TargetInfo<Block>, leaves: &[Block::Hash]) {
+	fn remove_target(
+		&mut self,
+		target: TargetInfo<Block>,
+		number: NumberFor<Block>,
+		leaves: &[Block::Hash],
+	) {
 		let mut remove_leaf = |number, hash| {
 			if self.backend.remove_leaf_block(&hash).is_err() {
 				return false
@@ -263,36 +289,52 @@ where
 			true
 		};
 
-		// Takes care of route removal. Starts from the leaf and stops as soon as an error is
-		// encountered. In this case an error is interpreted as the block being not a leaf
-		// and it will be removed while removing another route from the same block but to a
-		// different leaf.
-		let mut remove_route = |route: TreeRoute<Block>| {
-			route.enacted().iter().rev().all(|elem| remove_leaf(elem.number, elem.hash));
+		let target_hash = match target.freshest_route {
+			Some(freshest_route) => {
+				// Takes care of route removal. Starts from the leaf and stops as soon as an error is
+				// encountered. In this case an error is interpreted as the block being not a leaf
+				// and it will be removed while removing another route from the same block but to a
+				// different leaf.
+				let mut remove_route = |route: TreeRoute<Block>| {
+					route.enacted().iter().rev().all(|elem| remove_leaf(elem.number, elem.hash));
+				};
+
+				let target_hash = freshest_route.common_block().hash;
+				debug_assert_eq!(
+					freshest_route.common_block().number,
+					number,
+					"This is a bug in LevelMonitor::find_target() or the Backend is corrupted"
+				);
+
+				// Remove freshest (cached) route first.
+				remove_route(freshest_route);
+
+				// Don't bother trying with leaves we already found to not be our descendants.
+				let to_skip = leaves.len() - target.freshest_leaf_idx;
+				leaves.iter().rev().skip(to_skip).for_each(|leaf_hash| {
+					match sp_blockchain::tree_route(
+						self.backend.blockchain(),
+						target_hash,
+						*leaf_hash,
+					) {
+						Ok(route) if route.retracted().is_empty() => remove_route(route),
+						Err(err) => {
+							log::warn!(
+								target: "parachain",
+								"Unable getting route from {:?} to {:?}: {}",
+								target_hash, leaf_hash, err,
+							);
+						},
+						_ => (),
+					};
+				});
+
+				target_hash
+			},
+			None => leaves[target.freshest_leaf_idx],
 		};
 
-		let target_number = target.freshest_route.common_block().number;
-		let target_hash = target.freshest_route.common_block().hash;
-
-		remove_route(target.freshest_route);
-
-		// Don't bother trying with leaves we already found to not be our descendants.
-		let to_skip = leaves.len() - target.freshest_leaf_idx;
-		leaves.iter().rev().skip(to_skip).for_each(|leaf_hash| {
-			match sp_blockchain::tree_route(self.backend.blockchain(), target_hash, *leaf_hash) {
-				Ok(route) if route.retracted().is_empty() => remove_route(route),
-				Err(err) => {
-					log::warn!(
-						target: "parachain",
-						"Unable getting route from {:?} to {:?}: {}",
-						target_hash, leaf_hash, err,
-					);
-				},
-				_ => (),
-			};
-		});
-
-		remove_leaf(target_number, target_hash);
+		remove_leaf(number, target_hash);
 	}
 
 	/// Add a new imported block information to the monitor.
