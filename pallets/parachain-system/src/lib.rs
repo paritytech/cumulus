@@ -58,6 +58,8 @@ mod migration;
 mod relay_state_snapshot;
 #[macro_use]
 pub mod validate_block;
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 #[cfg(test)]
 mod tests;
 

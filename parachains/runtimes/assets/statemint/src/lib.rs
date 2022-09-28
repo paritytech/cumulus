@@ -679,7 +679,9 @@ mod benches {
 		[pallet_utility, Utility]
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
+		// Cumulus
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		[cumulus_pallet_parachain_system, ParachainSystem]
 		// XCM
 		// NOTE: Make sure you point to the individual modules below.
 		[pallet_xcm_benchmarks::fungible, XcmBalances]
@@ -842,6 +844,9 @@ impl_runtime_apis! {
 			use frame_support::traits::StorageInfoTrait;
 			use frame_system_benchmarking::Pallet as SystemBench;
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
+
+			// must compile
+			let _ = <cumulus_pallet_parachain_system::Pallet::<Runtime> as Benchmarking>::benchmarks(true);
 
 			// This is defined once again in dispatch_benchmark, because list_benchmarks!
 			// and add_benchmarks! are macros exported by define_benchmarks! macros and those types

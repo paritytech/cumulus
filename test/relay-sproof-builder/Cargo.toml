@@ -27,3 +27,4 @@ std = [
 	"sp-std/std",
 	"cumulus-primitives-core/std",
 ]
+runtime-benchmarks = []

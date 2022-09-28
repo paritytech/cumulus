@@ -1,4 +1,4 @@
-// Copyright 2021 Parity Technologies (UK) Ltd.
+// Copyright 2022 Parity Technologies (UK) Ltd.
 // This file is part of Cumulus.
 
 // Cumulus is free software: you can redistribute it and/or modify
@@ -11,8 +11,80 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 
-// You should have received a copy of the GNU General Public License
-// along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
+//! Benchmarks for the `parachain-system` pallet.
+
+use crate::*;
+
+use frame_benchmarking::benchmarks;
+use frame_system::RawOrigin;
+
+// TODO make this injectable.
+// Needs to be compile time available. For now just use the test config.
+pub const fn host_config() -> cumulus_primitives_core::AbridgedHostConfiguration {
+	cumulus_primitives_core::AbridgedHostConfiguration {
+		max_code_size: 2 * 1024 * 1024,
+		max_head_data_size: 1024 * 1024,
+		max_upward_queue_count: 8,
+		max_upward_queue_size: 1024,
+		max_upward_message_size: 256,
+		max_upward_message_num_per_candidate: 5,
+		hrmp_max_message_num_per_candidate: 5,
+		validation_upgrade_cooldown: 6,
+		validation_upgrade_delay: 6,
+	}
+}
+
+benchmarks! {
+	authorize_upgrade {}: _(RawOrigin::Root, Default::default())
+
+	sudo_send_upward_message {
+		let l in 0 .. host_config().max_upward_message_size;
+		HostConfiguration::<T>::put(host_config());
+
+		// Populate the queue and leave space for just one message.
+		for _ in 1..host_config().max_upward_queue_count {
+			let msg = vec![0u8; host_config().max_upward_message_size as usize];
+			PendingUpwardMessages::<T>::append(msg);
+		}
+
+		let msg = vec![0; l as usize];
+	}: _(RawOrigin::Root, msg)
+
+	enact_authorized_upgrade {
+		let s in 0 .. host_config().max_code_size;
+		HostConfiguration::<T>::put(host_config());
+
+		let code = vec![255u8; s as usize];
+		let code_hash = T::Hashing::hash(&code);
+		AuthorizedUpgrade::<T>::put(code_hash);
+
+		// Mocking the storage.
+		ValidationData::<T>::put(cumulus_primitives_core::PersistedValidationData::default());
+
+	}: _(RawOrigin::Root, code)
+
+	set_validation_data {
+		// todo this is currently empty
+		let sproof_builder = RelayStateSproofBuilder::default();
+		let (relay_parent_storage_root, relay_chain_state) =
+		sproof_builder.into_state_root_and_proof();
+		let vfp = PersistedValidationData {
+			relay_parent_number: 1 as RelayChainBlockNumber,
+			relay_parent_storage_root,
+			..Default::default()
+		};
+		let para_inherent_data = cumulus_primitives_parachain_inherent::ParachainInherentData {
+			validation_data: vfp.clone(),
+			relay_chain_state,
+			downward_messages: Default::default(),
+			horizontal_messages: Default::default(),
+		};
+	}: _(RawOrigin::None, para_inherent_data)
+
+	impl_benchmark_test_suite!(Pallet, crate::tests::new_test_ext(), crate::tests::Test);
+}
+
+// TODO move all stuff below
 
 use cumulus_primitives_core::{
 	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId,

@@ -176,7 +176,7 @@ impl XcmpMessageHandler for SaveIntoThreadLocal {
 
 // This function basically just builds a genesis storage key/value store according to
 // our desired mockup.
-fn new_test_ext() -> sp_io::TestExternalities {
+pub(crate) fn new_test_ext() -> sp_io::TestExternalities {
 	HANDLED_DMP_MESSAGES.with(|m| m.borrow_mut().clear());
 	HANDLED_XCMP_MESSAGES.with(|m| m.borrow_mut().clear());
 
