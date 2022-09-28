@@ -714,6 +714,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "bp-bridge-hub-rococo"
+version = "0.1.0"
+dependencies = [
+ "bp-polkadot-core",
+ "bp-runtime",
+ "frame-support",
+ "sp-api",
+]
+
+[[package]]
+name = "bp-bridge-hub-wococo"
+version = "0.1.0"
+dependencies = [
+ "bp-bridge-hub-rococo",
+ "bp-runtime",
+ "sp-api",
+]
+
+[[package]]
 name = "bp-header-chain"
 version = "0.1.0"
 dependencies = [
@@ -992,9 +1011,13 @@ dependencies = [
 name = "bridge-hub-rococo-runtime"
 version = "0.1.0"
 dependencies = [
- "bp-polkadot-core 0.1.0",
- "bp-rococo 0.1.0",
- "bp-wococo 0.1.0",
+ "bp-bridge-hub-rococo",
+ "bp-bridge-hub-wococo",
+ "bp-messages",
+ "bp-polkadot-core",
+ "bp-rococo",
+ "bp-runtime",
+ "bp-wococo",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
