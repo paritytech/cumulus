@@ -101,7 +101,7 @@ where
 		let info = self.backend.blockchain().info();
 
 		self.import_counter = info.finalized_number;
-		self.update(info.finalized_number, info.finalized_hash);
+		self.block_imported(info.finalized_number, info.finalized_hash);
 
 		for leaf in self.backend.blockchain().leaves().unwrap_or_default() {
 			let route =
@@ -114,7 +114,7 @@ where
 				if !self.freshness.contains_key(&elem.hash) {
 					// Use the block height value as the freshness.
 					self.import_counter = elem.number;
-					self.update(elem.number, elem.hash);
+					self.block_imported(elem.number, elem.hash);
 				}
 			});
 			counter_max = std::cmp::max(self.import_counter, counter_max);
@@ -338,7 +338,7 @@ where
 	}
 
 	/// Add a new imported block information to the monitor.
-	pub fn update(&mut self, number: NumberFor<Block>, hash: Block::Hash) {
+	pub fn block_imported(&mut self, number: NumberFor<Block>, hash: Block::Hash) {
 		self.freshness.insert(hash, self.import_counter);
 		self.levels.entry(number).or_default().insert(hash);
 		self.import_counter += One::one();

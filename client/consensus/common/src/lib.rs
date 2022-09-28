@@ -148,7 +148,7 @@ where
 		let res = self.inner.import_block(params, cache).await?;
 
 		if let Some(ref mut monitor) = self.level_monitor {
-			monitor.update(number, hash);
+			monitor.block_imported(number, hash);
 		}
 
 		Ok(res)
