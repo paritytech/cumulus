@@ -1,0 +1,21 @@
+include = ["**/Cargo.toml"]
+
+[formatting]
+array_auto_expand = false
+array_auto_collapse = false
+indent_string = "    "
+inline_table_expand = false
+
+[[rule]]
+include = ["**/Cargo.toml"]
+keys = ["dependencies", "target", "patch"]
+
+[rule.formatting]
+reorder_keys = true
+
+[[rule]]
+include = ["**/Cargo.toml"]
+keys = ["features"]
+
+[rule.formatting]
+array_auto_expand = true
