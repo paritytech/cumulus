@@ -25,8 +25,8 @@ do
 
     wait $tests
 
-    pkill -f polkadot
-    pkill -f parachain
+    pkill -f polkadot || echo killed
+    pkill -f parachain || echo killed
 
     printf "\n🎉 $t integration tests finished! \n\n"
 done
