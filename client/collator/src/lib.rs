@@ -19,10 +19,15 @@
 use cumulus_client_network::WaitToAnnounce;
 use cumulus_primitives_core::{
 	relay_chain::Hash as PHash, CollationInfo, CollectCollationInfo, ParachainBlockData,
-	PersistedValidationData,
+	PersistedValidationData, ValidationParams, ValidationResult,
 };
 
 use sc_client_api::BlockBackend;
+use sc_executor_common::{
+	runtime_blob::RuntimeBlob,
+	wasm_runtime::{InvokeMethod, WasmModule},
+};
+use sc_executor_wasmtime::{Config, DeterministicStackLimit, Semantics};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_consensus::BlockStatus;
 use sp_core::traits::SpawnNamed;
@@ -35,9 +40,11 @@ use cumulus_client_consensus_common::ParachainConsensus;
 use polkadot_node_primitives::{
 	BlockData, Collation, CollationGenerationConfig, CollationResult, MaybeCompressedPoV, PoV,
 };
-use polkadot_node_subsystem::messages::{CollationGenerationMessage, CollatorProtocolMessage};
+use polkadot_node_subsystem::messages::{
+	CollationGenerationMessage, CollatorProtocolMessage, RuntimeApiMessage, RuntimeApiRequest,
+};
 use polkadot_overseer::Handle as OverseerHandle;
-use polkadot_primitives::v2::{CollatorPair, Id as ParaId};
+use polkadot_primitives::v2::{CollatorPair, Id as ParaId, OccupiedCoreAssumption};
 
 use codec::{Decode, Encode};
 use futures::{channel::oneshot, FutureExt};
@@ -54,6 +61,9 @@ pub struct Collator<Block: BlockT, BS, RA> {
 	parachain_consensus: Box<dyn ParachainConsensus<Block>>,
 	wait_to_announce: Arc<Mutex<WaitToAnnounce<Block>>>,
 	runtime_api: Arc<RA>,
+	para_id: ParaId,
+	spawner: Arc<dyn SpawnNamed + Send + Sync>,
+	overseer_handle: OverseerHandle,
 }
 
 impl<Block: BlockT, BS, RA> Clone for Collator<Block, BS, RA> {
@@ -63,9 +73,57 @@ impl<Block: BlockT, BS, RA> Clone for Collator<Block, BS, RA> {
 			wait_to_announce: self.wait_to_announce.clone(),
 			parachain_consensus: self.parachain_consensus.clone(),
 			runtime_api: self.runtime_api.clone(),
+			para_id: self.para_id,
+			spawner: self.spawner.clone(),
+			overseer_handle: self.overseer_handle.clone(),
 		}
 	}
 }
+
+const DEFAULT_HEAP_PAGES_ESTIMATE: u64 = 32;
+const EXTRA_HEAP_PAGES: u64 = 2048;
+
+/// The number of bytes devoted for the stack during wasm execution of a PVF.
+const NATIVE_STACK_MAX: u32 = 256 * 1024 * 1024;
+
+const CONFIG: Config = Config {
+	allow_missing_func_imports: true,
+	cache_path: None,
+	semantics: Semantics {
+		extra_heap_pages: EXTRA_HEAP_PAGES,
+
+		// NOTE: This is specified in bytes, so we multiply by WASM page size.
+		max_memory_size: Some(((DEFAULT_HEAP_PAGES_ESTIMATE + EXTRA_HEAP_PAGES) * 65536) as usize),
+
+		instantiation_strategy:
+			sc_executor_wasmtime::InstantiationStrategy::RecreateInstanceCopyOnWrite,
+
+		// Enable deterministic stack limit to pin down the exact number of items the wasmtime stack
+		// can contain before it traps with stack overflow.
+		//
+		// Here is how the values below were chosen.
+		//
+		// At the moment of writing, the default native stack size limit is 1 MiB. Assuming a logical item
+		// (see the docs about the field and the instrumentation algorithm) is 8 bytes, 1 MiB can
+		// fit 2x 65536 logical items.
+		//
+		// Since reaching the native stack limit is undesirable, we halve the logical item limit and
+		// also increase the native 256x. This hopefully should preclude wasm code from reaching
+		// the stack limit set by the wasmtime.
+		deterministic_stack_limit: Some(DeterministicStackLimit {
+			logical_max: 65536,
+			native_stack_max: NATIVE_STACK_MAX,
+		}),
+		canonicalize_nans: true,
+		// Rationale for turning the multi-threaded compilation off is to make the preparation time
+		// easily reproducible and as deterministic as possible.
+		//
+		// Currently the prepare queue doesn't distinguish between precheck and prepare requests.
+		// On the one hand, it simplifies the code, on the other, however, slows down compile times
+		// for execute requests. This behavior may change in future.
+		parallel_compilation: false,
+	},
+};
 
 impl<Block, BS, RA> Collator<Block, BS, RA>
 where
@@ -81,10 +139,21 @@ where
 		announce_block: Arc<dyn Fn(Block::Hash, Option<Vec<u8>>) + Send + Sync>,
 		runtime_api: Arc<RA>,
 		parachain_consensus: Box<dyn ParachainConsensus<Block>>,
+		para_id: ParaId,
+		overseer_handle: OverseerHandle,
 	) -> Self {
-		let wait_to_announce = Arc::new(Mutex::new(WaitToAnnounce::new(spawner, announce_block)));
+		let wait_to_announce =
+			Arc::new(Mutex::new(WaitToAnnounce::new(spawner.clone(), announce_block)));
 
-		Self { block_status, wait_to_announce, runtime_api, parachain_consensus }
+		Self {
+			block_status,
+			wait_to_announce,
+			runtime_api,
+			parachain_consensus,
+			para_id,
+			spawner,
+			overseer_handle,
+		}
 	}
 
 	/// Checks the status of the given block hash in the Parachain.
@@ -168,11 +237,19 @@ where
 				},
 			};
 
+		tracing::error!(
+			"RUNTIME API VERSION: {} === {:?}",
+			api_version,
+			sp_core::hexdisplay::HexDisplay::from(
+				&<dyn CollectCollationInfo<Block> as sp_api::RuntimeApiInfo>::ID
+			),
+		);
+
 		let collation_info = if api_version < 2 {
 			#[allow(deprecated)]
 			runtime_api
 				.collect_collation_info_before_version_2(&block_id)?
-				.into_latest(header.encode().into())
+				.into_latest(hex_literal::hex!("b30e836c46f09c3327b10a47aa90736e5bf664c17d25d3a05cbd0f07eee6d2a872d38800bbf39840dafaa6a29d365093d8b75cce2f5e927b2210eaa317125bc0aea5189a4e50f15acf13b101972b89777931780ba30a86e3227cc43d44c29bb83c55155b080661757261206e7544080000000005617572610101f4173486975580af86c9bf8ece3309a29808c6eb1f238c5f36fd9bb5c6c6811e34fa51c8e59fb35754ed92af1beda9555839de36cda49a85ac823d6ce94f778f").to_vec().into())
 		} else {
 			runtime_api.collect_collation_info(&block_id, header)?
 		};
@@ -283,7 +360,14 @@ where
 		);
 
 		let block_hash = b.header().hash();
-		let collation = self.build_collation(b, block_hash, pov)?;
+		let collation = self.build_collation(b.clone(), block_hash, pov)?;
+
+		self.validate_pov(
+			BlockData(b.encode()),
+			validation_data,
+			relay_parent,
+			collation.head_data.0.clone(),
+		);
 
 		let (result_sender, signed_stmt_recv) = oneshot::channel();
 
@@ -292,6 +376,85 @@ where
 		tracing::info!(target: LOG_TARGET, ?block_hash, "Produced proof-of-validity candidate.",);
 
 		Some(CollationResult { collation, result_sender: Some(result_sender) })
+	}
+
+	fn validate_pov(
+		&self,
+		pov: BlockData,
+		validation_data: PersistedValidationData,
+		relay_parent: PHash,
+		expected_head: Vec<u8>,
+	) {
+		let validation_params = ValidationParams {
+			parent_head: validation_data.parent_head,
+			block_data: pov,
+			relay_parent_number: validation_data.relay_parent_number,
+			relay_parent_storage_root: validation_data.relay_parent_storage_root,
+		};
+		let mut handle = self.overseer_handle.clone();
+		let para_id = self.para_id;
+
+		self.spawner.spawn_blocking(
+			"test",
+			None,
+			async move {
+				let (code_tx, code_rx) = oneshot::channel();
+				handle
+					.send_msg(
+						RuntimeApiMessage::Request(
+							relay_parent,
+							RuntimeApiRequest::ValidationCode(
+								para_id,
+								OccupiedCoreAssumption::TimedOut,
+								code_tx,
+							),
+						),
+						"Lol",
+					)
+					.await;
+
+				let validation_code = code_rx.await.unwrap().unwrap().unwrap();
+
+				type HostFunctions = (
+					sp_io::misc::HostFunctions,
+					sp_io::crypto::HostFunctions,
+					sp_io::hashing::HostFunctions,
+					sp_io::allocator::HostFunctions,
+					sp_io::logging::HostFunctions,
+					sp_io::trie::HostFunctions,
+				);
+
+				let runtime = sc_executor_wasmtime::create_runtime::<HostFunctions>(
+					RuntimeBlob::uncompress_if_needed(&validation_code.0).unwrap(),
+					CONFIG,
+				)
+				.unwrap();
+
+				let mut instance = runtime.new_instance().unwrap();
+
+				let start = std::time::Instant::now();
+				let res = sp_io::TestExternalities::default().execute_with(|| {
+					instance
+						.call(InvokeMethod::Export("validate_block"), &validation_params.encode())
+						.unwrap()
+				});
+				let end = std::time::Instant::now();
+
+				let res = ValidationResult::decode(&mut &res[..]).unwrap();
+
+				let res_header =
+					<Block as BlockT>::Header::decode(&mut &res.head_data.0[..]).unwrap();
+				let expected_header =
+					<Block as BlockT>::Header::decode(&mut &expected_head[..]).unwrap();
+
+				if res_header != expected_header {
+					tracing::error!(?res_header, ?expected_header, "MISMATCH");
+				}
+
+				tracing::error!("VALIDATION TOOK: {:#?}", end.duration_since(start));
+			}
+			.boxed(),
+		);
 	}
 }
 
@@ -326,12 +489,26 @@ pub async fn start_collator<Block, RA, BS, Spawner>(
 	RA: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	RA::Api: CollectCollationInfo<Block>,
 {
+	{
+		let wasm_file = include_bytes!("../../../kilt_runtime.wasm");
+		let wasm_file = hex::decode(wasm_file).unwrap();
+		let version = sc_executor::read_embedded_version(
+			&RuntimeBlob::uncompress_if_needed(&wasm_file).unwrap(),
+		)
+		.unwrap()
+		.unwrap();
+
+		tracing::error!("RUNTIME API VERSION: {:?}", version,);
+	}
+
 	let collator = Collator::new(
 		block_status,
 		Arc::new(spawner),
 		announce_block,
 		runtime_api,
 		parachain_consensus,
+		para_id,
+		overseer_handle.clone(),
 	);
 
 	let span = tracing::Span::current();

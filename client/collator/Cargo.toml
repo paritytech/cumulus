@@ -12,10 +12,16 @@ tracing = "0.1.25"
 
 # Substrate
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sc-executor-wasmtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sc-executor-common = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+hex-literal = "0.3.4"
+hex = "0.4.3"
 
 # Polkadot
 polkadot-node-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.28" }
