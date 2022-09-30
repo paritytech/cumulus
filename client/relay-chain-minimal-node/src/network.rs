@@ -14,9 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use futures::FutureExt;
 use polkadot_core_primitives::{Block, Hash};
-use polkadot_service::{BlockT, HeaderBackend, NumberFor};
+use polkadot_service::{BlockT, NumberFor};
 
 use polkadot_node_network_protocol::PeerId;
 use sc_network::{NetworkService, SyncState};
@@ -49,8 +48,6 @@ pub(crate) fn build_collator_network(
 ) -> Result<(Arc<NetworkService<Block, Hash>>, NetworkStarter), Error> {
 	let BuildCollatorNetworkParams { config, client, spawn_handle, genesis_hash } = params;
 
-	let transaction_pool_adapter = Arc::new(sc_network::config::EmptyTransactionPool {});
-
 	let protocol_id = config.protocol_id();
 
 	let block_request_protocol_config =
@@ -70,17 +67,10 @@ pub(crate) fn build_collator_network(
 				spawn_handle.spawn("libp2p-node", Some("networking"), fut);
 			}))
 		},
-		transactions_handler_executor: {
-			let spawn_handle = Clone::clone(&spawn_handle);
-			Box::new(move |fut| {
-				spawn_handle.spawn("network-transactions-handler", Some("networking"), fut);
-			})
-		},
 		fork_id: None,
 		chain_sync: Box::new(DummyChainSync),
 		network_config: config.network.clone(),
 		chain: client.clone(),
-		transaction_pool: transaction_pool_adapter as _,
 		import_queue: Box::new(DummyImportQueue),
 		protocol_id,
 		metrics_registry: config.prometheus_config.as_ref().map(|config| config.registry.clone()),
@@ -220,7 +210,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		_request: Option<sc_network_common::sync::message::BlockRequest<B>>,
 		_response: sc_network_common::sync::message::BlockResponse<B>,
 	) -> Result<sc_network_common::sync::OnBlockData<B>, sc_network_common::sync::BadPeer> {
-		unimplemented!()
+		unimplemented!("Not supported on the RPC collator")
 	}
 
 	fn on_state_data(
@@ -228,7 +218,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		_who: &PeerId,
 		_response: sc_network_common::sync::OpaqueStateResponse,
 	) -> Result<sc_network_common::sync::OnStateData<B>, sc_network_common::sync::BadPeer> {
-		unimplemented!()
+		unimplemented!("Not supported on the RPC collator")
 	}
 
 	fn on_warp_sync_data(
@@ -236,7 +226,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		_who: &PeerId,
 		_response: sc_network_common::sync::warp::EncodedProof,
 	) -> Result<(), sc_network_common::sync::BadPeer> {
-		unimplemented!()
+		unimplemented!("Not supported on the RPC collator")
 	}
 
 	fn on_block_justification(
@@ -245,7 +235,7 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		_response: sc_network_common::sync::message::BlockResponse<B>,
 	) -> Result<sc_network_common::sync::OnBlockJustification<B>, sc_network_common::sync::BadPeer>
 	{
-		unimplemented!()
+		unimplemented!("Not supported on the RPC collator")
 	}
 
 	fn on_blocks_processed(
@@ -326,21 +316,21 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		&self,
 		_request: &sc_network_common::sync::message::BlockRequest<B>,
 	) -> sc_network_common::sync::OpaqueBlockRequest {
-		unimplemented!()
+		unimplemented!("Not supported on the RPC collator")
 	}
 
 	fn encode_block_request(
 		&self,
 		_request: &sc_network_common::sync::OpaqueBlockRequest,
 	) -> Result<Vec<u8>, String> {
-		unimplemented!()
+		unimplemented!("Not supported on the RPC collator")
 	}
 
 	fn decode_block_response(
 		&self,
 		_response: &[u8],
 	) -> Result<sc_network_common::sync::OpaqueBlockResponse, String> {
-		unimplemented!()
+		unimplemented!("Not supported on the RPC collator")
 	}
 
 	fn block_response_into_blocks(
@@ -348,21 +338,21 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		_request: &sc_network_common::sync::message::BlockRequest<B>,
 		_response: sc_network_common::sync::OpaqueBlockResponse,
 	) -> Result<Vec<sc_network_common::sync::message::BlockData<B>>, String> {
-		unimplemented!()
+		unimplemented!("Not supported on the RPC collator")
 	}
 
 	fn encode_state_request(
 		&self,
 		_request: &sc_network_common::sync::OpaqueStateRequest,
 	) -> Result<Vec<u8>, String> {
-		unimplemented!()
+		unimplemented!("Not supported on the RPC collator")
 	}
 
 	fn decode_state_response(
 		&self,
 		_response: &[u8],
 	) -> Result<sc_network_common::sync::OpaqueStateResponse, String> {
-		unimplemented!()
+		unimplemented!("Not supported on the RPC collator")
 	}
 }
 
