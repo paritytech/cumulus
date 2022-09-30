@@ -50,10 +50,10 @@ substrate-test-client = { git = "https://github.com/paritytech/substrate", branc
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "ao-recovery-try-connect" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "ao-recovery-try-connect" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "ao-recovery-try-connect" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "ao-recovery-try-connect" }
 
 # Cumulus
 cumulus-client-cli = { path = "../../client/cli" }
@@ -75,7 +75,7 @@ futures = "0.3.24"
 portpicker = "0.1.1"
 
 # Polkadot dependencies
-polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "ao-recovery-try-connect" }
 
 # Substrate dependencies
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
