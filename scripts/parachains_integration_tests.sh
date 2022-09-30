@@ -26,9 +26,9 @@ do
     wait $tests
 
     # trying to stop zombienet gracefully
-    # kill -s 3 $(ps -ef | awk '/[b]in\/zombienet/{print $2}')
-    pkill -TERM polkadot
-    pkill -TERM parachain
+    kill -s 3 $(ps -ef | awk '/[b]in\/zombienet/{print $2}')
+    pkill -TERM polkadot || echo killed
+    pkill -TERM parachain || echo killed
 
     printf "\n🎉 $t integration tests finished! \n\n"
 done
