@@ -53,7 +53,7 @@ cumulus_based = true
   command = "test-parachain"
   args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug", "--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'alice'|zombie('wsUri')}}", "-- --bootnodes {{'alice'|zombie('multiAddress')}}"]
 
-  # run two as parachain full node that is only connected to dave
+  # run two as parachain full node that is only connected to charlie
   [[parachains.collators]]
   name = "two"
   validator = false

@@ -79,7 +79,7 @@ fn main() -> Result<(), sc_cli::Error> {
 		},
 		None => {
 			let log_filters = cli.run.normalize().log_filters();
-			let mut builder = sc_cli::LoggerBuilder::new(log_filters.unwrap_or(String::new()));
+			let mut builder = sc_cli::LoggerBuilder::new(log_filters.unwrap_or_default());
 			builder.with_colors(true);
 			let _ = builder.init();
 

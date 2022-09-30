@@ -37,7 +37,7 @@ cumulus_based = true
   command = "test-parachain"
   args = ["-lparachain=debug,blockchain-rpc-client=debug", "--relay-chain-rpc-url {{'one'|zombie('wsUri')}}", "-- --bootnodes {{'one'|zombie('multiAddress')}}"]
 
-  # run eve as parachain full node that is only connected to dave
+  # run eve as parachain full node
   [[parachains.collators]]
   name = "eve"
   validator = true

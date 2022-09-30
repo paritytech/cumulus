@@ -43,39 +43,6 @@ pub(crate) struct BuildCollatorNetworkParams<'a> {
 	pub genesis_hash: Hash,
 }
 
-struct DummyImportQueue;
-
-impl sc_service::ImportQueue<Block> for DummyImportQueue {
-	/// Import bunch of blocks.
-	fn import_blocks(
-		&mut self,
-		_origin: BlockOrigin,
-		_blocks: Vec<sc_consensus::IncomingBlock<Block>>,
-	) {
-	}
-	/// Import block justifications.
-	fn import_justifications(
-		&mut self,
-		_who: PeerId,
-		_hash: Hash,
-		_number: NumberFor<Block>,
-		_justifications: Justifications,
-	) {
-	}
-
-	/// Polls for actions to perform on the network.
-	///
-	/// This method should behave in a way similar to `Future::poll`. It can register the current
-	/// task and notify later when more actions are ready to be polled. To continue the comparison,
-	/// it is as if this method always returned `Poll::Pending`.
-	fn poll_actions(
-		&mut self,
-		_cx: &mut futures::task::Context,
-		_link: &mut dyn sc_consensus::import_queue::Link<Block>,
-	) {
-	}
-}
-
 /// Build the network service, the network status sinks and an RPC sender.
 pub(crate) fn build_collator_network(
 	params: BuildCollatorNetworkParams,
@@ -124,10 +91,8 @@ pub(crate) fn build_collator_network(
 		request_response_protocol_configs: Vec::new(),
 	};
 
-	let network_mut = sc_network::NetworkWorker::new(network_params)?;
-	let network = network_mut.service().clone();
-
-	let future = build_network_collator_future(network_mut);
+	let network_worker = sc_network::NetworkWorker::new(network_params)?;
+	let network_service = network_worker.service().clone();
 
 	let (network_start_tx, network_start_rx) = futures::channel::oneshot::channel();
 
@@ -145,33 +110,15 @@ pub(crate) fn build_collator_network(
 			);
 			// This `return` might seem unnecessary, but we don't want to make it look like
 			// everything is working as normal even though the user is clearly misusing the API.
-			return
+			return;
 		}
 
-		future.await
+		network_worker.await
 	});
 
 	let network_starter = NetworkStarter::new(network_start_tx);
 
-	Ok((network, network_starter))
-}
-
-/// Builds a never-ending future that continuously polls the network.
-///
-/// The `status_sink` contain a list of senders to send a periodic network status to.
-async fn build_network_collator_future<B: BlockT, H: sc_network::ExHashT, C: HeaderBackend<B>>(
-	mut network: sc_network::NetworkWorker<B, H, C>,
-) {
-	loop {
-		futures::select! {
-			// Answer incoming RPC requests.
-
-			// The network worker has done something. Nothing special to do, but could be
-			// used in the future to perform actions in response of things that happened on
-			// the network.
-			_ = (&mut network).fuse() => {}
-		}
-	}
+	Ok((network_service, network_starter))
 }
 
 /// Empty ChainSync shell. Syncing code is not necessary for
@@ -416,5 +363,32 @@ impl<B: BlockT> sc_network_common::sync::ChainSync<B> for DummyChainSync {
 		_response: &[u8],
 	) -> Result<sc_network_common::sync::OpaqueStateResponse, String> {
 		unimplemented!()
+	}
+}
+
+struct DummyImportQueue;
+
+impl sc_service::ImportQueue<Block> for DummyImportQueue {
+	fn import_blocks(
+		&mut self,
+		_origin: BlockOrigin,
+		_blocks: Vec<sc_consensus::IncomingBlock<Block>>,
+	) {
+	}
+
+	fn import_justifications(
+		&mut self,
+		_who: PeerId,
+		_hash: Hash,
+		_number: NumberFor<Block>,
+		_justifications: Justifications,
+	) {
+	}
+
+	fn poll_actions(
+		&mut self,
+		_cx: &mut futures::task::Context,
+		_link: &mut dyn sc_consensus::import_queue::Link<Block>,
+	) {
 	}
 }

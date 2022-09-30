@@ -113,7 +113,7 @@ pub async fn new_minimal_relay_chain(
 	let genesis_hash = relay_chain_rpc_client
 		.block_get_hash(Some(0))
 		.await
-		.expect("Crash here if no genesis is available")
+		.expect("Genesis block hash is always available; qed")
 		.unwrap_or_default();
 
 	let peer_set_protocol_names =

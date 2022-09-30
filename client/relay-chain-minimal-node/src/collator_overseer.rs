@@ -81,6 +81,7 @@ pub(crate) struct CollatorOverseerGenArgs<'a> {
 	pub collator_pair: CollatorPair,
 	/// Request response protocols
 	pub req_protocol_names: ReqProtocolNames,
+	/// Peerset protocols name mapping
 	pub peer_set_protocol_names: PeerSetProtocolNames,
 	/// Config for the availability store
 	pub availability_config: Config,
