@@ -33,7 +33,7 @@ cumulus_based = true
   validator = true
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "--use-null-consensus", "--disable-block-announcements"]
+  args = ["--use-null-consensus", "--disable-block-announcements"]
 
   # run eve as parachain full node that is only connected to dave
   [[parachains.collators]]
@@ -41,4 +41,4 @@ cumulus_based = true
   validator = false
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "--use-null-consensus", "--disable-block-announcements"]
+  args = ["--use-null-consensus", "--disable-block-announcements"]
