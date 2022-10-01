@@ -287,7 +287,7 @@ where
 		invalidated_leaves: &mut HashSet<usize>,
 	) {
 		let mut remove_leaf = |number, hash| {
-			log::trace!(target: "parachain", "XXX Removing block (@{}) {:?}", number, hash);
+			log::debug!(target: "parachain", "XXX Removing block (@{}) {:?}", number, hash);
 			if let Err(err) = self.backend.remove_leaf_block(&hash) {
 				log::debug!(target: "parachain", "XXX Remove error for {}: {}", hash, err);
 				return false
@@ -350,7 +350,7 @@ where
 
 		remove_leaf(number, target_hash);
 
-		log::warn!(target: "parachain", "XXX Removed target (@{}) {:?}", number, target_hash);
+		log::debug!(target: "parachain", "XXX Removed target (@{}) {:?}", number, target_hash);
 	}
 
 	/// Add a new imported block information to the monitor.
