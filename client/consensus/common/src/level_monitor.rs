@@ -150,9 +150,11 @@ where
 			number,
 		);
 
+		// Sort leaves by freshness only once (less fresh first) and keep track of
+		// leaves that were invalidated on removal.
 		let mut leaves = self.backend.blockchain().leaves().unwrap_or_default();
-		// Sort leaves by freshness (less fresh first).
 		leaves.sort_unstable_by(|a, b| self.freshness.get(a).cmp(&self.freshness.get(b)));
+		let mut invalidated_leaves = HashSet::new();
 
 		// This may not be the most efficient way to remove **multiple** entries, but is the easy
 		// one :-). Should be considered that in "normal" conditions the number of blocks to remove
@@ -160,9 +162,14 @@ where
 		// trigger multiple removals (2+) is if we restart the node using an existing db and a
 		// smaller limit wrt the one previously used.
 		let remove_count = level_len - self.level_limit + 1;
+
+		log::debug!(
+			target: "parachain",
+			"Enforcing limit by removing {remove_count} blocks at level {number}"
+		);
 		(0..remove_count).all(|_| {
-			self.find_target(number, &leaves).map_or(false, |target| {
-				self.remove_target(target, number, &leaves);
+			self.find_target(number, &leaves, &invalidated_leaves).map_or(false, |target| {
+				self.remove_target(target, number, &leaves, &mut invalidated_leaves);
 				true
 			})
 		});
@@ -183,6 +190,7 @@ where
 		&self,
 		number: NumberFor<Block>,
 		leaves: &[Block::Hash],
+		invalidated_leaves: &HashSet<usize>,
 	) -> Option<TargetInfo<Block>> {
 		let mut target_info: Option<TargetInfo<Block>> = None;
 		let blockchain = self.backend.blockchain();
@@ -199,7 +207,9 @@ where
 			let candidate_info = leaves
 				.iter()
 				.enumerate()
-				.filter(|(leaf_idx, _)| !assigned_leaves.contains(leaf_idx))
+				.filter(|(leaf_idx, _)| {
+					!assigned_leaves.contains(leaf_idx) && !invalidated_leaves.contains(leaf_idx)
+				})
 				.rev()
 				.find_map(|(leaf_idx, leaf_hash)| {
 					if blk_hash == leaf_hash {
@@ -213,7 +223,7 @@ where
 							Err(err) => {
 								log::warn!(
 									target: "parachain",
-									"Unable getting route from {:?} to {:?}: {}",
+									"XXX (lookup) Unable getting route from {:?} to {:?}: {}",
 									blk_hash, leaf_hash, err,
 								);
 								None
@@ -278,16 +288,20 @@ where
 		target: TargetInfo<Block>,
 		number: NumberFor<Block>,
 		leaves: &[Block::Hash],
+		invalidated_leaves: &mut HashSet<usize>,
 	) {
 		let mut remove_leaf = |number, hash| {
-			if self.backend.remove_leaf_block(&hash).is_err() {
+			log::trace!(target: "parachain", "XXX Removing block (@{}) {:?}", number, hash);
+			if let Err(err) = self.backend.remove_leaf_block(&hash) {
+				log::debug!(target: "parachain", "XXX Remove error for {}: {}", hash, err);
 				return false
 			}
-			log::debug!(target: "parachain", "Removing block {}", hash);
 			self.levels.get_mut(&number).map(|level| level.remove(&hash));
 			self.freshness.remove(&hash);
 			true
 		};
+
+		invalidated_leaves.insert(target.freshest_leaf_idx);
 
 		let target_hash = match target.freshest_route {
 			Some(freshest_route) => {
@@ -311,7 +325,11 @@ where
 
 				// Don't bother trying with leaves we already found to not be our descendants.
 				let to_skip = leaves.len() - target.freshest_leaf_idx;
-				leaves.iter().rev().skip(to_skip).for_each(|leaf_hash| {
+				leaves.iter().enumerate().rev().skip(to_skip).for_each(|(leaf_idx, leaf_hash)| {
+					if invalidated_leaves.contains(&leaf_idx) {
+						return
+					}
+					invalidated_leaves.insert(leaf_idx);
 					match sp_blockchain::tree_route(
 						self.backend.blockchain(),
 						target_hash,
@@ -321,7 +339,7 @@ where
 						Err(err) => {
 							log::warn!(
 								target: "parachain",
-								"Unable getting route from {:?} to {:?}: {}",
+								"XXX (on rem) Unable getting route from {:?} to {:?}: {}",
 								target_hash, leaf_hash, err,
 							);
 						},
@@ -335,6 +353,8 @@ where
 		};
 
 		remove_leaf(number, target_hash);
+
+		log::warn!(target: "parachain", "XXX Removed target (@{}) {:?}", number, target_hash);
 	}
 
 	/// Add a new imported block information to the monitor.
