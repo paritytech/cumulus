@@ -97,9 +97,9 @@ impl<Block: BlockT, BI, BE: Backend<Block>> ParachainBlockImport<Block, BI, BE> 
 	}
 
 	/// Create a new instance with an explicit limit to the number of leaves per level.
-    ///
-    /// This function alone doesn't enforce the limit on levels for old imported blocks,
-    /// the limit is eventually enforced only when new blocks are imported.
+	///
+	/// This function alone doesn't enforce the limit on levels for old imported blocks,
+	/// the limit is eventually enforced only when new blocks are imported.
 	pub fn new_with_limit(inner: BI, backend: Arc<BE>, level_leaves_max: LevelLimit) -> Self {
 		let level_limit = match level_leaves_max {
 			LevelLimit::None => None,
