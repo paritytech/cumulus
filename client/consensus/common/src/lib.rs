@@ -17,7 +17,7 @@
 use polkadot_primitives::v2::{Hash as PHash, PersistedValidationData};
 
 use sc_client_api::Backend;
-use sc_consensus::BlockImport;
+use sc_consensus::{BlockImport, ImportResult};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 
 use std::sync::Arc;
@@ -147,7 +147,7 @@ where
 
 		let res = self.inner.import_block(params, cache).await?;
 
-		if let Some(ref mut monitor) = self.level_monitor {
+		if let (Some(monitor), ImportResult::Imported(_)) = (self.level_monitor.as_mut(), &res) {
 			monitor.block_imported(number, hash);
 		}
 

@@ -97,11 +97,13 @@ where
 	///
 	/// Level limits are not enforced during this phase.
 	fn restore(&mut self) {
-		let mut counter_max = Zero::zero();
 		let info = self.backend.blockchain().info();
 
+		self.lowest_level = info.finalized_number;
 		self.import_counter = info.finalized_number;
 		self.block_imported(info.finalized_number, info.finalized_hash);
+
+		let mut counter_max = info.finalized_number;
 
 		for leaf in self.backend.blockchain().leaves().unwrap_or_default() {
 			let route =
@@ -121,7 +123,6 @@ where
 		}
 
 		self.import_counter = counter_max;
-		self.lowest_level = info.finalized_number;
 	}
 
 	/// Check and enforce the limit bound at the given height.
@@ -144,12 +145,6 @@ where
 			return
 		}
 
-		log::debug!(
-			target: "parachain",
-			"Detected leaves overflow at height {}, removing obsolete blocks",
-			number,
-		);
-
 		// Sort leaves by freshness only once (less fresh first) and keep track of
 		// leaves that were invalidated on removal.
 		let mut leaves = self.backend.blockchain().leaves().unwrap_or_default();
@@ -165,8 +160,9 @@ where
 
 		log::debug!(
 			target: "parachain",
-			"Enforcing limit by removing {remove_count} blocks at level {number}"
+			"Detected leaves overflow at height {number}, removing {remove_count} obsolete blocks",
 		);
+
 		(0..remove_count).all(|_| {
 			self.find_target(number, &leaves, &invalidated_leaves).map_or(false, |target| {
 				self.remove_target(target, number, &leaves, &mut invalidated_leaves);
