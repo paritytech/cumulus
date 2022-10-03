@@ -23,18 +23,18 @@
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("statemine-dev"), DB CACHE: 1024
 
 // Executed Command:
-// /home/benchbot/cargo_target_dir/production/polkadot-parachain
+// ./artifacts/polkadot-parachain
 // benchmark
 // pallet
-// --steps=50
-// --repeat=20
-// --extrinsic=*
+// --template=./templates/xcm-bench-template.hbs
+// --chain=statemine-dev
 // --execution=wasm
 // --wasm-execution=compiled
-// --heap-pages=4096
 // --pallet=pallet_xcm_benchmarks::generic
-// --chain=statemine-dev
-// --json-file=/var/lib/gitlab-runner/builds/zyw4fam_/0/parity/mirrors/cumulus/.git/.artifacts/bench.json
+// --extrinsic=*
+// --steps=50
+// --repeat=20
+// --json
 // --header=./file_header.txt
 // --template=./templates/xcm-bench-template.hbs
 // --output=./parachains/runtimes/assets/statemine/src/weights/xcm/
