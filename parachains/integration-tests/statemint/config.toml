@@ -5,19 +5,22 @@ chain = "polkadot-local"
 
 	[[relaychain.nodes]]
 	name = "alice"
-	ws_port = 9900
+	ws_port = 9800
 	validator = true
 
 	[[relaychain.nodes]]
 	name = "bob"
+	ws_port = 9801
 	validator = true
 
 	[[relaychain.nodes]]
 	name = "charlie"
+	ws_port = 9802
 	validator = true
 
 	[[relaychain.nodes]]
 	name = "dave"
+	ws_port = 9803
 	validator = true
 
 [[parachains]]
@@ -27,11 +30,12 @@ cumulus_based = true
 
 	[[parachains.collators]]
 	name = "collator1"
-	ws_port = 9910
+	ws_port = 9810
 	command = "./bin/polkadot-parachain"
 
 	[[parachains.collators]]
 	name = "collator2"
+	ws_port = 9811
 	command = "./bin/polkadot-parachain"
 
 [[parachains]]
@@ -41,9 +45,10 @@ cumulus_based = true
 
 	[[parachains.collators]]
 	name = "collator3"
-	ws_port = 9920
+	ws_port = 9820
 	command = "./bin/polkadot-parachain"
 
 	[[parachains.collators]]
 	name = "collator4"
+	ws_port = 9821
 	command = "./bin/polkadot-parachain"
