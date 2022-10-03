@@ -62,7 +62,12 @@ impl<Call> XcmWeightInfo<Call> for WestmintXcmWeight<Call> {
 	fn receive_teleported_asset(assets: &MultiAssets) -> XCMWeight {
 		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::receive_teleported_asset())
 	}
-	fn query_response(_query_id: &u64, _response: &Response, _max_weight: &u64) -> XCMWeight {
+	fn query_response(
+		_query_id: &u64,
+		_response: &Response,
+		_max_weight: &u64,
+		_querier: &Option<MultiLocation>,
+	) -> XCMWeight {
 		XcmGeneric::<Runtime>::query_response().ref_time()
 	}
 	fn transfer_asset(assets: &MultiAssets, _dest: &MultiLocation) -> XCMWeight {
@@ -104,19 +109,11 @@ impl<Call> XcmWeightInfo<Call> for WestmintXcmWeight<Call> {
 	fn descend_origin(_who: &InteriorMultiLocation) -> XCMWeight {
 		XcmGeneric::<Runtime>::descend_origin().ref_time()
 	}
-	fn report_error(
-		_query_id: &QueryId,
-		_dest: &MultiLocation,
-		_max_response_weight: &u64,
-	) -> XCMWeight {
+	fn report_error(_query_response_info: &QueryResponseInfo) -> XCMWeight {
 		XcmGeneric::<Runtime>::report_error().ref_time()
 	}
 
-	fn deposit_asset(
-		assets: &MultiAssetFilter,
-		_max_assets: &u32,
-		_dest: &MultiLocation,
-	) -> XCMWeight {
+	fn deposit_asset(assets: &MultiAssetFilter, _dest: &MultiLocation) -> XCMWeight {
 		// Hardcoded till the XCM pallet is fixed
 		let hardcoded_weight = Weight::from_ref_time(1_000_000_000 as u64).ref_time();
 		let weight = assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_asset());
@@ -124,13 +121,16 @@ impl<Call> XcmWeightInfo<Call> for WestmintXcmWeight<Call> {
 	}
 	fn deposit_reserve_asset(
 		assets: &MultiAssetFilter,
-		_max_assets: &u32,
 		_dest: &MultiLocation,
 		_xcm: &Xcm<()>,
 	) -> XCMWeight {
 		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_reserve_asset())
 	}
-	fn exchange_asset(_give: &MultiAssetFilter, _receive: &MultiAssets) -> XCMWeight {
+	fn exchange_asset(
+		_give: &MultiAssetFilter,
+		_receive: &MultiAssets,
+		_maximal: &bool,
+	) -> XCMWeight {
 		Weight::MAX.ref_time()
 	}
 	fn initiate_reserve_withdraw(
@@ -150,13 +150,8 @@ impl<Call> XcmWeightInfo<Call> for WestmintXcmWeight<Call> {
 		let weight = assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::initiate_teleport());
 		cmp::min(hardcoded_weight, weight)
 	}
-	fn query_holding(
-		_query_id: &u64,
-		_dest: &MultiLocation,
-		_assets: &MultiAssetFilter,
-		_max_response_weight: &u64,
-	) -> XCMWeight {
-		XcmGeneric::<Runtime>::query_holding().ref_time()
+	fn report_holding(_response_info: &QueryResponseInfo, _assets: &MultiAssetFilter) -> XCMWeight {
+		XcmGeneric::<Runtime>::report_holding().ref_time()
 	}
 	fn buy_execution(_fees: &MultiAsset, _weight_limit: &WeightLimit) -> XCMWeight {
 		XcmGeneric::<Runtime>::buy_execution().ref_time()
@@ -184,5 +179,66 @@ impl<Call> XcmWeightInfo<Call> for WestmintXcmWeight<Call> {
 	}
 	fn unsubscribe_version() -> XCMWeight {
 		XcmGeneric::<Runtime>::unsubscribe_version().ref_time()
+	}
+	fn burn_asset(assets: &MultiAssets) -> XCMWeight {
+		assets.weigh_multi_assets(XcmGeneric::<Runtime>::burn_asset())
+	}
+	fn expect_asset(assets: &MultiAssets) -> XCMWeight {
+		assets.weigh_multi_assets(XcmGeneric::<Runtime>::expect_asset())
+	}
+	fn expect_origin(_origin: &Option<MultiLocation>) -> XCMWeight {
+		XcmGeneric::<Runtime>::expect_origin().ref_time()
+	}
+	fn expect_error(_error: &Option<(u32, XcmError)>) -> XCMWeight {
+		XcmGeneric::<Runtime>::expect_error().ref_time()
+	}
+	fn query_pallet(_module_name: &Vec<u8>, _response_info: &QueryResponseInfo) -> XCMWeight {
+		XcmGeneric::<Runtime>::query_pallet().ref_time()
+	}
+	fn expect_pallet(
+		_index: &u32,
+		_name: &Vec<u8>,
+		_module_name: &Vec<u8>,
+		_crate_major: &u32,
+		_min_crate_minor: &u32,
+	) -> XCMWeight {
+		XcmGeneric::<Runtime>::expect_pallet().ref_time()
+	}
+	fn report_transact_status(_response_info: &QueryResponseInfo) -> XCMWeight {
+		XcmGeneric::<Runtime>::report_transact_status().ref_time()
+	}
+	fn clear_transact_status() -> XCMWeight {
+		XcmGeneric::<Runtime>::clear_transact_status().ref_time()
+	}
+	fn universal_origin(_: &Junction) -> XCMWeight {
+		Weight::MAX.ref_time()
+	}
+	fn export_message(_: &NetworkId, _: &Junctions, _: &Xcm<()>) -> XCMWeight {
+		Weight::MAX.ref_time()
+	}
+	fn lock_asset(_: &MultiAsset, _: &MultiLocation) -> XCMWeight {
+		Weight::MAX.ref_time()
+	}
+	fn unlock_asset(_: &MultiAsset, _: &MultiLocation) -> XCMWeight {
+		Weight::MAX.ref_time()
+	}
+	fn note_unlockable(_: &MultiAsset, _: &MultiLocation) -> XCMWeight {
+		Weight::MAX.ref_time()
+	}
+	fn request_unlock(_: &MultiAsset, _: &MultiLocation) -> XCMWeight {
+		Weight::MAX.ref_time()
+	}
+	fn set_fees_mode(_: &bool) -> XCMWeight {
+		XcmGeneric::<Runtime>::set_fees_mode().ref_time()
+	}
+	fn set_topic(_topic: &[u8; 32]) -> XCMWeight {
+		XcmGeneric::<Runtime>::set_topic().ref_time()
+	}
+	fn clear_topic() -> XCMWeight {
+		XcmGeneric::<Runtime>::clear_topic().ref_time()
+	}
+	fn alias_origin(_: &MultiLocation) -> XCMWeight {
+		// XCM Executor does not currently support alias origin operations
+		Weight::MAX.ref_time()
 	}
 }

@@ -13,7 +13,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use super::{AccountId, ParachainInfo, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin};
+use super::{
+	AccountId, AllPalletsWithSystem, ParachainInfo, Runtime, RuntimeCall, RuntimeEvent,
+	RuntimeOrigin,
+};
 use frame_support::{match_types, parameter_types, traits::Nothing};
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -67,7 +70,7 @@ impl xcm_executor::Config for XcmConfig {
 	type AssetTrap = (); // don't trap for now
 	type AssetClaims = (); // don't claim for now
 	type SubscriptionService = (); // don't handle subscriptions for now
-	type PalletInstancesInfo = ();
+	type PalletInstancesInfo = AllPalletsWithSystem;
 	type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
 	type AssetLocker = ();
 	type AssetExchanger = ();
