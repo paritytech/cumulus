@@ -56,13 +56,13 @@ tests:
               ]
               events:
                 - name: sudo.Sudid
-                  attribute:
-                    type: Result<Null, SpRuntimeDispatchError>
-                    value: Ok
+                  attributes:
+                    - type: Result<Null, SpRuntimeDispatchError>
+                      value: Ok
                 - name: xcmPallet.SupportedVersionChanged
-                  attribute:
-                    type: u32
-                    value: *xcm_version
+                  attributes:
+                    - type: u32
+                      value: *xcm_version
           - extrinsics: # Relay Chain sets supported version for Penpal Parachain
             - chain: *relay_chain
               sudo: true
@@ -82,13 +82,13 @@ tests:
               ]
               events:
                 - name: sudo.Sudid
-                  attribute:
-                    type: Result<Null, SpRuntimeDispatchError>
-                    value: Ok
+                  attributes:
+                    - type: Result<Null, SpRuntimeDispatchError>
+                      value: Ok
                 - name: xcmPallet.SupportedVersionChanged
-                  attribute:
-                    type: u32
-                    value: *xcm_version
+                  attributes:
+                    - type: u32
+                      value: *xcm_version
           - extrinsics: # Assset Parachain sets supported version for Relay Chain through it
             - chain: *relay_chain
               signer: *rc_signer
@@ -111,15 +111,15 @@ tests:
               ]
               events:
                 - name: sudo.Sudid
-                  attribute:
-                    type: Result<Null, SpRuntimeDispatchError>
-                    value: Ok
+                  attributes:
+                    - type: Result<Null, SpRuntimeDispatchError>
+                      value: Ok
                 - name: xcmPallet.Sent
                 - name: polkadotXcm.SupportedVersionChanged
                   chain: *assets_parachain
-                  attribute:
-                    type: u32
-                    value: *xcm_version
+                  attributes:
+                    - type: u32
+                      value: *xcm_version
           - extrinsics: # Penpal Parachain sets supported version for Relay Chain
             - chain: *penpal_parachain
               signer: *pp_signer
@@ -135,10 +135,10 @@ tests:
               ]
               events:
                 - name: sudo.Sudid
-                  attribute:
-                    type: Result<Null, SpRuntimeDispatchError>
-                    value: Ok
+                  attributes:
+                    - type: Result<Null, SpRuntimeDispatchError>
+                      value: Ok
                 - name: polkadotXcm.SupportedVersionChanged
-                  attribute:
-                    type: u32
-                    value: *xcm_version
+                  attributes:
+                    - type: u32
+                      value: *xcm_version

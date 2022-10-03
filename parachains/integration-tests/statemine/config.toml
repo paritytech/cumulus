@@ -10,14 +10,17 @@ chain = "kusama-local"
 
 	[[relaychain.nodes]]
 	name = "bob"
+	ws_port = 9901
 	validator = true
 
 	[[relaychain.nodes]]
 	name = "charlie"
+	ws_port = 9902
 	validator = true
 
 	[[relaychain.nodes]]
 	name = "dave"
+	ws_port = 9903
 	validator = true
 
 [[parachains]]
@@ -32,6 +35,7 @@ cumulus_based = true
 
 	[[parachains.collators]]
 	name = "collator2"
+	ws_port = 9911
 	command = "./bin/polkadot-parachain"
 
 [[parachains]]
@@ -46,4 +50,5 @@ cumulus_based = true
 
 	[[parachains.collators]]
 	name = "collator4"
+	ws_port = 9921
 	command = "./bin/polkadot-parachain"
