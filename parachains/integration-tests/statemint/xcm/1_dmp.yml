@@ -2,9 +2,9 @@
 settings:
   chains:
     relay_chain: &relay_chain
-      wsPort: 9900
+      wsPort: 9800
     assets_parachain: &assets_parachain
-      wsPort: 9910
+      wsPort: 9810
       paraId: &ap_id 1000
   variables:
     relay_chain:
