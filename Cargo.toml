@@ -27,8 +27,8 @@ members = [
 	"pallets/session-benchmarking",
 	"pallets/xcm",
 	"pallets/xcmp-queue",
-	"parachain-template/node",
-	"parachain-template/runtime",
+#	"parachain-template/node",
+#	"parachain-template/runtime",
 	"primitives/core",
 	"primitives/parachain-inherent",
 	"primitives/timestamp",
@@ -37,21 +37,21 @@ members = [
 	"parachains/common",
 	"parachains/pallets/parachain-info",
 	"parachains/pallets/ping",
-	"parachains/runtimes/testing/rococo-parachain",
-	"parachains/runtimes/starters/shell",
-	"parachains/runtimes/starters/seedling",
-	"parachains/runtimes/assets/statemint",
-	"parachains/runtimes/assets/statemine",
-	"parachains/runtimes/assets/westmint",
+#	"parachains/runtimes/testing/rococo-parachain",
+#	"parachains/runtimes/starters/shell",
+#	"parachains/runtimes/starters/seedling",
+#	"parachains/runtimes/assets/statemint",
+#	"parachains/runtimes/assets/statemine",
+#	"parachains/runtimes/assets/westmint",
 	"parachains/runtimes/bridge-hubs/bridge-hub-rococo",
-	"parachains/runtimes/collectives/collectives-polkadot",
-	"parachains/runtimes/contracts/contracts-rococo",
-	"parachains/runtimes/testing/penpal",
-	"test/client",
-	"test/relay-sproof-builder",
-	"test/relay-validation-worker-provider",
-	"test/runtime",
-	"test/service",
+#	"parachains/runtimes/collectives/collectives-polkadot",
+#	"parachains/runtimes/contracts/contracts-rococo",
+#	"parachains/runtimes/testing/penpal",
+#	"test/client",
+#	"test/relay-sproof-builder",
+#	"test/relay-validation-worker-provider",
+#	"test/runtime",
+#	"test/service",
 ]
 
 [profile.release]
@@ -293,8 +293,8 @@ polkadot-runtime-parachains = { git = "https://github.com/paritytech//polkadot",
 polkadot-service = { git = "https://github.com/paritytech//polkadot", branch = "locked-for-gav-xcm-v3-and-bridges" }
 polkadot-statement-distribution = { git = "https://github.com/paritytech//polkadot", branch = "locked-for-gav-xcm-v3-and-bridges" }
 polkadot-statement-table = { git = "https://github.com/paritytech//polkadot", branch = "locked-for-gav-xcm-v3-and-bridges" }
-#polkadot-test-runtime = { git = "https://github.com/paritytech//polkadot", branch = "locked-for-gav-xcm-v3-and-bridges" }
-#polkadot-test-service = { git = "https://github.com/paritytech//polkadot", branch = "locked-for-gav-xcm-v3-and-bridges" }
+polkadot-test-runtime = { git = "https://github.com/paritytech//polkadot", branch = "locked-for-gav-xcm-v3-and-bridges" }
+polkadot-test-service = { git = "https://github.com/paritytech//polkadot", branch = "locked-for-gav-xcm-v3-and-bridges" }
 slot-range-helper = { git = "https://github.com/paritytech//polkadot", branch = "locked-for-gav-xcm-v3-and-bridges" }
 #test-runtime-constants = { git = "https://github.com/paritytech//polkadot", branch = "locked-for-gav-xcm-v3-and-bridges" }
 tracing-gum = { git = "https://github.com/paritytech//polkadot", branch = "locked-for-gav-xcm-v3-and-bridges" }
