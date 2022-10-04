@@ -41,4 +41,4 @@ cumulus_based = true
   validator = false
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'dave'|zombie('multiAddress')}}",  "--use-null-consensus", "--disable-block-announcements"]
+  args = ["--use-null-consensus", "--disable-block-announcements", "--", "--reserved-only", "--reserved-nodes {{'dave'|zombie('multiAddress')}}"]
