@@ -21,7 +21,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", rev = "952030cfa
 sp-trie = { git = "https://github.com/paritytech/substrate", rev = "952030cfa6f11be6aef938e5359064c4cf6b30a9" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", rev = "6b811eec977aa3e1950b2832ad20a476b4c81636" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", rev = "3e191db86d78bb1086877cafb822ef7476282c2e" }
 
 # Cumulus
 cumulus-relay-chain-interface = { path = "../../relay-chain-interface" }
