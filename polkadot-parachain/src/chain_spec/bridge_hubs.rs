@@ -156,8 +156,8 @@ pub mod rococo {
 						get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 					],
 					para_id,
-					Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
-					Some(get_account_id_from_seed::<sr25519::Public>("Bob")),
+					None,
+					None,
 				)
 			},
 			Vec::new(),
