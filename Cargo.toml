@@ -44,6 +44,8 @@ members = [
 	"test/service",
 ]
 
+# add common version here
+
 [profile.release]
 panic = "unwind"
 opt-level = 3
