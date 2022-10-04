@@ -16,7 +16,7 @@
 
 use std::{pin::Pin, str::FromStr};
 
-use cumulus_relay_chain_interface::RelayChainError;
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::RelayChainRpcClient;
 use futures::{Future, Stream, StreamExt};
 use polkadot_core_primitives::{Block, BlockId, Hash, Header};
@@ -356,24 +356,16 @@ impl BlockChainRpcClient {
 		Ok(result_vec)
 	}
 
-	pub async fn import_notification_stream_async(
+	pub async fn import_notification_stream(
 		&self,
-	) -> Pin<Box<dyn Stream<Item = Header> + Send>> {
-		self.rpc_client
-			.get_imported_heads_stream()
-			.await
-			.expect("subscribe_all_heads")
-			.boxed()
+	) -> RelayChainResult<Pin<Box<dyn Stream<Item = Header> + Send>>> {
+		Ok(self.rpc_client.get_imported_heads_stream().await?.boxed())
 	}
 
-	pub async fn finality_notification_stream_async(
+	pub async fn finality_notification_stream(
 		&self,
-	) -> Pin<Box<dyn Stream<Item = Header> + Send>> {
-		self.rpc_client
-			.get_finalized_heads_stream()
-			.await
-			.expect("imported_headers_stream")
-			.boxed()
+	) -> RelayChainResult<Pin<Box<dyn Stream<Item = Header> + Send>>> {
+		Ok(self.rpc_client.get_finalized_heads_stream().await?.boxed())
 	}
 }
 
@@ -403,13 +395,14 @@ impl HeaderBackend<Block> for BlockChainRpcClient {
 
 	fn info(&self) -> Info<Block> {
 		let best_header = block_local(self.rpc_client.chain_get_header(None))
-			.expect("get_header")
+			.expect("Unable to get header from relay chain.")
 			.unwrap();
-		let genesis_hash = block_local(self.rpc_client.chain_get_head(Some(0))).expect("get_head");
-		let finalized_head =
-			block_local(self.rpc_client.chain_get_finalized_head()).expect("get_head");
+		let genesis_hash = block_local(self.rpc_client.chain_get_head(Some(0)))
+			.expect("Unable to get header from relay chain.");
+		let finalized_head = block_local(self.rpc_client.chain_get_finalized_head())
+			.expect("Unable to get finalized head from relay chain.");
 		let finalized_header = block_local(self.rpc_client.chain_get_header(Some(finalized_head)))
-			.expect("get_head")
+			.expect("Unable to get finalized header from relay chain.")
 			.unwrap();
 		Info {
 			best_hash: best_header.hash(),

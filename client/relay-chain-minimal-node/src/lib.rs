@@ -91,6 +91,8 @@ fn build_authority_discovery_service<Block: BlockT>(
 /// - NetworkBridgeRx
 /// - NetworkBridgeTx
 /// - RuntimeApi
+/// - ChainApi
+/// - AvailabilityDistribution
 #[sc_tracing::logging::prefix_logs_with("Relaychain")]
 pub async fn new_minimal_relay_chain(
 	mut config: Configuration,

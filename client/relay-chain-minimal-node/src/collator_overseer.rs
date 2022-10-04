@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
+use cumulus_relay_chain_interface::RelayChainError;
 use lru::LruCache;
 use polkadot_availability_distribution::{
 	AvailabilityDistributionSubsystem, IncomingRequestReceivers,
@@ -250,9 +251,12 @@ pub struct NewMinimalNode {
 
 /// Glues together the [`Overseer`] and `BlockchainEvents` by forwarding
 /// import and finality notifications into the [`OverseerHandle`].
-async fn forward_collator_events(client: Arc<BlockChainRpcClient>, mut handle: Handle) {
-	let mut finality = client.finality_notification_stream_async().await.fuse();
-	let mut imports = client.import_notification_stream_async().await.fuse();
+async fn forward_collator_events(
+	client: Arc<BlockChainRpcClient>,
+	mut handle: Handle,
+) -> Result<(), RelayChainError> {
+	let mut finality = client.finality_notification_stream().await?.fuse();
+	let mut imports = client.import_notification_stream().await?.fuse();
 
 	loop {
 		select! {
@@ -262,7 +266,7 @@ async fn forward_collator_events(client: Arc<BlockChainRpcClient>, mut handle: H
 		let block_info = BlockInfo { hash: header.hash(), parent_hash: header.parent_hash, number: header.number };
 						handle.block_finalized(block_info).await;
 					}
-					None => break,
+					None => return Err(RelayChainError::GenericError("Relay chain finality stream ended.".to_string())),
 				}
 			},
 			i = imports.next() => {
@@ -271,7 +275,7 @@ async fn forward_collator_events(client: Arc<BlockChainRpcClient>, mut handle: H
 		let block_info = BlockInfo { hash: header.hash(), parent_hash: header.parent_hash, number: header.number };
 						handle.block_imported(block_info).await;
 					}
-					None => break,
+					None => return Err(RelayChainError::GenericError("Relay chain import stream ended.".to_string())),
 				}
 			}
 		}
