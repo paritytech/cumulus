@@ -59,4 +59,4 @@ cumulus_based = true
   validator = false
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug","--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'bob'|zombie('wsUri')}}", "-- --bootnodes {{'bob'|zombie('multiAddress')}}]
+  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug","--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'bob'|zombie('wsUri')}}", "-- --bootnodes {{'bob'|zombie('multiAddress')}}"]
