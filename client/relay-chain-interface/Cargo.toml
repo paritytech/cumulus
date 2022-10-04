@@ -5,8 +5,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-polkadot-overseer = { git = "https://github.com/paritytech/polkadot", branch = "slumber-collator-connection-management" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "slumber-collator-connection-management" }
+polkadot-overseer = { git = "https://github.com/paritytech/polkadot", rev = "6b811eec977aa3e1950b2832ad20a476b4c81636" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", rev = "6b811eec977aa3e1950b2832ad20a476b4c81636" }
 
 cumulus-primitives-core = { path = "../../primitives/core" }
 

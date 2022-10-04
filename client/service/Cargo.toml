@@ -18,7 +18,7 @@ sp-core = { git = "https://github.com/paritytech/substrate", rev = "952030cfa6f1
 sp-runtime = { git = "https://github.com/paritytech/substrate", rev = "952030cfa6f11be6aef938e5359064c4cf6b30a9" }
 
 # Polkadot
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "slumber-collator-connection-management" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", rev = "6b811eec977aa3e1950b2832ad20a476b4c81636" }
 
 # Cumulus
 cumulus-client-cli = { path = "../cli" }

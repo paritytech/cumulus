@@ -46,14 +46,14 @@ sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default
 sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "952030cfa6f11be6aef938e5359064c4cf6b30a9" }
 
 # Polkadot
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "slumber-collator-connection-management" }
-polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "slumber-collator-connection-management" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "slumber-collator-connection-management" }
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "slumber-collator-connection-management" }
-westend-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "slumber-collator-connection-management" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "slumber-collator-connection-management" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "slumber-collator-connection-management" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "slumber-collator-connection-management" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "6b811eec977aa3e1950b2832ad20a476b4c81636" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "6b811eec977aa3e1950b2832ad20a476b4c81636" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "6b811eec977aa3e1950b2832ad20a476b4c81636" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "6b811eec977aa3e1950b2832ad20a476b4c81636" }
+westend-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "6b811eec977aa3e1950b2832ad20a476b4c81636" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "6b811eec977aa3e1950b2832ad20a476b4c81636" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "6b811eec977aa3e1950b2832ad20a476b4c81636" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "6b811eec977aa3e1950b2832ad20a476b4c81636" }
 
 # Cumulus
 cumulus-pallet-aura-ext = { path = "../../../../pallets/aura-ext", default-features = false }
@@ -68,7 +68,7 @@ cumulus-primitives-utility = { path = "../../../../primitives/utility", default-
 pallet-collator-selection = { path = "../../../../pallets/collator-selection", default-features = false }
 parachain-info = { path = "../../../pallets/parachain-info", default-features = false }
 parachains-common = { path = "../../../common", default-features = false }
-pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", default-features = false, optional = true , branch = "slumber-collator-connection-management" }
+pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot", default-features = false, optional = true , rev = "6b811eec977aa3e1950b2832ad20a476b4c81636" }
 
 [dev-dependencies]
 hex-literal = "0.3.4"

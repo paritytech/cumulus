@@ -14,9 +14,9 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", default-features
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, rev = "952030cfa6f11be6aef938e5359064c4cf6b30a9" }
 
 # Polkadot
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "slumber-collator-connection-management" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "slumber-collator-connection-management" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "slumber-collator-connection-management" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "6b811eec977aa3e1950b2832ad20a476b4c81636" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "6b811eec977aa3e1950b2832ad20a476b4c81636" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, rev = "6b811eec977aa3e1950b2832ad20a476b4c81636" }
 
 
 # Cumulus
