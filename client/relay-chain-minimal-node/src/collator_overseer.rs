@@ -90,113 +90,105 @@ pub(crate) struct CollatorOverseerGenArgs<'a> {
 	pub parachains_db: Arc<dyn polkadot_node_subsystem_util::database::Database>,
 }
 
-pub(crate) struct CollatorOverseerGen;
-
-impl CollatorOverseerGen {
-	pub(crate) fn generate<'a>(
-		&self,
-		connector: OverseerConnector,
-		CollatorOverseerGenArgs {
-			runtime_client,
-			network_service,
-			authority_discovery_service,
-			collation_req_receiver,
+fn build_overseer<'a>(
+	connector: OverseerConnector,
+	CollatorOverseerGenArgs {
+		runtime_client,
+		network_service,
+		authority_discovery_service,
+		collation_req_receiver,
+		available_data_req_receiver,
+		availability_config,
+		registry,
+		spawner,
+		collator_pair,
+		req_protocol_names,
+		peer_set_protocol_names,
+		parachains_db,
+		pov_req_receiver,
+		chunk_req_receiver,
+	}: CollatorOverseerGenArgs<'a>,
+) -> Result<
+	(Overseer<SpawnGlue<sc_service::SpawnTaskHandle>, Arc<BlockChainRpcClient>>, OverseerHandle),
+	Error,
+> {
+	let leaves = Vec::new();
+	let metrics = <OverseerMetrics as MetricsTrait>::register(registry)?;
+	let keystore = Arc::new(LocalKeystore::in_memory());
+	let spawner = SpawnGlue(spawner);
+	let network_bridge_metrics: NetworkBridgeMetrics = Metrics::register(registry)?;
+	let builder = Overseer::builder()
+		.availability_distribution(AvailabilityDistributionSubsystem::new(
+			keystore.clone(),
+			IncomingRequestReceivers { pov_req_receiver, chunk_req_receiver },
+			Metrics::register(registry)?,
+		))
+		.availability_recovery(AvailabilityRecoverySubsystem::with_chunks_only(
 			available_data_req_receiver,
+			Metrics::register(registry)?,
+		))
+		.availability_store(AvailabilityStoreSubsystem::new(
+			parachains_db.clone(),
 			availability_config,
-			registry,
-			spawner,
-			collator_pair,
+			Metrics::register(registry)?,
+		))
+		.bitfield_distribution(DummySubsystem)
+		.bitfield_signing(DummySubsystem)
+		.candidate_backing(DummySubsystem)
+		.candidate_validation(DummySubsystem)
+		.pvf_checker(DummySubsystem)
+		.chain_api(ChainApiSubsystem::new(runtime_client.clone(), Metrics::register(registry)?))
+		.collation_generation(CollationGenerationSubsystem::new(Metrics::register(registry)?))
+		.collator_protocol({
+			let side = ProtocolSide::Collator(
+				network_service.local_peer_id().clone(),
+				collator_pair,
+				collation_req_receiver,
+				Metrics::register(registry)?,
+			);
+			CollatorProtocolSubsystem::new(side)
+		})
+		.network_bridge_rx(NetworkBridgeRxSubsystem::new(
+			network_service.clone(),
+			authority_discovery_service.clone(),
+			Box::new(network_service.clone()),
+			network_bridge_metrics.clone(),
+			peer_set_protocol_names.clone(),
+		))
+		.network_bridge_tx(NetworkBridgeTxSubsystem::new(
+			network_service.clone(),
+			authority_discovery_service.clone(),
+			network_bridge_metrics,
 			req_protocol_names,
 			peer_set_protocol_names,
-			parachains_db,
-			pov_req_receiver,
-			chunk_req_receiver,
-		}: CollatorOverseerGenArgs<'a>,
-	) -> Result<
-		(
-			Overseer<SpawnGlue<sc_service::SpawnTaskHandle>, Arc<BlockChainRpcClient>>,
-			OverseerHandle,
-		),
-		Error,
-	> {
-		let leaves = Vec::new();
-		let metrics = <OverseerMetrics as MetricsTrait>::register(registry)?;
-		let keystore = Arc::new(LocalKeystore::in_memory());
-		let spawner = SpawnGlue(spawner);
-		let network_bridge_metrics: NetworkBridgeMetrics = Metrics::register(registry)?;
-		let builder = Overseer::builder()
-			.availability_distribution(AvailabilityDistributionSubsystem::new(
-				keystore.clone(),
-				IncomingRequestReceivers { pov_req_receiver, chunk_req_receiver },
-				Metrics::register(registry)?,
-			))
-			.availability_recovery(AvailabilityRecoverySubsystem::with_chunks_only(
-				available_data_req_receiver,
-				Metrics::register(registry)?,
-			))
-			.availability_store(AvailabilityStoreSubsystem::new(
-				parachains_db.clone(),
-				availability_config,
-				Metrics::register(registry)?,
-			))
-			.bitfield_distribution(DummySubsystem)
-			.bitfield_signing(DummySubsystem)
-			.candidate_backing(DummySubsystem)
-			.candidate_validation(DummySubsystem)
-			.pvf_checker(DummySubsystem)
-			.chain_api(ChainApiSubsystem::new(runtime_client.clone(), Metrics::register(registry)?))
-			.collation_generation(CollationGenerationSubsystem::new(Metrics::register(registry)?))
-			.collator_protocol({
-				let side = ProtocolSide::Collator(
-					network_service.local_peer_id().clone(),
-					collator_pair,
-					collation_req_receiver,
-					Metrics::register(registry)?,
-				);
-				CollatorProtocolSubsystem::new(side)
-			})
-			.network_bridge_rx(NetworkBridgeRxSubsystem::new(
-				network_service.clone(),
-				authority_discovery_service.clone(),
-				Box::new(network_service.clone()),
-				network_bridge_metrics.clone(),
-				peer_set_protocol_names.clone(),
-			))
-			.network_bridge_tx(NetworkBridgeTxSubsystem::new(
-				network_service.clone(),
-				authority_discovery_service.clone(),
-				network_bridge_metrics,
-				req_protocol_names,
-				peer_set_protocol_names,
-			))
-			.provisioner(DummySubsystem)
-			.runtime_api(RuntimeApiSubsystem::new(
-				runtime_client.clone(),
-				Metrics::register(registry)?,
-				spawner.clone(),
-			))
-			.statement_distribution(DummySubsystem)
-			.approval_distribution(DummySubsystem)
-			.approval_voting(DummySubsystem)
-			.gossip_support(DummySubsystem)
-			.dispute_coordinator(DummySubsystem)
-			.dispute_distribution(DummySubsystem)
-			.chain_selection(DummySubsystem)
-			.leaves(Vec::from_iter(
-				leaves
-					.into_iter()
-					.map(|BlockInfo { hash, parent_hash: _, number }| (hash, number)),
-			))
-			.activation_external_listeners(Default::default())
-			.span_per_active_leaf(Default::default())
-			.active_leaves(Default::default())
-			.supports_parachains(runtime_client)
-			.known_leaves(LruCache::new(KNOWN_LEAVES_CACHE_SIZE))
-			.metrics(metrics)
-			.spawner(spawner);
+		))
+		.provisioner(DummySubsystem)
+		.runtime_api(RuntimeApiSubsystem::new(
+			runtime_client.clone(),
+			Metrics::register(registry)?,
+			spawner.clone(),
+		))
+		.statement_distribution(DummySubsystem)
+		.approval_distribution(DummySubsystem)
+		.approval_voting(DummySubsystem)
+		.gossip_support(DummySubsystem)
+		.dispute_coordinator(DummySubsystem)
+		.dispute_distribution(DummySubsystem)
+		.chain_selection(DummySubsystem)
+		.leaves(Vec::from_iter(
+			leaves
+				.into_iter()
+				.map(|BlockInfo { hash, parent_hash: _, number }| (hash, number)),
+		))
+		.activation_external_listeners(Default::default())
+		.span_per_active_leaf(Default::default())
+		.active_leaves(Default::default())
+		.supports_parachains(runtime_client)
+		.known_leaves(LruCache::new(KNOWN_LEAVES_CACHE_SIZE))
+		.metrics(metrics)
+		.spawner(spawner);
 
-		builder.build_with_connector(connector).map_err(|e| e.into())
-	}
+	builder.build_with_connector(connector).map_err(|e| e.into())
 }
 
 pub(crate) fn spawn_overseer(
@@ -204,14 +196,11 @@ pub(crate) fn spawn_overseer(
 	task_manager: &TaskManager,
 	relay_chain_rpc_client: Arc<BlockChainRpcClient>,
 ) -> Result<polkadot_overseer::Handle, polkadot_service::Error> {
-	let overseer_gen = CollatorOverseerGen;
-
-	let (overseer, overseer_handle) = overseer_gen
-		.generate(OverseerConnector::default(), overseer_args)
+	let (overseer, overseer_handle) = build_overseer(OverseerConnector::default(), overseer_args)
 		.map_err(|e| {
-			tracing::error!("Failed to initialize overseer: {}", e);
-			e
-		})?;
+		tracing::error!("Failed to initialize overseer: {}", e);
+		e
+	})?;
 
 	let overseer_handle = Handle::new(overseer_handle.clone());
 	{

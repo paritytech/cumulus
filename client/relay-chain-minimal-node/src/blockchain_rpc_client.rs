@@ -349,7 +349,11 @@ impl BlockChainRpcClient {
 		for address in addresses {
 			match MultiaddrWithPeerId::from_str(&address) {
 				Ok(addr) => result_vec.push(addr),
-				Err(err) => return Err(RelayChainError::GenericError(err.to_string())),
+				Err(err) =>
+					return Err(RelayChainError::GenericError(format!(
+						"Failed to parse a local listen addresses from the RPC node: {}",
+						err
+					))),
 			}
 		}
 
