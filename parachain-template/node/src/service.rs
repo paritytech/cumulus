@@ -22,9 +22,7 @@ use cumulus_client_service::{
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_minimal_node::BlockChainRpcClient;
-use cumulus_relay_chain_rpc_interface::{create_client_and_start_worker, RelayChainRpcInterface};
-use sp_core::Pair;
+use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
 
 // Substrate Imports
 use sc_executor::NativeElseWasmExecutor;
@@ -178,21 +176,8 @@ async fn build_relay_chain_interface(
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
 	match collator_options.relay_chain_rpc_url {
-		Some(relay_chain_url) => {
-			let client = create_client_and_start_worker(relay_chain_url, task_manager).await?;
-			let collator_pair = CollatorPair::generate().0;
-			let collator_node = cumulus_relay_chain_minimal_node::new_minimal_relay_chain(
-				polkadot_config,
-				collator_pair.clone(),
-				Arc::new(BlockChainRpcClient::new(client.clone())),
-			)
-			.await?;
-			task_manager.add_child(collator_node.task_manager);
-			Ok((
-				Arc::new(RelayChainRpcInterface::new(client, collator_node.overseer_handle)),
-				Some(collator_pair),
-			))
-		},
+		Some(relay_chain_url) =>
+			build_minimal_relay_chain_node(polkadot_config, task_manager, relay_chain_url).await,
 		None => build_inprocess_relay_chain(
 			polkadot_config,
 			parachain_config,

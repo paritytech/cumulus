@@ -427,7 +427,7 @@ mod tests {
 		let block = block_builder.build().expect("Finalizes the block").block;
 		let dummy_network: Arc<dyn SyncOracle + Sync + Send> = Arc::new(DummyNetwork {});
 
-		let (tx, _rx) = prioritized_metered_channel::channel(30);
+		let (tx, _rx) = metered::channel(30);
 		let mock_handle = Handle::new(tx);
 		(
 			client.clone(),

@@ -16,7 +16,8 @@
 
 use collator_overseer::{CollatorOverseerGenArgs, NewMinimalNode};
 
-use cumulus_relay_chain_interface::RelayChainError;
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
+use cumulus_relay_chain_rpc_interface::{RelayChainRpcInterface, Url};
 use polkadot_network_bridge::{peer_sets_info, IsAuthority};
 use polkadot_node_network_protocol::{
 	peer_set::PeerSetProtocolNames,
@@ -34,7 +35,7 @@ use polkadot_service::{open_database, Configuration, TaskManager};
 
 use futures::StreamExt;
 
-use sp_runtime::traits::Block as BlockT;
+use sp_runtime::{app_crypto::Pair, traits::Block as BlockT};
 
 mod collator_overseer;
 
@@ -80,6 +81,30 @@ fn build_authority_discovery_service<Block: BlockT>(
 	service
 }
 
+pub async fn build_minimal_relay_chain_node(
+	polkadot_config: Configuration,
+	task_manager: &mut TaskManager,
+	relay_chain_url: Url,
+) -> RelayChainResult<(Arc<(dyn RelayChainInterface + 'static)>, Option<CollatorPair>)> {
+	let client = cumulus_relay_chain_rpc_interface::create_client_and_start_worker(
+		relay_chain_url,
+		task_manager,
+	)
+	.await?;
+	let collator_pair = CollatorPair::generate().0;
+	let collator_node = new_minimal_relay_chain(
+		polkadot_config,
+		collator_pair.clone(),
+		Arc::new(BlockChainRpcClient::new(client.clone())),
+	)
+	.await?;
+	task_manager.add_child(collator_node.task_manager);
+	Ok((
+		Arc::new(RelayChainRpcInterface::new(client, collator_node.overseer_handle)),
+		Some(collator_pair),
+	))
+}
+
 /// Builds a minimal relay chain node. Chain data is fetched
 /// via [`BlockChainRpcClient`] and fed into the overseer and its subsystems.
 ///
@@ -94,7 +119,7 @@ fn build_authority_discovery_service<Block: BlockT>(
 /// - ChainApi
 /// - AvailabilityDistribution
 #[sc_tracing::logging::prefix_logs_with("Relaychain")]
-pub async fn new_minimal_relay_chain(
+async fn new_minimal_relay_chain(
 	mut config: Configuration,
 	collator_pair: CollatorPair,
 	relay_chain_rpc_client: Arc<BlockChainRpcClient>,

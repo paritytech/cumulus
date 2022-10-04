@@ -38,7 +38,8 @@ use cumulus_client_service::{
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::RelayChainInProcessInterface;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_minimal_node::BlockChainRpcClient;
+use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
+
 use cumulus_relay_chain_rpc_interface::{create_client_and_start_worker, RelayChainRpcInterface};
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
 
@@ -184,17 +185,9 @@ async fn build_relay_chain_interface(
 	task_manager: &mut TaskManager,
 ) -> RelayChainResult<Arc<dyn RelayChainInterface + 'static>> {
 	if let Some(relay_chain_url) = collator_options.relay_chain_rpc_url {
-		let client = create_client_and_start_worker(relay_chain_url, task_manager).await?;
-		let collator_key = collator_key.or_else(|| Some(CollatorPair::generate().0));
-		let collator_node = cumulus_relay_chain_minimal_node::new_minimal_relay_chain(
-			relay_chain_config,
-			collator_key.clone().unwrap(),
-			Arc::new(BlockChainRpcClient::new(client.clone())),
-		)
-		.await?;
-		task_manager.add_child(collator_node.task_manager);
-		tracing::info!("Using relay chain minimal node.");
-		return Ok(Arc::new(RelayChainRpcInterface::new(client, collator_node.overseer_handle)))
+		return build_minimal_relay_chain_node(relay_chain_config, task_manager, relay_chain_url)
+			.await
+			.map(|r| r.0)
 	}
 
 	let relay_chain_full_node = polkadot_test_service::new_full(
