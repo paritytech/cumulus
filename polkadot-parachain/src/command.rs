@@ -204,7 +204,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			bridge_like_id
 				.parse::<chain_spec::bridge_hubs::BridgeHubRuntimeType>()
 				.expect("invalid value")
-				.load_config(),
+				.load_config()?,
 
 		// -- Penpall
 		"penpal-kusama" => Box::new(chain_spec::penpal::get_penpal_chain_spec(
@@ -480,23 +480,43 @@ macro_rules! construct_async_run {
 				})
 			},
 			Runtime::BridgeHub(bridge_hub_runtime_type) => {
-				runner.async_run(|$config| {
-					let $components = match bridge_hub_runtime_type {
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal => new_partial::<chain_spec::bridge_hubs::rococo::RuntimeApi, _>(
-							&$config,
-							crate::service::aura_build_import_queue::<_, AuraId>,
-						)?,
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::Wococo |
-						chain_spec::bridge_hubs::BridgeHubRuntimeType::WococoLocal => new_partial::<chain_spec::bridge_hubs::wococo::RuntimeApi, _>(
-							&$config,
-							crate::service::aura_build_import_queue::<_, AuraId>,
-						)?,
-					};
+				 match bridge_hub_runtime_type {
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama => {
+						runner.async_run(|$config| {
+							let $components = new_partial::<chain_spec::bridge_hubs::kusama::RuntimeApi, _>(
+								&$config,
+								crate::service::aura_build_import_queue::<_, AuraId>,
+							)?;
 
-					let task_manager = $components.task_manager;
-					{ $( $code )* }.map(|v| (v, task_manager))
-				})
+							let task_manager = $components.task_manager;
+							{ $( $code )* }.map(|v| (v, task_manager))
+						})
+					},
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal => {
+						runner.async_run(|$config| {
+							let $components = new_partial::<chain_spec::bridge_hubs::rococo::RuntimeApi, _>(
+								&$config,
+								crate::service::aura_build_import_queue::<_, AuraId>,
+							)?;
+
+							let task_manager = $components.task_manager;
+							{ $( $code )* }.map(|v| (v, task_manager))
+						})
+					},
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::Wococo |
+					chain_spec::bridge_hubs::BridgeHubRuntimeType::WococoLocal => {
+						runner.async_run(|$config| {
+							let $components = new_partial::<chain_spec::bridge_hubs::wococo::RuntimeApi, _>(
+								&$config,
+								crate::service::aura_build_import_queue::<_, AuraId>,
+							)?;
+
+							let task_manager = $components.task_manager;
+							{ $( $code )* }.map(|v| (v, task_manager))
+						})
+					}
+				}
 			},
 			Runtime::Penpal(_) | Runtime::Default => {
 				runner.async_run(|$config| {
@@ -778,21 +798,30 @@ pub fn run() -> Result<()> {
 					.map(|r| r.0)
 					.map_err(Into::into),
 					Runtime::BridgeHub(bridge_hub_runtime_type) => match bridge_hub_runtime_type {
+						chain_spec::bridge_hubs::BridgeHubRuntimeType::Kusama =>
+							crate::service::start_generic_aura_node::<
+								chain_spec::bridge_hubs::kusama::RuntimeApi,
+								AuraId,
+							>(config, polkadot_config, collator_options, id, hwbench)
+							.await
+							.map(|r| r.0),
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::Rococo |
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::RococoLocal =>
 							crate::service::start_generic_aura_node::<
 								chain_spec::bridge_hubs::rococo::RuntimeApi,
 								AuraId,
-							>(config, polkadot_config, collator_options, id, hwbench),
+							>(config, polkadot_config, collator_options, id, hwbench)
+							.await
+							.map(|r| r.0),
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::Wococo |
 						chain_spec::bridge_hubs::BridgeHubRuntimeType::WococoLocal =>
 							crate::service::start_generic_aura_node::<
 								chain_spec::bridge_hubs::wococo::RuntimeApi,
 								AuraId,
-							>(config, polkadot_config, collator_options, id, hwbench),
+							>(config, polkadot_config, collator_options, id, hwbench)
+							.await
+							.map(|r| r.0),
 					}
-					.await
-					.map(|r| r.0)
 					.map_err(Into::into),
 					Runtime::Penpal(_) | Runtime::Default =>
 						crate::service::start_rococo_parachain_node(

@@ -24,8 +24,11 @@ use std::{path::PathBuf, str::FromStr};
 pub enum BridgeHubRuntimeType {
 	Rococo,
 	RococoLocal,
+
 	Wococo,
 	WococoLocal,
+
+	Kusama,
 }
 
 impl FromStr for BridgeHubRuntimeType {
@@ -33,6 +36,7 @@ impl FromStr for BridgeHubRuntimeType {
 
 	fn from_str(value: &str) -> Result<Self, Self::Err> {
 		match value {
+			kusama::BRIDGE_HUB_KUSAMA => Ok(BridgeHubRuntimeType::Kusama),
 			rococo::BRIDGE_HUB_ROCOCO => Ok(BridgeHubRuntimeType::Rococo),
 			rococo::BRIDGE_HUB_ROCOCO_LOCAL => Ok(BridgeHubRuntimeType::RococoLocal),
 			wococo::BRIDGE_HUB_WOCOCO => Ok(BridgeHubRuntimeType::Wococo),
@@ -46,45 +50,56 @@ impl BridgeHubRuntimeType {
 	pub const ID_PREFIX: &'static str = "bridge-hub";
 
 	pub fn chain_spec_from_json_file(&self, path: PathBuf) -> Result<Box<dyn ChainSpec>, String> {
-		Ok(Box::new(match self {
-			BridgeHubRuntimeType::Rococo => rococo::BridgeHubChainSpec::from_json_file(path)?,
-			BridgeHubRuntimeType::RococoLocal => rococo::BridgeHubChainSpec::from_json_file(path)?,
-			BridgeHubRuntimeType::Wococo => wococo::BridgeHubChainSpec::from_json_file(path)?,
-			BridgeHubRuntimeType::WococoLocal => wococo::BridgeHubChainSpec::from_json_file(path)?,
-		}))
+		match self {
+			BridgeHubRuntimeType::Kusama =>
+				Ok(Box::new(kusama::BridgeHubChainSpec::from_json_file(path)?)),
+			BridgeHubRuntimeType::Rococo =>
+				Ok(Box::new(rococo::BridgeHubChainSpec::from_json_file(path)?)),
+			BridgeHubRuntimeType::RococoLocal =>
+				Ok(Box::new(rococo::BridgeHubChainSpec::from_json_file(path)?)),
+			BridgeHubRuntimeType::Wococo =>
+				Ok(Box::new(wococo::BridgeHubChainSpec::from_json_file(path)?)),
+			BridgeHubRuntimeType::WococoLocal =>
+				Ok(Box::new(wococo::BridgeHubChainSpec::from_json_file(path)?)),
+		}
 	}
 
-	pub fn load_config(&self) -> Box<dyn ChainSpec> {
-		Box::new(match self {
-			BridgeHubRuntimeType::Rococo => rococo::live_config(
+	pub fn load_config(&self) -> Result<Box<dyn ChainSpec>, String> {
+		match self {
+			BridgeHubRuntimeType::Kusama =>
+				Ok(Box::new(kusama::BridgeHubChainSpec::from_json_bytes(
+					&include_bytes!("../../../parachains/chain-specs/bridge-hub-kusama.json")[..],
+				)?)),
+			BridgeHubRuntimeType::Rococo => Ok(Box::new(rococo::live_config(
 				rococo::BRIDGE_HUB_ROCOCO,
 				"Rococo BrideHub",
 				"rococo",
 				ParaId::new(1013),
-			),
-			BridgeHubRuntimeType::RococoLocal => rococo::local_config(
+			))),
+			BridgeHubRuntimeType::RococoLocal => Ok(Box::new(rococo::local_config(
 				rococo::BRIDGE_HUB_ROCOCO_LOCAL,
 				"Rococo BrideHub Local",
 				"rococo-local",
 				ParaId::new(1013),
-			),
-			BridgeHubRuntimeType::Wococo => wococo::live_config(
+			))),
+			BridgeHubRuntimeType::Wococo => Ok(Box::new(wococo::live_config(
 				wococo::BRIDGE_HUB_WOCOCO,
 				"Wococo BrideHub",
 				"wococo",
 				ParaId::new(1013),
-			),
-			BridgeHubRuntimeType::WococoLocal => wococo::local_config(
+			))),
+			BridgeHubRuntimeType::WococoLocal => Ok(Box::new(wococo::local_config(
 				wococo::BRIDGE_HUB_WOCOCO_LOCAL,
 				"Wococo BrideHub Local",
 				"wococo-local",
 				ParaId::new(1013),
-			),
-		})
+			))),
+		}
 	}
 
 	pub fn runtime_version(&self) -> &'static RuntimeVersion {
 		match self {
+			BridgeHubRuntimeType::Kusama => &bridge_hub_kusama_runtime::VERSION,
 			BridgeHubRuntimeType::Rococo |
 			BridgeHubRuntimeType::Wococo |
 			BridgeHubRuntimeType::RococoLocal |
@@ -313,4 +328,16 @@ pub mod wococo {
 	) -> BridgeHubChainSpec {
 		rococo::live_config(id, chain_name, relay_chain, para_id)
 	}
+}
+
+/// Sub-module for Kusama setup (reuses stuff from Rococo)
+pub mod kusama {
+	use crate::chain_spec::Extensions;
+
+	pub(crate) const BRIDGE_HUB_KUSAMA: &str = "bridge-hub-kusama";
+
+	/// Specialized `ChainSpec` for the normal parachain runtime.
+	pub type BridgeHubChainSpec =
+		sc_service::GenericChainSpec<bridge_hub_kusama_runtime::GenesisConfig, Extensions>;
+	pub type RuntimeApi = bridge_hub_kusama_runtime::RuntimeApi;
 }

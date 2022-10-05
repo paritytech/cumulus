@@ -51,6 +51,8 @@ jobs:
           - category: assets
             runtime: westmint
           - category: bridge-hubs
+            runtime: bridge-hub-kusama
+          - category: bridge-hubs
             runtime: bridge-hub-rococo
           - category: collectives
             runtime: collectives-polkadot
@@ -220,6 +222,8 @@ jobs:
             runtime: statemint
           - category: assets
             runtime: westmint
+          - category: bridge-hubs
+            runtime: bridge-hub-kusama
           - category: bridge-hubs
             runtime: bridge-hub-rococo
           - category: collectives
