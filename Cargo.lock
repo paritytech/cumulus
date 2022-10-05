@@ -1168,7 +1168,6 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-contracts",
  "pallet-contracts-primitives",
- "pallet-contracts-runtime-api",
  "pallet-multisig",
  "pallet-randomness-collective-flip",
  "pallet-session",
@@ -5698,19 +5697,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "pallet-contracts-runtime-api"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=master#7a8de4995715cc6cd11a79eb262bf41e5b190943"
-dependencies = [
- "pallet-contracts-primitives",
- "parity-scale-codec",
- "scale-info",
- "sp-api",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
