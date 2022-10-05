@@ -13,6 +13,10 @@ chain = "rococo-local"
   name = "bob"
   validator = true
 
+  [[relaychain.nodes]]
+  name = "ferdie"
+  validator = false
+
 [[parachains]]
 id = 2000
 cumulus_based = true
@@ -51,7 +55,7 @@ cumulus_based = true
   validator = true
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug", "--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'alice'|zombie('wsUri')}}", "-- --bootnodes {{'alice'|zombie('multiAddress')}}"]
+  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug", "--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'ferdie'|zombie('wsUri')}}", "-- --bootnodes {{'ferdie'|zombie('multiAddress')}}"]
 
   # run two as parachain full node that is only connected to charlie
   [[parachains.collators]]
@@ -59,4 +63,4 @@ cumulus_based = true
   validator = false
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug","--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'bob'|zombie('wsUri')}}", "-- --bootnodes {{'bob'|zombie('multiAddress')}}"]
+  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug","--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'ferdie'|zombie('wsUri')}}", "-- --bootnodes {{'ferdie'|zombie('multiAddress')}}"]
