@@ -157,7 +157,7 @@ where
 		// TODO: REMOVE temporary debug message
 		match res {
 			ImportResult::Imported(_) => (),
-			_ => log::warn!("Failed importing {}: {:?}", hash, res),
+			_ => log::warn!(target: "parachain", "Failed importing {}: {:?}", hash, res),
 		}
 
 		Ok(res)
