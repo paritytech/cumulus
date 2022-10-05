@@ -27,7 +27,7 @@ use sc_client_api::{
 	Backend as BackendT, BlockBackend, BlockchainEvents, Finalizer, UsageProvider,
 };
 use sc_consensus::{
-	import_queue::{ImportQueue, IncomingBlock, Link, Origin},
+	import_queue::{ImportQueue, IncomingBlock, Link, RuntimeOrigin},
 	BlockImport,
 };
 use sc_service::{Configuration, TaskManager};
@@ -125,9 +125,8 @@ where
 	task_manager
 		.spawn_essential_handle()
 		.spawn("cumulus-pov-recovery", None, pov_recovery.run());
-
 	cumulus_client_collator::start_collator(cumulus_client_collator::StartCollatorParams {
-		runtime_api: client.clone(),
+		runtime_api: client,
 		block_status,
 		announce_block,
 		overseer_handle,
@@ -261,7 +260,7 @@ impl<Block: BlockT> ImportQueue<Block> for SharedImportQueue<Block> {
 
 	fn import_justifications(
 		&mut self,
-		who: Origin,
+		who: RuntimeOrigin,
 		hash: Block::Hash,
 		number: NumberFor<Block>,
 		justifications: Justifications,
