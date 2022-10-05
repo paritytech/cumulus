@@ -154,6 +154,12 @@ where
 			monitor.block_imported(number, hash);
 		}
 
+		// TODO: REMOVE temporary debug message
+		match res {
+			ImportResult::Imported(_) => (),
+			_ => log::warn!("Failed importing {}: {:?}", hash, res),
+		}
+
 		Ok(res)
 	}
 }
