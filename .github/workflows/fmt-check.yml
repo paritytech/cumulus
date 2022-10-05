@@ -1,4 +1,4 @@
-name: Quick check Formatting
+name: Rustfmt check
 
 on:
   push:
