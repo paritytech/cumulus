@@ -203,7 +203,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			bridge_like_id
 				.parse::<chain_spec::bridge_hubs::BridgeHubRuntimeType>()
 				.expect("invalid value")
-				.load_config(),
+				.load_config()?,
 
 		// -- Penpall
 		"penpal-kusama" => Box::new(chain_spec::penpal::get_penpal_chain_spec(
