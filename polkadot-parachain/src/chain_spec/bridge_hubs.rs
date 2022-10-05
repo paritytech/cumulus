@@ -56,21 +56,39 @@ impl BridgeHubRuntimeType {
 
 	pub fn load_config(&self) -> Box<dyn ChainSpec> {
 		Box::new(match self {
-			BridgeHubRuntimeType::Rococo =>
-				rococo::live_config(rococo::BRIDGE_HUB_ROCOCO, "Rococo BrideHub", "rococo", ParaId::new(1013)),
-			BridgeHubRuntimeType::RococoLocal =>
-				rococo::local_config(rococo::BRIDGE_HUB_ROCOCO_LOCAL, "Rococo BrideHub Local", "rococo-local", ParaId::new(1013)),
-			BridgeHubRuntimeType::Wococo =>
-				wococo::live_config(wococo::BRIDGE_HUB_WOCOCO, "Wococo BrideHub", "wococo", ParaId::new(1013)),
-			BridgeHubRuntimeType::WococoLocal =>
-				wococo::local_config(wococo::BRIDGE_HUB_WOCOCO_LOCAL, "Wococo BrideHub Local", "wococo-local", ParaId::new(1013)),
+			BridgeHubRuntimeType::Rococo => rococo::live_config(
+				rococo::BRIDGE_HUB_ROCOCO,
+				"Rococo BrideHub",
+				"rococo",
+				ParaId::new(1013),
+			),
+			BridgeHubRuntimeType::RococoLocal => rococo::local_config(
+				rococo::BRIDGE_HUB_ROCOCO_LOCAL,
+				"Rococo BrideHub Local",
+				"rococo-local",
+				ParaId::new(1013),
+			),
+			BridgeHubRuntimeType::Wococo => wococo::live_config(
+				wococo::BRIDGE_HUB_WOCOCO,
+				"Wococo BrideHub",
+				"wococo",
+				ParaId::new(1013),
+			),
+			BridgeHubRuntimeType::WococoLocal => wococo::local_config(
+				wococo::BRIDGE_HUB_WOCOCO_LOCAL,
+				"Wococo BrideHub Local",
+				"wococo-local",
+				ParaId::new(1013),
+			),
 		})
 	}
 
 	pub fn runtime_version(&self) -> &'static RuntimeVersion {
 		match self {
-			BridgeHubRuntimeType::Rococo | BridgeHubRuntimeType::Wococo |
-			BridgeHubRuntimeType::RococoLocal | BridgeHubRuntimeType::WococoLocal => {
+			BridgeHubRuntimeType::Rococo |
+			BridgeHubRuntimeType::Wococo |
+			BridgeHubRuntimeType::RococoLocal |
+			BridgeHubRuntimeType::WococoLocal => {
 				// this is intentional, for Rococo/Wococo we just want to have one runtime, which is configured for both sides
 				&bridge_hub_rococo_runtime::VERSION
 			},
@@ -156,8 +174,6 @@ pub mod rococo {
 						get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 					],
 					para_id,
-					Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
-					Some(get_account_id_from_seed::<sr25519::Public>("Bob")),
 				)
 			},
 			Vec::new(),
