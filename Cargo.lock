@@ -788,7 +788,6 @@ dependencies = [
  "bitvec",
  "bp-runtime 0.1.0",
  "frame-support",
- "frame-system",
  "hex",
  "hex-literal",
  "impl-trait-for-tuples",
@@ -825,7 +824,6 @@ dependencies = [
  "frame-support",
  "parity-scale-codec",
  "scale-info",
- "serde",
  "sp-core",
 ]
 
@@ -842,11 +840,9 @@ dependencies = [
  "parity-util-mem",
  "scale-info",
  "serde",
- "sp-api",
  "sp-core",
  "sp-runtime",
  "sp-std",
- "sp-version",
 ]
 
 [[package]]
@@ -882,33 +878,10 @@ dependencies = [
 name = "bp-rococo"
 version = "0.1.0"
 dependencies = [
- "bp-messages 0.1.0",
- "bp-polkadot-core 0.1.0",
- "bp-runtime 0.1.0",
+ "bp-polkadot-core",
+ "bp-runtime",
  "frame-support",
- "parity-scale-codec",
- "smallvec",
  "sp-api",
- "sp-runtime",
- "sp-std",
- "sp-version",
-]
-
-[[package]]
-name = "bp-rococo"
-version = "0.1.0"
-source = "git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges#81128ab75395e256ae8ef50994d46101d0e67cea"
-dependencies = [
- "bp-messages 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "bp-polkadot-core 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "bp-runtime 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "frame-support",
- "parity-scale-codec",
- "smallvec",
- "sp-api",
- "sp-runtime",
- "sp-std",
- "sp-version",
 ]
 
 [[package]]
@@ -982,29 +955,10 @@ dependencies = [
 name = "bp-wococo"
 version = "0.1.0"
 dependencies = [
- "bp-messages 0.1.0",
- "bp-polkadot-core 0.1.0",
- "bp-rococo 0.1.0",
- "bp-runtime 0.1.0",
- "parity-scale-codec",
+ "bp-polkadot-core",
+ "bp-rococo",
+ "bp-runtime",
  "sp-api",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "bp-wococo"
-version = "0.1.0"
-source = "git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges#81128ab75395e256ae8ef50994d46101d0e67cea"
-dependencies = [
- "bp-messages 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "bp-polkadot-core 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "bp-rococo 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "bp-runtime 0.1.0 (git+https://github.com/paritytech//polkadot?branch=locked-for-gav-xcm-v3-and-bridges)",
- "parity-scale-codec",
- "sp-api",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]

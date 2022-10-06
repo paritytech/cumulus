@@ -114,7 +114,6 @@ pub struct ToBridgeHubWococoMessageVerifier<Origin, Sender> {
 impl<Origin: Clone, Sender: Chain>
 	LaneMessageVerifier<
 		Origin,
-		AccountIdOf<Sender>,
 		ToBridgeHubRococoMessagePayload,
 		BalanceOf<Sender>,
 	> for ToBridgeHubRococoMessageVerifier<Origin, Sender>
@@ -135,7 +134,6 @@ impl<Origin: Clone, Sender: Chain>
 impl<Origin: Clone, Sender: Chain>
 	LaneMessageVerifier<
 		Origin,
-		AccountIdOf<Sender>,
 		ToBridgeHubWococoMessagePayload,
 		BalanceOf<Sender>,
 	> for ToBridgeHubWococoMessageVerifier<Origin, Sender>
