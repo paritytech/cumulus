@@ -1,0 +1,68 @@
+[settings]
+timeout = 10000
+
+[relaychain]
+chain = "rococo-local"
+default_command = "../../bin/polkadot-v0.9.27"
+default_args = [ "-lparachain=debug" ]
+
+[[relaychain.nodes]]
+name = "alice"
+validator = true
+ws_port = 9999
+
+[[relaychain.nodes]]
+name = "bob"
+validator = true
+ws_port = 9988
+
+[[relaychain.nodes]]
+name = "charlie"
+validator = true
+ws_port = 9977
+
+[[relaychain.nodes]]
+name = "eve"
+validator = true
+ws_port = 9966
+
+[[parachains]]
+id = 2015
+addToGenesis = true
+cumulus_based = true
+chain = "integritee-rococo-local-dev"
+
+[[parachains.collators]]
+name = "integritee-collator01"
+command = "./target/release/integritee-collator"
+ws_port = 9994
+
+[[parachains.collators]]
+name = "integritee-collator02"
+command = "./target/release/integritee-collator"
+ws_port = 9995
+
+#this is not working !!!
+[[parachains]]
+id = 2000
+addToGenesis = true
+cumulus_based = true
+chain = "karura-dev"
+
+[[parachains.collators]]
+name = "acala-collator01"
+command = "../../bin/acala"
+ws_port = 9984
+
+[[hrmp_channels]]
+sender = 2015
+recipient = 2000
+max_capacity = 8
+max_message_size = 512
+
+[[hrmp_channels]]
+sender = 2000
+recipient = 2015
+max_capacity = 8
+max_message_size = 512
+
