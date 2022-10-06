@@ -1779,7 +1779,6 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "polkadot-parachain 0.9.29",
- "polkadot-primitives",
  "sc-client-api",
  "scale-info",
  "sp-core",
