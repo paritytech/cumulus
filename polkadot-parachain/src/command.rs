@@ -311,7 +311,7 @@ impl SubstrateCli for Cli {
 
 impl SubstrateCli for RelayChainCli {
 	fn impl_name() -> String {
-		"Polkadot parachain".into()
+		"Parity Polkadot".into()
 	}
 
 	fn impl_version() -> String {
