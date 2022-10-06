@@ -20,7 +20,7 @@ jobs:
           IMAGE: chevdor/ruled-labels:latest
         run: |
           docker pull $IMAGE
-          docker run --rm -it $IMAGE --version
+          docker run --rm $IMAGE --version
 
       - name: Check labels
         # continue-on-error: true
@@ -42,4 +42,4 @@ jobs:
           printf "Checking labels: %s\n" "$labels_args"
 
           # --dev is more useful to debug mode to debug
-          docker run --rm -i -e labels_args -v $PWD/:$MOUNT $IMAGE check $MOUNT/$CHECK_SPECS --dev --labels $labels_args
+          docker run --rm -e labels_args -v $PWD/:$MOUNT $IMAGE check $MOUNT/$CHECK_SPECS --dev --labels $labels_args
