@@ -234,12 +234,13 @@ rules:
     spec:
       require: !one_of [ D* ]
 
-  - name: Release need priorities
-    id: require_one_p_when_b1
-    tags: [ PR ]
-    when: !one_of [ B1 ]
-    spec:
-      require: !one_of [ P* ]
+  # We don't have those P labels yet
+  # - name: Release need priorities
+  #   id: require_one_p_when_b1
+  #   tags: [ PR ]
+  #   when: !one_of [ B1 ]
+  #   spec:
+  #     require: !one_of [ P* ]
 
   - name: Release need topics
     id: b_needs_t
