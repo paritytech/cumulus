@@ -38,10 +38,11 @@ xcm = { git = "https://github.com/paritytech/polkadot", default-features = false
 cumulus-pallet-parachain-system-proc-macro = { path = "proc-macro", default-features = false }
 cumulus-primitives-core = { path = "../../primitives/core", default-features = false }
 cumulus-primitives-parachain-inherent = { path = "../../primitives/parachain-inherent", default-features = false }
+hex-literal = { version = "0.3.4", default-features = false, optional = true }
 
 [dev-dependencies]
-hex-literal = "0.3.4"
 lazy_static = "1.4"
+hex-literal = { version = "0.3.4", default-features = false }
 
 # Substrate
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -79,6 +80,7 @@ std = [
 ]
 
 runtime-benchmarks = [
+	"hex-literal",
 	"sp-runtime/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",

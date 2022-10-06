@@ -15,24 +15,9 @@
 
 use crate::*;
 
+use codec::Decode;
 use frame_benchmarking::benchmarks;
 use frame_system::RawOrigin;
-
-// TODO make this injectable.
-// Needs to be compile time available. For now just use the test config.
-pub const fn host_config() -> cumulus_primitives_core::AbridgedHostConfiguration {
-	cumulus_primitives_core::AbridgedHostConfiguration {
-		max_code_size: 2 * 1024 * 1024,
-		max_head_data_size: 1024 * 1024,
-		max_upward_queue_count: 8,
-		max_upward_queue_size: 1024,
-		max_upward_message_size: 256,
-		max_upward_message_num_per_candidate: 5,
-		hrmp_max_message_num_per_candidate: 5,
-		validation_upgrade_cooldown: 6,
-		validation_upgrade_delay: 6,
-	}
-}
 
 benchmarks! {
 	authorize_upgrade {}: _(RawOrigin::Root, Default::default())
@@ -41,14 +26,13 @@ benchmarks! {
 		let l in 0 .. host_config().max_upward_message_size;
 		HostConfiguration::<T>::put(host_config());
 
-		// Populate the queue and leave space for just one message.
+		// Populate the queue and leave space for one more message.
 		for _ in 1..host_config().max_upward_queue_count {
-			let msg = vec![0u8; host_config().max_upward_message_size as usize];
+			let msg = vec![255u8; host_config().max_upward_message_size as usize];
 			PendingUpwardMessages::<T>::append(msg);
 		}
 
-		let msg = vec![0; l as usize];
-	}: _(RawOrigin::Root, msg)
+	}: _(RawOrigin::Root, vec![255u8; l as usize])
 
 	enact_authorized_upgrade {
 		let s in 0 .. host_config().max_code_size;
@@ -59,85 +43,21 @@ benchmarks! {
 		AuthorizedUpgrade::<T>::put(code_hash);
 
 		// Mocking the storage.
-		ValidationData::<T>::put(cumulus_primitives_core::PersistedValidationData::default());
-
+		RelaychainBlockNumberProvider::<T>::set_block_number(1);
 	}: _(RawOrigin::Root, code)
 
 	set_validation_data {
-		// todo this is currently empty
-		let sproof_builder = RelayStateSproofBuilder::default();
-		let (relay_parent_storage_root, relay_chain_state) =
-		sproof_builder.into_state_root_and_proof();
-		let vfp = PersistedValidationData {
-			relay_parent_number: 1 as RelayChainBlockNumber,
-			relay_parent_storage_root,
-			..Default::default()
-		};
-		let para_inherent_data = cumulus_primitives_parachain_inherent::ParachainInherentData {
-			validation_data: vfp.clone(),
-			relay_chain_state,
-			downward_messages: Default::default(),
-			horizontal_messages: Default::default(),
-		};
+		// Proof generation requires std; in particular `sp_trie::StateMachine::prove_read`.
+		// We therefore use hard-coded values. These values are checked in a test below.
+		let mut raw_inherent_data = PARA_INHERENT_DATA;
+		let para_inherent_data = ParachainInherentData::decode(&mut raw_inherent_data).unwrap();
 	}: _(RawOrigin::None, para_inherent_data)
 
 	impl_benchmark_test_suite!(Pallet, crate::tests::new_test_ext(), crate::tests::Test);
 }
 
-// TODO move all stuff below
-
-use cumulus_primitives_core::{
-	relay_chain, AbridgedHostConfiguration, AbridgedHrmpChannel, ParaId,
-};
-use polkadot_primitives::v2::UpgradeGoAhead;
-use sp_runtime::traits::HashFor;
-use sp_state_machine::MemoryDB;
-use sp_std::collections::btree_map::BTreeMap;
-
-/// Builds a sproof (portmanteau of 'spoof' and 'proof') of the relay chain state.
-#[derive(Clone)]
-pub struct RelayStateSproofBuilder {
-	/// The para id of the current parachain.
-	///
-	/// This doesn't get into the storage proof produced by the builder, however, it is used for
-	/// generation of the storage image and by auxilary methods.
-	///
-	/// It's recommended to change this value once in the very beginning of usage.
-	///
-	/// The default value is 200.
-	pub para_id: ParaId,
-
-	pub host_config: AbridgedHostConfiguration,
-	pub dmq_mqc_head: Option<relay_chain::Hash>,
-	pub upgrade_go_ahead: Option<UpgradeGoAhead>,
-	pub relay_dispatch_queue_size: Option<(u32, u32)>,
-	pub hrmp_ingress_channel_index: Option<Vec<ParaId>>,
-	pub hrmp_egress_channel_index: Option<Vec<ParaId>>,
-	pub hrmp_channels: BTreeMap<relay_chain::v2::HrmpChannelId, AbridgedHrmpChannel>,
-	pub current_slot: relay_chain::v2::Slot,
-	pub current_epoch: u64,
-	pub randomness: relay_chain::Hash,
-}
-
-impl Default for RelayStateSproofBuilder {
-	fn default() -> Self {
-		RelayStateSproofBuilder {
-			para_id: ParaId::from(200),
-			host_config: default_host_config(),
-			dmq_mqc_head: None,
-			upgrade_go_ahead: None,
-			relay_dispatch_queue_size: None,
-			hrmp_ingress_channel_index: None,
-			hrmp_egress_channel_index: None,
-			hrmp_channels: BTreeMap::new(),
-			current_slot: 0.into(),
-			current_epoch: 0u64,
-			randomness: relay_chain::Hash::default(),
-		}
-	}
-}
-
-pub const fn default_host_config() -> cumulus_primitives_core::AbridgedHostConfiguration {
+// Needs to be compile time available. For now just use the test config.
+const fn host_config() -> cumulus_primitives_core::AbridgedHostConfiguration {
 	cumulus_primitives_core::AbridgedHostConfiguration {
 		max_code_size: 2 * 1024 * 1024,
 		max_head_data_size: 1024 * 1024,
@@ -151,98 +71,23 @@ pub const fn default_host_config() -> cumulus_primitives_core::AbridgedHostConfi
 	}
 }
 
-impl RelayStateSproofBuilder {
-	/// Returns a mutable reference to HRMP channel metadata for a channel (`sender`, `self.para_id`).
-	///
-	/// If there is no channel, a new default one is created.
-	///
-	/// It also updates the `hrmp_ingress_channel_index`, creating it if needed.
-	pub fn upsert_inbound_channel(&mut self, sender: ParaId) -> &mut AbridgedHrmpChannel {
-		let in_index = self.hrmp_ingress_channel_index.get_or_insert_with(Vec::new);
-		if let Err(idx) = in_index.binary_search(&sender) {
-			in_index.insert(idx, sender);
-		}
-
-		self.hrmp_channels
-			.entry(relay_chain::v2::HrmpChannelId { sender, recipient: self.para_id })
-			.or_insert_with(|| AbridgedHrmpChannel {
-				max_capacity: 0,
-				max_total_size: 0,
-				max_message_size: 0,
-				msg_count: 0,
-				total_size: 0,
-				mqc_head: None,
-			})
-	}
-
-	pub fn into_state_root_and_proof(
-		self,
-	) -> (polkadot_primitives::v2::Hash, sp_state_machine::StorageProof) {
-		let (db, root) = MemoryDB::<HashFor<polkadot_primitives::v2::Block>>::default_with_root();
-		let state_version = Default::default(); // for test using default.
-		let mut backend = sp_state_machine::TrieBackendBuilder::new(db, root).build();
-
-		let mut relevant_keys = Vec::new();
-		{
-			use codec::Encode as _;
-
-			let mut insert = |key: Vec<u8>, value: Vec<u8>| {
-				relevant_keys.push(key.clone());
-				backend.insert(vec![(None, vec![(key, Some(value))])], state_version);
-			};
-
-			insert(relay_chain::well_known_keys::ACTIVE_CONFIG.to_vec(), self.host_config.encode());
-			if let Some(dmq_mqc_head) = self.dmq_mqc_head {
-				insert(
-					relay_chain::well_known_keys::dmq_mqc_head(self.para_id),
-					dmq_mqc_head.encode(),
-				);
-			}
-			if let Some(relay_dispatch_queue_size) = self.relay_dispatch_queue_size {
-				insert(
-					relay_chain::well_known_keys::relay_dispatch_queue_size(self.para_id),
-					relay_dispatch_queue_size.encode(),
-				);
-			}
-			if let Some(upgrade_go_ahead) = self.upgrade_go_ahead {
-				insert(
-					relay_chain::well_known_keys::upgrade_go_ahead_signal(self.para_id),
-					upgrade_go_ahead.encode(),
-				);
-			}
-			if let Some(hrmp_ingress_channel_index) = self.hrmp_ingress_channel_index {
-				let mut sorted = hrmp_ingress_channel_index.clone();
-				sorted.sort();
-				assert_eq!(sorted, hrmp_ingress_channel_index);
-
-				insert(
-					relay_chain::well_known_keys::hrmp_ingress_channel_index(self.para_id),
-					hrmp_ingress_channel_index.encode(),
-				);
-			}
-			if let Some(hrmp_egress_channel_index) = self.hrmp_egress_channel_index {
-				let mut sorted = hrmp_egress_channel_index.clone();
-				sorted.sort();
-				assert_eq!(sorted, hrmp_egress_channel_index);
-
-				insert(
-					relay_chain::well_known_keys::hrmp_egress_channel_index(self.para_id),
-					hrmp_egress_channel_index.encode(),
-				);
-			}
-			for (channel, metadata) in self.hrmp_channels {
-				insert(relay_chain::well_known_keys::hrmp_channels(channel), metadata.encode());
-			}
-			insert(relay_chain::well_known_keys::EPOCH_INDEX.to_vec(), self.current_epoch.encode());
-			insert(
-				relay_chain::well_known_keys::ONE_EPOCH_AGO_RANDOMNESS.to_vec(),
-				self.randomness.encode(),
-			);
-			insert(relay_chain::well_known_keys::CURRENT_SLOT.to_vec(), self.current_slot.encode());
-		}
-
-		let root = backend.root().clone();
-		let proof = sp_state_machine::prove_read(backend, relevant_keys).expect("prove read");
-		(root, proof)
-	}
+/// Tests that the hard-coded para inherent data is good.
+#[test]
+fn para_inherent_constant_is_good() {
+	let data_provider =
+		cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider::<()> {
+			current_para_block: 2,
+			relay_offset: 1,
+			relay_blocks_per_para_block: 2,
+			para_blocks_per_relay_epoch: 4,
+			relay_randomness_config: (),
+			xcm_config: Default::default(),
+			raw_downward_messages: Default::default(),
+			raw_horizontal_messages: Default::default(),
+		};
+	let para_inherent_data = data_provider.provide_para_inherent_data();
+	// NOTE: If this test fails, just replace the `PARA_INHERENT_DATA` constant.
+	assert_eq!(para_inherent_data.encode(), PARA_INHERENT_DATA);
 }
+
+const PARA_INHERENT_DATA: &'static [u8] = &hex_literal::hex!("0005000000f9c8346fc133e6b5479cdb5976ba53e8a735d5dc6c022257a3b93b36ef63c1e200000000189000002000000010000800000000040000000100000500000005000000060000000600000009013f2006de3d8a54d27e44a9d5ce189618f22db4b49d95320d9021994c850f25b8e3857a5f5394a5cbec57fd0b3c52245fc7783616e4e36ee7cc535eb39a08c8b459ebc85f0ce678799d3eff024253b90e84927cc68000000000000000020000000000000000000000000000000000000000000000003d017f1803f78c98723ddc9073523ef3beefda0c4d7fefc408aac59dbfe80a72ac8e3ce5b4def25cfda6ef3a00000000800000000000000000000000000000000000000000000000000000000000000000990180430080f2eec8c7aa03e907fd0ba1cc1c6dcf6e74f069b52640766f03de37b8b751b53d80548f64860878eb240e1c677f2f0527ebf6a146a3fc206249039ae093aa3737b880f09aa7114b573120db89867240a7262f85ee6592fb5d9c89368310e989de031da9019f0cb6f36e027abb2091cfb5110ab5087f8900685f06155b3cd9a8c9e5e9a23fd5dc13a5ed200000000000000000685f08316cbf8fa0da822a20ac1c55bf1be32000000000000000008062dd33c055efc9c5f6d66689e59d44d34be68536e63b4ce401c7b4dc3b8d8b300000");

@@ -108,6 +108,7 @@ impl Config for Test {
 	type XcmpMessageHandler = SaveIntoThreadLocal;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+	type WeightInfo = ();
 }
 
 pub struct FromThreadLocal;
