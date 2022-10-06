@@ -519,7 +519,7 @@ impl_runtime_apis! {
 				origin,
 				dest,
 				value,
-				Weight::from_ref_time(gas_limit),
+				gas_limit,
 				storage_deposit_limit,
 				input_data,
 				contracts::CONTRACTS_DEBUG_OUTPUT,
@@ -539,7 +539,7 @@ impl_runtime_apis! {
 			Contracts::bare_instantiate(
 				origin,
 				value,
-				Weight::from_ref_time(gas_limit),
+				gas_limit,
 				storage_deposit_limit,
 				code,
 				data,
