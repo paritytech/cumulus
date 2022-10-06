@@ -1961,12 +1961,10 @@ dependencies = [
  "cumulus-relay-chain-interface",
  "futures",
  "futures-timer",
- "polkadot-cli",
  "polkadot-client",
  "polkadot-primitives",
  "polkadot-service",
  "polkadot-test-client",
- "sc-cli",
  "sc-client-api",
  "sc-sysinfo",
  "sc-telemetry",
@@ -1977,6 +1975,7 @@ dependencies = [
  "sp-keyring",
  "sp-runtime",
  "sp-state-machine",
+ "substrate-build-script-utils",
 ]
 
 [[package]]
