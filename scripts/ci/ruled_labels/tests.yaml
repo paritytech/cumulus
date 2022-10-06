@@ -21,6 +21,7 @@ specs:
     expected: false
 
   - name: Fail - Release need priorities
+    skip: true
     filter:
       id: [ require_one_p_when_b1 ]
     labels: [ B1, X1, D1 ]
