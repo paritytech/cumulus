@@ -148,14 +148,8 @@ impl MockXcmConfig {
 	}
 }
 
-#[async_trait::async_trait]
-impl<R: Send + Sync + GenerateRandomness<u64>> InherentDataProvider
-	for MockValidationDataInherentDataProvider<R>
-{
-	fn provide_inherent_data(
-		&self,
-		inherent_data: &mut InherentData,
-	) -> Result<(), sp_inherents::Error> {
+impl<R: Send + Sync + GenerateRandomness<u64>> MockValidationDataInherentDataProvider<R> {
+	pub fn provide_para_inherent_data(&self) -> ParachainInherentData {
 		// Calculate the mocked relay block based on the current para block
 		let relay_parent_number =
 			self.relay_offset + self.relay_blocks_per_para_block * self.current_para_block;
@@ -212,20 +206,29 @@ impl<R: Send + Sync + GenerateRandomness<u64>> InherentDataProvider
 
 		let (relay_parent_storage_root, proof) = sproof_builder.into_state_root_and_proof();
 
-		inherent_data.put_data(
-			INHERENT_IDENTIFIER,
-			&ParachainInherentData {
-				validation_data: PersistedValidationData {
-					parent_head: Default::default(),
-					relay_parent_storage_root,
-					relay_parent_number,
-					max_pov_size: Default::default(),
-				},
-				downward_messages,
-				horizontal_messages,
-				relay_chain_state: proof,
+		ParachainInherentData {
+			validation_data: PersistedValidationData {
+				parent_head: Default::default(),
+				relay_parent_storage_root,
+				relay_parent_number,
+				max_pov_size: Default::default(),
 			},
-		)
+			downward_messages,
+			horizontal_messages,
+			relay_chain_state: proof,
+		}
+	}
+}
+
+#[async_trait::async_trait]
+impl<R: Send + Sync + GenerateRandomness<u64>> InherentDataProvider
+	for MockValidationDataInherentDataProvider<R>
+{
+	fn provide_inherent_data(
+		&self,
+		inherent_data: &mut InherentData,
+	) -> Result<(), sp_inherents::Error> {
+		inherent_data.put_data(INHERENT_IDENTIFIER, &self.provide_para_inherent_data())
 	}
 
 	// Copied from the real implementation
