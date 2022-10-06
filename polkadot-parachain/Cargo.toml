@@ -1,6 +1,6 @@
 [package]
 name = "polkadot-parachain"
-version = "0.9.230"
+version = "0.9.300"
 authors = ["Parity Technologies <admin@parity.io>"]
 build = "build.rs"
 edition = "2021"
@@ -34,7 +34,6 @@ frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", bran
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-session = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -65,11 +64,9 @@ try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "m
 sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 frame-rpc-system = { package = "substrate-frame-rpc-system", git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-contracts-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "master" }
