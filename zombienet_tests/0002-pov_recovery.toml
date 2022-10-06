@@ -37,7 +37,7 @@ cumulus_based = true
   validator = true
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug", "--use-null-consensus", "--disable-block-announcements"]
+  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug,parachain=debug", "--use-null-consensus", "--disable-block-announcements"]
 
   # run eve as parachain full node that is only connected to charlie
   [[parachains.collators]]
@@ -45,7 +45,7 @@ cumulus_based = true
   validator = false
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug", "--use-null-consensus", "--disable-block-announcements"]
+  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug,parachain=debug", "--use-null-consensus", "--disable-block-announcements"]
 
   # Run one as parachain collator and two as parachain full node, connected via RPC relay chain node
   #
@@ -55,7 +55,7 @@ cumulus_based = true
   validator = true
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug", "--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'ferdie'|zombie('wsUri')}}", "-- --bootnodes {{'ferdie'|zombie('multiAddress')}}"]
+  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug,parachain=debug", "--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'ferdie'|zombie('wsUri')}}", "-- --bootnodes {{'ferdie'|zombie('multiAddress')}}"]
 
   # run two as parachain full node that is only connected to charlie
   [[parachains.collators]]
@@ -63,4 +63,4 @@ cumulus_based = true
   validator = false
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug","--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'ferdie'|zombie('wsUri')}}", "-- --bootnodes {{'ferdie'|zombie('multiAddress')}}"]
+  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "-lcumulus-pov-recovery=debug,parachain=debug","--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'ferdie'|zombie('wsUri')}}", "-- --bootnodes {{'ferdie'|zombie('multiAddress')}}"]

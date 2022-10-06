@@ -190,6 +190,7 @@ where
 			},
 		}
 
+		tracing::debug!(target: LOG_TARGET, ?hash, "Adding pending candidate");
 		if self
 			.pending_candidates
 			.insert(
@@ -233,6 +234,7 @@ where
 			None => return,
 		};
 
+		tracing::debug!(target: LOG_TARGET, ?block_hash, "Issuing recovery request");
 		self.active_candidate_recovery
 			.recover_candidate(block_hash, pending_candidate)
 			.await;
