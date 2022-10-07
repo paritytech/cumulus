@@ -23,7 +23,7 @@ cumulus_based = true
   validator = true
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["-lcumulus-pov-recovery=debug", "--use-null-consensus", "--disable-block-announcements"]
+  args = ["-lcumulus-pov-recovery=debug", "--disable-block-announcements"]
 
   # Run dave as parachain collator and eve as parachain full node
   #
@@ -35,7 +35,7 @@ cumulus_based = true
   command = "test-parachain"
   args = ["-lcumulus-pov-recovery=debug", "--use-null-consensus", "--disable-block-announcements"]
 
-  # run eve as parachain full node that is only connected to alice
+  # run eve as parachain full node
   [[parachains.collators]]
   name = "eve"
   validator = false
