@@ -235,9 +235,10 @@ where
 					candidate_info
 				},
 				None => {
-					log::warn!(
+					// This should never happen
+					log::error!(
 						target: "parachain",
-						"Unable getting route to any leaf from {:?}",
+						"Unable getting route to any leaf from {:?} (this is a bug)",
 						blk_hash,
 					);
 					continue
