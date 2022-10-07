@@ -1,7 +1,7 @@
 [relaychain]
 default_image = "{{RELAY_IMAGE}}"
 default_command = "polkadot"
-default_args = [ "-lparachain=debug" ]
+default_args = [ "-lcumulus-pov-recovery=debug,parachain=debug" ]
 
 chain = "rococo-local"
 
@@ -13,7 +13,7 @@ group_rotation_frequency = 100 # 10 mins
   [[relaychain.node_groups]]
   name = "validator"
   count = 4
-  # args = ["--in-peers=3"]
+  # args = ["--out-peers=3"]
 
 [[parachains]]
 id = 2000
@@ -26,7 +26,7 @@ cumulus_based = true
   validator = true # collator
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["-lcumulus-pov-recovery=debug", "--use-null-consensus", "--disable-block-announcements"]
+  args = ["--use-null-consensus", "--disable-block-announcements"]
 
   # run bob as a parachain collator who is the only one producing blocks 
   # alice and charlie will need to recover the pov blocks through availability recovery
@@ -35,7 +35,7 @@ cumulus_based = true
   validator = true # collator
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["-lcumulus-pov-recovery=debug", "--disable-block-announcements"]
+  args = ["--disable-block-announcements"]
 
   # run eve as a parachain full node
   [[parachains.collators]]
@@ -43,4 +43,4 @@ cumulus_based = true
   validator = false # full node
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["-lcumulus-pov-recovery=debug,parachain=debug,sub-libp2p=debug", "--disable-block-announcements"]
+  args = ["--disable-block-announcements"]
