@@ -90,27 +90,6 @@ labels:
   - name: I1-panic
     description: The node panics and exits without proper error handling.
     color: 17b25d
-  - name: I10-enhancement
-    description: An additional feature request.
-    color: c2e0c6
-  - name: I11-meta
-    description: A specific issue for grouping tasks or bugs of a specific category.
-    color: a2eeef
-  - name: I12-unconfirmed
-    description: "Issue might be valid, but it's not yet known."
-    color: "000000"
-  - name: I13-intended
-    description: Issue describes a behavior which turns out to work as intended. Closer should explain why.
-    color: b10d11
-  - name: I14-duplicate
-    description: Issue is a duplicate. Closer should comment with a link to the duplicate.
-    color: D62209
-  - name: I15-wont_fix
-    description: "Issue is in principle valid, but this project will not address it. Closer should explain why."
-    color: FB3701
-  - name: I16-invalid
-    description: Issue is invalid. Closer should comment why.
-    color: F76E02
   - name: I2-security
     description: "The node fails to follow expected, security-sensitive, behaviour."
     color: d93f0b
@@ -135,6 +114,27 @@ labels:
   - name: I9-optimisation
     description: An enhancement to provide better overall performance in terms of time-to-completion for a task.
     color: c5def5
+  - name: J0-enhancement
+    description: An additional feature request.
+    color: c2e0c6
+  - name: J1-meta
+    description: A specific issue for grouping tasks or bugs of a specific category.
+    color: a2eeef
+  - name: J2-unconfirmed
+    description: "Issue might be valid, but it's not yet known."
+    color: "000000"
+  - name: J3-intended
+    description: Issue describes a behavior which turns out to work as intended. Closer should explain why.
+    color: b10d11
+  - name: J4-duplicate
+    description: Issue is a duplicate. Closer should comment with a link to the duplicate.
+    color: D62209
+  - name: J5-wont_fix
+    description: "Issue is in principle valid, but this project will not address it. Closer should explain why."
+    color: FB3701
+  - name: J6-invalid
+    description: Issue is invalid. Closer should comment why.
+    color: F76E02
   - name: S0-design
     description: Issue is in the design stage.
     color: f3a603
@@ -206,59 +206,44 @@ rules:
     spec:
       require: !one_of [ B* ]
 
-  - name: Require a single Auditing (D) label
+  - name: Release mentions need criticality (C)
+    id: require_one_c_when_b1
+    tags: [ PR ]
+    spec:
+      when: !one_of [ B1 ]
+      require: !one_of [ C* ]
+
+  - name: Release mentions need a topic (X)
+    id: require_one_x_when_b1
+    tags: [ PR ]
+    spec:
+      when: !one_of [ B1 ]
+      require: !one_of [ X* ]
+
+  - name: One single issue status (S) label allowed
+    id: single_s
+    tags:
+    spec:
+      when: !some_of  [ S* ]
+      require: !one_of [ S* ]
+
+  - name: One single urgency status (U) label allowed
+    id: single_u
+    tags: 
+    spec:
+      when: !some_of  [ U* ]
+      require: !one_of [ U* ]
+
+  - name: One single criticality (C) label allowed
+    id: single_c
+    tags: 
+    spec:
+      when: !some_of  [ C* ]
+      require: !one_of [ C* ]
+  
+  - name: One single audit (D) label allowed
     id: single_d
     tags: [ PR ]
     spec:
       when: !some_of  [ D* ]
       require: !one_of [ D* ]
-
-  - name: Require a single issue status (S) label
-    id: single_s
-    tags: [ issue ]
-    spec:
-      when: !some_of  [ S* ]
-      require: !one_of [ S* ]
-
-  - name: Require a single Urgency status (U) label
-    id: single_u
-    tags: [ issue ]
-    spec:
-      when: !some_of  [ U* ]
-      require: !one_of [ U* ]
-
-  - name: Runtimes require an audit Label
-    id: require_one_d_when_x1
-    tags: [ PR ]
-    when: !one_of [ X1 ]
-    spec:
-      require: !one_of [ D* ]
-
-  # We don't have those P labels yet
-  # - name: Release need priorities
-  #   id: require_one_p_when_b1
-  #   tags: [ PR ]
-  #   when: !one_of [ B1 ]
-  #   spec:
-  #     require: !one_of [ P* ]
-
-  - name: Release need topics
-    id: b_needs_t
-    tags: [ PR ]
-    when: !one_of [ B1 ]
-    spec:
-      require: !some_of [ T* ]
-
-  - name: Release require some topics
-    id: b_needs_x
-    tags: [ PR ]
-    when: !one_of [ B1 ]
-    spec:
-      require: !some_of [ X* ]
-
-  - name: Release needs criticality (C)
-    id: when_b1_require_one_c
-    tags: [ PR ]
-    when: !one_of [ B1 ]
-    spec:
-      require: !one_of [ C* ]

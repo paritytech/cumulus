@@ -5,7 +5,7 @@ specs:
   - name: Pass - Pass all
     filter:
       id: [ single_b, single_d, single_u, single_s]
-    labels: [ B1, P1, D1, X1, T4 ]
+    labels: [ B1, C1, D1, X1, T4 ]
     expected: true
 
   - name: Fail - Require release label
@@ -14,27 +14,27 @@ specs:
     labels: [ A1 ]
     expected: false
 
-  - name: Fail - Runtimes require an audit Label
+  - name: Fail - Only one audit label allowed
     filter:
       id: [ require_one_d_when_x1 ]
-    labels: [ X1, B1, P1 ]
+    labels: [ D1, B1, D4 ]
     expected: false
 
-  - name: Fail - Release need priorities
-    skip: true
+
+  - name: Fail - Release need criticality
     filter:
-      id: [ require_one_p_when_b1 ]
+      id: [ require_one_c_when_b1 ]
     labels: [ B1, X1, D1 ]
     expected: false
 
-  - name: Fail - Release require some T topics
+  - name: Fail - Release require one X topics
     filter:
-      id: [ b_needs_t ]
-    labels: [ B1, P1, D1 ]
+      id: [ require_one_x_when_b1 ]
+    labels: [ B1, T0, D1 ]
     expected: false
 
-  - name: Fail - Release require some X topics
+  - name: Fail - Only one criticality label allowed
     filter:
-      id: [ b_needs_x ]
-    labels: [ B1, P1, D1 ]
+      id: [ single_c ]
+    labels: [ B1, C1, C3 ]
     expected: false
