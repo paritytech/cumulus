@@ -1,9 +1,9 @@
-name: Quick check Formatting
+name: Rustfmt check
 
 on:
   push:
     branches:
-      - "*"
+      - master
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
 

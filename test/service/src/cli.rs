@@ -137,7 +137,7 @@ impl CliConfiguration<Self> for RelayChainCli {
 	fn base_path(&self) -> CliResult<Option<BasePath>> {
 		Ok(self
 			.shared_params()
-			.base_path()
+			.base_path()?
 			.or_else(|| self.base_path.clone().map(Into::into)))
 	}
 
@@ -184,12 +184,15 @@ impl CliConfiguration<Self> for RelayChainCli {
 		self.base.base.role(is_dev)
 	}
 
-	fn transaction_pool(&self) -> CliResult<sc_service::config::TransactionPoolOptions> {
-		self.base.base.transaction_pool()
+	fn transaction_pool(
+		&self,
+		is_dev: bool,
+	) -> CliResult<sc_service::config::TransactionPoolOptions> {
+		self.base.base.transaction_pool(is_dev)
 	}
 
-	fn state_cache_child_ratio(&self) -> CliResult<Option<usize>> {
-		self.base.base.state_cache_child_ratio()
+	fn trie_cache_maximum_size(&self) -> CliResult<Option<usize>> {
+		self.base.base.trie_cache_maximum_size()
 	}
 
 	fn rpc_methods(&self) -> CliResult<sc_service::config::RpcMethods> {
@@ -285,9 +288,16 @@ impl SubstrateCli for TestCollatorCli {
 		2017
 	}
 
-	fn load_spec(&self, _: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		Ok(Box::new(cumulus_test_service::get_chain_spec(ParaId::from(self.parachain_id)))
-			as Box<_>)
+	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+		Ok(match id {
+			"" => Box::new(cumulus_test_service::get_chain_spec(ParaId::from(self.parachain_id)))
+				as Box<_>,
+			path => {
+				let chain_spec =
+					cumulus_test_service::chain_spec::ChainSpec::from_json_file(path.into())?;
+				Box::new(chain_spec)
+			},
+		})
 	}
 
 	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -327,10 +337,8 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		<polkadot_cli::Cli as SubstrateCli>::from_iter(
-			[RelayChainCli::executable_name().to_string()].iter(),
-		)
-		.load_spec(id)
+		<polkadot_cli::Cli as SubstrateCli>::from_iter([RelayChainCli::executable_name()].iter())
+			.load_spec(id)
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {

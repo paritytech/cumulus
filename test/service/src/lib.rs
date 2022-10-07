@@ -18,7 +18,7 @@
 
 #![warn(missing_docs)]
 
-mod chain_spec;
+pub mod chain_spec;
 mod genesis;
 
 use std::{
@@ -28,6 +28,7 @@ use std::{
 };
 use url::Url;
 
+use crate::runtime::Weight;
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_client_network::BlockAnnounceValidator;
@@ -37,18 +38,18 @@ use cumulus_client_service::{
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::RelayChainInProcessInterface;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
+use cumulus_relay_chain_rpc_interface::{create_client_and_start_worker, RelayChainRpcInterface};
 use cumulus_test_runtime::{Hash, Header, NodeBlock as Block, RuntimeApi};
-use parking_lot::Mutex;
 
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use polkadot_primitives::v2::{CollatorPair, Hash as PHash, PersistedValidationData};
 use polkadot_service::ProvideRuntimeApi;
 use sc_client_api::execution_extensions::ExecutionStrategies;
-use sc_network::{config::TransportConfig, multiaddr, NetworkService};
+use sc_network::{multiaddr, NetworkBlock, NetworkService};
+use sc_network_common::{config::TransportConfig, service::NetworkStateInfo};
 use sc_service::{
 	config::{
-		DatabaseSource, KeepBlocks, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
+		BlocksPruning, DatabaseSource, KeystoreConfig, MultiaddrWithPeerId, NetworkConfiguration,
 		OffchainWorkerConfig, PruningMode, WasmExecutionMethod,
 	},
 	BasePath, ChainSpec, Configuration, Error as ServiceError, PartialComponents, Role,
@@ -140,7 +141,7 @@ pub fn new_partial(
 	);
 
 	let (client, backend, keystore_container, task_manager) =
-		sc_service::new_full_parts::<Block, RuntimeApi, _>(&config, None, executor)?;
+		sc_service::new_full_parts::<Block, RuntimeApi, _>(config, None, executor)?;
 	let client = Arc::new(client);
 
 	let registry = config.prometheus_registry();
@@ -158,7 +159,7 @@ pub fn new_partial(
 		client.clone(),
 		|_, _| async { Ok(sp_timestamp::InherentDataProvider::from_system_time()) },
 		&task_manager.spawn_essential_handle(),
-		registry.clone(),
+		registry,
 	)?;
 
 	let params = PartialComponents {
@@ -182,7 +183,8 @@ async fn build_relay_chain_interface(
 	task_manager: &mut TaskManager,
 ) -> RelayChainResult<Arc<dyn RelayChainInterface + 'static>> {
 	if let Some(relay_chain_url) = collator_options.relay_chain_rpc_url {
-		return Ok(Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>)
+		let client = create_client_and_start_worker(relay_chain_url, task_manager).await?;
+		return Ok(Arc::new(RelayChainRpcInterface::new(client)) as Arc<_>)
 	}
 
 	let relay_chain_full_node = polkadot_test_service::new_full(
@@ -199,8 +201,8 @@ async fn build_relay_chain_interface(
 	Ok(Arc::new(RelayChainInProcessInterface::new(
 		relay_chain_full_node.client.clone(),
 		relay_chain_full_node.backend.clone(),
-		Arc::new(Mutex::new(Box::new(relay_chain_full_node.network.clone()))),
-		relay_chain_full_node.overseer_handle.clone(),
+		Arc::new(relay_chain_full_node.network.clone()),
+		relay_chain_full_node.overseer_handle,
 	)) as Arc<_>)
 }
 
@@ -227,10 +229,6 @@ pub async fn start_node_impl<RB>(
 where
 	RB: Fn(Arc<Client>) -> Result<jsonrpsee::RpcModule<()>, sc_service::Error> + Send + 'static,
 {
-	if matches!(parachain_config.role, Role::Light) {
-		return Err("Light client not supported!".into())
-	}
-
 	let mut parachain_config = prepare_node_config(parachain_config);
 
 	let params = new_partial(&mut parachain_config)?;
@@ -259,7 +257,7 @@ where
 
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
-	let (network, system_rpc_tx, start_network) =
+	let (network, system_rpc_tx, tx_handler_controller, start_network) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &parachain_config,
 			client: client.clone(),
@@ -286,6 +284,7 @@ where
 		backend,
 		network: network.clone(),
 		system_rpc_tx,
+		tx_handler_controller,
 		telemetry: None,
 	})?;
 
@@ -610,7 +609,7 @@ pub fn node_config(
 	is_collator: bool,
 ) -> Result<Configuration, ServiceError> {
 	let base_path = BasePath::new_temp_dir()?;
-	let root = base_path.path().to_path_buf();
+	let root = base_path.path().join(format!("cumulus_test_service_{}", key.to_string()));
 	let role = if is_collator { Role::Authority } else { Role::Full };
 	let key_seed = key.to_seed();
 	let mut spec = Box::new(chain_spec::get_chain_spec(para_id));
@@ -621,7 +620,7 @@ pub fn node_config(
 	spec.set_storage(storage);
 
 	let mut network_config = NetworkConfiguration::new(
-		format!("{} (parachain)", key_seed.to_string()),
+		format!("{} (parachain)", key_seed),
 		"network/test/0.1",
 		Default::default(),
 		None,
@@ -630,7 +629,7 @@ pub fn node_config(
 	if nodes_exlusive {
 		network_config.default_peers_set.reserved_nodes = nodes;
 		network_config.default_peers_set.non_reserved_mode =
-			sc_network::config::NonReservedPeerMode::Deny;
+			sc_network_common::config::NonReservedPeerMode::Deny;
 	} else {
 		network_config.boot_nodes = nodes;
 	}
@@ -653,10 +652,9 @@ pub fn node_config(
 		keystore: KeystoreConfig::InMemory,
 		keystore_remote: Default::default(),
 		database: DatabaseSource::RocksDb { path: root.join("db"), cache_size: 128 },
-		state_cache_size: 67108864,
-		state_cache_child_ratio: None,
+		trie_cache_maximum_size: Some(64 * 1024 * 1024),
 		state_pruning: Some(PruningMode::ArchiveAll),
-		keep_blocks: KeepBlocks::All,
+		blocks_pruning: BlocksPruning::KeepAll,
 		chain_spec: spec,
 		wasm_method: WasmExecutionMethod::Interpreted,
 		// NOTE: we enforce the use of the native runtime to make the errors more debuggable
@@ -708,7 +706,7 @@ impl TestNode {
 	/// Send an extrinsic to this node.
 	pub async fn send_extrinsic(
 		&self,
-		function: impl Into<runtime::Call>,
+		function: impl Into<runtime::RuntimeCall>,
 		caller: Sr25519Keyring,
 	) -> Result<RpcTransactionOutput, RpcTransactionError> {
 		let extrinsic = construct_extrinsic(&*self.client, function, caller.pair(), Some(0));
@@ -721,7 +719,10 @@ impl TestNode {
 		let call = frame_system::Call::set_code { code: validation };
 
 		self.send_extrinsic(
-			runtime::SudoCall::sudo_unchecked_weight { call: Box::new(call.into()), weight: 1_000 },
+			runtime::SudoCall::sudo_unchecked_weight {
+				call: Box::new(call.into()),
+				weight: Weight::from_ref_time(1_000),
+			},
 			Sr25519Keyring::Alice,
 		)
 		.await
@@ -741,7 +742,7 @@ pub fn fetch_nonce(client: &Client, account: sp_core::sr25519::Public) -> u32 {
 /// Construct an extrinsic that can be applied to the test runtime.
 pub fn construct_extrinsic(
 	client: &Client,
-	function: impl Into<runtime::Call>,
+	function: impl Into<runtime::RuntimeCall>,
 	caller: sp_core::sr25519::Pair,
 	nonce: Option<u32>,
 ) -> runtime::UncheckedExtrinsic {
@@ -774,10 +775,10 @@ pub fn construct_extrinsic(
 	);
 	let signature = raw_payload.using_encoded(|e| caller.sign(e));
 	runtime::UncheckedExtrinsic::new_signed(
-		function.clone(),
+		function,
 		caller.public().into(),
-		runtime::Signature::Sr25519(signature.clone()),
-		extra.clone(),
+		runtime::Signature::Sr25519(signature),
+		extra,
 	)
 }
 

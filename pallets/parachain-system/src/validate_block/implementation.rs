@@ -74,7 +74,7 @@ where
 
 	sp_std::mem::drop(storage_proof);
 
-	let backend = sp_state_machine::TrieBackend::new(db, *parent_head.state_root());
+	let backend = sp_state_machine::TrieBackendBuilder::new(db, *parent_head.state_root()).build();
 
 	let _guard = (
 		// Replace storage calls with our own implementations
@@ -118,6 +118,11 @@ where
 	let inherent_data = block
 		.extrinsics()
 		.iter()
+		// Inherents are at the front of the block and are unsigned.
+		//
+		// If `is_signed` is returning `None`, we keep it safe and assume that it is "signed".
+		// We are searching for unsigned transactions anyway.
+		.take_while(|e| !e.is_signed().unwrap_or(true))
 		.filter_map(|e| e.call().is_sub_type())
 		.find_map(|c| match c {
 			crate::Call::set_validation_data { data: validation_data } =>
@@ -205,8 +210,8 @@ fn host_storage_set(key: &[u8], value: &[u8]) {
 	with_externalities(|ext| ext.place_storage(key.to_vec(), Some(value.to_vec())))
 }
 
-fn host_storage_get(key: &[u8]) -> Option<Vec<u8>> {
-	with_externalities(|ext| ext.storage(key).clone())
+fn host_storage_get(key: &[u8]) -> Option<bytes::Bytes> {
+	with_externalities(|ext| ext.storage(key).map(|value| value.into()))
 }
 
 fn host_storage_exists(key: &[u8]) -> bool {

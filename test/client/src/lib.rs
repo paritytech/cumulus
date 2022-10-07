@@ -19,7 +19,7 @@
 mod block_builder;
 use codec::{Decode, Encode};
 use runtime::{
-	Balance, Block, BlockHashCount, Call, GenesisConfig, Runtime, Signature, SignedExtra,
+	Balance, Block, BlockHashCount, GenesisConfig, Runtime, RuntimeCall, Signature, SignedExtra,
 	SignedPayload, UncheckedExtrinsic, VERSION,
 };
 use sc_executor::{WasmExecutionMethod, WasmExecutor};
@@ -122,7 +122,7 @@ fn genesis_config() -> GenesisConfig {
 pub fn generate_extrinsic(
 	client: &Client,
 	origin: sp_keyring::AccountKeyring,
-	function: impl Into<Call>,
+	function: impl Into<RuntimeCall>,
 ) -> UncheckedExtrinsic {
 	let current_block_hash = client.info().best_hash;
 	let current_block = client.info().best_number.saturated_into();
@@ -151,10 +151,10 @@ pub fn generate_extrinsic(
 	let signature = raw_payload.using_encoded(|e| origin.sign(e));
 
 	UncheckedExtrinsic::new_signed(
-		function.clone(),
+		function,
 		origin.public().into(),
-		Signature::Sr25519(signature.clone()),
-		extra.clone(),
+		Signature::Sr25519(signature),
+		extra,
 	)
 }
 
@@ -165,8 +165,10 @@ pub fn transfer(
 	dest: sp_keyring::AccountKeyring,
 	value: Balance,
 ) -> UncheckedExtrinsic {
-	let function =
-		Call::Balances(pallet_balances::Call::transfer { dest: dest.public().into(), value });
+	let function = RuntimeCall::Balances(pallet_balances::Call::transfer {
+		dest: dest.public().into(),
+		value,
+	});
 
 	generate_extrinsic(client, origin, function)
 }

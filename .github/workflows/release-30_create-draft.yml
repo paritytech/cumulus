@@ -50,6 +50,8 @@ jobs:
             runtime: statemint
           - category: assets
             runtime: westmint
+          - category: collectives
+            runtime: collectives-polkadot
           - category: contracts
             runtime: contracts-rococo
           - category: starters
@@ -77,7 +79,7 @@ jobs:
       - name: Build ${{ matrix.runtime }} runtime
         if: ${{ github.event.inputs.release_type != 'client' }}
         id: srtool_build
-        uses: chevdor/srtool-actions@v0.4.0
+        uses: chevdor/srtool-actions@v0.5.0
         with:
           image: paritytech/srtool
           chain: ${{ matrix.runtime }}
@@ -148,6 +150,7 @@ jobs:
           WESTMINT_DIGEST: ${{ github.workspace}}/westmint-srtool-json/westmint-srtool-digest.json
           STATEMINE_DIGEST: ${{ github.workspace}}/statemine-srtool-json/statemine-srtool-digest.json
           STATEMINT_DIGEST: ${{ github.workspace}}/statemint-srtool-json/statemint-srtool-digest.json
+          COLLECTIVES_POLKADOT_DIGEST: ${{ github.workspace}}/collectives-polkadot-srtool-json/collectives-polkadot-srtool-digest.json
           ROCOCO_PARA_DIGEST: ${{ github.workspace}}/rococo-parachain-srtool-json/rococo-parachain-srtool-digest.json
           CANVAS_KUSAMA_DIGEST: ${{ github.workspace}}/contracts-rococo-srtool-json/contracts-rococo-srtool-digest.json
           REF1: ${{ github.event.inputs.ref1 }}
@@ -162,6 +165,7 @@ jobs:
             ls -al $WESTMINT_DIGEST || true
             ls -al $STATEMINE_DIGEST || true
             ls -al $STATEMINT_DIGEST || true
+            ls -al $COLLECTIVES_POLKADOT_DIGEST || true
             ls -al $ROCOCO_PARA_DIGEST || true
             ls -al $CANVAS_KUSAMA_DIGEST || true
           fi
@@ -184,11 +188,11 @@ jobs:
         with:
           name: release-notes-context
           path: |
-            context.json
+            cumulus/scripts/ci/changelog/context.json
 
       - name: Create draft release
         id: create-release
-        uses: actions/create-release@v1
+        uses: actions/create-release@0cb9c9b65d5d1901c1f53e5e66eaf4afd303e70e # v1.1.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -212,6 +216,8 @@ jobs:
             runtime: statemint
           - category: assets
             runtime: westmint
+          - category: collectives
+            runtime: collectives-polkadot
           - category: contracts
             runtime: contracts-rococo
           - category: starters
@@ -252,7 +258,7 @@ jobs:
           mv "$(sed -E 's/-(.*)/_\1/' <<< ${{ matrix.runtime }})_runtime.compact.compressed.wasm" "${{ matrix.runtime }}_runtime.compact.compressed.wasm" || true
 
       - name: Upload compressed ${{ matrix.runtime }} wasm
-        uses: actions/upload-release-asset@v1
+        uses: actions/upload-release-asset@e8f9f06c4b078e705bd2ea027f0926603fc9b4d5 # v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -265,11 +271,17 @@ jobs:
     if: ${{ github.event.inputs.notification == 'true' }}
     runs-on: ubuntu-latest
     needs: publish-draft-release
+    strategy:
+      matrix:
+        channel:
+          - name: 'Cumulus Release Coordination'
+            room: '!ZrLPsivsytpkdJfVaa:matrix.parity.io'
+            pre-releases: true
     steps:
-      - name: Internal polkadot channel
-        uses: s3krit/matrix-message-action@v0.0.3
+      - name: Matrix notification to ${{ matrix.channel.name }}
+        uses: s3krit/matrix-message-action@70ad3fb812ee0e45ff8999d6af11cafad11a6ecf # v0.0.3
         with:
-          room_id: ${{ secrets.INTERNAL_CUMULUS_MATRIX_ROOM_ID }}
+          room_id: ${{ matrix.channel.room }}
           access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
           message: |
             **New draft for ${{ github.repository }}**: ${{ github.event.inputs.ref2 }}<br/>

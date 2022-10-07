@@ -1,6 +1,6 @@
 # This workflow performs the Extrinsic Ordering Check on demand using a binary
 
-name: Extrinsic Ordering Check from Binary
+name: Release - Extrinsic Ordering Check from Binary
 on:
   workflow_dispatch:
     inputs:
@@ -65,7 +65,7 @@ jobs:
           $CMD >> output.txt
           sed -z -i 's/\n\n/\n/g' output.txt
           cat output.txt | egrep -n -i ''
-          SUMMARY=$(./scripts/ci/extrinsic-ordering-filter.sh output.txt)
+          SUMMARY=$(./scripts/ci/github/extrinsic-ordering-filter.sh output.txt)
           echo -e $SUMMARY
           echo -e $SUMMARY >> output.txt
 
