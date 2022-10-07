@@ -13,10 +13,6 @@ chain = "rococo-local"
   name = "bob"
   validator = true
 
-  [[relaychain.nodes]]
-  name = "ferdie"
-  validator = false
-
 [[parachains]]
 id = 2000
 cumulus_based = true
@@ -27,7 +23,7 @@ cumulus_based = true
   validator = true
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["-lparachain=debug", "--disable-block-announcements"]
+  args = ["-lparachain=debug"]
 
   # Run dave as parachain collator and eve as parachain full node
   #
@@ -37,30 +33,12 @@ cumulus_based = true
   validator = true
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["-lcumulus-pov-recovery=debug,parachain=debug,sync=debug", "--use-null-consensus", "--disable-block-announcements"]
+  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "--use-null-consensus", "--disable-block-announcements"]
 
-  # run eve as parachain full node that is only connected to charlie
+  # run eve as parachain full node that is only connected to dave
   [[parachains.collators]]
   name = "eve"
   validator = false
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["-lcumulus-pov-recovery=debug,parachain=debug,sync=debug", "--use-null-consensus", "--disable-block-announcements"]
-
-  # Run one as parachain collator and two as parachain full node, connected via RPC relay chain node
-  #
-  # They will need to recover the pov blocks through availability recovery.
-  [[parachains.collators]]
-  name = "one"
-  validator = true
-  image = "{{COL_IMAGE}}"
-  command = "test-parachain"
-  args = ["-lcumulus-pov-recovery=debug,parachain=debug,sync=debug", "--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'ferdie'|zombie('wsUri')}}", "-- --bootnodes {{'ferdie'|zombie('multiAddress')}}"]
-
-  # run two as parachain full node that is only connected to charlie
-  [[parachains.collators]]
-  name = "two"
-  validator = false
-  image = "{{COL_IMAGE}}"
-  command = "test-parachain"
-  args = ["-lcumulus-pov-recovery=debug,parachain=debug,sync=debug","--use-null-consensus", "--disable-block-announcements", "--relay-chain-rpc-url {{'ferdie'|zombie('wsUri')}}", "-- --bootnodes {{'ferdie'|zombie('multiAddress')}}"]
+  args = ["--reserved-only", "--reserved-nodes {{'charlie'|zombie('multiAddress')}}", "--use-null-consensus", "--disable-block-announcements"]
