@@ -8,10 +8,14 @@ chain = "rococo-local"
   [[relaychain.nodes]]
   name = "alice"
   validator = true
+  # this should be enabled by default in `-local` chains
+  # but maybe zombienet changes this somehow
+  args = ["--allow-private-ipv4", "--discover-local"]
 
   [[relaychain.nodes]]
   name = "bob"
   validator = true
+  args = ["--allow-private-ipv4", "--discover-local"]
 
 [[parachains]]
 id = 2000
@@ -23,7 +27,7 @@ cumulus_based = true
   validator = true
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["-lparachain=debug"]
+  args = ["-lparachain=debug", "--", "--allow-private-ipv4", "--discover-local"]
 
   # Run dave as parachain collator and eve as parachain full node
   #
@@ -33,7 +37,7 @@ cumulus_based = true
   validator = true
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--use-null-consensus", "--disable-block-announcements"]
+  args = ["--use-null-consensus", "--disable-block-announcements", "--", "--allow-private-ipv4", "--discover-local"]
 
   # run eve as parachain full node that is only connected to dave
   [[parachains.collators]]
@@ -41,4 +45,4 @@ cumulus_based = true
   validator = false
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--use-null-consensus", "--disable-block-announcements", "--", "--reserved-only", "--reserved-nodes {{'dave'|zombie('multiAddress')}}"]
+  args = ["-lparachain=debug,sub-libp2p=debug", "--use-null-consensus", "--disable-block-announcements", "--", "--allow-private-ipv4", "--discover-local", "--reserved-only", "--reserved-nodes {{'dave'|zombie('multiAddress')}}"]
