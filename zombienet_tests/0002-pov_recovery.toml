@@ -5,40 +5,36 @@ default_args = [ "-lparachain=debug" ]
 
 chain = "rococo-local"
 
-  [[relaychain.nodes]]
-  name = "alice"
-  validator = true
-
-  [[relaychain.nodes]]
-  name = "bob"
-  validator = true
+  [[relaychain.node_groups]]
+  name = "validator"
+  count = 4
 
 [[parachains]]
 id = 2000
 cumulus_based = true
 
-  # run charlie as parachain collator
+  # run alice as a parachain collator who does not produce blocks
+  # alice is a bootnode for bob and charlie
   [[parachains.collators]]
-  name = "charlie"
-  validator = true
-  image = "{{COL_IMAGE}}"
-  command = "test-parachain"
-  args = ["-lcumulus-pov-recovery=debug", "--disable-block-announcements"]
-
-  # Run dave as parachain collator and eve as parachain full node
-  #
-  # They will need to recover the pov blocks through availability recovery.
-  [[parachains.collators]]
-  name = "dave"
-  validator = true
+  name = "alice"
+  validator = true # collator
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
   args = ["-lcumulus-pov-recovery=debug", "--use-null-consensus", "--disable-block-announcements"]
 
-  # run eve as parachain full node
+  # run bob as a parachain collator who is the only one producing blocks 
+  # alice and charlie will need to recover the pov blocks through availability recovery
   [[parachains.collators]]
-  name = "eve"
-  validator = false
+  name = "bob"
+  validator = true # collator
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["-lcumulus-pov-recovery=debug,parachain=debug,sub-libp2p=debug", "--use-null-consensus", "--disable-block-announcements"]
+  args = ["-lcumulus-pov-recovery=debug", "--disable-block-announcements"]
+
+  # run eve as a parachain full node
+  [[parachains.collators]]
+  name = "charlie"
+  validator = false # full node
+  image = "{{COL_IMAGE}}"
+  command = "test-parachain"
+  args = ["-lcumulus-pov-recovery=debug,parachain=debug,sub-libp2p=debug", "--disable-block-announcements"]
