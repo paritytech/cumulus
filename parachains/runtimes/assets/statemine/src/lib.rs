@@ -49,7 +49,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{AsEnsureOriginWithArg, EitherOfDiverse, InstanceFilter},
+	traits::{AsEnsureOriginWithArg, EitherOfDiverse, InstanceFilter, SortedMembers},
 	weights::{ConstantMultiplier, Weight},
 	PalletId, RuntimeDebug,
 };
@@ -87,11 +87,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("statemine"),
 	impl_name: create_runtime_str!("statemine"),
 	authoring_version: 1,
-	spec_version: 9300,
+	spec_version: 9301,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 8,
-	state_version: 0,
+	state_version: 1,
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -596,6 +596,8 @@ construct_runtime!(
 		// The main stage.
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
+
+		StateTrieMigration: pallet_state_trie_migration = 52,
 	}
 );
 
@@ -978,4 +980,69 @@ cumulus_pallet_parachain_system::register_validate_block! {
 	Runtime = Runtime,
 	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
 	CheckInherents = CheckInherents,
+}
+
+parameter_types! {
+	// The deposit configuration for the singed migration. Specially if you want to allow any signed account to do the migration (see `SignedFilter`, these deposits should be high)
+	pub const MigrationSignedDepositPerItem: Balance = 1 * CENTS;
+	pub const MigrationSignedDepositBase: Balance = 2_000 * CENTS;
+	pub const MigrationMaxKeyLen: u32 = 512;
+}
+
+impl pallet_state_trie_migration::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Currency = Balances;
+	type SignedDepositPerItem = MigrationSignedDepositPerItem;
+	type SignedDepositBase = MigrationSignedDepositBase;
+	// An origin that can control the whole pallet: should be Root, or a part of your council.
+	type ControlOrigin = frame_system::EnsureSignedBy<RootMigController, AccountId>;
+	// specific account for the migration, can trigger the signed migrations.
+	type SignedFilter = frame_system::EnsureSignedBy<MigController, AccountId>;
+	//type SignedFilter = frame_system::EnsureSigned<Self::AccountId>;
+
+	// Replace this with weight based on your runtime.
+	type WeightInfo = pallet_state_trie_migration::weights::SubstrateWeight<Runtime>;
+
+	type MaxKeyLen = MigrationMaxKeyLen;
+}
+
+pub struct MigController;
+pub struct RootMigController;
+
+const KEY_ROOT_MIG_CONTROLLER: [u8; 32] = [
+	82, 188, 113, 193, 236, 165, 53, 55, 73, 84, 45, 253, 240, 175, 151, 191, 118, 79, 156, 47, 68,
+	232, 96, 205, 72, 95, 28, 216, 100, 0, 246, 73,
+];
+
+const KEY_MIG_CONTROLLER: [u8; 32] = [
+	82, 188, 113, 193, 236, 165, 53, 55, 73, 84, 45, 253, 240, 175, 151, 191, 118, 79, 156, 47, 68,
+	232, 96, 205, 72, 95, 28, 216, 100, 0, 246, 73,
+];
+
+impl SortedMembers<AccountId> for RootMigController {
+	fn sorted_members() -> Vec<AccountId> {
+		// hardcoded key of controller for manual migration
+		vec![KEY_ROOT_MIG_CONTROLLER.into()]
+	}
+}
+
+impl SortedMembers<AccountId> for MigController {
+	fn sorted_members() -> Vec<AccountId> {
+		// hardcoded key of controller for manual migration
+		vec![KEY_MIG_CONTROLLER.into()]
+	}
+}
+
+#[test]
+fn ensure_key_ss58() {
+	use sp_core::crypto::Ss58Codec;
+	let acc =
+		AccountId::from_ss58check("5DwBmEFPXRESyEam5SsQF1zbWSCn2kCjyLW51hJHXe9vW4xs").unwrap();
+	let acc: &[u8] = acc.as_ref();
+	assert_eq!(acc, &KEY_MIG_CONTROLLER[..]);
+	let acc =
+		AccountId::from_ss58check("5DwBmEFPXRESyEam5SsQF1zbWSCn2kCjyLW51hJHXe9vW4xs").unwrap();
+	let acc: &[u8] = acc.as_ref();
+	assert_eq!(acc, &KEY_ROOT_MIG_CONTROLLER[..]);
+	//	panic!("{:?}", acc);
 }
