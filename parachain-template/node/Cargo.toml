@@ -54,10 +54,10 @@ substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate
 try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Polkadot
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "ao-recovery-try-connect" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "ao-recovery-try-connect" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "ao-recovery-try-connect" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "ao-recovery-try-connect" }
 
 # Cumulus
 cumulus-client-cli = { path = "../../client/cli" }
