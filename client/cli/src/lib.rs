@@ -42,15 +42,15 @@ use url::Url;
 #[derive(Debug, clap::Parser)]
 pub struct PurgeChainCmd {
 	/// The base struct of the purge-chain command.
-	#[clap(flatten)]
+	#[command(flatten)]
 	pub base: sc_cli::PurgeChainCmd,
 
 	/// Only delete the para chain database
-	#[clap(long, aliases = &["para"])]
+	#[arg(long, aliases = &["para"])]
 	pub parachain: bool,
 
 	/// Only delete the relay chain database
-	#[clap(long, aliases = &["relay"])]
+	#[arg(long, aliases = &["relay"])]
 	pub relaychain: bool,
 }
 
@@ -131,15 +131,15 @@ impl sc_cli::CliConfiguration for PurgeChainCmd {
 #[derive(Debug, clap::Parser)]
 pub struct ExportGenesisStateCommand {
 	/// Output file name or stdout if unspecified.
-	#[clap(action)]
+	#[arg()]
 	pub output: Option<PathBuf>,
 
 	/// Write output in binary. Default is to write in hex.
-	#[clap(short, long)]
+	#[arg(short, long)]
 	pub raw: bool,
 
 	#[allow(missing_docs)]
-	#[clap(flatten)]
+	#[command(flatten)]
 	pub shared_params: sc_cli::SharedParams,
 }
 
@@ -214,15 +214,15 @@ impl sc_cli::CliConfiguration for ExportGenesisStateCommand {
 #[derive(Debug, clap::Parser)]
 pub struct ExportGenesisWasmCommand {
 	/// Output file name or stdout if unspecified.
-	#[clap(action)]
+	#[arg()]
 	pub output: Option<PathBuf>,
 
 	/// Write output in binary. Default is to write in hex.
-	#[clap(short, long)]
+	#[arg(short, long)]
 	pub raw: bool,
 
 	#[allow(missing_docs)]
-	#[clap(flatten)]
+	#[command(flatten)]
 	pub shared_params: sc_cli::SharedParams,
 }
 
@@ -278,17 +278,17 @@ fn validate_relay_chain_url(arg: &str) -> Result<Url, String> {
 #[derive(Debug, clap::Parser)]
 pub struct RunCmd {
 	/// The cumulus RunCmd inherents from sc_cli's
-	#[clap(flatten)]
+	#[command(flatten)]
 	pub base: sc_cli::RunCmd,
 
 	/// Run node as collator.
 	///
 	/// Note that this is the same as running with `--validator`.
-	#[clap(long, conflicts_with = "validator")]
+	#[arg(long, conflicts_with = "validator")]
 	pub collator: bool,
 
 	/// EXPERIMENTAL: Specify an URL to a relay chain full node to communicate with.
-	#[clap(
+	#[arg(
 		long,
 		value_parser = validate_relay_chain_url,
 		conflicts_with_all = &["alice", "bob", "charlie", "dave", "eve", "ferdie", "one", "two"]	)
