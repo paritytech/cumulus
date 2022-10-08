@@ -35,7 +35,7 @@ cumulus_based = true
   validator = true # collator
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--disable-block-announcements", "--no-mdns"]
+  args = ["--disable-block-announcements", "--", "--no-mdns"]
 
   # run eve as a parachain full node
   [[parachains.collators]]
