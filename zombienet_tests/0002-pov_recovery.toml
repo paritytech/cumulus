@@ -13,7 +13,7 @@ group_rotation_frequency = 100 # 10 mins
   [[relaychain.node_groups]]
   name = "validator"
   count = 4
-  # args = ["--out-peers=3"]
+  args = ["--out-peers=3"]
 
 [[parachains]]
 id = 2000
@@ -26,7 +26,7 @@ cumulus_based = true
   validator = true # collator
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--use-null-consensus", "--disable-block-announcements"]
+  args = ["--use-null-consensus", "--disable-block-announcements", "--", "--no-mdns"]
 
   # run bob as a parachain collator who is the only one producing blocks 
   # alice and charlie will need to recover the pov blocks through availability recovery
@@ -43,4 +43,4 @@ cumulus_based = true
   validator = false # full node
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--disable-block-announcements"]
+  args = ["--disable-block-announcements", "--", "--no-mdns"]
