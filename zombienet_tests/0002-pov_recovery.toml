@@ -12,7 +12,7 @@ group_rotation_frequency = 100 # 10 mins
 
   [[relaychain.node_groups]]
   name = "validator"
-  count = 4
+  count = 7
   args = ["--out-peers=3", "--no-mdns"]
 
 [[parachains]]
