@@ -1,7 +1,6 @@
 [relaychain]
 default_image = "{{RELAY_IMAGE}}"
 default_command = "polkadot"
-default_args = [ "-lcumulus-pov-recovery=debug,parachain=debug" ]
 
 chain = "rococo-local"
 
@@ -13,11 +12,13 @@ group_rotation_frequency = 100 # 10 mins
   [[relaychain.nodes]]
   name = "ferdie" # bootnode
   validator = true
+  args = ["-lparachain::availability-distribution=trace"]
 
   [[relaychain.node_groups]]
   name = "validator"
   count = 6
-  args = ["--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
+  args = ["-lparachain::availability-distribution=trace", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
+  default_args = [ "-lcumulus-pov-recovery=debug,parachain=debug" ]
 
 [[parachains]]
 id = 2000
@@ -30,7 +31,7 @@ cumulus_based = true
   validator = true # collator
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--use-null-consensus", "--disable-block-announcements", "--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
+  args = ["-lparachain::availability-recovery=trace", "--use-null-consensus", "--disable-block-announcements", "--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
 
   # run bob as a parachain collator who is the only one producing blocks 
   # alice and charlie will need to recover the pov blocks through availability recovery
@@ -47,4 +48,4 @@ cumulus_based = true
   validator = false # full node
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--disable-block-announcements", "--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
+  args = ["-lparachain::availability-recovery=trace", "--disable-block-announcements", "--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
