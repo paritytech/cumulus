@@ -18,7 +18,6 @@ group_rotation_frequency = 100 # 10 mins
   name = "validator"
   count = 6
   args = ["-lparachain::availability-distribution=trace", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
-  default_args = [ "-lcumulus-pov-recovery=debug,parachain=debug" ]
 
 [[parachains]]
 id = 2000
