@@ -10,10 +10,14 @@ chain = "rococo-local"
 max_validators_per_core = 1
 group_rotation_frequency = 100 # 10 mins
 
+  [[relaychain.nodes]]
+  name = "ferdie" # bootnode
+  validator = true
+
   [[relaychain.node_groups]]
   name = "validator"
-  count = 7
-  args = ["--out-peers=3", "--no-mdns"]
+  count = 6
+  args = ["--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
 
 [[parachains]]
 id = 2000
@@ -26,7 +30,7 @@ cumulus_based = true
   validator = true # collator
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--use-null-consensus", "--disable-block-announcements", "--", "--no-mdns"]
+  args = ["--use-null-consensus", "--disable-block-announcements"]
 
   # run bob as a parachain collator who is the only one producing blocks 
   # alice and charlie will need to recover the pov blocks through availability recovery
@@ -35,7 +39,7 @@ cumulus_based = true
   validator = true # collator
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--disable-block-announcements", "--", "--no-mdns"]
+  args = ["--disable-block-announcements"]
 
   # run eve as a parachain full node
   [[parachains.collators]]
@@ -43,4 +47,4 @@ cumulus_based = true
   validator = false # full node
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["--disable-block-announcements", "--", "--no-mdns"]
+  args = ["--disable-block-announcements"]
