@@ -44,7 +44,7 @@ sp-session = { git = "https://github.com/paritytech/substrate", default-features
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 sp-version = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
-pallet-state-trie-migration = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-state-trie-migration = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master", optional = true }
 
 # Polkadot
 kusama-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
@@ -80,7 +80,14 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 
 [features]
 default = [ "std" ]
-state-trie-migration = []
+# When enabled the `state_version` is set to `1`.
+# This means that the chain will start using the new state format. The migration is lazy, so
+# it requires to write a storage value to use the new state format. To migrate all the other
+# storage values that aren't touched the state migration pallet is added as well.
+# This pallet will migrate the entire state, controlled through some account.
+#
+# This feature should be removed when the main-net will be migrated.
+state-trie-migration = ["pallet-state-trie-migration"]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",

@@ -88,7 +88,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("statemine"),
 	impl_name: create_runtime_str!("statemine"),
 	authoring_version: 1,
-	spec_version: 9301,
+	spec_version: 9300,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 8,
@@ -612,7 +612,7 @@ construct_runtime!(
 		Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
 
 		#[cfg(feature = "state-trie-migration")]
-		StateTrieMigration: pallet_state_trie_migration = 52,
+		StateTrieMigration: pallet_state_trie_migration = 70,
 	}
 );
 
@@ -997,6 +997,7 @@ cumulus_pallet_parachain_system::register_validate_block! {
 	CheckInherents = CheckInherents,
 }
 
+#[cfg(feature = "state-trie-migration")]
 parameter_types! {
 	// The deposit configuration for the singed migration. Specially if you want to allow any signed account to do the migration (see `SignedFilter`, these deposits should be high)
 	pub const MigrationSignedDepositPerItem: Balance = 1 * CENTS;
@@ -1014,7 +1015,6 @@ impl pallet_state_trie_migration::Config for Runtime {
 	type ControlOrigin = frame_system::EnsureSignedBy<RootMigController, AccountId>;
 	// specific account for the migration, can trigger the signed migrations.
 	type SignedFilter = frame_system::EnsureSignedBy<MigController, AccountId>;
-	//type SignedFilter = frame_system::EnsureSigned<Self::AccountId>;
 
 	// Replace this with weight based on your runtime.
 	type WeightInfo = pallet_state_trie_migration::weights::SubstrateWeight<Runtime>;
@@ -1022,11 +1022,13 @@ impl pallet_state_trie_migration::Config for Runtime {
 	type MaxKeyLen = MigrationMaxKeyLen;
 }
 
+#[cfg(feature = "state-trie-migration")]
 frame_support::ord_parameter_types! {
 	pub const MigController: AccountId = AccountId::from(hex_literal::hex!("52bc71c1eca5353749542dfdf0af97bf764f9c2f44e860cd485f1cd86400f649"));
 	pub const RootMigController: AccountId = AccountId::from(hex_literal::hex!("52bc71c1eca5353749542dfdf0af97bf764f9c2f44e860cd485f1cd86400f649"));
 }
 
+#[cfg(feature = "state-trie-migration")]
 #[test]
 fn ensure_key_ss58() {
 	use frame_support::traits::SortedMembers;
