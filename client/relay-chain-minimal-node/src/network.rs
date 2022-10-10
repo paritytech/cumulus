@@ -68,8 +68,8 @@ pub(crate) fn build_collator_network(
 
 	let chain_sync = DummyChainSync;
 	let block_announce_config = chain_sync.get_block_announce_proto_config(
-		&protocol_id.clone(),
-		None,
+		protocol_id.clone(),
+		&None,
 		Roles::from(&config.role),
 		client.info().best_number,
 		client.info().best_hash,
@@ -91,7 +91,7 @@ pub(crate) fn build_collator_network(
 		import_queue: Box::new(DummyImportQueue),
 		protocol_id,
 		metrics_registry: config.prometheus_config.as_ref().map(|config| config.registry.clone()),
-		// block_announce_config,
+		block_announce_config,
 		block_request_protocol_config,
 		state_request_protocol_config,
 		warp_sync_protocol_config: None,
