@@ -12,12 +12,12 @@ group_rotation_frequency = 100 # 10 mins
   [[relaychain.nodes]]
   name = "ferdie" # bootnode
   validator = true
-  args = ["-lparachain::availability-distribution=trace"]
+  args = ["-lparachain::availability=trace,parachain=debug"]
 
   [[relaychain.node_groups]]
   name = "validator"
   count = 6
-  args = ["-lparachain::availability-distribution=trace", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
+  args = ["-lparachain::availability=trace,parachain=debug", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
 
 [[parachains]]
 id = 2000
@@ -30,7 +30,7 @@ cumulus_based = true
   validator = true # collator
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["-lparachain::availability-recovery=trace", "--use-null-consensus", "--disable-block-announcements", "--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
+  args = ["-lparachain::availability=trace,parachain=debug,cumulus-pov-recovery=debug", "--use-null-consensus", "--disable-block-announcements", "--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
 
   # run bob as a parachain collator who is the only one producing blocks 
   # alice and charlie will need to recover the pov blocks through availability recovery
@@ -47,4 +47,4 @@ cumulus_based = true
   validator = false # full node
   image = "{{COL_IMAGE}}"
   command = "test-parachain"
-  args = ["-lparachain::availability-recovery=trace", "--disable-block-announcements", "--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
+  args = ["-lparachain::availability=trace,parachain=debug,cumulus-pov-recovery=debug", "--disable-block-announcements", "--", "--reserved-only", "--reserved-nodes {{'ferdie'|zombie('multiAddress')}}"]
