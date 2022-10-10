@@ -67,7 +67,7 @@ pub(crate) fn build_collator_network(
 		light_client_requests::generate_protocol_config(&protocol_id, genesis_hash, None);
 
 	let chain_sync = DummyChainSync;
-	let block_announce_config = chain_sync.get_block_announce_proto_config(
+	let block_announce_config = chain_sync.get_block_announce_proto_config::<Block>(
 		protocol_id.clone(),
 		&None,
 		Roles::from(&config.role),
